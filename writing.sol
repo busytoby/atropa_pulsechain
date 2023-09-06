@@ -33,8 +33,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     IERC20 private BondToken;
     //IERC20 private WritingToken;
 
-    constructo
-            HarToken = IERC20(HarContract);
+    constructor() ERC20(unicode"ހް", unicode"ޖޮޔިސްދޭވޯހީ") {
+        HarToken = IERC20(HarContract);
         LegalToken = IERC20(LegalContract);
         ScissorsToken = IERC20(ScissorsContract);
         ReadingToken = IERC20(ReadingContract);
@@ -89,3 +89,4 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
 
         _mint(msg.sender, 10 ** decimals());
     }
+}
