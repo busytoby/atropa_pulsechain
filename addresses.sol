@@ -26,6 +26,7 @@ address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC
 address constant TSFiContract = address(0x4243568Fa2bbad327ee36e06c16824cAd8B37819);
 
 address constant WMContract = address(0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29);
+address constant CallContract = address(0xD4FD96BA83d3E6FF1A0Baa44c32Def94e641D97c);        // 𐌎
 
 address constant TeddyBear9Contract = address(0x1f737F7994811fE994Fe72957C374e5cD5D5418A);
 
