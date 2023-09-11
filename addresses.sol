@@ -24,7 +24,8 @@ address constant YingContract = address(0x271197EFe41073681577CdbBFD6Ee1DA259BAa
 address constant MetisContract = address(0x36d4Ac3DF7Bf8aa3843Ad40C8b3eB67e3d18b4e1);       // ไมิติซส์
 address constant BinContract = address(0xf520404CF4fa5B633626333775b05F5dF94E1a9C);
 address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC6);         // ㉣
-address constant TSFiContract = address(0x4243568Fa2bbad327ee36e06c16824cAd8B37819);
+address constant QingDaoContract = address(0xE63191967735C52f5de78CE2471759a9963Ce118);
+address constant TSFiContract = address(0xE63191967735C52f5de78CE2471759a9963Ce118);
 
 address constant WMContract = address(0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29);
 address constant NoPrivateContract = address(0x3Cca11B99e3338F57B0FCB0d203D747AeAE01CE5);
