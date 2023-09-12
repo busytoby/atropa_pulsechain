@@ -40,3 +40,4 @@ address constant WritingContract = address(0x26D5906c4Cdf8C9F09CBd94049f99deaa87
 // address constant FAContract = address(0xF2be09EB43c1eD2791d0324BaA0649e62CdA4BBF);
 address constant hhFaContract = address(0xa28e8aA4d6257157de64a547c90B38C3c540eF72);
 address constant NoNukesContract = address(0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62);
+address constant WenTiContract = address(0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc);
