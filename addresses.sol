@@ -4,6 +4,10 @@ pragma solidity ^0.8.21;
 address constant dead = address(0x000000000000000000000000000000000000dEaD);
 address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
 address constant goldkey = address(0x30e22ab6e6B576e6A9c5dD73191237a9A5c72539);
+address constant aghlimbada = address(0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf);
+address constant kangol = address(0x046eB71EB92E3eD2534d005ab4436B4b8dB24DFa);
+address constant skinphlute = address(0xA7BC844a76e727Ec5250f3849148c21F4b43CeEA);
+address constant roxanne = address(0x066419EaEf5DE53cc5da0d8702b990c5bc7D1AB3);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant HarContract = address(0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622);         // ʁ 
@@ -41,3 +45,6 @@ address constant WritingContract = address(0x26D5906c4Cdf8C9F09CBd94049f99deaa87
 address constant hhFaContract = address(0xa28e8aA4d6257157de64a547c90B38C3c540eF72);
 address constant NoNukesContract = address(0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62);
 address constant WenTiContract = address(0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc);
+
+//
+address constant TRSIContract = address(0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6);
