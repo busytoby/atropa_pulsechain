@@ -8,6 +8,8 @@ address constant aghlimbada = address(0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf
 address constant kangol = address(0x046eB71EB92E3eD2534d005ab4436B4b8dB24DFa);
 address constant skinphlute = address(0xA7BC844a76e727Ec5250f3849148c21F4b43CeEA);
 address constant roxanne = address(0x066419EaEf5DE53cc5da0d8702b990c5bc7D1AB3);
+address constant daveschwimmer = address(0x5bC1b2aAFA145e6fE23bBA601925383E27fBc79e);
+address constant matthewperry = address(0xDb04e6d81d018D91B9D996bC2bbC81a568594818);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant HarContract = address(0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622);         // ʁ 
@@ -24,7 +26,7 @@ address constant TeddyBearContract = address(0xd6c31bA0754C4383A41c0e9DF042C62b5
 address constant PoppyContract = address(0xdE65090088Df0b2d80A5eC6A7B56ECE36ee83ce8);
 address constant OjeonContract = address(0xFa4d9C6E012d946853386113ACbF166deC5465Bb);
 address constant YuContract = address(0x52a4682880E990ebed5309764C7BD29c4aE22deB);          // 유
-address constant YingContract = address(0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c);
+address constant YingContract = address(0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c);        // 籯
 address constant MetisContract = address(0x36d4Ac3DF7Bf8aa3843Ad40C8b3eB67e3d18b4e1);       // ไมิติซส์
 address constant BinContract = address(0xf520404CF4fa5B633626333775b05F5dF94E1a9C);
 address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC6);         // ㉣
@@ -48,3 +50,4 @@ address constant WenTiContract = address(0xA537d6F4c1c8F8C41f1004cc34C00e7Db4017
 
 //
 address constant TRSIContract = address(0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6);
+address constant BELContract = address(0x4C1518286E1b8D5669Fe965EF174B8B4Ae2f017B);
