@@ -11,6 +11,7 @@ address constant roxanne = address(0x066419EaEf5DE53cc5da0d8702b990c5bc7D1AB3);
 address constant daveschwimmer = address(0x5bC1b2aAFA145e6fE23bBA601925383E27fBc79e);
 address constant matthewperry = address(0xDb04e6d81d018D91B9D996bC2bbC81a568594818);
 address constant juldeda = address(0x93e0488Adc304d7F34bCb4C1Ef6D3340A0f2Cb1A);
+address constant wangzhuocheng = address(0x77cD0Acd5dE3FfEbB08E94e2239b7EE5b5c1f3ba);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant HarContract = address(0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622);         // ʁ 
@@ -53,3 +54,4 @@ address constant WenTiContract = address(0xA537d6F4c1c8F8C41f1004cc34C00e7Db4017
 address constant TRSIContract = address(0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6);
 address constant BELContract = address(0x4C1518286E1b8D5669Fe965EF174B8B4Ae2f017B);
 address constant KLANContract = address(0xC196247AA267Db0DF216d5385bCD23e5cf25EA6A);
+address constant SMGContract = address(0xa8e8412d9B4341239269cBA38ad949fE4870be34);
