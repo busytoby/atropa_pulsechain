@@ -15,6 +15,9 @@ address constant matthewperry = address(0xDb04e6d81d018D91B9D996bC2bbC81a5685948
 address constant juldeda = address(0x93e0488Adc304d7F34bCb4C1Ef6D3340A0f2Cb1A);
 address constant michaelcrichton = address(0x31105BD518476Cd0ba38E601625C417Fa6D1FB47);
 address constant wangzhuocheng = address(0x77cD0Acd5dE3FfEbB08E94e2239b7EE5b5c1f3ba);
+address constant michaelbay = address(0x38f6Dcbc8bfBE4CD185527f2Ab767fF8fED44Ad9);
+address constant sailesh = address(0xCe28607BB80a69c73173a933a25519e745B03Ce9);
+address constant psy = address(0x6B0B5260bd86e1f9CeB91C428496A2BF352ee087);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant HarContract = address(0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622);         // ʁ 
@@ -62,3 +65,6 @@ address constant iCEContract = address(0x2fA079d2dAA29Ec8925484F9E9021e9191fE4aE
 address constant PWAContract = address(0x5d4cb28eA61125a1fD3c927162C6F1969DD26788);
 address constant LITContract = address(0xf5E3Cc8d22B10d967bE49FE103e496F449C8604E);
 address constant RZRContract = address(0x50e40e8555AaB6b9c6CFF691E14070b6F38142Cb);
+address constant FLTContract = address(0x86F0985Cd6Ab3196ea8DceBa87B92a2e22124633);
+address constant GokuldhamContract = address(0x920401FDce49Fc70A2D4cD70DB0dD90212a97f98);
+address constant KPOPContract = address(0x982B52a54916B899c60031772cc85b041613510E);
