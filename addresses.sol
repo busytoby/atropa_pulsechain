@@ -24,6 +24,7 @@ address constant kaleycuoco = address(0x8b75F76516cAbc5C7E5FF112806826Cf993011EE
 address constant johnnygalecki = address(0xe4b48272283055BF93144922F6B39445DC5b892a);
 address constant jimparsons = address(0x0694941e535C49B3D02680806AfC62CbD7B21eF1);
 address constant simonhelberg = address(0xA7BC844a76e727Ec5250f3849148c21F4b43CeEA);
+address constant markcendrowski = address(0x066419EaEf5DE53cc5da0d8702b990c5bc7D1AB3);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant HarContract = address(0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622);         // ʁ 
