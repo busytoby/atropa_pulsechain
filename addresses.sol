@@ -18,6 +18,7 @@ address constant wangzhuocheng = address(0x77cD0Acd5dE3FfEbB08E94e2239b7EE5b5c1f
 address constant michaelbay = address(0x38f6Dcbc8bfBE4CD185527f2Ab767fF8fED44Ad9);
 address constant sailesh = address(0xCe28607BB80a69c73173a933a25519e745B03Ce9);
 address constant psy = address(0x6B0B5260bd86e1f9CeB91C428496A2BF352ee087);
+address constant kaleycuoco = address(0x8b75F76516cAbc5C7E5FF112806826Cf993011EE);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant HarContract = address(0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622);         // ʁ 
