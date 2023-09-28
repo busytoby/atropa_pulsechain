@@ -4,8 +4,6 @@ pragma solidity ^0.8.21;
 address constant dead = address(0x000000000000000000000000000000000000dEaD);
 address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
 address constant goldkey = address(0x30e22ab6e6B576e6A9c5dD73191237a9A5c72539);
-address constant aghlimbada = address(0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf);
-address constant kangol = address(0x046eB71EB92E3eD2534d005ab4436B4b8dB24DFa);
 address constant skinphlute = address(0xA7BC844a76e727Ec5250f3849148c21F4b43CeEA);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
@@ -46,10 +44,14 @@ address constant BinContract = address(0xf520404CF4fa5B633626333775b05F5dF94E1a9
 address constant PhDContract = address(0x6236073377AC7e0aB694957dA5d7d4241e72EBc6);
 address constant KremlinContract = address(0x7F51FdB20246D7a673036f11C743E99A4AF01de0);
 address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC6);         // ㉣
+address constant TseContract = address(0x3d67511733d976800467119264C3d4Cd9FA23041);
+address constant FrockContract = address(0x8B8b26bB6C5fD4867339ab2f0acf3aE5129BD2F0);
 address constant QingDaoContract = address(0xE63191967735C52f5de78CE2471759a9963Ce118);
 address constant TSFiContract = address(0xE63191967735C52f5de78CE2471759a9963Ce118);
 address constant GreenlandContract = address(0xdE4Ef7Ea464c7771803b9838AeA07cE41089b054);
 address constant BuddhaghosaContract = address(0x840CBD20A70774BECAc4e932Fff6fb1f5417997F);
+address constant ZuoContract = address(0x583d1C1427308f7f96BFd3E0d7A3F9674D8BF8ec);
+address constant HegelBetContract = address(0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb);
 
 address constant WMContract = address(0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29);
 address constant NoPrivateContract = address(0x3Cca11B99e3338F57B0FCB0d203D747AeAE01CE5);
