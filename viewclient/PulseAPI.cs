@@ -104,10 +104,11 @@ namespace Pulse
             {
                 string[] s2chk = s[i].Split('\"');
                 if (s2chk.Count() != 5) throw new Exception("Doesn't Look Check !");
-                if (s2chk[0] == "{") {
+                if (s2chk[0] == "{" || s2chk[4] == "}]") {
                     R.Add(T);
                     if (s3chk == 0) s3chk = T.Count();
-                    if (s3chk != T.Count) throw new Exception("Doesn't Look Count !");
+                    if (s3chk != T.Count() && s.Count() < (i + 2)) 
+                        throw new Exception("Doesn't Look Count !");
                     T = new Dictionary<string, string>();
                 }
                 T[s2chk[1]] = s2chk[3];
@@ -120,7 +121,6 @@ namespace Pulse
         {
             foreach (API.Token tk in API.Tokens)
             {
-                int a = 44;
                 if (tk.symbol != "PLP") continue;
                 List<Dictionary<string, string>> t = API.GetAccountHoldings(tk.contractAddress);
                 int v = 99;
