@@ -17,6 +17,7 @@ using System.Security.Policy;
 using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using Microsoft.VisualBasic;
+using System.Windows.Media.TextFormatting;
 
 namespace Pulse
 {
@@ -29,6 +30,8 @@ namespace Pulse
 
         private List<API.Token> Tokens;
         private SQLite.Query Querier;
+        private int UIStage = 0;
+        private bool UIUpdating = false;
 
         public MainWindow()
         {
@@ -36,17 +39,48 @@ namespace Pulse
             Querier = new SQLite.Query();
 
             InitializeComponent();
-            GetTokens(AtropaContract);
-            PopulateSP();
-            GetTokenDatas();
+            StartThreads();
         }
 
-        //public void rowmb
-
-        public void PopulateSP()
+        private void StageUI()
         {
-            foreach(API.Token tk in Tokens)
+            if (!Dispatcher.CheckAccess())
             {
+                Dispatcher.BeginInvoke(() => { StageUI(); });
+                return;
+            }
+
+            int offset = 0;
+            while (UIStage == 0)
+            {
+                while (Tokens.Count == 0 || Tokens.Count == sp.Children.Count && UIStage != 1) System.Threading.Thread.Sleep(1000);
+                offset = PopulateSP(offset);
+            }
+            int i = 99;
+        }
+
+        private void StartThreads()
+        {
+            Action ac = new Action(() => { GetTokens(AtropaContract); UIStage = 1; });
+            //Action<object> sp = (object o) => { PopulateSP(); };
+            Action<object> td = (object o) => { GetTokenDatas(); };
+            Task t1 = new Task(ac);
+            Task t2 = t1.ContinueWith(td);
+            //t2.ContinueWith(td);
+            t1.Start();
+
+            Action su = new Action(() => { StageUI(); });
+            Task t3 = Task.Run(su);
+        }
+
+        public int PopulateSP(int offset = 0)
+        {
+            if (UIUpdating) return offset;
+            UIUpdating = true;
+
+            int i = offset;
+            for(; i < Tokens.Count; i++) {
+                API.Token tk = Tokens[i];
                 Border B = new Border();
                 B.Background = Brushes.White;
                 B.BorderBrush = Brushes.Thistle;
@@ -61,7 +95,11 @@ namespace Pulse
                 //mb.Command = row_mbClicked;
                 // T.InputBindings.Add();
                 sp.Children.Add(B);
+                //Action ia = new Action(() => { sp.Children.Add(B); });
+                //sp.Dispatcher.Invoke(ia);
             }
+            UIUpdating = false;
+            return i;
         }
 
         public void GetTokenDatas()
