@@ -57,6 +57,27 @@ namespace Pulse
                 createTable.Dispose();
             }
 
+            public static int InsertAlias(API.Token tk, String Alias)
+            {
+                SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO Aliases (Address, Alias) VALUES (\"{0}\", \"{1}\");",
+                                tk.contractAddress, Alias), db);
+                return ins.ExecuteNonQuery();
+            }
+
+            public static string GetAlias(string ContractAddress)
+            {
+                string Alias = "";
+                SqliteCommand chk = new SqliteCommand(String.Format("Select * From Aliases Where Address = \"{0}\";", ContractAddress), db);
+                using (var reader = chk.ExecuteReader())
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        Alias = reader.GetString(1);
+                    }
+                chk.Dispose();
+                return Alias;
+            }
+
             public static int InsertToken(API.Token tk)
             {
                 SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO Tokens (Address, Symbol, Name, Balance, Decimals, Type) VALUES (\"{0}\", \"{1}\", \"{2}\", \"{3}\", \"{4}\", \"{5}\");",

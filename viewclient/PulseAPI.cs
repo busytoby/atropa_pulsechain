@@ -13,6 +13,7 @@ namespace Pulse
     {
         private static System.Timers.Timer rateLimitingTimer = null;
         public static List<API.Token> Tokens = null;
+        public static Dictionary<String, String> Aliases;
 
         public class Token
         {
@@ -123,6 +124,15 @@ namespace Pulse
             {
                 if (tk.symbol != "PLP") continue;
                 List<Dictionary<string, string>> t = API.GetAccountHoldings(tk.contractAddress);
+
+                string Alias = SQLite.Query.GetAlias(tk.contractAddress);
+                if (Alias.Length == 0)
+                {
+                    Alias = String.Format("{0} ({1}) - {2} ({3}) PLP", t[0]["name"], t[0]["symbol"], t[1]["name"], t[1]["symbol"]);
+                    SQLite.Query.InsertAlias(tk, Alias);
+                }
+                if (Aliases == null) Aliases = new Dictionary<string, string>();
+                Aliases.Add(tk.contractAddress, Alias);
                 int v = 99;
 
             }
