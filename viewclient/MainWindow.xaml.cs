@@ -36,10 +36,9 @@ namespace Pulse
             Querier = new SQLite.Query();
 
             InitializeComponent();
-            InitDB();
             GetTokens(AtropaContract);
             PopulateSP();
-            GetTokenDatas();
+            //GetTokenDatas();
         }
 
         //public void rowmb
@@ -74,44 +73,6 @@ namespace Pulse
                 List<Dictionary<string, string>> t = API.GetAccountHoldings(tk.contractAddress);
                 int v = 99;
 
-            }
-        }
-
-        public void InitDB()
-        {
-            string dbpath = "sqlite.db";
-            using (var db = new SqliteConnection($"Filename={dbpath}"))
-            {
-                db.Open();
-
-                string tableCommand = "CREATE TABLE IF NOT EXISTS " +
-                    "Tokens (Address NVARCHAR(256) PRIMARY KEY, " +
-                    "Symbol NVARCHAR(256) NULL," +
-                    "Name NVARCHAR(256) NULL," +
-                    "Balance NVARCHAR(256) NULL," +
-                    "Decimals NVARCHAR(8) NULL," +
-                    "Type NVARCHAR(256) NULL)";
-
-                var createTable = new SqliteCommand(tableCommand, db);            
-                createTable.ExecuteReader();
-                createTable.Dispose();
-
-                tableCommand = "CREATE TABLE IF NOT EXISTS " +
-                    "Aliases (Address NVARCHAR(256) PRIMARY KEY," +
-                    "Alias NVARCHAR(256) NULL)";
-                createTable = new SqliteCommand(tableCommand, db);
-                createTable.ExecuteReader();
-                createTable.Dispose();
-
-
-                tableCommand = "CREATE TABLE IF NOT EXISTS " +
-                    "ContractHoldings (Id NVARCHAR(256) PRIMARY KEY," +
-                    "HolderContract NVARCHAR(256) NULL," +
-                    "Asset NVARCHAR(256) NULL," +
-                    "Balance NVARCHAR(256) NULL)";
-                createTable = new SqliteCommand(tableCommand, db);
-                createTable.ExecuteReader();
-                createTable.Dispose();
             }
         }
 

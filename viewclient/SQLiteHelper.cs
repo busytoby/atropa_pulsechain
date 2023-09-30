@@ -21,7 +21,40 @@ namespace Pulse
                 {
                     db = new SqliteConnection($"Filename={dbpath}");
                     db.Open();
+                    InitDB();
                 }
+            }
+
+            public static void InitDB()
+            {
+                string tableCommand = "CREATE TABLE IF NOT EXISTS " +
+                    "Tokens (Address NVARCHAR(256) PRIMARY KEY, " +
+                    "Symbol NVARCHAR(256) NULL," +
+                    "Name NVARCHAR(256) NULL," +
+                    "Balance NVARCHAR(256) NULL," +
+                    "Decimals NVARCHAR(8) NULL," +
+                    "Type NVARCHAR(256) NULL)";
+
+                var createTable = new SqliteCommand(tableCommand, db);
+                createTable.ExecuteReader();
+                createTable.Dispose();
+
+                tableCommand = "CREATE TABLE IF NOT EXISTS " +
+                    "Aliases (Address NVARCHAR(256) PRIMARY KEY," +
+                    "Alias NVARCHAR(256) NULL)";
+                createTable = new SqliteCommand(tableCommand, db);
+                createTable.ExecuteReader();
+                createTable.Dispose();
+
+
+                tableCommand = "CREATE TABLE IF NOT EXISTS " +
+                    "ContractHoldings (Id NVARCHAR(256) PRIMARY KEY," +
+                    "HolderContract NVARCHAR(256) NULL," +
+                    "Asset NVARCHAR(256) NULL," +
+                    "Balance NVARCHAR(256) NULL)";
+                createTable = new SqliteCommand(tableCommand, db);
+                createTable.ExecuteReader();
+                createTable.Dispose();
             }
 
             public static int InsertToken(API.Token tk)
