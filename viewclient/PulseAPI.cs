@@ -131,6 +131,8 @@ namespace Pulse
                     Alias = String.Format("{0} ({1}) - {2} ({3}) PLP", t[0]["name"], t[0]["symbol"], t[1]["name"], t[1]["symbol"]);
                     SQLite.Query.InsertAlias(tk, Alias);
                     Aliases.Add(tk.contractAddress, Alias);
+                    SQLite.Query.InsertContractHoldings(tk.contractAddress, t[0]["contractAddress"], t[0]["balance"]);
+                    SQLite.Query.InsertContractHoldings(tk.contractAddress, t[1]["contractAddress"], t[1]["balance"]);
                 }
                 int v = 99;
             }

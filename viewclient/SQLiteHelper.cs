@@ -51,7 +51,8 @@ namespace Pulse
                     "ContractHoldings (Id NVARCHAR(256) PRIMARY KEY," +
                     "HolderContract NVARCHAR(256) NULL," +
                     "Asset NVARCHAR(256) NULL," +
-                    "Balance NVARCHAR(256) NULL)";
+                    "Balance NVARCHAR(256) NULL," +
+                    "UNIQUE(HolderContract, Asset))";
                 createTable = new SqliteCommand(tableCommand, db);
                 createTable.ExecuteReader();
                 createTable.Dispose();
