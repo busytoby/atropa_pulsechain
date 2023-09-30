@@ -51,6 +51,7 @@ namespace Pulse
             {
                 RateLimit();
                 HttpClient client = new HttpClient();
+                client.DefaultRequestHeaders.Add("atropaclientid", "this will be unique later");
                 try
                 {
                     Task<string> ts = client.GetStringAsync(uri);
@@ -61,6 +62,7 @@ namespace Pulse
                 }
                 catch (Exception ex)
                 {
+                    client.Dispose();
                     int e = 44;
                 }
             }
