@@ -122,11 +122,9 @@ namespace Pulse
                         if (!reader.HasRows)
                         {
                             SQLite.Query.InsertContractHoldings(ContractAddress, tk.contractAddress, tk.balance);
-                            Tokens.Add(tk);
                         }
                         else
                         {
-                            Tokens.Add(tk);
                             while (reader.Read())
                             {
                                 if (reader.GetString(3) == tk.balance || tk.balance == null)
