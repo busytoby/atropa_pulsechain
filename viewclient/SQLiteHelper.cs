@@ -64,6 +64,21 @@ namespace Pulse
                 return ins.ExecuteNonQuery();
             }
 
+            public static Dictionary<string, string> GetAliases()
+            {
+                Dictionary<string, string> Aliases = new Dictionary<string, string>();
+                SqliteCommand chk = new SqliteCommand(String.Format("Select * From Aliases"), db);
+                using (var reader = chk.ExecuteReader())
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            Aliases.Add(reader.GetString(0), reader.GetString(1));
+                        }
+                    }
+                return Aliases;
+            }
+
             public static string GetAlias(string ContractAddress)
             {
                 string Alias = "";

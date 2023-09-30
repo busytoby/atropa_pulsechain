@@ -36,6 +36,7 @@ namespace Pulse
         {
             API.Tokens = new List<API.Token>();
             Querier = new SQLite.Query();
+            API.Aliases = SQLite.Query.GetAliases();
 
             InitializeComponent();
             StartThreads();
@@ -87,7 +88,10 @@ namespace Pulse
                 TextBlock T = new TextBlock();
                 T.Foreground = Brushes.Black;
                 T.FontSize = 16;
-                T.Text = String.Format("{0}\t{1} ({2})\t{3}", tk.contractAddress, tk.name, tk.symbol, tk.balance);
+                String DisplayName = tk.name;
+                if(API.Aliases.ContainsKey(tk.contractAddress))
+                    DisplayName = API.Aliases[tk.contractAddress];
+                T.Text = String.Format("{0}\t{1} ({2})\t{3}", tk.contractAddress, DisplayName, tk.symbol, tk.balance);
                 B.Child = T;
                 MouseBinding mb = new MouseBinding();
                 mb.MouseAction = MouseAction.LeftClick;
