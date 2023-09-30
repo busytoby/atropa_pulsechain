@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/viewclient/bin/Debug/net8.0-windows
+/viewclient/obj/Debug/net8.0-windows/ref
+/viewclient/obj
+/viewclient/Pulse.csproj.user
