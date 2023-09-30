@@ -51,6 +51,7 @@ namespace Pulse
             {
                 RateLimit();
                 HttpClient client = new HttpClient();
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("ATROPA/1.0 (compatible; PulsescanAPI/220930)");
                 client.DefaultRequestHeaders.Add("atropaclientid", "this will be unique later");
                 try
                 {
