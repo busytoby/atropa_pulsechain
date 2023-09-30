@@ -38,7 +38,7 @@ namespace Pulse
             InitializeComponent();
             GetTokens(AtropaContract);
             PopulateSP();
-            //GetTokenDatas();
+            GetTokenDatas();
         }
 
         //public void rowmb

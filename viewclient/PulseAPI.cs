@@ -4,11 +4,14 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace Pulse
 {
     internal class API
     {
+        private static System.Timers.Timer rateLimitingTimer = null;
+
         public class Token
         {
             public string balance;
@@ -20,8 +23,29 @@ namespace Pulse
             public string holder;
         }
 
+        private static void RateLimit()
+        {
+            if(rateLimitingTimer != null)
+                while (rateLimitingTimer.Enabled == true) System.Threading.Thread.Sleep(100);
+            else { 
+                rateLimitingTimer = new System.Timers.Timer(400);
+                rateLimitingTimer.Elapsed += RateEndEvent;
+                rateLimitingTimer.AutoReset = false;
+                rateLimitingTimer.Enabled = false;
+            }
+            if (rateLimitingTimer.Enabled == false) rateLimitingTimer.Enabled = true;
+        }
+
+        private static void RateEndEvent(Object src, ElapsedEventArgs e)
+        {
+            rateLimitingTimer.Stop();
+            rateLimitingTimer.Enabled = false;
+            return;
+        }
+
         public static List<Dictionary<string, string>> GetToken(string ContractAddress)
         {
+            RateLimit();
             HttpClient client = new HttpClient();
             Task<string> ts = client.GetStringAsync(new Uri(
                 String.Format("https://scan.pulsechain.com/api?module=token&action=getToken&contractaddress={0}&page=1&offset=100", ContractAddress)));
@@ -33,6 +57,7 @@ namespace Pulse
 
         public static List<Dictionary<string, string>> GetTokenList(string ContractAddress)
         {
+            RateLimit();
             HttpClient client = new HttpClient();
             Task<string> ts = client.GetStringAsync(new Uri(
                     String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
@@ -44,6 +69,7 @@ namespace Pulse
 
         public static List<Dictionary<string, string>> GetTokenHolders(string ContractAddress)
         {
+            RateLimit();
             HttpClient client = new HttpClient();
             Task<string> ts = client.GetStringAsync(new Uri(
                     String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page=1&offset=100", ContractAddress)));
@@ -55,6 +81,7 @@ namespace Pulse
 
         public static List<Dictionary<string, string>> GetAccountHoldings(string ContractAddress)
         {
+            RateLimit();
             HttpClient client = new HttpClient();
             Task<string> ts = client.GetStringAsync(new Uri(
                     String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
