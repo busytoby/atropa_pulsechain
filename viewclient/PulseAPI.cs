@@ -46,8 +46,7 @@ namespace Pulse
 
         private static List<Dictionary<string, string>> GetURI(Uri uri)
         {
-            bool success = false;
-            while (!success)
+            while (true)
             {
                 RateLimit();
                 HttpClient client = new HttpClient();
@@ -64,7 +63,6 @@ namespace Pulse
                     int e = 44;
                 }
             }
-            return null;
         }
 
         public static List<Dictionary<string, string>> GetToken(string ContractAddress)
