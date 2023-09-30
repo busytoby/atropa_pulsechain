@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -110,6 +111,89 @@ namespace Pulse
             }
 
             return R;
+        }
+
+        public static void GetTokenDatas()
+        {
+            foreach (API.Token tk in API.Tokens)
+            {
+                int a = 44;
+                if (tk.symbol != "PLP") continue;
+                List<Dictionary<string, string>> t = API.GetAccountHoldings(tk.contractAddress);
+                int v = 99;
+
+            }
+        }
+
+        public static void GetTokens(String ContractAddress)
+        {
+            try
+            {
+                List<Dictionary<string, string>> t = API.GetAccountHoldings(ContractAddress);
+
+                foreach (Dictionary<string, string> tkd in t)
+                {
+                    API.Token tk = new API.Token();
+                    tk.holder = ContractAddress;
+                    tk.balance = tkd["balance"];
+                    tk.contractAddress = tkd["contractAddress"];
+                    tk.decimals = tkd["decimals"];
+                    tk.name = tkd["name"];
+                    tk.symbol = tkd["symbol"];
+                    tk.type = tkd["type"];
+
+                    SqliteCommand chk = SQLite.Query.SelectTokensByAddress(tk.contractAddress);
+                    using (var reader = chk.ExecuteReader())
+                    {
+                        if (!reader.HasRows)
+                        {
+                            SQLite.Query.InsertToken(tk); // unchecked
+                            API.Tokens.Add(tk);
+                        }
+                        else
+                        {
+                            API.Tokens.Add(tk);
+                            while (reader.Read())
+                            {
+                                if (reader.GetString(3) == tk.balance || tk.balance == null)
+                                    continue;
+                                else
+                                {
+                                    int k = 44;
+                                }
+                            }
+                        }
+                    }
+                    chk.Dispose();
+                    chk = SQLite.Query.SelectAsset(ContractAddress, tk.contractAddress);
+                    using (var reader = chk.ExecuteReader())
+                    {
+                        if (!reader.HasRows)
+                        {
+                            SQLite.Query.InsertContractHoldings(ContractAddress, tk.contractAddress, tk.balance);
+                        }
+                        else
+                        {
+                            while (reader.Read())
+                            {
+                                if (reader.GetString(3) == tk.balance || tk.balance == null)
+                                    continue;
+                                else
+                                {
+                                    int k = 44;
+                                }
+                            }
+                        }
+                    }
+
+                    tk = new API.Token();
+                    tk.holder = ContractAddress;
+                }
+            }
+            catch (Exception ex)
+            {
+                int e = 44;
+            }
         }
     }
 }
