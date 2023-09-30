@@ -11,6 +11,7 @@ namespace Pulse
     internal class API
     {
         private static System.Timers.Timer rateLimitingTimer = null;
+        public static List<API.Token> Tokens = null;
 
         public class Token
         {
@@ -28,7 +29,7 @@ namespace Pulse
             if(rateLimitingTimer != null)
                 while (rateLimitingTimer.Enabled == true) System.Threading.Thread.Sleep(100);
             else { 
-                rateLimitingTimer = new System.Timers.Timer(400);
+                rateLimitingTimer = new System.Timers.Timer(1200);
                 rateLimitingTimer.Elapsed += RateEndEvent;
                 rateLimitingTimer.AutoReset = false;
                 rateLimitingTimer.Enabled = false;
@@ -43,52 +44,47 @@ namespace Pulse
             return;
         }
 
+        private static List<Dictionary<string, string>> GetURI(Uri uri)
+        {
+            bool success = false;
+            while (!success)
+            {
+                RateLimit();
+                HttpClient client = new HttpClient();
+                try
+                {
+                    Task<string> ts = client.GetStringAsync(uri);
+                    ts.Wait();
+                    client.Dispose();
+                    string s = ts.Result;
+                    return SanitizeResult(s.Split(','));
+                }
+                catch (Exception ex)
+                {
+                    int e = 44;
+                }
+            }
+            return null;
+        }
+
         public static List<Dictionary<string, string>> GetToken(string ContractAddress)
         {
-            RateLimit();
-            HttpClient client = new HttpClient();
-            Task<string> ts = client.GetStringAsync(new Uri(
-                String.Format("https://scan.pulsechain.com/api?module=token&action=getToken&contractaddress={0}&page=1&offset=100", ContractAddress)));
-            ts.Wait();
-            client.Dispose();
-            string s = ts.Result;
-            return SanitizeResult(s.Split(','));
+            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getToken&contractaddress={0}&page=1&offset=100", ContractAddress)));
         }
 
         public static List<Dictionary<string, string>> GetTokenList(string ContractAddress)
         {
-            RateLimit();
-            HttpClient client = new HttpClient();
-            Task<string> ts = client.GetStringAsync(new Uri(
-                    String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
-            ts.Wait();
-            client.Dispose();
-            string s = ts.Result;
-            return SanitizeResult(s.Split(','));
+            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
         }
 
         public static List<Dictionary<string, string>> GetTokenHolders(string ContractAddress)
         {
-            RateLimit();
-            HttpClient client = new HttpClient();
-            Task<string> ts = client.GetStringAsync(new Uri(
-                    String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page=1&offset=100", ContractAddress)));
-            ts.Wait();
-            client.Dispose();
-            string s = ts.Result;
-            return SanitizeResult(s.Split(','));
+            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page=1&offset=100", ContractAddress)));
         }
 
         public static List<Dictionary<string, string>> GetAccountHoldings(string ContractAddress)
         {
-            RateLimit();
-            HttpClient client = new HttpClient();
-            Task<string> ts = client.GetStringAsync(new Uri(
-                    String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
-            ts.Wait();
-            client.Dispose();
-            string s = ts.Result;
-            return SanitizeResult(s.Split(','));
+            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
         }
 
         public static List<Dictionary<string, string>> SanitizeResult(string[] s)

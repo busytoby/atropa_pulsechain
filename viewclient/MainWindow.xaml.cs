@@ -28,14 +28,13 @@ namespace Pulse
     {
         public string AtropaContract = "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6";
 
-        private List<API.Token> Tokens;
         private SQLite.Query Querier;
         private int UIStage = 0;
         private bool UIUpdating = false;
 
         public MainWindow()
         {
-            Tokens = new List<API.Token>();
+            API.Tokens = new List<API.Token>();
             Querier = new SQLite.Query();
 
             InitializeComponent();
@@ -53,7 +52,7 @@ namespace Pulse
             int offset = 0;
             while (UIStage == 0)
             {
-                while (Tokens.Count == 0 || Tokens.Count == sp.Children.Count && UIStage != 1) System.Threading.Thread.Sleep(1000);
+                while (API.Tokens.Count == 0 || API.Tokens.Count == sp.Children.Count && UIStage != 1) System.Threading.Thread.Sleep(1000);
                 offset = PopulateSP(offset);
             }
             int i = 99;
@@ -79,8 +78,8 @@ namespace Pulse
             UIUpdating = true;
 
             int i = offset;
-            for(; i < Tokens.Count; i++) {
-                API.Token tk = Tokens[i];
+            for(; i < API.Tokens.Count; i++) {
+                API.Token tk = API.Tokens[i];
                 Border B = new Border();
                 B.Background = Brushes.White;
                 B.BorderBrush = Brushes.Thistle;
@@ -95,8 +94,6 @@ namespace Pulse
                 //mb.Command = row_mbClicked;
                 // T.InputBindings.Add();
                 sp.Children.Add(B);
-                //Action ia = new Action(() => { sp.Children.Add(B); });
-                //sp.Dispatcher.Invoke(ia);
             }
             UIUpdating = false;
             return i;
@@ -104,7 +101,7 @@ namespace Pulse
 
         public void GetTokenDatas()
         {
-            foreach (API.Token tk in Tokens)
+            foreach (API.Token tk in API.Tokens)
             {
                 int a = 44;
                 if (tk.symbol != "PLP") continue;
@@ -137,11 +134,11 @@ namespace Pulse
                         if (!reader.HasRows)
                         {
                             SQLite.Query.InsertToken(tk); // unchecked
-                            Tokens.Add(tk);
+                            API.Tokens.Add(tk);
                         }
                         else
                         {
-                            Tokens.Add(tk);
+                            API.Tokens.Add(tk);
                             while (reader.Read())
                             {
                                 if (reader.GetString(3) == tk.balance || tk.balance == null)
