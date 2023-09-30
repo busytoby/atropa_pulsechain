@@ -7,3 +7,8 @@
 /viewclient/obj
 /viewclient/Pulse.csproj.user
 /.vs
+/viewclient/.vs
+/viewclient/viewclient_clang
+/viewclient/x64/Debug/viewclient_clang.dll
+/viewclient/x64/Debug/viewclient_clang.lib
+/viewclient/x64/Debug/viewclient_clang.pdb

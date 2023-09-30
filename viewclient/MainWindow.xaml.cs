@@ -15,6 +15,8 @@ using System.Dynamic;
 using System.IO;
 using System.Security.Policy;
 using Microsoft.Data.Sqlite;
+using System.Runtime.InteropServices;
+using Microsoft.VisualBasic;
 
 namespace Pulse
 {
@@ -23,32 +25,28 @@ namespace Pulse
     /// </summary>
     public partial class MainWindow : Window
     {
-        public class Token
-        {
-            public string balance;
-            public string contractAddress;
-            public string decimals;
-            public string name;
-            public string symbol;
-            public string type;
-        }
+        public string AtropaContract = "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6";
 
-        public List<Token> Tokens;
-        bool TokenComplete = false;
+        private List<API.Token> Tokens;
+        private SQLite.Query Querier;
 
         public MainWindow()
         {
-            Tokens = new List<Token>();
+            Tokens = new List<API.Token>();
+            Querier = new SQLite.Query();
+
             InitializeComponent();
             InitDB();
-            GetTokens();
+            GetTokens(AtropaContract);
             PopulateSP();
-            //GetTokenDatas();
+            GetTokenDatas();
         }
+
+        //public void rowmb
 
         public void PopulateSP()
         {
-            foreach(Token tk in Tokens)
+            foreach(API.Token tk in Tokens)
             {
                 Border B = new Border();
                 B.Background = Brushes.White;
@@ -59,34 +57,23 @@ namespace Pulse
                 T.FontSize = 16;
                 T.Text = String.Format("{0}\t{1} ({2})\t{3}", tk.contractAddress, tk.name, tk.symbol, tk.balance);
                 B.Child = T;
+                MouseBinding mb = new MouseBinding();
+                mb.MouseAction = MouseAction.LeftClick;
+                //mb.Command = row_mbClicked;
+                // T.InputBindings.Add();
                 sp.Children.Add(B);
             }
         }
 
         public void GetTokenDatas()
         {
-            while (!TokenComplete) 
-                System.Threading.Thread.Sleep(1000);
-
-            foreach (Token tk in Tokens)
+            foreach (API.Token tk in Tokens)
             {
-                HttpClient client = new HttpClient();
-                Task<string> ts = client.GetStringAsync(new Uri(
-                    String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", tk.contractAddress)));
-                ts.Wait();
-                client.Dispose();
-                string s = ts.Result;
-                string[] t = s.Split(',');
+                int a = 44;
+                if (tk.symbol != "PLP") continue;
+                List<Dictionary<string, string>> t = API.GetAccountHoldings(tk.contractAddress);
                 int v = 99;
 
-                client = new HttpClient();
-                ts = client.GetStringAsync(new Uri(
-                    String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page=1&offset=100", tk.contractAddress)));
-                ts.Wait();
-                client.Dispose();
-                s = ts.Result;
-                t = s.Split(',');
-                v = 99;
             }
         }
 
@@ -97,94 +84,108 @@ namespace Pulse
             {
                 db.Open();
 
-                string tableCommand = "CREATE TABLE IF NOT " +
-                    "EXISTS Tokens (Address NVARCHAR(256) PRIMARY KEY, " +
+                string tableCommand = "CREATE TABLE IF NOT EXISTS " +
+                    "Tokens (Address NVARCHAR(256) PRIMARY KEY, " +
                     "Symbol NVARCHAR(256) NULL," +
                     "Name NVARCHAR(256) NULL," +
                     "Balance NVARCHAR(256) NULL," +
                     "Decimals NVARCHAR(8) NULL," +
                     "Type NVARCHAR(256) NULL)";
 
-                var createTable = new SqliteCommand(tableCommand, db);
-
+                var createTable = new SqliteCommand(tableCommand, db);            
                 createTable.ExecuteReader();
+                createTable.Dispose();
+
+                tableCommand = "CREATE TABLE IF NOT EXISTS " +
+                    "Aliases (Address NVARCHAR(256) PRIMARY KEY," +
+                    "Alias NVARCHAR(256) NULL)";
+                createTable = new SqliteCommand(tableCommand, db);
+                createTable.ExecuteReader();
+                createTable.Dispose();
+
+
+                tableCommand = "CREATE TABLE IF NOT EXISTS " +
+                    "ContractHoldings (Id NVARCHAR(256) PRIMARY KEY," +
+                    "HolderContract NVARCHAR(256) NULL," +
+                    "Asset NVARCHAR(256) NULL," +
+                    "Balance NVARCHAR(256) NULL)";
+                createTable = new SqliteCommand(tableCommand, db);
+                createTable.ExecuteReader();
+                createTable.Dispose();
             }
         }
 
-        public void GetTokens()
+        public void GetTokens(String ContractAddress)
         {
-            string dbpath = "sqlite.db";
-            using (var db = new SqliteConnection($"Filename={dbpath}"))
+            try
             {
-                db.Open();
+                List<Dictionary<string, string>> t = API.GetAccountHoldings(ContractAddress);
 
-                try
+                foreach (Dictionary<string, string> tkd in t)
                 {
-                    HttpClient client = new HttpClient();
-                    Task<string> ts = client.GetStringAsync(new Uri("https://scan.pulsechain.com/api?module=account&action=tokenlist&address=0x7a20189B297343CF26d8548764b04891f37F3414"));
-                    ts.Wait();
-                    //string s = await client.GetStringAsync(new Uri("https://scan.pulsechain.com/api?module=account&action=tokenlist&address=0x7a20189B297343CF26d8548764b04891f37F3414"));
-                    string s = ts.Result;
-                    client.Dispose();
-                    string[] t = s.Split(',');
-                    Token tk = new Token();
-                    tk.balance = t[1].Split("\"")[5];
-                    int c = 1;
-                    for (int i = 2; i < t.Count(); i++)
+                    API.Token tk = new API.Token();
+                    tk.holder = ContractAddress;
+                    tk.balance = tkd["balance"];
+                    tk.contractAddress = tkd["contractAddress"];
+                    tk.decimals = tkd["decimals"];
+                    tk.name = tkd["name"];
+                    tk.symbol = tkd["symbol"];
+                    tk.type = tkd["type"];
+
+                    SqliteCommand chk = SQLite.Query.SelectTokensByAddress(tk.contractAddress);
+                    using (var reader = chk.ExecuteReader())
                     {
-                        string[] tkt = t[i].Split("\"");
-                        if (tkt[1] == "balance")
-                            tk.balance = tkt[3];
-                        else if (tkt[1] == "contractAddress")
-                            tk.contractAddress = tkt[3];
-                        else if (tkt[1] == "decimals")
-                            tk.decimals = tkt[3];
-                        else if (tkt[1] == "name")
-                            tk.name = tkt[3];
-                        else if (tkt[1] == "symbol")
-                            tk.symbol = tkt[3];
-                        else if (tkt[1] == "type")
+                        if (!reader.HasRows)
                         {
-                            tk.type = tkt[3];
-
-                            SqliteCommand chk = new SqliteCommand(String.Format("Select * From Tokens Where Address = \"{0}\";", tk.contractAddress), db);
-                            using (var reader = chk.ExecuteReader())
+                            SQLite.Query.InsertToken(tk); // unchecked
+                            Tokens.Add(tk);
+                        }
+                        else
+                        {
+                            Tokens.Add(tk);
+                            while (reader.Read())
                             {
-                                if (!reader.HasRows)
-                                {
-                                    SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO Tokens (Address, Symbol, Name, Balance, Decimals, Type) VALUES (\"{0}\", \"{1}\", \"{2}\", \"{3}\", \"{4}\", \"{5}\");",
-                                        tk.contractAddress, tk.symbol, tk.name, tk.balance, tk.decimals, tk.type), db);
-
-                                    ins.ExecuteNonQuery();
-                                    Tokens.Add(tk);
-                                }
+                                if (reader.GetString(3) == tk.balance || tk.balance == null)
+                                    continue;
                                 else
                                 {
-                                    Tokens.Add(tk);
-                                    while (reader.Read())
-                                    {
-                                        if (reader.GetString(3) == tk.balance || tk.balance == null)
-                                            continue;
-                                        else
-                                        {
-                                            int k = 44;
-                                        }
-                                    }
+                                    int k = 44;
                                 }
                             }
-
-                            tk = new Token();
                         }
-                        c++;
-                        if (c > 5) c = 0;
                     }
-                }
-                catch (Exception ex)
-                {
-                    int e = 44;
+                    chk.Dispose();
+                    chk = SQLite.Query.SelectAsset(ContractAddress, tk.contractAddress);
+                    using (var reader = chk.ExecuteReader())
+                    {
+                        if (!reader.HasRows)
+                        {
+                            SQLite.Query.InsertContractHoldings(ContractAddress, tk.contractAddress, tk.balance);
+                            Tokens.Add(tk);
+                        }
+                        else
+                        {
+                            Tokens.Add(tk);
+                            while (reader.Read())
+                            {
+                                if (reader.GetString(3) == tk.balance || tk.balance == null)
+                                    continue;
+                                else
+                                {
+                                    int k = 44;
+                                }
+                            }
+                        }
+                    }
+
+                    tk = new API.Token();
+                    tk.holder = ContractAddress;
                 }
             }
-            TokenComplete = true;
+            catch (Exception ex)
+            {
+                int e = 44;
+            }
         }
     }
 }
