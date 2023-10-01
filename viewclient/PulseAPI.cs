@@ -60,9 +60,9 @@ namespace Pulse
         private static void RateLimit()
         {
             if(rateLimitingTimer != null)
-                while (rateLimitingTimer.Enabled == true) System.Threading.Thread.Sleep(100);
+                while (rateLimitingTimer.Enabled == true) System.Threading.Thread.Sleep(40);
             else { 
-                rateLimitingTimer = new System.Timers.Timer(1200);
+                rateLimitingTimer = new System.Timers.Timer(400);
                 rateLimitingTimer.Elapsed += RateEndEvent;
                 rateLimitingTimer.AutoReset = false;
                 rateLimitingTimer.Enabled = false;

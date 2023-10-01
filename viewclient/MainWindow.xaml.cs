@@ -100,7 +100,6 @@ namespace Pulse
             int ntdLeft = 80;
             while (DisplayedTokens.Count < PLPTokenCount || API.UIStage != 1)
             {
-                System.Threading.Thread.Sleep(1000);
                 foreach (API.Token t in API.Tokens)
                 {
                     if (!DisplayedTokens.Contains(t.contractAddress) && API.Aliases.ContainsKey(t.contractAddress))
