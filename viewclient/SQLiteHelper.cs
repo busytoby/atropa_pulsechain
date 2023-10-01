@@ -19,7 +19,7 @@ namespace Pulse
             {
                 if (db == null)
                 {
-                    db = new SqliteConnection($"Filename={dbpath}");
+                    db = new SqliteConnection();
                     db.Open();
                     InitDB();
                 }
