@@ -18,7 +18,6 @@ using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using Microsoft.VisualBasic;
 using System.Windows.Media.TextFormatting;
-using System.Speech.Synthesis;
 
 namespace Pulse
 {
