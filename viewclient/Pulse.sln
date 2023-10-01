@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34112.27
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pulse", "Pulse.csproj", "{55234A6B-2C4B-445B-90A5-C49B96B2D936}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtropaAndroid", "..\AtropaAndroid\AtropaAndroid.csproj", "{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,24 @@ Global
 		{55234A6B-2C4B-445B-90A5-C49B96B2D936}.Release|x64.Build.0 = Release|Any CPU
 		{55234A6B-2C4B-445B-90A5-C49B96B2D936}.Release|x86.ActiveCfg = Release|Any CPU
 		{55234A6B-2C4B-445B-90A5-C49B96B2D936}.Release|x86.Build.0 = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|x64.Build.0 = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|x64.Deploy.0 = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|x86.Build.0 = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Debug|x86.Deploy.0 = Debug|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|x64.ActiveCfg = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|x64.Build.0 = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|x64.Deploy.0 = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|x86.ActiveCfg = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|x86.Build.0 = Release|Any CPU
+		{C891B6C1-5C10-4D3F-AFFA-A42996F5AC73}.Release|x86.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
