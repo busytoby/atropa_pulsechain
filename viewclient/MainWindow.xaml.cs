@@ -26,22 +26,7 @@ namespace Pulse
     /// </summary>
     public partial class MainWindow : Window
     {
-        public string AtropaContract = "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6";
-
-        private SQLite.Query Querier;
-        private int UIStage = 0;
-        private bool UIUpdating = false;
-
-        public MainWindow()
-        {
-            API.Tokens = new List<API.Token>();
-            Querier = new SQLite.Query();
-            API.Aliases = SQLite.Query.GetAliases();
-
-            InitializeComponent();
-            StartThreads();
-        }
-
+        /* reimplement in WPF AtropaWin later
         private void StageUI()
         {
             if (!Dispatcher.CheckAccess())
@@ -57,20 +42,6 @@ namespace Pulse
                 offset = PopulateSP(offset);
             }
             int i = 99;
-        }
-
-        private void StartThreads()
-        {
-            Action ac = new Action(() => { API.GetTokens(AtropaContract); UIStage = 1; });
-            //Action<object> sp = (object o) => { PopulateSP(); };
-            Action<object> td = (object o) => { API.GetTokenDatas(); };
-            Task t1 = new Task(ac);
-            Task t2 = t1.ContinueWith(td);
-            //t2.ContinueWith(td);
-            t1.Start();
-
-            Action su = new Action(() => { StageUI(); });
-            Task t3 = Task.Run(su);
         }
 
         public int PopulateSP(int offset = 0)
@@ -102,5 +73,6 @@ namespace Pulse
             UIUpdating = false;
             return i;
         }
+        */
     }
 }
