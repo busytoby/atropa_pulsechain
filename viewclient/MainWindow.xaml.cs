@@ -18,6 +18,7 @@ using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using Microsoft.VisualBasic;
 using System.Windows.Media.TextFormatting;
+using System.Windows.Media.Animation;
 
 namespace Pulse
 {
@@ -40,7 +41,7 @@ namespace Pulse
         private void StartThreads()
         {  
             Action su = new Action(() => { StageUI(); });
-            Action<object> sc = (object o) => { StageUI2(); };
+            Action<object> sc = (object o) => { System.Threading.Thread.Sleep(2000); StageUI2(); };
             Task t1 = new Task(su);
             t1.ContinueWith(sc);
             t1.Start();
@@ -48,8 +49,6 @@ namespace Pulse
 
         private void StageUI2()
         {
-            while (API.UIStage != 1) System.Threading.Thread.Sleep(1000);
-
             if (!Dispatcher.CheckAccess())
             {
                 Dispatcher.BeginInvoke(() => { StageUI2(); });
@@ -60,19 +59,66 @@ namespace Pulse
             Canvas cv = new Canvas();
             cv.Background = Brushes.Thistle;
 
-            BezierSegment curve = new BezierSegment(new Point(4, 4), new Point(12, 12), new Point(24, 12), false);
-            PathGeometry pg = new PathGeometry();
-            PathFigure pf = new PathFigure();
-            pf.StartPoint = new Point(4, 4);
-            pg.Figures.Add(pf);
-            pf.Segments.Add(curve);
-            System.Windows.Shapes.Path p = new System.Windows.Shapes.Path();
-            p.Fill = Brushes.Green;
-            p.Stroke = Brushes.Crimson;
-            p.StrokeThickness = 8;
-            p.Data = pg;
-            cv.Children.Add(p);
+            TextBlock tb = new TextBlock();
+            tb.Text = "Atropa";
+            Canvas.SetTop(tb, 40);
+            Canvas.SetLeft(tb, 30);            
+            cv.Children.Add(tb);
             sp.Children.Add(cv);
+
+            Action su = new Action(() => { System.Threading.Thread.Sleep(2000); PopulateUI2(cv); });
+            Task t1 = new Task(su);
+            t1.Start();
+        }
+
+        private void AddToCanvas(Canvas cv, UIElement e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(() => { AddToCanvas(cv, e); });
+                return;
+            }
+
+            cv.Children.Add(e);
+        }
+
+        private void PopulateUI2(Canvas cv, List<string> DisplayedTokens = null)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(() => { PopulateUI2(cv, DisplayedTokens); });
+                return;
+            }
+
+            int PLPTokenCount = 0;
+            foreach (API.Token t in API.Tokens)
+                if (t.symbol == "PLP") PLPTokenCount++;
+
+            if(DisplayedTokens == null)
+                DisplayedTokens = new List<string>();
+            int ntdTop = 40;
+            int ntdLeft = 80;
+            while (DisplayedTokens.Count < PLPTokenCount || API.UIStage != 1)
+            {
+                System.Threading.Thread.Sleep(1000);
+                foreach (API.Token t in API.Tokens)
+                {
+                    if (!DisplayedTokens.Contains(t.contractAddress) && API.Aliases.ContainsKey(t.contractAddress))
+                    {
+                        TextBlock tbp = new TextBlock();
+                        tbp.Text = API.Aliases[t.contractAddress];
+                        ntdTop = ((1 + DisplayedTokens.Count) * 15) + 40;
+                        Canvas.SetTop(tbp, ntdTop);
+                        Canvas.SetLeft(tbp, ntdLeft);
+                        AddToCanvas(cv, tbp);
+                        DisplayedTokens.Add(t.contractAddress);
+                        Action su = new Action(() => { System.Threading.Thread.Sleep(400); PopulateUI2(cv, DisplayedTokens); });
+                        Task t1 = new Task(su);
+                        t1.Start();
+                        return;
+                    }
+                }
+            }
 
             API.UIStage = 2;
         }

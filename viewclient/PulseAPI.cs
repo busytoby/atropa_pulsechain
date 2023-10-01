@@ -34,7 +34,7 @@ namespace Pulse
         {
             Action ac = new Action(() => { API.GetTokens(AtropaContract); });
             //Action<object> sp = (object o) => { PopulateSP(); };
-            Action<object> td = (object o) => { /*API.GetTokenDatas();*/ UIStage = 1; };
+            Action<object> td = (object o) => { API.GetTokenDatas(); UIStage = 1; };
             Task t1 = new Task(ac);
             Task t2 = t1.ContinueWith(td);
             //t2.ContinueWith(td);
