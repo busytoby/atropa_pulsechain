@@ -40,25 +40,55 @@ namespace Pulse
         private void StartThreads()
         {  
             Action su = new Action(() => { StageUI(); });
-            Task t3 = Task.Run(su);
+            Action<object> sc = (object o) => { StageUI2(); };
+            Task t1 = new Task(su);
+            t1.ContinueWith(sc);
+            t1.Start();
+        }
+
+        private void StageUI2()
+        {
+            while (API.UIStage != 1) System.Threading.Thread.Sleep(1000);
+
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(() => { StageUI2(); });
+                return;
+            }
+
+            sp.Children.Clear();
+            Canvas cv = new Canvas();
+            cv.Background = Brushes.Thistle;
+
+            BezierSegment curve = new BezierSegment(new Point(4, 4), new Point(12, 12), new Point(24, 12), false);
+            PathGeometry pg = new PathGeometry();
+            PathFigure pf = new PathFigure();
+            pf.StartPoint = new Point(4, 4);
+            pg.Figures.Add(pf);
+            pf.Segments.Add(curve);
+            System.Windows.Shapes.Path p = new System.Windows.Shapes.Path();
+            p.Fill = Brushes.Green;
+            p.Stroke = Brushes.Crimson;
+            p.StrokeThickness = 8;
+            p.Data = pg;
+            cv.Children.Add(p);
+            sp.Children.Add(cv);
+
+            API.UIStage = 2;
         }
 
 
         private void StageUI()
         {
+            while (API.Tokens.Count == 0) System.Threading.Thread.Sleep(1000);
+
             if (!Dispatcher.CheckAccess())
             {
                 Dispatcher.BeginInvoke(() => { StageUI(); });
                 return;
             }
-
-            int offset = 0;
-            while (API.UIStage == 0)
-            {
-                while (API.Tokens.Count == 0 || API.Tokens.Count == sp.Children.Count && API.UIStage != 1) System.Threading.Thread.Sleep(1000);
-                offset = PopulateSP(offset);
-            }
-            int i = 99;
+            
+            PopulateSP();
         }
 
         public int PopulateSP(int offset = 0)

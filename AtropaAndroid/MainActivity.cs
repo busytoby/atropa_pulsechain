@@ -1,3 +1,5 @@
+using Android.Views;
+
 namespace AtropaAndroid
 {
     [Activity(Label = "@string/app_name", MainLauncher = true)]
@@ -11,40 +13,56 @@ namespace AtropaAndroid
 
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.activity_main);
+
+            StartThreads();
         }
 
-        /*
+        private void StartThreads()
+        {
+            Action su = new Action(() => { StageUI(); });
+            Task t3 = Task.Run(su);
+        }
+
+        private void StageUI()
+        {
+            int offset = 0;
+            while (Pulse.API.UIStage == 0)
+            {
+                while (Pulse.API.Tokens.Count == 0 || Pulse.API.UIStage != 1) System.Threading.Thread.Sleep(1000);
+                offset = PopulateSP(offset);
+            }
+            int i = 99;
+        }
+
         public int PopulateSP(int offset = 0)
         {
             if (Pulse.API.UIUpdating) return offset;
-            UIUpdating = true;
+            Pulse.API.UIUpdating = true;
+            //LinearLayout linearLayout = new LinearLayout(this);
+            LayoutInflater factory = (LayoutInflater)Application.Context.GetSystemService(LayoutInflaterService);
+            View mView = factory.Inflate(Resource.Layout.activity_main, null);
 
             int i = offset;
-            for (; i < API.Tokens.Count; i++)
+            for (; i < Pulse.API.Tokens.Count; i++)
             {
                 Pulse.API.Token tk = Pulse.API.Tokens[i];
-                Border B = new Border();
-                B.Background = Brushes.White;
-                B.BorderBrush = Brushes.Thistle;
-                B.BorderThickness = new Thickness(1);
-                TextBlock T = new TextBlock();
-                T.Foreground = Brushes.Black;
-                T.FontSize = 16;
                 String DisplayName = tk.name;
-                if (API.Aliases.ContainsKey(tk.contractAddress))
-                    DisplayName = API.Aliases[tk.contractAddress];
-                T.Text = String.Format("{0}\t{1} ({2})\t{3}", tk.contractAddress, DisplayName, tk.symbol, tk.balance);
-                B.Child = T;
-                MouseBinding mb = new MouseBinding();
-                mb.MouseAction = MouseAction.LeftClick;
-                //mb.Command = row_mbClicked;
-                // T.InputBindings.Add();
-                sp.Children.Add(B);
+                if (Pulse.API.Aliases.ContainsKey(tk.contractAddress))
+                    DisplayName = Pulse.API.Aliases[tk.contractAddress];
+                string v = $"{tk.contractAddress}\t{DisplayName} ({tk.symbol})\t{tk.balance}";
+                TextView t = new TextView(this);
+                t.SetText(v.ToCharArray(), 0, v.Length);
+                RelativeLayout rl = (RelativeLayout)mView.FindViewById<RelativeLayout>(Resource.Id.rl);
+                TextView tv = (TextView)mView.FindViewById<TextView>(Resource.Id.tv);
+                RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WrapContent, RelativeLayout.LayoutParams.FillParent);
+                lp.AddRule(LayoutRules.Below, tv.Id);
+                rl.AddView(t, lp);
             }
-            UIUpdating = false;
+            //SetContentView(linearLayout);
+            Pulse.API.UIUpdating = false;
             return i;
         }
-        */
 
         public void InitAPI()
         {
