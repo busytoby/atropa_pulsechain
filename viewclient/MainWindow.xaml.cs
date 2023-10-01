@@ -26,7 +26,24 @@ namespace Pulse
     /// </summary>
     public partial class MainWindow : Window
     {
-        /* reimplement in WPF AtropaWin later
+        private bool UIUpdating = false;
+
+        public MainWindow()
+        {
+
+            Pulse.API Comptroller = new Pulse.API();
+
+            InitializeComponent();
+            StartThreads();
+        }
+
+        private void StartThreads()
+        {  
+            Action su = new Action(() => { StageUI(); });
+            Task t3 = Task.Run(su);
+        }
+
+
         private void StageUI()
         {
             if (!Dispatcher.CheckAccess())
@@ -36,9 +53,9 @@ namespace Pulse
             }
 
             int offset = 0;
-            while (UIStage == 0)
+            while (API.UIStage == 0)
             {
-                while (API.Tokens.Count == 0 || API.Tokens.Count == sp.Children.Count && UIStage != 1) System.Threading.Thread.Sleep(1000);
+                while (API.Tokens.Count == 0 || API.Tokens.Count == sp.Children.Count && API.UIStage != 1) System.Threading.Thread.Sleep(1000);
                 offset = PopulateSP(offset);
             }
             int i = 99;
@@ -73,6 +90,5 @@ namespace Pulse
             UIUpdating = false;
             return i;
         }
-        */
     }
 }

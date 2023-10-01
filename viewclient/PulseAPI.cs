@@ -11,12 +11,12 @@ namespace Pulse
 {
     public class API
     {
-        public string AtropaContract = "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6";
+        public static string AtropaContract = "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6";
 
-        private SQLite.Query Querier;
-        private int UIStage = 0;
-        private bool UIUpdating = false;
+        private static SQLite.Query Querier;
+        private static bool UIUpdating = false;
 
+        public static int UIStage = 0;
         private static System.Timers.Timer rateLimitingTimer = null;
         public static List<API.Token> Tokens = null;       
         public static Dictionary<String, String> Aliases;
