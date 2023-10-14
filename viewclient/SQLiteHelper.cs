@@ -19,7 +19,7 @@ namespace Pulse
             {
                 if (db == null)
                 {
-                    db = new SqliteConnection();
+                    db = new SqliteConnection("Data Source=sqlite.db; Mode=ReadWriteCreate");
                     db.Open();
                     InitDB();
                 }
@@ -58,6 +58,13 @@ namespace Pulse
                 createTable.Dispose();
             }
 
+            public static int InsertAlias(String Holder, String Alias)
+            {
+                SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO Aliases (Address, Alias) VALUES (\"{0}\", \"{1}\");",
+                                Holder, Alias), db);
+                return ins.ExecuteNonQuery();
+            }
+
             public static int InsertAlias(API.Token tk, String Alias)
             {
                 SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO Aliases (Address, Alias) VALUES (\"{0}\", \"{1}\");",
@@ -82,6 +89,7 @@ namespace Pulse
 
             public static string GetAlias(string ContractAddress)
             {
+                if(API.Aliases.ContainsKey(ContractAddress)) return API.Aliases[ContractAddress];
                 string Alias = "";
                 SqliteCommand chk = new SqliteCommand(String.Format("Select * From Aliases Where Address = \"{0}\";", ContractAddress), db);
                 using (var reader = chk.ExecuteReader())
@@ -101,11 +109,27 @@ namespace Pulse
                 return ins.ExecuteNonQuery();
             }
 
-            public static int InsertContractHoldings(String ContractAddress, String Token, String Balance)
+            public static int InsertContractHoldings(String ContractAddress, String Asset, String Balance)
             {
-                SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO ContractHoldings (Id, HolderContract, Asset, Balance) VALUES (\"{0}\", \"{1}\", \"{2}\", \"{3}\");",
-                                System.Guid.NewGuid(), ContractAddress, Token, Balance), db);
-                return ins.ExecuteNonQuery();
+                SqliteCommand chk = SQLite.Query.SelectContractHoldings(ContractAddress, Asset);
+                using (var reader = chk.ExecuteReader())
+                {
+                    if (!reader.HasRows)
+                    {
+                        SqliteCommand ins = new SqliteCommand(String.Format("INSERT INTO ContractHoldings (Id, HolderContract, Asset, Balance) VALUES (\"{0}\", \"{1}\", \"{2}\", \"{3}\");",
+                                System.Guid.NewGuid(), ContractAddress, Asset, Balance), db);
+                        return ins.ExecuteNonQuery();
+                    } else
+                    {
+                        SqliteCommand upd = new SqliteCommand(String.Format("UPDATE ContractHoldings SET Balance = \"{0}\" WHERE HolderContract = \"{1}\" AND Asset = \"{2}\";", Balance, ContractAddress, Asset));
+                        return upd.ExecuteNonQuery();
+                    }
+                }
+            }
+
+            public static SqliteCommand SelectContractHoldings(String ContractAddress, String Asset)
+            {
+                return new SqliteCommand(String.Format("Select * From ContractHoldings Where HolderContract = \"{0}\" AND Asset = \"{1}\";", ContractAddress, Asset), db);
             }
 
             public static SqliteCommand SelectTokensByAddress(String ContractAddress)
