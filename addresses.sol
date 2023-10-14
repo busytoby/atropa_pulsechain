@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 address constant dead = address(0x000000000000000000000000000000000000dEaD);
 address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
+address constant trebizond = address(0x903030f7e2d6489F38B0f4F96F9b371ec7960F78);
 address constant goldkey = address(0x30e22ab6e6B576e6A9c5dD73191237a9A5c72539);
 address constant skinphlute = address(0xA7BC844a76e727Ec5250f3849148c21F4b43CeEA);
 
@@ -47,11 +48,15 @@ address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC
 address constant TseContract = address(0x3d67511733d976800467119264C3d4Cd9FA23041);
 address constant FrockContract = address(0x8B8b26bB6C5fD4867339ab2f0acf3aE5129BD2F0);
 address constant QingDaoContract = address(0xE63191967735C52f5de78CE2471759a9963Ce118);
-address constant TSFiContract = address(0xE63191967735C52f5de78CE2471759a9963Ce118);
+address constant TSFiContract = address(0x4243568Fa2bbad327ee36e06c16824cAd8B37819);
 address constant GreenlandContract = address(0xdE4Ef7Ea464c7771803b9838AeA07cE41089b054);
 address constant BuddhaghosaContract = address(0x840CBD20A70774BECAc4e932Fff6fb1f5417997F);
 address constant ZuoContract = address(0x583d1C1427308f7f96BFd3E0d7A3F9674D8BF8ec);
 address constant HegelBetContract = address(0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb);
+address constant HahnarchContract = address(0x4a458D04909a42F79d31805762B2abc38ab9407d);
+address constant RabContract = address(0x89E8cD6306AbbAB8e39eeD0D53566d8dC2E02c01);
+address constant LoanContract = address(0xeE67825eF27588FAeE39cfefb465eB0A242A740c);
+address constant FreebiesContract = address(0x48F628c079353ECC4DB75F0d05de9299e083f3C2);
 
 address constant WMContract = address(0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29);
 address constant NoPrivateContract = address(0x3Cca11B99e3338F57B0FCB0d203D747AeAE01CE5);
@@ -62,6 +67,7 @@ address constant TeddyBear9Contract = address(0x1f737F7994811fE994Fe72957C374e5c
 
 address constant BondContract = address(0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38);
 address constant WritingContract = address(0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b);
+address constant SukukContract = address(0x72f96a39AC9408b5458E5597BBC22060552dedF4);
 
 // address constant FAContract = address(0xF2be09EB43c1eD2791d0324BaA0649e62CdA4BBF);
 address constant hhFaContract = address(0xa28e8aA4d6257157de64a547c90B38C3c540eF72);
