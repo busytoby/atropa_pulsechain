@@ -49,26 +49,10 @@ namespace Dysnomia
             return R % Prime;
         }
 
-        private static BigInteger pow(BigInteger x, BigInteger y, BigInteger p)
-        {
-            x %= p;
-            BigInteger r = 1;
-            while(y > 0)
-            {
-                if (!y.IsEven) r = (r * x) % p;
-                x = (x * x) % p;
-                y >>= 1;
-            }
-            return r;
-        }
-
         public static BigInteger ModPow(BigInteger A, BigInteger B, BigInteger C)
         {
-            //BigInteger L = BigInteger.Pow(A, (int)B) % C;
             BigInteger M = BigInteger.ModPow(A, B, C);
-            //BigInteger K = pow(A, B, C);
             return M;
-            //return BigInteger.ModPow(A, B, C);
         }
     }
 
