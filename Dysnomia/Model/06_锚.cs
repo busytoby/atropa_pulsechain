@@ -21,6 +21,7 @@ namespace Dysnomia
             Rho = new ë(ref Mu, true);
             Psi = new ë(ref Mu, false);
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
+            BigInteger I = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Manifold);
             /*
             Nu.Theta(Rho.Nu.Omicron);
             Nu.Beta(Psi.Nu.Omega);
