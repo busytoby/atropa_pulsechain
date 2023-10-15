@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Numerics;
 
@@ -19,6 +20,11 @@ namespace Dysnomia
             "901ABFE89B6129C427EBFA03AD511242C79FD93E89B20429DB33BEC356978F703875" +
             "07A95AD2068E195E9B852B6BF884AB9A714BA75CFB10A7F9CFE865A0764B6B6E8648" +
             "C98C8252C2B2AC42E7CAE4E8360", NumberStyles.AllowHexSpecifier);
+
+        public static BigInteger MarsennePrime = BigInteger.Parse(
+            "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" +
+            "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.AllowHexSpecifier);
+
 
 
         private static Random rand;
@@ -43,15 +49,25 @@ namespace Dysnomia
             return R % Prime;
         }
 
+        private static BigInteger pow(BigInteger x, BigInteger y, BigInteger p)
+        {
+            x %= p;
+            BigInteger r = 1;
+            while(y > 0)
+            {
+                if (!y.IsEven) r = (r * x) % p;
+                x = (x * x) % p;
+                y >>= 1;
+            }
+            return r;
+        }
+
         public static BigInteger ModPow(BigInteger A, BigInteger B, BigInteger C)
         {
-            BigInteger L = A ^ B % C;
+            //BigInteger L = BigInteger.Pow(A, (int)B) % C;
             BigInteger M = BigInteger.ModPow(A, B, C);
-            if(L == M)
-            {
-                int v = 44;
-            }
-            return L;
+            //BigInteger K = pow(A, B, C);
+            return M;
             //return BigInteger.ModPow(A, B, C);
         }
     }
