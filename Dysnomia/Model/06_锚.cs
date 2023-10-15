@@ -22,6 +22,9 @@ namespace Dysnomia
             Psi = new ë(ref Mu, false);
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
             BigInteger I = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Manifold);
+            BigInteger J = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Foundation);
+            BigInteger K = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Identity);
+            Faung Digamma = new Faung(I, J, K, Nu.Xi);
             /*
             Nu.Theta(Rho.Nu.Omicron);
             Nu.Beta(Psi.Nu.Omega);
