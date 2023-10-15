@@ -27,16 +27,23 @@ namespace Dysnomia
                 Eta = new Faung(ref Psi, Mu.Psi.Rod.Manifold, Mu.Mu.Rod.Element, Mu.Psi.Rod.Ring, Mu.Psi.Rod.Foundation);
             else
                 Eta = new Faung(ref Psi, Mu.Psi.Cone.Secret, Mu.Mu.Cone.Signal, Mu.Psi.Cone.Channel, Mu.Psi.Cone.Identity);
+            Mu.Tau.WaitOne();
+            while (Mu.Chi < 2) { Mu.Tau.ReleaseMutex(); Thread.Sleep(4000); Mu.Tau.WaitOne(); }
             Eta.Theta(Mu.Mu.Omicron);
             Eta.Beta(Mu.Psi.Omicron);
+            Mu.Tau.ReleaseMutex();
             Upsilon = new Fa();
             Theta = new ည(ref Eta, ref Upsilon, false);
             Eta.Iota();
+            Mu.Tau.WaitOne();
+            while (Mu.Chi < 3) { Mu.Tau.ReleaseMutex(); Thread.Sleep(4000); Mu.Tau.WaitOne(); }
             Mu.Mu.Beta(Theta.Mu.Omicron);
             Mu.Psi.Iota();
             Mu.Mu.Iota();
             Mu.Mu.Lambda();
             Mu.Psi.Lambda();
+            Mu.Chi = 5;
+            Mu.Tau.ReleaseMutex();
             Eta.Lambda();
         }
 
@@ -57,9 +64,14 @@ namespace Dysnomia
             else
                 Upsilon.Fuse(Beta.Mu.Rod.Secret, Iota.Mu.Cone.Signal, Omicron.Mu.Cone.Channel);
             Theta = Omicron;
-
+            while (Mu.Chi < 4) { Mu.Tau.ReleaseMutex(); Thread.Sleep(4000); Mu.Tau.WaitOne(); }
+            while (Theta.Chi < 4) { Theta.Tau.ReleaseMutex(); Thread.Sleep(4000); Theta.Tau.WaitOne(); }
             Eta.Theta(Theta.Mu.Omicron);
             Eta.Beta(Mu.Mu.Omicron);
+            Mu.Chi = 5;
+            Theta.Chi = 5;
+            Mu.Tau.ReleaseMutex();
+            Theta.Tau.ReleaseMutex();
             Eta.Iota();
             Eta.Lambda();
         }

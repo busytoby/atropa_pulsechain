@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -12,16 +13,61 @@ namespace Dysnomia
         public Faung Mu;
         public Fa Rho;
         public Faung Psi;
+        public Mutex Tau = new Mutex();
+        public Living Theta;
+        public int Kappa;
+        public int Chi = 0;
         public int Gamma = 1;
 
         public ည()
         {
             Mu = new Faung();
             Rho = new Fa();
+            Kappa = 1;
             Psi = Pi(true);
-            Mu.Theta(Psi.Cone.Coordinate);
-            Psi.Theta(Mu.Rod.Coordinate);
-            Psi.Beta(Mu.Omicron);
+            Theta = new Living(Phi);
+        }
+
+        public void Phi()
+        {
+            while (true)
+            {
+                Tau.WaitOne();
+                if (Kappa == 1)
+                {
+                    if (Chi == 0)
+                        Mu.Theta(Psi.Cone.Coordinate);
+                    else if (Chi == 1)
+                        Psi.Theta(Mu.Rod.Coordinate);
+                    else if (Chi == 2)
+                        Psi.Beta(Mu.Omicron);
+                    if (Chi < 3) Chi++;
+                } else if(Kappa == 2)
+                {
+                    if (Chi == 0)
+                        Mu.Theta(Psi.Omicron);
+                    else if (Chi == 1)
+                        Mu.Beta(Psi.Omicron);
+                    else if (Chi == 2)
+                        Mu.Iota();
+                    else if (Chi == 4)
+                        Mu.Lambda();
+                    if (Chi < 4) Chi++;
+                } else if(Kappa == 3)
+                {
+                    if (Chi == 0)
+                        Psi.Theta(Mu.Omicron);
+                    else if (Chi == 1)
+                        Psi.Beta(Mu.Omicron);
+                    else if (Chi == 2)
+                        Psi.Iota();
+                    else if (Chi == 4)
+                        Psi.Lambda();
+                    if (Chi < 4) Chi++;
+                }                
+                Tau.ReleaseMutex();
+                Thread.Sleep(4000);
+            }
         }
 
         public ည(ref Faung Beta, ref Fa Omicron, bool Lambda)
@@ -36,19 +82,13 @@ namespace Dysnomia
             Rho = Omicron;
             if (Lambda)
             {
+                Kappa = 2;
                 Psi = Beta;
-                Mu.Theta(Psi.Omicron);
-                Mu.Beta(Psi.Omicron);
-                Mu.Iota();
-                Mu.Lambda();
             }
             else
             {
+                Kappa = 3;
                 Psi = Pi(false);
-                Psi.Theta(Mu.Omicron);
-                Psi.Beta(Mu.Omicron);
-                Psi.Iota();
-                Psi.Lambda();
             }
         }
 

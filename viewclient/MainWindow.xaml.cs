@@ -34,7 +34,8 @@ namespace Pulse
 
         public MainWindow()
         {
-            锚 A = new 锚();
+            //锚 A = new 锚();
+            Tod A = new Tod();
 
 
             Pulse.API Comptroller = new Pulse.API();
