@@ -19,6 +19,9 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualBasic;
 using System.Windows.Media.TextFormatting;
 using System.Windows.Media.Animation;
+using System.Linq.Expressions;
+using System.Numerics;
+using Dysnomia;
 
 namespace Pulse
 {
@@ -31,9 +34,13 @@ namespace Pulse
 
         public MainWindow()
         {
+            锚 A = new 锚();
+            while (true)
+            {
+                A.Pi();
+            }
 
             Pulse.API Comptroller = new Pulse.API();
-
             InitializeComponent();
             StartThreads();
         }
@@ -62,13 +69,68 @@ namespace Pulse
             TextBlock tb = new TextBlock();
             tb.Text = "Atropa";
             Canvas.SetTop(tb, 40);
-            Canvas.SetLeft(tb, 30);            
+            Canvas.SetLeft(tb, 30);
+            tb.MouseDown += new MouseButtonEventHandler(tbClick);
             cv.Children.Add(tb);
             sp.Children.Add(cv);
 
-            Action su = new Action(() => { System.Threading.Thread.Sleep(2000); PopulateUI2(cv); });
+            Action su = new Action(() => { System.Threading.Thread.Sleep(400); PopulateUI2(cv); });
             Task t1 = new Task(su);
             t1.Start();
+
+            Action sl = new Action(() => { PopulateLiquidities(); });
+            Task t2 = new Task(sl);
+            t2.Start();
+        }
+
+        private void tbClick(object sender, MouseButtonEventArgs e)
+        {
+            int i = 99;
+        }
+
+        private void PopulateLiquidities()
+        {
+            int count = 1;
+            dynamic t;
+            do
+            {
+                t = API.GetTokenHolders(API.AtropaContract, count);
+                foreach(dynamic ti in t["result"])
+                {
+                    try {
+                        dynamic t2 = API.GetToken(ti["address"].ToString());
+                        if (t2["result"] != null && t2["result"]["symbol"].ToString() == "PLP")
+                        {
+                            string Alias = SQLite.Query.GetAlias(ti["address"].ToString());
+                            if (Alias.Length == 0)
+                            {
+                                dynamic t4 = API.GetFirstTransaction(ti["address"].ToString());
+                                string c1 = t4["result"][1]["to"].ToString();
+                                string c2 = t4["result"][2]["to"].ToString();
+
+                                dynamic t3 = API.GetAccountHoldings(ti["address"].ToString());
+                                int ca = 0;
+                                int cb = 0;
+                                for (int i = 0; i < t3["result"].Count; i++)
+                                {
+                                    if (t3["result"][i]["contractAddress"].ToString() == c1) ca = i;
+                                    if (t3["result"][i]["contractAddress"].ToString() == c2) cb = i;
+                                }
+                                Alias = String.Format("{0} ({1}) - {2} ({3}) PLP", t3["result"][ca]["name"].ToString(), t3["result"][ca]["symbol"].ToString(), t3["result"][cb]["name"].ToString(), t3["result"][cb]["symbol"].ToString());
+                                SQLite.Query.InsertAlias(ti["address"].ToString(), Alias);
+                                API.Aliases.Add(ti["address"].ToString(), Alias);
+                                SQLite.Query.InsertContractHoldings(ti["address"].ToString(), t3["result"][ca]["contractAddress"].ToString(), t3["result"][ca]["balance"].ToString());
+                                SQLite.Query.InsertContractHoldings(ti["address"].ToString(), t3["result"][cb]["contractAddress"].ToString(), t3["result"][cb]["balance"].ToString());
+                            }
+                        }
+                    } catch (Exception ex)
+                    {
+                        int r = 33;
+                    }
+                }
+                
+            } while (t.Count == 100);
+            int v = 99;
         }
 
         private void AddToCanvas(Canvas cv, UIElement e)
@@ -111,7 +173,7 @@ namespace Pulse
                         Canvas.SetLeft(tbp, ntdLeft);
                         AddToCanvas(cv, tbp);
                         DisplayedTokens.Add(t.contractAddress);
-                        Action su = new Action(() => { System.Threading.Thread.Sleep(400); PopulateUI2(cv, DisplayedTokens); });
+                        Action su = new Action(() => { System.Threading.Thread.Sleep(40); PopulateUI2(cv, DisplayedTokens); });
                         Task t1 = new Task(su);
                         t1.Start();
                         return;
@@ -125,7 +187,7 @@ namespace Pulse
 
         private void StageUI()
         {
-            while (API.Tokens.Count == 0) System.Threading.Thread.Sleep(1000);
+            while (API.Tokens.Count == 0) System.Threading.Thread.Sleep(400);
 
             if (!Dispatcher.CheckAccess())
             {

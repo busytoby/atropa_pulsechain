@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -20,6 +22,8 @@ namespace Pulse
         private static System.Timers.Timer rateLimitingTimer = null;
         public static List<API.Token> Tokens = null;       
         public static Dictionary<String, String> Aliases;
+
+        private static int rateLimit = 100;
 
         public API()
         {
@@ -62,12 +66,13 @@ namespace Pulse
             if(rateLimitingTimer != null)
                 while (rateLimitingTimer.Enabled == true) System.Threading.Thread.Sleep(40);
             else { 
-                rateLimitingTimer = new System.Timers.Timer(400);
+                rateLimitingTimer = new System.Timers.Timer(rateLimit);
                 rateLimitingTimer.Elapsed += RateEndEvent;
                 rateLimitingTimer.AutoReset = false;
                 rateLimitingTimer.Enabled = false;
             }
             if (rateLimitingTimer.Enabled == false) rateLimitingTimer.Enabled = true;
+            System.Threading.Thread.Sleep(rateLimit);
         }
 
         private static void RateEndEvent(Object src, ElapsedEventArgs e)
@@ -77,7 +82,7 @@ namespace Pulse
             return;
         }
 
-        private static List<Dictionary<string, string>> GetURI(Uri uri)
+        private static dynamic GetURI(Uri uri)
         {
             while (true)
             {
@@ -91,36 +96,48 @@ namespace Pulse
                     ts.Wait();
                     client.Dispose();
                     string s = ts.Result;
-                    return SanitizeResult(s.Split(','));
+                    dynamic d = JsonObject.Parse(s);
+//                    JsonConverter
+                    rateLimit = 100;
+                    return d;
+                    //return SanitizeResult(s.Split(','));
                 }
                 catch (Exception ex)
                 {
+                    rateLimit *= 2;
+                    if (rateLimit > 8000) rateLimit = 8000;
                     client.Dispose();
                     int e = 44;
                 }
             }
         }
 
-        public static List<Dictionary<string, string>> GetToken(string ContractAddress)
+        public static dynamic GetToken(string ContractAddress)
         {
             return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getToken&contractaddress={0}&page=1&offset=100", ContractAddress)));
         }
 
-        public static List<Dictionary<string, string>> GetTokenList(string ContractAddress)
+        public static dynamic GetTokenList(string ContractAddress)
         {
             return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
         }
 
-        public static List<Dictionary<string, string>> GetTokenHolders(string ContractAddress)
+        public static dynamic GetTokenHolders(string ContractAddress, int offset = 1)
         {
-            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page=1&offset=100", ContractAddress)));
+            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page={1}&offset=100", ContractAddress, offset.ToString()))); ;
         }
 
-        public static List<Dictionary<string, string>> GetAccountHoldings(string ContractAddress)
+        public static dynamic GetAccountHoldings(string ContractAddress)
         {
             return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
         }
 
+        public static dynamic GetFirstTransaction(string ContractAddress)
+        {
+            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=txlistinternal&address={0}&sort=asc", ContractAddress)));
+        }
+
+        /*
         public static List<Dictionary<string, string>> SanitizeResult(string[] s)
         {
             if (s[0] != "{\"message\":\"OK\"") throw new Exception("Doesn't Look OK");
@@ -129,18 +146,24 @@ namespace Pulse
 
             List<Dictionary<string, string>> R = new List<Dictionary<string, string>>();
             Dictionary<string, string> T = new Dictionary<string, string>();
-            T[s1chk[3]] = s1chk[5];
+            if(s1chk.Count() == 7)
+                T[s1chk[3]] = s1chk[5];
 
             int s3chk = 0;
             for (int i = 2; i < s.Count(); i++)
             {
                 string[] s2chk = s[i].Split('\"');
                 if (s2chk.Count() != 5) throw new Exception("Doesn't Look Check !");
-                if (s2chk[0] == "{" || s2chk[4] == "}]") {
+                if (s2chk[0] == "{" || s2chk[4] == "}]" || (s1chk.Count() != 7 && s2chk[4] == "}")) {
                     R.Add(T);
                     if (s3chk == 0) s3chk = T.Count();
                     if (s3chk != T.Count() && s.Count() < (i + 2)) 
                         throw new Exception("Doesn't Look Count !");
+                    if (s1chk.Count() != 7 && s2chk[4] == "}")
+                    {
+                        T[s2chk[1]] = s2chk[3];
+                        break;
+                    }
                     T = new Dictionary<string, string>();
                 }
                 T[s2chk[1]] = s2chk[3];
@@ -148,24 +171,41 @@ namespace Pulse
 
             return R;
         }
+        */
 
         public static void GetTokenDatas()
         {
             foreach (API.Token tk in API.Tokens)
             {
                 if (tk.symbol != "PLP") continue;
-                List<Dictionary<string, string>> t = API.GetAccountHoldings(tk.contractAddress);
+                dynamic t = API.GetAccountHoldings(tk.contractAddress);
 
                 string Alias = SQLite.Query.GetAlias(tk.contractAddress);
                 if (Alias.Length == 0)
                 {
-                    Alias = String.Format("{0} ({1}) - {2} ({3}) PLP", t[0]["name"], t[0]["symbol"], t[1]["name"], t[1]["symbol"]);
+                    dynamic t4 = API.GetFirstTransaction(tk.contractAddress);
+                    string c1 = t4["result"][1]["to"].ToString();
+                    string c2 = t4["result"][2]["to"].ToString();
+                    if (c1 == c2) c2 = t4["result"][3]["to"].ToString();
+                    if (c1 == c2) c2 = t4["result"][4]["to"].ToString();
+                    if (c1 == c2) c2 = t4["result"][5]["to"].ToString();
+                    if (c1 == c2) c2 = t4["result"][6]["to"].ToString();
+                    if (c1 == c2) 
+                        throw new Exception("LP Pair Detection");
+
+                    int ca = 0;
+                    int cb = 0;
+                    for (int i = 0; i < t["result"].Count; i++)
+                    {
+                        if (t["result"][i]["contractAddress"].ToString() == c1) ca = i;
+                        if (t["result"][i]["contractAddress"].ToString() == c2) cb = i;
+                    }
+                    Alias = String.Format("{0} ({1}) - {2} ({3}) PLP", t["result"][ca]["name"].ToString(), t["result"][ca]["symbol"].ToString(), t["result"][cb]["name"].ToString(), t["result"][cb]["symbol"].ToString());
                     SQLite.Query.InsertAlias(tk, Alias);
-                    Aliases.Add(tk.contractAddress, Alias);
-                    SQLite.Query.InsertContractHoldings(tk.contractAddress, t[0]["contractAddress"], t[0]["balance"]);
-                    SQLite.Query.InsertContractHoldings(tk.contractAddress, t[1]["contractAddress"], t[1]["balance"]);
+                    API.Aliases.Add(tk.contractAddress, Alias);
+                    SQLite.Query.InsertContractHoldings(tk.contractAddress, t["result"][ca]["contractAddress"].ToString(), t["result"][ca]["balance"].ToString());
+                    SQLite.Query.InsertContractHoldings(tk.contractAddress, t["result"][cb]["contractAddress"].ToString(), t["result"][cb]["balance"].ToString());
                 }
-                int v = 99;
             }
         }
 
@@ -173,18 +213,18 @@ namespace Pulse
         {
             try
             {
-                List<Dictionary<string, string>> t = API.GetAccountHoldings(ContractAddress);
+                dynamic t = API.GetAccountHoldings(ContractAddress);
 
-                foreach (Dictionary<string, string> tkd in t)
+                foreach (dynamic tkd in t["result"])
                 {
                     API.Token tk = new API.Token();
                     tk.holder = ContractAddress;
-                    tk.balance = tkd["balance"];
-                    tk.contractAddress = tkd["contractAddress"];
-                    tk.decimals = tkd["decimals"];
-                    tk.name = tkd["name"];
-                    tk.symbol = tkd["symbol"];
-                    tk.type = tkd["type"];
+                    tk.balance = tkd["balance"].ToString();
+                    tk.contractAddress = tkd["contractAddress"].ToString();
+                    tk.decimals = tkd["decimals"].ToString();
+                    tk.name = tkd["name"].ToString();
+                    tk.symbol = tkd["symbol"].ToString();
+                    tk.type = tkd["type"].ToString();
 
                     SqliteCommand chk = SQLite.Query.SelectTokensByAddress(tk.contractAddress);
                     using (var reader = chk.ExecuteReader())

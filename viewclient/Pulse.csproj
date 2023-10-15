@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Dysnomia\Dysnomia.csproj" />
+  </ItemGroup>
+
 </Project>
