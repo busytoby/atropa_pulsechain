@@ -12,6 +12,7 @@ namespace Dysnomia
     {
         public ညြ Mu;
         public ညြ Psi;
+        public List<Faung> Sigma;
         public Fa Upsilon;
         public Fa Tau;
         public int Gamma = 1;
