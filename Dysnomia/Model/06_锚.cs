@@ -21,10 +21,12 @@ namespace Dysnomia
             Rho = new ë(ref Mu, true);
             Psi = new ë(ref Mu, false);
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
+            /*
             Nu.Theta(Rho.Nu.Omicron);
             Nu.Beta(Psi.Nu.Omega);
             Nu.Iota();
             Nu.Lambda();
+            */
         }
 
         public Fa Pi()
