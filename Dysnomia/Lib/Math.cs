@@ -49,6 +49,12 @@ namespace Dysnomia
             return R % Prime;
         }
 
+        public static BigInteger ModXOR(BigInteger A, BigInteger B, BigInteger C)
+        {
+            BigInteger M = A ^ B % C;
+            return M;
+        }
+
         public static BigInteger ModPow(BigInteger A, BigInteger B, BigInteger C)
         {
             BigInteger M = BigInteger.ModPow(A, B, C);

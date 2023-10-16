@@ -13,9 +13,15 @@ namespace Dysnomia
         public BigInteger Tau, Eta, Kappa, Rho, Beta, Phi;
         public short Nu;
         public int Gamma = 1;
+        public delegate BigInteger Modulator(BigInteger A, BigInteger B, BigInteger C);
+        Modulator Mu;
 
-        public Fa()
+        public Fa(bool Omicron = false)
         {
+            if (Omicron)
+                Mu = Math.ModXOR;
+            else
+                Mu = Math.ModPow;
             Tau = 0;
             Initialize();
             Seed();
@@ -46,7 +52,7 @@ namespace Dysnomia
 
         public void Tune()
         {
-            Channel = Math.ModPow(Base, Signal, Math.Prime);
+            Channel = Mu(Base, Signal, Math.Prime);
             if (Channel < 0) throw new Exception("Negative Channel");
         }
 
@@ -61,24 +67,24 @@ namespace Dysnomia
 
         public BigInteger Avail(BigInteger Xi)
         {
-            return Math.ModPow(Xi, Secret, Math.Prime);
+            return Mu(Xi, Secret, Math.Prime);
         }
 
         public void Form(BigInteger Chi)
         {
-            Base = Math.ModPow(Chi, Secret, Math.Prime);
+            Base = Mu(Chi, Secret, Math.Prime);
             if (Base < 0) Base = Base * -1;
             Tune();
         }
 
         public void Polarize()
         {
-            Pole = Math.ModPow(Base, Secret, Math.Prime);
+            Pole = Mu(Base, Secret, Math.Prime);
         }
 
         public void Conjugate(ref BigInteger Chi)
         {
-            Coordinate = Math.ModPow(Chi, Secret, Math.Prime);
+            Coordinate = Mu(Chi, Secret, Math.Prime);
             Chi = 0;
         }
 
@@ -87,7 +93,7 @@ namespace Dysnomia
             if (Nu != 0) throw new Exception("Nu Non Zero");
             Identity = Math.Random();
             if (Identity < 0) Identity = Identity * -1;
-            Foundation = Math.ModPow(Base, Identity, Math.Prime);
+            Foundation = Mu(Base, Identity, Math.Prime);
             if (Foundation < 0) throw new Exception("Negative Foundation");
             Nu = 1;
         }
@@ -97,19 +103,19 @@ namespace Dysnomia
             if (Nu == 0)
             {
                 Identity = Math.Random();
-                Foundation = Math.ModPow(Base, Identity, Math.Prime);
+                Foundation = Mu(Base, Identity, Math.Prime);
             }
             else if (Nu != 1) throw new Exception("Nu Non One");
 
-            Beta = Math.ModPow(Epsilon, Identity, Math.Prime);
-            Rho = Math.ModPow(Theta, Identity, Math.Prime);
-            Eta = Math.ModPow(Epsilon, Signal, Math.Prime);
+            Beta = Mu(Epsilon, Identity, Math.Prime);
+            Rho = Mu(Theta, Identity, Math.Prime);
+            Eta = Mu(Epsilon, Signal, Math.Prime);
 
             Phi = Rho + Eta;
             Element = Beta + Phi;
 
             // Principal Uncertainty
-            Dynamo = Math.ModPow(Theta, Signal, Math.Prime);
+            Dynamo = Mu(Theta, Signal, Math.Prime);
             Manifold = Element + Dynamo;
 
             if (Nu != 0 && Nu != 1) throw new Exception("Invalid Nu");
@@ -119,19 +125,19 @@ namespace Dysnomia
 
         public void Bond()
         {
-            Dynamo = Math.ModPow(Base, Signal, Element);
+            Dynamo = Mu(Base, Signal, Element);
             Pole = 0;
         }
 
         public void Adduct(BigInteger Phi)
         {
-            Manifold = Math.ModPow(Phi, Signal, Element);
+            Manifold = Mu(Phi, Signal, Element);
         }
 
         public void Open()
         {
-            Ring = Math.ModPow(Coordinate, Manifold, Element);
-            Barn = Math.ModPow(Ring, Manifold, Element);
+            Ring = Mu(Coordinate, Manifold, Element);
+            Barn = Mu(Ring, Manifold, Element);
         }
 
         public bool ManifoldCompare(ref Fa Rod)
@@ -143,17 +149,17 @@ namespace Dysnomia
 
         public BigInteger Charge(BigInteger Psi)
         {
-            return Math.ModPow(Barn, Psi, Ring);
+            return Mu(Barn, Psi, Ring);
         }
 
         public BigInteger Induce(BigInteger Sigma)
         {
-            return Math.ModPow(Sigma, Manifold, Ring);
+            return Mu(Sigma, Manifold, Ring);
         }
 
         public BigInteger Torque(BigInteger Sigma)
         {
-            return Math.ModPow(Sigma, Element, Channel);
+            return Mu(Sigma, Element, Channel);
         }
 
         public BigInteger Amplify(BigInteger Upsilon)
@@ -168,8 +174,8 @@ namespace Dysnomia
 
         public void React(BigInteger Pi, BigInteger Theta)
         {
-            Eta = Math.ModPow(Pi, Channel, Theta);
-            Kappa = Math.ModPow(Pi, Theta, Channel);
+            Eta = Mu(Pi, Channel, Theta);
+            Kappa = Mu(Pi, Theta, Channel);
             if (Eta == 0 || Kappa == 0) throw new Exception("Fault");
         }
     }

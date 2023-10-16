@@ -15,10 +15,13 @@ namespace Dysnomia
         public BigInteger Phi, Eta, Mu, Xi;
         public BigInteger Sigma, Rho, Upsilon, Ohm, Pi, Omicron, Omega;
         public short Chi;
+        public delegate BigInteger Modulator(BigInteger A, BigInteger B, BigInteger C);
+        Modulator Kappa;
 
         public Faung()
         {
             bool Failed = true;
+            Kappa = Math.ModPow;
             while (Failed)
             {
                 try
@@ -44,6 +47,11 @@ namespace Dysnomia
             this.Cone.Kappa = -1;
 
             bool Failed = true;
+            if(Refaung)
+                Kappa = Math.ModPow;
+            else
+                Kappa = Math.ModXOR;
+
             while (Failed)
             {
                 try
@@ -64,12 +72,13 @@ namespace Dysnomia
         public Faung(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi)
         {
             bool Failed = true;
+            Kappa = Math.ModXOR;
             while (Failed)
             {
                 try
                 {
-                    Rod = new Fa();
-                    Cone = new Fa();
+                    Rod = new Fa(true);
+                    Cone = new Fa(true);
                     FuseAndOpen(Rho, Upsilon, Ohm, Xi);
                     Failed = false;
                 }
@@ -87,6 +96,7 @@ namespace Dysnomia
                 throw new Exception("Non Zero Barn");
 
             bool Failed = true;
+            Kappa = Math.ModPow;
             while (Failed)
             {
                 try
@@ -114,7 +124,7 @@ namespace Dysnomia
 
         public void OpenManifolds()
         {
-            Xi = Math.ModPow(Cone.Signal, Rod.Channel, Math.Prime);
+            Xi = Kappa(Cone.Signal, Rod.Channel, Math.Prime);
             OpenManifolds(Xi);
         }
 
