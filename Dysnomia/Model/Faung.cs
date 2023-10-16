@@ -47,10 +47,11 @@ namespace Dysnomia
             this.Cone.Kappa = -1;
 
             bool Failed = true;
-            if(Refaung)
+            if (Refaung)
                 Kappa = Math.ModPow;
             else
-                Kappa = Math.ModXOR;
+                throw new Exception("Review");
+//                Kappa = Math.ModXOR;
 
             while (Failed)
             {
