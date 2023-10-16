@@ -50,7 +50,7 @@ namespace Dysnomia
                         Mu.Beta(Psi.Omicron);
                     else if (Chi == 2)
                         Mu.Iota();
-                    else if (Chi == 4)
+                    else if (Chi == 3)
                         Mu.Lambda();
                     if (Chi < 4) Chi++;
                 } else if(Kappa == 3)
@@ -61,7 +61,7 @@ namespace Dysnomia
                         Psi.Beta(Mu.Omicron);
                     else if (Chi == 2)
                         Psi.Iota();
-                    else if (Chi == 4)
+                    else if (Chi == 3)
                         Psi.Lambda();
                     if (Chi < 4) Chi++;
                 }                
@@ -90,6 +90,7 @@ namespace Dysnomia
                 Kappa = 3;
                 Psi = Pi(false);
             }
+            Theta = new Living(Phi);
         }
 
         public Faung Pi(bool Lambda)

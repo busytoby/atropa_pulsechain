@@ -37,7 +37,6 @@ namespace Pulse
             //锚 A = new 锚();
             Zuo A = new Zuo();
 
-
             Pulse.API Comptroller = new Pulse.API();
             InitializeComponent();
             StartThreads();
