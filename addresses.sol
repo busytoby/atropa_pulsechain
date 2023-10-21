@@ -10,6 +10,7 @@ address constant FinalContract = address(0x50E72874dCd7C198d370ac27c7B3cce9f9a0d
 address constant KaContract = address(0x83a918056aB9316837Dc48a216119D679D561d91);
 address constant BuckinghamContract = address(0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11);
 address constant WheelContract = address(0xb9A44De20f26a027e467CB6c2F98766F01904189);
+address constant LibertyContract = address(0xFE9b99eCC43cb423408b975cc5ff439e5ABaCb61);
 address constant CherokeeContract = address(0xb4C1248812dAbF72cb2e82175b4c0aCffE4D2b10);
 address constant DreidelContract = address(0x8A03b032c5494219B212e5a74A49e2aa7F9d206F);
 address constant MantissaContract = address(0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3);
@@ -38,6 +39,7 @@ address constant DiscoContract = address(0xb6936B8e82626405f6E601D54a8292881D86b
 address constant HOSTContract = address(0x1162104a7b8766784153Dd2D6aC0eCEAecD28117);
 address constant DampfContract = address(0x08Fe5c72173044314A74705089d014a4416Ed71D);
 address constant DEIContract = address(0xF77c946C18A77B5DdA5e839dA9818C4D1f087393);
+address constant TlingitContract = address(0x54D88F0c4a738247DadF160923E1b1C5dc4F510f);
 address constant AbUrbeConditaContract = address(0x7FB09EE1a2c0E8b6D1c4E19C0248B3CbC0113af6);
 address constant SIMContract = address(0xBb341FD5C855c206f5538cc649f90d84Df19b65a);
 address constant BinContract = address(0xf520404CF4fa5B633626333775b05F5dF94E1a9C);
@@ -92,3 +94,6 @@ address constant MaltaContract = address(0xee62EE9A354E55dF7C39209B4304161369333
 
 //
 address constant BillBurrContract = address(0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691);
+
+//
+address constant BonusContract = address(0xB8FaCE58CB05C55BBBA9c564A550cc2402A40b5b);
