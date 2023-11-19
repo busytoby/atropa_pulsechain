@@ -75,7 +75,7 @@ namespace Dysnomia
                 }
                     
                 Tau.ReleaseMutex();
-                Thread.Sleep(4000);
+                Thread.Sleep(400);
             }
         }
 
