@@ -39,9 +39,9 @@ namespace Pulse
             Task t0 = new Task(sn);
             t0.Start();
 
-            Pulse.API Comptroller = new Pulse.API();
+            //Pulse.API Comptroller = new Pulse.API();
             InitializeComponent();
-            StartThreads();
+            //StartThreads();
         }
 
         private void StartThreads()

@@ -184,12 +184,17 @@ namespace Dysnomia
             Theta(Pi > 0 ? Pi : Rod.Signal);
         }
 
+        public void Alpha()
+        {
+            Upsilon = Upsilon ^ Ohm ^ Pi;
+        }
+
         public void Lambda()
         {
             if (Chi != 3) throw new Exception("Chi Non 3");
-            BigInteger Upsilon = Cone.Torque(Rod.Eta);
-            BigInteger Ohm = Cone.Amplify(Upsilon);
-            BigInteger Pi = Cone.Sustain(Ohm);
+            Upsilon = Cone.Torque(Rod.Eta);
+            Ohm = Cone.Amplify(Upsilon);
+            Pi = Cone.Sustain(Ohm);
             Cone.React(Pi, Cone.Dynamo);
             Rod.React(Pi, Rod.Dynamo);
             Chi = 4;
@@ -198,9 +203,9 @@ namespace Dysnomia
         public void Iota()
         {
             if (Chi != 2) throw new Exception("Chi Non 2");
-            BigInteger Upsilon = Cone.Torque(Rod.Kappa);
-            BigInteger Ohm = Cone.Amplify(Upsilon);
-            BigInteger Pi = Cone.Sustain(Ohm);
+            Upsilon = Cone.Torque(Rod.Kappa);
+            Ohm = Cone.Amplify(Upsilon);
+            Pi = Cone.Sustain(Ohm);
             Rod.React(Pi, Rod.Channel);
             Cone.React(Pi, Cone.Channel);
             Chi = 3;
@@ -210,9 +215,9 @@ namespace Dysnomia
         {
             if (Iota == 0) throw new Exception("Iota Zero");
             if (Chi != 1) throw new Exception("Chi Non 1");
-            BigInteger Upsilon = Rod.Torque(Iota);
-            BigInteger Ohm = Rod.Amplify(Upsilon);
-            BigInteger Pi = Rod.Sustain(Ohm);
+            Upsilon = Rod.Torque(Iota);
+            Ohm = Rod.Amplify(Upsilon);
+            Pi = Rod.Sustain(Ohm);
             Rod.React(Pi, Cone.Dynamo);
             Cone.React(Pi, Rod.Dynamo);
             Chi = 2;

@@ -41,7 +41,11 @@ namespace Dysnomia
                         Psi.Theta(Mu.Rod.Coordinate);
                     else if (Chi == 2)
                         Psi.Beta(Mu.Omicron);
-                    if (Chi < 3) Chi++;
+                    else if (Chi == 3)
+                        Psi.Alpha();
+                    else if (Chi == 4)
+                        Mu.Alpha();
+                    if (Chi < 5) Chi++;
                 } else if(Kappa == 2)
                 {
                     if (Chi == 0)
@@ -52,7 +56,9 @@ namespace Dysnomia
                         Mu.Iota();
                     else if (Chi == 3)
                         Mu.Lambda();
-                    if (Chi < 4) Chi++;
+                    else if (Chi == 4)
+                        Mu.Alpha();
+                    if (Chi < 5) Chi++;
                 } else if(Kappa == 3)
                 {
                     if (Chi == 0)
@@ -63,8 +69,11 @@ namespace Dysnomia
                         Psi.Iota();
                     else if (Chi == 3)
                         Psi.Lambda();
-                    if (Chi < 4) Chi++;
-                }                
+                    else if (Chi == 4)
+                        Psi.Alpha();
+                    if (Chi < 5) Chi++;
+                }
+                    
                 Tau.ReleaseMutex();
                 Thread.Sleep(4000);
             }
