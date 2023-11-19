@@ -184,11 +184,35 @@ namespace Dysnomia
             Theta(Pi > 0 ? Pi : Rod.Signal);
         }
 
+        public void Alpha(BigInteger Iota)
+        {
+            if (Chi != 8) throw new Exception("Chi Non 8");
+            Upsilon = Upsilon ^ Iota;
+            Chi = 9;
+        }
+
+        public void Alpha(ref Faung Beta)
+        {
+            if (Chi != 4 || Beta.Chi != 4) throw new Exception("Chi Non 4");
+            Upsilon = Upsilon ^ Ohm ^ Pi ^ Beta.Upsilon;
+            Beta.Ohm = Beta.Ohm ^ Upsilon;
+            Chi = 8;
+            Beta.Chi = 5;
+        }
+
         public void Alpha()
         {
-            if (Chi != 4) throw new Exception("Chi Non 4");
-            Upsilon = Upsilon ^ Ohm ^ Pi;
-            Chi = 7;
+            if(Chi != 4 && Chi != 5) throw new Exception("Chi Non 4 or 5");
+            if (Chi == 4)
+            {
+                Upsilon = Upsilon ^ Ohm ^ Pi;
+                Chi = 7;
+            }
+            if (Chi == 5)
+            {
+                Upsilon = Upsilon ^ Ohm;
+                Chi = 6;
+            }
         }
 
         public void Lambda()
