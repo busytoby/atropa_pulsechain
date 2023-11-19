@@ -28,9 +28,9 @@ namespace Dysnomia
             Psi.Tau.ReleaseMutex();
 
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
+            // Catch 381
             Nu.Theta(Psi.Upsilon.Omicron);
             Nu.Beta(Rho.Upsilon.Omega);
-            // Catch 381
             Nu.Iota();
             Nu.Lambda();
             Nu.Alpha();
