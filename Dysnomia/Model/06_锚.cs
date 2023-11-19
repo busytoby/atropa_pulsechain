@@ -12,7 +12,8 @@ namespace Dysnomia
         public Zuo Mu;
         public ë Rho;
         public ë Psi;
-        public Faung Nu;
+        public Fa Nu;
+        public Faung Eta;
         public int Gamma = 1;
 
         public 锚()
@@ -27,15 +28,14 @@ namespace Dysnomia
             while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Psi.Tau.WaitOne(); }
             Psi.Tau.ReleaseMutex();
 
-            Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
-            // Catch 381
-            Nu.Theta(Psi.Upsilon.Omicron);
-            Nu.Beta(Rho.Upsilon.Omega);
-            Nu.Iota();
-            Nu.Lambda();
-            Nu.Alpha();
+            Nu = Mu.Mu.Psi.Pi(Mu.Mu.Mu.Upsilon.Coordinate);
+            Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Mu.Mu.Mu.Upsilon.Coordinate);
+            Rho.Psi.Mu.Alpha();
+            Psi.Nu.Alpha();
+            Rho.Sigma.Eta.Alpha();
         }
 
+        /*
         public Fa Pi()
         {
             List<Faung> Beta = new List<Faung>();
@@ -73,6 +73,7 @@ namespace Dysnomia
             Beta.clear();
             return Iota;
             */
-        }
+        //}
+
     }
 }
