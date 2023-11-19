@@ -41,11 +41,17 @@ namespace Dysnomia
                         Psi.Theta(Mu.Rod.Coordinate);
                     else if (Chi == 2)
                         Psi.Beta(Mu.Omicron);
-                    else if (Chi == 3)
+                    else if (Chi == 3 && Psi.Chi == 4)
+                    {
                         Psi.Alpha();
-                    else if (Chi == 4)
+                        Chi++;
+                    }
+                    else if (Chi == 4 && Mu.Chi == 4)
+                    {
                         Mu.Alpha();
-                    if (Chi < 5) Chi++;
+                        Chi++;
+                    }
+                    if (Chi < 3) Chi++;
                 } else if(Kappa == 2)
                 {
                     if (Chi == 0)

@@ -19,18 +19,20 @@ namespace Dysnomia
         {
             Mu = new Zuo();
             Rho = new ë(ref Mu, true);
+            Rho.Tau.WaitOne();
+            while (Rho.Chi < 5) { Rho.Tau.ReleaseMutex(); Thread.Sleep(2000); Rho.Tau.WaitOne(); }
+            Rho.Tau.ReleaseMutex();
             Psi = new ë(ref Mu, false);
+            Psi.Tau.WaitOne();
+            while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Psi.Tau.WaitOne(); }
+            Psi.Tau.ReleaseMutex();
+
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
-            BigInteger I = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Manifold);
-            BigInteger J = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Foundation);
-            BigInteger K = Math.ModPow(Nu.Rod.Element, Nu.Rod.Ring, Nu.Cone.Identity);
-            Faung Digamma = new Faung(I, J, K, Nu.Xi);
-            /*
-            Nu.Theta(Rho.Nu.Omicron);
-            Nu.Beta(Psi.Nu.Omega);
+            Nu.Theta(Rho.Upsilon.Omicron);
+            Nu.Beta(Psi.Upsilon.Omega);
             Nu.Iota();
             Nu.Lambda();
-            */
+            Nu.Alpha();
         }
 
         public Fa Pi()

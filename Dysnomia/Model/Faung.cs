@@ -186,7 +186,9 @@ namespace Dysnomia
 
         public void Alpha()
         {
+            if (Chi != 4) throw new Exception("Chi Non 4");
             Upsilon = Upsilon ^ Ohm ^ Pi;
+            Chi = 7;
         }
 
         public void Lambda()

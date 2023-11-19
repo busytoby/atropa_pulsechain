@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,10 @@ namespace Dysnomia
         public Faung Nu;
         public ည Eta;
         public ညြ Sigma;
+        public Faung Upsilon;
+        public Mutex Tau = new Mutex();
+        public Living Theta;
+        public int Chi = 0;
         public int Gamma = 1;
 
         public ë(ref Zuo Beta, bool Iota)
@@ -33,6 +38,30 @@ namespace Dysnomia
             else
                 Eta = new ည(ref Nu, ref Mu.Eta.Rho, false);
             Sigma = new ညြ(ref Rho, ref Psi, ref Eta);
+            Upsilon = Eta.Pi(false);
+            Theta = new Living(Phi);
+        }
+
+        public void Phi()
+        {
+            while (true)
+            {
+                Tau.WaitOne();
+                if (Chi == 0)
+                    Upsilon.Theta(Mu.Sigma.Omicron);
+                else if (Chi == 1)
+                    Upsilon.Beta(Mu.Upsilon.Omicron);
+                else if (Chi == 2)
+                    Upsilon.Iota();
+                else if (Chi == 3)
+                    Upsilon.Lambda();
+                else if (Chi == 4)
+                    Upsilon.Alpha();
+                if (Chi < 5) Chi++;
+
+                Tau.ReleaseMutex();
+                Thread.Sleep(400);
+            }
         }
     }
 }
