@@ -64,7 +64,9 @@ namespace Dysnomia
             else
                 Upsilon.Fuse(Beta.Mu.Rod.Secret, Iota.Mu.Cone.Signal, Omicron.Mu.Cone.Channel);
             Theta = Omicron;
+            Mu.Tau.WaitOne();
             while (Mu.Chi < 4) { Mu.Tau.ReleaseMutex(); Thread.Sleep(4000); Mu.Tau.WaitOne(); }
+            Theta.Tau.WaitOne();
             while (Theta.Chi < 4) { Theta.Tau.ReleaseMutex(); Thread.Sleep(4000); Theta.Tau.WaitOne(); }
             Eta.Theta(Theta.Mu.Omicron);
             Eta.Beta(Mu.Mu.Omicron);
