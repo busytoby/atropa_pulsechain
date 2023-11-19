@@ -28,8 +28,8 @@ namespace Dysnomia
             Psi.Tau.ReleaseMutex();
 
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
-            Nu.Theta(Rho.Upsilon.Omicron);
-            Nu.Beta(Psi.Upsilon.Omega);
+            Nu.Theta(Psi.Upsilon.Omicron);
+            Nu.Beta(Rho.Upsilon.Omega);
             Nu.Iota();
             Nu.Lambda();
             Nu.Alpha();
