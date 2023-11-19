@@ -30,6 +30,7 @@ namespace Dysnomia
             Nu = new Faung(ref Rho.Sigma.Upsilon, ref Psi.Sigma.Upsilon);
             Nu.Theta(Psi.Upsilon.Omicron);
             Nu.Beta(Rho.Upsilon.Omega);
+            // Catch 381
             Nu.Iota();
             Nu.Lambda();
             Nu.Alpha();
