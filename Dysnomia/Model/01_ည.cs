@@ -90,7 +90,7 @@ namespace Dysnomia
                     {
                         if (Nu != null) throw new Exception("Collapse");
                         Nu = new Faung(Mu.Upsilon, Mu.Rho, Mu.Pi, Rho.Barn);
-                        Chi = 4;
+                        Chi = 1;
                         Mu.Chi = 0;
                         Mu.Theta(Mu.Omicron);
                         Mu.Beta(Mu.Omicron);
