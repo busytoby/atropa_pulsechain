@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -28,8 +29,8 @@ namespace Dysnomia
             while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Psi.Tau.WaitOne(); }
             Psi.Tau.ReleaseMutex();
 
-            Nu = Mu.Mu.Psi.Pi(Mu.Mu.Mu.Upsilon.Coordinate);
-            Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Mu.Mu.Mu.Upsilon.Coordinate);
+            Nu = Mu.Mu.Psi.Pi(Mu.Mu.Mu.Upsilon.Barn);
+            Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Mu.Mu.Mu.Upsilon.Barn);
             Psi.Nu.Alpha(ref Rho.Psi.Mu);
             Rho.Psi.Tau.WaitOne();
             while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Rho.Psi.Tau.WaitOne(); }
