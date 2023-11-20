@@ -90,11 +90,16 @@ namespace Dysnomia
                     {
                         if (Nu != null) throw new Exception("Collapse");
                         Nu = new Faung(Mu.Upsilon, Mu.Rho, Mu.Pi, Rho.Barn);
-                        Chi = 1;
                         Mu.Chi = 1;
                         Mu.Beta(Mu.Omicron);
                         Mu.Iota();
                         Mu.Lambda();
+                        Psi.Chi = 1;
+                        Psi.Beta(Mu.Omicron);
+                        Psi.Iota();
+                        Psi.Lambda();
+                        Psi.Alpha();
+                        Chi = 5;
                     }
                     if (Chi < 5) Chi++;
                 }
