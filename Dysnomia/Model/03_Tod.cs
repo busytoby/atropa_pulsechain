@@ -16,12 +16,9 @@ namespace Dysnomia
         public Fa Tau;
         public int Gamma = 1;
 
-        static Atmos Eta = null;
-
         public Tod()
         {
             Mu = new ညြ(false);
-            if (Eta == null) Eta = new Atmos(ref Mu.Psi);
             Psi = new ညြ(true);
 
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
