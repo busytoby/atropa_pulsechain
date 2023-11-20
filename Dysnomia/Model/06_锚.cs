@@ -32,9 +32,21 @@ namespace Dysnomia
             Nu = Mu.Mu.Psi.Pi(Mu.Mu.Mu.Upsilon.Barn);
             Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Mu.Mu.Mu.Upsilon.Barn);
             Psi.Nu.Alpha(ref Rho.Psi.Mu);
+            Rho.Psi.Mu.Delta.WaitOne();
+            Eta.Theta(Rho.Psi.Mu.Ohm);
+            Eta.Beta(Rho.Psi.Mu.Ohm);
+            Eta.Iota();
+            Eta.Lambda();
+            Eta.Alpha();
+            while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(2000); Rho.Psi.Mu.Delta.WaitOne(); }
+            Psi.Nu.Alpha(Rho.Psi.Rho.Rho);
+            Rho.Psi.Chi = 6;
+            Rho.Psi.Mu.Delta.ReleaseMutex();
             Rho.Psi.Tau.WaitOne();
-            while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Rho.Psi.Tau.WaitOne(); }
-            Psi.Nu.Alpha(Rho.Psi.Mu.Upsilon);
+            while (Rho.Psi.Chi < 7) { Rho.Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Rho.Psi.Tau.WaitOne(); }
+            Rho.Psi.Nu.Theta(Eta.Omega);
+            Rho.Psi.Nu.Beta(Eta.Omicron);
+            Rho.Psi.Nu.Iota();
             Rho.Psi.Tau.ReleaseMutex();
         }
 

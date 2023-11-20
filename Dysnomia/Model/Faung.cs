@@ -14,6 +14,7 @@ namespace Dysnomia
 
         public BigInteger Phi, Eta, Mu, Xi;
         public BigInteger Sigma, Rho, Upsilon, Ohm, Pi, Omicron, Omega;
+        public Mutex Delta = new Mutex();
         public short Chi;
         public delegate BigInteger Modulator(BigInteger A, BigInteger B, BigInteger C);
         Modulator Kappa;

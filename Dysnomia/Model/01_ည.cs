@@ -34,6 +34,8 @@ namespace Dysnomia
             while (true)
             {
                 Tau.WaitOne();
+                Mu.Delta.WaitOne();
+                Psi.Delta.WaitOne();
                 if ((Mu.Chi == 5 | Mu.Chi == 6) && Kappa != 3)
                     throw new Exception("Unplanned");
 
@@ -84,7 +86,6 @@ namespace Dysnomia
                     else if(Chi == 5 && Mu.Chi == 5)
                     {
                         Mu.Alpha();
-                        Chi++;
                     }
                     else if (Chi == 6 && Mu.Chi == 6)
                     {
@@ -99,11 +100,12 @@ namespace Dysnomia
                         Psi.Iota();
                         Psi.Lambda();
                         Psi.Alpha();
-                        Chi = 5;
+                        Chi++;
                     }
                     if (Chi < 5) Chi++;
                 }
-                    
+                Mu.Delta.ReleaseMutex();
+                Psi.Delta.ReleaseMutex();
                 Tau.ReleaseMutex();
                 Thread.Sleep(400);
             }

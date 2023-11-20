@@ -47,6 +47,9 @@ namespace Dysnomia
             while (true)
             {
                 Tau.WaitOne();
+                Upsilon.Delta.WaitOne();
+                Mu.Sigma.Delta.WaitOne();
+                Mu.Upsilon.Delta.WaitOne();
                 if (Chi == 0)
                     Upsilon.Theta(Mu.Sigma.Omicron);
                 else if (Chi == 1)
@@ -59,6 +62,9 @@ namespace Dysnomia
                     Upsilon.Alpha();
                 if (Chi < 5) Chi++;
 
+                Upsilon.Delta.ReleaseMutex();
+                Mu.Sigma.Delta.ReleaseMutex();
+                Mu.Upsilon.Delta.ReleaseMutex();
                 Tau.ReleaseMutex();
                 Thread.Sleep(400);
             }
