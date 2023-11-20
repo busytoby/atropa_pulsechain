@@ -91,8 +91,7 @@ namespace Dysnomia
                         if (Nu != null) throw new Exception("Collapse");
                         Nu = new Faung(Mu.Upsilon, Mu.Rho, Mu.Pi, Rho.Barn);
                         Chi = 1;
-                        Mu.Chi = 0;
-                        Mu.Theta(Mu.Omicron);
+                        Mu.Chi = 1;
                         Mu.Beta(Mu.Omicron);
                         Mu.Iota();
                         Mu.Lambda();
