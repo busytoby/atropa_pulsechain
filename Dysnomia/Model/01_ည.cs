@@ -13,7 +13,7 @@ namespace Dysnomia
         public Faung Mu;
         public Fa Rho;
         public Faung Psi;
-        public List<Faung> Nu;
+        public Faung Nu;
         public Mutex Tau = new Mutex();
         public Living Theta;
         public int Kappa;
@@ -26,7 +26,6 @@ namespace Dysnomia
             Rho = new Fa();
             Kappa = 1;
             Psi = Pi(true);
-            Nu = new List<Faung>();
             Theta = new Living(Phi);
         }
 
@@ -89,8 +88,8 @@ namespace Dysnomia
                     }
                     else if (Chi == 6 && Mu.Chi == 6)
                     {
-                        Faung Beta = new Faung(Mu.Upsilon, Mu.Rho, Mu.Pi, Rho.Barn);
-                        Nu.Add(Beta);
+                        if (Nu != null) throw new Exception("Collapse");
+                        Nu = new Faung(Mu.Upsilon, Mu.Rho, Mu.Pi, Rho.Barn);
                         Chi = 4;
                         Mu.Chi = 0;
                         Mu.Theta(Mu.Omicron);
@@ -126,7 +125,6 @@ namespace Dysnomia
                 Kappa = 3;
                 Psi = Pi(false);
             }
-            Nu = new List<Faung>();
             Theta = new Living(Phi);
         }
 
