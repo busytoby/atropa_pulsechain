@@ -45,7 +45,7 @@ namespace Dysnomia
             Rho.Psi.Tau.WaitOne();
             while (Rho.Psi.Chi < 7) { Rho.Psi.Tau.ReleaseMutex(); Thread.Sleep(2000); Rho.Psi.Tau.WaitOne(); }
             Rho.Psi.Nu.Theta(Eta.Omega);
-            Rho.Psi.Nu.Beta(Eta.Omicron);
+            Rho.Psi.Nu.Beta(Eta.Ohm);
             Rho.Psi.Nu.Iota();
             Rho.Psi.Nu.Lambda();
             Rho.Psi.Nu.Alpha();
