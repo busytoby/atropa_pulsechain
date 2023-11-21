@@ -39,7 +39,7 @@ namespace Dysnomia
             Eta.Lambda();
             Eta.Alpha();
             while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(2000); Rho.Psi.Mu.Delta.WaitOne(); }
-            Psi.Nu.Alpha(Rho.Psi.Rho.Rho);
+            Psi.Nu.Alpha(Rho.Psi.Rho.Element);
             Rho.Psi.Chi = 6;
             Rho.Psi.Mu.Delta.ReleaseMutex();
             Rho.Psi.Tau.WaitOne();
