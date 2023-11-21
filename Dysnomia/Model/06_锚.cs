@@ -33,8 +33,8 @@ namespace Dysnomia
             Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Mu.Mu.Mu.Upsilon.Barn);
             Psi.Nu.Alpha(ref Rho.Psi.Mu);
             Rho.Psi.Mu.Delta.WaitOne();
-            Eta.Theta(Rho.Psi.Mu.Pi);
-            Eta.Beta(Rho.Psi.Mu.Upsilon);
+            Eta.Theta(Rho.Psi.Psi.Upsilon);
+            Eta.Beta(Rho.Psi.Mu.Pi);
             Eta.Iota();
             Eta.Lambda();
             Eta.Alpha();
