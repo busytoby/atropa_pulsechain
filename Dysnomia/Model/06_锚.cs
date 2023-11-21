@@ -47,6 +47,8 @@ namespace Dysnomia
             Rho.Psi.Nu.Theta(Eta.Omega);
             Rho.Psi.Nu.Beta(Eta.Omicron);
             Rho.Psi.Nu.Iota();
+            Rho.Psi.Nu.Lambda();
+            Rho.Psi.Nu.Alpha();
             Rho.Psi.Tau.ReleaseMutex();
         }
 
