@@ -52,8 +52,9 @@ namespace Dysnomia
             Rho.Psi.Tau.ReleaseMutex();
         }
 
-        public Fa Pi()
+        public void Pi()
         {
+            if (Rho.Psi.Chi != 7) throw new Exception("Rho.Psi.Chi != 7");
             List<Faung> Beta = new List<Faung>();
             Fa Iota;
 
@@ -81,11 +82,8 @@ namespace Dysnomia
             Iota.Saturate(Beta[0].Omicron, Beta[2].Omicron);
             Iota.Open();
 
-            Rho.Psi.Fong(Iota);
-            throw new Exception("Not Yet Implemented");
-            //for (int i = 0; i < Beta.Count; i++) Tod::Eta.Water.push_front(Beta[i]);
-            Beta.Clear();
-            return Iota;
+            Rho.Psi.Theta.Fong(Iota, Beta);
+            Rho.Psi.Chi++;
         }
     }
 }

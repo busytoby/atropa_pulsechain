@@ -14,8 +14,7 @@ namespace Dysnomia
         public 錨()
         {
             Mu = new 锚();
-
-            Fa Rho = Mu.Pi();
+            Mu.Pi();
 
         }
     }
