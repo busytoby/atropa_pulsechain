@@ -11,6 +11,7 @@ namespace Dysnomia.Domain
     {
         public delegate void 活();
         public 活 Omega;
+        public Fa Chi;
         private Thread Omicron;
 
         public Living(活 O) 

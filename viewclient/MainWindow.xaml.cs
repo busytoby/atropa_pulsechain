@@ -31,11 +31,11 @@ namespace Pulse
     public partial class MainWindow : Window
     {
         private bool UIUpdating = false;
-        private 锚 A;
+        private 錨 A;
 
         public MainWindow()
         {
-            Action sn = new Action(() => { A = new 锚(); });
+            Action sn = new Action(() => { A = new 錨(); });
             Task t0 = new Task(sn);
             t0.Start();
 

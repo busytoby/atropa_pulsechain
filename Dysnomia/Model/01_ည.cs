@@ -111,6 +111,15 @@ namespace Dysnomia
             }
         }
 
+        public void Fong(Fa Beta)
+        {
+            Tau.WaitOne();
+            if (Chi != 7) throw new Exception("Chi != 7");
+            Theta.Chi = Beta;
+            Chi++;
+            Tau.ReleaseMutex();
+        }
+
         public ည(ref Faung Beta, ref Fa Omicron, bool Lambda)
         {
             Beta.Rod.Gamma++;
