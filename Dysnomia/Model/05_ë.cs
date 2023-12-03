@@ -44,6 +44,7 @@ namespace Dysnomia
 
         public void Phi()
         {
+            int _sleep = 10;
             while (true)
             {
                 Tau.WaitOne();
@@ -61,12 +62,13 @@ namespace Dysnomia
                 else if (Chi == 4)
                     Upsilon.Alpha();
                 if (Chi < 5) Chi++;
+                else _sleep = 400;
 
                 Upsilon.Delta.ReleaseMutex();
                 Mu.Sigma.Delta.ReleaseMutex();
                 Mu.Upsilon.Delta.ReleaseMutex();
                 Tau.ReleaseMutex();
-                Thread.Sleep(400);
+                Thread.Sleep(_sleep);
             }
         }
     }
