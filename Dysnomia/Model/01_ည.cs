@@ -111,6 +111,7 @@ namespace Dysnomia
                         _r++;
                     }
                     if (Chi < 5) Chi++;
+                    else _sleep = (_sleep >= 4000) ? 4000 : _sleep * 2;
                 }
                 Mu.Delta.ReleaseMutex();
                 Psi.Delta.ReleaseMutex();
