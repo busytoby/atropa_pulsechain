@@ -28,8 +28,7 @@ namespace Dysnomia
             Task t2 = new Task(() => { Anchor(ref Psi); Psi.Pi(); });
             t2.Start();
 
-            int i = 0;
-            while(i++ < 999) {
+            while(Mu == null || Rho == null || Psi == null) {
                 System.Threading.Thread.Sleep(2000);
             }
         }
