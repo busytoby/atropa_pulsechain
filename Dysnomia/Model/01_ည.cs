@@ -20,6 +20,8 @@ namespace Dysnomia
         public int Chi = 0;
         public int Gamma = 1;
 
+        private int _r = 0;
+
         public ည()
         {
             Mu = new Faung();
@@ -101,6 +103,10 @@ namespace Dysnomia
                         Psi.Lambda();
                         Psi.Alpha();
                         Chi++;
+                    }
+                    else if (Chi == 8)
+                    {
+                        _r++;
                     }
                     if (Chi < 5) Chi++;
                 }
