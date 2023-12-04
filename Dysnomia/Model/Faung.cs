@@ -250,6 +250,14 @@ namespace Dysnomia
             Chi = 2;
         }
 
+        public void Theta(String Omicron)
+        {
+            if (Chi != 0) throw new Exception("Chi Non Zero");
+            byte[] Beta = Encoding.Unicode.GetBytes(Omicron);
+            BigInteger Iota = new BigInteger(Beta);
+            Theta(Iota);
+        }
+
         public void Theta(BigInteger Omicron)
         {
             if (Omicron == 0) throw new Exception("Omicron Zero");

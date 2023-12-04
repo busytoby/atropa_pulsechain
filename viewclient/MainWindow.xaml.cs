@@ -42,6 +42,27 @@ namespace Pulse
             //Pulse.API Comptroller = new Pulse.API();
             InitializeComponent();
             //StartThreads();
+
+            while (A == null || A.Mu == null | A.Rho == null || A.Psi == null)
+                System.Threading.Thread.Sleep(1000);
+
+            BigInteger Code = A.Mu.Rho.Psi.Theta.Xi[0].Omicron;
+            BigInteger BinCode = A.Mu.Rho.Psi.Theta.Xi[0].Omega;
+            A.Mu.Rho.Psi.Theta.Xi[0].Chi = 0;
+            A.Mu.Rho.Psi.Theta.Xi[0].Theta("Atropa");
+            BigInteger OpCode = A.Mu.Rho.Psi.Theta.Xi[0].Omicron;
+            BigInteger BinOpCode = A.Mu.Rho.Psi.Theta.Xi[0].Omega;
+            A.Mu.Rho.Psi.Theta.Xi[0].Beta(OpCode);
+            BigInteger RefOpCode = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Eta;
+            BigInteger RefBinOpCode = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Kappa;
+            A.Mu.Rho.Psi.Theta.Xi[0].Chi = 0;
+            A.Mu.Rho.Psi.Theta.Xi[0].Theta("Atropa");
+            BigInteger OpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Omicron;
+            BigInteger BinOpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Omega;
+            A.Mu.Rho.Psi.Theta.Xi[0].Beta(BinOpCode);
+            BigInteger RefOpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Eta;
+            BigInteger RefBinOpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Kappa;
+
         }
 
         private void StartThreads()
