@@ -64,8 +64,7 @@ namespace Pulse
                 C == null || C.Rho == null || C.Psi == null || C.Nu == null ||
                 D == null || D.Rho == null || D.Psi == null || D.Nu == null)
                 System.Threading.Thread.Sleep(1000);
-            //OpCode OPC1 = A.Code();
-            //OpCode OPC2 = A.Code("Atropa");
+
             int i = 99;
         }
 

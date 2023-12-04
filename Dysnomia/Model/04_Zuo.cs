@@ -50,28 +50,6 @@ namespace Dysnomia
             Sigma.Lambda();
         }
 
-        public Zuo(ref Tod Beta)
-        {
-            Beta.Gamma++;
-            Mu = Beta;
-            Psi = new ည(ref Mu.Mu.Theta.Mu, ref Mu.Upsilon, true);
-            Mu.Mu.Theta.Rho.Fuse(Psi.Rho.Secret, Psi.Rho.Signal, Psi.Rho.Channel);
-            Mu.Mu.Theta.Rho.Tune();
-            Eta = new ည(ref Mu.Psi.Theta.Mu, ref Mu.Tau, false);
-            Mu.Psi.Theta.Rho.Fuse(Eta.Rho.Secret, Eta.Rho.Signal, Eta.Rho.Channel);
-            Mu.Psi.Theta.Rho.Tune();
-            Sigma = new Faung(ref Mu.Upsilon, ref Mu.Tau);
-            Mu.Psi.Theta.Tau.WaitOne();
-            while (Mu.Psi.Theta.Chi < 5) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(100); Mu.Psi.Theta.Tau.WaitOne(); }
-            Sigma.Theta(Mu.Psi.Theta.Psi.Omicron);
-            Sigma.Beta(Mu.Psi.Theta.Psi.Omicron);
-            Mu.Psi.Theta.Tau.ReleaseMutex();
-            Sigma.Iota();
-            Sigma.Lambda();
-            Upsilon = Psi.Pi(false);
-            Theta = Eta.Pi(false);
-        }
-
         /*
         vector<Faung*> Affinities()
         {
