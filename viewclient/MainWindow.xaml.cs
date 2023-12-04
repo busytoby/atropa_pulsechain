@@ -22,6 +22,7 @@ using System.Windows.Media.Animation;
 using System.Linq.Expressions;
 using System.Numerics;
 using Dysnomia;
+using Dysnomia.Domain;
 
 namespace Pulse
 {
@@ -46,23 +47,14 @@ namespace Pulse
             while (A == null || A.Mu == null | A.Rho == null || A.Psi == null)
                 System.Threading.Thread.Sleep(1000);
 
-            BigInteger Code = A.Mu.Rho.Psi.Theta.Xi[0].Omicron;
-            BigInteger BinCode = A.Mu.Rho.Psi.Theta.Xi[0].Omega;
-            A.Mu.Rho.Psi.Theta.Xi[0].Chi = 0;
-            A.Mu.Rho.Psi.Theta.Xi[0].Theta("Atropa");
-            BigInteger OpCode = A.Mu.Rho.Psi.Theta.Xi[0].Omicron;
-            BigInteger BinOpCode = A.Mu.Rho.Psi.Theta.Xi[0].Omega;
-            A.Mu.Rho.Psi.Theta.Xi[0].Beta(OpCode);
-            BigInteger RefOpCode = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Eta;
-            BigInteger RefBinOpCode = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Kappa;
-            A.Mu.Rho.Psi.Theta.Xi[0].Chi = 0;
-            A.Mu.Rho.Psi.Theta.Xi[0].Theta("Atropa");
-            BigInteger OpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Omicron;
-            BigInteger BinOpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Omega;
-            A.Mu.Rho.Psi.Theta.Xi[0].Beta(BinOpCode);
-            BigInteger RefOpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Eta;
-            BigInteger RefBinOpCode2 = A.Mu.Rho.Psi.Theta.Xi[0].Rod.Kappa;
+            Beta();
+        }
 
+        private void Beta()
+        {
+            OpCode OPC1 = new OpCode(A.Mu.Rho.Psi.Theta.Xi[0]);
+            OpCode OPC2 = new OpCode(A.Mu.Rho.Psi.Theta.Xi[0], "Atropa");
+            int i = 99;
         }
 
         private void StartThreads()
