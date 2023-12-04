@@ -52,17 +52,17 @@ namespace Pulse
             InitializeComponent();
             //StartThreads();
 
+            Task t4 = new Task(() => { Beta(); });
+            t4.Start();           
+        }
+
+        private void Beta()
+        {
             while (A == null || A.Mu == null | A.Rho == null || A.Psi == null ||
                 B == null || B.Mu == null || B.Rho == null || B.Psi == null ||
                 C == null || C.Mu == null || C.Rho == null || C.Psi == null ||
                 D == null || D.Mu == null || D.Rho == null || D.Psi == null)
                 System.Threading.Thread.Sleep(1000);
-
-            Beta();
-        }
-
-        private void Beta()
-        {
             //OpCode OPC1 = A.Code();
             //OpCode OPC2 = A.Code("Atropa");
             int i = 99;
