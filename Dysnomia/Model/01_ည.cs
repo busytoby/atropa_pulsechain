@@ -33,7 +33,7 @@ namespace Dysnomia
 
         public void Phi()
         {
-            int _sleep = 10;
+            int _sleep = 1;
             while (true)
             {
                 Tau.WaitOne();

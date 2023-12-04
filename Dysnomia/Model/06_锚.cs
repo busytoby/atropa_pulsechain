@@ -28,11 +28,11 @@ namespace Dysnomia
                 Mu = new Zuo();
             Rho = new ë(ref Mu, true);
             Rho.Tau.WaitOne();
-            while (Rho.Chi < 5) { Rho.Tau.ReleaseMutex(); Thread.Sleep(100); Rho.Tau.WaitOne(); }
+            while (Rho.Chi < 5) { Rho.Tau.ReleaseMutex(); Thread.Sleep(40); Rho.Tau.WaitOne(); }
             Rho.Tau.ReleaseMutex();
             Psi = new ë(ref Mu, false);
             Psi.Tau.WaitOne();
-            while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(100); Psi.Tau.WaitOne(); }
+            while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(40); Psi.Tau.WaitOne(); }
             Psi.Tau.ReleaseMutex();
 
             Nu = Mu.Mu.Psi.Pi(Mu.Mu.Mu.Upsilon.Barn);
@@ -44,12 +44,12 @@ namespace Dysnomia
             Eta.Iota();
             Eta.Lambda();
             Eta.Alpha();
-            while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(100); Rho.Psi.Mu.Delta.WaitOne(); }
+            while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(40); Rho.Psi.Mu.Delta.WaitOne(); }
             Psi.Nu.Alpha(Rho.Psi.Rho.Element);
             Rho.Psi.Chi = 6;
             Rho.Psi.Mu.Delta.ReleaseMutex();
             Rho.Psi.Tau.WaitOne();
-            while (Rho.Psi.Chi < 7) { Rho.Psi.Tau.ReleaseMutex(); Thread.Sleep(100); Rho.Psi.Tau.WaitOne(); }
+            while (Rho.Psi.Chi < 7) { Rho.Psi.Tau.ReleaseMutex(); Thread.Sleep(40); Rho.Psi.Tau.WaitOne(); }
             Rho.Psi.Nu.Theta(Eta.Pi);
             Rho.Psi.Nu.Beta(Eta.Upsilon);
             Rho.Psi.Nu.Iota();
