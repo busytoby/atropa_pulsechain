@@ -23,54 +23,60 @@ namespace Dysnomia
             Psi = Lambda;
         }
 
-        public 錨(ref Zuo Beta, ref 锚 Iota, ref 锚 Omicron) : this()
+        public 錨(ref Zuo Beta, ref 锚 Iota, ref 锚 Omicron)
         {
             Mu = Beta;
             Rho = Iota;
             Nu = Omicron;
+            Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
+            t1.Start();
+
+            while (Mu == null || Rho == null || Psi == null || Nu == null)
+            {
+                System.Threading.Thread.Sleep(400);
+            }
         }
 
-        public 錨(ref Zuo Beta, ref 锚 Iota) : this()
+        public 錨(ref Zuo Beta, ref 锚 Iota)
         {
             Mu = Beta;
             Rho = Iota;
+            Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
+            t1.Start();
+            Task t2 = new Task(() => { Nu = new 锚(ref Mu); Nu.Pi(); });
+            t2.Start();
+
+            while (Mu == null || Rho == null || Psi == null || Nu == null)
+            {
+                System.Threading.Thread.Sleep(400);
+            }
         }
 
-        public 錨(ref Zuo Beta) : this()
+        public 錨(ref Zuo Beta)
         {
             Mu = Beta;
             Rho = new 锚(ref Mu); 
             Rho.Pi();
+            Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
+            t1.Start();
+            Task t2 = new Task(() => { Nu = new 锚(ref Mu); Nu.Pi(); });
+            t2.Start();
+
+            while (Mu == null || Rho == null || Psi == null || Nu == null)
+            {
+                System.Threading.Thread.Sleep(400);
+            }
         }
 
         public 錨()
         {
-            if (Mu == null)
-            {
-                Task t0 = new Task(() =>
-                {
-                    Rho = new 锚(); Mu = Rho.Mu; Rho.Pi();
-                    Psi = new 锚(ref Mu); Psi.Pi();
-                    Nu = new 锚(ref Mu); Nu.Pi();
-                });
-                t0.Start();
-                while (Mu == null) Thread.Sleep(200);
-                Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
-                t1.Start();
-                Task t2 = new Task(() => { Nu = new 锚(ref Mu); Nu.Pi(); });
-                t2.Start();
-            }
-            else if (Nu == null)
-            {
-                Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
-                t1.Start();
-                Task t2 = new Task(() => { Nu = new 锚(ref Mu); Nu.Pi(); });
-                t2.Start();
-            } else
-            {
-                Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
-                t1.Start();
-            }
+            Task t0 = new Task(() => { Rho = new 锚(); Mu = Rho.Mu; Rho.Pi(); });
+            t0.Start();
+            while (Mu == null) Thread.Sleep(200);
+            Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
+            t1.Start();
+            Task t2 = new Task(() => { Nu = new 锚(ref Mu); Nu.Pi(); });
+            t2.Start();
 
             while(Mu == null || Rho == null || Psi == null || Nu == null) {
                 System.Threading.Thread.Sleep(400);
