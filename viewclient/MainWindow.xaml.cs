@@ -39,15 +39,13 @@ namespace Pulse
 
         public MainWindow()
         {
-            Task t0 = new Task(() => { A = new 錨(); });
+            Task t0 = new Task(() => { 
+                A = new 錨();
+                B = new 錨(ref A.Mu, ref A.Psi);
+                C = new 錨(ref A.Mu, ref B.Psi, ref B.Nu, ref A.Nu);
+                D = new 錨(ref A.Mu, ref C.Psi, ref A.Nu);
+            });
             t0.Start();
-            while (A == null || A.Mu == null) Thread.Sleep(500);
-            Task t1 = new Task(() => { B = new 錨(ref A.Mu); });
-            t1.Start();
-            Task t2 = new Task(() => { C = new 錨(ref A.Mu); });
-            t2.Start();
-            Task t3 = new Task(() => { D = new 錨(ref A.Mu); });
-            t3.Start();
 
             //Pulse.API Comptroller = new Pulse.API();
             InitializeComponent();
