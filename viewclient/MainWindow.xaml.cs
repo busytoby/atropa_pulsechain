@@ -52,8 +52,8 @@ namespace Pulse
 
         private void Beta()
         {
-            OpCode OPC1 = new OpCode(A.Mu.Rho.Psi.Theta.Xi[0]);
-            OpCode OPC2 = new OpCode(A.Mu.Rho.Psi.Theta.Xi[0], "Atropa");
+            OpCode OPC1 = A.Code();
+            OpCode OPC2 = A.Code("Atropa");
             int i = 99;
         }
 

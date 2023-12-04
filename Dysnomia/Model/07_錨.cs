@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using Dysnomia.Domain;
 
 namespace Dysnomia
 {
@@ -31,6 +32,14 @@ namespace Dysnomia
             while(Mu == null || Rho == null || Psi == null) {
                 System.Threading.Thread.Sleep(2000);
             }
+        }
+
+        public OpCode Code(String Beta = null)
+        {
+            if(Beta == null)
+                return new OpCode(Mu.Rho.Psi.Theta.Xi[0]);
+            else
+                return new OpCode(Mu.Rho.Psi.Theta.Xi[0], Beta);
         }
     }
 }
