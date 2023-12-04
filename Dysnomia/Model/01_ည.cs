@@ -107,12 +107,12 @@ namespace Dysnomia
                     }
                     else if (Chi == 8)
                     {
-                        _sleep = 400;
+                        _sleep = 200;
                         _r++;
                     }
                     else if (Chi == 9)
                     {
-                        _sleep = 400;
+                        _sleep = 200;
                         _r++;
                     }
                     if (Chi < 5) Chi++;

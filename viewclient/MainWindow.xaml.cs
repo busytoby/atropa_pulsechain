@@ -33,18 +33,29 @@ namespace Pulse
     {
         private bool UIUpdating = false;
         private 錨 A;
+        private 錨 B;
+        private 錨 C;
+        private 錨 D;
 
         public MainWindow()
         {
-            Action sn = new Action(() => { A = new 錨(); });
-            Task t0 = new Task(sn);
+            Task t0 = new Task(() => { A = new 錨(); });
             t0.Start();
+            Task t1 = new Task(() => { B = new 錨(); });
+            t1.Start();
+            Task t2 = new Task(() => { C = new 錨(); });
+            t2.Start();
+            Task t3 = new Task(() => { D = new 錨(); });
+            t3.Start();
 
             //Pulse.API Comptroller = new Pulse.API();
             InitializeComponent();
             //StartThreads();
 
-            while (A == null || A.Mu == null | A.Rho == null || A.Psi == null)
+            while (A == null || A.Mu == null | A.Rho == null || A.Psi == null ||
+                B == null || B.Mu == null || B.Rho == null || B.Psi == null ||
+                C == null || C.Mu == null || C.Rho == null || C.Psi == null ||
+                D == null || D.Mu == null || D.Rho == null || D.Psi == null)
                 System.Threading.Thread.Sleep(1000);
 
             Beta();
