@@ -33,13 +33,5 @@ namespace Dysnomia
                 System.Threading.Thread.Sleep(2000);
             }
         }
-
-        public OpCode Code(String Beta = null)
-        {
-            if(Beta == null)
-                return new OpCode(Mu.Rho.Psi.Theta.Xi[0]);
-            else
-                return new OpCode(Mu.Rho.Psi.Theta.Xi[0], Beta);
-        }
     }
 }

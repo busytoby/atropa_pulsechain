@@ -110,6 +110,11 @@ namespace Dysnomia
                         _sleep = 400;
                         _r++;
                     }
+                    else if (Chi == 9)
+                    {
+                        _sleep = 400;
+                        _r++;
+                    }
                     if (Chi < 5) Chi++;
                     else _sleep = (_sleep >= 4000) ? 4000 : _sleep * 2;
                 }
