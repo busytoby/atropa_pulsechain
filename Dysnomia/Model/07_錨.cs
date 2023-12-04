@@ -15,7 +15,7 @@ namespace Dysnomia
         public 锚 Psi;
         public 锚 Nu;
 
-        public 錨(Zuo Beta) : this()
+        public 錨(ref Zuo Beta) : this()
         {
             Mu = Beta;
         }
@@ -29,19 +29,19 @@ namespace Dysnomia
             }
             else
             {
-                Task t0 = new Task(() => { Rho = new 锚(Mu); Rho.Pi(); });
+                Task t0 = new Task(() => { Rho = new 锚(ref Mu); Rho.Pi(); });
                 t0.Start();
             }
             
             Task t1 = new Task(() => {
                 while (Mu == null) Thread.Sleep(500);
-                Psi = new 锚(Mu); Psi.Pi(); 
+                Psi = new 锚(ref Mu); Psi.Pi(); 
             });
             t1.Start();
             
             Task t2 = new Task(() => {
                 while (Mu == null) Thread.Sleep(500);
-                Nu = new 锚(Mu); Nu.Pi(); 
+                Nu = new 锚(ref Mu); Nu.Pi(); 
             });
             t2.Start();
 

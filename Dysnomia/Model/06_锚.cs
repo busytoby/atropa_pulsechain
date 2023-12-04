@@ -17,7 +17,7 @@ namespace Dysnomia
         public Faung Eta;
         public int Gamma = 1;
 
-        public 锚(Zuo Beta) : this()
+        public 锚(ref Zuo Beta) : this()
         {
             Mu = Beta;
         }
