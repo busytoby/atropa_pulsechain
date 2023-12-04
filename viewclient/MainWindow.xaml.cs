@@ -41,11 +41,12 @@ namespace Pulse
         {
             Task t0 = new Task(() => { A = new 錨(); });
             t0.Start();
-            Task t1 = new Task(() => { B = new 錨(); });
+            while (A == null || A.Mu == null) Thread.Sleep(500);
+            Task t1 = new Task(() => { B = new 錨(A.Mu); });
             t1.Start();
-            Task t2 = new Task(() => { C = new 錨(); });
+            Task t2 = new Task(() => { C = new 錨(A.Mu); });
             t2.Start();
-            Task t3 = new Task(() => { D = new 錨(); });
+            Task t3 = new Task(() => { D = new 錨(A.Mu); });
             t3.Start();
 
             //Pulse.API Comptroller = new Pulse.API();
@@ -58,10 +59,10 @@ namespace Pulse
 
         private void Beta()
         {
-            while (A == null || A.Mu == null | A.Rho == null || A.Psi == null ||
-                B == null || B.Mu == null || B.Rho == null || B.Psi == null ||
-                C == null || C.Mu == null || C.Rho == null || C.Psi == null ||
-                D == null || D.Mu == null || D.Rho == null || D.Psi == null)
+            while (A == null || A.Mu == null | A.Rho == null || A.Psi == null || A.Nu == null ||
+                B == null || B.Rho == null || B.Psi == null || B.Nu == null ||
+                C == null || C.Rho == null || C.Psi == null || C.Nu == null ||
+                D == null || D.Rho == null || D.Psi == null || D.Nu == null)
                 System.Threading.Thread.Sleep(1000);
             //OpCode OPC1 = A.Code();
             //OpCode OPC2 = A.Code("Atropa");

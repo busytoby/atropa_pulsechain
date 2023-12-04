@@ -10,27 +10,43 @@ namespace Dysnomia
 {
     public class 錨
     {
-        public 锚 Mu;
+        public Zuo Mu;
         public 锚 Rho;
         public 锚 Psi;
+        public 锚 Nu;
 
-
-        private static void Anchor(ref 锚 Beta)
+        public 錨(Zuo Beta) : this()
         {
-            Beta = new 锚();
+            Mu = Beta;
         }
 
         public 錨()
         {
-            Task t0 = new Task(() => { Anchor(ref Mu); Mu.Pi(); });
-            t0.Start();
-            Task t1 = new Task(() => { Anchor(ref Rho); Rho.Pi(); });
+            if (Mu == null)
+            {
+                Task t0 = new Task(() => { Rho = new 锚(); Mu = Rho.Mu; Rho.Pi(); });
+                t0.Start();
+            }
+            else
+            {
+                Task t0 = new Task(() => { Rho = new 锚(Mu); Rho.Pi(); });
+                t0.Start();
+            }
+            
+            Task t1 = new Task(() => {
+                while (Mu == null) Thread.Sleep(500);
+                Psi = new 锚(Mu); Psi.Pi(); 
+            });
             t1.Start();
-            Task t2 = new Task(() => { Anchor(ref Psi); Psi.Pi(); });
+            
+            Task t2 = new Task(() => {
+                while (Mu == null) Thread.Sleep(500);
+                Nu = new 锚(Mu); Nu.Pi(); 
+            });
             t2.Start();
 
-            while(Mu == null || Rho == null || Psi == null) {
-                System.Threading.Thread.Sleep(2000);
+            while(Mu == null || Rho == null || Psi == null || Nu == null) {
+                System.Threading.Thread.Sleep(1000);
             }
         }
     }

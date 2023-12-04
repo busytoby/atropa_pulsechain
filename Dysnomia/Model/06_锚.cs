@@ -17,9 +17,15 @@ namespace Dysnomia
         public Faung Eta;
         public int Gamma = 1;
 
+        public 锚(Zuo Beta) : this()
+        {
+            Mu = Beta;
+        }
+
         public 锚()
         {
-            Mu = new Zuo();
+            if(Mu == null)
+                Mu = new Zuo();
             Rho = new ë(ref Mu, true);
             Rho.Tau.WaitOne();
             while (Rho.Chi < 5) { Rho.Tau.ReleaseMutex(); Thread.Sleep(100); Rho.Tau.WaitOne(); }
