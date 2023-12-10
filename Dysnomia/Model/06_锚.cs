@@ -20,13 +20,7 @@ namespace Dysnomia
         {
             Zuo.Gamma++;
             Rho = new ë(true);
-            Rho.Tau.WaitOne();
-            while (Rho.Chi < 5) { Rho.Tau.ReleaseMutex(); Thread.Sleep(40); Rho.Tau.WaitOne(); }
-            Rho.Tau.ReleaseMutex();
             Psi = new ë(false);
-            Psi.Tau.WaitOne();
-            while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(40); Psi.Tau.WaitOne(); }
-            Psi.Tau.ReleaseMutex();
 
             Nu = Zuo.Mu.Psi.Pi(Zuo.Mu.Mu.Upsilon.Barn);
             Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Zuo.Mu.Mu.Upsilon.Barn);
