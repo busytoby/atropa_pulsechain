@@ -54,6 +54,7 @@ namespace Pulse
 
             OpCode Alpha = new OpCode(A.Rho.Rho.Psi.Theta.Xi[0]);
             OpCode Beta = new OpCode(A.Rho.Rho.Psi.Theta.Xi[0], "Atropa");
+            OpCode Gamma = new OpCode(A.Rho.Rho.Psi.Theta.Xi[1], "X");
 
             int i = 99;
         }
