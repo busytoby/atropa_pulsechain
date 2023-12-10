@@ -10,20 +10,19 @@ namespace Dysnomia
 {
     public class 錨
     {
-        public Zuo Mu;
         public 锚 Rho;
         public 锚 Psi;
         public 锚 Nu;
 
         public 錨()
         {
-            Task t0 = new Task(() => { Rho = new 锚(); Mu = Rho.Mu; Rho.Pi(); });
-            t0.Start();
-            while (Mu == null) Thread.Sleep(100);
-            Task t1 = new Task(() => { Psi = new 锚(ref Mu); Psi.Pi(); });
-            t1.Start();
-            Task t2 = new Task(() => { Nu = new 锚(ref Mu); Nu.Pi(); });
-            t2.Start();
+            Zuo.Gamma++;
+            Rho = new 锚();
+            Rho.Pi();
+            Psi = new 锚();
+            Psi.Pi();
+            Nu = new 锚();
+            Nu.Pi();
         }
     }
 }

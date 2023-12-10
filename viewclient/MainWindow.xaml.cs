@@ -49,7 +49,7 @@ namespace Pulse
 
         private void Beta()
         {
-            while (A == null || A.Mu == null | A.Rho == null || A.Psi == null || A.Nu == null)
+            while (A == null || Zuo.Mu == null | A.Rho == null || A.Psi == null || A.Nu == null)
                 Thread.Sleep(400);
 
             int i = 99;

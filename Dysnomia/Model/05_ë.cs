@@ -9,7 +9,6 @@ namespace Dysnomia
 {
     public class ë
     {
-        public Zuo Mu;
         public ည Rho;
         public ည Psi;
         public Faung Nu;
@@ -21,22 +20,21 @@ namespace Dysnomia
         public int Chi = 0;
         public int Gamma = 1;
 
-        public ë(ref Zuo Beta, bool Iota)
+        public ë(bool Iota)
         {
-            Beta.Gamma++;
-            Mu = Beta;
-            Rho = new ည(ref Mu.Psi.Mu, ref Mu.Mu.Upsilon, Iota);
-            Psi = new ည(ref Mu.Eta.Mu, ref Mu.Psi.Rho, !Iota);
+            Zuo.Gamma++;
+            Rho = new ည(ref Zuo.Psi.Mu, ref Zuo.Mu.Upsilon, Iota);
+            Psi = new ည(ref Zuo.Eta.Mu, ref Zuo.Psi.Rho, !Iota);
             if (Iota)
-                Nu = Mu.Upsilon;
+                Nu = Zuo.Upsilon;
             else
-                Nu = Mu.Theta;
+                Nu = Zuo.Theta;
             Nu.Rod.Gamma++;
             Nu.Cone.Gamma++;
             if (Iota)
-                Eta = new ည(ref Nu, ref Mu.Psi.Rho, true);
+                Eta = new ည(ref Nu, ref Zuo.Psi.Rho, true);
             else
-                Eta = new ည(ref Nu, ref Mu.Eta.Rho, false);
+                Eta = new ည(ref Nu, ref Zuo.Eta.Rho, false);
             Sigma = new ညြ(ref Rho, ref Psi, ref Eta);
             Upsilon = Eta.Pi(false);
             Theta = new Living(Phi);
@@ -49,12 +47,12 @@ namespace Dysnomia
             {
                 Tau.WaitOne();
                 Upsilon.Delta.WaitOne();
-                Mu.Sigma.Delta.WaitOne();
-                Mu.Upsilon.Delta.WaitOne();
+                Zuo.Sigma.Delta.WaitOne();
+                Zuo.Upsilon.Delta.WaitOne();
                 if (Chi == 0)
-                    Upsilon.Theta(Mu.Sigma.Omicron);
+                    Upsilon.Theta(Zuo.Sigma.Omicron);
                 else if (Chi == 1)
-                    Upsilon.Beta(Mu.Upsilon.Omicron);
+                    Upsilon.Beta(Zuo.Upsilon.Omicron);
                 else if (Chi == 2)
                     Upsilon.Iota();
                 else if (Chi == 3)
@@ -65,8 +63,8 @@ namespace Dysnomia
                 else _sleep = 400;
 
                 Upsilon.Delta.ReleaseMutex();
-                Mu.Sigma.Delta.ReleaseMutex();
-                Mu.Upsilon.Delta.ReleaseMutex();
+                Zuo.Sigma.Delta.ReleaseMutex();
+                Zuo.Upsilon.Delta.ReleaseMutex();
                 Tau.ReleaseMutex();
                 Thread.Sleep(_sleep);
             }

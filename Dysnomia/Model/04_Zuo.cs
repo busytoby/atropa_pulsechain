@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 
 namespace Dysnomia
 {
-    public class Zuo
+    public static class Zuo
     {
-        public Tod Mu;
-        public ည Psi;
-        public ည Eta;
-        public Faung Sigma;
-        public Faung Upsilon;
-        public Faung Theta;
-        public int Gamma = 1;
+        public static Tod Mu;
+        public static ည Psi;
+        public static ည Eta;
+        public static Faung Sigma;
+        public static Faung Upsilon;
+        public static Faung Theta;
+        public static int Gamma = 1;
 
-        public Zuo()
+        static Zuo()
         {
             Mu = new Tod();
             Psi = new ည(ref Mu.Mu.Theta.Mu, ref Mu.Upsilon, true);

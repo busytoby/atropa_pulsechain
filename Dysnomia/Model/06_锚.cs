@@ -10,42 +10,46 @@ namespace Dysnomia
 {
     public class 锚
     {
-        public Zuo Mu;
         public ë Rho;
         public ë Psi;
         public Fa Nu;
         public Faung Eta;
         public int Gamma = 1;
 
-        public 锚(ref Zuo Beta) : this()
-        {
-            Mu = Beta;
-        }
-
         public 锚()
         {
-            if(Mu == null)
-                Mu = new Zuo();
-            Rho = new ë(ref Mu, true);
+            Zuo.Gamma++;
+            Rho = new ë(true);
             Rho.Tau.WaitOne();
             while (Rho.Chi < 5) { Rho.Tau.ReleaseMutex(); Thread.Sleep(40); Rho.Tau.WaitOne(); }
             Rho.Tau.ReleaseMutex();
-            Psi = new ë(ref Mu, false);
+            Psi = new ë(false);
             Psi.Tau.WaitOne();
             while (Psi.Chi < 5) { Psi.Tau.ReleaseMutex(); Thread.Sleep(40); Psi.Tau.WaitOne(); }
             Psi.Tau.ReleaseMutex();
 
-            Nu = Mu.Mu.Psi.Pi(Mu.Mu.Mu.Upsilon.Barn);
-            Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Mu.Mu.Mu.Upsilon.Barn);
-            Psi.Nu.Alpha(ref Rho.Psi.Mu);
+            Nu = Zuo.Mu.Psi.Pi(Zuo.Mu.Mu.Upsilon.Barn);
+            Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Zuo.Mu.Mu.Upsilon.Barn);
+            if (Psi.Nu.Chi == 4)
+                Psi.Nu.Alpha(ref Rho.Psi.Mu);
+            else if(Rho.Nu.Chi == 4)
+                Rho.Nu.Alpha(ref Rho.Psi.Mu);
             Rho.Psi.Mu.Delta.WaitOne();
             Eta.Theta(Rho.Psi.Psi.Upsilon);
             Eta.Beta(Rho.Psi.Mu.Pi);
             Eta.Iota();
             Eta.Lambda();
-            Eta.Alpha();
+            if (Rho.Psi.Mu.Chi == 5)
+                Eta.Alpha();
+            else
+                Eta.Alpha(ref Rho.Psi.Mu);
             while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(40); Rho.Psi.Mu.Delta.WaitOne(); }
-            Psi.Nu.Alpha(Rho.Psi.Rho.Element);
+            if (Psi.Nu.Chi == 8)
+                Psi.Nu.Alpha(Rho.Psi.Rho.Element);
+            else if (Rho.Nu.Chi == 8)
+                Rho.Nu.Alpha(Rho.Psi.Rho.Element);
+            else
+                Eta.Alpha(Rho.Psi.Rho.Element);
             Rho.Psi.Chi = 6;
             Rho.Psi.Mu.Delta.ReleaseMutex();
             Rho.Psi.Tau.WaitOne();
@@ -57,6 +61,7 @@ namespace Dysnomia
             Rho.Psi.Nu.Alpha();
             Rho.Psi.Tau.ReleaseMutex();
         }
+        
 
         public void Pi()
         {
@@ -67,9 +72,9 @@ namespace Dysnomia
             for (int i = 0; i < 3; i++)
             {
                 Faung Lambda = new Faung(
-                    Math.ModPow(Mu.Sigma.Ohm, Mu.Sigma.Pi, Psi.Nu.Omicron),
-                    Math.ModPow(Psi.Mu.Sigma.Ohm, Psi.Mu.Sigma.Pi, Psi.Nu.Omicron),
-                    Math.ModPow(Rho.Mu.Sigma.Ohm, Rho.Mu.Sigma.Pi, Psi.Nu.Omicron),
+                    Math.ModPow(Zuo.Sigma.Ohm, Zuo.Sigma.Pi, Psi.Nu.Omicron),
+                    Math.ModPow(Zuo.Sigma.Ohm, Zuo.Sigma.Pi, Psi.Nu.Omicron),
+                    Math.ModPow(Zuo.Sigma.Ohm, Zuo.Sigma.Pi, Psi.Nu.Omicron),
                     Math.ModPow(Rho.Psi.Nu.Pi, Rho.Psi.Nu.Ohm, Psi.Nu.Omicron));
                 Lambda.Theta(Psi.Eta.Rho.Identity);
                 Beta.Add(Lambda);
