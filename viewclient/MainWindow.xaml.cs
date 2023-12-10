@@ -52,6 +52,8 @@ namespace Pulse
             while (A == null || Zuo.Mu == null | A.Rho == null || A.Psi == null || A.Nu == null)
                 Thread.Sleep(400);
 
+            OpCode Beta = new OpCode(A.Rho.Rho.Psi.Theta.Xi[0], "Atropa");
+
             int i = 99;
         }
 
