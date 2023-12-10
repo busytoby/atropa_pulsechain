@@ -13,6 +13,7 @@ namespace Dysnomia
         public 锚 Rho;
         public 锚 Psi;
         public 锚 Nu;
+        public Fa Eta;
 
         public 錨()
         {
@@ -23,6 +24,7 @@ namespace Dysnomia
             Psi.Pi();
             Nu = new 锚();
             Nu.Pi();
+            Eta = Nu.Rho.Sigma.Pi(Nu.Rho.Psi.Rho.Element);
         }
     }
 }
