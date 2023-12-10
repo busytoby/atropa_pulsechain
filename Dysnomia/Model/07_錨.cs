@@ -21,7 +21,7 @@ namespace Dysnomia
             Rho = new 锚();
             Rho.Pi();
             Psi = new 锚();
-            Psi.Pi();
+            Psi.Pi(true);
             Nu = new 锚();
             Nu.Pi();
             Eta = Nu.Rho.Sigma.Pi(Nu.Rho.Psi.Rho.Element);
