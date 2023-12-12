@@ -1,6 +1,7 @@
 ﻿using Dysnomia.Domain;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -77,7 +78,11 @@ namespace Dysnomia
                 } else if(Kappa == 3)
                 {
                     if (Chi == 0)
+                    {
+                        if (Mu.Omicron.IsZero)
+                            Mu.Omicron = Mu.Rod.Kappa ^ Mu.Cone.Kappa;
                         Psi.Theta(Mu.Omicron);
+                    }
                     else if (Chi == 1)
                         Psi.Beta(Mu.Omicron);
                     else if (Chi == 2)
@@ -86,7 +91,7 @@ namespace Dysnomia
                         Psi.Lambda();
                     else if (Chi == 4)
                         Psi.Alpha();
-                    else if(Chi == 5 && Mu.Chi == 5)
+                    else if (Chi == 5 && Mu.Chi == 5)
                     {
                         Mu.Alpha();
                     }
