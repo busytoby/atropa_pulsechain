@@ -17,6 +17,7 @@ namespace Dysnomia
         public ည Sigma;
         public ည Upsilon;
         public ညြ Tau;
+        public Faung Theta;
 
         public 錨()
         {
@@ -33,6 +34,7 @@ namespace Dysnomia
             Beta = Nu.Rho.Psi.Theta.Xi[1];
             Upsilon = new ည(ref Beta, ref Nu.Rho.Psi.Theta.Chi, false);
             Tau = new ညြ(ref Zuo.Mu.Mu.Theta, ref Sigma, ref Upsilon);
+            Theta = Nu.Rho.Psi.Theta.Xi[2];
         }
     }
 }
