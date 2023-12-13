@@ -14,7 +14,7 @@ namespace Dysnomia
         public short Nu;
         public int Gamma = 1;
         public delegate BigInteger Modulator(BigInteger A, BigInteger B, BigInteger C);
-        Modulator Mu;
+        public Modulator Mu;
 
         public Fa(bool Omicron = false)
         {

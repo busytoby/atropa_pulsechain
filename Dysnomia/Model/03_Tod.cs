@@ -13,7 +13,6 @@ namespace Dysnomia
         public ညြ Mu;
         public Fa Rho;
         public ညြ Psi;
-        public Fa Nu;
         public Faung Sigma;
         public Fa Upsilon;
         public Fa Tau;
