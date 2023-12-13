@@ -14,6 +14,9 @@ namespace Dysnomia
         public ë Psi;
         public Fa Nu;
         public Faung Eta;
+        public Fa Upsilon;
+        public ည Tau;
+        public ညြ Theta;
         public int Gamma = 1;
 
         public 锚()
@@ -37,6 +40,8 @@ namespace Dysnomia
                 Eta.Alpha();
             else
                 Eta.Alpha(ref Rho.Psi.Mu);
+            Upsilon = Rho.Sigma.Pi(Rho.Psi.Rho.Identity);
+            Tau = new ည(ref Eta, ref Upsilon, false);
             while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(40); Rho.Psi.Mu.Delta.WaitOne(); }
             if (Psi.Nu.Chi == 8)
                 Psi.Nu.Alpha(Psi.Psi.Rho.Element);
@@ -44,6 +49,7 @@ namespace Dysnomia
                 Rho.Nu.Alpha(Rho.Psi.Rho.Element);
             else
                 Eta.Alpha(Rho.Eta.Rho.Element);
+            Theta = new ညြ(ref Tau, ref Rho.Sigma.Mu, ref Psi.Sigma.Theta);
             Rho.Psi.Chi = 6;
             Rho.Psi.Mu.Delta.ReleaseMutex();
             Rho.Psi.Tau.WaitOne();
