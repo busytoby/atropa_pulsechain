@@ -52,8 +52,7 @@ namespace Dysnomia
             if (Refaung)
                 Kappa = Math.ModPow;
             else
-                throw new Exception("Review");
-//                Kappa = Math.ModXOR;
+                Kappa = Math.ModXOR;
 
             while (Failed)
             {

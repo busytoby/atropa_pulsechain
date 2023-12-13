@@ -19,35 +19,41 @@ namespace Dysnomia
 
         static Zuo()
         {
-            Mu = new Tod();
-            Psi = new ည(ref Mu.Mu.Theta.Mu, ref Mu.Upsilon, true);
-            Mu.Mu.Theta.Rho.Fuse(Psi.Rho.Secret, Psi.Rho.Signal, Psi.Rho.Channel);
-            Mu.Mu.Theta.Rho.Tune();
-            Eta = new ည(ref Mu.Psi.Theta.Mu, ref Mu.Tau, false);
-            Mu.Psi.Theta.Rho.Fuse(Eta.Rho.Secret, Eta.Rho.Signal, Eta.Rho.Channel);
-            Mu.Psi.Theta.Rho.Tune();
-            Sigma = new Faung(ref Mu.Mu.Theta.Rho, ref Mu.Psi.Theta.Rho);
-            Upsilon = Psi.Pi(true);
-            Theta = Eta.Pi(true);
+            try
+            {
+                Mu = new Tod();
+                Psi = new ည(ref Mu.Mu.Theta.Mu, ref Mu.Upsilon, true);
+                Mu.Mu.Theta.Rho.Fuse(Psi.Rho.Secret, Psi.Rho.Signal, Psi.Rho.Channel);
+                Mu.Mu.Theta.Rho.Tune();
+                Eta = new ည(ref Mu.Psi.Theta.Mu, ref Mu.Tau, false);
+                Mu.Psi.Theta.Rho.Fuse(Eta.Rho.Secret, Eta.Rho.Signal, Eta.Rho.Channel);
+                Mu.Psi.Theta.Rho.Tune();
+                Sigma = new Faung(ref Mu.Mu.Theta.Rho, ref Mu.Psi.Theta.Rho);
+                Upsilon = Psi.Pi(true);
+                Theta = Eta.Pi(true);
 
-            Mu.Psi.Theta.Tau.WaitOne();
-            while (Mu.Psi.Theta.Chi < 4) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Psi.Theta.Tau.WaitOne(); }
-            Sigma.Theta(Mu.Psi.Theta.Psi.Omicron);
-            Sigma.Beta(Mu.Psi.Theta.Psi.Omega);
-            Mu.Psi.Theta.Tau.ReleaseMutex();
-            Sigma.Iota();
-            Eta.Tau.WaitOne();
-            while (Eta.Chi < 4) { Eta.Tau.ReleaseMutex(); Thread.Sleep(40); Eta.Tau.WaitOne(); }
-            Upsilon.Theta(Eta.Psi.Omega);
-            Upsilon.Beta(Eta.Psi.Omicron);
-            Upsilon.Iota();
-            Upsilon.Lambda();
-            Theta.Theta(Eta.Mu.Omega);
-            Theta.Beta(Eta.Mu.Omicron);
-            Eta.Tau.ReleaseMutex();
-            Theta.Iota();
-            Theta.Lambda();
-            Sigma.Lambda();
+                Mu.Psi.Theta.Tau.WaitOne();
+                while (Mu.Psi.Theta.Chi < 4) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Psi.Theta.Tau.WaitOne(); }
+                Sigma.Theta(Mu.Psi.Theta.Psi.Omicron);
+                Sigma.Beta(Mu.Psi.Theta.Psi.Omega);
+                Mu.Psi.Theta.Tau.ReleaseMutex();
+                Sigma.Iota();
+                Eta.Tau.WaitOne();
+                while (Eta.Chi < 4) { Eta.Tau.ReleaseMutex(); Thread.Sleep(40); Eta.Tau.WaitOne(); }
+                Upsilon.Theta(Eta.Psi.Omega);
+                Upsilon.Beta(Eta.Psi.Omicron);
+                Upsilon.Iota();
+                Upsilon.Lambda();
+                Theta.Theta(Eta.Mu.Omega);
+                Theta.Beta(Eta.Mu.Omicron);
+                Eta.Tau.ReleaseMutex();
+                Theta.Iota();
+                Theta.Lambda();
+                Sigma.Lambda();
+            } catch (Exception e)
+            {
+                int i = 99; 
+            }
         }
 
         /*
