@@ -30,14 +30,14 @@ namespace Dysnomia
             Mu.Tau.WaitOne();
             while (Mu.Chi < 2) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
             Eta.Theta(Mu.Mu.Omicron);
-            Eta.Beta(Mu.Psi.Omicron);
+            Eta.Beta(Mu.Psi.Omega);
             Mu.Tau.ReleaseMutex();
             Upsilon = new Fa();
             Theta = new ည(ref Eta, ref Upsilon, false);
             Eta.Iota();
             Mu.Tau.WaitOne();
             while (Mu.Chi < 3) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
-            Mu.Mu.Beta(Theta.Mu.Omicron);
+            Mu.Mu.Beta(Theta.Mu.Omega);
             Mu.Psi.Iota();
             Mu.Mu.Iota();
             Mu.Mu.Lambda();
