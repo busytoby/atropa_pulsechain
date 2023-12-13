@@ -92,19 +92,21 @@ namespace Dysnomia
             }
         }
 
-        public Faung(ref Fa Beta, BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi)
+        public Faung(ref Fa Beta, BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, bool Phi = false)
         {
             Rod = Beta;
             if (!Rod.Barn.IsZero)
                 throw new Exception("Non Zero Barn");
 
             bool Failed = true;
-            Kappa = Math.ModPow;
+            if (Phi) Kappa = Math.ModXOR;
+            else Kappa = Math.ModPow;
+
             while (Failed)
             {
                 try
                 {
-                    Cone = new Fa();
+                    Cone = new Fa(Phi);
                     Cone.Kappa = -1;
                     if (Rho == Ohm) Rho = Math.Random();
                     FuseAndOpen(Rho, Upsilon, Ohm, Xi);

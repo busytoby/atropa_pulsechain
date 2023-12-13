@@ -11,20 +11,28 @@ namespace Dysnomia
     public class Tod
     {
         public ညြ Mu;
+        public Fa Rho;
         public ညြ Psi;
+        public Fa Nu;
+        public Faung Sigma;
         public Fa Upsilon;
         public Fa Tau;
+        public ည Theta;
         public int Gamma = 1;
 
         public Tod()
         {
             Mu = new ညြ(false);
+            Rho = new Fa(true);
             Psi = new ညြ(true);
-
+            Sigma = new Faung(ref Rho, Mu.Eta.Rod.Secret, Psi.Eta.Cone.Signal, Mu.Eta.Rod.Channel, Psi.Eta.Cone.Identity, true);
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
             Tau = Psi.Pi(Psi.Theta.Mu.Omega);
+
+            Theta = new ည(ref Sigma, ref Rho, true);
         }
 
+        /*
         public Tod(ref ညြ Beta, ref Fa Omicron, ref ည Iota)
         {
             Beta.Gamma++;
@@ -34,6 +42,7 @@ namespace Dysnomia
             Upsilon = Mu.Pi(Mu.Theta.Mu.Cone.Coordinate);
             Tau = Omicron;
         }
+        */ 
 
         /*
         vector<Faung*> Affinities()

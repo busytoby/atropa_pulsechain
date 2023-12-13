@@ -65,7 +65,11 @@ namespace Dysnomia
                 } else if(Kappa == 2)
                 {
                     if (Chi == 0)
+                    {
+                        if (Psi.Omicron.IsZero)
+                            Psi.Omicron = Psi.Rod.Identity ^ Psi.Cone.Identity;
                         Mu.Theta(Psi.Omicron);
+                    }
                     else if (Chi == 1)
                         Mu.Beta(Psi.Omicron);
                     else if (Chi == 2)
