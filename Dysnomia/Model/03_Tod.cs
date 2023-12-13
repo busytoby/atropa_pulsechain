@@ -25,8 +25,8 @@ namespace Dysnomia
             Rho = new Fa(true);
             Psi = new ညြ(true);
 
-            Rho.Fuse(Mu.Eta.Rod.Manifold, Psi.Eta.Cone.Manifold, Mu.Eta.Rod.Barn);
-            Sigma = new Faung(ref Rho, Mu.Eta.Rod.Manifold, Psi.Eta.Cone.Manifold, Mu.Eta.Rod.Barn, Psi.Eta.Cone.Barn, true);
+            Rho.Fuse(Mu.Eta.Cone.Manifold, Psi.Eta.Rod.Manifold, Mu.Eta.Rod.Barn);
+            Sigma = new Faung(ref Rho, Mu.Eta.Cone.Manifold, Psi.Eta.Rod.Manifold, Mu.Eta.Rod.Barn, Psi.Eta.Cone.Barn, true);
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
             Tau = Psi.Pi(Psi.Theta.Mu.Omega);
 
