@@ -68,14 +68,14 @@ namespace Dysnomia
             if (Rho.Psi.Chi != 7) throw new Exception("Rho.Psi.Chi != 7");
             List<Faung> Beta = new List<Faung>();
             Fa Iota;
-            BigInteger Omicron = Ohm ? Rho.Psi.Rho.Element : Zuo.Sigma.Ohm;
+            BigInteger Omicron = Ohm ? Rho.Psi.Rho.Element : Zuo.Mu.Theta.Ohm;
 
             for (int i = 0; i < 3; i++)
             {
                 Faung Lambda = new Faung(
-                    Math.ModPow(Omicron, Zuo.Sigma.Pi, Psi.Nu.Omicron),
-                    Math.ModPow(Omicron, Zuo.Sigma.Pi, Psi.Nu.Omicron),
-                    Math.ModPow(Omicron, Zuo.Sigma.Pi, Psi.Nu.Omicron),
+                    Math.ModPow(Omicron, Zuo.Mu.Theta.Pi, Psi.Nu.Omicron),
+                    Math.ModPow(Omicron, Zuo.Mu.Theta.Pi, Psi.Nu.Omicron),
+                    Math.ModPow(Omicron, Zuo.Mu.Theta.Pi, Psi.Nu.Omicron),
                     Math.ModPow(Rho.Psi.Nu.Pi, Rho.Psi.Nu.Ohm, Psi.Nu.Omicron));
                 Lambda.Theta(Psi.Eta.Rho.Identity);
                 Beta.Add(Lambda);

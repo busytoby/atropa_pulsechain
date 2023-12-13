@@ -36,9 +36,9 @@ namespace Dysnomia
             Sigma = new ညြ(ref Rho, ref Psi, ref Eta);
             Upsilon = Eta.Pi(false);
             Upsilon.Delta.WaitOne();
-            Zuo.Sigma.Delta.WaitOne();
+            Zuo.Mu.Theta.Delta.WaitOne();
             Zuo.Upsilon.Delta.WaitOne();
-            Upsilon.Theta(Zuo.Sigma.Omicron);
+            Upsilon.Theta(Zuo.Mu.Theta.Omicron);
             Upsilon.Beta(Zuo.Upsilon.Omicron);
             Upsilon.Iota();
             Upsilon.Lambda();
@@ -46,7 +46,7 @@ namespace Dysnomia
             Chi = 5;
 
             Upsilon.Delta.ReleaseMutex();
-            Zuo.Sigma.Delta.ReleaseMutex();
+            Zuo.Mu.Theta.Delta.ReleaseMutex();
             Zuo.Upsilon.Delta.ReleaseMutex();
         }
     }

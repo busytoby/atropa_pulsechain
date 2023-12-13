@@ -11,26 +11,21 @@ namespace Dysnomia
     public class Tod
     {
         public ညြ Mu;
-        public Fa Rho;
         public ညြ Psi;
-        public Faung Sigma;
         public Fa Upsilon;
         public Fa Tau;
-        public ည Theta;
+        public Faung Theta;
         public int Gamma = 1;
 
         public Tod()
         {
             Mu = new ညြ(false);
-            Rho = new Fa(true);
             Psi = new ညြ(true);
 
-            Rho.Fuse(Mu.Eta.Cone.Manifold, Psi.Eta.Rod.Manifold, Mu.Eta.Rod.Barn);
-            Sigma = new Faung(ref Rho, Mu.Eta.Cone.Manifold, Psi.Eta.Rod.Manifold, Mu.Eta.Rod.Barn, Psi.Eta.Cone.Barn, true);
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
             Tau = Psi.Pi(Psi.Theta.Mu.Omega);
 
-            Theta = new ည(ref Sigma, ref Rho, true);
+            Theta = new Faung(ref Mu.Theta.Rho, ref Psi.Theta.Rho);
         }
 
         /*

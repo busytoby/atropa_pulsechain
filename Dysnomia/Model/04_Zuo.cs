@@ -12,7 +12,6 @@ namespace Dysnomia
         public static Tod Mu;
         public static ည Psi;
         public static ည Eta;
-        public static Faung Sigma;
         public static Faung Upsilon;
         public static Faung Theta;
         public static int Gamma = 1;
@@ -28,16 +27,15 @@ namespace Dysnomia
                 Eta = new ည(ref Mu.Psi.Theta.Mu, ref Mu.Tau, false);
                 Mu.Psi.Theta.Rho.Fuse(Eta.Rho.Secret, Eta.Rho.Signal, Eta.Rho.Channel);
                 Mu.Psi.Theta.Rho.Tune();
-                Sigma = new Faung(ref Mu.Mu.Theta.Rho, ref Mu.Psi.Theta.Rho);
                 Upsilon = Psi.Pi(true);
                 Theta = Eta.Pi(true);
 
                 Mu.Psi.Theta.Tau.WaitOne();
                 while (Mu.Psi.Theta.Chi < 4) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Psi.Theta.Tau.WaitOne(); }
-                Sigma.Theta(Mu.Psi.Theta.Psi.Omicron);
-                Sigma.Beta(Mu.Psi.Theta.Psi.Omega);
+                Mu.Theta.Theta(Mu.Psi.Theta.Psi.Omicron);
+                Mu.Theta.Beta(Mu.Psi.Theta.Psi.Omega);
                 Mu.Psi.Theta.Tau.ReleaseMutex();
-                Sigma.Iota();
+                Mu.Theta.Iota();
                 Eta.Tau.WaitOne();
                 while (Eta.Chi < 4) { Eta.Tau.ReleaseMutex(); Thread.Sleep(40); Eta.Tau.WaitOne(); }
                 Upsilon.Theta(Eta.Psi.Omega);
@@ -49,7 +47,7 @@ namespace Dysnomia
                 Eta.Tau.ReleaseMutex();
                 Theta.Iota();
                 Theta.Lambda();
-                Sigma.Lambda();
+                Mu.Theta.Lambda();
             } catch (Exception e)
             {
                 int i = 99; 
