@@ -23,6 +23,7 @@ namespace Dysnomia
         {
             Mu = new ညြ(false);
             Rho = new Fa(true);
+            Rho.Fuse(Mu.Eta.Rod.Manifold, Psi.Eta.Cone.Manifold, Mu.Eta.Rod.Barn);
             Psi = new ညြ(true);
             Sigma = new Faung(ref Rho, Mu.Eta.Rod.Manifold, Psi.Eta.Cone.Manifold, Mu.Eta.Rod.Barn, Psi.Eta.Cone.Barn, true);
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
