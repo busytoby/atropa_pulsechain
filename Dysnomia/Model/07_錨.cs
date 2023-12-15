@@ -14,10 +14,6 @@ namespace Dysnomia
         public 锚 Psi;
         public 锚 Nu;
         public Fa Eta;
-        public ည Sigma;
-        public ည Upsilon;
-        public ညြ Tau;
-        public Faung Theta;
 
         public 錨()
         {
@@ -29,12 +25,19 @@ namespace Dysnomia
             Nu = new 锚();
             Nu.Pi();
             Eta = Nu.Rho.Sigma.Pi(Nu.Rho.Psi.Rho.Element);
-            Faung Beta = Nu.Rho.Psi.Theta.Xi[0];
-            Sigma = new ည(ref Beta, ref Eta, false);
-            Beta = Nu.Rho.Psi.Theta.Xi[1];
-            Upsilon = new ည(ref Beta, ref Nu.Rho.Psi.Theta.Chi, false);
+        }
+
+        public ໂຂ໌ Beta()
+        {
+            ည Sigma;
+            ည Upsilon;
+            ညြ Tau;
+            Faung Iota = Nu.Rho.Psi.Theta.Xi[0];
+            Sigma = new ည(ref Iota, ref Eta, false);
+            Iota = Nu.Rho.Psi.Theta.Xi[1];
+            Upsilon = new ည(ref Iota, ref Nu.Rho.Psi.Theta.Chi, false);
             Tau = new ညြ(ref Zuo.Mu.Mu.Theta, ref Sigma, ref Upsilon);
-            Theta = Nu.Rho.Psi.Theta.Xi[2];
+            return new ໂຂ໌(ref Sigma, ref Upsilon, ref Tau);
         }
     }
 }

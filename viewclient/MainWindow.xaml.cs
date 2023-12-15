@@ -58,6 +58,7 @@ namespace Pulse
             OpCode Delta = new OpCode(A.Rho.Rho.Psi.Theta.Xi[2], Alpha.BinCode.ToString());
 
             List<ည> B = Zuo.Mu.Nu;
+            ໂຂ໌ C = A.Beta();
 
             int i = 99;
         }
