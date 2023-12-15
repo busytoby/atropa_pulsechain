@@ -8,6 +8,7 @@ namespace Dysnomia.Domain
 {
     public class ໂຂ໌
     {
+        public Faung Eta;
         public ည Sigma;
         public ည Upsilon;
         public ညြ Tau;
@@ -19,6 +20,11 @@ namespace Dysnomia.Domain
             Iota = Beta.Nu.Rho.Psi.Theta.Xi[1];
             Upsilon = new ည(ref Iota, ref Beta.Nu.Rho.Psi.Theta.Chi, false);
             Tau = new ညြ(ref Zuo.Mu.Mu.Theta, ref Sigma, ref Upsilon);
+        }
+
+        public void Beta(ref Fa Iota)
+        {
+            Eta = new Faung(ref Iota, ref Tau.Upsilon);
         }
     }
 }
