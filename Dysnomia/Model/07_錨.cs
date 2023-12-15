@@ -27,17 +27,6 @@ namespace Dysnomia
             Eta = Nu.Rho.Sigma.Pi(Nu.Rho.Psi.Rho.Element);
         }
 
-        public ໂຂ໌ Beta()
-        {
-            ည Sigma;
-            ည Upsilon;
-            ညြ Tau;
-            Faung Iota = Nu.Rho.Psi.Theta.Xi[0];
-            Sigma = new ည(ref Iota, ref Eta, false);
-            Iota = Nu.Rho.Psi.Theta.Xi[1];
-            Upsilon = new ည(ref Iota, ref Nu.Rho.Psi.Theta.Chi, false);
-            Tau = new ညြ(ref Zuo.Mu.Mu.Theta, ref Sigma, ref Upsilon);
-            return new ໂຂ໌(ref Sigma, ref Upsilon, ref Tau);
-        }
+        public ໂຂ໌ Beta() { return new ໂຂ໌(this); }
     }
 }
