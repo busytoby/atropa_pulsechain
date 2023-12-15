@@ -59,7 +59,6 @@ namespace Pulse
 
             List<ည> B = Zuo.Mu.Nu;
             ໂຂ໌ C = A.Beta();
-            C.Beta(ref A.Eta);
 
             int i = 99;
         }
