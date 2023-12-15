@@ -42,6 +42,7 @@ namespace Dysnomia
                 Eta.Alpha(ref Rho.Psi.Mu);
             Upsilon = Rho.Sigma.Pi(Rho.Psi.Rho.Identity);
             Tau = new ည(ref Eta, ref Upsilon, false);
+            Zuo.Mu.Nu.Add(Tau);
             while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(40); Rho.Psi.Mu.Delta.WaitOne(); }
             if (Psi.Nu.Chi == 8)
                 Psi.Nu.Alpha(Psi.Psi.Rho.Element);

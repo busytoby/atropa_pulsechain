@@ -12,6 +12,7 @@ namespace Dysnomia
     {
         public ညြ Mu;
         public ညြ Psi;
+        public List<ည> Nu;
         public Fa Upsilon;
         public Fa Tau;
         public Faung Theta;
@@ -21,7 +22,7 @@ namespace Dysnomia
         {
             Mu = new ညြ(false);
             Psi = new ညြ(true);
-
+            Nu = [Mu.Mu, Mu.Theta, Psi.Mu, Psi.Theta];
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
             Tau = Psi.Pi(Psi.Theta.Mu.Omega);
 

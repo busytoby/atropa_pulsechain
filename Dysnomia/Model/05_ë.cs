@@ -22,7 +22,9 @@ namespace Dysnomia
         {
             Zuo.Gamma++;
             Rho = new ည(ref Zuo.Psi.Mu, ref Zuo.Mu.Upsilon, Iota);
+            Zuo.Mu.Nu.Add(Rho);
             Psi = new ည(ref Zuo.Eta.Mu, ref Zuo.Psi.Rho, !Iota);
+            Zuo.Mu.Nu.Add(Psi);
             if (Iota)
                 Nu = Zuo.Upsilon;
             else
@@ -33,6 +35,7 @@ namespace Dysnomia
                 Eta = new ည(ref Nu, ref Zuo.Psi.Rho, true);
             else
                 Eta = new ည(ref Nu, ref Zuo.Eta.Rho, false);
+            Zuo.Mu.Nu.Add(Eta);
             Sigma = new ညြ(ref Rho, ref Psi, ref Eta);
             Upsilon = Eta.Pi(false);
             Upsilon.Delta.WaitOne();
