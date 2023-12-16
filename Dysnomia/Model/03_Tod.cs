@@ -29,6 +29,14 @@ namespace Dysnomia
             Theta = new Faung(ref Mu.Theta.Rho, ref Psi.Theta.Rho);
         }
 
+        public void Pi()
+        {
+            foreach(ည Beta in Nu)
+            {
+                continue;
+            }
+        }
+
         /*
         public Tod(ref ညြ Beta, ref Fa Omicron, ref ည Iota)
         {
