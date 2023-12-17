@@ -35,6 +35,11 @@ namespace Dysnomia.Domain
         {
             while(true)
             {
+                if (Theta.Chi != null && Theta.Chi.Identity.IsZero)
+                {
+                    Faung Lambda = new Faung(ref Theta.Chi, Eta.Mu.Theta.Chi.Barn, Nu.Theta.Chi.Barn, Psi.Theta.Chi.Barn, Theta.Chi.Base);
+                    Theta.Xi.Add(Lambda);
+                }
                 Zuo.Mu.Pi();
                 Thread.Sleep(1551);
             }
