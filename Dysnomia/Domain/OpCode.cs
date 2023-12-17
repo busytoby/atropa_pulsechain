@@ -16,45 +16,45 @@ namespace Dysnomia.Domain
         public BigInteger OpRef;
         public BigInteger BinOpRef;
 
-        public OpCode(Faung Beta, BigInteger Ohm)
+        public OpCode(BigInteger Ohm)
         {
             if (Ohm.IsZero)
             {
-                Code = Beta.Omicron;
-                BinCode = Beta.Omega;
+                Code = Zuo.Mu.Nu[2].Theta.Xi[0].Omicron;
+                BinCode = Zuo.Mu.Nu[2].Theta.Xi[0].Omega;
                 return;
             }
             else
             {
                 Iota = Ohm;
-                Beta.Chi = 0;
-                Beta.Theta(Iota);
-                Code = Beta.Omicron;
-                BinCode = Beta.Omega;
-                Beta.Beta(BinCode);
-                OpRef = Beta.Rod.Eta;
-                BinOpRef = Beta.Rod.Kappa;
+                Zuo.Mu.Nu[2].Theta.Xi[0].Chi = 0;
+                Zuo.Mu.Nu[2].Theta.Xi[0].Theta(Iota);
+                Code = Zuo.Mu.Nu[2].Theta.Xi[0].Omicron;
+                BinCode = Zuo.Mu.Nu[2].Theta.Xi[0].Omega;
+                Zuo.Mu.Nu[2].Theta.Xi[0].Beta(BinCode);
+                OpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Eta;
+                BinOpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Kappa;
             }
         }
 
-        public OpCode(Faung Beta, String Omega = null)
+        public OpCode(String Omega = null)
         {
             if (Omega == null)
             {
-                Code = Beta.Omicron;
-                BinCode = Beta.Omega;
+                Code = Zuo.Mu.Nu[2].Theta.Xi[0].Omicron;
+                BinCode = Zuo.Mu.Nu[2].Theta.Xi[0].Omega;
                 return;
             }
             else
             {
                 Alpha = Omega;
-                Beta.Chi = 0;
-                Beta.Theta(Omega);
-                Code = Beta.Omicron;
-                BinCode = Beta.Omega;
-                Beta.Beta(BinCode);
-                OpRef = Beta.Rod.Eta;
-                BinOpRef = Beta.Rod.Kappa;
+                Zuo.Mu.Nu[2].Theta.Xi[0].Chi = 0;
+                Zuo.Mu.Nu[2].Theta.Xi[0].Theta(Omega);
+                Code = Zuo.Mu.Nu[2].Theta.Xi[0].Omicron;
+                BinCode = Zuo.Mu.Nu[2].Theta.Xi[0].Omega;
+                Zuo.Mu.Nu[2].Theta.Xi[0].Beta(BinCode);
+                OpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Eta;
+                BinOpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Kappa;
             }
         }
     }
