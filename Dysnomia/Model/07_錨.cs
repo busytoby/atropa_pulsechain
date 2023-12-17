@@ -30,7 +30,9 @@ namespace Dysnomia
             Iota.Psi.Theta.Fong(ref Nu.Rho.Psi.Theta.Chi, ref Nu.Rho.Psi.Theta.Xi);
             Iota.Nu.Theta.Fong(ref Psi.Rho.Psi.Theta.Chi, ref Psi.Rho.Psi.Theta.Xi);
             Iota.Eta.Mu.Theta.Fong(ref Rho.Rho.Psi.Theta.Chi, ref Rho.Rho.Psi.Theta.Xi);
-            return Iota; 
+            List<Faung> Omicron = new List<Faung>();
+            Iota.Theta.Fong(ref Rho.Upsilon, ref Omicron);
+            return Iota;
         }
     }
 }
