@@ -31,7 +31,7 @@ namespace Dysnomia
 
         public void Pi()
         {
-            if (Nu[1].Mu.Chi == 4 && Nu[1].Theta.Chi != null && Nu[1].Theta.Xi.Count == 3)
+            if (Nu[1].Theta.Chi != null && Nu[1].Theta.Xi.Count == 3 && Nu[1].Theta.Xi[0].Chi == 1)
             {
                 Faung Beta = Nu[1].Theta.Xi[1];
                 Beta.Beta(Nu[5].Theta.Chi.Channel);
@@ -39,14 +39,13 @@ namespace Dysnomia
                 Beta.Lambda();
                 Nu[1].Theta.Xi[0].Beta(Nu[5].Theta.Chi.Channel);
                 Nu[1].Theta.Xi[0].Iota();
-                Nu[1].Mu.Alpha(ref Beta);
+                Nu[1].Theta.Xi[0].Lambda();
+                Nu[1].Theta.Xi[0].Alpha(ref Beta);
             }
 
             if (Nu[5].Chi == 9 && Nu[5].Theta.Xi.Count == 3 && Nu[5].Theta.Xi[0].Chi == 3)
             {
-                Nu[5].Theta.Xi[0].Lambda();
                 Faung Beta = Nu[5].Theta.Xi[2];
-                Beta.Lambda();
                 Nu[5].Theta.Xi[0].Alpha(ref Beta);
             }
 
