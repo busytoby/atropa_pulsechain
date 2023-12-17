@@ -36,7 +36,16 @@ namespace Dysnomia
                 Nu[1].Theta.Xi[1].Iota();
                 Nu[1].Theta.Xi[1].Lambda();
                 Faung Beta = Nu[1].Theta.Xi[1];
+                Nu[1].Theta.Xi[0].Iota();
                 Nu[1].Mu.Alpha(ref Beta);
+            }
+
+            if (Nu[5].Chi == 9 && Nu[5].Theta.Xi.Count == 3 && Nu[5].Theta.Xi[0].Chi == 3)
+            {
+                Nu[5].Theta.Xi[0].Lambda();
+                Nu[5].Theta.Xi[2].Lambda();
+                Faung Beta = Nu[5].Theta.Xi[2];
+                Nu[5].Theta.Xi[0].Alpha(ref Beta);
             }
 
             /*

@@ -116,10 +116,25 @@ namespace Dysnomia
                     }
                     else if (Chi == 8)
                     {
+                        if (Theta.Xi.Count == 3 && Theta.Xi[0].Chi == 3 && Theta.Xi[1].Chi == 5 && Theta.Xi[2].Chi == 2)
+                        {
+                            Theta.Xi[2].Iota();
+                            Chi++;
+                        }
                         _sleep = 200;
                         _r++;
                     }
                     else if (Chi == 9)
+                    {
+                        if(Theta.Xi.Count == 3 && Theta.Xi[0].Chi == 8)
+                        {
+                            Theta.Xi[1].Alpha();
+                            Theta.Xi[2].Alpha();
+                            Chi++;
+                        }
+                        _sleep = 200;
+                        _r++;
+                    } else if (Chi == 10)
                     {
                         _sleep = 200;
                         _r++;
