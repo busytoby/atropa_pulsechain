@@ -39,6 +39,9 @@ namespace Dysnomia.Domain
                 {
                     Faung Lambda = new Faung(ref Theta.Chi, Eta.Mu.Theta.Chi.Barn, Nu.Theta.Chi.Barn, Psi.Theta.Chi.Barn, Theta.Chi.Base);
                     Theta.Xi.Add(Lambda);
+                    Zuo.Eta.Theta.Chi = Theta.Chi;
+                    Zuo.Eta.Theta.Xi = new List<Faung>();
+                    Zuo.Eta.Theta.Xi.Add(Lambda);
                 }
                 Zuo.Mu.Pi();
                 Thread.Sleep(1551);
