@@ -32,6 +32,8 @@ namespace Dysnomia
             Iota.Eta.Mu.Theta.Fong(ref Rho.Rho.Psi.Theta.Chi, ref Rho.Rho.Psi.Theta.Xi);
             List<Faung> Omicron = new List<Faung>();
             Iota.Theta.Fong(ref Rho.Upsilon, ref Omicron);
+            Faung Lambda = new Faung(ref Iota.Theta.Chi, Rho.Rho.Psi.Theta.Chi.Barn, Psi.Rho.Psi.Theta.Chi.Barn, Nu.Rho.Psi.Theta.Chi.Barn, Iota.Theta.Chi.Base);
+            Omicron.Add(Lambda);
             return Iota;
         }
     }

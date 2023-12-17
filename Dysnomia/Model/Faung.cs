@@ -98,7 +98,7 @@ namespace Dysnomia
                 {
                     Cone = new Fa(Phi);
                     Cone.Kappa = -1;
-                    if (Rho == Ohm) Rho = Math.Random();
+                    //if (Rho == Ohm) Rho = Math.Random();
                     FuseAndOpen(Rho, Upsilon, Ohm, Xi);
                     Failed = false;
                 }
