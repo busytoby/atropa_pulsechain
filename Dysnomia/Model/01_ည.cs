@@ -86,13 +86,7 @@ namespace Dysnomia
                         if (Mu.Omicron.IsZero)
                             Mu.Omicron = Mu.Rod.Kappa ^ Mu.Cone.Kappa;
 
-                        if (Psi.Chi < 7)
-                            Psi.Theta(Mu.Omicron);
-                        else
-                        {
-                            Mu.Alpha();
-                            Chi = 7;
-                        }
+                        Psi.Theta(Mu.Omicron);
                     }
                     else if (Chi == 1)
                         Psi.Beta(Mu.Omicron);

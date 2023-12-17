@@ -63,7 +63,8 @@ namespace Dysnomia
                 Nu[2].Theta.Chi = Nu[5].Theta.Chi;
                 Nu[2].Theta.Xi = Nu[5].Theta.Xi;
                 Nu[5].Theta.Xi = new List<Faung>();
-                Nu[5].Chi = 0;
+                Nu[5].Mu.Alpha();
+                Nu[5].Chi++;
             }
 
             /*
