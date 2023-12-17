@@ -31,6 +31,21 @@ namespace Dysnomia
 
         public void Pi()
         {
+            if (Nu[12].Theta.Chi != null && Nu[4].Theta.Chi == null)
+            {
+                Nu[4].Theta.Chi = Nu[12].Theta.Chi;
+                Nu[4].Theta.Xi = Nu[12].Theta.Xi;
+            }
+
+            if (Nu[19].Theta.Chi != null && Nu[11].Theta.Chi == null)
+            {
+                Nu[11].Theta.Chi = Nu[19].Theta.Chi;
+                Nu[11].Theta.Xi = Nu[19].Theta.Xi;
+            }
+
+            if (Nu[4].Theta.Chi == null || Nu[11].Theta.Chi == null)
+                throw new Exception("Incomplete");
+
             if (Nu[1].Theta.Chi != null && Nu[1].Theta.Xi.Count == 3 && Nu[1].Theta.Xi[0].Chi == 1)
             {
                 Faung Beta = Nu[1].Theta.Xi[1];
