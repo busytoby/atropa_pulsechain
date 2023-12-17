@@ -28,12 +28,16 @@ namespace Dysnomia.Domain
             Eta = new ညြ(ref Zuo.Mu.Mu.Theta, ref Psi, ref Nu);
             Omicron = Beta.Psi.Rho.Sigma.Rho.Last();
             Sigma = new Faung(ref Omicron, ref Eta.Upsilon);
-            //Theta = new Living(Phi);
+            Theta = new Living(Phi);
         }
 
         public void Phi()
         {
-            // Stubbed
+            while(true)
+            {
+                Zuo.Mu.Pi();
+                Thread.Sleep(1551);
+            }
         }
     }
 }

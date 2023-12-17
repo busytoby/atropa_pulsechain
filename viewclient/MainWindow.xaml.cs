@@ -59,8 +59,6 @@ namespace Pulse
 
             List<ည> B = Zuo.Mu.Nu;
             ໂຂ໌ C = A.Beta();
-
-            Zuo.Mu.Pi();
         }
 
         private void StartThreads()
