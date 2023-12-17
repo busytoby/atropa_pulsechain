@@ -31,10 +31,20 @@ namespace Dysnomia
 
         public void Pi()
         {
+            if (Nu[1].Mu.Chi == 4 && Nu[1].Theta.Chi != null && Nu[1].Theta.Xi.Count == 3)
+            {
+                Nu[1].Theta.Xi[1].Iota();
+                Nu[1].Theta.Xi[1].Lambda();
+                Faung Beta = Nu[1].Theta.Xi[1];
+                Nu[1].Mu.Alpha(ref Beta);
+            }
+
+            /*
             foreach(ည Beta in Nu)
             {
                 continue;
             }
+            */
         }
 
         /*
