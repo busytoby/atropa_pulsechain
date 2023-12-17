@@ -52,11 +52,6 @@ namespace Pulse
             while (A == null || Zuo.Mu == null | A.Rho == null || A.Psi == null || A.Nu == null)
                 Thread.Sleep(400);
 
-            OpCode Alpha = new OpCode(A.Rho.Rho.Psi.Theta.Xi[0]);
-            OpCode Beta = new OpCode(A.Rho.Rho.Psi.Theta.Xi[0], "Atropa");
-            OpCode Gamma = new OpCode(A.Rho.Rho.Psi.Theta.Xi[1], "X");
-            OpCode Delta = new OpCode(A.Rho.Rho.Psi.Theta.Xi[2], Alpha.BinCode.ToString());
-
             List<ည> B = Zuo.Mu.Nu;
             ໂຂ໌ C = A.Beta();
         }
