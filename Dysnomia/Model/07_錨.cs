@@ -25,6 +25,12 @@ namespace Dysnomia
             Nu.Pi();
         }
 
-        public ໂຂ໌ Beta() { return new ໂຂ໌(this); }
+        public ໂຂ໌ Beta() {
+            ໂຂ໌ Iota = new ໂຂ໌(this);
+            Iota.Psi.Theta.Fong(ref Nu.Rho.Psi.Theta.Chi, ref Nu.Rho.Psi.Theta.Xi);
+            Iota.Nu.Theta.Fong(ref Psi.Rho.Psi.Theta.Chi, ref Psi.Rho.Psi.Theta.Xi);
+            Iota.Eta.Mu.Theta.Fong(ref Rho.Rho.Psi.Theta.Chi, ref Rho.Rho.Psi.Theta.Xi);
+            return Iota; 
+        }
     }
 }

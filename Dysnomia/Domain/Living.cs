@@ -23,7 +23,7 @@ namespace Dysnomia.Domain
             Omicron.Start();
         }
 
-        public void Fong(Fa Beta, List<Faung> Iota)
+        public void Fong(ref Fa Beta, ref List<Faung> Iota)
         {
             Tau.WaitOne();
             if (Chi != null || Xi != null) throw new Exception("Non Null");

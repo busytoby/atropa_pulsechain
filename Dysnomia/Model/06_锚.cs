@@ -95,7 +95,7 @@ namespace Dysnomia
             Iota.Saturate(Beta[0].Omicron, Beta[2].Omicron);
             Iota.Open();
 
-            Rho.Psi.Theta.Fong(Iota, Beta);
+            Rho.Psi.Theta.Fong(ref Iota, ref Beta);
             Rho.Psi.Chi++;
         }
     }
