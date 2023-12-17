@@ -43,10 +43,12 @@ namespace Dysnomia
                 Nu[1].Theta.Xi[0].Alpha(ref Beta);
             }
 
-            if (Nu[5].Chi == 9 && Nu[5].Theta.Xi.Count == 3 && Nu[5].Theta.Xi[0].Chi == 3)
+            if (Nu[5].Chi == 11)
             {
-                Faung Beta = Nu[5].Theta.Xi[2];
-                Nu[5].Theta.Xi[0].Alpha(ref Beta);
+                Nu[2].Theta.Chi = Nu[5].Theta.Chi;
+                Nu[2].Theta.Xi = Nu[5].Theta.Xi;
+                Nu[5].Theta.Xi = new List<Faung>();
+                Nu[5].Chi = 0;
             }
 
             /*

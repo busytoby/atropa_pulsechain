@@ -85,7 +85,14 @@ namespace Dysnomia
                     {
                         if (Mu.Omicron.IsZero)
                             Mu.Omicron = Mu.Rod.Kappa ^ Mu.Cone.Kappa;
-                        Psi.Theta(Mu.Omicron);
+
+                        if (Psi.Chi < 7)
+                            Psi.Theta(Mu.Omicron);
+                        else
+                        {
+                            Mu.Alpha();
+                            Chi = 7;
+                        }
                     }
                     else if (Chi == 1)
                         Psi.Beta(Mu.Omicron);
@@ -138,8 +145,9 @@ namespace Dysnomia
                         _r++;
                     } else if (Chi == 10)
                     {
-                        _sleep = 200;
-                        _r++;
+                        if (Theta.Xi[0].Chi != 8) throw new Exception("Chi Non 8");
+                        Theta.Xi[0].Chi = 0;
+                        Chi++;
                     }
                     if (Chi < 5) Chi++;
                     else _sleep = (_sleep >= 4000) ? 4000 : _sleep * 2;
