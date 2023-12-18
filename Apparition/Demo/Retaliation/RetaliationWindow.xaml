@@ -22,27 +22,28 @@
           <Border.Effect>
             <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.5" ShadowDepth="8" Direction="320"/>
           </Border.Effect>
-          <RichTextBox x:Name="TerminalOutput"
-                          IsReadOnlyCaretVisible="False"
-                          VerticalScrollBarVisibility="Visible"
-                          IsReadOnly="true"
-                          PreviewMouseDown="RetaliationWindow_MouseDown"
-                          Margin="8,8,8,72" />
         </Border>
+        <RichTextBox x:Name="TerminalOutput"
+                IsReadOnlyCaretVisible="False"
+                VerticalScrollBarVisibility="Visible"
+                IsReadOnly="true"
+                BorderThickness="0"
+                PreviewMouseDown="RetaliationWindow_MouseDown"
+                Margin="16,16,16,76" />
         <RichTextBox x:Name="TerminalStatus"
               IsReadOnlyCaretVisible="False"
               VerticalScrollBarVisibility="Hidden"
               IsReadOnly="true"
               BorderThickness="0"
               PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="6,374,6,54" />
+              Margin="6,378,6,54" />
         <RichTextBox x:Name="TerminalInput"
               IsReadOnlyCaretVisible="False"
               VerticalScrollBarVisibility="Hidden"
               IsReadOnly="false"
-              FontSize="16"
+              FontSize="20"
               PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="16,400,16,10" />
+              Margin="16,400,16,18" />
       </Grid>
     </Border>
 </Window>
