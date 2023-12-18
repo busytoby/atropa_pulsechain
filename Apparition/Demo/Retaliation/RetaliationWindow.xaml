@@ -32,13 +32,15 @@
         <RichTextBox x:Name="TerminalStatus"
               IsReadOnlyCaretVisible="False"
               VerticalScrollBarVisibility="Hidden"
-              IsReadOnly="false"
+              IsReadOnly="true"
+              BorderThickness="0"
               PreviewMouseDown="RetaliationWindow_MouseDown"
               Margin="6,374,6,54" />
         <RichTextBox x:Name="TerminalInput"
               IsReadOnlyCaretVisible="False"
               VerticalScrollBarVisibility="Hidden"
-              IsReadOnly="true"
+              IsReadOnly="false"
+              FontSize="16"
               PreviewMouseDown="RetaliationWindow_MouseDown"
               Margin="16,400,16,10" />
       </Grid>
