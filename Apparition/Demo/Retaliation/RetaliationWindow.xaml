@@ -17,20 +17,30 @@
             <DropShadowEffect BlurRadius="6" Color="DeepPink" Opacity="0.1" ShadowDepth="4" Direction="170" />
         </Border.Effect>
 
-        <Grid>
-            <Border Padding="1" Margin="4" BorderThickness="2" CornerRadius="16" Background="White">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.5" ShadowDepth="8" Direction="320"/>
-                </Border.Effect>
-              <RichTextBox x:Name="TerminalOutput"
-                              IsReadOnlyCaretVisible="False"
-                              VerticalScrollBarVisibility="Visible"
-                              IsReadOnly="false"
-                              PreviewMouseDown="RetaliationWindow_MouseDown"
-                              Margin="8">
-              </RichTextBox>
-            
-          </Border>
-        </Grid>
+      <Grid>
+        <Border Padding="1" Margin="4" BorderThickness="2" CornerRadius="16" Background="White">
+          <Border.Effect>
+            <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.5" ShadowDepth="8" Direction="320"/>
+          </Border.Effect>
+          <RichTextBox x:Name="TerminalOutput"
+                          IsReadOnlyCaretVisible="False"
+                          VerticalScrollBarVisibility="Visible"
+                          IsReadOnly="true"
+                          PreviewMouseDown="RetaliationWindow_MouseDown"
+                          Margin="8,8,8,72" />
+        </Border>
+        <RichTextBox x:Name="TerminalStatus"
+              IsReadOnlyCaretVisible="False"
+              VerticalScrollBarVisibility="Hidden"
+              IsReadOnly="false"
+              PreviewMouseDown="RetaliationWindow_MouseDown"
+              Margin="6,374,6,54" />
+        <RichTextBox x:Name="TerminalInput"
+              IsReadOnlyCaretVisible="False"
+              VerticalScrollBarVisibility="Hidden"
+              IsReadOnly="true"
+              PreviewMouseDown="RetaliationWindow_MouseDown"
+              Margin="16,400,16,10" />
+      </Grid>
     </Border>
 </Window>
