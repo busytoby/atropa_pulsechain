@@ -19,7 +19,7 @@ namespace Pulse
             t0.Start();
 
             //Pulse.API Comptroller = new Pulse.API();
-            InitializeComponent();
+            //InitializeComponent();
             //StartThreads();
 
             Task t4 = new Task(() => { Beta(); });
