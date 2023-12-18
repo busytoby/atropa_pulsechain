@@ -114,7 +114,6 @@ namespace Dysnomia
             Phi = Rho + Eta;
             Element = Beta + Phi;
 
-            // Principal Uncertainty
             Dynamo = Mu(Theta, Signal, Math.Prime);
             Manifold = Element + Dynamo;
 

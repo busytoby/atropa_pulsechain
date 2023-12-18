@@ -29,21 +29,29 @@
                 IsReadOnly="true"
                 BorderThickness="0"
                 PreviewMouseDown="RetaliationWindow_MouseDown"
-                Margin="16,16,16,76" />
+                Margin="16,16,16,76" >
+          <RichTextBox.Resources>
+            <Style TargetType="{x:Type Paragraph}">
+              <Setter Property="Margin" Value="0"/>
+            </Style>
+          </RichTextBox.Resources>
+        </RichTextBox>
         <RichTextBox x:Name="TerminalStatus"
               IsReadOnlyCaretVisible="False"
               VerticalScrollBarVisibility="Hidden"
               IsReadOnly="true"
               BorderThickness="0"
               PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="6,378,6,54" />
+              Margin="6,378,6,54">
+        </RichTextBox>
         <RichTextBox x:Name="TerminalInput"
               IsReadOnlyCaretVisible="False"
               VerticalScrollBarVisibility="Hidden"
               IsReadOnly="false"
               FontSize="20"
               PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="16,400,16,18" />
+              Margin="16,400,16,18">
+        </RichTextBox>
       </Grid>
     </Border>
 </Window>

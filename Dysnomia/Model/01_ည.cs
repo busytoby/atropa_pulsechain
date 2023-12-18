@@ -129,7 +129,7 @@ namespace Dysnomia
                     }
                     else if (Chi == 9)
                     {
-                        if(Theta.Xi.Count == 3 && Theta.Xi[0].Chi == 8)
+                        if (Theta.Xi.Count == 3 && Theta.Xi[0].Chi == 8)
                         {
                             Theta.Xi[1].Alpha();
                             Theta.Xi[2].Alpha();
@@ -137,11 +137,16 @@ namespace Dysnomia
                         }
                         _sleep = 200;
                         _r++;
-                    } else if (Chi == 10)
+                    }
+                    else if (Chi == 10)
                     {
                         if (Theta.Xi[0].Chi != 8) throw new Exception("Chi Non 8");
                         Theta.Xi[0].Chi = 0;
                         Chi++;
+                    }
+                    else if (Chi == 12)
+                    {
+                        Chi = 12;
                     }
                     if (Chi < 5) Chi++;
                     else _sleep = (_sleep >= 4000) ? 4000 : _sleep * 2;

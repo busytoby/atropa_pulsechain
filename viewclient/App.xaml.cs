@@ -37,9 +37,17 @@ namespace Pulse
 
             Application.Current.Dispatcher.Invoke((Action)delegate
             {
-                Apparition.Retaliation.RetaliationWindow w = new Apparition.Retaliation.RetaliationWindow();
-                w.Show();
+                Dysnomia.Apparition.Window = new Apparition.Retaliation.RetaliationWindow();
+                Dysnomia.Apparition.Window.Show();
             });
+
+            Dysnomia.Apparition.Tau.WaitOne();
+            Dysnomia.Apparition.MsgQueue.Enqueue(new Tuple<String, String>("Test", "Ready"));
+            Dysnomia.Apparition.Tau.ReleaseMutex();
+            Dysnomia.Apparition.Tau.WaitOne();
+            Dysnomia.Apparition.MsgQueue.Enqueue(new Tuple<String, String>("Test", "Two"));
+            Dysnomia.Apparition.MsgQueue.Enqueue(new Tuple<String, String>("Ready", "Three"));
+            Dysnomia.Apparition.Tau.ReleaseMutex();
         }
     }
 

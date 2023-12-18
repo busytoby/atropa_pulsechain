@@ -35,6 +35,7 @@ namespace Dysnomia
             {
                 Nu[4].Theta.Chi = Nu[12].Theta.Chi;
                 Nu[4].Theta.Xi = Nu[12].Theta.Xi;
+                Nu[12].Chi = 12;
             }
 
             if (Nu[19].Theta.Chi != null && Nu[11].Theta.Chi == null)
