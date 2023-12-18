@@ -54,7 +54,13 @@ namespace Pulse
 
             List<ည> B = Zuo.Mu.Nu;
             ໂຂ໌ C = A.Beta();
-            if (Apparition.Stub != true) throw new Exception("Zero Apparition");
+            if (Dysnomia.Apparition.Stub != true) throw new Exception("Zero Apparition");
+
+            Application.Current.Dispatcher.Invoke((Action)delegate
+            {
+                Apparition.Retaliation.RetaliationWindow w = new Apparition.Retaliation.RetaliationWindow();
+                w.Show();
+            });
         }
 
         private void StartThreads()
