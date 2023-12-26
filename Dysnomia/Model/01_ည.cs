@@ -104,6 +104,7 @@ namespace Dysnomia
                     {
                         if (Nu != null) throw new Exception("Collapse");
                         Nu = new Faung(Mu.Upsilon, Mu.Rho, Mu.Pi, Rho.Barn);
+                        Zuo.Mu.Rho.Enqueue(new Fi(ref Mu));
                         Mu.Chi = 1;
                         Mu.Beta(Mu.Omicron);
                         Mu.Iota();

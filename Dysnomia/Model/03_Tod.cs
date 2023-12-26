@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -11,6 +12,7 @@ namespace Dysnomia
     public class Tod
     {
         public ညြ Mu;
+        public ConcurrentQueue<Fi> Rho;
         public ညြ Psi;
         public List<ည> Nu;
         public Fa Upsilon;
@@ -21,6 +23,7 @@ namespace Dysnomia
         public Tod()
         {
             Mu = new ညြ(false);
+            Rho = new ConcurrentQueue<Fi>();
             Psi = new ညြ(true);
             Nu = [Mu.Mu, Mu.Theta, Psi.Mu, Psi.Theta];
             Upsilon = Mu.Pi(Mu.Mu.Psi.Omicron);
@@ -31,6 +34,11 @@ namespace Dysnomia
 
         public void Pi()
         {
+            if (Rho.Count > 0)
+            {
+                int i = 99;
+            }
+
             if (Nu[12].Theta.Chi != null && Nu[4].Theta.Chi == null)
             {
                 Nu[4].Theta.Chi = Nu[12].Theta.Chi;
