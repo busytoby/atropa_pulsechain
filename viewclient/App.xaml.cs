@@ -2,6 +2,7 @@
 using Dysnomia.Domain;
 using System.Configuration;
 using System.Data;
+using System.Text;
 using System.Windows;
 
 namespace Pulse
@@ -16,6 +17,11 @@ namespace Pulse
         private void Bootstrap(object sender, StartupEventArgs e)
         {
             Oracle O = new Oracle();
+            Dysnomia.Domain.Buffer A = O.Encode("Test");
+            Dysnomia.Domain.Buffer B = O.Encode("Test");
+            O.Beta(Dysnomia.Math.Random());
+            A = O.Encode("Test");
+            B = O.Encode("Test");
 
             //Task t0 = new Task(() => { A = new 錨(); });
             //t0.Start();

@@ -14,6 +14,7 @@ namespace Dysnomia.Domain
     public class Oracle : ConcurrentQueue<byte[]>
     {
         Faung Mu;
+        Mutex Tau = new Mutex(false);
         Living Theta;
 
         public Oracle()
@@ -23,8 +24,14 @@ namespace Dysnomia.Domain
             Register(Mu.Rod.Signal);
         }
 
+        public Buffer Encode(String Beta)
+        {            
+            return new Buffer(Mu, Encoding.ASCII.GetBytes(Beta));
+        }
+
         private void Register(BigInteger Omicron)
         {
+            Tau.WaitOne();
             if (Count != 0) throw new Exception("Already Registered");
             if (Mu.Omicron != 0) throw new Exception("Mu Omicron Non-Zero");
             if (Omicron == 0) throw new Exception("Omicron Zero");
@@ -44,6 +51,7 @@ namespace Dysnomia.Domain
             Enqueue(Mu.Cone.Channel.ToByteArray());
             Enqueue(Mu.Rod.Channel.ToByteArray());
             Enqueue(Mu.Rod.Kappa.ToByteArray());
+            Tau.ReleaseMutex();
         }
 
         public BigInteger Op(String Beta)
@@ -55,6 +63,7 @@ namespace Dysnomia.Domain
 
         public void Beta(BigInteger Omicron)
         {
+            Tau.WaitOne();
             if (Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
             if (Omicron == 0) throw new Exception("Iota Zero");
 
@@ -70,6 +79,7 @@ namespace Dysnomia.Domain
             Enqueue(Mu.Rod.Dynamo.ToByteArray());
             Enqueue(Mu.Rod.Eta.ToByteArray());
             Enqueue(Mu.Cone.Eta.ToByteArray());
+            Tau.ReleaseMutex();
         }
 
         public BigInteger Next()
@@ -83,6 +93,7 @@ namespace Dysnomia.Domain
         {
             while (true)
             {
+                Tau.WaitOne();
                 if (Count > 0)
                 {
                     byte[] OpCode;
@@ -128,8 +139,8 @@ namespace Dysnomia.Domain
                         if (Count > 0) TryDequeue(out OpCode);
                     }
                     if (Count != 0) throw new Exception("Execution Failure");
-                    Beta(Math.Random());
                 }
+                Tau.ReleaseMutex();
                 Thread.Sleep(1000);
             }
         }
