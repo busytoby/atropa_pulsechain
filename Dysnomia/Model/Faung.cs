@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Dysnomia
         public BigInteger Sigma, Rho, Upsilon, Ohm, Pi, Omicron, Omega;
         public Mutex Delta = new Mutex();
         public short Chi;
-        public List<byte[]> Nu = new List<byte[]>();
+        public Domain.Nit Nu = new Domain.Nit();
 
         public Faung()
         {
@@ -184,7 +185,7 @@ namespace Dysnomia
         {
             if (Chi != 8) throw new Exception("Chi Non 8");
             if (Nu.Count != 34) throw new Exception("Nu Non 34");
-            Nu.Add(Iota.ToByteArray());
+            Nu.Enqueue(Iota.ToByteArray());
             Upsilon = Upsilon ^ Iota;
             Chi = 9;
         }
@@ -193,12 +194,12 @@ namespace Dysnomia
         {
             if (Nu.Count != 31) throw new Exception("Nu Non 31");
             if (Beta.Nu.Count != 31) throw new Exception("Beta.Nu Non 31");
-            Nu.Add(Beta.Upsilon.ToByteArray());
+            Nu.Enqueue(Beta.Upsilon.ToByteArray());
             // stub additional record from beta
             Upsilon = Upsilon ^ Ohm ^ Pi ^ Beta.Upsilon;
-            Nu.Add(Upsilon.ToByteArray());
+            Nu.Enqueue(Upsilon.ToByteArray());
             Beta.Ohm = Beta.Ohm ^ Upsilon;
-            Nu.Add(Beta.Ohm.ToByteArray());
+            Nu.Enqueue(Beta.Ohm.ToByteArray());
             Chi = 8;
             Beta.Chi = 5;
         }
@@ -209,13 +210,13 @@ namespace Dysnomia
             if (Nu.Count == 30 || Chi == 4)
             {
                 Upsilon = Upsilon ^ Ohm ^ Pi;
-                Nu.Add(Upsilon.ToByteArray());
+                Nu.Enqueue(Upsilon.ToByteArray());
                 Chi = 7;
             }
             else if (Nu.Count == 31 && Chi == 5)
             {
                 Upsilon = Upsilon ^ Ohm;
-                Nu.Add(Upsilon.ToByteArray());
+                Nu.Enqueue(Upsilon.ToByteArray());
                 Chi = 6;
             }
             else throw new Exception("Bad Count");
@@ -225,11 +226,11 @@ namespace Dysnomia
         {
             if (Nu.Count != 28) throw new Exception("Nu Non 28");
             Upsilon = Cone.Torque(Rod.Eta);
-            Nu.Add(Upsilon.ToByteArray());
+            Nu.Enqueue(Upsilon.ToByteArray());
             Ohm = Cone.Amplify(Upsilon);
-            Nu.Add(Ohm.ToByteArray());
+            Nu.Enqueue(Ohm.ToByteArray());
             Pi = Cone.Sustain(Ohm);
-            Nu.Add(Pi.ToByteArray());
+            Nu.Enqueue(Pi.ToByteArray());
             Cone.React(Pi, Cone.Dynamo);
             Rod.React(Pi, Rod.Dynamo);
             Chi = 4;
@@ -239,15 +240,15 @@ namespace Dysnomia
         {
             if (Nu.Count != 23) throw new Exception("Nu Non 23");
             BigInteger Lambda = Cone.Torque(Rod.Kappa);
-            Nu.Add(Lambda.ToByteArray());
+            Nu.Enqueue(Lambda.ToByteArray());
             Lambda = Cone.Amplify(Lambda);
-            Nu.Add(Lambda.ToByteArray());
+            Nu.Enqueue(Lambda.ToByteArray());
             Lambda = Cone.Sustain(Ohm);
-            Nu.Add(Lambda.ToByteArray());
+            Nu.Enqueue(Lambda.ToByteArray());
             Rod.React(Lambda, Rod.Channel);
-            Nu.Add(Rod.Kappa.ToByteArray());
+            Nu.Enqueue(Rod.Kappa.ToByteArray());
             Cone.React(Lambda, Cone.Channel);
-            Nu.Add(Cone.Kappa.ToByteArray());
+            Nu.Enqueue(Cone.Kappa.ToByteArray());
             Chi = 3;
         }
 
@@ -256,19 +257,19 @@ namespace Dysnomia
             if (Iota == 0) throw new Exception("Iota Zero");
             if (Nu.Count != 15) throw new Exception("Nu Non 15");
 
-            Nu.Add(Iota.ToByteArray());
+            Nu.Enqueue(Iota.ToByteArray());
             BigInteger Lambda = Rod.Torque(Iota);
-            Nu.Add(Lambda.ToByteArray());
+            Nu.Enqueue(Lambda.ToByteArray());
             Lambda = Rod.Amplify(Lambda);
-            Nu.Add(Lambda.ToByteArray());
+            Nu.Enqueue(Lambda.ToByteArray());
             Lambda = Rod.Sustain(Lambda);
-            Nu.Add(Cone.Dynamo.ToByteArray());
-            Nu.Add(Rod.Dynamo.ToByteArray());
-            Nu.Add(Lambda.ToByteArray());
+            Nu.Enqueue(Cone.Dynamo.ToByteArray());
+            Nu.Enqueue(Rod.Dynamo.ToByteArray());
+            Nu.Enqueue(Lambda.ToByteArray());
             Rod.React(Lambda, Cone.Dynamo);
-            Nu.Add(Rod.Eta.ToByteArray());
+            Nu.Enqueue(Rod.Eta.ToByteArray());
             Cone.React(Lambda, Rod.Dynamo);
-            Nu.Add(Cone.Eta.ToByteArray());
+            Nu.Enqueue(Cone.Eta.ToByteArray());
             Chi = 2;
         }
 
@@ -289,29 +290,29 @@ namespace Dysnomia
             {
                 try
                 {
-                    Nu.Add(Rod.Base.ToByteArray());
-                    Nu.Add(Rod.Element.ToByteArray());
-                    Nu.Add(Rod.Manifold.ToByteArray());
-                    Nu.Add(Rod.Ring.ToByteArray());
-                    Nu.Add(Rod.Barn.ToByteArray());
-                    Nu.Add(Omicron.ToByteArray());
+                    Nu.Enqueue(Rod.Base.ToByteArray());
+                    Nu.Enqueue(Rod.Element.ToByteArray());
+                    Nu.Enqueue(Rod.Manifold.ToByteArray());
+                    Nu.Enqueue(Rod.Ring.ToByteArray());
+                    Nu.Enqueue(Rod.Barn.ToByteArray());
+                    Nu.Enqueue(Omicron.ToByteArray());
                     Charge(Omicron);
-                    Nu.Add(Sigma.ToByteArray());
+                    Nu.Enqueue(Sigma.ToByteArray());
                     if (Sigma < 4)
                         throw new Exception("Sigma < 4");
                     Induce();
-                    Nu.Add(Rho.ToByteArray());
-                    Nu.Add(Cone.Channel.ToByteArray());
+                    Nu.Enqueue(Rho.ToByteArray());
+                    Nu.Enqueue(Cone.Channel.ToByteArray());
                     Torque();
-                    Nu.Add(Upsilon.ToByteArray());
+                    Nu.Enqueue(Upsilon.ToByteArray());
                     Amplify();
-                    Nu.Add(Ohm.ToByteArray());
+                    Nu.Enqueue(Ohm.ToByteArray());
                     Sustain();
-                    Nu.Add(Pi.ToByteArray());
+                    Nu.Enqueue(Pi.ToByteArray());
                     React();
-                    Nu.Add(Rod.Channel.ToByteArray());
-                    Nu.Add(Rod.Kappa.ToByteArray());
-                    Nu.Add(Cone.Kappa.ToByteArray());
+                    Nu.Enqueue(Rod.Channel.ToByteArray());
+                    Nu.Enqueue(Rod.Kappa.ToByteArray());
+                    Nu.Enqueue(Cone.Kappa.ToByteArray());
                     Failed = false;
                     Chi = 1;
                 }

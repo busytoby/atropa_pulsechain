@@ -11,6 +11,7 @@ namespace Dysnomia.Domain
     public class Fi
     {
         private Fa.Modulator Mu;
+        private Faung Rho;
         private BigInteger Base, Element, Manifold, Ring, Barn, Cone_Channel, Rod_Channel, Cone_Dynamo, Rod_Dynamo;
 
         public Fi(ref Faung Beta)
@@ -18,56 +19,64 @@ namespace Dysnomia.Domain
             Mu = Beta.Rod.Mu;
             if (Beta.Nu.Count != 32) throw new Exception("Count Expected 32");
 
-            Base = new BigInteger(Beta.Nu[0]);
-            Element = new BigInteger(Beta.Nu[1]);
-            Manifold = new BigInteger(Beta.Nu[2]);
-            Ring = new BigInteger(Beta.Nu[3]);
-            Barn = new BigInteger(Beta.Nu[4]);
+            Rho = Beta;
 
-            BigInteger Delta = new BigInteger(Beta.Nu[5]);
-            BigInteger Pi = new BigInteger(Beta.Nu[6]);
+            Base = Next();
+            Element = Next();
+            Manifold = Next();
+            Ring = Next();
+            Barn = Next();
+
+            BigInteger Delta = Next();
+            BigInteger Pi = Next();
             if (Mu(Barn, Delta, Ring) != Pi) throw new Exception("Invalid Charge");
 
-            Delta = new BigInteger(Beta.Nu[7]);
+            Delta = Next();
             if (Mu(Pi, Manifold, Ring) != Delta) throw new Exception("Invalid Induction");
 
-            Cone_Channel = new BigInteger(Beta.Nu[8]);
-            Pi = new BigInteger(Beta.Nu[9]);
+            Cone_Channel = Next();
+            Pi = Next();
             if (Mu(Delta, Element, Cone_Channel) != Pi) throw new Exception("Invalid Torque");
 
-            Delta = new BigInteger(Beta.Nu[10]);
+            Delta = Next();
             if (Mu(Pi, Element, Cone_Channel) != Delta) throw new Exception("Invalid Amp");
 
-            Pi = new BigInteger(Beta.Nu[11]);
+            Pi = Next();
             if (Mu(Delta, Element, Cone_Channel) != Pi) throw new Exception("Invalid Sustain");
 
-            Rod_Channel = new BigInteger(Beta.Nu[12]);
-            Delta = new BigInteger(Beta.Nu[13]);
+            Rod_Channel = Next();
+            Delta = Next();
             if (Mu(Pi, Cone_Channel, Rod_Channel) != Delta) throw new Exception("Invalid Rod Kappa");
 
-            Delta = new BigInteger(Beta.Nu[14]);
+            Delta = Next();
             if (Mu(Pi, Rod_Channel, Cone_Channel) != Delta) throw new Exception("Invalid Cone Kappa");
 
-            Delta = new BigInteger(Beta.Nu[15]);
-            Pi = new BigInteger(Beta.Nu[16]);
+            Delta = Next();
+            Pi = Next();
             if (Mu(Delta, Element, Rod_Channel) != Pi) throw new Exception("Invalid Beta Torque");
 
-            Delta = new BigInteger(Beta.Nu[17]);
+            Delta = Next();
             if (Mu(Pi, Element, Rod_Channel) != Delta) throw new Exception("Invalid Beta Amp");
 
-            Cone_Dynamo = new BigInteger(Beta.Nu[18]);
-            Rod_Dynamo = new BigInteger(Beta.Nu[19]);
-            Pi = new BigInteger(Beta.Nu[20]);
+            Cone_Dynamo = Next();
+            Rod_Dynamo = Next();
+            Pi = Next();
             if (Mu(Delta, Element, Rod_Channel) != Pi) throw new Exception("Invalid Beta Sustain");
 
-            Delta = new BigInteger(Beta.Nu[21]);
-            if(Mu(Pi, Rod_Channel, Cone_Dynamo) != Delta) throw new Exception("Invalid Rod Eta");
+            Delta = Next();
+            if (Mu(Pi, Rod_Channel, Cone_Dynamo) != Delta) throw new Exception("Invalid Rod Eta");
 
-            Delta = new BigInteger(Beta.Nu[22]);
+            Delta = Next();
             if (Mu(Pi, Cone_Channel, Rod_Dynamo) != Delta) throw new Exception("Invalid Cone Eta");
-
             throw new Exception("Stubbed");
             int i = 99;
+        }
+
+        public BigInteger Next()
+        {
+            byte[] Beta;
+            Rho.Nu.TryDequeue(out Beta);
+            return new BigInteger(Beta);
         }
     }
 }
