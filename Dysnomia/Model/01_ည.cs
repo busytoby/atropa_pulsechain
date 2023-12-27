@@ -40,8 +40,6 @@ namespace Dysnomia
                 Tau.WaitOne();
                 Mu.Delta.WaitOne();
                 Psi.Delta.WaitOne();
-                if ((Mu.Chi == 5 | Mu.Chi == 6) && Kappa != 3)
-                    throw new Exception("Unplanned");
 
                 if (Kappa == 1)
                 {
