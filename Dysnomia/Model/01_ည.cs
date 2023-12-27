@@ -15,10 +15,10 @@ namespace Dysnomia
         public Fa Rho;
         public Faung Psi;
         public Faung Nu;
+        public Domain.Nit Upsilon = new Domain.Nit();
         public Mutex Tau = new Mutex();
         public Living Theta;
         public int Kappa;
-        public int Chi = 0;
         public int Gamma = 1;
 
         private int _r = 0;
@@ -43,12 +43,13 @@ namespace Dysnomia
 
                 if (Kappa == 1)
                 {
-                    if (Chi == 0)
-                        Mu.Theta(Psi.Cone.Coordinate);
-                    else if (Chi == 1)
-                        Psi.Theta(Mu.Rod.Coordinate);
-                    else if (Chi == 2)
-                        Psi.Beta(Mu.Omicron);
+                    if (Upsilon.Count == 0)
+                        Upsilon.Theta(ref Mu, Psi.Cone.Coordinate);
+                    else if (Upsilon.Count == 16)
+                        Upsilon.Theta(ref Psi, Mu.Rod.Coordinate);
+                    else if (Upsilon.Count == 32)
+                        Upsilon.Beta(ref Psi, Mu.Omicron);
+/*
                     else if (Chi == 3 && Psi.Chi == 4)
                     {
                         Psi.Alpha();
@@ -60,16 +61,14 @@ namespace Dysnomia
                         Chi++;
                     }
                     if (Chi < 3) Chi++;
+*/
                 } else if(Kappa == 2)
                 {
-                    if (Chi == 0)
-                    {
-                        if (Psi.Omicron.IsZero)
-                            Psi.Omicron = Psi.Rod.Identity ^ Psi.Cone.Identity;
-                        Mu.Theta(Psi.Omicron);
-                    }
-                    else if (Chi == 1)
-                        Mu.Beta(Psi.Omicron);
+                    if (Upsilon.Count == 0 && !Psi.Omicron.IsZero)
+                        Upsilon.Theta(ref Mu, Psi.Omicron);
+                    else if (Upsilon.Count == 16)
+                        Upsilon.Beta(ref Mu, Psi.Omicron);
+                    /*
                     else if (Chi == 2)
                         Mu.Iota();
                     else if (Chi == 3)
@@ -77,17 +76,14 @@ namespace Dysnomia
                     else if (Chi == 4)
                         Mu.Alpha();
                     if (Chi < 5) Chi++;
+                    */
                 } else if(Kappa == 3)
                 {
-                    if (Chi == 0)
-                    {
-                        if (Mu.Omicron.IsZero)
-                            Mu.Omicron = Mu.Rod.Kappa ^ Mu.Cone.Kappa;
-
-                        Psi.Theta(Mu.Omicron);
-                    }
-                    else if (Chi == 1)
-                        Psi.Beta(Mu.Omicron);
+                    if (Upsilon.Count == 0 && !Mu.Omicron.IsZero)
+                        Upsilon.Theta(ref Psi, Mu.Omicron);
+                    else if (Upsilon.Count == 16)
+                        Upsilon.Beta(ref Psi, Mu.Omicron);
+/*
                     else if (Chi == 2)
                         Psi.Iota();
                     else if (Chi == 3)
@@ -148,8 +144,10 @@ namespace Dysnomia
                         Chi = 12;
                     }
                     if (Chi < 5) Chi++;
-                    else _sleep = (_sleep >= 4000) ? 4000 : _sleep * 2;
+*/
+                    _sleep = (_sleep >= 4000) ? 4000 : _sleep * 2;
                 }
+
                 Mu.Delta.ReleaseMutex();
                 Psi.Delta.ReleaseMutex();
                 Tau.ReleaseMutex();

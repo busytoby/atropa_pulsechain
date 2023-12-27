@@ -28,10 +28,10 @@ namespace Dysnomia.Domain
             {
                 Iota = Ohm;
                 Zuo.Mu.Nu[2].Theta.Xi[0].Chi = 0;
-                Zuo.Mu.Nu[2].Theta.Xi[0].Theta(Iota);
+                //Zuo.Mu.Nu[2].Theta.Xi[0].Theta(Iota);
                 Code = Zuo.Mu.Nu[2].Theta.Xi[0].Omicron;
                 BinCode = Zuo.Mu.Nu[2].Theta.Xi[0].Omega;
-                Zuo.Mu.Nu[2].Theta.Xi[0].Beta(BinCode);
+                //Zuo.Mu.Nu[2].Theta.Xi[0].Beta(BinCode);
                 OpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Eta;
                 BinOpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Kappa;
             }
@@ -49,10 +49,10 @@ namespace Dysnomia.Domain
             {
                 Alpha = Omega;
                 Zuo.Mu.Nu[2].Theta.Xi[0].Chi = 0;
-                Zuo.Mu.Nu[2].Theta.Xi[0].Theta(Omega);
+                //Zuo.Mu.Nu[2].Theta.Xi[0].Theta(Omega);
                 Code = Zuo.Mu.Nu[2].Theta.Xi[0].Omicron;
                 BinCode = Zuo.Mu.Nu[2].Theta.Xi[0].Omega;
-                Zuo.Mu.Nu[2].Theta.Xi[0].Beta(BinCode);
+                //Zuo.Mu.Nu[2].Theta.Xi[0].Beta(BinCode);
                 OpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Eta;
                 BinOpRef = Zuo.Mu.Nu[2].Theta.Xi[0].Rod.Kappa;
             }

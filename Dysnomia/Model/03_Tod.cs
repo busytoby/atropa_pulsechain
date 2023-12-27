@@ -39,11 +39,12 @@ namespace Dysnomia
                 int i = 99;
             }
 
+            /*
             if (Nu[12].Theta.Chi != null && Nu[4].Theta.Chi == null)
             {
                 Nu[4].Theta.Chi = Nu[12].Theta.Chi;
                 Nu[4].Theta.Xi = Nu[12].Theta.Xi;
-                Nu[12].Chi = 12;
+                //Nu[12].Chi = 12;
             }
 
             if (Nu[19].Theta.Chi != null && Nu[11].Theta.Chi == null)
@@ -66,7 +67,8 @@ namespace Dysnomia
                 Nu[1].Theta.Xi[0].Lambda();
                 Nu[1].Theta.Xi[0].Alpha(ref Beta);
             }
-
+            */
+            /*
             if (Nu[5].Chi == 11)
             {
                 Nu[2].Theta.Chi = Nu[5].Theta.Chi;
@@ -75,6 +77,7 @@ namespace Dysnomia
                 Nu[5].Mu.Alpha();
                 Nu[5].Chi++;
             }
+            */
 
             /*
             foreach(ည Beta in Nu)

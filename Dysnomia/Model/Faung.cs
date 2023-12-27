@@ -176,11 +176,6 @@ namespace Dysnomia
             Cone.Bond();
         }
 
-        public void Theta()
-        {
-            Theta(Pi > 0 ? Pi : Rod.Signal);
-        }
-
         public void Alpha(BigInteger Iota)
         {
             if (Chi != 8) throw new Exception("Chi Non 8");
@@ -250,65 +245,6 @@ namespace Dysnomia
             Cone.React(Lambda, Cone.Channel);
             Nu.Enqueue(Cone.Kappa.ToByteArray());
             Chi = 3;
-        }
-
-        public void Beta(BigInteger Iota)
-        {
-            if (Iota == 0) throw new Exception("Iota Zero");
-            if (Nu.Count != 15) throw new Exception("Nu Non 15");
-
-            Nu.Enqueue(Iota.ToByteArray());
-            BigInteger Lambda = Rod.Torque(Iota);
-            Nu.Enqueue(Lambda.ToByteArray());
-            Lambda = Rod.Amplify(Lambda);
-            Nu.Enqueue(Lambda.ToByteArray());
-            Lambda = Rod.Sustain(Lambda);
-            Nu.Enqueue(Cone.Dynamo.ToByteArray());
-            Nu.Enqueue(Rod.Dynamo.ToByteArray());
-            Nu.Enqueue(Lambda.ToByteArray());
-            Rod.React(Lambda, Cone.Dynamo);
-            Nu.Enqueue(Rod.Eta.ToByteArray());
-            Cone.React(Lambda, Rod.Dynamo);
-            Nu.Enqueue(Cone.Eta.ToByteArray());
-            Chi = 2;
-        }
-
-        public void Theta(String Omicron)
-        {
-            if (Chi != 0) throw new Exception("Chi Non Zero");
-            byte[] Beta = Encoding.Unicode.GetBytes(Omicron);
-            BigInteger Iota = new BigInteger(Beta);
-            Theta(Iota);
-        }
-
-        public void Theta(BigInteger Omicron)
-        {
-            if (Omicron == 0) throw new Exception("Omicron Zero");
-            if (Nu.Count != 0) throw new Exception("Nu Count > 0");
-            Nu.Enqueue(Rod.Base.ToByteArray());
-            Nu.Enqueue(Rod.Element.ToByteArray());
-            Nu.Enqueue(Rod.Manifold.ToByteArray());
-            Nu.Enqueue(Rod.Ring.ToByteArray());
-            Nu.Enqueue(Rod.Barn.ToByteArray());
-            Nu.Enqueue(Omicron.ToByteArray());
-            Charge(Omicron);
-            Nu.Enqueue(Sigma.ToByteArray());
-            if (Sigma < 4)
-                throw new Exception("Sigma < 4");
-            Induce();
-            Nu.Enqueue(Rho.ToByteArray());
-            Nu.Enqueue(Cone.Channel.ToByteArray());
-            Torque();
-            Nu.Enqueue(Upsilon.ToByteArray());
-            Amplify();
-            Nu.Enqueue(Ohm.ToByteArray());
-            Sustain();
-            Nu.Enqueue(Pi.ToByteArray());
-            React();
-            Nu.Enqueue(Rod.Channel.ToByteArray());
-            Nu.Enqueue(Rod.Kappa.ToByteArray());
-            Nu.Enqueue(Cone.Kappa.ToByteArray());
-            Chi = 1;
         }
 
         public void Charge(BigInteger Signal)

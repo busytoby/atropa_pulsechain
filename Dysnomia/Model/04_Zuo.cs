@@ -30,6 +30,7 @@ namespace Dysnomia
                 Upsilon = Psi.Pi(true);
                 Theta = Eta.Pi(true);
 
+                /*
                 Mu.Psi.Theta.Tau.WaitOne();
                 while (Mu.Psi.Theta.Chi < 4) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Psi.Theta.Tau.WaitOne(); }
                 Mu.Theta.Theta(Mu.Psi.Theta.Psi.Omicron);
@@ -48,6 +49,7 @@ namespace Dysnomia
                 Theta.Iota();
                 Theta.Lambda();
                 Mu.Theta.Lambda();
+                */
             } catch (Exception e)
             {
                 int i = 99; 

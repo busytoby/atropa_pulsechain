@@ -15,6 +15,8 @@ namespace Pulse
 
         private void Bootstrap(object sender, StartupEventArgs e)
         {
+            Zuo.Gamma++;
+            return;
             Task t0 = new Task(() => { A = new 錨(); });
             t0.Start();
 

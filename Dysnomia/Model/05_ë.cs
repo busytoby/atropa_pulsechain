@@ -38,6 +38,7 @@ namespace Dysnomia
             Zuo.Mu.Nu.Add(Eta);
             Sigma = new ညြ(ref Rho, ref Psi, ref Eta);
             Upsilon = Eta.Pi(false);
+            /*
             Upsilon.Delta.WaitOne();
             Zuo.Mu.Theta.Delta.WaitOne();
             Zuo.Upsilon.Delta.WaitOne();
@@ -51,6 +52,7 @@ namespace Dysnomia
             Upsilon.Delta.ReleaseMutex();
             Zuo.Mu.Theta.Delta.ReleaseMutex();
             Zuo.Upsilon.Delta.ReleaseMutex();
+            */
         }
     }
 }

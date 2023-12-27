@@ -27,6 +27,7 @@ namespace Dysnomia
 
             Nu = Zuo.Mu.Psi.Pi(Zuo.Mu.Mu.Upsilon.Barn);
             Eta = new Faung(ref Nu, Rho.Psi.Rho.Secret, Psi.Nu.Rod.Signal, Rho.Sigma.Eta.Cone.Channel, Zuo.Mu.Mu.Upsilon.Barn);
+            /*
             if (Psi.Nu.Chi == 4)
                 Psi.Nu.Alpha(ref Rho.Psi.Mu);
             else if(Rho.Nu.Chi == 4)
@@ -40,9 +41,11 @@ namespace Dysnomia
                 Eta.Alpha();
             else
                 Eta.Alpha(ref Rho.Psi.Mu);
+            */
             Upsilon = Rho.Sigma.Pi(Rho.Psi.Rho.Identity);
             Tau = new ည(ref Eta, ref Upsilon, false);
             Zuo.Mu.Nu.Add(Tau);
+            /*
             while (Rho.Psi.Mu.Chi < 6) { Rho.Psi.Mu.Delta.ReleaseMutex(); Thread.Sleep(40); Rho.Psi.Mu.Delta.WaitOne(); }
             if (Psi.Nu.Chi == 8)
                 Psi.Nu.Alpha(Psi.Psi.Rho.Element);
@@ -50,7 +53,9 @@ namespace Dysnomia
                 Rho.Nu.Alpha(Rho.Psi.Rho.Element);
             else
                 Eta.Alpha(Rho.Eta.Rho.Element);
+            */
             Theta = new ညြ(ref Tau, ref Rho.Sigma.Mu, ref Psi.Sigma.Theta);
+            /*
             Rho.Psi.Chi = 6;
             Rho.Psi.Mu.Delta.ReleaseMutex();
             Rho.Psi.Tau.WaitOne();
@@ -61,12 +66,13 @@ namespace Dysnomia
             Rho.Psi.Nu.Lambda();
             Rho.Psi.Nu.Alpha();
             Rho.Psi.Tau.ReleaseMutex();
+            */
         }
         
 
         public void Pi(bool Ohm = false)
         {
-            if (Rho.Psi.Chi != 7) throw new Exception("Rho.Psi.Chi != 7");
+            //if (Rho.Psi.Chi != 7) throw new Exception("Rho.Psi.Chi != 7");
             List<Faung> Beta = new List<Faung>();
             Fa Iota;
             BigInteger Omicron = Ohm ? Rho.Psi.Rho.Element : Zuo.Mu.Theta.Ohm;
@@ -78,7 +84,7 @@ namespace Dysnomia
                     Math.ModPow(Omicron, Zuo.Mu.Theta.Pi, Psi.Nu.Omicron),
                     Math.ModPow(Omicron, Zuo.Mu.Theta.Pi, Psi.Nu.Omicron),
                     Math.ModPow(Rho.Psi.Nu.Pi, Rho.Psi.Nu.Ohm, Psi.Nu.Omicron));
-                Lambda.Theta(Psi.Eta.Rho.Identity);
+                //Lambda.Theta(Psi.Eta.Rho.Identity);
                 Beta.Add(Lambda);
             }
 
@@ -96,7 +102,7 @@ namespace Dysnomia
             Iota.Open();
 
             Rho.Psi.Theta.Fong(ref Iota, ref Beta);
-            Rho.Psi.Chi++;
+            //Rho.Psi.Chi++;
         }
     }
 }
