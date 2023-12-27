@@ -21,7 +21,7 @@ namespace Dysnomia.Domain
         {
             Mu = new Faung();
             Theta = new Living(Phi);
-            Register(Mu.Rod.Signal);
+            Reset();
         }
 
         public Buffer Encode(String Beta)
@@ -34,11 +34,14 @@ namespace Dysnomia.Domain
             return new Buffer(Mu, Beta.Bytes);
         }
 
+        public void Reset()
+        {
+            Register(Mu.Rod.Signal);
+        }
+
         private void Register(BigInteger Omicron)
         {
             Tau.WaitOne();
-            if (Count != 0) throw new Exception("Already Registered");
-            if (Mu.Omicron != 0) throw new Exception("Mu Omicron Non-Zero");
             if (Omicron == 0) throw new Exception("Omicron Zero");
 
             Mu.Charge(Omicron);

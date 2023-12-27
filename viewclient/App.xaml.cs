@@ -30,6 +30,9 @@ namespace Pulse
             D = B.ToString();
             E = O.Decode(A); 
             F = O.Decode(B);
+            O.Reset();
+            A = O.Encode("Test");
+            B = O.Encode("Test");
 
             //Task t0 = new Task(() => { A = new 錨(); });
             //t0.Start();

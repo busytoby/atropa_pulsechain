@@ -9,10 +9,9 @@ namespace Dysnomia.Domain
 {
     public class Buffer
     {
-        public int Size;
         public byte[] Bytes;
 
-        public Buffer(Faung Mu, byte[] Rho = null) {
+        public Buffer(Faung Mu, byte[] Rho) {
             int _size = Rho.Length;
             Bytes = new byte[_size];
 
