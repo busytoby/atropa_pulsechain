@@ -13,6 +13,24 @@ namespace Dysnomia.Domain
     {
         BigInteger Upsilon, Ohm, Pi, Kappa, Eta;
 
+        public void Alpha(BigInteger Iota)
+        {
+            Enqueue(new byte[] { 0x06 });
+            Enqueue(Iota.ToByteArray());
+            Upsilon = Upsilon ^ Iota;
+        }
+
+        public void Alpha(ref Faung Beta)
+        {
+            Enqueue(new byte[] { 0x05 });
+            Enqueue(Beta.Upsilon.ToByteArray());
+            // stub additional record from beta
+            Upsilon = Upsilon ^ Ohm ^ Pi ^ Beta.Upsilon;
+            Enqueue(Upsilon.ToByteArray());
+            Beta.Ohm = Beta.Ohm ^ Upsilon;
+            Enqueue(Beta.Ohm.ToByteArray());
+        }
+
         public void Alpha(bool Phi = true)
         {
             Enqueue(new byte[] { 0x04 });

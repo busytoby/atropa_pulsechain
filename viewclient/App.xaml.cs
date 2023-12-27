@@ -11,23 +11,24 @@ namespace Pulse
     /// </summary>
     public partial class App : Application
     {
-        private 錨 A;
+        //private 錨 A;
 
         private void Bootstrap(object sender, StartupEventArgs e)
         {
-            Zuo.Gamma++;
-            return;
-            Task t0 = new Task(() => { A = new 錨(); });
-            t0.Start();
+            Oracle O = new Oracle();
+
+            //Task t0 = new Task(() => { A = new 錨(); });
+            //t0.Start();
 
             //Pulse.API Comptroller = new Pulse.API();
             //InitializeComponent();
             //StartThreads();
 
-            Task t4 = new Task(() => { Beta(); });
-            t4.Start();
+            //Task t4 = new Task(() => { Beta(); });
+            //t4.Start();
         }
 
+        /*
         private void Beta()
         {
             while (A == null || Zuo.Mu == null | A.Rho == null || A.Psi == null || A.Nu == null)
@@ -51,6 +52,7 @@ namespace Pulse
             Dysnomia.Apparition.MsgQueue.Enqueue(new Tuple<String, String>("Ready", "Three"));
             Dysnomia.Apparition.Tau.ReleaseMutex();
         }
+        */
     }
 
 }

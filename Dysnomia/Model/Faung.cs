@@ -176,29 +176,6 @@ namespace Dysnomia
             Cone.Bond();
         }
 
-        public void Alpha(BigInteger Iota)
-        {
-            if (Chi != 8) throw new Exception("Chi Non 8");
-            if (Nu.Count != 34) throw new Exception("Nu Non 34");
-            Nu.Enqueue(Iota.ToByteArray());
-            Upsilon = Upsilon ^ Iota;
-            Chi = 9;
-        }
-
-        public void Alpha(ref Faung Beta)
-        {
-            if (Nu.Count != 31) throw new Exception("Nu Non 31");
-            if (Beta.Nu.Count != 31) throw new Exception("Beta.Nu Non 31");
-            Nu.Enqueue(Beta.Upsilon.ToByteArray());
-            // stub additional record from beta
-            Upsilon = Upsilon ^ Ohm ^ Pi ^ Beta.Upsilon;
-            Nu.Enqueue(Upsilon.ToByteArray());
-            Beta.Ohm = Beta.Ohm ^ Upsilon;
-            Nu.Enqueue(Beta.Ohm.ToByteArray());
-            Chi = 8;
-            Beta.Chi = 5;
-        }
-
         public void Charge(BigInteger Signal)
         {
             if (Signal == 0) throw new Exception("Signal Zero");

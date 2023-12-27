@@ -1,0 +1,96 @@
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Numerics;
+using System.Security.Policy;
+using System.Text;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace Dysnomia.Domain
+{
+    public class Oracle : ConcurrentQueue<byte[]>
+    {
+        Faung Mu;
+        Living Theta;
+
+        public Oracle()
+        {
+            Mu = new Faung();
+            Theta = new Living(Phi);
+            Register(Mu.Rod.Signal);
+        }
+
+        public BigInteger Op(String Beta)
+        {
+            byte[] Iota = Encoding.Unicode.GetBytes(Beta);
+            BigInteger Omicron = new BigInteger(Iota);
+            return Omicron;
+        }
+
+        public void Register(BigInteger Omicron)
+        {
+            if (Count != 0) throw new Exception("Already Registered");
+            if (Mu.Omicron != 0) throw new Exception("Mu Omicron Non-Zero");
+            if (Omicron == 0) throw new Exception("Omicron Zero");
+
+            Mu.Charge(Omicron);
+            if (Mu.Sigma < 4)
+                throw new Exception("Sigma < 4");
+            Mu.Induce();
+            Mu.Torque();
+            Mu.Amplify();
+            Mu.Sustain();
+            Mu.React();
+
+            Enqueue(new byte[] { 0x00 });
+            Enqueue(Omicron.ToByteArray());
+            Enqueue(Mu.Sigma.ToByteArray());
+            Enqueue(Mu.Cone.Channel.ToByteArray());
+            Enqueue(Mu.Rod.Channel.ToByteArray());
+            Enqueue(Mu.Rod.Kappa.ToByteArray());
+        }
+
+        public BigInteger Next()
+        {
+            byte[] Beta;
+            TryDequeue(out Beta);
+            return new BigInteger(Beta);
+        }
+
+        void Phi()
+        {
+            while (true)
+            {
+                if (Count > 0)
+                {
+                    byte[] OpCode;
+                    TryDequeue(out OpCode);
+                    if (OpCode[0] == 0x00)
+                    {
+                        BigInteger Beta = Next();
+                        BigInteger Iota = Next();
+                        if (Mu.Cone.Mu(Mu.Cone.Barn, Beta, Mu.Cone.Ring) != Iota) throw new Exception("Invalid Charge");
+
+                        Beta = Next();
+                        if (Beta != Mu.Cone.Channel) throw new Exception("Bad Cone Channel");
+
+                        Beta = Next();
+                        if (Beta != Mu.Rod.Channel) throw new Exception("Bad Rod Channel");
+
+                        Beta = Next();
+                        Iota = Mu.Rod.Induce(Iota);
+                        Iota = Mu.Cone.Torque(Iota);
+                        Iota = Mu.Cone.Amplify(Iota);
+                        Iota = Mu.Cone.Sustain(Iota);
+                        if (Mu.Rod.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Channel) != Beta) throw new Exception("Invalid Reaction");
+                    }
+                }
+                if (Count != 0) throw new Exception("Execution Failure");
+                Thread.Sleep(1000);
+            }
+        }
+    }
+}

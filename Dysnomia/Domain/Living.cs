@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -13,8 +14,6 @@ namespace Dysnomia.Domain
         public delegate void 活();
         public Mutex Tau = new Mutex();
         public 活 Omega;
-        public Fa Chi;
-        public List<Faung> Xi;
         private Thread Omicron;
 
         public Living(活 O) 
@@ -22,15 +21,6 @@ namespace Dysnomia.Domain
             Omega = O;
             Omicron = new Thread(new ThreadStart(Omega));
             Omicron.Start();
-        }
-
-        public void Fong(ref Fa Beta, ref List<Faung> Iota)
-        {
-            Tau.WaitOne();
-            if (Chi != null || Xi != null) throw new Exception("Non Null");
-            Chi = Beta;
-            Xi = Iota;
-            Tau.ReleaseMutex();
         }
     }
 }

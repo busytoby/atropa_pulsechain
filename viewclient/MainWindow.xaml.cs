@@ -31,6 +31,7 @@ namespace Pulse
     /// </summary>
     public partial class MainWindow : Window
     {
+        /*
         private bool UIUpdating = false;
         private 錨 A;
 
@@ -245,5 +246,6 @@ namespace Pulse
             UIUpdating = false;
             return i;
         }
+        */
     }
 }
