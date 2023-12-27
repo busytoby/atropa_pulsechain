@@ -24,6 +24,11 @@ namespace Dysnomia.Domain
                 Beta = Mu.Rod.Mu(Beta, Mu.Cone.Kappa, Mu.Pi);
             }
             
-        } 
+        }
+
+        public String ToString()
+        {
+            return new String(Bytes.Select(b => (char)b).ToArray());
+        }
     }
 }

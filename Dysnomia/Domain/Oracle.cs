@@ -13,9 +13,9 @@ namespace Dysnomia.Domain
 {
     public class Oracle : ConcurrentQueue<byte[]>
     {
-        Faung Mu;
-        Mutex Tau = new Mutex(false);
-        Living Theta;
+        public Faung Mu;
+        public Mutex Tau = new Mutex(false);
+        public Living Theta;
 
         public Oracle()
         {
@@ -27,6 +27,11 @@ namespace Dysnomia.Domain
         public Buffer Encode(String Beta)
         {            
             return new Buffer(Mu, Encoding.ASCII.GetBytes(Beta));
+        }
+
+        public Buffer Decode(Buffer Beta)
+        {
+            return new Buffer(Mu, Beta.Bytes);
         }
 
         private void Register(BigInteger Omicron)

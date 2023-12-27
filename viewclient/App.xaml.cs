@@ -19,9 +19,17 @@ namespace Pulse
             Oracle O = new Oracle();
             Dysnomia.Domain.Buffer A = O.Encode("Test");
             Dysnomia.Domain.Buffer B = O.Encode("Test");
+            String C = A.ToString();
+            String D = B.ToString();
+            Dysnomia.Domain.Buffer E = O.Decode(A);
+            Dysnomia.Domain.Buffer F = O.Decode(B);
             O.Beta(Dysnomia.Math.Random());
-            A = O.Encode("Test");
-            B = O.Encode("Test");
+            A = O.Encode("TSET");
+            B = O.Encode("TSET");
+            C = A.ToString();
+            D = B.ToString();
+            E = O.Decode(A); 
+            F = O.Decode(B);
 
             //Task t0 = new Task(() => { A = new 錨(); });
             //t0.Start();
