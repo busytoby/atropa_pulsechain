@@ -23,14 +23,7 @@ namespace Dysnomia.Domain
             Register(Mu.Rod.Signal);
         }
 
-        public BigInteger Op(String Beta)
-        {
-            byte[] Iota = Encoding.Unicode.GetBytes(Beta);
-            BigInteger Omicron = new BigInteger(Iota);
-            return Omicron;
-        }
-
-        public void Register(BigInteger Omicron)
+        private void Register(BigInteger Omicron)
         {
             if (Count != 0) throw new Exception("Already Registered");
             if (Mu.Omicron != 0) throw new Exception("Mu Omicron Non-Zero");
@@ -51,6 +44,32 @@ namespace Dysnomia.Domain
             Enqueue(Mu.Cone.Channel.ToByteArray());
             Enqueue(Mu.Rod.Channel.ToByteArray());
             Enqueue(Mu.Rod.Kappa.ToByteArray());
+        }
+
+        public BigInteger Op(String Beta)
+        {
+            byte[] Iota = Encoding.Unicode.GetBytes(Beta);
+            BigInteger Omicron = new BigInteger(Iota);
+            return Omicron;
+        }
+
+        public void Beta(BigInteger Omicron)
+        {
+            if (Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
+            if (Omicron == 0) throw new Exception("Iota Zero");
+
+            BigInteger Lambda = Mu.Rod.Torque(Omicron);
+            Lambda = Mu.Rod.Amplify(Lambda);
+            Lambda = Mu.Rod.Sustain(Lambda);
+            Mu.Rod.React(Lambda, Mu.Cone.Dynamo);
+            Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
+
+            Enqueue(new byte[] { 0x01 });
+            Enqueue(Omicron.ToByteArray());
+            Enqueue(Mu.Cone.Dynamo.ToByteArray());
+            Enqueue(Mu.Rod.Dynamo.ToByteArray());
+            Enqueue(Mu.Rod.Eta.ToByteArray());
+            Enqueue(Mu.Cone.Eta.ToByteArray());
         }
 
         public BigInteger Next()
@@ -86,9 +105,31 @@ namespace Dysnomia.Domain
                         Iota = Mu.Cone.Amplify(Iota);
                         Iota = Mu.Cone.Sustain(Iota);
                         if (Mu.Rod.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Channel) != Beta) throw new Exception("Invalid Reaction");
+                        if(Count > 0) TryDequeue(out OpCode);
                     }
+
+                    if (OpCode[0] == 0x01)
+                    {
+                        BigInteger Beta = Next();
+                        BigInteger Iota = Next();
+                        if (Iota != Mu.Cone.Dynamo) throw new Exception("Bad Cone Dynamo");
+                        Iota = Next();
+                        if (Iota != Mu.Rod.Dynamo) throw new Exception("Bad Rod Dynamo");
+
+                        Beta = Mu.Rod.Torque(Beta);
+                        Beta = Mu.Rod.Amplify(Beta);
+                        Beta = Mu.Rod.Sustain(Beta);
+
+                        Iota = Next();
+                        if (Mu.Rod.Mu(Beta, Mu.Rod.Channel, Mu.Cone.Dynamo) != Iota) throw new Exception("Invalid Rod Eta");
+
+                        Iota = Next();
+                        if (Mu.Cone.Mu(Beta, Mu.Cone.Channel, Mu.Rod.Dynamo) != Iota) throw new Exception("Invalid Cone Eta");
+                        if (Count > 0) TryDequeue(out OpCode);
+                    }
+                    if (Count != 0) throw new Exception("Execution Failure");
+                    Beta(Math.Random());
                 }
-                if (Count != 0) throw new Exception("Execution Failure");
                 Thread.Sleep(1000);
             }
         }
