@@ -11,11 +11,50 @@ namespace Dysnomia.Domain
 {
     public class Nit : ConcurrentQueue<byte[]>
     {
+        BigInteger Upsilon, Ohm, Pi, Kappa, Eta;
+
+        public void Alpha(bool Phi = true)
+        {
+            Enqueue(new byte[] { 0x04 });
+            Upsilon = Phi ? Upsilon ^ Ohm ^ Pi : Upsilon ^ Ohm;
+            Enqueue(Upsilon.ToByteArray());
+        }
+
+        public void Lambda(ref Faung Beta)
+        {
+            Enqueue(new byte[] { 0x03 });
+            Upsilon = Beta.Cone.Torque(Beta.Rod.Eta);
+            Enqueue(Upsilon.ToByteArray());
+            Ohm = Beta.Cone.Amplify(Upsilon);
+            Enqueue(Ohm.ToByteArray());
+            Pi = Beta.Cone.Sustain(Ohm);
+            Enqueue(Pi.ToByteArray());
+            Beta.Cone.React(Pi, Beta.Cone.Dynamo);
+            Kappa = Beta.Cone.Kappa;
+            Beta.Rod.React(Pi, Beta.Rod.Dynamo);
+            Eta = Beta.Rod.Kappa;
+        }
+
+        public void Iota(ref Faung Beta)
+        {
+            Enqueue(new byte[] { 0x02 });
+            BigInteger Lambda = Beta.Cone.Torque(Beta.Rod.Kappa);
+            Enqueue(Lambda.ToByteArray());
+            Lambda = Beta.Cone.Amplify(Lambda);
+            Enqueue(Lambda.ToByteArray());
+            Lambda = Beta.Cone.Sustain(Lambda);
+            Enqueue(Lambda.ToByteArray());
+            Beta.Rod.React(Lambda, Beta.Rod.Channel);
+            Enqueue(Beta.Rod.Kappa.ToByteArray());
+            Beta.Cone.React(Lambda, Beta.Cone.Channel);
+            Enqueue(Beta.Cone.Kappa.ToByteArray());
+        }
+
         public void Beta(ref Faung Beta, BigInteger Iota)
         {
             if (Iota == 0) throw new Exception("Iota Zero");
-            if (Count < 16) throw new Exception("Count < 16");
 
+            Enqueue(new byte[] { 0x01 });
             Enqueue(Iota.ToByteArray());
             BigInteger Lambda = Beta.Rod.Torque(Iota);
             Enqueue(Lambda.ToByteArray());
@@ -34,7 +73,7 @@ namespace Dysnomia.Domain
         public void Theta(ref Faung Beta, BigInteger Omicron)
         {
             if (Omicron == 0) throw new Exception("Omicron Zero");
-            Enqueue(null);
+            Enqueue(new byte[] {0x00});
             Enqueue(Beta.Rod.Base.ToByteArray());
             Enqueue(Beta.Rod.Element.ToByteArray());
             Enqueue(Beta.Rod.Manifold.ToByteArray());

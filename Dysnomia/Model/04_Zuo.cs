@@ -29,27 +29,24 @@ namespace Dysnomia
                 Mu.Psi.Theta.Rho.Tune();
                 Upsilon = Psi.Pi(true);
                 Theta = Eta.Pi(true);
-
-                /*
                 Mu.Psi.Theta.Tau.WaitOne();
-                while (Mu.Psi.Theta.Chi < 4) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Psi.Theta.Tau.WaitOne(); }
-                Mu.Theta.Theta(Mu.Psi.Theta.Psi.Omicron);
-                Mu.Theta.Beta(Mu.Psi.Theta.Psi.Omega);
+                while (Mu.Psi.Theta.Upsilon.Count < 39) { Mu.Psi.Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Psi.Theta.Tau.WaitOne(); }
+                Mu.Psi.Theta.Upsilon.Theta(ref Mu.Theta, Mu.Psi.Theta.Psi.Omicron);
+                Mu.Psi.Theta.Upsilon.Beta(ref Mu.Theta, Mu.Psi.Theta.Psi.Omega);
                 Mu.Psi.Theta.Tau.ReleaseMutex();
-                Mu.Theta.Iota();
+                Mu.Psi.Theta.Upsilon.Iota(ref Mu.Theta);
                 Eta.Tau.WaitOne();
-                while (Eta.Chi < 4) { Eta.Tau.ReleaseMutex(); Thread.Sleep(40); Eta.Tau.WaitOne(); }
-                Upsilon.Theta(Eta.Psi.Omega);
-                Upsilon.Beta(Eta.Psi.Omicron);
-                Upsilon.Iota();
-                Upsilon.Lambda();
-                Theta.Theta(Eta.Mu.Omega);
-                Theta.Beta(Eta.Mu.Omicron);
+                while (Eta.Upsilon.Count < 39) { Eta.Tau.ReleaseMutex(); Thread.Sleep(40); Eta.Tau.WaitOne(); }
+                Eta.Upsilon.Theta(ref Upsilon, Eta.Psi.Omega);
+                Eta.Upsilon.Beta(ref Upsilon, Eta.Psi.Omicron);
+                Eta.Upsilon.Iota(ref Upsilon);
+                Eta.Upsilon.Lambda(ref Upsilon);
+                Eta.Upsilon.Theta(ref Theta, Eta.Mu.Omega);
+                Eta.Upsilon.Beta(ref Theta, Eta.Mu.Omicron);
                 Eta.Tau.ReleaseMutex();
-                Theta.Iota();
-                Theta.Lambda();
-                Mu.Theta.Lambda();
-                */
+                Eta.Upsilon.Iota(ref Theta);
+                Eta.Upsilon.Lambda(ref Theta);
+                Eta.Upsilon.Lambda(ref Mu.Theta);
             } catch (Exception e)
             {
                 int i = 99; 

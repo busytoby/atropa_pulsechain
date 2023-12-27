@@ -49,51 +49,38 @@ namespace Dysnomia
                         Upsilon.Theta(ref Psi, Mu.Rod.Coordinate);
                     else if (Upsilon.Count == 32)
                         Upsilon.Beta(ref Psi, Mu.Omicron);
-/*
-                    else if (Chi == 3 && Psi.Chi == 4)
+                    else if (Upsilon.Count == 41)
                     {
-                        Psi.Alpha();
-                        Chi++;
+                        Upsilon.Alpha();
+                        Upsilon.Alpha(false);
                     }
-                    else if (Chi == 4 && Mu.Chi == 4)
-                    {
-                        Mu.Alpha();
-                        Chi++;
-                    }
-                    if (Chi < 3) Chi++;
-*/
                 } else if(Kappa == 2)
                 {
                     if (Upsilon.Count == 0 && !Psi.Omicron.IsZero)
                         Upsilon.Theta(ref Mu, Psi.Omicron);
                     else if (Upsilon.Count == 16)
                         Upsilon.Beta(ref Mu, Psi.Omicron);
-                    /*
-                    else if (Chi == 2)
-                        Mu.Iota();
-                    else if (Chi == 3)
-                        Mu.Lambda();
-                    else if (Chi == 4)
-                        Mu.Alpha();
-                    if (Chi < 5) Chi++;
-                    */
+                    else if(Upsilon.Count == 25)
+                        Upsilon.Iota(ref Mu);
+                    else if (Upsilon.Count == 31)
+                        Upsilon.Lambda(ref Mu);
+                    else if (Upsilon.Count == 35)
+                        Upsilon.Alpha();
                 } else if(Kappa == 3)
                 {
                     if (Upsilon.Count == 0 && !Mu.Omicron.IsZero)
                         Upsilon.Theta(ref Psi, Mu.Omicron);
                     else if (Upsilon.Count == 16)
                         Upsilon.Beta(ref Psi, Mu.Omicron);
+                    else if(Upsilon.Count == 25)
+                        Upsilon.Iota(ref Psi);
+                    else if(Upsilon.Count == 31)
+                        Upsilon.Lambda(ref Psi);
+                    else if(Upsilon.Count == 35)
+                        Upsilon.Alpha();
+                    else if(Upsilon.Count == 37)
+                        Upsilon.Alpha();
 /*
-                    else if (Chi == 2)
-                        Psi.Iota();
-                    else if (Chi == 3)
-                        Psi.Lambda();
-                    else if (Chi == 4)
-                        Psi.Alpha();
-                    else if (Chi == 5 && Mu.Chi == 5)
-                    {
-                        Mu.Alpha();
-                    }
                     else if (Chi == 6 && Mu.Chi == 6)
                     {
                         if (Nu != null) throw new Exception("Collapse");

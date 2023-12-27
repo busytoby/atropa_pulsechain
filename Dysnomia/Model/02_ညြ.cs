@@ -28,24 +28,24 @@ namespace Dysnomia
             else
                 Eta = new Faung(ref Psi, Mu.Psi.Cone.Secret, Mu.Mu.Cone.Signal, Mu.Psi.Cone.Channel, Mu.Psi.Cone.Identity);
             Mu.Tau.WaitOne();
-            while (Mu.Upsilon.Count < 16) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
+            while (Mu.Upsilon.Count < 41) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
             Mu.Upsilon.Theta(ref Eta, Mu.Mu.Omicron);
+            Mu.Tau.WaitOne();
+            while (Mu.Upsilon.Count < 57) { Mu.Tau.ReleaseMutex(); Thread.Sleep(4000); Mu.Tau.WaitOne(); }
             Mu.Upsilon.Beta(ref Eta, Mu.Psi.Omega);
             Mu.Tau.ReleaseMutex();
             Upsilon = new Fa();
             Theta = new ည(ref Eta, ref Upsilon, false);
-            /*
-            Eta.Iota();
+            Mu.Upsilon.Iota(ref Eta);
             Mu.Tau.WaitOne();
-            while (Mu.Chi < 3) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
-            Mu.Mu.Beta(Theta.Mu.Omega);
-            Mu.Psi.Iota();
-            Mu.Mu.Iota();
-            Mu.Mu.Lambda();
-            Mu.Psi.Lambda();
+            while (Mu.Upsilon.Count < 76) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
+            Mu.Upsilon.Beta(ref Mu.Mu, Theta.Mu.Omega);
+            Mu.Upsilon.Iota(ref Mu.Psi);
+            Mu.Upsilon.Iota(ref Mu.Mu);
+            Mu.Upsilon.Lambda(ref Mu.Mu);
+            Mu.Upsilon.Lambda(ref Mu.Psi);
+            Mu.Upsilon.Lambda(ref Eta);
             Mu.Tau.ReleaseMutex();
-            Eta.Lambda();
-            */
         }
 
         public ညြ(ref ည Beta, ref ည Iota, ref ည Omicron)
@@ -65,9 +65,9 @@ namespace Dysnomia
             else
                 Upsilon.Fuse(Beta.Mu.Rod.Secret, Iota.Mu.Cone.Signal, Omicron.Mu.Cone.Channel);
             Theta = Omicron;
-            /*
             Mu.Tau.WaitOne();
-            while (Mu.Chi < 5) { Mu.Tau.ReleaseMutex(); Thread.Sleep(40); Mu.Tau.WaitOne(); }
+            while (Mu.Upsilon.Count < 500) { Mu.Tau.ReleaseMutex(); Thread.Sleep(400); Mu.Tau.WaitOne(); }
+/*
             Theta.Tau.WaitOne();
             while (Theta.Chi < 5) { Theta.Tau.ReleaseMutex(); Thread.Sleep(40); Theta.Tau.WaitOne(); }
             Eta.Theta(Theta.Mu.Omicron);

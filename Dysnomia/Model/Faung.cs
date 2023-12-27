@@ -199,54 +199,6 @@ namespace Dysnomia
             Beta.Chi = 5;
         }
 
-        public void Alpha()
-        {
-            if (Nu.Count != 30 && Nu.Count != 31) throw new Exception("Nu Non 30/31");
-            if (Nu.Count == 30)
-            {
-                Upsilon = Upsilon ^ Ohm ^ Pi;
-                Nu.Enqueue(Upsilon.ToByteArray());
-                Chi = 7;
-            }
-            else if (Nu.Count == 31)
-            {
-                Upsilon = Upsilon ^ Ohm;
-                Nu.Enqueue(Upsilon.ToByteArray());
-                Chi = 6;
-            }
-            else throw new Exception("Bad Count");
-        }
-
-        public void Lambda()
-        {
-            if (Nu.Count != 28) throw new Exception("Nu Non 28");
-            Upsilon = Cone.Torque(Rod.Eta);
-            Nu.Enqueue(Upsilon.ToByteArray());
-            Ohm = Cone.Amplify(Upsilon);
-            Nu.Enqueue(Ohm.ToByteArray());
-            Pi = Cone.Sustain(Ohm);
-            Nu.Enqueue(Pi.ToByteArray());
-            Cone.React(Pi, Cone.Dynamo);
-            Rod.React(Pi, Rod.Dynamo);
-            Chi = 4;
-        }
-
-        public void Iota()
-        {
-            if (Nu.Count != 23) throw new Exception("Nu Non 23");
-            BigInteger Lambda = Cone.Torque(Rod.Kappa);
-            Nu.Enqueue(Lambda.ToByteArray());
-            Lambda = Cone.Amplify(Lambda);
-            Nu.Enqueue(Lambda.ToByteArray());
-            Lambda = Cone.Sustain(Ohm);
-            Nu.Enqueue(Lambda.ToByteArray());
-            Rod.React(Lambda, Rod.Channel);
-            Nu.Enqueue(Rod.Kappa.ToByteArray());
-            Cone.React(Lambda, Cone.Channel);
-            Nu.Enqueue(Cone.Kappa.ToByteArray());
-            Chi = 3;
-        }
-
         public void Charge(BigInteger Signal)
         {
             if (Signal == 0) throw new Exception("Signal Zero");
