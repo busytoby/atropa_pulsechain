@@ -18,9 +18,10 @@ namespace Dysnomia
             MsgQueue = new Queue<Tuple<String, String>>();
         }
 
-        public static void Input(byte[] Data)
+        public static void Input(Dysnomia.Domain.Tare.MSG A)
         {
-            lock(Tau) MsgQueue.Enqueue(new Tuple<String, String>("Pulse", Encoding.Default.GetString(Data)));
+            if(A.Priority > 0)
+            lock(Tau) MsgQueue.Enqueue(new Tuple<String, String>(Encoding.Default.GetString(A.From), Encoding.Default.GetString(A.Data)));
         }
     }
 }

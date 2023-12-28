@@ -47,7 +47,7 @@ namespace Pulse
             });
 
             Logging.Add(Dysnomia.Apparition.Input);
-            Logging.Log("Ready");
+            Logging.Log("Pulse", "Ready");
         }
     }
 

@@ -20,7 +20,7 @@ namespace Dysnomia.Domain
 
         public Oracle()
         {
-            Logging.Log("New Oracle");
+            Logging.Log("Oracle", "New Oracle");
             Mu = new Faung();
             Tau = new Object();
             Theta = new Living(Phi);

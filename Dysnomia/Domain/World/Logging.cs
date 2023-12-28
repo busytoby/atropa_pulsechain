@@ -21,15 +21,17 @@ namespace Dysnomia.Domain.World
             Tau.Add(G);
         }
 
-        static public void Log(byte[] A)
+        static public void Log(MSG A)
         {
             foreach (Gram G in Tau) G(A);
         }
 
-        static public void Log(String B)
+        static public void Log(String From, String Data, short Priority = 1)
         {
-            byte[] A = Encoding.Default.GetBytes(B);
-            foreach (Gram G in Tau) G(A);
+            byte[] A = Encoding.Default.GetBytes(From);
+            byte[] B = Encoding.Default.GetBytes(Data);
+            MSG C = new MSG(A, B, Priority);
+            foreach (Gram G in Tau) G(C);
         }
     }
 }
