@@ -31,13 +31,13 @@ namespace Dysnomia.Domain
         {
             Logging.Log("Oracle", "Encoding: " + Beta, 1);
             Buffer A = new Buffer(Mu, Encoding.Default.GetBytes(Beta));
-            Logging.Log("Oracle", "Encoded: " + Encoding.Default.GetString(A.Bytes), 2);
+            Logging.Log("Oracle", "Encoded Base64: " + Convert.ToBase64String(A.Bytes), 2);
             return A;
         }
 
         public Buffer Decode(Buffer Beta)
         {
-            Logging.Log("Oracle", "Decoding: " + Beta, 1);
+            Logging.Log("Oracle", "Decoding Base64: " + Convert.ToBase64String(Beta.Bytes), 1);
             Buffer B = new Buffer(Mu, Beta.Bytes);
             Logging.Log("Oracle", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
             return B;

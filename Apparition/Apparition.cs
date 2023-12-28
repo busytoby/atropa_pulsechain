@@ -13,7 +13,7 @@ namespace Dysnomia
         static public RetaliationWindow Window;
         static public Object Tau;
         static public Queue<Tare.MSG> MsgQueue;
-        static public short LogLevel = 3;
+        static public short LogLevel = 1;
 
         static Apparition()
         {
