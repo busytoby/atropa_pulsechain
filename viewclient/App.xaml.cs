@@ -16,6 +16,8 @@ namespace Pulse
 
         private void Bootstrap(object sender, StartupEventArgs e)
         {
+            ShowApparitionWindow();
+
             Oracle O = new Oracle();
             Dysnomia.Domain.Buffer A = O.Encode("Test");
             Dysnomia.Domain.Buffer B = O.Encode("Test");
@@ -43,6 +45,24 @@ namespace Pulse
 
             //Task t4 = new Task(() => { Beta(); });
             //t4.Start();
+        }
+
+        private void ShowApparitionWindow()
+        {
+            if (Dysnomia.Apparition.Stub != true) throw new Exception("Zero Apparition");
+
+            Application.Current.Dispatcher.Invoke((Action)delegate
+            {
+                Dysnomia.Apparition.Window = new Apparition.Retaliation.RetaliationWindow();
+                Dysnomia.Apparition.Window.Show();
+            });
+
+            lock (Dysnomia.Apparition.Tau)
+            {
+                Dysnomia.Apparition.MsgQueue.Enqueue(new Tuple<String, String>("Pulse", "Ready"));
+            }
+
+            Dysnomia.Domain.World.Logging.Add(Dysnomia.Apparition.Input);
         }
 
         /*

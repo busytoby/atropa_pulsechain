@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain.World;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace Dysnomia.Domain
 
         public Oracle()
         {
+            Logging.Log(Encoding.Default.GetBytes("New Oracle"));
             Mu = new Faung();
             Tau = new Object();
             Theta = new Living(Phi);
@@ -106,7 +108,7 @@ namespace Dysnomia.Domain
             {
                 lock (Tau)
                 {
-                    if (Count > 0)
+                    while (Count > 0)
                     {
                         byte[] OpCode;
                         TryDequeue(out OpCode);
@@ -150,7 +152,6 @@ namespace Dysnomia.Domain
                             if (Mu.Cone.Mu(Beta, Mu.Cone.Channel, Mu.Rod.Dynamo) != Iota) throw new Exception("Invalid Cone Eta");
                             if (Count > 0) TryDequeue(out OpCode);
                         }
-                        if (Count != 0) throw new Exception("Execution Failure");
                     }
                 }
                 Thread.Sleep(1000);

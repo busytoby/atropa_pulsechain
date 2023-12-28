@@ -24,13 +24,14 @@ namespace Apparition.Retaliation
             {
                 while (Dysnomia.Apparition.MsgQueue.Count > 0)
                 {
-                    Dysnomia.Apparition.Tau.WaitOne();
-                    Tuple<String, String> Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
-                    Application.Current.Dispatcher.Invoke((Action)delegate
+                    lock (Dysnomia.Apparition.Tau)
                     {
-                        TerminalOutput.AppendText("<" + Beta.Item1 + "> " + Beta.Item2 + "\n");
-                    });
-                    Dysnomia.Apparition.Tau.ReleaseMutex();
+                        Tuple<String, String> Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
+                        Application.Current.Dispatcher.Invoke((Action)delegate
+                        {
+                            TerminalOutput.AppendText("<" + Beta.Item1 + "> " + Beta.Item2 + "\n");
+                        });
+                    }
                 }
                 Thread.Sleep(111);
             }
