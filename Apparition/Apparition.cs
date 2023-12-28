@@ -4,6 +4,7 @@ using Dysnomia.Domain;
 using System.Text;
 using System.Windows;
 using Windows.Foundation.Diagnostics;
+using static Dysnomia.Domain.Tare;
 
 namespace Dysnomia
 {
@@ -23,7 +24,7 @@ namespace Dysnomia
 
         public static void Input(Tare.MSG A)
         {
-            if(A.Priority > LogLevel) lock(Tau) MsgQueue.Enqueue(A);
+            if (A.Priority > LogLevel) new Task(() => { lock (Tau) MsgQueue.Enqueue(A); }).Start();
         }
     }
 }
