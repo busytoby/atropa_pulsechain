@@ -1,5 +1,6 @@
 ﻿using Dysnomia;
 using Dysnomia.Domain;
+using Dysnomia.Domain.World;
 using System.Configuration;
 using System.Data;
 using System.Text;
@@ -57,12 +58,8 @@ namespace Pulse
                 Dysnomia.Apparition.Window.Show();
             });
 
-            lock (Dysnomia.Apparition.Tau)
-            {
-                Dysnomia.Apparition.MsgQueue.Enqueue(new Tuple<String, String>("Pulse", "Ready"));
-            }
-
-            Dysnomia.Domain.World.Logging.Add(Dysnomia.Apparition.Input);
+            Logging.Add(Dysnomia.Apparition.Input);
+            Logging.Log("Ready");
         }
 
         /*
