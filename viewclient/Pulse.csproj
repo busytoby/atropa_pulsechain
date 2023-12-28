@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <StartupObject>Pulse.App</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
