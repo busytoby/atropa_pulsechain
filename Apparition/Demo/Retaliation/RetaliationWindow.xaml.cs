@@ -26,11 +26,13 @@ namespace Apparition.Retaliation
             {
                 while (Dysnomia.Apparition.MsgQueue.Count > 0)
                 {
-                    lock (Dysnomia.Apparition.Tau) Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
-                    Application.Current.Dispatcher.Invoke((Action)delegate { 
-                        TerminalOutput.AppendText("<" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
-                        TerminalOutput.ScrollToEnd();
-                    });
+                    lock (Dysnomia.Apparition.Tau)
+                        if (Dysnomia.Apparition.MsgQueue.TryDequeue(out Beta))
+                            Application.Current.Dispatcher.Invoke((Action)delegate
+                            {
+                                TerminalOutput.AppendText("<" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
+                                TerminalOutput.ScrollToEnd();
+                            });
                 }
                 Thread.Sleep(111);
             }
