@@ -2,7 +2,6 @@
 using Dysnomia.Domain.World;
 using System.Text;
 
-// Edit ../Dysnomia/Dysnomia.csproj to remove the WPF line & change dotnet8-windows to dotnet8
 namespace Pulse {
     public class ConsoleApp {
 	static void Main(string[] args) {
