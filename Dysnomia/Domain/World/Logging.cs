@@ -30,7 +30,7 @@ namespace Dysnomia.Domain.World
         {
             byte[] A = Encoding.Default.GetBytes(From);
             byte[] B = Encoding.Default.GetBytes(Data);
-            MSG C = new MSG(A, B, Priority);
+            MSG C = new MSG(ref A, ref B, Priority);
             foreach (Gram G in Tau) G(C);
         }
     }
