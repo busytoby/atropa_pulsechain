@@ -1,57 +1,82 @@
-<Window x:Class="Apparition.Retaliation.RetaliationWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Apparition.Retaliation"
-        mc:Ignorable="d"
-        WindowStyle="None"
-        BorderThickness="0"
-        AllowsTransparency="True"
-        Background="Transparent" 
-        MouseDown="RetaliationWindow_MouseDown"
-        ResizeMode="CanResizeWithGrip"
-        Title="RetaliationWindow" Height="450" Width="800">
-    <Border Padding="0" Margin="0" BorderThickness="0" CornerRadius="22" Background="Pink">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="6" Color="DeepPink" Opacity="0.1" ShadowDepth="4" Direction="170" />
-        </Border.Effect>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 
-      <Grid>
-        <Border Padding="1" Margin="4" BorderThickness="2" CornerRadius="16" Background="White">
-          <Border.Effect>
-            <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.5" ShadowDepth="8" Direction="320"/>
-          </Border.Effect>
-        </Border>
-        <RichTextBox x:Name="TerminalOutput"
-                IsReadOnlyCaretVisible="False"
-                VerticalScrollBarVisibility="Visible"
-                IsReadOnly="true"
-                BorderThickness="0"
-                PreviewMouseDown="RetaliationWindow_MouseDown"
-                Margin="16,16,16,76" >
-          <RichTextBox.Resources>
-            <Style TargetType="{x:Type Paragraph}">
-              <Setter Property="Margin" Value="0"/>
-            </Style>
-          </RichTextBox.Resources>
-        </RichTextBox>
-        <RichTextBox x:Name="TerminalStatus"
-              IsReadOnlyCaretVisible="False"
-              VerticalScrollBarVisibility="Hidden"
-              IsReadOnly="true"
-              BorderThickness="0"
-              PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="6,378,6,54">
-        </RichTextBox>
-        <RichTextBox x:Name="TerminalInput"
-              IsReadOnlyCaretVisible="False"
-              VerticalScrollBarVisibility="Hidden"
-              IsReadOnly="false"
-              FontSize="20"
-              PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="16,400,16,18">
-        </RichTextBox>
-      </Grid>
-    </Border>
-</Window>
+namespace Apparition.Retaliation
+{
+    public partial class RetaliationWindow : Window
+    {
+        private List<string> _textBuffer = new List<string>(); // Holds all lines of text
+        private const int MaxVisibleLines = 30; // Adjust as needed for the size of your RichTextBox
+
+        public RetaliationWindow()
+        {
+            InitializeComponent();
+            InitializeBufferAndDisplay(); // Initial population of the buffer and display
+        }
+
+        private void InitializeBufferAndDisplay()
+        {
+            // Populate the buffer with initial data
+            // For example, load from a file or any other source
+            // Example: _textBuffer.Add("Sample line");
+
+            // Display the last 'MaxVisibleLines' from the buffer
+            DisplayLastLines();
+        }
+
+        private void TerminalOutput_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (!(sender is ScrollViewer scrollViewer)) return;
+
+            if (e.VerticalChange < 0) // Scrolling up
+            {
+                DisplayPreviousLines();
+            }
+            else if (e.VerticalChange > 0) // Scrolling down
+            {
+                DisplayNextLines();
+            }
+        }
+
+        private void DisplayPreviousLines()
+        {
+            // Logic to display previous lines when scrolling up
+            var firstVisibleLineIndex = _textBuffer.IndexOf(TerminalOutput.Document.Blocks.FirstBlock?.ToString());
+            if (firstVisibleLineIndex > 0)
+            {
+                TerminalOutput.Document.Blocks.InsertBefore(TerminalOutput.Document.Blocks.FirstBlock, new Paragraph(new Run(_textBuffer[firstVisibleLineIndex - 1])));
+                if (TerminalOutput.Document.Blocks.Count > MaxVisibleLines)
+                {
+                    TerminalOutput.Document.Blocks.Remove(TerminalOutput.Document.Blocks.LastBlock);
+                }
+            }
+        }
+
+        private void DisplayNextLines()
+        {
+            // Logic to display next lines when scrolling down
+            var lastVisibleLineIndex = _textBuffer.IndexOf(TerminalOutput.Document.Blocks.LastBlock?.ToString());
+            if (lastVisibleLineIndex < _textBuffer.Count - 1)
+            {
+                TerminalOutput.Document.Blocks.Add(new Paragraph(new Run(_textBuffer[lastVisibleLineIndex + 1])));
+                if (TerminalOutput.Document.Blocks.Count > MaxVisibleLines)
+                {
+                    TerminalOutput.Document.Blocks.Remove(TerminalOutput.Document.Blocks.FirstBlock);
+                }
+            }
+        }
+
+        private void DisplayLastLines()
+        {
+            TerminalOutput.Document.Blocks.Clear();
+            foreach (var line in _textBuffer.Skip(Math.Max(0, _textBuffer.Count - MaxVisibleLines)))
+            {
+                TerminalOutput.Document.Blocks.Add(new Paragraph(new Run(line)));
+            }
+        }
+    }
+}
