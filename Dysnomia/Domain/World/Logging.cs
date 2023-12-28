@@ -10,10 +10,12 @@ namespace Dysnomia.Domain.World
     static public class Logging
     {
         static private Tare Tau;
+        static private Object Theta;
 
         static Logging()
         {
             Tau = new Tare();
+            Theta = new Object();
         }
 
         static public void Add(Gram G)
@@ -31,7 +33,8 @@ namespace Dysnomia.Domain.World
             byte[] A = Encoding.Default.GetBytes(From);
             byte[] B = Encoding.Default.GetBytes(Data);
             MSG C = new MSG(ref A, ref B, Priority);
-            foreach (Gram G in Tau) G(C);
+            Task L = new Task(() => { lock (Theta) foreach (Gram G in Tau) G(C); });
+            L.Start();            
         }
     }
 }
