@@ -36,10 +36,10 @@ namespace Dysnomia.Domain
 
         public void Reset()
         {
-            Register(Mu.Rod.Signal);
+            Alpha(Mu.Rod.Signal);
         }
 
-        private void Register(BigInteger Omicron)
+        private void Alpha(BigInteger Omicron)
         {
             Tau.WaitOne();
             if (Omicron == 0) throw new Exception("Omicron Zero");
