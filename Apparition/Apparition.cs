@@ -20,7 +20,7 @@ namespace Dysnomia
 
         public static void Input(byte[] Data)
         {
-            MsgQueue.Enqueue(new Tuple<String, String>("Pulse", Encoding.Default.GetString(Data)));
+            lock(Tau) MsgQueue.Enqueue(new Tuple<String, String>("Pulse", Encoding.Default.GetString(Data)));
         }
     }
 }
