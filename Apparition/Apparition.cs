@@ -2,6 +2,7 @@
 using Apparition.Retaliation;
 using System.Text;
 using System.Windows;
+using Windows.Foundation.Diagnostics;
 
 namespace Dysnomia
 {
@@ -11,6 +12,7 @@ namespace Dysnomia
         static public RetaliationWindow Window;
         static public Object Tau;
         static public Queue<Tuple<String, String>> MsgQueue;
+        static public short LogLevel = 3;
 
         static Apparition()
         {
@@ -20,7 +22,7 @@ namespace Dysnomia
 
         public static void Input(Dysnomia.Domain.Tare.MSG A)
         {
-            if(A.Priority > 0)
+            if(A.Priority > LogLevel)
             lock(Tau) MsgQueue.Enqueue(new Tuple<String, String>(Encoding.Default.GetString(A.From), Encoding.Default.GetString(A.Data)));
         }
     }

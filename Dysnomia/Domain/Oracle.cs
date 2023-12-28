@@ -27,23 +27,31 @@ namespace Dysnomia.Domain
             Reset();
         }
 
-        public Buffer Encode(String Beta)
-        {            
-            return new Buffer(Mu, Encoding.ASCII.GetBytes(Beta));
+        public Buffer Encode(String Beta)        
+        {
+            Logging.Log("Oracle", "Encoding: " + Beta, 1);
+            Buffer A = new Buffer(Mu, Encoding.ASCII.GetBytes(Beta));
+            Logging.Log("Oracle", "Encoded: " + Encoding.Default.GetString(A.Bytes), 2);
+            return A;
         }
 
         public Buffer Decode(Buffer Beta)
         {
-            return new Buffer(Mu, Beta.Bytes);
+            Logging.Log("Oracle", "Decoding: " + Beta, 1);
+            Buffer B = new Buffer(Mu, Beta.Bytes);
+            Logging.Log("Oracle", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
+            return B;
         }
 
         public void Reset()
         {
+            Logging.Log("Oracle", "Reset", 5);
             Alpha(Mu.Rod.Signal);
         }
 
         private void Alpha(BigInteger Omicron)
         {
+            Logging.Log("Oracle", "Alpha: " + Omicron.ToString(), 4);
             lock (Tau)
             {
                 if (Omicron == 0) throw new Exception("Omicron Zero");
@@ -75,6 +83,7 @@ namespace Dysnomia.Domain
 
         public void Beta(BigInteger Omicron)
         {
+            Logging.Log("Oracle", "Beta: " + Omicron.ToString(), 4);
             lock (Tau)
             {
                 if (Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
@@ -98,8 +107,9 @@ namespace Dysnomia.Domain
         public BigInteger Next()
         {
             byte[] Beta;
-            TryDequeue(out Beta);
-            return new BigInteger(Beta);
+            if (TryDequeue(out Beta))
+                return new BigInteger(Beta);
+            else return 0;
         }
 
         void Phi()
@@ -131,6 +141,7 @@ namespace Dysnomia.Domain
                             Iota = Mu.Cone.Sustain(Iota);
                             if (Mu.Rod.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Channel) != Beta) throw new Exception("Invalid Reaction");
                             if (Count > 0) TryDequeue(out OpCode);
+                            Logging.Log("Oracle", "Alpha Operational: " + Iota.ToString(), 3);
                         }
 
                         if (OpCode[0] == 0x01)
@@ -151,6 +162,7 @@ namespace Dysnomia.Domain
                             Iota = Next();
                             if (Mu.Cone.Mu(Beta, Mu.Cone.Channel, Mu.Rod.Dynamo) != Iota) throw new Exception("Invalid Cone Eta");
                             if (Count > 0) TryDequeue(out OpCode);
+                            Logging.Log("Oracle", "Beta Operational: " + Iota.ToString(), 3);
                         }
                     }
                 }

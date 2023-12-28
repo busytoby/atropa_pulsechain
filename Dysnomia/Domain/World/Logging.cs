@@ -26,7 +26,7 @@ namespace Dysnomia.Domain.World
             foreach (Gram G in Tau) G(A);
         }
 
-        static public void Log(String From, String Data, short Priority = 1)
+        static public void Log(String From, String Data, short Priority = 6)
         {
             byte[] A = Encoding.Default.GetBytes(From);
             byte[] B = Encoding.Default.GetBytes(Data);

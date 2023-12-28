@@ -28,6 +28,7 @@ namespace Apparition.Retaliation
                     lock (Dysnomia.Apparition.Tau) Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
                     Application.Current.Dispatcher.Invoke((Action)delegate { 
                         TerminalOutput.AppendText("<" + Beta.Item1 + "> " + Beta.Item2 + "\n");
+                        TerminalOutput.ScrollToEnd();
                     });
                 }
                 Thread.Sleep(111);
