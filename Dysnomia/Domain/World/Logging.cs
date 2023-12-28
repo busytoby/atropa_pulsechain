@@ -25,5 +25,11 @@ namespace Dysnomia.Domain.World
         {
             foreach (Gram G in Tau) G(A);
         }
+
+        static public void Log(String B)
+        {
+            byte[] A = Encoding.Default.GetBytes(B);
+            foreach (Gram G in Tau) G(A);
+        }
     }
 }
