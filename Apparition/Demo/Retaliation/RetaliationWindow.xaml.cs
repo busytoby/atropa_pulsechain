@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,14 +21,14 @@ namespace Apparition.Retaliation
 
         private void Frame()
         {
-            Tuple<String, String> Beta;
+            Tare.MSG Beta;
             while (true)
             {
                 while (Dysnomia.Apparition.MsgQueue.Count > 0)
                 {
                     lock (Dysnomia.Apparition.Tau) Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
                     Application.Current.Dispatcher.Invoke((Action)delegate { 
-                        TerminalOutput.AppendText("<" + Beta.Item1 + "> " + Beta.Item2 + "\n");
+                        TerminalOutput.AppendText("<" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
                         TerminalOutput.ScrollToEnd();
                     });
                 }
