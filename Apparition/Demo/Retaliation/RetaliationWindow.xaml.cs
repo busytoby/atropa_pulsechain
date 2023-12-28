@@ -20,18 +20,15 @@ namespace Apparition.Retaliation
 
         private void Frame()
         {
+            Tuple<String, String> Beta;
             while (true)
             {
                 while (Dysnomia.Apparition.MsgQueue.Count > 0)
                 {
-                    lock (Dysnomia.Apparition.Tau)
-                    {
-                        Tuple<String, String> Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
-                        Application.Current.Dispatcher.Invoke((Action)delegate
-                        {
-                            TerminalOutput.AppendText("<" + Beta.Item1 + "> " + Beta.Item2 + "\n");
-                        });
-                    }
+                    lock (Dysnomia.Apparition.Tau) Beta = Dysnomia.Apparition.MsgQueue.Dequeue();
+                    Application.Current.Dispatcher.Invoke((Action)delegate { 
+                        TerminalOutput.AppendText("<" + Beta.Item1 + "> " + Beta.Item2 + "\n");
+                    });
                 }
                 Thread.Sleep(111);
             }
@@ -41,21 +38,6 @@ namespace Apparition.Retaliation
         {
             if (Keyboard.IsKeyDown(Key.LeftAlt) && e.ChangedButton == MouseButton.Left && e.ButtonState == MouseButtonState.Pressed)
                 this.DragMove();
-            /*
-            if (Keyboard.IsKeyDown(Key.LeftAlt) && e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Pressed)
-            {
-                isResizing = true;
-                Point resizingOrigin = e.GetPosition(this);
-                resizingOriginX = (int)resizingOrigin.X;
-                resizingOriginY = (int)resizingOrigin.Y;
-                if (resizingOriginX < Width / 2 && resizingOriginY < Width / 2) resizingCorner = 0;
-                if (resizingOriginX > Width / 2 && resizingOriginY < Width / 2) resizingCorner = 1;
-                if (resizingOriginX > Width / 2 && resizingOriginY > Width / 2) resizingCorner = 2;
-                if (resizingOriginX < Width / 2 && resizingOriginY > Width / 2) resizingCorner = 3;
-                this.MouseMove += new MouseEventHandler(PerceiveHUDWindow_MouseResize);
-            }
-            */
         }
-
     }
 }
