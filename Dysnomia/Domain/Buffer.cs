@@ -36,7 +36,7 @@ namespace Dysnomia.Domain
             Encode(Mu, Bytes);
         }
 
-        public String ToString()
+        public override String ToString()
         {
             return new String(Bytes.Select(b => (char)b).ToArray());
         }
