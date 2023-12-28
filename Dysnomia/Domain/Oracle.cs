@@ -114,10 +114,12 @@ namespace Dysnomia.Domain
 
         void Phi()
         {
+            int _sleep = 20;
             while (true)
             {
                 lock (Tau)
                 {
+                    if (Count > 0) _sleep = 20;
                     while (Count > 0)
                     {
                         byte[] OpCode;
@@ -165,8 +167,10 @@ namespace Dysnomia.Domain
                             Logging.Log("Oracle", "Beta Operational: " + Iota.ToString(), 3);
                         }
                     }
+                    if (Count == 0) _sleep *= 2;
                 }
-                Thread.Sleep(1000);
+                if (_sleep > 1551) _sleep = 1551;
+                Thread.Sleep(_sleep);
             }
         }
     }
