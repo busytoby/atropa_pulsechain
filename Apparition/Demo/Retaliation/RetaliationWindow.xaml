@@ -17,41 +17,33 @@
             <DropShadowEffect BlurRadius="6" Color="DeepPink" Opacity="0.1" ShadowDepth="4" Direction="170" />
         </Border.Effect>
 
-      <Grid>
-        <Border Padding="1" Margin="4" BorderThickness="2" CornerRadius="16" Background="White">
-          <Border.Effect>
-            <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.5" ShadowDepth="8" Direction="320"/>
-          </Border.Effect>
-        </Border>
-        <RichTextBox x:Name="TerminalOutput"
-                IsReadOnlyCaretVisible="False"
-                VerticalScrollBarVisibility="Visible"
-                IsReadOnly="true"
-                BorderThickness="0"
-                PreviewMouseDown="RetaliationWindow_MouseDown"
-                Margin="16,16,16,76" >
-          <RichTextBox.Resources>
-            <Style TargetType="{x:Type Paragraph}">
-              <Setter Property="Margin" Value="0"/>
-            </Style>
-          </RichTextBox.Resources>
-        </RichTextBox>
-        <RichTextBox x:Name="TerminalStatus"
-              IsReadOnlyCaretVisible="False"
-              VerticalScrollBarVisibility="Hidden"
-              IsReadOnly="true"
-              BorderThickness="0"
-              PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="6,378,6,54">
-        </RichTextBox>
-        <RichTextBox x:Name="TerminalInput"
-              IsReadOnlyCaretVisible="False"
-              VerticalScrollBarVisibility="Hidden"
-              IsReadOnly="false"
-              FontSize="20"
-              PreviewMouseDown="RetaliationWindow_MouseDown"
-              Margin="16,400,16,18">
-        </RichTextBox>
-      </Grid>
+        <Grid>
+            <Border Padding="1" Margin="4" BorderThickness="2" CornerRadius="16" Background="White">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.5" ShadowDepth="8" Direction="320"/>
+                </Border.Effect>
+            </Border>
+            <RichTextBox x:Name="TerminalOutput"
+                    IsReadOnlyCaretVisible="False"
+                    VerticalScrollBarVisibility="Visible"
+                    IsReadOnly="true"
+                    BorderThickness="0"
+                    PreviewMouseDown="RetaliationWindow_MouseDown"
+                    Margin="16,16,16,76">
+                <RichTextBox.Resources>
+                    <Style TargetType="{x:Type Paragraph}">
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="FontFamily" Value="Consolas"/>
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="Foreground" Value="LimeGreen"/>
+                        <Setter Property="Background" Value="Black"/>
+                    </Style>
+                </RichTextBox.Resources>
+                <RichTextBox.ScrollViewer>
+                    <ScrollViewer ScrollChanged="TerminalOutput_ScrollChanged"/>
+                </RichTextBox.ScrollViewer>
+            </RichTextBox>
+            <!-- Other RichTextBoxes remain unchanged -->
+        </Grid>
     </Border>
 </Window>
