@@ -1,0 +1,2 @@
+to run, use: dotnet run
+to compile, use: dotnet publish --self-contained
