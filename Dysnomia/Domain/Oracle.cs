@@ -30,7 +30,7 @@ namespace Dysnomia.Domain
         public Buffer Encode(String Beta)        
         {
             Logging.Log("Oracle", "Encoding: " + Beta, 1);
-            Buffer A = new Buffer(Mu, Encoding.ASCII.GetBytes(Beta));
+            Buffer A = new Buffer(Mu, Encoding.Default.GetBytes(Beta));
             Logging.Log("Oracle", "Encoded: " + Encoding.Default.GetString(A.Bytes), 2);
             return A;
         }
