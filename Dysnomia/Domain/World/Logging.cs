@@ -33,8 +33,7 @@ namespace Dysnomia.Domain.World
             byte[] A = Encoding.Default.GetBytes(From);
             byte[] B = Encoding.Default.GetBytes(Data);
             MSG C = new MSG(ref A, ref B, Priority);
-            Task L = new Task(() => { lock (Theta) foreach (Gram G in Tau) G(C); });
-            L.Start();            
+            new Task(() => { lock (Theta) foreach (Gram G in Tau) G(C); }).Start();
         }
     }
 }
