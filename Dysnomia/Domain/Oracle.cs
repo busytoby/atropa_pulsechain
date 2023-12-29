@@ -106,7 +106,7 @@ namespace Dysnomia.Domain
 
         public BigInteger Next()
         {
-            byte[] Beta;
+            byte[]? Beta;
             if (TryDequeue(out Beta))
                 return new BigInteger(Beta);
             else return 0;
@@ -122,7 +122,7 @@ namespace Dysnomia.Domain
                     if (Count > 0) _sleep = 20;
                     while (Count > 0)
                     {
-                        byte[] OpCode;
+                        byte[]? OpCode;
                         TryDequeue(out OpCode);
                         if (OpCode[0] == 0x00)
                         {
