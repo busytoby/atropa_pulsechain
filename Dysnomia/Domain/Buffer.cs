@@ -19,6 +19,8 @@ namespace Dysnomia.Domain
 
         private void Encode(Faung Mu, byte[] Rho)
         {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
             int _size = Rho.Length;
 
             BigInteger Beta = Mu.Rod.Mu(Mu.Rod.Kappa, Mu.Cone.Kappa, Mu.Pi);

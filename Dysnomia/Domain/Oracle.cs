@@ -45,12 +45,15 @@ namespace Dysnomia.Domain
 
         public void Reset()
         {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
             Logging.Log("Oracle", "Reset", 5);
             Alpha(Mu.Rod.Signal);
         }
 
         private void Alpha(BigInteger Omicron)
         {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
             Logging.Log("Oracle", "Alpha: " + Omicron.ToString(), 4);
             lock (Tau)
             {
@@ -83,6 +86,8 @@ namespace Dysnomia.Domain
 
         public void Beta(BigInteger Omicron)
         {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
             Logging.Log("Oracle", "Beta: " + Omicron.ToString(), 4);
             lock (Tau)
             {
@@ -114,7 +119,10 @@ namespace Dysnomia.Domain
 
         void Phi()
         {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
             int _sleep = 20;
+            byte[]? OpCode;
             while (true)
             {
                 lock (Tau)
@@ -122,8 +130,8 @@ namespace Dysnomia.Domain
                     if (Count > 0) _sleep = 20;
                     while (Count > 0)
                     {
-                        byte[]? OpCode;
                         TryDequeue(out OpCode);
+                        if (OpCode == null) throw new Exception("Null OpCode");
                         if (OpCode[0] == 0x00)
                         {
                             BigInteger Beta = Next();
@@ -146,6 +154,7 @@ namespace Dysnomia.Domain
                             Logging.Log("Oracle", "Alpha Operational: " + Iota.ToString(), 3);
                         }
 
+                        if (OpCode == null) throw new Exception("Null OpCode");
                         if (OpCode[0] == 0x01)
                         {
                             BigInteger Beta = Next();
