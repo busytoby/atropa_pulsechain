@@ -14,12 +14,14 @@ namespace Dysnomia.Domain
     public class Living
     {
         public delegate void 活();
+        public Tare Sigma;
         public Mutex Tau = new Mutex();
         public 活 Omega;
         private Thread Omicron;
 
         public Living(活 O) 
         {
+            Sigma = new Tare();
             Omega = O;
             Omicron = new Thread(new ThreadStart(Omega));
             Omicron.Start();
