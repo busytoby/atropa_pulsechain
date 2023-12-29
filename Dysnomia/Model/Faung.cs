@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain.World;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -12,8 +13,8 @@ namespace Dysnomia
 {
     public class Faung
     {
-        public Fa Rod;
-        public Fa Cone;
+        public Fa? Rod;
+        public Fa? Cone;
 
         public BigInteger Phi, Eta, Mu, Xi;
         public BigInteger Sigma, Rho, Upsilon, Ohm, Pi, Omicron, Omega;
@@ -35,6 +36,7 @@ namespace Dysnomia
                 }
                 catch (Exception E)
                 {
+                    Logging.Log("Faung", E.ToString());
                     continue;
                 }
             }
@@ -59,6 +61,7 @@ namespace Dysnomia
                 }
                 catch (Exception E)
                 {
+                    Logging.Log("Faung", E.ToString());
                     this.Cone.Nu = 0;
                     throw;
                 }
@@ -82,6 +85,7 @@ namespace Dysnomia
                 }
                 catch (Exception E)
                 {
+                    Logging.Log("Faung", E.ToString());
                     throw;
                 }
             }
@@ -107,6 +111,7 @@ namespace Dysnomia
                 }
                 catch (Exception E)
                 {
+                    Logging.Log("Faung", E.ToString());
                     throw;
                 }
             }
@@ -115,6 +120,7 @@ namespace Dysnomia
 
         public void FuseAndOpen(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi)
         {
+            if (Cone == null) throw new Exception("Null Cone");
             Cone.Fuse(Rho, Upsilon, Ohm);
             Cone.Tune();
             OpenManifolds(Xi);
@@ -122,12 +128,16 @@ namespace Dysnomia
 
         public void OpenManifolds()
         {
+            if (Cone == null) throw new Exception("Null Cone");
+            if (Rod == null) throw new Exception("Null Rod");
             Xi = Cone.Mu(Cone.Signal, Rod.Channel, Math.Prime);
             OpenManifolds(Xi);
         }
 
         public void ConductorGenerate(BigInteger Xi)
         {
+            if (Cone == null) throw new Exception("Null Cone");
+            if (Rod == null) throw new Exception("Null Rod");
             Phi = Rod.Avail(Xi);
             Cone.Tau = Cone.Avail(Xi);
 
@@ -140,6 +150,8 @@ namespace Dysnomia
 
         public void OpenManifolds(BigInteger Xi)
         {
+            if (Cone == null) throw new Exception("Null Cone");
+            if (Rod == null) throw new Exception("Null Rod");
             ConductorGenerate(Xi);
 
             Rod.Conjugate(ref Cone.Pole);
@@ -172,38 +184,47 @@ namespace Dysnomia
 
         public void Ratchet()
         {
+            if (Cone == null) throw new Exception("Null Cone");
+            if (Rod == null) throw new Exception("Null Rod");
             Rod.Bond();
             Cone.Bond();
         }
 
         public void Charge(BigInteger Signal)
         {
+            if (Cone == null) throw new Exception("Null Cone");
             if (Signal == 0) throw new Exception("Signal Zero");
             Sigma = Cone.Charge(Signal);
         }
 
         public void Induce()
         {
+            if (Rod == null) throw new Exception("Null Rod");
             Rho = Rod.Induce(Sigma);
         }
 
         public void Torque()
         {
+            if (Cone == null) throw new Exception("Null Cone");
             Upsilon = Cone.Torque(Rho);
         }
 
         public void Amplify()
         {
+            if (Cone == null) throw new Exception("Null Cone");
             Ohm = Cone.Amplify(Upsilon);
         }
 
         public void Sustain()
         {
+            if (Cone == null) throw new Exception("Null Cone");
             Pi = Cone.Sustain(Ohm);
         }
 
         public void React()
         {
+            if (Cone == null) throw new Exception("Null Cone");
+            if (Rod == null) throw new Exception("Null Rod");
             Rod.React(Pi, Cone.Channel);
             Cone.React(Pi, Rod.Channel);
             if (Cone.Kappa != Rod.Eta || Rod.Kappa != Cone.Eta)
