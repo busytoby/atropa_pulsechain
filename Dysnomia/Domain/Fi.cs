@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,18 +11,19 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Domain
 {
-    public class Fi
+    static public class Fi
     {
-        private TcpListener Mu;
-        public Tare Rho;
-        private Fa Upsilon;
+        static private TcpListener Mu;
+        static public Tare Rho;
+        static public ConcurrentDictionary<BigInteger, TcpClient> Psi;
 
-        public Fi()
+        static Fi()
         {
             Rho = new Tare();
+            Psi = new ConcurrentDictionary<BigInteger, TcpClient>();
         }
 
-        public void Listen(int port)
+        static public void Listen(int port)
         {
             if (Mu != null) throw new Exception("Mu Non Null");
             Mu = new TcpListener(IPAddress.Any, port);
@@ -29,14 +31,19 @@ namespace Dysnomia.Domain
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
-        private void Kappa(IAsyncResult result)
+        static private void Kappa(IAsyncResult result)
         {           
             new Thread(() => Phi(Mu.EndAcceptTcpClient(result))).Start();
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
-        private void Phi(TcpClient Beta)
+        static private void Phi(TcpClient Beta)
         {
+            BigInteger ClientId = Math.Random();
+            while(Psi.ContainsKey(ClientId)) ClientId = Math.Random();
+
+            if (!Psi.TryAdd(ClientId, Beta)) throw new Exception("Failure Adding Client To Dictionary");
+
             NetworkStream Iota = Beta.GetStream();
             Iota.ReadTimeout = 100;
             byte[] bytes = new byte[32];
@@ -48,7 +55,7 @@ namespace Dysnomia.Domain
                     int size = Iota.Read(Omicron);
                     if (size > 0)
                     {
-                        Tare.MSG M = new Tare.MSG(Encoding.Default.GetBytes("Fi"), Omicron.Slice(0, size).ToArray(), 1);
+                        Tare.MSG M = new Tare.MSG(ClientId.ToByteArray(), Omicron.Slice(0, size).ToArray(), 1);
                         foreach (Tare.Gram G in Rho) G(M);
                     }
                 }

@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Security.Policy;
 using System.Text;
@@ -27,9 +28,11 @@ namespace Dysnomia.Domain
             Reset();
         }
 
-        public void Input(Tare.MSG A)
+        public void Fi(Tare.MSG A)
         {
-            throw new Exception("Stub");
+            BigInteger ClientId = new BigInteger(A.From);
+            NetworkStream Writer = Domain.Fi.Psi[ClientId].GetStream();
+            Writer.WriteByte(222);
         }
 
         public Buffer Encode(String Beta)        
