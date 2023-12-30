@@ -131,6 +131,9 @@ namespace Dysnomia.Domain
             if (Mu.Cone == null) throw new Exception("Null Cone");
             int _sleep = 20;
             byte[]? OpCode;
+
+            BigInteger Iota, Omicron;
+
             while (true)
             {
                 lock (Tau)
@@ -141,49 +144,50 @@ namespace Dysnomia.Domain
                     {
                         if (OpCode == null) TryDequeue(out OpCode);
                         if (OpCode == null || OpCode.Length != 1) throw new Exception("Bad OpCode");
-                        if (OpCode[0] == 0x00)
+                        switch(OpCode[0])
                         {
-                            BigInteger Beta = Next();
-                            BigInteger Iota = Next();
-                            if (Mu.Cone.Mu(Mu.Cone.Barn, Beta, Mu.Cone.Ring) != Iota) throw new Exception("Invalid Charge");
+                            case 0x00:
+                                Iota = Next();
+                                Omicron = Next();
+                                if (Mu.Cone.Mu(Mu.Cone.Barn, Iota, Mu.Cone.Ring) != Omicron) throw new Exception("Invalid Charge");
 
-                            Beta = Next();
-                            if (Beta != Mu.Cone.Channel) throw new Exception("Bad Cone Channel");
+                                Iota = Next();
+                                if (Iota != Mu.Cone.Channel) throw new Exception("Bad Cone Channel");
 
-                            Beta = Next();
-                            if (Beta != Mu.Rod.Channel) throw new Exception("Bad Rod Channel");
+                                Iota = Next();
+                                if (Iota != Mu.Rod.Channel) throw new Exception("Bad Rod Channel");
 
-                            Beta = Next();
-                            Iota = Mu.Rod.Induce(Iota);
-                            Iota = Mu.Cone.Torque(Iota);
-                            Iota = Mu.Cone.Amplify(Iota);
-                            Iota = Mu.Cone.Sustain(Iota);
-                            if (Mu.Rod.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Channel) != Beta) throw new Exception("Invalid Reaction");
-                            if (Count > 0) TryDequeue(out OpCode);
-                            Logging.Log("Oracle", "Alpha Operational: " + Iota.ToString(), 3);
+                                Iota = Next();
+                                Omicron = Mu.Rod.Induce(Omicron);
+                                Omicron = Mu.Cone.Torque(Omicron);
+                                Omicron = Mu.Cone.Amplify(Omicron);
+                                Omicron = Mu.Cone.Sustain(Omicron);
+                                if (Mu.Rod.Mu(Omicron, Mu.Cone.Channel, Mu.Rod.Channel) != Iota) throw new Exception("Invalid Reaction");
+                                Logging.Log("Oracle", "Alpha Operational: " + Omicron.ToString(), 3);
+                                break;
+                            case 0x01:
+                                Iota = Next();
+                                Omicron = Next();
+                                if (Omicron != Mu.Cone.Dynamo) throw new Exception("Bad Cone Dynamo");
+                                Omicron = Next();
+                                if (Omicron != Mu.Rod.Dynamo) throw new Exception("Bad Rod Dynamo");
+
+                                Iota = Mu.Rod.Torque(Iota);
+                                Iota = Mu.Rod.Amplify(Iota);
+                                Iota = Mu.Rod.Sustain(Iota);
+
+                                Omicron = Next();
+                                if (Mu.Rod.Mu(Iota, Mu.Rod.Channel, Mu.Cone.Dynamo) != Omicron) throw new Exception("Invalid Rod Eta");
+
+                                Omicron = Next();
+                                if (Mu.Cone.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Dynamo) != Omicron) throw new Exception("Invalid Cone Eta");
+                                Logging.Log("Oracle", "Beta Operational: " + Omicron.ToString(), 3);
+                                break;
+                            default:
+                                throw new Exception("Not Implemented");
                         }
 
-                        if (OpCode == null) throw new Exception("Null OpCode");
-                        if (OpCode[0] == 0x01)
-                        {
-                            BigInteger Beta = Next();
-                            BigInteger Iota = Next();
-                            if (Iota != Mu.Cone.Dynamo) throw new Exception("Bad Cone Dynamo");
-                            Iota = Next();
-                            if (Iota != Mu.Rod.Dynamo) throw new Exception("Bad Rod Dynamo");
-
-                            Beta = Mu.Rod.Torque(Beta);
-                            Beta = Mu.Rod.Amplify(Beta);
-                            Beta = Mu.Rod.Sustain(Beta);
-
-                            Iota = Next();
-                            if (Mu.Rod.Mu(Beta, Mu.Rod.Channel, Mu.Cone.Dynamo) != Iota) throw new Exception("Invalid Rod Eta");
-
-                            Iota = Next();
-                            if (Mu.Cone.Mu(Beta, Mu.Cone.Channel, Mu.Rod.Dynamo) != Iota) throw new Exception("Invalid Cone Eta");
-                            if (Count > 0) TryDequeue(out OpCode);
-                            Logging.Log("Oracle", "Beta Operational: " + Iota.ToString(), 3);
-                        }
+                        if (Count > 0) TryDequeue(out OpCode);
                     }
                     if (Count == 0) _sleep *= 2;
                 }
