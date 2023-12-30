@@ -33,8 +33,10 @@ namespace Dysnomia.Domain
         }
 
         static private void Kappa(IAsyncResult result)
-        {           
-            new Thread(() => Phi(Mu.EndAcceptTcpClient(result))).Start();
+        {
+            TcpClient Beta = Mu.EndAcceptTcpClient(result);
+            new Thread(() => Phi(Beta)).Start();
+            Logging.Log("Fi", "Connected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
