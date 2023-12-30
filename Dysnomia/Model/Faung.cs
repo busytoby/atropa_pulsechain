@@ -20,7 +20,6 @@ namespace Dysnomia
         public BigInteger Sigma, Rho, Upsilon, Ohm, Pi, Omicron, Omega;
         public Mutex Delta = new Mutex();
         public short Chi;
-        public Domain.Nit Nu = new Domain.Nit();
 
         public Faung()
         {

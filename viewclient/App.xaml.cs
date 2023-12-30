@@ -34,6 +34,9 @@ namespace Pulse
             O.Reset();
             A = O.Encode("Test");
             B = O.Encode("Test");
+
+            Fi F = new Fi();
+            F.Listen(5555);
         }
 
         private void ShowApparitionWindow()
