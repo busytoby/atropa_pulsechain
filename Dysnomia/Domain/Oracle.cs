@@ -136,10 +136,11 @@ namespace Dysnomia.Domain
                 lock (Tau)
                 {
                     if (Count > 0) _sleep = 20;
+                    TryDequeue(out OpCode);
                     while (Count > 0)
                     {
-                        TryDequeue(out OpCode);
-                        if (OpCode == null) throw new Exception("Null OpCode");
+                        if (OpCode == null) TryDequeue(out OpCode);
+                        if (OpCode == null || OpCode.Length != 1) throw new Exception("Bad OpCode");
                         if (OpCode[0] == 0x00)
                         {
                             BigInteger Beta = Next();
