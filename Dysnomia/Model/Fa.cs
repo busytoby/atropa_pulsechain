@@ -90,8 +90,13 @@ namespace Dysnomia
 
         public void Conify()
         {
+            Conify(Math.Random());
+        }
+
+        public void Conify(BigInteger Beta)
+        {
             if (Nu != 0) throw new Exception("Nu Non Zero");
-            Identity = Math.Random();
+            Identity = Beta;
             if (Identity < 0) Identity = Identity * -1;
             Foundation = Mu(Base, Identity, Math.Prime);
             if (Foundation < 0) throw new Exception("Negative Foundation");
@@ -100,9 +105,14 @@ namespace Dysnomia
 
         public BigInteger Saturate(BigInteger Epsilon, BigInteger Theta)
         {
+            return Saturate(Math.Random(), Epsilon, Theta);
+        }
+
+        public BigInteger Saturate(BigInteger Beta, BigInteger Epsilon, BigInteger Theta)
+        {
             if (Nu == 0)
             {
-                Identity = Math.Random();
+                Identity = Beta;
                 Foundation = Mu(Base, Identity, Math.Prime);
             }
             else if (Nu != 1) throw new Exception("Nu Non One");
