@@ -9,13 +9,14 @@ namespace Dysnomia.Domain.World
 {
     public class Greed
     {
-        public Fa Mu;
-        public TcpClient Rho;
-        public Living Theta;
+        public TcpClient Mu;
+        public Fa Rho;
+        public List<Living> Theta;
 
         public Greed(TcpClient Iota)
         {
-            Rho = Iota;
+            Mu = Iota;
+            Rho = new Fa();
         }
     }
 }

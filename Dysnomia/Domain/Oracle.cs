@@ -31,7 +31,7 @@ namespace Dysnomia.Domain
         public void Fi(Tare.MSG A)
         {
             BigInteger ClientId = new BigInteger(A.From);
-            NetworkStream Writer = Domain.Fi.Psi[ClientId].Rho.GetStream();
+            NetworkStream Writer = Domain.Fi.Psi[ClientId].Mu.GetStream();
             Writer.WriteByte(222);
         }
 
