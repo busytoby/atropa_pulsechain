@@ -23,13 +23,13 @@ namespace Dysnomia.Domain
             if (Mu.Cone == null) throw new Exception("Null Cone");
             int _size = Rho.Length;
 
-            BigInteger Beta = Mu.Rod.Mu(Mu.Rod.Kappa, Mu.Cone.Kappa, Mu.Pi);
+            BigInteger Beta = Mu.Rod.Mu(Mu.Cone.Kappa, Mu.Rod.Kappa, Mu.Pi);
             for (int i = 0; i < _size;)
             {
                 byte[] Iota = Beta.ToByteArray();
                 for (int j = 0; j < Iota.Length && i < _size; j++, i++)
                     Bytes[i] = (byte)(Iota[j] ^ Rho[i]);
-                Beta = Mu.Rod.Mu(Beta, Mu.Cone.Kappa, Mu.Pi);
+                Beta = Mu.Rod.Mu(Beta, Mu.Rod.Kappa, Mu.Pi);
             }
         }
 
