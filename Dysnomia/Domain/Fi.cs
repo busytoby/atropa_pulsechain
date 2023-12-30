@@ -13,10 +13,12 @@ namespace Dysnomia.Domain
     public class Fi
     {
         private TcpListener Mu;
+        public Tare Rho;
         private Fa Upsilon;
 
         public Fi()
         {
+            Rho = new Tare();
         }
 
         public void Listen(int port)
@@ -44,6 +46,11 @@ namespace Dysnomia.Domain
                 if (Iota.DataAvailable)
                 {
                     int size = Iota.Read(Omicron);
+                    if (size > 0)
+                    {
+                        Tare.MSG M = new Tare.MSG(Encoding.Default.GetBytes("Fi"), Omicron.Slice(0, size).ToArray(), 1);
+                        foreach (Tare.Gram G in Rho) G(M);
+                    }
                 }
                 else
                     Thread.Sleep(400);

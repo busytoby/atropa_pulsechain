@@ -27,6 +27,11 @@ namespace Dysnomia.Domain
             Reset();
         }
 
+        public void Input(Tare.MSG A)
+        {
+            throw new Exception("Stub");
+        }
+
         public Buffer Encode(String Beta)        
         {
             Logging.Log("Oracle", "Encoding: " + Beta, 1);

@@ -37,6 +37,7 @@ namespace Pulse
 
             Fi F = new Fi();
             F.Listen(5555);
+            F.Rho.Add(O.Input);
         }
 
         private void ShowApparitionWindow()

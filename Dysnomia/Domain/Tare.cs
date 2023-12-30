@@ -10,7 +10,7 @@ namespace Dysnomia.Domain
             public short Priority;
             public DateTime TimeStamp;
 
-            public MSG(ref byte[] from, ref byte[] data, short priority)
+            public MSG(byte[] from, byte[] data, short priority)
             {
                 From = from;
                 Data = data;
