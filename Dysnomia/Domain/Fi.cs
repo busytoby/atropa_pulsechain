@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Dysnomia.Domain.World;
 
 namespace Dysnomia.Domain
 {
@@ -15,12 +16,12 @@ namespace Dysnomia.Domain
     {
         static private TcpListener Mu;
         static public Tare Rho;
-        static public ConcurrentDictionary<BigInteger, TcpClient> Psi;
+        static public ConcurrentDictionary<BigInteger, Greed> Psi;
 
         static Fi()
         {
             Rho = new Tare();
-            Psi = new ConcurrentDictionary<BigInteger, TcpClient>();
+            Psi = new ConcurrentDictionary<BigInteger, Greed>();
         }
 
         static public void Listen(int port)
@@ -42,7 +43,7 @@ namespace Dysnomia.Domain
             BigInteger ClientId = Math.Random();
             while(Psi.ContainsKey(ClientId)) ClientId = Math.Random();
 
-            if (!Psi.TryAdd(ClientId, Beta)) throw new Exception("Failure Adding Client To Dictionary");
+            if (!Psi.TryAdd(ClientId, new Greed(Beta))) throw new Exception("Failure Adding Client To Dictionary");
 
             NetworkStream Iota = Beta.GetStream();
             Iota.ReadTimeout = 100;
