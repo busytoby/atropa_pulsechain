@@ -29,7 +29,7 @@ namespace Dysnomia
 
         static public void Input(Tare.MSG A)
         {
-            if (A.Priority > LogLevel) new Task(() => { lock (Tau) MsgQueue.Enqueue(A); }).Start();
+            if (A.Priority >= LogLevel) new Task(() => { lock (Tau) MsgQueue.Enqueue(A); }).Start();
         }
 
         public delegate void OutputCaller(String A);

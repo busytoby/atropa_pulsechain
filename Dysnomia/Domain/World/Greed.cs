@@ -41,7 +41,7 @@ namespace Dysnomia.Domain.World
 
         private void Handshake(String Step, BigInteger Iota)
         {
-            Logging.Log("Greed", Cone?"Cone ":"Rod " + Step + "Handshake: " + Iota, 1);
+            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Step, Iota, 1));
             Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Step), Iota.ToByteArray(), 1));
         }
 
