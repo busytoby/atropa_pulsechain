@@ -205,8 +205,15 @@ namespace Dysnomia.Domain
 
                     foreach (KeyValuePair<BigInteger, Greed> G in Domain.Fi.Psi)
                     {
-                        NetworkStream ns = G.Value.Mu.GetStream();
-                        ns.WriteByte(111);
+                        try
+                        {
+                            NetworkStream ns = G.Value.Mu.GetStream();
+                            ns.WriteByte(111);
+                        } catch(Exception E)
+                        {
+                            Greed X;
+                            Domain.Fi.Psi.Remove(G.Key, out X);
+                        }
                     }
                 }
                 if (_sleep > 1551) _sleep = 1551;
