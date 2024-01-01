@@ -186,8 +186,6 @@ namespace Dysnomia.Domain.World
                     }
 
                     Thread.Sleep(200);
-                    if(Cone)
-                        Iota.WriteByte(111);
                 } catch (Exception E) { }
             }
         }
