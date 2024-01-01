@@ -192,7 +192,7 @@ namespace Dysnomia.Domain
                                 break;
                             case 0x02:
                                 Iota = Next();
-                                Logging.Log("Oracle", "NOOP: " + Iota.ToString(), 3);
+                                Logging.Log("Oracle", "NOOP: " + Iota.ToString(), 1);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
