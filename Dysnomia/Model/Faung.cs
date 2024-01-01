@@ -137,11 +137,11 @@ namespace Dysnomia
         {
             if (Cone == null) throw new Exception("Null Cone");
             if (Rod == null) throw new Exception("Null Rod");
-            Phi = Rod.Avail(Xi);
+            Rod.Alpha = Rod.Avail(Xi);
             Cone.Tau = Cone.Avail(Xi);
 
             Rod.Form(Cone.Tau);
-            Cone.Form(Phi);
+            Cone.Form(Rod.Alpha);
 
             Rod.Polarize();
             Cone.Polarize();

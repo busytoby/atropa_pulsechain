@@ -23,6 +23,8 @@ namespace Pulse
 
             Fi.Listen(5555);
             Fi.Rho.Add(O.Fi);
+
+            Fi.Connect("127.0.0.1", 5555);
         }
 
         private void ShowApparitionWindow()

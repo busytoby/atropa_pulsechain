@@ -10,7 +10,7 @@ namespace Dysnomia
     public class Fa
     {
         public BigInteger Base, Secret, Signal, Channel, Pole, Identity, Foundation, Element, Dynamo, Manifold, Ring, Barn, Coordinate;
-        public BigInteger Tau, Eta, Kappa, Rho, Beta, Phi;
+        public BigInteger Tau, Eta, Kappa, Rho, Beta, Phi, Alpha;
         public short Nu;
         public int Gamma = 1;
         public delegate BigInteger Modulator(BigInteger A, BigInteger B, BigInteger C);
@@ -36,7 +36,7 @@ namespace Dysnomia
             Manifold = 0;
             Ring = 0;
             Barn = Ring;
-            Eta = Kappa = Rho = Beta = Phi = 0;
+            Eta = Kappa = Rho = Beta = Phi = Alpha = 0;
             Nu = 0;
             Coordinate = 0;
         }

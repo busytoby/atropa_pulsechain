@@ -18,6 +18,8 @@ namespace Dysnomia.Domain
         static public Tare Rho;
         static public ConcurrentDictionary<BigInteger, Greed> Psi;
 
+        static public String DLE = "\u0010\u0010\u0010\u0010";
+
         static Fi()
         {
             Rho = new Tare();
@@ -40,6 +42,12 @@ namespace Dysnomia.Domain
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
+        static private void XiHandshake(BigInteger ClientId)
+        {
+            Psi[ClientId].Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
+            Psi[ClientId].Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
+        }
+
         static private void Phi(TcpClient Beta)
         {
             BigInteger ClientId = Math.Random();
@@ -50,7 +58,11 @@ namespace Dysnomia.Domain
             NetworkStream Iota = Beta.GetStream();
             Iota.ReadTimeout = 100;
             byte[] bytes = new byte[32];
-            Span<Byte> Omicron = new Span<Byte>(bytes);
+            //Span<Byte> Omicron = new Span<Byte>(bytes);
+
+            XiHandshake(ClientId);
+
+            /*
             while (Beta.Connected)
             {
                 if (Iota.DataAvailable)
@@ -77,6 +89,12 @@ namespace Dysnomia.Domain
                     break;
                 }
             }
+            */
+        }
+
+        public static Greed Connect(String Host, int Port)
+        {
+            return new Greed(Host, Port);
         }
     }
 }
