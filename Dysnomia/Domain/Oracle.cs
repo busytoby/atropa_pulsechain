@@ -38,6 +38,8 @@ namespace Dysnomia.Domain
         public void ProcessString(String A)
         {
             Buffer B = Encode(A.Trim());
+            Enqueue(new byte[] { 0x02 });
+            Enqueue(B.Bytes);
         }
 
         public Buffer Encode(String Beta)        
@@ -187,6 +189,10 @@ namespace Dysnomia.Domain
                                 Omicron = Next();
                                 if (Mu.Cone.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Dynamo) != Omicron) throw new Exception("Invalid Cone Eta");
                                 Logging.Log("Oracle", "Beta Operational: " + Omicron.ToString(), 3);
+                                break;
+                            case 0x02:
+                                Iota = Next();
+                                Logging.Log("Oracle", "NOOP: " + Iota.ToString(), 3);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
