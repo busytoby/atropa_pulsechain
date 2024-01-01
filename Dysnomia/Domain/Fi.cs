@@ -71,6 +71,8 @@ namespace Dysnomia.Domain
                 }
                 catch (IOException E)
                 {
+                    Greed Lambda;
+                    Psi.TryRemove(ClientId, out Lambda);
                     break;
                 }
             }
