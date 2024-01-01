@@ -49,6 +49,7 @@ namespace Apparition.Retaliation
             {
                 Dysnomia.Apparition.Output(new TextRange(sender.As<RichTextBox>().Document.ContentStart, sender.As<RichTextBox>().Document.ContentEnd).Text);
                 sender.As<RichTextBox>().Document.Blocks.Clear();
+                e.Handled = true;
             }
         }
 
