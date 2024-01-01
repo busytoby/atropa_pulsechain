@@ -73,6 +73,7 @@ namespace Dysnomia.Domain
                 {
                     Greed Lambda;
                     Psi.TryRemove(ClientId, out Lambda);
+                    Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
                     break;
                 }
             }
