@@ -182,7 +182,6 @@ namespace Dysnomia.Domain.World
                     while (Theta.Out.Count > 0)
                     {
                         if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
                         Iota.Write(Lambda.Data);
                         Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
                     }
