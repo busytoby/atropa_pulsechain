@@ -37,7 +37,8 @@ namespace Dysnomia.Domain
 
         public void ProcessString(String A)
         {
-            Buffer B = Encode(A.Trim());
+            Logging.Log("Oracle", "NOOP: " + A, 5);
+            Buffer B = Encode(A);
             Enqueue(new byte[] { 0x02 });
             Enqueue(B.Bytes);
         }

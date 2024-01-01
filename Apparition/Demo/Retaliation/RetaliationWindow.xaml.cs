@@ -47,7 +47,7 @@ namespace Apparition.Retaliation
 
             if(e.Key == Key.Enter)
             {
-                Dysnomia.Apparition.Output(new TextRange(sender.As<RichTextBox>().Document.ContentStart, sender.As<RichTextBox>().Document.ContentEnd).Text);
+                Dysnomia.Apparition.Output(new TextRange(sender.As<RichTextBox>().Document.ContentStart, sender.As<RichTextBox>().Document.ContentEnd).Text.Trim());
                 sender.As<RichTextBox>().Document.Blocks.Clear();
                 e.Handled = true;
             }
