@@ -54,7 +54,7 @@ namespace Dysnomia.Domain.World
 
             while (Mu.Connected)
             {
-                while(Theta.In.Count > 0)
+                while(Theta.In != null && Theta.In.Count > 0)
                 {
                     if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
                     String Subject = Encoding.Default.GetString(Lambda.Subject);
