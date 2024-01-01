@@ -184,6 +184,10 @@ namespace Dysnomia.Domain.World
                         Iota.Write(Lambda.Data);
                         Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
                     }
+
+                    Thread.Sleep(200);
+                    if(Cone)
+                        Iota.WriteByte(111);
                 } catch (Exception E) { }
             }
         }
