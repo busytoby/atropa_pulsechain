@@ -5,12 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Threading;
+using WinRT;
 
 namespace Apparition.Retaliation
 {
-    public partial class RetaliationWindow : Window 
+    public partial class RetaliationWindow : Window
     {
         public RetaliationWindow()
         {
@@ -35,6 +38,17 @@ namespace Apparition.Retaliation
                             });
                 }
                 Thread.Sleep(111);
+            }
+        }
+
+        private void Retaliation_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (Dysnomia.Apparition.Output == null) throw new Exception("No Output Handler");
+
+            if(e.Key == Key.Enter)
+            {
+                Dysnomia.Apparition.Output(new TextRange(sender.As<RichTextBox>().Document.ContentStart, sender.As<RichTextBox>().Document.ContentEnd).Text);
+                sender.As<RichTextBox>().Document.Blocks.Clear();
             }
         }
 

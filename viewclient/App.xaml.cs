@@ -16,24 +16,10 @@ namespace Pulse
         private void Bootstrap(object sender, StartupEventArgs e)
         {
             ShowApparitionWindow();
+            Logging.Add(Dysnomia.Apparition.Input);
 
             Oracle O = new Oracle();
-            Dysnomia.Domain.Buffer A = O.Encode("Test");
-            Dysnomia.Domain.Buffer B = O.Encode("Test");
-            String C = A.ToString();
-            String D = B.ToString();
-            O.Decode(A);
-            O.Decode(B);
-            O.Beta(Dysnomia.Math.Random());
-            A = O.Encode("TSET");
-            B = O.Encode("TSET");
-            C = A.ToString();
-            D = B.ToString();
-            O.Decode(A);
-            O.Decode(B);
-            O.Reset();
-            A = O.Encode("Test");
-            B = O.Encode("Test");
+            Dysnomia.Apparition.Output = O.ProcessString;
 
             Fi.Listen(5555);
             Fi.Rho.Add(O.Fi);
@@ -49,7 +35,6 @@ namespace Pulse
                 Dysnomia.Apparition.Window.Show();
             });
 
-            Logging.Add(Dysnomia.Apparition.Input);
             Logging.Log("Pulse", "Ready");
         }
     }

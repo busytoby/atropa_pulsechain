@@ -50,6 +50,7 @@
               IsReadOnly="false"
               FontSize="20"
               PreviewMouseDown="RetaliationWindow_MouseDown"
+              PreviewKeyDown="Retaliation_KeyDown"
               Margin="16,400,16,18">
         </RichTextBox>
       </Grid>

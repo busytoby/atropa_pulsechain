@@ -35,6 +35,11 @@ namespace Dysnomia.Domain
             Writer.WriteByte(222);
         }
 
+        public void ProcessString(String A)
+        {
+            Buffer B = Encode(A.Trim());
+        }
+
         public Buffer Encode(String Beta)        
         {
             Logging.Log("Oracle", "Encoding: " + Beta, 1);
