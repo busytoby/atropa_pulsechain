@@ -122,6 +122,7 @@ namespace Dysnomia.Domain.World
                                     Rho.Adduct(PeerDynamo);
                                     Rho.Open();
                                     Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
+                                    return;
                                 }
                                 else
                                     throw new Exception("Not Implemented");
@@ -165,6 +166,7 @@ namespace Dysnomia.Domain.World
                                     Rho.Adduct(PeerDynamo);
                                     Rho.Open();
                                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
+                                    return;
                                 }
                                 else
                                     throw new Exception("Not Implemented");
