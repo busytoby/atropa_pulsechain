@@ -202,6 +202,12 @@ namespace Dysnomia.Domain
                         if (Count > 0) TryDequeue(out OpCode);
                     }
                     if (Count == 0) _sleep *= 2;
+
+                    foreach (KeyValuePair<BigInteger, Greed> G in Domain.Fi.Psi)
+                    {
+                        NetworkStream ns = G.Value.Mu.GetStream();
+                        ns.WriteByte(111);
+                    }
                 }
                 if (_sleep > 1551) _sleep = 1551;
                 Thread.Sleep(_sleep);
