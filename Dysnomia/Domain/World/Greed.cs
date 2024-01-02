@@ -69,11 +69,17 @@ namespace Dysnomia.Domain.World
                         else throw new Exception("Unknown Handshake Subject");
                     }
 
+                    while (Theta.Out.Count > 0)
+                    {
+                        if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                        Iota.Write(Lambda.Data);
+                        Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
+                    }
+
                     if (Iota.DataAvailable)
                     {
                         Thread.Sleep(200);
                         int size = Iota.Read(Omicron);
-                        Queue<byte[]> Candidates = new Queue<byte[]>();
 
                         int A, B;
                         for (int i = A = B = 0; i < size; i++)
@@ -116,13 +122,12 @@ namespace Dysnomia.Domain.World
                                     Rho.Bond();
                                     Handshake("Dynamo", Rho.Dynamo);
                                 }
-                                else if (Rho.Ring.IsZero)
+                                else if (Rho.Barn.IsZero)
                                 {
                                     PeerDynamo = new BigInteger(Token);
                                     Rho.Adduct(PeerDynamo);
                                     Rho.Open();
                                     Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
-                                    return;
                                 }
                                 else
                                     throw new Exception("Not Implemented");
@@ -160,13 +165,12 @@ namespace Dysnomia.Domain.World
                                     Handshake("Channel", Rho.Channel);
                                     Handshake("Dynamo", Rho.Dynamo);
                                 }
-                                else if (Rho.Ring.IsZero)
+                                else if (Rho.Barn.IsZero)
                                 {
                                     PeerDynamo = new BigInteger(Token);
                                     Rho.Adduct(PeerDynamo);
                                     Rho.Open();
                                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
-                                    return;
                                 }
                                 else
                                     throw new Exception("Not Implemented");
@@ -179,14 +183,7 @@ namespace Dysnomia.Domain.World
                         Omicron.Clear();
                     }
 
-                    while (Theta.Out.Count > 0)
-                    {
-                        if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        Iota.Write(Lambda.Data);
-                        Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
-                    }
-
-                    Thread.Sleep(200);
+                    if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
                 } catch (Exception E) { }
             }
         }
