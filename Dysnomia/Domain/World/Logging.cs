@@ -9,6 +9,15 @@ namespace Dysnomia.Domain.World
 {
     static public class Logging
     {
+        /* for now
+         * 1 - data
+         * 2 - crypt
+         * 3 - operational
+         * 4 - opcode
+         * 5 - function
+         * 6 - msg
+         */
+
         static private Tare Tau;
         static private Object Theta;
 
