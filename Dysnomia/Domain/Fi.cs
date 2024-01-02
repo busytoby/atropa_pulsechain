@@ -58,14 +58,13 @@ namespace Dysnomia.Domain
             NetworkStream Iota = Beta.GetStream();
             Iota.ReadTimeout = 100;
             byte[] bytes = new byte[32];
-            //Span<Byte> Omicron = new Span<Byte>(bytes);
+            Span<Byte> Omicron = new Span<Byte>(bytes);
 
             XiHandshake(ClientId);
 
-            /*
             while (Beta.Connected)
             {
-                if (Iota.DataAvailable)
+                if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
                 {
                     int size = Iota.Read(Omicron);
                     if (size > 0)
@@ -89,7 +88,6 @@ namespace Dysnomia.Domain
                     break;
                 }
             }
-            */
         }
 
         public static Greed Connect(String Host, int Port)
