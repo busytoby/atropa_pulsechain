@@ -40,6 +40,22 @@ namespace Dysnomia.Domain.World
             Cone = true;
         }
 
+        public Buffer Encode(String Beta)
+        {
+            Logging.Log("Greed", "Encoding: " + Beta, 1);
+            Buffer A = new Buffer(Psi, Encoding.Default.GetBytes(Beta));
+            Logging.Log("Greed", "Encoded Base64: " + Convert.ToBase64String(A.Bytes), 2);
+            return A;
+        }
+
+        public Buffer Decode(Buffer Beta)
+        {
+            Logging.Log("Greed", "Decoding Base64: " + Convert.ToBase64String(Beta.Bytes), 1);
+            Buffer B = new Buffer(Psi, Beta.Bytes);
+            Logging.Log("Greed", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
+            return B;
+        }
+
         private void Handshake(String Step, BigInteger Iota)
         {
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Step, Iota, 1));
