@@ -69,6 +69,29 @@ namespace Dysnomia
             Cone.Gamma++;
         }
 
+        public Faung(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
+        {
+            bool Failed = true;
+
+            while (Failed)
+            {
+                try
+                {
+                    Rod = new Fa();
+                    Cone = new Fa();
+                    Rod.Fuse(Ohm, Upsilon, Rho);
+                    Rod.Tune();
+                    FuseAndOpen(Rho, Upsilon, Ohm, Xi, Alpha);
+                    Failed = false;
+                }
+                catch (Exception E)
+                {
+                    Logging.Log("Faung", E.ToString());
+                    throw;
+                }
+            }
+        }
+
         public Faung(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi)
         {
             bool Failed = true;
@@ -119,10 +142,15 @@ namespace Dysnomia
 
         public void FuseAndOpen(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi)
         {
+            FuseAndOpen(Rho, Upsilon, Ohm, Xi, Math.Random());
+        }
+
+        public void FuseAndOpen(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
+        {
             if (Cone == null) throw new Exception("Null Cone");
             Cone.Fuse(Rho, Upsilon, Ohm);
             Cone.Tune();
-            OpenManifolds(Xi);
+            OpenManifolds(Xi, Alpha);
         }
 
         public void OpenManifolds()
@@ -149,6 +177,11 @@ namespace Dysnomia
 
         public void OpenManifolds(BigInteger Xi)
         {
+            OpenManifolds(Xi, Math.Random());
+        }
+
+        public void OpenManifolds(BigInteger Xi, BigInteger Alpha)
+        {
             if (Cone == null) throw new Exception("Null Cone");
             if (Rod == null) throw new Exception("Null Rod");
             ConductorGenerate(Xi);
@@ -159,9 +192,9 @@ namespace Dysnomia
             if (Rod.Coordinate != Cone.Coordinate)
                 throw new Exception("Bad Coordination");
 
-            Cone.Conify();
+            Cone.Conify(Alpha);
 
-            Eta = Rod.Saturate(Cone.Foundation, Cone.Channel);
+            Eta = Rod.Saturate(Alpha, Cone.Foundation, Cone.Channel);
             Mu = Cone.Saturate(Rod.Foundation, Rod.Channel);
 
             if (Rod.Element != Cone.Element)
