@@ -79,7 +79,7 @@ namespace Dysnomia
                 {
                     Rod = new Fa();
                     Cone = new Fa();
-                    Rod.Fuse(Ohm, Upsilon, Rho);
+                    Rod.Fuse(Rho, Upsilon, Ohm);
                     Rod.Tune();
                     FuseAndOpen(Rho, Upsilon, Ohm, Xi, Alpha);
                     Failed = false;
