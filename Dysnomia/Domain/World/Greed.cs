@@ -28,7 +28,7 @@ namespace Dysnomia.Domain.World
         {
             Mu = new TcpClient();
             Rho = new Fa();
-            Mu.Connect(new IPEndPoint(System.Net.Dns.GetHostAddresses(Host)[0], Port));
+            Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
             Theta = new Living(Phi);
         }
 
