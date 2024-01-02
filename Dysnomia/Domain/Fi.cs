@@ -62,6 +62,7 @@ namespace Dysnomia.Domain
 
             XiHandshake(ClientId);
 
+            /*
             while (Beta.Connected)
             {
                 if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
@@ -88,6 +89,7 @@ namespace Dysnomia.Domain
                     break;
                 }
             }
+            */
         }
 
         public static Greed Connect(String Host, int Port)

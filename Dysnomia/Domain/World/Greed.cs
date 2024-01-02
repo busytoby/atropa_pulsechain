@@ -16,6 +16,7 @@ namespace Dysnomia.Domain.World
     {
         public TcpClient Mu;
         public Fa Rho;
+        //public Faung Psi;
         public Living Theta;
         private bool Cone = false;
 
@@ -128,6 +129,7 @@ namespace Dysnomia.Domain.World
                                     Rho.Adduct(PeerDynamo);
                                     Rho.Open();
                                     Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
+                                    //Psi = new Faung(Rho.Coordinate, Rho.Manifold, Rho.Ring, Rho.Barn);
                                 }
                                 else
                                     throw new Exception("Not Implemented");
@@ -171,6 +173,7 @@ namespace Dysnomia.Domain.World
                                     Rho.Adduct(PeerDynamo);
                                     Rho.Open();
                                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
+                                    //Psi = new Faung(Rho.Coordinate, Rho.Manifold, Rho.Ring, Rho.Barn);
                                 }
                                 else
                                     throw new Exception("Not Implemented");
