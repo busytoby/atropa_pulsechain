@@ -226,6 +226,13 @@ namespace Dysnomia.Domain
                                 Lambda = NextBytes();
                                 Beta(new BigInteger(Lambda));
                                 break;
+                            case 0x05:
+                                Lambda = NextBytes();
+                                String Connect_Host = Encoding.Default.GetString(Lambda);
+                                Lambda = NextBytes();
+                                int Connect_Port = BitConverter.ToInt16(Lambda, 0);
+                                Domain.Fi.Connect(Connect_Host, Connect_Port);
+                                break;
                             default:
                                 throw new Exception("Not Implemented");
                         }

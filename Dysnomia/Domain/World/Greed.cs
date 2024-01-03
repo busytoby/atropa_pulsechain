@@ -14,6 +14,9 @@ namespace Dysnomia.Domain.World
 {
     public class Greed
     {
+        public readonly String Host;
+        public readonly int Port;
+
         public TcpClient Mu;
         public Fa Rho;
         public Faung Psi;
@@ -24,11 +27,12 @@ namespace Dysnomia.Domain.World
         BigInteger PeerChannel = 0;
         BigInteger PeerDynamo = 0;
 
-        public Greed(String Host, int Port)
+        public Greed(String _Host, int _Port)
         {
             Mu = new TcpClient();
             Rho = new Fa();
-            Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
+            Host = _Host;
+            Port = _Port;
             Theta = new Living(Phi);
         }
 
@@ -64,6 +68,8 @@ namespace Dysnomia.Domain.World
 
         void Phi()
         {
+            Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
+
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
             Span<Byte> Omicron = new Span<Byte>(bytes);
