@@ -206,11 +206,14 @@ namespace Dysnomia.Domain
                                 Xi = Encoding.Default.GetString(Lambda);
                                 Logging.Log("Oracle", "EXEC: " + Xi, 3);
                                 Command command = new Command(Xi);
-                                while (command.Theta.Alive()) Thread.Sleep(100);
-                                while(command.Theta.Out.Count > 0)
+                                if (command.Theta != null)
                                 {
-                                    if (command.Theta.Out.TryDequeue(out Alpha))
-                                        Logging.Log(Alpha);
+                                    while (command.Theta.Alive()) Thread.Sleep(100);
+                                    while (command.Theta.Out.Count > 0)
+                                    {
+                                        if (command.Theta.Out.TryDequeue(out Alpha))
+                                            Logging.Log(Alpha);
+                                    }
                                 }
                                 break;
                             default:

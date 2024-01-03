@@ -10,11 +10,12 @@ namespace Dysnomia.Domain.bin
 {
     internal class help : Command
     {
+        public static String Name = "cmd_Help";
         public static String Description = "Prints The List Of Available Commands Or Provides Information On A Specific Command With help [cmd]";
 
         protected override void Phi()
         {
-            byte[] From = Encoding.Default.GetBytes("cmd_Help");
+            byte[] From = Encoding.Default.GetBytes(Name);
 
             if (Args.Length == 0)
             {

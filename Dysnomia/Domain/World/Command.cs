@@ -9,7 +9,7 @@ namespace Dysnomia.Domain.World
 {
     public class Command
     {
-        public string Name;
+        public string Name = "Command";
         public static String Description = "Not Set Description";
         public String[] Args;
         public Living Theta;
@@ -17,6 +17,8 @@ namespace Dysnomia.Domain.World
         public Command() { }
 
         public Command(String Eta) {
+            byte[] From = Encoding.Default.GetBytes(Name);
+
             Tokenize(Eta);
             object EXE = null;
             Type[] Commands = GetCommands();
@@ -26,15 +28,14 @@ namespace Dysnomia.Domain.World
                 {
                     ConstructorInfo CI = C.GetConstructor(new Type[] { });
                     EXE = CI.Invoke(null);
-                    ((Command)EXE).Name = Name;
                     ((Command)EXE).Args = Args;
                     ((Command)EXE).Theta = new Living(((Command)EXE).Phi);
                     Theta = ((Command)EXE).Theta;
                     break;
                 }
 
-            if (EXE == null)
-                throw new Exception("Command Not Found");
+            if (EXE == null || Theta == null)
+                Logging.Log(new Tare.MSG(From, Encoding.Default.GetBytes(Name + ": Not Found"), 6));
         }
 
         private void Tokenize(String Eta)
