@@ -32,7 +32,7 @@ namespace Dysnomia.Domain.bin
                     foreach (Type T in GetCommands())
                         if (A == T.Name)
                         {
-                            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(T.GetField("Description").GetValue(null).ToString()), 6));
+                            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(A + ": " + T.GetField("Description").GetValue(null).ToString()), 6));
                             found = true;
                             break;
                         }
