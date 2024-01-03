@@ -30,6 +30,7 @@ namespace Dysnomia.Domain.World
                     ((Command)EXE).Args = Args;
                     ((Command)EXE).Theta = new Living(((Command)EXE).Phi);
                     Theta = ((Command)EXE).Theta;
+                    break;
                 }
 
             if (EXE == null)
