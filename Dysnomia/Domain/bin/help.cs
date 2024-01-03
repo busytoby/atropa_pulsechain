@@ -10,6 +10,8 @@ namespace Dysnomia.Domain.bin
 {
     internal class help : Command
     {
+        public static String Description = "Prints The List Of Available Commands Or Provides Information On A Specific Command With help [cmd]";
+
         protected override void Phi()
         {
             byte[] From = Encoding.Default.GetBytes("cmd_Help");
@@ -23,7 +25,19 @@ namespace Dysnomia.Domain.bin
                 Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(CmdList), 6));
             } else
             {
-                throw new Exception("Not Implemented");
+                foreach(String A in Args)
+                {
+                    bool found = false;
+                    foreach (Type T in GetCommands())
+                        if (A == T.Name)
+                        {
+                            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(T.GetField("Description").GetValue(null).ToString()), 6));
+                            found = true;
+                            break;
+                        }
+                    if(!found)
+                        Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Help For " + A + " Not Found"), 6));
+                }
             }
         }
     }

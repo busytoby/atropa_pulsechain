@@ -10,6 +10,7 @@ namespace Dysnomia.Domain.World
     public class Command
     {
         public string Name;
+        public static String Description = "Not Set Description";
         public String[] Args;
         public Living Theta;
 
