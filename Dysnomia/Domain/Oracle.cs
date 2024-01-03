@@ -38,7 +38,7 @@ namespace Dysnomia.Domain
 
         public void ProcessString(String A)
         {
-            Logging.Log("Oracle", "EXEC: " + A, 5);
+            Logging.Log("Oracle", "ProcessString: " + A, 3);
             Enqueue(new byte[] { 0x02 });
             Enqueue(Encoding.Default.GetBytes(A));
         }
@@ -204,7 +204,7 @@ namespace Dysnomia.Domain
                             case 0x02:
                                 Lambda = NextBytes();
                                 Xi = Encoding.Default.GetString(Lambda);
-                                Logging.Log("Oracle", "EXEC: " + Xi, 1);
+                                Logging.Log("Oracle", "EXEC: " + Xi, 3);
                                 Command command = new Command(Xi);
                                 while (command.Theta.Alive()) Thread.Sleep(100);
                                 while(command.Theta.Out.Count > 0)
