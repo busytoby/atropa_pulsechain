@@ -43,11 +43,11 @@ namespace Apparition.Retaliation
 
         private void Retaliation_KeyDown(object sender, KeyEventArgs e)
         {
-            if (Dysnomia.Apparition.Output == null) throw new Exception("No Output Handler");
+            if (Dysnomia.Apparition.Interpreter == null) throw new Exception("No Interpretation Handler");
 
             if(e.Key == Key.Enter)
             {
-                Dysnomia.Apparition.Output(new TextRange(sender.As<RichTextBox>().Document.ContentStart, sender.As<RichTextBox>().Document.ContentEnd).Text.Trim());
+                Dysnomia.Apparition.Interpreter(new TextRange(sender.As<RichTextBox>().Document.ContentStart, sender.As<RichTextBox>().Document.ContentEnd).Text.Trim());
                 sender.As<RichTextBox>().Document.Blocks.Clear();
                 e.Handled = true;
             }

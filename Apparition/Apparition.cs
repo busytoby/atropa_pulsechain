@@ -18,7 +18,7 @@ namespace Dysnomia
         static public Object Tau;
         static public ConcurrentQueue<Tare.MSG> MsgQueue;
         static public short LogLevel = 1;
-        static public OutputCaller Output;
+        static public InterpretationCaller Interpreter;
 
         static Apparition()
         {
@@ -32,6 +32,6 @@ namespace Dysnomia
             if (A.Priority >= LogLevel) new Task(() => { lock (Tau) MsgQueue.Enqueue(A); }).Start();
         }
 
-        public delegate void OutputCaller(String A);
+        public delegate Domain.World.Command InterpretationCaller(String A);
     }
 }

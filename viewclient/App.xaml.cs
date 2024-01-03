@@ -19,7 +19,7 @@ namespace Pulse
             Logging.Add(Dysnomia.Apparition.Input);
 
             Oracle O = new Oracle();
-            Dysnomia.Apparition.Output = O.ProcessString;
+            Dysnomia.Apparition.Interpreter = O.ProcessString;
 
             Fi.Listen(5555);
             Fi.Rho.Add(O.Fi);

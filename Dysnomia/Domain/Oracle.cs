@@ -35,12 +35,14 @@ namespace Dysnomia.Domain
             //Writer.WriteByte(222);
         }
 
-        public void ProcessString(String A)
+        public World.Command ProcessString(String A)
         {
+            Command command = new Command();
             Logging.Log("Oracle", "NOOP: " + A, 5);
             Buffer B = Encode(A);
             Enqueue(new byte[] { 0x02 });
             Enqueue(B.Bytes);
+            return command;
         }
 
         public Buffer Encode(String Beta)        
