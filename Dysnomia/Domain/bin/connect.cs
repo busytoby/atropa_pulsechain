@@ -22,8 +22,8 @@ namespace Dysnomia.Domain.bin
             else
             {
                 Theta.In.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(Args[0]), 6));
-                if(Args.Length < 2) Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0xB3, 0x15 }, 6)); // 0x15B3 = 5555
-                else Theta.In.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(Args[1]), 6));
+                if(Args.Length < 2) Theta.In.Enqueue(new Tare.MSG(From, BitConverter.GetBytes(Int16.Parse("5555")), 6)); // 0x15B3 = 5555
+                else Theta.In.Enqueue(new Tare.MSG(From, BitConverter.GetBytes(Int16.Parse(Args[1])), 6));
             }
         }
     }
