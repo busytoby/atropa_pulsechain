@@ -150,7 +150,7 @@ namespace Dysnomia.Domain
             BigInteger Iota, Omicron;
             byte[] Lambda;
             String Xi;
-            Tare.MSG Alpha;
+            Tare.MSG Pi;
 
             while (true)
             {
@@ -209,12 +209,22 @@ namespace Dysnomia.Domain
                                 if (command.Theta != null)
                                 {
                                     while (command.Theta.Alive()) Thread.Sleep(100);
+                                    while (command.Theta.In.Count > 0)
+                                        if (command.Theta.In.TryDequeue(out Pi))
+                                            Enqueue(Pi.Data);
                                     while (command.Theta.Out.Count > 0)
-                                    {
-                                        if (command.Theta.Out.TryDequeue(out Alpha))
-                                            Logging.Log(Alpha);
-                                    }
+                                        if (command.Theta.Out.TryDequeue(out Pi))
+                                            Logging.Log(Pi);
                                 }
+                                break;
+                            case 0x03:
+                                Lambda = NextBytes();
+                                if (Lambda[0] == 0x00) Reset();
+                                else Alpha(new BigInteger(Lambda));
+                                break;
+                            case 0x04:
+                                Lambda = NextBytes();
+                                Beta(new BigInteger(Lambda));
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
