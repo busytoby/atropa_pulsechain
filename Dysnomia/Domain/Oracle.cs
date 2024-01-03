@@ -1,4 +1,5 @@
-﻿using Dysnomia.Domain.World;
+﻿using Dysnomia.Domain.bin;
+using Dysnomia.Domain.World;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -35,14 +36,11 @@ namespace Dysnomia.Domain
             //Writer.WriteByte(222);
         }
 
-        public World.Command ProcessString(String A)
+        public void ProcessString(String A)
         {
-            Command command = new Command();
-            Logging.Log("Oracle", "NOOP: " + A, 5);
-            Buffer B = Encode(A);
+            Logging.Log("Oracle", "EXEC: " + A, 5);
             Enqueue(new byte[] { 0x02 });
-            Enqueue(B.Bytes);
-            return command;
+            Enqueue(Encoding.Default.GetBytes(A));
         }
 
         public Buffer Encode(String Beta)        
@@ -127,10 +125,17 @@ namespace Dysnomia.Domain
             }
         }
 
-        public BigInteger Next()
+        public byte[] NextBytes()
         {
             byte[]? Beta;
-            if (TryDequeue(out Beta))
+            TryDequeue(out Beta);
+            return Beta;
+        }
+
+        public BigInteger Next()
+        {
+            byte[] Beta = NextBytes();
+            if (Beta != null)
                 return new BigInteger(Beta);
             else return 0;
         }
@@ -143,6 +148,9 @@ namespace Dysnomia.Domain
             byte[]? OpCode;
 
             BigInteger Iota, Omicron;
+            byte[] Lambda;
+            String Xi;
+            Tare.MSG Alpha;
 
             while (true)
             {
@@ -194,8 +202,16 @@ namespace Dysnomia.Domain
                                 Logging.Log("Oracle", "Beta Operational: " + Omicron.ToString(), 3);
                                 break;
                             case 0x02:
-                                Iota = Next();
-                                Logging.Log("Oracle", "NOOP: " + Iota.ToString(), 1);
+                                Lambda = NextBytes();
+                                Xi = Encoding.Default.GetString(Lambda);
+                                Logging.Log("Oracle", "EXEC: " + Xi, 1);
+                                Command command = new Command(Xi);
+                                while (command.Theta.Alive()) Thread.Sleep(100);
+                                while(command.Theta.Out.Count > 0)
+                                {
+                                    if (command.Theta.Out.TryDequeue(out Alpha))
+                                        Logging.Log(Alpha);
+                                }
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

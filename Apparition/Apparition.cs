@@ -32,6 +32,6 @@ namespace Dysnomia
             if (A.Priority >= LogLevel) new Task(() => { lock (Tau) MsgQueue.Enqueue(A); }).Start();
         }
 
-        public delegate Domain.World.Command InterpretationCaller(String A);
+        public delegate void InterpretationCaller(String A);
     }
 }

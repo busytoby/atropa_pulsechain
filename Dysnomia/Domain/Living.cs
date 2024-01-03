@@ -30,5 +30,7 @@ namespace Dysnomia.Domain
             Omicron = new Thread(new ThreadStart(Omega));
             Omicron.Start();
         }
+
+        public bool Alive() { return Omicron.IsAlive; }
     }
 }
