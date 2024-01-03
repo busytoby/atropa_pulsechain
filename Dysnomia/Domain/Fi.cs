@@ -94,7 +94,9 @@ namespace Dysnomia.Domain
 
         public static Greed Connect(String Host, int Port)
         {
-            return new Greed(Host, Port);
+            Greed Beta = new Greed(Host, Port);
+            Beta.Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
+            return Beta;
         }
     }
 }

@@ -68,7 +68,8 @@ namespace Dysnomia.Domain.World
 
         void Phi()
         {
-            Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
+            if(Host != null && Port != null)
+                Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
 
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
