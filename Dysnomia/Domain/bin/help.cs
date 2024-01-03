@@ -14,13 +14,17 @@ namespace Dysnomia.Domain.bin
         {
             byte[] From = Encoding.Default.GetBytes("cmd_Help");
 
-            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Help Commands Available:"), 6));
-            String CmdList = "";
-            if (Args == null)
+            if (Args.Length == 0)
+            {
+                Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Help Commands Available:"), 6));
+                String CmdList = "";
                 foreach (Type T in GetCommands())
                     CmdList += T.Name + " ";
-            else throw new Exception("Not Implemented");
-            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(CmdList), 6));
+                Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(CmdList), 6));
+            } else
+            {
+                throw new Exception("Not Implemented");
+            }
         }
     }
 }

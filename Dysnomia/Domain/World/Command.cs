@@ -9,26 +9,37 @@ namespace Dysnomia.Domain.World
 {
     public class Command
     {
+        public string Name;
+        public String[] Args;
         public Living Theta;
-        public String[] Args = null;
 
         public Command() { }
 
         public Command(String Eta) {
+            Tokenize(Eta);
             object EXE = null;
             Type[] Commands = GetCommands();
 
             foreach(Type C in Commands)
-                if(C.Name.ToLower() == Eta.ToLower())
+                if(C.Name.ToLower() == Name.ToLower())
                 {
                     ConstructorInfo CI = C.GetConstructor(new Type[] { });
                     EXE = CI.Invoke(null);
+                    ((Command)EXE).Name = Name;
+                    ((Command)EXE).Args = Args;
                     ((Command)EXE).Theta = new Living(((Command)EXE).Phi);
                     Theta = ((Command)EXE).Theta;
                 }
 
             if (EXE == null)
                 throw new Exception("Command Not Found");
+        }
+
+        private void Tokenize(String Eta)
+        {
+            List<String> _args = Eta.Split(" ").ToList();
+            Name = _args[0];
+            Args = _args.Skip(1).ToArray();
         }
 
         public Type[] GetCommands()
