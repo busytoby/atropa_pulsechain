@@ -76,8 +76,19 @@ namespace Dysnomia.Domain.World
 
         void Phi()
         {
-            if(Host != null && Port > 0)
+            if (Host != null && Port > 0)
+            {
+                bool already_connected = false;
+                foreach (KeyValuePair<BigInteger, Greed> P in Fi.Psi)
+                    if (P.Value.Host == Host)
+                        already_connected = true;
+                if(already_connected)
+                {
+                    Logging.Log("Greed", String.Format("{0} Connection Denied, Host Attempted To Connect Twice", Host, 6));
+                    return;
+                }
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
+            }
 
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
