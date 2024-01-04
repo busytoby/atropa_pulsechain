@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Pulse {
     public class ConsoleApp {
-        static public OutputCaller Output;
+        static public OutputCaller? Output;
 	public delegate void OutputCaller(String A);
 
 	static void Main(string[] args) {
@@ -14,7 +14,7 @@ namespace Pulse {
 	    Fi.Listen(5555);
             Fi.Rho.Add(O.Fi);
 
-	    string consoleinput;
+	    string? consoleinput;
 	    while((consoleinput = Console.ReadLine()) != null)
 		Output(consoleinput);
 	}
