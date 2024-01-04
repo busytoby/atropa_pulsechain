@@ -10,8 +10,8 @@ namespace Dysnomia.Domain.bin
 {
     internal class help : Command
     {
-        public static String Name = "cmd_Help";
-        public static String Description = "Prints The List Of Available Commands Or Provides Information On A Specific Command With help [cmd]";
+        new public static String Name = "cmd_Help";
+        new public static String Description = "Prints The List Of Available Commands Or Provides Information On A Specific Command With help [cmd]";
 
         protected override void Phi()
         {

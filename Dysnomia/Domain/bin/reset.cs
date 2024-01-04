@@ -10,8 +10,8 @@ namespace Dysnomia.Domain.bin
 {
     internal class reset : Command
     {
-        public static String Name = "cmd_Reset";
-        public static String Description = "Resets The System Encryption To Original State";
+        new public static String Name = "cmd_Reset";
+        new public static String Description = "Resets The System Encryption To Original State";
 
         protected override void Phi()
         {

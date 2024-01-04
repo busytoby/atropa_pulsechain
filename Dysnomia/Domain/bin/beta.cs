@@ -10,8 +10,8 @@ namespace Dysnomia.Domain.bin
 {
     internal class beta : Command
     {
-        public static String Name = "cmd_Beta";
-        public static String Description = "Manually Sets The Block Encryption To State Seeded By Any CMD Arguments";
+        new public static String Name = "cmd_Beta";
+        new public static String Description = "Manually Sets The Block Encryption To State Seeded By Any CMD Arguments";
 
         protected override void Phi()
         {

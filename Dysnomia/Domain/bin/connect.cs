@@ -10,8 +10,8 @@ namespace Dysnomia.Domain.bin
 {
     internal class connect : Command
     {
-        public static String Name = "cmd_Connect";
-        public static String Description = "Initiate A New Connection connect [Host] [Port]";
+        new public static String Name = "cmd_Connect";
+        new public static String Description = "Initiate A New Connection connect [Host] [Port]";
 
         protected override void Phi()
         {
