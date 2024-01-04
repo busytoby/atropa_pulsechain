@@ -24,7 +24,7 @@ namespace Dysnomia.Domain.World
         public Fa Rho;
         public Faung? Psi;
         public Living Theta;
-        private bool Cone = false;
+        public bool Cone = false;
 
         BigInteger PeerFoundation = 0;
         BigInteger PeerChannel = 0;

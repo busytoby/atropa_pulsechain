@@ -40,9 +40,20 @@ namespace Dysnomia.Domain
         {
             if (Mu == null) throw new Exception("Null Mu");
             TcpClient Beta = Mu.EndAcceptTcpClient(result);
+            Socket S = Beta.Client;
+            if (S.RemoteEndPoint == null) throw new Exception("Null EndPoint");
+            IPEndPoint Remote = (IPEndPoint)S.RemoteEndPoint;
+
+            foreach (KeyValuePair<BigInteger, Greed> P in Psi)
+                if(P.Value.Cone && P.Value.Host == Remote.Address.ToString())
+                {
+                    Logging.Log("Fi", "Denied Already Connected: " + Remote.Address.ToString());
+                    Beta.Close();
+                    Mu.BeginAcceptTcpClient(Kappa, Mu);
+                    return;
+                }
             new Thread(() => Phi(Beta)).Start();
-            if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
-                Logging.Log("Fi", "Connected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
+            Logging.Log("Fi", "Connected: " + Remote.Address.ToString());
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
