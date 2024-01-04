@@ -20,13 +20,15 @@ namespace Dysnomia.Domain.World
             byte[] From = Encoding.Default.GetBytes(Name);
 
             Tokenize(Eta);
-            object EXE = null;
+            object? EXE = null;
             Type[] Commands = GetCommands();
 
             foreach(Type C in Commands)
                 if(C.Name.ToLower() == Name.ToLower())
                 {
                     EXE = Activator.CreateInstance(C, null);
+                    if (EXE == null) throw new Exception("Null Command Instance");
+                    if (Args == null) throw new Exception("Null Args");
                     ((Command)EXE).Args = Args;
                     ((Command)EXE).Theta = new Living();
                     Theta = ((Command)EXE).Theta;
