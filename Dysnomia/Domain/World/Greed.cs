@@ -80,11 +80,11 @@ namespace Dysnomia.Domain.World
             {
                 bool already_connected = false;
                 foreach (KeyValuePair<BigInteger, Greed> P in Fi.Psi)
-                    if (P.Value.Host == Host)
+                    if (P.Value.Host == Host && P.Value.Mu != Mu)
                         already_connected = true;
                 if(already_connected)
                 {
-                    Logging.Log("Greed", String.Format("{0} Connection Denied, Host Attempted To Connect Twice", Host, 6));
+                    Logging.Log("Greed", String.Format("{0} Connection Denied, Already Connected", Host, 6));
                     return;
                 }
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
