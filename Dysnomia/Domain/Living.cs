@@ -21,11 +21,25 @@ namespace Dysnomia.Domain
         public 活 Omega;
         private Thread Omicron;
 
+        public Living()
+        {
+            In = new ConcurrentQueue<MSG>();
+            Out = new ConcurrentQueue<MSG>();
+            Sigma = new Tare();
+        }
+
         public Living(活 O) 
         {
             In = new ConcurrentQueue<MSG>();
             Out = new ConcurrentQueue<MSG>();
             Sigma = new Tare();
+            Omega = O;
+            Omicron = new Thread(new ThreadStart(Omega));
+            Omicron.Start();
+        }
+
+        public void Run(活 O)
+        {
             Omega = O;
             Omicron = new Thread(new ThreadStart(Omega));
             Omicron.Start();

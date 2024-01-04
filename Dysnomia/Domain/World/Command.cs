@@ -28,8 +28,9 @@ namespace Dysnomia.Domain.World
                 {
                     EXE = Activator.CreateInstance(C, null);
                     ((Command)EXE).Args = Args;
-                    ((Command)EXE).Theta = new Living(((Command)EXE).Phi);
+                    ((Command)EXE).Theta = new Living();
                     Theta = ((Command)EXE).Theta;
+                    ((Command)EXE).Theta.Run(((Command)EXE).Phi);
                     break;
                 }
 
