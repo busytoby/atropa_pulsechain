@@ -15,14 +15,14 @@ namespace Dysnomia.Domain
     {
         BigInteger Upsilon, Ohm, Pi, Kappa, Eta;
 
-        public void Alpha(BigInteger Iota)
+        public void Alpha(BigInteger Iota) // Upsilon
         {
             Enqueue(new byte[] { 0x06 });
             Enqueue(Iota.ToByteArray());
             Upsilon = Upsilon ^ Iota;
         }
 
-        public void Alpha(ref Faung Beta)
+        public void Alpha(ref Faung Beta) // Upsilon
         {
             Enqueue(new byte[] { 0x05 });
             Enqueue(Beta.Upsilon.ToByteArray());
@@ -33,14 +33,14 @@ namespace Dysnomia.Domain
             Enqueue(Beta.Ohm.ToByteArray());
         }
 
-        public void Alpha(bool Phi = true)
+        public void Alpha(bool Phi = true) // Upsilon
         {
             Enqueue(new byte[] { 0x04 });
             Upsilon = Phi ? Upsilon ^ Ohm ^ Pi : Upsilon ^ Ohm;
             Enqueue(Upsilon.ToByteArray());
         }
 
-        public void Lambda(ref Faung Beta)
+        public void Lambda(ref Faung Beta) // Rho
         {
             Enqueue(new byte[] { 0x03 });
             Upsilon = Beta.Cone.Torque(Beta.Rod.Eta);
@@ -55,7 +55,7 @@ namespace Dysnomia.Domain
             Eta = Beta.Rod.Kappa;
         }
 
-        public void Iota(ref Faung Beta)
+        public void Iota(ref Faung Beta) // Pi
         {
             Enqueue(new byte[] { 0x02 });
             BigInteger Lambda = Beta.Cone.Torque(Beta.Rod.Kappa);
