@@ -17,10 +17,11 @@ namespace Dysnomia.Domain.bin
         {
             byte[] From = Encoding.Default.GetBytes(Name);
             Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0x04 }, 6));
-            if (Args.Length == 0)
+            String Eta = string.Join(" ", Args);
+            if (Eta.Length == 0)
                 Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Beta Command Requires At Least 1 Argument"), 6));
             else
-                Theta.In.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(string.Join(" ", Args)), 6));
+                Theta.In.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(Eta), 6));
         }
     }
 }
