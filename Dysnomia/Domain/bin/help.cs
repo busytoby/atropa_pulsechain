@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -34,7 +35,11 @@ namespace Dysnomia.Domain.bin
                     foreach (Type T in GetCommands())
                         if (A == T.Name)
                         {
-                            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(A + ": " + T.GetField("Description").GetValue(null).ToString()), 6));
+                            FieldInfo? DF = T.GetField("Description");
+                            if (DF == null) throw new Exception("No Description");
+                            object? DFV = DF.GetValue(null);
+                            if (DFV == null) throw new Exception("Null Description");
+                            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(A + ": " + DFV.ToString()), 6));
                             found = true;
                             break;
                         }

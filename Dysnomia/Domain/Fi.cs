@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable CS0168
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +16,7 @@ namespace Dysnomia.Domain
 {
     static public class Fi
     {
-        static private TcpListener Mu;
+        static private TcpListener? Mu;
         static public Tare Rho;
         static public ConcurrentDictionary<BigInteger, Greed> Psi;
 
@@ -36,9 +38,11 @@ namespace Dysnomia.Domain
 
         static private void Kappa(IAsyncResult result)
         {
+            if (Mu == null) throw new Exception("Null Mu");
             TcpClient Beta = Mu.EndAcceptTcpClient(result);
             new Thread(() => Phi(Beta)).Start();
-            Logging.Log("Fi", "Connected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
+            if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
+                Logging.Log("Fi", "Connected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
@@ -84,8 +88,9 @@ namespace Dysnomia.Domain
                 }
                 catch (IOException E)
                 {
-                    Greed Lambda;
+                    Greed? Lambda;
                     Psi.TryRemove(ClientId, out Lambda);
+                    if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
                     Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
                     break;
                 }

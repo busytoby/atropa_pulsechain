@@ -234,7 +234,8 @@ namespace Dysnomia.Domain
                                 String Connect_Host = Encoding.Default.GetString(Lambda);
                                 Lambda = NextBytes();
                                 int Connect_Port = BitConverter.ToInt16(Lambda, 0);
-                                Domain.Fi.Connect(Connect_Host, Connect_Port);
+                                Greed Chi = Domain.Fi.Connect(Connect_Host, Connect_Port);
+                                Domain.Fi.Psi.TryAdd(Math.Random(), Chi);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

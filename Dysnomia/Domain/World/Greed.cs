@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain.bin;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
@@ -19,7 +20,7 @@ namespace Dysnomia.Domain.World
 
         public TcpClient Mu;
         public Fa Rho;
-        public Faung Psi;
+        public Faung? Psi;
         public Living Theta;
         private bool Cone = false;
 
@@ -29,15 +30,18 @@ namespace Dysnomia.Domain.World
 
         public Greed(String _Host, int _Port)
         {
-            Mu = new TcpClient();
-            Rho = new Fa();
             Host = _Host;
             Port = _Port;
+            Mu = new TcpClient();
+            Rho = new Fa();
             Theta = new Living(Phi);
         }
 
         public Greed(TcpClient Iota)
         {
+            if (Iota.Client.RemoteEndPoint as IPEndPoint == null) throw new Exception("Null Client");
+            Host = ((IPEndPoint)Iota.Client.RemoteEndPoint).Address.ToString();
+            Port = ((IPEndPoint)Iota.Client.RemoteEndPoint).Port;
             Mu = Iota;
             Rho = new Fa();
             Theta = new Living(Phi);
@@ -47,6 +51,7 @@ namespace Dysnomia.Domain.World
         public Buffer Encode(String Beta)
         {
             Logging.Log("Greed", "Encoding: " + Beta, 1);
+            if (Psi == null) throw new Exception("Null Psi");
             Buffer A = new Buffer(Psi, Encoding.Default.GetBytes(Beta));
             Logging.Log("Greed", "Encoded Base64: " + Convert.ToBase64String(A.Bytes), 2);
             return A;
@@ -55,6 +60,7 @@ namespace Dysnomia.Domain.World
         public Buffer Decode(Buffer Beta)
         {
             Logging.Log("Greed", "Decoding Base64: " + Convert.ToBase64String(Beta.Bytes), 1);
+            if (Psi == null) throw new Exception("Null Psi");
             Buffer B = new Buffer(Psi, Beta.Bytes);
             Logging.Log("Greed", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
             return B;
@@ -68,13 +74,13 @@ namespace Dysnomia.Domain.World
 
         void Phi()
         {
-            if(Host != null && Port != null)
+            if(Host != null && Port > 0)
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
 
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
             Span<Byte> Omicron = new Span<Byte>(bytes);
-            MSG Lambda;
+            MSG? Lambda;
 
             while (Mu.Connected)
             {

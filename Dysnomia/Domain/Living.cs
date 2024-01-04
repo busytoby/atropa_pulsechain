@@ -18,8 +18,8 @@ namespace Dysnomia.Domain
         public ConcurrentQueue<MSG> Out;
         public Tare Sigma;
         public Mutex Tau = new Mutex();
-        public 活 Omega;
-        private Thread Omicron;
+        public 活? Omega;
+        private Thread? Omicron;
 
         public Living()
         {
@@ -45,6 +45,6 @@ namespace Dysnomia.Domain
             Omicron.Start();
         }
 
-        public bool Alive() { return Omicron.IsAlive; }
+        public bool Alive() { return (Omicron != null && Omicron.IsAlive); }
     }
 }
