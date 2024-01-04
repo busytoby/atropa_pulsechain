@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -165,12 +166,14 @@ namespace Dysnomia.Domain.World
 
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
-            System.Timers.Timer timeout = new System.Timers.Timer(1551);
+            Stopwatch stopwatch = new Stopwatch();
+            
             Span<Byte> Omicron = new Span<Byte>(bytes);
             MSG? Lambda;
 
             while (Mu.Connected)
             {
+                stopwatch.Start();
                 try
                 {
                     while (Theta.In.Count > 0)
@@ -221,6 +224,9 @@ namespace Dysnomia.Domain.World
 
                     if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
                 } catch (Exception E) { }
+                stopwatch.Stop();
+                if (stopwatch.Elapsed.TotalSeconds > 5) throw new Exception("Handshake Timeout Exceeded");
+                stopwatch.Start();
             }
         }
     }
