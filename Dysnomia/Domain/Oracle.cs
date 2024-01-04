@@ -240,7 +240,9 @@ namespace Dysnomia.Domain
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
                                 int Connect_Port = BitConverter.ToInt16(Lambda, 0);
                                 Greed Chi = Domain.Fi.Connect(Connect_Host, Connect_Port);
-                                Domain.Fi.Psi.TryAdd(Math.Random(), Chi);
+                                if (!Chi.ClientId.IsZero) throw new Exception("Client ID Non-Zero");
+                                Chi.ClientId = Math.Random();
+                                Domain.Fi.Psi.TryAdd(Chi.ClientId, Chi);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

@@ -20,6 +20,7 @@ namespace Dysnomia.Domain.World
     {
         public readonly String Host;
         public readonly int Port;
+        public BigInteger ClientId;
 
         public TcpClient Mu;
         public Fa Rho;
@@ -202,6 +203,7 @@ namespace Dysnomia.Domain.World
                         if (Cone && Subject == "Xi")
                         {
                             BigInteger Delta = new BigInteger(Lambda.Data);
+                            ClientId = Delta;
                             NextHandshake(ref Delta);
                         }
                         else throw new Exception("Unknown Handshake Subject");
