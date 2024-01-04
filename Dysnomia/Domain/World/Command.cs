@@ -26,11 +26,10 @@ namespace Dysnomia.Domain.World
             foreach(Type C in Commands)
                 if(C.Name.ToLower() == Name.ToLower())
                 {
-                    ConstructorInfo CI = C.GetConstructor(new Type[] { });
-                    EXE = CI.Invoke(null);
+                    EXE = Activator.CreateInstance(C, null);
                     ((Command)EXE).Args = Args;
-                    Theta = new Living(((Command)EXE).Phi);
-                    ((Command)EXE).Theta = Theta;
+                    ((Command)EXE).Theta = new Living(((Command)EXE).Phi);
+                    Theta = ((Command)EXE).Theta;
                     break;
                 }
 
