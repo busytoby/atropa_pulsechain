@@ -29,8 +29,8 @@ namespace Dysnomia.Domain.World
                     ConstructorInfo CI = C.GetConstructor(new Type[] { });
                     EXE = CI.Invoke(null);
                     ((Command)EXE).Args = Args;
-                    ((Command)EXE).Theta = new Living(((Command)EXE).Phi);
-                    Theta = ((Command)EXE).Theta;
+                    Theta = new Living(((Command)EXE).Phi);
+                    ((Command)EXE).Theta = Theta;
                     break;
                 }
 
