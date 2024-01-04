@@ -98,51 +98,58 @@ namespace Dysnomia.Domain
 
             while (Beta.Connected)
             {
-                while (Client.Theta.In.Count > 0)
-                {
-                    if (!Client.Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                    String Subject = (Lambda.Subject == null) ? "" : Encoding.Default.GetString(Lambda.Subject);
-
-                    if (Lambda.Data[0] == 0x07)
-                    {
-                        Logging.Log("Fi", "Handshake OK", 6);
-                    }
-                    else throw new Exception("Unknown OpCode");
-                }
-
-                while (Client.Theta.Out.Count > 0)
-                {
-                    if (!Client.Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                    if (Lambda != null && ValidateMSG(Lambda))
-                    {
-                        Iota.Write(Lambda.Data);
-                        Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
-                    }
-                }
-
-                if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
-                {
-                    int size = Iota.Read(Omicron);
-                    if (size > 0)
-                    {
-                        Tare.MSG M = new Tare.MSG(ClientId.ToByteArray(), Omicron.Slice(0, size).ToArray(), 1);
-                        foreach (Tare.Gram G in Rho) G(M);
-                    }
-                }
-                else
-                    Thread.Sleep(400);
-
                 try
                 {
-                    Iota.WriteByte(111);
+                    while (Client.Theta.In.Count > 0)
+                    {
+                        if (!Client.Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                        String Subject = (Lambda.Subject == null) ? "" : Encoding.Default.GetString(Lambda.Subject);
+
+                        if (Lambda.Data[0] == 0x07)
+                        {
+                            Logging.Log("Fi", "Handshake OK", 6);
+                        }
+                        else throw new Exception("Unknown OpCode");
+                    }
+
+                    while (Client.Theta.Out.Count > 0)
+                    {
+                        if (!Client.Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                        if (Lambda != null && ValidateMSG(Lambda))
+                        {
+                            Iota.Write(Lambda.Data);
+                            Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
+                        }
+                    }
+
+                    if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
+                    {
+                        int size = Iota.Read(Omicron);
+                        if (size > 0)
+                        {
+                            Tare.MSG M = new Tare.MSG(ClientId.ToByteArray(), Omicron.Slice(0, size).ToArray(), 1);
+                            foreach (Tare.Gram G in Rho) G(M);
+                        }
+                    }
+                    else
+                        Thread.Sleep(400);
+
+                    try
+                    {
+                        Iota.WriteByte(111);
+                    }
+                    catch (IOException E)
+                    {
+                        Greed? Delta;
+                        Psi.TryRemove(ClientId, out Delta);
+                        if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
+                        Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
+                        break;
+                    }
                 }
-                catch (IOException E)
+                catch (Exception E)
                 {
-                    Greed? Delta;
-                    Psi.TryRemove(ClientId, out Delta);
-                    if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
-                    Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
-                    break;
+                    Logging.Log("Fi", "Error: " + E.StackTrace, 7);
                 }
             }
         }

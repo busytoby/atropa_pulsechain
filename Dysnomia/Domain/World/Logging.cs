@@ -16,6 +16,7 @@ namespace Dysnomia.Domain.World
          * 4 - opcode
          * 5 - function
          * 6 - msg
+         * 7 - error
          */
 
         static private Tare Tau;
