@@ -8,7 +8,7 @@ namespace Dysnomia
     {
         public static BigInteger Prime;
         public static BigInteger MotzkinPrime = 953467954114363;
-        public static BigInteger TSFiPrime = 304250263527209;
+        public static BigInteger BelphegorsPrime = BigInteger.Parse("1000000000000066600000000000001");
         public static BigInteger BellPrime = BigInteger.Parse("35742549198872617291353508656626642567");
         public static BigInteger RepunitPrime = BigInteger.Parse(
             "3AF1BF72E45FFA4B0C58C8EFD853EC16D0CEF373229C476B51B61F54D30E04D8B76C" +
