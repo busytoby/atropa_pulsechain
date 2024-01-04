@@ -27,6 +27,7 @@ namespace Dysnomia.Domain.World
         public Living Theta;
         public bool Cone = false;
         public bool TimedOut = false;
+        public short HandshakeState = 0x00;
 
         BigInteger PeerFoundation = 0;
         BigInteger PeerChannel = 0;
@@ -80,11 +81,18 @@ namespace Dysnomia.Domain.World
         {
             if (Cone)
             {
-                if (Rho.Pole.IsZero && PeerChannel.IsZero)
+                if(Rho.Tau.IsZero)
+                {
+                    Rho.Tau = Rho.Avail(Beta);
+                    Handshake("Tau", Rho.Tau);
+                    HandshakeState = 0x01;
+                }
+                else if (Rho.Pole.IsZero && PeerChannel.IsZero)
                 {
                     Rho.Form(Beta);
                     Rho.Polarize();
                     Handshake("Pole", Rho.Pole);
+                    HandshakeState = 0x02;
                 }
                 else if (Rho.Coordinate.IsZero)
                 {
@@ -92,10 +100,12 @@ namespace Dysnomia.Domain.World
                     Rho.Conify();
                     Handshake("Foundation", Rho.Foundation);
                     Handshake("Channel", Rho.Channel);
+                    HandshakeState = 0x03;
                 }
                 else if (Rho.Element.IsZero && PeerFoundation.IsZero)
                 {
                     PeerFoundation = Beta;
+                    HandshakeState = 0x04;
                 }
                 else if (Rho.Element.IsZero && PeerChannel.IsZero)
                 {
@@ -103,6 +113,7 @@ namespace Dysnomia.Domain.World
                     Rho.Saturate(PeerFoundation, PeerChannel);
                     Rho.Bond();
                     Handshake("Dynamo", Rho.Dynamo);
+                    HandshakeState = 0x05;
                 }
                 else if (Rho.Barn.IsZero)
                 {
@@ -111,6 +122,7 @@ namespace Dysnomia.Domain.World
                     Rho.Open();
                     Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
                     Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    HandshakeState = 0x06;
                 }
                 else
                     throw new Exception("Not Implemented");
@@ -121,20 +133,24 @@ namespace Dysnomia.Domain.World
                 {
                     Rho.Alpha = Rho.Avail(Beta);
                     Handshake("Alpha", Rho.Alpha);
+                    HandshakeState = 0x01;
                 }
                 else if (Rho.Pole.IsZero && PeerChannel.IsZero)
                 {
                     Rho.Form(Beta);
                     Rho.Polarize();
                     Handshake("Pole", Rho.Pole);
+                    HandshakeState = 0x02;
                 }
                 else if (Rho.Coordinate.IsZero)
                 {
                     Rho.Conjugate(ref Beta);
+                    HandshakeState = 0x03;
                 }
                 else if (Rho.Element.IsZero && PeerFoundation.IsZero)
                 {
                     PeerFoundation = Beta;
+                    HandshakeState = 0x04;
                 }
                 else if (Rho.Element.IsZero && PeerChannel.IsZero)
                 {
@@ -144,6 +160,7 @@ namespace Dysnomia.Domain.World
                     Handshake("Foundation", Rho.Foundation);
                     Handshake("Channel", Rho.Channel);
                     Handshake("Dynamo", Rho.Dynamo);
+                    HandshakeState = 0x05;
                 }
                 else if (Rho.Barn.IsZero)
                 {
@@ -152,6 +169,7 @@ namespace Dysnomia.Domain.World
                     Rho.Open();
                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
                     Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    HandshakeState = 0x06;
                 }
                 else
                     throw new Exception("Not Implemented");
@@ -183,8 +201,7 @@ namespace Dysnomia.Domain.World
                         if (Cone && Subject == "Xi")
                         {
                             BigInteger Delta = new BigInteger(Lambda.Data);
-                            Rho.Tau = Rho.Avail(Delta);
-                            Handshake("Tau", Rho.Tau);
+                            NextHandshake(ref Delta);
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }
