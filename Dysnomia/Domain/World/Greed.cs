@@ -1,4 +1,6 @@
-﻿using Dysnomia.Domain.bin;
+﻿#pragma warning disable CS0168
+
+using Dysnomia.Domain.bin;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -89,7 +91,7 @@ namespace Dysnomia.Domain.World
                     while (Theta.In.Count > 0)
                     {
                         if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        String Subject = Encoding.Default.GetString(Lambda.Subject);
+                        String Subject = (Lambda.Subject == null)?"":Encoding.Default.GetString(Lambda.Subject);
                         if (Cone && Subject == "Xi")
                         {
                             BigInteger Delta = new BigInteger(Lambda.Data);

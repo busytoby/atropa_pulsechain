@@ -11,10 +11,13 @@ namespace Dysnomia.Domain.World
     {
         public string Name = "Command";
         public static String Description = "Not Set Description";
-        public String[] Args;
-        public Living Theta;
+        public String[]? Args;
+        public Living? Theta;
 
-        public Command() { }
+        public Command() {
+            Args = null;
+            Theta = null;
+        }
 
         public Command(String Eta) {
             byte[] From = Encoding.Default.GetBytes(Name);
@@ -29,10 +32,12 @@ namespace Dysnomia.Domain.World
                     EXE = Activator.CreateInstance(C, null);
                     if (EXE == null) throw new Exception("Null Command Instance");
                     if (Args == null) throw new Exception("Null Args");
-                    ((Command)EXE).Args = Args;
-                    ((Command)EXE).Theta = new Living();
-                    Theta = ((Command)EXE).Theta;
-                    ((Command)EXE).Theta.Run(((Command)EXE).Phi);
+                    Command CEXE = ((Command)EXE);
+                    CEXE.Args = Args;
+                    CEXE.Theta = new Living();
+                    Theta = CEXE.Theta;
+                    if (EXE == null || CEXE.Theta == null) throw new Exception("Catastrophic Failure");
+                    CEXE.Theta.Run(CEXE.Phi);
                     break;
                 }
 

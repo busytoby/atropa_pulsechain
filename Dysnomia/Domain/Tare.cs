@@ -6,12 +6,12 @@ namespace Dysnomia.Domain
         public class MSG
         {
             public byte[] From;
-            public byte[] Subject;
+            public byte[]? Subject;
             public byte[] Data;
             public short Priority;
             public DateTime TimeStamp;
 
-            public MSG(byte[] from, byte[] subject, byte[] data, short priority)
+            public MSG(byte[] from, byte[]? subject, byte[] data, short priority)
             {
                 From = from;
                 Subject = subject;

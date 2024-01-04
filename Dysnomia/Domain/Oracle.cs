@@ -125,7 +125,7 @@ namespace Dysnomia.Domain
             }
         }
 
-        public byte[] NextBytes()
+        public byte[]? NextBytes()
         {
             byte[]? Beta;
             TryDequeue(out Beta);
@@ -134,7 +134,7 @@ namespace Dysnomia.Domain
 
         public BigInteger Next()
         {
-            byte[] Beta = NextBytes();
+            byte[]? Beta = NextBytes();
             if (Beta != null)
                 return new BigInteger(Beta);
             else return 0;
@@ -148,9 +148,9 @@ namespace Dysnomia.Domain
             byte[]? OpCode;
 
             BigInteger Iota, Omicron;
-            byte[] Lambda;
+            byte[]? Lambda;
             String Xi;
-            Tare.MSG Pi;
+            Tare.MSG? Pi;
 
             while (true)
             {
@@ -203,6 +203,7 @@ namespace Dysnomia.Domain
                                 break;
                             case 0x02:
                                 Lambda = NextBytes();
+                                if (Lambda == null) throw new Exception("Heap Corrupted");
                                 Xi = Encoding.Default.GetString(Lambda);
                                 Logging.Log("Oracle", "EXEC: " + Xi, 3);
                                 Command command = new Command(Xi);
@@ -220,19 +221,23 @@ namespace Dysnomia.Domain
                             case 0x03:
                                 while (Count < 1) Thread.Sleep(100);
                                 Lambda = NextBytes();
+                                if (Lambda == null) throw new Exception("Heap Corrupted");
                                 if (Lambda[0] == 0x00) Reset();
                                 else Alpha(new BigInteger(Lambda));
                                 break;
                             case 0x04:
                                 while (Count < 1) Thread.Sleep(100);
                                 Lambda = NextBytes();
+                                if (Lambda == null) throw new Exception("Heap Corrupted");
                                 Beta(new BigInteger(Lambda));
                                 break;
                             case 0x05:
                                 while (Count < 2) Thread.Sleep(100);
                                 Lambda = NextBytes();
+                                if (Lambda == null) throw new Exception("Heap Corrupted");
                                 String Connect_Host = Encoding.Default.GetString(Lambda);
                                 Lambda = NextBytes();
+                                if (Lambda == null) throw new Exception("Heap Corrupted");
                                 int Connect_Port = BitConverter.ToInt16(Lambda, 0);
                                 Greed Chi = Domain.Fi.Connect(Connect_Host, Connect_Port);
                                 Domain.Fi.Psi.TryAdd(Math.Random(), Chi);

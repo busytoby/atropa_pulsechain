@@ -18,6 +18,8 @@ namespace Dysnomia.Domain.bin
 
         protected override void Phi()
         {
+            if (Theta == null) throw new Exception("Null Command Theta");
+            if (Args == null) throw new Exception("Null Command Args");
             byte[] From = Encoding.Default.GetBytes(Name);
 
             if (Args.Length == 0)

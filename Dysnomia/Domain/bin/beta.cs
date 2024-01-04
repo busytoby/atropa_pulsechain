@@ -17,6 +17,8 @@ namespace Dysnomia.Domain.bin
 
         protected override void Phi()
         {
+            if (Theta == null) throw new Exception("Null Command Theta");
+            if (Args == null) throw new Exception("Null Command Args");
             byte[] From = Encoding.Default.GetBytes(Name);
             Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0x04 }, 6));
             String Eta = string.Join(" ", Args);
