@@ -199,7 +199,7 @@ namespace Dysnomia.Domain.World
             if(!Mu.Connected && Theta.In.Count == 0 && Cone == false)
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
 
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[64];
             NetworkStream Iota = Mu.GetStream();
             Stopwatch stopwatch = new Stopwatch();
             short Resets = 0;
@@ -209,9 +209,9 @@ namespace Dysnomia.Domain.World
 
             while (Mu.Connected)
             {
-                stopwatch.Start();
                 try
                 {
+                    stopwatch.Start();
                     while (Theta.In.Count > 0)
                     {
                         if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
@@ -221,6 +221,7 @@ namespace Dysnomia.Domain.World
                             BigInteger Delta = new BigInteger(Lambda.Data);
                             ClientId = Delta;
                             NextHandshake(ref Delta);
+                            stopwatch.Reset();
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }
@@ -250,6 +251,7 @@ namespace Dysnomia.Domain.World
 
                             BigInteger Alpha = new BigInteger(Omicron.Slice(A, B));
                             NextHandshake(ref Alpha);
+                            stopwatch.Reset();
 
                             A = i + 4;
                             B = 0;
@@ -259,17 +261,17 @@ namespace Dysnomia.Domain.World
                     }
 
                     if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
+                    stopwatch.Stop();
+                    if (stopwatch.Elapsed.TotalSeconds > 2)
+                        if (++Resets > 2) throw new Exception("Handshake Timeout");
+                        else
+                        {
+                            Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
+                            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
+                            stopwatch.Reset();
+                        }
+                    stopwatch.Start();
                 } catch (Exception E) { Disconnect(); return; }
-                stopwatch.Stop();
-                if (stopwatch.Elapsed.TotalSeconds > 2)
-                    if (++Resets > 2) { Disconnect(); return; }
-                    else
-                    {
-                        Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
-                        Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
-                        stopwatch.Reset();
-                    }
-                stopwatch.Start();
             }
         }
     }
