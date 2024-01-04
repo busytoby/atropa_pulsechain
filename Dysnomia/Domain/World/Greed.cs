@@ -177,6 +177,22 @@ namespace Dysnomia.Domain.World
             }
         }
 
+        void Disconnect()
+        {
+            try {
+                Greed? Beta;
+                Fi.Psi.TryRemove(ClientId, out Beta);
+                NetworkStream Iota = Mu.GetStream();
+                try {
+                    Iota.Close();
+                } catch (Exception E) { }
+            } catch (Exception E) { }
+            try {
+                Mu.Close();
+            } catch (Exception E) { }
+            Logging.Log("Greed", "Disconnected " + Host, 6);
+        }
+
         void Phi()
         {
             Thread.Sleep(10);
@@ -243,25 +259,16 @@ namespace Dysnomia.Domain.World
                     }
 
                     if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
-                } catch (Exception E) { }
+                } catch (Exception E) { Disconnect(); return; }
                 stopwatch.Stop();
                 if (stopwatch.Elapsed.TotalSeconds > 2)
-                {
-                    if (++Resets > 2)
-                    {
-                        Greed? Delta;
-                        Fi.Psi.TryRemove(ClientId, out Delta);
-                        Iota.Close();
-                        Mu.Close();
-                        Logging.Log("Greed", "Disconnected " + Host, 6);
-                    }
+                    if (++Resets > 2) { Disconnect(); return; }
                     else
                     {
                         Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
                         Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
                         stopwatch.Reset();
                     }
-                }
                 stopwatch.Start();
             }
         }
