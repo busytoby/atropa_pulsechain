@@ -107,7 +107,7 @@ namespace Dysnomia.Domain
                     {
                         Logging.Log("Fi", "Handshake OK", 6);
                     }
-                    else throw new Exception("Unknown Handshake Subject");
+                    else throw new Exception("Unknown OpCode");
                 }
 
                 while (Client.Theta.Out.Count > 0)
