@@ -185,7 +185,8 @@ namespace Dysnomia.Domain.World
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
             Stopwatch stopwatch = new Stopwatch();
-            
+            short Resets = 0;
+
             Span<Byte> Omicron = new Span<Byte>(bytes);
             MSG? Lambda;
 
@@ -244,9 +245,18 @@ namespace Dysnomia.Domain.World
                 stopwatch.Stop();
                 if (stopwatch.Elapsed.TotalSeconds > 5)
                 {
-                    Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
-                    Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] {0x06}, 1));
-                    stopwatch.Reset();
+                    if (++Resets > 2)
+                    {
+                        Iota.Close();
+                        Mu.Close();
+                        Logging.Log("Greed", "Disconnected " + Host, 6);
+                    }
+                    else
+                    {
+                        Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
+                        Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
+                        stopwatch.Reset();
+                    }
                 }
                 stopwatch.Start();
             }
