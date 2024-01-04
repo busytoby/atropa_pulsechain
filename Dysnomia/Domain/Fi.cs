@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -10,7 +11,9 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Dysnomia.Domain.bin;
 using Dysnomia.Domain.World;
+using Microsoft.VisualBasic;
 
 namespace Dysnomia.Domain
 {
@@ -57,6 +60,11 @@ namespace Dysnomia.Domain
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
+        static private bool ValidateMSG(Tare.MSG M)
+        {
+            throw new Exception("Not Implemented");
+        }
+
         static private void XiHandshake(BigInteger ClientId)
         {
             Psi[ClientId].Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
@@ -67,6 +75,7 @@ namespace Dysnomia.Domain
         {
             Greed? Client;
             BigInteger ClientId = Math.Random();
+            Tare.MSG? Lambda;
             while(Psi.ContainsKey(ClientId)) ClientId = Math.Random();
 
             Client = new Greed(Beta);
@@ -89,6 +98,28 @@ namespace Dysnomia.Domain
 
             while (Beta.Connected)
             {
+                while (Client.Theta.In.Count > 0)
+                {
+                    if (!Client.Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                    String Subject = (Lambda.Subject == null) ? "" : Encoding.Default.GetString(Lambda.Subject);
+
+                    if (Lambda.Data[0] == 0x07)
+                    {
+                        Logging.Log("Fi", "Handshake OK", 6);
+                    }
+                    else throw new Exception("Unknown Handshake Subject");
+                }
+
+                while (Client.Theta.Out.Count > 0)
+                {
+                    if (!Client.Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                    if (Lambda != null && ValidateMSG(Lambda))
+                    {
+                        Iota.Write(Lambda.Data);
+                        Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
+                    }
+                }
+
                 if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
                 {
                     int size = Iota.Read(Omicron);
@@ -107,8 +138,8 @@ namespace Dysnomia.Domain
                 }
                 catch (IOException E)
                 {
-                    Greed? Lambda;
-                    Psi.TryRemove(ClientId, out Lambda);
+                    Greed? Delta;
+                    Psi.TryRemove(ClientId, out Delta);
                     if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
                     Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
                     break;

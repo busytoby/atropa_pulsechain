@@ -260,7 +260,11 @@ namespace Dysnomia.Domain.World
                         Omicron.Clear();
                     }
 
-                    if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
+                    if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero)
+                    {
+                        Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("OK"), new byte[] { 0x07 }, 1));
+                        return;
+                    }
                     stopwatch.Stop();
                     if (stopwatch.Elapsed.TotalSeconds > 2)
                         if (++Resets > 2) throw new Exception("Handshake Timeout");
