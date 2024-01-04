@@ -225,7 +225,11 @@ namespace Dysnomia.Domain.World
                     if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
                 } catch (Exception E) { }
                 stopwatch.Stop();
-                if (stopwatch.Elapsed.TotalSeconds > 5) throw new Exception("Handshake Timeout Exceeded");
+                if (stopwatch.Elapsed.TotalSeconds > 5)
+                {
+                    Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
+                    Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] {0x06}, 1));
+                }
                 stopwatch.Start();
             }
         }
