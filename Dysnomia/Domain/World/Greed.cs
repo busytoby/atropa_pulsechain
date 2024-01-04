@@ -243,7 +243,7 @@ namespace Dysnomia.Domain.World
                     if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero) return;
                 } catch (Exception E) { }
                 stopwatch.Stop();
-                if (stopwatch.Elapsed.TotalSeconds > 5)
+                if (stopwatch.Elapsed.TotalSeconds > 2)
                 {
                     if (++Resets > 2)
                     {
