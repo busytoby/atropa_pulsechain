@@ -199,7 +199,7 @@ namespace Dysnomia.Domain
 
                                 Omicron = Next();
                                 if (Mu.Cone.Mu(Iota, Mu.Cone.Channel, Mu.Rod.Dynamo) != Omicron) throw new Exception("Invalid Cone Eta");
-                                Logging.Log("Oracle", "Beta Operational: " + Omicron.ToString(), 3);
+                                Logging.Log("Oracle", "Beta Operational: " + Mu.Sigma.ToString(), 3);
                                 break;
                             case 0x02:
                                 Lambda = NextBytes();
