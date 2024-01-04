@@ -249,6 +249,8 @@ namespace Dysnomia.Domain.World
                 {
                     if (++Resets > 2)
                     {
+                        Greed? Delta;
+                        Fi.Psi.TryRemove(ClientId, out Delta);
                         Iota.Close();
                         Mu.Close();
                         Logging.Log("Greed", "Disconnected " + Host, 6);

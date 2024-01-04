@@ -77,7 +77,10 @@ namespace Dysnomia.Domain
 
             XiHandshake(ClientId);
 
-            while (Psi[ClientId].Psi == null) Thread.Sleep(1000);
+            // Drop Client If Handshake Incomplete
+            try {
+                while (Psi[ClientId].Psi == null) Thread.Sleep(1000);
+            } catch(Exception E) { return; }
 
             while (Beta.Connected)
             {
