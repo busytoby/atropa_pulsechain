@@ -25,6 +25,7 @@ namespace Dysnomia.Domain.World
         public Faung? Psi;
         public Living Theta;
         public bool Cone = false;
+        public bool TimedOut = false;
 
         BigInteger PeerFoundation = 0;
         BigInteger PeerChannel = 0;
@@ -74,13 +75,97 @@ namespace Dysnomia.Domain.World
             Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Step), Iota.ToByteArray(), 1));
         }
 
+        private void NextHandshake(ref BigInteger Beta)
+        {
+            if (Cone)
+            {
+                if (Rho.Pole.IsZero && PeerChannel.IsZero)
+                {
+                    Rho.Form(Beta);
+                    Rho.Polarize();
+                    Handshake("Pole", Rho.Pole);
+                }
+                else if (Rho.Coordinate.IsZero)
+                {
+                    Rho.Conjugate(ref Beta);
+                    Rho.Conify();
+                    Handshake("Foundation", Rho.Foundation);
+                    Handshake("Channel", Rho.Channel);
+                }
+                else if (Rho.Element.IsZero && PeerFoundation.IsZero)
+                {
+                    PeerFoundation = Beta;
+                }
+                else if (Rho.Element.IsZero && PeerChannel.IsZero)
+                {
+                    PeerChannel = Beta;
+                    Rho.Saturate(PeerFoundation, PeerChannel);
+                    Rho.Bond();
+                    Handshake("Dynamo", Rho.Dynamo);
+                }
+                else if (Rho.Barn.IsZero)
+                {
+                    PeerDynamo = Beta;
+                    Rho.Adduct(PeerDynamo);
+                    Rho.Open();
+                    Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
+                    Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                }
+                else
+                    throw new Exception("Not Implemented");
+            }
+            else
+            {
+                if (Rho.Alpha.IsZero)
+                {
+                    Rho.Alpha = Rho.Avail(Beta);
+                    Handshake("Alpha", Rho.Alpha);
+                }
+                else if (Rho.Pole.IsZero && PeerChannel.IsZero)
+                {
+                    Rho.Form(Beta);
+                    Rho.Polarize();
+                    Handshake("Pole", Rho.Pole);
+                }
+                else if (Rho.Coordinate.IsZero)
+                {
+                    Rho.Conjugate(ref Beta);
+                }
+                else if (Rho.Element.IsZero && PeerFoundation.IsZero)
+                {
+                    PeerFoundation = Beta;
+                }
+                else if (Rho.Element.IsZero && PeerChannel.IsZero)
+                {
+                    PeerChannel = Beta;
+                    Rho.Saturate(PeerFoundation, PeerChannel);
+                    Rho.Bond();
+                    Handshake("Foundation", Rho.Foundation);
+                    Handshake("Channel", Rho.Channel);
+                    Handshake("Dynamo", Rho.Dynamo);
+                }
+                else if (Rho.Barn.IsZero)
+                {
+                    PeerDynamo = Beta;
+                    Rho.Adduct(PeerDynamo);
+                    Rho.Open();
+                    Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
+                    Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                }
+                else
+                    throw new Exception("Not Implemented");
+            }
+        }
+
         void Phi()
         {
-            if(!Mu.Connected)
+            Thread.Sleep(10);
+            if(!Mu.Connected && Theta.In.Count == 0 && Cone == false)
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
 
             byte[] bytes = new byte[1024];
             NetworkStream Iota = Mu.GetStream();
+            System.Timers.Timer timeout = new System.Timers.Timer(1551);
             Span<Byte> Omicron = new Span<Byte>(bytes);
             MSG? Lambda;
 
@@ -124,91 +209,8 @@ namespace Dysnomia.Domain.World
                             }
                             if (B <= 0) continue;
 
-                            Span<Byte> Token = Omicron.Slice(A, B);
-
-                            if (Cone)
-                            {
-                                if (Rho.Pole.IsZero && PeerChannel.IsZero)
-                                {
-                                    BigInteger Alpha = new BigInteger(Token);
-                                    Rho.Form(Alpha);
-                                    Rho.Polarize();
-                                    Handshake("Pole", Rho.Pole);
-                                }
-                                else if (Rho.Coordinate.IsZero)
-                                {
-                                    BigInteger Pole = new BigInteger(Token);
-                                    Rho.Conjugate(ref Pole);
-                                    Rho.Conify();
-                                    Handshake("Foundation", Rho.Foundation);
-                                    Handshake("Channel", Rho.Channel);
-                                }
-                                else if (Rho.Element.IsZero && PeerFoundation.IsZero)
-                                {
-                                    PeerFoundation = new BigInteger(Token);
-                                }
-                                else if (Rho.Element.IsZero && PeerChannel.IsZero)
-                                {
-                                    PeerChannel = new BigInteger(Token);
-                                    Rho.Saturate(PeerFoundation, PeerChannel);
-                                    Rho.Bond();
-                                    Handshake("Dynamo", Rho.Dynamo);
-                                }
-                                else if (Rho.Barn.IsZero)
-                                {
-                                    PeerDynamo = new BigInteger(Token);
-                                    Rho.Adduct(PeerDynamo);
-                                    Rho.Open();
-                                    Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
-                                    Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
-                                }
-                                else
-                                    throw new Exception("Not Implemented");
-                            }
-                            else
-                            {
-                                if (Rho.Alpha.IsZero)
-                                {
-                                    BigInteger Xi = new BigInteger(Token);
-                                    Rho.Alpha = Rho.Avail(Xi);
-                                    Handshake("Alpha", Rho.Alpha);
-                                }
-                                else if (Rho.Pole.IsZero && PeerChannel.IsZero)
-                                {
-                                    BigInteger Tau = new BigInteger(Token);
-                                    Rho.Form(Tau);
-                                    Rho.Polarize();
-                                    Handshake("Pole", Rho.Pole);
-                                }
-                                else if (Rho.Coordinate.IsZero)
-                                {
-                                    BigInteger Pole = new BigInteger(Token);
-                                    Rho.Conjugate(ref Pole);
-                                }
-                                else if (Rho.Element.IsZero && PeerFoundation.IsZero)
-                                {
-                                    PeerFoundation = new BigInteger(Token);
-                                }
-                                else if (Rho.Element.IsZero && PeerChannel.IsZero)
-                                {
-                                    PeerChannel = new BigInteger(Token);
-                                    Rho.Saturate(PeerFoundation, PeerChannel);
-                                    Rho.Bond();
-                                    Handshake("Foundation", Rho.Foundation);
-                                    Handshake("Channel", Rho.Channel);
-                                    Handshake("Dynamo", Rho.Dynamo);
-                                }
-                                else if (Rho.Barn.IsZero)
-                                {
-                                    PeerDynamo = new BigInteger(Token);
-                                    Rho.Adduct(PeerDynamo);
-                                    Rho.Open();
-                                    Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
-                                    Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
-                                }
-                                else
-                                    throw new Exception("Not Implemented");
-                            }
+                            BigInteger Alpha = new BigInteger(Omicron.Slice(A, B));
+                            NextHandshake(ref Alpha);
 
                             A = i + 4;
                             B = 0;
