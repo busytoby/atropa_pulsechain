@@ -65,10 +65,12 @@ namespace Dysnomia.Domain
 
         static private void Phi(TcpClient Beta)
         {
+            Greed? Client;
             BigInteger ClientId = Math.Random();
             while(Psi.ContainsKey(ClientId)) ClientId = Math.Random();
 
-            if (!Psi.TryAdd(ClientId, new Greed(Beta))) throw new Exception("Failure Adding Client To Dictionary");
+            Client = new Greed(Beta);
+            if (!Psi.TryAdd(ClientId, Client)) throw new Exception("Failure Adding Client To Dictionary");
 
             NetworkStream Iota = Beta.GetStream();
             Iota.ReadTimeout = 100;
@@ -80,7 +82,10 @@ namespace Dysnomia.Domain
             // Drop Client If Handshake Incomplete
             try {
                 while (Psi[ClientId].Psi == null) Thread.Sleep(1000);
-            } catch(Exception E) { return; }
+            } catch(Exception E) {
+                Psi.TryRemove(ClientId, out Client);
+                return; 
+            }
 
             while (Beta.Connected)
             {
