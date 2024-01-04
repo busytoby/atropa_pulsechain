@@ -218,15 +218,18 @@ namespace Dysnomia.Domain
                                 }
                                 break;
                             case 0x03:
+                                while (Count < 1) Thread.Sleep(100);
                                 Lambda = NextBytes();
                                 if (Lambda[0] == 0x00) Reset();
                                 else Alpha(new BigInteger(Lambda));
                                 break;
                             case 0x04:
+                                while (Count < 1) Thread.Sleep(100);
                                 Lambda = NextBytes();
                                 Beta(new BigInteger(Lambda));
                                 break;
                             case 0x05:
+                                while (Count < 2) Thread.Sleep(100);
                                 Lambda = NextBytes();
                                 String Connect_Host = Encoding.Default.GetString(Lambda);
                                 Lambda = NextBytes();
