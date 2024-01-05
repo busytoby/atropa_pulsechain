@@ -141,6 +141,9 @@ namespace Dysnomia.Domain
             String Xi;
             Tare.MSG? Pi;
 
+            BigInteger ClientId, ClientIdCheck;
+            Greed Client;
+
             while (true)
             {
                 lock (Tau)
@@ -242,14 +245,25 @@ namespace Dysnomia.Domain
                                 //break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
-                                BigInteger ClientId = Next();
-                                BigInteger AlphaCode = Next();
-                                BigInteger ClientIdCheck = Next();
+                                ClientId = Next();
+                                byte[] AlphaCode = NextBytes();
+                                ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x08 ClientId Error");
                                 if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
-                                Greed A = Dysnomia.Beta.Fi.Psi[ClientId];
-                                if (A.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                A.Psi.Alpha(AlphaCode);
+                                Client = Dysnomia.Beta.Fi.Psi[ClientId];
+                                if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
+                                Client.Psi.Alpha(AlphaCode);
+                                break;
+                            case 0x09:
+                                while (Count < 3) Thread.Sleep(100);
+                                ClientId = Next();
+                                byte[] BetaCode = NextBytes();
+                                ClientIdCheck = Next();
+                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x09 ClientId Error");
+                                if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
+                                Client = Dysnomia.Beta.Fi.Psi[ClientId];
+                                if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
+                                Client.Psi.Beta(BetaCode, true);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

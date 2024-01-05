@@ -40,6 +40,11 @@ namespace Dysnomia.Domain
             Bytes = null;
         }
 
+        public void Alpha(byte[] Omicron)
+        {
+            Alpha(new BigInteger(Omicron));
+        }
+
         public void Alpha(BigInteger Omicron)
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
@@ -58,6 +63,13 @@ namespace Dysnomia.Domain
             Logging.Log("Buffer", "Alpha Parallel: " + Mu.Omicron.ToString(), 2);
         }
 
+        public void Beta(byte[] Omicron, bool Receiver)
+        {
+            Encode(Omicron);
+            if (Bytes == null) throw new Exception("Null Bytes Alpha");
+            Beta(new BigInteger(Receiver?Bytes:Omicron));
+        }
+
         public void Beta(BigInteger Omicron)
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
@@ -73,7 +85,12 @@ namespace Dysnomia.Domain
             Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
         }
 
-        private void Encode(byte[] Rho)
+        public void Encode(BigInteger Rho)
+        {
+            Encode(Rho.ToByteArray());
+        }
+
+        public void Encode(byte[] Rho)
         {
             int _size = Rho.Length;
             if(Bytes == null) Bytes = new byte[_size];

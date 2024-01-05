@@ -186,6 +186,10 @@ namespace Dysnomia.Domain.World
                     Psi.Alpha(Rho.Signal);
                     Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), new byte[] { 0x08 }, 1));
                     Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), Rho.Signal.ToByteArray(), 1));
+                    Psi.Beta(Rho.Channel.ToByteArray(), false);
+                    if (Psi.Bytes == null) throw new Exception("Encoding Failure");
+                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), new byte[] { 0x09 }, 1));
+                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), Psi.Bytes, 1));
                     HandshakeState = 0x06;
                 }
                 else
@@ -247,6 +251,12 @@ namespace Dysnomia.Domain.World
                             BigInteger Delta = new BigInteger(Lambda.Data);
                             Handshake("Alpha", 0x08);
                             Handshake("Alpha", Delta);
+                        }
+                        else if (Subject == "BETA" && Lambda.Data.Length == 1 && Lambda.Data[0] == 0x09)
+                        {
+                            if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                            Handshake("Alpha", 0x09);
+                            Handshake("Alpha", Lambda.Data);
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }
