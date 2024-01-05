@@ -200,8 +200,8 @@ namespace Dysnomia.Domain.World
 
         protected override void Phi()
         {
-            if (Theta == null) throw new Exception("Null Theta");
             Thread.Sleep(10);
+            if (Theta == null) throw new Exception("Null Theta");
             if(!Mu.Connected && Theta.In.Count == 0 && Cone == false)
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
 
