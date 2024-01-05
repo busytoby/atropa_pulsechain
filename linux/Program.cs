@@ -1,4 +1,5 @@
-﻿using Dysnomia.Domain;
+﻿using Dysnomia;
+using Dysnomia.Domain;
 using Dysnomia.Domain.World;
 using System.Text;
 
@@ -9,10 +10,8 @@ namespace Pulse {
 
 	static void Main(string[] args) {
 	    Logging.Add(Input);
-            Oracle O = new Oracle();
-	    Output = O.ProcessString;
-	    Fi.Listen(5555);
-            Fi.Rho.Add(O.Fi);
+	    Output = Beta.Oracle.ProcessString;
+	    Beta.Fi.Listen(5555);
 
 	    string? consoleinput;
 	    while((consoleinput = Console.ReadLine()) != null)
