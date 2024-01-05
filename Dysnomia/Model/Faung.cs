@@ -253,7 +253,7 @@ namespace Dysnomia
             Pi = Cone.Sustain(Ohm);
         }
 
-        public void React()
+        public void React(bool NonParallel = true)
         {
             if (Cone == null) throw new Exception("Null Cone");
             if (Rod == null) throw new Exception("Null Rod");
@@ -261,7 +261,7 @@ namespace Dysnomia
             Cone.React(Pi, Rod.Channel);
             if (Cone.Kappa != Rod.Eta || Rod.Kappa != Cone.Eta)
                 throw new Exception("Non Match");
-            if (Rod.Eta == Rod.Kappa)
+            if (Rod.Eta == Rod.Kappa && NonParallel)
                 throw new Exception("Parallel");
             if (Cone.Kappa <= 1 && Rod.Kappa <= 1)
                 throw new Exception("Negative");

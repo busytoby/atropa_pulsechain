@@ -33,8 +33,9 @@ namespace Dysnomia.Domain
         public void Fi(Tare.MSG A)
         {
             BigInteger ClientId = new BigInteger(A.From);
-            //NetworkStream Writer = Domain.Fi.Psi[ClientId].Mu.GetStream();
-            //Writer.WriteByte(222);
+            if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
+            Enqueue(A.Data);
+            Enqueue(A.From);
         }
 
         public void ProcessString(String A)
@@ -66,33 +67,33 @@ namespace Dysnomia.Domain
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
             Logging.Log("Oracle", "Reset", 5);
-            Alpha(Mu.Rod.Signal);
+            Alpha(ref Mu, Mu.Rod.Signal);
         }
 
-        private void Alpha(BigInteger Omicron)
+        private void Alpha(ref Faung _Mu, BigInteger Omicron)
         {
-            if (Mu.Rod == null) throw new Exception("Null Rod");
-            if (Mu.Cone == null) throw new Exception("Null Cone");
+            if (_Mu.Rod == null) throw new Exception("Null Rod");
+            if (_Mu.Cone == null) throw new Exception("Null Cone");
             Logging.Log("Oracle", "Alpha: " + Omicron.ToString(), 4);
             lock (Tau)
             {
                 if (Omicron == 0) throw new Exception("Omicron Zero");
 
-                Mu.Charge(Omicron);
-                if (Mu.Sigma < 4)
+                _Mu.Charge(Omicron);
+                if (_Mu.Sigma < 4)
                     throw new Exception("Sigma < 4");
-                Mu.Induce();
-                Mu.Torque();
-                Mu.Amplify();
-                Mu.Sustain();
-                Mu.React();
+                _Mu.Induce();
+                _Mu.Torque();
+                _Mu.Amplify();
+                _Mu.Sustain();
+                _Mu.React();
 
                 Enqueue(new byte[] { 0x00 });
                 Enqueue(Omicron.ToByteArray());
-                Enqueue(Mu.Sigma.ToByteArray());
-                Enqueue(Mu.Cone.Channel.ToByteArray());
-                Enqueue(Mu.Rod.Channel.ToByteArray());
-                Enqueue(Mu.Rod.Kappa.ToByteArray());
+                Enqueue(_Mu.Sigma.ToByteArray());
+                Enqueue(_Mu.Cone.Channel.ToByteArray());
+                Enqueue(_Mu.Rod.Channel.ToByteArray());
+                Enqueue(_Mu.Rod.Kappa.ToByteArray());
             }
         }
 
@@ -103,28 +104,28 @@ namespace Dysnomia.Domain
             return Omicron;
         }
 
-        public void Beta(BigInteger Omicron)
+        public void Beta(ref Faung _Mu, BigInteger Omicron)
         {
-            if (Mu.Rod == null) throw new Exception("Null Rod");
-            if (Mu.Cone == null) throw new Exception("Null Cone");
+            if (_Mu.Rod == null) throw new Exception("Null Rod");
+            if (_Mu.Cone == null) throw new Exception("Null Cone");
             Logging.Log("Oracle", "Beta: " + Omicron.ToString(), 4);
             lock (Tau)
             {
-                if (Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
+                if (_Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
                 if (Omicron == 0) throw new Exception("Iota Zero");
 
-                BigInteger Lambda = Mu.Rod.Torque(Omicron);
-                Lambda = Mu.Rod.Amplify(Lambda);
-                Lambda = Mu.Rod.Sustain(Lambda);
-                Mu.Rod.React(Lambda, Mu.Cone.Dynamo);
-                Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
+                BigInteger Lambda = _Mu.Rod.Torque(Omicron);
+                Lambda = _Mu.Rod.Amplify(Lambda);
+                Lambda = _Mu.Rod.Sustain(Lambda);
+                _Mu.Rod.React(Lambda, _Mu.Cone.Dynamo);
+                _Mu.Cone.React(Lambda, _Mu.Rod.Dynamo);
 
                 Enqueue(new byte[] { 0x01 });
                 Enqueue(Omicron.ToByteArray());
-                Enqueue(Mu.Cone.Dynamo.ToByteArray());
-                Enqueue(Mu.Rod.Dynamo.ToByteArray());
-                Enqueue(Mu.Rod.Eta.ToByteArray());
-                Enqueue(Mu.Cone.Eta.ToByteArray());
+                Enqueue(_Mu.Cone.Dynamo.ToByteArray());
+                Enqueue(_Mu.Rod.Dynamo.ToByteArray());
+                Enqueue(_Mu.Rod.Eta.ToByteArray());
+                Enqueue(_Mu.Cone.Eta.ToByteArray());
             }
         }
 
@@ -211,13 +212,13 @@ namespace Dysnomia.Domain
                                 Lambda = NextBytes();
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
                                 if (Lambda[0] == 0x00) Reset();
-                                else Alpha(new BigInteger(Lambda));
+                                else Alpha(ref Mu, new BigInteger(Lambda));
                                 break;
                             case 0x04:
                                 while (Count < 1) Thread.Sleep(100);
                                 Lambda = NextBytes();
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
-                                Beta(new BigInteger(Lambda));
+                                Beta(ref Mu, new BigInteger(Lambda));
                                 break;
                             case 0x05:
                                 while (Count < 2) Thread.Sleep(100);
@@ -233,7 +234,15 @@ namespace Dysnomia.Domain
                                 Dysnomia.Beta.Fi.Psi.TryAdd(Chi.ClientId, Chi);
                                 break;
                             case 0x08:
-
+                                while(Count < 3) Thread.Sleep(100);
+                                BigInteger ClientId = Next();
+                                BigInteger AlphaCode = Next();
+                                BigInteger ClientIdCheck = Next();
+                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x08 ClientId Error");
+                                if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
+                                Greed A = Dysnomia.Beta.Fi.Psi[ClientId];
+                                if (A.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
+                                A.Psi.Alpha(AlphaCode);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

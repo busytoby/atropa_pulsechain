@@ -65,7 +65,8 @@ namespace Dysnomia.Domain
 
         private bool ValidateMSG(Tare.MSG M)
         {
-            throw new Exception("Not Implemented");
+            // not implemented
+            return true;
         }
 
         private void XiHandshake(BigInteger ClientId)
@@ -99,6 +100,8 @@ namespace Dysnomia.Domain
             try {
                 while (Psi[ClientId].Psi == null) Thread.Sleep(1000);
             } catch(Exception E) {
+                Logging.Log("Fi", E.Message, 7);
+                if(E.StackTrace != null) Logging.Log("Fi", E.StackTrace, 7);
                 Psi.TryRemove(ClientId, out Client);
                 return; 
             }
@@ -132,31 +135,48 @@ namespace Dysnomia.Domain
 
                     if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
                     {
+                        Thread.Sleep(200);
                         int size = Iota.Read(Omicron);
-                        if (size > 0)
+
+                        int A, B;
+                        for (int i = A = B = 0; i < size; i++)
                         {
-                            Tare.MSG M = new Tare.MSG(ClientId.ToByteArray(), Omicron.Slice(0, size).ToArray(), 1);
-                            foreach (Tare.Gram G in Rho) G(M);
+                            if (i == A && Omicron[A] != 0x10) B = -1;
+                            if (i >= A && Omicron.Slice(i, 4).SequenceEqual<Byte>(Encoding.Default.GetBytes(Fi.DLE)))
+                            {
+                                if (B == 0) A = i + 4;
+                                B = i - A;
+                            }
+                            if (B <= 0) continue;
+
+                            BigInteger Alpha = new BigInteger(Omicron.Slice(A, B));
+                            if (size > 0)
+                            {
+                                Tare.MSG M = new Tare.MSG(ClientId.ToByteArray(), Omicron.Slice(A, B).ToArray(), 1);
+                                try
+                                {
+                                    foreach (Tare.Gram G in Rho) G(M);
+                                } catch(Exception e)
+                                {
+                                    Logging.Log("Fi", "Error: " + e.Message, 7);
+                                    Logging.Log("Fi", "Error: " + e.StackTrace, 7);
+                                }
+                            }
+
+                            A = i + 4;
+                            B = 0;
+                            i += 3;
                         }
+                        Omicron.Clear();
+
+
                     }
                     else
                         Thread.Sleep(400);
-
-                    try
-                    {
-                        Iota.WriteByte(111);
-                    }
-                    catch (IOException E)
-                    {
-                        Greed? Delta;
-                        Psi.TryRemove(ClientId, out Delta);
-                        if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
-                        Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
-                        break;
-                    }
                 }
                 catch (Exception E)
                 {
+                    Logging.Log("Fi", "Error: " + E.Message, 7);
                     Logging.Log("Fi", "Error: " + E.StackTrace, 7);
                 }
             }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain.World;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -37,6 +38,39 @@ namespace Dysnomia.Domain
         public void Clear()
         {
             Bytes = null;
+        }
+
+        public void Alpha(BigInteger Omicron)
+        {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
+            Logging.Log("Buffer", "Alpha: " + Omicron.ToString(), 2);
+            if (Omicron == 0) throw new Exception("Omicron Zero");
+
+            Mu.Charge(Omicron);
+            if (Mu.Sigma < 4)
+                throw new Exception("Sigma < 4");
+            Mu.Induce();
+            Mu.Torque();
+            Mu.Amplify();
+            Mu.Sustain();
+            Mu.React(false);
+            if (Mu.Omega != Mu.Omicron) throw new Exception("NonParallel");
+        }
+
+        public void Beta(BigInteger Omicron)
+        {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
+            Logging.Log("Buffer", "Beta: " + Omicron.ToString(), 4);
+            if (Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
+            if (Omicron == 0) throw new Exception("Iota Zero");
+
+            BigInteger Lambda = Mu.Rod.Torque(Omicron);
+            Lambda = Mu.Rod.Amplify(Lambda);
+            Lambda = Mu.Rod.Sustain(Lambda);
+            Mu.Rod.React(Lambda, Mu.Cone.Dynamo);
+            Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
         }
 
         private void Encode(byte[] Rho)

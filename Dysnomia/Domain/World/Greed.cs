@@ -76,15 +76,23 @@ namespace Dysnomia.Domain.World
         }
         */
 
-        private void Handshake(String Step, BigInteger Iota)
+        private void Handshake(String Subject, byte[] Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
-            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Step, Iota, 1));
-            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Step), Iota.ToByteArray(), 1));
+            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Data, 1));
+            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Subject), Data, 1));
+        }
+
+        private void Handshake(String Subject, BigInteger Data)
+        {
+            if (Theta == null) throw new Exception("Null Theta");
+            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Subject, Data, 1));
+            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Subject), Data.ToByteArray(), 1));
         }
 
         private void NextHandshake(ref BigInteger Beta)
         {
+            if (Theta == null) throw new Exception("Null Theta");
             if (Cone)
             {
                 if(Rho.Tau.IsZero)
@@ -175,6 +183,9 @@ namespace Dysnomia.Domain.World
                     Rho.Open();
                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
                     Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    Psi.Alpha(Rho.Signal);
+                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), new byte[] { 0x08 }, 1));
+                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), Rho.Signal.ToByteArray(), 1));
                     HandshakeState = 0x06;
                 }
                 else
@@ -229,6 +240,14 @@ namespace Dysnomia.Domain.World
                             NextHandshake(ref Delta);
                             stopwatch.Reset();
                         }
+                        else if (Cone) throw new Exception("Cone Should No Longer Be Running In Greed");
+                        else if(Subject == "ALPHA" && Lambda.Data.Length == 1 && Lambda.Data[0] == 0x08)
+                        {
+                            if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                            BigInteger Delta = new BigInteger(Lambda.Data);
+                            Handshake("Alpha", 0x08);
+                            Handshake("Alpha", Delta);
+                        }
                         else throw new Exception("Unknown Handshake Subject");
                     }
 
@@ -266,13 +285,13 @@ namespace Dysnomia.Domain.World
                         Omicron.Clear();
                     }
 
-                    if (Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero)
+                    if (Cone && Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero)
                     {
                         Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("OK"), new byte[] { 0x07 }, 1));
                         return;
                     }
                     stopwatch.Stop();
-                    if (stopwatch.Elapsed.TotalSeconds > 2)
+                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 2)
                         if (++Resets > 2) throw new Exception("Handshake Timeout");
                         else
                         {
@@ -281,7 +300,12 @@ namespace Dysnomia.Domain.World
                             stopwatch.Reset();
                         }
                     stopwatch.Start();
-                } catch (Exception E) { Disconnect(); return; }
+                } catch (Exception E) {
+                    Logging.Log("Fi", E.Message, 7);
+                    if (E.StackTrace != null) Logging.Log("Fi", E.StackTrace, 7);
+                    Disconnect(); 
+                    return; 
+                }
             }
         }
     }

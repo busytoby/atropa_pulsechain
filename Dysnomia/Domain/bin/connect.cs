@@ -34,6 +34,7 @@ namespace Dysnomia.Domain.bin
                 }
             } catch(Exception e)
             {
+                Theta.In.Clear();
                 Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Unable To Connect: " + Args[0] + " Port " + Args[1]), 6));
             }
         }
