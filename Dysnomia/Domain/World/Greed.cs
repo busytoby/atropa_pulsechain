@@ -286,7 +286,7 @@ namespace Dysnomia.Domain.World
                         Omicron.Clear();
                     }
 
-                    if (Cone && Theta.In.Count == 0 && Theta.Out.Count == 0 && !Rho.Barn.IsZero)
+                    if (Cone && HandshakeState == 0x06)
                     {
                         Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("OK"), new byte[] { 0x07 }, 1));
                         return;
@@ -298,6 +298,7 @@ namespace Dysnomia.Domain.World
                         {
                             Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
                             Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
+                            Rho = new Fa();
                             stopwatch.Reset();
                         }
                     stopwatch.Start();

@@ -233,6 +233,9 @@ namespace Dysnomia.Domain
                                 Chi.ClientId = Math.Random();
                                 Dysnomia.Beta.Fi.Psi.TryAdd(Chi.ClientId, Chi);
                                 break;
+                            case 0x06:
+                                throw new Exception("Handshake Correction Not Yet Implemented");
+                                break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
                                 BigInteger ClientId = Next();
