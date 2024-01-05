@@ -44,7 +44,6 @@ namespace Dysnomia.Domain
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
-            Logging.Log("Buffer", "Alpha: " + Omicron.ToString(), 2);
             if (Omicron == 0) throw new Exception("Omicron Zero");
 
             Mu.Charge(Omicron);
@@ -56,6 +55,7 @@ namespace Dysnomia.Domain
             Mu.Sustain();
             Mu.React(false);
             if (Mu.Omega != Mu.Omicron) throw new Exception("NonParallel, Maybe Not A Greed Buffer ?");
+            Logging.Log("Buffer", "Alpha Parallel: " + Mu.Omicron.ToString(), 2);
         }
 
         public void Beta(BigInteger Omicron)
