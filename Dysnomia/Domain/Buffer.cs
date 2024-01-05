@@ -85,6 +85,17 @@ namespace Dysnomia.Domain
             Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
         }
 
+        private void Pi()
+        {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
+            BigInteger Lambda = Mu.Cone.Torque(Mu.Rod.Kappa);
+            Lambda = Mu.Cone.Amplify(Lambda);
+            Lambda = Mu.Cone.Sustain(Lambda);
+            Mu.Rod.React(Lambda, Mu.Rod.Channel);
+            Mu.Cone.React(Lambda, Mu.Cone.Channel);
+        }
+
         public void Encode(BigInteger Rho)
         {
             Encode(Rho.ToByteArray());

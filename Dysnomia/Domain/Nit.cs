@@ -54,20 +54,5 @@ namespace Dysnomia.Domain
             Beta.Rod.React(Pi, Beta.Rod.Dynamo);
             Eta = Beta.Rod.Kappa;
         }
-
-        public void Iota(ref Faung Beta) // Pi
-        {
-            Enqueue(new byte[] { 0x02 });
-            BigInteger Lambda = Beta.Cone.Torque(Beta.Rod.Kappa);
-            Enqueue(Lambda.ToByteArray());
-            Lambda = Beta.Cone.Amplify(Lambda);
-            Enqueue(Lambda.ToByteArray());
-            Lambda = Beta.Cone.Sustain(Lambda);
-            Enqueue(Lambda.ToByteArray());
-            Beta.Rod.React(Lambda, Beta.Rod.Channel);
-            Enqueue(Beta.Rod.Kappa.ToByteArray());
-            Beta.Cone.React(Lambda, Beta.Cone.Channel);
-            Enqueue(Beta.Cone.Kappa.ToByteArray());
-        }
     }
 }
