@@ -74,7 +74,7 @@ namespace Dysnomia.Domain
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
-            Logging.Log("Buffer", "Beta: " + Omicron.ToString(), 4);
+            Logging.Log("Buffer", "Beta Light: " + Omicron.ToString(), 4);
             if (Mu.Omicron == 0) throw new Exception("Mu Omicron Zero");
             if (Omicron == 0) throw new Exception("Iota Zero");
 
