@@ -21,14 +21,20 @@ namespace Dysnomia.Domain.bin
             if (Args == null) throw new Exception("Null Command Args");
             byte[] From = Encoding.Default.GetBytes(Name);
 
-            if (Args.Length == 0)
-                Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Connect Command Requires At Least 1 Argument"), 6));
-            else
+            try
             {
-                Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0x05 }, 6));
-                Theta.In.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(Args[0]), 6));
-                if(Args.Length < 2) Theta.In.Enqueue(new Tare.MSG(From, BitConverter.GetBytes(Int16.Parse("5555")), 6)); // 0x15B3 = 5555
-                else Theta.In.Enqueue(new Tare.MSG(From, BitConverter.GetBytes(Int16.Parse(Args[1])), 6));
+                if (Args.Length == 0)
+                    Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Connect Command Requires At Least 1 Argument"), 6));
+                else
+                {
+                    Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0x05 }, 6));
+                    Theta.In.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(Args[0]), 6));
+                    if (Args.Length < 2) Theta.In.Enqueue(new Tare.MSG(From, BitConverter.GetBytes(Int16.Parse("5555")), 6)); // 0x15B3 = 5555
+                    else Theta.In.Enqueue(new Tare.MSG(From, BitConverter.GetBytes(Int16.Parse(Args[1])), 6));
+                }
+            } catch(Exception e)
+            {
+                Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Unable To Connect: " + Args[0] + " Port " + Args[1]), 6));
             }
         }
     }
