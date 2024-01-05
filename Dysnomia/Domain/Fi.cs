@@ -173,6 +173,20 @@ namespace Dysnomia.Domain
                     }
                     else
                         Thread.Sleep(400);
+
+                    try
+                    {
+                        Iota.WriteByte(0x07);
+                        Thread.Sleep(1000);
+                    }
+                    catch (IOException E)
+                    {
+                        Greed? Delta;
+                        Psi.TryRemove(ClientId, out Delta);
+                        if (Beta == null || Beta.Client == null || Beta.Client.RemoteEndPoint == null) throw new Exception("Null EndPoint");
+                        Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
+                        break;
+                    }
                 }
                 catch (Exception E)
                 {

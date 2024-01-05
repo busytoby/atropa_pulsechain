@@ -266,6 +266,7 @@ namespace Dysnomia.Domain.World
                         int A, B;
                         for (int i = A = B = 0; i < size; i++)
                         {
+                            if (i == A && Omicron[A] == 0x07) { A++; continue; }
                             if (i == A && Omicron[A] != 0x10) B = -1;
                             if (i >= A && Omicron.Slice(i, 4).SequenceEqual<Byte>(Encoding.Default.GetBytes(Fi.DLE)))
                             {
