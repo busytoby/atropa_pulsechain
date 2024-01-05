@@ -9,15 +9,34 @@ namespace Dysnomia.Domain
 {
     public class Buffer
     {
+        public Faung Mu;
         public byte[] Bytes;
 
-        public Buffer(Faung Mu, byte[] Rho) {
-            int _size = Rho.Length;
-            Bytes = new byte[_size];
-            Encode(Mu, Rho);
+        public Buffer(Daemon Beta)
+        {
+            if (Beta.Count < 5) throw new Exception("Daemon Queue Count < 5");
+            BigInteger Rho, Upsilon, Ohm, Xi, Alpha;
+            Rho = Beta.Next();
+            Upsilon = Beta.Next();
+            Ohm = Beta.Next();
+            Xi = Beta.Next();
+            Alpha = Beta.Next();
+            Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
         }
 
-        private void Encode(Faung Mu, byte[] Rho)
+        public Buffer(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
+        {
+            Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
+        }
+
+        public Buffer(Faung _Mu, byte[] Rho) {
+            Mu = _Mu;
+            int _size = Rho.Length;
+            Bytes = new byte[_size];
+            Encode(Rho);
+        }
+
+        private void Encode(byte[] Rho)
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
@@ -33,9 +52,9 @@ namespace Dysnomia.Domain
             }
         }
 
-        public void Decode(Faung Mu)
+        public void Recode()
         {
-            Encode(Mu, Bytes);
+            Encode(Bytes);
         }
 
         public override String ToString()

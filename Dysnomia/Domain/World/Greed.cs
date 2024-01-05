@@ -27,7 +27,7 @@ namespace Dysnomia.Domain.World
 
         public TcpClient Mu;
         public Fa Rho;
-        public Faung? Psi;
+        public Buffer? Psi;
         public bool Cone = false;
         public bool TimedOut = false;
         public short HandshakeState = 0x00;
@@ -56,6 +56,7 @@ namespace Dysnomia.Domain.World
             Cone = true;
         }
 
+        /*
         public Buffer Encode(String Beta)
         {
             Logging.Log("Greed", "Encoding: " + Beta, 1);
@@ -73,6 +74,7 @@ namespace Dysnomia.Domain.World
             Logging.Log("Greed", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
             return B;
         }
+        */
 
         private void Handshake(String Step, BigInteger Iota)
         {
@@ -124,7 +126,7 @@ namespace Dysnomia.Domain.World
                     Rho.Adduct(PeerDynamo);
                     Rho.Open();
                     Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
-                    Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
                     HandshakeState = 0x06;
                 }
                 else
@@ -171,7 +173,7 @@ namespace Dysnomia.Domain.World
                     Rho.Adduct(PeerDynamo);
                     Rho.Open();
                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
-                    Psi = new Faung(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
                     HandshakeState = 0x06;
                 }
                 else

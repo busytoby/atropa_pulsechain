@@ -126,21 +126,6 @@ namespace Dysnomia.Domain
             }
         }
 
-        public byte[]? NextBytes()
-        {
-            byte[]? Beta;
-            TryDequeue(out Beta);
-            return Beta;
-        }
-
-        public BigInteger Next()
-        {
-            byte[]? Beta = NextBytes();
-            if (Beta != null)
-                return new BigInteger(Beta);
-            else return 0;
-        }
-
         protected override void Phi()
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
