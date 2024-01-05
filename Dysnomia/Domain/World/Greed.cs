@@ -78,6 +78,7 @@ namespace Dysnomia.Domain.World
 
         private void Handshake(String Step, BigInteger Iota)
         {
+            if (Theta == null) throw new Exception("Null Theta");
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Step, Iota, 1));
             Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Step), Iota.ToByteArray(), 1));
         }
@@ -199,6 +200,7 @@ namespace Dysnomia.Domain.World
 
         protected override void Phi()
         {
+            if (Theta == null) throw new Exception("Null Theta");
             Thread.Sleep(10);
             if(!Mu.Connected && Theta.In.Count == 0 && Cone == false)
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));

@@ -10,7 +10,7 @@ namespace Dysnomia.Domain
     public class Buffer
     {
         public Faung Mu;
-        public byte[] Bytes;
+        public byte[]? Bytes;
 
         public Buffer(Daemon Beta)
         {
@@ -31,16 +31,21 @@ namespace Dysnomia.Domain
 
         public Buffer(Faung _Mu, byte[] Rho) {
             Mu = _Mu;
-            int _size = Rho.Length;
-            Bytes = new byte[_size];
             Encode(Rho);
+        }
+
+        public void Clear()
+        {
+            Bytes = null;
         }
 
         private void Encode(byte[] Rho)
         {
+            int _size = Rho.Length;
+            if(Bytes == null) Bytes = new byte[_size];
+
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
-            int _size = Rho.Length;
 
             BigInteger Beta = Mu.Rod.Mu(Mu.Cone.Kappa, Mu.Rod.Kappa, Mu.Pi);
             for (int i = 0; i < _size;)
@@ -54,11 +59,13 @@ namespace Dysnomia.Domain
 
         public void Recode()
         {
+            if (Bytes == null) throw new Exception("Cannot Recode Null Buffer");
             Encode(Bytes);
         }
 
         public override String ToString()
         {
+            if (Bytes == null) return "";
             return new String(Bytes.Select(b => (char)b).ToArray());
         }
     }
