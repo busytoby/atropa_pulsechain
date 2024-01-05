@@ -44,6 +44,7 @@ namespace Dysnomia.Domain
             Enqueue(Encoding.Default.GetBytes(A));
         }
 
+        /*
         public Buffer Encode(String Beta)        
         {
             Logging.Log("Oracle", "Encoding: " + Beta, 1);
@@ -59,6 +60,7 @@ namespace Dysnomia.Domain
             Logging.Log("Oracle", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
             return B;
         }
+        */
 
         public void Reset()
         {
