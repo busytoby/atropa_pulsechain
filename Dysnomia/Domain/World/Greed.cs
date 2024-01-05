@@ -303,8 +303,8 @@ namespace Dysnomia.Domain.World
                         }
                     stopwatch.Start();
                 } catch (Exception E) {
-                    Logging.Log("Fi", E.Message, 7);
-                    if (E.StackTrace != null) Logging.Log("Fi", E.StackTrace, 7);
+                    //Logging.Log("Fi", E.Message, 7);
+                    //if (E.StackTrace != null) Logging.Log("Fi", E.StackTrace, 7);
                     Disconnect(); 
                     return; 
                 }
