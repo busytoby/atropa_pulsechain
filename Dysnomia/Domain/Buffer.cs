@@ -55,7 +55,7 @@ namespace Dysnomia.Domain
             Mu.Amplify();
             Mu.Sustain();
             Mu.React(false);
-            if (Mu.Omega != Mu.Omicron) throw new Exception("NonParallel");
+            if (Mu.Omega != Mu.Omicron) throw new Exception("NonParallel, Maybe Not A Greed Buffer ?");
         }
 
         public void Beta(BigInteger Omicron)
