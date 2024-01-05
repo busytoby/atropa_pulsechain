@@ -154,6 +154,8 @@ namespace Dysnomia.Domain
                         switch(OpCode[0])
                         {
                             case 0x00:
+                                if (Mu.Rod == null) throw new Exception("Null Rod");
+                                if (Mu.Cone == null) throw new Exception("Null Cone");
                                 Iota = Next();
                                 Omicron = Next();
                                 if (Mu.Cone.Mu(Mu.Cone.Barn, Iota, Mu.Cone.Ring) != Omicron) throw new Exception("Invalid Charge");
@@ -173,6 +175,8 @@ namespace Dysnomia.Domain
                                 Logging.Log("Oracle", "Alpha Operational: " + Omicron.ToString(), 3);
                                 break;
                             case 0x01:
+                                if (Mu.Rod == null) throw new Exception("Null Rod");
+                                if (Mu.Cone == null) throw new Exception("Null Cone");
                                 Iota = Next();
                                 Omicron = Next();
                                 if (Omicron != Mu.Cone.Dynamo) throw new Exception("Bad Cone Dynamo");
@@ -235,7 +239,7 @@ namespace Dysnomia.Domain
                                 break;
                             case 0x06:
                                 throw new Exception("Handshake Correction Not Yet Implemented");
-                                break;
+                                //break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
                                 BigInteger ClientId = Next();
