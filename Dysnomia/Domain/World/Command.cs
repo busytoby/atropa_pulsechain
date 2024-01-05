@@ -7,16 +7,14 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Domain.World
 {
-    public class Command
+    public class Command : Daemon
     {
-        public string Name = "Command";
-        public static String Description = "Not Set Description";
+        new public static string Name = "Command";
+        new public static String Description = "Not Set Description";
         public String[]? Args;
-        public Living? Theta;
 
-        public Command() {
+        public Command() : base() {
             Args = null;
-            Theta = null;
         }
 
         public Command(String Eta) {
@@ -57,11 +55,6 @@ namespace Dysnomia.Domain.World
             return Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => String.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal))
                 .ToArray();
-        }
-
-        protected virtual void Phi()
-        {
-            throw new Exception("Not Implemented");
         }
     }
 }

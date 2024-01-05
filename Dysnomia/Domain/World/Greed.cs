@@ -16,8 +16,11 @@ using static Dysnomia.Domain.Tare;
 
 namespace Dysnomia.Domain.World
 {
-    public class Greed
+    public class Greed : Daemon
     {
+        new public static string Name = "Greed";
+        new public static String Description = "Greed Daemon";
+
         public readonly String Host;
         public readonly int Port;
         public BigInteger ClientId;
@@ -25,7 +28,6 @@ namespace Dysnomia.Domain.World
         public TcpClient Mu;
         public Fa Rho;
         public Faung? Psi;
-        public Living Theta;
         public bool Cone = false;
         public bool TimedOut = false;
         public short HandshakeState = 0x00;
@@ -177,11 +179,11 @@ namespace Dysnomia.Domain.World
             }
         }
 
-        void Disconnect()
+        public void Disconnect()
         {
             try {
                 Greed? Beta;
-                Fi.Psi.TryRemove(ClientId, out Beta);
+                Dysnomia.Beta.Fi.Psi.TryRemove(ClientId, out Beta);
                 NetworkStream Iota = Mu.GetStream();
                 try {
                     Iota.Close();
@@ -193,7 +195,7 @@ namespace Dysnomia.Domain.World
             Logging.Log("Greed", "Disconnected " + Host, 6);
         }
 
-        void Phi()
+        protected override void Phi()
         {
             Thread.Sleep(10);
             if(!Mu.Connected && Theta.In.Count == 0 && Cone == false)

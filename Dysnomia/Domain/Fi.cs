@@ -17,21 +17,24 @@ using Microsoft.VisualBasic;
 
 namespace Dysnomia.Domain
 {
-    static public class Fi
+    public class Fi : Daemon
     {
-        static private TcpListener? Mu;
-        static public Tare Rho;
-        static public ConcurrentDictionary<BigInteger, Greed> Psi;
+        new static public string Name = "Fi";
+        new static public String Description = "Fi Daemon";
+
+        private TcpListener? Mu;
+        public Tare Rho;
+        public ConcurrentDictionary<BigInteger, Greed> Psi;
 
         static public String DLE = "\u0010\u0010\u0010\u0010";
 
-        static Fi()
+        public Fi() : base()
         {
             Rho = new Tare();
             Psi = new ConcurrentDictionary<BigInteger, Greed>();
         }
 
-        static public void Listen(int port)
+        public void Listen(int port)
         {
             if (Mu != null) throw new Exception("Mu Non Null");
             Mu = new TcpListener(IPAddress.Any, port);
@@ -39,7 +42,7 @@ namespace Dysnomia.Domain
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
-        static private void Kappa(IAsyncResult result)
+        private void Kappa(IAsyncResult result)
         {
             if (Mu == null) throw new Exception("Null Mu");
             TcpClient Beta = Mu.EndAcceptTcpClient(result);
@@ -60,18 +63,22 @@ namespace Dysnomia.Domain
             Mu.BeginAcceptTcpClient(Kappa, Mu);
         }
 
-        static private bool ValidateMSG(Tare.MSG M)
+        private bool ValidateMSG(Tare.MSG M)
         {
             throw new Exception("Not Implemented");
         }
 
-        static private void XiHandshake(BigInteger ClientId)
+        private void XiHandshake(BigInteger ClientId)
         {
-            Psi[ClientId].Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
-            Psi[ClientId].Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
+            if (!Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
+            Greed X = Psi[ClientId];
+            if (X == null) throw new Exception("Null Greed");
+            if (X.Theta == null) throw new Exception("Null Theta");
+            X.Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
+            X.Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
         }
 
-        static private void Phi(TcpClient Beta)
+        private void Phi(TcpClient Beta)
         {
             Greed? Client;
             BigInteger ClientId = Math.Random();
@@ -100,6 +107,7 @@ namespace Dysnomia.Domain
             {
                 try
                 {
+                    if (Client.Theta == null) throw new Exception("Null Theta");
                     while (Client.Theta.In.Count > 0)
                     {
                         if (!Client.Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
@@ -154,7 +162,7 @@ namespace Dysnomia.Domain
             }
         }
 
-        public static Greed Connect(String Host, int Port)
+        public Greed Connect(String Host, int Port)
         {
             Greed Beta = new Greed(Host, Port);
             return Beta;

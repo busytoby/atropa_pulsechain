@@ -14,11 +14,12 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Domain
 {
-    public class Oracle : ConcurrentQueue<byte[]>
+    public class Oracle : Daemon
     {
+        new public static string Name = "Oracle";
+        new public static String Description = "Oracle Daemon";
         public Faung Mu;
         public Object Tau;
-        public Living Theta;
 
         public Oracle()
         {
@@ -140,7 +141,7 @@ namespace Dysnomia.Domain
             else return 0;
         }
 
-        void Phi()
+        protected override void Phi()
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
@@ -239,10 +240,13 @@ namespace Dysnomia.Domain
                                 Lambda = NextBytes();
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
                                 int Connect_Port = BitConverter.ToInt16(Lambda, 0);
-                                Greed Chi = Domain.Fi.Connect(Connect_Host, Connect_Port);
+                                Greed Chi = Dysnomia.Beta.Fi.Connect(Connect_Host, Connect_Port);
                                 if (!Chi.ClientId.IsZero) throw new Exception("Client ID Non-Zero");
                                 Chi.ClientId = Math.Random();
-                                Domain.Fi.Psi.TryAdd(Chi.ClientId, Chi);
+                                Dysnomia.Beta.Fi.Psi.TryAdd(Chi.ClientId, Chi);
+                                break;
+                            case 0x08:
+
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
