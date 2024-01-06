@@ -55,6 +55,7 @@ address constant BuddhaghosaContract = address(0x840CBD20A70774BECAc4e932Fff6fb1
 address constant ZuoContract = address(0x583d1C1427308f7f96BFd3E0d7A3F9674D8BF8ec);
 address constant HegelBetContract = address(0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb);
 address constant HahnarchContract = address(0x4a458D04909a42F79d31805762B2abc38ab9407d);
+address constant HermogenesContract = address(0x68E87Fa19984f45C68945BBd4c81bF3481750429);
 address constant RabContract = address(0x89E8cD6306AbbAB8e39eeD0D53566d8dC2E02c01);
 address constant LoanContract = address(0xeE67825eF27588FAeE39cfefb465eB0A242A740c);
 address constant FreebiesContract = address(0x48F628c079353ECC4DB75F0d05de9299e083f3C2);
@@ -74,7 +75,7 @@ address constant hhFaContract = address(0xa28e8aA4d6257157de64a547c90B38C3c540eF
 address constant NoNukesContract = address(0x174A0ad99c60c20D9B3D94c3095BC1fb9ddEFd62);
 address constant WenTiContract = address(0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc);
 address constant TwoCentClubContract = address(0x6293373BF0DAE2050641973D49b7b2f71adC91a1);
-
+address constant BFFContract = address(0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996);
 //
 address constant TRSIContract = address(0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6);
 address constant BELContract = address(0x4C1518286E1b8D5669Fe965EF174B8B4Ae2f017B);
