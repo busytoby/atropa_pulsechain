@@ -1,4 +1,5 @@
-﻿using Dysnomia.Domain.World;
+﻿using Dysnomia.Domain.bin;
+using Dysnomia.Domain.World;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,6 +97,36 @@ namespace Dysnomia.Domain
             Mu.Cone.React(Lambda, Mu.Cone.Channel);
         }
 
+        public void Rho()
+        {
+            if (Mu.Rod == null) throw new Exception("Null Rod");
+            if (Mu.Cone == null) throw new Exception("Null Cone");
+            Mu.Upsilon = Mu.Cone.Torque(Mu.Rod.Eta);
+            Mu.Ohm = Mu.Cone.Amplify(Mu.Upsilon);
+            Mu.Pi = Mu.Cone.Sustain(Mu.Ohm);
+            Mu.Cone.React(Mu.Pi, Mu.Cone.Dynamo);
+            Mu.Omicron = Mu.Cone.Kappa;
+            Mu.Rod.React(Mu.Pi, Mu.Rod.Dynamo);
+            Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+        }
+
+        public void Upsilon(bool Phi = true)
+        {
+            Mu.Upsilon = Phi ? Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi : Mu.Upsilon ^ Mu.Ohm;
+        }
+
+        public void Upsilon(ref Faung Beta)
+        {
+            // stub additional record from beta
+            Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi ^ Beta.Upsilon;
+            Beta.Ohm = Beta.Ohm ^ Mu.Upsilon;
+        }
+
+        public void Upsilon(BigInteger Iota)
+        {
+            Mu.Upsilon = Mu.Upsilon ^ Iota;
+        }
+
         public void Encode(BigInteger Rho)
         {
             Encode(Rho.ToByteArray());
@@ -109,13 +140,13 @@ namespace Dysnomia.Domain
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
 
-            BigInteger Beta = Mu.Rod.Mu(Mu.Cone.Kappa, Mu.Rod.Kappa, Mu.Pi);
+            BigInteger Beta = Mu.Rod.Mu(Mu.Omicron, Mu.Omega, Mu.Pi);
             for (int i = 0; i < _size;)
             {
                 byte[] Iota = Beta.ToByteArray();
                 for (int j = 0; j < Iota.Length && i < _size; j++, i++)
                     Bytes[i] = (byte)(Iota[j] ^ Rho[i]);
-                Beta = Mu.Rod.Mu(Beta, Mu.Rod.Kappa, Mu.Pi);
+                Beta = Mu.Rod.Mu(Beta, Mu.Omega, Mu.Pi);
             }
         }
 
