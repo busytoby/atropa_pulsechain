@@ -1,5 +1,6 @@
 ﻿using Dysnomia.Domain.bin;
 using Dysnomia.Domain.World;
+using ExtensionMethods;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -247,12 +248,9 @@ namespace Dysnomia.Domain
                                 while (Count < 1) Thread.Sleep(100);
                                 ClientId = Next();
                                 if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
-                                Dysnomia.Beta.Serialization.Enqueue(OpCode);
-                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Ring.ToByteArray());
-                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Coordinate.ToByteArray());
-                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Manifold.ToByteArray());
-                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Barn.ToByteArray());
-                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Element.ToByteArray());
+                                Serialization Nu = Dysnomia.Beta.Fi.Psi[ClientId].Rho.OpenSerialization();
+                                while (Nu.TryDequeue(out Lambda))
+                                    Dysnomia.Beta.Serialization.Enqueue(Lambda);
                                 break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);

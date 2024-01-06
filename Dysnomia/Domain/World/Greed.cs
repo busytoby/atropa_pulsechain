@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0168
 
 using Dysnomia.Domain.bin;
+using ExtensionMethods;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -186,24 +187,12 @@ namespace Dysnomia.Domain.World
                     Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
                     Avail(Rho.Signal);
                     Form(Rho.Channel);
-                    Cast();
+                    Nu = Dysnomia.Beta.Fi.Psi[ClientId].Rho.OpenSerialization();
                     HandshakeState = 0x06;
                 }
                 else
                     throw new Exception("Not Implemented");
             }
-        }
-
-        public void Cast()
-        {
-            if (Nu != null) throw new Exception("Non Null Nu");
-            Nu = new Serialization();
-            Nu.Enqueue(new byte[] { 0x07 });
-            Nu.Enqueue(Rho.Ring.ToByteArray());
-            Nu.Enqueue(Rho.Coordinate.ToByteArray());
-            Nu.Enqueue(Rho.Manifold.ToByteArray());
-            Nu.Enqueue(Rho.Barn.ToByteArray());
-            Nu.Enqueue(Rho.Element.ToByteArray());
         }
 
         public void Avail(BigInteger Signal)
