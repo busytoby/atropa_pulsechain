@@ -50,17 +50,25 @@ namespace Dysnomia.Domain
             if (S.RemoteEndPoint == null) throw new Exception("Null EndPoint");
             IPEndPoint Remote = (IPEndPoint)S.RemoteEndPoint;
 
-            foreach (KeyValuePair<BigInteger, Greed> P in Psi)
-                if(P.Value.Cone && P.Value.Host == Remote.Address.ToString())
-                {
-                    Logging.Log("Fi", "Denied Already Connected: " + Remote.Address.ToString());
-                    Beta.Close();
-                    Mu.BeginAcceptTcpClient(Kappa, Mu);
-                    return;
-                }
+            if (IsAlreadyConnected(Remote))
+            {
+                Logging.Log("Fi", "Denied Already Connected: " + Remote.Address.ToString());
+                Beta.Close();
+                Mu.BeginAcceptTcpClient(Kappa, Mu);
+                return;
+            }
+
             new Thread(() => Phi(Beta)).Start();
             Logging.Log("Fi", "Connected: " + Remote.Address.ToString());
             Mu.BeginAcceptTcpClient(Kappa, Mu);
+        }
+
+        private bool IsAlreadyConnected(IPEndPoint Remote)
+        {
+            foreach (KeyValuePair<BigInteger, Greed> P in Psi)
+                if (P.Value.Cone && P.Value.Host == Remote.Address.ToString())
+                    return true;
+            return false;
         }
 
         private bool ValidateMSG(Tare.MSG M)
