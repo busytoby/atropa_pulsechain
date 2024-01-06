@@ -191,6 +191,14 @@ namespace Dysnomia.Domain.World
                     if (Psi.Bytes == null) throw new Exception("Encoding Failure");
                     Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), new byte[] { 0x09 }, 1));
                     Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), Psi.Bytes, 1));
+                    if (Nu != null) throw new Exception("Non Null Nu");
+                    Nu = new Serialization();
+                    Nu.Enqueue(new byte[] { 0x07 });
+                    Nu.Enqueue(Rho.Ring.ToByteArray());
+                    Nu.Enqueue(Rho.Coordinate.ToByteArray());
+                    Nu.Enqueue(Rho.Manifold.ToByteArray());
+                    Nu.Enqueue(Rho.Barn.ToByteArray());
+                    Nu.Enqueue(Rho.Element.ToByteArray());
                     HandshakeState = 0x06;
                 }
                 else
@@ -252,12 +260,20 @@ namespace Dysnomia.Domain.World
                             BigInteger Delta = new BigInteger(Lambda.Data);
                             Handshake("Alpha", 0x08);
                             Handshake("Alpha", Delta);
+                            if (Nu == null) throw new Exception("Null Nu");
+                            Nu.Enqueue(new byte[] { 0x08 });
+                            Nu.Enqueue(Delta.ToByteArray());
                         }
                         else if (Subject == "BETA" && Lambda.Data.Length == 1 && Lambda.Data[0] == 0x09)
                         {
+                            if (Psi == null) throw new Exception("Null Psi");
+                            if (Psi.Bytes == null) throw new Exception("Null Psi Bytes");
                             if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
                             Handshake("Alpha", 0x09);
                             Handshake("Alpha", Lambda.Data);
+                            if (Nu == null) throw new Exception("Null Nu");
+                            Nu.Enqueue(new byte[] { 0x09 });
+                            Nu.Enqueue(Rho.Channel.ToByteArray());
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }
