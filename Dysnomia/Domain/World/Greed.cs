@@ -184,26 +184,45 @@ namespace Dysnomia.Domain.World
                     Rho.Open();
                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
                     Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
-                    Psi.Alpha(Rho.Signal);
-                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), new byte[] { 0x08 }, 1));
-                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), Rho.Signal.ToByteArray(), 1));
-                    Psi.Beta(Rho.Channel.ToByteArray(), false);
-                    if (Psi.Bytes == null) throw new Exception("Encoding Failure");
-                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), new byte[] { 0x09 }, 1));
-                    Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), Psi.Bytes, 1));
-                    if (Nu != null) throw new Exception("Non Null Nu");
-                    Nu = new Serialization();
-                    Nu.Enqueue(new byte[] { 0x07 });
-                    Nu.Enqueue(Rho.Ring.ToByteArray());
-                    Nu.Enqueue(Rho.Coordinate.ToByteArray());
-                    Nu.Enqueue(Rho.Manifold.ToByteArray());
-                    Nu.Enqueue(Rho.Barn.ToByteArray());
-                    Nu.Enqueue(Rho.Element.ToByteArray());
+                    Avail(Rho.Signal);
+                    Form(Rho.Channel);
+                    Cast();
                     HandshakeState = 0x06;
                 }
                 else
                     throw new Exception("Not Implemented");
             }
+        }
+
+        public void Cast()
+        {
+            if (Nu != null) throw new Exception("Non Null Nu");
+            Nu = new Serialization();
+            Nu.Enqueue(new byte[] { 0x07 });
+            Nu.Enqueue(Rho.Ring.ToByteArray());
+            Nu.Enqueue(Rho.Coordinate.ToByteArray());
+            Nu.Enqueue(Rho.Manifold.ToByteArray());
+            Nu.Enqueue(Rho.Barn.ToByteArray());
+            Nu.Enqueue(Rho.Element.ToByteArray());
+        }
+
+        public void Avail(BigInteger Signal)
+        {
+            if (Psi == null) throw new Exception("Null Psi");
+            if (Theta == null) throw new Exception("Null Theta");
+            Psi.Alpha(Signal);
+            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), new byte[] { 0x08 }, 1));
+            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), Signal.ToByteArray(), 1));
+        }
+
+        public void Form(BigInteger Channel)
+        {
+            if (Psi == null) throw new Exception("Null Psi");
+            if (Theta == null) throw new Exception("Null Theta");
+            Psi.Beta(Channel.ToByteArray(), false);
+            if (Psi.Bytes == null) throw new Exception("Encoding Failure");
+            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), new byte[] { 0x09 }, 1));
+            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), Psi.Bytes, 1));
         }
 
         public void Disconnect()
