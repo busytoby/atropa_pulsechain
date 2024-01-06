@@ -13,10 +13,12 @@ namespace Dysnomia.Domain
     {
         static public string Name = "Daemon";
         static public string Description = "Not Set Description";
+        public Object Tau;
         public Living? Theta;
 
         public Daemon()
         {
+            Tau = new Object();
             Theta = null;
         }
 

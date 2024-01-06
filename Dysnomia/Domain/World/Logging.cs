@@ -35,7 +35,7 @@ namespace Dysnomia.Domain.World
 
         static public void Log(MSG A)
         {
-            foreach (Gram G in Tau) G(A);
+            new Task(() => { lock (Theta) foreach (Gram G in Tau) G(A); }).Start();
         }
 
         static public void Log(String From, String Data, short Priority = 6)

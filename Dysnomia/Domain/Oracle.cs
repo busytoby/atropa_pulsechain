@@ -20,13 +20,11 @@ namespace Dysnomia.Domain
         new public static string Name = "Oracle";
         new public static String Description = "Oracle Daemon";
         public Faung Mu;
-        public Object Tau;
 
         public Oracle()
         {
             Logging.Log("Oracle", "New Oracle");
             Mu = new Faung();
-            Tau = new Object();
             Theta = new Living(Phi);
             Reset();
         }
