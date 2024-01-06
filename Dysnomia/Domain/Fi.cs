@@ -188,6 +188,7 @@ namespace Dysnomia.Domain
                     else
                         Thread.Sleep(400);
 
+                    /*
                     try
                     {
                         Iota.WriteByte(0x07);
@@ -201,6 +202,7 @@ namespace Dysnomia.Domain
                         Logging.Log("Fi", "Disconnected: " + ((IPEndPoint)Beta.Client.RemoteEndPoint).Address.ToString());
                         break;
                     }
+                    */
                 }
                 catch (Exception E)
                 {
