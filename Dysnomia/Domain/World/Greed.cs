@@ -28,6 +28,7 @@ namespace Dysnomia.Domain.World
         public TcpClient Mu;
         public Fa Rho;
         public Buffer? Psi;
+        public Serialization? Nu;
         public bool Cone = false;
         public bool TimedOut = false;
         public short HandshakeState = 0x00;
