@@ -10,5 +10,11 @@ namespace Dysnomia.Domain.World
     {
         new public static string Name = "Serialization";
         new public static String Description = "Serialization Daemon";
+
+        public void Serialize(byte[] OpCode, byte[] Bytes)
+        {
+            Enqueue(OpCode);
+            Enqueue(Bytes);
+        }
     }
 }

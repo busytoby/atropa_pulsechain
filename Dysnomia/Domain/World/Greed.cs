@@ -270,8 +270,7 @@ namespace Dysnomia.Domain.World
                             Handshake("Alpha", 0x08);
                             Handshake("Alpha", Delta);
                             if (Nu == null) throw new Exception("Null Nu");
-                            Nu.Enqueue(new byte[] { 0x08 });
-                            Nu.Enqueue(Delta.ToByteArray());
+                            Nu.Serialize(new byte[] { 0x08 }, Delta.ToByteArray());
                         }
                         else if (Subject == "BETA" && Lambda.Data.Length == 1 && Lambda.Data[0] == 0x09)
                         {
@@ -281,8 +280,7 @@ namespace Dysnomia.Domain.World
                             Handshake("Alpha", 0x09);
                             Handshake("Alpha", Lambda.Data);
                             if (Nu == null) throw new Exception("Null Nu");
-                            Nu.Enqueue(new byte[] { 0x09 });
-                            Nu.Enqueue(Rho.Channel.ToByteArray());
+                            Nu.Serialize(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }

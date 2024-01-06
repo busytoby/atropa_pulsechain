@@ -139,6 +139,7 @@ namespace Dysnomia.Domain
 
             BigInteger Iota, Omicron;
             byte[]? Lambda;
+            Serialization? Nu = null;
             String Xi;
             Tare.MSG? Pi;
 
@@ -248,9 +249,8 @@ namespace Dysnomia.Domain
                                 while (Count < 1) Thread.Sleep(100);
                                 ClientId = Next();
                                 if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
-                                Serialization Nu = Dysnomia.Beta.Fi.Psi[ClientId].Rho.OpenSerialization();
-                                while (Nu.TryDequeue(out Lambda))
-                                    Dysnomia.Beta.Serialization.Enqueue(Lambda);
+                                if (Nu != null) throw new Exception("Non Null Nu");
+                                Nu = Dysnomia.Beta.Fi.Psi[ClientId].Rho.OpenSerialization();
                                 break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
@@ -262,8 +262,8 @@ namespace Dysnomia.Domain
                                 Client = Dysnomia.Beta.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Alpha(AlphaCode);
-                                Dysnomia.Beta.Serialization.Enqueue(OpCode);
-                                Dysnomia.Beta.Serialization.Enqueue(AlphaCode);
+                                if (Nu == null) throw new Exception("Null Nu");
+                                Nu.Serialize(OpCode, AlphaCode);
                                 break;
                             case 0x09:
                                 while (Count < 3) Thread.Sleep(100);
@@ -276,12 +276,16 @@ namespace Dysnomia.Domain
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Beta(BetaCode, true);
                                 if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
-                                Dysnomia.Beta.Serialization.Enqueue(OpCode);
-                                Dysnomia.Beta.Serialization.Enqueue(Client.Psi.Bytes);
+                                if (Nu == null) throw new Exception("Null Nu");
+                                Nu.Serialize(OpCode, Client.Psi.Bytes);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
                         }
+
+                        if (Nu != null)
+                            while (Nu.TryDequeue(out Lambda))
+                                Dysnomia.Beta.Serialization.Enqueue(Lambda);
 
                         if (Count > 0) TryDequeue(out OpCode);
                     }
