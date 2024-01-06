@@ -12,12 +12,14 @@ namespace Dysnomia
     {
         static public Oracle Oracle;
         static public Fi Fi;
+        static public Serialization Serialization;
 
         static Beta()
         {
             Oracle = new Oracle();
             Fi = new Fi();
             Fi.Rho.Add(Oracle.Fi);
+            Serialization = new Serialization();
         }
     }
 }
