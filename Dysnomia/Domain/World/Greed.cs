@@ -79,7 +79,7 @@ namespace Dysnomia.Domain.World
         private void Handshake(String Subject, byte[] Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
-            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Data, 1));
+            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1));
             Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Subject), Data, 1));
         }
 

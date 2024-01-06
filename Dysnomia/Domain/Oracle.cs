@@ -242,7 +242,18 @@ namespace Dysnomia.Domain
                                 break;
                             case 0x06:
                                 throw new Exception("Handshake Correction Not Yet Implemented");
-                                //break;
+                            //break;
+                            case 0x07:
+                                while (Count < 1) Thread.Sleep(100);
+                                ClientId = Next();
+                                if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
+                                Dysnomia.Beta.Serialization.Enqueue(OpCode);
+                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Ring.ToByteArray());
+                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Coordinate.ToByteArray());
+                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Manifold.ToByteArray());
+                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Barn.ToByteArray());
+                                Dysnomia.Beta.Serialization.Enqueue(Dysnomia.Beta.Fi.Psi[ClientId].Rho.Element.ToByteArray());
+                                break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
                                 ClientId = Next();
@@ -253,6 +264,8 @@ namespace Dysnomia.Domain
                                 Client = Dysnomia.Beta.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Alpha(AlphaCode);
+                                Dysnomia.Beta.Serialization.Enqueue(OpCode);
+                                Dysnomia.Beta.Serialization.Enqueue(AlphaCode);
                                 break;
                             case 0x09:
                                 while (Count < 3) Thread.Sleep(100);
@@ -264,6 +277,9 @@ namespace Dysnomia.Domain
                                 Client = Dysnomia.Beta.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Beta(BetaCode, true);
+                                if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
+                                Dysnomia.Beta.Serialization.Enqueue(OpCode);
+                                Dysnomia.Beta.Serialization.Enqueue(Client.Psi.Bytes);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

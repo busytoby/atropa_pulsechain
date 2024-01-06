@@ -79,6 +79,19 @@ namespace Dysnomia.Domain
             X.Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
         }
 
+        private void Push(byte[] From, byte[] Data)
+        {
+            try
+            {
+                foreach (Tare.Gram G in Rho) G(new Tare.MSG(From, Data, 1));
+            }
+            catch (Exception e)
+            {
+                Logging.Log("Fi", "Error: " + e.Message, 7);
+                Logging.Log("Fi", "Error: " + e.StackTrace, 7);
+            }
+        }
+
         private void Phi(TcpClient Beta)
         {
             Greed? Client;
@@ -119,6 +132,7 @@ namespace Dysnomia.Domain
                         if (Lambda.Data[0] == 0x07)
                         {
                             Logging.Log("Fi", "Handshake OK", 6);
+                            Push(ClientId.ToByteArray(), Lambda.Data);
                         }
                         else throw new Exception("Unknown OpCode");
                     }
@@ -152,15 +166,7 @@ namespace Dysnomia.Domain
                             BigInteger Alpha = new BigInteger(Omicron.Slice(A, B));
                             if (size > 0)
                             {
-                                Tare.MSG M = new Tare.MSG(ClientId.ToByteArray(), Omicron.Slice(A, B).ToArray(), 1);
-                                try
-                                {
-                                    foreach (Tare.Gram G in Rho) G(M);
-                                } catch(Exception e)
-                                {
-                                    Logging.Log("Fi", "Error: " + e.Message, 7);
-                                    Logging.Log("Fi", "Error: " + e.StackTrace, 7);
-                                }
+                                Push(ClientId.ToByteArray(), Omicron.Slice(A, B).ToArray());
                             }
 
                             A = i + 4;
