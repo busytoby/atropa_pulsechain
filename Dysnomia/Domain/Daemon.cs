@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Domain
 {
-    public class Daemon : ConcurrentQueue<byte[]>
+    abstract public class Daemon : ConcurrentQueue<byte[]>
     {
         static public string Name = "Daemon";
         static public string Description = "Not Set Description";
