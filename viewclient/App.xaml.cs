@@ -17,8 +17,8 @@ namespace Pulse
         {
             ShowApparitionWindow();
             Logging.Add(Dysnomia.Apparition.Input);
-            Dysnomia.Apparition.Interpreter = Beta.Oracle.ProcessString;
-            Beta.Fi.Listen(5555);
+            Dysnomia.Apparition.Interpreter = Controller.Oracle.ProcessString;
+            Controller.Fi.Listen(5555);
         }
 
         private void ShowApparitionWindow()

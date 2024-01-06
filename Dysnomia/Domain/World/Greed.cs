@@ -188,7 +188,7 @@ namespace Dysnomia.Domain.World
                     Avail(Rho.Signal);
                     Form(Rho.Channel);
                     if (Nu != null) throw new Exception("Non Null Nu");
-                    Nu = Dysnomia.Beta.Fi.Psi[ClientId].Rho.OpenSerialization();
+                    Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
                     HandshakeState = 0x06;
                 }
                 else
@@ -219,7 +219,7 @@ namespace Dysnomia.Domain.World
         {
             try {
                 Greed? Beta;
-                Dysnomia.Beta.Fi.Psi.TryRemove(ClientId, out Beta);
+                Controller.Fi.Psi.TryRemove(ClientId, out Beta);
                 NetworkStream Iota = Mu.GetStream();
                 try {
                     Iota.Close();

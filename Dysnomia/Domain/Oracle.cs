@@ -32,7 +32,7 @@ namespace Dysnomia.Domain
         public void Fi(Tare.MSG A)
         {
             BigInteger ClientId = new BigInteger(A.From);
-            if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
+            if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
             Enqueue(A.Data);
             Enqueue(A.From);
         }
@@ -235,10 +235,10 @@ namespace Dysnomia.Domain
                                 Lambda = NextBytes();
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
                                 int Connect_Port = BitConverter.ToInt16(Lambda, 0);
-                                Greed Chi = Dysnomia.Beta.Fi.Connect(Connect_Host, Connect_Port);
+                                Greed Chi = Controller.Fi.Connect(Connect_Host, Connect_Port);
                                 if (!Chi.ClientId.IsZero) throw new Exception("Client ID Non-Zero");
                                 Chi.ClientId = Math.Random();
-                                Dysnomia.Beta.Fi.Psi.TryAdd(Chi.ClientId, Chi);
+                                Controller.Fi.Psi.TryAdd(Chi.ClientId, Chi);
                                 break;
                             case 0x06:
                                 throw new Exception("Handshake Correction Not Yet Implemented");
@@ -246,9 +246,8 @@ namespace Dysnomia.Domain
                             case 0x07:
                                 while (Count < 1) Thread.Sleep(100);
                                 ClientId = Next();
-                                if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
-                                if (Nu != null) throw new Exception("Non Null Nu");
-                                Nu = Dysnomia.Beta.Fi.Psi[ClientId].Rho.OpenSerialization();
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
+                                Controller.Fi.Psi[ClientId].Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
                                 break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
@@ -256,12 +255,11 @@ namespace Dysnomia.Domain
                                 byte[] AlphaCode = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x08 ClientId Error");
-                                if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
-                                Client = Dysnomia.Beta.Fi.Psi[ClientId];
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
+                                Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Alpha(AlphaCode);
-                                if (Nu == null) throw new Exception("Null Nu");
-                                Nu.Serialize(OpCode, AlphaCode);
+                                Controller.Fi.Psi[ClientId].Nu?.Serialize(OpCode, AlphaCode);
                                 break;
                             case 0x09:
                                 while (Count < 3) Thread.Sleep(100);
@@ -269,21 +267,16 @@ namespace Dysnomia.Domain
                                 byte[] BetaCode = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x09 ClientId Error");
-                                if (!Dysnomia.Beta.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
-                                Client = Dysnomia.Beta.Fi.Psi[ClientId];
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
+                                Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Beta(BetaCode, true);
                                 if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
-                                if (Nu == null) throw new Exception("Null Nu");
-                                Nu.Serialize(OpCode, Client.Psi.Bytes);
+                                Controller.Fi.Psi[ClientId].Nu?.Serialize(OpCode, Client.Psi.Bytes);
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
                         }
-
-                        if (Nu != null)
-                            while (Nu.TryDequeue(out Lambda))
-                                Dysnomia.Beta.Serialization.Enqueue(Lambda);
 
                         if (Count > 0) TryDequeue(out OpCode);
                     }
