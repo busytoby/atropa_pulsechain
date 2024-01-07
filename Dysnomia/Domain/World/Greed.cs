@@ -223,6 +223,7 @@ namespace Dysnomia.Domain.World
                 Controller.Fi.Psi.TryRemove(ClientId, out Beta);
                 NetworkStream Iota = Mu.GetStream();
                 try {
+                    Iota.Write(Encoding.Default.GetBytes("\nPre-Alpha Chatlog Milestone Test Client Available At https://github.com/busytoby/atropa_pulsechain\n"));
                     Iota.Close();
                 } catch (Exception E) { }
             } catch (Exception E) { }
