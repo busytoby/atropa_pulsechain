@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0168
 
 using Dysnomia.Domain.bin;
+using Dysnomia.Lib;
 using ExtensionMethods;
 using System;
 using System.Collections.Concurrent;
@@ -28,7 +29,7 @@ namespace Dysnomia.Domain.World
 
         public TcpClient Mu;
         public Fa Rho;
-        public Buffer? Psi;
+        public Lib.Buffer? Psi;
         public Serialization? Nu;
         public bool Cone = false;
         public bool TimedOut = false;
@@ -137,7 +138,7 @@ namespace Dysnomia.Domain.World
                     Rho.Adduct(PeerDynamo);
                     Rho.Open();
                     Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
-                    Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    Psi = new Lib.Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
                     HandshakeState = 0x06;
                 }
                 else
@@ -184,7 +185,7 @@ namespace Dysnomia.Domain.World
                     Rho.Adduct(PeerDynamo);
                     Rho.Open();
                     Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
-                    Psi = new Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    Psi = new Lib.Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
                     Avail(Rho.Signal);
                     Form(Rho.Channel);
                     if (Nu != null) throw new Exception("Non Null Nu");

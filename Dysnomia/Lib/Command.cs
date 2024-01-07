@@ -4,33 +4,36 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Dysnomia.Domain;
 
-namespace Dysnomia.Domain.World
+namespace Dysnomia.Lib
 {
     public class Command : Daemon
     {
         new public static string Name = "Command";
-        new public static String Description = "Not Set Description";
-        public String[]? Args;
+        new public static string Description = "Not Set Description";
+        public string[]? Args;
 
-        public Command() : base() {
+        public Command() : base()
+        {
             Args = null;
         }
 
-        public Command(String Eta) {
+        public Command(string Eta)
+        {
             byte[] From = Encoding.Default.GetBytes(Name);
 
             Tokenize(Eta);
             object? EXE = null;
             Type[] Commands = GetCommands();
 
-            foreach(Type C in Commands)
-                if(C.Name.ToLower() == Name.ToLower())
+            foreach (Type C in Commands)
+                if (C.Name.ToLower() == Name.ToLower())
                 {
                     EXE = Activator.CreateInstance(C, null);
                     if (EXE == null) throw new Exception("Null Command Instance");
                     if (Args == null) throw new Exception("Null Args");
-                    Command CEXE = ((Command)EXE);
+                    Command CEXE = (Command)EXE;
                     CEXE.Args = Args;
                     CEXE.Theta = new Living();
                     Theta = CEXE.Theta;
@@ -43,9 +46,9 @@ namespace Dysnomia.Domain.World
                 Logging.Log(new Tare.MSG(From, Encoding.Default.GetBytes(Name + ": Not Found"), 6));
         }
 
-        private void Tokenize(String Eta)
+        private void Tokenize(string Eta)
         {
-            List<String> _args = Eta.Split(" ").ToList();
+            List<string> _args = Eta.Split(" ").ToList();
             Name = _args[0];
             Args = _args.Skip(1).ToArray();
         }
@@ -53,7 +56,7 @@ namespace Dysnomia.Domain.World
         public Type[] GetCommands()
         {
             return Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => String.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal))
+                .Where(t => string.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal))
                 .ToArray();
         }
     }

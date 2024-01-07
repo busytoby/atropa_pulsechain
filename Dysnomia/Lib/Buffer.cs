@@ -1,5 +1,4 @@
 ﻿using Dysnomia.Domain.bin;
-using Dysnomia.Domain.World;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Dysnomia.Domain
+namespace Dysnomia.Lib
 {
     public class Buffer
     {
@@ -31,7 +30,8 @@ namespace Dysnomia.Domain
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
         }
 
-        public Buffer(Faung _Mu, byte[] Rho) {
+        public Buffer(Faung _Mu, byte[] Rho)
+        {
             Mu = _Mu;
             Encode(Rho);
         }
@@ -68,7 +68,7 @@ namespace Dysnomia.Domain
         {
             Encode(Omicron);
             if (Bytes == null) throw new Exception("Null Bytes Alpha");
-            Beta(new BigInteger(Receiver?Bytes:Omicron));
+            Beta(new BigInteger(Receiver ? Bytes : Omicron));
         }
 
         public void Beta(BigInteger Omicron)
@@ -135,7 +135,7 @@ namespace Dysnomia.Domain
         public void Encode(byte[] Rho)
         {
             int _size = Rho.Length;
-            if(Bytes == null) Bytes = new byte[_size];
+            if (Bytes == null) Bytes = new byte[_size];
 
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
@@ -156,10 +156,10 @@ namespace Dysnomia.Domain
             Encode(Bytes);
         }
 
-        public override String ToString()
+        public override string ToString()
         {
             if (Bytes == null) return "";
-            return new String(Bytes.Select(b => (char)b).ToArray());
+            return new string(Bytes.Select(b => (char)b).ToArray());
         }
     }
 }

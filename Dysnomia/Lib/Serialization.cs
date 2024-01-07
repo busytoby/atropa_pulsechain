@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Dysnomia.Domain.World
+namespace Dysnomia.Lib
 {
     public class Serialization : ConcurrentQueue<byte[]>
     {

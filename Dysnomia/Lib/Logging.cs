@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dysnomia.Domain;
 using static Dysnomia.Domain.Tare;
 
-namespace Dysnomia.Domain.World
+namespace Dysnomia.Lib
 {
     static public class Logging
     {
@@ -20,12 +21,12 @@ namespace Dysnomia.Domain.World
          */
 
         static private Tare Tau;
-        static private Object Theta;
+        static private object Theta;
 
         static Logging()
         {
             Tau = new Tare();
-            Theta = new Object();
+            Theta = new object();
         }
 
         static public void Add(Gram G)
@@ -38,7 +39,7 @@ namespace Dysnomia.Domain.World
             new Task(() => { lock (Theta) foreach (Gram G in Tau) G(A); }).Start();
         }
 
-        static public void Log(String From, String Data, short Priority = 6)
+        static public void Log(string From, string Data, short Priority = 6)
         {
             byte[] A = Encoding.Default.GetBytes(From);
             byte[] B = Encoding.Default.GetBytes(Data);

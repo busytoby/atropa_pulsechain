@@ -1,6 +1,6 @@
 ﻿#pragma warning disable CS8981
 
-using Dysnomia.Domain.World;
+using Dysnomia.Lib;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
