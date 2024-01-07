@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Dysnomia.Domain;
-using static Dysnomia.Domain.Tare;
+using static Dysnomia.Lib.Tare;
 
 namespace Dysnomia.Lib
 {

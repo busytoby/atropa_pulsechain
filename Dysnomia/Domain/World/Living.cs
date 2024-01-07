@@ -6,10 +6,10 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Dysnomia.Domain;
-using static Dysnomia.Domain.Tare;
+using Dysnomia.Lib;
+using static Dysnomia.Lib.Tare;
 
-namespace Dysnomia.Domain
+namespace Dysnomia.Domain.World
 {
     public class Living
     {
@@ -28,7 +28,7 @@ namespace Dysnomia.Domain
             Sigma = new Tare();
         }
 
-        public Living(活 O) 
+        public Living(活 O)
         {
             In = new ConcurrentQueue<MSG>();
             Out = new ConcurrentQueue<MSG>();
@@ -45,6 +45,6 @@ namespace Dysnomia.Domain
             Omicron.Start();
         }
 
-        public bool Alive() { return (Omicron != null && Omicron.IsAlive); }
+        public bool Alive() { return Omicron != null && Omicron.IsAlive; }
     }
 }

@@ -1,12 +1,12 @@
 
 using Apparition.Retaliation;
-using Dysnomia.Domain;
+using Dysnomia.Lib;
 using System.Collections.Concurrent;
 using System.Numerics;
 using System.Text;
 using System.Windows;
 using Windows.Foundation.Diagnostics;
-using static Dysnomia.Domain.Tare;
+using static Dysnomia.Lib.Tare;
 
 namespace Dysnomia
 {

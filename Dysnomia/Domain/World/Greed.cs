@@ -14,7 +14,7 @@ using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using static Dysnomia.Domain.Tare;
+using static Dysnomia.Lib.Tare;
 
 namespace Dysnomia.Domain.World
 {

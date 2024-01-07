@@ -1,5 +1,5 @@
-﻿using static Dysnomia.Domain.Tare;
-namespace Dysnomia.Domain
+﻿using static Dysnomia.Lib.Tare;
+namespace Dysnomia.Lib
 {
     public class Tare : List<Gram>
     {
@@ -20,7 +20,7 @@ namespace Dysnomia.Domain
                 TimeStamp = DateTime.Now;
             }
 
-            public MSG(byte[] from, byte[] data, short priority) : this(from, null, data, priority){}
+            public MSG(byte[] from, byte[] data, short priority) : this(from, null, data, priority) { }
         }
 
         public delegate void Gram(MSG A);
