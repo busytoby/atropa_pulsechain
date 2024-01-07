@@ -10,8 +10,8 @@ namespace Pulse {
 
 	static void Main(string[] args) {
 	    Logging.Add(Input);
-	    Output = Beta.Oracle.ProcessString;
-	    Beta.Fi.Listen(5555);
+	    Output = Controller.Oracle.ProcessString;
+	    Controller.Fi.Listen(5555);
 
 	    string? consoleinput;
 	    while((consoleinput = Console.ReadLine()) != null)
