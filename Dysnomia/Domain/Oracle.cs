@@ -137,7 +137,6 @@ namespace Dysnomia.Domain
 
             BigInteger Iota, Omicron;
             byte[]? Lambda;
-            Serialization? Nu = null;
             String Xi;
             Tare.MSG? Pi;
 
