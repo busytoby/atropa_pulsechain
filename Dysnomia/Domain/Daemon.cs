@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain.World;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Domain
 {
-    abstract public class Daemon : ConcurrentQueue<byte[]>
+    abstract public class Daemon : Serialization
     {
         static public string Name = "Daemon";
         static public string Description = "Not Set Description";
