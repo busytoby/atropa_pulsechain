@@ -1,1 +1,30 @@
 come to irc.debian.org #atropa if you want to chat
+
+Project Layout:
+Apparition - WPF Display Class/DLL, Currently offers a XAML based terminal style text input for entering commands like "help"
+  - Demo
+    - Retaliation - The terminal style input window
+
+Dysnomia - Model-Tare-Controller Framework DLL
+  - Controller.cs - Container Class For Static Class Accessors
+  - Domain\
+    - Fi.cs - Server Networking Code
+    - Oracle.cs - VM Central Processing Core
+    - bin\ - Command files in this folder contain their own help Descriptions & can be executed from the terminal
+    - World\
+      - Greed.cs - Client Networking Code
+      - Living.cs - Object Threading Code
+  - Lib
+    - Buffer.cs  - Encryption Buffers
+    - Command.cs - Command Operations Handler Daemon For Files In \Domain\bin
+    - Daemon.cs - Abstract
+    - ExtensionMethods.cs - C# Standard
+    - Logging.cs - Static Logging Handler
+    - Math.cs - Math Using Motzkin's Prime
+    - Serialization.cs - Serialization Class That Daemons Inherit
+    - Tare.cs - Subscribeable Message Handler
+  - Model - Encryption Objects
+
+linux - Demo executeable project demo for using Dysnomia without Apparition
+
+Pulse - Demo executeable project for using Dysnomia with Apparition
