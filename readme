@@ -14,7 +14,7 @@ Dysnomia - Model-Tare-Controller Framework DLL
     - World\
       - Greed.cs - Client Networking Code
       - Living.cs - Object Threading Code
-  - Lib
+  - Lib\
     - Buffer.cs  - Encryption Buffers
     - Command.cs - Command Operations Handler Daemon For Files In \Domain\bin
     - Daemon.cs - Abstract
@@ -23,7 +23,7 @@ Dysnomia - Model-Tare-Controller Framework DLL
     - Math.cs - Math Using Motzkin's Prime
     - Serialization.cs - Serialization Class That Daemons Inherit
     - Tare.cs - Subscribeable Message Handler
-  - Model - Encryption Objects
+  - Model\ - Encryption Objects
 
 linux - Demo executeable project demo for using Dysnomia without Apparition
 
