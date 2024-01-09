@@ -86,7 +86,7 @@ namespace Dysnomia.Lib
             Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
         }
 
-        private void Pi()
+        public void Pi()
         {
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");

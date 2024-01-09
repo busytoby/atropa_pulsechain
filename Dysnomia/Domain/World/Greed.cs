@@ -188,6 +188,8 @@ namespace Dysnomia.Domain.World
                     Psi = new Lib.Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
                     Avail(Rho.Signal);
                     Form(Rho.Channel);
+                    Psi.Pi();
+                    Psi.Rho();
                     if (Nu != null) throw new Exception("Non Null Nu");
                     Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
                     HandshakeState = 0x06;

@@ -273,6 +273,8 @@ namespace Dysnomia.Domain
                                 Client.Psi.Beta(BetaCode, true);
                                 if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
                                 Controller.Fi.Psi[ClientId].Nu?.Serialize(OpCode, Client.Psi.Bytes);
+                                Client.Psi.Pi();
+                                Client.Psi.Rho();
                                 break;
                             default:
                                 throw new Exception("Not Implemented");
