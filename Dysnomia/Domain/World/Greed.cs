@@ -225,7 +225,8 @@ namespace Dysnomia.Domain.World
                 Controller.Fi.Psi.TryRemove(ClientId, out Beta);
                 NetworkStream Iota = Mu.GetStream();
                 try {
-                    Iota.Write(Encoding.Default.GetBytes("\r\nPre-Alpha Chatlog Milestone Test Client Available At https://github.com/busytoby/atropa_pulsechain\r\n"));
+                    Iota.Write(Encoding.Default.GetBytes(String.Format("\r\n\r\n\r\n\r\n{0}\r\n", DateTime.Now.ToDysnomia())));
+                    Iota.Write(Encoding.Default.GetBytes("Pre-Alpha Chatlog Milestone Test Client Available At https://github.com/busytoby/atropa_pulsechain\r\n"));
                     Iota.Close();
                 } catch (Exception E) { }
             } catch (Exception E) { }
