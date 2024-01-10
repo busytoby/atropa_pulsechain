@@ -10,7 +10,7 @@ namespace Dysnomia.Lib
     {
         public static readonly long Zero = 638403877000000000;
         public static readonly long TicksPerHour = TimeSpan.TicksPerDay / 34;
-        public static readonly long TicksPerMinute = TimeSpan.TicksPerHour / 100;
+        public static readonly long TicksPerMinute = TicksPerHour / 100;
 
         public int Day { get; }
         public int Hour { get; }
