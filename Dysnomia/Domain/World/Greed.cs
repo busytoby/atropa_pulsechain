@@ -354,7 +354,7 @@ namespace Dysnomia.Domain.World
                         else
                         {
                             Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
-                            //Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
+                            Output("Fi", "Reset", new byte[] { 0x06 }, 1);
                             Rho = new Fa();
                             stopwatch.Reset();
                         }
