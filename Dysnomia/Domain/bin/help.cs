@@ -24,11 +24,11 @@ namespace Dysnomia.Domain.bin
 
             if (Args.Length == 0)
             {
-                Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Help Commands Available:"), 6));
+                Output(From, Encoding.Default.GetBytes("Help Commands Available:"), 6);
                 String CmdList = "";
                 foreach (Type T in GetCommands())
                     CmdList += T.Name + " ";
-                Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(CmdList), 6));
+                Output(From, Encoding.Default.GetBytes(CmdList), 6);
             } else
             {
                 foreach(String A in Args)
@@ -41,12 +41,12 @@ namespace Dysnomia.Domain.bin
                             if (DF == null) throw new Exception("No Description");
                             object? DFV = DF.GetValue(null);
                             if (DFV == null) throw new Exception("Null Description");
-                            Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes(A + ": " + DFV.ToString()), 6));
+                            Output(From, Encoding.Default.GetBytes(A + ": " + DFV.ToString()), 6);
                             found = true;
                             break;
                         }
                     if(!found)
-                        Theta.Out.Enqueue(new Tare.MSG(From, Encoding.Default.GetBytes("Help For " + A + " Not Found"), 6));
+                        Output(From, Encoding.Default.GetBytes("Help For " + A + " Not Found"), 6);
                 }
             }
         }

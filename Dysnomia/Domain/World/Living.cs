@@ -14,8 +14,8 @@ namespace Dysnomia.Domain.World
     public class Living
     {
         public delegate void 活();
-        public ConcurrentQueue<MSG> In;
-        public ConcurrentQueue<MSG> Out;
+        public ConcurrentQueue<Tare> In;
+        public ConcurrentQueue<Tare> Out;
         public Tare Sigma;
         public Mutex Tau = new Mutex();
         public 活? Omega;
@@ -23,15 +23,15 @@ namespace Dysnomia.Domain.World
 
         public Living()
         {
-            In = new ConcurrentQueue<MSG>();
-            Out = new ConcurrentQueue<MSG>();
+            In = new ConcurrentQueue<Tare>();
+            Out = new ConcurrentQueue<Tare>();
             Sigma = new Tare();
         }
 
         public Living(活 O)
         {
-            In = new ConcurrentQueue<MSG>();
-            Out = new ConcurrentQueue<MSG>();
+            In = new ConcurrentQueue<Tare>();
+            Out = new ConcurrentQueue<Tare>();
             Sigma = new Tare();
             Omega = O;
             Omicron = new Thread(new ThreadStart(Omega));

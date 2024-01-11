@@ -19,8 +19,8 @@ namespace Dysnomia.Domain.bin
         {
             if (Theta == null) throw new Exception("Null Command Theta");
             byte[] From = Encoding.Default.GetBytes(Name);
-            Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0x03 }, 6));
-            Theta.In.Enqueue(new Tare.MSG(From, new byte[] { 0x00 }, 6));
+            Input(From, new byte[] { 0x03 }, 6);
+            Input(From, new byte[] { 0x00 }, 6);
         }
     }
 }

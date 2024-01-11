@@ -16,10 +16,10 @@ namespace Dysnomia.Lib
             Enqueue(Bytes);
         }
 
-        public void Serialize(byte[] OpCode, BigInteger Beta)
-        {
-            Serialize(OpCode, Beta.ToByteArray());
-        }
+        public void Serialize(byte[] OpCode, BigInteger Beta) { Serialize(OpCode, Beta.ToByteArray()); }
+
+        public BigInteger Next() { return new BigInteger(NextBytes()); }
+        public string NextString() { return Encoding.Default.GetString(NextBytes()); }
 
         public byte[] NextBytes()
         {
@@ -30,9 +30,15 @@ namespace Dysnomia.Lib
             return Beta;
         }
 
-        public BigInteger Next()
+        public byte OpCode()
         {
-            return new BigInteger(NextBytes());
+            if (Count == 0) throw new Exception("No Next");
+            byte[]? Beta;
+            TryPeek(out Beta);
+            if (Beta == null || Beta.Length != 1) throw new Exception("Invalid OpCode");
+            TryDequeue(out Beta);
+            if (Beta == null) throw new Exception("Invalid OpCode");
+            return Beta[0];
         }
     }
 }

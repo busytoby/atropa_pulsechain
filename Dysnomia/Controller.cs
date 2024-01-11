@@ -18,7 +18,7 @@ namespace Dysnomia
         {
             Oracle = new Oracle();
             Fi = new Fi();
-            Fi.Rho.Add(Oracle.Fi);
+            Fi.Rho.Subscribers.Add(Oracle.Fi);
             //Serialization = new Serialization();
         }
     }

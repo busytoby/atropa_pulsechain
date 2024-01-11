@@ -30,12 +30,14 @@ namespace Dysnomia.Domain
             Reset();
         }
 
-        public void Fi(Tare.MSG A)
+        public Tare? Fi(Tare M)
         {
-            BigInteger ClientId = new BigInteger(A.From);
+            byte[] ClientIdBytes = M.NextBytes();
+            BigInteger ClientId = new BigInteger(ClientIdBytes);
             if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
-            Enqueue(A.Data);
-            Enqueue(A.From);
+            Enqueue(M.NextBytes());
+            Enqueue(ClientIdBytes);
+            return null;
         }
 
         public void ProcessString(String A)
@@ -139,7 +141,7 @@ namespace Dysnomia.Domain
             BigInteger Iota, Omicron;
             byte[]? Lambda;
             String Xi;
-            Tare.MSG? Pi;
+            Tare? Pi;
 
             BigInteger ClientId, ClientIdCheck;
             Greed Client;
@@ -208,7 +210,13 @@ namespace Dysnomia.Domain
                                     while (command.Theta.Alive()) Thread.Sleep(100);
                                     while (command.Theta.In.Count > 0)
                                         if (command.Theta.In.TryDequeue(out Pi))
-                                            Enqueue(Pi.Data);
+                                        {
+                                            byte[] From = Pi.NextBytes();
+                                            byte[] Data = Pi.NextBytes();
+                                            byte[] Priority = Pi.NextBytes();
+                                            if (Pi.Count > 0) throw new Exception("Bad Command Input");
+                                            Enqueue(Data);
+                                        }
                                     while (command.Theta.Out.Count > 0)
                                         if (command.Theta.Out.TryDequeue(out Pi))
                                             Logging.Log(Pi);

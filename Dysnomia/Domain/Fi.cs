@@ -72,7 +72,7 @@ namespace Dysnomia.Domain
             return false;
         }
 
-        private bool ValidateMSG(Tare.MSG M)
+        private bool ValidateTare(Tare M)
         {
             // not implemented
             return true;
@@ -84,15 +84,17 @@ namespace Dysnomia.Domain
             Greed X = Psi[ClientId];
             if (X == null) throw new Exception("Null Greed");
             if (X.Theta == null) throw new Exception("Null Theta");
-            X.Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
-            X.Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Xi"), ClientId.ToByteArray(), 1));
+            X.Input("Fi", "Xi", ClientId.ToByteArray(), 1);
+            X.Output("Fi", "Xi", ClientId.ToByteArray(), 1);
         }
 
         private void Push(byte[] From, byte[] Data)
         {
             try
             {
-                foreach (Tare.Gram G in Rho) G(new Tare.MSG(From, Data, 1));
+                Tare M = new Tare();
+                M.Enqueue(From, Data, 1);
+                foreach (Tare.Gram G in Rho.Subscribers) G(M);
             }
             catch (Exception e)
             {
@@ -105,7 +107,7 @@ namespace Dysnomia.Domain
         {
             Greed? Client;
             BigInteger ClientId = Math.Random();
-            Tare.MSG? Lambda;
+            Tare? Lambda;
             while(Psi.ContainsKey(ClientId)) ClientId = Math.Random();
 
             Client = new Greed(Beta);
@@ -136,22 +138,30 @@ namespace Dysnomia.Domain
                     while (Client.Theta.In.Count > 0)
                     {
                         if (!Client.Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        String Subject = (Lambda.Subject == null) ? "" : Encoding.Default.GetString(Lambda.Subject);
+                        String From = Lambda.NextString();
+                        String Subject = Lambda.NextString();
+                        byte[] Data = Lambda.NextBytes();
+                        byte[] Priority = Lambda.NextBytes();
 
-                        if (Lambda.Data[0] == 0x07)
+                        if (Data[0] == 0x07)
                         {
                             Logging.Log("Fi", "Handshake OK", 6);
-                            Push(ClientId.ToByteArray(), Lambda.Data);
+                            Push(ClientId.ToByteArray(), Data);
                         }
+
                         else throw new Exception("Unknown OpCode");
                     }
 
                     while (Client.Theta.Out.Count > 0)
                     {
                         if (!Client.Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        if (Lambda != null && ValidateMSG(Lambda))
+                        if (Lambda != null && ValidateTare(Lambda))
                         {
-                            Iota.Write(Lambda.Data);
+                            String From = Lambda.NextString();
+                            String Subject = Lambda.NextString();
+                            byte[] Data = Lambda.NextBytes();
+                            byte[] Priority = Lambda.NextBytes();
+                            Iota.Write(Data);
                             Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
                         }
                     }

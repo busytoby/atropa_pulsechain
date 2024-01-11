@@ -83,14 +83,14 @@ namespace Dysnomia.Domain.World
         {
             if (Theta == null) throw new Exception("Null Theta");
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1));
-            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Subject), Data, 1));
+            Output("Fi", Subject, Data, 1);
         }
 
         private void Handshake(String Subject, BigInteger Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Subject, Data, 1));
-            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes(Subject), Data.ToByteArray(), 1));
+            Output("Fi", Subject, Data.ToByteArray(), 1);
         }
 
         private void NextHandshake(ref BigInteger Beta)
@@ -204,8 +204,8 @@ namespace Dysnomia.Domain.World
             if (Psi == null) throw new Exception("Null Psi");
             if (Theta == null) throw new Exception("Null Theta");
             Psi.Alpha(Signal);
-            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), new byte[] { 0x08 }, 1));
-            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("ALPHA"), Signal.ToByteArray(), 1));
+            Input("Fi", "ALPHA", new byte[] { 0x08 }, 1);
+            Input("Fi", "ALPHA Signal", Signal.ToByteArray(), 1);
         }
 
         public void Form(BigInteger Channel)
@@ -214,8 +214,8 @@ namespace Dysnomia.Domain.World
             if (Theta == null) throw new Exception("Null Theta");
             Psi.Beta(Channel.ToByteArray(), false);
             if (Psi.Bytes == null) throw new Exception("Encoding Failure");
-            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), new byte[] { 0x09 }, 1));
-            Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("BETA"), Psi.Bytes, 1));
+            Input("Fi", "BETA", new byte[] { 0x09 }, 1);
+            Input("Fi", "BETA Psi", Psi.Bytes, 1);
         }
 
         public void Disconnect()
@@ -225,7 +225,7 @@ namespace Dysnomia.Domain.World
                 Controller.Fi.Psi.TryRemove(ClientId, out Beta);
                 NetworkStream Iota = Mu.GetStream();
                 try {
-                    Iota.Write(Encoding.Default.GetBytes(String.Format("\r\n\r\n\r\n\r\n{0}\r\n", DateTime.Now.ToDysnomia())));
+                    Iota.Write(Encoding.Default.GetBytes(String.Format("\r\n\r\n\r\n\r\n{0}\r\n", DysnomiaTime.Now)));
                     Iota.Write(Encoding.Default.GetBytes("Pre-Alpha Chatlog Milestone Test Client Available At https://github.com/busytoby/atropa_pulsechain\r\n"));
                     Iota.Close();
                 } catch (Exception E) { }
@@ -249,7 +249,7 @@ namespace Dysnomia.Domain.World
             short Resets = 0;
 
             Span<Byte> Omicron = new Span<Byte>(bytes);
-            MSG? Lambda;
+            Tare? Lambda;
 
             while (Mu.Connected)
             {
@@ -258,32 +258,46 @@ namespace Dysnomia.Domain.World
                     stopwatch.Start();
                     while (Theta.In.Count > 0)
                     {
+                        string From, Subject;
+                        byte[] Data, Priority;
                         if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        String Subject = (Lambda.Subject == null)?"":Encoding.Default.GetString(Lambda.Subject);
+                        From = Lambda.NextString();
+                        Subject = Lambda.NextString();
+                        Data = Lambda.NextBytes();
+                        Priority = Lambda.NextBytes();
                         if (Cone && Subject == "Xi")
                         {
-                            BigInteger Delta = new BigInteger(Lambda.Data);
+                            BigInteger Delta = new BigInteger(Data);
                             ClientId = Delta;
                             NextHandshake(ref Delta);
                             stopwatch.Reset();
                         }
+
                         else if (Cone) throw new Exception("Cone Should No Longer Be Running In Greed");
-                        else if(Subject == "ALPHA" && Lambda.Data.Length == 1 && Lambda.Data[0] == 0x08)
+                        else if(Subject == "ALPHA" && Data.Length == 1 && Data[0] == 0x08)
                         {
                             if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                            BigInteger Delta = new BigInteger(Lambda.Data);
+                            From = Lambda.NextString();
+                            Subject = Lambda.NextString();
+                            Data = Lambda.NextBytes();
+                            Priority = Lambda.NextBytes();
+                            BigInteger Delta = new BigInteger(Data);
                             Handshake("Alpha", 0x08);
                             Handshake("Alpha", Delta);
                             if (Nu == null) throw new Exception("Null Nu");
                             Nu.Serialize(new byte[] { 0x08 }, Delta.ToByteArray());
                         }
-                        else if (Subject == "BETA" && Lambda.Data.Length == 1 && Lambda.Data[0] == 0x09)
+                        else if (Subject == "BETA" && Data.Length == 1 && Data[0] == 0x09)
                         {
                             if (Psi == null) throw new Exception("Null Psi");
                             if (Psi.Bytes == null) throw new Exception("Null Psi Bytes");
                             if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                            From = Lambda.NextString();
+                            Subject = Lambda.NextString();
+                            Data = Lambda.NextBytes();
+                            Priority = Lambda.NextBytes();
                             Handshake("Alpha", 0x09);
-                            Handshake("Alpha", Lambda.Data);
+                            Handshake("Alpha", Data);
                             if (Nu == null) throw new Exception("Null Nu");
                             Nu.Serialize(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
                         }
@@ -293,7 +307,11 @@ namespace Dysnomia.Domain.World
                     while (Theta.Out.Count > 0)
                     {
                         if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
-                        Iota.Write(Lambda.Data);
+                        string From = Lambda.NextString();
+                        string Subject = Lambda.NextString();
+                        byte[] Data = Lambda.NextBytes();
+                        byte[] Priority = Lambda.NextBytes();
+                        Iota.Write(Data);
                         Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
                     }
 
@@ -327,16 +345,16 @@ namespace Dysnomia.Domain.World
 
                     if (Cone && HandshakeState == 0x06)
                     {
-                        Theta.In.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("OK"), new byte[] { 0x07 }, 1));
+                        Input("Fi", "OK", new byte[] { 0x07 }, 1);
                         return;
                     }
                     stopwatch.Stop();
-                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 2)
+                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 20000)
                         if (++Resets > 2) throw new Exception("Handshake Timeout");
                         else
                         {
                             Logging.Log("Greed", "Handshake Timeout, Sending Reset", 6);
-                            Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
+                            //Theta.Out.Enqueue(new Tare.MSG(Encoding.Default.GetBytes("Fi"), Encoding.Default.GetBytes("Reset"), new byte[] { 0x06 }, 1));
                             Rho = new Fa();
                             stopwatch.Reset();
                         }

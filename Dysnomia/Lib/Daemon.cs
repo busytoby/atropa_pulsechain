@@ -23,6 +23,48 @@ namespace Dysnomia.Lib
             Theta = null;
         }
 
+        public void Input(byte[] From, byte[] Data, short Priority)
+        {
+            if (Theta == null) throw new Exception("Null Theta");
+            Tare M = new Tare();
+            M.Enqueue(From);
+            M.Enqueue(Data);
+            M.Enqueue(Priority);
+            Theta.In.Enqueue(M);
+        }
+
+        public void Input(String From, String Subject, byte[] Data, short Priority)
+        {
+            if (Theta == null) throw new Exception("Null Theta");
+            Tare M = new Tare();
+            M.Enqueue(From);
+            M.Enqueue(Subject);
+            M.Enqueue(Data);
+            M.Enqueue(Priority);
+            Theta.In.Enqueue(M);
+        }
+
+        public void Output(byte[] From, byte[] Data, short Priority)
+        {
+            if (Theta == null) throw new Exception("Null Theta");
+            Tare M = new Tare();
+            M.Enqueue(From);
+            M.Enqueue(Data);
+            M.Enqueue(Priority);
+            Theta.Out.Enqueue(M);
+        }
+
+        public void Output(String From, String Subject, byte[] Data, short Priority)
+        {
+            if (Theta == null) throw new Exception("Null Theta");
+            Tare M = new Tare();
+            M.Enqueue(From);
+            M.Enqueue(Subject);
+            M.Enqueue(Data);
+            M.Enqueue(Priority);
+            Theta.Out.Enqueue(M);
+        }
+
         protected virtual void Phi()
         {
             throw new Exception("Not Implemented");

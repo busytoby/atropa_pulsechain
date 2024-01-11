@@ -18,6 +18,26 @@ namespace Dysnomia.Lib
          * 6 - msg
          * 7 - error
          */
+        public class MSG
+        {
+            public byte[] From;
+            public byte[]? Subject;
+            public byte[] Data;
+            public short Priority;
+            public DysnomiaTime TimeStamp;
+
+            public MSG(byte[] from, byte[]? subject, byte[] data, short priority)
+            {
+                From = from;
+                TimeStamp = DysnomiaTime.Now;
+                Subject = subject;
+                Data = data;
+                Priority = priority;
+            }
+
+            public MSG(byte[] from, byte[] data, short priority) : this(from, null, data, priority) { }
+        }
+
 
         static private Tare Tau;
         static private object Theta;
@@ -30,20 +50,22 @@ namespace Dysnomia.Lib
 
         static public void Add(Gram G)
         {
-            Tau.Add(G);
+            Tau.Subscribers.Add(G);
         }
 
-        static public void Log(MSG A)
+        static public void Log(Tare A)
         {
-            new Task(() => { lock (Theta) foreach (Gram G in Tau) G(A); }).Start();
+            new Task(() => { foreach (Gram G in Tau.Subscribers) G(A); }).Start();
         }
 
         static public void Log(string From, string Data, short Priority = 6)
         {
-            byte[] A = Encoding.Default.GetBytes(From);
-            byte[] B = Encoding.Default.GetBytes(Data);
-            MSG C = new MSG(A, B, Priority);
-            new Task(() => { lock (Theta) foreach (Gram G in Tau) G(C); }).Start();
+            lock (Theta)
+            {
+                Tau.Enqueue(From, Data, Priority);
+                foreach (Gram G in Tau.Subscribers) G(Tau);
+                Tau.Clear();
+            }
         }
     }
 }

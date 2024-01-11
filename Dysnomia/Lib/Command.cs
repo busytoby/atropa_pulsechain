@@ -44,7 +44,7 @@ namespace Dysnomia.Lib
                 }
 
             if (EXE == null || Theta == null)
-                Logging.Log(new Tare.MSG(From, Encoding.Default.GetBytes(Name + ": Not Found"), 6));
+                Logging.Log(Encoding.Default.GetString(From), Name + ": Not Found", 6);
         }
 
         private void Tokenize(string Eta)
