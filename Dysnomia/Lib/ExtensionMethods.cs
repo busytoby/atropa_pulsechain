@@ -12,9 +12,9 @@ namespace ExtensionMethods
 {
     public static class ExtensionMethods
     {
-        public static Serialization OpenSerialization(this Fa Rho)
+        public static Conjunction OpenSerialization(this Fa Rho)
         {
-            Serialization Nu = new Serialization();
+            Conjunction Nu = new Conjunction();
             Nu.Enqueue(new byte[] { 0x07 });
             Nu.Enqueue(Rho.Ring.ToByteArray());
             Nu.Enqueue(Rho.Coordinate.ToByteArray());

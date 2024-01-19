@@ -5,7 +5,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Dysnomia.Lib
 {
-    public class Tare : Serialization
+    public class Tare : Conjunction
     {
         public List<Gram> Subscribers;
 

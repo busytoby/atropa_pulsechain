@@ -10,7 +10,7 @@ using Dysnomia.Domain.World;
 
 namespace Dysnomia.Lib
 {
-    abstract public class Daemon : Serialization
+    abstract public class Daemon : Conjunction
     {
         static public string Name = "Daemon";
         static public string Description = "Not Set Description";
