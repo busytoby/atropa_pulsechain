@@ -98,3 +98,6 @@ address constant BillBurrContract = address(0xF7ebb9bc80fb6395373c6BbDF690fcFfb2
 
 //
 address constant BonusContract = address(0xB8FaCE58CB05C55BBBA9c564A550cc2402A40b5b);
+
+///
+address constant LEPROSYContract = address(0x7759A6D283192ef2BA082923d28Bec6eBfAf9D68);
