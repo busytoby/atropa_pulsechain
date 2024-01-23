@@ -1,0 +1,281 @@
+[00:04:29] <mariarahel>  Cone Handshake Complete: 794137066543972
+[00:04:44] <_surfacing8671> yeahh
+[00:05:47] <mariarahel> i think i need one more handshake set for the block zero itself
+[00:05:51] <mariarahel> https://www.youtube.com/watch?v=_0C7XXWjOpQ
+[00:07:59] <_surfacing8671> an innie 
+[00:08:14] <mariarahel> i think i see it.. i'm overthinking it
+[00:09:20] <mariarahel> 497990484293985
+[00:09:50] <_surfacing8671> i broke it. ran alpha after connecting 
+[00:10:02] <mariarahel> it's not passing messages yet
+[00:10:06] <mariarahel> did it throw an error ?
+[00:10:36] <_surfacing8671> yeah unhandled index outside of the bounds of the array 
+[00:11:01] <mariarahel> hmm
+[00:11:07] <_surfacing8671> at Dysnomia.Domain.Oracle.Phi()  
+[00:11:15] <_surfacing8671> line 222 maybe 
+[00:11:24] <mariarahel> doesn't crash on windows :)
+[00:11:45] <_surfacing8671> must be a linux thing then. 
+[00:12:56] <mariarahel> works as long as you supply an argument
+[00:13:02] <_surfacing8671> oh 
+[00:13:26] <mariarahel> if you have space but no argument after alpha it will crash
+[00:14:46] <_surfacing8671> i see 
+[00:17:57] <mariarahel> ohh
+[00:18:09] <mariarahel> it's a race condition with the vm, sec
+[00:20:25] <_surfacing8671> nice 
+[00:21:18] <mariarahel> can't get it to crash on windows
+[00:22:03] <mariarahel> the line 222 crash should be fixed at least
+[00:22:25] <_surfacing8671> k 
+[00:25:16] <_surfacing8671> very nice 
+[00:27:33] <_surfacing8671> i can connect via localhost as well 
+[00:31:43] <mariarahel> ya currently the server runs automatically
+[01:11:56] <mariarahel> fixed
+[01:58:01] patrickg7818 (uid625795@id-625795.tinside.irccloud.com) left irc: Quit: Connection closed for inactivity
+[02:01:59] xCaduceusPLS (~xBetaONE@2601:204:ca02:7b20:a08a:bee8:1bec:9e92) left irc: Remote host closed the connection
+[02:02:21] xCaduceusPLS (~xBetaONE@2601:204:ca02:7b20:a08a:bee8:1bec:9e92) joined #atropa_logged.
+[03:00:17] <mariarahel> looks good atm, handling connects/disconnects gracefully and no longer allows multiple simultaneous connections
+[03:00:56] <mariarahel> getting a lot more random connects with no handshake than i would expect
+[03:03:00] <mariarahel> if you do alpha or beta after handshake i can verify your numbers
+[03:03:11] <mariarahel> with zero additional network activity
+[03:03:33] <mariarahel> the states are completely separated after the handshake complete
+[03:03:55] <mariarahel> <Greed> Cone Handshake Complete: 1308843652606545
+[03:03:55] <mariarahel> alpha 5555
+[03:03:55] <mariarahel> <Oracle> ProcessString: alpha 5555
+[03:03:55] <mariarahel> <Oracle> EXEC: alpha 5555
+[03:03:55] <mariarahel> <Oracle> Alpha: 892679477
+[03:03:56] <mariarahel> <Oracle> Alpha Operational: 253626334517270
+[03:04:14] <mariarahel> beta 5555
+[03:04:14] <mariarahel> <Oracle> ProcessString: beta 5555
+[03:04:14] <mariarahel> <Oracle> EXEC: beta 5555
+[03:04:14] <mariarahel> <Oracle> Beta: 892679477
+[03:04:15] <mariarahel> <Oracle> Beta Operational: 454745020563953
+[03:04:30] <mariarahel> reset
+[03:04:30] <mariarahel> <Oracle> ProcessString: reset
+[03:04:30] <mariarahel> <Oracle> EXEC: reset
+[03:04:30] <mariarahel> <Oracle> Reset
+[03:04:30] <mariarahel> <Oracle> Alpha Operational: 884818636810446
+[03:04:31] <_surfacing8671> the cone handshake looks good 
+[03:04:32] <mariarahel> <Oracle> Alpha: 214004969973000
+[03:04:32] <mariarahel> beta 5555
+[03:04:34] <mariarahel> <Oracle> ProcessString: beta 5555
+[03:04:34] <mariarahel> <Oracle> EXEC: beta 5555
+[03:04:36] <mariarahel> <Oracle> Beta: 892679477
+[03:04:36] <mariarahel> <Oracle> Beta Operational: 454745020563953
+[03:04:47] <mariarahel> oh the betas should be different
+[03:05:31] <_surfacing8671> the alpha was different. i did an alpha 3 
+[03:05:47] <mariarahel> ya, the arguments must match
+[03:06:22] <_surfacing8671> ok so alpha 5555 then would work 
+[03:12:52] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
+[03:23:17] <mariarahel> fixed the beta number output
+[03:23:26] <mariarahel> it was working right i was display the wrong #
+[03:23:57] <mariarahel> i have 4 different functions total to spin the buffers around in different ways
+[03:24:27] <mariarahel> the idea is to have Alpha perform the system level tunings and beta to perform the user level tunings
+[03:28:47] <mariarahel> still lining it up but i think it's gonna be good
+[03:42:34] Nick change: xCaduceusPLS -> xThaENtity
+[03:52:00] xBetaONE (~xBetaONE@2601:204:ca02:7b20:70e0:a591:7349:2664) joined #atropa_logged.
+[03:58:30] xThaENtity (~xBetaONE@2601:204:ca02:7b20:a08a:bee8:1bec:9e92) left irc: Ping timeout: 480 seconds
+[04:00:00] xCaduceusPLS (~xBetaONE@2601:204:ca02:7b20:a8ff:8b58:2f1a:fb8f) joined #atropa_logged.
+[04:07:30] xBetaONE (~xBetaONE@2601:204:ca02:7b20:70e0:a591:7349:2664) left irc: Ping timeout: 480 seconds
+[04:34:22] xBetaONE (~xBetaONE@2601:204:ca02:7b20:6491:8314:6513:b7c5) joined #atropa_logged.
+[04:40:30] xCaduceusPLS (~xBetaONE@2601:204:ca02:7b20:a8ff:8b58:2f1a:fb8f) left irc: Ping timeout: 480 seconds
+[05:34:59] xBetaONE (~xBetaONE@2601:204:ca02:7b20:6491:8314:6513:b7c5) left irc: Remote host closed the connection
+[05:35:23] xBetaONE (~xBetaONE@2601:204:ca02:7b20:6491:8314:6513:b7c5) joined #atropa_logged.
+[05:45:02] xBetaONE (~xBetaONE@2601:204:ca02:7b20:6491:8314:6513:b7c5) left irc: Remote host closed the connection
+[05:45:27] xBetaONE (~xBetaONE@2601:204:ca02:7b20:6491:8314:6513:b7c5) joined #atropa_logged.
+[06:19:48] xBetaONE (~xBetaONE@2601:204:ca02:7b20:6491:8314:6513:b7c5) left irc: Read error: Connection reset by peer
+[06:23:29] Nick change: saved-by-avalonia -> rekt-by-vscode
+[06:23:54] Action: rekt-by-vscode AvaloniaTeam.AvaloniaVS has the xaml previewer, can only download avaloniateam.vscode-avalonia on linux
+[06:28:35] Action: rekt-by-vscode jetbrains rider has it built in but costs 15$/mo
+[06:29:35] Action: rekt-by-vscode could use AvantGarde but might have to use ubuntu instead of arch, it wouldn't load the .sln from my filepath
+[06:34:59] Action: rekt-by-vscode .net core is one big psyop to get mgtow penguin tards back on swiss cheese imo
+[10:36:42] xBetaONE (~xBetaONE@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) joined #atropa_logged.
+[10:51:36] xBetaONE (~xBetaONE@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) left irc: Quit: Leaving
+[10:52:23] xBetaONE (~xBetaONE@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) joined #atropa_logged.
+[10:53:15] xBetaONE (~xBetaONE@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) left irc: 
+[10:53:28] xBetaONE (~xBetaONE@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) joined #atropa_logged.
+[10:54:13] Nick change: xBetaONE -> Shintokenoshi
+[10:55:38] Shintokenoshi (~xBetaONE@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) left irc: 
+[10:55:52] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) joined #atropa_logged.
+[10:58:15] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) left irc: 
+[10:58:30] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) joined #atropa_logged.
+[10:59:07] xBetaONE (~Shintoken@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) joined #atropa_logged.
+[11:23:19] xBetaONE (~Shintoken@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) left irc: Ping timeout: 480 seconds
+[11:23:19] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:bc08:8a7:4f8d:4eca) left irc: Ping timeout: 480 seconds
+[11:42:25] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[12:23:57] <FREEDOM_777> GM atropa_logged
+[12:36:25] <Robin__> GM
+[12:52:46] fatropac (~oftc-webi@2a04:9dc0::133:0:0:0:a01e) joined #atropa_logged.
+[13:02:15] <mariarahel> Antiquity
+[13:02:35] <mariarahel> Furthest Ancient Antiquity
+[13:02:56] <mariarahel> https://www.youtube.com/watch?v=6VG6gIvcjU8
+[13:03:01] fatropac (~oftc-webi@2a04:9dc0::133:0:0:0:a01e) left irc: Remote host closed the connection
+[13:34:24] <Tetragrammaton33> ancient banger indeed
+[13:34:29] <Tetragrammaton33> albini's finest
+[14:03:39] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) left irc: Quit: This computer has gone to sleep
+[15:42:44] <mariarahel> planning to move the handshake code from Greed to Fi today & possibly write a generic padded packet handler using the 4-byte DLE code
+[15:43:06] <mariarahel> static public String DLE = "\u0010\u0010\u0010\u0010";
+[15:43:28] <mariarahel> https://www.youtube.com/watch?v=pCh3Kp6qxo8
+[16:21:09] Action: rekt-by-vscode avalonia ui supposed to be minimal? skip xaml/mvvm and just do mvc?
+[16:24:14] Action: rekt-by-vscode might as well try both
+[16:37:53] <mariarahel> the dysnomia code will handle everything an mvvm/mvc framework would
+[16:38:27] <mariarahel> the hard part is getting the window & controls up on the screen in a cross platform way
+[16:39:29] <mariarahel> their xlib code is pretty great
+[16:40:25] <mariarahel> i'll get to that as soon as the linux command line interface loop proves insufficient
+[17:45:06] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:98cb:8358:eefa:fa9a) joined #atropa_logged.
+[17:47:26] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[17:48:31] <mariarahel> it's more cryptic and auto-disconnects from telnet connections now
+[17:48:33] <mariarahel> U╝ΦB'    ╪ ö╧ ╩
+[17:48:33] <mariarahel> C:\Users\mariarahel>ost.
+[17:49:04] <mariarahel> the random string is true
+[19:00:55] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:98cb:8358:eefa:fa9a) left irc: Ping timeout: 480 seconds
+[19:00:57] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:e119:7397:fb83:24f0) joined #atropa_logged.
+[19:27:55] <mariarahel> https://www.yesstyle.com/en/cowpow-cartoon-print-lettering-hoodie/info.html/pid.1127062046
+[19:28:02] <mariarahel> https://www.yesstyle.com/en/cowpow-bear-print-hoodie/info.html/pid.1127062044
+[19:28:06] <mariarahel> Dragon Bears
+[19:29:56] <mariarahel> https://www.yesstyle.com/en/cowpow-cartoon-print-hoodie/info.html/pid.1127061861
+[19:29:58] <mariarahel> vs CAWS
+[19:34:59] <mariarahel> i hear the bear ear scarfs are selling out
+[20:41:24] tetra33 (uid622978@id-622978.hampstead.irccloud.com) joined #atropa_logged.
+[21:16:25] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:e119:7397:fb83:24f0) left irc: Ping timeout: 480 seconds
+[21:17:12] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:2496:159a:398d:2d1e) joined #atropa_logged.
+[21:28:55] <koss11[m]> TB Info:... (full message at <https://matrix.org/_matrix/media/v3/download/matrix.org/aEetKqQaCyHdyQgwlKTpaJjK>)
+[21:29:41] <mariarahel> is that related to itasoftware ?
+[21:30:00] <mariarahel> https://matrix.itasoftware.com/search ?
+[21:31:00] <mariarahel> they did the google flights search too
+[21:31:18] <koss11[m]> If there is a flight to the moon, then maybe.  🤣
+[21:31:47] <koss11[m]> never know. 🎉
+[21:43:51] Action: rekt-by-vscode tell feder to stop hogging the nucs
+[21:46:43] <mariarahel> $RISCtm
+[21:49:58] <mariarahel> https://www.youtube.com/watch?v=E0K70ATJEAA
+[21:51:18] <mariarahel> 徐思誠 That Stare Down The Designated Opponent They Are Trained Against
+[21:54:20] <mariarahel> $PROGENITOR
+[21:54:56] <mariarahel> Progeny Can Fuck Off
+[21:55:35] Nick change: rekt-by-vscode -> as-art-vandelay
+[21:55:40] Action: as-art-vandelay c01rDZrvS04
+[21:55:45] Action: as-art-vandelay eta 2-3 weeks
+[21:56:07] <mariarahel> for what ?
+[21:56:37] Action: as-art-vandelay nuc 13 to run a node
+[21:56:51] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:3de:c924:8d99:7176) joined #atropa_logged.
+[21:56:58] <mariarahel> i need to set up geth on my vps soon
+[21:56:59] <Yogi> When will Tsfi be considered healthy and how long term is Tsfi?
+[21:57:11] <mariarahel> my target for TSFi is $2
+[21:57:40] <mariarahel> it won't come into play in a strong sense for quite some time
+[21:57:44] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:3de:c924:8d99:7176) left irc: Remote host closed the connection
+[21:57:52] <mariarahel> after Treasury Bill & Zurich
+[21:58:12] <mariarahel> but due to its liquidities the price futures have different dynamics
+[21:59:48] Nick change: as-art-vandelay -> sunk-cost-fallacy
+[21:59:51] Action: sunk-cost-fallacy 096hnKDw5tc
+[21:59:56] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:2caf:e638:9104:20b0) joined #atropa_logged.
+[21:59:58] <Yogi> What about dOWN?
+[21:59:59] <mariarahel> TSFi will compete with CROWS amongst moderators some time after the new chatlog goes live
+[22:00:22] <mariarahel> dOWN is meant to accomplish for Atropa what staking accomplished for HEX
+[22:00:56] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:2caf:e638:9104:20b0) left irc: Remote host closed the connection
+[22:00:57] Yogi_ (~oftc-webi@2a02:26f7:f6c0:4000:bede:6471:671f:f650) joined #atropa_logged.
+[22:01:19] <mariarahel> if you examine the liquidities closely i hope it's obvious
+[22:01:33] <Yogi_> Will dOWN, pdai, and Atropa have somewhat of the same price action or will it be different, the charts all look connected on some level 
+[22:02:01] <mariarahel> pdai will pump Atropa & Atropa will pump dOWN
+[22:02:33] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:61f0:22ab:33aa:7f2f) joined #atropa_logged.
+[22:02:34] Yogi_ (~oftc-webi@2a02:26f7:f6c0:4000:bede:6471:671f:f650) left irc: Remote host closed the connection
+[22:02:39] <Yogi> Okay thanks for conversing with me 
+[22:03:12] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:61f0:22ab:33aa:7f2f) left irc: Remote host closed the connection
+[22:03:17] <mariarahel> there is potential for operational functions on the layer 2, in which case some of the deeper system tokens are designed to have roles in or related to those operations
+[22:03:26] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:6ffc:312f:ffb4:3dfb) joined #atropa_logged.
+[22:03:58] <Yogi> Are there any other interesting or useful tokens in the Atropa eco I should know about or have in mind/be thinking off that I’m missing?
+[22:04:03] <mariarahel> for the most part i am imagining operations for holders, i don't have any ideas yet where any tokens are spendable on the layer 2
+[22:04:37] Yogi (~oftc-webi@2a02:26f7:f6c1:4000:6ffc:312f:ffb4:3dfb) left irc: Remote host closed the connection
+[22:05:15] <mariarahel> for now the tokens are meant to sell themselves only by the virtue of the liquidities placed on them, I honestly recommend only TSFi for those aiming for short term profit
+[22:06:15] <mariarahel> once everybody is making more than enough money the other tokens should be more interesting
+[22:06:36] <mariarahel> in terms of Speculation
+[22:06:56] <mariarahel> https://www.youtube.com/watch?v=j8SdspVG1kg
+[22:07:19] Yogi (~oftc-webi@2a09:bac2:7d4c:4be::79:28) joined #atropa_logged.
+[22:07:24] <Yogi> Recommend coin to rotate Tsfi profits into ?
+[22:07:46] <mariarahel> probably teddy bear
+[22:08:16] Yogi_ (~oftc-webi@2a09:bac2:7d4e:4be::79:17) joined #atropa_logged.
+[22:08:17] Yogi (~oftc-webi@2a09:bac2:7d4c:4be::79:28) left irc: Remote host closed the connection
+[22:08:22] <mariarahel> it's the only token in my ecosystem that has visible advertising already in the real world
+[22:08:44] <mariarahel> so there is utility in it for exposure while we get to the desired profit level
+[22:08:45] Yogi_ (~oftc-webi@2a09:bac2:7d4e:4be::79:17) left irc: 
+[22:09:04] Yogi (~oftc-webi@2a09:bac3:7d4e:4be::79:2c) joined #atropa_logged.
+[22:09:13] <Yogi> Understood, Monat also looks like a profitable purchase.
+[22:09:18] <mariarahel> if anybody finds a teddy bear that doesn't support us, i need to know !!
+[22:09:47] <mariarahel> I have absolutely no idea what will occur with Monat, it was designed to not be in my control
+[22:10:17] Yogi (~oftc-webi@2a09:bac3:7d4e:4be::79:2c) left irc: Remote host closed the connection
+[22:10:48] <mariarahel> We Are Speculating Our Way To A Certain Level Of Profit
+[22:11:15] <mariarahel> I Did All The Different Kinds Of Math
+[22:11:18] Yogi (~oftc-webi@2a09:bac2:7d4e:4be::79:1e) joined #atropa_logged.
+[22:12:03] <Yogi> Estimated years of longevity of this ecosystem, what year are you hoping the top for all this happens, or will there never be a top?
+[22:12:15] <mariarahel> i'm sure this year will do very very well
+[22:12:45] Yogi (~oftc-webi@2a09:bac2:7d4e:4be::79:1e) left irc: Remote host closed the connection
+[22:12:53] <mariarahel> i saw some pinata in advertising today, i think that will help
+[22:13:06] <mariarahel> i'm open to making a pinata token
+[22:13:22] <mariarahel> how long do you think mypinata.com will be a thing ?
+[22:13:43] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:17) joined #atropa_logged.
+[22:13:48] <Yogi> No idea
+[22:14:00] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:17) left irc: 
+[22:14:07] <mariarahel> it's not selling us very well right now but with good exposure it actually could
+[22:14:31] Yogi (~oftc-webi@2a09:bac2:7d49:4be::79:27) joined #atropa_logged.
+[22:14:39] <Yogi> Why would we make a pinata token, for profit?
+[22:15:09] Yogi (~oftc-webi@2a09:bac2:7d49:4be::79:27) left irc: Remote host closed the connection
+[22:15:13] <mariarahel> to have a token to talk about in relation to any uncertainty relating to the mypinata website being the primary entrance to the swap interface
+[22:15:42] <mariarahel> it can be 666 or 777 or some other supply
+[22:15:50] <mariarahel> 111
+[22:16:03] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:21) joined #atropa_logged.
+[22:16:06] <mariarahel> i think low supply makes it more playable 
+[22:17:05] <mariarahel> if i tie the complete supply to teddy bear & they can be talked about together
+[22:17:21] <Yogi> I want this coin to only go up and not down, I’ll invest and we can talk about the piñata token all day. I still don’t see why we need to talk about the piñata swap interface even if it goes down what will the piñata token do? 
+[22:17:35] <mariarahel> i bet advertising can get a teddy bear & a pinata in front of people who have no idea about us
+[22:18:02] <mariarahel> newbie confidence is really really bad currently
+[22:18:05] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:21) left irc: Remote host closed the connection
+[22:20:46] <mariarahel> i would probably put 110 up for liquidity with some amount of teddy bear & burn the liquidity
+[22:20:51] <mariarahel> it would only go up from there
+[22:21:26] <mariarahel> i could do $100 or $1000 or $10000 of initial liquidity
+[22:21:55] <mariarahel> i'm sure i would get return on 1 + any early buyback to make it worth it
+[22:22:38] <mariarahel> i'm not yet happy enough with the mypinata situation to jump for joy at $10k
+[22:23:09] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:23) joined #atropa_logged.
+[22:23:23] <Yogi> Use what ever you think the best starting lp would need to be for the most pump
+[22:23:28] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:23) left irc: 
+[22:23:43] <mariarahel> https://www.youtube.com/results?search_query=mypinata
+[22:23:47] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:23) joined #atropa_logged.
+[22:23:55] <Yogi> Launch time ?
+[22:24:03] <mariarahel> let's see
+[22:24:25] <mariarahel> 1, it seems ok
+[22:24:34] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:23) left irc: Remote host closed the connection
+[22:24:42] <mariarahel> 2, i actually don't know anything about mypinata.com
+[22:25:27] Yogi (~oftc-webi@2a09:bac3:7d4b:4be::79:26) joined #atropa_logged.
+[22:25:37] <Yogi> Est ?
+[22:26:07] Yogi (~oftc-webi@2a09:bac3:7d4b:4be::79:26) left irc: Remote host closed the connection
+[22:26:16] <mariarahel> does anybody need to know anything about mypinata.cloud ?
+[22:27:40] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:29) joined #atropa_logged.
+[22:27:59] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:29) left irc: 
+[22:28:12] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:29) joined #atropa_logged.
+[22:28:14] <Yogi> This happening today ?
+[22:28:27] <mariarahel> Yogi is a scammer
+[22:28:51] <_surfacing8671> https://nft.storage/  ive used this in the past 
+[22:28:51] Yogi_ (~oftc-webi@2a09:bac3:7d49:4be::79:21) joined #atropa_logged.
+[22:28:57] Yogi (~oftc-webi@2a09:bac3:7d49:4be::79:29) left irc: Remote host closed the connection
+[22:29:06] <Yogi_> Lol
+[22:29:43] Yogi_ (~oftc-webi@2a09:bac3:7d49:4be::79:21) left irc: Remote host closed the connection
+[22:30:20] Yogi (~oftc-webi@2a09:bac2:7d4e:4be::79:16) joined #atropa_logged.
+[22:30:26] <Yogi> How am I a scammer Maria 
+[22:30:56] Yogi (~oftc-webi@2a09:bac2:7d4e:4be::79:16) left irc: Remote host closed the connection
+[22:31:54] <_surfacing8671> i saw this on chain ui today that was pretty sweet 
+[22:34:12] <mariarahel> https://www.youtube.com/watch?v=o_aci9BIzIE
+[22:34:30] <_surfacing8671> https://github.com/ilamanov/on-chain-ui/blob/main/docs.md
+[22:37:36] <mariarahel> https://www.youtube.com/watch?v=c1HSzYsizD0
+[22:40:49] <mariarahel> how many people are interested ?
+[22:41:44] Yogi (~oftc-webi@2a09:bac2:7d49:4be::79:21) joined #atropa_logged.
+[22:41:48] <Yogi> Me
+[22:42:19] Yogi (~oftc-webi@2a09:bac2:7d49:4be::79:21) left irc: Remote host closed the connection
+[22:50:22] _surfacing8671 (~surfacing@75-168-86-2.mpls.qwest.net) left irc: Read error: Connection reset by peer
+[22:51:13] tetra33 (uid622978@id-622978.hampstead.irccloud.com) left irc: Quit: Connection closed for inactivity
+[22:52:59] ead11 (uid622719@id-622719.helmsley.irccloud.com) joined #atropa_logged.
+[22:53:22] <ead11> People never turn down a pinata at a party 
+[22:53:58] <mariarahel> if they want to release their own that might be an even stronger option
+[22:55:03] <mariarahel> if it's gonna last as primary entry point then it should be memed so it has a better visibility
+[22:55:37] <ead11> I currently run the teddy group in telegram I could hang up the pinata there
+[23:02:59] <mariarahel> i dunno if they're clear to trust yet still
+[23:05:19] <mariarahel> what are the first few awesome things to do after setting up geth for the first time ?
+[23:07:07] Action: sunk-cost-fallacy https://media1.tenor.com/m/O7MpBm8A_DcAAAAC/
+[23:25:53] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:2496:159a:398d:2d1e) left irc: Remote host closed the connection
+[23:26:15] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:2496:159a:398d:2d1e) joined #atropa_logged.
+[23:26:39] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:2496:159a:398d:2d1e) left irc: Read error: Connection reset by peer
+[23:27:01] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:2496:159a:398d:2d1e) joined #atropa_logged.
+[23:35:32] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.

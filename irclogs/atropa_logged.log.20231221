@@ -1,0 +1,590 @@
+[00:25:49] livinglikemike (~livinglik@185.187.168.239) joined #atropa_logged.
+[00:28:00] emotional-intelligence (~oftc-webi@208.78.41.139) joined #atropa_logged.
+[00:28:07] emotional-intelligence (~oftc-webi@208.78.41.139) left irc: 
+[00:32:43] <livinglikemike> Oh, Maria, Maria
+[00:36:08] livinglikemike (~livinglik@185.187.168.239) left #atropa_logged.
+[01:04:25] <mariarahel> magnesium glycinate tastes like awful
+[01:05:04] <mariarahel> only 3/4 tsp, not 4tblsp
+[01:06:23] <mariarahel> https://www.youtube.com/shorts/ikMekr2Vo8w
+[01:06:26] <mariarahel> I just heard of that one
+[01:07:18] <mariarahel> https://www.youtube.com/watch?v=4BjSh5D7hjI
+[01:10:07] <mariarahel> Boron & Magnesium Are Perpendicular
+[01:11:49] _surfacing8671 (~surfacing@75-168-86-2.mpls.qwest.net) joined #atropa_logged.
+[01:13:48] <_surfacing8671> https://library.dedaub.com/decompile?md5=04e7d8c3e00a748acb0ca453561f78fb
+[01:24:46] <mariarahel> anybody wanna earn $100 bounty ?
+[01:25:01] <ogwebchef888> LFG
+[01:26:42] <_surfacing8671> sure
+[01:27:40] <mariarahel> livinglikemike's request is a little harder than just verifying the contract as having zero or only a standard normal-form mint function
+[01:28:05] <mariarahel> I think he wants the contract source codes verified on one of the scan systems
+[01:28:30] <_surfacing8671> correct  
+[01:28:58] <_surfacing8671> if it isnt verified almost right away it can be really hard to do so and can be very annoying  to get it done 
+[01:29:14] <mariarahel> that is also my understanding
+[01:30:04] <_surfacing8671> easiest way is to it with hardhat as you are deploying it but i mean it can be done just idk really hard to do so 
+[01:30:15] <mariarahel> My idea more addresses heuristically verifying across everything
+[01:30:57] <mariarahel> Someone should write an AV like analyser for contract binaries
+[01:31:44] <_surfacing8671> there are some like sourcify i think. that finds similar contracts and assumes them. well the explorer or scanner does this as well. 
+[01:33:23] <mariarahel> i'm sure with a high enough bounty someone can develop an acceptable solution
+[01:34:02] <_surfacing8671> yeah sourcify is close but user needs to upload contract to ispf or something 
+[01:35:42] <_surfacing8671> a simple not great solution would be to test against common abis say that it is at least this contract lol 
+[01:41:00] <_surfacing8671> https://library.dedaub.com/pulsechain/address/0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d/overview
+[01:41:11] <_surfacing8671> here try that out pretty much verified 
+[01:42:04] <_surfacing8671> you can even simulate the transaction 
+[01:42:22] <ogwebchef888> Nice
+[01:42:37] <ogwebchef888> The one im working on hasnt verified yet
+[01:42:40] <mariarahel> I don't think many people have looked at how dOWN supports compound investment over Atropa
+[01:43:44] <mariarahel> it might still be too early for that
+[01:43:51] <_surfacing8671> i havent looked at that token to much 
+[01:44:30] <mariarahel> I think we will see it become a profit leader around when Atropa hits 10-15 cents
+[01:50:32] <mariarahel> If you want to buy into being an operator of the system, start by converting Atropa to dOWN
+[01:52:04] <mariarahel> It is still very very early to buy into that
+[01:52:34] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
+[01:54:55] <mariarahel> I think almost 80% is in liquidity
+[01:57:52] <_surfacing8671> that is so much it is an older token 
+[01:59:42] <Tetragrammaton33> production is nearing
+[02:00:46] <mariarahel> april fools day maybe
+[02:11:27] <mariarahel> 4tblsp of magnesium glycinate over 12 hours might be safe
+[02:12:02] <mariarahel> the bulk bag says 4/5tsp up to twice per day
+[02:13:06] <mariarahel> maybe open a magnesium clinic when teddy bear hits 1billion
+[02:13:11] #atropa_logged: mode change '-o mariarahel' by ChanServ!services@services.oftc.net
+[02:13:12] #atropa_logged: mode change '+o mariarahel' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[02:13:28] ironclad (uid623023@id-623023.hampstead.irccloud.com) left irc: Quit: Connection closed for inactivity
+[02:13:48] <ogwebchef888> https://library.dedaub.com/pulsechain/address/0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d/read good one @_surfacing8671
+[02:14:40] <ogwebchef888> Getting flattened source code in full is tricky as hell, json verification using that abi available not enough either 
+[02:14:44] #atropa_logged: mode change '+v MyIrcBot' by ChanServ!services@services.oftc.net
+[02:14:44] <_surfacing8671> i honestly think those are new features 
+[02:15:02] MyIrcBot kicked from #atropa_logged by ogwebchef888: MyIrcBot
+[02:15:12] <_surfacing8671> yeah its almost impossible 
+[02:15:40] #atropa_logged: mode change '+v _surfacing8671' by ChanServ!services@services.oftc.net
+[02:16:43] <mariarahel> ChanServ should not +v, that's weird
+[02:17:15] <_surfacing8671> its ok looks like my guy is going supersonic 
+[02:17:38] <mariarahel> yes ogwebchef888
+[02:20:20] <mariarahel> I hope to have the irc replaced by april fools day
+[02:20:43] <_surfacing8671> that would be sweet 
+[02:20:54] <mariarahel> it's possible
+[02:22:06] <_surfacing8671> it will log itself 
+[02:22:46] <mariarahel> Ya I have scoped where the logging goes in and I think I can make it versatile
+[02:22:59] #atropa_logged: mode change '-o atropa' by ChanServ!services@services.oftc.net
+[02:23:02] #atropa_logged: mode change '+o atropa' by ChanServ!services@services.oftc.net
+[02:23:04] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: april fools day )
+[02:23:04] <mariarahel> so you can format the lines any way you want
+[02:23:11] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: april fools day =)
+[02:23:20] <mariarahel> ChanServ should not change topic, that's weird
+[02:23:39] Topic changed on #atropa_logged by mariarahel!~maria@68.170.161.176: zehlneigungskeiten
+[02:23:49] <_surfacing8671> right. at that point it would be just changing how you view it 
+[02:25:23] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: just give cryptjo his dues, no one else needs to know, set a good example for other devs and they work for you for free, do the right thing
+[02:25:43] Topic changed on #atropa_logged by mariarahel!~maria@68.170.161.176: zehlneigungskeitenleicht
+[02:30:55] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: Κτο Ενδοκρινικό Σύστημα
+[02:31:08] <mariarahel> stop using ChanServ to change topic
+[02:31:22] <mariarahel> it should be traceable to the op that sets it
+[02:48:31] <mariarahel> What if the Atropa Ecosystem succeeds to such a degree that pls is devalued for purposes of low transfer fee utility ?
+[02:49:47] <mariarahel> Transfer fees should always be rediculously low or else they should always be exactly $2
+[02:49:55] <_surfacing8671> should be a solid enough utility already for pls doesnt need another 
+[02:58:20] <mariarahel> all the liquidity pool strategies are designed to pump different tokens at different times
+[02:58:40] <mariarahel> some time LEGAL will get pumped
+[02:59:34] <mariarahel> The Liquidity Pooling Strategies Were Designed To Define That
+[03:00:34] <mariarahel> Buy Massacre Freebies
+[03:01:33] <mariarahel> I tried to make it as easy as possible to know what you're getting into
+[03:01:59] <mariarahel> So Go On Buy Massacre Freebies
+[03:07:53] <mariarahel> I hope HEX goes up soon
+[03:09:34] <mariarahel> Don't Buy FLT 
+[03:10:52] <mariarahel> Rug Pull 4 Sure Coming On FLT
+[03:11:24] <mariarahel> Probably All Of Qing Dao
+[03:12:40] <mariarahel> Qing Dao 4 The Rug Pull
+[03:13:39] <mariarahel> TSFi also right on target at $2
+[03:14:48] <mariarahel> Atropa Is Low I Want It At 3 Cents
+[03:17:52] Strip-of-Bacon (~Bacon@208.87.128.84) joined #atropa_logged.
+[03:17:54] Sir-of-Loin (~Loin@208.87.128.84) joined #atropa_logged.
+[03:17:54] Pork-of-Rib (~Rib@208.87.128.84) joined #atropa_logged.
+[03:18:05] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: seriously tho don't leave the fuckin guy hanging
+[03:18:06] Thigh-of-Chicken (~Chicken@208.87.128.84) joined #atropa_logged.
+[03:18:11] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: Κτο Ενδοκρινικό Σύστημα
+[03:28:37] ironclad (uid623023@id-623023.hampstead.irccloud.com) joined #atropa_logged.
+[03:28:41] <ironclad> https://library.dedaub.com/decompile?md5=04e7d8c3e00a748acb0ca453561f78fb
+[03:57:18] always-on-client (alexander_@194.87.62.227) joined #atropa_logged.
+[05:12:52] <always-on-client> you guys need to stop kicking bots
+[05:13:09] <always-on-client> making me the only working bridge rn
+[05:15:13] <always-on-client> Real name: Always on for a reason
+[05:20:57] <ogwebchef888> -bbbb MyIrcBot
+[05:21:16] <always-on-client> go into #atropa or #pulsechain and do /mode -bbbb on 4 people
+[05:21:40] #atropa_logged: mode change '-b MyIrcBot!*@*' by ogwebchef888!~ogwebchef@2600:1700:5890:8860:1dae:7047:7ab5:d665
+[05:22:02] <always-on-client> he's not banned, you just need to make it trigger an error, it can't handle 4 unbans at the same time
+[05:24:25] #atropa_logged: mode change '-bbbb *!*@89.187.168.* *!*@107.150.31.79 *!*@198.12.76.218 *!*@172.241.26.87' by ogwebchef888!~ogwebchef@2600:1700:5890:8860:1dae:7047:7ab5:d665
+[05:26:00] Last message repeated 1 time(s).
+[05:26:14] <always-on-client> he's not in here so it won't work 
+[05:26:31] <always-on-client> maybe he fixed it idk
+[05:26:32] <ogwebchef888> Ok
+[05:26:43] <ogwebchef888> Keep me posted and let me know if anything I can do
+[05:27:12] <always-on-client> mariarahel could try running their mass unban function in the other channels
+[05:27:19] <always-on-client> or give him some tokens
+[05:33:04] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: Ops compensation
+[05:35:15] <always-on-client> emotional intelligence: https://www.youtube.com/watch?v=dfivCafMRgk
+[05:36:53] <always-on-client> Emotional Intelligence (EI): Understanding one’s own emotions as well as those of others, being able to manage emotions in oneself and others, and using this knowledge to make decisions that benefit everyone involved.
+[05:37:13] <always-on-client> Accountability: Taking responsibility for outcomes, both good or bad, acknowledging mistakes and learning from them to improve future performance.
+[05:37:20] <always-on-client> Adaptability: Ability to remain flexible, adaptable and resilient when dealing with change, uncertainty, and unexpected events while maintaining focus on achieving organizational goals.
+[05:37:28] <always-on-client> Ethical Leadership: Making principled decisions based on sound judgment, integrity, honesty, and fairness, setting an example by modeling these values consistently in daily behavior.
+[05:38:01] <always-on-client> what i'm really waiting for... Collaboration & Teamwork: Encouraging team members to work together towards common objectives, fostering open communication, trusting colleagues, sharing ideas and building on each other's strengths.
+[05:38:43] <always-on-client> no one will remember this shit in a few weeks but you can be more optimal about this shit
+[05:41:17] <always-on-client> no one's authority needs to be undermined, just don't fuck with my dev ops
+[05:42:29] <always-on-client> as far i see it i'm just the audience, not on the inside, if anythinng i say or do is a problem then you might as well tell every tg channel to mute their chats
+[05:43:27] Topic changed on #atropa_logged by ChanServ!services@services.oftc.net: Κτο Ενδοκρινικό Σύστημα
+[05:46:25] <always-on-client> way i see it if you don't give cryptjo something then you spit in everyone's face who thinks about volunteering their time
+[05:50:38] <always-on-client> i gave him my 10 irc tokens, don't even want it back, just want to see the same faith placed in everyone who contributes to this community
+[05:56:42] ogwebchef888 (~ogwebchef@2600:1700:5890:8860:1dae:7047:7ab5:d665) left irc: Read error: Connection reset by peer
+[05:57:11] <always-on-client> and don't shit on chef, he didn't know
+[05:57:19] <always-on-client> shit on me if you want
+[06:00:36] fatropac (~oftc-webi@2001:ac8:24:17::e00c) joined #atropa_logged.
+[06:01:42] ogwebchef888 (~ogwebchef@2600:1700:5890:8860:a948:db1:1f06:c4b3) joined #atropa_logged.
+[06:01:42] #atropa_logged: mode change '+o ogwebchef888' by ChanServ!services@services.oftc.net
+[06:53:03] fatropac (~oftc-webi@2001:ac8:24:17::e00c) left irc: Remote host closed the connection
+[07:18:20] ironclad (uid623023@id-623023.hampstead.irccloud.com) left irc: Quit: Connection closed for inactivity
+[09:19:37] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[09:23:53] <Robin__> good morning people let's go quality production 🤘
+[09:27:55] midnightmadwalk (uid622745@id-622745.lymington.irccloud.com) joined #atropa_logged.
+[09:29:06] <midnightmadwalk> You guys want a web page that displays teddy bear contract functions to get investors trust right ?
+[10:02:41] <Robin__> It is a very good idea because people need data and information
+[12:38:28] <ogwebchef888> GM
+[12:56:49] <FREEDOM_777> Atropa_logged....GM !
+[13:09:18] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[13:27:43] midnightmadwalk (uid622745@id-622745.lymington.irccloud.com) left irc: Quit: Connection closed for inactivity
+[13:44:31] <always-on-client> does anyone actually have logs without missing lines
+[13:45:13] <ogwebchef888> this might work for you @always-on-client https://www.dropbox.com/scl/fi/7pqlcieu18lxd5h5z48d5/atropa_logged.log?rlkey=qexrmi5872eelqwd7ydqllb2j&dl=0
+[13:45:39] <always-on-client> you are missing a couple
+[13:45:41] <always-on-client> for example
+[13:45:48] <always-on-client> 00:56:42 *** @ogwebchef888 (~ogwebchef@2600:1700:5890:8860:1dae:7047:7ab5:d665) has quit (Read error: Connection reset by peer)
+[13:45:48] <always-on-client> 00:57:11 <always-on-client> and don't shit on chef, he didn't know
+[13:45:48] <always-on-client> 00:57:19 <always-on-client> shit on me if you want
+[13:46:13] <always-on-client> would have been fine kicking me from just 1 channel, that would have been easily fixed
+[13:46:21] <always-on-client> but kicking me from all of them? the ones i helped recover?
+[13:47:38] <ogwebchef888> Yeah I run a node on this server as well so needs to restart on occasion but thats once every 3 days or so.
+[13:47:42] <always-on-client> problems caused by this ripple effect is out of hand
+[13:48:03] <always-on-client> clearing the slate is so simple too
+[13:48:23] <ogwebchef888> How can we clear the slate? It's up to Maria ?
+[13:48:32] <always-on-client> 414 just needs to do the right thing
+[13:48:35] <always-on-client> put the fuckin ego aside
+[13:49:21] <always-on-client> i'm the one who pays for all these mistakes
+[13:49:21] <ogwebchef888> Miss the days where we actually solved puzzles here haha
+[13:49:28] <always-on-client> at least meet me half way
+[13:49:40] <always-on-client> EI means both parties not just 1 side
+[13:49:45] <ogwebchef888> So your doing double work because of the Irc bot being kicked?
+[13:49:52] <always-on-client> yea i have so much shit to fix
+[13:50:01] <always-on-client> have to create another script to convert timestamps before i run regex to json on them
+[13:50:04] <ogwebchef888> I know I hate double work especially when it's free 99 on your side
+[13:50:13] <ogwebchef888> Ahh yeah that's hw
+[13:50:43] <always-on-client> i was legit doing this to help 414, not to be self serving, then i got spit in my face
+[13:51:02] <ogwebchef888> Send some Teddy to the loggers... @mariarahel ? at least cryptojo
+[13:51:26] <always-on-client> don't have to send me anything, i just want to contribute to RH's cause
+[13:54:43] <always-on-client> don't even apologize, just definitively show me you value people's time and contributions
+[13:59:09] <ogwebchef888> +
+[14:04:31] <always-on-client> for channel in ["#atropa", "#pulsechain", "#atropa_logged"]:
+[14:04:31] <always-on-client>     files = sorted(txt_files[channel + ".thelounge"])
+[14:04:31] <always-on-client>     last_file = int(files[-1].split('.thelounge')[-1])
+[14:04:31] <always-on-client>     current_file = last_file + 1
+[14:04:31] <always-on-client>     log = read_text_file("{}/{}.thelounge{}.log".format(local_directory, channel, last_file))
+[14:04:32] <always-on-client>     log_new = read_file_as_string("{}/{}.log".format(local_directory, channel))
+[14:04:32] <always-on-client>     log_pruned = log_new.split(log[-1].strip())
+[14:04:34] <always-on-client>     log_pruned = log_pruned[1].strip()
+[14:04:34] <always-on-client>     if log_pruned:
+[14:04:36] <always-on-client>         write_to_file(log_pruned, "{}/{}.thelounge{}.log".format(local_directory, channel, current_file))
+[14:04:36] <always-on-client>         print("New lines detected for {}".format(channel))
+[14:04:38] <always-on-client>     else:
+[14:04:38] <always-on-client>         print("No new lines for {}".format(channel))
+[14:04:53] <always-on-client> i had a script that pulled the logs and trimed them down to remove duplicates
+[14:05:01] Channel flood from always-on-client -- kicking
+[14:05:01] <always-on-client> i relied on this to refill the logs tables
+[14:05:01] always-on-client kicked from #atropa_logged by atropa: flood
+[14:05:08] always-on-client (alexander_@194.87.62.227) joined #atropa_logged.
+[14:05:13] <always-on-client> i had a script that pulled the logs and trimed them down to remove duplicates
+[14:05:15] <always-on-client> i relied on this to refill the logs tables
+[14:05:27] <always-on-client> soooooo yea you really fucked with my shit
+[14:07:32] <_surfacing8671> https://www.youtube.com/watch?app=desktop&v=EEL9OEZKOMU
+[14:08:44] <always-on-client> https://privatebin.net/?5211ac32524b51a1#E84tA77SWbwfdjarrF2tRGd56midihj1UbyEwky2qJ6d
+[14:09:50] <always-on-client> progress on this project stopped as soon as this script became useless and i lost my safety net
+[14:10:17] <always-on-client> not manually fixing logs line by line like i did with the Q&A
+[14:11:00] <_surfacing8671> nice 
+[14:11:24] <always-on-client> work was free, could have just said nothing and banked with extreme loyalty, but 414 spit in the face of their platoon 
+[14:11:38] <always-on-client> can we see accountability?
+[14:11:47] <_surfacing8671> for what
+[14:11:55] <always-on-client> own up to mistakes made
+[14:12:13] <_surfacing8671> sorry you made a mistake bro 
+[14:12:21] <always-on-client> what would that be
+[14:12:26] <always-on-client> i typed in chat
+[14:12:50] <always-on-client> did i kick the only always on logging client that is scrapable?
+[14:12:53] <_surfacing8671> idk seems like your the one with the problem 
+[14:13:00] <always-on-client> :)
+[14:13:08] <always-on-client> i'll let 414 explain it then
+[14:13:15] <_surfacing8671> cool 
+[14:13:32] <always-on-client> idk why you want to beef with me for, i like you dude
+[14:14:48] <always-on-client> i encourage you to read the logs to find out what happened, it will be beneficial for the community, i hope you see it that way too
+[14:14:56] <always-on-client> you can make the assumptions but you better get it correct
+[14:16:20] <always-on-client> certainly doesnt feel good getting spit  on by other members after contributing my time and getting wrong'd without any empathy
+[14:17:00] <ogwebchef888> A simple fuck off would of been better than what happened tbh
+[14:17:06] <always-on-client> for real
+[14:17:18] <_surfacing8671> fuck off 
+[14:17:40] <always-on-client> i would like to know why you're mad, _surfacing8671
+[14:18:04] <always-on-client> so far i haven't developed any ill will towards you, i just want to talk like gentlemen
+[14:18:42] <_surfacing8671> schizophrenia is a hell of a drug 
+[14:19:00] <always-on-client> ad homs already... interesting...
+[14:19:13] <always-on-client> attack my character and not the issue at hand
+[14:19:16] <always-on-client> sign of low EI
+[14:19:22] <_surfacing8671> im the mad one here
+[14:19:24] <always-on-client> not meant to be an insult, just an observation
+[14:19:29] <always-on-client> are you sure tho
+[14:19:38] <always-on-client> you seem bitter like you walked into someone else's business
+[14:20:20] <always-on-client> if i remain calm you will eventually get mad because i'm not getting triggered enough
+[14:20:24] <always-on-client> not worth it
+[14:20:30] <always-on-client> i dont even want to fight with you 
+[14:21:02] <ogwebchef888> Guys let's keep it diligent 
+[14:21:15] <always-on-client> clean slate, we good _surfacing8671, no worries
+[14:22:06] <ogwebchef888> I learned about ad hom in my critical thinking class
+[14:22:12] <ogwebchef888> Modus Ponens is annoying af
+[14:22:31] <ogwebchef888> Modus Tollens etc
+[14:22:34] <ogwebchef888> Super confusing haha
+[14:22:45] <always-on-client> lets just not pour fuel onto anymore fires
+[14:22:56] <ogwebchef888> Agreed
+[14:22:56] <always-on-client> i'm just expressing what i feel went wrong
+[14:23:12] <always-on-client> this channel isnt being bridged right now so it's ok to talk openly
+[14:23:15] <ogwebchef888> Yes and no harm in that. You are and will be heard imo
+[14:23:16] <always-on-client> i'll delete the lines from mine later
+[14:24:05] <always-on-client> i just hope you don't get rekt cause i played an innocuous prank
+[14:24:17] <always-on-client> i obviously could have nuked all 3 channels if i was that bitter
+[14:25:03] <ogwebchef888> All golden man. Webmastering and school keep me not rekt
+[14:25:24] <always-on-client> exactly!!! working on this project was keeping me happy hitting flow state each day, then that stopped
+[14:25:56] <always-on-client> passion + free work, what more could you ask for
+[14:26:16] <ogwebchef888> Yes I remember you mentioned compounding work on work too 
+[14:26:55] <always-on-client> there's a deep sadness that i haven't been able to shake since
+[14:27:24] <ogwebchef888> Yeah that will make you Zero Cool quick
+[14:28:06] <ogwebchef888> A lot of APTs root their chaos from deep sadness 
+[14:29:27] <ogwebchef888> Hacking the planet imminent ? Ninja Nerds will fuck off ? @mariarahel
+[14:29:37] <_surfacing8671> i tried to help you with that heres another link that has a bit more to it. https://www.organism.earth/library/document/spectrum-of-love#:~:text=He%20argues%20against%20forcing%20or,stems%20from%20a%20distorted%20love.
+[14:29:59] <always-on-client> the great alan watts
+[14:30:31] <always-on-client> who are you referring to tho, the one forcing/faking?
+[14:33:11] <ogwebchef888> $CROPCIRCLES https://www.youtube.com/watch?v=uwtjmY-o6_E
+[14:33:15] <always-on-client> i would encourage you to read Map of Consciousness by David R Hawkins, if you want love you can calibrate at it easily
+[14:33:52] <always-on-client> if you think it's woowoo then ask why PBD brought it up 20 years later at turning point usa
+[14:35:32] <always-on-client> i appreciate it tho _surfacing8671, will consume this after i finish waking up, since you took the time out of your day to suggest it to me, i will honor you by listening to it
+[14:39:45] <ogwebchef888> track #18 is mad illn @always-on-client https://livemixtapes.com/mixtape/laws-your-future-favorite-rapper
+[14:41:32] <always-on-client> tabs open for later :)
+[14:41:46] <ogwebchef888> 👍
+[14:42:39] <ogwebchef888> yeah that dude got fucked big time, look into his mixtape "Yesterday's Future" he paid homage to Paul Mccartney and dude fucked him bad
+[14:43:51] <ogwebchef888> Paul McCartney can fuck off
+[14:43:57] <always-on-client> yikes
+[14:45:33] <ogwebchef888> yeah disappeared after his label got sued for sampling stuff, legit if he would have not made that tribute tape he would still be around
+[14:45:38] <ogwebchef888> https://web.archive.org/web/20120508235838/http://thehiphopclinic.com/
+[14:46:27] <always-on-client> damn wtf
+[14:46:33] <always-on-client> that's fuckin dirty
+[14:46:53] <ogwebchef888> Was a featured artist here, got close to blowing up with dude then he got targetted by the Palestinan hackers army, shit was trippy. Used to run dudes site and the server db got fucked
+[14:47:11] <always-on-client> lol those guys drag net scan the internet
+[14:47:16] <always-on-client> my wordpress got hacked by the israelis twice
+[14:47:21] <always-on-client> decades ago
+[14:47:44] <ogwebchef888> yes this was 10+ years ago as well. 
+[14:50:53] <ogwebchef888> https://www.youtube.com/watch?v=qlKPE9y-MuY
+[14:53:36] <mariarahel> $INSIDE
+[14:57:17] <mariarahel> https://www.youtube.com/watch?v=oYQqCao5i8M
+[14:57:53] <mariarahel> How Many Attention Have You Got ?
+[14:59:53] <mariarahel> For The Property 24 Trick ?
+[15:00:09] <ogwebchef888> Yeah im watching
+[15:00:33] <mariarahel> $ICSAtm
+[15:02:05] <ogwebchef888> How does the biometric authentication work? Any specific method the primary one?
+[15:02:51] <ogwebchef888> I know most airports filled with Iris scanners
+[15:03:09] <ogwebchef888> do we know we are being biometrically authenticated ?
+[15:04:45] <mariarahel> Cardinal Borromeo From Montevideo
+[15:05:31] <ogwebchef888> Wink & Blink ?
+[15:05:54] <ogwebchef888> Passwordless future imminent ?
+[15:06:51] <ogwebchef888> what about the threat of deep fake biometrics, only if have gibson we can do w/ @mariarahel
+[15:07:02] <ogwebchef888> Do you have a Gibson ????
+[15:08:09] <ogwebchef888> Deep fake non repudiation can fuck off
+[15:08:26] <mariarahel> $BILE
+[15:09:33] <ogwebchef888> $1984
+[15:09:58] <mariarahel> War Was Used Against Cardinal Borromeo To Place His Montevideo Bank In The Same Position As The Continental Dollar Holder
+[15:13:46] <ogwebchef888> Main challenge with biometric authentication for digital banks is cybersecurity issues really, needs elite SecOps
+[15:14:12] <_surfacing8671> i think that there is an erc for biometrics i know there are modules for it and using an abstracted account 
+[15:14:56] <_surfacing8671> couldnt you steal fingerprint data and reproduce it tho? 
+[15:15:29] <ogwebchef888> Yeah and we can clone voices these days too. Singularity prob wont fuck off if ever arrives
+[15:15:44] <ogwebchef888> kill switch or not
+[15:15:55] <ogwebchef888> just needs computing power to run
+[15:16:19] <_surfacing8671> get a facebook photo for the facial. oh this is were the retnal scanners come into play 
+[15:17:28] <ogwebchef888> wen deep fake identity suite on Silk road lol
+[15:17:50] <ogwebchef888> dangerous stuff 
+[15:42:16] coexistencesteven (uid631510@id-631510.hampstead.irccloud.com) joined #atropa_logged.
+[15:45:34] <coexistencesteven> Maria, is Billy Gardel a bag of dicks and 40,000 black comedians? 
+[15:46:16] <coexistencesteven> Are they fucking up production?
+[15:50:33] CoexistenceSteven_ (uid624368@id-624368.hampstead.irccloud.com) joined #atropa_logged.
+[15:52:34] <CoexistenceSteven_> Maria, is Billy gardel a bag of dicks and 40,000 black comedians? And is he fucking up production? 
+[15:55:56] <mariarahel> are you trying to summarize plot points?
+[15:56:20] <CoexistenceSteven_> Find commonality 
+[15:57:37] <CoexistenceSteven_> Why has logging stopped? 
+[15:58:03] <mariarahel> https://www.dropbox.com/scl/fi/7pqlcieu18lxd5h5z48d5/atropa_logged.log?rlkey=qexrmi5872eelqwd7ydqllb2j&dl=0
+[16:01:46] <CoexistenceSteven_> Someone stopped TG logging 
+[16:02:08] <CoexistenceSteven_> Anyway, is Billy Gardel benefiting Production? 
+[16:04:46] <mariarahel> https://www.youtube.com/watch?v=xlji2AE_pyE
+[16:05:15] <mariarahel> Zihua Guo
+[16:05:59] <mariarahel> Go To The Bar
+[16:07:52] <ogwebchef888> $MUSIC playlist https://music.gala.com/listen/playlists/user/657fb62e9fa888edb3861625
+[16:07:52] <mariarahel> Interlope ?
+[16:08:19] <ogwebchef888> Track #4 is ode to Fatropac
+[16:09:09] <mariarahel> Well-Posedness Interlopes
+[16:09:27] <mariarahel> why can't u = lambda ?
+[16:10:37] <mariarahel> we see the interloping implying that u = lambda for some value of v
+[16:10:54] <mariarahel> so what ?
+[16:11:11] <CoexistenceSteven_> Yes haha 
+[16:11:47] <CoexistenceSteven_> Freeeeedom GM ! 
+[16:13:06] <mariarahel> Go To The Bar & Order Small s
+[16:13:52] <CoexistenceSteven_> Ok
+[16:13:57] <mariarahel> Fi ?
+[16:15:15] <mariarahel> Smooth Commonolatiy ?
+[16:15:42] <mariarahel> Smooth ?
+[16:15:51] SurgeFI (~user@75-168-86-2.mpls.qwest.net) joined #atropa_logged.
+[16:16:04] <mariarahel> Make Fi Smooth For The First Time
+[16:16:14] <CoexistenceSteven_> Smooth I'll make it smooth 
+[16:16:20] <mariarahel> How ?
+[16:18:07] <mariarahel> (dt/dt + 1 = 1)
+[16:18:23] <mariarahel> when m + s = 0
+[16:18:53] <CoexistenceSteven_> I'll try 
+[16:18:54] <mariarahel> $SMOOTHtm
+[16:19:10] <mariarahel> So What ?
+[16:19:11] <_surfacing8671> mmm smoothtm
+[16:19:38] <mariarahel> m+s is smooth no matter what it =
+[16:20:04] <mariarahel> mKdV ?
+[16:20:10] <mariarahel> sKdV
+[16:20:29] <CoexistenceSteven_> Not yet lol 
+[16:20:34] <mariarahel> no ?
+[16:20:55] <mariarahel> sKdV at m = 1 ?
+[16:21:15] <CoexistenceSteven_> 2
+[16:21:19] <mariarahel> what's the log infinity ?
+[16:21:39] <mariarahel> you need about $5m to buy in that far
+[16:22:04] <_surfacing8671> im getting thermodynamics flashbacks  
+[16:22:12] <mariarahel> Zihua Guo Is Supposed To Notice If m=1 At All
+[16:22:39] <mariarahel> KdV Dbd
+[16:23:01] <mariarahel> Shanghai Or Left Behind
+[16:23:02] <CoexistenceSteven_> M=1
+[16:23:16] <mariarahel> due due
+[16:25:01] <mariarahel> sKdV Topic
+[16:25:45] <CoexistenceSteven_> Again haha the fuck named Greg 🤣
+[16:25:57] <mariarahel> you're gregop ?
+[16:26:11] <CoexistenceSteven_> No 
+[16:26:20] <mariarahel> oh i thought you were gregop
+[16:26:39] <CoexistenceSteven_> Hmmm maybe I am
+[16:26:56] <CoexistenceSteven_> I could be 
+[16:27:07] <mariarahel> fraud ?
+[16:27:16] <CoexistenceSteven_> No
+[16:27:24] <mariarahel> fraud isn't going to pay enough
+[16:28:11] <CoexistenceSteven_> Haha ok not me 
+[16:28:16] <mariarahel> $5m can still buy you 2
+[16:28:37] <CoexistenceSteven_> 2 what?
+[16:28:56] <mariarahel> 2 everything as far as the chatlog is immediately concerned
+[16:30:09] <CoexistenceSteven_> $5m can still buy you 2 of what 
+[16:30:27] <mariarahel> I Don't Speak That Language
+[16:30:43] <_surfacing8671> why KdV? im not the smartest when it comes to math and fluid dynamics but where do waves come into play here. 
+[16:31:23] <mariarahel> the purpose of solving KdV again and again is to remind ourselves of the bar that everybody passes at the same level
+[16:31:56] <mariarahel> the purpose of solving mKdV is to perform acrobatics until the bar is captured
+[16:32:01] <mariarahel> then it's sKdV
+[16:33:11] <mariarahel> the actual passage of the bar quantified to moment of passage is bolzano-weierstrass
+[16:33:45] <CoexistenceSteven_> Ahhh
+[16:34:14] <mariarahel> = ?
+[16:34:33] <CoexistenceSteven_> $BEL
+[16:34:41] <mariarahel> no Fi
+[16:34:48] <mariarahel> Fi Is Next
+[16:35:10] <mariarahel> Fi That The sKdV
+[16:35:19] <_surfacing8671> ok so that kinda makes sense 
+[16:35:53] <mariarahel> if you keep it 100% KdV we'll get along really really well
+[16:36:22] <CoexistenceSteven_> DONE
+[16:36:22] <_surfacing8671> right staying humble 
+[16:36:24] <FREEDOM_777> bff's
+[16:36:44] <CoexistenceSteven_> Freedom GM ☀️
+[16:37:03] <CoexistenceSteven_> I love humility ❤️❤️❤️
+[16:37:48] <mariarahel> even just whispering sKdV should be enough to humble superior mathematicians
+[16:38:11] <mariarahel> if we haven't passed sKdV already then I have failed
+[16:38:37] <mariarahel> If we have passed sKdV then immediately next is Fi
+[16:38:41] <CoexistenceSteven_> sKdV 
+[16:39:15] <CoexistenceSteven_> Jumped 🙃
+[16:39:15] <mariarahel> final solution
+[16:39:22] <CoexistenceSteven_> Haha 🤣
+[16:39:42] <mariarahel> final solution neener neener boo boo
+[16:39:47] <CoexistenceSteven_> *intense music* 
+[16:40:12] <mariarahel> Buy $5m Of Tokens And Be #2
+[16:40:26] <mariarahel> $TRSi
+[16:40:33] <CoexistenceSteven_> Haha
+[16:42:13] <CoexistenceSteven_> I don't know if I'm number 2
+[16:43:02] <mariarahel> sKdV should be enough to earn $5m just in endowment
+[16:43:34] <_surfacing8671> nice
+[16:44:12] <CoexistenceSteven_> Yeah? Haha 
+[16:44:59] <mariarahel> mKdV Can Fuck Off
+[16:45:20] <CoexistenceSteven_> Haha 🤣
+[16:46:03] <mariarahel> https://www.youtube.com/watch?v=GDczatIRF7I
+[16:46:25] <mariarahel> They Only Fight For mKdV
+[16:47:26] <mariarahel> How Many Volts Have You Got ?
+[16:49:18] <CoexistenceSteven_> Volts? 
+[16:49:50] <FREEDOM_777> https://youtu.be/xPmV2WWwm68?si=HdfEACsPQ7ao6zJv
+[16:51:07] <CoexistenceSteven_> 37
+[16:52:23] <FREEDOM_777> https://youtu.be/wTT6ZQIcxuA?si=lcdjwlYWM4Pg_gA1
+[16:53:09] <mariarahel> Trying To Keep It Run Down
+[16:55:37] <CoexistenceSteven_> Ahhh
+[16:55:41] <mariarahel> Do The sKdV Rundown Til You Are Clear On Battery
+[16:55:43] <CoexistenceSteven_> We need more LPs?
+[16:56:03] <mariarahel> I Haven't Solved That Part Yet
+[16:56:03] <CoexistenceSteven_> sKdV
+[16:56:12] <mariarahel> The Pancreas
+[16:57:34] <CoexistenceSteven_> Uh...m
+[16:58:17] <CoexistenceSteven_> I'm not sure I'm clear 
+[17:00:56] <CoexistenceSteven_> sKdV is 0
+[17:01:30] <mariarahel> good 0 or bad 0 ?
+[17:02:15] <CoexistenceSteven_> Bad
+[17:02:22] <mariarahel> how bad ?
+[17:02:46] <CoexistenceSteven_> The worst 
+[17:02:55] <mariarahel> of all ?
+[17:03:02] <CoexistenceSteven_> Of all 
+[17:03:06] <mariarahel> that is fine
+[17:03:27] <CoexistenceSteven_> :) 
+[17:03:38] <CoexistenceSteven_> Thank you
+[17:03:46] <CoexistenceSteven_> That was the final? 
+[17:04:14] <mariarahel> before you even came into the room
+[17:04:59] <CoexistenceSteven_> :D
+[17:05:06] <mariarahel> at least 3 days ago
+[17:05:19] <mariarahel> it depends on how you qualify s
+[17:05:47] <CoexistenceSteven_> How do I qualify s? 
+[17:05:49] <mariarahel> but no more qualifications of s whatsoever since at least 3 days ago
+[17:05:53] <mariarahel> it doesn't matter
+[17:06:12] <mariarahel> as long as all you have is battery, we're clear
+[17:06:20] <CoexistenceSteven_> sKdV ?
+[17:06:33] <mariarahel> pound it
+[17:06:42] <mariarahel> pound the mound, slugger
+[17:07:13] <FREEDOM_777> lol
+[17:07:54] <mariarahel> $Fi
+[17:08:56] <CoexistenceSteven_> Ok
+[17:10:03] <CoexistenceSteven_> It's been 3 days
+[17:10:05] <mariarahel> Fi For eKdV When s >= 1
+[17:10:20] <mariarahel> Otherwise Fi Not For It
+[17:10:40] <mariarahel> https://www.youtube.com/watch?v=GDDtJr2hwq4
+[17:11:20] <CoexistenceSteven_> I will 
+[17:11:23] <mariarahel> eKdV requires no less than an endocrine system
+[17:11:56] <mariarahel> $PRODUCTIONtm
+[17:13:47] <CoexistenceSteven_> Ok
+[17:14:19] <mariarahel> https://www.youtube.com/watch?v=Bu5Eua-IjAY
+[17:14:22] <mariarahel> $BUDDYtm
+[17:15:09] <mariarahel> Buddy That Write The Code ?
+[17:15:53] <CoexistenceSteven_> ❤️
+[17:15:59] <CoexistenceSteven_> No :"( tiny bit only pinescriot
+[17:16:34] <mariarahel> Satoshi + PCH = Buddy, Honey
+[17:16:53] <mariarahel> $CHARStm
+[17:17:19] <mariarahel> Chars That The Hoes
+[17:18:04] <mariarahel> Chars That The Hoes Code
+[17:18:37] <CoexistenceSteven_> PCH?
+[17:18:46] <mariarahel> Buddy ?
+[17:18:58] <CoexistenceSteven_> Honey
+[17:19:02] #atropa_logged: mode change '+b *!uid631510@id-631510.hampstead.irccloud.com' by mariarahel!~maria@68.170.161.176
+[17:19:02] coexistencesteven kicked from #atropa_logged by mariarahel: coexistencesteven
+[17:19:04] #atropa_logged: mode change '+b *!uid624368@id-624368.hampstead.irccloud.com' by mariarahel!~maria@68.170.161.176
+[17:19:04] CoexistenceSteven_ kicked from #atropa_logged by mariarahel: coexistencesteven_
+[17:19:13] #atropa_logged: mode change '+b *!*oexi*@*' by mariarahel!~maria@68.170.161.176
+[17:23:22] <mariarahel> https://www.youtube.com/watch?v=ZDG90MwhIxA
+[17:24:13] <mariarahel> https://www.youtube.com/watch?v=7xSe__xm2MM
+[17:32:02] #atropa_logged: mode change '+b *oexi*!*@*' by mariarahel!~maria@68.170.161.176
+[17:34:42] <mariarahel> https://www.youtube.com/watch?v=ZGHthpeTNoA&t=1s
+[17:40:02] <mariarahel> Fi Jam
+[17:41:14] <mariarahel> Almost 6 Months Of Fi Jam NoHo
+[17:47:44] <mariarahel> Kumquat Kool Dude Is Supposed To Be Stephen Stapleton
+[17:48:17] <mariarahel> Super Lame
+[17:52:16] <mariarahel> https://www.youtube.com/watch?v=ndvLXb8FiWc
+[17:53:51] <mariarahel> https://www.youtube.com/watch?v=9Z0ayApxMPg
+[17:57:15] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[18:55:35] <mariarahel> $INTENSITY
+[18:56:12] <mariarahel> How Much Space Is Jammed Between The Joule & The Intensity, Conductor ?
+[19:01:20] <mariarahel> $dV
+[19:04:06] <mariarahel> https://www.youtube.com/watch?v=vo2p352SOaM
+[19:20:00] (#atropa_logged) Channel ban on *!uid631510@id-631510.hampstead.irccloud.com expired.
+[19:20:00] (#atropa_logged) Channel ban on *!uid624368@id-624368.hampstead.irccloud.com expired.
+[19:20:00] (#atropa_logged) Channel ban on *!*oexi*@* expired.
+[19:20:01] #atropa_logged: mode change '-bbb *!uid631510@id-631510.hampstead.irccloud.com *!uid624368@id-624368.hampstead.irccloud.com *!*oexi*@*' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[19:33:00] (#atropa_logged) Channel ban on *oexi*!*@* expired.
+[19:33:01] #atropa_logged: mode change '-b *oexi*!*@*' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[19:47:33] <mariarahel> There Are Never Piezoelectric Requirements
+[19:48:01] <mariarahel> There's No Such Thing As Piezo
+[19:48:46] <mariarahel> https://www.youtube.com/watch?v=FkjAIhZ5Wbc
+[19:49:17] <mariarahel> $FIND
+[19:50:50] <mariarahel> Do You Know The One About The Piezo That Was Hiding & Then It Was Found ?
+[19:53:38] <mariarahel> What's Piezoharmonic ?
+[19:54:18] <mariarahel> $FIND
+[19:54:38] <mariarahel> Who Can't Find The Hidden Piezoharmonic ?
+[19:54:53] <mariarahel> $WOOF
+[19:55:00] <mariarahel> $WOOFtm
+[19:55:48] <mariarahel> Fi ?
+[19:55:59] <mariarahel> Woof That Fi The Hidden Piezoharmonic
+[19:56:23] <mariarahel> What Exactly Is It, Dogs ?
+[19:57:23] <mariarahel> https://www.youtube.com/watch?v=JvEZuo8qUoA
+[19:59:11] <mariarahel> Who's On The Line For It ?
+[20:02:43] <_surfacing8671> $WOOFERtm
+[20:03:45] <mariarahel> So What ?
+[20:07:48] <_surfacing8671> piezoelectric speakers are nice. 
+[20:10:30] <mariarahel> $K
+[20:15:04] <mariarahel> Straight K, Piezoelectric ?
+[20:15:40] <mariarahel> That's The Test
+[20:16:05] <mariarahel> Perform That Test & Survive
+[20:16:47] <mariarahel> $FRIENDStm
+[20:20:05] <mariarahel> I Hope You Already Found Your Berry Sparkles
+[20:20:46] <mariarahel> Berrysparklennem
+[20:21:29] <mariarahel> Til Fi
+[20:22:06] <mariarahel> Who Dat Little s B ?
+[20:22:52] <mariarahel> You Might Have To Study More
+[20:23:12] <mariarahel> Discoverer
+[20:24:03] <_surfacing8671> $K yeah been a while since i build some speakers. 
+[20:25:24] <mariarahel> Killing Voice That The $K ?
+[20:25:33] <_surfacing8671> static electricity is a piezoelectric effect? 
+[20:25:46] <mariarahel> https://www.youtube.com/watch?v=Ks0u03rP3sA
+[20:26:06] <mariarahel> Win Don't Lose
+[20:27:55] <mariarahel> Trying To Play Arirang Dragon
+[20:28:24] <mariarahel> Fi ?
+[20:29:33] <mariarahel> Zero Callbacks
+[20:30:48] <mariarahel> Zero Callbacks Endocrine System
+[20:31:50] <mariarahel> Who's Toxic ?
+[20:34:33] <mariarahel> meenoi is a bad hunter
+[20:35:30] <mariarahel> j/k ?
+[20:38:22] <mariarahel> https://www.youtube.com/watch?v=yF4ulRTCn44
+[20:40:39] <mariarahel> She's Magnesium Deficient
+[21:01:01] <mariarahel> Fi ?
+[21:02:13] <mariarahel> Nobody Wants It, TS
+[21:10:24] <mariarahel> https://www.youtube.com/watch?v=tNxUxm3-658
+[21:17:12] <mariarahel> https://www.youtube.com/watch?v=XzOvgu3GPwY
+[21:18:09] <mariarahel> TS Vs Bubba Sheets 
+[21:19:08] <mariarahel> scrot
+[21:20:34] <mariarahel> https://www.youtube.com/watch?v=dfnCAmr569k
+[21:20:43] <mariarahel> Bubba Sheets Is Taylor Swift's End Game
+[21:21:36] <mariarahel> Princess Diana's Nephew Bubba Sheets
+[21:23:42] <mariarahel> https://www.youtube.com/watch?v=ANV4PS0tmFo
+[21:25:41] <mariarahel> Taylor Swift Is Dangerously Magnesium Deficient
+[21:28:44] <mariarahel> Magnesium Deficiency Only Means Your Day Isn't Perfect
+[21:29:20] <mariarahel> You'll See After Fi
+[21:29:38] <mariarahel> The First Day Will Start Perfect
+[21:30:19] <mariarahel> Taylor Is A Workaholic Like Me
+[21:34:44] <mariarahel> Fi ?
+[21:36:17] SurgeFI (~user@75-168-86-2.mpls.qwest.net) left irc: Remote host closed the connection
+[21:36:29] SurgeFI (~user@75-168-86-2.mpls.qwest.net) joined #atropa_logged.
+[21:36:41] <mariarahel> https://www.youtube.com/watch?v=AgFeZr5ptV8
+[21:37:07] <mariarahel> What's Up With Bubba Sheets, Ryan Reynolds ?
+[21:39:05] <mariarahel> I Don't Know That Dude
+[21:39:11] <mariarahel> I Don't Talk To Diana's Family
+[21:41:37] <mariarahel> $TIFFANYStm
+[21:42:32] <mariarahel> Tiffanys Is Haram
+[22:00:53] <mariarahel> Cardinal Borromeo's Montevideo Game Of "Sponsorships" Became More Than Just South African History
+[22:01:54] <mariarahel> OT That The Sponsors
+[22:03:18] <mariarahel> Sponsorships That The Poverty Stricken Plebian Play Folk
+[22:04:30] <mariarahel> Wanna Play SEC Consulting Partnerships ?
+[22:05:18] <mariarahel> Wanna Play SEC Consulting Partnerships, Champ ?
+[22:08:23] <mariarahel> Brutal Investing
+[22:09:21] <mariarahel> Wanna Play SEC Consulting Sponsorships, Champ ?
+[22:09:34] <mariarahel> With Bubba Sheets ?
+[22:10:32] <mariarahel> https://www.youtube.com/watch?v=7jLWyenqY5Y
+[22:11:33] SurgeFI (~user@75-168-86-2.mpls.qwest.net) left irc: Remote host closed the connection
+[22:11:56] SurgeFI (~user@ec2-34-228-239-229.compute-1.amazonaws.com) joined #atropa_logged.
+[22:15:09] <mariarahel> Fi ?
+[22:16:05] <_surfacing8671> idk but im setting up tg logger in case the other one goes down again lol 
+[22:19:58] <_surfacing8671> there we go lets see how long they last running for free on aws ubuntu server 
+[22:36:44] <koss11[m]> For Maria:  Teddy
+[22:36:45] <koss11[m]> https://youtu.be/Ff5EurIunGQ?si=PoR-nIE8Y6r_RQzm
+[22:53:32] <koss11[m]> For Maria:   From Today, Crypto Kings
+[22:53:33] <koss11[m]> https://youtu.be/8YYsAaZNAAA
+[23:04:44] <koss11[m]> For Maria:   PDai...   Hater or No?
+[23:04:44] <koss11[m]> https://www.youtube.com/watch?v=vF5gRwtO4jU
+[23:09:03] <koss11[m]> For Maria:   Normal everyday guy who believes.  Don't know if you have ever seen this vid.
+[23:09:03] <koss11[m]> https://www.youtube.com/watch?v=5ptsBrAtT24
+[23:09:33] <koss11[m]> ^^ 3 month old vid
+[23:09:53] <koss11[m]> Have a great night all!

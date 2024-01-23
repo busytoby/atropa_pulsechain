@@ -1,0 +1,169 @@
+[00:00:12] Bin-of-Compost2 (~Compost2@170.64.189.40) joined #atropa_logged.
+[00:00:19] Bin-of-Compost (~Compost@2a03:4000:40:38:d4b4:a9ff:fe4d:a51b) joined #atropa_logged.
+[01:08:08] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[01:10:15] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[01:21:22] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) left irc: Quit: This computer has gone to sleep
+[01:24:27] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
+[02:11:15] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) left irc: Quit: This computer has gone to sleep
+[02:46:26] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
+[03:28:08] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[06:43:55] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) left irc: Quit: This computer has gone to sleep
+[09:47:52] Bin-of-Compost2 (~Compost2@170.64.189.40) left irc: Remote host closed the connection
+[09:48:19] Bin-of-Compost2 (~Compost2@170.64.189.40) joined #atropa_logged.
+[14:37:15] <FREEDOM_777> GM atropa_logged !!! LFG!!
+[14:43:53] fatropac (~oftc-webi@2a02:6ea0:d509:3::a11e) joined #atropa_logged.
+[14:55:34] fatropac (~oftc-webi@2a02:6ea0:d509:3::a11e) left irc: Remote host closed the connection
+[15:15:01] <ogwebchef888> GM @FREEDOM_777
+[15:22:11] <FREEDOM_777> To another blessed day. We have a lot to be grateful for. You woke up this morning, start with that 🙏. Excited for the future of PulseChain and ATROPA.
+[15:40:23] <ogwebchef888> https://www.youtube.com/watch?v=VAIYbfTBa5A
+[15:50:45] <ogwebchef888> Strike on the strike ?
+[15:50:58] <ogwebchef888> Flushed vibe
+[15:54:48] <FREEDOM_777> https://youtu.be/GKzsktuqwyU?si=Bs_raSlxKq-YD9Yt
+[15:55:14] <FREEDOM_777> 😤💪
+[15:56:00] <ogwebchef888> Damn that's quite a vibe haha @FREEDOM_777
+[15:58:05] <ogwebchef888> https://www.youtube.com/watch?v=-oVwmS4i3XU
+[15:59:53] Topic changed on #atropa_logged by mariarahel!~maria@68.170.161.176: Pulse #1
+[16:00:36] <FREEDOM_777> GM maria. Pulse #1!!
+[16:00:45] <ogwebchef888> 100%
+[16:01:16] <mariarahel> I had the activation in the wrong place & it wasn't pulse
+[16:01:36] <mariarahel> I think the network can start going in now
+[16:01:46] <ogwebchef888> 4 life ?
+[16:01:52] <ogwebchef888> $ACTIVATED https://music.gala.com/discover/0x04d400000000000000000000000000000000
+[16:03:22] <FREEDOM_777> nice
+[16:07:39] jameshexican (uid622906@id-622906.ilkley.irccloud.com) joined #atropa_logged.
+[16:13:28] <ogwebchef888> Any use case for OTPF for the initial Terminal-Entry Style UI ? It was really engaging to participate with those style of puzzles. Perhaps if that gets reintroduced in a way where some of us contribute to the Chatlog token release
+[16:14:02] <ogwebchef888> would bring in some builders to help bring us closer
+[16:14:18] <mariarahel> there will absolutely be at least one of those
+[16:14:30] <ogwebchef888> Nice, i'm into it.
+[16:14:44] <mariarahel> it should be impossible until the states are shared
+[16:15:05] <mariarahel> even a shitty one
+[16:15:13] <ogwebchef888> Ok
+[16:17:03] <mariarahel> It's shaped like a heart with 2 nodes for the front end to connect with 2 nodes on the back end and a pulse with 25 threads expected to perform duties based on the 2+2 connections
+[16:17:29] <mariarahel> 3 of those 25 threads have shared state between the front & back end
+[16:18:43] <mariarahel> all the UI updates will occur from the back end and all the active-connection state stuff will occur from the front end
+[16:18:59] <mariarahel> it's inside-out
+[16:20:11] <mariarahel> https://www.youtube.com/watch?v=meQlFTcoAlo
+[16:21:22] <mariarahel> Universal Smallest Protrusion
+[16:21:55] <mariarahel> Less Is More Is Over
+[16:22:11] <ogwebchef888> The UI caught a hernia ?
+[16:22:23] <mariarahel> there is no ui yet really
+[16:23:04] <mariarahel> there's an opcode based message queue and I presume all the UI related stuff will run from the 2 threads on Zuo
+[16:24:04] <mariarahel> Milestone Mesa Should Contain All Of "Less"
+[16:24:11] <ogwebchef888> Epic
+[16:24:50] <ogwebchef888> Will there be a new repo on busytoby github account?
+[16:25:00] <ogwebchef888> Where can we contribute
+[16:25:19] <mariarahel> there will be a linux project added soon after the first network stack integration
+[16:25:43] <mariarahel> i don't plan to make the source contributable at this time
+[16:25:56] <ogwebchef888> 🐧
+[16:26:43] <mariarahel> i have a plugin stack i can integrate at any time that would support the creation of a user contributeable plugin foundry
+[16:26:44] <ogwebchef888> Sounds impressive to say the least. Can't wait to see how it unfolds
+[16:27:05] <mariarahel> i haven't tested that on linux either though
+[16:27:24] <mariarahel> i think it's supposed to just work
+[16:27:28] <mariarahel> for same dotnet version
+[16:28:59] <ogwebchef888> Makes sense. I'm more into python than asp/.net but find it intriguing should be cross compatible 
+[16:34:10] Topic changed on #atropa_logged by mariarahel!~maria@68.170.161.176: Pulse #1 Activated
+[16:34:21] <mariarahel> Activated Now
+[16:37:50] <mariarahel> Rods & Cones Completed To Activation
+[16:38:12] <mariarahel> First Sight
+[16:38:25] <mariarahel> Activated At First Sight
+[16:39:16] alexander_as_helios (alexander_@194.87.62.227) left irc: Quit: 🛸
+[16:53:14] <ogwebchef888> https://www.youtube.com/watch?v=RjSWJRL5NYc
+[16:56:54] <mariarahel> Trying To Figure Out Circulation
+[16:57:22] <mariarahel> https://www.youtube.com/watch?v=S8IMBEYhtUU
+[17:45:34] <mariarahel> https://www.youtube.com/watch?v=oXngES_l_HQ
+[17:47:54] Topic changed on #atropa_logged by mariarahel!~maria@68.170.161.176: Pulse #1 Activated First Blood Now
+[17:56:03] <mariarahel> Ready Listen Blood ?
+[17:57:36] <mariarahel> Confidence > 0
+[17:58:04] <mariarahel> Everybody Confidence > 0 ?
+[17:58:26] <mariarahel> $BLOODtm
+[18:02:55] <mariarahel> The Atropa Ecosystem Claims To Have Drawn Blood From Absolutely Nothing
+[18:03:31] <mariarahel> At Ultimate Precision
+[18:03:45] <mariarahel> What More Do You Want ?
+[18:04:19] <mariarahel> Buy scissors Quick
+[18:05:32] <mariarahel> Trying To Pull A Fast One
+[18:07:36] Heap-of-Trash (alexander_@194.87.62.227) joined #atropa_logged.
+[18:09:29] <mariarahel> I Keep Checking & Everybody Has Blood
+[18:09:55] <mariarahel> Can The Atropa Ecosystem Have The Patent tm On The Blood Inside You ?
+[18:10:27] <mariarahel> Close Enough ?
+[18:10:55] <mariarahel> Who Gives Up So Easily ?
+[18:11:06] <Heap-of-Trash> don't kick the sand castle
+[18:11:09] <Heap-of-Trash> kick one bot kick all
+[18:11:13] <Heap-of-Trash> logs must then be fixed
+[18:11:19] <Heap-of-Trash> don't fail the brown bag axiom or i might have to upload it
+[18:11:28] <mariarahel> robot talk
+[18:12:14] <mariarahel> Robot That Give Up The Blood ?
+[18:21:01] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[18:24:07] <mariarahel> $BLOODtm
+[18:57:36] jameshexican (uid622906@id-622906.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[19:03:23] <mariarahel> https://www.youtube.com/watch?v=vLCg_kyuyw4
+[19:03:26] <mariarahel> Threads 0-4
+[19:04:09] <mariarahel> Corticotrypsin Already Functional
+[19:06:58] <mariarahel> I Don't Yet Expect Anyone Else To Be Familiar With The Code
+[19:10:01] <mariarahel> The Chi = 10 State Represents The First Adrenocorticotrypsin
+[19:24:40] <mariarahel> https://www.youtube.com/watch?v=4m7XflJzm2w
+[19:47:46] <mariarahel> $ACTHtm
+[19:48:42] <mariarahel> Tropins Swap Data Between Threads
+[20:15:54] <mariarahel> Bloody Pulse Beat ?
+[20:16:13] <mariarahel> 1 Complete Bloody Pulse Beat ?
+[20:18:11] <mariarahel> 1 Complete Bloody Pulse Beat Apparition ?
+[20:43:07] <mariarahel> Still Passing
+[20:44:14] <mariarahel> $BEAT
+[20:55:52] <mariarahel> Pump The Beat
+[21:02:54] <FREEDOM_777> https://youtu.be/0fllyJTBsRU?si=ADNATsAk748qcgHY
+[21:04:51] SHVDXW9 (~SHVDXW9@116.90.74.92) joined #atropa_logged.
+[21:06:49] koss11[m] (~koss11mat@2001:470:1af1:101::1:2e53) joined #atropa_logged.
+[21:06:49] <koss11[m]> watching, since inception.  Very Interesting.
+[21:07:35] <FREEDOM_777> very
+[21:07:58] <koss11[m]> how do you interpret ?
+[21:09:44] <mariarahel> Beat It
+[21:13:54] <koss11[m]> https://www.google.com/search?gs_ssp=eJzj4tFP1zcsNM2qMqu0rDBg9BJPSk0sUcgsUcjNTM5ITM1RyEpMzi7OzwMA9lkNHg&q=beat+it+michael+jackson&rlz=1C1RXMK_enUS1031US1031&oq=beat+it+michsael&gs_lcrp=EgZjaHJvbWUqCQgBEC4YDRiABDIGCAAQRRg5MgkIARAuGA0YgAQyCQgCEAAYDRiABDIJCAMQABgNGIAEMgkIBBAAGA0YgAQyCQgFEAAYDRiABDIJCAYQABgNGIAEMgkIBxAAGA0YgAQyCQgIEAAYDRiABNIBCDg5NDFqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8#fpstate=ive&vld=cid:a060a3ae,vid:aV4ZFhIUGEU,st:0
+[21:14:22] <koss11[m]> no offense, Just watching.
+[21:15:11] <FREEDOM_777> My interpretation is im grateful to be a part of PulseChain and what's happening on it. I think all the atropa specifics are in the chatlog somewhere 😄
+[21:18:25] <mariarahel> I think it's ready for the network attachment
+[21:18:51] <koss11[m]> It will be interesting to see how the Channel Topic changed and to how it will play out.    I am excited to see it unfold.
+[21:19:44] <koss11[m]> Good Luck Mariah, I wish you the best!
+[21:21:38] <mariarahel> https://www.youtube.com/watch?v=KdJkojtgZ8o
+[21:24:50] <FREEDOM_777> Te-te-te Teddy Bear!
+[21:25:39] <mariarahel> 𐔰
+[21:26:09] <mariarahel> 𐔰 For Networking
+[21:26:31] <mariarahel> $𐔰tm
+[21:29:20] <koss11[m]> I posted your Youtube link To Broots and Ian.   Wishing you luck!
+[21:30:08] <mariarahel> Ready ?
+[21:30:45] <mariarahel> Ready With The Beat ?
+[21:30:52] <mariarahel> $BEATREPORTERtm
+[21:32:22] <mariarahel> How Long Have You Been Playing Beat Reporter ?
+[21:34:02] <mariarahel> 비트 리 포터
+[21:34:12] <mariarahel> 비트 리포터
+[21:38:54] <mariarahel> Can We Get 100% Reporting ?
+[21:39:45] <mariarahel> If We Can Get 100% Reporting Then I Can Add The Networking
+[21:41:03] <mariarahel> Add The Networking After 100% Report This Beat
+[21:41:33] <mariarahel> $SWIFTtm
+[21:42:54] <mariarahel> I Don't Think It'll Pass
+[21:44:24] <mariarahel> This Beat With Zero 𐔰
+[21:46:10] <mariarahel> Way Ahead Of Schedule
+[21:46:46] <mariarahel> Way Ahead Of Schedule On The Beat At 100% Reporting
+[21:47:14] <mariarahel> $TAYLORtm
+[21:49:02] <mariarahel> It Can't Report For Itself Without Networking
+[21:52:08] <mariarahel> It Can't Report For Itself Without Networking, Annabelle
+[22:13:58] <mariarahel> $REPORTINGtm
+[22:16:55] <mariarahel> Something Might Be Wrong
+[22:27:36] _surfacing86711 (~surfacing@75-168-86-2.mpls.qwest.net) joined #atropa_logged.
+[22:30:13] _surfacing8671 (~surfacing@75-168-117-181.mpls.qwest.net) left irc: Ping timeout: 480 seconds
+[22:30:31] <_surfacing86711> oh so we can patent ™. we can make a factory contract that makes erc20-™ tokens. so like we can do erc20-  ® ones as well. and it could be a way of validating the token or ya know registering the brand for on chain use. like either token communities go through a vetting process or they pay a fee (send LP tokens that get transformed into the erc20-™ version) and then the the ™ factory prints the ™ token for them. what
+[22:30:31] <_surfacing86711> is will do is create a traceable and verifiable trademark. now we could leave it open to mint the ™ tokens and then go through a regulatory process to get the actual register token with the  ®
+[22:31:05] <mariarahel> I think it is only for proof of intimidation
+[22:32:21] <mariarahel> Purely Meme
+[22:32:58] <mariarahel> The Atropa Ecosystem Seeks To Become An Intimidation Meme
+[22:33:36] <mariarahel> The Atropa Ecosystem Seeks To Become An Intimidation Meme By Retaining The Beat
+[22:33:52] <mariarahel> The Atropa Ecosystem Seeks To Become An Intimidation Meme By Retaining The Beat For 100% Reporters
+[22:34:26] <_surfacing86711> uhhh fine i mean that is what tm is anyways. but could actually use the chain "properly"  i think to practical sometimes. 
+[22:41:38] <mariarahel> Encrypted Job Duty Tokens Could Have Functions To Make Them Pay Out Based On Rules That Could Serve As The Core For A Layer 2 Marketplace
+[22:44:49] <_surfacing86711> hmmm that could be cool. 
+[22:49:43] <mariarahel> You Only Have To Stay So On Beat To Fill Out The Rhythm
+[22:51:39] <mariarahel> Just Beat It
+[22:54:06] <mariarahel> If You Beat It It Will Be Immediate Scope
+[22:55:15] <mariarahel> Play It And Beat It
+[22:55:44] <mariarahel> Everything Less Is Bad For Networking
+[22:56:52] <mariarahel> https://www.youtube.com/watch?v=5Tav8-WRZRc
+[23:09:59] <_surfacing86711> man that had some aggressive  stereo usage. i cant think of the word right now. where the placements of the instrument are located in the ....sound field idk this bugs me ha. 
+[23:11:20] <_surfacing86711> stereo imaging and the  perceived spatial locations 

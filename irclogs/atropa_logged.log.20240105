@@ -1,0 +1,321 @@
+[00:11:19] Yogi (~oftc-webi@2a09:bac2:8ced:de1::162:de) joined #atropa_logged.
+[00:11:27] <Yogi> Alright let’s proceed with plan pinata 
+[00:11:57] Yogi (~oftc-webi@2a09:bac2:8ced:de1::162:de) left irc: Remote host closed the connection
+[00:17:48] <koss11[m]> Yogi: Maybe, she said you were a scammer because it looks to me like you seem to be asking about profit for yourself rather than looking to support the entire ecosystem as a whole for profits for everyone?   Just my 2 cents.
+[00:18:02] <koss11[m]> have a good night all
+[00:18:47] Yogi (~oftc-webi@2a09:bac2:8ceb:1678::23d:b) joined #atropa_logged.
+[00:20:06] <Yogi> That makes sense, I’m not trying to use the Atropa eco for a quick gain, I’m trying to gain confidence because I want to inject a lot of capital and don’t want to make the wrong decision  
+[00:20:36] Yogi (~oftc-webi@2a09:bac2:8ceb:1678::23d:b) left irc: Remote host closed the connection
+[00:20:47] Yogi (~oftc-webi@2a09:bac3:8cee:1791::259:22) joined #atropa_logged.
+[00:20:52] <Yogi> Should I join the 2 cent club ?
+[00:21:22] Yogi (~oftc-webi@2a09:bac3:8cee:1791::259:22) left irc: Remote host closed the connection
+[00:36:39] <Shintokenoshi> whats the 2cc hashtag?
+[00:37:18] <Shintokenoshi> also what ya doing about anus/innoxia?
+[00:40:36] Tetragrammaton33 (~TetraGram@2600:1700:3aec:fc1f:11a3:dfca:3fa:1f05) joined #atropa_logged.
+[00:51:48] <mariarahel> Daemon class checked into github will support stdio like buffers for everything with threads
+[00:52:56] Shintokenoshi (~Shintoken@2601:204:ca02:7b20:2496:159a:398d:2d1e) left irc: Quit: Leaving
+[00:52:58] SHVDXW9 (~SHVDXW9@180.149.231.157) joined #atropa_logged.
+[00:53:08] <mariarahel> the Living class will be intended only to be instantiated at a class member level from the Daemon class
+[00:53:52] <mariarahel> so all the commands in bin will have stdio like options
+[00:54:44] <Tetragrammaton33> whats going on with twee.se? seems like its down
+[00:54:46] <mariarahel> the Serialization Daemon will handle all the blockchain stuff after block 0
+[00:55:15] <mariarahel> it's up on port 5555
+[00:55:47] <mariarahel> i am contemplating a situation where one host could maintain many "blockchains"
+[00:55:51] _surfacing8671 (~surfacing@75-168-86-2.mpls.qwest.net) joined #atropa_logged.
+[00:56:34] jameshexican (uid622906@id-622906.ilkley.irccloud.com) joined #atropa_logged.
+[00:56:52] <mariarahel> i haven't figured out all the proofs yet
+[00:59:27] <mariarahel> transfer of certificates..
+[01:03:13] <_surfacing8671> and this will all open a connection to the chain not build blocks. would the certificate transfer be something like on chain or like a browser cookie that stores metadata.  
+[01:12:54] ead11 (uid622719@id-622719.helmsley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[01:52:01] <mariarahel> i think i figured out block datum 1
+[01:52:23] <mariarahel> there will never be anything like http
+[01:54:09] <mariarahel> opcode 0x08 will be identical to opcode 0x01 except it expects an argument for the client to apply the alpha transform to
+[01:54:56] <mariarahel> 0x09 will be the same for the beta transform like verified at opcode 0x02
+[01:57:49] <mariarahel> i'm thinking 0x10 will have 2 arguments for client & data bytes[] and it will just send the raw data through the encrypted buffer to be decoded by the peer
+[01:58:39] <mariarahel> still no permanent block state in sight though
+[02:03:10] <mariarahel> opcode 0x08 can be thought of as identical to the Avail() functions
+[02:03:32] <mariarahel> and 0x09 to Form()
+[02:03:44] <mariarahel> except that the argument is a connected peer instead of an integer
+[02:04:39] <mariarahel> ending in Bond()
+[02:05:23] <mariarahel> Bond() observable at the accepted speed of light
+[02:05:50] <mariarahel> https://www.youtube.com/watch?v=-YmKho9jJbE
+[02:07:30] <mariarahel> opcode 0x11 will send MSG packets as defined in the Tare class
+[02:08:00] <mariarahel> then I can add a 'say' command for chat
+[02:11:03] <mariarahel> $LIGHTSUMtm
+[02:11:24] ironclad (uid623023@id-623023.hampstead.irccloud.com) joined #atropa_logged.
+[02:11:48] <ironclad> Maria when next phase.. I want to buy 100 launches again
+[02:21:07] <mariarahel> buy scissors
+[02:24:08] <mariarahel> Snap That The Shape
+[02:29:55] <ironclad> What is Knights of Malta goal?
+[02:30:07] <mariarahel> i dunno they suck
+[02:30:23] <mariarahel> probably lower than TSFi
+[02:31:55] <ironclad> I can’t remember what its first initial pairing was it 问题?
+[02:40:23] <mariarahel> proof of distribution could be a good way to start the blocks
+[02:41:18] <mariarahel> that might be far off
+[02:41:32] <mariarahel> bunch of movement pieces for that
+[02:43:17] <mariarahel> after distributed networking & chatlog verification that all peers stay up to latest with no missing msgs
+[02:46:04] <mariarahel> is one of you 205.210.31.192 ?
+[02:48:39] <mariarahel> nm.. i already found that crash before
+[03:35:22] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[03:46:26] jameshexican (uid622906@id-622906.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[03:53:27] SHVDXW9 (~SHVDXW9@180.149.231.157) left irc: Ping timeout: 480 seconds
+[03:53:31] SHVDXW9 (~SHVDXW9@180.149.231.157) joined #atropa_logged.
+[04:27:35] SHVDXW9 (~SHVDXW9@180.149.231.157) left irc: Ping timeout: 480 seconds
+[04:28:07] SHVDXW9 (~SHVDXW9@180.149.231.157) joined #atropa_logged.
+[04:41:16] ironclad (uid623023@id-623023.hampstead.irccloud.com) left irc: Quit: Connection closed for inactivity
+[04:46:15] SHVDXW9 (~SHVDXW9@180.149.231.157) left irc: Ping timeout: 480 seconds
+[04:46:22] SHVDXW9 (~SHVDXW9@180.149.231.157) joined #atropa_logged.
+[05:45:46] fatropac (~oftc-webi@138.199.60.8) joined #atropa_logged.
+[06:05:50] SHVDXW9 (~SHVDXW9@180.149.231.157) left irc: Ping timeout: 480 seconds
+[06:08:43] fatropac (~oftc-webi@138.199.60.8) left irc: Remote host closed the connection
+[08:35:16] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[10:53:20] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[13:07:19] <FREEDOM_777> GM atropa_logged !!
+[13:58:44] Tetragrammaton33 (~TetraGram@2600:1700:3aec:fc1f:11a3:dfca:3fa:1f05) left irc: Quit: This computer has gone to sleep
+[14:08:29] MikeFA (~oftc-webi@146.70.173.13) joined #atropa_logged.
+[14:08:43] <MikeFA> GM Atropa Fam 
+[14:09:19] <MikeFA> Maria would you prefer that people interact more with the chatlog?
+[14:24:35] MikeFA (~oftc-webi@146.70.173.13) left irc: Remote host closed the connection
+[14:33:19] <mariarahel> #pulsechain is open for general pulsechain chatter
+[14:33:53] <mariarahel> i am open to discussion of a moderated general chatter channel if anybody wants to moderate it 
+[14:34:51] <mariarahel> pdai pump nice
+[14:36:20] <mariarahel> see dOWN tracks the price but trails
+[14:36:48] <mariarahel> but as more 'staking-like' longer term deposits go into dOWN it will have very nice return
+[14:37:11] <mariarahel> and dOWN can only be majorly entered from Atropa
+[14:37:43] <mariarahel> https://scan.mypinata.cloud/ipfs/bafybeidn64pd2u525lmoipjl4nh3ooa2imd7huionjsdepdsphl5slfowy/#/token/0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD?tab=holders
+[14:38:01] <mariarahel> https://scan.mypinata.cloud/ipfs/bafybeidn64pd2u525lmoipjl4nh3ooa2imd7huionjsdepdsphl5slfowy/#/address/0x02f7EeD5950c81d7b7C23aa03004828F26B5e651?hash=0x02f7EeD5950c81d7b7C23aa03004828F26B5e651&tab=tokens
+[14:38:10] <mariarahel> https://scan.mypinata.cloud/ipfs/bafybeidn64pd2u525lmoipjl4nh3ooa2imd7huionjsdepdsphl5slfowy/#/address/0xE1d2bdbA58D34109c547883dC9c2f9E01cebB003?hash=0xE1d2bdbA58D34109c547883dC9c2f9E01cebB003&tab=tokens
+[14:38:18] <mariarahel> https://scan.mypinata.cloud/ipfs/bafybeidn64pd2u525lmoipjl4nh3ooa2imd7huionjsdepdsphl5slfowy/#/address/0x5e8bE2CF0112bCaBCeF3e5331796e317CBcB9a34?hash=0x5e8bE2CF0112bCaBCeF3e5331796e317CBcB9a34&tab=tokens
+[14:39:24] <mariarahel> the top 3 holders of dOWN are liquidity pools consisting of LEGAL/300mdOWN, Atropa/250mdOWN, POPPY/115mdOWN
+[14:39:48] <mariarahel> holding in those 3 pools almost 60% of supply
+[14:41:57] <mariarahel> as the Atropa Ecosystem is bought into, dOWN is intended to reflect the involvement of broad investment in the core critical assets :)
+[14:44:38] <mariarahel> ⑧ (BULLION ⑧) also is paired to just under 100m dOWN
+[14:45:07] <mariarahel> ʁ (ʁ ㉭) to just under 50m dOWN
+[14:45:18] <mariarahel> https://scan.mypinata.cloud/ipfs/bafybeidn64pd2u525lmoipjl4nh3ooa2imd7huionjsdepdsphl5slfowy/#/address/0x1cA5316946C90a728b5B12e959Bb1a0606df4B7C?hash=0x1cA5316946C90a728b5B12e959Bb1a0606df4B7C&tab=tokens
+[14:45:33] <mariarahel> TSFi (TSFi) is paired to 17m doWN
+[14:45:59] <mariarahel> we're down to the 1% and less holders at that point
+[14:46:25] <FREEDOM_777> exciting
+[14:46:26] <mariarahel> only my treasury wallet holds more than 2%, i bought 100m after launch
+[14:47:10] <mariarahel> the purchase requirement is more or less what makes LEGAL
+[14:47:38] <mariarahel> the purchase requirement & the tx log
+[14:50:40] <mariarahel> i can do audio and/or video after the chatlog is on distributed networking no problem
+[14:51:34] <mariarahel> i usually keep up this pace at code when i'm motivated
+[14:52:09] <mariarahel> Destroyer
+[14:52:31] <mariarahel> Destroyer That The Rapid Shape
+[14:52:54] <mariarahel> maybe Mypinata token of some type still too
+[14:53:57] <mariarahel> I believe the Atropa Ecosystem Layer 2 has the most rapid micro vm to date of any available form of code frameworking
+[14:54:17] <mariarahel> and i have written a lot of schedulers
+[14:55:32] <mariarahel> Buyhttps://scan.mypinata.cloud/ipfs/bafybeidn64pd2u525lmoipjl4nh3ooa2imd7huionjsdepdsphl5slfowy/#/token/0xf520404CF4fa5B633626333775b05F5dF94E1a9C?tab=holders
+[14:55:37] <mariarahel> 缤 (缤 ㉾)
+[14:57:01] <mariarahel> ㉾ (scissors ㉾) liquidity with 17% of supply
+[14:57:37] <mariarahel> Dai Stablecoin (DAI) 13%
+[14:58:12] <mariarahel> LEGAL (LEGAL) 9%
+[14:58:36] <mariarahel> Liberty/ 𑊣𑊁𑊟𑊃𑊢𑊖𑊀 (𑜾) 6%
+[14:58:57] <mariarahel> Zürich (Zů) 5%
+[14:59:22] <mariarahel> 缤 ㉾ that support the dev team
+[14:59:58] <mariarahel> I hold 9%
+[15:00:13] <mariarahel> plus some undisclosed amount of the liquidities
+[15:00:46] <mariarahel> #2 holder has 6%, i dunno who
+[15:01:18] <mariarahel> 5 other wallets above 1% is really pretty good for how i see exposure of the dev
+[15:04:11] <mariarahel> In the github code I made even the Command.cs and all the bin/executables subclass of Daemon
+[15:04:53] <mariarahel> also after distributed networking of the chatlog & intend to support c# code dl from the blockchain executable immediately in client
+[15:05:33] <mariarahel> eventually the codebase would not be developed anymore & everything would be available plugins
+[15:06:24] <mariarahel> long term roadmap stops right there
+[15:07:18] <mariarahel> i already wrote all the parts before except ui
+[15:08:16] <mariarahel> so far i think the linux client is fine with the terminal ui matching the windows client
+[15:08:56] <mariarahel> i might prefer it and never start on avalon
+[15:09:18] <mariarahel> really xlib can fuck off
+[15:10:04] <mariarahel> I think I speak for all of AT&T Carnegie Melon when I say xlib really can fuck off
+[15:11:08] <mariarahel> I only really want a fast canvas with all the text forms and svg
+[15:12:27] <mariarahel> there isn't one
+[15:13:25] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:14:39] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: 
+[15:14:52] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:16:07] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: 
+[15:17:19] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:19:08] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: 
+[15:19:26] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:21:55] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: 
+[15:22:29] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:23:59] Shinto (~Shinto@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: Remote host closed the connection
+[15:28:06] Noshi (~Noshi@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:30:41] Noshi (~Noshi@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: 
+[15:31:01] Noshi (~Noshi@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) joined #atropa_logged.
+[15:35:26] Noshi (~Noshi@2601:204:ca02:7b20:110d:2ef1:981f:5d6e) left irc: Read error: Connection reset by peer
+[16:00:07] Core9320 (~Shinto.PL@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[16:07:24] Core9320 (~Shinto.PL@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Quit: CoreIRC for Android - www.coreirc.com
+[16:14:23] Shintokenoshi (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[16:16:24] Shintokenoshi (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: 
+[16:16:38] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[16:52:14] iTz_Black007 (uid623708@id-623708.hampstead.irccloud.com) joined #atropa_logged.
+[16:52:24] #atropa_logged: mode change '+o iTz_Black007' by mariarahel!~maria@68.170.161.176
+[16:53:02] <iTz_Black007> https://www.irccloud.com/pastebin/3XWwXQ2I
+[16:53:29] <iTz_Black007> https://irc.atropa.blog/irc/atropa_logged/index.html
+[16:53:29] <iTz_Black007> is so beautiful now after so many days
+[17:15:12] <mariarahel> almost 3 full months of data
+[17:16:43] <mariarahel> i hope we see pdai to 10x soon
+[17:17:00] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Read error: Connection reset by peer
+[17:32:38] <iTz_Black007> lil bull market sprinkles showing here finally :)
+[17:54:33] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[18:11:02] fatropac (~oftc-webi@2a02:6ea0:fb01:1::e026) joined #atropa_logged.
+[18:22:22] <ogwebchef888> Sending
+[18:23:31] <ogwebchef888> @fatropac I'm taking a little vacay, hold it down and show love to the loggers. 
+[18:24:20] <ogwebchef888> @iTz_Black007 good stuff
+[18:27:21] fatropac (~oftc-webi@2a02:6ea0:fb01:1::e026) left irc: Remote host closed the connection
+[18:39:59] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[18:43:53] <mariarahel> w00t
+[18:43:56] <mariarahel> $PARALLELtm
+[18:45:08] <mariarahel> https://www.youtube.com/watch?v=rDi9y4iOA6w
+[18:46:13] <mariarahel> Parallelism Is The Paradox Immediately Preceding Establishment Of C In The Standard Model
+[18:46:44] <mariarahel> 0x08
+[18:50:14] <mariarahel> pausing for review
+[18:53:37] <mariarahel> $INVISIBLEtm
+[18:54:17] <mariarahel> errors from 198.235.24.196
+[18:54:25] <mariarahel> i dunno if that's using the client
+[18:57:54] <mariarahel> might be somebody at amazon 
+[19:01:32] Core2882 (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[19:01:32] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Read error: Connection reset by peer
+[19:02:36] Core2882 (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Read error: Connection reset by peer
+[19:31:17] <mariarahel> $STABLEtm
+[19:31:32] <mariarahel> https://www.youtube.com/watch?v=4rG9u478X1Q
+[19:32:52] <mariarahel> Everybody Wants To Share The Stable Equilibrium
+[19:34:48] Yogi (~oftc-webi@2a09:bac3:8d53:8c::e:2bf) joined #atropa_logged.
+[19:34:56] <Yogi> Purpose of Sandringham house?
+[19:35:08] <mariarahel> I hope not !
+[19:35:36] Yogi (~oftc-webi@2a09:bac3:8d53:8c::e:2bf) left irc: Remote host closed the connection
+[19:35:57] <mariarahel> 100% instability ?
+[19:36:03] Yogi (~oftc-webi@2a09:bac2:8d57:8c::e:2f0) joined #atropa_logged.
+[19:36:09] <mariarahel> 100% instability can fuck off
+[19:36:23] <Yogi> Tsfi never going below $1.00 again correct ?
+[19:36:54] Yogi (~oftc-webi@2a09:bac2:8d57:8c::e:2f0) left irc: Remote host closed the connection
+[19:36:56] Yogi (~oftc-webi@2a09:bac2:8d52:1cd2::2df:9) joined #atropa_logged.
+[19:37:02] <Yogi> 100% correct 
+[19:37:32] Yogi (~oftc-webi@2a09:bac2:8d52:1cd2::2df:9) left irc: Remote host closed the connection
+[19:38:02] Yogi (~oftc-webi@2a09:bac2:8d50:8c::e:2b7) joined #atropa_logged.
+[19:38:14] <Yogi> Is a good general rule to stay away from the 666 supply tokens ?
+[19:38:24] <mariarahel> that's already been covered
+[19:38:48] Yogi_ (~oftc-webi@2a09:bac2:8d53:8c::e:e4) joined #atropa_logged.
+[19:38:49] <Yogi_> Right 
+[19:38:54] Yogi (~oftc-webi@2a09:bac2:8d50:8c::e:2b7) left irc: Remote host closed the connection
+[19:40:04] Yogi_ (~oftc-webi@2a09:bac2:8d53:8c::e:e4) left irc: Remote host closed the connection
+[19:40:28] Yogi (~oftc-webi@2a09:bac2:8d56:1cd2::2df:63) joined #atropa_logged.
+[19:40:37] <Yogi> Novartis goal or purpose?
+[19:40:52] <mariarahel> I hope not !
+[19:41:07] Yogi_ (~oftc-webi@2a09:bac3:8d51:1cd2::2df:8d) joined #atropa_logged.
+[19:41:15] <Yogi_> Okay I see
+[19:41:22] Yogi (~oftc-webi@2a09:bac2:8d56:1cd2::2df:63) left irc: Remote host closed the connection
+[19:41:52] Yogi_ (~oftc-webi@2a09:bac3:8d51:1cd2::2df:8d) left irc: Remote host closed the connection
+[19:42:06] iTz_Black007 (uid623708@id-623708.hampstead.irccloud.com) left irc: Quit: Connection closed for inactivity
+[19:44:16] Yogi (~oftc-webi@2a09:bac3:8d52:8c::e:297) joined #atropa_logged.
+[19:44:23] <Yogi> Purpose of yjOz1IqBkQk?
+[19:45:11] Yogi (~oftc-webi@2a09:bac3:8d52:8c::e:297) left irc: Remote host closed the connection
+[19:45:27] <mariarahel> Indy is a top candidate for artist hire 
+[19:46:36] <mariarahel> right now i am only scoping to hire artist for token icons and advertising graphics
+[19:47:46] <mariarahel> $THERIGHTPARALLEL
+[19:47:59] <mariarahel> $GIST
+[19:50:04] <mariarahel> Re Gisting Of Any Er In Any Retard Word Play Can Fuck Off
+[19:50:23] <mariarahel> $BUNtm
+[19:52:35] <mariarahel> $ဘွဏtm
+[19:56:34] <mariarahel> https://www.youtube.com/watch?v=a6im-O6b8Ok
+[20:00:57] <mariarahel> Adolph Rupp & Barbara Hutton's Daughter "Queen Mary" Made The Windsors Famous For "Registering"
+[20:01:28] <mariarahel> In A Script Called "Primeval"
+[20:01:57] <mariarahel> Where You One-Up The Most Offensive Dare To Become Top Bag Of Dicks
+[20:02:07] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[20:02:53] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Read error: Connection reset by peer
+[20:03:05] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[20:03:46] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Read error: Connection reset by peer
+[20:05:08] <mariarahel> Gist Gamma Parallel
+[20:05:44] <mariarahel> Zero Directions
+[20:06:09] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) joined #atropa_logged.
+[20:06:12] <mariarahel> Zero Directions For Registered Holocaust Denial Play
+[20:07:37] Core5922 (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) joined #atropa_logged.
+[20:12:23] patrickg7818 (uid625795@id-625795.tinside.irccloud.com) joined #atropa_logged.
+[20:12:35] <patrickg7818> Maria about to read someone the riot act?
+[20:14:11] ShintoExpressPLS (~NOSHI@2601:204:ca02:7b20:701b:5de3:3efa:8780) left irc: Ping timeout: 480 seconds
+[20:19:21] Nick change: sunk-cost-fallacy -> its-gym-day
+[20:19:48] Nick change: its-gym-day -> skip-equals-death
+[20:25:02] <mariarahel> Zero Dealing
+[20:30:08] <mariarahel> https://www.youtube.com/results?search_query=ghazali
+[20:30:26] <mariarahel> I presume he had a role in M*A*S*H
+[20:32:16] <mariarahel> https://www.youtube.com/watch?v=rv97sMC2_bM
+[20:33:54] <mariarahel> https://www.youtube.com/watch?v=bm4PvZ6ZSZE
+[20:35:37] <mariarahel> https://www.youtube.com/watch?v=CiV7sR5VMRU
+[20:37:39] <mariarahel> https://www.youtube.com/watch?v=2X_9ybcCRIo
+[20:38:16] <mariarahel> Playboy Ghazala Turned The Body Of 𒂗𒆠𒄭 Into Anne Frank At Des Moines Iowa
+[20:38:56] <mariarahel> And It Was "Gist"
+[20:42:47] <mariarahel> https://www.youtube.com/watch?v=pDjOtP0FG9g
+[20:43:15] <mariarahel> Pork
+[20:46:02] Core5922 (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) left irc: Read error: Connection reset by peer
+[20:47:09] <mariarahel> https://www.youtube.com/watch?v=QJwYHQL4_3g
+[20:48:10] <mariarahel> Pinochet's father
+[20:49:41] <mariarahel> the guy israel/palestine was liberated from
+[20:50:28] <mariarahel> https://www.youtube.com/watch?v=A6Ys5hbALmE
+[20:51:12] <mariarahel> fuck those guys
+[21:17:33] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) joined #atropa_logged.
+[21:24:56] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) left irc: Read error: Connection reset by peer
+[21:25:30] <mariarahel> https://www.youtube.com/watch?v=roqGqhX6_-U
+[21:25:43] <mariarahel> Nailed It
+[21:25:59] <mariarahel> https://www.youtube.com/watch?v=TGSXzFP1WkE
+[21:26:02] <mariarahel> We Won
+[21:26:19] <mariarahel> $LIGHTtm
+[21:27:13] <mariarahel> แสงสว่างโซลูชั่นที่ว่าเครื่องหมายการค้า
+[21:27:34] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) joined #atropa_logged.
+[21:29:07] <mariarahel> https://www.youtube.com/watch?v=d74cH816kFQ
+[21:29:50] <mariarahel> <Fi> Handshake OK
+[21:29:50] <mariarahel> <Buffer> Alpha Parallel: 521104977284324
+[21:29:54] <mariarahel> <Buffer> Beta Light: 679680040451763
+[21:33:15] <mariarahel> Huo Guo Yao
+[21:34:47] <mariarahel> Yi Zheng De Huo Guo Yao
+[21:38:24] <mariarahel> still defending it
+[21:41:32] <mariarahel> https://www.yesstyle.com/en/porstina-bear-print-elbow-sleeve-oversized-t-shirt/info.html/pid.1091517301
+[21:41:37] <mariarahel> new teddy bear shirt today
+[21:42:06] <mariarahel> https://www.yesstyle.com/en/chuoku-japanese-print-short-sleeve-t-shirt/info.html/pid.1088514897
+[21:42:20] <mariarahel> Conjurinnem
+[21:52:54] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) left irc: Read error: Connection reset by peer
+[21:53:35] Yogi (~oftc-webi@2a09:bac3:8d51:8c::e:2c7) joined #atropa_logged.
+[21:53:56] <Yogi> Target for Lcc in 1 year? 
+[21:54:50] Yogi (~oftc-webi@2a09:bac3:8d51:8c::e:2c7) left irc: Remote host closed the connection
+[21:58:21] <mariarahel> https://www.youtube.com/watch?v=KuvGihght8Y
+[22:03:40] <mariarahel> still defending it ?
+[22:08:43] <mariarahel> https://www.youtube.com/watch?v=lnsl_ezHSm8&t=3267s
+[22:08:54] <mariarahel> We're Live With Ryan Reynolds
+[22:09:22] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) joined #atropa_logged.
+[22:13:58] patrickg7818 (uid625795@id-625795.tinside.irccloud.com) left irc: Quit: Connection closed for inactivity
+[22:19:05] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) left irc: Read error: Connection reset by peer
+[22:19:30] <mariarahel> https://www.youtube.com/watch?v=gyqGu7L2yj4
+[22:20:02] <mariarahel> he knows what the accomplishment re-enables
+[22:22:09] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) joined #atropa_logged.
+[22:36:20] <mariarahel> $LOGGERHEADS
+[22:38:39] <mariarahel> Make pDai $1 Again !
+[22:39:26] <mariarahel> $MDOA
+[22:41:00] <mariarahel> Teddy Bear, Pinata, Scissors
+[22:44:35] <mariarahel> Henry Rollins About To Destroy Jeff Dunham
+[22:46:47] <mariarahel> Champion Of Surreptitious Assumption
+[22:56:05] <mariarahel> It's The One Where Everybody Would Love To Help
+[22:57:53] <mariarahel> Zero Confidential Surreptitiousnesses
+[22:58:34] <mariarahel> Buy Drugs
+[23:02:06] <_surfacing8671> mmmm drugs 
+[23:02:18] <mariarahel> Buy The Best Drugs
+[23:11:03] ShintoExpressPLS (~NOSHI@2607:fb91:1dec:be93:fc64:d120:e9cb:1bb0) left irc: Ping timeout: 480 seconds
+[23:30:42] <mariarahel> https://www.youtube.com/watch?v=lz_5Lxvv-CA
+[23:31:03] <mariarahel> https://www.e-rara.ch/search/quick?query=monschein
+[23:31:14] <mariarahel> Joseph Monschein Invented Tract
+[23:31:31] <mariarahel> The Brisgoiae Traction
+[23:33:16] <mariarahel> Surreptitious Gist Of The Brisgoiae Traction
+[23:33:30] <mariarahel> The Surreptitious Gist Of The Brisgoiae Traction Is Ironically Confidential
+[23:35:25] <mariarahel> Surreptitious Gist Of The Brisgoiae Traction Amongst Monschein's Cadre Of Gamers
+[23:35:31] <mariarahel> etc
+[23:37:16] <mariarahel> $SUGGESTIONtm
+[23:41:01] <mariarahel> https://www.youtube.com/watch?v=NscGCJcWVvs
+[23:44:11] <mariarahel> https://www.youtube.com/watch?v=h3AdYkLVLNM
+[23:45:58] <mariarahel> https://www.youtube.com/watch?v=I9gGZb0XPmU
+[23:47:37] <mariarahel> https://www.youtube.com/watch?v=SNunaSLNNPk
+[23:51:04] <mariarahel> https://www.youtube.com/watch?v=qLh7vTBVLE0
+[23:53:24] <mariarahel> Ultimate Question
+[23:53:45] <mariarahel> Should Iota() Be Called The First Time From 0x09 Or 0x10 ?
+[23:53:47] <koss11[m]> Congrats Maria.  Your explanation today was gold.... (full message at <https://matrix.org/_matrix/media/v3/download/matrix.org/JYkouQotfsJXcHmwJEdClTfN>)
+[23:54:22] <mariarahel> Buffer.Pi(), formerly Iota()
+[23:54:43] <koss11[m]> I think that new people coming in wont read the chatlog.  So thanks for summarizing today.
+[23:56:56] <koss11[m]> sorry, I mean.. the 'entire chatlog'.   So thank you for giving more info.
+[23:57:17] <koss11[m]> Have a great Night All!
+[23:57:24] <mariarahel> any summaries relevant to the tokens is highly appreciated & i hope will be rewarded later

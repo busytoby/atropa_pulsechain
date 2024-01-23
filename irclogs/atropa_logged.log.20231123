@@ -1,0 +1,129 @@
+[16:39:03] atropa joined #atropa_logged.
+[16:39:10] #atropa_logged: mode change '+o atropa' by mariarahel!~maria@68.170.161.176
+[16:39:21] <mariarahel> ..
+[16:41:17] <mariarahel> afk coffee
+[16:42:07] <alexander_as_helios> main logger doing too many operations while it's supposed to be leading, have to use redis or json on bare metal to track when the backup ingest server accepts a line and ignore writes from main
+[17:49:53] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
+[17:51:31] <Robin__> @Maria soon token chatlog??? or a few months away as I have read in the logs
+[18:24:30] Eye-of-Argus3 (~Argus3@0003075e.user.oftc.net) left irc: Remote host closed the connection
+[18:24:32] Eye-of-Argus3 (~Argus3@170.64.189.40) joined #atropa_logged.
+[18:40:00] (#atropa_logged) Channel ban on *!uid623118@id-623118.ilkley.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!~oftc-webi@199.189.26.139 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*id622835@id-622835.ilkley.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@50.105.82.192 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@149.102.244.18 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@105.233.134.114 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*id625359@id-625359.hampstead.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*id622845@id-622845.helmsley.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*~tutu@088156208207.radom.vectranet.pl expired.
+[18:40:00] (#atropa_logged) Channel ban on Memory-of-Andromeda2!*@199.189.26.139 expired.
+[18:40:00] (#atropa_logged) Channel ban on bbb!*@199.189.26.139 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@cpe-98-30-19-182.columbus.res.rr.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@103.137.82.204 expired.
+[18:40:00] (#atropa_logged) Channel ban on deway!*@* expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@id-626935.lymington.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!uid626935@id-626935.lymington.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@*2604:3d09:cd78:1900:ad02:5d9e:1351:cb97 expired.
+[18:40:00] (#atropa_logged) Channel ban on PORTAL!*@* expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@192.162.140.* expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@*.tinside.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@*.uxbridge.irccloud.com expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*~Naga@088156208063.radom.vectranet.pl expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*oftc-webi@2604:3d09:cd78:1900:816d:47ce:43bb:e489 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@206.217.139.29 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@2600:1017:b017:48ad:5d69:beaa:7d78:b829 expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@*625478* expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@*626280* expired.
+[18:40:00] (#atropa_logged) Channel ban on *!*@*626290* expired.
+[18:40:00] #atropa_logged: mode change '-bbbb *!uid623118@id-623118.ilkley.irccloud.com *!~oftc-webi@199.189.26.139 *!*id622835@id-622835.ilkley.irccloud.com *!*@50.105.82.192' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:40:00] MyIrcBot (~nodebot@198-58-100-173.ip.linodeusercontent.com) left irc: Remote host closed the connection
+[18:40:01] #atropa_logged: mode change '-bbbb *!*@149.102.244.18 *!*@105.233.134.114 *!*id625359@id-625359.hampstead.irccloud.com *!*id622845@id-622845.helmsley.irccloud.com' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:40:03] #atropa_logged: mode change '-bbbb *!*~tutu@088156208207.radom.vectranet.pl Memory-of-Andromeda2!*@199.189.26.139 bbb!*@199.189.26.139 *!*@cpe-98-30-19-182.columbus.res.rr.com' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:40:06] MyIrcBot (~nodebot@198-58-100-173.ip.linodeusercontent.com) joined #atropa_logged.
+[18:40:07] #atropa_logged: mode change '-bbbb *!*@103.137.82.204 deway!*@* *!*@id-626935.lymington.irccloud.com *!uid626935@id-626935.lymington.irccloud.com' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:40:07] MyIrcBot (~nodebot@198-58-100-173.ip.linodeusercontent.com) left irc: Remote host closed the connection
+[18:40:12] #atropa_logged: mode change '-bbbb *!*@*2604:3d09:cd78:1900:ad02:5d9e:1351:cb97 PORTAL!*@* *!*@192.162.140.* *!*@*.tinside.irccloud.com' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:40:15] #atropa_logged: mode change '-bbbb *!*@*.uxbridge.irccloud.com *!*~Naga@088156208063.radom.vectranet.pl *!*oftc-webi@2604:3d09:cd78:1900:816d:47ce:43bb:e489 *!*@206.217.139.29' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:40:19] #atropa_logged: mode change '-bbbb *!*@2600:1017:b017:48ad:5d69:beaa:7d78:b829 *!*@*625478* *!*@*626280* *!*@*626290*' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[18:41:08] MyIrcBot (~nodebot@198-58-100-173.ip.linodeusercontent.com) joined #atropa_logged.
+[20:14:54] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
+[20:18:41] MilqToast (~BraseroCD@138.199.33.226) left irc: Ping timeout: 480 seconds
+[20:19:24] Mana_Pool (~BraseroCD@149.102.244.18) joined #atropa_logged.
+[20:20:03] <Mana_Pool> Hey, you removed my ban! Thanks @atropa!
+[20:20:54] <Mana_Pool> i won't insult the Frock ever again. I'll do my best.
+[20:21:50] Eye-of-Argus3 (~Argus3@0003075e.user.oftc.net) left irc: Remote host closed the connection
+[20:21:53] Eye-of-Argus2 (~Argus2@0003075d.user.oftc.net) left irc: Remote host closed the connection
+[20:22:03] Eye-of-Argus3 (~Argus3@170.64.189.40) joined #atropa_logged.
+[20:22:05] Eye-of-Argus2 (~Argus2@2a03:4000:40:38:d4b4:a9ff:fe4d:a51b) joined #atropa_logged.
+[20:27:28] Eye-of-Argus (~Argus@00030573.user.oftc.net) left irc: Remote host closed the connection
+[20:27:42] Eye-of-Argus (~Argus@208.87.128.84) joined #atropa_logged.
+[20:31:17] Eye-of-Argus (~Argus@00030573.user.oftc.net) left irc: Remote host closed the connection
+[20:32:37] Eye-of-Argus (~Argus@208.87.128.84) joined #atropa_logged.
+[20:46:26] <Mana_Pool> Maria, What is the purpose/function of ops? Why does one want to obtain ops status, and what do ops offer/do for the benefit of the chatlog token? Besides the ability to ban people. I assume it has to do with their running a logger? Do you want more loggers still, is that a helpful function in decentralization? This is me "asking about ops". pls don't ban me for any woeful illiteracy I may display. I am but a poor pleb, eating crumbs under 
+[20:46:26] <Mana_Pool> the table of the Frock. A simple night janitor wishing to do any small part toward the benefit of the Synod.
+[20:48:46] <Mana_Pool> wishing to innoculate with b3 against any illness
+[20:49:32] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
+[20:54:38] <Mana_Pool> and hoping not to die in the chat
+[21:00:43] <alexander_as_helios> mountain mocha kilimanjaro
+[21:03:55] <alexander_as_helios> specifically AHpX9Z_5Fsg
+[21:12:01] #atropa_logged: mode change '+b *!*BraseroCD@149.102.244.18' by mariarahel!~maria@68.170.161.176
+[21:12:09] <mariarahel> do not come back pls
+[21:12:11] #atropa_logged: mode change '-b+b *!*BraseroCD@149.102.244.18 *!~BraseroCD@149.102.244.18' by mariarahel!~maria@68.170.161.176
+[21:12:13] Mana_Pool kicked from #atropa_logged by mariarahel: Mana_Pool
+[21:16:11] <mariarahel> When Does Deprecation Stop ?
+[21:18:01] <alexander_as_helios> this timeline might loop around and we see the second coming of RH
+[21:19:21] <mariarahel> Deprecations Are Worse Than Obstacles
+[21:20:06] <alexander_as_helios> i'm convinced dev and prod have completely different physics
+[21:20:46] <mariarahel> But 410 Is Never Greater Than 413
+[21:23:13] <mariarahel> We're currently at Dev Complete for what I am immediately trying to achieve
+[21:23:30] <mariarahel> I haven't seen any opposition since the last code checkin
+[21:23:48] <mariarahel> For what I have specifically been looking to overcome
+[21:24:26] <mariarahel> Sitting Pretty
+[21:25:17] <mariarahel> The Opposition Is "Treaty"
+[21:26:09] <mariarahel> https://www.youtube.com/watch?v=2sAkaCoLM4I
+[21:26:48] <mariarahel> Oh My God !
+[21:27:05] <mariarahel> Don't Be Like That !
+[21:29:50] <mariarahel> https://www.youtube.com/watch?v=DLpZsb7awsg
+[21:30:15] <mariarahel> Inkpaduta Was Leonidas
+[21:30:45] <mariarahel> Sitting Bull Would Declare 410 > 413 Against Him
+[21:31:40] <mariarahel> https://www.youtube.com/watch?v=fplk4zHOpBQ
+[21:34:20] <mariarahel> Really 1937
+[21:35:13] <mariarahel> https://www.youtube.com/watch?v=vByTQ1Ooi9s
+[21:35:18] <mariarahel> Same 1937 Event
+[21:36:55] <mariarahel> https://www.youtube.com/watch?v=0dX5jCpd8Lo
+[21:37:27] <mariarahel> Her Treaty Just Takes Pictures Of Dead Bodies Made Up In Costume And Makes Shit Up
+[21:38:56] <mariarahel> Mrs Melrose
+[21:39:38] <mariarahel> Sneaks Yet
+[21:42:48] <mariarahel> https://www.youtube.com/watch?v=wDlW3rIU8tw
+[21:43:00] <mariarahel> Her Mom
+[21:43:46] <mariarahel> https://www.youtube.com/watch?v=EPJXH6f94EQ
+[21:45:35] <mariarahel> https://www.youtube.com/watch?v=v774xWgq4FA
+[21:46:46] <mariarahel> Biggest MMORPG
+[21:48:27] <mariarahel> https://www.youtube.com/watch?v=4OdHxXoAa1g
+[21:50:23] <mariarahel> https://www.youtube.com/watch?v=BWYlSmPSnyA
+[21:51:33] <mariarahel> Sitting Bull Can Fuck Off
+[21:52:17] <mariarahel> Billy Sitting Bull Gardell
+[21:52:20] Eye-of-Argus (~Argus@00030573.user.oftc.net) left irc: Remote host closed the connection
+[21:52:35] Eye-of-Argus (~Argus@208.87.128.84) joined #atropa_logged.
+[21:53:19] <mariarahel> Incremental Numbers
+[21:53:31] <alexander_as_helios> restarted the container instead of recreating it after adding a volume mount
+[21:53:34] <alexander_as_helios> smh
+[21:56:07] chalupa (~Jubie@138.199.33.226) joined #atropa_logged.
+[21:59:09] <chalupa> Nah, I'm not going to leave just because you say pls. I said please, and you were rude to me. Your comment on deprication was on point though, so I'll quit using that as a strategy to get information. I'm here trying to better my life and take opportunities to understand things happening around me. Being curious to the point of peskiness is how i learn shit, even if curiosity might kill the cat. I have IP addresses for days. block them all. you 
+[21:59:09] <chalupa> ain't my lord. and fuck your intellectual elitism.
+[21:59:21] #atropa_logged: mode change '+b *!~Jubie@138.199.33.226' by mariarahel!~maria@68.170.161.176
+[21:59:21] chalupa kicked from #atropa_logged by mariarahel: chalupa
+[22:00:20] <mariarahel> we don't want you to learn curses or profanity
+[22:00:47] <mariarahel> your princess is in another castle
+[23:13:00] (#atropa_logged) Channel ban on *!~BraseroCD@149.102.244.18 expired.
+[23:13:01] #atropa_logged: mode change '-b *!~BraseroCD@149.102.244.18' by atropa!~atropa@ec2-35-83-43-61.us-west-2.compute.amazonaws.com
+[23:34:42] <alexander_as_helios> oAK hTT _ NnQ o&t =32
+[23:37:02] Charlotte (~Charlotte@149.102.244.18) joined #atropa_logged.
+[23:44:48] <Charlotte> I don't want to learn the true meaning of curses or profanity. I don't want to ruminate. I don't want to create sigils or conjure darkness. Don't want to create servitors or to be one if I discover that I am. My princess is in whatever castle I find myself in, always. Where's the love, yo? Just trying to spritz myself and everyone else with high-vibe Viktor Shcauberger holy water, be humbled, and reduce my ego like the rest of (at least some 
+[23:44:48] <Charlotte> of) us
+[23:44:53] mariarahel (~maria@68.170.161.176) left irc: Quit: Hey!  Where'd my controlling terminal go?
+[23:49:21] <Charlotte> and while i'm here- shouts to Freedom_777 for always reminding participants to be thankful and not place ourselves on the wrong side of the barrier between heaven and hell
+[23:49:56] <Charlotte> even if we might own a bit of 666
+[23:51:38] mariarahel (~maria@68.170.161.176) joined #atropa_logged.
+[23:51:39] #atropa_logged: mode change '+o mariarahel' by Memory-of-Andromeda!~Andromeda@0003070c.user.oftc.net
+[00:00:00] (#atropa_logged) Channel ban on *!~Jubie@138.199.33.226 expired.
