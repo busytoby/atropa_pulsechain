@@ -4,7 +4,8 @@
 [16:39:21] <mariarahel> ..
 [16:41:17] <mariarahel> afk coffee
 [16:42:07] <alexander_as_helios> main logger doing too many operations while it's supposed to be leading, have to use redis or json on bare metal to track when the backup ingest server accepts a line and ignore writes from main
-[17:51:31] <Robin__> @Maria soon token chatlog??? or a few months away as I have read in the logs
+![17:51:31] <Robin__> @Maria soon token chatlog??? or a few months away as I have read in the logs
+https://www.youtube.com/@StovesKitchen
 [21:00:43] <alexander_as_helios> mountain mocha kilimanjaro
 [21:03:55] <alexander_as_helios> specifically AHpX9Z_5Fsg
 [21:19:21] <mariarahel> Deprecations Are Worse Than Obstacles
