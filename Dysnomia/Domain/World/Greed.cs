@@ -30,7 +30,7 @@ namespace Dysnomia.Domain.World
         public TcpClient Mu;
         public Fa Rho;
         public Lib.Buffer? Psi;
-        public Serialization? Nu;
+        public Conjunction? Nu;
         public bool Cone = false;
         public bool TimedOut = false;
         public short HandshakeState = 0x00;
@@ -285,7 +285,7 @@ namespace Dysnomia.Domain.World
                             Handshake("Alpha", 0x08);
                             Handshake("Alpha", Delta);
                             if (Nu == null) throw new Exception("Null Nu");
-                            Nu.Serialize(new byte[] { 0x08 }, Delta.ToByteArray());
+                            Nu.Join(new byte[] { 0x08 }, Delta.ToByteArray());
                         }
                         else if (Subject == "BETA" && Data.Length == 1 && Data[0] == 0x09)
                         {
@@ -299,7 +299,7 @@ namespace Dysnomia.Domain.World
                             Handshake("Alpha", 0x09);
                             Handshake("Alpha", Data);
                             if (Nu == null) throw new Exception("Null Nu");
-                            Nu.Serialize(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
+                            Nu.Join(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }

@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Lib
 {
-    public class Serialization : ConcurrentQueue<byte[]>
+    public class Conjunction : ConcurrentQueue<byte[]>
     {
-        public void Serialize(byte[] OpCode, byte[] Bytes)
+        public void Join(byte[] OpCode, byte[] Bytes)
         {
             Enqueue(OpCode);
             Enqueue(Bytes);
         }
 
-        public void Serialize(byte[] OpCode, BigInteger Beta) { Serialize(OpCode, Beta.ToByteArray()); }
+        public void Join(byte[] OpCode, BigInteger Beta) { Join(OpCode, Beta.ToByteArray()); }
 
         public BigInteger Next() { return new BigInteger(NextBytes()); }
         public string NextString() { return Encoding.Default.GetString(NextBytes()); }

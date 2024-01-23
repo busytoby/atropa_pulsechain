@@ -267,7 +267,7 @@ namespace Dysnomia.Domain
                                 Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Alpha(AlphaCode);
-                                Controller.Fi.Psi[ClientId].Nu?.Serialize(OpCode, AlphaCode);
+                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, AlphaCode);
                                 break;
                             case 0x09:
                                 while (Count < 3) Thread.Sleep(100);
@@ -280,7 +280,7 @@ namespace Dysnomia.Domain
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
                                 Client.Psi.Beta(BetaCode, true);
                                 if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
-                                Controller.Fi.Psi[ClientId].Nu?.Serialize(OpCode, Client.Psi.Bytes);
+                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
                                 Client.Psi.Pi();
                                 Client.Psi.Rho();
                                 break;
