@@ -1,32 +1,4 @@
-[00:37:24] MikeFA (~oftc-webi@87.249.134.25) left irc: Remote host closed the connection
-[01:54:13] SHVDXW9 (~SHVDXW9@219-89-192-167.adsl.xtra.co.nz) joined #atropa_logged.
-[02:11:47] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
-[02:18:15] SHVDXW9 (~SHVDXW9@219-89-192-167.adsl.xtra.co.nz) left irc: Ping timeout: 480 seconds
-[02:19:40] SHVDXW9 (~SHVDXW9@103.62.49.194) joined #atropa_logged.
-[02:56:35] atropa-53613 (~oftc-webi@199.189.26.139) joined #atropa_logged.
-[02:56:53] atropa-53613 (~oftc-webi@199.189.26.139) left irc: Remote host closed the connection
-[03:09:12] user-4416 (~oftc-webi@199.189.26.139) joined #atropa_logged.
-[03:14:11] user-4416 (~oftc-webi@199.189.26.139) left irc: 
-[03:14:17] user-4416 (~oftc-webi@199.189.26.139) joined #atropa_logged.
-[03:15:23] user-4416 (~oftc-webi@199.189.26.139) left irc: 
-[03:15:32] user-4416 (~oftc-webi@199.189.26.139) joined #atropa_logged.
-[03:16:56] user-4416 (~oftc-webi@199.189.26.139) left irc: Remote host closed the connection
-[03:17:00] user-4416 (~oftc-webi@199.189.26.139) joined #atropa_logged.
-[03:17:17] user-4416 (~oftc-webi@199.189.26.139) left irc: 
-[03:17:21] user-4416 (~oftc-webi@199.189.26.139) joined #atropa_logged.
 [03:17:32] <user-4416> asd
-[03:18:06] user-4416 (~oftc-webi@199.189.26.139) left irc: 
-[04:18:39] ogwebchef888 (~ogwebchef@2600:1700:5890:8860:e062:a1f2:a9fd:9192) left irc: Ping timeout: 480 seconds
-[04:27:26] ogwebchef888 (~ogwebchef@2600:1700:5890:8860:ec37:ad56:2a79:841e) joined #atropa_logged.
-[04:27:26] #atropa_logged: mode change '+o ogwebchef888' by ChanServ!services@services.oftc.net
-[05:25:29] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) left irc: Quit: This computer has gone to sleep
-[07:29:32] SHVDXW9 (~SHVDXW9@103.62.49.194) left irc: Ping timeout: 480 seconds
-[07:40:36] SHVDXW9 (~SHVDXW9@219-89-192-167.adsl.xtra.co.nz) joined #atropa_logged.
-[07:49:30] SHVDXW9 (~SHVDXW9@219-89-192-167.adsl.xtra.co.nz) left irc: Ping timeout: 480 seconds
-[09:22:37] SHVDXW9 (~SHVDXW9@116.90.74.141) joined #atropa_logged.
-[10:34:45] SHVDXW9 (~SHVDXW9@116.90.74.141) left irc: Ping timeout: 480 seconds
-[10:35:11] SHVDXW9 (~SHVDXW9@116.90.74.141) joined #atropa_logged.
-[11:20:45] jameshexican (uid622906@id-622906.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
 [14:24:36] <mariarahel> I think I see how the layer 2 is going to come together
 [14:25:08] <mariarahel> I will build it to replace the irc channel for #atropa_logged
 [14:25:54] <mariarahel> And release the chatlog token from layer 2 with specific features for how and what goes into the Chatlog
@@ -87,23 +59,12 @@
 [15:18:38] <mariarahel> Store Bank Show
 [15:19:03] <mariarahel> Fuck Off, Chloe
 [15:20:50] <mariarahel> And Your Breakfast Franchise
-[15:28:44] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
 [15:48:08] <FREEDOM_777> GM atropa 
 [16:04:06] <ogwebchef888> $MUSIC
 [16:04:08] <ogwebchef888> GM 
-[16:04:26] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) left irc: Quit: This computer has gone to sleep
 [16:15:51] <DunnyHex> GM
-[18:18:58] jameshexican (uid622906@id-622906.ilkley.irccloud.com) joined #atropa_logged.
 [18:25:26] <ogwebchef888> Do we make price of $MUSIC 50x cheaper than eth price?? It's moving https://www.dextools.io/app/en/ether/pair-explorer/0x5221aafc7f7e0ff5a7aeaa8555681c9f7f42a014
 [18:25:39] <ogwebchef888> What's a good way to do this
 [18:25:43] <ogwebchef888> Initial lp was burnt
 [18:46:33] <ogwebchef888> I think onboarding has been a bit slow on pulsechain side due to the token price being higher than on eth. $MUSIC just got added to coinmarketcap too https://coinmarketcap.com/currencies/gala-music/
-[18:52:08] fatropac (~oftc-webi@2a02:6ea0:d509:1::a09e) joined #atropa_logged.
-[19:25:17] fatropac (~oftc-webi@2a02:6ea0:d509:1::a09e) left irc: Remote host closed the connection
-[21:26:09] Robin__ (uid626135@id-626135.ilkley.irccloud.com) joined #atropa_logged.
-[22:39:41] DunnyHex (uid629710@id-629710.helmsley.irccloud.com) left irc: Quit: Connection closed for inactivity
 [22:53:41] <mariarahel> watching
-[23:03:25] alexander_as_helios (alexander_@000303bd.user.oftc.net) left irc: Quit: Ping timeout (120 seconds)
-[23:04:06] alexander_as_helios (alexander_@194.87.62.227) joined #atropa_logged.
-[23:09:08] Tetragrammaton33 (~TetraGram@104-5-108-140.lightspeed.nsvltn.sbcglobal.net) joined #atropa_logged.
-[23:55:51] Robin__ (uid626135@id-626135.ilkley.irccloud.com) left irc: Quit: Connection closed for inactivity
