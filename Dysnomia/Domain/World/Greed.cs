@@ -194,10 +194,8 @@ namespace Dysnomia.Domain.World
                     Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
                     HandshakeState = 0x06;
                 }
-                else if(Beta == 0x11)
-                    HandshakeState = 0x11;
                 else
-                    throw new Exception("Not Implemented");
+                    HandshakeState = (short)Beta;
             }
         }
 
@@ -365,7 +363,7 @@ namespace Dysnomia.Domain.World
                             if (B <= 0) continue;
 
                             Span<Byte> Slice = Omicron.Slice(A, B);
-                            if (HandshakeState <= 0x06)
+                            if (HandshakeState <= 0x07)
                             {
                                 BigInteger Alpha = new BigInteger(Slice);
                                 NextHandshake(ref Alpha);
