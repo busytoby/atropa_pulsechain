@@ -24,21 +24,22 @@ namespace Dysnomia.Domain.bin
 
             if (Args.Length == 0)
             {
-                if(Controller.Fi.Psi.Count == 0) Output(From, Encoding.Default.GetBytes("No Open Connections"), 6);
+                if (Controller.Fi.Psi.Count == 0) Output(From, Encoding.Default.GetBytes("No Open Connections"), 6);
                 foreach (Greed G in Controller.Fi.Psi.Values)
                 {
                     if (G.Cone == false)
                         Output(From, Encoding.Default.GetBytes(String.Format("{0} :: {1}[{2}]", G.ClientId.ToString(), G.Host, G.Port)), 6);
                 }
+                if (!Controller.Fi.Nu.IsZero)
+                    Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Controller.Fi.Nu.ToString())), 6);
                 return;
             }
-
-            
-            /*
-            byte[] From = Encoding.Default.GetBytes(Name);
-            Input(From, new byte[] { 0x03 }, 6);
-            Input(From, new byte[] { 0x00 }, 6);
-            */
+            else
+            {
+                BigInteger _sel = BigInteger.Parse(Args[0]);
+                if (Controller.Fi.Psi.ContainsKey(_sel)) Controller.Fi.Nu = _sel;
+                else Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: ", _sel)), 6);
+            }
         }
     }
 }
