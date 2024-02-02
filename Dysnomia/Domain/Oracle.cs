@@ -270,7 +270,7 @@ namespace Dysnomia.Domain
                                 Next(); // ignore priority
                                 break;
                             case 0x08:
-                                while(Count < 3) Thread.Sleep(100);
+                                while(Count < 5) Thread.Sleep(100);
                                 ClientId = Next();
                                 byte[] AlphaCode = NextBytes();
                                 byte[] AlphaBytes = NextBytes();
@@ -284,7 +284,7 @@ namespace Dysnomia.Domain
                                 Next(); // ignore priority
                                 break;
                             case 0x09:
-                                while (Count < 3) Thread.Sleep(100);
+                                while (Count < 5) Thread.Sleep(100);
                                 ClientId = Next();
                                 byte[] BetaCode = NextBytes();
                                 byte[] BetaBytes = NextBytes();
@@ -298,6 +298,28 @@ namespace Dysnomia.Domain
                                 Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
                                 Client.Psi.Pi();
                                 Client.Psi.Rho();
+                                Next(); // ignore priority
+                                break;
+                            case 0x10:
+                                throw new Exception("There Is No OpCode 0x10");
+                            case 0x11:
+                                while (Count < 5) Thread.Sleep(100);
+                                ClientId = Next();
+                                byte[] SayCode = NextBytes();
+                                byte[] SayBytes = NextBytes();
+                                ClientIdCheck = Next();
+                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x10 ClientId Error");
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x10 Unknown ClientId");
+
+                                String SayString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(SayBytes));
+                                foreach (Greed G in Controller.Fi.Psi.Values)
+                                {
+                                    if (G.Cone == true)
+                                    {
+                                        G.Handshake("Say", 0x11);
+                                        G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(SayString));
+                                    }
+                                }
                                 Next(); // ignore priority
                                 break;
                             default:

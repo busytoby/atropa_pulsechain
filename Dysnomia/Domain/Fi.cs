@@ -116,7 +116,7 @@ namespace Dysnomia.Domain
 
             NetworkStream Iota = Beta.GetStream();
             Iota.ReadTimeout = 100;
-            byte[] bytes = new byte[32];
+            byte[] bytes = new byte[256];
             Span<Byte> Omicron = new Span<Byte>(bytes);
 
             XiHandshake(ClientId);

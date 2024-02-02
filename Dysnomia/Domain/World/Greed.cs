@@ -79,14 +79,14 @@ namespace Dysnomia.Domain.World
         }
         */
 
-        private void Handshake(String Subject, byte[] Data)
+        public void Handshake(String Subject, byte[] Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1));
             Output("Fi", Subject, Data, 1);
         }
 
-        private void Handshake(String Subject, BigInteger Data)
+        public void Handshake(String Subject, BigInteger Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Subject, Data, 1));
@@ -194,6 +194,8 @@ namespace Dysnomia.Domain.World
                     Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
                     HandshakeState = 0x06;
                 }
+                else if(Beta == 0x11)
+                    HandshakeState = 0x11;
                 else
                     throw new Exception("Not Implemented");
             }
@@ -236,6 +238,19 @@ namespace Dysnomia.Domain.World
             Logging.Log("Greed", "Disconnected " + Host, 6);
         }
 
+        private void Procede(Span<Byte> Iota)
+        {
+            switch(HandshakeState)
+            {
+                case 0x11:
+                    Logging.Log("CHAT", Encoding.Default.GetString(Iota), 12);
+                    break;
+                default:
+                    throw new Exception("Cannot Procede With Handshake State");
+            }
+            HandshakeState = 0x07;
+        }
+
         protected override void Phi()
         {
             Thread.Sleep(10);
@@ -243,7 +258,7 @@ namespace Dysnomia.Domain.World
             if(!Mu.Connected && Theta.In.Count == 0 && Cone == false)
                 Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
 
-            byte[] bytes = new byte[64];
+            byte[] bytes = new byte[256];
             NetworkStream Iota = Mu.GetStream();
             Stopwatch stopwatch = new Stopwatch();
             short Resets = 0;
@@ -300,6 +315,17 @@ namespace Dysnomia.Domain.World
                             Handshake("Beta", Data);
                             if (Nu == null) throw new Exception("Null Nu");
                             Nu.Join(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
+                        } else if (Subject == "SAY" && Data.Length == 1 && Data[0] == 0x10)
+                        {
+                            if (Psi == null) throw new Exception("Null Psi");
+                            if (Psi.Bytes == null) throw new Exception("Null Psi Bytes");
+                            if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                            From = Lambda.NextString();
+                            Subject = Lambda.NextString();
+                            Data = Lambda.NextBytes();
+                            Priority = Lambda.NextBytes();
+                            Handshake("Say", 0x11);
+                            Handshake("Say", Data);
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }
@@ -338,8 +364,14 @@ namespace Dysnomia.Domain.World
                             }
                             if (B <= 0) continue;
 
-                            BigInteger Alpha = new BigInteger(Omicron.Slice(A, B));
-                            NextHandshake(ref Alpha);
+                            Span<Byte> Slice = Omicron.Slice(A, B);
+                            if (HandshakeState <= 0x06)
+                            {
+                                BigInteger Alpha = new BigInteger(Slice);
+                                NextHandshake(ref Alpha);
+                            }
+                            else
+                                Procede(Slice);
                             stopwatch.Reset();
 
                             A = i + 4;
@@ -355,7 +387,7 @@ namespace Dysnomia.Domain.World
                         return;
                     }
                     stopwatch.Stop();
-                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 3)
+                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 3000)
                         if (++Resets > 2) throw new Exception("Handshake Timeout");
                         else
                         {
