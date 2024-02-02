@@ -32,11 +32,20 @@ namespace Dysnomia.Domain
 
         public Tare? Fi(Tare M)
         {
-            byte[] ClientIdBytes = M.NextBytes();
-            BigInteger ClientId = new BigInteger(ClientIdBytes);
-            if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
-            Enqueue(M.NextBytes());
-            Enqueue(ClientIdBytes);
+            short OpCode = M.OpCode();
+            if (OpCode == 0x10)
+            {
+                byte[] TimeStamp = M.NextBytes();
+                byte[] ClientIdBytes = M.NextBytes();
+                BigInteger ClientId = new BigInteger(ClientIdBytes);
+                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
+                Enqueue(M.NextBytes());
+                Enqueue(ClientIdBytes);
+                Enqueue(M.NextBytes());
+            }
+
+            if (M.Count != 0) 
+                throw new Exception("Mishandled Tare");
             return null;
         }
 
@@ -247,6 +256,7 @@ namespace Dysnomia.Domain
                                 if (!Chi.ClientId.IsZero) throw new Exception("Client ID Non-Zero");
                                 Chi.ClientId = Math.Random();
                                 Controller.Fi.Psi.TryAdd(Chi.ClientId, Chi);
+                                Controller.Fi.Nu = Chi.ClientId;
                                 break;
                             case 0x06:
                                 throw new Exception("Handshake Correction Not Yet Implemented");
@@ -256,33 +266,39 @@ namespace Dysnomia.Domain
                                 ClientId = Next();
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
                                 Controller.Fi.Psi[ClientId].Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
+                                Logging.Log("Oracle", "Serialization Opened For ClientId: " + ClientId, 5);
+                                Next(); // ignore priority
                                 break;
                             case 0x08:
                                 while(Count < 3) Thread.Sleep(100);
                                 ClientId = Next();
                                 byte[] AlphaCode = NextBytes();
+                                byte[] AlphaBytes = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x08 ClientId Error");
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
                                 Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                Client.Psi.Alpha(AlphaCode);
-                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, AlphaCode);
+                                Client.Psi.Alpha(AlphaBytes);
+                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, AlphaBytes);
+                                Next(); // ignore priority
                                 break;
                             case 0x09:
                                 while (Count < 3) Thread.Sleep(100);
                                 ClientId = Next();
                                 byte[] BetaCode = NextBytes();
+                                byte[] BetaBytes = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x09 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x09 Unknown ClientId");
                                 Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                Client.Psi.Beta(BetaCode, true);
+                                Client.Psi.Beta(BetaBytes, true);
                                 if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
                                 Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
                                 Client.Psi.Pi();
                                 Client.Psi.Rho();
+                                Next(); // ignore priority
                                 break;
                             default:
                                 throw new Exception("Not Implemented");

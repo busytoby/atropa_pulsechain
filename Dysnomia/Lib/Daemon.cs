@@ -48,9 +48,7 @@ namespace Dysnomia.Lib
         {
             if (Theta == null) throw new Exception("Null Theta");
             Tare M = new Tare();
-            M.Enqueue(From);
-            M.Enqueue(Data);
-            M.Enqueue(Priority);
+            M.Enqueue(From, Data, Priority);
             Theta.Out.Enqueue(M);
         }
 
@@ -58,10 +56,7 @@ namespace Dysnomia.Lib
         {
             if (Theta == null) throw new Exception("Null Theta");
             Tare M = new Tare();
-            M.Enqueue(From);
-            M.Enqueue(Subject);
-            M.Enqueue(Data);
-            M.Enqueue(Priority);
+            M.Enqueue(From, Subject, Data, Priority);
             Theta.Out.Enqueue(M);
         }
 

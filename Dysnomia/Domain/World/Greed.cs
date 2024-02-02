@@ -296,8 +296,8 @@ namespace Dysnomia.Domain.World
                             Subject = Lambda.NextString();
                             Data = Lambda.NextBytes();
                             Priority = Lambda.NextBytes();
-                            Handshake("Alpha", 0x09);
-                            Handshake("Alpha", Data);
+                            Handshake("Beta", 0x09);
+                            Handshake("Beta", Data);
                             if (Nu == null) throw new Exception("Null Nu");
                             Nu.Join(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
                         }
@@ -307,14 +307,20 @@ namespace Dysnomia.Domain.World
                     while (Theta.Out.Count > 0)
                     {
                         if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                        short OpCode = Lambda.OpCode();
+                        if (OpCode != 0x10 && OpCode != 0x11) throw new Exception("Unknown OpCode");
+                        byte[] Timestamp = Lambda.NextBytes();
                         string From = Lambda.NextString();
-                        string Subject = Lambda.NextString();
+                        string Subject = "";
+                        if(OpCode == 0x11)
+                            Subject = Lambda.NextString();
                         byte[] Data = Lambda.NextBytes();
                         byte[] Priority = Lambda.NextBytes();
                         Iota.Write(Data);
                         Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
                     }
 
+                    Thread.Sleep(200);
                     if (Iota.DataAvailable)
                     {
                         Thread.Sleep(200);

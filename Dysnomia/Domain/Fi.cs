@@ -26,6 +26,7 @@ namespace Dysnomia.Domain
         private TcpListener? Mu;
         public Tare Rho;
         public ConcurrentDictionary<BigInteger, Greed> Psi;
+        public BigInteger Nu;
 
         static public String DLE = "\u0010\u0010\u0010\u0010";
 
@@ -157,8 +158,13 @@ namespace Dysnomia.Domain
                         if (!Client.Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
                         if (Lambda != null && ValidateTare(Lambda))
                         {
-                            String From = Lambda.NextString();
-                            String Subject = Lambda.NextString();
+                            short OpCode = Lambda.OpCode();
+                            if (OpCode != 0x10 && OpCode != 0x11) throw new Exception("Unknown OpCode");
+                            byte[] Timestamp = Lambda.NextBytes();
+                            string From = Lambda.NextString();
+                            string Subject = "";
+                            if (OpCode == 0x11)
+                                Subject = Lambda.NextString();
                             byte[] Data = Lambda.NextBytes();
                             byte[] Priority = Lambda.NextBytes();
                             Iota.Write(Data);
