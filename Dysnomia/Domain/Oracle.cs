@@ -155,6 +155,11 @@ namespace Dysnomia.Domain
             BigInteger ClientId, ClientIdCheck;
             Greed Client;
 
+            byte[] Code;
+            byte[] Bytes;
+            byte[] EncBytes;
+            String DataString;
+
             while (true)
             {
                 lock (Tau)
@@ -272,28 +277,28 @@ namespace Dysnomia.Domain
                             case 0x08:
                                 while(Count < 5) Thread.Sleep(100);
                                 ClientId = Next();
-                                byte[] AlphaCode = NextBytes();
-                                byte[] AlphaBytes = NextBytes();
+                                Code = NextBytes();
+                                Bytes = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x08 ClientId Error");
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
                                 Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                Client.Psi.Alpha(AlphaBytes);
-                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, AlphaBytes);
+                                Client.Psi.Alpha(Bytes);
+                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Bytes);
                                 Next(); // ignore priority
                                 break;
                             case 0x09:
                                 while (Count < 5) Thread.Sleep(100);
                                 ClientId = Next();
-                                byte[] BetaCode = NextBytes();
-                                byte[] BetaBytes = NextBytes();
+                                Code = NextBytes();
+                                Bytes = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x09 ClientId Error");
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x09 Unknown ClientId");
                                 Client = Controller.Fi.Psi[ClientId];
                                 if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                Client.Psi.Beta(BetaBytes, true);
+                                Client.Psi.Beta(Bytes, true);
                                 if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
                                 Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
                                 Client.Psi.Pi();
@@ -303,21 +308,45 @@ namespace Dysnomia.Domain
                             case 0x10:
                                 throw new Exception("There Is No OpCode 0x10");
                             case 0x11:
+                                throw new Exception("There Is No OpCode 0x10");
+                            case 0x12:
                                 while (Count < 5) Thread.Sleep(100);
                                 ClientId = Next();
-                                byte[] SayCode = NextBytes();
-                                byte[] SayBytes = NextBytes();
+                                Code = NextBytes();
+                                Bytes = NextBytes();
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x10 ClientId Error");
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x10 Unknown ClientId");
 
-                                String SayString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(SayBytes));
+                                DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Bytes));
                                 foreach (Greed G in Controller.Fi.Psi.Values)
                                 {
                                     if (G.Cone == true)
                                     {
-                                        G.Handshake("Say", 0x11);
-                                        G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(SayString));
+                                        G.Handshake("Say", 0x12);
+                                        G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(DataString));
+                                    }
+                                }
+                                Next(); // ignore priority
+                                break;
+                            case 0x13:
+                                while (Count < 5) Thread.Sleep(100);
+                                ClientId = Next();
+                                Code = NextBytes();
+                                Bytes = NextBytes();
+                                ClientIdCheck = Next();
+                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x10 ClientId Error");
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x10 Unknown ClientId");
+
+                                Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes);                              
+                                DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Controller.Fi.Psi[ClientId].Psi.Bytes));
+                                foreach (Greed G in Controller.Fi.Psi.Values)
+                                {
+                                    if (G.Cone == true)
+                                    {
+                                        G.Handshake("ESay", 0x13);
+                                        G.Psi?.Encode(DataString);
+                                        G.Handshake(ClientId.ToString(), G.Psi.Bytes);
                                     }
                                 }
                                 Next(); // ignore priority

@@ -60,20 +60,20 @@ namespace Dysnomia.Domain.World
         }
 
         /*
-        public Buffer Encode(String Beta)
+        public Lib.Buffer Encode(String Beta)
         {
             Logging.Log("Greed", "Encoding: " + Beta, 1);
             if (Psi == null) throw new Exception("Null Psi");
-            Buffer A = new Buffer(Psi, Encoding.Default.GetBytes(Beta));
+            Lib.Buffer A = new Lib.Buffer(Psi, Encoding.Default.GetBytes(Beta));
             Logging.Log("Greed", "Encoded Base64: " + Convert.ToBase64String(A.Bytes), 2);
             return A;
         }
 
-        public Buffer Decode(Buffer Beta)
+        public Lib.Buffer Decode(Lib.Buffer Beta)
         {
             Logging.Log("Greed", "Decoding Base64: " + Convert.ToBase64String(Beta.Bytes), 1);
             if (Psi == null) throw new Exception("Null Psi");
-            Buffer B = new Buffer(Psi, Beta.Bytes);
+            Lib.Buffer B = new Lib.Buffer(Psi, Beta.Bytes);
             Logging.Log("Greed", "Decoded: " + Encoding.Default.GetString(B.Bytes), 2);
             return B;
         }
@@ -240,8 +240,12 @@ namespace Dysnomia.Domain.World
         {
             switch(HandshakeState)
             {
-                case 0x11:
+                case 0x12:
                     Logging.Log("CHAT", Encoding.Default.GetString(Iota), 12);
+                    break;
+                case 0x13:
+                    Psi.Encode(Iota.ToArray());
+                    Logging.Log("ECHAT", Encoding.Default.GetString(Psi.Bytes), 12);
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");
@@ -287,7 +291,7 @@ namespace Dysnomia.Domain.World
                         }
 
                         else if (Cone) throw new Exception("Cone Should No Longer Be Running In Greed");
-                        else if(Subject == "ALPHA" && Data.Length == 1 && Data[0] == 0x08)
+                        else if (Subject == "ALPHA" && Data.Length == 1 && Data[0] == 0x08)
                         {
                             if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
                             From = Lambda.NextString();
@@ -313,7 +317,8 @@ namespace Dysnomia.Domain.World
                             Handshake("Beta", Data);
                             if (Nu == null) throw new Exception("Null Nu");
                             Nu.Join(new byte[] { 0x09 }, Rho.Channel.ToByteArray());
-                        } else if (Subject == "SAY" && Data.Length == 1 && Data[0] == 0x10)
+                        }
+                        else if (Subject == "SAY" && Data.Length == 1 && Data[0] == 0x12)
                         {
                             if (Psi == null) throw new Exception("Null Psi");
                             if (Psi.Bytes == null) throw new Exception("Null Psi Bytes");
@@ -322,8 +327,21 @@ namespace Dysnomia.Domain.World
                             Subject = Lambda.NextString();
                             Data = Lambda.NextBytes();
                             Priority = Lambda.NextBytes();
-                            Handshake("Say", 0x11);
+                            Handshake("Say", 0x12);
                             Handshake("Say", Data);
+                        }
+                        else if (Subject == "ESAY" && Data.Length == 1 && Data[0] == 0x13)
+                        {
+                            if (Psi == null) throw new Exception("Null Psi");
+                            if (Psi.Bytes == null) throw new Exception("Null Psi Bytes");
+                            if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
+                            From = Lambda.NextString();
+                            Subject = Lambda.NextString();
+                            Psi.Encode(Lambda.NextBytes());
+                            Data = Psi.Bytes;
+                            Priority = Lambda.NextBytes();
+                            Handshake("Esay", 0x13);
+                            Handshake("Esay", Data);
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }

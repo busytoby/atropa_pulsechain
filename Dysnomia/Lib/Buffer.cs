@@ -13,9 +13,9 @@ namespace Dysnomia.Lib
         public Faung Mu;
         public byte[]? Bytes;
 
-        public Buffer(Daemon Beta)
+        public Buffer(Conjunction Beta)
         {
-            if (Beta.Count < 5) throw new Exception("Daemon Queue Count < 5");
+            if (Beta.Count < 5) throw new Exception("Conjunction Queue Count < 5");
             BigInteger Rho, Upsilon, Ohm, Xi, Alpha;
             Rho = Beta.Next();
             Upsilon = Beta.Next();
@@ -84,6 +84,7 @@ namespace Dysnomia.Lib
             Lambda = Mu.Rod.Sustain(Lambda);
             Mu.Rod.React(Lambda, Mu.Cone.Dynamo);
             Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
+            Upsilon(false);
         }
 
         public void Pi()
@@ -108,6 +109,7 @@ namespace Dysnomia.Lib
             Mu.Omicron = Mu.Cone.Kappa;
             Mu.Rod.React(Mu.Pi, Mu.Rod.Dynamo);
             Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+            Upsilon(true);
         }
 
         public void Upsilon(bool Phi = true)
@@ -132,10 +134,15 @@ namespace Dysnomia.Lib
             Encode(Rho.ToByteArray());
         }
 
+        public void Encode(String Rho)
+        {
+            Encode(Encoding.Default.GetBytes(Rho));
+        }
+
         public void Encode(byte[] Rho)
         {
             int _size = Rho.Length;
-            if (Bytes == null) Bytes = new byte[_size];
+            Bytes = new byte[_size];
 
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
@@ -148,12 +155,16 @@ namespace Dysnomia.Lib
                     Bytes[i] = (byte)(Iota[j] ^ Rho[i]);
                 Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
             }
+            Upsilon(Beta);
         }
 
         public void Recode()
         {
+            throw new Exception("Not Implemented");
+            /*
             if (Bytes == null) throw new Exception("Cannot Recode Null Buffer");
             Encode(Bytes);
+            */
         }
 
         public override string ToString()
