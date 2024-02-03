@@ -153,7 +153,8 @@ namespace Dysnomia.Lib
                 byte[] Iota = Beta.ToByteArray();
                 for (int j = 0; j < Iota.Length && i < _size; j++, i++)
                     Bytes[i] = (byte)(Iota[j] ^ Rho[i]);
-                Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
+                //Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
+                Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Math.BelphegorsPrime);
             }
             Upsilon(Beta);
         }
