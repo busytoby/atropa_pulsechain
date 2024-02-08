@@ -148,15 +148,15 @@ namespace Dysnomia.Lib
             if (Mu.Cone == null) throw new Exception("Null Cone");
 
             BigInteger Beta = Mu.Rod.Mu(Mu.Upsilon, Mu.Ohm, Mu.Pi);
+            Upsilon(Beta);
             for (int i = 0; i < _size;)
             {
                 byte[] Iota = Beta.ToByteArray();
                 for (int j = 0; j < Iota.Length && i < _size; j++, i++)
                     Bytes[i] = (byte)(Iota[j] ^ Rho[i]);
-                //Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
                 Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
+                Upsilon(Beta);
             }
-            Upsilon(Beta);
         }
 
         public void Recode()
