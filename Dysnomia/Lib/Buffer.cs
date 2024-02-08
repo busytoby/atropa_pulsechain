@@ -157,6 +157,7 @@ namespace Dysnomia.Lib
                 Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
                 Upsilon(Beta);
             }
+            Upsilon(false);
         }
 
         public void Recode()
