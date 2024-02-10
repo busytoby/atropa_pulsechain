@@ -44,6 +44,7 @@ address constant AbUrbeConditaContract = address(0x7FB09EE1a2c0E8b6D1c4E19C0248B
 address constant SIMContract = address(0xBb341FD5C855c206f5538cc649f90d84Df19b65a);
 address constant BinContract = address(0xf520404CF4fa5B633626333775b05F5dF94E1a9C);
 address constant PhDContract = address(0x6236073377AC7e0aB694957dA5d7d4241e72EBc6);
+address constant LilliesContract = address(0xE949a217809d1Fab4018E22d6810500399951dAE);
 address constant KremlinContract = address(0x7F51FdB20246D7a673036f11C743E99A4AF01de0);
 address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC6);         // ㉣
 address constant TseContract = address(0x3d67511733d976800467119264C3d4Cd9FA23041);
