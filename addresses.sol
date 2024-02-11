@@ -94,6 +94,7 @@ address constant CiAContract = address(0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F219
 address constant SNLContract = address(0xcBE13C3292f7226FF5fd096A4DC53C52a4ED4DAA);
 address constant ACiDContract = address(0xf8b6e89b851e03c724aad1F5170230A60490b819);
 address constant MaltaContract = address(0xee62EE9A354E55dF7C39209B4304161369333fF7);
+address constant ŽižekContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
 
 //
 address constant BillBurrContract = address(0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691);
