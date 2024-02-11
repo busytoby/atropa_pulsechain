@@ -6,6 +6,7 @@ address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
 address constant trebizond = address(0x903030f7e2d6489F38B0f4F96F9b371ec7960F78);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
+address constant EasternLightningContract = address(0xCD6159D0a1aaE415E0c1504E90A5d741A28afc98);
 address constant FinalContract = address(0x50E72874dCd7C198d370ac27c7B3cce9f9a0defd);
 address constant KaContract = address(0x83a918056aB9316837Dc48a216119D679D561d91);
 address constant BuckinghamContract = address(0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11);
