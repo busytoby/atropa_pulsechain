@@ -11,6 +11,7 @@ namespace Dysnomia.Lib
     public class Buffer
     {
         public Faung Mu;
+        public Faung Psi;
         public byte[]? Bytes;
 
         public Buffer(Conjunction Beta)
@@ -23,22 +24,41 @@ namespace Dysnomia.Lib
             Xi = Beta.Next();
             Alpha = Beta.Next();
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
+            Psi = new Faung(Rho, Upsilon, Ohm, Xi);
         }
 
         public Buffer(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
         {
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
+            Psi = new Faung(Rho, Upsilon, Ohm, Xi);
         }
 
+        /*
         public Buffer(Faung _Mu, byte[] Rho)
         {
             Mu = _Mu;
             Encode(Rho);
         }
+        */
 
         public void Clear()
         {
             Bytes = null;
+        }
+
+        public void Gamma(BigInteger Omicron)
+        {
+            if (Psi.Rod == null) throw new Exception("Null Rod");
+            if (Psi.Cone == null) throw new Exception("Null Cone");
+            if (Omicron == 0) throw new Exception("Omicron Zero");
+
+            Psi.Charge(Omicron);
+            if (Psi.Sigma < 4)
+                throw new Exception("Sigma < 4");
+            Psi.Induce();
+            Psi.Torque();
+            Psi.Amplify();
+            Logging.Log("Buffer", "Gamma: " + Omicron.ToString(), 2);
         }
 
         public void Alpha(byte[] Omicron)
