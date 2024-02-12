@@ -30,7 +30,6 @@ namespace Dysnomia.Lib
             Enqueue(Upsilon.ToByteArray());
             Enqueue(Ohm.ToByteArray());
             Enqueue(Xi.ToByteArray());
-            Enqueue(Alpha.ToByteArray());
         }
 
         public Buffer(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
@@ -41,7 +40,6 @@ namespace Dysnomia.Lib
             Enqueue(Upsilon.ToByteArray());
             Enqueue(Ohm.ToByteArray());
             Enqueue(Xi.ToByteArray());
-            Enqueue(Alpha.ToByteArray());
         }
 
         /*
