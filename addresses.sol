@@ -6,6 +6,7 @@ address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
 address constant trebizond = address(0x903030f7e2d6489F38B0f4F96F9b371ec7960F78);
 
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
+address constant EasternLightningContract = address(0xCD6159D0a1aaE415E0c1504E90A5d741A28afc98);
 address constant FinalContract = address(0x50E72874dCd7C198d370ac27c7B3cce9f9a0defd);
 address constant KaContract = address(0x83a918056aB9316837Dc48a216119D679D561d91);
 address constant BuckinghamContract = address(0xe5d3A6e88590fc2A8037D9CCbd816C05B1ff5f11);
@@ -44,6 +45,7 @@ address constant AbUrbeConditaContract = address(0x7FB09EE1a2c0E8b6D1c4E19C0248B
 address constant SIMContract = address(0xBb341FD5C855c206f5538cc649f90d84Df19b65a);
 address constant BinContract = address(0xf520404CF4fa5B633626333775b05F5dF94E1a9C);
 address constant PhDContract = address(0x6236073377AC7e0aB694957dA5d7d4241e72EBc6);
+address constant LilliesContract = address(0xE949a217809d1Fab4018E22d6810500399951dAE);
 address constant KremlinContract = address(0x7F51FdB20246D7a673036f11C743E99A4AF01de0);
 address constant TwoContract = address(0xDf6A16689A893095C721542e5d3CE55bBcc23aC6);         // ㉣
 address constant TseContract = address(0x3d67511733d976800467119264C3d4Cd9FA23041);
@@ -92,6 +94,7 @@ address constant CiAContract = address(0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F219
 address constant SNLContract = address(0xcBE13C3292f7226FF5fd096A4DC53C52a4ED4DAA);
 address constant ACiDContract = address(0xf8b6e89b851e03c724aad1F5170230A60490b819);
 address constant MaltaContract = address(0xee62EE9A354E55dF7C39209B4304161369333fF7);
+address constant ŽižekContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
 
 //
 address constant BillBurrContract = address(0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691);
