@@ -241,7 +241,9 @@ namespace Dysnomia.Domain.World
             switch(HandshakeState)
             {
                 case 0x12:
-                    Logging.Log("CHAT", Encoding.Default.GetString(Iota), 12);
+                    String Eta = Encoding.Default.GetString(Iota);
+                    Psi.Gamma(Eta);
+                    Logging.Log("CHAT", Eta, 12);
                     break;
                 case 0x13:
                     Psi.Encode(Iota.ToArray());
