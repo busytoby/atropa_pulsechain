@@ -245,7 +245,7 @@ namespace Dysnomia.Domain.World
                     break;
                 case 0x13:
                     Psi.Encode(Iota.ToArray());
-                    Logging.Log("ECHAT", Encoding.Default.GetString(Psi.Bytes), 12);
+                    Logging.Log("ECHAT", Psi.ToString(), 12);
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");

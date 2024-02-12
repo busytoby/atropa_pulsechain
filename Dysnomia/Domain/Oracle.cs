@@ -339,7 +339,7 @@ namespace Dysnomia.Domain
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x10 Unknown ClientId");
 
                                 Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes);                              
-                                DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Controller.Fi.Psi[ClientId].Psi.Bytes));
+                                DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
                                 foreach (Greed G in Controller.Fi.Psi.Values)
                                 {
                                     if (G.Cone == true)

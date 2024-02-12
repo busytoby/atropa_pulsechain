@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Dysnomia.Lib
 {
-    public class Buffer
+    public class Buffer : Conjunction
     {
         public Faung Mu;
         public Faung Psi;
@@ -25,12 +25,16 @@ namespace Dysnomia.Lib
             Alpha = Beta.Next();
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
             Psi = new Faung(Rho, Upsilon, Ohm, Xi);
+            Enqueue(Psi.Cone.Element.ToByteArray());
+            Enqueue(Psi.Cone.Channel.ToByteArray());
         }
 
         public Buffer(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
         {
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
             Psi = new Faung(Rho, Upsilon, Ohm, Xi);
+            Enqueue(Psi.Cone.Element.ToByteArray());
+            Enqueue(Psi.Cone.Channel.ToByteArray());
         }
 
         /*
@@ -52,12 +56,15 @@ namespace Dysnomia.Lib
             if (Psi.Cone == null) throw new Exception("Null Cone");
             if (Omicron == 0) throw new Exception("Omicron Zero");
 
+            Enqueue(Omicron.ToByteArray());
             Psi.Charge(Omicron);
             if (Psi.Sigma < 4)
                 throw new Exception("Sigma < 4");
             Psi.Induce();
             Psi.Torque();
             Psi.Amplify();
+            if (Psi.Rho != Psi.Ohm) throw new Exception("Gamma Failure");
+            Enqueue(Psi.Rho.ToByteArray());
             Logging.Log("Buffer", "Gamma: " + Omicron.ToString(), 2);
         }
 
@@ -192,7 +199,7 @@ namespace Dysnomia.Lib
         public override string ToString()
         {
             if (Bytes == null) return "";
-            return new string(Bytes.Select(b => (char)b).ToArray());
+            return Encoding.Default.GetString(Bytes);
         }
     }
 }
