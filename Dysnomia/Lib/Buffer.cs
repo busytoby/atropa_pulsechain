@@ -23,18 +23,25 @@ namespace Dysnomia.Lib
             Ohm = Beta.Next();
             Xi = Beta.Next();
             Alpha = Beta.Next();
+
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
             Psi = new Faung(Rho, Upsilon, Ohm, Xi);
-            Enqueue(Psi.Cone.Element.ToByteArray());
-            Enqueue(Psi.Cone.Channel.ToByteArray());
+            Enqueue(Rho.ToByteArray());
+            Enqueue(Upsilon.ToByteArray());
+            Enqueue(Ohm.ToByteArray());
+            Enqueue(Xi.ToByteArray());
+            Enqueue(Alpha.ToByteArray());
         }
 
         public Buffer(BigInteger Rho, BigInteger Upsilon, BigInteger Ohm, BigInteger Xi, BigInteger Alpha)
         {
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
             Psi = new Faung(Rho, Upsilon, Ohm, Xi);
-            Enqueue(Psi.Cone.Element.ToByteArray());
-            Enqueue(Psi.Cone.Channel.ToByteArray());
+            Enqueue(Rho.ToByteArray());
+            Enqueue(Upsilon.ToByteArray());
+            Enqueue(Ohm.ToByteArray());
+            Enqueue(Xi.ToByteArray());
+            Enqueue(Alpha.ToByteArray());
         }
 
         /*
