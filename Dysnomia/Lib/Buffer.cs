@@ -57,12 +57,28 @@ namespace Dysnomia.Lib
             Bytes = null;
         }
 
+        public void Gamma()
+        {
+            Enqueue(new byte[] { 0x10 });
+            Enqueue(Bytes);
+            Gamma(BigInteger.Abs(new BigInteger(Bytes)));
+        }
+
+        public void Gamma(String Iota)
+        {
+            Enqueue(new byte[] { 0x10 });
+            byte[] Eta = Encoding.Default.GetBytes(Iota);
+            Enqueue(Eta);
+            Gamma(BigInteger.Abs(new BigInteger(Eta)));
+        }
+
         public void Gamma(BigInteger Omicron)
         {
             if (Psi.Rod == null) throw new Exception("Null Rod");
             if (Psi.Cone == null) throw new Exception("Null Cone");
             if (Omicron == 0) throw new Exception("Omicron Zero");
 
+            Enqueue(new byte[] { 0x14 });
             Enqueue(Omicron.ToByteArray());
             Psi.Charge(Omicron);
             if (Psi.Sigma < 4)

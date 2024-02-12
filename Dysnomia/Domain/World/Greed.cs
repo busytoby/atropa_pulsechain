@@ -245,6 +245,7 @@ namespace Dysnomia.Domain.World
                     break;
                 case 0x13:
                     Psi.Encode(Iota.ToArray());
+                    Psi.Gamma();
                     Logging.Log("ECHAT", Psi.ToString(), 12);
                     break;
                 default:
