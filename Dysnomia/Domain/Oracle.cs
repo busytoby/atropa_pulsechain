@@ -308,7 +308,7 @@ namespace Dysnomia.Domain
                             case 0x10:
                                 throw new Exception("There Is No OpCode 0x10");
                             case 0x11:
-                                throw new Exception("There Is No OpCode 0x10");
+                                throw new Exception("There Is No OpCode 0x11");
                             case 0x12:
                                 while (Count < 5) Thread.Sleep(100);
                                 ClientId = Next();
@@ -353,6 +353,8 @@ namespace Dysnomia.Domain
                                 }
                                 Next(); // ignore priority
                                 break;
+                            case 0x14:
+                                throw new Exception("There Is No OpCode 0x14");
                             default:
                                 throw new Exception("Not Implemented");
                         }
