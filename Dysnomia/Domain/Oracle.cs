@@ -315,8 +315,8 @@ namespace Dysnomia.Domain
                                 Code = NextBytes();
                                 Bytes = NextBytes();
                                 ClientIdCheck = Next();
-                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x10 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x10 Unknown ClientId");
+                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x12 ClientId Error");
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x12 Unknown ClientId");
 
                                 DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Bytes));
                                 Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
@@ -336,8 +336,8 @@ namespace Dysnomia.Domain
                                 Code = NextBytes();
                                 Bytes = NextBytes();
                                 ClientIdCheck = Next();
-                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x10 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x10 Unknown ClientId");
+                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x13 ClientId Error");
+                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x13 Unknown ClientId");
 
                                 Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes);
                                 DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
