@@ -1,4 +1,5 @@
 ﻿using Dysnomia.Domain.bin;
+using ExtensionMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +38,8 @@ namespace Dysnomia.Lib
         {
             Mu = new Faung(Rho, Upsilon, Ohm, Xi, Alpha);
             Psi = new Faung(Rho, Upsilon, Ohm, Xi);
+            String Test1 = Mu.GetPublicKey();
+            String Test2 = Psi.GetPublicKey();
             Enqueue(Rho.ToByteArray());
             Enqueue(Upsilon.ToByteArray());
             Enqueue(Ohm.ToByteArray());

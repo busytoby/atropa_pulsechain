@@ -1,6 +1,7 @@
 ﻿using Dysnomia;
 using Dysnomia.Lib;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -12,6 +13,11 @@ namespace ExtensionMethods
 {
     public static class ExtensionMethods
     {
+        public static String GetPublicKey(this Faung Upsilon)
+        {
+            return Convert.ToBase64String(Upsilon.Cone.Manifold.ToByteArray()) + Convert.ToBase64String(Upsilon.Cone.Ring.ToByteArray()) + Convert.ToBase64String(Upsilon.Rod.Barn.ToByteArray());
+        }
+
         public static Conjunction OpenSerialization(this Fa Rho)
         {
             Conjunction Nu = new Conjunction();
