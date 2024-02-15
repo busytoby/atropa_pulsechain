@@ -31,6 +31,7 @@ namespace Dysnomia.Domain.World
         public Fa Rho;
         public Lib.Buffer? Psi;
         public Conjunction? Nu;
+        public Dictionary<BigInteger, (BigInteger In, BigInteger Out)> Eta;
         public bool Cone = false;
         public bool TimedOut = false;
         public short HandshakeState = 0x00;
@@ -45,6 +46,7 @@ namespace Dysnomia.Domain.World
             Port = _Port;
             Mu = new TcpClient();
             Rho = new Fa();
+            Eta = new Dictionary<BigInteger, (BigInteger In, BigInteger Out)>();
             Theta = new Living(Phi);
         }
 
@@ -55,6 +57,7 @@ namespace Dysnomia.Domain.World
             Port = ((IPEndPoint)Iota.Client.RemoteEndPoint).Port;
             Mu = Iota;
             Rho = new Fa();
+            Eta = new Dictionary<BigInteger, (BigInteger In, BigInteger Out)>();
             Theta = new Living(Phi);
             Cone = true;
         }
@@ -190,6 +193,7 @@ namespace Dysnomia.Domain.World
                     Form(Rho.Channel);
                     Psi.Pi();
                     Psi.Rho();
+                    Eta.Add(ClientId, (Psi.Mu.Upsilon, Psi.Mu.Upsilon));
                     if (Nu != null) throw new Exception("Non Null Nu");
                     Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
                     HandshakeState = 0x06;
@@ -241,12 +245,14 @@ namespace Dysnomia.Domain.World
             switch(HandshakeState)
             {
                 case 0x12:
-                    String Eta = Encoding.Default.GetString(Iota);
-                    Psi.Gamma(Eta);
-                    Logging.Log("CHAT", Eta, 12);
+                    String ChatString = Encoding.Default.GetString(Iota);
+                    Psi.Gamma(ChatString);
+                    Logging.Log("CHAT", ChatString, 12);
                     break;
                 case 0x13:
-                    Psi.Encode(Iota.ToArray());
+                    BigInteger Upsilon = Eta[ClientId].In;
+                    Psi.Encode(Iota.ToArray(), ref Upsilon);
+                    Eta[ClientId] = (Upsilon, Eta[ClientId].Out);
                     Psi.Gamma();
                     Logging.Log("ECHAT", Psi.ToString(), 12);
                     break;
@@ -340,7 +346,9 @@ namespace Dysnomia.Domain.World
                             if (!Theta.In.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
                             From = Lambda.NextString();
                             Subject = Lambda.NextString();
-                            Psi.Encode(Lambda.NextBytes());
+                            BigInteger Upsilon = Eta[ClientId].Out;
+                            Psi.Encode(Lambda.NextBytes(), ref Upsilon);
+                            Eta[ClientId] = (Eta[ClientId].In, Upsilon);
                             Data = Psi.Bytes;
                             Priority = Lambda.NextBytes();
                             Handshake("Esay", 0x13);

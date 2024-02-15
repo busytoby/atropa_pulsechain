@@ -52,10 +52,12 @@ namespace Dysnomia.Lib
         }
         */
 
+        /*
         public void Clear()
         {
             Bytes = null;
         }
+        */
 
         public void Gamma()
         {
@@ -116,7 +118,7 @@ namespace Dysnomia.Lib
 
         public void Beta(byte[] Omicron, bool Receiver)
         {
-            Encode(Omicron);
+            Encode(Omicron, ref Mu.Upsilon);
             if (Bytes == null) throw new Exception("Null Bytes Alpha");
             Beta(new BigInteger(Receiver ? Bytes : Omicron));
         }
@@ -134,7 +136,7 @@ namespace Dysnomia.Lib
             Lambda = Mu.Rod.Sustain(Lambda);
             Mu.Rod.React(Lambda, Mu.Cone.Dynamo);
             Mu.Cone.React(Lambda, Mu.Rod.Dynamo);
-            Upsilon(false);
+            Upsilon(ref Mu.Upsilon, false);
         }
 
         public void Pi()
@@ -159,37 +161,37 @@ namespace Dysnomia.Lib
             Mu.Omicron = Mu.Cone.Kappa;
             Mu.Rod.React(Mu.Pi, Mu.Rod.Dynamo);
             Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
-            Upsilon(true);
+            Upsilon(ref Mu.Upsilon, true);
         }
 
-        public void Upsilon(bool Phi = true)
+        public void Upsilon(ref BigInteger Alpha, bool Phi = true)
         {
-            Mu.Upsilon = Phi ? Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi : Mu.Upsilon ^ Mu.Ohm;
+            Alpha = Phi ? Alpha ^ Mu.Ohm ^ Mu.Pi : Alpha ^ Mu.Ohm;
         }
 
-        public void Upsilon(ref Faung Beta)
+        public void Upsilon(ref BigInteger Alpha, ref Faung Beta)
         {
             // stub additional record from beta
-            Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi ^ Beta.Upsilon;
-            Beta.Ohm = Beta.Ohm ^ Mu.Upsilon;
+            Alpha = Alpha ^ Mu.Ohm ^ Mu.Pi ^ Beta.Upsilon;
+            Beta.Ohm = Beta.Ohm ^ Alpha;
         }
 
-        public void Upsilon(BigInteger Iota)
+        public void Upsilon(ref BigInteger Alpha, BigInteger Iota)
         {
-            Mu.Upsilon = Mu.Upsilon ^ Iota;
+            Alpha = Alpha ^ Iota;
         }
 
-        public void Encode(BigInteger Rho)
+        public void Encode(BigInteger Rho, ref BigInteger Eta)
         {
-            Encode(Rho.ToByteArray());
+            Encode(Rho.ToByteArray(), ref Eta);
         }
 
-        public void Encode(String Rho)
+        public void Encode(String Rho, ref BigInteger Eta)
         {
-            Encode(Encoding.Default.GetBytes(Rho));
+            Encode(Encoding.Default.GetBytes(Rho), ref Eta);
         }
 
-        public void Encode(byte[] Rho)
+        public void Encode(byte[] Rho, ref BigInteger Eta)
         {
             int _size = Rho.Length;
             Bytes = new byte[_size];
@@ -197,17 +199,17 @@ namespace Dysnomia.Lib
             if (Mu.Rod == null) throw new Exception("Null Rod");
             if (Mu.Cone == null) throw new Exception("Null Cone");
 
-            BigInteger Beta = Mu.Rod.Mu(Mu.Upsilon, Mu.Ohm, Mu.Pi);
-            Upsilon(Beta);
+            BigInteger Beta = Mu.Rod.Mu(Eta, Mu.Ohm, Mu.Pi);
+            Upsilon(ref Eta, Beta);
             for (int i = 0; i < _size;)
             {
                 byte[] Iota = Beta.ToByteArray();
                 for (int j = 0; j < Iota.Length && i < _size; j++, i++)
                     Bytes[i] = (byte)(Iota[j] ^ Rho[i]);
                 Beta = Mu.Rod.Mu(Beta, Mu.Ohm, Mu.Pi);
-                Upsilon(Beta);
+                Upsilon(ref Eta, Beta);
             }
-            Upsilon(false);
+            Upsilon(ref Eta, false);
         }
 
         public void Recode()

@@ -147,7 +147,7 @@ namespace Dysnomia.Domain
             int _sleep = 20;
             byte[]? OpCode;
 
-            BigInteger Iota, Omicron;
+            BigInteger Iota, Omicron, Upsilon;
             byte[]? Lambda;
             String Xi;
             Tare? Pi;
@@ -157,7 +157,6 @@ namespace Dysnomia.Domain
 
             byte[] Code;
             byte[] Bytes;
-            byte[] EncBytes;
             String DataString;
 
             while (true)
@@ -303,6 +302,7 @@ namespace Dysnomia.Domain
                                 Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
                                 Client.Psi.Pi();
                                 Client.Psi.Rho();
+                                Client.Eta.Add(ClientId, (Client.Psi.Mu.Upsilon, Client.Psi.Mu.Upsilon));
                                 Next(); // ignore priority
                                 break;
                             case 0x10:
@@ -338,8 +338,9 @@ namespace Dysnomia.Domain
                                 ClientIdCheck = Next();
                                 if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x13 ClientId Error");
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x13 Unknown ClientId");
-
-                                Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes);
+                                Upsilon = Controller.Fi.Psi[ClientId].Eta[ClientId].In;
+                                Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes, ref Upsilon);
+                                Controller.Fi.Psi[ClientId].Eta[ClientId] = (Upsilon, Controller.Fi.Psi[ClientId].Eta[ClientId].Out);
                                 DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
                                 Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
                                 foreach (Greed G in Controller.Fi.Psi.Values)
@@ -347,7 +348,9 @@ namespace Dysnomia.Domain
                                     if (G.Cone == true)
                                     {
                                         G.Handshake("ESay", 0x13);
-                                        G.Psi?.Encode(DataString);
+                                        Upsilon = G.Eta[G.ClientId].Out;
+                                        G.Psi?.Encode(DataString, ref Upsilon);
+                                        G.Eta[G.ClientId] = (G.Eta[G.ClientId].In, Upsilon);
                                         G.Handshake(ClientId.ToString(), G.Psi.Bytes);
                                     }
                                 }
