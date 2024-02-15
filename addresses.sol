@@ -91,7 +91,6 @@ address constant FLTContract = address(0x86F0985Cd6Ab3196ea8DceBa87B92a2e2212463
 address constant GokuldhamContract = address(0x920401FDce49Fc70A2D4cD70DB0dD90212a97f98);
 address constant KPOPContract = address(0x982B52a54916B899c60031772cc85b041613510E);
 address constant CiAContract = address(0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F2196);
-address constant SNLContract = address(0xcBE13C3292f7226FF5fd096A4DC53C52a4ED4DAA);
 address constant ACiDContract = address(0xf8b6e89b851e03c724aad1F5170230A60490b819);
 address constant MaltaContract = address(0xee62EE9A354E55dF7C39209B4304161369333fF7);
 address constant ŽižekContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
