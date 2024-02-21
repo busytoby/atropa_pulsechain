@@ -31,8 +31,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         bool success2 = BondToken.transferFrom(msg.sender, address(this), 1 * 10 ** decimals());
         require(success2, unicode"Need Approved 1 FPMB");
 
-        bool success3 = OjeonToken.transferFrom(msg.sender, address(this), 12000 * 10 ** decimals());
-        require(success3, unicode"Need Approved 12,000 Ojeon");
+        bool success3 = OjeonToken.transferFrom(msg.sender, address(this), 10000 * 10 ** decimals());
+        require(success3, unicode"Need Approved 10,000 Ojeon");
 
         bool success4 = YingToken.transferFrom(msg.sender, address(this), 100000 * 10 ** decimals());
         require(success4, unicode"Need Approved 100,000 Ying");
@@ -55,7 +55,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
 
         ACABToken.transfer(msg.sender, 1 * 10 ** decimals());
         BondToken.transfer(msg.sender, 1 * 10 ** decimals());
-        OjeonToken.transfer(msg.sender, 12000 * 10 ** decimals());
+        OjeonToken.transfer(msg.sender, 10000 * 10 ** decimals());
         YingToken.transfer(trebizond, 50000 * 10 ** decimals());
         NeptuneToken.transfer(dead, 1 * 10 ** decimals());
         LOLToken.transfer(trebizond, 50000 * 10 ** decimals());
