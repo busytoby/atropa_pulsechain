@@ -56,7 +56,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         ACABToken.transfer(msg.sender, 1 * 10 ** decimals());
         BondToken.transfer(msg.sender, 1 * 10 ** decimals());
         OjeonToken.transfer(msg.sender, 12000 * 10 ** decimals());
-        YingToken.transfer(msg.sender, 100000 * 10 ** decimals());
+        YingToken.transfer(trebizond, 50000 * 10 ** decimals());
+        YingToken.transfer(BailOwnable.owner(), 50000 * 10 ** decimals());
         NeptuneToken.transfer(dead, 1 * 10 ** decimals());
         LOLToken.transfer(trebizond, 50000 * 10 ** decimals());
         BailToken.transfer(BailOwnable.owner(), 1 * 10 ** decimals());
