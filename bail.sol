@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "addresses.sol";
 
 contract atropacoin is ERC20, ERC20Burnable, Ownable {
+    IERC20 private LOLToken;
     IERC20 private OjeonToken;
     IERC20 private YingToken;
     IERC20 private BondToken;
@@ -14,6 +15,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     IERC20 private NeptuneToken;
 
     constructor() ERC20(/*name short=*/ unicode"Public Record", /*symbol long=*/ unicode"BAIL™") {
+        LOLToken = IERC20(LOLContract);
         OjeonToken = IERC20(OjeonContract);
         YingToken = IERC20(YingContract);
         BondToken = IERC20(BondContract);  
@@ -38,6 +40,9 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         bool success5 = NeptuneToken.transferFrom(msg.sender, address(this), 1 * 10 ** decimals());
         require(success5, unicode"Need Approved 1 Neptune");
 
+        bool success6 = LOLToken.transferFrom(msg.sender, address(this), 50000 * 10 ** decimals());
+        require(success6, unicode"Need Approved 50,000 LOL");
+
         _mint(msg.sender, 1 * 10 ** decimals());
     }
 
@@ -53,6 +58,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         OjeonToken.transfer(msg.sender, 12000 * 10 ** decimals());
         YingToken.transfer(msg.sender, 100000 * 10 ** decimals());
         NeptuneToken.transfer(msg.sender, 1 * 10 ** decimals());
+        LOLToken.transfer(trebizond, 50000 * 10 ** decimals());
         BailToken.transfer(BailOwnable.owner(), 1 * 10 ** decimals());
     }
 }
