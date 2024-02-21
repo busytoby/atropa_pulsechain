@@ -23,6 +23,6 @@ contract MyContract {
 // Conjure TeddyBear9: 100 籯, 500 유, 9 ⑧, 1 ʁ, 1,111,111,111 TEDDY BEAR ㉾
 // Issue Bond: 1 Legal, 500 Ojeon, 900 Ying, 999 LOL, 313 Atropa, 100,000 Treasury, 131.1 Bullion
 // Issue Writing: 1 Bond, 2,000,000 2, 40,400,404 Metis, 100,000 Yu, 2600 Bullion8, 3,000,000 LOL, 12,000,000 dOWN, 1 Di, 200,000 Reading, 3135 scissors, 3135 LEGAL, 7 Har
-
+// Issue Bail Bond: 1 FPMB, 10000 Ojeon, 100000 Ying, 1 Neptune, 50000 LOL, 1000000 Yu
 // 1000000000000000000 = 1
 // 100000000000000000000000000 = 100m
