@@ -69,6 +69,7 @@ address constant CallContract = address(0xD4FD96BA83d3E6FF1A0Baa44c32Def94e641D9
 address constant TeddyBear9Contract = address(0x1f737F7994811fE994Fe72957C374e5cD5D5418A);
 
 address constant BondContract = address(0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38);
+address constant BailContract = address(0x8B16115fF716b4c52706122cb4e974f7a72E5Af1);
 address constant WritingContract = address(0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b);
 address constant SukukContract = address(0x72f96a39AC9408b5458E5597BBC22060552dedF4);
 
