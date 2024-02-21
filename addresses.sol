@@ -93,7 +93,8 @@ address constant KPOPContract = address(0x982B52a54916B899c60031772cc85b04161351
 address constant CiAContract = address(0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F2196);
 address constant ACiDContract = address(0xf8b6e89b851e03c724aad1F5170230A60490b819);
 address constant MaltaContract = address(0xee62EE9A354E55dF7C39209B4304161369333fF7);
-address constant ŽižekContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
+address constant ZzkContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
+address constant ACABContract = address(0x241DA2613b0A01C2f60acB636b21A8E082E2f2F0);
 
 //
 address constant BillBurrContract = address(0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691);
