@@ -114,27 +114,27 @@ namespace Pulse
 
         public static dynamic GetToken(string ContractAddress)
         {
-            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getToken&contractaddress={0}&page=1&offset=100", ContractAddress)));
+            return GetURI(new Uri(String.Format("https://api.scan.pulsechain.com/api?module=token&action=getToken&contractaddress={0}&page=1&offset=100", ContractAddress)));
         }
 
         public static dynamic GetTokenList(string ContractAddress)
         {
-            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
+            return GetURI(new Uri(String.Format("https://api.scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
         }
 
         public static dynamic GetTokenHolders(string ContractAddress, int offset = 1)
         {
-            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page={1}&offset=100", ContractAddress, offset.ToString()))); ;
+            return GetURI(new Uri(String.Format("https://api.scan.pulsechain.com/api?module=token&action=getTokenHolders&contractaddress={0}&page={1}&offset=100", ContractAddress, offset.ToString()))); ;
         }
 
         public static dynamic GetAccountHoldings(string ContractAddress)
         {
-            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
+            return GetURI(new Uri(String.Format("https://api.scan.pulsechain.com/api?module=account&action=tokenlist&address={0}", ContractAddress)));
         }
 
         public static dynamic GetFirstTransaction(string ContractAddress)
         {
-            return GetURI(new Uri(String.Format("https://scan.pulsechain.com/api?module=account&action=txlistinternal&address={0}&sort=asc", ContractAddress)));
+            return GetURI(new Uri(String.Format("https://api.scan.pulsechain.com/api?module=account&action=txlistinternal&address={0}&sort=asc", ContractAddress)));
         }
 
         /*
