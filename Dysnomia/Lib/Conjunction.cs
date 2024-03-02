@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dysnomia.Domain.bin;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +40,20 @@ namespace Dysnomia.Lib
             TryDequeue(out Beta);
             if (Beta == null) throw new Exception("Invalid OpCode");
             return Beta[0];
+        }
+
+        public byte[] Serialize(int skip = 0)
+        {
+            byte[] Delta = new byte[] { };
+            byte[][] Gamma = ToArray();
+
+            foreach (byte[] Alpha in Gamma)
+            {
+                if (skip-- > 0) continue;
+                byte[] Lambda = BitConverter.GetBytes(Alpha.Length);
+                Delta = Delta.Concat(Lambda).Concat(Alpha).ToArray();
+            }
+            return Delta.Concat(new byte[] {0x00}).ToArray();
         }
     }
 }

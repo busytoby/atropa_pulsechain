@@ -51,14 +51,12 @@ namespace Dysnomia.Domain.bin
             if (!Beta.IsZero)
             {
                 Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Beta.ToString())), 6);
-                byte[][] Nu = Controller.Fi.Nu.ToArray();
-                BigInteger Epsilon = Controller.Fi.Nu.Next();
+                byte[] Nu;
+                Controller.Fi.Nu.TryPeek(out Nu);
+                BigInteger Epsilon = new BigInteger(Nu);
                 if (!Controller.Fi.Psi.ContainsKey(Epsilon)) throw new Exception("Invalid Query Host");
                 Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14);
-                while (Controller.Fi.Nu.Count > 0)
-                    Controller.Fi.Psi[Epsilon].Handshake("Query", Controller.Fi.Nu.NextBytes());
-                Controller.Fi.Psi[Epsilon].Handshake("Query", 0x00);
-                foreach (byte[] b in Nu) Controller.Fi.Nu.Enqueue(b);
+                Controller.Fi.Psi[Epsilon].Handshake("Query", Controller.Fi.Nu.Serialize(1));
             }
         }
     }
