@@ -69,6 +69,7 @@ address constant CallContract = address(0xD4FD96BA83d3E6FF1A0Baa44c32Def94e641D9
 address constant TeddyBear9Contract = address(0x1f737F7994811fE994Fe72957C374e5cD5D5418A);
 
 address constant BondContract = address(0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38);
+address constant BailContract = address(0x8B16115fF716b4c52706122cb4e974f7a72E5Af1);
 address constant WritingContract = address(0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b);
 address constant SukukContract = address(0x72f96a39AC9408b5458E5597BBC22060552dedF4);
 
@@ -93,7 +94,8 @@ address constant KPOPContract = address(0x982B52a54916B899c60031772cc85b04161351
 address constant CiAContract = address(0x2e5898b2e107a3cAf4f0597aCFE5D2e6d73F2196);
 address constant ACiDContract = address(0xf8b6e89b851e03c724aad1F5170230A60490b819);
 address constant MaltaContract = address(0xee62EE9A354E55dF7C39209B4304161369333fF7);
-address constant ŽižekContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
+address constant ZzkContract = address(0xe2e1a5d691cCB9E88b84e23A1166B4e6Bd6904Dc);
+address constant ACABContract = address(0x241DA2613b0A01C2f60acB636b21A8E082E2f2F0);
 
 //
 address constant BillBurrContract = address(0xF7ebb9bc80fb6395373c6BbDF690fcFfb217a691);
