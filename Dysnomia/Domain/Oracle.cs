@@ -147,17 +147,12 @@ namespace Dysnomia.Domain
             int _sleep = 20;
             byte[]? OpCode;
 
-            BigInteger Iota, Omicron, Upsilon;
+            BigInteger Iota, Omicron;
             byte[]? Lambda;
             String Xi;
             Tare? Pi;
 
-            BigInteger ClientId, ClientIdCheck;
-            Greed Client;
-
-            byte[] Code;
-            byte[] Bytes;
-            String DataString;
+            BigInteger ClientId;
 
             while (true)
             {
@@ -273,93 +268,10 @@ namespace Dysnomia.Domain
                                 Logging.Log("Oracle", "Serialization Opened For ClientId: " + ClientId, 5);
                                 Next(); // ignore priority
                                 break;
-                            case 0x08:
-                                while(Count < 5) Thread.Sleep(100);
-                                ClientId = Next();
-                                Code = NextBytes();
-                                Bytes = NextBytes();
-                                ClientIdCheck = Next();
-                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x08 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x08 Unknown ClientId");
-                                Client = Controller.Fi.Psi[ClientId];
-                                if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                Client.Psi.Alpha(Bytes);
-                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Bytes);
-                                Next(); // ignore priority
-                                break;
-                            case 0x09:
-                                while (Count < 5) Thread.Sleep(100);
-                                ClientId = Next();
-                                Code = NextBytes();
-                                Bytes = NextBytes();
-                                ClientIdCheck = Next();
-                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x09 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x09 Unknown ClientId");
-                                Client = Controller.Fi.Psi[ClientId];
-                                if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
-                                Client.Psi.Beta(Bytes, true);
-                                if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
-                                Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
-                                Client.Psi.Pi();
-                                Client.Psi.Rho();
-                                Client.Eta.Add(ClientId, (Client.Psi.Mu.Upsilon, Client.Psi.Mu.Upsilon));
-                                Next(); // ignore priority
-                                break;
-                            case 0x10:
-                                throw new Exception("There Is No OpCode 0x10");
-                            case 0x11:
-                                throw new Exception("There Is No OpCode 0x11");
-                            case 0x12:
-                                while (Count < 5) Thread.Sleep(100);
-                                ClientId = Next();
-                                Code = NextBytes();
-                                Bytes = NextBytes();
-                                ClientIdCheck = Next();
-                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x12 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x12 Unknown ClientId");
-
-                                DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Bytes));
-                                Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
-                                foreach (Greed G in Controller.Fi.Psi.Values)
-                                {
-                                    if (G.Cone == true)
-                                    {
-                                        G.Handshake("Say", 0x12);
-                                        G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(DataString));
-                                    }
-                                }
-                                Next(); // ignore priority
-                                break;
-                            case 0x13:
-                                while (Count < 5) Thread.Sleep(100);
-                                ClientId = Next();
-                                Code = NextBytes();
-                                Bytes = NextBytes();
-                                ClientIdCheck = Next();
-                                if (ClientId != ClientIdCheck) throw new Exception("OpCode 0x13 ClientId Error");
-                                if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x13 Unknown ClientId");
-                                Upsilon = Controller.Fi.Psi[ClientId].Eta[ClientId].In;
-                                Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes, ref Upsilon);
-                                Controller.Fi.Psi[ClientId].Eta[ClientId] = (Upsilon, Controller.Fi.Psi[ClientId].Eta[ClientId].Out);
-                                DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
-                                Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
-                                foreach (Greed G in Controller.Fi.Psi.Values)
-                                {
-                                    if (G.Cone == true)
-                                    {
-                                        G.Handshake("ESay", 0x13);
-                                        Upsilon = G.Eta[G.ClientId].Out;
-                                        G.Psi?.Encode(DataString, ref Upsilon);
-                                        G.Eta[G.ClientId] = (G.Eta[G.ClientId].In, Upsilon);
-                                        G.Handshake(ClientId.ToString(), G.Psi.Bytes);
-                                    }
-                                }
-                                Next(); // ignore priority
-                                break;
-                            case 0x14:
-                                throw new Exception("There Is No OpCode 0x14");
                             default:
-                                throw new Exception("Not Implemented");
+                                while (Count < 5) Thread.Sleep(100);
+                                StdCall(OpCode);
+                                break;
                         }
 
                         if (Count > 0) TryDequeue(out OpCode);
@@ -368,6 +280,85 @@ namespace Dysnomia.Domain
                 }
                 if (_sleep > 1551) _sleep = 1551;
                 Thread.Sleep(_sleep);
+            }
+        }
+
+        protected void StdCall(byte[] OpCode)
+        {
+            BigInteger Upsilon;
+            BigInteger ClientId, ClientIdCheck;
+            Greed Client;
+
+            byte[] Code;
+            byte[] Bytes;
+            String DataString;
+
+            ClientId = Next();
+            Code = NextBytes();
+            Bytes = NextBytes();
+            ClientIdCheck = Next();
+
+            if (ClientId != ClientIdCheck) throw new Exception("OpCode " + Convert.ToHexString(OpCode) + " ClientId Error");
+            if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode " + Convert.ToHexString(OpCode) + " Unknown ClientId");
+            Client = Controller.Fi.Psi[ClientId];
+            if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
+
+            switch (OpCode[0])
+            {
+                case 0x08:
+                    Client.Psi.Alpha(Bytes);
+                    Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Bytes);
+                    Next(); // ignore priority
+                    break;
+                case 0x09:
+                    Client.Psi.Beta(Bytes, true);
+                    if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
+                    Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
+                    Client.Psi.Pi();
+                    Client.Psi.Rho();
+                    Client.Eta.Add(ClientId, (Client.Psi.Mu.Upsilon, Client.Psi.Mu.Upsilon));
+                    Next(); // ignore priority
+                    break;
+                case 0x10:
+                    throw new Exception("There Is No OpCode 0x10");
+                case 0x11:
+                    throw new Exception("There Is No OpCode 0x11");
+                case 0x12:
+                    DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Bytes));
+                    Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
+                    foreach (Greed G in Controller.Fi.Psi.Values)
+                    {
+                        if (G.Cone == true)
+                        {
+                            G.Handshake("Say", 0x12);
+                            G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(DataString));
+                        }
+                    }
+                    Next(); // ignore priority
+                    break;
+                case 0x13:
+                    Upsilon = Controller.Fi.Psi[ClientId].Eta[ClientId].In;
+                    Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes, ref Upsilon);
+                    Controller.Fi.Psi[ClientId].Eta[ClientId] = (Upsilon, Controller.Fi.Psi[ClientId].Eta[ClientId].Out);
+                    DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
+                    Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
+                    foreach (Greed G in Controller.Fi.Psi.Values)
+                    {
+                        if (G.Cone == true)
+                        {
+                            G.Handshake("ESay", 0x13);
+                            Upsilon = G.Eta[G.ClientId].Out;
+                            G.Psi?.Encode(DataString, ref Upsilon);
+                            G.Eta[G.ClientId] = (G.Eta[G.ClientId].In, Upsilon);
+                            G.Handshake(ClientId.ToString(), G.Psi.Bytes);
+                        }
+                    }
+                    Next(); // ignore priority
+                    break;
+                case 0x14:
+                    throw new Exception("There Is No OpCode 0x14");
+                default:
+                    throw new Exception("Not Implemented");
             }
         }
     }

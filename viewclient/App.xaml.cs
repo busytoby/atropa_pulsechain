@@ -1,4 +1,5 @@
-﻿using Dysnomia;
+﻿#define DEMO
+using Dysnomia;
 using Dysnomia.Domain;
 using Dysnomia.Lib;
 using ExtensionMethods;
