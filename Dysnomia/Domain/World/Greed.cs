@@ -32,6 +32,7 @@ namespace Dysnomia.Domain.World
         public Lib.Buffer? Psi;
         public Conjunction? Nu;
         public Dictionary<BigInteger, (BigInteger In, BigInteger Out)> Eta;
+        public Conjunction? Sigma;
         public bool Cone = false;
         public bool TimedOut = false;
         public short HandshakeState = 0x00;
@@ -196,6 +197,7 @@ namespace Dysnomia.Domain.World
                     Eta.Add(ClientId, (Psi.Mu.Upsilon, Psi.Mu.Upsilon));
                     if (Nu != null) throw new Exception("Non Null Nu");
                     Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
+                    Sigma = new Conjunction();
                     HandshakeState = 0x06;
                 }
                 else
