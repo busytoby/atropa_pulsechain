@@ -26,7 +26,7 @@ namespace Dysnomia.Domain
         private TcpListener? Mu;
         public Tare Rho;
         public ConcurrentDictionary<BigInteger, Greed> Psi;
-        public BigInteger Nu;
+        public Conjunction Nu;
 
         static public String DLE = "\u0010\u0010\u0010\u0010";
 
@@ -34,6 +34,7 @@ namespace Dysnomia.Domain
         {
             Rho = new Tare();
             Psi = new ConcurrentDictionary<BigInteger, Greed>();
+            Nu = new Conjunction();
         }
 
         public void Listen(int port)

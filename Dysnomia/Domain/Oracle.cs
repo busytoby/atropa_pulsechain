@@ -3,6 +3,7 @@ using Dysnomia.Domain.World;
 using Dysnomia.Lib;
 using ExtensionMethods;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,11 +23,14 @@ namespace Dysnomia.Domain
         new public static String Description = "Oracle Daemon";
         public Faung Mu;
 
+        private Dictionary<byte[], Command> ProcessTable;
+
         public Oracle()
         {
             Logging.Log("Oracle", "New Oracle");
             Mu = new Faung();
             Theta = new Living(Phi);
+            ProcessTable = new Dictionary<byte[], Command>();
             Reset();
         }
 
@@ -210,24 +214,34 @@ namespace Dysnomia.Domain
                             case 0x02:
                                 Lambda = NextBytes();
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
-                                Xi = Encoding.Default.GetString(Lambda);
-                                Logging.Log("Oracle", "EXEC: " + Xi, 3);
-                                Command command = new Command(Xi);
+                                Command command;
+                                if (ProcessTable.ContainsKey(Lambda))
+                                    command = ProcessTable[Lambda];
+                                else
+                                {
+                                    Xi = Encoding.Default.GetString(Lambda);
+                                    Logging.Log("Oracle", "EXEC: " + Xi, 3);
+                                    command = new Command(Xi);
+                                }
                                 if (command.Theta != null)
                                 {
-                                    while (command.Theta.Alive()) Thread.Sleep(100);
-                                    while (command.Theta.In.Count > 0)
-                                        if (command.Theta.In.TryDequeue(out Pi))
-                                        {
-                                            byte[] From = Pi.NextBytes();
-                                            byte[] Data = Pi.NextBytes();
-                                            byte[] Priority = Pi.NextBytes();
-                                            if (Pi.Count > 0) throw new Exception("Bad Command Input");
-                                            Enqueue(Data);
-                                        }
-                                    while (command.Theta.Out.Count > 0)
-                                        if (command.Theta.Out.TryDequeue(out Pi))
-                                            Logging.Log(Pi);
+                                    if (command.Theta.Alive()) ProcessTable.Add(Math.Random().ToByteArray(), command);
+                                    else
+                                    {
+                                        if (ProcessTable.ContainsKey(Lambda)) ProcessTable.Remove(Lambda);
+                                        while (command.Theta.In.Count > 0)
+                                            if (command.Theta.In.TryDequeue(out Pi))
+                                            {
+                                                byte[] From = Pi.NextBytes();
+                                                byte[] Data = Pi.NextBytes();
+                                                byte[] Priority = Pi.NextBytes();
+                                                if (Pi.Count > 0) throw new Exception("Bad Command Input");
+                                                Enqueue(Data);
+                                            }
+                                        while (command.Theta.Out.Count > 0)
+                                            if (command.Theta.Out.TryDequeue(out Pi))
+                                                Logging.Log(Pi);
+                                    }
                                 }
                                 break;
                             case 0x03:
@@ -255,11 +269,12 @@ namespace Dysnomia.Domain
                                 if (!Chi.ClientId.IsZero) throw new Exception("Client ID Non-Zero");
                                 Chi.ClientId = Math.Random();
                                 Controller.Fi.Psi.TryAdd(Chi.ClientId, Chi);
-                                Controller.Fi.Nu = Chi.ClientId;
+                                Controller.Fi.Nu.Clear();
+                                Controller.Fi.Nu.Enqueue(Chi.ClientId.ToByteArray());
                                 break;
                             case 0x06:
                                 throw new Exception("Handshake Correction Not Yet Implemented");
-                            //break;
+                                break;
                             case 0x07:
                                 while (Count < 1) Thread.Sleep(100);
                                 ClientId = Next();
@@ -280,6 +295,13 @@ namespace Dysnomia.Domain
                 }
                 if (_sleep > 1551) _sleep = 1551;
                 Thread.Sleep(_sleep);
+                if (ProcessTable.Count > 0)
+                    lock (Tau)
+                        foreach (byte[] Key in ProcessTable.Keys)
+                        {
+                            Enqueue(new byte[] { 0x02 });
+                            Enqueue(Key);
+                        }
             }
         }
 

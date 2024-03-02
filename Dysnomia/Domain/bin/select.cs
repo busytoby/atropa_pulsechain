@@ -38,27 +38,28 @@ namespace Dysnomia.Domain.bin
             else
             {
                 BigInteger _sel = BigInteger.Parse(Args[0]);
-                if (Controller.Fi.Psi.ContainsKey(_sel)) Controller.Fi.Nu = _sel;
+                Controller.Fi.Nu.Clear();
+                if (Controller.Fi.Psi.ContainsKey(_sel)) Controller.Fi.Nu.Enqueue(_sel.ToByteArray());
                 else Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: ", _sel)), 6);
             }
 
-            if (!Controller.Fi.Nu.IsZero)
-            {
-                Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Controller.Fi.Nu.ToString())), 6);
-                Conjunction Q = new Conjunction();
-                Q.Enqueue(Controller.Fi.Nu.ToByteArray());
-                Q.Enqueue(new byte[] { 0x00 });
-                Query(Q);
-            }
-        }
+            byte[] To;
 
-        protected void Query(Conjunction Q)
-        {
-            BigInteger Epsilon = Q.Next();
-            Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14);
-            Controller.Fi.Psi[Epsilon].Handshake("Query", Q.NextBytes());
-            while (Controller.Fi.Psi[Epsilon].Sigma.Count == 0) Thread.Sleep(200);
-            Thread.Sleep(400);
+            Controller.Fi.Nu.TryPeek(out To);
+            BigInteger Beta = new BigInteger(To);
+
+            if (!Beta.IsZero)
+            {
+                Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Beta.ToString())), 6);
+                byte[][] Nu = Controller.Fi.Nu.ToArray();
+                BigInteger Epsilon = Controller.Fi.Nu.Next();
+                if (!Controller.Fi.Psi.ContainsKey(Epsilon)) throw new Exception("Invalid Query Host");
+                Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14);
+                while (Controller.Fi.Nu.Count > 0)
+                    Controller.Fi.Psi[Epsilon].Handshake("Query", Controller.Fi.Nu.NextBytes());
+                Controller.Fi.Psi[Epsilon].Handshake("Query", 0x00);
+                foreach (byte[] b in Nu) Controller.Fi.Nu.Enqueue(b);
+            }
         }
     }
 }
