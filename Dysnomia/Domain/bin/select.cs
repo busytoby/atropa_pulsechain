@@ -1,4 +1,6 @@
-﻿#pragma warning disable CS8981
+﻿#pragma warning disable CS8602
+#pragma warning disable CS8603
+#pragma warning disable CS8981
 
 using Dysnomia.Domain.World;
 using Dysnomia.Lib;
@@ -46,21 +48,17 @@ namespace Dysnomia.Domain.bin
                 Conjunction Q = new Conjunction();
                 Q.Enqueue(Controller.Fi.Nu.ToByteArray());
                 Q.Enqueue(new byte[] { 0x00 });
-                Conjunction R = Query(Q).GetAwaiter().GetResult();
+                Query(Q);
             }
         }
 
-        protected static async Task<Conjunction> Query(Conjunction Q)
+        protected void Query(Conjunction Q)
         {
-            return await Task.Run(() =>
-            {
-                BigInteger Epsilon = Q.Next();
-                Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14);
-                Controller.Fi.Psi[Epsilon].Handshake("Query", Q.NextBytes());
-                Conjunction R = new Conjunction();
-                R.Enqueue(new byte[] { 0x01, 0x02, 0x00 });
-                return R;
-            });
+            BigInteger Epsilon = Q.Next();
+            Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14);
+            Controller.Fi.Psi[Epsilon].Handshake("Query", Q.NextBytes());
+            while (Controller.Fi.Psi[Epsilon].Sigma.Count == 0) Thread.Sleep(200);
+            Thread.Sleep(400);
         }
     }
 }
