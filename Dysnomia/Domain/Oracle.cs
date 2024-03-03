@@ -344,7 +344,7 @@ namespace Dysnomia.Domain
                     Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
                     Client.Psi.Pi();
                     Client.Psi.Rho();
-                    Client.Eta.Add(ClientId, (Client.Psi.Mu.Upsilon, Client.Psi.Mu.Upsilon));
+                    Client.Eta = (Client.Psi.Mu.Upsilon, Client.Psi.Mu.Upsilon);
                     Next(); // ignore priority
                     break;
                 case 0x10:
@@ -365,32 +365,35 @@ namespace Dysnomia.Domain
                     Next(); // ignore priority
                     break;
                 case 0x13:
-                    Upsilon = Controller.Fi.Psi[ClientId].Eta[ClientId].In;
-                    Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes, ref Upsilon);
-                    Controller.Fi.Psi[ClientId].Eta[ClientId] = (Upsilon, Controller.Fi.Psi[ClientId].Eta[ClientId].Out);
+                    Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes, ref Controller.Fi.Psi[ClientId].Eta.In);
                     DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
                     Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
                     foreach (Greed G in Controller.Fi.Psi.Values)
                         if (G.Cone == true)
                         {
                             G.Handshake("ESay", 0x13);
-                            Upsilon = G.Eta[G.ClientId].Out;
-                            G.Psi?.Encode(DataString, ref Upsilon);
-                            G.Eta[G.ClientId] = (G.Eta[G.ClientId].In, Upsilon);
+                            G.Psi?.Encode(DataString, ref G.Eta.Out);
                             G.Handshake(ClientId.ToString(), G.Psi.Bytes);
                         }
                     Next(); // ignore priority
                     break;
                 case 0x14:
-                    if (Bytes.Length != 1 || Bytes[0] != 0x00) throw new Exception("Not Yet Implemented");
-                    foreach (Greed G in Controller.Fi.Psi.Values)
-                        if (G.Cone == false)
-                        {
-                            Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
-                            Controller.Fi.Psi[ClientId].Handshake("Query", G.ClientId);
-                        }
-                    Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
-                    Controller.Fi.Psi[ClientId].Handshake("Query", 0x00);
+                    if (Bytes.Length != 1 || Bytes[0] != 0x00)
+                    {
+                        Conjunction Xi = Conjunction.Deserialize(Bytes);
+                        Greed Chi = new Greed(ClientId, Xi);
+                    }
+                    else
+                    {
+                        foreach (Greed G in Controller.Fi.Psi.Values)
+                            if (G.Cone == false)
+                            {
+                                Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
+                                Controller.Fi.Psi[ClientId].Handshake("Query", G.ClientId);
+                            }
+                        Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
+                        Controller.Fi.Psi[ClientId].Handshake("Query", 0x00);
+                    }
                     Next(); // ignore priority
                     break;
                 default:
