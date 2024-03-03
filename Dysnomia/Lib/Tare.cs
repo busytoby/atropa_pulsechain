@@ -63,6 +63,27 @@ namespace Dysnomia.Lib
             return false;
         }
 
+        public Logging.MSG ToLogMSG()
+        {
+            if (Count < 5) throw new Exception("Tare Short");
+            byte _OpCode = OpCode();
+            byte[]? Ticks, From, Subject, Data;
+            short Priority;
+            Subject = null;
+
+            if (_OpCode == 0x10 || _OpCode == 0x11)
+            {
+                Ticks = NextBytes();
+                From = NextBytes();
+                if (_OpCode == 0x11) Subject = NextBytes();
+                Data = NextBytes();
+                Priority = OpCode();
+                return new Logging.MSG(From, Subject, Data, Priority);
+            }
+
+            else throw new Exception("Unknown OpCode");
+        }
+
         public delegate Tare? Gram(Tare M);
     }
 }

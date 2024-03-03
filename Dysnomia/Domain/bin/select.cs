@@ -32,20 +32,14 @@ namespace Dysnomia.Domain.bin
                 {
                     if (G.Cone == false)
                     {
-                        Output(From, Encoding.Default.GetBytes(String.Format("{0} :: {1}[{2}]", G.ClientId.B64(), G.Host, G.Port)), 6);
+                        Output(From, Encoding.Default.GetBytes(String.Format("{0} :: {1}[{2}]", G.ClientId, G.Host, G.Port)), 6);
                     }
                 }
             }
             else
             {
-                BigInteger _sel = new BigInteger(Convert.FromBase64String(Args[0]));
-                if (Controller.Fi.Psi.ContainsKey(_sel))
-                {
-                    Controller.Fi.Nu.Clear();
-                    Controller.Fi.Nu.Enqueue(_sel.ToByteArray());
-                }
-                else
-                    Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: {0}", _sel.B64())), 6);
+                if(!TryParse(Args[0]))
+                    Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: {0}", Args[0])), 6);
             }
 
             byte[] To;
@@ -55,7 +49,7 @@ namespace Dysnomia.Domain.bin
 
             if (!Beta.IsZero)
             {
-                Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Beta.B64())), 6);
+                Output(From, Encoding.Default.GetBytes(String.Format("Active: {0} :: {1}[{2}]", Beta, Controller.Fi.Psi[Beta].Host, Controller.Fi.Psi[Beta].Port)), 6);
                 byte[] Nu;
                 Controller.Fi.Nu.TryPeek(out Nu);
                 BigInteger Epsilon = new BigInteger(Nu);
@@ -72,9 +66,34 @@ namespace Dysnomia.Domain.bin
                     if (Epsilon == SubId) continue;
 #endif
                     if (SubId != 0)
-                        Output(From, Encoding.Default.GetBytes(String.Format("Path: {0}{1}", Epsilon.B64(), SubId.B64())), 6);
+                        Output(From, Encoding.Default.GetBytes(String.Format("Connect Path: {0}.{1} :: {2}[{3}]", Epsilon, SubId, Controller.Fi.Psi[Epsilon].Host, Controller.Fi.Psi[Epsilon].Port)), 6);
                 }
             }
+        }
+
+        public bool TryParse(String Dotted)
+        {
+            try
+            {
+                Conjunction Eta = new Conjunction();
+                foreach (String Beta in Dotted.Split(".", StringSplitOptions.RemoveEmptyEntries))
+                {
+                    BigInteger _sel;
+                    BigInteger.TryParse(Beta, out _sel);
+                    if (Controller.Fi.Psi.ContainsKey(_sel))
+                        Eta.Enqueue(_sel.ToByteArray());
+                    else
+                        return false;
+                }
+
+                Clear();
+                while (Eta.Count > 0)
+                    Controller.Fi.Nu.Enqueue(Eta.NextBytes());
+
+                return true;
+            }
+            catch { }
+            return false;
         }
     }
 }

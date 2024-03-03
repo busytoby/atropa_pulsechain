@@ -1,4 +1,5 @@
 ﻿using Dysnomia.Domain.bin;
+using ExtensionMethods;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
