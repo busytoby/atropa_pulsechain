@@ -18,7 +18,7 @@ namespace Dysnomia
         static public RetaliationWindow Window;
         static public Object Tau;
         static public ConcurrentQueue<Logging.MSG> MsgQueue;
-        static public short LogLevel = 1;
+        static public short LogLevel = 5;
         static public InterpretationCaller Interpreter;
 
         static Apparition()

@@ -45,9 +45,7 @@ namespace Dysnomia.Lib
         public byte[] Serialize(int skip = 0)
         {
             byte[] Delta = new byte[] { };
-            byte[][] Gamma = ToArray();
-
-            foreach (byte[] Alpha in Gamma)
+            foreach (byte[] Alpha in ToArray())
             {
                 if (skip-- > 0) continue;
                 byte[] Lambda = BitConverter.GetBytes(Alpha.Length);

@@ -86,14 +86,14 @@ namespace Dysnomia.Domain.World
         public void Handshake(String Subject, byte[] Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
-            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1));
+            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1), 2);
             Output("Fi", Subject, Data, 1);
         }
 
         public void Handshake(String Subject, BigInteger Data)
         {
             if (Theta == null) throw new Exception("Null Theta");
-            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Subject, Data, 1));
+            Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone?"Cone":"Rod", Subject, Data, 1), 2);
             Output("Fi", Subject, Data.ToByteArray(), 1);
         }
 
@@ -257,6 +257,11 @@ namespace Dysnomia.Domain.World
                     Eta[ClientId] = (Upsilon, Eta[ClientId].Out);
                     Psi.Gamma();
                     Logging.Log("ECHAT", Psi.ToString(), 12);
+                    break;
+                case 0x14:
+                    Sigma.Enqueue(new byte[] { 0x14 });
+                    Sigma.Enqueue(Iota.ToArray());
+                    Logging.Log("QUERY", Encoding.Default.GetString(Iota), 1);
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");

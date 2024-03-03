@@ -33,11 +33,12 @@ namespace Apparition.Retaliation
                     lock (Dysnomia.Apparition.Tau)
                         if (Dysnomia.Apparition.MsgQueue.TryDequeue(out Beta))
                         {
-                            Application.Current.Dispatcher.Invoke((Action)delegate
-                            {
-                                TerminalOutput.AppendText("<" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
-                                TerminalOutput.ScrollToEnd();
-                            });
+                            if (Beta.Priority > Dysnomia.Apparition.LogLevel)
+                                Application.Current.Dispatcher.Invoke((Action)delegate
+                                {
+                                    TerminalOutput.AppendText("<" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
+                                    TerminalOutput.ScrollToEnd();
+                                });
                         }
                 }
                 Thread.Sleep(111);

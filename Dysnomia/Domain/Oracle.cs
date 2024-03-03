@@ -216,7 +216,10 @@ namespace Dysnomia.Domain
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
                                 Command command;
                                 if (ProcessTable.ContainsKey(Lambda))
+                                {
                                     command = ProcessTable[Lambda];
+                                    if (command.Theta.Alive()) break;
+                                }
                                 else
                                 {
                                     Xi = Encoding.Default.GetString(Lambda);
@@ -365,7 +368,6 @@ namespace Dysnomia.Domain
                     DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
                     Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
                     foreach (Greed G in Controller.Fi.Psi.Values)
-                    {
                         if (G.Cone == true)
                         {
                             G.Handshake("ESay", 0x13);
@@ -374,11 +376,20 @@ namespace Dysnomia.Domain
                             G.Eta[G.ClientId] = (G.Eta[G.ClientId].In, Upsilon);
                             G.Handshake(ClientId.ToString(), G.Psi.Bytes);
                         }
-                    }
                     Next(); // ignore priority
                     break;
                 case 0x14:
-                    throw new Exception("There Is No OpCode 0x14");
+                    if (Bytes.Length != 1 || Bytes[0] != 0x00) throw new Exception("Not Yet Implemented");
+                    foreach (Greed G in Controller.Fi.Psi.Values)
+                        if (G.Cone == false)
+                        {
+                            Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
+                            Controller.Fi.Psi[ClientId].Handshake("Query", G.ClientId);
+                        }
+                    Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
+                    Controller.Fi.Psi[ClientId].Handshake("Query", 0x00);
+                    Next(); // ignore priority
+                    break;
                 default:
                     throw new Exception("Not Implemented");
             }

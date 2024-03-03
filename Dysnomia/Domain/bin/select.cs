@@ -40,7 +40,7 @@ namespace Dysnomia.Domain.bin
                 BigInteger _sel = BigInteger.Parse(Args[0]);
                 Controller.Fi.Nu.Clear();
                 if (Controller.Fi.Psi.ContainsKey(_sel)) Controller.Fi.Nu.Enqueue(_sel.ToByteArray());
-                else Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: ", _sel)), 6);
+                else Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: {0}", _sel)), 6);
             }
 
             byte[] To;
@@ -57,6 +57,18 @@ namespace Dysnomia.Domain.bin
                 if (!Controller.Fi.Psi.ContainsKey(Epsilon)) throw new Exception("Invalid Query Host");
                 Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14);
                 Controller.Fi.Psi[Epsilon].Handshake("Query", Controller.Fi.Nu.Serialize(1));
+
+                while (Controller.Fi.Psi[Epsilon].Sigma.Count < 2) Thread.Sleep(200);
+                while (Controller.Fi.Psi[Epsilon].Sigma.Count > 0)
+                {
+                    byte[] OpCode = Controller.Fi.Psi[Epsilon].Sigma.NextBytes();
+                    BigInteger SubId = Controller.Fi.Psi[Epsilon].Sigma.Next();
+#if !DEBUG
+                    if (Epsilon == SubId) continue;
+#endif
+                    if (SubId != 0)
+                        Output(From, Encoding.Default.GetBytes(String.Format("Path: {0}::{1}", Epsilon, SubId.ToString())), 6);
+                }
             }
         }
     }
