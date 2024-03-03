@@ -66,7 +66,7 @@ namespace Dysnomia.Domain.bin
                     if (Epsilon == SubId) continue;
 #endif
                     if (SubId != 0)
-                        Output(From, Encoding.Default.GetBytes(String.Format("Connect Path: {0}.{1} :: {2}[{3}]", Epsilon, SubId, Controller.Fi.Psi[Epsilon].Host, Controller.Fi.Psi[Epsilon].Port)), 6);
+                        Output(From, Encoding.Default.GetBytes(String.Format("Available Path: {0}.{1} :: {2}[{3}]", Epsilon, SubId, Controller.Fi.Psi[Epsilon].Host, Controller.Fi.Psi[Epsilon].Port)), 6);
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace Dysnomia.Domain.bin
                         return false;
                 }
 
-                Clear();
+                Controller.Fi.Nu.Clear();
                 while (Eta.Count > 0)
                     Controller.Fi.Nu.Enqueue(Eta.NextBytes());
 

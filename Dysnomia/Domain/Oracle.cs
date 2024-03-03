@@ -271,7 +271,7 @@ namespace Dysnomia.Domain
                                 Lambda = NextBytes();
                                 if (Lambda == null) throw new Exception("Heap Corrupted");
                                 int Connect_Port = BitConverter.ToInt16(Lambda, 0);
-                                Greed Chi = Controller.Fi.Connect(Connect_Host, Connect_Port);
+                                Greed Chi = new Greed(Connect_Host, Connect_Port);
                                 if (!Chi.ClientId.IsZero) throw new Exception("Client ID Non-Zero");
                                 Chi.ClientId = Math.Random();
                                 Controller.Fi.Psi.TryAdd(Chi.ClientId, Chi);

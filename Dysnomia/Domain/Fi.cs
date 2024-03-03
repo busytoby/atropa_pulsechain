@@ -229,11 +229,5 @@ namespace Dysnomia.Domain
                 }
             }
         }
-
-        public Greed Connect(String Host, int Port)
-        {
-            Greed Beta = new Greed(Host, Port);
-            return Beta;
-        }
     }
 }
