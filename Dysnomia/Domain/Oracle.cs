@@ -43,9 +43,12 @@ namespace Dysnomia.Domain
                 byte[] ClientIdBytes = M.NextBytes();
                 BigInteger ClientId = new BigInteger(ClientIdBytes);
                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("Unknown ClientId");
-                Enqueue(M.NextBytes());
-                Enqueue(ClientIdBytes);
-                Enqueue(M.NextBytes());
+                lock (Tau)
+                {
+                    Enqueue(M.NextBytes());
+                    Enqueue(ClientIdBytes);
+                    Enqueue(M.NextBytes());
+                }
             }
 
             if (M.Count != 0) 
