@@ -68,7 +68,7 @@ namespace Dysnomia.Lib
                     _size = BitConverter.ToInt32(Gamma, i);
                     _next = Gamma.Skip(i + 4).Take(_size).ToArray();
                     Mu.Enqueue(_next);
-                    if (Gamma.Skip(i + 4 + _size).Take(1).ToArray()[0] == 0) return Mu;
+                    if (i + 4 + _size + 1 == Gamma.Length && Gamma.Skip(i + 4 + _size).Take(1).ToArray()[0] == 0) return Mu;
                     i += 4 + _size;
                 }
             }
