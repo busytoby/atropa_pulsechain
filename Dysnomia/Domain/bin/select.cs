@@ -4,6 +4,7 @@
 
 using Dysnomia.Domain.World;
 using Dysnomia.Lib;
+using ExtensionMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,16 +32,20 @@ namespace Dysnomia.Domain.bin
                 {
                     if (G.Cone == false)
                     {
-                        Output(From, Encoding.Default.GetBytes(String.Format("{0} :: {1}[{2}]", G.ClientId.ToString(), G.Host, G.Port)), 6);
+                        Output(From, Encoding.Default.GetBytes(String.Format("{0} :: {1}[{2}]", G.ClientId.B64(), G.Host, G.Port)), 6);
                     }
                 }
             }
             else
             {
-                BigInteger _sel = BigInteger.Parse(Args[0]);
-                Controller.Fi.Nu.Clear();
-                if (Controller.Fi.Psi.ContainsKey(_sel)) Controller.Fi.Nu.Enqueue(_sel.ToByteArray());
-                else Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: {0}", _sel)), 6);
+                BigInteger _sel = new BigInteger(Convert.FromBase64String(Args[0]));
+                if (Controller.Fi.Psi.ContainsKey(_sel))
+                {
+                    Controller.Fi.Nu.Clear();
+                    Controller.Fi.Nu.Enqueue(_sel.ToByteArray());
+                }
+                else
+                    Output(From, Encoding.Default.GetBytes(String.Format("ClientId Not Found: {0}", _sel.B64())), 6);
             }
 
             byte[] To;
@@ -50,7 +55,7 @@ namespace Dysnomia.Domain.bin
 
             if (!Beta.IsZero)
             {
-                Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Beta.ToString())), 6);
+                Output(From, Encoding.Default.GetBytes(String.Format("Active: {0}", Beta.B64())), 6);
                 byte[] Nu;
                 Controller.Fi.Nu.TryPeek(out Nu);
                 BigInteger Epsilon = new BigInteger(Nu);
@@ -67,7 +72,7 @@ namespace Dysnomia.Domain.bin
                     if (Epsilon == SubId) continue;
 #endif
                     if (SubId != 0)
-                        Output(From, Encoding.Default.GetBytes(String.Format("Path: {0}::{1}", Epsilon, SubId.ToString())), 6);
+                        Output(From, Encoding.Default.GetBytes(String.Format("Path: {0}{1}", Epsilon.B64(), SubId.B64())), 6);
                 }
             }
         }

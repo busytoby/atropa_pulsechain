@@ -15,7 +15,12 @@ namespace ExtensionMethods
     {
         public static String GetPublicKey(this Faung Upsilon)
         {
-            return Convert.ToBase64String(Upsilon.Cone.Manifold.ToByteArray()) + Convert.ToBase64String(Upsilon.Cone.Ring.ToByteArray()) + Convert.ToBase64String(Upsilon.Rod.Barn.ToByteArray());
+            return Upsilon.Cone.Manifold.B64() + Upsilon.Cone.Ring.B64() + Upsilon.Rod.Barn.B64();
+        }
+
+        public static String B64(this BigInteger Beta)
+        {
+            return Convert.ToBase64String(Beta.ToByteArray());
         }
 
         public static Conjunction OpenSerialization(this Fa Rho)
