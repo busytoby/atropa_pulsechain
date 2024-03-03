@@ -421,7 +421,7 @@ namespace Dysnomia.Domain.World
                         return;
                     }
                     stopwatch.Stop();
-                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 3000)
+                    if (Rho.Barn.IsZero && stopwatch.Elapsed.TotalSeconds > 30)
                         if (++Resets > 2) throw new Exception("Handshake Timeout");
                         else
                         {
