@@ -42,13 +42,13 @@ namespace Dysnomia.Domain.World
         BigInteger PeerChannel = 0;
         BigInteger PeerDynamo = 0;
 
-        public Greed(BigInteger Proxy, Conjunction Xi)
+        public Greed(BigInteger Proxy, Conjunction Chi)
         {
             Host = Controller.Fi.Psi[Proxy].Host;
             Port = Controller.Fi.Psi[Proxy].Port;
             Mu = Controller.Fi.Psi[Proxy].Mu;
             Rho = new Fa();
-            Upsilon = Xi;
+            Upsilon = Chi;
             Theta = new Living(Phi);
             Cone = true;
         }
@@ -123,52 +123,52 @@ namespace Dysnomia.Domain.World
             Handshake(Subject, Data.ToByteArray());
         }
 
-        private void NextHandshake(ref BigInteger Beta)
+        private void NextHandshake(ref BigInteger Beta, ref Fa Iota)
         {
             if (Theta == null) throw new Exception("Null Theta");
             if (Cone)
             {
-                if(Rho.Tau.IsZero)
+                if(Iota.Tau.IsZero)
                 {
-                    Rho.Tau = Rho.Avail(Beta);
-                    Handshake("Tau", Rho.Tau);
+                    Iota.Tau = Iota.Avail(Beta);
+                    Handshake("Tau", Iota.Tau);
                     HandshakeState = 0x01;
                 }
-                else if (Rho.Pole.IsZero && PeerChannel.IsZero)
+                else if (Iota.Pole.IsZero && PeerChannel.IsZero)
                 {
-                    Rho.Form(Beta);
-                    Rho.Polarize();
-                    Handshake("Pole", Rho.Pole);
+                    Iota.Form(Beta);
+                    Iota.Polarize();
+                    Handshake("Pole", Iota.Pole);
                     HandshakeState = 0x02;
                 }
-                else if (Rho.Coordinate.IsZero)
+                else if (Iota.Coordinate.IsZero)
                 {
-                    Rho.Conjugate(ref Beta);
-                    Rho.Conify();
-                    Handshake("Foundation", Rho.Foundation);
-                    Handshake("Channel", Rho.Channel);
+                    Iota.Conjugate(ref Beta);
+                    Iota.Conify();
+                    Handshake("Foundation", Iota.Foundation);
+                    Handshake("Channel", Iota.Channel);
                     HandshakeState = 0x03;
                 }
-                else if (Rho.Element.IsZero && PeerFoundation.IsZero)
+                else if (Iota.Element.IsZero && PeerFoundation.IsZero)
                 {
                     PeerFoundation = Beta;
                     HandshakeState = 0x04;
                 }
-                else if (Rho.Element.IsZero && PeerChannel.IsZero)
+                else if (Iota.Element.IsZero && PeerChannel.IsZero)
                 {
                     PeerChannel = Beta;
-                    Rho.Saturate(PeerFoundation, PeerChannel);
-                    Rho.Bond();
-                    Handshake("Dynamo", Rho.Dynamo);
+                    Iota.Saturate(PeerFoundation, PeerChannel);
+                    Iota.Bond();
+                    Handshake("Dynamo", Iota.Dynamo);
                     HandshakeState = 0x05;
                 }
-                else if (Rho.Barn.IsZero)
+                else if (Iota.Barn.IsZero)
                 {
                     PeerDynamo = Beta;
-                    Rho.Adduct(PeerDynamo);
-                    Rho.Open();
-                    Logging.Log("Greed", "Cone Handshake Complete: " + Rho.Barn, 2);
-                    Psi = new Lib.Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
+                    Iota.Adduct(PeerDynamo);
+                    Iota.Open();
+                    Logging.Log("Greed", "Cone Handshake Complete: " + Iota.Barn, 2);
+                    Psi = new Lib.Buffer(Iota.Ring, Iota.Coordinate, Iota.Manifold, Iota.Barn, Iota.Element);
                     HandshakeState = 0x06;
                 }
                 else
@@ -176,48 +176,48 @@ namespace Dysnomia.Domain.World
             }
             else
             {
-                if (Rho.Alpha.IsZero)
+                if (Iota.Alpha.IsZero)
                 {
-                    Rho.Alpha = Rho.Avail(Beta);
-                    Handshake("Alpha", Rho.Alpha);
+                    Iota.Alpha = Iota.Avail(Beta);
+                    Handshake("Alpha", Iota.Alpha);
                     HandshakeState = 0x01;
                 }
-                else if (Rho.Pole.IsZero && PeerChannel.IsZero)
+                else if (Iota.Pole.IsZero && PeerChannel.IsZero)
                 {
-                    Rho.Form(Beta);
-                    Rho.Polarize();
-                    Handshake("Pole", Rho.Pole);
+                    Iota.Form(Beta);
+                    Iota.Polarize();
+                    Handshake("Pole", Iota.Pole);
                     HandshakeState = 0x02;
                 }
-                else if (Rho.Coordinate.IsZero)
+                else if (Iota.Coordinate.IsZero)
                 {
-                    Rho.Conjugate(ref Beta);
+                    Iota.Conjugate(ref Beta);
                     HandshakeState = 0x03;
                 }
-                else if (Rho.Element.IsZero && PeerFoundation.IsZero)
+                else if (Iota.Element.IsZero && PeerFoundation.IsZero)
                 {
                     PeerFoundation = Beta;
                     HandshakeState = 0x04;
                 }
-                else if (Rho.Element.IsZero && PeerChannel.IsZero)
+                else if (Iota.Element.IsZero && PeerChannel.IsZero)
                 {
                     PeerChannel = Beta;
-                    Rho.Saturate(PeerFoundation, PeerChannel);
-                    Rho.Bond();
-                    Handshake("Foundation", Rho.Foundation);
-                    Handshake("Channel", Rho.Channel);
-                    Handshake("Dynamo", Rho.Dynamo);
+                    Iota.Saturate(PeerFoundation, PeerChannel);
+                    Iota.Bond();
+                    Handshake("Foundation", Iota.Foundation);
+                    Handshake("Channel", Iota.Channel);
+                    Handshake("Dynamo", Iota.Dynamo);
                     HandshakeState = 0x05;
                 }
-                else if (Rho.Barn.IsZero)
+                else if (Iota.Barn.IsZero)
                 {
                     PeerDynamo = Beta;
-                    Rho.Adduct(PeerDynamo);
-                    Rho.Open();
-                    Logging.Log("Greed", "Rod Handshake Complete: " + Rho.Barn, 2);
-                    Psi = new Lib.Buffer(Rho.Ring, Rho.Coordinate, Rho.Manifold, Rho.Barn, Rho.Element);
-                    Avail(Rho.Signal);
-                    Form(Rho.Channel);
+                    Iota.Adduct(PeerDynamo);
+                    Iota.Open();
+                    Logging.Log("Greed", "Rod Handshake Complete: " + Iota.Barn, 2);
+                    Psi = new Lib.Buffer(Iota.Ring, Iota.Coordinate, Iota.Manifold, Iota.Barn, Iota.Element);
+                    Avail(Iota.Signal);
+                    Form(Iota.Channel);
                     Psi.Pi();
                     Psi.Rho();
                     Eta = (Psi.Mu.Upsilon, Psi.Mu.Upsilon);
@@ -338,7 +338,7 @@ namespace Dysnomia.Domain.World
                         {
                             BigInteger Delta = new BigInteger(Data);
                             ClientId = Delta;
-                            NextHandshake(ref Delta);
+                            NextHandshake(ref Delta, ref Rho);
                             stopwatch.Reset();
                         }
                         else if (Cone) throw new Exception("Cone Should No Longer Be Running In Greed");
@@ -435,7 +435,7 @@ namespace Dysnomia.Domain.World
                             if (HandshakeState <= 0x07)
                             {
                                 BigInteger Alpha = new BigInteger(Slice);
-                                NextHandshake(ref Alpha);
+                                NextHandshake(ref Alpha, ref Rho);
                             }
                             else
                                 Procede(Slice);
