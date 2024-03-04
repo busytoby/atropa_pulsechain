@@ -116,7 +116,11 @@ namespace Dysnomia.Domain
             if (!Psi.TryAdd(ClientId, Client)) throw new Exception("Failure Adding Client To Dictionary");
 
             NetworkStream Iota = Beta.GetStream();
-            Iota.ReadTimeout = 100;
+#if DEBUG         
+            Iota.ReadTimeout = 300000;
+#else
+            Iota.ReadTimeout = 20000;
+#endif
             byte[] bytes = new byte[256];
             Span<Byte> Omicron = new Span<Byte>(bytes);
 
@@ -200,11 +204,9 @@ namespace Dysnomia.Domain
                             i += 3;
                         }
                         Omicron.Clear();
-
-
                     }
                     else
-                        Thread.Sleep(400);
+                        Thread.Sleep(10000);
 
                     /*
                     try

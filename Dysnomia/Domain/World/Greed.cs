@@ -86,15 +86,13 @@ namespace Dysnomia.Domain.World
 
         public byte[] ProxyEncrypt(byte[] Data)
         {
-            Conjunction ts = new Conjunction();
-            while (Upsilon.Count > 0)
+            byte[][] Proxies = Upsilon.ToArray();
+            foreach (byte[] Omicron in Proxies)
             {
-                BigInteger Proxy = Upsilon.Next();
-                ts.Enqueue(Proxy.ToByteArray());
-                Controller.Fi.Psi[Proxy].Rho[0].Psi.Encode(Data, ref Controller.Fi.Psi[Proxy].Rho[0].Eta.Out);
-                Data = Controller.Fi.Psi[Proxy].Rho[0].Psi.Bytes;
+                BigInteger Lambda = new BigInteger(Omicron); 
+                Controller.Fi.Psi[Lambda].Rho[0].Psi.Encode(Data, ref Controller.Fi.Psi[Lambda].Rho[0].Eta.Out);
+                Data = Controller.Fi.Psi[Lambda].Rho[0].Psi.Bytes;
             }
-            while (ts.Count > 0) Upsilon.Enqueue(ts.NextBytes());
             return Data;
         }
 
@@ -165,7 +163,7 @@ namespace Dysnomia.Domain.World
                     Iota.HandshakeState = 0x06;
                 }
                 else
-                    throw new Exception("Not Implemented");
+                    Iota.HandshakeState = (short)Beta;
             }
             else
             {
