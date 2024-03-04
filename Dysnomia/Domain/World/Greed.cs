@@ -282,11 +282,11 @@ namespace Dysnomia.Domain.World
                 case 0x16:
                     Omicron.Psi.Encode(Iota.ToArray(), ref Omicron.Eta.In);
                     Conjunction Omega = Conjunction.Deserialize(Omicron.Psi.Bytes);
-                    BigInteger ProxyTo = Omega.Next();
+                    BigInteger ProxyTo = new BigInteger(Omega.ToArray()[0]);
                     byte[] ProxyData = Omega.Serialize();
                     Controller.Fi.Psi[ProxyTo].Output("Fi", "Proxy", new byte[] { 0x17 }, 1);
                     Controller.Fi.Psi[ProxyTo].Output("Fi", "Proxy", ProxyData, 1);
-                    Thread.Sleep(10000);
+                    Thread.Sleep(6000);
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");
@@ -398,7 +398,6 @@ namespace Dysnomia.Domain.World
                         else throw new Exception("Unknown Handshake Subject");
                     }
 
-                    // TODO: Abstract Write To Fi For Proxy Peering
                     while (Theta.Out.Count > 0)
                     {
                         if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");

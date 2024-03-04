@@ -213,10 +213,11 @@ namespace Dysnomia.Domain
                                     if (!Client.Rho.Indexes.ContainsKey(PClientId)) Client.Rho.Add(PClientId, 0);
                                     Fang Chi = Client.Rho[PClientId];
 
+                                    BigInteger PCData = PC.Next();
                                     if (Client.Rho[PClientId].HandshakeState <= 0x07)
                                     {
                                         if (PC.Count == 0)
-                                            Client.NextHandshake(ref PClientId, ref Chi);
+                                            Client.NextHandshake(ref PCData, ref Chi);
                                         else
                                             throw new Exception("Not Yet Implemented");
                                     }
