@@ -358,8 +358,8 @@ namespace Dysnomia.Domain
                     {
                         if (G.Cone == true)
                         {
-                            G.Handshake("Say", 0x12);
-                            G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(DataString));
+                            G.Handshake("Say", 0x12, G.Rho[0]);
+                            G.Handshake(ClientId.ToString(), Encoding.Default.GetBytes(DataString), G.Rho[0]);
                         }
                     }
                     Next(); // ignore priority
@@ -371,9 +371,9 @@ namespace Dysnomia.Domain
                     foreach (Greed G in Controller.Fi.Psi.Values)
                         if (G.Cone == true)
                         {
-                            G.Handshake("ESay", 0x13);
+                            G.Handshake("ESay", 0x13, G.Rho[0]);
                             G.Rho[0].Psi?.Encode(DataString, ref G.Rho[0].Eta.Out);
-                            G.Handshake(ClientId.ToString(), G.Rho[0].Psi.Bytes);
+                            G.Handshake(ClientId.ToString(), G.Rho[0].Psi.Bytes, G.Rho[0]);
                         }
                     Next(); // ignore priority
                     break;
@@ -388,11 +388,11 @@ namespace Dysnomia.Domain
                         foreach (Greed G in Controller.Fi.Psi.Values)
                             if (G.Cone == false)
                             {
-                                Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
-                                Controller.Fi.Psi[ClientId].Handshake("Query", G.ClientId);
+                                Controller.Fi.Psi[ClientId].Handshake("Query", 0x14, Controller.Fi.Psi[ClientId].Rho[0]);
+                                Controller.Fi.Psi[ClientId].Handshake("Query", G.ClientId, Controller.Fi.Psi[ClientId].Rho[0]);
                             }
-                        Controller.Fi.Psi[ClientId].Handshake("Query", 0x14);
-                        Controller.Fi.Psi[ClientId].Handshake("Query", 0x00);
+                        Controller.Fi.Psi[ClientId].Handshake("Query", 0x14, Controller.Fi.Psi[ClientId].Rho[0]);
+                        Controller.Fi.Psi[ClientId].Handshake("Query", 0x00, Controller.Fi.Psi[ClientId].Rho[0]);
                     }
                     Next(); // ignore priority
                     break;

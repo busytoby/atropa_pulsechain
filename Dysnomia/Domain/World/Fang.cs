@@ -15,6 +15,7 @@ namespace Dysnomia.Domain.World
         public Conjunction? Nu;
         public (BigInteger In, BigInteger Out) Eta;
         public Conjunction? Sigma;
+        public Conjunction? Upsilon;
         public BigInteger PeerFoundation;
         public BigInteger PeerChannel;
         public BigInteger PeerDynamo;

@@ -29,7 +29,6 @@ namespace Dysnomia.Domain.World
 
         public TcpClient Mu;
         public Fan Rho;
-        public Conjunction? Upsilon;
         public bool Cone = false;
         public bool TimedOut = false;
 
@@ -39,7 +38,7 @@ namespace Dysnomia.Domain.World
             Port = Controller.Fi.Psi[Proxy].Port;
             Mu = Controller.Fi.Psi[Proxy].Mu;
             Rho = new Fan(Proxy);
-            Upsilon = Chi;
+            Rho[0].Upsilon = Chi;
             Theta = new Living(Phi);
             Cone = true;
         }
@@ -84,9 +83,9 @@ namespace Dysnomia.Domain.World
         }
         */
 
-        public byte[] ProxyEncrypt(byte[] Data)
+        public byte[] ProxyEncrypt(byte[] Data, Fang Iota)
         {
-            byte[][] Proxies = Upsilon.ToArray();
+            byte[][] Proxies = Iota.Upsilon.ToArray();
             foreach (byte[] Omicron in Proxies)
             {
                 BigInteger Lambda = new BigInteger(Omicron); 
@@ -96,22 +95,22 @@ namespace Dysnomia.Domain.World
             return Data;
         }
 
-        public void Handshake(String Subject, byte[] Data)
+        public void Handshake(String Subject, byte[] Data, Fang Iota)
         {
             if (Theta == null) throw new Exception("Null Theta");
-            if (Subject != "Proxy" && Upsilon != null)
+            if (Subject != "Proxy" && Iota.Upsilon != null)
             {
-                Handshake("Proxy", 0x16);
-                Data = ProxyEncrypt(Upsilon.Serialize().Concat(BitConverter.GetBytes(Data.Length)).Concat(Data).ToArray());
+                Output("Proxy", Subject, new byte[] { 0x16 }, 1);
+                Data = ProxyEncrypt(Iota.Upsilon.Serialize().Concat(BitConverter.GetBytes(Data.Length)).Concat(Data).ToArray(), Iota);
             }
 
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1), 2);
             Output("Fi", Subject, Data, 1);
         }
 
-        public void Handshake(String Subject, BigInteger Data)
+        public void Handshake(String Subject, BigInteger Data, Fang Iota)
         {
-            Handshake(Subject, Data.ToByteArray());
+            Handshake(Subject, Data.ToByteArray(), Iota);
         }
 
         public void NextHandshake(ref BigInteger Beta, ref Fang Iota)
@@ -122,22 +121,22 @@ namespace Dysnomia.Domain.World
                 if(Iota.Mu.Tau.IsZero)
                 {
                     Iota.Mu.Tau = Iota.Mu.Avail(Beta);
-                    Handshake("Tau", Iota.Mu.Tau);
+                    Handshake("Tau", Iota.Mu.Tau, Iota);
                     Iota.HandshakeState = 0x01;
                 }
                 else if (Iota.Mu.Pole.IsZero && Iota.PeerChannel.IsZero)
                 {
                     Iota.Mu.Form(Beta);
                     Iota.Mu.Polarize();
-                    Handshake("Pole", Iota.Mu.Pole);
+                    Handshake("Pole", Iota.Mu.Pole, Iota);
                     Iota.HandshakeState = 0x02;
                 }
                 else if (Iota.Mu.Coordinate.IsZero)
                 {
                     Iota.Mu.Conjugate(ref Beta);
                     Iota.Mu.Conify();
-                    Handshake("Foundation", Iota.Mu.Foundation);
-                    Handshake("Channel", Iota.Mu.Channel);
+                    Handshake("Foundation", Iota.Mu.Foundation, Iota);
+                    Handshake("Channel", Iota.Mu.Channel, Iota);
                     Iota.HandshakeState = 0x03;
                 }
                 else if (Iota.Mu.Element.IsZero && Iota.PeerFoundation.IsZero)
@@ -150,7 +149,7 @@ namespace Dysnomia.Domain.World
                     Iota.PeerChannel = Beta;
                     Iota.Mu.Saturate(Iota.PeerFoundation, Iota.PeerChannel);
                     Iota.Mu.Bond();
-                    Handshake("Dynamo", Iota.Mu.Dynamo);
+                    Handshake("Dynamo", Iota.Mu.Dynamo, Iota);
                     Iota.HandshakeState = 0x05;
                 }
                 else if (Iota.Mu.Barn.IsZero)
@@ -170,14 +169,14 @@ namespace Dysnomia.Domain.World
                 if (Iota.Mu.Alpha.IsZero)
                 {
                     Iota.Mu.Alpha = Iota.Mu.Avail(Beta);
-                    Handshake("Alpha", Iota.Mu.Alpha);
+                    Handshake("Alpha", Iota.Mu.Alpha, Iota);
                     Iota.HandshakeState = 0x01;
                 }
                 else if (Iota.Mu.Pole.IsZero && Iota.PeerChannel.IsZero)
                 {
                     Iota.Mu.Form(Beta);
                     Iota.Mu.Polarize();
-                    Handshake("Pole", Iota.Mu.Pole);
+                    Handshake("Pole", Iota.Mu.Pole, Iota);
                     Iota.HandshakeState = 0x02;
                 }
                 else if (Iota.Mu.Coordinate.IsZero)
@@ -195,9 +194,9 @@ namespace Dysnomia.Domain.World
                     Iota.PeerChannel = Beta;
                     Iota.Mu.Saturate(Iota.PeerFoundation, Iota.PeerChannel);
                     Iota.Mu.Bond();
-                    Handshake("Foundation", Iota.Mu.Foundation);
-                    Handshake("Channel", Iota.Mu.Channel);
-                    Handshake("Dynamo", Iota.Mu.Dynamo);
+                    Handshake("Foundation", Iota.Mu.Foundation, Iota);
+                    Handshake("Channel", Iota.Mu.Channel, Iota);
+                    Handshake("Dynamo", Iota.Mu.Dynamo, Iota);
                     Iota.HandshakeState = 0x05;
                 }
                 else if (Iota.Mu.Barn.IsZero)
@@ -298,7 +297,7 @@ namespace Dysnomia.Domain.World
         {
             Thread.Sleep(10);
             if (Theta == null) throw new Exception("Null Theta");
-            if (Upsilon == null)
+            if (Rho[0].Upsilon == null)
             {
                 if (!Mu.Connected && Theta.In.Count == 0 && Cone == false)
                     Mu.Connect(new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port));
@@ -309,8 +308,8 @@ namespace Dysnomia.Domain.World
                 byte[] ClientIdBytes = ClientId.ToByteArray();
                 Input("Fi", "Xi", ClientIdBytes, 1);
                 Output("Fi", "Proxy", new byte[] { 0x16 }, 1);
-                byte[] ConnectionString = Upsilon.Serialize().Concat(BitConverter.GetBytes(ClientIdBytes.Length)).Concat(ClientIdBytes).ToArray();
-                Output("Fi", "Xi", ProxyEncrypt(ConnectionString), 1);
+                byte[] ConnectionString = Rho[0].Upsilon.Serialize().Concat(BitConverter.GetBytes(ClientIdBytes.Length)).Concat(ClientIdBytes).ToArray();
+                Output("Fi", "Xi", ProxyEncrypt(ConnectionString, Rho[0]), 1);
             }
             byte[] bytes = new byte[256];
             NetworkStream Iota = Mu.GetStream();
@@ -351,8 +350,8 @@ namespace Dysnomia.Domain.World
                             Data = Lambda.NextBytes();
                             Priority = Lambda.NextBytes();
                             BigInteger Delta = new BigInteger(Data);
-                            Handshake("Alpha", 0x08);
-                            Handshake("Alpha", Delta);
+                            Handshake("Alpha", 0x08, Rho[0]);
+                            Handshake("Alpha", Delta, Rho[0]);
                             if (Rho[0].Nu == null) throw new Exception("Null Nu");
                             Rho[0].Nu.Join(new byte[] { 0x08 }, Delta.ToByteArray());
                         }
@@ -365,8 +364,8 @@ namespace Dysnomia.Domain.World
                             Subject = Lambda.NextString();
                             Data = Lambda.NextBytes();
                             Priority = Lambda.NextBytes();
-                            Handshake("Beta", 0x09);
-                            Handshake("Beta", Data);
+                            Handshake("Beta", 0x09, Rho[0]);
+                            Handshake("Beta", Data, Rho[0]);
                             if (Rho[0].Nu == null) throw new Exception("Null Nu");
                             Rho[0].Nu.Join(new byte[] { 0x09 }, Rho[0].Mu.Channel.ToByteArray());
                         }
@@ -379,8 +378,8 @@ namespace Dysnomia.Domain.World
                             Subject = Lambda.NextString();
                             Data = Lambda.NextBytes();
                             Priority = Lambda.NextBytes();
-                            Handshake("Say", 0x12);
-                            Handshake("Say", Data);
+                            Handshake("Say", 0x12, Rho[0]);
+                            Handshake("Say", Data, Rho[0]);
                         }
                         else if (Subject == "ESAY" && Data.Length == 1 && Data[0] == 0x13)
                         {
@@ -392,8 +391,8 @@ namespace Dysnomia.Domain.World
                             Rho[0].Psi.Encode(Lambda.NextBytes(), ref Rho[0].Eta.Out);
                             Data = Rho[0].Psi.Bytes;
                             Priority = Lambda.NextBytes();
-                            Handshake("Esay", 0x13);
-                            Handshake("Esay", Data);
+                            Handshake("Esay", 0x13, Rho[0]);
+                            Handshake("Esay", Data, Rho[0]);
                         }
                         else throw new Exception("Unknown Handshake Subject");
                     }
@@ -442,7 +441,7 @@ namespace Dysnomia.Domain.World
                                 NextHandshake(ref Alpha, ref Chi);
                             }
                             else
-                                Procede(Slice, ref Chi);
+                                 Procede(Slice, ref Chi);
                             stopwatch.Reset();
 
                             A = i + 4;
