@@ -119,8 +119,9 @@ namespace Dysnomia.Domain
 #if DEBUG         
             Iota.ReadTimeout = 300000;
 #else
-            Iota.ReadTimeout = 20000;
+            Iota.ReadTimeout = 8000;
 #endif
+            bool Proxying = false;
             byte[] bytes = new byte[256];
             Span<Byte> Omicron = new Span<Byte>(bytes);
 
@@ -193,10 +194,37 @@ namespace Dysnomia.Domain
                             }
                             if (B <= 0) continue;
 
-                            BigInteger Alpha = new BigInteger(Omicron.Slice(A, B));
-                            if (size > 0)
+                            Span<Byte> Slice = Omicron.Slice(A, B);
+                            if (Slice.Length == 1 && Slice[0] == 0x17)
+                                Proxying = true;
+                            else
                             {
-                                Push(ClientId.ToByteArray(), Omicron.Slice(A, B).ToArray());
+                                if (!Proxying)
+                                {
+                                    BigInteger Alpha = new BigInteger(Slice);
+                                    if (size > 0)
+                                    {
+                                        Push(ClientId.ToByteArray(), Slice.ToArray());
+                                    }
+                                } else
+                                {
+                                    Conjunction PC = Conjunction.Deserialize(Slice.ToArray());
+                                    BigInteger PClientId = PC.Next();
+                                    if (!Client.Rho.Indexes.ContainsKey(PClientId)) Client.Rho.Add(PClientId, 0);
+                                    Fang Chi = Client.Rho[PClientId];
+
+                                    if (Client.Rho[PClientId].HandshakeState <= 0x07)
+                                    {
+                                        if (PC.Count == 0)
+                                            Client.NextHandshake(ref PClientId, ref Chi);
+                                        else
+                                            throw new Exception("Not Yet Implemented");
+                                    }
+                                    else
+                                        Client.Procede(Slice, ref Chi);
+
+                                    Proxying = false;
+                                }
                             }
 
                             A = i + 4;
@@ -206,7 +234,7 @@ namespace Dysnomia.Domain
                         Omicron.Clear();
                     }
                     else
-                        Thread.Sleep(10000);
+                        Thread.Sleep(400);
 
                     /*
                     try

@@ -114,7 +114,7 @@ namespace Dysnomia.Domain.World
             Handshake(Subject, Data.ToByteArray());
         }
 
-        private void NextHandshake(ref BigInteger Beta, ref Fang Iota)
+        public void NextHandshake(ref BigInteger Beta, ref Fang Iota)
         {
             if (Theta == null) throw new Exception("Null Theta");
             if (Cone)
@@ -260,7 +260,7 @@ namespace Dysnomia.Domain.World
             Logging.Log("Greed", "Disconnected " + Host, 6);
         }
 
-        private void Procede(Span<Byte> Iota, ref Fang Omicron)
+        public void Procede(Span<Byte> Iota, ref Fang Omicron)
         {
             switch(Omicron.HandshakeState)
             {
@@ -286,6 +286,7 @@ namespace Dysnomia.Domain.World
                     byte[] ProxyData = Omega.Serialize();
                     Controller.Fi.Psi[ProxyTo].Output("Fi", "Proxy", new byte[] { 0x17 }, 1);
                     Controller.Fi.Psi[ProxyTo].Output("Fi", "Proxy", ProxyData, 1);
+                    Thread.Sleep(10000);
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");
@@ -397,6 +398,7 @@ namespace Dysnomia.Domain.World
                         else throw new Exception("Unknown Handshake Subject");
                     }
 
+                    // TODO: Abstract Write To Fi For Proxy Peering
                     while (Theta.Out.Count > 0)
                     {
                         if (!Theta.Out.TryDequeue(out Lambda)) throw new Exception("Cannot Dequeue");
