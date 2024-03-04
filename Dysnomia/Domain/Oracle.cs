@@ -285,7 +285,7 @@ namespace Dysnomia.Domain
                                 while (Count < 1) Thread.Sleep(100);
                                 ClientId = Next();
                                 if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode 0x07 Unknown ClientId");
-                                Controller.Fi.Psi[ClientId].Nu = Controller.Fi.Psi[ClientId].Rho.OpenSerialization();
+                                Controller.Fi.Psi[ClientId].Rho[0].Nu = Controller.Fi.Psi[ClientId].Rho[0].Mu.OpenSerialization();
                                 Logging.Log("Oracle", "Serialization Opened For ClientId: " + ClientId, 5);
                                 Next(); // ignore priority
                                 break;
@@ -329,22 +329,22 @@ namespace Dysnomia.Domain
             if (ClientId != ClientIdCheck) throw new Exception("OpCode " + Convert.ToHexString(OpCode) + " ClientId Error");
             if (!Controller.Fi.Psi.ContainsKey(ClientId)) throw new Exception("OpCode " + Convert.ToHexString(OpCode) + " Unknown ClientId");
             Client = Controller.Fi.Psi[ClientId];
-            if (Client.Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
+            if (Client.Rho[0].Psi == null) throw new Exception("Null Psi For ClientId: " + ClientId);
 
             switch (OpCode[0])
             {
                 case 0x08:
-                    Client.Psi.Alpha(Bytes);
-                    Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Bytes);
+                    Client.Rho[0].Psi.Alpha(Bytes);
+                    Controller.Fi.Psi[ClientId].Rho[0].Nu?.Join(OpCode, Bytes);
                     Next(); // ignore priority
                     break;
                 case 0x09:
-                    Client.Psi.Beta(Bytes, true);
-                    if (Client.Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
-                    Controller.Fi.Psi[ClientId].Nu?.Join(OpCode, Client.Psi.Bytes);
-                    Client.Psi.Pi();
-                    Client.Psi.Rho();
-                    Client.Eta = (Client.Psi.Mu.Upsilon, Client.Psi.Mu.Upsilon);
+                    Client.Rho[0].Psi.Beta(Bytes, true);
+                    if (Client.Rho[0].Psi.Bytes == null) throw new Exception("Psi Decryption Failure For ClientId: " + ClientId);
+                    Controller.Fi.Psi[ClientId].Rho[0].Nu?.Join(OpCode, Client.Rho[0].Psi.Bytes);
+                    Client.Rho[0].Psi.Pi();
+                    Client.Rho[0].Psi.Rho();
+                    Client.Rho[0].Eta = (Client.Rho[0].Psi.Mu.Upsilon, Client.Rho[0].Psi.Mu.Upsilon);
                     Next(); // ignore priority
                     break;
                 case 0x10:
@@ -353,7 +353,7 @@ namespace Dysnomia.Domain
                     throw new Exception("There Is No OpCode 0x11");
                 case 0x12:
                     DataString = String.Format("<{0}> {1}", ClientId.ToString(), Encoding.Default.GetString(Bytes));
-                    Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
+                    Controller.Fi.Psi[ClientId].Rho[0].Psi?.Gamma(DataString);
                     foreach (Greed G in Controller.Fi.Psi.Values)
                     {
                         if (G.Cone == true)
@@ -365,15 +365,15 @@ namespace Dysnomia.Domain
                     Next(); // ignore priority
                     break;
                 case 0x13:
-                    Controller.Fi.Psi[ClientId].Psi?.Encode(Bytes, ref Controller.Fi.Psi[ClientId].Eta.In);
-                    DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Psi);
-                    Controller.Fi.Psi[ClientId].Psi?.Gamma(DataString);
+                    Controller.Fi.Psi[ClientId].Rho[0].Psi?.Encode(Bytes, ref Controller.Fi.Psi[ClientId].Rho[0].Eta.In);
+                    DataString = String.Format("<{0}> {1}", ClientId.ToString(), Controller.Fi.Psi[ClientId].Rho[0].Psi);
+                    Controller.Fi.Psi[ClientId].Rho[0].Psi?.Gamma(DataString);
                     foreach (Greed G in Controller.Fi.Psi.Values)
                         if (G.Cone == true)
                         {
                             G.Handshake("ESay", 0x13);
-                            G.Psi?.Encode(DataString, ref G.Eta.Out);
-                            G.Handshake(ClientId.ToString(), G.Psi.Bytes);
+                            G.Rho[0].Psi?.Encode(DataString, ref G.Rho[0].Eta.Out);
+                            G.Handshake(ClientId.ToString(), G.Rho[0].Psi.Bytes);
                         }
                     Next(); // ignore priority
                     break;

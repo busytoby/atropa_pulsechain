@@ -124,7 +124,7 @@ namespace Dysnomia.Domain
 
             // Drop Client If Handshake Incomplete
             try {
-                while (Psi[ClientId].Psi == null) Thread.Sleep(1000);
+                while (Psi[ClientId].Rho[0].Psi == null) Thread.Sleep(1000);
             } catch(Exception E) {
                 //Logging.Log("Fi", E.Message, 7);
                 //if(E.StackTrace != null) Logging.Log("Fi", E.StackTrace, 7);
@@ -173,7 +173,7 @@ namespace Dysnomia.Domain
                         }
                     }
 
-                    if (Iota.DataAvailable && !Psi[ClientId].Rho.Barn.IsZero)
+                    if (Iota.DataAvailable && !Psi[ClientId].Rho[0].Mu.Barn.IsZero)
                     {
                         Thread.Sleep(200);
                         int size = Iota.Read(Omicron);
