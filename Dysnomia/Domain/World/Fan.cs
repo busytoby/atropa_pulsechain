@@ -16,13 +16,20 @@ namespace Dysnomia.Domain.World
         {
             Items = new List<Fang>();
             Indexes = new Dictionary<BigInteger, int>();
-            Add(0);
+            Add(0, 0);
         }
 
-        public void Add(BigInteger clientId)
+        public Fan(BigInteger Proxy)
+        {
+            Items = new List<Fang>();
+            Indexes = new Dictionary<BigInteger, int>();
+            Add(0, Proxy);
+        }
+
+        public void Add(BigInteger clientId, BigInteger Proxy)
         {
             Indexes.Add(clientId, Items.Count);
-            Items.Add(new Fang());
+            Items.Add(new Fang(Proxy));
         }
 
         public Fang this[BigInteger index]

@@ -52,7 +52,8 @@ namespace Dysnomia.Lib
                 byte[] Lambda = BitConverter.GetBytes(Alpha.Length);
                 Delta = Delta.Concat(Lambda).Concat(Alpha).ToArray();
             }
-            return Delta.Concat(new byte[] {0x00}).ToArray();
+            if (Delta.Length == 0) return new byte[] { 0x00 };
+            else return Delta.ToArray();
         }
 
         public static Conjunction Deserialize(byte[] Gamma)
@@ -68,9 +69,10 @@ namespace Dysnomia.Lib
                     _size = BitConverter.ToInt32(Gamma, i);
                     _next = Gamma.Skip(i + 4).Take(_size).ToArray();
                     Mu.Enqueue(_next);
-                    if (i + 4 + _size + 1 == Gamma.Length && Gamma.Skip(i + 4 + _size).Take(1).ToArray()[0] == 0) return Mu;
+                    //if (i + 4 + _size == Gamma.Length && Gamma.Skip(i + 4 + _size).Take(1).ToArray()[0] == 0) return Mu;
                     i += 4 + _size;
                 }
+                return Mu;
             }
             catch { }
             return null;

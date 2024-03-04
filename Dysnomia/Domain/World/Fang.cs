@@ -18,6 +18,7 @@ namespace Dysnomia.Domain.World
         public BigInteger PeerFoundation;
         public BigInteger PeerChannel;
         public BigInteger PeerDynamo;
+        public BigInteger Proxy;
         public short HandshakeState;
 
         public Fang()
@@ -26,6 +27,17 @@ namespace Dysnomia.Domain.World
             PeerFoundation = 0;
             PeerChannel = 0;
             PeerDynamo = 0;
+            Proxy = 0;
+            HandshakeState = 0x00;
+        }
+
+        public Fang(BigInteger _proxy)
+        {
+            Mu = new Fa();
+            PeerFoundation = 0;
+            PeerChannel = 0;
+            PeerDynamo = 0;
+            Proxy = _proxy;
             HandshakeState = 0x00;
         }
     }

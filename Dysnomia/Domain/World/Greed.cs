@@ -38,7 +38,7 @@ namespace Dysnomia.Domain.World
             Host = Controller.Fi.Psi[Proxy].Host;
             Port = Controller.Fi.Psi[Proxy].Port;
             Mu = Controller.Fi.Psi[Proxy].Mu;
-            Rho = new Fan();
+            Rho = new Fan(Proxy);
             Upsilon = Chi;
             Theta = new Living(Phi);
             Cone = true;
@@ -86,12 +86,15 @@ namespace Dysnomia.Domain.World
 
         public byte[] ProxyEncrypt(byte[] Data)
         {
+            Conjunction ts = new Conjunction();
             while (Upsilon.Count > 0)
             {
                 BigInteger Proxy = Upsilon.Next();
+                ts.Enqueue(Proxy.ToByteArray());
                 Controller.Fi.Psi[Proxy].Rho[0].Psi.Encode(Data, ref Controller.Fi.Psi[Proxy].Rho[0].Eta.Out);
                 Data = Controller.Fi.Psi[Proxy].Rho[0].Psi.Bytes;
             }
+            while (ts.Count > 0) Upsilon.Enqueue(ts.NextBytes());
             return Data;
         }
 
@@ -101,8 +104,7 @@ namespace Dysnomia.Domain.World
             if (Subject != "Proxy" && Upsilon != null)
             {
                 Handshake("Proxy", 0x16);
-                Conjunction Omicron = new Conjunction();
-                Data = ProxyEncrypt(Data);
+                Data = ProxyEncrypt(Upsilon.Serialize().Concat(BitConverter.GetBytes(Data.Length)).Concat(Data).ToArray());
             }
 
             Logging.Log("Greed", String.Format("{0} {1} Handshake: {2}", Cone ? "Cone" : "Rod", Subject, Encoding.Default.GetString(Data), 1), 2);
@@ -216,6 +218,7 @@ namespace Dysnomia.Domain.World
                     Iota.Nu = Controller.Fi.Psi[ClientId].Rho[0].Mu.OpenSerialization();
                     Iota.Sigma = new Conjunction();
                     Iota.HandshakeState = 0x06;
+                    Logging.Log("Greed", "Connected: " + ClientId, 6);
                 }
                 else
                     Iota.HandshakeState = (short)Beta;
@@ -279,7 +282,12 @@ namespace Dysnomia.Domain.World
                     Logging.Log("QUERY", Encoding.Default.GetString(Iota), 1);
                     break;
                 case 0x16:
-                    throw new Exception("Not Yet Implemented");
+                    Omicron.Psi.Encode(Iota.ToArray(), ref Omicron.Eta.In);
+                    Conjunction Omega = Conjunction.Deserialize(Omicron.Psi.Bytes);
+                    BigInteger ProxyTo = Omega.Next();
+                    byte[] ProxyData = Omega.Serialize();
+                    Controller.Fi.Psi[ProxyTo].Output("Fi", "Proxy", new byte[] { 0x17 }, 1);
+                    Controller.Fi.Psi[ProxyTo].Output("Fi", "Proxy", ProxyData, 1);
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");
@@ -299,9 +307,11 @@ namespace Dysnomia.Domain.World
             else
             {
                 ClientId = Math.Random();
-                Input("Fi", "Xi", ClientId.ToByteArray(), 1);
+                byte[] ClientIdBytes = ClientId.ToByteArray();
+                Input("Fi", "Xi", ClientIdBytes, 1);
                 Output("Fi", "Proxy", new byte[] { 0x16 }, 1);
-                Output("Fi", "Xi", ProxyEncrypt(ClientId.ToByteArray()), 1);
+                byte[] ConnectionString = Upsilon.Serialize().Concat(BitConverter.GetBytes(ClientIdBytes.Length)).Concat(ClientIdBytes).ToArray();
+                Output("Fi", "Xi", ProxyEncrypt(ConnectionString), 1);
             }
             byte[] bytes = new byte[256];
             NetworkStream Iota = Mu.GetStream();
@@ -424,10 +434,12 @@ namespace Dysnomia.Domain.World
                             if (B <= 0) continue;
 
                             Span<Byte> Slice = Omicron.Slice(A, B);
+
                             Fang Chi = Rho[0];
+
                             if (Rho[0].HandshakeState <= 0x07)
                             {
-                                BigInteger Alpha = new BigInteger(Slice);                                
+                                BigInteger Alpha = new BigInteger(Slice);
                                 NextHandshake(ref Alpha, ref Chi);
                             }
                             else
