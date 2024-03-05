@@ -115,11 +115,11 @@ namespace Dysnomia.Domain
             Client = new Greed(Beta);
             if (!Psi.TryAdd(ClientId, Client)) throw new Exception("Failure Adding Client To Dictionary");
 
-            NetworkStream Iota = Beta.GetStream();
+            Client.Rho[0].Rho = new DysnomiaNetworkStream(Beta);
 #if DEBUG         
-            Iota.ReadTimeout = 300000;
+            Client.Rho[0].Rho.ReadTimeout = 300000;
 #else
-            Iota.ReadTimeout = 8000;
+            Client.Rho[0].Rho.ReadTimeout = 8000;
 #endif
             bool Proxying = false;
             byte[] bytes = new byte[256];
@@ -173,15 +173,15 @@ namespace Dysnomia.Domain
                                 Subject = Lambda.NextString();
                             byte[] Data = Lambda.NextBytes();
                             byte[] Priority = Lambda.NextBytes();
-                            Iota.Write(Data);
-                            Iota.Write(Encoding.Default.GetBytes(Fi.DLE));
+                            Client.Rho[0].Rho.Write(Data);
+                            Client.Rho[0].Rho.Write(Encoding.Default.GetBytes(Fi.DLE));
                         }
                     }
 
-                    if (Iota.DataAvailable && !Psi[ClientId].Rho[0].Mu.Barn.IsZero)
+                    if (Client.Rho[0].Rho.DataAvailable && !Psi[ClientId].Rho[0].Mu.Barn.IsZero)
                     {
                         Thread.Sleep(200);
-                        int size = Iota.Read(Omicron);
+                        int size = Client.Rho[0].Rho.Read(Omicron);
 
                         int A, B;
                         for (int i = A = B = 0; i < size; i++)
@@ -209,8 +209,17 @@ namespace Dysnomia.Domain
                                 } else
                                 {
                                     Conjunction PC = Conjunction.Deserialize(Slice.ToArray());
+                                    Conjunction Upsilon = new Conjunction();
                                     BigInteger PClientId = PC.Next();
-                                    if (!Client.Rho.Indexes.ContainsKey(PClientId)) Client.Rho.Add(PClientId, 0);
+                                    Upsilon.Enqueue(PClientId.ToByteArray());
+
+                                    while (PC.Count > 1)
+                                        Upsilon.Enqueue(PC.NextBytes());
+                                    if (!Client.Rho.Indexes.ContainsKey(PClientId))
+                                    {
+                                        Client.Rho.Add(PClientId, 0);
+                                        Client.Rho[PClientId].Upsilon = Upsilon;
+                                    }
                                     Fang Chi = Client.Rho[PClientId];
 
                                     BigInteger PCData = PC.Next();
@@ -220,6 +229,7 @@ namespace Dysnomia.Domain
                                             Client.NextHandshake(ref PCData, ref Chi);
                                         else
                                             throw new Exception("Not Yet Implemented");
+                                        Client.Rho[0].Rho.WaitingForProxy = true;
                                     }
                                     else
                                         Client.Procede(Slice, ref Chi);

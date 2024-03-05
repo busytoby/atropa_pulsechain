@@ -43,6 +43,17 @@ namespace Dysnomia.Lib
             Enqueue(Priority);
         }
 
+        public void Enqueue(string From, byte[] Subject, byte[] Data, short Priority)
+        {
+            if (Count != 0) throw new Exception("Already Tare");
+            Enqueue(0x17);
+            Enqueue(DysnomiaTime.Now.Ticks);
+            Enqueue(From);
+            Enqueue(Subject);
+            Enqueue(Data);
+            Enqueue(Priority);
+        }
+
         public void Enqueue(byte[] From, byte[] Data, short Priority)
         {
             if (Count != 0) throw new Exception("Already Tare");

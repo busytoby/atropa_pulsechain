@@ -11,6 +11,7 @@ namespace Dysnomia.Domain.World
     public class Fang
     {
         public Fa Mu;
+        public DysnomiaNetworkStream Rho;
         public Lib.Buffer? Psi;
         public Conjunction? Nu;
         public (BigInteger In, BigInteger Out) Eta;

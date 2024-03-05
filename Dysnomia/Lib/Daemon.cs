@@ -52,6 +52,14 @@ namespace Dysnomia.Lib
             Theta.Out.Enqueue(M);
         }
 
+        public void Output(String From, byte[] Subject, byte[] Data, short Priority)
+        {
+            if (Theta == null) throw new Exception("Null Theta");
+            Tare M = new Tare();
+            M.Enqueue(From, Subject, Data, Priority);
+            Theta.Out.Enqueue(M);
+        }
+
         public void Output(String From, String Subject, byte[] Data, short Priority)
         {
             if (Theta == null) throw new Exception("Null Theta");
