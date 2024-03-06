@@ -14,6 +14,7 @@ using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using static Dysnomia.Lib.Tare;
 
 namespace Dysnomia.Domain.World
@@ -324,10 +325,24 @@ namespace Dysnomia.Domain.World
                         
                     }
                     else Omega = Conjunction.Deserialize(Iota.ToArray());
-                    int x = 555;
-                    ProxyData = Omega.Serialize();
-                    int v = 444;
-                    throw new Exception("Not Yet Implemented");
+                    Conjunction Upsilon = new Conjunction();
+                    while (Omega.Count > 2)
+                        Upsilon.Enqueue(Omega.NextBytes());
+                    ProxyTo = Omega.Next();
+                    if (Omicron.Psi == null)
+                    {
+                        BigInteger Data = Omega.Next();
+                        Fang Chi = Rho[ProxyTo];
+                        Rho[ProxyTo].HandshakeState = 0x00;
+                        NextHandshake(ref Data, ref Chi);
+                        Rho[ProxyTo].HandshakeState = 0x07;
+                        Rho[ProxyTo].Rho.WaitingForProxy = true;
+                        Controller.Fi.Psi[ProxyTo].Rho[Controller.Fi.Psi[ProxyTo].Rho.ProxyId].Rho.WaitingForProxy = false;
+                    }
+                    else
+                    {
+                        throw new Exception("Not Yet Implemented");
+                    }
                     break;
                 default:
                     throw new Exception("Cannot Procede With Handshake State");
