@@ -32,15 +32,5 @@ namespace Dysnomia.Domain.World
             Proxy = 0;
             HandshakeState = 0x00;
         }
-
-        public Fang(BigInteger _proxy)
-        {
-            Mu = new Fa();
-            PeerFoundation = 0;
-            PeerChannel = 0;
-            PeerDynamo = 0;
-            Proxy = _proxy;
-            HandshakeState = 0x00;
-        }
     }
 }

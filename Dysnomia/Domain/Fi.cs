@@ -217,7 +217,7 @@ namespace Dysnomia.Domain
                                         Upsilon.Enqueue(PC.NextBytes());
                                     if (!Client.Rho.Indexes.ContainsKey(PClientId))
                                     {
-                                        Client.Rho.Add(PClientId, 0);
+                                        Client.Rho.Add(PClientId);
                                         Client.Rho[PClientId].Upsilon = Upsilon;
                                     }
                                     Fang Chi = Client.Rho[PClientId];
