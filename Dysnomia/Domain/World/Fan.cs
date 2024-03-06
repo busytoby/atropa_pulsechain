@@ -26,13 +26,6 @@ namespace Dysnomia.Domain.World
             Add(0, Proxy);
         }
 
-        public Fan(BigInteger ClientId, BigInteger Proxy)
-        {
-            Items = new List<Fang>();
-            Indexes = new Dictionary<BigInteger, int>();
-            Add(ClientId, Proxy);
-        }
-
         public void Add(BigInteger clientId, BigInteger Proxy)
         {
             Indexes.Add(clientId, Items.Count);
