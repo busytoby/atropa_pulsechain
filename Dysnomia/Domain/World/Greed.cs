@@ -333,10 +333,10 @@ namespace Dysnomia.Domain.World
                     {
                         BigInteger Data = Omega.Next();
                         Fang Chi = Rho[ProxyTo];
-                        Rho[ProxyTo].HandshakeState = 0x00;
+                        Chi.HandshakeState = 0x00;
                         NextHandshake(ref Data, ref Chi);
-                        Rho[ProxyTo].HandshakeState = 0x07;
-                        Rho[ProxyTo].Rho.WaitingForProxy = true;
+                        Chi.HandshakeState = 0x07;
+                        Chi.Rho.WaitingForProxy = true;
                         Controller.Fi.Psi[ProxyTo].Rho[Controller.Fi.Psi[ProxyTo].Rho.ProxyId].Rho.WaitingForProxy = false;
                     }
                     else
