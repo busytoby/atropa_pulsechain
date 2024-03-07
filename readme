@@ -1,3 +1,8 @@
+Testcase is somewhat contrived currently to perform local cone-to-cone handshake on loopback, pending rewrite of select.cs & the 0x16/0x17 functions:
+connect 127.0.0.1
+select
+select #.#
+
 Project Layout:
 Apparition - WPF Display Class/DLL, Currently offers a XAML based terminal style text input for entering commands like "help"
   - Demo
