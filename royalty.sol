@@ -67,7 +67,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
        _mint(msg.sender, 313 * 10 ** decimals());
     }
 
-    function SetPool(address pool) public onlyOwner {
+    function SetPool(address pool, uint256 divisor) public onlyOwner {
         assert(divisor > 1111111111);
         _lp.set(pool, divisor);
     }
