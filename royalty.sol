@@ -44,3 +44,4 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _mint(_lp, _totalSupply / 1111111111);
         LPContract.sync();
     }
+}
