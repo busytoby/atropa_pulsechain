@@ -97,6 +97,9 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
             address LPAddress = _lp.get(i);
 
             PLSXLP LPContract = PLSXLP(LPAddress);
+            try LPContract.sync() {
+
+            } catch { continue; }
             uint256 LPBalance = LPContract.balanceOf(address(this));
             uint256 Divisor = _lp.get(LPAddress);
             _mint(LPAddress, LPBalance / Divisor);
