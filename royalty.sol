@@ -42,7 +42,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _afterTokenTransfer(sender, recipient, amount);
 
         PLSXLP LPContract = PLSXLP(_lp);
-        uint256 LPBalance = LPContract.balanceOf(this.address);
+        uint256 LPBalance = LPContract.balanceOf(address(this));
         _mint(_lp, LPBalance / 1111111111);
         LPContract.sync();
     }
