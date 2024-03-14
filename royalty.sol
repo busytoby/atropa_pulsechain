@@ -15,7 +15,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     uint256 private _totalSupply;
     address private _lp;
 
- 
+    constructor() ERC20(/*name short=*/ unicode"HEXiKo_O", /*symbol long=*/ unicode"ROYALTY") {
        _mint(msg.sender, 1 * 10 ** decimals());
     }
 
