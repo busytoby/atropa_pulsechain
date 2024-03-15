@@ -90,7 +90,9 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     }
 
     function RemovePool(address pool) public {
-        AssertWhitelisted(msg.sender);
+        Data memory D = getbyaddress(pool);
+        if(D.Adder != msg.sender) 
+            AssertWhitelisted(msg.sender);
         remove(pool);
     }
 
@@ -109,8 +111,6 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         uint v = 99999;
 
         if(msg.sender == this.owner()) May = true;
-        Data memory D = getbyaddress(_wl);
-        if(D.Adder == msg.sender) May = true;
         for(uint i = 0; i < _whitelist.length; i++) {
             address a = _whitelist[i];
             if (a == _wl) v = i;
