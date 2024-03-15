@@ -78,7 +78,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     }
 
     function _setpool(address pool, uint256 divisor) private {
-        assert(divisor > 1110); // Change Me
+        assert(divisor > 1110); // Change Me To No Lower Than 100
         assert(CHANGED);
         assert(Sync(pool) == true);
         set(pool, divisor);
@@ -154,6 +154,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         uint256 Multiplier = txamount / D.Divisor;
         uint256 Amount = ((Modifier / D.Divisor) * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
+        if((totalSupply() + Amount) > (1111111111 * 10 ** decimals())) Amount = 1;
         return Amount;
     }
 
