@@ -79,6 +79,7 @@ address constant NoNukesContract = address(0x174A0ad99c60c20D9B3D94c3095BC1fb9dd
 address constant WenTiContract = address(0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc);
 address constant TwoCentClubContract = address(0x6293373BF0DAE2050641973D49b7b2f71adC91a1);
 address constant BFFContract = address(0xE35A842eb1EDca4C710B6c1B1565cE7df13f5996);
+address constant SECURITYContract = address(0x2234da59c2D5EDB197594C95dbbA7a99Bcd91230);
 //
 address constant TRSIContract = address(0x51A7aaBcCa69B3c0F82b3b9ce5104FDe3efAecE6);
 address constant BELContract = address(0x4C1518286E1b8D5669Fe965EF174B8B4Ae2f017B);
@@ -105,3 +106,11 @@ address constant BonusContract = address(0xB8FaCE58CB05C55BBBA9c564A550cc2402A40
 
 ///
 address constant LEPROSYContract = address(0x7759A6D283192ef2BA082923d28Bec6eBfAf9D68);
+
+/// royalty tokens
+/*
+0xC6F085DE4f388a48ce2942857455147A37870086
+0x80C105217885707BA0003ffAe7Ab01466E5E8488
+0xF2563864C22022deb03ce929c26C54033a69E9d5
+0xA78feD26D175b4B2c83F69Ca3eA195123ca30381
+*/
