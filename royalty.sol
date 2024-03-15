@@ -38,11 +38,12 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         return _lp.keys.length;
     }
 
-    function set(address key, uint256 Divisor)  private {
+    function set(address key, uint256 Divisor, address Adder)  private {
         if(_lp.inserted[key]) _lp.values[key].Divisor = Divisor;
         else {
             _lp.inserted[key] = true;
             _lp.values[key].Divisor = Divisor;
+            _lp.values[key].Adder = Adder;
             _lp.indexOf[key] = _lp.keys.length;
             _lp.keys.push(key);
         }
@@ -116,6 +117,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         uint v = 99999;
 
         if(msg.sender == this.owner()) May = true;
+        Data memory D = getbyaddress(_wl);
+        if(D.Adder == msg.sender) May = true;
         for(uint i = 0; i < _whitelist.length; i++) {
             address a = _whitelist[i];
             if (a == _wl) v = i;
