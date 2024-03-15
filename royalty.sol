@@ -61,33 +61,46 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _mint(msg.sender, 5 * 10 ** decimals());
     }
 
-    function SetPool(address pool, uint256 divisor) public onlyOwner {
-        PLSXLP LPA = PLSXLP(pool);
-        LPA.sync();
+    function _setpool(address pool, uint256 divisor) private {
         assert(divisor > 1111111110);
+        assert(Sync(pool) == true);
         set(pool, divisor);
+    }
+
+    function SetPool(address pool, uint256 divisor) public onlyOwner {
+        _setpool(pool, divisor);
     }
 
     function RemovePool(address pool) public onlyOwner {
         remove(pool);
     }
 
-    function Sync(PLSXLP LPA) public returns (bool) {
-        try LPA.sync() {
+    function Sync(address LPA) public returns (bool) {
+        PLSXLP LPContract = PLSXLP(LPA);
+
+        try LPContract.sync() {
             return true;
         } catch {
             return false;
         }
     }
 
+    function GetDistribution(address LPAddress) public view returns (uint256) {
+        uint256 LPBalance = balanceOf(LPAddress);
+        uint256 Divisor = getbyaddress(LPAddress);
+        uint256 Amount = LPBalance / Divisor;
+        if(Amount < 1) Amount = 1;
+        return Amount;
+    }
+
     function MintDerivative(address LPAddress) private {
-            PLSXLP LPContract = PLSXLP(LPAddress);
-            Sync(LPContract);
-            uint256 LPBalance = balanceOf(LPAddress);
-            uint256 Divisor = getbyaddress(LPAddress);
-            uint256 Amount = LPBalance / Divisor;
-            _mint(LPAddress, Amount);
-            Sync(LPContract);
+        uint256 Amount = GetDistribution(LPAddress);
+        _mint(LPAddress, Amount);
+        Sync(LPAddress);
+    }
+
+    function SIGMA() public onlyOwner {
+        Mint();
     }
 
     function Mint() private returns (bool) {
