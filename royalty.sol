@@ -78,7 +78,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     }
 
     function _setpool(address pool, uint256 divisor) private {
-        assert(divisor > 11110); // Change Me
+        assert(divisor > 1110); // Change Me
         assert(CHANGED);
         assert(Sync(pool) == true);
         set(pool, divisor);
@@ -143,11 +143,16 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         }
     }
 
+    function GetPercentage(uint256 A, uint256 B) public pure returns (uint256) {
+        return ((B * 10 ** 12) / A);
+    }
+
     function GetDistribution(address LPAddress, uint256 txamount) public view returns (uint256) {
         uint256 LPBalance = balanceOf(LPAddress);
+        uint256 Modifier = GetPercentage(totalSupply(), LPBalance);
         Data memory D = getbyaddress(LPAddress);
         uint256 Multiplier = txamount / D.Divisor;
-        uint256 Amount = (LPBalance / D.Divisor) * Multiplier;
+        uint256 Amount = ((Modifier / D.Divisor) * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
         return Amount;
     }
