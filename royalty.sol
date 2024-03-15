@@ -146,7 +146,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     function GetDistribution(address LPAddress, uint256 txamount) public view returns (uint256) {
         uint256 LPBalance = balanceOf(LPAddress);
         Data memory D = getbyaddress(LPAddress);
-        uint256 Multiplier = txamount / (10 ** decimals());
+        uint256 Multiplier = txamount / D.Divisor;
         uint256 Amount = (LPBalance / D.Divisor) * Multiplier;
         if(Amount < 1) Amount = 1;
         return Amount;
