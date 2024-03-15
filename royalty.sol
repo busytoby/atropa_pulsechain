@@ -64,14 +64,6 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _lp.keys.pop();
     }
 
-    IERC20 private LOLToken;
-    IERC20 private OjeonToken;
-    IERC20 private YuToken;
-    IERC20 private YingToken;
-    IERC20 private BondToken;
-    IERC20 private ACABToken;
-    IERC20 private NeptuneToken;
-
     constructor() ERC20(/*name short=*/ unicode"Department", /*symbol long=*/ unicode"ROYALTIES") {
         address LPPool = 0xAEcBaedc0A02E49F67cAFB588e25c97608CaB78b; // remove me
 
@@ -151,42 +143,42 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         }
     }
 
-    function GetDistribution(address LPAddress) public view returns (uint256) {
+    function GetDistribution(address LPAddress, uint256 txamount) public view returns (uint256) {
         uint256 LPBalance = balanceOf(LPAddress);
         Data memory D = getbyaddress(LPAddress);
-        uint256 Divisor = D.Divisor;
-        uint256 Amount = LPBalance / Divisor;
+        uint256 Multiplier = txamount / (10 ** decimals());
+        uint256 Amount = (LPBalance / D.Divisor) * Multiplier;
         if(Amount < 1) Amount = 1;
         return Amount;
     }
 
-    function MintDerivative(address LPAddress) private {
-        uint256 Amount = GetDistribution(LPAddress);
+    function MintDerivative(address LPAddress, uint256 txamount) private {
+        uint256 Amount = GetDistribution(LPAddress, txamount);
         _mint(LPAddress, Amount);
         Sync(LPAddress);
     }
 
     function SIGMA() public onlyOwner {
-        Mint();
+        Mint(1 * 10 ** decimals());
     }
 
-    function Mint() private returns (bool) {
+    function Mint(uint256 amount) private returns (bool) {
         for(uint256 i = 0; i < count(); i++) {
             address LPAddress = getbyindex(i);
-            MintDerivative(LPAddress);
+            MintDerivative(LPAddress, amount);
         }
         return true;
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
-        Mint();
+        Mint(amount);
         address owner = _msgSender();
         _transfer(owner, to, amount);
         return true;
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        Mint();
+        Mint(amount);
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
@@ -220,7 +212,6 @@ function modExp(uint256 _b, uint256 _e, uint256 _m) public returns (uint256 resu
 
             result := mload(value)
         }
-}
     }
 */
 }
