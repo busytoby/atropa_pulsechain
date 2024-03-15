@@ -117,12 +117,12 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         Mint();
         return true;
     }
-
+//taking the mint function out of the transferFrom allows it to work fine when adding mintable LP but limits the amounts of mints that happen. 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
-        Mint();
+     //   Mint();
         return true;
     }
 }
