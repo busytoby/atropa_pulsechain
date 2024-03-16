@@ -5,7 +5,7 @@ import "asset.sol";
 import "whitelist.sol";
 import "incorporation.sol";
 
-contract atropacoin is Incorporation {
+contract atropacoin is Incorporation, Whitelist {
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
         _mint(msg.sender, 666 * 10 ** decimals());
         AddToWhitelist(msg.sender);
