@@ -166,7 +166,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         Sync(LPAddress);
     }
 
-    function IsPLPPayable(address payee) public returns (bool) {
+    function IsPLPPayable(address payee) public view returns (bool) {
         bool Is = false;
         PLSXLP LPContract = PLSXLP(payee);
         try LPContract.token0() {
