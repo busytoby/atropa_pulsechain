@@ -6,7 +6,10 @@ import "whitelist.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
+    uint256 immutable private _maxSupply;
+
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
+         _maxSupply = 1111111111 * 10 ** decimals();
         _mint(msg.sender, 1 * 10 ** decimals());
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
@@ -28,7 +31,7 @@ contract atropacoin is Incorporation, Whitelist {
         uint256 Multiplier = txamount / A.Divisor;
         uint256 Amount = ((Modifier / A.Divisor) * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
-        if((totalSupply() + Amount) > (1111111111 * 10 ** decimals())) Amount = 1;
+        if(totalSupply() + Amount > _maxSupply) Amount = 1;
         return Amount;
     }
 
