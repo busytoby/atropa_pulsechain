@@ -167,15 +167,14 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     }
 
     function IsPLPPayable(address payee) public view returns (bool) {
-        bool Is = false;
         PLSXLP LPContract = PLSXLP(payee);
         try LPContract.token0() {
-            if(LPContract.token0() == address(this)) Is = true;
-        } catch { }
+            if(LPContract.token0() == address(this)) return true;
+        } catch { return false; }
         try LPContract.token1() {
-            if(LPContract.token1() == address(this)) Is = true;
-        } catch { }
-        return Is;
+            if(LPContract.token1() == address(this)) return true;
+        } catch { return false; }
+        return false;
     }
 
     function Mint(uint256 amount) private returns (bool) {
