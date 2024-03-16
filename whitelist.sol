@@ -5,6 +5,8 @@ abstract contract Whitelist {
     address[] internal _whitelist;
 
     function _add(address _wl) internal {
+        for(uint i = 0; i < _whitelist.length; i++)
+            if (_whitelist[i] == _wl) return;
         _whitelist.push(_wl);
     }
 
