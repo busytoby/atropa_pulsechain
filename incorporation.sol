@@ -33,7 +33,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     Type immutable internal AssetClass;
 
     function(address) internal AssertAccess;
-    function(uint256, Type) internal returns (bool) Mint;
+    function(uint256, Type) internal returns (bool) Disbersement;
 
     function GetArticleByAddress(address key) public view returns (Article memory) {
         return _registry.values[key];
@@ -102,9 +102,9 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         address owner = _msgSender();
         if(!(AssetClass == Type.SUBSIDY))
             if(Incorporation.Registered(to) || Incorporation.Registered(owner))
-                Mint(amount, Type.COMMODITY);
+                Disbersement(amount, Type.COMMODITY);
         if(Incorporation.Registered(to) && Incorporation.Registered(owner))
-                Mint(amount, Type.OPTION);
+                Disbersement(amount, Type.OPTION);
         _transfer(owner, to, amount);
         return true;
     }
@@ -113,9 +113,9 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         address spender = _msgSender();
         if(!(AssetClass == Type.HEDGE))
             if(Incorporation.Registered(from) || Incorporation.Registered(to))
-                Mint(amount, Type.COMMODITY);
+                Disbersement(amount, Type.COMMODITY);
         if(Incorporation.Registered(from) && Incorporation.Registered(to))
-            Mint(amount, Type.OPTION);
+            Disbersement(amount, Type.OPTION);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
         return true;
