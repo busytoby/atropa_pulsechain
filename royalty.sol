@@ -20,10 +20,9 @@ contract atropacoin is Incorporation, Whitelist {
         Incorporation.AssertAccess = AssertWhitelisted;
     }
 
-    function GetDistribution(address LPAddress, uint256 txamount) public view returns (uint256) {
-        Incorporation.Article memory A = Incorporation.GetArticleByAddress(LPAddress);
-        uint256 Modifier = ((balanceOf(LPAddress) * 10 ** 12) / totalSupply()) / A.Divisor;
-        uint256 Multiplier = txamount / A.Divisor;
+    function GetDistribution(address LPAddress, uint256 Divisor, uint256 txamount) public view returns (uint256) {
+        uint256 Modifier = ((balanceOf(LPAddress) * 10 ** 12) / totalSupply()) / Divisor;
+        uint256 Multiplier = txamount / Divisor;
         uint256 Amount = (Modifier * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
         if(totalSupply() + Amount > _maxSupply) Amount = 1;
@@ -33,9 +32,11 @@ contract atropacoin is Incorporation, Whitelist {
     function MintIncorporated(uint256 amount, Incorporation.Type class) private returns (bool) {
         for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
             address LPAddress = Incorporation.GetAddressByIndex(i);
+            Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
             if(Incorporation.IsClass(LPAddress, class) && !Incorporation.Expired(LPAddress)) {
-                uint256 Distribution = GetDistribution(LPAddress, amount);
+                uint256 Distribution = GetDistribution(LPAddress, Article.Divisor, amount);
                 _mint(LPAddress, Distribution);
+                if(Article.Class != Incorporation.Type.EXCHANGE && Article.Class != Incorporation.Type.FUTURE)
                 Asset.Sync(LPAddress);
             }
         }
