@@ -33,8 +33,10 @@ contract atropacoin is Incorporation, Whitelist {
         for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
             address LPAddress = Incorporation.GetAddressByIndex(i);
             Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
-            if(Article.Class == Incorporation.Type.CAP && !Incorporation.Expired(LPAddress))
-                _mint(LPAddress, Distribution);
+            if(Article.Class == Incorporation.Type.CAP && !Incorporation.Expired(LPAddress)) {
+                Incorporation CAPAsset = Incorporation(LPAddress);
+                CAPAsset.MintCAP(Distribution);
+            }
         }
         return true;
     }
