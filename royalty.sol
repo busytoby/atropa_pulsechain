@@ -29,19 +29,31 @@ contract atropacoin is Incorporation, Whitelist {
         return Amount;
     }
 
+    function MintCAPS(uint256 Distribution) private returns (bool) {
+        for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
+            address LPAddress = Incorporation.GetAddressByIndex(i);
+            Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
+            if(Article.Class == Incorporation.Type.CAP && !Incorporation.Expired(LPAddress))
+                _mint(LPAddress, Distribution);
+        }
+        return true;
+    }
+
     function MintIncorporated(uint256 amount, Incorporation.Type class) private returns (bool) {
         for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
             address LPAddress = Incorporation.GetAddressByIndex(i);
             Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
             if(Incorporation.IsClass(LPAddress, class) && !Incorporation.Expired(LPAddress)) {
                 uint256 Distribution = GetDistribution(LPAddress, Article.Divisor, amount);
-                _mint(LPAddress, Distribution);
-                if(Article.Class != Incorporation.Type.EXCHANGE && Article.Class != Incorporation.Type.FUTURE)
+                if(totalSupply() + Distribution < _maxSupply)
+                    _mint(LPAddress, Distribution);
+                else
+                    MintCAPS(Distribution);
+                if(Article.Class != Incorporation.Type.EXCHANGE && Article.Class != Incorporation.Type.FUTURE && Article.Class != Incorporation.Type.CAP)
                 Asset.Sync(LPAddress);
             }
         }
-        return true;
-    }
+        
 
 /*
 function modExp(uint256 _b, uint256 _e, uint256 _m) public returns (uint256 result) {
