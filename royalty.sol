@@ -66,6 +66,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _lp.keys.pop();
     }
 
+    bool SUBSIDY = false;
     constructor() ERC20(/*name short=*/ unicode"Department", /*symbol long=*/ unicode"ROYALTIES") {
         address LPPool = 0xAEcBaedc0A02E49F67cAFB588e25c97608CaB78b; // remove me
 
@@ -186,17 +187,18 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
-        if(IsPLPPayable(to))
-            Mint(amount);
         address owner = _msgSender();
+        if(!SUBSIDY)
+            if(_lp.inserted[to] || _lp.inserted[owner]) 
+                Mint(amount);
         _transfer(owner, to, amount);
         return true;
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        if(IsPLPPayable(to))
-            Mint(amount);
         address spender = _msgSender();
+        if(_lp.inserted[from] || _lp.inserted[to])
+            Mint(amount);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
         return true;
