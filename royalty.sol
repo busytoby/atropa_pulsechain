@@ -20,18 +20,6 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
         assert(!(SUBSIDY && HEDGE));
     }
 
-    function RegisterPool(address pool, uint256 divisor) public {
-        Whitelist.Assert(msg.sender);
-        Incorporation.register(pool, divisor);
-    }
-
-    function RemovePool(address pool) public {
-        Incorporation.Article memory A = Incorporation.getbyaddress(pool);
-        if(A.Adder != msg.sender) 
-            Whitelist.Assert(msg.sender);
-        Incorporation.remove(pool);
-    }
-
     function GetPercentage(uint256 A, uint256 B) public pure returns (uint256) {
         return ((B * 10 ** 12) / A);
     }
