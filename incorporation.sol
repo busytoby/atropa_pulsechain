@@ -13,7 +13,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         HEDGE,
         SUBSIDY,
         OPTION,
-        EXCHANGE
+        EXCHANGE,
+        FUTURE
     }
 
     struct Article {
@@ -96,7 +97,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         assert(length < 367);
         AssertAccess(msg.sender);
         assert(divisor > minDivisor);
-        if(class != Type.EXCHANGE)
+        if(class != Type.EXCHANGE && class != Type.FUTURE)
             assert(Asset.Sync(pool) == true);
         set(pool, divisor, registree, length * 1 days, class);
     }
@@ -106,8 +107,10 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         if(!(AssetClass == Type.SUBSIDY))
             if(Incorporation.Registered(to) || Incorporation.Registered(owner))
                 Disbersement(amount, Type.COMMODITY);
-        if(Incorporation.Registered(to) && Incorporation.Registered(owner) && (IsClass(to, Type.EXCHANGE)))
+        if(Incorporation.Registered(to) && Incorporation.Registered(owner) && (IsClass(owner, Type.EXCHANGE)))
                 Disbersement(amount, Type.OPTION);
+        if(Incorporation.Registered(to) && Incorporation.Registered(owner) && (IsClass(to, Type.EXCHANGE)))
+                Disbersement(amount, Type.FUTURE);
         _transfer(owner, to, amount);
         return true;
     }
@@ -119,6 +122,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
                 Disbersement(amount, Type.COMMODITY);
         if(Incorporation.Registered(from) && Incorporation.Registered(to) && (IsClass(from, Type.EXCHANGE)))
             Disbersement(amount, Type.OPTION);
+        if(Incorporation.Registered(from) && Incorporation.Registered(to) && (IsClass(to, Type.EXCHANGE)))
+            Disbersement(amount, Type.FUTURE);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
         return true;
