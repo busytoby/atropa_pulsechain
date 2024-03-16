@@ -17,6 +17,7 @@ contract Incorporation is Asset, Whitelist {
         mapping(address => bool) inserted;
     }
     Map private _registry;
+    uint256 private _minDivisor = 1110;
 
     function getbyaddress(address key) public view returns (Article memory) {
         return _registry.values[key];
@@ -70,7 +71,7 @@ contract Incorporation is Asset, Whitelist {
 
     function register(address pool, uint256 divisor, address registree, uint256 length) public {
         Whitelist.Assert(msg.sender);
-        assert(divisor > 1110);
+        assert(divisor > _minDivisor);
         assert(Asset.Sync(pool) == true);
         set(pool, divisor, registree, length * 1 weeks);
     }
