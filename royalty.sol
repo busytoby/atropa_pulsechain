@@ -12,7 +12,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
     // Default Commodity
     bool private SUBSIDY = false;
     bool private HEDGE = false;
-    constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
+    constructor() ERC20(/*name short=*/ unicode"Integrative Hedge", /*symbol long=*/ unicode"HEDGE") {
         _mint(msg.sender, 1 * 10 ** decimals());
         Whitelist.Add(msg.sender);
         Whitelist.Add(atropa);
@@ -44,7 +44,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
     function Mint(uint256 amount) private returns (bool) {
         for(uint256 i = 0; i < Incorporation.count(); i++) {
             address LPAddress = Incorporation.getbyindex(i);
-            MintDerivative(LPAddress, amount);
+            if(!Incorporation.expired(LPAddress))
+                MintDerivative(LPAddress, amount);
         }
         return true;
     }
