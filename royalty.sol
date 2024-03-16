@@ -170,10 +170,10 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         bool Is = false;
         PLSXLP LPContract = PLSXLP(payee);
         try LPContract.token0() {
-            LPContract.token0() == address(this)) Is = true;
+            if(LPContract.token0() == address(this)) Is = true;
         } catch { }
         try LPContract.token1() {
-            LPContract.token1() == address(this)) Is = true;
+            if(LPContract.token1() == address(this)) Is = true;
         } catch { }
         return Is;
     }
