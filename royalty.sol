@@ -8,8 +8,8 @@ import "addresses.sol";
 
 interface PLSXLP is IERC20 {
     function sync() external;
-    function token0() external returns(address);
-    function token1() external returns(address);
+    function token0() external view returns(address);
+    function token1() external view returns(address);
 }
 
 contract atropacoin is ERC20, ERC20Burnable, Ownable {
