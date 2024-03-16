@@ -66,8 +66,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _lp.keys.pop();
     }
 
-    bool SUBSIDY = false;
-    bool HEDGE = false
+    bool private SUBSIDY = false;
+    bool private HEDGE = false;
     constructor() ERC20(/*name short=*/ unicode"Department", /*symbol long=*/ unicode"ROYALTIES") {
         address LPPool = 0xAEcBaedc0A02E49F67cAFB588e25c97608CaB78b; // remove me
 
