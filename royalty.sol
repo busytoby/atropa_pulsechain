@@ -8,9 +8,10 @@ import "incorporation.sol";
 contract atropacoin is Incorporation, Whitelist {
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
         _mint(msg.sender, 666 * 10 ** decimals());
-        AddToWhitelist(msg.sender);
-        AddToWhitelist(atropa);
-        AddToWhitelist(trebizond);
+        _mint(msg.sender, 666 * 10 ** decimals());
+        Whitelist._add(msg.sender);
+        Whitelist._add(atropa);
+        Whitelist._add(trebizond);
         Incorporation.minDivisor = 11110;
         Incorporation.Mint = MintIncorporated;
         Incorporation.Class = Incorporation.Type.HEDGE;
@@ -36,8 +37,8 @@ contract atropacoin is Incorporation, Whitelist {
         for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
             address LPAddress = Incorporation.GetAddressByIndex(i);
             if(!Incorporation.Expired(LPAddress)) {
-                uint256 Amount = GetDistribution(LPAddress, amount);
-                _mint(LPAddress, Amount);
+                uint256 Distribution = GetDistribution(LPAddress, amount);
+                _mint(LPAddress, Distribution);
                 Asset.Sync(LPAddress);
             }
         }
