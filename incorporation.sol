@@ -16,7 +16,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         EXCHANGE,
         FUTURE,
         CAP,
-        CLIMA
+        CLIMA,
+        OFFSET
     }
 
     struct Article {
@@ -33,6 +34,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         mapping(address => bool) inserted;
     }
     Map internal _registry;
+    uint256 immutable internal maxSupply;
     uint256 internal minDivisor = 1110;
     Type immutable internal AssetClass;
 
@@ -97,7 +99,10 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
 
     function MintCAP(uint256 amount) public {
         assert(_registry.values[msg.sender].Class == Type.CLIMA);
-        _mint(trebizond, amount);
+        if(totalSupply() + amount < maxSupply)
+            _mint(trebizond, amount);
+        else
+            Disbersement(amount, Type.OFFSET);
     }
 
     function Register(address pool, uint256 divisor, address registree, uint256 length, Type class) public {
