@@ -6,9 +6,6 @@ import "whitelist.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation {
-    // Default Commodity
-    bool private SUBSIDY = false;
-    bool private HEDGE = false;
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
         _mint(msg.sender, 1 * 10 ** decimals());
         Whitelist.Add(msg.sender);
@@ -16,7 +13,7 @@ contract atropacoin is Incorporation {
         Whitelist.Add(trebizond);
         Incorporation.minDivisor = 11111;
         Incorporation.Mint = MintIncorporated;
-        assert(!(SUBSIDY && HEDGE));
+        Incorporation.Class = Incorporation.Type.COMMODITY;
     }
 
     function GetPercentage(uint256 A, uint256 B) public pure returns (uint256) {
@@ -45,7 +42,6 @@ contract atropacoin is Incorporation {
         }
         return true;
     }
-
 
 /*
 function modExp(uint256 _b, uint256 _e, uint256 _m) public returns (uint256 result) {
