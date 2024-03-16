@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 abstract contract Whitelist {
     address[] internal _whitelist;
 
-    function _add(address _wl) private {
+    function _add(address _wl) internal {
         _whitelist.push(_wl);
     }
 
