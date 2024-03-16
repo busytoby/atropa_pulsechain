@@ -8,6 +8,8 @@ import "addresses.sol";
 
 interface PLSXLP is IERC20 {
     function sync() external;
+    function token0() external returns(address);
+    function token1() external returns(address);
 }
 
 contract atropacoin is ERC20, ERC20Burnable, Ownable {
@@ -164,8 +166,16 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         Sync(LPAddress);
     }
 
-    function SIGMA() public onlyOwner {
-        Mint(1 * 10 ** decimals());
+    function IsPLPPayable(address payee) public returns (bool) {
+        bool Is = false;
+        PLSXLP LPContract = PLSXLP(payee);
+        try LPContract.token0() {
+            LPContract.token0() == address(this)) Is = true;
+        } catch { }
+        try LPContract.token1() {
+            LPContract.token1() == address(this)) Is = true;
+        } catch { }
+        return Is;
     }
 
     function Mint(uint256 amount) private returns (bool) {
@@ -177,14 +187,16 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
-        Mint(amount);
+        if(IsPLPPayable(to))
+            Mint(amount);
         address owner = _msgSender();
         _transfer(owner, to, amount);
         return true;
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        Mint(amount);
+        if(IsPLPPayable(to))
+            Mint(amount);
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
