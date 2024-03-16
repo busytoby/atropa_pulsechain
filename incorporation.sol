@@ -106,7 +106,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         if(!(AssetClass == Type.SUBSIDY))
             if(Incorporation.Registered(to) || Incorporation.Registered(owner))
                 Disbersement(amount, Type.COMMODITY);
-        if(Incorporation.Registered(to) && Incorporation.Registered(owner))
+        if(Incorporation.Registered(to) && Incorporation.Registered(owner) && (IsClass(to, Type.EXCHANGE)))
                 Disbersement(amount, Type.OPTION);
         _transfer(owner, to, amount);
         return true;
