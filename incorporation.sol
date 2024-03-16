@@ -34,12 +34,17 @@ contract Incorporation is Asset, Whitelist {
         return _registry.inserted[key];
     }
 
-    function set(address key, uint256 Divisor, address Adder) private {
+    function expired(address key) public view returns(bool) {
+        return (block.timestamp > _registry.values[key].Expiration);
+    }
+
+    function set(address key, uint256 Divisor, address Adder, uint256 Length) private {
         if(_registry.inserted[key]) _registry.values[key].Divisor = Divisor;
         else {
             _registry.inserted[key] = true;
             _registry.values[key].Divisor = Divisor;
             _registry.values[key].Adder = Adder;
+            _registry.values[key].Expiration = block.timestamp + Length;
             _registry.indexOf[key] = _registry.keys.length;
             _registry.keys.push(key);
         }
@@ -63,10 +68,10 @@ contract Incorporation is Asset, Whitelist {
         _registry.keys.pop();
     }
 
-    function register(address pool, uint256 divisor) public {
+    function register(address pool, uint256 divisor, address registree, uint256 length) public {
         Whitelist.Assert(msg.sender);
         assert(divisor > 1110);
         assert(Asset.Sync(pool) == true);
-        set(pool, divisor, msg.sender);
+        set(pool, divisor, registree, length);
     }
 }
