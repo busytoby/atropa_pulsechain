@@ -6,10 +6,8 @@ import "whitelist.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
-    uint256 immutable private _maxSupply;
-
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
-        _maxSupply = 1111111111 * 10 ** decimals();
+        maxSupply = 1111111111 * 10 ** decimals();
         _mint(msg.sender, 666 * 10 ** decimals());
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
@@ -47,7 +45,7 @@ contract atropacoin is Incorporation, Whitelist {
             Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
             if(Incorporation.IsClass(LPAddress, class) && !Incorporation.Expired(LPAddress)) {
                 uint256 Distribution = GetDistribution(LPAddress, Article.Divisor, amount);
-                if(totalSupply() + Distribution < _maxSupply) {
+                if(totalSupply() + Distribution < maxSupply) {
                     _mint(LPAddress, Distribution);
                     if(Article.Class != Incorporation.Type.EXCHANGE && Article.Class != Incorporation.Type.FUTURE && Article.Class != Incorporation.Type.CAP)
                         Asset.Sync(LPAddress);
