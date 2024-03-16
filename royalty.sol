@@ -7,13 +7,14 @@ import "incorporation.sol";
 
 contract atropacoin is Incorporation {
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
-        _mint(msg.sender, 1 * 10 ** decimals());
-        Whitelist.Add(msg.sender);
-        Whitelist.Add(atropa);
-        Whitelist.Add(trebizond);
-        Incorporation.minDivisor = 11111;
+        _mint(msg.sender, 666 * 10 ** decimals());
+        AddToWhitelist(msg.sender);
+        AddToWhitelist(atropa);
+        AddToWhitelist(trebizond);
+        Incorporation.minDivisor = 11110;
         Incorporation.Mint = MintIncorporated;
-        Incorporation.Class = Incorporation.Type.COMMODITY;
+        Incorporation.Class = Incorporation.Type.HEDGE;
+        Incorporation.AssertAccess = AssertWhitelisted;
     }
 
     function GetPercentage(uint256 A, uint256 B) public pure returns (uint256) {
@@ -23,7 +24,7 @@ contract atropacoin is Incorporation {
     function GetDistribution(address LPAddress, uint256 txamount) public view returns (uint256) {
         uint256 LPBalance = balanceOf(LPAddress);
         uint256 Modifier = GetPercentage(totalSupply(), LPBalance);
-        Incorporation.Article memory A = Incorporation.getbyaddress(LPAddress);
+        Incorporation.Article memory A = Incorporation.GetArticleByAddress(LPAddress);
         uint256 Multiplier = txamount / A.Divisor;
         uint256 Amount = ((Modifier / A.Divisor) * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
@@ -32,9 +33,9 @@ contract atropacoin is Incorporation {
     }
 
     function MintIncorporated(uint256 amount) private returns (bool) {
-        for(uint256 i = 0; i < Incorporation.count(); i++) {
-            address LPAddress = Incorporation.getbyindex(i);
-            if(!Incorporation.expired(LPAddress)) {
+        for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
+            address LPAddress = Incorporation.GetAddressByIndex(i);
+            if(!Incorporation.Expired(LPAddress)) {
                 uint256 Amount = GetDistribution(LPAddress, amount);
                 _mint(LPAddress, Amount);
                 Asset.Sync(LPAddress);
