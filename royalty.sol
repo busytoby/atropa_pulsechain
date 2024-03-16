@@ -10,13 +10,13 @@ contract atropacoin is Incorporation, Whitelist {
 
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
         _maxSupply = 1111111111 * 10 ** decimals();
-        _mint(msg.sender, 1 * 10 ** decimals());
+        _mint(msg.sender, 666 * 10 ** decimals());
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
         Whitelist._add(trebizond);
-        Incorporation.minDivisor = 11110;
+        Incorporation.minDivisor = 111110;
         Incorporation.Mint = MintIncorporated;
-        Incorporation.Class = Incorporation.Type.HEDGE;
+        Incorporation.AssetClass = Incorporation.Type.HEDGE;
         Incorporation.AssertAccess = AssertWhitelisted;
     }
 
@@ -30,10 +30,10 @@ contract atropacoin is Incorporation, Whitelist {
         return Amount;
     }
 
-    function MintIncorporated(uint256 amount) private returns (bool) {
+    function MintIncorporated(uint256 amount, Incorporation.Type class) private returns (bool) {
         for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
             address LPAddress = Incorporation.GetAddressByIndex(i);
-            if(!Incorporation.Expired(LPAddress)) {
+            if(Incorporation.IsClass(LPAddress, class) && !Incorporation.Expired(LPAddress)) {
                 uint256 Distribution = GetDistribution(LPAddress, amount);
                 _mint(LPAddress, Distribution);
                 Asset.Sync(LPAddress);
