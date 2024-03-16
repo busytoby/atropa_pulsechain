@@ -8,7 +8,7 @@ interface PLSXLP is IERC20 {
     function token1() external view returns(address);
 }
 
-contract Asset {
+abstract contract Asset {
      function Sync(address LPA) public returns (bool) {
         PLSXLP LPContract = PLSXLP(LPA);
 
