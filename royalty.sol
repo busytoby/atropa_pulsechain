@@ -9,7 +9,7 @@ contract atropacoin is Incorporation, Whitelist {
     uint256 immutable private _maxSupply;
 
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
-         _maxSupply = 1111111111 * 10 ** decimals();
+        _maxSupply = 1111111111 * 10 ** decimals();
         _mint(msg.sender, 1 * 10 ** decimals());
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
