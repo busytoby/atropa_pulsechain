@@ -20,16 +20,11 @@ contract atropacoin is Incorporation, Whitelist {
         Incorporation.AssertAccess = AssertWhitelisted;
     }
 
-    function GetPercentage(uint256 A, uint256 B) public pure returns (uint256) {
-        return ((B * 10 ** 12) / A);
-    }
-
     function GetDistribution(address LPAddress, uint256 txamount) public view returns (uint256) {
-        uint256 LPBalance = balanceOf(LPAddress);
-        uint256 Modifier = GetPercentage(totalSupply(), LPBalance);
         Incorporation.Article memory A = Incorporation.GetArticleByAddress(LPAddress);
+        uint256 Modifier = ((balanceOf(LPAddress) * 10 ** 12) / totalSupply()) / A.Divisor;
         uint256 Multiplier = txamount / A.Divisor;
-        uint256 Amount = ((Modifier / A.Divisor) * Multiplier) / (10 ** 10);
+        uint256 Amount = (Modifier * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
         if(totalSupply() + Amount > _maxSupply) Amount = 1;
         return Amount;
