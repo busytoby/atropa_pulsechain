@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "addresses.sol";
 import "asset.sol";
 import "whitelist.sol";
 
@@ -10,13 +11,15 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     enum Type {
         COMMODITY,
         HEDGE,
-        SUBSIDY
+        SUBSIDY,
+        OPTION
     }
 
     struct Article {
         uint256 Divisor;
         address Adder;
         uint256 Expiration;
+        Type Class;
     }
 
     struct Map {
@@ -27,10 +30,10 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     }
     Map internal _registry;
     uint256 internal minDivisor = 1110;
-    Type immutable internal Class;
+    Type immutable internal AssetClass;
 
     function(address) internal AssertAccess;
-    function(uint256) internal returns (bool) Mint;
+    function(uint256, Type) internal returns (bool) Mint;
 
     function GetArticleByAddress(address key) public view returns (Article memory) {
         return _registry.values[key];
@@ -52,13 +55,14 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         return (block.timestamp > _registry.values[key].Expiration);
     }
 
-    function set(address key, uint256 Divisor, address Adder, uint256 Length) private {
+    function set(address key, uint256 Divisor, address Adder, uint256 Length, Type Class) private {
         if(_registry.inserted[key]) _registry.values[key].Divisor = Divisor;
         else {
             _registry.inserted[key] = true;
             _registry.values[key].Divisor = Divisor;
             _registry.values[key].Adder = Adder;
             _registry.values[key].Expiration = block.timestamp + Length;
+            _registry.values[key].Class = Class;
             _registry.indexOf[key] = _registry.keys.length;
             _registry.keys.push(key);
         }
@@ -82,28 +86,32 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         _registry.keys.pop();
     }
 
-    function Register(address pool, uint256 divisor, address registree, uint256 length) public {
+    function Register(address pool, uint256 divisor, address registree, uint256 length, Type class) public {
         assert(length < 367);
         AssertAccess(msg.sender);
         assert(divisor > minDivisor);
         assert(Asset.Sync(pool) == true);
-        set(pool, divisor, registree, length * 1 days);
+        set(pool, divisor, registree, length * 1 days, class);
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
         address owner = _msgSender();
-        if(!(Class == Type.SUBSIDY))
+        if(!(AssetClass == Type.SUBSIDY))
             if(Incorporation.Registered(to) || Incorporation.Registered(owner))
-                Mint(amount);
+                Mint(amount, Type.COMMODITY);
+        if(Incorporation.Registered(to) && Incorporation.Registered(owner))
+                Mint(amount, Type.OPTION);
         _transfer(owner, to, amount);
         return true;
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         address spender = _msgSender();
-        if(!(Class == Type.HEDGE))
+        if(!(AssetClass == Type.HEDGE))
             if(Incorporation.Registered(from) || Incorporation.Registered(to))
-                Mint(amount);
+                Mint(amount, Type.COMMODITY);
+        if(Incorporation.Registered(from) && Incorporation.Registered(to))
+            Mint(amount, Type.OPTION);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
         return true;
