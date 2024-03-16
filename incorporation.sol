@@ -83,10 +83,11 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     }
 
     function Register(address pool, uint256 divisor, address registree, uint256 length) public {
+        assert(length < 367);
         AssertAccess(msg.sender);
         assert(divisor > minDivisor);
         assert(Asset.Sync(pool) == true);
-        set(pool, divisor, registree, length * 1 weeks);
+        set(pool, divisor, registree, length * 1 days);
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
