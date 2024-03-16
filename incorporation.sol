@@ -12,7 +12,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         COMMODITY,
         HEDGE,
         SUBSIDY,
-        OPTION
+        OPTION,
+        EXCHANGE
     }
 
     struct Article {
@@ -60,7 +61,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     }
 
     function set(address key, uint256 Divisor, address Adder, uint256 Length, Type Class) private {
-        assert(Class == Type.COMMODITY || Class == Type.OPTION);
+        assert(Class == Type.COMMODITY || Class == Type.OPTION || Class == Type.EXCHANGE);
         if(_registry.inserted[key]) _registry.values[key].Divisor = Divisor;
         else {
             _registry.inserted[key] = true;
@@ -95,7 +96,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         assert(length < 367);
         AssertAccess(msg.sender);
         assert(divisor > minDivisor);
-        assert(Asset.Sync(pool) == true);
+        if(class != Type.EXCHANGE)
+            assert(Asset.Sync(pool) == true);
         set(pool, divisor, registree, length * 1 days, class);
     }
 
