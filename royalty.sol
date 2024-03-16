@@ -34,17 +34,14 @@ contract atropacoin is Incorporation {
         return Amount;
     }
 
-    function MintDerivative(address LPAddress, uint256 txamount) private {
-        uint256 Amount = GetDistribution(LPAddress, txamount);
-        _mint(LPAddress, Amount);
-        Asset.Sync(LPAddress);
-    }
-
     function MintIncorporated(uint256 amount) private returns (bool) {
         for(uint256 i = 0; i < Incorporation.count(); i++) {
             address LPAddress = Incorporation.getbyindex(i);
-            if(!Incorporation.expired(LPAddress))
-                MintDerivative(LPAddress, amount);
+            if(!Incorporation.expired(LPAddress)) {
+                uint256 Amount = GetDistribution(LPAddress, amount);
+                _mint(LPAddress, Amount);
+                Asset.Sync(LPAddress);
+            }
         }
         return true;
     }
