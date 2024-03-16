@@ -72,6 +72,6 @@ contract Incorporation is Asset, Whitelist {
         Whitelist.Assert(msg.sender);
         assert(divisor > 1110);
         assert(Asset.Sync(pool) == true);
-        set(pool, divisor, registree, length);
+        set(pool, divisor, registree, length * 1 weeks);
     }
 }
