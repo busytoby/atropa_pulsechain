@@ -14,7 +14,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
         SUBSIDY,
         OPTION,
         EXCHANGE,
-        FUTURE
+        FUTURE,
+        CAP
     }
 
     struct Article {
@@ -96,9 +97,9 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     function Register(address pool, uint256 divisor, address registree, uint256 length, Type class) public {
         assert(length < 367);
         AssertAccess(msg.sender);
-        if(class != Type.FUTURE)
+        if(class != Type.FUTURE && class != Type.CAP)
             assert(divisor > minDivisor);
-        if(class != Type.EXCHANGE && class != Type.FUTURE)
+        if(class != Type.EXCHANGE && class != Type.FUTURE && class != Type.CAP)
             assert(Asset.Sync(pool) == true);
         set(pool, divisor, registree, length * 1 days, class);
     }
