@@ -15,7 +15,7 @@ contract atropacoin is Incorporation, Whitelist {
         Whitelist._add(atropa);
         Whitelist._add(trebizond);
         Incorporation.minDivisor = 111110;
-        Incorporation.Mint = MintIncorporated;
+        Incorporation.Disbersement = MintIncorporated;
         Incorporation.AssetClass = Incorporation.Type.HEDGE;
         Incorporation.AssertAccess = AssertWhitelisted;
     }
