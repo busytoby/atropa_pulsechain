@@ -12,11 +12,12 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
     // Default Commodity
     bool private SUBSIDY = false;
     bool private HEDGE = false;
-    constructor() ERC20(/*name short=*/ unicode"Integrative Hedge", /*symbol long=*/ unicode"HEDGE") {
+    constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
         _mint(msg.sender, 1 * 10 ** decimals());
         Whitelist.Add(msg.sender);
         Whitelist.Add(atropa);
         Whitelist.Add(trebizond);
+        Incorporation.minDivisor = 11110;
         assert(!(SUBSIDY && HEDGE));
     }
 
