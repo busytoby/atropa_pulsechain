@@ -66,6 +66,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         _lp.keys.pop();
     }
 
+    // Choose One
     bool private SUBSIDY = false;
     bool private HEDGE = false;
     constructor() ERC20(/*name short=*/ unicode"Department", /*symbol long=*/ unicode"ROYALTIES") {
@@ -78,6 +79,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
         remove(LPPool); // remove me
         _whitelist.push(atropa);
         _whitelist.push(trebizond);
+        assert((SUBSIDY || HEDGE) && !(SUBSIDY && HEDGE));
         //assert(GetDistribution(LPPool) < 0); // remove me
     }
 
