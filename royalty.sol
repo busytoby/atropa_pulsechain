@@ -7,8 +7,7 @@ import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
     constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
-        _mint(msg.sender, 666 * 10 ** decimals());
-        _mint(msg.sender, 666 * 10 ** decimals());
+        _mint(msg.sender, 1 * 10 ** decimals());
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
         Whitelist._add(trebizond);
