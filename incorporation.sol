@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "asset.sol";
 import "whitelist.sol";
 
-abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Whitelist {
+abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     enum Type {
         COMMODITY,
         HEDGE,
@@ -25,28 +25,30 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Whiteli
         mapping(address => uint256) indexOf;
         mapping(address => bool) inserted;
     }
-    Map private _registry;
-    uint256 public minDivisor = 1110;
-    Type public Class;
+    Map internal _registry;
+    uint256 internal minDivisor = 1110;
+    Type immutable internal Class;
 
+    function(address) internal AssertAccess;
+    function(uint256) internal returns (bool) Mint;
 
-    function getbyaddress(address key) public view returns (Article memory) {
+    function GetArticleByAddress(address key) public view returns (Article memory) {
         return _registry.values[key];
     }
 
-    function getbyindex(uint256 index) public view returns(address) {
+    function GetAddressByIndex(uint256 index) public view returns(address) {
         return _registry.keys[index];
     }
 
-    function count() public view returns(uint256) {
+    function RegistryCount() public view returns(uint256) {
         return _registry.keys.length;
     }
 
-    function registered(address key) public view returns(bool) {
+    function Registered(address key) public view returns(bool) {
         return _registry.inserted[key];
     }
 
-    function expired(address key) public view returns(bool) {
+    function Expired(address key) public view returns(bool) {
         return (block.timestamp > _registry.values[key].Expiration);
     }
 
@@ -62,10 +64,10 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Whiteli
         }
     }
 
-    function remove(address key) public {
-        Incorporation.Article memory A = getbyaddress(key);
+    function Deregister(address key) public {
+        Incorporation.Article memory A = GetArticleByAddress(key);
         if(A.Adder != msg.sender) 
-            Whitelist.Assert(msg.sender);
+            AssertAccess(msg.sender);
         if(!_registry.inserted[key]) return;
         delete _registry.inserted[key];
         delete _registry.values[key];
@@ -80,19 +82,17 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Whiteli
         _registry.keys.pop();
     }
 
-    function register(address pool, uint256 divisor, address registree, uint256 length) public {
-        Whitelist.Assert(msg.sender);
+    function Register(address pool, uint256 divisor, address registree, uint256 length) public {
+        AssertAccess(msg.sender);
         assert(divisor > minDivisor);
         assert(Asset.Sync(pool) == true);
         set(pool, divisor, registree, length * 1 weeks);
     }
 
-    function(uint256) internal returns (bool) Mint;
-
     function transfer(address to, uint256 amount) public override returns (bool) {
         address owner = _msgSender();
         if(!(Class == Type.SUBSIDY))
-            if(Incorporation.registered(to) || Incorporation.registered(owner))
+            if(Incorporation.Registered(to) || Incorporation.Registered(owner))
                 Mint(amount);
         _transfer(owner, to, amount);
         return true;
@@ -101,7 +101,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Whiteli
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         address spender = _msgSender();
         if(!(Class == Type.HEDGE))
-            if(Incorporation.registered(from) || Incorporation.registered(to))
+            if(Incorporation.Registered(from) || Incorporation.Registered(to))
                 Mint(amount);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
