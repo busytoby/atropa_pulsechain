@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "addresses.sol";
 import "asset.sol";
 import "whitelist.sol";
 import "incorporation.sol";
 
-contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
+contract atropacoin is Incorporation {
     // Default Commodity
     bool private SUBSIDY = false;
     bool private HEDGE = false;
@@ -17,7 +14,8 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
         Whitelist.Add(msg.sender);
         Whitelist.Add(atropa);
         Whitelist.Add(trebizond);
-        Incorporation.minDivisor = 11110;
+        Incorporation.minDivisor = 11111;
+        Incorporation.Mint = MintIncorporated;
         assert(!(SUBSIDY && HEDGE));
     }
 
@@ -42,31 +40,12 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable, Incorporation {
         Asset.Sync(LPAddress);
     }
 
-    function Mint(uint256 amount) private returns (bool) {
+    function MintIncorporated(uint256 amount) private returns (bool) {
         for(uint256 i = 0; i < Incorporation.count(); i++) {
             address LPAddress = Incorporation.getbyindex(i);
             if(!Incorporation.expired(LPAddress))
                 MintDerivative(LPAddress, amount);
         }
-        return true;
-    }
-
-    function transfer(address to, uint256 amount) public override returns (bool) {
-        address owner = _msgSender();
-        if(!SUBSIDY)
-            if(Incorporation.registered(to) || Incorporation.registered(owner))
-                Mint(amount);
-        _transfer(owner, to, amount);
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        address spender = _msgSender();
-        if(!HEDGE)
-            if(Incorporation.registered(from) || Incorporation.registered(to))
-                Mint(amount);
-        _spendAllowance(from, spender, amount);
-        _transfer(from, to, amount);
         return true;
     }
 
