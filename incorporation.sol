@@ -46,7 +46,9 @@ contract Incorporation is Asset, Whitelist {
     }
 
     function remove(address key) public {
-        Whitelist.Assert(msg.sender);
+        Incorporation.Article memory A = getbyaddress(key);
+        if(A.Adder != msg.sender) 
+            Whitelist.Assert(msg.sender);
         if(!_registry.inserted[key]) return;
         delete _registry.inserted[key];
         delete _registry.values[key];
