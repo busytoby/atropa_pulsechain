@@ -60,6 +60,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     }
 
     function set(address key, uint256 Divisor, address Adder, uint256 Length, Type Class) private {
+        assert(Class == Type.COMMODITY || Class == Type.OPTION);
         if(_registry.inserted[key]) _registry.values[key].Divisor = Divisor;
         else {
             _registry.inserted[key] = true;
