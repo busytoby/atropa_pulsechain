@@ -50,7 +50,7 @@ abstract contract ArticleRegistry {
         return Articles[addr];
     }
 
-    function set(address key, uint256 Divisor, address ResponsibleParty, uint256 Length, IncorporationType Class) internal {
+    function SetArticle(address key, uint256 Divisor, address ResponsibleParty, uint256 Length, IncorporationType Class) internal {
         Registry.Register(key);
         assert(Class == IncorporationType.COMMODITY || Class == IncorporationType.OPTION || Class == IncorporationType.EXCHANGE);
         Articles[key].Address = key;

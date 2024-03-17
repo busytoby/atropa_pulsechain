@@ -16,14 +16,17 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
 
     function(uint256, IncorporationType) internal returns (bool) Disbersement;
 
+    function SyncableAssetClass(IncorporationType class) public pure returns (bool) {
+        return (class != IncorporationType.EXCHANGE && class != IncorporationType.FUTURE && class != IncorporationType.CAP && class != IncorporationType.CLIMA);
+    }
+
     function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public override {
         assert(length < 367);
         AssertAccess(msg.sender);
         if(class != IncorporationType.FUTURE && class != IncorporationType.CAP)
             assert(divisor > minDivisor);
-        if(class != IncorporationType.EXCHANGE && class != IncorporationType.FUTURE && class != IncorporationType.CAP && class != IncorporationType.CLIMA)
-            assert(Asset.Sync(pool) == true);
-        set(pool, divisor, registree, length * 1 days, class);
+        if(SyncableAssetClass(class)) assert(Asset.Sync(pool) == true);
+        SetArticle(pool, divisor, registree, length * 1 days, class);
     }
 
     function MintCAP(uint256 amount) public {

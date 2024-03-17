@@ -45,7 +45,7 @@ contract atropacoin is Incorporation, Whitelist {
                 uint256 Distribution = GetDistribution(Article.Address, Article.Divisor, amount);
                 if(totalSupply() + Distribution < maxSupply) {
                     _mint(Article.Address, Distribution);
-                    if(Article.Class != IncorporationType.EXCHANGE && Article.Class != IncorporationType.FUTURE && Article.Class != IncorporationType.CAP)
+                    if(SyncableAssetClass(Article.Class)) 
                         Asset.Sync(Article.Address);
                 }
                 else
