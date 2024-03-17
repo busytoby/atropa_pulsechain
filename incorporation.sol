@@ -1,143 +1,61 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "addresses.sol";
+import "articleregistry.sol";
 import "asset.sol";
 import "whitelist.sol";
 
-abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {   
-    enum Type {
-        COMMODITY,
-        HEDGE,
-        SUBSIDY,
-        OPTION,
-        EXCHANGE,
-        FUTURE,
-        CAP,
-        CLIMA,
-        OFFSET
-    }
-
-    struct Article {
-        uint256 Divisor;
-        address Adder;
-        uint256 Expiration;
-        Type Class;
-    }
-
-    struct Map {
-        address[] keys;
-        mapping(address => Article) values;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
-    }
-    Map internal _registry;
+abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, ArticleRegistry {   
     uint256 immutable internal maxSupply;
     uint256 internal minDivisor = 1110;
-    Type immutable internal AssetClass;
+    IncorporationType immutable internal AssetClass;
     address immutable internal TreasuryReceiver;
 
-    function(address) internal AssertAccess;
-    function(uint256, Type) internal returns (bool) Disbersement;
+    function(uint256, IncorporationType) internal returns (bool) Disbersement;
 
-    function GetArticleByAddress(address key) public view returns (Article memory) {
-        return _registry.values[key];
-    }
-
-    function GetAddressByIndex(uint256 index) public view returns(address) {
-        return _registry.keys[index];
-    }
-
-    function RegistryCount() public view returns(uint256) {
-        return _registry.keys.length;
-    }
-
-    function Registered(address key) public view returns(bool) {
-        return _registry.inserted[key];
-    }
-
-    function Expired(address key) public view returns(bool) {
-        return (block.timestamp > _registry.values[key].Expiration);
-    }
-
-    function IsClass(address key, Type class) public view returns(bool) {
-        return _registry.values[key].Class == class;
-    }
-
-    function set(address key, uint256 Divisor, address Adder, uint256 Length, Type Class) private {
-        assert(Class == Type.COMMODITY || Class == Type.OPTION || Class == Type.EXCHANGE);
-        if(_registry.inserted[key]) _registry.values[key].Divisor = Divisor;
-        else {
-            _registry.inserted[key] = true;
-            _registry.values[key].Divisor = Divisor;
-            _registry.values[key].Adder = Adder;
-            _registry.values[key].Expiration = block.timestamp + Length;
-            _registry.values[key].Class = Class;
-            _registry.indexOf[key] = _registry.keys.length;
-            _registry.keys.push(key);
-        }
-    }
-
-    function Deregister(address key) public {
-        Incorporation.Article memory A = GetArticleByAddress(key);
-        if(A.Adder != msg.sender) 
-            AssertAccess(msg.sender);
-        if(!_registry.inserted[key]) return;
-        delete _registry.inserted[key];
-        delete _registry.values[key];
-
-        uint256 index = _registry.indexOf[key];
-        address lastKey = _registry.keys[_registry.keys.length - 1];
-
-        _registry.indexOf[lastKey] = index;
-        delete _registry.indexOf[key];
-
-        _registry.keys[index] = lastKey;
-        _registry.keys.pop();
-    }
-
-    function MintCAP(uint256 amount) public {
-        assert(_registry.values[msg.sender].Class == Type.CLIMA);
-        if(totalSupply() + amount < maxSupply)
-            _mint(TreasuryReceiver, amount);
-        else
-            Disbersement(amount, Type.OFFSET);
-    }
-
-    function Register(address pool, uint256 divisor, address registree, uint256 length, Type class) public {
+    function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public {
         assert(length < 367);
         AssertAccess(msg.sender);
-        if(class != Type.FUTURE && class != Type.CAP)
+        if(class != IncorporationType.FUTURE && class != IncorporationType.CAP)
             assert(divisor > minDivisor);
-        if(class != Type.EXCHANGE && class != Type.FUTURE && class != Type.CAP && class != Type.CLIMA)
+        if(class != IncorporationType.EXCHANGE && class != IncorporationType.FUTURE && class != IncorporationType.CAP && class != IncorporationType.CLIMA)
             assert(Asset.Sync(pool) == true);
         set(pool, divisor, registree, length * 1 days, class);
     }
 
+    function MintCAP(uint256 amount) public {
+        assert(_registry.values[msg.sender].Class == IncorporationType.CLIMA);
+        if(totalSupply() + amount < maxSupply)
+            _mint(TreasuryReceiver, amount);
+        else
+            Disbersement(amount, IncorporationType.OFFSET);
+    }
+
     function transfer(address to, uint256 amount) public override returns (bool) {
         address owner = _msgSender();
-        if(!(AssetClass == Type.SUBSIDY))
-            if(Incorporation.Registered(to) || Incorporation.Registered(owner))
-                Disbersement(amount, Type.COMMODITY);
-        if(Incorporation.Registered(to) && Incorporation.Registered(owner) && (IsClass(owner, Type.EXCHANGE)))
-                Disbersement(amount, Type.OPTION);
-        if(Incorporation.Registered(to) && Incorporation.Registered(owner) && (IsClass(to, Type.EXCHANGE)))
-                Disbersement(amount, Type.FUTURE);
+        if(!(AssetClass == IncorporationType.SUBSIDY))
+            if(Registered(to) || Registered(owner))
+                Disbersement(amount, IncorporationType.COMMODITY);
+        if(Registered(to) && Registered(owner) && (IsClass(owner, IncorporationType.EXCHANGE)))
+                Disbersement(amount, IncorporationType.OPTION);
+        if(Registered(to) && Registered(owner) && (IsClass(to, IncorporationType.EXCHANGE)))
+                Disbersement(amount, IncorporationType.FUTURE);
         _transfer(owner, to, amount);
         return true;
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         address spender = _msgSender();
-        if(!(AssetClass == Type.HEDGE))
-            if(Incorporation.Registered(from) || Incorporation.Registered(to))
-                Disbersement(amount, Type.COMMODITY);
-        if(Incorporation.Registered(from) && Incorporation.Registered(to) && (IsClass(from, Type.EXCHANGE)))
-            Disbersement(amount, Type.OPTION);
-        if(Incorporation.Registered(from) && Incorporation.Registered(to) && (IsClass(to, Type.EXCHANGE)))
-            Disbersement(amount, Type.FUTURE);
+        if(!(AssetClass == IncorporationType.HEDGE))
+            if(Registered(from) || Registered(to))
+                Disbersement(amount, IncorporationType.COMMODITY);
+        if(Registered(from) && Registered(to) && (IsClass(from, IncorporationType.EXCHANGE)))
+            Disbersement(amount, IncorporationType.OPTION);
+        if(Registered(from) && Registered(to) && (IsClass(to, IncorporationType.EXCHANGE)))
+            Disbersement(amount, IncorporationType.FUTURE);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
         return true;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 
 abstract contract Whitelist {
     address[] internal _whitelist;

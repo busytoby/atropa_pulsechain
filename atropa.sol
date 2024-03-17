@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 import "addresses.sol";
 import "asset.sol";
 import "whitelist.sol";
@@ -11,10 +11,10 @@ contract atropacoin is Incorporation, Whitelist {
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
         Whitelist._add(trebizond);
+        ArticleRegistry.AssertAccess = AssertWhitelisted;
         Incorporation.maxSupply = 1111111111 * 10 ** decimals();
         Incorporation.minDivisor = 111110;
-        Incorporation.AssetClass = Incorporation.Type.HEDGE;
-        Incorporation.AssertAccess = AssertWhitelisted;
+        Incorporation.AssetClass = IncorporationType.HEDGE;
         Incorporation.Disbersement = MintIncorporated;
         Incorporation.TreasuryReceiver = trebizond;
     }
@@ -28,10 +28,10 @@ contract atropacoin is Incorporation, Whitelist {
     }
 
     function MintCAPS(uint256 Distribution) private returns (bool) {
-        for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
-            address LPAddress = Incorporation.GetAddressByIndex(i);
-            Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
-            if(Article.Class == Incorporation.Type.CAP && !Incorporation.Expired(LPAddress)) {
+        for(uint256 i = 0; i < ArticleRegistry.RegistryCount(); i++) {
+            address LPAddress = ArticleRegistry.GetAddressByIndex(i);
+            Incorporation.Article memory Article = ArticleRegistry.GetArticleByAddress(LPAddress);
+            if(Article.Class == IncorporationType.CAP && !ArticleRegistry.Expired(LPAddress)) {
                 Incorporation CAPAsset = Incorporation(LPAddress);
                 try CAPAsset.MintCAP(Distribution) {} catch {}
             }
@@ -39,15 +39,15 @@ contract atropacoin is Incorporation, Whitelist {
         return true;
     }
 
-    function MintIncorporated(uint256 amount, Incorporation.Type class) private returns (bool) {
-        for(uint256 i = 0; i < Incorporation.RegistryCount(); i++) {
-            address LPAddress = Incorporation.GetAddressByIndex(i);
-            Incorporation.Article memory Article = Incorporation.GetArticleByAddress(LPAddress);
-            if(Incorporation.IsClass(LPAddress, class) && !Incorporation.Expired(LPAddress)) {
+    function MintIncorporated(uint256 amount, IncorporationType class) private returns (bool) {
+        for(uint256 i = 0; i < ArticleRegistry.RegistryCount(); i++) {
+            address LPAddress = ArticleRegistry.GetAddressByIndex(i);
+            Incorporation.Article memory Article = ArticleRegistry.GetArticleByAddress(LPAddress);
+            if(ArticleRegistry.IsClass(LPAddress, class) && !ArticleRegistry.Expired(LPAddress)) {
                 uint256 Distribution = GetDistribution(LPAddress, Article.Divisor, amount);
                 if(totalSupply() + Distribution < maxSupply) {
                     _mint(LPAddress, Distribution);
-                    if(Article.Class != Incorporation.Type.EXCHANGE && Article.Class != Incorporation.Type.FUTURE && Article.Class != Incorporation.Type.CAP)
+                    if(Article.Class != IncorporationType.EXCHANGE && Article.Class != IncorporationType.FUTURE && Article.Class != IncorporationType.CAP)
                         Asset.Sync(LPAddress);
                 }
                 else
