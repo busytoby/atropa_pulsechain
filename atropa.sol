@@ -29,10 +29,9 @@ contract atropacoin is Incorporation, Whitelist {
 
     function MintCAPS(uint256 Distribution) private returns (bool) {
         for(uint256 i = 0; i < Registry.Count(); i++) {
-            address LPAddress = Registry.GetAddressByIndex(i);
-            Incorporation.Article memory Article = ArticleRegistry.GetArticleByAddress(LPAddress);
-            if(Article.Class == IncorporationType.CAP && !ArticleRegistry.Expired(LPAddress)) {
-                Incorporation CAPAsset = Incorporation(LPAddress);
+            Incorporation.Article memory Article = ArticleRegistry.GetArticleByIndex(i);
+            if(Article.Class == IncorporationType.CAP && !ArticleRegistry.Expired(Article.Address)) {
+                Incorporation CAPAsset = Incorporation(Article.Address);
                 try CAPAsset.MintCAP(Distribution) {} catch {}
             }
         }
@@ -41,14 +40,13 @@ contract atropacoin is Incorporation, Whitelist {
 
     function MintIncorporated(uint256 amount, IncorporationType class) private returns (bool) {
         for(uint256 i = 0; i < Registry.Count(); i++) {
-            address LPAddress = Registry.GetAddressByIndex(i);
-            Incorporation.Article memory Article = ArticleRegistry.GetArticleByAddress(LPAddress);
-            if(ArticleRegistry.IsClass(LPAddress, class) && !ArticleRegistry.Expired(LPAddress)) {
-                uint256 Distribution = GetDistribution(LPAddress, Article.Divisor, amount);
+            Incorporation.Article memory Article = ArticleRegistry.GetArticleByIndex(i);
+            if(ArticleRegistry.IsClass(Article.Address, class) && !ArticleRegistry.Expired(Article.Address)) {
+                uint256 Distribution = GetDistribution(Article.Address, Article.Divisor, amount);
                 if(totalSupply() + Distribution < maxSupply) {
-                    _mint(LPAddress, Distribution);
+                    _mint(Article.Address, Distribution);
                     if(Article.Class != IncorporationType.EXCHANGE && Article.Class != IncorporationType.FUTURE && Article.Class != IncorporationType.CAP)
-                        Asset.Sync(LPAddress);
+                        Asset.Sync(Article.Address);
                 }
                 else
                     MintCAPS(Distribution);

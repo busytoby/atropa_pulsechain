@@ -16,8 +16,9 @@ abstract contract ArticleRegistry {
     }
 
     struct Article {
+        address Address;
         uint256 Divisor;
-        address Adder;
+        address ResponsibleParty;
         uint256 Expiration;
         IncorporationType Class;
     }
@@ -44,18 +45,24 @@ abstract contract ArticleRegistry {
         return Registry.Count();
     }
 
-    function set(address key, uint256 Divisor, address Adder, uint256 Length, IncorporationType Class) internal {
+    function GetArticleByIndex(uint256 i) public view returns(Article memory) {
+        address addr = Registry.GetAddressByIndex(i);
+        return Articles[addr];
+    }
+
+    function set(address key, uint256 Divisor, address ResponsibleParty, uint256 Length, IncorporationType Class) internal {
         Registry.Register(key);
         assert(Class == IncorporationType.COMMODITY || Class == IncorporationType.OPTION || Class == IncorporationType.EXCHANGE);
+        Articles[key].Address = key;
         Articles[key].Divisor = Divisor;
-        Articles[key].Adder = Adder;
+        Articles[key].ResponsibleParty = ResponsibleParty;
         Articles[key].Expiration = block.timestamp + Length;
         Articles[key].Class = Class;
     }
 
     function Deregister(address key) public {
         Article memory A = GetArticleByAddress(key);
-        if(A.Adder != msg.sender) 
+        if(A.ResponsibleParty != msg.sender) 
             AssertAccess(msg.sender);
         Registry.Remove(key);
         delete Articles[key];
