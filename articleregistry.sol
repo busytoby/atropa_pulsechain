@@ -29,6 +29,7 @@ abstract contract ArticleRegistry {
     }
 
     Registry internal _registry;
+    function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public virtual;
     function(address) internal AssertAccess;
 
     function GetArticleByAddress(address key) public view returns (Article memory) {

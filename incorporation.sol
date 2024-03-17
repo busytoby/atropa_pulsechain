@@ -16,7 +16,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
 
     function(uint256, IncorporationType) internal returns (bool) Disbersement;
 
-    function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public {
+    function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public override {
         assert(length < 367);
         AssertAccess(msg.sender);
         if(class != IncorporationType.FUTURE && class != IncorporationType.CAP)
