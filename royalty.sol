@@ -6,7 +6,7 @@ import "whitelist.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
-    constructor() ERC20(/*name short=*/ unicode"Incorporated Asset", /*symbol long=*/ unicode"INC") {
+    constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(atropa) {
         maxSupply = 1111111111 * 10 ** decimals();
         _mint(msg.sender, 666 * 10 ** decimals());
         Whitelist._add(msg.sender);
@@ -23,7 +23,6 @@ contract atropacoin is Incorporation, Whitelist {
         uint256 Multiplier = txamount / Divisor;
         uint256 Amount = (Modifier * Multiplier) / (10 ** 10);
         if(Amount < 1) Amount = 1;
-        if(totalSupply() + Amount > _maxSupply) Amount = 1;
         return Amount;
     }
 
@@ -56,7 +55,6 @@ contract atropacoin is Incorporation, Whitelist {
         }
         return true;
     }
-        
 
 /*
 function modExp(uint256 _b, uint256 _e, uint256 _m) public returns (uint256 result) {
