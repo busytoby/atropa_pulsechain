@@ -6,7 +6,7 @@ import "whitelist.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
-    constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(atropa) {
+    constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(msg.sender) {
         maxSupply = 1111111111 * 10 ** decimals();
         _mint(msg.sender, 666 * 10 ** decimals());
         Whitelist._add(msg.sender);
