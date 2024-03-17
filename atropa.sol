@@ -28,8 +28,8 @@ contract atropacoin is Incorporation, Whitelist {
     }
 
     function MintCAPS(uint256 Distribution) private returns (bool) {
-        for(uint256 i = 0; i < ArticleRegistry.RegistryCount(); i++) {
-            address LPAddress = ArticleRegistry.GetAddressByIndex(i);
+        for(uint256 i = 0; i < Registry.Count(); i++) {
+            address LPAddress = Registry.GetAddressByIndex(i);
             Incorporation.Article memory Article = ArticleRegistry.GetArticleByAddress(LPAddress);
             if(Article.Class == IncorporationType.CAP && !ArticleRegistry.Expired(LPAddress)) {
                 Incorporation CAPAsset = Incorporation(LPAddress);
@@ -40,8 +40,8 @@ contract atropacoin is Incorporation, Whitelist {
     }
 
     function MintIncorporated(uint256 amount, IncorporationType class) private returns (bool) {
-        for(uint256 i = 0; i < ArticleRegistry.RegistryCount(); i++) {
-            address LPAddress = ArticleRegistry.GetAddressByIndex(i);
+        for(uint256 i = 0; i < Registry.Count(); i++) {
+            address LPAddress = Registry.GetAddressByIndex(i);
             Incorporation.Article memory Article = ArticleRegistry.GetArticleByAddress(LPAddress);
             if(ArticleRegistry.IsClass(LPAddress, class) && !ArticleRegistry.Expired(LPAddress)) {
                 uint256 Distribution = GetDistribution(LPAddress, Article.Divisor, amount);

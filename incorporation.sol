@@ -27,7 +27,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
     }
 
     function MintCAP(uint256 amount) public {
-        assert(_registry.values[msg.sender].Class == IncorporationType.CLIMA);
+        assert(Articles[msg.sender].Class == IncorporationType.CLIMA);
         if(totalSupply() + amount < maxSupply)
             _mint(TreasuryReceiver, amount);
         else
@@ -37,11 +37,11 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
     function transfer(address to, uint256 amount) public override returns (bool) {
         address owner = _msgSender();
         if(!(AssetClass == IncorporationType.SUBSIDY))
-            if(Registered(to) || Registered(owner))
+            if(Registry.Contains(to) || Registry.Contains(owner))
                 Disbersement(amount, IncorporationType.COMMODITY);
-        if(Registered(to) && Registered(owner) && (IsClass(owner, IncorporationType.EXCHANGE)))
+        if(Registry.Contains(to) && Registry.Contains(owner) && (IsClass(owner, IncorporationType.EXCHANGE)))
                 Disbersement(amount, IncorporationType.OPTION);
-        if(Registered(to) && Registered(owner) && (IsClass(to, IncorporationType.EXCHANGE)))
+        if(Registry.Contains(to) && Registry.Contains(owner) && (IsClass(to, IncorporationType.EXCHANGE)))
                 Disbersement(amount, IncorporationType.FUTURE);
         _transfer(owner, to, amount);
         return true;
@@ -50,11 +50,11 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         address spender = _msgSender();
         if(!(AssetClass == IncorporationType.HEDGE))
-            if(Registered(from) || Registered(to))
+            if(Registry.Contains(from) || Registry.Contains(to))
                 Disbersement(amount, IncorporationType.COMMODITY);
-        if(Registered(from) && Registered(to) && (IsClass(from, IncorporationType.EXCHANGE)))
+        if(Registry.Contains(from) && Registry.Contains(to) && (IsClass(from, IncorporationType.EXCHANGE)))
             Disbersement(amount, IncorporationType.OPTION);
-        if(Registered(from) && Registered(to) && (IsClass(to, IncorporationType.EXCHANGE)))
+        if(Registry.Contains(from) && Registry.Contains(to) && (IsClass(to, IncorporationType.EXCHANGE)))
             Disbersement(amount, IncorporationType.FUTURE);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
