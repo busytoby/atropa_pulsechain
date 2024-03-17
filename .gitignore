@@ -22,3 +22,6 @@
 /Apparition/bin/Debug/net8.0-windows10.0.18362.0
 /viewclient/bin/Debug/net8.0-windows10.0.18362.0
 /Dysnomia/bin/Debug/net8.0
+/.deps
+/.states
+/artifacts
