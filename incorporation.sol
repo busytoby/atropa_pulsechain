@@ -7,7 +7,7 @@ import "addresses.sol";
 import "asset.sol";
 import "whitelist.sol";
 
-abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
+abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {   
     enum Type {
         COMMODITY,
         HEDGE,
@@ -37,6 +37,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     uint256 immutable internal maxSupply;
     uint256 internal minDivisor = 1110;
     Type immutable internal AssetClass;
+    address immutable internal TreasuryReceiver;
 
     function(address) internal AssertAccess;
     function(uint256, Type) internal returns (bool) Disbersement;
@@ -100,7 +101,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset {
     function MintCAP(uint256 amount) public {
         assert(_registry.values[msg.sender].Class == Type.CLIMA);
         if(totalSupply() + amount < maxSupply)
-            _mint(trebizond, amount);
+            _mint(TreasuryReceiver, amount);
         else
             Disbersement(amount, Type.OFFSET);
     }

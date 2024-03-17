@@ -15,7 +15,7 @@ contract atropacoin is ERC20, ERC20Burnable, Ownable {
     IERC20 private ACABToken;
     IERC20 private NeptuneToken;
 
-    constructor() ERC20(/*name short=*/ unicode"Public Record", /*symbol long=*/ unicode"BAIL™") {
+    constructor() ERC20(/*name short=*/ unicode"Public Record", /*symbol long=*/ unicode"BAIL™") Ownable(msg.sender) {
         LOLToken = IERC20(LOLContract);
         OjeonToken = IERC20(OjeonContract);
         YuToken = IERC20(YuContract);

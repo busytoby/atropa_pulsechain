@@ -7,15 +7,16 @@ import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
     constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(msg.sender) {
-        maxSupply = 1111111111 * 10 ** decimals();
         _mint(msg.sender, 666 * 10 ** decimals());
         Whitelist._add(msg.sender);
         Whitelist._add(atropa);
         Whitelist._add(trebizond);
+        Incorporation.maxSupply = 1111111111 * 10 ** decimals();
         Incorporation.minDivisor = 111110;
-        Incorporation.Disbersement = MintIncorporated;
         Incorporation.AssetClass = Incorporation.Type.HEDGE;
         Incorporation.AssertAccess = AssertWhitelisted;
+        Incorporation.Disbersement = MintIncorporated;
+        Incorporation.TreasuryReceiver = trebizond;
     }
 
     function GetDistribution(address LPAddress, uint256 Divisor, uint256 txamount) public view returns (uint256) {
