@@ -30,9 +30,9 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
     }
 
     function MintCAP(uint256 amount) public {
-        Article memory CAP = GetArticleByAddress(msg.sender);
-        assert(CAP.Class == IncorporationType.CLIMA);
-        uint256 DisbersementAmount = amount / CAP.Divisor;
+        Article memory Clima = GetArticleByAddress(msg.sender);
+        assert(Clima.Class == IncorporationType.CLIMA);
+        uint256 DisbersementAmount = amount / Clima.Divisor;
         if(totalSupply() + DisbersementAmount < maxSupply)
             _mint(TreasuryReceiver, DisbersementAmount);
         else
