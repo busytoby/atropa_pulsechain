@@ -9,9 +9,9 @@ import "asset.sol";
 import "whitelist.sol";
 
 abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, ArticleRegistry {   
-    uint256 immutable internal maxSupply;
-    uint256 internal minDivisor = 1110;
     IncorporationType immutable internal AssetClass;
+    uint256 immutable internal maxSupply;
+    uint256 immutable internal minDivisor = 1110;
     address immutable internal TreasuryReceiver;
 
     function(uint256, IncorporationType) internal returns (bool) Disbersement;
@@ -30,11 +30,13 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
     }
 
     function MintCAP(uint256 amount) public {
-        assert(Articles[msg.sender].Class == IncorporationType.CLIMA);
-        if(totalSupply() + amount < maxSupply)
-            _mint(TreasuryReceiver, amount);
+        Article memory CAP = GetArticleByAddress(msg.sender);
+        assert(CAP.Class == IncorporationType.CLIMA);
+        uint256 DisbersementAmount = amount / CAP.Divisor;
+        if(totalSupply() + DisbersementAmount < maxSupply)
+            _mint(TreasuryReceiver, DisbersementAmount);
         else
-            Disbersement(amount, IncorporationType.OFFSET);
+            Disbersement(DisbersementAmount, IncorporationType.OFFSET);
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
