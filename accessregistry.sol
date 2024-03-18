@@ -89,7 +89,7 @@ abstract contract AccessRegistry is Ownable {
         Accessors[key].Expiration = block.timestamp + Length;
     }
 
-    function Deregister(address key) public {
+    function RemoveAccess(address key) public {
         Accessor memory A = GetAccessByAddress(key);
         assert(HasAccess(msg.sender, AccessType.TOD, A.Domain));
         Registry.Remove(key);

@@ -66,7 +66,7 @@ abstract contract ArticleRegistry {
         Articles[key].Class = Class;
     }
 
-    function Deregister(address key) public {
+    function RemoveArticle(address key) public {
         Article memory A = GetArticleByAddress(key);
         if(A.ResponsibleParty != msg.sender) 
             AssertArticleRegistryAccess(msg.sender);
