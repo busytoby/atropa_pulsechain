@@ -3,6 +3,8 @@ pragma solidity ^0.8.25;
 import "registry.sol";
 
 abstract contract ArticleRegistry {
+    using LibRegistry for LibRegistry.Registry;
+
     enum IncorporationType {
         COMMODITY,
         HEDGE,
@@ -23,7 +25,7 @@ abstract contract ArticleRegistry {
         IncorporationType Class;
     }
 
-    DataRegistry internal Registry;
+    LibRegistry.Registry internal Registry;
     mapping(address => Article) internal Articles;
 
     function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public virtual;

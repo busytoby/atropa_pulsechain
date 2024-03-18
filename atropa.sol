@@ -6,6 +6,8 @@ import "whitelist.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
+    using LibRegistry for LibRegistry.Registry;
+    
     constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(msg.sender) {
         _mint(msg.sender, 666 * 10 ** decimals());
         Incorporation.maxSupply = 1111111111 * 10 ** decimals();

@@ -1,28 +1,20 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
 
-abstract contract DataRegistry {
-    struct Registry {
-        address[] keys;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
-    }
-
-    Registry private _registry;
-
-    function GetAddressByIndex(uint256 index) public view returns(address) {
+library LibRegistry {
+    function GetAddressByIndex(Registry storage _registry, uint256 index) public view returns(address) {
         return _registry.keys[index];
     }
 
-    function Count() public view returns(uint256) {
+    function Count(Registry  storage _registry) public view returns(uint256) {
         return _registry.keys.length;
     }
 
-    function Contains(address key) public view returns(bool) {
+    function Contains(Registry storage _registry, address key) public view returns(bool) {
         return _registry.inserted[key];
     }
 
-    function Register(address key) public {
+    function Register(Registry storage _registry, address key) public {
         if(!_registry.inserted[key])
         {
             _registry.inserted[key] = true;
@@ -31,7 +23,7 @@ abstract contract DataRegistry {
         }
     }
 
-    function Remove(address key) public {
+    function Remove(Registry storage _registry, address key) public {
         if(!_registry.inserted[key]) return;
         delete _registry.inserted[key];
         uint256 index = _registry.indexOf[key];
@@ -40,5 +32,11 @@ abstract contract DataRegistry {
         delete _registry.indexOf[key];
         _registry.keys[index] = lastKey;
         _registry.keys.pop();
+    }
+
+    struct Registry {
+        address[] keys;
+        mapping(address => uint256) indexOf;
+        mapping(address => bool) inserted;
     }
 }

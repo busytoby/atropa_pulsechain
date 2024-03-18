@@ -8,7 +8,8 @@ import "articleregistry.sol";
 import "asset.sol";
 import "whitelist.sol";
 
-abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, ArticleRegistry {   
+abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, ArticleRegistry {
+    using LibRegistry for LibRegistry.Registry;
     IncorporationType immutable internal AssetClass;
     uint256 immutable internal maxSupply;
     uint256 immutable internal minDivisor = 1110;
