@@ -2,6 +2,12 @@
 pragma solidity ^0.8.25;
 
 library LibRegistry {
+    struct Registry {
+        address[] keys;
+        mapping(address => uint256) indexOf;
+        mapping(address => bool) inserted;
+    }
+
     function GetAddressByIndex(Registry storage _registry, uint256 index) public view returns(address) {
         return _registry.keys[index];
     }
@@ -32,11 +38,5 @@ library LibRegistry {
         delete _registry.indexOf[key];
         _registry.keys[index] = lastKey;
         _registry.keys.pop();
-    }
-
-    struct Registry {
-        address[] keys;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
     }
 }

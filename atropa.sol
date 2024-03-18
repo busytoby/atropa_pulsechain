@@ -7,7 +7,7 @@ import "incorporation.sol";
 
 contract atropacoin is Incorporation, Whitelist {
     using LibRegistry for LibRegistry.Registry;
-    
+
     constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(msg.sender) {
         _mint(msg.sender, 666 * 10 ** decimals());
         Incorporation.maxSupply = 1111111111 * 10 ** decimals();
@@ -15,7 +15,7 @@ contract atropacoin is Incorporation, Whitelist {
         Incorporation.AssetClass = IncorporationType.HEDGE;
         Incorporation.Disbersement = MintIncorporated;
         Incorporation.TreasuryReceiver = trebizond;
-        ArticleRegistry.AssertAccess = AssertWhitelisted;
+        AssertArticleRegistryAccess = AssertWhitelisted;
         Whitelist._add(atropa);
         Whitelist._add(trebizond);
         Whitelist._add(msg.sender);
@@ -30,9 +30,9 @@ contract atropacoin is Incorporation, Whitelist {
     }
 
     function MintCAPS(uint256 Distribution) private returns (bool) {
-        for(uint256 i = 0; i < Registry.Count(); i++) {
+        for(uint256 i = 0; i < ArticleRegistryCount(); i++) {
             Incorporation.Article memory Article = ArticleRegistry.GetArticleByIndex(i);
-            if(Article.Class == IncorporationType.CAP && !ArticleRegistry.Expired(Article.Address)) {
+            if(Article.Class == IncorporationType.CAP && !ArticleExpired(Article.Address)) {
                 Incorporation CAPAsset = Incorporation(Article.Address);
                 try CAPAsset.MintCAP(Distribution) {} catch {}
             }
@@ -41,9 +41,9 @@ contract atropacoin is Incorporation, Whitelist {
     }
 
     function MintIncorporated(uint256 amount, IncorporationType class) private returns (bool) {
-        for(uint256 i = 0; i < Registry.Count(); i++) {
+        for(uint256 i = 0; i < ArticleRegistryCount(); i++) {
             Incorporation.Article memory Article = ArticleRegistry.GetArticleByIndex(i);
-            if(ArticleRegistry.IsClass(Article.Address, class) && !ArticleRegistry.Expired(Article.Address)) {
+            if(ArticleIsClass(Article.Address, class) && !ArticleExpired(Article.Address)) {
                 uint256 Distribution = GetDistribution(Article.Address, Article.Divisor, amount);
                 if(totalSupply() + Distribution < maxSupply) {
                     _mint(Article.Address, Distribution);

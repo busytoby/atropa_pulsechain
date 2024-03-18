@@ -25,22 +25,26 @@ abstract contract ArticleRegistry {
         IncorporationType Class;
     }
 
-    LibRegistry.Registry internal Registry;
+    LibRegistry.Registry private Registry;
     mapping(address => Article) internal Articles;
 
-    function Register(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public virtual;
-    function(address) internal AssertAccess;
+    function RegisterArticle(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public virtual;
+    function(address) internal AssertArticleRegistryAccess;
 
     function GetArticleByAddress(address key) public view returns (Article memory) {
         return Articles[key];
     }
 
-    function Expired(address key) public view returns(bool) {
+    function ArticleExpired(address key) public view returns(bool) {
         return (block.timestamp > Articles[key].Expiration);
     }
 
-    function IsClass(address key, IncorporationType class) public view returns(bool) {
+    function ArticleIsClass(address key, IncorporationType class) public view returns(bool) {
         return Articles[key].Class == class;
+    }
+
+    function ArticleRegistryContains(address key) public view returns (bool) {
+        return Registry.Contains(key);
     }
 
     function ArticleRegistryCount() public view returns(uint256) {
@@ -53,8 +57,8 @@ abstract contract ArticleRegistry {
     }
 
     function SetArticle(address key, uint256 Divisor, address ResponsibleParty, uint256 Length, IncorporationType Class) internal {
-        Registry.Register(key);
         assert(Class == IncorporationType.COMMODITY || Class == IncorporationType.OPTION || Class == IncorporationType.EXCHANGE);
+        Registry.Register(key);
         Articles[key].Address = key;
         Articles[key].Divisor = Divisor;
         Articles[key].ResponsibleParty = ResponsibleParty;
@@ -65,7 +69,7 @@ abstract contract ArticleRegistry {
     function Deregister(address key) public {
         Article memory A = GetArticleByAddress(key);
         if(A.ResponsibleParty != msg.sender) 
-            AssertAccess(msg.sender);
+            AssertArticleRegistryAccess(msg.sender);
         Registry.Remove(key);
         delete Articles[key];
     }
