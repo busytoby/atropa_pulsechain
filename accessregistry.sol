@@ -47,7 +47,7 @@ abstract contract AccessRegistry is Ownable {
             Accessor memory A = GetAccessByAddress(addr);
             assert(HasAccess(msg.sender, A.Class, addr));
             if(!HasAccess(msg.sender, AccessType.TOD, addr))
-            Expiration = A.Expiration;
+                Expiration = A.Expiration;
         }
         SetAccess(addr, class, dom, Expiration);
     }
