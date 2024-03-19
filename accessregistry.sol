@@ -32,11 +32,18 @@ abstract contract AccessRegistry is Ownable {
     LibRegistry.Registry private Registry;
     mapping(address => Accessor) internal Accessors;
 
-    function HasAccess(address user, AccessType min, address dom) public view returns (bool) {        
+    function _hasAccess(address user, AccessType min, address dom) private view returns (bool) {        
         if(user == owner()) return true;
         if(Accessors[user].Expired()) return false;
         if(Accessors[user].Class <= min && (Accessors[user].Domain == address(this) || Accessors[user].Domain == dom)) return true;
         return false;
+    }
+
+    function HasAccess(address user, AccessType min, address dom) public view returns (bool) {                
+        assert(_hasAccess(msg.sender, AccessType.PAFF, user));
+        if(Registry.Contains(user))
+            assert(_hasAccess(msg.sender, Accessors[user].Class, user));
+        return _hasAccess(user, min, dom);
     }
 
     function RegisterAccess(address addr, AccessType class, address dom, uint256 lengthInDays) public {
