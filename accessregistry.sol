@@ -51,7 +51,7 @@ abstract contract AccessRegistry is Ownable {
         uint256 Expiration = block.timestamp + lengthInDays * 1 days;
         if(Registry.Contains(addr)) {
             assert(HasAccess(msg.sender, Accessors[addr].Class, addr));
-            assert(HasAccess(msg.sender, class, addr));
+            assert(HasAccess(msg.sender, class, dom));
             if(!HasAccess(msg.sender, AccessType.TOD, addr))
                 Expiration = Accessors[addr].Expiration;
         }
