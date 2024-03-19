@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
-import "addresses.sol";
-import "asset.sol";
 import "incorporation.sol";
 
 contract atropacoin is Incorporation {
