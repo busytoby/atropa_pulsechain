@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
+import "atropamath.sol";
 
 library LibRegistry {
     struct Registry {
-        address[] keys;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
+        uint256[] keys;
+        mapping(uint256 => uint256) indexOf;
+        mapping(uint256 => bool) inserted;
     }
 
-    function GetAddressByIndex(Registry storage _registry, uint256 index) public view returns(address) {
+    function GetHashByIndex(Registry storage _registry, uint256 index) public view returns(uint256) {
         return _registry.keys[index];
     }
 
@@ -16,11 +17,11 @@ library LibRegistry {
         return _registry.keys.length;
     }
 
-    function Contains(Registry storage _registry, address key) public view returns(bool) {
+    function Contains(Registry storage _registry, uint256 key) public view returns(bool) {
         return _registry.inserted[key];
     }
 
-    function Register(Registry storage _registry, address key) public {
+    function Register(Registry storage _registry, uint256 key) public {
         if(!_registry.inserted[key])
         {
             _registry.inserted[key] = true;
@@ -29,11 +30,11 @@ library LibRegistry {
         }
     }
 
-    function Remove(Registry storage _registry, address key) public {
+    function Remove(Registry storage _registry, uint256 key) public {
         if(!_registry.inserted[key]) return;
         delete _registry.inserted[key];
         uint256 index = _registry.indexOf[key];
-        address lastKey = _registry.keys[_registry.keys.length - 1];
+        uint256 lastKey = _registry.keys[_registry.keys.length - 1];
         _registry.indexOf[lastKey] = index;
         delete _registry.indexOf[key];
         _registry.keys[index] = lastKey;
