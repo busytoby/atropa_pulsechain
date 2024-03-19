@@ -43,13 +43,19 @@ abstract contract AccessRegistry is Ownable {
         return false;
     }
 
+    function _hasAccess(uint256 hash, AccessType min, address dom) private view returns (bool) {    
+        if(Accessors[hash].Expired()) return false;
+        if(Accessors[hash].Class <= min && (Accessors[hash].Domain == address(this) || Accessors[hash].Domain == dom)) return true;
+        return false;
+    }
+
     function HasAccess(address user, AccessType min, address dom) public returns (bool) {                
         if(user == owner()) return true;
         assert(_hasAccess(msg.sender, AccessType.PAFF, user));
         uint256 hash = user.hashWith(dom);
         if(Registry.Contains(hash)) {
             assert(_hasAccess(msg.sender, Accessors[hash].Class, user));
-            return _hasAccess(user, min, dom);
+            return _hasAccess(hash, min, dom);
         }
         return false;
     }

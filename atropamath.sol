@@ -2,10 +2,10 @@
 pragma solidity ^0.8.25;
 
 library atropaMath {
-    uint256 constant Prime = 1051153199500053598403188407217590190707671147285551702341089650185945215953;
+    uint256 constant MotzkinPrime = 953467954114363;
     
     function hashWith(address a, address b) public returns (uint256) {
-        return modExp(uint256(uint160(a)), uint256(uint160(b)), Prime);
+        return modExp(uint256(uint160(a)), uint256(uint160(b)), MotzkinPrime);
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) public returns (uint256 result) {
