@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
+import "accessregistry.sol";
 import "addresses.sol";
 import "asset.sol";
 import "whitelist.sol";
 import "incorporation.sol";
 
-contract atropacoin is Incorporation, Whitelist {
+contract atropacoin is Incorporation, Whitelist, AccessRegistry {
     using LibRegistry for LibRegistry.Registry;
 
     constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(msg.sender) {
