@@ -33,7 +33,7 @@ abstract contract AccessRegistry is Ownable {
     mapping(address => Accessor) internal Accessors;
 
     function HasAccess(address user, AccessType min, address dom) public view returns (bool) {        
-        if(msg.sender == owner()) return true;
+        if(user == owner()) return true;
         if(Accessors[user].Expired()) return false;
         if(Accessors[user].Class <= min && (Accessors[user].Domain == address(this) || Accessors[user].Domain == dom)) return true;
         return false;
