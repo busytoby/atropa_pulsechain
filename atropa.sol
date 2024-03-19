@@ -34,10 +34,6 @@ contract atropacoin is Incorporation {
         return true;
     }
 
-    function Test() public pure returns(uint256) {
-        return atropa.hashWith(trebizond);
-    }
-
     function MintIncorporated(uint256 amount, IncorporationType class) private returns (bool) {
         for(uint256 i = 0; i < ArticleRegistryCount(); i++) {
             Incorporation.Article memory Article = ArticleRegistry.GetArticleByIndex(i);
