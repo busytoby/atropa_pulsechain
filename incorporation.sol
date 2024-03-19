@@ -27,6 +27,8 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
         if(class != IncorporationType.FUTURE && class != IncorporationType.CAP)
             assert(divisor > minDivisor);
         if(SyncableAssetClass(class)) assert(Asset.Sync(pool) == true);
+        if(ArticleRegistryContains(pool))
+            assert(HasAccess(msg.sender, AccessType.TOD, pool));
         SetArticle(pool, divisor, registree, length * 1 days, class);
     }
 

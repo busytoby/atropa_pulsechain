@@ -32,7 +32,7 @@ abstract contract AccessRegistry is Ownable {
     LibRegistry.Registry private Registry;
     mapping(address => Accessor) internal Accessors;
 
-    function HasAccess(address user, AccessType min, address dom) public view returns (bool) {
+    function HasAccess(address user, AccessType min, address dom) public view returns (bool) {        
         if(msg.sender == owner()) return true;
         Accessor memory A = GetAccessByAddress(user);
         if(A.Expired()) return false;
@@ -46,38 +46,46 @@ abstract contract AccessRegistry is Ownable {
     }
 
     function GetAccessNotes(address addr) public view returns (string[] memory) {
+        assert(HasAccess(msg.sender, AccessType.GUELPH, addr));
         return Accessors[addr].Notes;
     }
 
     function AddAccessNote(address addr, string memory note) public {
+        assert(HasAccess(msg.sender, AccessType.GUELPH, addr));
         assert(Registry.Contains(addr));
         Accessors[addr].Notes.push(note);
     }
 
     function RemoveAccessNote(address addr, uint256 idx) public {
+        assert(HasAccess(msg.sender, AccessType.TOD, addr));
         assert(Registry.Contains(addr));
         Accessors[addr].Notes[idx] = Accessors[addr].Notes[Accessors[addr].Notes.length - 1];
         Accessors[addr].Notes.pop();
     }
 
     function GetAccessByAddress(address key) public view returns (Accessor memory) {
+        assert(HasAccess(msg.sender, AccessType.PAFF, key));
         return Accessors[key];
     }
 
     function AccessExpired(address key) public view returns(bool) {
+        assert(HasAccess(msg.sender, AccessType.PAFF, key));
         return Accessors[key].Expired();
     }
 
     function AccessIsClass(address key, AccessType class) public view returns(bool) {
+        assert(HasAccess(msg.sender, AccessType.PAFF, key));
         return Accessors[key].Class == class;
     }
 
     function AccessRegistryCount() public view returns(uint256) {
+        assert(HasAccess(msg.sender, AccessType.WORKER, address(this)));
         return Registry.Count();
     }
 
     function GetAccessByIndex(uint256 i) public view returns(Accessor memory) {
         address addr = Registry.GetAddressByIndex(i);
+        assert(HasAccess(msg.sender, AccessType.WORKER, addr));
         return Accessors[addr];
     }
 
