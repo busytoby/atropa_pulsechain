@@ -44,10 +44,9 @@ abstract contract AccessRegistry is Ownable {
         assert(HasAccess(msg.sender, AccessType.GUELPH, address(this)));
         uint256 Expiration = block.timestamp + lengthInDays * 1 days;
         if(Registry.Contains(addr)) {
-            Accessor memory A = GetAccessByAddress(addr);
-            assert(HasAccess(msg.sender, A.Class, addr));
+            assert(HasAccess(msg.sender, Accessors[addr].Class, addr));
             if(!HasAccess(msg.sender, AccessType.TOD, addr))
-                Expiration = A.Expiration;
+                Expiration = Accessors[addr].Expiration;
         }
         SetAccess(addr, class, dom, Expiration);
     }
@@ -60,6 +59,7 @@ abstract contract AccessRegistry is Ownable {
     function AddAccessNote(address addr, string memory note) public {
         assert(HasAccess(msg.sender, AccessType.GUELPH, addr));
         assert(Registry.Contains(addr));
+        assert(HasAccess(msg.sender, Accessors[addr].Class, addr));
         Accessors[addr].Notes.push(note);
     }
 
