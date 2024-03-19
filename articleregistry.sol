@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
-import "registry.sol";
+import "accessregistry.sol";
 
-abstract contract ArticleRegistry {
+abstract contract ArticleRegistry is AccessRegistry {
     using LibRegistry for LibRegistry.Registry;
 
     enum IncorporationType {
@@ -29,7 +29,6 @@ abstract contract ArticleRegistry {
     mapping(address => Article) internal Articles;
 
     function RegisterArticle(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public virtual;
-    function(address) internal AssertArticleRegistryAccess;
 
     function GetArticleByAddress(address key) public view returns (Article memory) {
         return Articles[key];
@@ -69,7 +68,7 @@ abstract contract ArticleRegistry {
     function RemoveArticle(address key) public {
         Article memory A = GetArticleByAddress(key);
         if(A.ResponsibleParty != msg.sender) 
-            AssertArticleRegistryAccess(msg.sender);
+            assert(HasAccess(msg.sender, AccessType.TOD, key));
         Registry.Remove(key);
         delete Articles[key];
     }

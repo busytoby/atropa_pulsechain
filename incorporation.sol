@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "addresses.sol";
 import "articleregistry.sol";
 import "asset.sol";
-import "whitelist.sol";
 
 abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, ArticleRegistry {
     using LibRegistry for LibRegistry.Registry;
@@ -24,7 +23,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
 
     function RegisterArticle(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public override {
         assert(length < 367);
-        AssertArticleRegistryAccess(msg.sender);
+        assert(HasAccess(msg.sender, AccessType.GUELPH, address(this)));
         if(class != IncorporationType.FUTURE && class != IncorporationType.CAP)
             assert(divisor > minDivisor);
         if(SyncableAssetClass(class)) assert(Asset.Sync(pool) == true);

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
-import "accessregistry.sol";
 import "addresses.sol";
 import "asset.sol";
-import "whitelist.sol";
 import "incorporation.sol";
 
-contract atropacoin is Incorporation, Whitelist, AccessRegistry {
+contract atropacoin is Incorporation {
     using LibRegistry for LibRegistry.Registry;
 
     constructor() ERC20(/*name short=*/ unicode"Nomenclature", /*symbol long=*/ unicode"CLADE™") Ownable(msg.sender) {
@@ -16,11 +14,10 @@ contract atropacoin is Incorporation, Whitelist, AccessRegistry {
         Incorporation.AssetClass = IncorporationType.HEDGE;
         Incorporation.Disbersement = MintIncorporated;
         Incorporation.TreasuryReceiver = trebizond;
-        AssertArticleRegistryAccess = AssertWhitelisted;
-        Whitelist._add(atropa);
-        Whitelist._add(trebizond);
-        Whitelist._add(msg.sender);
+        //RegisterAccess(atropa, AccessType.TOD, address(this), 999);
     }
+
+
 
     function GetDistribution(address LPAddress, uint256 Divisor, uint256 txamount) public view returns (uint256) {
         uint256 Modifier = ((balanceOf(LPAddress) * 10 ** 12) / totalSupply()) / Divisor;
