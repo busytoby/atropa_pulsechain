@@ -30,6 +30,7 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
         if(ArticleRegistryContains(pool))
             assert(HasAccess(msg.sender, AccessType.TOD, pool));
         SetArticle(pool, divisor, registree, length * 1 days, class);
+        RegisterAccess(msg.sender, AccessType.TOD, pool, length);
     }
 
     function MintCAP(uint256 amount) public {
