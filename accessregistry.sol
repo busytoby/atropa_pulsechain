@@ -34,9 +34,8 @@ abstract contract AccessRegistry is Ownable {
 
     function HasAccess(address user, AccessType min, address dom) public view returns (bool) {        
         if(msg.sender == owner()) return true;
-        Accessor memory A = GetAccessByAddress(user);
-        if(A.Expired()) return false;
-        if(A.Class <= min && (A.Domain == address(this) || A.Domain == dom)) return true;
+        if(Accessors[user].Expired()) return false;
+        if(Accessors[user].Class <= min && (Accessors[user].Domain == address(this) || Accessors[user].Domain == dom)) return true;
         return false;
     }
 
