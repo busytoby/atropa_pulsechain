@@ -6,8 +6,8 @@ library atropaMath {
     
     function hashWith(address a, address b) public pure returns (uint256 hash) {        
         hash = 0;
-        uint256 _a = uint256(uint160(a));
-        uint256 _b = uint256(uint160(b) / 15);
+        uint160 _a = uint160(a);
+        uint160 _b = uint160(b) / 15;
         unchecked {
             while(hash == 0) {
                 hash = (_a**_b)%MotzkinPrime;
