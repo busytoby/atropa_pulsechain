@@ -27,10 +27,13 @@ abstract contract Incorporation is ERC20, ERC20Burnable, Ownable, Asset, Article
         if(class != IncorporationType.FUTURE && class != IncorporationType.CAP)
             assert(divisor > minDivisor);
         if(SyncableAssetClass(class)) assert(Asset.Sync(pool) == true);
-        if(ArticleRegistryContains(pool))
+        uint256 Expiration = block.timestamp + (length * 1 days);
+        if(ArticleRegistryContains(pool)) {
             assert(HasAccess(msg.sender, AccessType.TOD, pool));
-        SetArticle(pool, divisor, registree, length * 1 days, class);
-        RegisterAccess(msg.sender, AccessType.TOD, pool, length);
+            Expiration = GetArticleByAddress(pool).Expiration;
+        }
+        SetArticle(pool, divisor, registree, Expiration, class);
+        RegisterAccess(msg.sender, AccessType.TOD, pool, Expiration);
     }
 
     function MintCAP(uint256 amount) public {

@@ -42,7 +42,14 @@ abstract contract AccessRegistry is Ownable {
 
     function RegisterAccess(address addr, AccessType class, address dom, uint256 lengthInDays) public {
         assert(HasAccess(msg.sender, AccessType.GUELPH, address(this)));
-        SetAccess(addr, class, dom, lengthInDays * 1 days);
+        uint256 Expiration = block.timestamp + lengthInDays * 1 days;
+        if(Registry.Contains(addr)) {
+            Accessor memory A = GetAccessByAddress(addr);
+            assert(HasAccess(msg.sender, A.Class, addr));
+            if(!HasAccess(msg.sender, AccessType.TOD, addr))
+            Expiration = A.Expiration;
+        }
+        SetAccess(addr, class, dom, Expiration);
     }
 
     function GetAccessNotes(address addr) public view returns (string[] memory) {
@@ -94,7 +101,7 @@ abstract contract AccessRegistry is Ownable {
         Accessors[key].Address = key;
         Accessors[key].Class = Class;
         Accessors[key].Domain = Domain;
-        Accessors[key].Expiration = block.timestamp + Length;
+        Accessors[key].Expiration = Length;
     }
 
     function RemoveAccess(address key) public {
