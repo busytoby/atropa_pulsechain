@@ -31,22 +31,22 @@ abstract contract ArticleRegistry is AccessRegistry {
 
     function RegisterArticle(address pool, uint256 divisor, address registree, uint256 length, IncorporationType class) public virtual;
 
-    function GetArticleByAddress(address key) public returns (Article memory) {
+    function GetArticleByAddress(address key) public view returns (Article memory) {
         uint256 hash = address(this).hashWith(key);
         return Articles[hash];
     }
 
-    function ArticleExpired(address key) public returns(bool) {
+    function ArticleExpired(address key) public view returns(bool) {
         uint256 hash = address(this).hashWith(key);
         return (block.timestamp > Articles[hash].Expiration);
     }
 
-    function ArticleIsClass(address key, IncorporationType class) public returns(bool) {
+    function ArticleIsClass(address key, IncorporationType class) public view returns(bool) {
         uint256 hash = address(this).hashWith(key);
         return Articles[hash].Class == class;
     }
 
-    function ArticleRegistryContains(address key) public returns (bool) {
+    function ArticleRegistryContains(address key) public view returns (bool) {
         uint256 hash = address(this).hashWith(key);
         return Registry.Contains(hash);
     }

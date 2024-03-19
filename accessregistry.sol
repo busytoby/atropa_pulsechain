@@ -33,7 +33,7 @@ abstract contract AccessRegistry is Ownable {
     LibRegistry.Registry private Registry;
     mapping(uint256 => Accessor) internal Accessors;
 
-    function _hasAccess(address user, AccessType min, address dom) private returns (bool) {    
+    function _hasAccess(address user, AccessType min, address dom) private view returns (bool) {    
         if(user == owner()) return true;    
         uint256 hash = user.hashWith(dom);
         if(Registry.Contains(hash)) {
@@ -49,7 +49,7 @@ abstract contract AccessRegistry is Ownable {
         return false;
     }
 
-    function HasAccess(address user, AccessType min, address dom) public returns (bool) {                
+    function HasAccess(address user, AccessType min, address dom) public view returns (bool) {                
         if(user == owner()) return true;
         assert(_hasAccess(msg.sender, AccessType.PAFF, user));
         uint256 hash = user.hashWith(dom);
@@ -73,7 +73,7 @@ abstract contract AccessRegistry is Ownable {
         SetAccess(addr, class, dom, Expiration);
     }
 
-    function GetAccessNotes(address addr, address dom) public returns (string[] memory) {
+    function GetAccessNotes(address addr, address dom) public view returns (string[] memory) {
         assert(HasAccess(msg.sender, AccessType.GUELPH, addr));
         assert(HasAccess(msg.sender, AccessType.GUELPH, dom));
         uint256 hash = addr.hashWith(dom);
@@ -97,30 +97,30 @@ abstract contract AccessRegistry is Ownable {
         Accessors[hash].Notes.pop();
     }
 
-    function GetAccess(address user, address dom) public returns (Accessor memory) {
+    function GetAccess(address user, address dom) public view returns (Accessor memory) {
         assert(HasAccess(msg.sender, AccessType.PAFF, user));
         uint256 hash = user.hashWith(dom);
         return Accessors[hash];
     }
 
-    function AccessExpired(address user, address dom) public returns(bool) {
+    function AccessExpired(address user, address dom) public view returns(bool) {
         assert(HasAccess(msg.sender, AccessType.PAFF, user));
         uint256 hash = user.hashWith(dom);
         return Accessors[hash].Expired();
     }
 
-    function AccessIsClass(address user, address dom, AccessType class) public returns(bool) {
+    function AccessIsClass(address user, address dom, AccessType class) public view returns(bool) {
         assert(HasAccess(msg.sender, AccessType.PAFF, user));
         uint256 hash = user.hashWith(dom);
         return Accessors[hash].Class == class;
     }
 
-    function AccessRegistryCount() public returns(uint256) {
+    function AccessRegistryCount() public view returns(uint256) {
         assert(HasAccess(msg.sender, AccessType.WORKER, address(this)));
         return Registry.Count();
     }
 
-    function GetAccessByIndex(uint256 i) public returns(Accessor memory) {
+    function GetAccessByIndex(uint256 i) public view returns(Accessor memory) {
         uint256 hash = Registry.GetHashByIndex(i);
         assert(HasAccess(msg.sender, AccessType.WORKER, address(this)));
         return Accessors[hash];
