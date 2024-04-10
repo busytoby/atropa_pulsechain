@@ -63,6 +63,7 @@ address constant LoanContract = address(0xeE67825eF27588FAeE39cfefb465eB0A242A74
 address constant FreebiesContract = address(0x48F628c079353ECC4DB75F0d05de9299e083f3C2);
 
 address constant WMContract = address(0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29);
+address constant IRCContract = address(0xD64f26Bcf78df919D587b6743fcFf5b155815bd6);
 address constant NoContract = address(0x1942Ba1EA7c21a070D70C4eFe64B21694283F23e);
 address constant CallContract = address(0xD4FD96BA83d3E6FF1A0Baa44c32Def94e641D97c);        // 𐌎
 
