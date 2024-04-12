@@ -12,7 +12,7 @@ contract MyContract {
     function Rho() public returns(string memory) {Rho();}       // WM
     function Psi() public returns(string memory) {Psi();}       // WenTi
     function nu() public returns(string memory) {nu();}         // Tristar and Red Sector Incorporated
-    //function NU() public returns(string memory) {NU();}         // Dial 666-ANNABELLE
+    function NU() public returns(string memory) {NU();}         // Dial 666-ANNABELLE
     function Phi() public returns(string memory) {Phi();}       // hhFa
     function SIGMA() public returns(string memory) {SIGMA();}   // NoNukes
     function Theta() public returns(string memory) {Theta();}   // FA
