@@ -25,6 +25,7 @@ address constant ScissorsContract = address(0x1b8F9E19360D1dc94295D984b7Ca7eA9b8
 address constant ReadingContract = address(0xf69e9f943674027Cedf05564A8D5A01041d07c62);     // পঁদাে়নুিং
 address constant DiContract = address(0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89);          // 第作
 address constant dOWNContract = address(0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD);
+address constant STAYContract = address(0x7674516ad438dd67A057fBc1119168d9A7d2a9B1);
 address constant LOLContract = address(0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D);         // ލ
 address constant Bullion5Contract = address(0x77Bed67181CeF592472bcb7F97736c560340E006);
 address constant Bullion8Contract = address(0x2959221675bdF0e59D0cC3dE834a998FA5fFb9F4);    // ⑧
