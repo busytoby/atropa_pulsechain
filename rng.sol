@@ -9,15 +9,45 @@ import "faung.sol";
 contract RNG is ERC20, ERC20Burnable, Ownable {
     Dynamic.Faung private Mu;
 
-    constructor() ERC20(/*name short=*/ unicode"Random Number Generator", /*symbol long=*/ unicode"RNG") Ownable(msg.sender) {
-        Conjecture.Fa memory Rod = Conjecture.New(605841056431434, 824993723223339, 543871960643842);
-        Conjecture.Fa memory Cone = Conjecture.New(601841066431434, 706190049965693, 187758195120264);
+    ERC20 private DaiToken;
+    ERC20 private USDCToken;
+    ERC20 private USDTToken;
 
-        Mu = Dynamic.New(Rod, Cone, 314267673176633, 300042226926212, 658285062338874);
+    constructor() ERC20(/*name short=*/ unicode"Random Number Generator", /*symbol long=*/ unicode"RNG") Ownable(msg.sender) {
+        DaiToken = ERC20(dai);
+        USDCToken = ERC20(usdc);
+        USDTToken = ERC20(usdt);
+
+        Conjecture.Fa memory Rod = Conjecture.New(605841066431434, 824993723223339, 543871960643842);
+        Conjecture.Fa memory Cone = Conjecture.New(605841066431434, 706190044965693, 187758195120264);
+
+        Mu = Dynamic.New(Rod, Cone, 314267673176633, 300042286926212, 658285068338874);
+        _mint(address(this), 1 * 10 ** decimals());
     }
 
     function View() public view returns(Dynamic.Faung memory) {
         return Mu;
+    }
+
+    function BuyWithDAI(uint32 amount) public {
+        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+        bool success1 = DaiToken.transferFrom(msg.sender, address(this), amount * 10 ** DaiToken.decimals());
+        require(success1, unicode"Need Approved DAI");
+        transfer(msg.sender, amount * 10 ** decimals());
+    }
+
+    function BuyWithUSDC(uint32 amount) public {
+        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+        bool success1 = USDCToken.transferFrom(msg.sender, address(this), amount * 10 ** USDCToken.decimals());
+        require(success1, unicode"Need Approved USDC");
+        transfer(msg.sender, amount * 10 ** decimals());
+    }
+
+    function BuyWithUSDT(uint32 amount) public {
+        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+        bool success1 = USDTToken.transferFrom(msg.sender, address(this), amount * 10 ** USDCToken.decimals());
+        require(success1, unicode"Need Approved USDT");
+        transfer(msg.sender, amount * 10 ** decimals());
     }
 
     function Generate(uint64 Alpha, uint64 Beta) public returns(uint64) {
@@ -50,6 +80,9 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
             Conjecture.React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
             Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
             Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi;
+
+            if(totalSupply() <= (1111111111 * 10 ** decimals()))
+                _mint(address(this), 1 * 10 ** decimals());
 
             return Mu.Upsilon;
     }
