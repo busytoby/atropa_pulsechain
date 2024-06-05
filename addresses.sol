@@ -5,6 +5,10 @@ address constant dead = address(0x000000000000000000000000000000000000dEaD);
 address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
 address constant trebizond = address(0x903030f7e2d6489F38B0f4F96F9b371ec7960F78);
 
+address constant dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+address constant usdc = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+address constant usdt = address(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+
 address constant AtropaContract = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
 address constant EasternLightningContract = address(0xCD6159D0a1aaE415E0c1504E90A5d741A28afc98);
 address constant FinalContract = address(0x50E72874dCd7C198d370ac27c7B3cce9f9a0defd);
@@ -26,6 +30,7 @@ address constant ReadingContract = address(0xf69e9f943674027Cedf05564A8D5A01041d
 address constant DiContract = address(0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89);          // 第作
 address constant dOWNContract = address(0x2556F7f8d82EbcdD7b821b0981C38D9dA9439CdD);
 address constant STAYContract = address(0x7674516ad438dd67A057fBc1119168d9A7d2a9B1);
+address constant INDEPENDENCEContract = address(0x8B090509eAe0fEB4A0B934de1b4345161fA9a62d);
 address constant LOLContract = address(0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D);         // ލ
 address constant Bullion5Contract = address(0x77Bed67181CeF592472bcb7F97736c560340E006);
 address constant Bullion8Contract = address(0x2959221675bdF0e59D0cC3dE834a998FA5fFb9F4);    // ⑧

@@ -20,6 +20,12 @@ contract MyContract {
     function Create() public returns(string memory) {Create();} 
     function Dumvert() public returns(string memory) {Dumvert();} 
     function remint(uint256 amount) public returns(string memory) { remint(amount); }
+
+    function BatchRn() external {
+        for(uint256 i = 0; i <1000; i++) {
+            (bool success, ) = WMContract.call("0xa4566950");
+        }
+    }
 }
 
 // Conjure TeddyBear9: 100 籯, 500 유, 9 ⑧, 1 ʁ, 1,111,111,111 TEDDY BEAR ㉾

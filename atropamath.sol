@@ -2,7 +2,11 @@
 pragma solidity ^0.8.25;
 
 library atropaMath {
-    uint256 constant MotzkinPrime = 953467954114363;
+    uint64 constant MotzkinPrime = 953467954114363;
+
+    struct bar {
+        address[] a;
+    }
     
     function hashWith(address a, address b) public pure returns (uint256 hash) {        
         hash = 0;
@@ -15,6 +19,14 @@ library atropaMath {
             }
         }
         //return modExp(uint256(uint160(a)), uint256(uint160(b)), MotzkinPrime);
+    }
+
+    function modExp64(uint64 _b, uint64 _e, uint64 _m) public returns(uint64 result) {
+        uint256 B = _b;
+        uint256 E = _e;
+        uint256 M = _m;
+        uint64 R = uint64(modExp(B, E, M) % 18446744073709551615);
+        return R;
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) public returns (uint256 result) {
