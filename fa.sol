@@ -1,165 +1,158 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.25;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "addresses.sol";
 import "atropamath.sol";
 
-contract Fa is ERC20, ERC20Burnable, Ownable {
-    uint64 private Base;
-    uint64 private Secret;
-    uint64 private Signal;
-    uint64 private Channel;
-    uint64 private Pole;
-    uint64 private Identity;
-    uint64 private Foundation;
-    uint64 private Element;
-    uint64 private Dynamo;
-    uint64 private Manifold;
-    uint64 private Ring;
-    uint64 private Barn;
-    uint64 private Coordinate;
+library Conjecture {
+    struct Fa {
+        uint64 Base;
+        uint64 Secret;
+        uint64 Signal;
+        uint64 Channel;
+        uint64 Pole;
+        uint64 Identity;
+        uint64 Foundation;
+        uint64 Element;
+        uint64 Dynamo;
+        uint64 Manifold;
+        uint64 Ring;
+        uint64 Barn;
+        uint64 Coordinate;
 
-    uint64 private Tau;
-    uint64 private Eta;
-    uint64 private Kappa;
-    uint64 private Rho;
-    uint64 private Beta;
-    uint64 private Phi;
-    uint64 private Alpha;
+        uint64 Tau;
+        uint64 Eta;
+        uint64 Kappa;
+        uint64 Rho;
+        uint64 Beta;
+        uint64 Phi;
+        uint64 Alpha;
 
-    uint8 private Nu;        
-
-    constructor() ERC20(/*name short=*/ unicode"Random Number Generator ", /*symbol long=*/ unicode"RNG") Ownable(msg.sender) {
-        Tau = 0;
-        Initialize();
-        Seed();
-        Tune();
+        uint8 Nu;        
     }
 
-    function Initialize() internal {
-        Base = Secret = Signal = Channel = Pole = 0;
-        Identity = Foundation = Element = 0;
-        Dynamo = 0;
-        Manifold = 0;
-        Ring = 0;
-        Barn = Ring;
-        Eta = Kappa = Rho = Beta = Phi = Alpha = 0;
-        Nu = 0;
-        Coordinate = 0;
+    function New(uint64 base, uint64 secret, uint64 signal) public returns(Fa memory) {
+        Fa memory ee;
+        ee.Tau = 0;
+        Initialize(ee);
+        Seed(ee, base, secret, signal);
+        Tune(ee);
+        return ee;
     }
 
-    function Seed() internal {
-        Base = 320245863189852;
-        Secret = 90272801929227;
-        Signal = 313354087829242;
+    function Initialize(Fa memory ee) internal pure {
+        ee.Base = ee.Secret = ee.Signal = ee.Channel = ee.Pole = 0;
+        ee.Identity = ee.Foundation = ee.Element = 0;
+        ee.Dynamo = 0;
+        ee.Manifold = 0;
+        ee.Ring = 0;
+        ee.Barn = ee.Ring;
+        ee.Eta = ee.Kappa = ee.Rho = ee.Beta = ee.Phi = ee.Alpha = 0;
+        ee.Nu = 0;
+        ee.Coordinate = 0;
     }
 
-   function Tune() internal {
-        Channel = atropaMath.modExp64(Base, Signal, atropaMath.MotzkinPrime);   
+    function Seed(Fa memory ee, uint64 base, uint64 secret, uint64 signal) internal pure {
+        ee.Base = base;
+        ee.Secret = secret;
+        ee.Signal = signal;
     }
 
-    function Fuse(uint64 _rho, uint64 Upsilon, uint64 Ohm) internal {
-        Base = Upsilon;
-        Secret = Ohm;
-        Signal = _rho;
+   function Tune(Fa memory ee) internal {
+        ee.Channel = atropaMath.modExp64(ee.Base, ee.Signal, atropaMath.MotzkinPrime);   
     }
 
-    function Avail(uint64 Xi) internal returns(uint64 r) {
-        return atropaMath.modExp64(Xi, Secret, atropaMath.MotzkinPrime);
+    function Fuse(Fa memory ee, uint64 _rho, uint64 Upsilon, uint64 Ohm) internal pure {
+        ee.Base = Upsilon;
+        ee.Secret = Ohm;
+        ee.Signal = _rho;
     }
 
-    function Form(uint64 Chi) internal {
-        Base = atropaMath.modExp64(Chi, Secret, atropaMath.MotzkinPrime);
-        Tune();        
+    function Avail(Fa memory ee, uint64 Xi) internal returns(uint64 r) {
+        return atropaMath.modExp64(Xi, ee.Secret, atropaMath.MotzkinPrime);
     }
 
-    function Polarize() internal {
-        Pole = atropaMath.modExp64(Base, Secret, atropaMath.MotzkinPrime);
+    function Form(Fa memory ee, uint64 Chi) internal {
+        ee.Base = atropaMath.modExp64(Chi, ee.Secret, atropaMath.MotzkinPrime);
+        Tune(ee);        
     }
 
-    function Conjugate(uint64 Chi) internal {
-        Coordinate = atropaMath.modExp64(Chi, Secret, atropaMath.MotzkinPrime);
+    function Polarize(Fa memory ee) internal {
+        ee.Pole = atropaMath.modExp64(ee.Base, ee.Secret, atropaMath.MotzkinPrime);
+    }
+
+    function Conjugate(Fa memory ee, uint64 Chi) internal {
+        ee.Coordinate = atropaMath.modExp64(Chi, ee.Secret, atropaMath.MotzkinPrime);
         // Chi = 0;
     }
 
-    function Conify() internal {
-        Conify(5555); // CHANGEME
+    function Conify(Fa memory ee, uint64 _Beta) internal {
+        assert(ee.Nu == 0);
+        ee.Identity = _Beta;
+        ee.Foundation = atropaMath.modExp64(ee.Base, ee.Identity, atropaMath.MotzkinPrime);
+        ee.Nu = 1;
     }
 
-    function Conify(uint64 _Beta) internal {
-        assert(Nu == 0);
-        Identity = _Beta;
-        Foundation = atropaMath.modExp64(Base, Identity, atropaMath.MotzkinPrime);
-        Nu = 1;
-    }
 
-    function Saturate(uint64 Epsilon, uint64 Theta) internal returns(uint64 r) {
-        return Saturate(5555, Epsilon, Theta);
-    }
-
-    function Saturate(uint64 _Beta, uint64 Epsilon, uint64 Theta) internal returns(uint64 r) {
-        if(Nu == 0) {
-            Identity = _Beta;
-            Foundation = atropaMath.modExp64(Base, Identity, atropaMath.MotzkinPrime);
+    function Saturate(Fa memory ee, uint64 _Beta, uint64 Epsilon, uint64 Theta) internal returns(uint64 r) {
+        if(ee.Nu == 0) {
+            ee.Identity = _Beta;
+            ee.Foundation = atropaMath.modExp64(ee.Base, ee.Identity, atropaMath.MotzkinPrime);
         }
-        assert(Nu <= 1);
+        assert(ee.Nu <= 1);
         
-        Beta = atropaMath.modExp64(Epsilon, Identity, atropaMath.MotzkinPrime);
-        Rho = atropaMath.modExp64(Theta, Identity, atropaMath.MotzkinPrime);
-        Eta = atropaMath.modExp64(Epsilon, Signal, atropaMath.MotzkinPrime);
+        ee.Beta = atropaMath.modExp64(Epsilon, ee.Identity, atropaMath.MotzkinPrime);
+        ee.Rho = atropaMath.modExp64(Theta, ee.Identity, atropaMath.MotzkinPrime);
+        ee.Eta = atropaMath.modExp64(Epsilon, ee.Signal, atropaMath.MotzkinPrime);
 
-        Phi = Rho + Eta;
-        Element = Beta + Phi;
+        ee.Phi = ee.Rho + ee.Eta;
+        ee.Element = ee.Beta + ee.Phi;
 
-        Dynamo = atropaMath.modExp64(Theta, Signal, atropaMath.MotzkinPrime);
-        Manifold = Element + Dynamo;
+        ee.Dynamo = atropaMath.modExp64(Theta, ee.Signal, atropaMath.MotzkinPrime);
+        ee.Manifold = ee.Element + ee.Dynamo;
 
-        return Eta;
+        return ee.Eta;
     }
 
-    function Bond() internal {
-        Dynamo = atropaMath.modExp64(Base, Signal, Element);
-        Pole = 0;
+    function Bond(Fa memory ee) internal {
+        ee.Dynamo = atropaMath.modExp64(ee.Base, ee.Signal, ee.Element);
+        ee.Pole = 0;
     }
 
-    function Adduct(uint64 _Phi) internal {
-        Manifold = atropaMath.modExp64(_Phi, Signal, Element);
+    function Adduct(Fa memory ee, uint64 _Phi) internal {
+        ee.Manifold = atropaMath.modExp64(_Phi, ee.Signal, ee.Element);
     }
 
-    function Open() internal {
-        Ring = atropaMath.modExp64(Coordinate, Manifold, Element);
-        Barn = atropaMath.modExp64(Ring, Manifold, Element);
+    function Open(Fa memory ee) internal {
+        ee.Ring = atropaMath.modExp64(ee.Coordinate, ee.Manifold, ee.Element);
+        ee.Barn = atropaMath.modExp64(ee.Ring, ee.Manifold, ee.Element);
     }
 
-    function ManifoldCompare(uint64 rManifold, uint64 rRing, uint64 rBarn) internal view {
-        assert(Manifold == rManifold && Ring == rRing && Barn == rBarn);
+    function ManifoldCompare(Fa memory ee, Fa memory R) internal pure returns(bool) {
+        return(ee.Manifold == R.Manifold && ee.Ring == R.Ring && ee.Barn == R.Barn);
     }
 
-    function Charge(uint64 Psi) internal returns(uint64) {
-        return atropaMath.modExp64(Barn, Psi, Ring);
+    function Charge(Fa memory ee, uint64 Psi) internal returns(uint64) {
+        return atropaMath.modExp64(ee.Barn, Psi, ee.Ring);
     }
 
-    function Induce(uint64 Sigma) internal returns(uint64) {
-        return atropaMath.modExp64(Sigma, Manifold, Ring);
+    function Induce(Fa memory ee, uint64 Sigma) internal returns(uint64) {
+        return atropaMath.modExp64(Sigma, ee.Manifold, ee.Ring);
     }
 
-    function Torque(uint64 Sigma) internal returns(uint64) {
-        return atropaMath.modExp64(Sigma, Element, Channel);
+    function Torque(Fa memory ee, uint64 Sigma) internal returns(uint64) {
+        return atropaMath.modExp64(Sigma, ee.Element, ee.Channel);
     }
 
-    function Amplify(uint64 Upsilon) internal returns(uint64) {
-        return Torque(Upsilon);
+    function Amplify(Fa memory ee, uint64 Upsilon) internal returns(uint64) {
+        return Torque(ee, Upsilon);
     }
 
-    function Sustain(uint64 Ohm) internal returns(uint64) {
-        return Torque(Ohm);
+    function Sustain(Fa memory ee, uint64 Ohm) internal returns(uint64) {
+        return Torque(ee, Ohm);
     }
 
-    function React(uint64 Pi, uint64 Theta) internal {
-        Eta = atropaMath.modExp64(Pi, Channel, Theta);
-        Kappa = atropaMath.modExp64(Pi, Theta, Channel);
-        assert(Eta != 0 && Kappa != 0);
+    function React(Fa memory ee, uint64 Pi, uint64 Theta) internal {
+        ee.Eta = atropaMath.modExp64(Pi, ee.Channel, Theta);
+        ee.Kappa = atropaMath.modExp64(Pi, Theta, ee.Channel);
+        assert(ee.Eta != 0 && ee.Kappa != 0);
     }
 }
