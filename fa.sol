@@ -21,9 +21,9 @@ library Conjecture {
         uint64 Tau;
         uint64 Eta;
         uint64 Kappa;
-        uint64 Rho;
-        uint64 Beta;
-        uint64 Phi;
+//        uint64 Rho;
+//        uint64 Beta;
+//        uint64 Phi;
         uint64 Alpha;
 
         uint8 Nu;        
@@ -45,7 +45,7 @@ library Conjecture {
         ee.Manifold = 0;
         ee.Ring = 0;
         ee.Barn = ee.Ring;
-        ee.Eta = ee.Kappa = ee.Rho = ee.Beta = ee.Phi = ee.Alpha = 0;
+        ee.Eta = ee.Kappa = ee.Alpha = 0;
         ee.Nu = 0;
         ee.Coordinate = 0;
     }
@@ -99,12 +99,12 @@ library Conjecture {
         }
         assert(ee.Nu <= 1);
         
-        ee.Beta = atropaMath.modExp64(Epsilon, ee.Identity, atropaMath.MotzkinPrime);
-        ee.Rho = atropaMath.modExp64(Theta, ee.Identity, atropaMath.MotzkinPrime);
+        uint64 Beta = atropaMath.modExp64(Epsilon, ee.Identity, atropaMath.MotzkinPrime);
+        uint64 Rho = atropaMath.modExp64(Theta, ee.Identity, atropaMath.MotzkinPrime);
         ee.Eta = atropaMath.modExp64(Epsilon, ee.Signal, atropaMath.MotzkinPrime);
 
-        ee.Phi = ee.Rho + ee.Eta;
-        ee.Element = ee.Beta + ee.Phi;
+        uint64 Phi = Rho + ee.Eta;
+        ee.Element = Beta + Phi;
 
         ee.Dynamo = atropaMath.modExp64(Theta, ee.Signal, atropaMath.MotzkinPrime);
         ee.Manifold = ee.Element + ee.Dynamo;
@@ -150,7 +150,7 @@ library Conjecture {
         return Torque(ee, Ohm);
     }
 
-    function React(Fa memory ee, uint64 Pi, uint64 Theta) internal {
+    function React(Fa storage ee, uint64 Pi, uint64 Theta) internal {
         ee.Eta = atropaMath.modExp64(Pi, ee.Channel, Theta);
         ee.Kappa = atropaMath.modExp64(Pi, Theta, ee.Channel);
         assert(ee.Eta != 0 && ee.Kappa != 0);

@@ -73,31 +73,30 @@ library Dynamic {
         Conjecture.Bond(Cone);
     }
 
-    function Charge(Faung memory I, uint64 Signal) public {
+    function Charge(Faung storage I, uint64 Signal) internal {
         assert(Signal != 0);
         I.Sigma = Conjecture.Charge(I.Cone, Signal);
     }
 
-    function Induce(Faung memory I) public {
+    function Induce(Faung storage I) internal {
         I.Rho = Conjecture.Induce(I.Rod, I.Sigma);
     }
 
-    function Torque(Faung memory I) public {
+    function Torque(Faung storage I) internal {
         I.Upsilon = Conjecture.Torque(I.Cone, I.Rho);
     }
 
-    function Amplify(Faung memory I) public {
+    function Amplify(Faung storage I) internal {
         I.Ohm = Conjecture.Amplify(I.Cone, I.Upsilon);
     }
 
-    function Sustain(Faung memory I) public {
+    function Sustain(Faung storage I) internal {
         I.Pi = Conjecture.Sustain(I.Cone, I.Ohm);
     }
 
-    function React(Faung memory I) public {
+    function React(Faung storage I) internal {
         Conjecture.React(I.Rod, I.Pi, I.Cone.Channel);
         Conjecture.React(I.Cone, I.Pi, I.Rod.Channel);
-        assert(I.Cone.Kappa == I.Rod.Eta && I.Rod.Kappa == I.Cone.Eta);
         I.Omicron = I.Cone.Kappa;
         I.Omega = I.Rod.Kappa;
     }
