@@ -8,7 +8,6 @@ import "faung.sol";
 
 contract RNG is ERC20, ERC20Burnable, Ownable {
     Dynamic.Faung private Mu;
-    uint64 private Rho;
 
     ERC20 private DaiToken;
     ERC20 private USDCToken;
