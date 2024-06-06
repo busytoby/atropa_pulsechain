@@ -73,37 +73,37 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
         return balanceOf(address(this));
     }
 
-    function BuyWithDAI(uint32 amount) public {
-        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+    function BuyWithDAI(uint256 amount) public {
+        assert(AvailableForPurchase() >= amount);
         bool success1 = DaiToken.transferFrom(msg.sender, address(this), amount * 10 ** DaiToken.decimals());
         require(success1, unicode"Need Approved DAI");
         transfer(msg.sender, amount * 10 ** decimals());
     }
 
-    function BuyWithUSDC(uint32 amount) public {
-        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+    function BuyWithUSDC(uint256 amount) public {
+        assert(AvailableForPurchase() >= amount);
         bool success1 = USDCToken.transferFrom(msg.sender, address(this), amount * 10 ** USDCToken.decimals());
         require(success1, unicode"Need Approved USDC");
         transfer(msg.sender, amount * 10 ** decimals());
     }
 
-    function BuyWithUSDT(uint32 amount) public {
-        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+    function BuyWithUSDT(uint256 amount) public {
+        assert(AvailableForPurchase() >= amount);
         bool success1 = USDTToken.transferFrom(msg.sender, address(this), amount * 10 ** USDCToken.decimals());
         require(success1, unicode"Need Approved USDT");
         transfer(msg.sender, amount * 10 ** decimals());
     }
 
-    function BuyWithG5(uint32 amount) public {
-        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+    function BuyWithG5(uint256 amount) public {
+        assert(AvailableForPurchase() >= amount);
         bool success1 = G5Token.transferFrom(msg.sender, address(this), (amount * 10 ** G5Token.decimals()) / 4);
         require(success1, unicode"Need Approved Gimme5");
         transfer(msg.sender, amount * 10 ** decimals());
     }
 
-    function BuyWithPI(uint32 amount) public {
-        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
-        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 200));
+    function BuyWithPI(uint256 amount) public {
+        assert(AvailableForPurchase() >= amount);
+        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 212));
         require(success1, unicode"Need Approved pINDEPENDENCE");
         transfer(msg.sender, amount * 10 ** decimals());
     }
