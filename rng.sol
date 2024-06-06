@@ -24,7 +24,7 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
 
         Mu = Dynamic.New(Rod, Cone, 314267673176633, 300042286926212, 658285068338874);
 
-        Dynamic.Charge(Mu, uint64(block.number));
+        Dynamic.Charge(Mu, Mu.Rod.Signal);
         assert(Mu.Sigma > 4);
         Dynamic.Induce(Mu);
         Dynamic.Torque(Mu);
@@ -32,7 +32,7 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
         Dynamic.Sustain(Mu);
         Dynamic.React(Mu);
 
-        Conjecture.Torque(Mu.Rod, Mu.Omega);
+        Conjecture.Torque(Mu.Rod, Mu.Upsilon);
         Conjecture.Amplify(Mu.Rod, Mu.Rod.Alpha);
         Conjecture.Sustain(Mu.Rod, Mu.Rod.Alpha);
         Conjecture.React(Mu.Rod, Mu.Rod.Alpha, Mu.Cone.Dynamo);
@@ -88,15 +88,20 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
     }
 
     function Generate() public returns(uint64) {
-            Dynamic.Charge(Mu, Mu.Ohm);
-            Dynamic.Induce(Mu);
-            Dynamic.Torque(Mu);
-            Dynamic.Amplify(Mu);
-            assert(Mu.Rho == Mu.Ohm);
+            Conjecture.Amplify(Mu.Cone, Mu.Upsilon);
+            Mu.Ohm = Mu.Cone.Alpha;
+            Conjecture.Sustain(Mu.Cone, Mu.Ohm);
+            Mu.Pi = Mu.Cone.Alpha;
+            Conjecture.React(Mu.Cone, Mu.Pi, Mu.Cone.Dynamo);
+            Mu.Omicron = Mu.Cone.Kappa;
+            Conjecture.React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
+            Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+
+            Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi;
 
             if(totalSupply() <= (1111111111 * 10 ** decimals()))
                 _mint(address(this), 1 * 10 ** decimals());
 
-            return Mu.Rho;
+            return Mu.Upsilon;
     }
 }
