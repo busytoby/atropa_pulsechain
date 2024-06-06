@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.21;
 import "atropamath.sol";
 
 library Conjecture {
@@ -66,8 +66,8 @@ library Conjecture {
         ee.Signal = _rho;
     }
 
-    function Avail(Fa memory ee, uint64 Xi) internal returns(uint64 r) {
-        return atropaMath.modExp64(Xi, ee.Secret, atropaMath.MotzkinPrime);
+    function Avail(Fa memory ee, uint64 Xi) internal {
+        ee.Alpha = atropaMath.modExp64(Xi, ee.Secret, atropaMath.MotzkinPrime);
     }
 
     function Form(Fa memory ee, uint64 Chi) internal {
@@ -126,33 +126,42 @@ library Conjecture {
         ee.Barn = atropaMath.modExp64(ee.Ring, ee.Manifold, ee.Element);
     }
 
+    event DysnomiaNuclearEvent(string What, uint64 Value);
+
     function ManifoldCompare(Fa memory ee, Fa memory R) internal pure returns(bool) {
+        
+        //emit DysnomiaNuclearEvent("Manifold Created", ee.Barn);
         return(ee.Manifold == R.Manifold && ee.Ring == R.Ring && ee.Barn == R.Barn);
     }
 
-    function Charge(Fa memory ee, uint64 Psi) internal returns(uint64) {
-        return atropaMath.modExp64(ee.Barn, Psi, ee.Ring);
+    function Charge(Fa storage ee, uint64 Psi) internal {
+        ee.Alpha = atropaMath.modExp64(ee.Barn, Psi, ee.Ring);
+        //emit DysnomiaNuclearEvent("Alpha Charged", ee.Alpha);
     }
 
-    function Induce(Fa memory ee, uint64 Sigma) internal returns(uint64) {
-        return atropaMath.modExp64(Sigma, ee.Manifold, ee.Ring);
+    function Induce(Fa storage ee, uint64 Sigma) internal {
+        ee.Alpha = atropaMath.modExp64(Sigma, ee.Manifold, ee.Ring);
+        //emit DysnomiaNuclearEvent("Alpha Induced", ee.Alpha);
     }
 
-    function Torque(Fa memory ee, uint64 Sigma) internal returns(uint64) {
-        return atropaMath.modExp64(Sigma, ee.Element, ee.Channel);
+    function Torque(Fa storage ee, uint64 Sigma) internal {
+        ee.Alpha = atropaMath.modExp64(Sigma, ee.Element, ee.Channel);
+        //emit DysnomiaNuclearEvent("Alpha TORQUE", ee.Alpha);
     }
 
-    function Amplify(Fa memory ee, uint64 Upsilon) internal returns(uint64) {
-        return Torque(ee, Upsilon);
+    function Amplify(Fa storage ee, uint64 Upsilon) internal {
+        Torque(ee, Upsilon);
     }
 
-    function Sustain(Fa memory ee, uint64 Ohm) internal returns(uint64) {
-        return Torque(ee, Ohm);
+    function Sustain(Fa storage ee, uint64 Ohm) internal {
+        Torque(ee, Ohm);
     }
 
     function React(Fa storage ee, uint64 Pi, uint64 Theta) internal {
         ee.Eta = atropaMath.modExp64(Pi, ee.Channel, Theta);
         ee.Kappa = atropaMath.modExp64(Pi, Theta, ee.Channel);
         assert(ee.Eta != 0 && ee.Kappa != 0);
+        //emit DysnomiaNuclearEvent(">>", ee.Eta);
+        //emit DysnomiaNuclearEvent("<<", ee.Kappa);
     }
 }

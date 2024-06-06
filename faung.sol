@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.21;
 import "atropamath.sol";
 import "fa.sol";
 
@@ -58,8 +58,9 @@ library Dynamic {
     }
 
     function ConductorGenerate(Conjecture.Fa memory Rod, Conjecture.Fa memory Cone, uint64 Xi) internal {
-        Rod.Alpha = Conjecture.Avail(Rod, Xi);
-        Cone.Tau = Conjecture.Avail(Cone, Xi);
+        Conjecture.Avail(Rod, Xi);
+        Conjecture.Avail(Cone, Xi);
+        Cone.Tau = Cone.Alpha;
 
         Conjecture.Form(Rod, Cone.Tau);
         Conjecture.Form(Cone, Rod.Alpha);
@@ -75,23 +76,28 @@ library Dynamic {
 
     function Charge(Faung storage I, uint64 Signal) internal {
         assert(Signal != 0);
-        I.Sigma = Conjecture.Charge(I.Cone, Signal);
+        Conjecture.Charge(I.Cone, Signal);
+        I.Sigma = I.Cone.Alpha;
     }
 
     function Induce(Faung storage I) internal {
-        I.Rho = Conjecture.Induce(I.Rod, I.Sigma);
+        Conjecture.Induce(I.Rod, I.Sigma);
+        I.Rho = I.Rod.Alpha;
     }
 
     function Torque(Faung storage I) internal {
-        I.Upsilon = Conjecture.Torque(I.Cone, I.Rho);
+        Conjecture.Torque(I.Cone, I.Rho);
+        I.Upsilon = I.Cone.Alpha;
     }
 
     function Amplify(Faung storage I) internal {
-        I.Ohm = Conjecture.Amplify(I.Cone, I.Upsilon);
+        Conjecture.Amplify(I.Cone, I.Upsilon);
+        I.Ohm = I.Cone.Alpha;
     }
 
     function Sustain(Faung storage I) internal {
-        I.Pi = Conjecture.Sustain(I.Cone, I.Ohm);
+        Conjecture.Sustain(I.Cone, I.Ohm);
+        I.Pi = I.Cone.Alpha;
     }
 
     function React(Faung storage I) internal {

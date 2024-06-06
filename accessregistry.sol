@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.21;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "registry.sol";
 

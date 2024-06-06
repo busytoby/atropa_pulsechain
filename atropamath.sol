@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Sharia
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.21;
 
 library atropaMath {
     uint64 constant MotzkinPrime = 953467954114363;
