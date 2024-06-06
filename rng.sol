@@ -22,10 +22,12 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
         G5Token = ERC20(G5Contract);
         PIToken = ERC20(PIContract);
 
-        Conjecture.Fa memory Rod = Conjecture.New(605841066431434, 824993723223339, 543871960643842);
-        Conjecture.Fa memory Cone = Conjecture.New(605841066431434, 706190044965693, 187758195120264);
+        RNG RNG1 = RNG(0xa96BcbeD7F01de6CEEd14fC86d90F21a36dE2143);
+        
+        Conjecture.Fa memory Rod = Conjecture.New(RNG1.Generate(), RNG1.Generate(), RNG1.Generate());
+        Conjecture.Fa memory Cone = Conjecture.New(RNG1.Generate(), RNG1.Generate(), RNG1.Generate());
 
-        Mu = Dynamic.New(Rod, Cone, 314267673176633, 300042286926212, 658285068338874);
+        Mu = Dynamic.New(Rod, Cone, RNG1.Generate(), RNG1.Generate(), RNG1.Generate());
 
         Dynamic.Charge(Mu, Mu.Rod.Signal);
         assert(Mu.Sigma > 4);

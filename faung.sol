@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "atropamath.sol";
 import "fa.sol";
 
 library Dynamic {

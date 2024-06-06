@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "atropamath.sol";
+//import "atropamath.sol";
+
+interface atropaMath {   
+    function hashWith(address a, address b) external returns (uint256 hash);
+    function modExp64(uint64 _b, uint64 _e, uint64 _m) external returns(uint64 result);
+    function modExp(uint256 _b, uint256 _e, uint256 _m) external returns (uint256 result);
+}
 
 library Conjecture {
+    uint64 constant MotzkinPrime = 953467954114363;
+
     struct Fa {
         uint64 Base;
         uint64 Secret;
@@ -57,7 +65,8 @@ library Conjecture {
     }
 
    function Tune(Fa memory ee) internal {
-        ee.Channel = atropaMath.modExp64(ee.Base, ee.Signal, atropaMath.MotzkinPrime);   
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Channel = aa.modExp64(ee.Base, ee.Signal, MotzkinPrime);   
     }
 
     function Fuse(Fa memory ee, uint64 _rho, uint64 Upsilon, uint64 Ohm) internal pure {
@@ -67,63 +76,72 @@ library Conjecture {
     }
 
     function Avail(Fa memory ee, uint64 Xi) internal {
-        ee.Alpha = atropaMath.modExp64(Xi, ee.Secret, atropaMath.MotzkinPrime);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Alpha = aa.modExp64(Xi, ee.Secret, MotzkinPrime);
     }
 
     function Form(Fa memory ee, uint64 Chi) internal {
-        ee.Base = atropaMath.modExp64(Chi, ee.Secret, atropaMath.MotzkinPrime);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Base = aa.modExp64(Chi, ee.Secret, MotzkinPrime);
         Tune(ee);        
     }
 
     function Polarize(Fa memory ee) internal {
-        ee.Pole = atropaMath.modExp64(ee.Base, ee.Secret, atropaMath.MotzkinPrime);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Pole = aa.modExp64(ee.Base, ee.Secret, MotzkinPrime);
     }
 
     function Conjugate(Fa memory ee, uint64 Chi) internal {
-        ee.Coordinate = atropaMath.modExp64(Chi, ee.Secret, atropaMath.MotzkinPrime);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Coordinate = aa.modExp64(Chi, ee.Secret, MotzkinPrime);
         // Chi = 0;
     }
 
-    function Conify(Fa memory ee, uint64 _Beta) internal {
+    function Conify(Fa memory ee, uint64 _Beta) internal {        
         assert(ee.Nu == 0);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
         ee.Identity = _Beta;
-        ee.Foundation = atropaMath.modExp64(ee.Base, ee.Identity, atropaMath.MotzkinPrime);
+        ee.Foundation = aa.modExp64(ee.Base, ee.Identity, MotzkinPrime);
         ee.Nu = 1;
     }
 
 
     function Saturate(Fa memory ee, uint64 _Beta, uint64 Epsilon, uint64 Theta) internal returns(uint64 r) {
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
         if(ee.Nu == 0) {
             ee.Identity = _Beta;
-            ee.Foundation = atropaMath.modExp64(ee.Base, ee.Identity, atropaMath.MotzkinPrime);
+            ee.Foundation = aa.modExp64(ee.Base, ee.Identity, MotzkinPrime);
         }
         assert(ee.Nu <= 1);
         
-        uint64 Beta = atropaMath.modExp64(Epsilon, ee.Identity, atropaMath.MotzkinPrime);
-        uint64 Rho = atropaMath.modExp64(Theta, ee.Identity, atropaMath.MotzkinPrime);
-        ee.Eta = atropaMath.modExp64(Epsilon, ee.Signal, atropaMath.MotzkinPrime);
+        uint64 Beta = aa.modExp64(Epsilon, ee.Identity, MotzkinPrime);
+        uint64 Rho = aa.modExp64(Theta, ee.Identity, MotzkinPrime);
+        ee.Eta = aa.modExp64(Epsilon, ee.Signal, MotzkinPrime);
 
         uint64 Phi = Rho + ee.Eta;
         ee.Element = Beta + Phi;
 
-        ee.Dynamo = atropaMath.modExp64(Theta, ee.Signal, atropaMath.MotzkinPrime);
+        ee.Dynamo = aa.modExp64(Theta, ee.Signal, MotzkinPrime);
         ee.Manifold = ee.Element + ee.Dynamo;
 
         return ee.Eta;
     }
 
     function Bond(Fa memory ee) internal {
-        ee.Dynamo = atropaMath.modExp64(ee.Base, ee.Signal, ee.Element);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Dynamo = aa.modExp64(ee.Base, ee.Signal, ee.Element);
         ee.Pole = 0;
     }
 
     function Adduct(Fa memory ee, uint64 _Phi) internal {
-        ee.Manifold = atropaMath.modExp64(_Phi, ee.Signal, ee.Element);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Manifold = aa.modExp64(_Phi, ee.Signal, ee.Element);
     }
 
     function Open(Fa memory ee) internal {
-        ee.Ring = atropaMath.modExp64(ee.Coordinate, ee.Manifold, ee.Element);
-        ee.Barn = atropaMath.modExp64(ee.Ring, ee.Manifold, ee.Element);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Ring = aa.modExp64(ee.Coordinate, ee.Manifold, ee.Element);
+        ee.Barn = aa.modExp64(ee.Ring, ee.Manifold, ee.Element);
     }
 
     event DysnomiaNuclearEvent(string What, uint64 Value);
@@ -135,17 +153,20 @@ library Conjecture {
     }
 
     function Charge(Fa storage ee, uint64 Psi) internal {
-        ee.Alpha = atropaMath.modExp64(ee.Barn, Psi, ee.Ring);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Alpha = aa.modExp64(ee.Barn, Psi, ee.Ring);
         //emit DysnomiaNuclearEvent("Alpha Charged", ee.Alpha);
     }
 
     function Induce(Fa storage ee, uint64 Sigma) internal {
-        ee.Alpha = atropaMath.modExp64(Sigma, ee.Manifold, ee.Ring);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Alpha = aa.modExp64(Sigma, ee.Manifold, ee.Ring);
         //emit DysnomiaNuclearEvent("Alpha Induced", ee.Alpha);
     }
 
     function Torque(Fa storage ee, uint64 Sigma) internal {
-        ee.Alpha = atropaMath.modExp64(Sigma, ee.Element, ee.Channel);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Alpha = aa.modExp64(Sigma, ee.Element, ee.Channel);
         //emit DysnomiaNuclearEvent("Alpha TORQUE", ee.Alpha);
     }
 
@@ -158,8 +179,9 @@ library Conjecture {
     }
 
     function React(Fa storage ee, uint64 Pi, uint64 Theta) internal {
-        ee.Eta = atropaMath.modExp64(Pi, ee.Channel, Theta);
-        ee.Kappa = atropaMath.modExp64(Pi, Theta, ee.Channel);
+        atropaMath aa = atropaMath(0x008Fb244289a3FDb9700CC2208848Df0B89F40aa);
+        ee.Eta = aa.modExp64(Pi, ee.Channel, Theta);
+        ee.Kappa = aa.modExp64(Pi, Theta, ee.Channel);
         assert(ee.Eta != 0 && ee.Kappa != 0);
         //emit DysnomiaNuclearEvent(">>", ee.Eta);
         //emit DysnomiaNuclearEvent("<<", ee.Kappa);
