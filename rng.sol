@@ -100,7 +100,7 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
 
     function BuyWithPI(uint32 amount) public {
         assert(balanceOf(address(this)) >= amount * 10 ** decimals());
-        bool success1 = USDTToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 220));
+        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 220));
         require(success1, unicode"Need Approved pINDEPENDENCE");
         transfer(msg.sender, amount * 10 ** decimals());
     }
