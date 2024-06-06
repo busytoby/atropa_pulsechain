@@ -70,6 +70,10 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
         return Mu;
     }
 
+    function AvailableForPurchase() public view returns(uint256) {
+        return balanceOf(address(this));
+    }
+
     function BuyWithDAI(uint32 amount) public {
         assert(balanceOf(address(this)) >= amount * 10 ** decimals());
         bool success1 = DaiToken.transferFrom(msg.sender, address(this), amount * 10 ** DaiToken.decimals());
@@ -100,7 +104,7 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
 
     function BuyWithPI(uint32 amount) public {
         assert(balanceOf(address(this)) >= amount * 10 ** decimals());
-        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 220));
+        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 200));
         require(success1, unicode"Need Approved pINDEPENDENCE");
         transfer(msg.sender, amount * 10 ** decimals());
     }
