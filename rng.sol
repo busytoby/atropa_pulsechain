@@ -13,11 +13,15 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
     ERC20 private DaiToken;
     ERC20 private USDCToken;
     ERC20 private USDTToken;
+    ERC20 private G5Token;
+    ERC20 private PIToken;
 
     constructor() ERC20(/*name short=*/ unicode"Random Number Generator", /*symbol long=*/ unicode"RNG") Ownable(msg.sender) {
         DaiToken = ERC20(dai);
         USDCToken = ERC20(usdc);
         USDTToken = ERC20(usdt);
+        G5Token = ERC20(G5Contract);
+        PIToken = ERC20(PIContract);
 
         Conjecture.Fa memory Rod = Conjecture.New(605841066431434, 824993723223339, 543871960643842);
         Conjecture.Fa memory Cone = Conjecture.New(605841066431434, 706190044965693, 187758195120264);
@@ -87,21 +91,35 @@ contract RNG is ERC20, ERC20Burnable, Ownable {
         transfer(msg.sender, amount * 10 ** decimals());
     }
 
+    function BuyWithG5(uint32 amount) public {
+        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+        bool success1 = G5Token.transferFrom(msg.sender, address(this), (amount * 10 ** G5Token.decimals()) / 4);
+        require(success1, unicode"Need Approved Gimme5");
+        transfer(msg.sender, amount * 10 ** decimals());
+    }
+
+    function BuyWithPI(uint32 amount) public {
+        assert(balanceOf(address(this)) >= amount * 10 ** decimals());
+        bool success1 = USDTToken.transferFrom(msg.sender, address(this), (amount * 10 ** PIToken.decimals() / 220));
+        require(success1, unicode"Need Approved pINDEPENDENCE");
+        transfer(msg.sender, amount * 10 ** decimals());
+    }
+
     function Generate() public returns(uint64) {
-            Conjecture.Amplify(Mu.Cone, Mu.Upsilon);
-            Mu.Ohm = Mu.Cone.Alpha;
-            Conjecture.Sustain(Mu.Cone, Mu.Ohm);
-            Mu.Pi = Mu.Cone.Alpha;
-            Conjecture.React(Mu.Cone, Mu.Pi, Mu.Cone.Dynamo);
-            Mu.Omicron = Mu.Cone.Kappa;
-            Conjecture.React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
-            Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+        Conjecture.Amplify(Mu.Cone, Mu.Upsilon);
+        Mu.Ohm = Mu.Cone.Alpha;
+        Conjecture.Sustain(Mu.Cone, Mu.Ohm);
+        Mu.Pi = Mu.Cone.Alpha;
+        Conjecture.React(Mu.Cone, Mu.Pi, Mu.Cone.Dynamo);
+        Mu.Omicron = Mu.Cone.Kappa;
+        Conjecture.React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
+        Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
 
-            Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi;
+        Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi;
 
-            if(totalSupply() <= (1111111111 * 10 ** decimals()))
-                _mint(address(this), 1 * 10 ** decimals());
+        if(totalSupply() <= (1111111111 * 10 ** decimals()))
+            _mint(address(this), 1 * 10 ** decimals());
 
-            return Mu.Upsilon;
+        return Mu.Upsilon;
     }
 }
