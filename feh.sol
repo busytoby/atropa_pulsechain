@@ -13,8 +13,8 @@ interface atropaMath {
 
 abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     uint64 constant public MotzkinPrime = 953467954114363;
-    //atropaMath internal aa = atropaMath(libAtropaMathContract);
-    atropaMath internal aa = atropaMath(0xEAEfC777D0b087e5feF003bC32835d92fADF63C0);
+    //atropaMath internal Xiao = atropaMath(libAtropaMathContract);
+    atropaMath internal Xiao = atropaMath(0xEAEfC777D0b087e5feF003bC32835d92fADF63C0);
 
     function _mintToCap() internal {
         if(totalSupply() <= (1111111111 * 10 ** decimals()))

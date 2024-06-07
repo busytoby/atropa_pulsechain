@@ -20,7 +20,7 @@ contract Affection is Affinity {
         G5Token = ERC20(G5Contract);
         PIToken = ERC20(PIContract); // trying to remove these
 
-        NewDynamic(aa.Random(), aa.Random(), aa.Random());
+        NewDynamic(Xiao.Random(), Xiao.Random(), Xiao.Random());
         Alpha(Mu.Rod.Signal);
         Beta(Mu.Upsilon);
         Upsilon(Mu.Upsilon, false);
