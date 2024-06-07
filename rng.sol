@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "addresses.sol";
 import "dynamic.sol";
 
-contract Affection is ERC20, ERC20Burnable, Ownable, Dynamic {
+contract Affection is ERC20Burnable, Dynamic {
     ERC20 private DaiToken;
     ERC20 private USDCToken;
     ERC20 private USDTToken;
@@ -46,18 +46,6 @@ contract Affection is ERC20, ERC20Burnable, Ownable, Dynamic {
     function BuyWithMATH(uint256 amount) public {
         bool success1 = ERC20(libAtropaMathContract).transferFrom(msg.sender, address(this), amount);
         require(success1, unicode"Need Approved MATH");
-        ERC20(address(this)).transfer(msg.sender, amount);
-    }
-
-    function BuyWithFa(uint256 amount) public {
-        bool success1 = ERC20(libConjectureContract).transferFrom(msg.sender, address(this), amount * 4);
-        require(success1, unicode"Need Approved Fa");
-        ERC20(address(this)).transfer(msg.sender, amount);
-    }
-
-    function BuyWithFaung(uint256 amount) public {
-        bool success1 = ERC20(libDynamicContract).transferFrom(msg.sender, address(this), amount * 2);
-        require(success1, unicode"Need Approved Faung");
         ERC20(address(this)).transfer(msg.sender, amount);
     }
 

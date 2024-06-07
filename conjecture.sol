@@ -13,9 +13,10 @@ interface atropaMath {
     function modExp(uint256 _b, uint256 _e, uint256 _m) external returns (uint256);
 }
 
-abstract contract Conjecture is ERC20, ERC20Burnable, Ownable {
+abstract contract Conjecture is ERC20 {
     uint64 constant public MotzkinPrime = 953467954114363;
-    atropaMath internal aa = atropaMath(libAtropaMathContract);
+    //atropaMath internal aa = atropaMath(libAtropaMathContract);
+    atropaMath internal aa = atropaMath(0xEAEfC777D0b087e5feF003bC32835d92fADF63C0);
 
     function _mintToCap() internal {
         if(totalSupply() <= (1111111111 * 10 ** decimals()))

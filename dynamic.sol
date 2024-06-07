@@ -4,11 +4,15 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "addresses.sol";
+import "fan.sol";
 import "faung.sol";
+import "fei.sol";
 import "conjecture.sol";
 
-abstract contract Dynamic is ERC20, ERC20Burnable, Ownable, Conjecture {
+abstract contract Dynamic is Ownable, Conjecture {
     Faung internal Mu;
+    Fei internal Nu;
+    Fan public Eta;
 
     function NewDynamic(uint64 Xi, uint64 Alpha, uint64 Beta) internal {
         NewConjecture(Mu.Rod);
