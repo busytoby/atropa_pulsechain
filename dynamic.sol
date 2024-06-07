@@ -9,7 +9,7 @@ import "faung.sol";
 import "fei.sol";
 import "conjecture.sol";
 
-abstract contract Dynamic is Ownable, Conjecture {
+abstract contract Dynamic is Conjecture {
     Faung internal Mu;
     Fan internal Eta;
     Fei public Nu;

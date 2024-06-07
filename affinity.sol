@@ -11,7 +11,7 @@ struct Registry {
     mapping(uint256 => bool) inserted;
 }
 
-abstract contract Affinity is ERC20Burnable, Dynamic {
+abstract contract Affinity is Dynamic {
     Registry internal Sigma;
 
     function _dynamicCall(uint64 Context, uint64 Operation, uint64 Entity) internal {
