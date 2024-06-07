@@ -15,13 +15,13 @@ abstract contract Affinity is Dynamic {
     Registry internal Sigma;
     Fa private Upsilon;
 
-    function _dynamicCall(uint64 Context, uint64 Operation, uint64 Entity) internal {
-        if(Context == 0) {
+    function _dynamicCall(uint64 _Context, uint64 Operation, uint64 Entity) internal {
+        if(_Context == 0) {
             Nu.Context = uint256(uint160(msg.sender));
             Nu.Operation = Operation;
             Nu.Entity = Entity;
-            Nu.Mu = new bytes(0);
-        } else if(Context == Mu.Rod.Signal) {
+            Nu.Theta = new bytes(0);
+        } else if(_Context == Mu.Rod.Signal) {
             if(Operation == 0 && Entity == 0) {
                 // then we know this is request to access level 0 setup-ish data
             }

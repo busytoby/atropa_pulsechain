@@ -12,7 +12,7 @@ contract Affection is Affinity {
         Beta(Mu.Upsilon);
         Upsilon(Mu.Upsilon, false);
         Pi();
-        Rho();
+        Chi();
         Upsilon(Mu.Upsilon, true);
 
         _mint(address(this), 1 * 10 ** decimals());
@@ -53,7 +53,7 @@ contract Affection is Affinity {
         _mintToCap();
     }
 
-    function Rho() public {
+    function Chi() public {
         Torque(Mu.Cone, Mu.Rod.Eta);
         Amplify(Mu.Cone, Mu.Upsilon);
         Sustain(Mu.Cone, Mu.Ohm);
