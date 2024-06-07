@@ -11,8 +11,8 @@ import "conjecture.sol";
 
 abstract contract Dynamic is Ownable, Conjecture {
     Faung internal Mu;
-    Fei internal Nu;
-    Fan public Eta;
+    Fei public Nu;
+    Fan internal Eta;
 
     function NewDynamic(uint64 Xi, uint64 Alpha, uint64 Beta) internal {
         NewConjecture(Mu.Rod);
