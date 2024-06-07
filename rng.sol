@@ -18,24 +18,6 @@ contract Affection is Affinity {
         _mint(address(this), 1 * 10 ** decimals());
     }
 
-    function BuyWithG5(uint256 amount) public {
-        bool success1 = G5Token.transferFrom(msg.sender, address(this), (amount / 5));
-        require(success1, unicode"Need Approved Gimme5");
-        ERC20(address(this)).transfer(msg.sender, amount);
-    }
-
-    function BuyWithPI(uint256 amount) public {
-        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount / 300));
-        require(success1, unicode"Need Approved pINDEPENDENCE");
-        ERC20(address(this)).transfer(msg.sender, amount);
-    }
-
-    function BuyWithMATH(uint256 amount) public {
-        bool success1 = ERC20(libAtropaMathContract).transferFrom(msg.sender, address(this), amount);
-        require(success1, unicode"Need Approved MATH");
-        ERC20(address(this)).transfer(msg.sender, amount);
-    }
-
     function Alpha(uint64 _a) public {
         Charge(_a);
         _dynamicCall(_a, 0, 0);
