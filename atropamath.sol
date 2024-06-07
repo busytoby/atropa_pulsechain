@@ -20,7 +20,7 @@ contract atropaMath is ERC20, ERC20Burnable, Ownable {
     ERC20 private G5Token;
     ERC20 private PIToken;
 
-    constructor() ERC20(/*name short=*/ unicode"libAtropaMath v1.0", /*symbol long=*/ unicode"MATH") Ownable(msg.sender) {
+    constructor() ERC20(/*name short=*/ unicode"libAtropaMath v1.1", /*symbol long=*/ unicode"MATH") Ownable(msg.sender) {
         DaiToken = ERC20(dai);
         USDCToken = ERC20(usdc);
         USDTToken = ERC20(usdt);
@@ -34,7 +34,8 @@ contract atropaMath is ERC20, ERC20Burnable, Ownable {
     }
 
     function Random() public returns(uint64) {
-        _mint(address(this), 1 * 10 ** decimals());
+        if(totalSupply() <= (1111111111 * 10 ** decimals()))
+            _mint(address(this), 1 * 10 ** decimals());
         return RandomNumberGeneratorToken.Generate();
     }
 
@@ -115,6 +116,12 @@ contract atropaMath is ERC20, ERC20Burnable, Ownable {
     function BuyWithPI(uint256 amount) public {
         bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount / 212));
         require(success1, unicode"Need Approved pINDEPENDENCE");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithMATH(uint256 amount) public {
+        bool success1 = ERC20(0x5EF3011243B03f817223A19f277638397048A0DC).transferFrom(msg.sender, address(this), amount);
+        require(success1, unicode"Need Approved MATH");
         ERC20(address(this)).transfer(msg.sender, amount);
     }
 }

@@ -127,3 +127,6 @@ address constant LEPROSYContract = address(0x7759A6D283192ef2BA082923d28Bec6eBfA
 //
 address constant PIContract = address(0xA2262D7728C689526693aE893D0fD8a352C7073C);
 address constant G5Contract = address(0x2fc636E7fDF9f3E8d61033103052079781a6e7D2);
+
+//
+address constant libAtropaMathContract = address(0xB680F0cc810317933F234f67EB6A9E923407f05D);
