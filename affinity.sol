@@ -15,6 +15,11 @@ abstract contract Affinity is ERC20Burnable, Dynamic {
     Registry internal Sigma;
 
     function _dynamicCall(uint64 Context, uint64 Operation, uint64 Entity) internal {
-        assert(false);
+        if(Context == Mu.Rod.Signal) {
+            if(Operation == 0 && Entity == 0) {
+                // then we know this is request to access level 0 setup-ish data
+            }
+            // then we knoe this is during setup-ish
+        }
     }
 }

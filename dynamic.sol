@@ -13,10 +13,11 @@ abstract contract Dynamic is Ownable, Conjecture {
     Faung internal Mu;
     Fan internal Eta;
     Fei public Nu;
-    
+
     function NewDynamic(uint64 Xi, uint64 Alpha, uint64 Beta) internal {
         NewConjecture(Mu.Rod);
         NewConjecture(Mu.Cone);
+        // maybe generate random numgers here
         OpenManifolds(Xi, Alpha, Beta);
         Mu.Xi = Xi;
         Mu.Chi = 0;
