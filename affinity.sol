@@ -13,13 +13,18 @@ struct Registry {
 
 abstract contract Affinity is Dynamic {
     Registry internal Sigma;
+    Fa private Upsilon;
 
     function _dynamicCall(uint64 Context, uint64 Operation, uint64 Entity) internal {
-        if(Context == Mu.Rod.Signal) {
+        if(Context == 0) {
+            Nu.Context = uint256(uint160(msg.sender));
+            Nu.Operation = Operation;
+            Nu.Entity = Entity;
+        } else if(Context == Mu.Rod.Signal) {
             if(Operation == 0 && Entity == 0) {
                 // then we know this is request to access level 0 setup-ish data
             }
             // then we knoe this is during setup-ish
-        }
+        } else assert(false);
     }
 }
