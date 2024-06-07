@@ -4,21 +4,21 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "addresses.sol";
-import "dynamic.sol";
+import "affinity.sol";
 
-contract Affection is ERC20Burnable, Dynamic {
+contract Affection is Affinity {
     ERC20 private DaiToken;
     ERC20 private USDCToken;
     ERC20 private USDTToken;
     ERC20 private G5Token;
-    ERC20 private PIToken;
+    ERC20 private PIToken; // trying to remove these
 
     constructor() ERC20(/*name short=*/ unicode"AFFECTION™", /*symbol long=*/ unicode"Ⓐ") Ownable(msg.sender) {
         DaiToken = ERC20(dai);
         USDCToken = ERC20(usdc);
         USDTToken = ERC20(usdt);
         G5Token = ERC20(G5Contract);
-        PIToken = ERC20(PIContract);
+        PIToken = ERC20(PIContract); // trying to remove these
 
         NewDynamic(aa.Random(), aa.Random(), aa.Random());
         Alpha(Mu.Rod.Signal);
@@ -51,6 +51,7 @@ contract Affection is ERC20Burnable, Dynamic {
 
     function Alpha(uint64 _a) public {
         Charge(_a);
+        _dynamicCall(_a, 0, 0);
         assert(Mu.Sigma > 4);
         Induce();
         Torque();
