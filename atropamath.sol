@@ -1,13 +1,43 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "addresses.sol";
 
-library atropaMath {
-    uint64 constant MotzkinPrime = 953467954114363;
+interface RNG {
+    function Generate() external returns(uint64);
+}
 
-    struct bar {
-        address[] a;
+contract atropaMath is ERC20, ERC20Burnable, Ownable {
+    uint64 constant public MotzkinPrime = 953467954114363;
+
+    RNG private RandomNumberGeneratorToken;
+
+    ERC20 private DaiToken;
+    ERC20 private USDCToken;
+    ERC20 private USDTToken;
+    ERC20 private G5Token;
+    ERC20 private PIToken;
+
+    constructor() ERC20(/*name short=*/ unicode"libAtropaMath v1.0", /*symbol long=*/ unicode"MATH") Ownable(msg.sender) {
+        DaiToken = ERC20(dai);
+        USDCToken = ERC20(usdc);
+        USDTToken = ERC20(usdt);
+        G5Token = ERC20(G5Contract);
+        PIToken = ERC20(PIContract);
+
+        RandomNumberGeneratorToken = RNG(0xa96BcbeD7F01de6CEEd14fC86d90F21a36dE2143);
+        //RandomNumberGeneratorToken = RNG(0xBDA2A2cBD5E5E9B8BBd52614E94030D71F1dC54B);
+
+        _mint(address(this), 1 * 10 ** decimals());
     }
-    
+
+    function Random() public returns(uint64) {
+        _mint(address(this), 1 * 10 ** decimals());
+        return RandomNumberGeneratorToken.Generate();
+    }
+
     function hashWith(address a, address b) public pure returns (uint256 hash) {        
         hash = 0;
         uint160 _a = uint160(a);
@@ -54,5 +84,37 @@ library atropaMath {
 
             result := mload(value)
         }
+    }
+
+    function BuyWithDAI(uint256 amount) public {
+        bool success1 = DaiToken.transferFrom(msg.sender, address(this), amount);
+        require(success1, unicode"Need Approved DAI");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithUSDC(uint256 amount) public {
+        uint256 _a = (amount / (10**decimals())) * 10 ** USDCToken.decimals();
+        bool success1 = USDCToken.transferFrom(msg.sender, address(this), _a);
+        require(success1, unicode"Need Approved USDC");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithUSDT(uint256 amount) public {
+        uint256 _a = (amount / (10**decimals())) * 10 ** USDTToken.decimals();
+        bool success1 = USDTToken.transferFrom(msg.sender, address(this), _a);
+        require(success1, unicode"Need Approved USDT");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithG5(uint256 amount) public {
+        bool success1 = G5Token.transferFrom(msg.sender, address(this), (amount / 4));
+        require(success1, unicode"Need Approved Gimme5");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithPI(uint256 amount) public {
+        bool success1 = PIToken.transferFrom(msg.sender, address(this), (amount / 212));
+        require(success1, unicode"Need Approved pINDEPENDENCE");
+        ERC20(address(this)).transfer(msg.sender, amount);
     }
 }
