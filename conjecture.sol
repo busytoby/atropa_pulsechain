@@ -1,0 +1,160 @@
+// SPDX-License-Identifier: Sharia
+pragma solidity ^0.8.21;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "addresses.sol";
+import "fa.sol";
+
+interface atropaMath {   
+    function Random() external returns (uint64);
+    function hashWith(address a, address b) external returns (uint256);
+    function modExp64(uint64 _b, uint64 _e, uint64 _m) external returns(uint64);
+    function modExp(uint256 _b, uint256 _e, uint256 _m) external returns (uint256);
+}
+
+abstract contract Conjecture is ERC20, ERC20Burnable, Ownable {
+    uint64 constant public MotzkinPrime = 953467954114363;
+    atropaMath internal aa = atropaMath(libAtropaMathContract);
+
+    function _mintToCap() internal {
+        if(totalSupply() <= (1111111111 * 10 ** decimals()))
+            _mint(address(this), 1 * 10 ** decimals());
+    }
+
+    function NewConjecture(Fa storage Rod) internal {
+        _mintToCap();
+        Rod.Tau = 0;
+        Initialize(Rod);
+        Seed(Rod);
+        Tune(Rod);
+    }
+
+    function Initialize(Fa storage Rod) internal {
+        Rod.Base = Rod.Secret = Rod.Signal = Rod.Channel = Rod.Pole = 0;
+        Rod.Identity = Rod.Foundation = Rod.Element = 0;
+        Rod.Dynamo = 0;
+        Rod.Manifold = 0;
+        Rod.Ring = 0;
+        Rod.Barn = Rod.Ring;
+        Rod.Eta = Rod.Kappa = Rod.Alpha = 0;
+        Rod.Nu = 0;
+        Rod.Coordinate = 0;
+    }
+
+    function Seed(Fa storage Rod) internal {
+        Rod.Base = aa.Random();
+        Rod.Secret = aa.Random();
+        Rod.Signal = aa.Random();
+    }
+
+   function Tune(Fa storage Rod) internal {
+        Rod.Channel = aa.modExp64(Rod.Base, Rod.Signal, MotzkinPrime);   
+    }
+
+    function Fuse(Fa storage Rod, uint64 _rho, uint64 Upsilon, uint64 Ohm) internal {
+        Rod.Base = Upsilon;
+        Rod.Secret = Ohm;
+        Rod.Signal = _rho;
+    }
+
+    function Avail(Fa storage Rod, uint64 Xi) internal {
+        Rod.Alpha = aa.modExp64(Xi, Rod.Secret, MotzkinPrime);
+    }
+
+    function Form(Fa storage Rod, uint64 Chi) internal {
+        Rod.Base = aa.modExp64(Chi, Rod.Secret, MotzkinPrime);
+        Tune(Rod);
+    }
+
+    function Polarize(Fa storage Rod) internal {
+        Rod.Pole = aa.modExp64(Rod.Base, Rod.Secret, MotzkinPrime);
+    }
+
+    function Conjugate(Fa storage Rod, uint64 Chi) internal {
+        Rod.Coordinate = aa.modExp64(Chi, Rod.Secret, MotzkinPrime);
+        // Chi = 0;
+    }
+
+    function Conify(Fa storage Rod, uint64 _Beta) internal {
+        assert(Rod.Nu == 0);
+        Rod.Identity = _Beta;
+        Rod.Foundation = aa.modExp64(Rod.Base, Rod.Identity, MotzkinPrime);
+        Rod.Nu = 1;
+    }
+
+
+    function Saturate(Fa storage Rod, uint64 _Beta, uint64 Epsilon, uint64 Theta) internal {
+        if(Rod.Nu == 0) {
+            Rod.Identity = _Beta;
+            Rod.Foundation = aa.modExp64(Rod.Base, Rod.Identity, MotzkinPrime);
+        }
+        assert(Rod.Nu <= 1);
+        
+        uint64 Beta = aa.modExp64(Epsilon, Rod.Identity, MotzkinPrime);
+        uint64 Rho = aa.modExp64(Theta, Rod.Identity, MotzkinPrime);
+        Rod.Eta = aa.modExp64(Epsilon, Rod.Signal, MotzkinPrime);
+
+        uint64 Phi = Rho + Rod.Eta;
+        Rod.Element = Beta + Phi;
+
+        Rod.Dynamo = aa.modExp64(Theta, Rod.Signal, MotzkinPrime);
+        Rod.Manifold = Rod.Element + Rod.Dynamo;
+    }
+
+    function Bond(Fa storage Rod) internal {
+        Rod.Dynamo = aa.modExp64(Rod.Base, Rod.Signal, Rod.Element);
+        Rod.Pole = 0;
+    }
+
+    function Adduct(Fa storage Rod, uint64 _Phi) internal {
+        Rod.Manifold = aa.modExp64(_Phi, Rod.Signal, Rod.Element);
+    }
+
+    function Open(Fa storage Rod) internal {
+        Rod.Ring = aa.modExp64(Rod.Coordinate, Rod.Manifold, Rod.Element);
+        Rod.Barn = aa.modExp64(Rod.Ring, Rod.Manifold, Rod.Element);
+    }
+
+    event DysnomiaNuclearEvent(string What, uint64 Value);
+
+    function ManifoldCompare(Fa storage Rod, Fa storage Cone) internal view returns(bool) {
+        //emit DysnomiaNuclearEvent("Manifold Created", Rod.Barn);
+        return(Rod.Manifold == Cone.Manifold && Rod.Ring == Cone.Ring && Rod.Barn == Cone.Barn);
+    }
+
+    function Charge(Fa storage Rod, uint64 Psi) internal returns(uint64) {
+        Rod.Alpha = aa.modExp64(Rod.Barn, Psi, Rod.Ring);
+        //emit DysnomiaNuclearEvent("Alpha Charged", Rod.Alpha);
+        return Rod.Alpha;
+    }
+
+    function Induce(Fa storage Rod, uint64 Sigma) internal returns(uint64) {
+        Rod.Alpha = aa.modExp64(Sigma, Rod.Manifold, Rod.Ring);
+        //emit DysnomiaNuclearEvent("Alpha Induced", Rod.Alpha);
+        return Rod.Alpha;
+    }
+
+    function Torque(Fa storage Rod, uint64 Sigma) internal returns(uint64) {
+        Rod.Alpha = aa.modExp64(Sigma, Rod.Element, Rod.Channel);
+        //emit DysnomiaNuclearEvent("Alpha TORQUE", Rod.Alpha);
+        return Rod.Alpha;
+    }
+
+    function Amplify(Fa storage Rod, uint64 Upsilon) internal returns(uint64) {
+        return Torque(Rod, Upsilon);
+    }
+
+    function Sustain(Fa storage Rod, uint64 Ohm) internal returns(uint64) {
+        return Torque(Rod, Ohm);
+    }
+
+    function React(Fa storage Rod, uint64 Pi, uint64 Theta) internal {
+        _mintToCap();
+        Rod.Eta = aa.modExp64(Pi, Rod.Channel, Theta);
+        Rod.Kappa = aa.modExp64(Pi, Theta, Rod.Channel);
+        assert(Rod.Eta != 0 && Rod.Kappa != 0);
+        //emit DysnomiaNuclearEvent(">>", Rod.Eta);
+        //emit DysnomiaNuclearEvent("<<", Rod.Kappa);
+    }
+}

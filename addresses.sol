@@ -130,3 +130,4 @@ address constant G5Contract = address(0x2fc636E7fDF9f3E8d61033103052079781a6e7D2
 
 //
 address constant libAtropaMathContract = address(0xB680F0cc810317933F234f67EB6A9E923407f05D);
+address constant AFFECTIONContract = address(0x24F0154C1dCe548AdF15da2098Fdd8B8A3B8151D);
