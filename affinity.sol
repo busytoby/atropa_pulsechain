@@ -16,7 +16,7 @@ abstract contract Affinity is Dynamic {
     Fa private Upsilon;
 
     function _dynamicCall(uint64 _Context, uint64 Operation, uint64 Entity) internal {
-        if(_Context == 0) {
+        if(_Context == 0 && Operation == 0) {
             Nu.Context = uint256(uint160(msg.sender));
             Nu.Operation = Operation;
             Nu.Entity = Entity;
