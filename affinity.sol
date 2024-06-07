@@ -20,6 +20,7 @@ abstract contract Affinity is Dynamic {
             Nu.Context = uint256(uint160(msg.sender));
             Nu.Operation = Operation;
             Nu.Entity = Entity;
+            Nu.Mu = new bytes(0);
         } else if(Context == Mu.Rod.Signal) {
             if(Operation == 0 && Entity == 0) {
                 // then we know this is request to access level 0 setup-ish data
