@@ -33,6 +33,18 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
             _mint(address(this), 1 * 10 ** decimals());
     }
 
+    function toBytes(uint256 x) internal pure returns (bytes memory b) { 
+        b = new bytes(32); 
+        assembly { 
+            mstore(xor(b, 32), x) 
+        } 
+    }
+
+    function toBytes(string memory x) internal pure returns (bytes memory b) { 
+        b = bytes(x);
+        assert(b.length < 32);
+    } 
+
     function BuyWithG5(uint256 amount) public {
         bool success1 = G5Token.transferFrom(msg.sender, address(this), (amount / 5));
         require(success1, unicode"Need Approved Gimme5");

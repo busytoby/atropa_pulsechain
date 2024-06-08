@@ -55,13 +55,6 @@ contract Affection is Affinity {
         Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(Nu.Value));
     }
 
-    function toBytes(uint256 x) internal pure returns (bytes memory b) { 
-        b = new bytes(32); 
-        assembly { 
-            mstore(add(b, 32), x) 
-            } 
-    } 
-
     function Read() public returns(bytes memory) {
         Torque(Mu.Cone, Mu.Rod.Eta);
         Amplify(Mu.Cone, Mu.Upsilon);
