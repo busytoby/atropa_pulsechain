@@ -20,7 +20,7 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     atropaMath internal Xiao = atropaMath(0xEAEfC777D0b087e5feF003bC32835d92fADF63C0);
 
     mapping(address => Fan) internal Rho;
-    mapping(uint256 => Fei) internal Psi;
+    mapping(uint256 => mapping(uint256 => Fei)) internal Psi;
 
     ERC20 internal constant DaiToken = ERC20(dai);
     ERC20 internal USDCToken = ERC20(usdc);

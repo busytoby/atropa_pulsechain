@@ -30,7 +30,7 @@ contract Affection is Affinity {
     }
 
     function Beta(uint64 _b) public {
-        Nu.Operation = _b;
+        Nu.Operator = _b;
         Torque(Mu.Rod, _b);
         Amplify(Mu.Rod, Mu.Rod.Alpha);
         Sustain(Mu.Rod, Mu.Rod.Alpha);
@@ -40,7 +40,7 @@ contract Affection is Affinity {
     }
 
     function Upsilon(uint64 _a, bool Phi) public {
-        Nu.Entity = _a;
+        Nu.Value = _a;
         Mu.Upsilon = Phi ? _a ^ Mu.Ohm ^ Mu.Pi : _a ^ Mu.Ohm;
         _mintToCap();
     }
@@ -52,9 +52,17 @@ contract Affection is Affinity {
         React(Mu.Rod, Mu.Cone.Alpha, Mu.Rod.Channel);
         React(Mu.Cone, Mu.Cone.Alpha, Mu.Cone.Channel);
         _mintToCap();
+        Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(Nu.Value));
     }
 
-    function Read() public {
+    function toBytes(uint256 x) internal pure returns (bytes memory b) { 
+        b = new bytes(32); 
+        assembly { 
+            mstore(add(b, 32), x) 
+            } 
+    } 
+
+    function Read() public returns(bytes memory) {
         Torque(Mu.Cone, Mu.Rod.Eta);
         Amplify(Mu.Cone, Mu.Upsilon);
         Sustain(Mu.Cone, Mu.Ohm);
@@ -62,6 +70,7 @@ contract Affection is Affinity {
         React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
         Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
         _mintToCap();
+        return Psi[Nu.Context][Nu.Operator].Theta;
     }
 
     function View() public view returns(Faung memory) {

@@ -13,9 +13,10 @@ abstract contract Affinity is Dynamic {
     Fa private Upsilon;
 
     function _dynamicCall(uint64 _Context, uint64 Operation, uint64 Entity) internal {
+        /*
         if(_Context == 0 && Operation == 0) {
             Nu.Context = uint256(uint160(msg.sender));
-            Nu.Operation = Operation;
+            Nu.Operator = Operation;
             Nu.Entity = Entity;
             Nu.Theta = new bytes(0);
         } else if(_Context == Mu.Rod.Signal) {
@@ -24,5 +25,6 @@ abstract contract Affinity is Dynamic {
             }
             // then we knoe this is during setup-ish
         } else assert(false);
+        */
     }
 }
