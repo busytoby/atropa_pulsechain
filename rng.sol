@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "affinity.sol";
 
 contract Affection is Affinity {
@@ -11,26 +8,29 @@ contract Affection is Affinity {
         Alpha(Mu.Rod.Signal);
         Beta(Mu.Upsilon);
         Upsilon(Mu.Upsilon, false);
-        Pi();
-        Chi();
+        Write();
+        Read();
         Upsilon(Mu.Upsilon, true);
 
         _mint(address(this), 1 * 10 ** decimals());
     }
 
     function Alpha(uint64 _a) public {
+        Nu.Context = _a;
         Charge(_a);
-        _dynamicCall(_a, 0, 0);
         assert(Mu.Sigma > 4);
         Induce();
         Torque();
         Amplify();
         Sustain();
         React();
+        if(Nu.Context == 0 && (msg.sender != owner()))
+            Nu.Context = uint256(uint160(msg.sender));
         _mintToCap();
     }
 
     function Beta(uint64 _b) public {
+        Nu.Operation = _b;
         Torque(Mu.Rod, _b);
         Amplify(Mu.Rod, Mu.Rod.Alpha);
         Sustain(Mu.Rod, Mu.Rod.Alpha);
@@ -40,11 +40,12 @@ contract Affection is Affinity {
     }
 
     function Upsilon(uint64 _a, bool Phi) public {
+        Nu.Entity = _a;
         Mu.Upsilon = Phi ? _a ^ Mu.Ohm ^ Mu.Pi : _a ^ Mu.Ohm;
         _mintToCap();
     }
 
-    function Pi() public {
+    function Write() public {
         Torque(Mu.Cone, Mu.Rod.Kappa);
         Amplify(Mu.Cone, Mu.Cone.Alpha);
         Sustain(Mu.Cone, Mu.Cone.Alpha);
@@ -53,7 +54,7 @@ contract Affection is Affinity {
         _mintToCap();
     }
 
-    function Chi() public {
+    function Read() public {
         Torque(Mu.Cone, Mu.Rod.Eta);
         Amplify(Mu.Cone, Mu.Upsilon);
         Sustain(Mu.Cone, Mu.Ohm);
