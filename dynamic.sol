@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "fan.sol";
 import "faung.sol";
-import "fei.sol";
 import "conjecture.sol";
 
 abstract contract Dynamic is Conjecture {

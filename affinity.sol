@@ -2,29 +2,62 @@
 pragma solidity ^0.8.21;
 import "dynamic.sol";
 
-struct Registry {
-    uint256[] keys;
-    mapping(uint256 => uint256) indexOf;
-    mapping(uint256 => bool) inserted;
-}
-
 abstract contract Affinity is Dynamic {
-    Registry internal Sigma;
     Fa private Upsilon;
 
-    function _dynamicCall(uint64 _Context, uint64 Operation, uint64 Entity) internal {
-        /*
-        if(_Context == 0 && Operation == 0) {
-            Nu.Context = uint256(uint160(msg.sender));
-            Nu.Operator = Operation;
-            Nu.Entity = Entity;
-            Nu.Theta = new bytes(0);
-        } else if(_Context == Mu.Rod.Signal) {
-            if(Operation == 0 && Entity == 0) {
-                // then we know this is request to access level 0 setup-ish data
-            }
-            // then we knoe this is during setup-ish
-        } else assert(false);
-        */
+    function Alpha(uint64 _a) internal {
+        Nu.Context = _a;
+        Charge(_a);
+        assert(Mu.Sigma > 4);
+        Induce();
+        Torque();
+        Amplify();
+        Sustain();
+        React();
+        if(Nu.Context == 0 && (msg.sender != owner()))
+        Nu.Context = uint256(uint160(msg.sender));
+        _mintToCap();
+    }
+
+    function Beta(uint64 _b) internal {
+        Nu.Operator = _b;
+        Torque(Mu.Rod, _b);
+        Amplify(Mu.Rod, Mu.Rod.Alpha);
+        Sustain(Mu.Rod, Mu.Rod.Alpha);
+        React(Mu.Rod, Mu.Rod.Alpha, Mu.Cone.Dynamo);
+        React(Mu.Cone, Mu.Rod.Alpha, Mu.Rod.Dynamo);
+        _mintToCap();
+    }
+
+    function Pi() internal {
+        Torque(Mu.Cone, Mu.Rod.Kappa);
+        Amplify(Mu.Cone, Mu.Cone.Alpha);
+        Sustain(Mu.Cone, Mu.Cone.Alpha);
+        React(Mu.Rod, Mu.Cone.Alpha, Mu.Rod.Channel);
+        React(Mu.Cone, Mu.Cone.Alpha, Mu.Cone.Channel);
+        _mintToCap();
+    }
+
+    function Chi() internal {
+        Torque(Mu.Cone, Mu.Rod.Eta);
+        Amplify(Mu.Cone, Mu.Upsilon);
+        Sustain(Mu.Cone, Mu.Ohm);
+        React(Mu.Cone, Mu.Pi, Mu.Cone.Dynamo);
+        React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
+        Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+        _mintToCap();
+    }
+
+    function Phi() internal returns(uint64) {
+        Amplify(Mu.Cone, Mu.Upsilon);
+        Sustain(Mu.Cone, Mu.Ohm);
+        React(Mu.Cone, Mu.Pi, Mu.Cone.Dynamo);
+        React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
+        Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+
+        Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi;
+        
+        _mintToCap();
+        return Mu.Upsilon;
     }
 }
