@@ -45,17 +45,26 @@ contract Affection is Affinity {
         _mintToCap();
     }
 
-    function Write() public {
+    function Write(uint64 _c, uint64 _o, uint64 _v) public {
+        Pi();
+        Psi[_c][_o].Theta = bytes.concat(Psi[_c][_o].Theta, toBytes(_v));
+    }
+
+    function Pi() public {
         Torque(Mu.Cone, Mu.Rod.Kappa);
         Amplify(Mu.Cone, Mu.Cone.Alpha);
         Sustain(Mu.Cone, Mu.Cone.Alpha);
         React(Mu.Rod, Mu.Cone.Alpha, Mu.Rod.Channel);
         React(Mu.Cone, Mu.Cone.Alpha, Mu.Cone.Channel);
         _mintToCap();
-        Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(Nu.Value));
     }
 
     function Read() public returns(bytes memory) {
+        Chi();
+        return Psi[Nu.Context][Nu.Operator].Theta;
+    }
+
+    function Chi() public {
         Torque(Mu.Cone, Mu.Rod.Eta);
         Amplify(Mu.Cone, Mu.Upsilon);
         Sustain(Mu.Cone, Mu.Ohm);
@@ -63,7 +72,6 @@ contract Affection is Affinity {
         React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
         Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
         _mintToCap();
-        return Psi[Nu.Context][Nu.Operator].Theta;
     }
 
     function View() public view returns(Faung memory) {
