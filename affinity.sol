@@ -3,8 +3,6 @@ pragma solidity ^0.8.21;
 import "dynamic.sol";
 
 abstract contract Affinity is Dynamic {
-    Fa private Upsilon;
-
     function Alpha(uint64 _a) internal {
         Nu.Context = _a;
         Charge(_a);
@@ -29,22 +27,30 @@ abstract contract Affinity is Dynamic {
         _mintToCap();
     }
 
-    function Pi() internal {
+    function Pi(uint64 _a) internal {
         Torque(Mu.Cone, Mu.Rod.Kappa);
         Amplify(Mu.Cone, Mu.Cone.Alpha);
         Sustain(Mu.Cone, Mu.Cone.Alpha);
         React(Mu.Rod, Mu.Cone.Alpha, Mu.Rod.Channel);
         React(Mu.Cone, Mu.Cone.Alpha, Mu.Cone.Channel);
+        Kappa(_a, false);
         _mintToCap();
     }
 
-    function Chi() internal {
+    function Chi(uint64 _a) internal {
         Torque(Mu.Cone, Mu.Rod.Eta);
         Amplify(Mu.Cone, Mu.Upsilon);
         Sustain(Mu.Cone, Mu.Ohm);
         React(Mu.Cone, Mu.Pi, Mu.Cone.Dynamo);
         React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
         Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
+        Kappa(_a, true);
+        _mintToCap();
+    }
+
+    function Kappa(uint64 _a, bool _Phi) private {
+        Nu.Value = _a;
+        Mu.Upsilon = _Phi ? _a ^ Mu.Ohm ^ Mu.Pi : _a ^ Mu.Ohm;
         _mintToCap();
     }
 
