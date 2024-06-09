@@ -7,8 +7,7 @@ contract Affection is Affinity {
         NewDynamic(Xiao.Random(), Xiao.Random(), Xiao.Random());
         Alpha(Mu.Rod.Signal);
         Beta(Mu.Upsilon);
-        Upsilon(Mu.Upsilon, false);
-        Write(Mu.Rod.Signal, Mu.Upsilon, Mu.Upsilon);
+        Write(Mu.Upsilon);
         Read();
         Upsilon(Mu.Upsilon, true);
 
@@ -21,12 +20,10 @@ contract Affection is Affinity {
         _mintToCap();
     }
 
-    function Write(uint64 _c, uint64 _o, uint64 _v) public {
-        Alpha(_c);
-        Beta(_o);
+    function Write(uint64 _v) public {
         Upsilon(_v, false);
         Pi();
-        Psi[_c][_o].Theta = bytes.concat(Psi[_c][_o].Theta, toBytes(_v));
+        Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(_v));
     }
 
     function Read() public returns(bytes memory) {
