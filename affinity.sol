@@ -13,7 +13,7 @@ abstract contract Affinity is Dynamic {
         Sustain();
         React();
         if(Nu.Context == 0 && (msg.sender != owner()))
-        Nu.Context = uint256(uint160(msg.sender));
+            Nu.Context = uint256(uint160(msg.sender));
         _mintToCap();
     }
 
