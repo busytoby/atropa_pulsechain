@@ -38,4 +38,9 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
         b = bytes(x);
         assert(b.length < 32);
     }
+
+    event LogEvent(string, bytes);
+    function Log(string calldata log, bytes calldata data) internal {
+        emit LogEvent(log, data);
+    }
 }
