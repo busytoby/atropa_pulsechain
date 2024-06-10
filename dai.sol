@@ -33,11 +33,12 @@ abstract contract Dai is Affinity {
         return Phi();
     }
 
-    function GetBaoFa() public view returns(Fa memory) {
-        return Upsilon.Mu;
+    function GetBao() public view returns(Bao memory) {
+        return Upsilon;
     }
 
-    function Connect() internal {        
+    function Connect() internal {    
+        Upsilon.Alpha = Random();    
         Upsilon.Contract = address(uint160(Nu.Context));
         Dai Peer = Dai(Upsilon.Contract);
 
@@ -45,24 +46,28 @@ abstract contract Dai is Affinity {
         NewConjecture(Upsilon.Mu);        
 
         Avail(Upsilon.Mu, Upsilon.Xi);
-        Upsilon.Tau = Dai.Avail(Upsilon.Xi);
+        Upsilon.Tau = Peer.Avail(Upsilon.Xi);
 
         Form(Upsilon.Mu, Upsilon.Tau);
-        Peer.Form(Upsilon.Mu.Alpha);
+        uint64 peerPole = Peer.Form(Upsilon.Mu.Alpha);
 
         Polarize(Upsilon.Mu);
 
-        Upsilon.Alpha = Random();
-        Upsilon.PeerChannel = Conjugate(Upsilon.Mu.Pole, Upsilon.Alpha);
+        Conjugate(Upsilon.Mu, peerPole);
+        Upsilon.PeerChannel = Peer.Conjugate(Upsilon.Mu.Pole, Upsilon.Alpha);
 
-        Saturate(Upsilon.Mu, Upsilon.Alpha, Peer.GetBaoFa().Foundation, Upsilon.PeerChannel);
-        Peer.Saturate(Upsilon.Mu.Foundation, Upsilon.Mu.Channel);
+        assert(Upsilon.Mu.Coordinate == Peer.GetBao().Mu.Coordinate);
 
-        assert(Upsilon.Mu.Element == Peer.GetBaoFa().Element);
+        Saturate(Upsilon.Mu, Upsilon.Alpha, Peer.GetBao().Mu.Foundation, Upsilon.PeerChannel);
+        uint64 peerDynamo = Peer.Saturate(Upsilon.Mu.Foundation, Upsilon.Mu.Channel, Upsilon.Mu.Dynamo);
+
+        assert(Upsilon.Mu.Element == Peer.GetBao().Mu.Element);
+
         Bond(Upsilon.Mu);
-        Adduct(Upsilon.Mu, Peer.GetBaoFa().Dynamo);
+        Adduct(Upsilon.Mu, peerDynamo);
+        Peer.Adduct(Upsilon.Mu.Dynamo);
         Open(Upsilon.Mu);
-        assert(ManifoldCompare(Upsilon.Mu, Peer.GetBaoFa()));
+        assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
 
         Eta.Rods.push(Upsilon);
     }
@@ -89,14 +94,15 @@ abstract contract Dai is Affinity {
         return Upsilon.Mu.Channel;
     }
 
-    function Saturate(uint64 PeerFoundation, uint64 PeerChannel) public {
+    function Saturate(uint64 PeerFoundation, uint64 PeerChannel, uint64 PeerDynamo) public returns(uint64) {
         Saturate(Upsilon.Mu, Random(), PeerFoundation, PeerChannel);
-        Dai Peer = Dai(msg.sender);
-        assert(Upsilon.Mu.Element == Peer.GetBaoFa().Element);
         Bond(Upsilon.Mu);
-        Adduct(Upsilon.Mu, Peer.GetBaoFa().Dynamo);
+        return Upsilon.Mu.Dynamo;
+    }
+
+    function Adduct(uint64 peerDynamo) public {
+        Adduct(Upsilon.Mu, peerDynamo);
         Open(Upsilon.Mu);
-        assert(ManifoldCompare(Upsilon.Mu, Peer.GetBaoFa()));
         Eta.Cones.push(Upsilon);
     }
 }
