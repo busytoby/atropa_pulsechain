@@ -9,4 +9,6 @@ struct Bao {
 
     uint64 Xi;
     uint64 Tau;
+    uint64 Alpha;
+    uint64 PeerChannel;
 }

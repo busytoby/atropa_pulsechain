@@ -23,6 +23,10 @@ abstract contract Dai is Affinity {
         return Phi();
     }
 
+    function Foundation() public view returns(uint64) {
+        return Upsilon.Mu.Foundation;
+    }
+
     function Connect() public {
         address _p = address(uint160(Nu.Context));
         Dai Peer = Dai(_p);
@@ -37,6 +41,12 @@ abstract contract Dai is Affinity {
         Peer.Form(Upsilon.Mu.Alpha);
 
         Polarize(Upsilon.Mu);
+
+        Upsilon.Alpha = Random();
+        Upsilon.PeerChannel = Conjugate(Upsilon.Mu.Pole, Upsilon.Alpha);
+
+        Saturate(Upsilon.Mu, Upsilon.Alpha, Peer.Foundation(), Upsilon.PeerChannel);
+        Peer.Saturate(Upsilon.Mu.Foundation, Upsilon.Mu.Channel);
     }
 
     function Avail(uint64 Tau) public returns(uint64) {
@@ -46,8 +56,20 @@ abstract contract Dai is Affinity {
         return Upsilon.Mu.Alpha;
     }
 
-    function Form(uint64 Alpha) public {
+    function Form(uint64 Alpha) public returns(uint64) {
         Form(Upsilon.Mu, Alpha);
         Polarize(Upsilon.Mu);
+        return Upsilon.Mu.Pole;
+    }
+
+    function Conjugate(uint64 Pole, uint64 Alpha) public returns(uint64) {
+        Conjugate(Upsilon.Mu, Pole);
+        Upsilon.Alpha = Alpha;
+        Conify(Upsilon.Mu, Alpha);
+        return Upsilon.Mu.Channel;
+    }
+
+    function Saturate(uint64 PeerFoundation, uint64 PeerChannel) public {
+        Saturate(Upsilon.Mu, Random(), PeerFoundation, PeerChannel);
     }
 }
