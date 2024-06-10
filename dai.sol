@@ -53,6 +53,7 @@ abstract contract Dai is Affinity {
         Peer.Saturate(Upsilon.Mu.Foundation, Upsilon.Mu.Channel);
 
         assert(Upsilon.Mu.Element == Peer.Element());
+        Bond(Upsilon.Mu);
     }
 
     function Avail(uint64 Tau) public returns(uint64) {
@@ -79,5 +80,6 @@ abstract contract Dai is Affinity {
         Saturate(Upsilon.Mu, Random(), PeerFoundation, PeerChannel);
         Dai Peer = Dai(msg.sender);
         assert(Upsilon.Mu.Element == Peer.Element());
+        Bond(Upsilon.Mu);
     }
 }
