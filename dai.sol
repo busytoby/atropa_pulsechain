@@ -75,7 +75,30 @@ abstract contract Dai is Affinity {
         assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
         _mintToCap();
 
+        Alpha(Upsilon.Mu.Signal);
+        //Beta()
+
         Rho[Upsilon.Contract] = Upsilon;
+    }
+
+    function Encode(bytes memory Rho, uint64 Eta) public
+    {
+        uint256 _size = Rho.length;
+        Upsilon.Theta.Theta = new bytes(_size);
+
+        uint64 _beta = Xiao.modExp64(Eta, Mu.Ohm, Mu.Pi);
+        Eta = Eta ^ _beta;
+        for (uint64 i = 0; i < _size;)
+        {
+            bytes memory Iota = new bytes(_beta);
+            for (uint64 j = 0; j < Iota.length && i < _size; j++) {
+                Upsilon.Theta.Theta[i] = (Iota[j] ^ Rho[i]);
+                i++;
+            }
+            _beta = Xiao.modExp64(_beta, Mu.Ohm, Mu.Pi);
+            Eta = Eta ^ _beta;
+        }
+        Eta = Eta ^ Mu.Ohm;
     }
 
 
