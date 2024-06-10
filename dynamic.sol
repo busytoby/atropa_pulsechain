@@ -17,6 +17,10 @@ abstract contract Dynamic is Conjecture {
         Mu.Chi = 0;
     }
 
+    function GetDynamic() public view returns(Faung memory) {
+        return Mu;
+    }
+
     function OpenManifolds(uint64 Xi, uint64 Alpha, uint64 Beta) internal {
         ConductorGenerate(Xi);
 

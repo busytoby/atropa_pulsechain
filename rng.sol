@@ -17,6 +17,7 @@ contract Blotter is Affinity {
     }
 
     function Write(uint64 _v) public {
+        assert(msg.sender == owner() || Nu.Context == uint256(uint160(msg.sender)));
         bytes memory _data = toBytes(_v);
         Pi(_v);
         Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(_data.length), _data, NULL);
@@ -25,10 +26,6 @@ contract Blotter is Affinity {
     function Read() public returns(bytes memory) {
         Chi(Mu.Upsilon);
         return Psi[Nu.Context][Nu.Operator].Theta;
-    }
-
-    function View() public view returns(Faung memory) {
-        return Mu;
     }
 
     function Generate() public returns(uint64) {

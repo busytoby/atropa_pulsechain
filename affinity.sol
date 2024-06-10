@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 import "dynamic.sol";
 
 abstract contract Affinity is Dynamic {
-    function Alpha(uint64 _a) internal {
+    function Alpha(uint64 _a) public {
         Nu.Context = _a;
         Charge(_a);
         assert(Mu.Sigma > 4);
@@ -17,7 +17,7 @@ abstract contract Affinity is Dynamic {
         _mintToCap();
     }
 
-    function Beta(uint64 _b) internal {
+    function Beta(uint64 _b) public {
         Nu.Operator = _b;
         Torque(Mu.Rod, _b);
         Amplify(Mu.Rod, Mu.Rod.Alpha);
