@@ -27,6 +27,10 @@ abstract contract Dai is Affinity {
         return Upsilon.Mu.Foundation;
     }
 
+    function Element() public view returns(uint64) {
+        return Upsilon.Mu.Element;
+    }
+
     function Connect() public {
         address _p = address(uint160(Nu.Context));
         Dai Peer = Dai(_p);
@@ -47,6 +51,8 @@ abstract contract Dai is Affinity {
 
         Saturate(Upsilon.Mu, Upsilon.Alpha, Peer.Foundation(), Upsilon.PeerChannel);
         Peer.Saturate(Upsilon.Mu.Foundation, Upsilon.Mu.Channel);
+
+        assert(Upsilon.Mu.Element == Peer.Element());
     }
 
     function Avail(uint64 Tau) public returns(uint64) {
