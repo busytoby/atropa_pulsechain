@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "affinity.sol";
+import "bao.sol";
 
-abstract contract Dai is Affinity {
+abstract contract Dai is Affinity {    
+    Bao private Upsilon;
     bytes constant private NULL = bytes(unicode"\u0009\u0009\u0009");
 
     function Write(uint64 _v) public {
