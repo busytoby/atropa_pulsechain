@@ -12,4 +12,9 @@ contract Blotter is Dai {
 
         _mint(address(this), 1 * 10 ** decimals());
     }
+
+    function Connect(address _a) public {
+        Nu.Context = uint256(uint160(_a));
+        Connect();
+    }
 }

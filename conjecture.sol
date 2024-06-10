@@ -28,6 +28,9 @@ abstract contract Conjecture is Feh {
         Rod.Base = Xiao.Random();
         Rod.Secret = Xiao.Random();
         Rod.Signal = Xiao.Random();
+        //Rod.Base = 541566;
+        //Rod.Secret = 65236;
+        //Rod.Signal = 54262907;
     }
 
    function Tune(Fa storage Rod) internal {
@@ -75,9 +78,9 @@ abstract contract Conjecture is Feh {
         
         uint64 Beta = Xiao.modExp64(Epsilon, Rod.Identity, MotzkinPrime);
         uint64 Rho = Xiao.modExp64(Theta, Rod.Identity, MotzkinPrime);
-        Rod.Eta = Xiao.modExp64(Epsilon, Rod.Signal, MotzkinPrime);
+        uint64 Eta = Xiao.modExp64(Epsilon, Rod.Signal, MotzkinPrime);
 
-        uint64 Phi = Rho + Rod.Eta;
+        uint64 Phi = Rho + Eta;
         Rod.Element = Beta + Phi;
 
         Rod.Dynamo = Xiao.modExp64(Theta, Rod.Signal, MotzkinPrime);

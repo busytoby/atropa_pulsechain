@@ -4,7 +4,7 @@ import "fa.sol";
 import "fei.sol";
 
 struct Fan {
-    Fa[] Rods;
+    //Fa[] Rods;
     Fa[] Cones;
-    mapping(uint256 => Fei) Tau;
+    //mapping(uint256 => Fei) Tau;
 }

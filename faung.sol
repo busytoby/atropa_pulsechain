@@ -8,7 +8,6 @@ struct Faung {
 
     uint64 Phi;
     uint64 Eta;
-    uint64 Mu;
     uint64 Xi;
     uint64 Sigma;
     uint64 Rho;

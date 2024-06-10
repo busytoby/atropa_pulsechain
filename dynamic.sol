@@ -17,7 +17,7 @@ abstract contract Dynamic is Conjecture {
         Mu.Chi = 0;
     }
 
-    function GetDynamic() public view returns(Faung memory) {
+    function GetFaung() public view returns(Faung memory) {
         return Mu;
     }
 

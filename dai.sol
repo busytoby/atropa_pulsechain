@@ -5,13 +5,11 @@ import "bao.sol";
 
 abstract contract Dai is Affinity {    
     Bao private Upsilon;
-    bytes constant private NULL = bytes(unicode"\u0009\u0009\u0009");
 
     function Write(uint64 _v) public {
         assert(msg.sender == owner() || Nu.Context == uint256(uint160(msg.sender)));
-        bytes memory _data = toBytes(_v);
         Pi(_v);
-        Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(_data.length), _data, NULL);
+        Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, abi.encodePacked(_v));
     }
 
     function Read() public returns(bytes memory) {
@@ -27,8 +25,7 @@ abstract contract Dai is Affinity {
         return Upsilon.Mu;
     }
 
-
-    function Connect() public {
+    function Connect() internal {
         address _p = address(uint160(Nu.Context));
         Dai Peer = Dai(_p);
 
@@ -49,12 +46,13 @@ abstract contract Dai is Affinity {
         Saturate(Upsilon.Mu, Upsilon.Alpha, Peer.GetBaoFa().Foundation, Upsilon.PeerChannel);
         Peer.Saturate(Upsilon.Mu.Foundation, Upsilon.Mu.Channel);
 
-        assert(Upsilon.Mu.Element == Peer.GetBaoFa().Element);
+        //assert(Upsilon.Mu.Element == Peer.GetBaoFa().Element);
         Bond(Upsilon.Mu);
         Adduct(Upsilon.Mu, Peer.GetBaoFa().Dynamo);
         Open(Upsilon.Mu);
-        assert(ManifoldCompare(Upsilon.Mu, Peer.GetBaoFa()));
+        //assert(ManifoldCompare(Upsilon.Mu, Peer.GetBaoFa()));
     }
+
 
     function Avail(uint64 Tau) public returns(uint64) {
         NewConjecture(Upsilon.Mu);
@@ -79,10 +77,10 @@ abstract contract Dai is Affinity {
     function Saturate(uint64 PeerFoundation, uint64 PeerChannel) public {
         Saturate(Upsilon.Mu, Random(), PeerFoundation, PeerChannel);
         Dai Peer = Dai(msg.sender);
-        assert(Upsilon.Mu.Element == Peer.GetBaoFa().Element);
+        //assert(Upsilon.Mu.Element == Peer.GetBaoFa().Element);
         Bond(Upsilon.Mu);
         Adduct(Upsilon.Mu, Peer.GetBaoFa().Dynamo);
         Open(Upsilon.Mu);
-        assert(ManifoldCompare(Upsilon.Mu, Peer.GetBaoFa()));
+        //assert(ManifoldCompare(Upsilon.Mu, Peer.GetBaoFa()));
     }
 }

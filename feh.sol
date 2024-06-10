@@ -17,7 +17,7 @@ interface atropaMath {
 abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     uint64 constant public MotzkinPrime = 953467954114363;
     //atropaMath internal Xiao = atropaMath(libAtropaMathContract);
-    atropaMath internal Xiao = atropaMath(0xEAEfC777D0b087e5feF003bC32835d92fADF63C0);
+    atropaMath internal Xiao = atropaMath(0xDf159010A8d1B173262EBb3D7b5393Dc0333301d);
 
     mapping(address => Fan) internal Rho;
     mapping(uint256 => mapping(uint256 => Fei)) internal Psi;
@@ -60,6 +60,26 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     function BuyWithMATH(uint256 amount) public {
         bool success1 = ERC20(libAtropaMathContract).transferFrom(msg.sender, address(this), amount);
         require(success1, unicode"Need Approved MATH");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithDAI(uint256 amount) public {
+        bool success1 = DaiToken.transferFrom(msg.sender, address(this), amount);
+        require(success1, unicode"Need Approved DAI");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithUSDC(uint256 amount) public {
+        uint256 _a = (amount / (10**decimals())) * 10 ** USDCToken.decimals();
+        bool success1 = USDCToken.transferFrom(msg.sender, address(this), _a);
+        require(success1, unicode"Need Approved USDC");
+        ERC20(address(this)).transfer(msg.sender, amount);
+    }
+
+    function BuyWithUSDT(uint256 amount) public {
+        uint256 _a = (amount / (10**decimals())) * 10 ** USDTToken.decimals();
+        bool success1 = USDTToken.transferFrom(msg.sender, address(this), _a);
+        require(success1, unicode"Need Approved USDT");
         ERC20(address(this)).transfer(msg.sender, amount);
     }
 }
