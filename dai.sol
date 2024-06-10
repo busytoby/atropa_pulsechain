@@ -77,5 +77,7 @@ abstract contract Dai is Affinity {
 
     function Saturate(uint64 PeerFoundation, uint64 PeerChannel) public {
         Saturate(Upsilon.Mu, Random(), PeerFoundation, PeerChannel);
+        Dai Peer = Dai(msg.sender);
+        assert(Upsilon.Mu.Element == Peer.Element());
     }
 }
