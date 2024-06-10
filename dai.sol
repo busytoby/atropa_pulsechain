@@ -23,7 +23,31 @@ abstract contract Dai is Affinity {
         return Phi();
     }
 
-    function Connect(address _a) public {
-        
+    function Connect() public {
+        address _p = address(uint160(Nu.Context));
+        Dai Peer = Dai(_p);
+
+        Upsilon.Xi = Xiao.modExp64(Mu.Cone.Signal, Mu.Rod.Channel, MotzkinPrime);
+        NewConjecture(Upsilon.Mu);        
+
+        Avail(Upsilon.Mu, Upsilon.Xi);
+        Upsilon.Tau = Dai.Avail(Upsilon.Xi);
+
+        Form(Upsilon.Mu, Upsilon.Tau);
+        Peer.Form(Upsilon.Mu.Alpha);
+
+        Polarize(Upsilon.Mu);
+    }
+
+    function Avail(uint64 Tau) public returns(uint64) {
+        NewConjecture(Upsilon.Mu);
+        Avail(Upsilon.Mu, Tau);
+        Upsilon.Xi = Tau;
+        return Upsilon.Mu.Alpha;
+    }
+
+    function Form(uint64 Alpha) public {
+        Form(Upsilon.Mu, Alpha);
+        Polarize(Upsilon.Mu);
     }
 }
