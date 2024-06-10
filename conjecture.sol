@@ -100,7 +100,7 @@ abstract contract Conjecture is Feh {
 
     event DysnomiaNuclearEvent(string What, uint64 Value);
 
-    function ManifoldCompare(Fa storage Rod, Fa storage Cone) internal view returns(bool) {
+    function ManifoldCompare(Fa memory Rod, Fa memory Cone) internal pure returns(bool) {
         //emit DysnomiaNuclearEvent("Manifold Created", Rod.Barn);
         return(Rod.Manifold == Cone.Manifold && Rod.Ring == Cone.Ring && Rod.Barn == Cone.Barn);
     }
