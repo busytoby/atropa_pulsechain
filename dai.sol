@@ -22,4 +22,8 @@ abstract contract Dai is Affinity {
     function Random() public returns(uint64) {
         return Phi();
     }
+
+    function Connect(address _a) public {
+        
+    }
 }
