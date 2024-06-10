@@ -41,4 +41,21 @@ contract Blotter is Dai {
         assert(price > 0);
         return price;
     }
+
+    function Configure(string memory key, address _a) public {
+        bytes memory keybytes = bytes(key);
+        assert(keybytes.length < 30);
+        Nu.Context = 0;
+        Nu.Operator = uint256(bytes32(keybytes));
+        Write(_a);
+    }
+
+    function GetConfiguration(string memory key) public returns(address CA) {
+        bytes memory keybytes = bytes(key);
+        assert(keybytes.length < 30);
+        Nu.Context = 0;
+        Nu.Operator = uint256(bytes32(keybytes));
+        bytes memory bpdata = Read();
+        CA = abi.decode(bpdata, (address));
+    }
 }

@@ -10,6 +10,11 @@ abstract contract Dai is Affinity {
         Write(_v, false);
     }
 
+    function Write(address _a) public {
+        assert(msg.sender == owner() || Nu.Context == uint256(uint160(msg.sender)));
+        Psi[Nu.Context][Nu.Operator].Theta = abi.encode(_a);
+    }
+
     function Write(uint64 _v, bool Replace) public {
         assert(msg.sender == owner() || Nu.Context == uint256(uint160(msg.sender)));
         Pi(_v);
@@ -64,7 +69,7 @@ abstract contract Dai is Affinity {
 
 
     function Avail(uint64 Tau) public returns(uint64) {
-        Upsilon.Contract = address(uint160(msg.sender));
+        Upsilon.Contract = msg.sender;
         NewConjecture(Upsilon.Mu);
         Avail(Upsilon.Mu, Tau);
         Upsilon.Xi = Tau;
