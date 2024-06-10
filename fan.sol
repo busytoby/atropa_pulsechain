@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "fa.sol";
 import "fei.sol";
+import "bao.sol";
 
 struct Fan {
-    //Fa[] Rods;
-    Fa[] Cones;
-    //mapping(uint256 => Fei) Tau;
+    Bao[] Rods;
+    Bao[] Cones;
 }
