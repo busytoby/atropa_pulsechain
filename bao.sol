@@ -5,7 +5,6 @@ import "fei.sol";
 
 struct Bao {
     Fa Mu;
-    Fei Theta;
 
     uint64 Xi;
     uint64 Tau;

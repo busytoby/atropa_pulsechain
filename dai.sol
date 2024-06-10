@@ -75,7 +75,7 @@ abstract contract Dai is Affinity {
         assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
         _mintToCap();
 
-        Eta.Rods.push(Upsilon);
+        Rho[Upsilon.Contract] = Upsilon;
     }
 
 
@@ -114,6 +114,6 @@ abstract contract Dai is Affinity {
         _mintToCap();
         Adduct(Upsilon.Mu, peerDynamo);
         Open(Upsilon.Mu);
-        Eta.Cones.push(Upsilon);
+        Rho[Upsilon.Contract] = Upsilon;
     }
 }

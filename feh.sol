@@ -19,7 +19,7 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     //atropaMath internal Xiao = atropaMath(libAtropaMathContract);
     atropaMath internal Xiao = atropaMath(0xDf159010A8d1B173262EBb3D7b5393Dc0333301d);
 
-    mapping(address => Fan) internal Rho;
+    mapping(address => Bao) internal Rho;
     mapping(uint256 => mapping(uint256 => Fei)) internal Psi;
 
     function _mintToCap() internal {
