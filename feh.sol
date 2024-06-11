@@ -23,7 +23,7 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     mapping(uint256 => mapping(uint256 => Fei)) internal Psi;
 
     function _mintToCap() internal {
-        if(totalSupply() <= (1111111111 * 10 ** decimals()))
+        if(totalSupply() <= (1551 * 10 ** decimals()))
             _mint(address(this), 1 * 10 ** decimals());
     }
 

@@ -74,14 +74,15 @@ abstract contract Dai is Affinity {
         Open(Upsilon.Mu);
         assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
         Rho[Upsilon.Contract] = Upsilon;
-        _mintToCap();
 
         Alpha(Upsilon.Mu.Signal);
         uint64 BetaChallenge = Upsilon.Mu.Channel ^ Mu.Upsilon;
+        _mintToCap();
         Beta(Upsilon.Mu.Channel);
         Peer.Activate(BetaChallenge);
         //Write(Upsilon.Mu.Channel, true);
         //Read();
+        Eta.Rods.push(Upsilon);
     }
 
 /*
@@ -151,9 +152,11 @@ abstract contract Dai is Affinity {
 
     function Activate(uint64 peerChallenge) public {
         uint64 peerBeta = peerChallenge ^ Mu.Upsilon;
+        _mintToCap();
         Alpha(Upsilon.Mu.Signal);
         Beta(peerBeta);
         //Write(peerBeta, true);
         //Read();
+        Eta.Cones.push(Upsilon);
     }
 }
