@@ -28,7 +28,7 @@ contract atropaMath is ERC20, ERC20Burnable, Ownable {
         PIToken = ERC20(PIContract);
 
         //RandomNumberGeneratorToken = RNG(0xa96BcbeD7F01de6CEEd14fC86d90F21a36dE2143);
-        RandomNumberGeneratorToken = RNG(0xeF50110EAc01512796e7AaFEe68458800A4bD358);
+        RandomNumberGeneratorToken = RNG(0x659b4cE17Ea8eb6138c2fdd8508b5F0fd7b11bc2);
 
         _mint(address(this), 1 * 10 ** decimals());
     }

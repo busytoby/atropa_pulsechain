@@ -40,7 +40,7 @@ abstract contract Dai is Affinity {
         return Upsilon;
     }
 
-    function Connect() internal {    
+    function Connect() internal returns(uint64) {    
         Upsilon.Alpha = Random();    
         Upsilon.Contract = address(uint160(Nu.Context));
         Dai Peer = Dai(Upsilon.Contract);
@@ -76,30 +76,38 @@ abstract contract Dai is Affinity {
         _mintToCap();
 
         Alpha(Upsilon.Mu.Signal);
-        //Beta()
-
-        Rho[Upsilon.Contract] = Upsilon;
+        uint64 BetaChallenge = Upsilon.Mu.Channel ^ Mu.Upsilon;
+        Beta(Upsilon.Mu.Channel);
+        Peer.Activate(BetaChallenge);
+        //Write(Upsilon.Mu.Channel, true);
+        //Read();
     }
 
-    function Encode(bytes memory Rho, uint64 Eta) public
-    {
+/*
+    function Encode(string memory Rho, uint64 Eta) public returns(uint64) {
+        return Encode(bytes(Rho), Eta);
+    }
+
+    function Encode(bytes memory Rho, uint64 Eta) public returns(uint64) {
         uint256 _size = Rho.length;
         Upsilon.Theta.Theta = new bytes(_size);
 
         uint64 _beta = Xiao.modExp64(Eta, Mu.Ohm, Mu.Pi);
         Eta = Eta ^ _beta;
-        for (uint64 i = 0; i < _size;)
-        {
-            bytes memory Iota = new bytes(_beta);
-            for (uint64 j = 0; j < Iota.length && i < _size; j++) {
+
+        for (uint64 i = 0; i < _size;) {
+            bytes memory Iota = toBytes(_beta);
+            for (uint64 j = 0; j < Iota.length && i < _size;) {
                 Upsilon.Theta.Theta[i] = (Iota[j] ^ Rho[i]);
-                i++;
+                i++; j++;
             }
             _beta = Xiao.modExp64(_beta, Mu.Ohm, Mu.Pi);
             Eta = Eta ^ _beta;
         }
         Eta = Eta ^ Mu.Ohm;
+        return Eta;
     }
+*/
 
 
     function Avail(uint64 Tau) public returns(uint64) {
@@ -138,5 +146,13 @@ abstract contract Dai is Affinity {
         Adduct(Upsilon.Mu, peerDynamo);
         Open(Upsilon.Mu);
         Rho[Upsilon.Contract] = Upsilon;
+    }
+
+    function Activate(uint64 peerChallenge) public {
+        uint64 peerBeta = peerChallenge ^ Mu.Upsilon;
+        Alpha(Upsilon.Mu.Signal);
+        Beta(peerBeta);
+        //Write(peerBeta, true);
+        //Read();
     }
 }
