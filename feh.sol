@@ -21,7 +21,7 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
 
     constructor(address mathContract, uint256 _maxSupply) {
         Xiao = atropaMath(mathContract);
-        maxSupply = _maxSupply;
+        maxSupply = _maxSupply - 1;
     }
 
     mapping(address => Bao) internal Rho;
