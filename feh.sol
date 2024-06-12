@@ -16,14 +16,19 @@ interface atropaMath {
 
 abstract contract Feh is ERC20, ERC20Burnable, Ownable {
     uint64 constant public MotzkinPrime = 953467954114363;
-    atropaMath internal Xiao = atropaMath(libAtropaMathContract);
-    //atropaMath internal Xiao = atropaMath(0xAaA30b30Fb1CF391999De470dfB19ADD74308d42);
+    atropaMath internal Xiao;
+    uint256 private maxSupply;
+
+    constructor(address mathContract, uint256 _maxSupply) {
+        Xiao = atropaMath(mathContract);
+        maxSupply = _maxSupply;
+    }
 
     mapping(address => Bao) internal Rho;
     mapping(uint256 => mapping(uint256 => Fei)) internal Psi;
 
     function _mintToCap() internal {
-        if(totalSupply() <= (1551 * 10 ** decimals()))
+        if(totalSupply() <= (maxSupply * 10 ** decimals()))
             _mint(address(this), 1 * 10 ** decimals());
     }
 

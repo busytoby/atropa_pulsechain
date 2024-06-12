@@ -40,7 +40,7 @@ abstract contract Dai is Affinity {
         return Upsilon;
     }
 
-    function Connect() internal returns(uint64) {    
+    function Connect() internal {    
         Upsilon.Alpha = Random();    
         Upsilon.Contract = address(uint160(Nu.Context));
         Dai Peer = Dai(Upsilon.Contract);

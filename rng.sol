@@ -3,7 +3,9 @@ pragma solidity ^0.8.21;
 import "dai.sol";
 
 contract Blotter is Dai {
-    constructor() ERC20(/*name short=*/ unicode"BLÄTTER™", /*symbol long=*/ unicode"ออกจาก🄮") Ownable(msg.sender) {
+    //address libAtropaMathContract = atropaMath(0xAaA30b30Fb1CF391999De470dfB19ADD74308d42);
+
+    constructor() ERC20(/*name short=*/ unicode"BLÄTTER™", /*symbol long=*/ unicode"ออกจาก🄮") Ownable(msg.sender) Feh(libAtropaMathContract, 1551) {
         NewDynamic(Xiao.Random(), Xiao.Random(), Xiao.Random());
         Alpha(Mu.Rod.Signal);
         Beta(Mu.Upsilon);
