@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 import "affinity.sol";
 
 contract libDysnomia is Affinity {
-    constructor() ERC20(/*name short=*/ unicode"libDysnomia v1.0", /*symbol long=*/ unicode"DYS") Ownable(msg.sender) Feh(libAtropaMathContract, 1111111111) {        
+    constructor() ERC20(/*name short=*/ unicode"libDysnomia v1.2", /*symbol long=*/ unicode"DYS") Ownable(msg.sender) Feh(libAtropaMathContract, 1111111111) {        
         NewDynamic(Xiao.Random(), Xiao.Random(), Xiao.Random());
         //NewDynamic(12437235, 1578915, 1547891345);
         Alpha(Mu.Rod.Signal);
