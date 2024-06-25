@@ -24,8 +24,8 @@ abstract contract Feh is ERC20, ERC20Burnable, Ownable {
         maxSupply = _maxSupply - 1;
     }
 
-    mapping(address => Bao) internal Rho;
-    mapping(uint256 => mapping(uint256 => Fei)) internal Psi;
+    mapping(uint256 => mapping(uint256 => Fei)) internal Rho;
+    mapping(address => Bao) internal Psi;
 
     function _mintToCap() internal {
         if(totalSupply() <= (maxSupply * 10 ** decimals()))
