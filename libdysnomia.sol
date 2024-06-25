@@ -23,12 +23,12 @@ contract libDysnomia is Affinity {
         //bytes memory _data = toBytes(_v);
         Pi(_v);
         //Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, toBytes(_data.length), _data, NULL);
-        Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, abi.encodePacked(_v));
+        Rho[Nu.Context][Nu.Operator].Theta = bytes.concat(Rho[Nu.Context][Nu.Operator].Theta, abi.encodePacked(_v));
     }
 
     function Read() public returns(bytes memory) {
         Chi(Mu.Upsilon);
-        return Psi[Nu.Context][Nu.Operator].Theta;
+        return Rho[Nu.Context][Nu.Operator].Theta;
     }
 
     function Random() public returns(uint64) {
