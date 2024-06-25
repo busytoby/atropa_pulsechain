@@ -14,7 +14,7 @@ interface atropaMath {
     function modExp(uint256 _b, uint256 _e, uint256 _m) external returns (uint256);
 }
 
-abstract contract Feh is ERC20, ERC20Burnable, Ownable {
+abstract contract MEH is ERC20, ERC20Burnable, Ownable {
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath internal Xiao;
     uint256 private maxSupply;

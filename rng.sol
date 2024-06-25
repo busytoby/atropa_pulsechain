@@ -5,7 +5,7 @@ import "dai.sol";
 contract Blotter is Dai {
     //address libAtropaMathContract = atropaMath(0xAaA30b30Fb1CF391999De470dfB19ADD74308d42);
 
-    constructor() ERC20(/*name short=*/ unicode"BLÄTER™", /*symbol long=*/ unicode"ออกจาก🄮") Ownable(msg.sender) Feh(libAtropaMathContract, 1551) {
+    constructor() ERC20(/*name short=*/ unicode"BAR™", /*symbol long=*/ unicode"ออกจาก") Ownable(msg.sender) MEH(libAtropaMathContract, 1551) {
         NewDynamic(Xiao.Random(), Xiao.Random(), Xiao.Random());
         Alpha(Mu.Rod.Signal);
         Beta(Mu.Upsilon);

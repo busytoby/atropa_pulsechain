@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "fa.sol";
-import "feh.sol";
+import "meh.sol";
 
-abstract contract Conjecture is Feh {
+abstract contract Conjecture is MEH {
     function NewConjecture(Fa storage Rod) internal {
         _mintToCap();
         Rod.Tau = 0;
