@@ -12,7 +12,7 @@ abstract contract Dai is Affinity {
 
     function Write(address _a) public {
         assert(msg.sender == owner() || Nu.Context == uint256(uint160(msg.sender)));
-        Psi[Nu.Context][Nu.Operator].Theta = abi.encode(_a);
+        Rho[Nu.Context][Nu.Operator].Theta = abi.encode(_a);
         _mintToCap();
     }
 
@@ -20,16 +20,16 @@ abstract contract Dai is Affinity {
         assert(msg.sender == owner() || Nu.Context == uint256(uint160(msg.sender)));
         Pi(_v);
         if(Replace)
-            Psi[Nu.Context][Nu.Operator].Theta = abi.encode(_v);
+            Rho[Nu.Context][Nu.Operator].Theta = abi.encode(_v);
         else
-            Psi[Nu.Context][Nu.Operator].Theta = bytes.concat(Psi[Nu.Context][Nu.Operator].Theta, abi.encode(_v));
+            Rho[Nu.Context][Nu.Operator].Theta = bytes.concat(Rho[Nu.Context][Nu.Operator].Theta, abi.encode(_v));
         _mintToCap();
     }
 
     function Read() public returns(bytes memory) {
         Chi(Mu.Upsilon);
         _mintToCap();
-        return Psi[Nu.Context][Nu.Operator].Theta;
+        return Rho[Nu.Context][Nu.Operator].Theta;
     }
 
     function Random() public returns(uint64) {
@@ -73,7 +73,7 @@ abstract contract Dai is Affinity {
         Peer.Adduct(Upsilon.Mu.Dynamo);
         Open(Upsilon.Mu);
         assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
-        Rho[Upsilon.Contract] = Upsilon;
+        Psi[Upsilon.Contract] = Upsilon;
 
         Alpha(Upsilon.Mu.Signal);
         uint64 BetaChallenge = Upsilon.Mu.Channel ^ Mu.Upsilon;
@@ -147,7 +147,7 @@ abstract contract Dai is Affinity {
         _mintToCap();
         Adduct(Upsilon.Mu, peerDynamo);
         Open(Upsilon.Mu);
-        Rho[Upsilon.Contract] = Upsilon;
+        Psi[Upsilon.Contract] = Upsilon;
     }
 
     function Activate(uint64 peerChallenge) public {
