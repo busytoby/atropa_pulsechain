@@ -25,7 +25,7 @@ abstract contract MEH is ERC20, ERC20Burnable, Ownable {
     }
 
     mapping(uint256 => mapping(uint256 => Fei)) internal Rho;
-    mapping(address => Bao) internal Psi;
+    mapping(uint256 => Bao) internal Psi;
 
     function _mintToCap() internal {
         if(totalSupply() <= (maxSupply * 10 ** decimals()))

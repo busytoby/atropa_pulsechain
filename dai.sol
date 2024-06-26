@@ -73,7 +73,7 @@ abstract contract Dai is Affinity {
         Peer.Adduct(Upsilon.Mu.Dynamo);
         Open(Upsilon.Mu);
         assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
-        Psi[Upsilon.Contract] = Upsilon;
+        Psi[uint256(uint160(Upsilon.Contract))] = Upsilon;
 
         Alpha(Upsilon.Mu.Signal);
         uint64 BetaChallenge = Upsilon.Mu.Channel ^ Mu.Upsilon;
@@ -147,7 +147,7 @@ abstract contract Dai is Affinity {
         _mintToCap();
         Adduct(Upsilon.Mu, peerDynamo);
         Open(Upsilon.Mu);
-        Psi[Upsilon.Contract] = Upsilon;
+        Psi[uint256(uint160(Upsilon.Contract))] = Upsilon;
     }
 
     function Activate(uint64 peerChallenge) public {
