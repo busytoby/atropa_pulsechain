@@ -42,8 +42,8 @@ abstract contract Dai is Affinity {
 
     function Connect() internal {    
         Upsilon.Alpha = Random();    
-        Upsilon.Contract = address(uint160(Nu.Context));
-        Dai Peer = Dai(Upsilon.Contract);
+        Upsilon.Contract = Nu.Context;
+        Dai Peer = Dai(address(uint160(Upsilon.Contract)));
 
         Upsilon.Xi = Xiao.modExp64(Mu.Cone.Signal, Mu.Rod.Channel, MotzkinPrime);
         NewConjecture(Upsilon.Mu);        
@@ -73,7 +73,7 @@ abstract contract Dai is Affinity {
         Peer.Adduct(Upsilon.Mu.Dynamo);
         Open(Upsilon.Mu);
         assert(ManifoldCompare(Upsilon.Mu, Peer.GetBao().Mu));
-        Psi[uint256(uint160(Upsilon.Contract))] = Upsilon;
+        Psi[Upsilon.Contract] = Upsilon;
 
         Alpha(Upsilon.Mu.Signal);
         uint64 BetaChallenge = Upsilon.Mu.Channel ^ Mu.Upsilon;
@@ -114,7 +114,7 @@ abstract contract Dai is Affinity {
 
     function Avail(uint64 Tau) public returns(uint64) {
         _mintToCap();
-        Upsilon.Contract = msg.sender;
+        Upsilon.Contract = uint256(uint160(msg.sender));
         NewConjecture(Upsilon.Mu);
         Avail(Upsilon.Mu, Tau);
         Upsilon.Xi = Tau;
@@ -147,7 +147,7 @@ abstract contract Dai is Affinity {
         _mintToCap();
         Adduct(Upsilon.Mu, peerDynamo);
         Open(Upsilon.Mu);
-        Psi[uint256(uint160(Upsilon.Contract))] = Upsilon;
+        Psi[Upsilon.Contract] = Upsilon;
     }
 
     function Activate(uint64 peerChallenge) public {

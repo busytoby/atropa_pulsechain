@@ -12,5 +12,5 @@ struct Bao {
     uint64 Alpha;
     uint64 PeerChannel;
 
-    address Contract;
+    uint256 Contract;
 }
