@@ -69,8 +69,8 @@ contract SHIO is SH {
 
         assert(Rho.Rod.Yao() == Rho.Cone.Yao() && RodRing == ConeRing && RodBarn == ConeBarn);
         Ring = RodRing;
-        Rho.Barn = ConeBarn;
         Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
+        Rho.Barn = ConeBarn;
         _mintToCap();
     }
 
