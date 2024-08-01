@@ -2,31 +2,22 @@
 pragma solidity ^0.8.21;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "addresses.sol";
 import "02_sha.sol";
-//import "faung.sol";
 
 struct Shao {
     SHA Rod;
     SHA Cone;
 
-    uint64 Xi;
     uint64 Barn;
 }
 
 contract SHIO is SH {
     Shao internal Rho;
-    uint64 internal Ring;
     uint64 internal Monopole;
 
-    address constant MathLib = 0x430d082e46091173B8A4f9f48752e16e3A3a4c62;
-
-    constructor() ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) Ownable(msg.sender) {
+    constructor(address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) Ownable(msg.sender) {
         Rho.Rod = new SHA("Shio Rod", "SROD", MathLib);
         Rho.Cone = new SHA("Shio Rod", "SCONE", MathLib);
-
-        Rho.Xi = Xiao.Random();
-        OpenManifolds(Rho.Xi, Xiao.Random(), Xiao.Random());
     }
 
     function View() public view returns(Shao memory) {
@@ -44,7 +35,7 @@ contract SHIO is SH {
         Rho.Cone.Polarize();
     }
 
-    function OpenManifolds(uint64 Xi, uint64 Alpha, uint64 Beta) internal {
+    function OpenManifolds(uint64 Xi, uint64 Alpha, uint64 Beta) public onlyOwner returns(uint64) {
         ConductorGenerate(Xi);
 
         Rho.Rod.Conjugate(Rho.Cone.View().Pole);
@@ -68,12 +59,12 @@ contract SHIO is SH {
         (ConeRing, ConeBarn) = Rho.Cone.Open();
 
         assert(Rho.Rod.Yao() == Rho.Cone.Yao() && RodRing == ConeRing && RodBarn == ConeBarn);
-        Ring = RodRing;
         Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
         Rho.Barn = ConeBarn;
         mintToCap();
         Rho.Rod.mintToCap();
         Rho.Cone.mintToCap();
+        return RodRing;
     }
 
     function Ratchet() internal {
