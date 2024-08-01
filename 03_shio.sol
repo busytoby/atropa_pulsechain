@@ -11,8 +11,6 @@ struct Shao {
     SHA Cone;
 
     uint64 Xi;
-    uint64 Epsilon;
-    uint64 Tau;
     uint64 Monopole;
 }
 
