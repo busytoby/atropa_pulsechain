@@ -13,6 +13,7 @@ struct Shao {
     uint64 Xi;
     uint64 Epsilon;
     uint64 Tau;
+    uint64 Monopole;
 }
 
 contract SHIO is SH {
@@ -33,11 +34,11 @@ contract SHIO is SH {
     }
 
     function ConductorGenerate(uint64 Xi) internal {
-        Rho.Epsilon = Rho.Rod.Avail(Xi);
-        Rho.Tau = Rho.Cone.Avail(Xi);
+        Rho.Rod.Avail(Xi);
+        Rho.Cone.Avail(Xi);
 
-        Rho.Rod.Form(Rho.Tau);
-        Rho.Cone.Form(Rho.Epsilon);
+        Rho.Rod.Form(Rho.Cone.View().Contour);
+        Rho.Cone.Form(Rho.Rod.View().Contour);
 
         Rho.Rod.Polarize();
         Rho.Cone.Polarize();
@@ -63,6 +64,7 @@ contract SHIO is SH {
         Rho.Cone.Open();
 
         assert(Rho.Rod.View().Manifold == Rho.Cone.View().Manifold && Rho.Rod.View().Ring == Rho.Cone.View().Ring && Rho.Rod.View().Barn == Rho.Cone.View().Barn);
+        Rho.Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
         _mintToCap();
     }
 

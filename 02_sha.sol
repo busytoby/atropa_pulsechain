@@ -56,9 +56,8 @@ contract SHA is SH {
         Mu.Signal = _rho;
     }
 
-    function Avail(uint64 Xi) public onlyOwner returns(uint64) {
+    function Avail(uint64 Xi) public onlyOwner {
         Mu.Contour = Xiao.modExp64(Xi, Mu.Secret, MotzkinPrime);
-        return Mu.Contour;
     }
 
     function Form(uint64 Chi) public onlyOwner {
