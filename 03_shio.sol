@@ -13,6 +13,7 @@ struct Shao {
 
 contract SHIO is SH {
     Shao internal Rho;
+    uint64 internal Manifold;
     uint64 internal Monopole;
 
     constructor(address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) Ownable(msg.sender) {
@@ -48,23 +49,19 @@ contract SHIO is SH {
 
         Ratchet();
 
-        Rho.Rod.Adduct(Rho.Cone.Calibrate());
-        Rho.Cone.Adduct(Rho.Rod.Calibrate());
+        Manifold = Rho.Rod.Adduct(Rho.Cone.Calibrate());
+        assert(Manifold == Rho.Cone.Adduct(Rho.Rod.Calibrate()));
 
-        uint64 RodRing;
-        uint64 RodBarn;
-        uint64 ConeRing;
-        uint64 ConeBarn;
-        (RodRing, RodBarn) = Rho.Rod.Open();
-        (ConeRing, ConeBarn) = Rho.Cone.Open();
+        uint64 Ring = Xiao.modExp64(Rho.Rod.View().Coordinate, Manifold, Rho.Rod.View().Element);
+        Rho.Barn = Xiao.modExp64(Ring, Manifold, Rho.Rod.View().Element);
+        assert(Ring == Xiao.modExp64(Rho.Cone.View().Coordinate, Manifold, Rho.Cone.View().Element));
+        assert(Rho.Barn == Xiao.modExp64(Ring, Manifold, Rho.Cone.View().Element));
 
-        assert(Rho.Rod.Yao() == Rho.Cone.Yao() && RodRing == ConeRing && RodBarn == ConeBarn);
         Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
-        Rho.Barn = ConeBarn;
         mintToCap();
         Rho.Rod.mintToCap();
         Rho.Cone.mintToCap();
-        return RodRing;
+        return Ring;
     }
 
     function Ratchet() internal {

@@ -26,7 +26,6 @@ struct Fa {
 contract SHA is SH {
     Fa internal Mu;
     uint64 internal Dynamo;
-    uint64 internal Manifold;
 
     constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) Ownable(msg.sender) {
         mintToCap();
@@ -103,21 +102,11 @@ contract SHA is SH {
         Mu.Pole = 0;
     }
 
-    function Adduct(uint64 _Phi) public onlyOwner {
-        Manifold = Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
-    }
-
-    function Open() public onlyOwner returns(uint64, uint64) {
-        uint64 Ring = Xiao.modExp64(Mu.Coordinate, Manifold, Mu.Element);
-        uint64 Barn = Xiao.modExp64(Ring, Manifold, Mu.Element);
-        return(Ring, Barn);
+    function Adduct(uint64 _Phi) public onlyOwner returns(uint64) {
+        return Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
     }
 
     function Calibrate() public view onlyOwner returns(uint64) {
         return Dynamo;
-    }
-
-    function Yao() public view onlyOwner returns(uint64) {
-        return Manifold;
     }
 }
