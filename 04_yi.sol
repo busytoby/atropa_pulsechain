@@ -4,10 +4,35 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "03_shio.sol";
 
+struct Fei {
+    bytes Theta;
+    uint256 Context;
+    uint256 Operator;
+    uint256 Value;
+}
+
+struct Bao {
+    SHA Mu;
+    Fei Theta;
+
+    uint64 Xi;
+    uint64 Tau;
+    uint64 Alpha;
+    uint64 PeerChannel;
+
+    uint256 Contract;
+}
+
+struct Fan {
+    Bao[] Rods;
+    Bao[] Cones;
+}
+
 contract YI is SH {
     address constant MathLib = 0x430d082e46091173B8A4f9f48752e16e3A3a4c62;
 
     SHIO internal Psi;
+    mapping(uint256 => Bao) internal Nu;
     uint64 internal Xi;
     uint64 internal Ring;
 
