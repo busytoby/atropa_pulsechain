@@ -23,20 +23,13 @@ struct Bao {
     uint256 Contract;
 }
 
-struct Fan {
-    Bao[] Rods;
-    Bao[] Cones;
-}
-
 contract YI is SH {
-    address constant MathLib = 0x430d082e46091173B8A4f9f48752e16e3A3a4c62;
-
     SHIO internal Psi;
     mapping(uint256 => Bao) internal Nu;
     uint64 internal Xi;
     uint64 internal Ring;
 
-    constructor() ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) Ownable(msg.sender) {
+    constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) Ownable(msg.sender) {
         Psi = new SHIO(MathLib);
         Xi = Xiao.Random();
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
