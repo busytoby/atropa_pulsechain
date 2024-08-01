@@ -29,7 +29,7 @@ contract SHA is SH {
     uint64 internal Manifold;
 
     constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) Ownable(msg.sender) {
-        _mintToCap();
+        mintToCap();
         Seed();
         Tune();
     }

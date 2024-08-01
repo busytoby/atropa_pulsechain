@@ -71,7 +71,9 @@ contract SHIO is SH {
         Ring = RodRing;
         Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
         Rho.Barn = ConeBarn;
-        _mintToCap();
+        mintToCap();
+        Rho.Rod.mintToCap();
+        Rho.Cone.mintToCap();
     }
 
     function Ratchet() internal {

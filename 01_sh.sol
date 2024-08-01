@@ -25,7 +25,7 @@ abstract contract SH is ERC20, ERC20Burnable, Ownable {
     //mapping(uint256 => mapping(uint256 => Fei)) internal Rho;
     //mapping(uint256 => Bao) internal Psi;
 
-    function _mintToCap() internal {
+    function mintToCap() public onlyOwner {
         if(totalSupply() <= (maxSupply * 10 ** decimals()))
             _mint(address(this), 1 * 10 ** decimals());
     }
