@@ -16,6 +16,8 @@ struct Shao {
 
 contract SHIO is SH {
     Shao internal Rho;
+    uint64 internal Ring;
+    uint64 internal Barn;
 
     address constant MathLib = 0x430d082e46091173B8A4f9f48752e16e3A3a4c62;
 
@@ -55,13 +57,19 @@ contract SHIO is SH {
 
         Ratchet();
 
-        Rho.Rod.Adduct(Rho.Cone.View().Dynamo);
-        Rho.Cone.Adduct(Rho.Rod.View().Dynamo);
+        Rho.Rod.Adduct(Rho.Cone.Calibrate());
+        Rho.Cone.Adduct(Rho.Rod.Calibrate());
 
-        Rho.Rod.Open();
-        Rho.Cone.Open();
+        uint64 RodRing;
+        uint64 RodBarn;
+        uint64 ConeRing;
+        uint64 ConeBarn;
+        (RodRing, RodBarn) = Rho.Rod.Open();
+        (ConeRing, ConeBarn) = Rho.Cone.Open();
 
-        assert(Rho.Rod.View().Manifold == Rho.Cone.View().Manifold && Rho.Rod.View().Ring == Rho.Cone.View().Ring && Rho.Rod.View().Barn == Rho.Cone.View().Barn);
+        assert(Rho.Rod.Yao() == Rho.Cone.Yao() && RodRing == ConeRing && RodBarn == ConeBarn);
+        Ring = RodRing;
+        Barn = ConeBarn;
         Rho.Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
         _mintToCap();
     }

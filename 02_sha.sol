@@ -18,10 +18,6 @@ struct Fa {
         uint64 Charge;
         uint64 Chin;
         uint64 Monopole;
-        uint64 Dynamo;
-        uint64 Manifold;
-        uint64 Ring;
-        uint64 Barn;
 
         uint64 Nu;
 }
@@ -29,6 +25,8 @@ struct Fa {
 
 contract SHA is SH {
     Fa internal Mu;
+    uint64 internal Dynamo;
+    uint64 internal Manifold;
 
     constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) Ownable(msg.sender) {
         _mintToCap();
@@ -96,21 +94,30 @@ contract SHA is SH {
         Mu.Chin = Beta + Eta; 
         Mu.Element = Beta + Mu.Charge;
 
-        Mu.Dynamo = Xiao.modExp64(Theta, Mu.Signal, MotzkinPrime);
+        Dynamo = Xiao.modExp64(Theta, Mu.Signal, MotzkinPrime);
         Mu.Monopole = Xiao.modExp64(Mu.Chin, Mu.Identity, MotzkinPrime);
     }
 
     function Bond() public onlyOwner {
-        Mu.Dynamo = Xiao.modExp64(Mu.Base, Mu.Signal, Mu.Element);
+        Dynamo = Xiao.modExp64(Mu.Base, Mu.Signal, Mu.Element);
         Mu.Pole = 0;
     }
 
     function Adduct(uint64 _Phi) public onlyOwner {
-        Mu.Manifold = Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
+        Manifold = Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
     }
 
-    function Open() public onlyOwner {
-        Mu.Ring = Xiao.modExp64(Mu.Coordinate, Mu.Manifold, Mu.Element);
-        Mu.Barn = Xiao.modExp64(Mu.Ring, Mu.Manifold, Mu.Element);
+    function Open() public onlyOwner returns(uint64, uint64) {
+        uint64 Ring = Xiao.modExp64(Mu.Coordinate, Manifold, Mu.Element);
+        uint64 Barn = Xiao.modExp64(Ring, Manifold, Mu.Element);
+        return(Ring, Barn);
+    }
+
+    function Calibrate() public view onlyOwner returns(uint64) {
+        return Dynamo;
+    }
+
+    function Yao() public view onlyOwner returns(uint64) {
+        return Manifold;
     }
 }
