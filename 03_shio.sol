@@ -11,13 +11,13 @@ struct Shao {
     SHA Cone;
 
     uint64 Xi;
-    uint64 Monopole;
+    uint64 Barn;
 }
 
 contract SHIO is SH {
     Shao internal Rho;
     uint64 internal Ring;
-    uint64 internal Barn;
+    uint64 internal Monopole;
 
     address constant MathLib = 0x430d082e46091173B8A4f9f48752e16e3A3a4c62;
 
@@ -69,8 +69,8 @@ contract SHIO is SH {
 
         assert(Rho.Rod.Yao() == Rho.Cone.Yao() && RodRing == ConeRing && RodBarn == ConeBarn);
         Ring = RodRing;
-        Barn = ConeBarn;
-        Rho.Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
+        Rho.Barn = ConeBarn;
+        Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
         _mintToCap();
     }
 
