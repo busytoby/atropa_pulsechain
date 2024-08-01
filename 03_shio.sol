@@ -48,11 +48,11 @@ contract SHIO is SH {
         Rho.Cone.Saturate(Beta, Rho.Rod.View().Foundation, Rho.Rod.View().Channel);
     }
 
-    function BondRod() public onlyOwner {
+    function Isomerize() public onlyOwner {
         Rho.Rod.Bond();
     }
 
-    function BondCone() public onlyOwner {
+    function Isolate() public onlyOwner {
         Rho.Cone.Bond();
     }
 

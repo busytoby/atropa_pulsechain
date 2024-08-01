@@ -15,13 +15,13 @@ contract BELT is SH {
         Psi = new SHIO(MathLib);
         Xi = Xiao.Random();
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
-        Ratchet();
+        Ionize();
         Ring = Psi.Magnetize();
     }
     
-    function Ratchet() internal {
-        Psi.BondRod();
-        Psi.BondCone();
+    function Ionize() internal {
+        Psi.Isomerize();
+        Psi.Isolate();
     }
 
     /*
