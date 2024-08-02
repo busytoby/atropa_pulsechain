@@ -11,7 +11,7 @@ struct Fan {
 }
 
 contract ZHENG is SH {
-    mapping(uint256 => mapping(uint256 => Fei)) internal Eta;
+    mapping(address => mapping(address => Fei)) internal Eta;
     Fan internal Sigma;
     YI internal Upsilon;
 

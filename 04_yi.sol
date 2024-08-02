@@ -20,12 +20,12 @@ struct Bao {
     uint64 Alpha;
     uint64 PeerChannel;
 
-    uint256 Contract;
+    address Contract;
 }
 
 contract YI is SH {
     SHIO internal Psi;
-    mapping(uint256 => Bao) internal Nu;
+    mapping(address => Bao) internal Nu;
     uint64 internal Xi;
     uint64 internal Ring;
 
