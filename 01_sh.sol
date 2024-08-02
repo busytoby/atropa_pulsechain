@@ -16,6 +16,7 @@ abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath internal Xiao;
     uint256 private maxSupply;
+    address[] internal Addresses;
 
     constructor(address mathContract, uint256 _maxSupply) {
         Xiao = atropaMath(mathContract);
@@ -25,9 +26,13 @@ abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
     //mapping(uint256 => mapping(uint256 => Fei)) internal Rho;
     //mapping(uint256 => Bao) internal Psi;
 
-    function mintToCap() public onlyOwner {
+    function mintToCap() public onlyOwners {
         if(totalSupply() <= (maxSupply * 10 ** decimals()))
             _mint(address(this), 1 * 10 ** decimals());
+    }
+
+    function KnownAddresses() public view returns(address[] memory) {
+        return Addresses;
     }
 
 /*

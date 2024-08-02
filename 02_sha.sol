@@ -22,61 +22,62 @@ struct Fa {
 
 
 contract SHA is SH {
-    Fa internal Mu;
-    uint64 internal Dynamo;
+    Fa private Mu;
+    uint64 public Dynamo;
 
     constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) MultiOwnable(msg.sender) {
         mintToCap();
         Seed();
         Tune();
+        Addresses.push(address(this));
     }
 
     function View() public view returns(Fa memory) {
         return Mu;
     }
 
-    function Seed() internal {
+    function Seed() private {
         Mu.Base = Xiao.Random();
         Mu.Secret = Xiao.Random();
         Mu.Signal = Xiao.Random();
     }
 
-   function Tune() internal {
+   function Tune() private {
         Mu.Channel = Xiao.modExp64(Mu.Base, Mu.Signal, MotzkinPrime);   
     }
 
-    function Fuse(uint64 _rho, uint64 Upsilon, uint64 Ohm) public onlyOwner {
+    function Fuse(uint64 _rho, uint64 Upsilon, uint64 Ohm) public onlyOwners {
         Mu.Base = Upsilon;
         Mu.Secret = Ohm;
         Mu.Signal = _rho;
     }
 
-    function Avail(uint64 Xi) public onlyOwner {
+    function Avail(uint64 Xi) public onlyOwners {
         Mu.Contour = Xiao.modExp64(Xi, Mu.Secret, MotzkinPrime);
     }
 
-    function Form(uint64 Chi) public onlyOwner {
+    function Form(uint64 Chi) public onlyOwners {
         Mu.Base = Xiao.modExp64(Chi, Mu.Secret, MotzkinPrime);
         Tune();
     }
 
-    function Polarize() public onlyOwner {
+    function Polarize() public onlyOwners {
         Mu.Pole = Xiao.modExp64(Mu.Base, Mu.Secret, MotzkinPrime);
     }
 
-    function Conjugate(uint64 Chi) public onlyOwner {
+    function Conjugate(uint64 Chi) public onlyOwners {
         Mu.Coordinate = Xiao.modExp64(Chi, Mu.Secret, MotzkinPrime);
         // Chi = 0;
     }
 
-    function Conify(uint64 _Beta) public onlyOwner {
+    function Conify(uint64 _Beta) public onlyOwners {
         assert(Mu.Nu == 0);
         Mu.Identity = _Beta;
         Mu.Foundation = Xiao.modExp64(Mu.Base, Mu.Identity, MotzkinPrime);
         Mu.Nu = 1;
     }
 
-    function Saturate(uint64 _Beta, uint64 Epsilon, uint64 Theta) public onlyOwner {
+    function Saturate(uint64 _Beta, uint64 Epsilon, uint64 Theta) public onlyOwners {
         if(Mu.Nu == 0) {
             Mu.Identity = _Beta;
             Mu.Foundation = Xiao.modExp64(Mu.Base, Mu.Identity, MotzkinPrime);
@@ -95,16 +96,12 @@ contract SHA is SH {
         Mu.Monopole = Xiao.modExp64(Mu.Chin, Mu.Identity, MotzkinPrime);
     }
 
-    function Bond() public onlyOwner {
+    function Bond() public onlyOwners {
         Dynamo = Xiao.modExp64(Mu.Base, Mu.Signal, Mu.Element);
         Mu.Pole = 0;
     }
 
-    function Adduct(uint64 _Phi) public onlyOwner returns(uint64) {
+    function Adduct(uint64 _Phi) public onlyOwners returns(uint64) {
         return Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
-    }
-
-    function Calibrate() public view onlyOwner returns(uint64) {
-        return Dynamo;
     }
 }

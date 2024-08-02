@@ -22,10 +22,10 @@ struct Bao {
 }
 
 contract YI is SH {
-    SHIO internal Psi;
-    mapping(address => Bao) internal Nu;
-    uint64 internal Xi;
-    uint64 internal Ring;
+    SHIO private Psi;
+    mapping(address => Bao) private Nu;
+    uint64 private Xi;
+    uint64 private Ring;
 
     constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
         SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
@@ -37,9 +37,13 @@ contract YI is SH {
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
         Ring = Psi.Magnetize();
+        Addresses.push(address(Rod));
+        Addresses.push(address(Cone));                
+        Addresses.push(address(Psi));
+        Addresses.push(address(this));
     }
     
-    function Ionize() internal {
+    function Ionize() private {
         Psi.Isomerize();
         Psi.Isolate();
     }

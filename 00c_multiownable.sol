@@ -16,7 +16,7 @@ abstract contract MultiOwnable is Context {
         _changeOwnership(initialOwner, true);
     }
 
-    modifier onlyOwner() {
+    modifier onlyOwners() {
         _checkOwner();
         _;
     }
@@ -31,11 +31,11 @@ abstract contract MultiOwnable is Context {
         }
     }
 
-    function renounceOwnership(address toRemove) public virtual onlyOwner {
+    function renounceOwnership(address toRemove) public virtual onlyOwners {
         _changeOwnership(toRemove, false);
     }
 
-    function addOwner(address newOwner) public virtual onlyOwner {
+    function addOwner(address newOwner) public virtual onlyOwners {
         if (newOwner == address(0)) {
             revert OwnableInvalidOwner(address(0));
         }

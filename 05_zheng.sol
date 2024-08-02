@@ -11,11 +11,13 @@ struct Fan {
 }
 
 contract ZHENG is SH {
-    mapping(address => mapping(address => Fei)) internal Eta;
-    Fan internal Sigma;
-    YI internal Upsilon;
+    mapping(address => mapping(address => Fei)) private Eta;
+    Fan private Sigma;
+    YI private Upsilon;
 
     constructor(address MathLib) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 111) MultiOwnable(msg.sender) {
         Upsilon = new YI(MathLib);
+        Addresses.push(address(Upsilon));
+        Addresses.push(address(this));
     }
 }

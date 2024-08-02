@@ -10,20 +10,19 @@ struct Shao {
 }
 
 contract SHIO is SH {
-    Shao internal Rho;
-    uint64 internal Manifold;
-    uint64 internal Monopole;
+    Shao private Rho;
+    uint64 private Manifold;
+    uint64 private Monopole;
 
     constructor(address Rod, address Cone, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(Rod);
         Rho.Cone = SHA(Cone);
+        Addresses.push(address(Rho.Rod));
+        Addresses.push(address(Rho.Cone));
+        Addresses.push(address(this));
     }
 
-    function View() public view returns(Shao memory) {
-        return Rho;
-    }
-
-    function ConductorGenerate(uint64 Xi) internal {
+    function ConductorGenerate(uint64 Xi) private {
         Rho.Rod.Avail(Xi);
         Rho.Cone.Avail(Xi);
 
@@ -34,7 +33,7 @@ contract SHIO is SH {
         Rho.Cone.Polarize();
     }
 
-    function Generate(uint64 Xi, uint64 Alpha, uint64 Beta) public onlyOwner {
+    function Generate(uint64 Xi, uint64 Alpha, uint64 Beta) public onlyOwners {
         ConductorGenerate(Xi);
 
         Rho.Rod.Conjugate(Rho.Cone.View().Pole);
@@ -46,17 +45,17 @@ contract SHIO is SH {
         Rho.Cone.Saturate(Beta, Rho.Rod.View().Foundation, Rho.Rod.View().Channel);
     }
 
-    function Isomerize() public onlyOwner {
+    function Isomerize() public onlyOwners {
         Rho.Rod.Bond();
     }
 
-    function Isolate() public onlyOwner {
+    function Isolate() public onlyOwners {
         Rho.Cone.Bond();
     }
 
-    function Magnetize() public onlyOwner returns(uint64) {
-        Manifold = Rho.Rod.Adduct(Rho.Cone.Calibrate());
-        assert(Manifold == Rho.Cone.Adduct(Rho.Rod.Calibrate()));
+    function Magnetize() public onlyOwners returns(uint64) {
+        Manifold = Rho.Rod.Adduct(Rho.Cone.Dynamo());
+        assert(Manifold == Rho.Cone.Adduct(Rho.Rod.Dynamo()));
 
         uint64 Ring = Xiao.modExp64(Rho.Rod.View().Coordinate, Manifold, Rho.Rod.View().Element);
         Rho.Barn = Xiao.modExp64(Ring, Manifold, Rho.Rod.View().Element);
