@@ -6,7 +6,8 @@ import "05_zheng.sol";
 
 
 contract ZHOU is SH {
-    address constant MathLib = 0x1a6e3ABCcFFaA12b8F24192A44B42A86341410B0;
+    string public constant Type = "ZHOU";
+    address public constant MathLib = 0x1a6e3ABCcFFaA12b8F24192A44B42A86341410B0;
 
     Fei private Upsilon;
     ZHENG private Theta;

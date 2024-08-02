@@ -22,6 +22,8 @@ struct Fa {
 
 
 contract SHA is SH {
+    string public constant Type = "SHA";
+
     Fa private Mu;
     uint64 public Dynamo;
 

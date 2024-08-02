@@ -11,6 +11,8 @@ struct Fan {
 }
 
 contract ZHENG is SH {
+    string public constant Type = "ZHENG";
+
     mapping(address => mapping(address => Fei)) private Eta;
     Fan private Sigma;
     YI private Upsilon;

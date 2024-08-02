@@ -10,6 +10,8 @@ struct Shao {
 }
 
 contract SHIO is SH {
+    string public constant Type = "SHIO";
+        
     Shao private Rho;
     uint64 private Manifold;
     uint64 private Monopole;
