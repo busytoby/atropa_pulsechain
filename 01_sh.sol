@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "00c_multiownable.sol";
 import "addresses.sol";
 
 interface atropaMath {   
@@ -12,7 +12,7 @@ interface atropaMath {
     function modExp(uint256 _b, uint256 _e, uint256 _m) external returns (uint256);
 }
 
-abstract contract SH is ERC20, ERC20Burnable, Ownable {
+abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath internal Xiao;
     uint256 private maxSupply;

@@ -15,7 +15,7 @@ contract ZHENG is SH {
     Fan internal Sigma;
     YI internal Upsilon;
 
-    constructor(address MathLib) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 111) Ownable(msg.sender) {
+    constructor(address MathLib) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 111) MultiOwnable(msg.sender) {
         Upsilon = new YI(MathLib);
     }
 }

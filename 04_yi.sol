@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "03_shio.sol";
 
 struct Fei {
@@ -29,8 +27,12 @@ contract YI is SH {
     uint64 internal Xi;
     uint64 internal Ring;
 
-    constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) Ownable(msg.sender) {
-        Psi = new SHIO(MathLib);
+    constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
+        SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
+        SHA Cone = new SHA("Shio Rod", "SCONE", MathLib);
+        Psi = new SHIO(address(Rod), address(Cone), MathLib);
+        Rod.addOwner(address(Psi));
+        Cone.addOwner(address(Psi));
         Xi = Xiao.Random();
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();

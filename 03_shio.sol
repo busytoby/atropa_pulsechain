@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "02_sha.sol";
 
 struct Shao {
@@ -16,9 +14,9 @@ contract SHIO is SH {
     uint64 internal Manifold;
     uint64 internal Monopole;
 
-    constructor(address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) Ownable(msg.sender) {
-        Rho.Rod = new SHA("Shio Rod", "SROD", MathLib);
-        Rho.Cone = new SHA("Shio Rod", "SCONE", MathLib);
+    constructor(address Rod, address Cone, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
+        Rho.Rod = SHA(Rod);
+        Rho.Cone = SHA(Cone);
     }
 
     function View() public view returns(Shao memory) {

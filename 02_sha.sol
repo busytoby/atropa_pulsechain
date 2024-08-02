@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "01_sh.sol";
 
 struct Fa {
@@ -27,7 +25,7 @@ contract SHA is SH {
     Fa internal Mu;
     uint64 internal Dynamo;
 
-    constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) Ownable(msg.sender) {
+    constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) MultiOwnable(msg.sender) {
         mintToCap();
         Seed();
         Tune();
