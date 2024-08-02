@@ -17,7 +17,9 @@ contract ZHENG is SH {
 
     constructor(address MathLib) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 111) MultiOwnable(msg.sender) {
         Upsilon = new YI(MathLib);
-        Addresses.push(address(Upsilon));
+        address[] memory YiAddresses = Upsilon.KnownAddresses();
+        for(uint256 i = 0; i < YiAddresses.length; i++)
+            Addresses.push(YiAddresses[i]);
         Addresses.push(address(this));
     }
 }
