@@ -2,20 +2,13 @@
 pragma solidity ^0.8.21;
 import "03_shio.sol";
 
-struct Fei {
-    bytes Theta;
-    uint256 Context;
-    uint256 Operator;
-    uint256 Value;
-}
-
 struct Bao {
     SHA Mu;
-    Fei Theta;
+    uint64[] Theta;
 
-    uint64 Xi;
-    uint64 Tau;
-    uint64 Alpha;
+    uint64 Xi;    // Context
+    uint64 Tau;   // Operator
+    uint64 Alpha; // Value
     uint64 PeerChannel;
 
     address Contract;
