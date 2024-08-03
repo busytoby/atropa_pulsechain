@@ -19,9 +19,8 @@ contract SHIO is SH {
     constructor(address Rod, address Cone, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(Rod);
         Rho.Cone = SHA(Cone);
-        Addresses.push(address(Rho.Rod));
-        Addresses.push(address(Rho.Cone));
-        Addresses.push(address(this));
+        RegisterAddress(Rod);
+        RegisterAddress(Cone);
     }
 
     function ConductorGenerate(uint64 Xi) private {

@@ -6,7 +6,7 @@ import "06_zhou.sol";
 
 contract YAU is SH {
     string public constant Type = "YAU";
-    address public constant MathLib = 0x1a6e3ABCcFFaA12b8F24192A44B42A86341410B0;
+    address public constant MathLib = 0x48087234ed7bc38e04347176b08B860E643806e2;
 
     ZHOU private Theta;
     mapping(uint64 => uint64) private Connections;
@@ -15,8 +15,10 @@ contract YAU is SH {
     constructor() ERC20(unicode"VM Yau", unicode"YAU") SH(MathLib, 111) MultiOwnable(msg.sender) {
         Theta = new ZHOU(MathLib);
         address[] memory ZhouAddresses = Theta.KnownAddresses();
-        for(uint256 i = 0; i < ZhouAddresses.length; i++)
-            Addresses.push(ZhouAddresses[i]);
-        Addresses.push(address(this));
+        for(uint256 i = 0; i < ZhouAddresses.length; i++) {
+            RegisterAddress(ZhouAddresses[i]);
+        }
+        Theta.RegisterAddress(address(this));
+        RegisterAddress(address(Theta));
     }
 }

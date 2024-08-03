@@ -16,7 +16,7 @@ abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath internal Xiao;
     uint256 private maxSupply;
-    address[] internal Addresses;
+    address[] private Addresses;
 
     constructor(address mathContract, uint256 _maxSupply) {
         Xiao = atropaMath(mathContract);
@@ -33,6 +33,26 @@ abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
 
     function KnownAddresses() public view returns(address[] memory) {
         return Addresses;
+    }
+
+    function KnownAddress(address _a) public view returns(bool) {
+        for(uint256 i = 0; i < Addresses.length; i++)
+            if(Addresses[i] == _a) return true;
+        return false;
+    }
+
+    function RemoveAddress(address _a) public onlyOwners {        
+        int256 foundidx = -1;
+        for(uint256 i = 0; i < Addresses.length && foundidx < 0; i++)
+            if(Addresses[i] == _a) foundidx = int256(i);
+        if(foundidx >= 0) {
+            Addresses[uint256(foundidx)] = Addresses[Addresses.length - 1];
+            Addresses.pop();
+        }
+    }
+
+    function RegisterAddress(address _a) public onlyOwners {
+        if(_a != address(this) && !KnownAddress(_a)) Addresses.push(_a);
     }
 
 /*

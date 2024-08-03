@@ -14,8 +14,10 @@ contract ZHOU is SH {
     constructor(address MathLib) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(MathLib, 313) MultiOwnable(msg.sender) {
         Theta = new ZHENG(MathLib);
         address[] memory ZhengAddresses = Theta.KnownAddresses();
-        for(uint256 i = 0; i < ZhengAddresses.length; i++)
-            Addresses.push(ZhengAddresses[i]);
-        Addresses.push(address(this));
+        for(uint256 i = 0; i < ZhengAddresses.length; i++) {
+            RegisterAddress(ZhengAddresses[i]);
+        }
+        Theta.RegisterAddress(address(this));
+        RegisterAddress(address(Theta));
     }
 }

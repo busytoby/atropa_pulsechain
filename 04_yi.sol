@@ -32,10 +32,16 @@ contract YI is SH {
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
         Ring = Psi.Magnetize();
-        Addresses.push(address(Rod));
-        Addresses.push(address(Cone));                
-        Addresses.push(address(Psi));
-        Addresses.push(address(this));
+        Rod.RegisterAddress(address(Cone));
+        Rod.RegisterAddress(address(Psi));
+        Rod.RegisterAddress(address(this));
+        Cone.RegisterAddress(address(Rod));
+        Cone.RegisterAddress(address(Psi));
+        Cone.RegisterAddress(address(this));
+        Psi.RegisterAddress(address(this));
+        RegisterAddress(address(Rod));
+        RegisterAddress(address(Cone));
+        RegisterAddress(address(Psi));
     }
     
     function Ionize() private {

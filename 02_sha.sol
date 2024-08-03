@@ -31,7 +31,6 @@ contract SHA is SH {
         mintToCap();
         Seed();
         Tune();
-        Addresses.push(address(this));
     }
 
     function View() public view returns(Fa memory) {
