@@ -18,7 +18,7 @@ contract YI is SH {
     string public constant Type = "YI";
         
     SHIO private Psi;
-    mapping(address => Bao) private Nu;
+    mapping(uint64 => Bao) private Nu;
     uint64 private Xi;
     uint64 private Ring;
 

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 
-abstract contract MultiOwnable is Context {
+abstract contract MultiOwnable {
     mapping(address => bool) private _owners;
 
     error OwnableUnauthorizedAccount(address account);
@@ -26,8 +25,8 @@ abstract contract MultiOwnable is Context {
     }
 
     function _checkOwner() internal view virtual {
-        if (!owner(_msgSender())) {
-            revert OwnableUnauthorizedAccount(_msgSender());
+        if (!owner(msg.sender)) {
+            revert OwnableUnauthorizedAccount(msg.sender);
         }
     }
 
