@@ -13,8 +13,8 @@ contract SHIO is SH {
     string public constant Type = "SHIO";
         
     Shao public Rho;
-    uint64 private Manifold;
-    uint64 private Monopole;
+    uint64 public Manifold;
+    uint64 public Monopole;
 
     constructor(address Rod, address Cone, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(Rod);

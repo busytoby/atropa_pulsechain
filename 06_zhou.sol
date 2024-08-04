@@ -36,10 +36,11 @@ contract ZHOU is SH {
         RegisterAddress(address(Tau));
     }
 
-    function Beta(uint64 Iota) public onlyOwners returns (Bao memory) {      
-        uint64 DIRAC = Theta.Mu.Torque(Iota); // torque
-        DIRAC = Theta.Mu.Torque(DIRAC);       // amplify
-        DIRAC = Theta.Mu.Torque(DIRAC);       // sustain
+    function Beta(uint64 Iota) public onlyOwners returns (Bao memory) {
+        uint64 Interference = SHIO(Theta.Shio).Monopole();
+        uint64 DIRAC = Theta.Mu.Torque(Iota) ^ Interference; // torque
+        DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // amplify
+        DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // sustain
         Theta = Upsilon.React(Theta, DIRAC);
         mintToCap();
         return Theta;
