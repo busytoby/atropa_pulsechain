@@ -46,8 +46,7 @@ contract ZHENG is SH {
         ZhengBao.Shio = address(ZhengShio);
         ZhengBao.Ring = ZhengShio.Magnetize();
         Upsilon.Bing(ZhengBao);
-        Alpha(ZhengBao, 0);
-        Sigma.Rods.push(ZhengBao);
+        Sigma.Rods.push(Alpha(ZhengBao, 0));
 
         address[] memory YiAddresses = Upsilon.KnownAddresses();
         for(uint256 i = 0; i < YiAddresses.length; i++) {
@@ -57,18 +56,14 @@ contract ZHENG is SH {
         RegisterAddress(address(Upsilon));
     }
 
-    function Alpha(Bao memory Beta, uint64 Iota) public {
+    function Alpha(Bao memory Beta, uint64 Iota) public returns(Bao memory) {
         uint64 Gamma = Upsilon.Charge(Beta, Iota);
         Gamma = Upsilon.Induce(Beta, Gamma);
         Gamma = Upsilon.Torque(Beta, Gamma);
         Gamma = Upsilon.Amplify(Beta, Gamma);
         Gamma = Upsilon.Sustain(Beta, Gamma);
         Beta = Upsilon.React(Beta, Gamma);
-        temp = Beta;
-    }
-
-    function bt() public view returns(uint64, uint64) {
-        return (temp.Omicron, temp.Omega);
+        return Beta;
     }
 
     function Ionize(SHIO Shio) private {
