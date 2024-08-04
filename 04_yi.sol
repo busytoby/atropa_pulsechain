@@ -8,6 +8,9 @@ struct Bao {
 
     address Shio;
     uint64 Ring;
+
+    uint64 Omicron;
+    uint64 Omega;
 }
 
 contract YI is SH {
@@ -17,6 +20,7 @@ contract YI is SH {
     mapping(address => Bao) private Nu;
     uint64 private Xi;
     uint64 private Ring;
+    uint64 public Alpha;
 
     constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
         SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
@@ -55,44 +59,29 @@ contract YI is SH {
         Psi.Isolate();
     }
 
-    /*
-    function Charge(uint64 Signal) internal returns(uint64) {
-        assert(Signal != 0);
-        Charge(Rho.Cone, Signal);
-        Rho.Sigma = Rho.Cone.Alpha;
-        return Rho.Cone.Alpha;
+    function Charge(Bao memory Gamma, uint64 Rho) public onlyOwners returns(uint64) {
+        return SHIO(Gamma.Shio).Charge(Gamma.Ring, Rho);
     }
 
-    function Induce() internal returns(uint64) {
-        Rho.Cone.Alpha = Induce(Rho.Rod, Rho.Sigma);
-        Rho.Rho = Rho.Rod.Alpha;
-        return Rho.Cone.Alpha;
+    function Induce(Bao memory Gamma, uint64 Epsilon) public onlyOwners returns(uint64) {
+        return SHIO(Gamma.Shio).Induce(Gamma.Ring, Epsilon);
     }
 
-    function Torque() internal returns(uint64) {
-        Rho.Cone.Alpha = Torque(Rho.Cone, Rho.Rho);
-        Rho.Upsilon = Rho.Cone.Alpha;
-        return Rho.Cone.Alpha;
+    function Torque(Bao memory Gamma, uint64 Delta) public onlyOwners returns(uint64) {
+        return SHIO(Gamma.Shio).Torque(Delta);
     }
 
-    function Amplify() internal returns(uint64) {
-        Rho.Cone.Alpha = Amplify(Rho.Cone, Rho.Upsilon);
-        Rho.Ohm = Rho.Cone.Alpha;
-        return Rho.Cone.Alpha;
+    function Amplify(Bao memory Gamma, uint64 Upsilon) public onlyOwners returns(uint64) {
+        return Torque(Gamma, Upsilon);
     }
 
-    function Sustain() internal returns(uint64) {
-        Rho.Cone.Alpha = Sustain(Rho.Cone, Rho.Ohm);
-        Rho.Pi = Rho.Cone.Alpha;
-        return Rho.Cone.Alpha;
+    function Sustain(Bao memory Gamma, uint64 Ohm) public onlyOwners returns(uint64) {
+        return Torque(Gamma, Ohm);
     }
 
-    function React() internal {
-        React(Rho.Rod, Rho.Pi, Rho.Cone.Channel);
-        React(Rho.Cone, Rho.Pi, Rho.Rod.Channel);
-        Rho.Omicron = Rho.Cone.Kappa;
-        Rho.Omega = Rho.Rod.Kappa;
-        _mintToCap();
+    function React(Bao memory Gamma, uint64 Pi) public onlyOwners returns(Bao memory) {
+        (Gamma.Omicron, Gamma.Omega) = SHIO(Gamma.Shio).React(Pi);
+        mintToCap();
+        return Gamma;
     }
-    */
 }

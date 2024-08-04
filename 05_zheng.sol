@@ -28,6 +28,8 @@ contract ZHENG is SH {
     Fan private Sigma;
     YI private Upsilon;
 
+    Bao public temp;
+
     constructor(address MathLib, address YiContract) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 100) MultiOwnable(msg.sender) {
         Upsilon = YI(YiContract);
         Bao memory ZhengBao;
@@ -44,6 +46,7 @@ contract ZHENG is SH {
         ZhengBao.Shio = address(ZhengShio);
         ZhengBao.Ring = ZhengShio.Magnetize();
         Upsilon.Bing(ZhengBao);
+        Alpha(ZhengBao, 0);
         Sigma.Rods.push(ZhengBao);
 
         address[] memory YiAddresses = Upsilon.KnownAddresses();
@@ -52,6 +55,20 @@ contract ZHENG is SH {
         }
         Upsilon.RegisterAddress(address(this));
         RegisterAddress(address(Upsilon));
+    }
+
+    function Alpha(Bao memory Beta, uint64 Iota) public {
+        uint64 Gamma = Upsilon.Charge(Beta, Iota);
+        Gamma = Upsilon.Induce(Beta, Gamma);
+        Gamma = Upsilon.Torque(Beta, Gamma);
+        Gamma = Upsilon.Amplify(Beta, Gamma);
+        Gamma = Upsilon.Sustain(Beta, Gamma);
+        Beta = Upsilon.React(Beta, Gamma);
+        temp = Beta;
+    }
+
+    function bt() public view returns(uint64, uint64) {
+        return (temp.Omicron, temp.Omega);
     }
 
     function Ionize(SHIO Shio) private {

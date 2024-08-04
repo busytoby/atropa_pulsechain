@@ -105,4 +105,17 @@ contract SHA is SH {
     function Adduct(uint64 _Phi) public onlyOwners returns(uint64) {
         return Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
     }
+
+    function Torque(uint64 Pi) public onlyOwners returns(uint64) {
+        uint64 Alpha = Xiao.modExp64(Pi, Mu.Element, Mu.Channel);
+        return Alpha;
+    }
+
+    function React(uint64 Pi, uint64 Theta) public onlyOwners returns(uint64, uint64) {
+        uint64 Eta = Xiao.modExp64(Pi, Mu.Channel, Theta);
+        uint64 Kappa = Xiao.modExp64(Pi, Theta, Mu.Channel);
+        assert(Eta != 0 && Kappa != 0);
+        mintToCap();
+        return(Eta, Kappa);
+    }
 }

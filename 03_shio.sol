@@ -69,4 +69,28 @@ contract SHIO is SH {
         Rho.Cone.mintToCap();
         return Ring;
     }
+
+    function Charge(uint64 Ring, uint64 Gamma) public onlyOwners returns(uint64) {
+        uint64 Alpha = Xiao.modExp64(Rho.Barn, Gamma, Ring);
+        return Alpha;
+    }
+
+    function Induce(uint64 Ring, uint64 Beta) public onlyOwners returns(uint64) {
+        uint64 Alpha = Xiao.modExp64(Beta, Manifold, Ring);
+        return Alpha;
+    }
+
+    function Torque(uint64 Pi) public onlyOwners returns(uint64) {
+        return SHA(Rho.Cone).Torque(Pi);
+    }
+
+    function React(uint64 Pi) public onlyOwners returns(uint64, uint64) {
+        Pi = Pi ^ Monopole;
+        (uint64 Eta, uint64 Kappa) = Rho.Rod.React(Pi, Rho.Cone.View().Channel);
+        (uint64 Omicron, uint64 Omega) = Rho.Cone.React(Pi, Rho.Rod.View().Channel);
+        assert((Omicron == Kappa && Omega == Eta));
+        assert(Omega != 0 && Omicron != 0);
+        mintToCap();
+        return(Omicron, Omega);
+    }
 }
