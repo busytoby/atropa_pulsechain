@@ -24,7 +24,7 @@ contract YI is SH {
 
     constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
         SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
-        SHA Cone = new SHA("Shio Rod", "SCONE", MathLib);
+        SHA Cone = new SHA("Shio Cone", "SCONE", MathLib);
         Psi = new SHIO(address(Rod), address(Cone), MathLib);
         Rod.addOwner(address(Psi));
         Cone.addOwner(address(Psi));
@@ -42,6 +42,12 @@ contract YI is SH {
         RegisterAddress(address(Rod));
         RegisterAddress(address(Cone));
         RegisterAddress(address(Psi));
+    }
+
+    function Beta(string calldata Name, string calldata Symbol) public onlyOwners returns(SHA) {
+        SHA Xun = new SHA(Name, Symbol, address(Xiao));
+        Xun.addOwner(msg.sender);
+        return Xun;
     }
     
     function Ionize() private {
