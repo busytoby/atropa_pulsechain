@@ -16,7 +16,7 @@ struct Bao {
 contract YI is SH {
     string public constant Type = "YI";
         
-    SHIO private Psi;
+    SHIO public Psi;
     mapping(address => Bao) private Nu;
     uint64 private Xi;
     uint64 private Ring;
