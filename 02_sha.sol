@@ -111,6 +111,11 @@ contract SHA is SH {
         return Alpha;
     }
 
+    function Flux(uint64 Pi) public returns(uint64) {
+        uint64 Alpha = Xiao.modExp64(Pi, Mu.Monopole, Mu.Channel);
+        return Alpha;
+    }
+
     function React(uint64 Pi, uint64 Theta) public returns(uint64, uint64) {
         uint64 Eta = Xiao.modExp64(Pi, Mu.Channel, Theta);
         uint64 Kappa = Xiao.modExp64(Pi, Theta, Mu.Channel);

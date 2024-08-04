@@ -16,11 +16,19 @@ contract SHIO is SH {
     uint64 public Manifold;
     uint64 public Monopole;
 
-    constructor(address Rod, address Cone, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
-        Rho.Rod = SHA(Rod);
-        Rho.Cone = SHA(Cone);
-        RegisterAddress(Rod);
-        RegisterAddress(Cone);
+    constructor(address RodAddress, address ConeAddress, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
+        Rho.Rod = SHA(RodAddress);
+        Rho.Cone = SHA(ConeAddress);
+        RegisterAddress(RodAddress);
+        RegisterAddress(ConeAddress);
+    }
+
+    function Rod() public view returns(SHA) {
+        return Rho.Rod;
+    }
+
+    function Cone() public view returns(SHA) {
+        return Rho.Cone;
     }
 
     function ConductorGenerate(uint64 Xi) private {

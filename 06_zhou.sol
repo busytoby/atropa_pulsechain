@@ -49,8 +49,8 @@ contract ZHOU is SH {
     function Pi(uint64 _theta, uint64 _a) public onlyOwners returns(Bao memory) {
         Bao memory Theta = Tau.GetRodByIdx(_theta);
         uint64 Watt = Theta.Mu.Torque(Theta.Omega); // torque
-        uint64 Ohm = Theta.Mu.Torque(Watt);         // amplify
-        uint64 _pi = Theta.Mu.Torque(Ohm);           // sustain
+        uint64 Ohm = Theta.Mu.Flux(Watt);         // amplify
+        uint64 _pi = SHA(SHIO(Theta.Shio).Cone()).Flux(Ohm);           // sustain
         Theta = Tau.Eta().React(Theta, _pi);
         Theta.Pi = _a ^ Ohm;
         mintToCap();
