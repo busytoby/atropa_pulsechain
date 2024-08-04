@@ -12,9 +12,10 @@ contract ZHOU is SH {
 
     constructor(address YiContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(MathLib, 313) MultiOwnable(msg.sender) {
         Tau = new ZHENG(MathLib, YiContract);
+        Tau.addOwner(tx.origin);
         Upsilon = YI(YiContract);
         Theta.Mu = new SHA("Zheng Rod", "ZROD", MathLib);
-        SHA Cone = Upsilon.Beta("Shio Cone", "ZCONE");
+        SHA Cone = Upsilon.Beta("Yi Shio Cone", "ZCONE");
         SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), MathLib);
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));

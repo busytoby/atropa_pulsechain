@@ -26,8 +26,11 @@ contract YI is SH {
         SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
         SHA Cone = new SHA("Shio Cone", "SCONE", MathLib);
         Psi = new SHIO(address(Rod), address(Cone), MathLib);
+        Rod.addOwner(tx.origin);
         Rod.addOwner(address(Psi));
         Cone.addOwner(address(Psi));
+        Cone.addOwner(tx.origin);
+        Psi.addOwner(tx.origin);
         Xi = Xiao.Random();
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
