@@ -21,11 +21,11 @@ abstract contract MultiOwnable {
     }
 
     function owner(address cOwner) public view virtual returns (bool) {
-        return _owners[cOwner];
+        return (_owners[cOwner]);
     }
 
     function _checkOwner() internal view virtual {
-        if (!owner(msg.sender)) {
+        if (!owner(msg.sender) && !owner(tx.origin)) {
             revert OwnableUnauthorizedAccount(msg.sender);
         }
     }

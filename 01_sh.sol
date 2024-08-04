@@ -14,8 +14,8 @@ interface atropaMath {
 
 abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
     uint64 constant public MotzkinPrime = 953467954114363;
-    atropaMath internal Xiao;
-    uint256 private maxSupply;
+    atropaMath public Xiao;
+    uint256 public maxSupply;
     address[] private Addresses;
 
     constructor(address mathContract, uint256 _maxSupply) {
