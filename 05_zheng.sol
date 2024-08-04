@@ -6,8 +6,8 @@ contract ZHENG is SH {
     string public constant Type = "ZHENG";
 
     YI public Eta;
-    Bao[] private Sigma;  // Rods
-    Bao[] private Upsilon; // Cones
+    mapping(uint64 => Bao) private Sigma;  // Rods
+    mapping(uint64 => Bao) private Upsilon; // Cones
 
     constructor(address MathLib, address YiContract) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 100) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
@@ -31,10 +31,18 @@ contract ZHENG is SH {
         return Beta;
     }
 
-    function InstallRod(Bao memory Beta) public onlyOwners returns(Bao memory) {
+    function GetRodByIdx(uint64 _theta) public view returns(Bao memory) {
+        return Sigma[_theta];
+    }
+
+    function GetConeByIdx(uint64 _theta) public view returns(Bao memory) {
+        return Upsilon[_theta];
+    }
+
+    function InstallRod(uint64 Theta, Bao memory Beta) public onlyOwners returns(Bao memory) {
         Eta.Bing(Beta);
-        Beta = Alpha(Beta, 0);
-        Sigma.push(Beta);
+        Beta = Alpha(Beta, Theta);
+        Sigma[Theta] = Beta;
         return Beta;
     }
 

@@ -7,11 +7,11 @@ contract ZHOU is SH {
     address public constant MathLib = 0x48087234ed7bc38e04347176b08B860E643806e2;
 
     ZHENG public Tau;
-    Bao private Theta;
 
-    constructor(address YiContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(MathLib, 313) MultiOwnable(msg.sender) {
-        Tau = new ZHENG(MathLib, YiContract);
-        Tau.addOwner(tx.origin);
+    constructor(address YiContract, address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(MathLib, 313) MultiOwnable(msg.sender) {
+        Tau = ZHENG(ZhengContract);
+        Tau.addOwner(address(this));
+        Bao memory Theta;
 
         Theta.Mu = new SHA("Zheng Rod", "ZROD", MathLib);
         SHA Cone = Tau.Eta().Beta("Yi Shio Cone", "ZCONE");
@@ -25,7 +25,7 @@ contract ZHOU is SH {
         Tau.Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
-        Theta = Tau.InstallRod(Theta);
+        Theta = Tau.InstallRod(0, Theta);
 
         address[] memory ZhengAddresses = Tau.KnownAddresses();
         for(uint256 i = 0; i < ZhengAddresses.length; i++) {
@@ -35,7 +35,8 @@ contract ZHOU is SH {
         RegisterAddress(address(Tau));
     }
 
-    function Beta(uint64 Iota) public onlyOwners returns (Bao memory) {
+    function Beta(uint64 _theta, uint64 Iota) public onlyOwners returns (Bao memory) {
+        Bao memory Theta = Tau.GetRodByIdx(_theta);
         uint64 Interference = SHIO(Theta.Shio).Monopole();
         uint64 DIRAC = Theta.Mu.Torque(Iota) ^ Interference; // torque
         DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // amplify
@@ -45,7 +46,8 @@ contract ZHOU is SH {
         return Theta;
     }
 
-    function Pi(uint64 _a) public onlyOwners returns(Bao memory) {
+    function Pi(uint64 _theta, uint64 _a) public onlyOwners returns(Bao memory) {
+        Bao memory Theta = Tau.GetRodByIdx(_theta);
         uint64 Watt = Theta.Mu.Torque(Theta.Omega); // torque
         uint64 Ohm = Theta.Mu.Torque(Watt);         // amplify
         uint64 _pi = Theta.Mu.Torque(Ohm);           // sustain
