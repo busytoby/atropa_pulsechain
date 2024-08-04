@@ -44,6 +44,7 @@ contract ZHENG is SH {
         ZhengBao.Shio = address(ZhengShio);
         ZhengBao.Ring = ZhengShio.Magnetize();
         Upsilon.Bing(ZhengBao);
+        Sigma.Rods.push(ZhengBao);
 
         address[] memory YiAddresses = Upsilon.KnownAddresses();
         for(uint256 i = 0; i < YiAddresses.length; i++) {
