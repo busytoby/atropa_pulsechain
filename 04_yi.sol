@@ -59,27 +59,27 @@ contract YI is SH {
         Psi.Isolate();
     }
 
-    function Charge(Bao memory Gamma, uint64 Rho) public onlyOwners returns(uint64) {
+    function Charge(Bao memory Gamma, uint64 Rho) public returns(uint64) {
         return SHIO(Gamma.Shio).Charge(Gamma.Ring, Rho);
     }
 
-    function Induce(Bao memory Gamma, uint64 Epsilon) public onlyOwners returns(uint64) {
+    function Induce(Bao memory Gamma, uint64 Epsilon) public returns(uint64) {
         return SHIO(Gamma.Shio).Induce(Gamma.Ring, Epsilon);
     }
 
-    function Torque(Bao memory Gamma, uint64 Delta) public onlyOwners returns(uint64) {
+    function Torque(Bao memory Gamma, uint64 Delta) public returns(uint64) {
         return SHIO(Gamma.Shio).Torque(Delta);
     }
 
-    function Amplify(Bao memory Gamma, uint64 Upsilon) public onlyOwners returns(uint64) {
+    function Amplify(Bao memory Gamma, uint64 Upsilon) public returns(uint64) {
         return Torque(Gamma, Upsilon);
     }
 
-    function Sustain(Bao memory Gamma, uint64 Ohm) public onlyOwners returns(uint64) {
+    function Sustain(Bao memory Gamma, uint64 Ohm) public returns(uint64) {
         return Torque(Gamma, Ohm);
     }
 
-    function React(Bao memory Gamma, uint64 Pi) public onlyOwners returns(Bao memory) {
+    function React(Bao memory Gamma, uint64 Pi) public returns(Bao memory) {
         (Gamma.Omicron, Gamma.Omega) = SHIO(Gamma.Shio).React(Pi);
         mintToCap();
         return Gamma;
