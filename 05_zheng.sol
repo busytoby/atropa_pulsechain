@@ -57,12 +57,12 @@ contract ZHENG is SH {
     }
 
     function Alpha(Bao memory Beta, uint64 Iota) public returns(Bao memory) {
-        uint64 Gamma = Upsilon.Charge(Beta, Iota);
-        Gamma = Upsilon.Induce(Beta, Gamma);
-        Gamma = Upsilon.Torque(Beta, Gamma);
-        Gamma = Upsilon.Amplify(Beta, Gamma);
-        Gamma = Upsilon.Sustain(Beta, Gamma);
-        Beta = Upsilon.React(Beta, Gamma);
+        uint64 DIRAC = Upsilon.Charge(Beta, Iota);
+        DIRAC = Upsilon.Induce(Beta, DIRAC);
+        DIRAC = Upsilon.Torque(Beta, DIRAC);
+        DIRAC = Upsilon.Amplify(Beta, DIRAC);
+        DIRAC = Upsilon.Sustain(Beta, DIRAC);
+        Beta = Upsilon.React(Beta, DIRAC);
         return Beta;
     }
 
