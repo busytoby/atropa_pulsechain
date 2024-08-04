@@ -14,7 +14,7 @@ contract ZHOU is SH {
         Tau.addOwner(tx.origin);
 
         Theta.Mu = new SHA("Zheng Rod", "ZROD", MathLib);
-        SHA Cone = YI(YiContract).Beta("Yi Shio Cone", "ZCONE");
+        SHA Cone = Tau.Eta().Beta("Yi Shio Cone", "ZCONE");
         SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), MathLib);
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
@@ -41,6 +41,16 @@ contract ZHOU is SH {
         DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // amplify
         DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // sustain
         Theta = Tau.Eta().React(Theta, DIRAC);
+        mintToCap();
+        return Theta;
+    }
+
+    function Pi(uint64 _a) public onlyOwners returns(Bao memory) {
+        uint64 Watt = Theta.Mu.Torque(Theta.Omega); // torque
+        uint64 Ohm = Theta.Mu.Torque(Watt);         // amplify
+        uint64 _pi = Theta.Mu.Torque(Ohm);           // sustain
+        Theta = Tau.Eta().React(Theta, _pi);
+        Theta.Pi = _a ^ Ohm;
         mintToCap();
         return Theta;
     }

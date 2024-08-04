@@ -5,6 +5,7 @@ import "03_shio.sol";
 struct Bao {
     SHA Mu;
     uint64 Xi;
+    uint64 Pi;
 
     address Shio;
     uint64 Ring;
