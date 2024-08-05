@@ -14,13 +14,13 @@ contract YAU is SH {
     mapping(uint64 => uint64) private Connections;
     mapping(uint64 => address) private ConnectionAddresses;
 
-    constructor(address MathLib, address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(MathLib, 111) MultiOwnable(msg.sender) {
+    constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(SH(ZhouAddress).Xiao.address, 111) MultiOwnable(msg.sender) {
         Theta = ZHOU(ZhouAddress);
         Theta.addOwner(address(this));
 
         Alpha.Mu = Theta.Alpha("Yau Rod", "YROD");
         SHA Cone = Theta.Tau().Eta().Beta("Yi Cone", "XCONE");
-        SHIO ZhengShio = new SHIO(address(Alpha.Mu), address(Cone), MathLib);
+        SHIO ZhengShio = new SHIO(address(Alpha.Mu), address(Cone), SH(ZhouAddress).Xiao.address);
         Alpha.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Theta));

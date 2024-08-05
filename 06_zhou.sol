@@ -4,11 +4,10 @@ import "05_zheng.sol";
 
 contract ZHOU is SH {
     string public constant Type = "ZHOU";
-    address public constant MathLib = 0x48087234ed7bc38e04347176b08B860E643806e2;
 
     ZHENG public Tau;
 
-    constructor(address YiContract, address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(MathLib, 313) MultiOwnable(msg.sender) {
+    constructor(address YiContract, address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(SH(YiContract).Xiao.address, 313) MultiOwnable(msg.sender) {
         Tau = ZHENG(ZhengContract);
         Tau.addOwner(address(this));
 
@@ -16,7 +15,7 @@ contract ZHOU is SH {
 
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Tau.Eta().Beta("Yi Shio Cone", "ZCONE");
-        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), MathLib);
+        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), SH(YiContract).Xiao.address);
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Tau));

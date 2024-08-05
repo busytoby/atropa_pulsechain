@@ -9,7 +9,7 @@ contract ZHENG is SH {
     mapping(uint64 => Bao) private Sigma;  // Rods
     mapping(uint64 => Bao) private Upsilon; // Cones
 
-    constructor(address MathLib, address YiContract) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(MathLib, 100) MultiOwnable(msg.sender) {
+    constructor(address YiContract) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(SH(YiContract).Xiao.address, 100) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
         Eta.addOwner(msg.sender);
 
