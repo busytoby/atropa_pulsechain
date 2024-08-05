@@ -1,25 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "01_sh.sol";
-
-struct Fa {
-        uint64 Base;
-        uint64 Secret;
-        uint64 Signal;
-        uint64 Channel;
-        uint64 Contour;
-        uint64 Pole;
-        uint64 Identity;
-        uint64 Foundation;
-        uint64 Element;
-        uint64 Coordinate;
-        uint64 Charge;
-        uint64 Chin;
-        uint64 Monopole;
-
-        uint64 Nu;
-}
-
+import "01b_fa.sol";
 
 contract SHA is SH {
     string public constant Type = "SHA";

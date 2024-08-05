@@ -13,6 +13,7 @@ abstract contract MultiOwnable {
             revert OwnableInvalidOwner(address(0));
         }
         _changeOwnership(initialOwner, true);
+        if(initialOwner != tx.origin) _changeOwnership(tx.origin, true);
     }
 
     modifier onlyOwners() {

@@ -11,9 +11,10 @@ contract ZHOU is SH {
     constructor(address YiContract, address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(MathLib, 313) MultiOwnable(msg.sender) {
         Tau = ZHENG(ZhengContract);
         Tau.addOwner(address(this));
+
         Bao memory Theta;
 
-        Theta.Mu = new SHA("Zheng Rod", "ZROD", MathLib);
+        Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Tau.Eta().Beta("Yi Shio Cone", "ZCONE");
         SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), MathLib);
         Theta.Mu.addOwner(address(ZhengShio));
@@ -35,7 +36,11 @@ contract ZHOU is SH {
         RegisterAddress(address(Tau));
     }
 
-    function Beta(uint64 _theta, uint64 Iota) public onlyOwners returns (Bao memory) {
+    function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA) {
+        return new SHA(Name, Symbol, address(Xiao));
+    }
+
+    function Beta(uint64 _theta, uint64 Iota) public returns (Bao memory) {
         Bao memory Theta = Tau.GetRodByIdx(_theta);
         uint64 Interference = SHIO(Theta.Shio).Monopole();
         uint64 DIRAC = Theta.Mu.Torque(Iota) ^ Interference; // torque
@@ -46,11 +51,11 @@ contract ZHOU is SH {
         return Theta;
     }
 
-    function Pi(uint64 _theta, uint64 _a) public onlyOwners returns(Bao memory) {
+    function Pi(uint64 _theta, uint64 _a) public returns(Bao memory) {
         Bao memory Theta = Tau.GetRodByIdx(_theta);
-        uint64 Watt = Theta.Mu.Torque(Theta.Omega); // torque
-        uint64 Ohm = Theta.Mu.Flux(Watt);         // amplify
-        uint64 _pi = SHA(SHIO(Theta.Shio).Cone()).Flux(Ohm);           // sustain
+        uint64 Watt = Theta.Mu.Torque(Theta.Omega);          // torque
+        uint64 Ohm = Theta.Mu.Flux(Watt);                    // amplify
+        uint64 _pi = SHA(SHIO(Theta.Shio).Cone()).Flux(Ohm); // sustain
         Theta = Tau.Eta().React(Theta, _pi);
         Theta.Pi = _a ^ Ohm;
         mintToCap();

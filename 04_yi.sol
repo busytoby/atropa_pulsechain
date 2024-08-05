@@ -19,8 +19,8 @@ contract YI is SH {
         
     SHIO public Psi;
     mapping(address => Bao) private Nu;
-    uint64 private Xi;
-    uint64 private Ring;
+    uint64 public Xi;
+    uint64 public Ring;
     uint64 public Alpha;
 
     constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
