@@ -5,9 +5,11 @@
   "license": "MIT",
   "scripts": {
     "build": "npx hardhat compile --quiet",
+    "fork": "anvil --rpc-url https://rpc.pulsechain.com",
+    "deploy": "npx hardhat run script/deploy.js --network pulsechain",
     "clean": "forge clean; npx hardhat clean; rm -rf coverage.json artifacts/ artifacts-zk/ build/ cache/ cache-zk/ coverage/ example/ node_modules/ types/",
     "coverage": "npx hardhat coverage --solcoverjs ./solcover.js",
-    "deploy": "npx hardhat run scripts/console.ts",
+ 
     "doc": "npx hardhat dodoc",
     "lint": "npx prettier --config ./.prettierrc.json --check . && npx eslint --no-error-on-unmatched-pattern \"**/*.{ts,tsx}\"",
     "pretty": "npx prettier --config ./.prettierrc.json --write . && npx eslint --no-error-on-unmatched-pattern --fix .",
