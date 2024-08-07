@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
-import "06_zhou.sol";
+import "./01_sh.sol";
+import "./06_zhou.sol";
 
 contract YAU is SH {
     string public constant Type = "YAU";

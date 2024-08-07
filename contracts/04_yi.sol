@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "03_shio.sol";
+import "./03_shio.sol";
 
 struct Bao {
     SHA Mu;

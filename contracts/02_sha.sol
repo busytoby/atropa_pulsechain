@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
-import "01b_fa.sol";
+import "./01_sh.sol";
+import "./01b_fa.sol";
 
 contract SHA is SH {
     string public constant Type = "SHA";

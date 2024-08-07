@@ -2,8 +2,8 @@
 pragma solidity ^0.8.21;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "addresses.sol";
-import "faung.sol";
+import "./addresses.sol";
+import "./faung.sol";
 
 contract VMREQ is ERC20, ERC20Burnable {
     uint64 constant public MotzkinPrime = 953467954114363;

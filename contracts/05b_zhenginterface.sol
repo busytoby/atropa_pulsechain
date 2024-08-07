@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "04b_yiinterface.sol";
+import "./04b_yiinterface.sol";
 
 interface ZHENG {
     function addOwner(address newOwner) external;
