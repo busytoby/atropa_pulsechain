@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "02_sha.sol";
+import "./02_sha.sol";
 
 struct Shao {
     SHA Rod;

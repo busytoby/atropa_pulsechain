@@ -31,3 +31,7 @@ Dysnomia - Model-Tare-Controller Framework DLL
 linux - Demo executeable project demo for using Dysnomia without Apparition
 
 Pulse - Demo executeable project for using Dysnomia with Apparition
+
+Hardhat - install with 'yarn'
+        - start pulsechain fork 'yarn fork'
+        - deploy contracts 'yarn deploy'
