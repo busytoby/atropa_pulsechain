@@ -5,34 +5,34 @@ import "05_zheng.sol";
 contract ZHOU is SH {
     string public constant Type = "ZHOU";
 
-    ZHENG public Tau;
+    ZHENG public Upsilon;
 
     constructor(address YiContract, address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(SH(YiContract).Xiao.address, 313) MultiOwnable(msg.sender) {
-        Tau = ZHENG(ZhengContract);
-        Tau.addOwner(address(this));
+        Upsilon = ZHENG(ZhengContract);
+        Upsilon.addOwner(address(this));
 
         Bao memory Theta;
 
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
-        SHA Cone = Tau.Eta().Beta("Yi Shio Cone", "ZCONE");
+        SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
         SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), SH(YiContract).Xiao.address);
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
-        ZhengShio.addOwner(address(Tau));
+        ZhengShio.addOwner(address(Upsilon));
         ZhengShio.addOwner(YiContract);
         Theta.Xi = Xiao.Random();
         ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
-        Tau.Ionize(ZhengShio);
+        Upsilon.Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
-        Theta = Tau.InstallRod(0, Theta);
+        Theta = Upsilon.InstallRod(0, Theta);
 
-        address[] memory ZhengAddresses = Tau.KnownAddresses();
+        address[] memory ZhengAddresses = Upsilon.KnownAddresses();
         for(uint256 i = 0; i < ZhengAddresses.length; i++) {
             RegisterAddress(ZhengAddresses[i]);
         }
-        Tau.RegisterAddress(address(this));
-        RegisterAddress(address(Tau));
+        Upsilon.RegisterAddress(address(this));
+        RegisterAddress(address(Upsilon));
     }
 
     function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA) {
@@ -40,22 +40,22 @@ contract ZHOU is SH {
     }
 
     function Beta(uint64 _theta, uint64 Iota) public returns (Bao memory) {
-        Bao memory Theta = Tau.GetRodByIdx(_theta);
+        Bao memory Theta = Upsilon.GetRodByIdx(_theta);
         uint64 Interference = SHIO(Theta.Shio).Monopole();
         uint64 DIRAC = Theta.Mu.Torque(Iota) ^ Interference; // torque
         DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // amplify
         DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // sustain
-        Theta = Tau.Eta().React(Theta, DIRAC);
+        Theta = Upsilon.Eta().React(Theta, DIRAC);
         mintToCap();
         return Theta;
     }
 
     function Pi(uint64 _theta, uint64 _a) public returns(Bao memory) {
-        Bao memory Theta = Tau.GetRodByIdx(_theta);
+        Bao memory Theta = Upsilon.GetRodByIdx(_theta);
         uint64 Watt = Theta.Mu.Torque(Theta.Omega);          // torque
         uint64 Ohm = Theta.Mu.Flux(Watt);                    // amplify
         uint64 _pi = SHA(SHIO(Theta.Shio).Cone()).Flux(Ohm); // sustain
-        Theta = Tau.Eta().React(Theta, _pi);
+        Theta = Upsilon.Eta().React(Theta, _pi);
         Theta.Pi = _a ^ Ohm;
         mintToCap();
         return Theta;

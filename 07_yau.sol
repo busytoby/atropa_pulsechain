@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
 import "06_zhou.sol";
 
 contract YAU is SH {
     string public constant Type = "YAU";
 
-    ZHOU private Theta;
-    Bao private Alpha;
+    ZHOU private Tau;
+    Bao private Theta;
     SHIO private Shio;
     uint64 public Coulomb;
 
@@ -15,46 +14,46 @@ contract YAU is SH {
     mapping(uint64 => address) private ConnectionAddresses;
 
     constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(SH(ZhouAddress).Xiao.address, 111) MultiOwnable(msg.sender) {
-        Theta = ZHOU(ZhouAddress);
-        Theta.addOwner(address(this));
+        Tau = ZHOU(ZhouAddress);
+        Tau.addOwner(address(this));
 
-        Alpha.Mu = Theta.Alpha("Yau Rod", "YROD");
-        SHA Cone = Theta.Tau().Eta().Beta("Yi Cone", "XCONE");
-        SHIO ZhengShio = new SHIO(address(Alpha.Mu), address(Cone), SH(ZhouAddress).Xiao.address);
-        Alpha.Mu.addOwner(address(ZhengShio));
+        Theta.Mu = Tau.Alpha("Yau Rod", "YROD");
+        SHA Cone = Tau.Upsilon().Eta().Beta("Yi Cone", "XCONE");
+        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), SH(ZhouAddress).Xiao.address);
+        Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
-        ZhengShio.addOwner(address(Theta));
-        Alpha.Xi = Xiao.Random();
-        ZhengShio.Generate(Alpha.Xi, Xiao.Random(), Xiao.Random());
-        Theta.Tau().Ionize(ZhengShio);
-        Alpha.Shio = address(ZhengShio);
-        Alpha.Ring = ZhengShio.Magnetize();
-        Alpha = Theta.Tau().InstallRod(Alpha.Ring, Alpha);
-        Shio = SHIO(Alpha.Shio);
+        ZhengShio.addOwner(address(Tau));
+        Theta.Xi = Xiao.Random();
+        ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
+        Tau.Upsilon().Ionize(ZhengShio);
+        Theta.Shio = address(ZhengShio);
+        Theta.Ring = ZhengShio.Magnetize();
+        Theta = Tau.Upsilon().InstallRod(Theta.Ring, Theta);
+        Shio = SHIO(Theta.Shio);
         Chi();
 
-        address[] memory ZhouAddresses = Theta.KnownAddresses();
+        address[] memory ZhouAddresses = Tau.KnownAddresses();
         for(uint256 i = 0; i < ZhouAddresses.length; i++) {
             RegisterAddress(ZhouAddresses[i]);
         }
-        Theta.RegisterAddress(address(this));
-        RegisterAddress(address(Theta));
+        Tau.RegisterAddress(address(this));
+        RegisterAddress(address(Tau));
     }
 
     function Chi() internal {
-        Coulomb = SHA(SHIO(Alpha.Shio).Cone()).Torque(Alpha.Omicron);
-        uint64 Ohm = SHA(SHIO(Alpha.Shio).Cone()).Flux(Coulomb);
-        uint64 Pi = Alpha.Mu.Flux(Ohm);
-        Alpha = Theta.Tau().Eta().React(Alpha, Pi);
-        Alpha.Omega = Alpha.Omega ^ Shio.Monopole();
+        Coulomb = SHA(SHIO(Theta.Shio).Cone()).Torque(Theta.Omicron);
+        uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
+        uint64 Pi = Theta.Mu.Flux(Ohm);
+        Theta = Tau.Upsilon().Eta().React(Theta, Pi);
+        Theta.Omega = Theta.Omega ^ Shio.Monopole();
         mintToCap();
     }
 
     function Phi() public onlyOwners returns(Bao memory, uint64) {
         uint64 _b = Shio.Flow(Coulomb);
-        uint64 _e = Alpha.Mu.Flux(Shio.Monopole());
-        uint64 _m = Alpha.Mu.Flux(SHA(SHIO(Alpha.Shio).Cone()).View().Monopole);
-        Bao memory Delta = Theta.Tau().Eta().React(Alpha, _m);
+        uint64 _e = Theta.Mu.Flux(Shio.Monopole());
+        uint64 _m = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
+        Bao memory Delta = Tau.Upsilon().Eta().React(Theta, _m);
         Coulomb = Xiao.modExp64(_b, _e, _m);
         
         mintToCap();
