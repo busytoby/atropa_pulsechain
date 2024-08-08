@@ -10,9 +10,6 @@ contract YAU is SH {
     SHIO private Shio;
     uint64 public Coulomb;
 
-    mapping(uint64 => uint64) private Connections;
-    mapping(uint64 => address) private ConnectionAddresses;
-
     constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(SH(ZhouAddress).Xiao.address, 111) MultiOwnable(msg.sender) {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
