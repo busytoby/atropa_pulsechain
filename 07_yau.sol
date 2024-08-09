@@ -42,9 +42,8 @@ contract YAU is SH {
     function Chi() internal {
         Coulomb = SHA(SHIO(Theta.Shio).Cone()).Torque(Theta.Omicron);
         uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
-        uint64 Pi = Theta.Mu.Flux(Ohm);
-        Gamma[1] = Pi;
-        Theta = Tau.Upsilon().Eta().React(Theta, Pi);
+        Gamma[1] = Theta.Mu.Flux(Ohm);
+        Theta = Tau.Upsilon().Eta().React(Theta, Gamma[1]);
         Theta.Omega = Theta.Omega ^ Shio.Monopole();
         mintToCap();
     }
