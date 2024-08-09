@@ -54,18 +54,15 @@ contract SHA is SH {
     }
 
     function Conify(uint64 _Beta) public onlyOwners {
-        assert(Mu.Nu == 0);
         Mu.Identity = _Beta;
         Mu.Foundation = Xiao.modExp64(Mu.Base, Mu.Identity, MotzkinPrime);
-        Mu.Nu = 1;
     }
 
     function Saturate(uint64 _Beta, uint64 Epsilon, uint64 Theta) public onlyOwners {
-        if(Mu.Nu == 0) {
+        if(Mu.Identity == 0) {
             Mu.Identity = _Beta;
             Mu.Foundation = Xiao.modExp64(Mu.Base, Mu.Identity, MotzkinPrime);
         }
-        assert(Mu.Nu <= 1);
         
         uint64 Beta = Xiao.modExp64(Epsilon, Mu.Identity, MotzkinPrime);
         uint64 Rho = Xiao.modExp64(Theta, Mu.Identity, MotzkinPrime);

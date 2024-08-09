@@ -10,13 +10,13 @@ contract YAU is SH {
     SHIO private Shio;
     uint64 public Coulomb;
 
-    constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(SH(ZhouAddress).Xiao.address, 111) MultiOwnable(msg.sender) {
+    constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(address(SH(ZhouAddress).Xiao()), 111) MultiOwnable(msg.sender) {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
 
         Theta.Mu = Tau.Alpha("Yau Rod", "YROD");
         SHA Cone = Tau.Upsilon().Eta().Beta("Yi Cone", "XCONE");
-        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), SH(ZhouAddress).Xiao.address);
+        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), address(SH(ZhouAddress).Xiao()));
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Tau));
@@ -24,8 +24,8 @@ contract YAU is SH {
         ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
         Tau.Upsilon().Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
-        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta);
         Theta.Ring = ZhengShio.Magnetize();
+        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta);
         Shio = SHIO(Theta.Shio);
         Chi();
 

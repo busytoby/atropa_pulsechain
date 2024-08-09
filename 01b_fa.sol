@@ -15,6 +15,4 @@ struct Fa {
         uint64 Charge;
         uint64 Chin;
         uint64 Monopole;
-
-        uint64 Nu;
 }

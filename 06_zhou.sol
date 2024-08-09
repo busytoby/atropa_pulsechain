@@ -7,7 +7,7 @@ contract ZHOU is SH {
 
     ZHENG public Upsilon;
 
-    constructor(address YiContract, address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(SH(YiContract).Xiao.address, 313) MultiOwnable(msg.sender) {
+    constructor(address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(address(SH(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
         Upsilon = ZHENG(ZhengContract);
         Upsilon.addOwner(address(this));
 
@@ -15,17 +15,17 @@ contract ZHOU is SH {
 
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
-        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), SH(YiContract).Xiao.address);
+        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), address(SH(ZhengContract).Xiao()));
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Upsilon));
-        ZhengShio.addOwner(YiContract);
+        ZhengShio.addOwner(address(Upsilon.Eta()));
         Theta.Xi = Xiao.Random();
         ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
         Upsilon.Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
-        Theta = Upsilon.InstallRod(Theta.Xi, Theta);
         Theta.Ring = ZhengShio.Magnetize();
+        Theta = Upsilon.InstallRod(Theta.Xi, Theta);
 
         address[] memory ZhengAddresses = Upsilon.KnownAddresses();
         for(uint256 i = 0; i < ZhengAddresses.length; i++) {
