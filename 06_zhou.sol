@@ -6,6 +6,7 @@ contract ZHOU is SH {
     string public constant Type = "ZHOU";
 
     ZHENG public Upsilon;
+    uint64[2] public Gamma;
 
     constructor(address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(address(SH(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
         Upsilon = ZHENG(ZhengContract);
@@ -25,7 +26,8 @@ contract ZHOU is SH {
         Upsilon.Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
-        Theta = Upsilon.InstallRod(Theta.Xi, Theta);
+        Gamma[0] = Upsilon.Clear(Theta, Theta.Xi);
+        Theta = Upsilon.InstallRod(Theta.Xi, Theta, Gamma[0]);
 
         address[] memory ZhengAddresses = Upsilon.KnownAddresses();
         for(uint256 i = 0; i < ZhengAddresses.length; i++) {
@@ -42,10 +44,11 @@ contract ZHOU is SH {
     function Beta(uint64 _theta, uint64 Iota) public returns (Bao memory) {
         Bao memory Theta = Upsilon.GetRodByIdx(_theta);
         uint64 Interference = SHIO(Theta.Shio).Monopole();
-        uint64 DIRAC = Theta.Mu.Torque(Iota) ^ Interference; // torque
-        DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // amplify
-        DIRAC = Theta.Mu.Torque(DIRAC) ^ Interference;       // sustain
-        Theta = Upsilon.Eta().React(Theta, DIRAC);
+        uint64 DREYFUS = Theta.Mu.Torque(Iota) ^ Interference; // torque
+        DREYFUS = Theta.Mu.Torque(DREYFUS) ^ Interference;       // amplify
+        Gamma[1] = DREYFUS;
+        DREYFUS = Theta.Mu.Torque(DREYFUS) ^ Interference;       // sustain
+        Theta = Upsilon.Eta().React(Theta, DREYFUS);
         mintToCap();
         return Theta;
     }

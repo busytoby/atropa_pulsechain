@@ -7,6 +7,7 @@ contract YAU is SH {
 
     ZHOU private Tau;
     Bao private Theta;
+    uint64[2] public Gamma;
     SHIO private Shio;
     uint64 public Coulomb;
 
@@ -21,11 +22,12 @@ contract YAU is SH {
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Tau));
         Theta.Xi = Xiao.Random();
-        ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
+        ZhengShio.Generate(Theta.Xi, Tau.Gamma(1), Tau.Gamma(0));
         Tau.Upsilon().Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
-        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta);
+        Gamma[0] = Tau.Upsilon().Clear(Theta, Theta.Ring);
+        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Gamma[0]);
         Shio = SHIO(Theta.Shio);
         Chi();
 
@@ -41,6 +43,7 @@ contract YAU is SH {
         Coulomb = SHA(SHIO(Theta.Shio).Cone()).Torque(Theta.Omicron);
         uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
         uint64 Pi = Theta.Mu.Flux(Ohm);
+        Gamma[1] = Pi;
         Theta = Tau.Upsilon().Eta().React(Theta, Pi);
         Theta.Omega = Theta.Omega ^ Shio.Monopole();
         mintToCap();

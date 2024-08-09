@@ -40,9 +40,8 @@ contract ZHENG is SH {
         return Sigma[_theta];
     }
 
-    function InstallRod(uint64 Theta, Bao memory Beta) public onlyOwners returns(Bao memory) {
+    function InstallRod(uint64 Theta, Bao memory Beta, uint64 DIRAC) public onlyOwners returns(Bao memory) {
         Eta.Bing(Beta);
-        uint64 DIRAC = Clear(Beta, Theta);
         Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
         return Beta;
