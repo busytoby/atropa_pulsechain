@@ -91,8 +91,7 @@ contract SHIO is SH {
     }
 
     function Flow(uint64 Pi) public onlyOwners returns(uint64) {
-        uint64 Alpha = Xiao.modExp64(Pi, Monopole, Rho.Cone.View().Channel);
-        return Alpha;
+        return Xiao.modExp64(Pi, Monopole, Rho.Cone.View().Channel);
     }
 
     function React(uint64 Pi) public onlyOwners returns(uint64, uint64) {

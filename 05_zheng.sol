@@ -20,26 +20,14 @@ contract ZHENG is SH {
         RegisterAddress(address(Eta));
     }
 
-    function Alpha2(Bao memory Beta, uint64 Iota) public returns(uint64[5] memory, uint64, uint64) {
-        uint64 B;
-        uint64[5] memory A;
-        B = Eta.Charge(Beta, Iota);
-        A[0] = B;
-        B = Eta.Induce(Beta, B);
-        A[1] = B;
-        B = Eta.Torque(Beta, B);
-        A[2] = B;
-        B = Eta.Amplify(Beta, B);
-        A[3] = B;
-        B = Eta.Sustain(Beta, B);
-        A[4] = B;
-        Beta = Eta.React(Beta, B);
-        return (A, Beta.Omicron, Beta.Omega);
+    function Clear(Bao memory Beta, uint64 Iota) public returns(uint64) {
+        uint64 DIRAC = Eta.Charge(Beta, Iota);
+        DIRAC = Eta.Induce(Beta, DIRAC);
+        return DIRAC;
     }
 
-    function Alpha(Bao memory Beta, uint64 Iota) public returns(Bao memory) {
-        uint64 DIRAC1 = Eta.Charge(Beta, Iota);
-        DIRAC1 = Eta.Induce(Beta, DIRAC1);
+
+    function Sign(Bao memory Beta, uint64 DIRAC1) public returns(Bao memory) {
         uint64 DIRAC2 = Eta.Torque(Beta, DIRAC1);
         DIRAC2 = Eta.Amplify(Beta, DIRAC2);
         assert(DIRAC1 == DIRAC2);
@@ -54,7 +42,8 @@ contract ZHENG is SH {
 
     function InstallRod(uint64 Theta, Bao memory Beta) public onlyOwners returns(Bao memory) {
         Eta.Bing(Beta);
-        Beta = Alpha(Beta, Theta);
+        uint64 DIRAC = Clear(Beta, Theta);
+        Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
         return Beta;
     }

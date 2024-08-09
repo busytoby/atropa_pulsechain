@@ -67,19 +67,19 @@ contract YI is SH {
         return SHIO(Gamma.Shio).Charge(Gamma.Ring, Rho);
     }
 
-    function Induce(Bao memory Gamma, uint64 Epsilon) public returns(uint64) {
+    function Induce(Bao memory Gamma, uint64 Epsilon) public view returns(uint64) {
         return SHIO(Gamma.Shio).Induce(Gamma.Ring, Epsilon);
     }
 
-    function Torque(Bao memory Gamma, uint64 Delta) public returns(uint64) {
+    function Torque(Bao memory Gamma, uint64 Delta) public view returns(uint64) {
         return SHIO(Gamma.Shio).Torque(Delta);
     }
 
-    function Amplify(Bao memory Gamma, uint64 Upsilon) public returns(uint64) {
+    function Amplify(Bao memory Gamma, uint64 Upsilon) public view returns(uint64) {
         return Torque(Gamma, Upsilon);
     }
 
-    function Sustain(Bao memory Gamma, uint64 Ohm) public returns(uint64) {
+    function Sustain(Bao memory Gamma, uint64 Ohm) public view returns(uint64) {
         return Torque(Gamma, Ohm);
     }
 
