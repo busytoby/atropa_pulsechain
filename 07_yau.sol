@@ -24,8 +24,8 @@ contract YAU is SH {
         ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
         Tau.Upsilon().Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
+        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta);
         Theta.Ring = ZhengShio.Magnetize();
-        Theta = Tau.Upsilon().InstallRod(Theta.Ring, Theta);
         Shio = SHIO(Theta.Shio);
         Chi();
 

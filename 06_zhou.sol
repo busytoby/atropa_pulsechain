@@ -24,8 +24,8 @@ contract ZHOU is SH {
         ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
         Upsilon.Ionize(ZhengShio);
         Theta.Shio = address(ZhengShio);
+        Theta = Upsilon.InstallRod(Theta.Xi, Theta);
         Theta.Ring = ZhengShio.Magnetize();
-        Theta = Upsilon.InstallRod(0, Theta);
 
         address[] memory ZhengAddresses = Upsilon.KnownAddresses();
         for(uint256 i = 0; i < ZhengAddresses.length; i++) {
