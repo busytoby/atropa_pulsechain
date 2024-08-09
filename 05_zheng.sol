@@ -20,6 +20,23 @@ contract ZHENG is SH {
         RegisterAddress(address(Eta));
     }
 
+    function Alpha2(Bao memory Beta, uint64 Iota) public returns(uint64[5] memory, uint64, uint64) {
+        uint64 B;
+        uint64[5] memory A;
+        B = Eta.Charge(Beta, Iota);
+        A[0] = B;
+        B = Eta.Induce(Beta, B);
+        A[1] = B;
+        B = Eta.Torque(Beta, B);
+        A[2] = B;
+        B = Eta.Amplify(Beta, B);
+        A[3] = B;
+        B = Eta.Sustain(Beta, B);
+        A[4] = B;
+        Beta = Eta.React(Beta, B);
+        return (A, Beta.Omicron, Beta.Omega);
+    }
+
     function Alpha(Bao memory Beta, uint64 Iota) public returns(Bao memory) {
         uint64 DIRAC = Eta.Charge(Beta, Iota);
         DIRAC = Eta.Induce(Beta, DIRAC);

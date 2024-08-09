@@ -78,17 +78,15 @@ contract SHIO is SH {
         return Ring;
     }
 
-    function Charge(uint64 Ring, uint64 Gamma) public onlyOwners returns(uint64) {
-        uint64 Alpha = Xiao.modExp64(Rho.Barn, Gamma, Ring);
-        return Alpha;
+    function Charge(uint64 Ring, uint64 Gamma) public view onlyOwners returns(uint64) {
+        return Rho.Barn ^ Gamma % Ring;
     }
 
-    function Induce(uint64 Ring, uint64 Beta) public onlyOwners returns(uint64) {
-        uint64 Alpha = Xiao.modExp64(Beta, Manifold, Ring);
-        return Alpha;
+    function Induce(uint64 Ring, uint64 Beta) public view onlyOwners returns(uint64) {
+        return Beta ^ Manifold % Ring;
     }
 
-    function Torque(uint64 Pi) public onlyOwners returns(uint64) {
+    function Torque(uint64 Pi) public view onlyOwners returns(uint64) {
         return SHA(Rho.Cone).Torque(Pi);
     }
 

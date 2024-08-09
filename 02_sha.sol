@@ -85,14 +85,12 @@ contract SHA is SH {
         return Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
     }
 
-    function Torque(uint64 Pi) public returns(uint64) {
-        uint64 Alpha = Xiao.modExp64(Pi, Mu.Element, Mu.Channel);
-        return Alpha;
+    function Torque(uint64 Pi) public view returns(uint64) {
+        return Pi ^ Mu.Element % Mu.Channel;
     }
 
-    function Flux(uint64 Pi) public returns(uint64) {
-        uint64 Alpha = Xiao.modExp64(Pi, Mu.Monopole, Mu.Channel);
-        return Alpha;
+    function Flux(uint64 Pi) public view returns(uint64) {
+        return Pi ^ Mu.Monopole % Mu.Channel;
     }
 
     function React(uint64 Pi, uint64 Theta) public returns(uint64, uint64) {
