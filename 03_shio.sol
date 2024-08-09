@@ -78,8 +78,8 @@ contract SHIO is SH {
         return Ring;
     }
 
-    function Charge(uint64 Ring, uint64 Gamma) public view onlyOwners returns(uint64) {
-        return Rho.Barn ^ Gamma % Ring;
+    function Charge(uint64 Ring, uint64 Gamma) public onlyOwners returns(uint64) {
+        return Xiao.modExp64(Rho.Barn, Gamma, Ring);
     }
 
     function Induce(uint64 Ring, uint64 Beta) public view onlyOwners returns(uint64) {
