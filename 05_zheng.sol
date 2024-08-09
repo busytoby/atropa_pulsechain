@@ -38,12 +38,13 @@ contract ZHENG is SH {
     }
 
     function Alpha(Bao memory Beta, uint64 Iota) public returns(Bao memory) {
-        uint64 DIRAC = Eta.Charge(Beta, Iota);
-        DIRAC = Eta.Induce(Beta, DIRAC);
-        DIRAC = Eta.Torque(Beta, DIRAC);
-        DIRAC = Eta.Amplify(Beta, DIRAC);
-        DIRAC = Eta.Sustain(Beta, DIRAC);
-        Beta = Eta.React(Beta, DIRAC);
+        uint64 DIRAC1 = Eta.Charge(Beta, Iota);
+        DIRAC1 = Eta.Induce(Beta, DIRAC1);
+        uint64 DIRAC2 = Eta.Torque(Beta, DIRAC1);
+        DIRAC2 = Eta.Amplify(Beta, DIRAC2);
+        assert(DIRAC1 == DIRAC2);
+        DIRAC2 = Eta.Sustain(Beta, DIRAC2);
+        Beta = Eta.React(Beta, DIRAC2);
         return Beta;
     }
 
