@@ -27,25 +27,10 @@ contract YI is SH {
         SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
         SHA Cone = new SHA("Shio Cone", "SCONE", MathLib);
         Psi = new SHIO(address(Rod), address(Cone), MathLib);
-        Rod.addOwner(tx.origin);
-        Rod.addOwner(address(Psi));
-        Cone.addOwner(address(Psi));
-        Cone.addOwner(tx.origin);
-        Psi.addOwner(tx.origin);
         Xi = Xiao.Random();
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
         Ring = Psi.Magnetize();
-        Rod.RegisterAddress(address(Cone));
-        Rod.RegisterAddress(address(Psi));
-        Rod.RegisterAddress(address(this));
-        Cone.RegisterAddress(address(Rod));
-        Cone.RegisterAddress(address(Psi));
-        Cone.RegisterAddress(address(this));
-        Psi.RegisterAddress(address(this));
-        RegisterAddress(address(Rod));
-        RegisterAddress(address(Cone));
-        RegisterAddress(address(Psi));
         mintToCap();
     }
 

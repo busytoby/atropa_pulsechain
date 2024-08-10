@@ -19,8 +19,6 @@ contract SHIO is SH {
     constructor(address RodAddress, address ConeAddress, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(RodAddress);
         Rho.Cone = SHA(ConeAddress);
-        RegisterAddress(RodAddress);
-        RegisterAddress(ConeAddress);
         mintToCap();
     }
 

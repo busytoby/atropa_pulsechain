@@ -31,13 +31,6 @@ contract YAU is SH {
         Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Monopole[0]);
         Shio = SHIO(Theta.Shio);
         Chi();
-
-        address[] memory ZhouAddresses = Tau.KnownAddresses();
-        for(uint256 i = 0; i < ZhouAddresses.length; i++) {
-            RegisterAddress(ZhouAddresses[i]);
-        }
-        Tau.RegisterAddress(address(this));
-        RegisterAddress(address(Tau));
         mintToCap();
     }
 

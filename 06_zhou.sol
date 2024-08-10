@@ -30,13 +30,6 @@ contract ZHOU is SH {
         Monopole = Upsilon.Clear(Theta, Theta.Xi);
         Theta = Upsilon.InstallRod(Theta.Xi, Theta, Monopole);
         Xi = Theta.Xi;
-
-        address[] memory ZhengAddresses = Upsilon.KnownAddresses();
-        for(uint256 i = 0; i < ZhengAddresses.length; i++) {
-            RegisterAddress(ZhengAddresses[i]);
-        }
-        Upsilon.RegisterAddress(address(this));
-        RegisterAddress(address(Upsilon));
         mintToCap();
     }
 

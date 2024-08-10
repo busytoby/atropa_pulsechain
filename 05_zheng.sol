@@ -10,14 +10,6 @@ contract ZHENG is SH {
 
     constructor(address YiContract) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(address(SH(YiContract).Xiao()), 100) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
-        Eta.addOwner(msg.sender);
-
-        address[] memory YiAddresses = Eta.KnownAddresses();
-        for(uint256 i = 0; i < YiAddresses.length; i++) {
-            RegisterAddress(YiAddresses[i]);
-        }
-        Eta.RegisterAddress(address(this));
-        RegisterAddress(address(Eta));
         mintToCap();
     }
 
