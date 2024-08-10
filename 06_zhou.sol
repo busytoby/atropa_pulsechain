@@ -43,7 +43,7 @@ contract ZHOU is SH {
         return new SHA(Name, Symbol, address(Xiao));
     }
 
-    function Beta(uint64 Iota) public returns (uint64) {
+    function Qin(uint64 Iota) public returns (uint64) {
         Bao memory Theta = Upsilon.GetRodByIdx(Xi);
         uint64 Interference = SHIO(Theta.Shio).Monopole();
         uint64 DREYFUS = Theta.Mu.Torque(Iota); // torque

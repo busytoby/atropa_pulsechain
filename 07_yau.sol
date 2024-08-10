@@ -22,7 +22,7 @@ contract YAU is SH {
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Tau));
         Theta.Xi = Xiao.Random();
-        Monopole[1] = Tau.Beta(Theta.Xi);
+        Monopole[1] = Tau.Qin(Theta.Xi);
         ZhengShio.Generate(Theta.Xi, Monopole[1], Tau.Monopole());
         Tau.Upsilon().Iodize(ZhengShio);
         Theta.Shio = address(ZhengShio);
