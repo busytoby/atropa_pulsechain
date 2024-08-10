@@ -23,7 +23,7 @@ contract YAU is SH {
         ZhengShio.addOwner(address(Tau));
         Theta.Xi = Xiao.Random();
         Gamma[1] = Tau.Beta(Theta.Xi);
-        ZhengShio.Generate(Xiao.Random(), Gamma[1], Tau.Gamma());
+        ZhengShio.Generate(Theta.Xi, Gamma[1], Tau.Gamma());
         Tau.Upsilon().Iodize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
