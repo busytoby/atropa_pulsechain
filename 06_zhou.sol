@@ -47,7 +47,7 @@ contract ZHOU is SH {
         uint64 DREYFUS = Theta.Mu.Torque(Iota) ^ Interference; // torque
         DREYFUS = Theta.Mu.Torque(DREYFUS) ^ Interference;       // amplify
         Gamma[1] = DREYFUS;
-        DREYFUS = Theta.Mu.Torque(DREYFUS) ^ Interference;       // sustain
+        DREYFUS = Theta.Mu.Sustain(DREYFUS);       // sustain
         Theta = Upsilon.Eta().React(Theta, DREYFUS);
         mintToCap();
         return Theta;

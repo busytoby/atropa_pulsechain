@@ -40,7 +40,7 @@ contract YAU is SH {
     }
 
     function Chi() internal {
-        Coulomb = SHA(SHIO(Theta.Shio).Cone()).Torque(Theta.Omicron);
+        Coulomb = SHA(SHIO(Theta.Shio).Cone()).Sustain(Theta.Omicron);
         uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
         Gamma[1] = Theta.Mu.Flux(Ohm);
         Theta = Tau.Upsilon().Eta().React(Theta, Gamma[1]);
