@@ -47,7 +47,7 @@ contract ZHENG is SH {
         return Beta;
     }
 
-    function Ionize(SHIO Shio) public {
+    function Iodize(SHIO Shio) public {
         Shio.Isomerize();
         Shio.Isolate();
     }

@@ -23,7 +23,7 @@ contract ZHOU is SH {
         ZhengShio.addOwner(address(Upsilon.Eta()));
         Theta.Xi = Xiao.Random();
         ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
-        Upsilon.Ionize(ZhengShio);
+        Upsilon.Iodize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
         Gamma[0] = Upsilon.Clear(Theta, Theta.Xi);
