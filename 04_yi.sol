@@ -79,8 +79,8 @@ contract YI is SH {
         return Torque(Gamma, Upsilon);
     }
 
-    function Sustain(Bao memory Gamma, uint64 Ohm) public view returns(uint64) {
-        return Torque(Gamma, Ohm);
+    function Sustain(Bao memory Gamma, uint64 Ohm) public returns(uint64) {
+        return SHIO(Gamma.Shio).Sustain(Ohm);
     }
 
     function React(Bao memory Gamma, uint64 Pi) public returns(Bao memory) {

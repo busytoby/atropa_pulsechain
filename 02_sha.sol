@@ -89,6 +89,10 @@ contract SHA is SH {
         return Pi ^ Mu.Element % Mu.Channel;
     }
 
+    function Sustain(uint64 Rho) public returns(uint64) {
+        return Xiao.modExp64(Rho, Mu.Element, Mu.Channel);
+    }
+
     function Flux(uint64 Pi) public view returns(uint64) {
         return Pi ^ Mu.Monopole % Mu.Channel;
     }

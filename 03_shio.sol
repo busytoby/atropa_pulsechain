@@ -90,6 +90,10 @@ contract SHIO is SH {
         return SHA(Rho.Cone).Torque(Pi);
     }
 
+    function Sustain(uint64 Watt) public onlyOwners returns(uint64) {
+        return SHA(Rho.Rod).Sustain(Watt);
+    }
+
     function Flow(uint64 Pi) public onlyOwners returns(uint64) {
         return Xiao.modExp64(Pi, Monopole, Rho.Cone.View().Channel);
     }
