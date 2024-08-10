@@ -7,7 +7,7 @@ contract YAU is SH {
 
     ZHOU public Tau;
     Bao public Theta;
-    uint64[2] public Gamma;
+    uint64[2] public Monopole;
     SHIO public Shio;
     uint64 public Coulomb;
 
@@ -22,13 +22,13 @@ contract YAU is SH {
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Tau));
         Theta.Xi = Xiao.Random();
-        Gamma[1] = Tau.Beta(Theta.Xi);
-        ZhengShio.Generate(Theta.Xi, Gamma[1], Tau.Gamma());
+        Monopole[1] = Tau.Beta(Theta.Xi);
+        ZhengShio.Generate(Theta.Xi, Monopole[1], Tau.Monopole());
         Tau.Upsilon().Iodize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
-        Gamma[0] = Tau.Upsilon().Clear(Theta, Theta.Ring);
-        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Gamma[0]);
+        Monopole[0] = Tau.Upsilon().Clear(Theta, Theta.Ring);
+        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Monopole[0]);
         Shio = SHIO(Theta.Shio);
         Chi();
 

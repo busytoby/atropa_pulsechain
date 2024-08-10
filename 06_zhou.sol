@@ -7,7 +7,7 @@ contract ZHOU is SH {
 
     ZHENG public Upsilon;
     uint64 public Xi;
-    uint64 public Gamma;
+    uint64 public Monopole;
 
     constructor(address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(address(SH(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
         Upsilon = ZHENG(ZhengContract);
@@ -27,8 +27,8 @@ contract ZHOU is SH {
         Upsilon.Iodize(ZhengShio);
         Theta.Shio = address(ZhengShio);
         Theta.Ring = ZhengShio.Magnetize();
-        Gamma = Upsilon.Clear(Theta, Theta.Xi);
-        Theta = Upsilon.InstallRod(Theta.Xi, Theta, Gamma);
+        Monopole = Upsilon.Clear(Theta, Theta.Xi);
+        Theta = Upsilon.InstallRod(Theta.Xi, Theta, Monopole);
         Xi = Theta.Xi;
 
         address[] memory ZhengAddresses = Upsilon.KnownAddresses();
