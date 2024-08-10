@@ -5,10 +5,10 @@ import "06_zhou.sol";
 contract YAU is SH {
     string public constant Type = "YAU";
 
-    ZHOU private Tau;
-    Bao private Theta;
+    ZHOU public Tau;
+    Bao public Theta;
     uint64[2] public Gamma;
-    SHIO private Shio;
+    SHIO public Shio;
     uint64 public Coulomb;
 
     constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(address(SH(ZhouAddress).Xiao()), 111) MultiOwnable(msg.sender) {
@@ -53,7 +53,7 @@ contract YAU is SH {
         uint64 _e = Theta.Mu.Flux(Shio.Monopole());
         uint64 _m = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
         Bao memory Delta = Tau.Upsilon().Eta().React(Theta, _m);
-        Coulomb = Xiao.modExp64(_b, _e, _m);
+        Coulomb = _b ^ _e % _m;
         
         mintToCap();
         return (Delta, Coulomb);
