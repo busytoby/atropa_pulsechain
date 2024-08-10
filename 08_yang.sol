@@ -19,5 +19,6 @@ contract YANG is SH {
         }
         Upsilon.RegisterAddress(address(this));
         RegisterAddress(address(Upsilon));
+        mintToCap();
     }
 }

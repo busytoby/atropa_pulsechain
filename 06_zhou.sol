@@ -37,9 +37,11 @@ contract ZHOU is SH {
         }
         Upsilon.RegisterAddress(address(this));
         RegisterAddress(address(Upsilon));
+        mintToCap();
     }
 
     function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA) {
+        mintToCap();
         return new SHA(Name, Symbol, address(Xiao));
     }
 

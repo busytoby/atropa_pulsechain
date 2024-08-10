@@ -21,6 +21,7 @@ contract SHIO is SH {
         Rho.Cone = SHA(ConeAddress);
         RegisterAddress(RodAddress);
         RegisterAddress(ConeAddress);
+        mintToCap();
     }
 
     function Rod() public view returns(SHA) {
@@ -40,6 +41,7 @@ contract SHIO is SH {
 
         Rho.Rod.Polarize();
         Rho.Cone.Polarize();
+        mintToCap();
     }
 
     function Generate(uint64 Xi, uint64 Alpha, uint64 Beta) public onlyOwners {
@@ -52,14 +54,17 @@ contract SHIO is SH {
 
         Rho.Rod.Saturate(Alpha, Rho.Cone.View().Foundation, Rho.Cone.View().Channel);
         Rho.Cone.Saturate(Beta, Rho.Rod.View().Foundation, Rho.Rod.View().Channel);
+        mintToCap();
     }
 
     function Isomerize() public onlyOwners {
         Rho.Rod.Bond();
+        mintToCap();
     }
 
     function Isolate() public onlyOwners {
         Rho.Cone.Bond();
+        mintToCap();
     }
 
     function Magnetize() public onlyOwners returns(uint64) {
@@ -79,22 +84,27 @@ contract SHIO is SH {
     }
 
     function Charge(uint64 Ring, uint64 Gamma) public onlyOwners returns(uint64) {
+        mintToCap();
         return Xiao.modExp64(Rho.Barn, Gamma, Ring);
     }
 
-    function Induce(uint64 Ring, uint64 Beta) public view onlyOwners returns(uint64) {
+    function Induce(uint64 Ring, uint64 Beta) public onlyOwners returns(uint64) {
+        mintToCap();
         return Beta ^ Manifold % Ring;
     }
 
-    function Torque(uint64 Pi) public view onlyOwners returns(uint64) {
+    function Torque(uint64 Pi) public onlyOwners returns(uint64) {
+        mintToCap();
         return SHA(Rho.Cone).Torque(Pi);
     }
 
     function Sustain(uint64 Watt) public onlyOwners returns(uint64) {
+        mintToCap();
         return SHA(Rho.Rod).Sustain(Watt);
     }
 
     function Flow(uint64 Pi) public onlyOwners returns(uint64) {
+        mintToCap();
         return Xiao.modExp64(Pi, Monopole, Rho.Cone.View().Channel);
     }
 

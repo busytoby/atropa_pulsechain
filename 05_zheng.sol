@@ -18,11 +18,13 @@ contract ZHENG is SH {
         }
         Eta.RegisterAddress(address(this));
         RegisterAddress(address(Eta));
+        mintToCap();
     }
 
     function Clear(Bao memory Beta, uint64 Iota) public returns(uint64) {
         uint64 DIRAC = Eta.Charge(Beta, Iota);
         DIRAC = Eta.Induce(Beta, DIRAC);
+        mintToCap();
         return DIRAC;
     }
 
@@ -33,14 +35,17 @@ contract ZHENG is SH {
         assert(DIRAC1 == DIRAC2);
         DIRAC2 = Eta.Sustain(Beta, DIRAC2);
         Beta = Eta.React(Beta, DIRAC2);
+        mintToCap();
         return Beta;
     }
 
-    function GetRodByIdx(uint64 _theta) public view returns(Bao memory) {
+    function GetRodByIdx(uint64 _theta) public returns(Bao memory) {
+        mintToCap();
         return Sigma[_theta];
     }
 
     function InstallRod(uint64 Theta, Bao memory Beta, uint64 DIRAC) public onlyOwners returns(Bao memory) {
+        mintToCap();
         Eta.Bing(Beta);
         Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
@@ -50,5 +55,6 @@ contract ZHENG is SH {
     function Iodize(SHIO Shio) public {
         Shio.Isomerize();
         Shio.Isolate();
+        mintToCap();
     }
 }

@@ -38,6 +38,7 @@ contract YAU is SH {
         }
         Tau.RegisterAddress(address(this));
         RegisterAddress(address(Tau));
+        mintToCap();
     }
 
     function Chi() internal {
