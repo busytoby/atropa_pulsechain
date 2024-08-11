@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "000_dysnomia.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "00c_multiownable.sol";
 import "addresses.sol";
@@ -12,7 +12,7 @@ interface atropaMath {
     function modExp(uint256 _b, uint256 _e, uint256 _m) external returns (uint256);
 }
 
-abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
+abstract contract SH is DYSNOMIA, MultiOwnable {
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath public Xiao;
     uint256 public maxSupply;
@@ -24,6 +24,19 @@ abstract contract SH is ERC20, ERC20Burnable, MultiOwnable {
         maxSupply = _maxSupply - 1;
         SetReservePercentage(100);
         AddMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+    }
+
+    function Rename(string memory newName, string memory newSymbol) public onlyOwners {
+        _name = newName;
+        _symbol = newSymbol;
+    }
+
+    function name() public view override returns (string memory) {
+        return _name;
+    }
+
+    function symbol() public view override returns (string memory) {
+        return _symbol;
     }
 
     function mintToCap() public onlyOwners {

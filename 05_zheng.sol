@@ -9,7 +9,7 @@ contract ZHENG is SH {
     YI public Eta;
     mapping(uint64 => Bao) private Sigma;  // Rods
 
-    constructor(address YiContract) ERC20(unicode"VM Zheng", unicode"ZHENG") SH(address(SH(YiContract).Xiao()), 100) MultiOwnable(msg.sender) {
+    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG") SH(address(SH(YiContract).Xiao()), 100) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
         mintToCap();
     }
@@ -20,7 +20,6 @@ contract ZHENG is SH {
         mintToCap();
         return DIRAC;
     }
-
 
     function Sign(Bao memory Beta, uint64 DIRAC1) public returns(Bao memory) {
         uint64 DIRAC2 = Eta.Torque(Beta, DIRAC1);

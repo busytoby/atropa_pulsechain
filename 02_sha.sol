@@ -9,7 +9,7 @@ contract SHA is SH {
     Fa private Mu;
     uint64 public Dynamo;
 
-    constructor(string memory name, string memory symbol, address MathLib) ERC20(name, symbol) SH(MathLib, 131) MultiOwnable(msg.sender) {
+    constructor(string memory name, string memory symbol, address MathLib) DYSNOMIA(name, symbol) SH(MathLib, 131) MultiOwnable(msg.sender) {
         mintToCap();
         Seed();
         Tune();

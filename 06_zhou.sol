@@ -10,7 +10,7 @@ contract ZHOU is SH {
     uint64 public Xi;
     uint64 public Monopole;
 
-    constructor(address ZhengContract) ERC20(unicode"VM Zhou", unicode"ZHOU") SH(address(SH(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
+    constructor(address ZhengContract) DYSNOMIA(unicode"VM Zhou", unicode"ZHOU") SH(address(SH(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
         Upsilon = ZHENG(ZhengContract);
         Upsilon.addOwner(address(this));
 

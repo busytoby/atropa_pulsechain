@@ -13,7 +13,7 @@ contract YAU is SH {
     SHIO public Shio;
     uint64 public Coulomb;
 
-    constructor(address ZhouAddress) ERC20(unicode"VM Yau", unicode"YAU") SH(address(SH(ZhouAddress).Xiao()), 111) MultiOwnable(msg.sender) {
+    constructor(address ZhouAddress) DYSNOMIA(unicode"VM Yau", unicode"YAU") SH(address(SH(ZhouAddress).Xiao()), 111) MultiOwnable(msg.sender) {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
 

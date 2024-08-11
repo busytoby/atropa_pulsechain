@@ -11,14 +11,8 @@ contract YANG is SH {
     uint64 private Operator;
     address private Value;
 
-    constructor(address YauAddress) ERC20(unicode"VM Yang", unicode"YANG") SH(SH(YauAddress).Xiao.address, 8) MultiOwnable(msg.sender) {
+    constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG") SH(SH(YauAddress).Xiao.address, 8) MultiOwnable(msg.sender) {
         Upsilon = YAU(YauAddress);
-        address[] memory YauAddresses = Upsilon.KnownAddresses();
-        for(uint256 i = 0; i < YauAddresses.length; i++) {
-            RegisterAddress(YauAddresses[i]);
-        }
-        Upsilon.RegisterAddress(address(this));
-        RegisterAddress(address(Upsilon));
         mintToCap();
     }
 }

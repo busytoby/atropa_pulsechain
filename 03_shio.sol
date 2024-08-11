@@ -17,7 +17,7 @@ contract SHIO is SH {
     uint64 public Manifold;
     uint64 public Monopole;
 
-    constructor(address RodAddress, address ConeAddress, address MathLib) ERC20(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
+    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(RodAddress);
         Rho.Cone = SHA(ConeAddress);
         mintToCap();
