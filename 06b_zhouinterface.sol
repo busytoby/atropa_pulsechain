@@ -4,12 +4,12 @@ import "05b_zhenginterface.sol";
 
 interface ZHOU {
     function addOwner(address newOwner) external;
-    function RegisterAddress(address _a) external;
-    function KnownAddresses() external view returns(address[] memory);
     function mintToCap() external;
     function Type() external returns(string memory);
-    function Tau() external returns(ZHENG);
+    function Upsilon() external returns(ZHENG);
+    function Monopole() external returns(uint64);
+    function Xi() external returns(uint64);
     function Alpha(string memory Name, string memory Symbol) external returns (SHA);
-    function Beta(uint64 _theta, uint64 Iota) external returns (Bao memory);
-    function Pi(uint64 _theta, uint64 _a) external returns(Bao memory);
+    function Qin(uint64 Iota) external returns (uint64);
+    function Pi(uint64 _a) external returns(Bao memory);
 }

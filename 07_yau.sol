@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "01_sh.sol";
+//import "06b_zhouinterface.sol";
 import "06_zhou.sol";
 
 contract YAU is SH {
@@ -17,7 +19,7 @@ contract YAU is SH {
 
         Theta.Mu = Tau.Alpha("Yau Rod", "YROD");
         SHA Cone = Tau.Upsilon().Eta().Beta("Yi Cone", "XCONE");
-        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), address(SH(ZhouAddress).Xiao()));
+        SHIO ZhengShio = Tau.Upsilon().Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(SH(ZhouAddress).Xiao()));
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Tau));

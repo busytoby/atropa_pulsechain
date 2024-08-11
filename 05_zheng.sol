@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "04_yi.sol";
+import "01_sh.sol";
+import "04b_yiinterface.sol";
 
 contract ZHENG is SH {
     string public constant Type = "ZHENG";

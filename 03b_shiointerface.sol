@@ -25,6 +25,7 @@ interface SHIO {
     function Charge(uint64 Ring, uint64 Gamma) external returns(uint64);
     function Induce(uint64 Ring, uint64 Beta) external returns(uint64);
     function Torque(uint64 Pi) external returns(uint64);
+    function Sustain(uint64 Watt) external returns(uint64);
     function Flow(uint64 Pi) external returns(uint64);
     function React(uint64 Pi) external returns(uint64, uint64);
 }

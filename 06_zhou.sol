@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "05_zheng.sol";
+import "01_sh.sol";
+import "05b_zhenginterface.sol";
 
 contract ZHOU is SH {
     string public constant Type = "ZHOU";
@@ -14,10 +15,9 @@ contract ZHOU is SH {
         Upsilon.addOwner(address(this));
 
         Bao memory Theta;
-
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
-        SHIO ZhengShio = new SHIO(address(Theta.Mu), address(Cone), address(SH(ZhengContract).Xiao()));
+        SHIO ZhengShio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(SH(ZhengContract).Xiao()));
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Upsilon));
@@ -35,7 +35,7 @@ contract ZHOU is SH {
 
     function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA) {
         mintToCap();
-        return new SHA(Name, Symbol, address(Xiao));
+        return Upsilon.Eta().SHAFactoryInterface().New(Name, Symbol, address(address(Xiao)));
     }
 
     function Qin(uint64 Iota) public returns (uint64) {

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "03_shio.sol";
+import "01_sh.sol";
+import "02d_shafactoryinterface.sol";
+import "03b_shiointerface.sol";
+import "03d_shiofactoryinterface.sol";
 
 struct Bao {
     SHA Mu;
@@ -22,11 +25,15 @@ contract YI is SH {
     uint64 public Xi;
     uint64 public Ring;
     uint64 public Alpha;
+    SHAFactory public SHAFactoryInterface;
+    SHIOFactory public SHIOFactoryInterface;
 
-    constructor(address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
-        SHA Rod = new SHA("Shio Rod", "SROD", MathLib);
-        SHA Cone = new SHA("Shio Cone", "SCONE", MathLib);
-        Psi = new SHIO(address(Rod), address(Cone), MathLib);
+    constructor(address _shaFactory, address _shioFactory, address MathLib) ERC20(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
+        SHAFactoryInterface = SHAFactory(_shaFactory);
+        SHIOFactoryInterface = SHIOFactory(_shioFactory);
+        SHA Rod = SHAFactoryInterface.New("Shio Rod", "SROD", MathLib);
+        SHA Cone = SHAFactoryInterface.New("Shio Cone", "SCONE", MathLib);
+        Psi = SHIOFactoryInterface.New(address(Rod), address(Cone), MathLib);
         Xi = Xiao.Random();
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
@@ -35,7 +42,7 @@ contract YI is SH {
     }
 
     function Beta(string calldata Name, string calldata Symbol) public onlyOwners returns(SHA) {
-        SHA Xun = new SHA(Name, Symbol, address(Xiao));
+        SHA Xun = SHAFactoryInterface.New(Name, Symbol, address(Xiao));
         Xun.addOwner(msg.sender);
         mintToCap();
         return Xun;

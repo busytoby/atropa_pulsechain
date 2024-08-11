@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "02d_shafactoryinterface.sol";
 import "03b_shiointerface.sol";
+import "03d_shiofactoryinterface.sol";
 
 struct Bao {
     SHA Mu;
@@ -30,4 +32,6 @@ interface YI {
     function Amplify(Bao memory Gamma, uint64 Upsilon) external returns(uint64);
     function Sustain(Bao memory Gamma, uint64 Ohm) external returns(uint64);
     function React(Bao memory Gamma, uint64 Pi) external returns(Bao memory);
-}
+    function SHAFactoryInterface() external returns(SHAFactory);
+    function SHIOFactoryInterface() external returns(SHIOFactory);
+ }
