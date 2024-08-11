@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
+import "01_dysnomia.sol";
 import "02b_shainterface.sol";
 
 struct Shao {
@@ -10,14 +10,14 @@ struct Shao {
     uint64 Barn;
 }
 
-contract SHIO is SH {
+contract SHIO is DYSNOMIA {
     string public constant Type = "SHIO";
         
     Shao public Rho;
     uint64 public Manifold;
     uint64 public Monopole;
 
-    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO") SH(MathLib, 1551) MultiOwnable(msg.sender) {
+    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO", MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(RodAddress);
         Rho.Cone = SHA(ConeAddress);
         mintToCap();

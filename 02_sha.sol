@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
+import "01_dysnomia.sol";
 import "01b_fa.sol";
 
-contract SHA is SH {
+contract SHA is DYSNOMIA {
     string public constant Type = "SHA";
 
     Fa private Mu;
     uint64 public Dynamo;
 
-    constructor(string memory name, string memory symbol, address MathLib) DYSNOMIA(name, symbol) SH(MathLib, 131) MultiOwnable(msg.sender) {
+    constructor(string memory name, string memory symbol, address MathLib) DYSNOMIA(name, symbol, MathLib, 131) MultiOwnable(msg.sender) {
         mintToCap();
         Seed();
         Tune();

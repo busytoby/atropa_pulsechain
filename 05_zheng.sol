@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
+import "01_dysnomia.sol";
 import "04b_yiinterface.sol";
 
-contract ZHENG is SH {
+contract ZHENG is DYSNOMIA {
     string public constant Type = "ZHENG";
 
     YI public Eta;
     mapping(uint64 => Bao) private Sigma;  // Rods
 
-    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG") SH(address(SH(YiContract).Xiao()), 100) MultiOwnable(msg.sender) {
+    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao()), 100) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
         mintToCap();
     }

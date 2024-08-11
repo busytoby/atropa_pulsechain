@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
+import "01_dysnomia.sol";
 import "02d_shafactoryinterface.sol";
 import "03b_shiointerface.sol";
 import "03d_shiofactoryinterface.sol";
@@ -17,7 +17,7 @@ struct Bao {
     uint64 Omega;
 }
 
-contract YI is SH {
+contract YI is DYSNOMIA {
     string public constant Type = "YI";
         
     SHIO public Psi;
@@ -28,7 +28,7 @@ contract YI is SH {
     SHAFactory public SHAFactoryInterface;
     SHIOFactory public SHIOFactoryInterface;
 
-    constructor(address _shaFactory, address _shioFactory, address MathLib) DYSNOMIA(unicode"VM Yi", unicode"YI") SH(MathLib, 999) MultiOwnable(msg.sender) {
+    constructor(address _shaFactory, address _shioFactory, address MathLib) DYSNOMIA(unicode"VM Yi", unicode"YI", MathLib, 999) MultiOwnable(msg.sender) {
         SHAFactoryInterface = SHAFactory(_shaFactory);
         SHIOFactoryInterface = SHIOFactory(_shioFactory);
         SHA Rod = SHAFactoryInterface.New("Shio Rod", "SROD", MathLib);

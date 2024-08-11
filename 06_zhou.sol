@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "01_sh.sol";
+import "01_dysnomia.sol";
 import "05b_zhenginterface.sol";
 
-contract ZHOU is SH {
+contract ZHOU is DYSNOMIA {
     string public constant Type = "ZHOU";
 
     ZHENG public Upsilon;
     uint64 public Xi;
     uint64 public Monopole;
 
-    constructor(address ZhengContract) DYSNOMIA(unicode"VM Zhou", unicode"ZHOU") SH(address(SH(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
+    constructor(address ZhengContract) DYSNOMIA(unicode"VM Zhou", unicode"ZHOU", address(DYSNOMIA(ZhengContract).Xiao()), 313) MultiOwnable(msg.sender) {
         Upsilon = ZHENG(ZhengContract);
         Upsilon.addOwner(address(this));
 
         Bao memory Theta;
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
-        SHIO ZhengShio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(SH(ZhengContract).Xiao()));
+        SHIO ZhengShio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhengContract).Xiao()));
         Theta.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Upsilon));
