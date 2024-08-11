@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-import {IERC20Errors} from  "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
-
-abstract contract DYSNOMIA is Context, IERC20, IERC20Metadata, IERC20Errors {
+abstract contract DYSNOMIA {
     mapping(address account => uint256) private _balances;
 
     mapping(address account => mapping(address spender => uint256)) private _allowances;
@@ -42,16 +37,16 @@ abstract contract DYSNOMIA is Context, IERC20, IERC20Metadata, IERC20Errors {
     }
 
     function burn(uint256 value) public virtual {
-        _burn(_msgSender(), value);
+        _burn(msg.sender, value);
     }
 
     function burnFrom(address account, uint256 value) public virtual {
-        _spendAllowance(account, _msgSender(), value);
+        _spendAllowance(account, msg.sender, value);
         _burn(account, value);
     }
 
     function transfer(address to, uint256 value) public virtual returns (bool) {
-        address owner = _msgSender();
+        address owner = msg.sender;
         _transfer(owner, to, value);
         return true;
     }
@@ -61,13 +56,13 @@ abstract contract DYSNOMIA is Context, IERC20, IERC20Metadata, IERC20Errors {
     }
 
     function approve(address spender, uint256 value) public virtual returns (bool) {
-        address owner = _msgSender();
+        address owner = msg.sender;
         _approve(owner, spender, value);
         return true;
     }
 
     function transferFrom(address from, address to, uint256 value) public virtual returns (bool) {
-        address spender = _msgSender();
+        address spender = msg.sender;
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
         return true;
@@ -155,4 +150,14 @@ abstract contract DYSNOMIA is Context, IERC20, IERC20Metadata, IERC20Errors {
             }
         }
     }
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
+    error ERC20InvalidSender(address sender);
+    error ERC20InvalidReceiver(address receiver);
+    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+    error ERC20InvalidApprover(address approver);
+    error ERC20InvalidSpender(address spender);
 }
