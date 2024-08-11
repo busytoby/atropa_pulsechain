@@ -31,14 +31,6 @@ abstract contract SH is DYSNOMIA, MultiOwnable {
         _symbol = newSymbol;
     }
 
-    function name() public view override returns (string memory) {
-        return _name;
-    }
-
-    function symbol() public view override returns (string memory) {
-        return _symbol;
-    }
-
     function mintToCap() public onlyOwners {
         if(totalSupply() < (maxSupply * 10 ** decimals()))
             _mint(address(this), 1 * 10 ** decimals());
