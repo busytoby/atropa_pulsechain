@@ -50,16 +50,14 @@ contract ZHOU is DYSNOMIA {
         return AMP;
     }
 
-    /*
-    function Pi(uint64 _a) public returns(Bao memory) {
-        Bao memory Theta = Upsilon.GetRodByIdx(Xi);
-        uint64 Watt = Theta.Mu.Torque(Theta.Omega);          // torque
-        uint64 Ohm = Theta.Mu.Flux(Watt);                    // amplify
-        uint64 _pi = SHA(SHIO(Theta.Shio).Cone()).Flux(Ohm); // sustain
-        Theta = Upsilon.Eta().React(Theta, _pi);
-        Theta.Pi = _a ^ Ohm;
+    function Pi() public returns(Bao memory) {
+        Bao memory Thetan = Upsilon.GetRodByIdx(Xi);
+        uint64 Watt = Thetan.Mu.Torque(Thetan.Omega);          // torque
+        uint64 Ohm = Thetan.Mu.Flux(Watt);                    // amplify
+        uint64 _pi = SHA(SHIO(Thetan.Shio).Cone()).Flux(Ohm); // sustain
+        Thetan = Upsilon.Eta().React(Thetan, _pi);
+        Thetan.Pi = Monopole ^ Ohm;
         mintToCap();
-        return Theta;
+        return Thetan;
     }
-    */
 }
