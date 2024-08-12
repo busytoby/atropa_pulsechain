@@ -11,5 +11,5 @@ interface ZHOU {
     function Xi() external returns(uint64);
     function Alpha(string memory Name, string memory Symbol) external returns (SHA);
     function Qin(uint64 Iota) external returns (uint64);
-    function Pi(uint64 _a) external returns(Bao memory);
+    function Pi() external returns(Bao memory);
 }

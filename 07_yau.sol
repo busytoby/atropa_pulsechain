@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "01_dysnomia.sol";
-//import "06b_zhouinterface.sol";
-import "06_zhou.sol";
+import "06b_zhouinterface.sol";
 
 contract YAU is DYSNOMIA {
     string public constant Type = "YAU";
