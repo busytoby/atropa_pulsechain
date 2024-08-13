@@ -15,10 +15,6 @@ contract YANG is DYSNOMIA {
     YAU public Mu;
     Tai public Rho;
 
-    uint64 private Context;
-    uint64 private Operator;
-    address private Value;
-
     constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", DYSNOMIA(YauAddress).Xiao.address, 8) MultiOwnable(msg.sender) {
         Mu = YAU(YauAddress);
         (Rho.Bang, Rho.Lai) = Mu.Phi();
