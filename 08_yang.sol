@@ -6,7 +6,7 @@ import "07b_yauinterface.sol";
 contract YANG is DYSNOMIA {
     string public constant Type = "YANG";
 
-    YAU public Upsilon;
+    YAU public Mu;
 
     Bao public X;
     Bao public Y;
@@ -18,9 +18,9 @@ contract YANG is DYSNOMIA {
     address private Value;
 
     constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", DYSNOMIA(YauAddress).Xiao.address, 8) MultiOwnable(msg.sender) {
-        Upsilon = YAU(YauAddress);
-        (X, Eta) = Upsilon.Phi();
-        Y = Upsilon.Tau().Pi();
+        Mu = YAU(YauAddress);
+        (X, Eta) = Mu.Phi();
+        Y = Mu.Tau().Pi();
         mintToCap();
     }
 }
