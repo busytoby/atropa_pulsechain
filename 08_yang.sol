@@ -6,7 +6,7 @@ import "07b_yauinterface.sol";
 contract YANG is DYSNOMIA {
     string public constant Type = "YANG";
 
-    YAU private Upsilon;
+    YAU public Upsilon;
 
     Bao public X;
     Bao public Y;
