@@ -8,10 +8,6 @@ contract SIU is DYSNOMIA {
 
     YANG public Psi;
 
-    uint64 public Context;
-    uint64 public Operator;
-    uint64 public Value;
-
     constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao()), 1) MultiOwnable(msg.sender) {
         Psi = YANG(YangAddress);
         mintToCap();
