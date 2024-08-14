@@ -14,5 +14,5 @@ interface YANG {
     function Type() external returns(string memory);
     function Mu() external returns(YAU);
     function Rho() external returns(Tai memory);
-    function Pole() external returns(uint64[3] memory);
+    function Pole(uint256) external returns(uint64);
 }

@@ -38,6 +38,4 @@ contract YANG is DYSNOMIA {
 
         mintToCap();
     }
-
-
 }
