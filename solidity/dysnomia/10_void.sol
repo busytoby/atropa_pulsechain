@@ -25,6 +25,10 @@ contract VOID is DYSNOMIA {
         SHIO(GetSoul(Sigma).Shio).Log(LogLine);
     }
 
+    function Log(address Sigma, string memory LogLine) public onlyOwners {
+        SHIO(GetSoul(_activeUsers[Sigma]).Shio).Log(LogLine);
+    }
+
     function Log(string memory Xi, string memory LogLine) public onlyOwners {
         if(keccak256(bytes(Xi)) == keccak256("ZHOU")) {
           SHIO(GetSoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(LogLine);  
