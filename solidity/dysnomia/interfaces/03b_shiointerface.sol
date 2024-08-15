@@ -10,8 +10,11 @@ struct Shao {
 }
 
 interface SHIO {
+    function name() external returns (string memory);
+    function symbol() external returns (string memory);
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external returns (bool);
     function mintToCap() external;
     function Type() external returns(string memory);
     function Rho() external returns(Shao memory);
@@ -29,4 +32,5 @@ interface SHIO {
     function Sustain(uint64 Watt) external returns(uint64);
     function Flow(uint64 Pi) external returns(uint64);
     function React(uint64 Pi) external returns(uint64, uint64);
+    function Log(string memory LogLine) external;
 }

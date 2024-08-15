@@ -17,18 +17,28 @@ contract VOID is DYSNOMIA {
         mintToCap();
     }
 
+    function Log(string memory LogLine) public onlyOwners {
+        SHIO(GetSoul(_activeUsers[msg.sender]).Shio).Log(LogLine);
+    }
+
+    function GetSoul(uint64 Sigma) internal returns(Bao memory On) {
+        return Nu.Psi().Mu().Tau().Upsilon().GetRodByIdx(Sigma);
+    }
+
     function Enter() public returns(uint64[3] memory Saat, Bao memory On) {
         assert(_activeUsers[msg.sender] != 0);
         Saat[0] = Nu.Psi().Pole(2);
         Saat[1] = _activeUsers[msg.sender];
         Saat[2] = Nu.Psi().Mu().Tau().Qin(uint64(uint160(msg.sender) % Xiao.MotzkinPrime()));
 
-        On = Nu.Psi().Mu().Tau().Upsilon().GetRodByIdx(Saat[1]);
+        On = GetSoul(Saat[1]);
+        Nu.Psi().Mu().Tau().Upsilon().AssertAccess(On);
     }
 
     function Enter(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory On) {
         assert(_activeUsers[msg.sender] == 0);
         (Saat, On) = Nu.Miu(name, symbol);
+        Nu.Psi().Mu().Tau().Upsilon().AssertAccess(On);
         _activeUsers[msg.sender] = Saat[1];
     }
 }

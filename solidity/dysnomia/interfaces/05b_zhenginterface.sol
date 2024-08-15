@@ -7,6 +7,7 @@ interface ZHENG {
     function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external returns(string memory);
+    function AssertAccess(Bao memory Beta) external;
     function Eta() external returns(YI);
     function Clear(Bao memory Beta, uint64 Iota) external returns(uint64);
     function Sign(Bao memory Beta, uint64 DIRAC1) external returns(Bao memory);
