@@ -14,7 +14,7 @@ contract SIU is DYSNOMIA {
         mintToCap();
     }
 
-    function Miu(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory On) {
+    function Miu(string memory name, string memory symbol) public onlyOwners returns(uint64[3] memory Saat, Bao memory On) {
         Saat[0] = Psi.Pole(2);
         Saat[1] = Xiao.Random();
         Saat[2] = Psi.Mu().Tau().Qin(uint64(uint160(tx.origin) % Xiao.MotzkinPrime()));
