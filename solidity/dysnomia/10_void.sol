@@ -10,10 +10,14 @@ contract VOID is DYSNOMIA {
 
     SIU public Nu;
     mapping(address => uint64) private _activeUsers;
+    mapping(string => bytes32) private _kecNames;
 
     constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao()), 1) MultiOwnable(msg.sender) {
         Nu = SIU(SiuAddress);
         Nu.addOwner(address(this));
+        _kecNames["ZHOU"] = keccak256("ZHOU");
+        _kecNames["YAU"] = keccak256("YAU");
+        _kecNames["YANG"] = keccak256("YANG");
         mintToCap();
     }
 
@@ -31,11 +35,11 @@ contract VOID is DYSNOMIA {
 
     function Log(string memory Xi, string memory LogLine) public onlyOwners {
         bytes32 XiKec = keccak256(bytes(Xi));
-        if(XiKec == keccak256("ZHOU")) {
+        if(XiKec == _kecNames["ZHOU"]) {
           SHIO(GetSoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(LogLine);  
-        } else if(XiKec == keccak256("YAU")) {
+        } else if(XiKec == _kecNames["YAU"]) {
             SHIO(GetSoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(LogLine);  
-        } else if(XiKec == keccak256("YANG")) {
+        } else if(XiKec == _kecNames["YANG"]) {
             SHIO(GetSoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(LogLine);  
         } else assert(false);        
     }
