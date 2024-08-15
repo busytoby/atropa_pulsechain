@@ -30,11 +30,12 @@ contract VOID is DYSNOMIA {
     }
 
     function Log(string memory Xi, string memory LogLine) public onlyOwners {
-        if(keccak256(bytes(Xi)) == keccak256("ZHOU")) {
+        bytes32 XiKec = keccak256(bytes(Xi));
+        if(XiKec == keccak256("ZHOU")) {
           SHIO(GetSoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(LogLine);  
-        } else if(keccak256(bytes(Xi)) == keccak256("YAU")) {
+        } else if(XiKec == keccak256("YAU")) {
             SHIO(GetSoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(LogLine);  
-        } else if(keccak256(bytes(Xi)) == keccak256("YANG")) {
+        } else if(XiKec == keccak256("YANG")) {
             SHIO(GetSoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(LogLine);  
         } else assert(false);        
     }
