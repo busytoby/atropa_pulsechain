@@ -33,8 +33,8 @@ contract SIU is DYSNOMIA {
         Psi.Mu().Tau().Upsilon().Iodize(ZhengShio);
         On.Shio = address(ZhengShio);
         On.Ring = ZhengShio.Magnetize();
-        uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(On, Saat[1]);
-        On = Psi.Mu().Tau().Upsilon().InstallCone(Saat[2], On, Soul);
+        uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(On, Saat[2]);
+        On = Psi.Mu().Tau().Upsilon().InstallCone(Saat[1], On, Soul);
         return (Saat, On);
     }
 }
