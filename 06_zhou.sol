@@ -15,6 +15,7 @@ contract ZHOU is DYSNOMIA {
         Upsilon.addOwner(address(this));
 
         Bao memory Theta;
+        Theta.Phi = address(this);
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
         SHIO ZhengShio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhengContract).Xiao()));

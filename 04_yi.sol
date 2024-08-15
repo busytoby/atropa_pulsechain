@@ -6,6 +6,7 @@ import "03b_shiointerface.sol";
 import "03d_shiofactoryinterface.sol";
 
 struct Bao {
+    address Phi;
     SHA Mu;
     uint64 Xi;
     uint64 Pi;
@@ -49,7 +50,7 @@ contract YI is DYSNOMIA {
     }
 
     function Bing(Bao memory _b) public onlyOwners {
-        Nu[msg.sender] = _b;
+        Nu[_b.Phi] = _b;
         mintToCap();
     }
     

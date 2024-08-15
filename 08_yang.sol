@@ -21,6 +21,7 @@ contract YANG is DYSNOMIA {
         (Rho.Bang, Pole[0]) = Mu.Phi(); // North Pole
         Rho.Le = Mu.Tau().Pi();
 
+        Rho.Lai.Phi = address(this);
         Rho.Lai.Mu = Mu.Tau().Alpha("Yang Rod", "MROD");
         SHA Cone = Mu.Tau().Upsilon().Eta().Beta("Yang Cone", "MCONE");
         SHIO ZhengShio = Mu.Tau().Upsilon().Eta().SHIOFactoryInterface().New(address(Rho.Lai.Mu), address(Cone), address(DYSNOMIA(YauAddress).Xiao()));

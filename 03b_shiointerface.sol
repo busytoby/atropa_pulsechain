@@ -11,6 +11,7 @@ struct Shao {
 
 interface SHIO {
     function addOwner(address newOwner) external;
+    function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external returns(string memory);
     function Rho() external returns(Shao memory);

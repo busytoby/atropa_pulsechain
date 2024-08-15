@@ -37,6 +37,16 @@ contract ZHENG is DYSNOMIA {
     }
 
     function InstallRod(uint64 Theta, Bao memory Beta, uint64 DIRAC) public onlyOwners returns(Bao memory) {
+        assert(Sigma[Theta].Phi == address(0x0));
+        mintToCap();
+        Eta.Bing(Beta);
+        Beta = Sign(Beta, DIRAC);
+        Sigma[Theta] = Beta;
+        return Beta;
+    }
+
+    function InstallCone(uint64 Theta, Bao memory Beta, uint64 DIRAC) public onlyOwners returns(Bao memory) {
+        assert(Sigma[Theta].Phi == address(0x0));
         mintToCap();
         Eta.Bing(Beta);
         Beta = Sign(Beta, DIRAC);

@@ -10,12 +10,31 @@ contract SIU is DYSNOMIA {
 
     constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao()), 1) MultiOwnable(msg.sender) {
         Psi = YANG(YangAddress);
+
         mintToCap();
     }
 
-    function Miu() public returns(uint64[3] memory Saat) {
+    function Miu(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory Bon) {
         Saat[0] = Psi.Pole(2);
         Saat[1] = Xiao.Random();
         Saat[2] = Psi.Mu().Tau().Qin(uint64(uint160(tx.origin) % Xiao.MotzkinPrime()));
+
+        Bon.Phi = address(this);
+        Bon.Mu = Psi.Mu().Tau().Upsilon().Eta().SHAFactoryInterface().New(string.concat(name, " Rod"), string.concat(symbol, "ROD"), address(address(Xiao)));
+        SHA Cone = Psi.Mu().Tau().Upsilon().Eta().Beta("Siu Cone", "VCONE");
+        SHIO ZhengShio = Psi.Mu().Tau().Upsilon().Eta().SHIOFactoryInterface().New(address(Bon.Mu), address(Cone), address(Xiao));
+        Bon.Mu.addOwner(address(ZhengShio));
+        Cone.addOwner(address(ZhengShio));
+        Cone.renounceOwnership(tx.origin);
+        ZhengShio.addOwner(address(Psi.Mu().Tau().Upsilon()));
+        ZhengShio.addOwner(address(Psi.Mu().Tau().Upsilon().Eta()));
+        Bon.Xi = Saat[0];
+        ZhengShio.Generate(Bon.Xi, Saat[2], Saat[1]);
+        Psi.Mu().Tau().Upsilon().Iodize(ZhengShio);
+        Bon.Shio = address(ZhengShio);
+        Bon.Ring = ZhengShio.Magnetize();
+        uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(Bon, Saat[1]);
+        Bon = Psi.Mu().Tau().Upsilon().InstallCone(Saat[2], Bon, Soul);
+        return (Saat, Bon);
     }
 }

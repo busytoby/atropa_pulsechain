@@ -5,6 +5,7 @@ import "03b_shiointerface.sol";
 import "03d_shiofactoryinterface.sol";
 
 struct Bao {
+    address Phi;
     SHA Mu;
     uint64 Xi;
     uint64 Pi;
@@ -18,6 +19,7 @@ struct Bao {
 
 interface YI {
     function addOwner(address newOwner) external;
+    function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external returns(string memory);
     function Psi() external returns(SHIO);

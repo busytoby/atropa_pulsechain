@@ -16,6 +16,7 @@ contract YAU is DYSNOMIA {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
 
+        Theta.Phi = address(this);
         Theta.Mu = Tau.Alpha("Yau Rod", "YROD");
         SHA Cone = Tau.Upsilon().Eta().Beta("Yi Cone", "XCONE");
         SHIO ZhengShio = Tau.Upsilon().Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhouAddress).Xiao()));

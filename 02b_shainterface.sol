@@ -4,6 +4,7 @@ import "01b_fa.sol";
 
 interface SHA {
     function addOwner(address newOwner) external;
+    function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external returns (string memory);
     function Dynamo() external returns (uint64);
