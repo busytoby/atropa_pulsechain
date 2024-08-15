@@ -14,27 +14,27 @@ contract SIU is DYSNOMIA {
         mintToCap();
     }
 
-    function Miu(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory Bon) {
+    function Miu(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory On) {
         Saat[0] = Psi.Pole(2);
         Saat[1] = Xiao.Random();
         Saat[2] = Psi.Mu().Tau().Qin(uint64(uint160(tx.origin) % Xiao.MotzkinPrime()));
 
-        Bon.Phi = address(this);
-        Bon.Mu = Psi.Mu().Tau().Upsilon().Eta().SHAFactoryInterface().New(string.concat(name, " Rod"), string.concat(symbol, "ROD"), address(address(Xiao)));
+        On.Phi = address(this);
+        On.Mu = Psi.Mu().Tau().Upsilon().Eta().SHAFactoryInterface().New(string.concat(name, " Rod"), string.concat(symbol, "ROD"), address(address(Xiao)));
         SHA Cone = Psi.Mu().Tau().Upsilon().Eta().Beta("Siu Cone", "VCONE");
-        SHIO ZhengShio = Psi.Mu().Tau().Upsilon().Eta().SHIOFactoryInterface().New(address(Bon.Mu), address(Cone), address(Xiao));
-        Bon.Mu.addOwner(address(ZhengShio));
+        SHIO ZhengShio = Psi.Mu().Tau().Upsilon().Eta().SHIOFactoryInterface().New(address(On.Mu), address(Cone), address(Xiao));
+        On.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         Cone.renounceOwnership(tx.origin);
         ZhengShio.addOwner(address(Psi.Mu().Tau().Upsilon()));
         ZhengShio.addOwner(address(Psi.Mu().Tau().Upsilon().Eta()));
-        Bon.Xi = Saat[0];
-        ZhengShio.Generate(Bon.Xi, Saat[2], Saat[1]);
+        On.Xi = Saat[0];
+        ZhengShio.Generate(On.Xi, Saat[2], Saat[1]);
         Psi.Mu().Tau().Upsilon().Iodize(ZhengShio);
-        Bon.Shio = address(ZhengShio);
-        Bon.Ring = ZhengShio.Magnetize();
-        uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(Bon, Saat[1]);
-        Bon = Psi.Mu().Tau().Upsilon().InstallCone(Saat[2], Bon, Soul);
-        return (Saat, Bon);
+        On.Shio = address(ZhengShio);
+        On.Ring = ZhengShio.Magnetize();
+        uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(On, Saat[1]);
+        On = Psi.Mu().Tau().Upsilon().InstallCone(Saat[2], On, Soul);
+        return (Saat, On);
     }
 }
