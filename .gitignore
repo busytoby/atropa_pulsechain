@@ -1,4 +1,4 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
@@ -25,3 +25,7 @@
 /.deps
 /.states
 /artifacts
+/solidity/artifacts
+/solidity/dysnomia/artifacts
+/solidity/dysnomia/interfaces/artifacts
+/solidity/old/artifacts
