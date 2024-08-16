@@ -4,13 +4,14 @@ import { ethers } from 'ethers'
 // execute remix.exeCurrent() from the > command prompt at the bottom of the remixz
 
 const getContract = async (contractName: string, contractAddress, accountIndex?: number): Promise<ethers.Contract> => {
-  console.log(`deploying ${contractName}`)
+  console.log(`getting contract ${contractName}`)
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   try { await remix.call('fileManager', 'rename', libartifactsPath, artifactsPath) } catch {}
   const metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath))
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
-  const contract = new ethers.Contract(contractAddress, metadata.abi, signer);
+  const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
+  const contract = new ethers.Contract(contractAddress, factory.interface, signer);
   return contract
 }
 
@@ -94,18 +95,20 @@ let START = 0;
         result = await deploy('VOID', [siuaddress])
         console.log(`VOID address: ${result.address}`)
         voidaddress = result.address
-        let voidcontract = result
 
       case 10:
         result = await deploy('ATTRIBUTE', [voidaddress]) 
         console.log(`ATTRIBUTE address: ${result.address}`)
         libattributeaddress = result.address
 
-      case 11:
-        //let voidcontract = await getContract('VOID', voidaddress)
-        let enterResult = await voidcontract.Enter("Test", "TEST")
-        //const enterResult = await voidcontract.interface.getFunction("Enter(string,string)")
-        console.log(enterResult)
+      case 99:
+        let voidcontract = await getContract('VOID', voidaddress)
+        try { result = await voidcontract["Enter(string,string)"]("Test", "TEST") } catch {}
+        result = await voidcontract["Enter()"]()
+        result = await voidcontract["SetAttribute(string,string)"]("Username", "mariarahel")
+        result = await voidcontract["Chat(string)"]("Chat Test")
+        //console.log(result)
+        console.log("successful")
     }
   } catch (e) {
     console.log(e.message)
