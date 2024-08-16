@@ -31,14 +31,12 @@ contract ATTRIBUTE is DYSNOMIA {
     }
 
     function Set(uint64 Soul, string memory name, string memory value) public onlyOwners {
-        assert(_attributes[name] > 0);
         assert(bytes(value).length < _attributes[name]);
         _userAttributes[Soul][name] = value;
         mintToCap();
     }
 
     function Get(uint64 Soul, string memory name) public view onlyOwners returns (string memory _a) {
-        assert(_attributes[name] > 0);
         _a = _userAttributes[Soul][name];
         assert(bytes(_a).length > 0);
     }
