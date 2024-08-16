@@ -32,5 +32,5 @@ interface SHIO {
     function Sustain(uint64 Watt) external returns(uint64);
     function Flow(uint64 Pi) external returns(uint64);
     function React(uint64 Pi) external returns(uint64, uint64);
-    function Log(string memory LogLine) external;
+    function Log(uint64 Soul, string memory LogLine) external;
 }

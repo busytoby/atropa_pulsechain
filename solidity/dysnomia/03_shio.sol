@@ -17,7 +17,7 @@ contract SHIO is DYSNOMIA {
     uint64 public Manifold;
     uint64 public Monopole;
 
-    event LogEvent(string LogLine);
+    event LogEvent(uint64 Soul, string LogLine);
 
     constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO", MathLib, 1551) MultiOwnable(msg.sender) {
         Rho.Rod = SHA(RodAddress);
@@ -25,8 +25,8 @@ contract SHIO is DYSNOMIA {
         mintToCap();
     }
 
-    function Log(string memory LogLine) public onlyOwners {
-        emit LogEvent(LogLine);
+    function Log(uint64 Soul, string memory LogLine) public onlyOwners {
+        emit LogEvent(Soul, LogLine);
     }
 
     function Rod() public view returns(SHA) {

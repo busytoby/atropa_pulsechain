@@ -47,7 +47,7 @@ contract ZHENG is DYSNOMIA {
         Eta.Bing(Beta);
         Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
-        SHIO(Beta.Shio).Log("Rod Installed In Zheng Sigma");
+        SHIO(Beta.Shio).Log(Theta, "Rod Installed In Zheng Sigma");
         return Beta;
     }
 
@@ -57,7 +57,7 @@ contract ZHENG is DYSNOMIA {
         Eta.Bing(Beta);
         Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
-        SHIO(Beta.Shio).Log("Cone Installed In Zheng Sigma");
+        SHIO(Beta.Shio).Log(Theta, "Cone Installed In Zheng Sigma");
         return Beta;
     }
 

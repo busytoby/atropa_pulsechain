@@ -26,25 +26,28 @@ contract VOID is DYSNOMIA {
     }
 
     function Log(string memory LogLine) public onlyOwners {
-        SHIO(GetBySoul(_activeUsers[msg.sender]).Shio).Log(LogLine);
+        uint64 Soul = _activeUsers[msg.sender];
+        SHIO(GetBySoul(Soul).Shio).Log(Soul, LogLine);
     }
 
     function Log(uint64 Sigma, string memory LogLine) public onlyOwners {
-        SHIO(GetBySoul(Sigma).Shio).Log(LogLine);
+        SHIO(GetBySoul(Sigma).Shio).Log(Sigma, LogLine);
     }
 
     function Log(address Sigma, string memory LogLine) public onlyOwners {
-        SHIO(GetBySoul(_activeUsers[Sigma]).Shio).Log(LogLine);
+        uint64 Soul = _activeUsers[Sigma];
+        SHIO(GetBySoul(_activeUsers[Sigma]).Shio).Log(Soul, LogLine);
     }
 
     function Log(string memory Xi, string memory LogLine) public onlyOwners {
+        uint64 Soul = _activeUsers[msg.sender];
         bytes32 XiKec = keccak256(bytes(Xi));
         if(XiKec == _kecNames["ZHOU"]) {
-          SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(LogLine);  
+          SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(Soul, LogLine);  
         } else if(XiKec == _kecNames["YAU"]) {
-            SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(LogLine);  
+            SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(Soul, LogLine);  
         } else if(XiKec == _kecNames["YANG"]) {
-            SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(LogLine);  
+            SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(Soul, LogLine);  
         } else assert(false);        
     }
 
