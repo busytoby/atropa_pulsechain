@@ -3,6 +3,17 @@ import { ethers } from 'ethers'
 
 // execute remix.exeCurrent() from the > command prompt at the bottom of the remixz
 
+const getContract = async (contractName: string, contractAddress, accountIndex?: number): Promise<ethers.Contract> => {
+  console.log(`deploying ${contractName}`)
+  const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
+  const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
+  try { await remix.call('fileManager', 'rename', libartifactsPath, artifactsPath) } catch {}
+  const metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath))
+  const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
+  const contract = new ethers.Contract(contractAddress, metadata.abi, signer);
+  return contract
+}
+
 const deploy = async (contractName: string, args: Array<any>, accountIndex?: number): Promise<ethers.Contract> => {
   console.log(`deploying ${contractName}`)
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
@@ -25,8 +36,8 @@ let zhengaddress
 let zhouaddress
 let yauaddress
 let yangaddress
-let siuaddress 
-let voidaddress
+let siuaddress //= ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
+let voidaddress //= ethers.utils.getAddress("0x7A1c4322ecA7454A687324e51CC3657E989C873a")
 let libattributeaddress
 let START = 0;
 // set pre-requisite address to deploy only subset ie: = ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
@@ -83,37 +94,20 @@ let START = 0;
         result = await deploy('VOID', [siuaddress])
         console.log(`VOID address: ${result.address}`)
         voidaddress = result.address
+        let voidcontract = result
 
       case 10:
         result = await deploy('ATTRIBUTE', [voidaddress]) 
         console.log(`ATTRIBUTE address: ${result.address}`)
         libattributeaddress = result.address
+
+      case 11:
+        //let voidcontract = await getContract('VOID', voidaddress)
+        let enterResult = await voidcontract.Enter("Test", "TEST")
+        //const enterResult = await voidcontract.interface.getFunction("Enter(string,string)")
+        console.log(enterResult)
     }
   } catch (e) {
     console.log(e.message)
   }
 })()
-
-/*
-async function deploy(contractName, contractArgs) {
-  try {
-    const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
-    const metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath))
-    const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner()
-    let factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer);
-    let contract = await factory.deploy(contractArgs);
-    console.log(contract.address);
-    console.log(contract.deployTransaction.hash);
-    await contract.deployed()
-    console.log('contract deployed')
-    return contract.address;
-  } catch (e) {
-    console.log(e.message)
-  }
-};
-
-vmreqaddress = deploy("VMREQ", null);
-shafactoryaddress = deploy("SHAFactory", null);
-shiofactoryaddress = deploy("SHIOFactory", null);
-deploy("YI", [shafactoryaddress, shiofactoryaddress, vmreqaddress]);
-*/
