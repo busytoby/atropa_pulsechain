@@ -48,6 +48,12 @@ contract VOID is DYSNOMIA {
         } else assert(false);        
     }
 
+    function Chat(string memory chatline) public {
+        assert(_activeUsers[msg.sender] != 0);
+        string memory Username = GetAttribute("Username");
+        Log("ZHOU", string.concat("<", Username, "> ", chatline));
+    }
+
     function SetAttribute(string memory name, string memory value) public {
         assert(_activeUsers[msg.sender] != 0);
         LIBATTRIBUTE(_libraries["libattribute"]).Set(_activeUsers[msg.sender], name, value);

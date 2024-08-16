@@ -7,7 +7,7 @@ contract ATTRIBUTE is DYSNOMIA {
     string public constant Type = "LibAttribute";
 
     VOID public Void;
-    mapping(string => bool) private _attributes;
+    mapping(string => uint8) private _attributes;
     mapping(uint64 => mapping(string => string)) private _userAttributes;
 
 
@@ -15,29 +15,31 @@ contract ATTRIBUTE is DYSNOMIA {
         Void = VOID(VoidAddress);
         addOwner(VoidAddress);
         Void.AddLibrary("libattribute", address(this));
-        addAttribute("Username");
-        addAttribute("TestAttribute");
+        addAttribute("Username", 12);
+        addAttribute("TestAttribute", 140);
         mintToCap();
     }
 
-    function addAttribute(string memory name) public onlyOwners {
-        _attributes[name] = true;
+    function addAttribute(string memory name, uint8 maxLength) public onlyOwners {
+        _attributes[name] = maxLength;
         mintToCap();
     }
 
     function removeAttribute(string memory name) public onlyOwners {
-        _attributes[name] = false;
+        _attributes[name] = 0;
         mintToCap();
     }
 
     function Set(uint64 Soul, string memory name, string memory value) public onlyOwners {
-        assert(_attributes[name]);
+        assert(_attributes[name] > 0);
+        assert(bytes(value).length < _attributes[name]);
         _userAttributes[Soul][name] = value;
         mintToCap();
     }
 
-    function Get(uint64 Soul, string memory name) public view onlyOwners returns (string memory) {
-        assert(_attributes[name]);
-        return _userAttributes[Soul][name];
+    function Get(uint64 Soul, string memory name) public view onlyOwners returns (string memory _a) {
+        assert(_attributes[name] > 0);
+        _a = _userAttributes[Soul][name];
+        assert(bytes(_a).length > 0);
     }
 }
