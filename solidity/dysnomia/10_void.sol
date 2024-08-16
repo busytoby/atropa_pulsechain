@@ -2,8 +2,7 @@
 pragma solidity ^0.8.21;
 import "./01_dysnomia.sol";
 import "./interfaces/09b_siuinterface.sol";
-import "./lib/registry.sol";
-using LibRegistry for LibRegistry.Registry;
+import "./interfaces/libattribute.sol";
 
 contract VOID is DYSNOMIA {
     string public constant Type = "VOID";
@@ -11,6 +10,7 @@ contract VOID is DYSNOMIA {
     SIU public Nu;
     mapping(address => uint64) private _activeUsers;
     mapping(string => bytes32) private _kecNames;
+    mapping(string => address) private _libraries;
 
     constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao()), 1) MultiOwnable(msg.sender) {
         Nu = SIU(SiuAddress);
@@ -21,30 +21,42 @@ contract VOID is DYSNOMIA {
         mintToCap();
     }
 
+    function AddLibrary(string memory name, address _a) public onlyOwners {
+        _libraries[name] = _a;
+    }
+
     function Log(string memory LogLine) public onlyOwners {
-        SHIO(GetSoul(_activeUsers[msg.sender]).Shio).Log(LogLine);
+        SHIO(GetBySoul(_activeUsers[msg.sender]).Shio).Log(LogLine);
     }
 
     function Log(uint64 Sigma, string memory LogLine) public onlyOwners {
-        SHIO(GetSoul(Sigma).Shio).Log(LogLine);
+        SHIO(GetBySoul(Sigma).Shio).Log(LogLine);
     }
 
     function Log(address Sigma, string memory LogLine) public onlyOwners {
-        SHIO(GetSoul(_activeUsers[Sigma]).Shio).Log(LogLine);
+        SHIO(GetBySoul(_activeUsers[Sigma]).Shio).Log(LogLine);
     }
 
     function Log(string memory Xi, string memory LogLine) public onlyOwners {
         bytes32 XiKec = keccak256(bytes(Xi));
         if(XiKec == _kecNames["ZHOU"]) {
-          SHIO(GetSoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(LogLine);  
+          SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(LogLine);  
         } else if(XiKec == _kecNames["YAU"]) {
-            SHIO(GetSoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(LogLine);  
+            SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(LogLine);  
         } else if(XiKec == _kecNames["YANG"]) {
-            SHIO(GetSoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(LogLine);  
+            SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(LogLine);  
         } else assert(false);        
     }
 
-    function GetSoul(uint64 Sigma) internal returns(Bao memory On) {
+    function SetAttribute(string memory name, string memory value) public {
+        LIBATTRIBUTE(_libraries["libattribute"]).Set(_activeUsers[msg.sender], name, value);
+    }
+
+    function GetAttribute(string memory name) public view returns (string memory) {
+        return LIBATTRIBUTE(_libraries["libattribute"]).Get(_activeUsers[msg.sender], name);
+    }
+
+    function GetBySoul(uint64 Sigma) internal returns(Bao memory On) {
         return Nu.Psi().Mu().Tau().Upsilon().GetRodByIdx(Sigma);
     }
 
@@ -54,7 +66,7 @@ contract VOID is DYSNOMIA {
         Saat[1] = _activeUsers[msg.sender];
         Saat[2] = Nu.Psi().Mu().Tau().Qin(uint64(uint160(msg.sender) % Xiao.MotzkinPrime()));
 
-        On = GetSoul(Saat[1]);
+        On = GetBySoul(Saat[1]);
         Nu.Psi().Mu().Tau().Upsilon().AssertAccess(On);
     }
 

@@ -8,7 +8,7 @@ contract SIU is DYSNOMIA {
 
     YANG public Psi;
 
-    constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao()), 1) MultiOwnable(msg.sender) {
+    constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao()), 999) MultiOwnable(msg.sender) {
         Psi = YANG(YangAddress);
 
         mintToCap();
@@ -35,6 +35,7 @@ contract SIU is DYSNOMIA {
         On.Ring = ZhengShio.Magnetize();
         uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(On, Saat[2]);
         On = Psi.Mu().Tau().Upsilon().InstallCone(Saat[1], On, Soul);
+        mintToCap();
         return (Saat, On);
     }
 }
