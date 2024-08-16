@@ -49,6 +49,7 @@ contract VOID is DYSNOMIA {
     }
 
     function SetAttribute(string memory name, string memory value) public {
+        assert(_activeUsers[msg.sender] != 0);
         LIBATTRIBUTE(_libraries["libattribute"]).Set(_activeUsers[msg.sender], name, value);
     }
 
