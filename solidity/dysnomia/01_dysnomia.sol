@@ -31,7 +31,7 @@ abstract contract DYSNOMIA is MultiOwnable {
         _name = name_;
         _symbol = symbol_;
         Xiao = atropaMath(mathContract);
-        maxSupply = _maxSupply - 1;
+        maxSupply = _maxSupply;
         SetReservePercentage(100);
         AddMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
     }
