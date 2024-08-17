@@ -18,8 +18,8 @@ abstract contract DYSNOMIA is MultiOwnable {
 
     uint256 private _totalSupply;
 
-    string internal _name;
-    string internal _symbol;
+    string internal __name;
+    string internal __symbol;
 
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath public Xiao;
@@ -27,9 +27,9 @@ abstract contract DYSNOMIA is MultiOwnable {
     mapping(address => uint256) public MarketRates;
     uint256 public Reserve;
 
-    constructor(string memory name_, string memory symbol_, address mathContract, uint256 _maxSupply) {
-        _name = name_;
-        _symbol = symbol_;
+    constructor(string memory name_, string memory symbol_, address mathContract, uint256 _maxSupply) { //ERC20(name_, symbol_) {
+        __name = name_;
+        __symbol = symbol_;
         Xiao = atropaMath(mathContract);
         maxSupply = _maxSupply;
         SetReservePercentage(100);
@@ -37,8 +37,8 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function Rename(string memory newName, string memory newSymbol) public onlyOwners {
-        _name = newName;
-        _symbol = newSymbol;
+        __name = newName;
+        __symbol = newSymbol;
     }
 
     function mintToCap() public onlyOwners {
@@ -61,15 +61,15 @@ abstract contract DYSNOMIA is MultiOwnable {
         DYSNOMIA BuyToken = DYSNOMIA(_t);
         bool success1 = BuyToken.transferFrom(msg.sender, address(this), ((_a / (10 ** decimals())) * MarketRates[_t]));
         require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
-        transfer(msg.sender, _a);
+        DYSNOMIA(address(this)).transfer(msg.sender, _a);
     }
 
     function name() public view virtual returns (string memory) {
-        return _name;
+        return __name;
     }
 
     function symbol() public view virtual returns (string memory) {
-        return _symbol;
+        return __symbol;
     }
 
     function decimals() public view virtual returns (uint8) {
@@ -117,12 +117,6 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function _transfer(address from, address to, uint256 value) internal {
-        if (from == address(0)) {
-            revert ERC20InvalidSender(address(0));
-        }
-        if (to == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
-        }
         _update(from, to, value);
     }
 
@@ -133,7 +127,7 @@ abstract contract DYSNOMIA is MultiOwnable {
         } else {
             uint256 fromBalance = _balances[from];
             if (fromBalance < value) {
-                revert ERC20InsufficientBalance(from, fromBalance, value);
+                revert DysnomiaInsufficientBalance(from, to, address(this), fromBalance, value);
             }
             unchecked {
                 // Overflow not possible: value <= fromBalance <= totalSupply.
@@ -157,16 +151,10 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function _mint(address account, uint256 value) internal {
-        if (account == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
-        }
         _update(address(0), account, value);
     }
 
     function _burn(address account, uint256 value) internal {
-        if (account == address(0)) {
-            revert ERC20InvalidSender(address(0));
-        }
         _update(account, address(0), value);
     }
 
@@ -175,12 +163,6 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function _approve(address owner, address spender, uint256 value, bool emitEvent) internal virtual {
-        if (owner == address(0)) {
-            revert ERC20InvalidApprover(address(0));
-        }
-        if (spender == address(0)) {
-            revert ERC20InvalidSpender(address(0));
-        }
         _allowances[owner][spender] = value;
         if (emitEvent) {
             emit Approval(owner, spender, value);
@@ -202,10 +184,6 @@ abstract contract DYSNOMIA is MultiOwnable {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
-    error ERC20InvalidSender(address sender);
-    error ERC20InvalidReceiver(address receiver);
+    error DysnomiaInsufficientBalance(address from, address to, address what, uint256 balance, uint256 needed);
     error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
-    error ERC20InvalidApprover(address approver);
-    error ERC20InvalidSpender(address spender);
 }
