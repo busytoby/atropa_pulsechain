@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../01b_fa.sol";
+import "../include/fa.sol";
 
 interface SHA {
     function addOwner(address newOwner) external;

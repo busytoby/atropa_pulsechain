@@ -1,21 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "../include/bao.sol";
 import "./02d_shafactoryinterface.sol";
 import "./03b_shiointerface.sol";
 import "./03d_shiofactoryinterface.sol";
-
-struct Bao {
-    address Phi;
-    SHA Mu;
-    uint64 Xi;
-    uint64 Pi;
-
-    address Shio;
-    uint64 Ring;
-
-    uint64 Omicron;
-    uint64 Omega;
-}
 
 interface YI {
     function addOwner(address newOwner) external;
@@ -28,6 +16,7 @@ interface YI {
     function Alpha() external returns(uint64);
     function Beta(string calldata Name, string calldata Symbol) external returns(SHA);
     function Bing(Bao memory _b) external;
+    function Bang(address _a) external view returns(Bao memory);
     function Charge(Bao memory Gamma, uint64 Rho) external returns(uint64);
     function Induce(Bao memory Gamma, uint64 Epsilon) external returns(uint64);
     function Torque(Bao memory Gamma, uint64 Delta) external returns(uint64);

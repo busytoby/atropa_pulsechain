@@ -1,22 +1,10 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia.sol";
+import "./include/bao.sol";
 import "./interfaces/02d_shafactoryinterface.sol";
 import "./interfaces/03b_shiointerface.sol";
 import "./interfaces/03d_shiofactoryinterface.sol";
-
-struct Bao {
-    address Phi;
-    SHA Mu;
-    uint64 Xi;
-    uint64 Pi;
-
-    address Shio;
-    uint64 Ring;
-
-    uint64 Omicron;
-    uint64 Omega;
-}
 
 contract YI is DYSNOMIA {
     string public constant Type = "YI";

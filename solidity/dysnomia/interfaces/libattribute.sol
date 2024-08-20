@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "../include/bao.sol";
 
 interface LIBATTRIBUTE {
     function addOwner(address newOwner) external;
@@ -12,4 +13,6 @@ interface LIBATTRIBUTE {
     function Get(uint64 Soul, string memory name) external view returns (string memory);
     function Alias(uint64 Soul, address name, string memory value) external;
     function Alias(uint64 Soul, address name) external view returns (string memory _a);
+    function Alias(uint64 Soul, Bao memory entity, string memory value) external;
+    function Alias(uint64 Soul, Bao memory entity) external view returns (string memory _a);
 }

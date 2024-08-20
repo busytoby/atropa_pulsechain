@@ -53,4 +53,15 @@ contract ATTRIBUTE is DYSNOMIA {
         _a = _userGrades[Soul][name];
         assert(bytes(_a).length > 0);
     }
+
+    function Alias(uint64 Soul, Bao memory entity, string memory value) public onlyOwners {
+        assert(bytes(value).length < 32);
+        _userGrades[Soul][entity.Phi] = value;
+        mintToCap();
+    }
+
+    function Alias(uint64 Soul, Bao memory entity) public view onlyOwners returns (string memory _a) {
+        _a = _userGrades[Soul][entity.Phi];
+        assert(bytes(_a).length > 0);
+    }
 }

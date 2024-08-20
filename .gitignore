@@ -27,6 +27,7 @@
 /artifacts
 /solidity/artifacts
 /solidity/dysnomia/artifacts
+/solidity/dysnomia/include/artifacts
 /solidity/dysnomia/interfaces/artifacts
 /solidity/dysnomia/lib/artifacts
 /solidity/old/artifacts
