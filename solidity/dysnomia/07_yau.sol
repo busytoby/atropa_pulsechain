@@ -48,8 +48,8 @@ contract YAU is DYSNOMIA {
 
     function Phi() public onlyOwners returns(Bao memory, uint64) {
         uint64 _b = Shio.Flow(Coulomb);
-        uint64 _e = Theta.Mu.Flux(Shio.Monopole());
-        uint64 _m = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
+        uint64 _e = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
+        uint64 _m = Theta.Mu.Flux(Shio.Monopole());
         Bao memory Delta = Tau.Upsilon().Eta().React(Theta, _m);
         Coulomb = _b ^ _e % _m;
         
