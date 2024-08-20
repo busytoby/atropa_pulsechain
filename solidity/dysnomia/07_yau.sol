@@ -37,7 +37,7 @@ contract YAU is DYSNOMIA {
     }
 
     function Chi() internal {
-        Coulomb = SHA(SHIO(Theta.Shio).Cone()).Sustain(Theta.Omicron);
+        Coulomb = SHA(SHIO(Theta.Shio).Rod()).Sustain(Theta.Omicron);
         uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
         uint64 Joule = Theta.Mu.Flux(Ohm);
         Theta = Tau.Upsilon().Eta().React(Theta, Joule);
