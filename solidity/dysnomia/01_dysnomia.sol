@@ -24,7 +24,7 @@ abstract contract DYSNOMIA is MultiOwnable {
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath public Xiao;
     uint256 public maxSupply;
-    mapping(address => uint256) public MarketRates;
+    mapping(address => uint256) private _marketRates;
 
     constructor(string memory name_, string memory symbol_, address mathContract) {
         __name = name_;
@@ -46,23 +46,23 @@ abstract contract DYSNOMIA is MultiOwnable {
             _mint(address(this), 1 * 10 ** decimals());
     }
 
-    function AddMarketRate(address _a, uint256 _r) public onlyOwners {
-        MarketRates[_a] = _r;
+    function AddMarketRate(address _a, uint256 _r) internal {
+        _marketRates[_a] = _r;
     }
 
     function Purchase(address _t, uint256 _a) public {
-        assert(MarketRates[_t] > 0);
+        assert(_marketRates[_t] > 0);
         DYSNOMIA BuyToken = DYSNOMIA(_t);
-        uint256 cost = (_a * MarketRates[_t]) / (10 ** decimals());
+        uint256 cost = (_a * _marketRates[_t]) / (10 ** decimals());
         bool success1 = BuyToken.transferFrom(msg.sender, address(this), cost);
         require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
         DYSNOMIA(address(this)).transfer(msg.sender, _a);
     }
 
     function Redeem(address _t, uint256 _a) public {
-        assert(MarketRates[_t] > 0);
+        assert(_marketRates[_t] > 0);
         DYSNOMIA BuyToken = DYSNOMIA(_t);
-        uint256 cost = (_a * MarketRates[_t]) / (10 ** decimals());
+        uint256 cost = (_a * _marketRates[_t]) / (10 ** decimals());
         bool success1 = DYSNOMIA(address(this)).transferFrom(msg.sender, address(this), _a);
         require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
         BuyToken.transfer(msg.sender, cost);
