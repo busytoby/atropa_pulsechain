@@ -27,6 +27,9 @@ contract YI is DYSNOMIA {
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
         Ring = Psi.Magnetize();
+        AddMarketRate(address(Rod), 1 * 10 ** decimals());
+        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        AddMarketRate(address(Psi), 1 * 10 ** decimals());
         mintToCap();
     }
 

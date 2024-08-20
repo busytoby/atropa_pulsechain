@@ -11,6 +11,7 @@ contract ZHENG is DYSNOMIA {
 
     constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao())) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
+        AddMarketRate(address(Eta), 1 * 10 ** decimals());
         mintToCap();
     }
 
@@ -48,6 +49,10 @@ contract ZHENG is DYSNOMIA {
         Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
         SHIO(Beta.Shio).Log(Theta, "Rod Installed In Zheng Sigma");
+        AddMarketRate(Beta.Phi, 1 * 10 ** decimals());
+        AddMarketRate(Beta.Shio, 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Beta.Shio).Rod()), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Beta.Shio).Cone()), 1 * 10 ** decimals());
         return Beta;
     }
 
@@ -58,6 +63,7 @@ contract ZHENG is DYSNOMIA {
         Beta = Sign(Beta, DIRAC);
         Sigma[Theta] = Beta;
         SHIO(Beta.Shio).Log(Theta, "Cone Installed In Zheng Sigma");
+        AddMarketRate(address(SHIO(Beta.Shio).Cone()), 1 * 10 ** decimals());
         return Beta;
     }
 

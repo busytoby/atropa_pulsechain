@@ -36,7 +36,10 @@ contract YANG is DYSNOMIA {
         Rho.Lai.Ring = ZhengShio.Magnetize();
         Pole[2] = Mu.Tau().Qin(Rho.Lai.Xi); // South Pole
         Rho.Lai = Mu.Tau().Upsilon().InstallRod(Rho.Lai.Xi, Rho.Lai, Pole[1]);
-
+        AddMarketRate(address(Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(Rho.Lai.Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        AddMarketRate(Rho.Lai.Shio, 1 * 10 ** decimals());
         mintToCap();
     }
 }

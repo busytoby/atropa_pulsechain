@@ -31,6 +31,10 @@ contract ZHOU is DYSNOMIA {
         Monopole = Upsilon.Clear(Theta, Theta.Xi);
         Theta = Upsilon.InstallRod(Theta.Xi, Theta, Monopole);
         Xi = Theta.Xi;
+        AddMarketRate(address(Upsilon), 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
         mintToCap();
     }
 

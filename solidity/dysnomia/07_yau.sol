@@ -31,6 +31,10 @@ contract YAU is DYSNOMIA {
         Monopole[0] = Tau.Upsilon().Clear(Theta, Theta.Ring);
         Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Monopole[0]);
         Chi();
+        AddMarketRate(address(Tau), 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
         mintToCap();
     }
 

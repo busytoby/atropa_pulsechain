@@ -50,6 +50,10 @@ abstract contract DYSNOMIA is MultiOwnable {
         _marketRates[_a] = _r;
     }
 
+    function GetMarketRate(address _a) public view returns(uint256) {
+        return _marketRates[_a];
+    }
+
     function Purchase(address _t, uint256 _a) public {
         assert(_marketRates[_t] > 0);
         DYSNOMIA BuyToken = DYSNOMIA(_t);

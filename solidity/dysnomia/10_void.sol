@@ -18,6 +18,7 @@ contract VOID is DYSNOMIA {
         _kecNames["ZHOU"] = keccak256("ZHOU");
         _kecNames["YAU"] = keccak256("YAU");
         _kecNames["YANG"] = keccak256("YANG");
+        AddMarketRate(address(Nu), 1 * 10 ** decimals());
         mintToCap();
     }
 
