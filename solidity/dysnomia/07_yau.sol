@@ -9,7 +9,6 @@ contract YAU is DYSNOMIA {
     ZHOU public Tau;
     Bao public Theta;
     uint64[2] public Monopole;
-    SHIO public Shio;
     uint64 public Coulomb;
 
     constructor(address ZhouAddress) DYSNOMIA(unicode"VM Yau", unicode"YAU", address(DYSNOMIA(ZhouAddress).Xiao())) MultiOwnable(msg.sender) {
@@ -31,7 +30,6 @@ contract YAU is DYSNOMIA {
         Theta.Ring = ZhengShio.Magnetize();
         Monopole[0] = Tau.Upsilon().Clear(Theta, Theta.Ring);
         Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Monopole[0]);
-        Shio = SHIO(Theta.Shio);
         Chi();
         mintToCap();
     }
@@ -41,15 +39,15 @@ contract YAU is DYSNOMIA {
         uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
         uint64 Joule = Theta.Mu.Flux(Ohm);
         Theta = Tau.Upsilon().Eta().React(Theta, Joule);
-        Theta.Omega = Theta.Omega ^ Shio.Monopole();
-        Theta.Omicron = Theta.Omicron ^ SHA(Shio.Rod()).View().Monopole;
+        Theta.Omega = Theta.Omega ^ SHIO(Theta.Shio).Monopole();
+        Theta.Omicron = Theta.Omicron ^ SHA(SHIO(Theta.Shio).Rod()).View().Monopole;
         mintToCap();
     }
 
     function Phi() public onlyOwners returns(Bao memory, uint64) {
-        uint64 _b = Shio.Flow(Coulomb);
+        uint64 _b = SHIO(Theta.Shio).Flow(Coulomb);
         uint64 _e = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
-        uint64 _m = Theta.Mu.Flux(Shio.Monopole());
+        uint64 _m = Theta.Mu.Flux(SHIO(Theta.Shio).Monopole());
         Bao memory Delta = Tau.Upsilon().Eta().React(Theta, _m);
         Coulomb = _b ^ _e % _m;
         
