@@ -25,6 +25,18 @@ contract VOID is DYSNOMIA {
         _libraries[name] = _a;
     }
 
+    function Clear(uint64 Iota) public returns(uint64) {
+        assert(_activeUsers[msg.sender] != 0);
+        mintToCap();
+        return Nu.Psi().Mu().Tau().Upsilon().Clear(GetBySoul(_activeUsers[msg.sender]), Iota);
+    }
+
+    function Sign(uint64 DIRAC1) public returns(Bao memory) {
+        assert(_activeUsers[msg.sender] != 0);
+        mintToCap();
+        return Nu.Psi().Mu().Tau().Upsilon().Sign(GetBySoul(_activeUsers[msg.sender]), DIRAC1);
+    }
+
     function Log(string memory LogLine) public onlyOwners {
         uint64 Soul = _activeUsers[msg.sender];
         SHIO(GetBySoul(Soul).Shio).Log(Soul, LogLine);
