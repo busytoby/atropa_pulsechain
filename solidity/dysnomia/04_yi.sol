@@ -54,6 +54,10 @@ contract YI is DYSNOMIA {
         SHIO(_b.Shio).Log(0, "Added to Yi.Nu");
         mintToCap();
     }
+
+    function Bang(address _a) public view returns(Bao memory) {
+        return Nu[_a];
+    }
     
     function Ionize() private {
         Psi.Isomerize();
