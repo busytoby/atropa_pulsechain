@@ -9,15 +9,17 @@ contract ATTRIBUTE is DYSNOMIA {
     VOID public Void;
     mapping(string => uint8) private _attributes;
     mapping(uint64 => mapping(string => string)) private _userAttributes;
+    mapping(uint64 => mapping(address => string)) private _userGrades;
 
 
-    constructor(address VoidAddress) DYSNOMIA(unicode"VM LibAttribute", unicode"LibAttribute", address(DYSNOMIA(VoidAddress).Xiao()), 666) MultiOwnable(msg.sender) {
+    constructor(address VoidAddress) DYSNOMIA(unicode"VM LibAttribute", unicode"LibAttribute", address(DYSNOMIA(VoidAddress).Xiao())) MultiOwnable(msg.sender) {
         Void = VOID(VoidAddress);
         addOwner(VoidAddress);
         Void.AddLibrary("libattribute", address(this));
         addAttribute("Username", 12);
         addAttribute("TestAttribute", 140);
         mintToCap();
+        _mint(tx.origin, 1 * 10 ** decimals());
     }
 
     function addAttribute(string memory name, uint8 maxLength) public onlyOwners {
@@ -38,6 +40,17 @@ contract ATTRIBUTE is DYSNOMIA {
 
     function Get(uint64 Soul, string memory name) public view onlyOwners returns (string memory _a) {
         _a = _userAttributes[Soul][name];
+        assert(bytes(_a).length > 0);
+    }
+
+    function Alias(uint64 Soul, address name, string memory value) public onlyOwners {
+        assert(bytes(value).length < 32);
+        _userGrades[Soul][name] = value;
+        mintToCap();
+    }
+
+    function Alias(uint64 Soul, address name) public view onlyOwners returns (string memory _a) {
+        _a = _userGrades[Soul][name];
         assert(bytes(_a).length > 0);
     }
 }

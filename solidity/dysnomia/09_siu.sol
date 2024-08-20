@@ -8,7 +8,7 @@ contract SIU is DYSNOMIA {
 
     YANG public Psi;
 
-    constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao()), 999) MultiOwnable(msg.sender) {
+    constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao())) MultiOwnable(msg.sender) {
         Psi = YANG(YangAddress);
 
         mintToCap();

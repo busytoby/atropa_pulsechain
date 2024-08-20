@@ -12,7 +12,7 @@ contract YAU is DYSNOMIA {
     SHIO public Shio;
     uint64 public Coulomb;
 
-    constructor(address ZhouAddress) DYSNOMIA(unicode"VM Yau", unicode"YAU", address(DYSNOMIA(ZhouAddress).Xiao()), 111) MultiOwnable(msg.sender) {
+    constructor(address ZhouAddress) DYSNOMIA(unicode"VM Yau", unicode"YAU", address(DYSNOMIA(ZhouAddress).Xiao())) MultiOwnable(msg.sender) {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
 

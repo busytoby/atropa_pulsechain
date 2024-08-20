@@ -16,7 +16,7 @@ contract YANG is DYSNOMIA {
     Tai public Rho;
     uint64[3] public Pole;
 
-    constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao()), 8) MultiOwnable(msg.sender) {
+    constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) MultiOwnable(msg.sender) {
         Mu = YAU(YauAddress);
         (Rho.Bang, Pole[0]) = Mu.Phi(); // North Pole
         Rho.Le = Mu.Tau().Pi();

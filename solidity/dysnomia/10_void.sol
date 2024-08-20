@@ -12,7 +12,7 @@ contract VOID is DYSNOMIA {
     mapping(string => bytes32) private _kecNames;
     mapping(string => address) private _libraries;
 
-    constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao()), 1) MultiOwnable(msg.sender) {
+    constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao())) MultiOwnable(msg.sender) {
         Nu = SIU(SiuAddress);
         Nu.addOwner(address(this));
         _kecNames["ZHOU"] = keccak256("ZHOU");
@@ -64,6 +64,15 @@ contract VOID is DYSNOMIA {
 
     function GetAttribute(string memory name) public view returns (string memory) {
         return LIBATTRIBUTE(_libraries["libattribute"]).Get(_activeUsers[msg.sender], name);
+    }
+
+    function Alias(address name, string memory value) public {
+        assert(_activeUsers[msg.sender] != 0);
+        LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], name, value);
+    }
+
+    function Alias(address name) public view returns (string memory) {
+        return LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], name);
     }
 
     function GetBySoul(uint64 Sigma) internal returns(Bao memory On) {

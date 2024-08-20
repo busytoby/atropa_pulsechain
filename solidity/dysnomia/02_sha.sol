@@ -9,7 +9,7 @@ contract SHA is DYSNOMIA {
     Fa private Mu;
     uint64 public Dynamo;
 
-    constructor(string memory name, string memory symbol, address MathLib) DYSNOMIA(name, symbol, MathLib, 131) MultiOwnable(msg.sender) {
+    constructor(string memory name, string memory symbol, address MathLib) DYSNOMIA(name, symbol, MathLib) MultiOwnable(msg.sender) {
         mintToCap();
         Seed();
         Tune();

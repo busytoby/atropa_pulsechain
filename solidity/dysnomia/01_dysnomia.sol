@@ -25,14 +25,14 @@ abstract contract DYSNOMIA is MultiOwnable {
     atropaMath public Xiao;
     uint256 public maxSupply;
     mapping(address => uint256) public MarketRates;
-    uint256 public Reserve;
 
-    constructor(string memory name_, string memory symbol_, address mathContract, uint256 _maxSupply) { //ERC20(name_, symbol_) {
+    constructor(string memory name_, string memory symbol_, address mathContract) {
         __name = name_;
         __symbol = symbol_;
         Xiao = atropaMath(mathContract);
-        maxSupply = _maxSupply;
-        SetReservePercentage(100);
+        maxSupply = Xiao.Random() % 111111;
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
         AddMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
     }
 
@@ -50,19 +50,22 @@ abstract contract DYSNOMIA is MultiOwnable {
         MarketRates[_a] = _r;
     }
 
-    function SetReservePercentage(uint8 _p) public onlyOwners {
-        assert(_p <= 100);
-        Reserve = maxSupply * _p * 10 ** (decimals() - 2);
-    }
-
     function Purchase(address _t, uint256 _a) public {
         assert(MarketRates[_t] > 0);
-        if(balanceOf(address(this)) < Reserve) assert(owner(msg.sender));
         DYSNOMIA BuyToken = DYSNOMIA(_t);
         uint256 cost = (_a * MarketRates[_t]) / (10 ** decimals());
         bool success1 = BuyToken.transferFrom(msg.sender, address(this), cost);
         require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
         DYSNOMIA(address(this)).transfer(msg.sender, _a);
+    }
+
+    function Redeem(address _t, uint256 _a) public {
+        assert(MarketRates[_t] > 0);
+        DYSNOMIA BuyToken = DYSNOMIA(_t);
+        uint256 cost = (_a * MarketRates[_t]) / (10 ** decimals());
+        bool success1 = DYSNOMIA(address(this)).transferFrom(msg.sender, address(this), _a);
+        require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
+        BuyToken.transfer(msg.sender, cost);
     }
 
     function name() public view virtual returns (string memory) {

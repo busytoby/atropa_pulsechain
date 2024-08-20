@@ -10,4 +10,6 @@ interface LIBATTRIBUTE {
     function removeAttribute(string memory name) external;
     function Set(uint64 Soul, string memory name, string memory value) external;
     function Get(uint64 Soul, string memory name) external view returns (string memory);
+    function Alias(uint64 Soul, address name, string memory value) external;
+    function Alias(uint64 Soul, address name) external view returns (string memory _a);
 }

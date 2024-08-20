@@ -7,8 +7,10 @@ const getContract = async (contractName: string, contractAddress, accountIndex?:
   console.log(`getting contract ${contractName}`)
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
-  try { await remix.call('fileManager', 'rename', libartifactsPath, artifactsPath) } catch {}
-  const metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath))
+  let metadata
+  try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath)) } catch {
+    metadata = JSON.parse(await remix.call('fileManager', 'getFile', libartifactsPath))
+  }
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   const contract = new ethers.Contract(contractAddress, factory.interface, signer);
@@ -19,8 +21,10 @@ const deploy = async (contractName: string, args: Array<any>, accountIndex?: num
   console.log(`deploying ${contractName}`)
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
-  try { await remix.call('fileManager', 'rename', libartifactsPath, artifactsPath) } catch {}
-  const metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath))
+  let metadata
+  try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath)) } catch {
+    metadata = JSON.parse(await remix.call('fileManager', 'getFile', libartifactsPath))
+  }
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   const contract = await factory.deploy(...args)
@@ -38,7 +42,7 @@ let zhouaddress
 let yauaddress
 let yangaddress
 let siuaddress //= ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
-let voidaddress //= ethers.utils.getAddress("0x7A1c4322ecA7454A687324e51CC3657E989C873a")
+let voidaddress //= ethers.utils.getAddress("0x5582b0CF7E785f561d133fCb1cE0d5956130dD65")
 let libattributeaddress
 let START = 0;
 // set pre-requisite address to deploy only subset ie: = ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")

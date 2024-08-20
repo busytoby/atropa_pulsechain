@@ -29,7 +29,7 @@ contract YI is DYSNOMIA {
     SHAFactory public SHAFactoryInterface;
     SHIOFactory public SHIOFactoryInterface;
 
-    constructor(address _shaFactory, address _shioFactory, address MathLib) DYSNOMIA(unicode"VM Yi", unicode"YI", MathLib, 999) MultiOwnable(msg.sender) {
+    constructor(address _shaFactory, address _shioFactory, address MathLib) DYSNOMIA(unicode"VM Yi", unicode"YI", MathLib) MultiOwnable(msg.sender) {
         SHAFactoryInterface = SHAFactory(_shaFactory);
         SHIOFactoryInterface = SHIOFactory(_shioFactory);
         SHA Rod = SHAFactoryInterface.New("Shio Rod", "SROD", MathLib);

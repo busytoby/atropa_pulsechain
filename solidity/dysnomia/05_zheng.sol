@@ -9,7 +9,7 @@ contract ZHENG is DYSNOMIA {
     YI public Eta;
     mapping(uint64 => Bao) private Sigma;  // Rods
 
-    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao()), 100) MultiOwnable(msg.sender) {
+    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao())) MultiOwnable(msg.sender) {
         Eta = YI(YiContract);
         mintToCap();
     }
