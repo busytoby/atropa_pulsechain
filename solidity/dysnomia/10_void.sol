@@ -75,6 +75,15 @@ contract VOID is DYSNOMIA {
         return LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], name);
     }
 
+    function Alias(Bao memory Theta, string memory value) public {
+        assert(_activeUsers[msg.sender] != 0);
+        LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], Theta, value);
+    }
+
+    function Alias(Bao memory Theta) public view returns (string memory) {
+        return LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], Theta);
+    }
+
     function GetBySoul(uint64 Sigma) internal returns(Bao memory On) {
         return Nu.Psi().Mu().Tau().Upsilon().GetRodByIdx(Sigma);
     }
