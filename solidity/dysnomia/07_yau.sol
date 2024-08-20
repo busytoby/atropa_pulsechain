@@ -49,7 +49,7 @@ contract YAU is DYSNOMIA {
         uint64 _e = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
         uint64 _m = Theta.Mu.Flux(Theta.Omega);
         Bao memory Delta = Tau.Upsilon().Eta().React(Theta, _m);
-        Coulomb = _b ^ _e % _m;
+        Coulomb = Xiao.modExp64(_b, _e, _m);
         
         mintToCap();
         return (Delta, Coulomb);
