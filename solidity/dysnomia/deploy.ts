@@ -42,9 +42,9 @@ let zhouaddress
 let yauaddress
 let yangaddress
 let siuaddress //= ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
-let voidaddress //= ethers.utils.getAddress("0x5582b0CF7E785f561d133fCb1cE0d5956130dD65")
-let libattributeaddress
-let START = 0;
+let voidaddress = ethers.utils.getAddress("0x5801a94Acb16E7Ee17E87b490759d5A2785cB82d")
+let libattributeaddress = ethers.utils.getAddress("0x6B166f2452dA78F3A4e3CD39F5b855B22FbCf837")
+let START = 99;
 // set pre-requisite address to deploy only subset ie: = ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
 
 (async () => {

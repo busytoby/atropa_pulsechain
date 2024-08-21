@@ -9,55 +9,29 @@ contract YAU is DYSNOMIA {
     ZHOU public Tau;
     Bao public Theta;
     uint64[2] public Monopole;
-    uint64 public Coulomb;
 
     constructor(address ZhouAddress) DYSNOMIA(unicode"VM Yau", unicode"YAU", address(DYSNOMIA(ZhouAddress).Xiao())) MultiOwnable(msg.sender) {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
 
+        Theta = Tau.React(Xiao.Random());
         Theta.Phi = address(this);
-        Theta.Mu = Tau.Alpha("Yau Rod", "YROD");
-        SHA Cone = Tau.Upsilon().Eta().Beta("Yi Cone", "XCONE");
-        SHIO ZhengShio = Tau.Upsilon().Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhouAddress).Xiao()));
-        Theta.Mu.addOwner(address(ZhengShio));
-        Cone.addOwner(address(ZhengShio));
-        ZhengShio.addOwner(address(Tau));
-        Theta.Xi = Xiao.Random();
-        Monopole[1] = Tau.Qin(Theta.Xi);
-        ZhengShio.Generate(Theta.Xi, Monopole[1], Tau.Monopole());
-        Tau.Upsilon().Iodize(ZhengShio);
-        Theta.Shio = address(ZhengShio);
-        Theta.Ring = ZhengShio.Magnetize();
-        Monopole[0] = Tau.Upsilon().Clear(Theta, Theta.Ring);
-        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Monopole[0]);
-        Chi();
+        Theta.Xi = Monopole[0] = Theta.Omega;
+        Monopole[1] = Theta.Omicron;
+        Theta = Tau.Upsilon().InstallRod(Theta.Xi, Theta, Monopole[1]);
         AddMarketRate(address(Tau), 1 * 10 ** decimals());
         AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
-        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Theta.Shio).Cone()), 1 * 10 ** decimals());
         AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
         mintToCap();
     }
 
-    function Chi() internal {
-        Coulomb = SHA(SHIO(Theta.Shio).Rod()).Sustain(Theta.Omicron);
-        uint64 Ohm = SHA(SHIO(Theta.Shio).Cone()).Flux(Coulomb);
-        uint64 Joule = Theta.Mu.Flux(Ohm);
-        Theta = Tau.Upsilon().Eta().React(Theta, Joule);
-        Theta.Omega = Theta.Omega ^ SHIO(Theta.Shio).Monopole();
-        Theta.Omicron = Theta.Omicron ^ SHA(SHIO(Theta.Shio).Rod()).View().Monopole;
-        mintToCap();
-    }
-
-    function Phi() public onlyOwners returns(Bao memory, uint64) {
-        uint64 _b = SHIO(Theta.Shio).Flow(Coulomb);
-        uint64 _e = Theta.Mu.Flux(SHA(SHIO(Theta.Shio).Cone()).View().Monopole);
-        uint64 _m = Theta.Mu.Flux(Theta.Omega);
-        Bao memory Delta = Tau.Upsilon().Eta().React(Theta, _m);
-        Theta.Omicron = Delta.Omicron ^ SHA(SHIO(Theta.Shio).Cone()).View().Monopole;
-        Theta.Omega = Delta.Omega;
-        uint64 Dysjecta = Xiao.modExp64(_b, _e, _m);
+    function React() public onlyOwners returns(Bao memory) {
+        Bao memory Delta = Tau.Upsilon().Eta().React(Theta, Theta.Omicron);
+        Theta.Omicron = Delta.Omicron;
+        Theta.Omega = Theta.Omega ^ Delta.Omega;
         
         mintToCap();
-        return (Delta, Dysjecta);
+        return Delta;
     }
 }

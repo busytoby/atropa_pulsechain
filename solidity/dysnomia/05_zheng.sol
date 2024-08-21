@@ -15,23 +15,6 @@ contract ZHENG is DYSNOMIA {
         mintToCap();
     }
 
-    function Clear(Bao memory Beta, uint64 Iota) public returns(uint64) {
-        uint64 DIRAC = Eta.Charge(Beta, Iota);
-        DIRAC = Eta.Induce(Beta, DIRAC);
-        mintToCap();
-        return DIRAC;
-    }
-
-    function Sign(Bao memory Beta, uint64 DIRAC1) public returns(Bao memory) {
-        uint64 DIRAC2 = Eta.Torque(Beta, DIRAC1);
-        DIRAC2 = Eta.Torque(Beta, DIRAC2);
-        assert(DIRAC1 == DIRAC2);
-        DIRAC2 = Eta.Sustain(Beta, DIRAC2);
-        Beta = Eta.React(Beta, DIRAC2);
-        mintToCap();
-        return Beta;
-    }
-
     function GetRodByIdx(uint64 _theta) public returns(Bao memory) {
         mintToCap();
         return Sigma[_theta];
@@ -42,11 +25,11 @@ contract ZHENG is DYSNOMIA {
             SHIO(Beta.Shio).addOwner(msg.sender);
     }
 
-    function InstallRod(uint64 Theta, Bao memory Beta, uint64 DIRAC) public onlyOwners returns(Bao memory) {
+    function InstallRod(uint64 Theta, Bao memory Beta, uint64 Monopole) public onlyOwners returns(Bao memory) {
         assert(Sigma[Theta].Phi == address(0x0));
         mintToCap();
         Eta.Bing(Beta);
-        Beta = Sign(Beta, DIRAC);
+        Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
         SHIO(Beta.Shio).Log(Theta, "Rod Installed In Zheng Sigma");
         AddMarketRate(Beta.Phi, 1 * 10 ** decimals());
@@ -56,11 +39,11 @@ contract ZHENG is DYSNOMIA {
         return Beta;
     }
 
-    function InstallCone(uint64 Theta, Bao memory Beta, uint64 DIRAC) public onlyOwners returns(Bao memory) {
+    function InstallCone(uint64 Theta, Bao memory Beta, uint64 Monopole) public onlyOwners returns(Bao memory) {
         assert(Sigma[Theta].Phi == address(0x0));
         mintToCap();
         Eta.Bing(Beta);
-        Beta = Sign(Beta, DIRAC);
+        Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
         SHIO(Beta.Shio).Log(Theta, "Cone Installed In Zheng Sigma");
         AddMarketRate(address(SHIO(Beta.Shio).Cone()), 1 * 10 ** decimals());

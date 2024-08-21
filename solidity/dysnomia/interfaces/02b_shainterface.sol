@@ -18,8 +18,5 @@ interface SHA {
     function Saturate(uint64 _Beta, uint64 Epsilon, uint64 Theta) external;
     function Bond() external;
     function Adduct(uint64 _Phi) external returns(uint64);
-    function Torque(uint64 Pi) external returns(uint64);
-    function Sustain(uint64 Rho) external returns(uint64);
-    function Flux(uint64 Pi) external returns(uint64);
     function React(uint64 Pi, uint64 Theta) external returns(uint64, uint64);
 }

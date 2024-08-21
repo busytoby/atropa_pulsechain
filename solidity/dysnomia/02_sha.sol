@@ -96,21 +96,6 @@ contract SHA is DYSNOMIA {
         return Xiao.modExp64(_Phi, Mu.Signal, Mu.Element);
     }
 
-    function Torque(uint64 Pi) public returns(uint64) {
-        mintToCap();
-        return Pi ^ Mu.Element % Mu.Channel;
-    }
-
-    function Sustain(uint64 Rho) public returns(uint64) {
-        mintToCap();
-        return Xiao.modExp64(Rho, Mu.Element, Mu.Channel);
-    }
-
-    function Flux(uint64 Pi) public returns(uint64) {
-        mintToCap();
-        return Pi ^ Mu.Monopole % Mu.Channel;
-    }
-
     function React(uint64 Pi, uint64 Theta) public returns(uint64, uint64) {
         uint64 Eta = Xiao.modExp64(Pi, Mu.Channel, Theta);
         uint64 Kappa = Xiao.modExp64(Pi, Theta, Mu.Channel);

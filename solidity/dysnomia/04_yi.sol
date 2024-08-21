@@ -13,7 +13,6 @@ contract YI is DYSNOMIA {
     mapping(address => Bao) private Nu;
     uint64 public Xi;
     uint64 public Ring;
-    uint64 public Alpha;
     SHAFactory public SHAFactoryInterface;
     SHIOFactory public SHIOFactoryInterface;
 
@@ -54,31 +53,6 @@ contract YI is DYSNOMIA {
         Psi.Isomerize();
         Psi.Isolate();
         mintToCap();
-    }
-
-    function Charge(Bao memory Gamma, uint64 Rho) public returns(uint64) {
-        mintToCap();
-        return SHIO(Gamma.Shio).Charge(Gamma.Ring, Rho);
-    }
-
-    function Induce(Bao memory Gamma, uint64 Epsilon) public returns(uint64) {
-        mintToCap();
-        return SHIO(Gamma.Shio).Induce(Gamma.Ring, Epsilon);
-    }
-
-    function Torque(Bao memory Gamma, uint64 Delta) public returns(uint64) {
-        mintToCap();
-        return SHIO(Gamma.Shio).Torque(Delta);
-    }
-
-    function Amplify(Bao memory Gamma, uint64 Upsilon) public returns(uint64) {
-        mintToCap();
-        return SHIO(Gamma.Shio).Flow(Upsilon);
-    }
-
-    function Sustain(Bao memory Gamma, uint64 Ohm) public returns(uint64) {
-        mintToCap();
-        return SHIO(Gamma.Shio).Sustain(Ohm);
     }
 
     function React(Bao memory Gamma, uint64 Pi) public returns(Bao memory) {

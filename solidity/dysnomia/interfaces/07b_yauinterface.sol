@@ -11,6 +11,5 @@ interface YAU {
     function Theta() external returns(Bao memory);
     function Monopole() external returns(uint64);
     function Shio() external returns(SHIO);
-    function Coulomb() external returns(uint64);
-    function Phi() external returns(Bao memory, uint64);
+    function React() external returns(Bao memory);
 }

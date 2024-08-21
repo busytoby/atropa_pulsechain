@@ -11,6 +11,5 @@ interface ZHOU {
     function Monopole() external returns(uint64);
     function Xi() external returns(uint64);
     function Alpha(string memory Name, string memory Symbol) external returns (SHA);
-    function Qin(uint64 Iota) external returns (uint64);
-    function Pi() external returns(Bao memory);
+    function React(uint64 Iota) external returns (Bao memory);
 }

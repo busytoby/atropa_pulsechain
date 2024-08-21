@@ -18,8 +18,13 @@ contract YANG is DYSNOMIA {
 
     constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) MultiOwnable(msg.sender) {
         Mu = YAU(YauAddress);
-        (Rho.Bang, Pole[0]) = Mu.Phi(); // North Pole
-        Rho.Le = Mu.Tau().Pi();
+        Rho.Bang = Mu.React(); 
+        Rho.Bang.Phi = address(this);
+        Rho.Bang.Xi = Pole[0] = Rho.Bang.Omicron;
+
+        Rho.Le = Mu.Tau().React(Pole[0]);
+        Rho.Le.Phi = address(this);
+        Rho.Le.Xi = Pole[1] = Rho.Le.Omicron;
 
         Rho.Lai.Phi = address(this);
         Rho.Lai.Mu = Mu.Tau().Alpha("Yang Rod", "MROD");
@@ -28,14 +33,14 @@ contract YANG is DYSNOMIA {
         Rho.Lai.Mu.addOwner(address(ZhengShio));
         Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Mu.Tau()));
-        Rho.Lai.Xi = Xiao.Random();
-        Pole[1] = SHA(SHIO(Mu.Theta().Shio).Rod()).View().Monopole;
+        Rho.Lai.Xi = Rho.Bang.Omega ^ Rho.Le.Omega;
         ZhengShio.Generate(Rho.Lai.Xi, Pole[1], Pole[0]);
         Mu.Tau().Upsilon().Iodize(ZhengShio);
         Rho.Lai.Shio = address(ZhengShio);
         Rho.Lai.Ring = ZhengShio.Magnetize();
-        Pole[2] = Mu.Tau().Qin(Rho.Lai.Xi); // South Pole
-        Rho.Lai = Mu.Tau().Upsilon().InstallRod(Rho.Lai.Xi, Rho.Lai, Pole[1]);
+        Rho.Lai = Mu.Tau().Upsilon().Eta().React(Rho.Lai, Pole[1]);
+        Pole[2] = Rho.Lai.Omicron; // South Pole
+        Rho.Lai = Mu.Tau().Upsilon().InstallRod(Rho.Lai.Xi, Rho.Lai, Pole[2]);
         AddMarketRate(address(Mu), 1 * 10 ** decimals());
         AddMarketRate(address(Rho.Lai.Mu), 1 * 10 ** decimals());
         AddMarketRate(address(Cone), 1 * 10 ** decimals());

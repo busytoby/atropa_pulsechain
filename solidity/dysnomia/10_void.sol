@@ -26,18 +26,6 @@ contract VOID is DYSNOMIA {
         _libraries[name] = _a;
     }
 
-    function Clear(uint64 Iota) public returns(uint64) {
-        assert(_activeUsers[msg.sender] != 0);
-        mintToCap();
-        return Nu.Psi().Mu().Tau().Upsilon().Clear(GetBySoul(_activeUsers[msg.sender]), Iota);
-    }
-
-    function Sign(uint64 DIRAC1) public returns(Bao memory) {
-        assert(_activeUsers[msg.sender] != 0);
-        mintToCap();
-        return Nu.Psi().Mu().Tau().Upsilon().Sign(GetBySoul(_activeUsers[msg.sender]), DIRAC1);
-    }
-
     function Log(string memory LogLine) public onlyOwners {
         uint64 Soul = _activeUsers[msg.sender];
         SHIO(GetBySoul(Soul).Shio).Log(Soul, LogLine);
@@ -105,7 +93,7 @@ contract VOID is DYSNOMIA {
         assert(_activeUsers[msg.sender] != 0);
         Saat[0] = Nu.Psi().Pole(2);
         Saat[1] = _activeUsers[msg.sender];
-        Saat[2] = Nu.Psi().Mu().Tau().Qin(uint64(uint160(msg.sender) % Xiao.MotzkinPrime()));
+        Saat[2] = Nu.Soul();
 
         On = GetBySoul(Saat[1]);
         Nu.Psi().Mu().Tau().Upsilon().AssertAccess(On);

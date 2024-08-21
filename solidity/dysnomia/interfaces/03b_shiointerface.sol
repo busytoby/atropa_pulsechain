@@ -26,11 +26,6 @@ interface SHIO {
     function Isomerize() external;
     function Isolate() external;
     function Magnetize() external returns(uint64);
-    function Charge(uint64 Ring, uint64 Gamma) external returns(uint64);
-    function Induce(uint64 Ring, uint64 Beta) external returns(uint64);
-    function Torque(uint64 Pi) external returns(uint64);
-    function Sustain(uint64 Watt) external returns(uint64);
-    function Flow(uint64 Pi) external returns(uint64);
     function React(uint64 Pi) external returns(uint64, uint64);
     function Log(uint64 Soul, string memory LogLine) external;
 }

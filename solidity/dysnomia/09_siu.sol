@@ -14,10 +14,14 @@ contract SIU is DYSNOMIA {
         mintToCap();
     }
 
+    function Soul() public view returns (uint64) {
+        return uint64(uint160(tx.origin) % MotzkinPrime);
+    }
+
     function Miu(string memory name, string memory symbol) public onlyOwners returns(uint64[3] memory Saat, Bao memory On) {
         Saat[0] = Psi.Pole(2);
         Saat[1] = Xiao.Random();
-        Saat[2] = Psi.Mu().Tau().Qin(uint64(uint160(tx.origin) % Xiao.MotzkinPrime()));
+        Saat[2] = Soul();
 
         On.Mu = Psi.Mu().Tau().Upsilon().Eta().SHAFactoryInterface().New(string.concat(name, " Rod"), string.concat(symbol, "ROD"), address(address(Xiao)));
         SHA Cone = Psi.Mu().Tau().Upsilon().Eta().Beta("Siu Cone", "VCONE");
@@ -33,8 +37,8 @@ contract SIU is DYSNOMIA {
         Psi.Mu().Tau().Upsilon().Iodize(ZhengShio);
         On.Shio = address(ZhengShio);
         On.Ring = ZhengShio.Magnetize();
-        uint64 Soul = Psi.Mu().Tau().Upsilon().Clear(On, Saat[2]);
-        On = Psi.Mu().Tau().Upsilon().InstallCone(Saat[1], On, Soul);
+
+        On = Psi.Mu().Tau().Upsilon().InstallCone(Saat[1], On, Saat[2]);
         AddMarketRate(address(Cone), 1 * 10 ** decimals());
         mintToCap();
         return (Saat, On);

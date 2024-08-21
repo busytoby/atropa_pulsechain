@@ -88,31 +88,6 @@ contract SHIO is DYSNOMIA {
         return Ring;
     }
 
-    function Charge(uint64 Ring, uint64 Gamma) public onlyOwners returns(uint64) {
-        mintToCap();
-        return Xiao.modExp64(Rho.Barn, Gamma, Ring);
-    }
-
-    function Induce(uint64 Ring, uint64 Beta) public onlyOwners returns(uint64) {
-        mintToCap();
-        return Beta ^ Manifold % Ring;
-    }
-
-    function Torque(uint64 Pi) public onlyOwners returns(uint64) {
-        mintToCap();
-        return SHA(Rho.Cone).Torque(Pi);
-    }
-
-    function Sustain(uint64 Watt) public onlyOwners returns(uint64) {
-        mintToCap();
-        return SHA(Rho.Rod).Sustain(Watt);
-    }
-
-    function Flow(uint64 Pi) public onlyOwners returns(uint64) {
-        mintToCap();
-        return Xiao.modExp64(Pi, Monopole, Rho.Cone.View().Channel);
-    }
-
     function React(uint64 Pi) public onlyOwners returns(uint64, uint64) {
         Pi = Pi ^ Monopole;
         (uint64 Eta, uint64 Kappa) = Rho.Rod.React(Pi, Rho.Cone.View().Channel);
