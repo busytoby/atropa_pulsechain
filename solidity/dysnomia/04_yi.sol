@@ -73,7 +73,7 @@ contract YI is DYSNOMIA {
 
     function Amplify(Bao memory Gamma, uint64 Upsilon) public returns(uint64) {
         mintToCap();
-        return Torque(Gamma, Upsilon);
+        return SHIO(Gamma.Shio).Flow(Upsilon);
     }
 
     function Sustain(Bao memory Gamma, uint64 Ohm) public returns(uint64) {
