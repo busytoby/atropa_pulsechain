@@ -45,21 +45,19 @@ contract ZHOU is DYSNOMIA {
 
     function Qin(uint64 Iota) public returns (uint64) {
         Bao memory Theta = Upsilon.GetRodByIdx(Xi);
-        uint64 Interference = SHIO(Theta.Shio).Monopole();
-        uint64 DREYFUS = Theta.Mu.Torque(Iota); // torque
-        DREYFUS = Theta.Mu.Torque(DREYFUS);       // amplify
-        uint64 AMP = DREYFUS ^ Interference;
-        DREYFUS = Theta.Mu.Sustain(DREYFUS);       // sustain
+        uint64 DREYFUS = Theta.Mu.Torque(Iota);
+        DREYFUS = Theta.Mu.Flux(DREYFUS);
+        DREYFUS = Theta.Mu.Sustain(DREYFUS);
         Theta = Upsilon.Eta().React(Theta, DREYFUS);
         mintToCap();
-        return AMP;
+        return DREYFUS;
     }
 
     function Pi() public returns(Bao memory) {
         Bao memory Thetan = Upsilon.GetRodByIdx(Xi);
-        uint64 Watt = Thetan.Mu.Torque(Thetan.Omega);          // torque
-        uint64 Ohm = Thetan.Mu.Flux(Watt);                    // amplify
-        uint64 _pi = SHA(SHIO(Thetan.Shio).Cone()).Flux(Ohm); // sustain
+        uint64 Watt = SHA(SHIO(Thetan.Shio).Cone()).Torque(Thetan.Omega);
+        uint64 Ohm = SHA(SHIO(Thetan.Shio).Cone()).Flux(Watt);
+        uint64 _pi = SHA(SHIO(Thetan.Shio).Cone()).Sustain(Ohm);
         Thetan = Upsilon.Eta().React(Thetan, _pi);
         Thetan.Pi = Monopole ^ Ohm;
         mintToCap();
