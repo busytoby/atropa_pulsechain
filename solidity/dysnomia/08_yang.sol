@@ -19,11 +19,9 @@ contract YANG is DYSNOMIA {
     constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) MultiOwnable(msg.sender) {
         Mu = YAU(YauAddress);
         Rho.Bang = Mu.React(); 
-        Rho.Bang.Phi = address(this);
         Rho.Bang.Xi = Pole[0] = Rho.Bang.Omicron;
 
         Rho.Le = Mu.Tau().React(Pole[0]);
-        Rho.Le.Phi = address(this);
         Rho.Le.Xi = Pole[1] = Rho.Le.Omicron;
 
         Rho.Lai.Phi = address(this);
@@ -45,6 +43,18 @@ contract YANG is DYSNOMIA {
         AddMarketRate(address(Rho.Lai.Mu), 1 * 10 ** decimals());
         AddMarketRate(address(Cone), 1 * 10 ** decimals());
         AddMarketRate(Rho.Lai.Shio, 1 * 10 ** decimals());
+        
+        AddMarketRate(Rho.Bang.Phi, 1 * 10 ** decimals());
+        AddMarketRate(address(Rho.Bang.Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(Rho.Bang.Shio), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Rho.Bang.Shio).Rod()), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Rho.Bang.Shio).Cone()), 1 * 10 ** decimals());
+
+        AddMarketRate(Rho.Le.Phi, 1 * 10 ** decimals());
+        AddMarketRate(address(Rho.Le.Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(Rho.Le.Shio), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Rho.Le.Shio).Rod()), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Rho.Le.Shio).Cone()), 1 * 10 ** decimals());
         mintToCap();
     }
 }
