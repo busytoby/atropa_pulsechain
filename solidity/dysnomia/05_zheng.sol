@@ -24,7 +24,7 @@ contract ZHENG is DYSNOMIA {
 
     function Sign(Bao memory Beta, uint64 DIRAC1) public returns(Bao memory) {
         uint64 DIRAC2 = Eta.Torque(Beta, DIRAC1);
-        DIRAC2 = Eta.Amplify(Beta, DIRAC2);
+        DIRAC2 = Eta.Torque(Beta, DIRAC2);
         assert(DIRAC1 == DIRAC2);
         DIRAC2 = Eta.Sustain(Beta, DIRAC2);
         Beta = Eta.React(Beta, DIRAC2);
