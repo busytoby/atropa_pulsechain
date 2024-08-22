@@ -4,7 +4,8 @@ import { ethers } from 'ethers'
 // execute remix.exeCurrent() from the > command prompt at the bottom of the remixz
 
 const getContract = async (contractName: string, contractAddress, accountIndex?: number): Promise<ethers.Contract> => {
-  console.log(`getting contract ${contractName}`)
+  if(accountIndex == undefined) accountIndex = 0;
+  console.log(`getting contract ${contractName} as account ${accountIndex}`)
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
@@ -18,7 +19,8 @@ const getContract = async (contractName: string, contractAddress, accountIndex?:
 }
 
 const deploy = async (contractName: string, args: Array<any>, accountIndex?: number): Promise<ethers.Contract> => {
-  console.log(`deploying ${contractName}`)
+  if(accountIndex == undefined) accountIndex = 0;
+  console.log(`deploying ${contractName} from account ${accountIndex}`)
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
