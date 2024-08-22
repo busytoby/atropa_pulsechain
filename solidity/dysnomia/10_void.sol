@@ -26,7 +26,6 @@ contract VOID is DYSNOMIA {
         SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).addOwner(address(this));
 
         _kecNames["ZHOU"] = keccak256("ZHOU");
-        _kecNames["YAU"] = keccak256("YAU");
         _kecNames["YANG"] = keccak256("YANG");
         Augment();
     }
@@ -47,12 +46,12 @@ contract VOID is DYSNOMIA {
         _mintToCap();
     }
 
-    function Log(uint64 Sigma, string memory LogLine) internal {
+    function Log(uint64 Sigma, string memory LogLine) public onlyOwners {
         SHIO(GetBySoul(Sigma).Shio).Log(Sigma, LogLine);
         _mintToCap();
     }
 
-    function Log(address Sigma, string memory LogLine) internal {
+    function Log(address Sigma, string memory LogLine) public onlyOwners {
         uint64 Soul = _activeUsers[Sigma];
         SHIO(GetBySoul(_activeUsers[Sigma]).Shio).Log(Soul, LogLine);
         _mintToCap();
@@ -64,8 +63,6 @@ contract VOID is DYSNOMIA {
         bytes32 XiKec = keccak256(bytes(Xi));
         if(XiKec == _kecNames["ZHOU"]) {
           SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(Soul, LogLine);  
-        } else if(XiKec == _kecNames["YAU"]) {
-            SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(Soul, LogLine);  
         } else if(XiKec == _kecNames["YANG"]) {
             SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(Soul, LogLine);  
         } else revert InvalidLogXi(Xi);
