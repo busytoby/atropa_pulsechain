@@ -32,7 +32,7 @@ contract ZHENG is DYSNOMIA {
         Eta.Bing(Beta);
         Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
-        SHIO(Beta.Shio).Log(Theta, "Rod Installed In Zheng Sigma");
+        SHIO(Beta.Shio).Log(Theta, 0, "Rod Installed In Zheng Sigma");
         AddMarketRate(Beta.Phi, 1 * 10 ** decimals());
         AddMarketRate(Beta.Shio, 1 * 10 ** decimals());
         AddMarketRate(address(SHIO(Beta.Shio).Rod()), 1 * 10 ** decimals());
@@ -46,7 +46,7 @@ contract ZHENG is DYSNOMIA {
         Eta.Bing(Beta);
         Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
-        SHIO(Beta.Shio).Log(Theta, "Cone Installed In Zheng Sigma");
+        SHIO(Beta.Shio).Log(Theta, 0, "Cone Installed In Zheng Sigma");
         AddMarketRate(address(SHIO(Beta.Shio).Cone()), 1 * 10 ** decimals());
         return Beta;
     }

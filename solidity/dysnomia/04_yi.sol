@@ -45,7 +45,7 @@ contract YI is DYSNOMIA {
 
     function Bing(Bao memory _b) public onlyOwners {
         Nu[_b.Phi] = _b;
-        SHIO(_b.Shio).Log(0, "Added to Yi.Nu");
+        SHIO(_b.Shio).Log(0, 0, "Added to Yi.Nu");
         _mintToCap();
     }
 

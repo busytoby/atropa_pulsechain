@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./lib/multiownable.sol";
+import "./lib/tostring.sol";
 import "../addresses.sol";
 
 interface atropaMath {
