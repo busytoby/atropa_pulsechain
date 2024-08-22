@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../interfaces/02b_shainterface.sol";
+import "../interfaces/03b_shiointerface.sol";
 
 struct Bao {
     address Phi;
@@ -8,7 +9,7 @@ struct Bao {
     uint64 Xi;
     uint64 Pi;
 
-    address Shio;
+    SHIO Shio;
     uint64 Ring;
 
     uint64 Omicron;

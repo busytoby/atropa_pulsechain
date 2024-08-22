@@ -20,14 +20,13 @@ contract ZHOU is DYSNOMIA {
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
         Cone.addOwner(address(Upsilon));
-        SHIO ZhengShio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhengContract).Xiao()));
-        ZhengShio.addOwner(address(Upsilon));
-        ZhengShio.addOwner(address(Upsilon.Eta()));
+        Theta.Shio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhengContract).Xiao()));
+        Theta.Shio.addOwner(address(Upsilon));
+        Theta.Shio.addOwner(address(Upsilon.Eta()));
         Theta.Xi = Xiao.Random();
-        ZhengShio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
-        Upsilon.Iodize(ZhengShio);
-        Theta.Shio = address(ZhengShio);
-        Theta.Ring = ZhengShio.Magnetize();
+        Theta.Shio.Generate(Theta.Xi, Xiao.Random(), Xiao.Random());
+        Upsilon.Iodize(Theta.Shio);
+        Theta.Ring = Theta.Shio.Magnetize();
         Theta = Upsilon.Eta().React(Theta, Theta.Xi);
         Monopole = Theta.Omicron;
         Theta = Upsilon.InstallRod(Theta.Xi, Theta, Monopole);
@@ -38,8 +37,8 @@ contract ZHOU is DYSNOMIA {
     function Augment(Bao memory Theta) internal {
         AddMarketRate(address(Upsilon), 1 * 10 ** decimals());
         AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
-        AddMarketRate(address(SHIO(Theta.Shio).Cone()), 1 * 10 ** decimals());
-        AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Shio.Cone()), 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Shio), 1 * 10 ** decimals());
         _mintToCap();
     }
 

@@ -27,8 +27,8 @@ contract YAU is DYSNOMIA {
     function Augment() internal {
         AddMarketRate(address(Tau), 1 * 10 ** decimals());
         AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
-        AddMarketRate(address(SHIO(Theta.Shio).Cone()), 1 * 10 ** decimals());
-        AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Shio.Cone()), 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Shio), 1 * 10 ** decimals());
         _mintToCap();
     }
 

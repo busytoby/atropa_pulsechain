@@ -32,11 +32,11 @@ contract ZHENG is DYSNOMIA {
         Eta.Bing(Beta);
         Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
-        SHIO(Beta.Shio).Log(Theta, 0, "Rod Installed In Zheng Sigma");
+        Beta.Shio.Log(Theta, 0, "Rod Installed In Zheng Sigma");
         AddMarketRate(Beta.Phi, 1 * 10 ** decimals());
-        AddMarketRate(Beta.Shio, 1 * 10 ** decimals());
-        AddMarketRate(address(SHIO(Beta.Shio).Rod()), 1 * 10 ** decimals());
-        AddMarketRate(address(SHIO(Beta.Shio).Cone()), 1 * 10 ** decimals());
+        AddMarketRate(address(Beta.Shio), 1 * 10 ** decimals());
+        AddMarketRate(address(Beta.Shio.Rod()), 1 * 10 ** decimals());
+        AddMarketRate(address(Beta.Shio.Cone()), 1 * 10 ** decimals());
         return Beta;
     }
 
@@ -46,23 +46,22 @@ contract ZHENG is DYSNOMIA {
         Eta.Bing(Beta);
         Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
-        SHIO(Beta.Shio).Log(Theta, 0, "Cone Installed In Zheng Sigma");
-        AddMarketRate(address(SHIO(Beta.Shio).Cone()), 1 * 10 ** decimals());
+        Beta.Shio.Log(Theta, 0, "Cone Installed In Zheng Sigma");
+        AddMarketRate(address(Beta.Shio.Cone()), 1 * 10 ** decimals());
         return Beta;
     }
 
     function Mau(address Rod, address Cone, uint64 Xi, uint64 Rho, uint64 Upsilon) public onlyOwners returns (Bao memory On) {
         On.Phi = msg.sender;
         On.Mu = SHA(Rod);
-        SHIO ZhengShio = Eta.SHIOFactoryInterface().New(Rod, Cone, address(Xiao));
-        On.Phi = address(ZhengShio);
-        ZhengShio.addOwner(msg.sender);
-        ZhengShio.addOwner(address(Eta));
+        On.Shio = Eta.SHIOFactoryInterface().New(Rod, Cone, address(Xiao));
+        On.Phi = address(On.Shio);
+        On.Shio.addOwner(msg.sender);
+        On.Shio.addOwner(address(Eta));
         On.Xi = Xi;
-        ZhengShio.Generate(On.Xi, Rho, Upsilon);
-        Iodize(ZhengShio);
-        On.Shio = address(ZhengShio);
-        On.Ring = ZhengShio.Magnetize();
+        On.Shio.Generate(On.Xi, Rho, Upsilon);
+        Iodize(On.Shio);
+        On.Ring = On.Shio.Magnetize();
 
         On = InstallCone(Upsilon, On, Rho);        
         _mintToCap();

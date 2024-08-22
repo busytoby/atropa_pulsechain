@@ -14,6 +14,9 @@ contract LAU is DYSNOMIA {
     constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
         Eta = VOID(VoidAddress);
         (Saat, On) = Eta.Enter(name, symbol);
+        On.Shio.addOwner(address(this));
+        On.Shio.Rho().Rod.addOwner(address(this));
+        On.Shio.Rho().Cone.addOwner(address(this));
         _mintToCap();
     }
 

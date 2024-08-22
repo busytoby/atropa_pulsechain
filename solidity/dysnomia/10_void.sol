@@ -21,8 +21,8 @@ contract VOID is DYSNOMIA {
         Nu.Psi().Mu().Tau().Upsilon().addOwner(address(this));
         Nu.Psi().Mu().Tau().Upsilon().Eta().addOwner(address(this));
 
-        SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).addOwner(address(this));
-        SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).addOwner(address(this));
+        GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio.addOwner(address(this));
+        GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio.addOwner(address(this));
 
         _kecNames["ZHOU"] = keccak256("ZHOU");
         _kecNames["YANG"] = keccak256("YANG");
@@ -45,18 +45,18 @@ contract VOID is DYSNOMIA {
 
     function Log(string memory LogLine) public {
         uint64 Soul = _activeUsers[msg.sender];
-        SHIO(GetBySoul(Soul).Shio).Log(Soul, Nu.Aura(), LogLine);
+        GetBySoul(Soul).Shio.Log(Soul, Nu.Aura(), LogLine);
         _mintToCap();
     }
 
     function Log(uint64 Sigma, string memory LogLine) public onlyOwners {
-        SHIO(GetBySoul(Sigma).Shio).Log(Sigma, Nu.Aura(), LogLine);
+        GetBySoul(Sigma).Shio.Log(Sigma, Nu.Aura(), LogLine);
         _mintToCap();
     }
 
     function Log(address Sigma, string memory LogLine) public onlyOwners {
         uint64 Soul = _activeUsers[Sigma];
-        SHIO(GetBySoul(_activeUsers[Sigma]).Shio).Log(Soul, Nu.Aura(), LogLine);
+        GetBySoul(_activeUsers[Sigma]).Shio.Log(Soul, Nu.Aura(), LogLine);
         _mintToCap();
     }
 
@@ -65,9 +65,9 @@ contract VOID is DYSNOMIA {
         uint64 Soul = _activeUsers[msg.sender];
         bytes32 XiKec = keccak256(bytes(Xi));
         if(XiKec == _kecNames["ZHOU"]) {
-          SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).Log(Soul, Nu.Aura(), LogLine);  
+          GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio.Log(Soul, Nu.Aura(), LogLine);  
         } else if(XiKec == _kecNames["YANG"]) {
-            SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(Soul, Nu.Aura(), LogLine);  
+            GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio.Log(Soul, Nu.Aura(), LogLine);  
         } else revert InvalidLogXi(Xi);
         _mintToCap();
     }
@@ -124,7 +124,7 @@ contract VOID is DYSNOMIA {
         Saat[2] = Nu.Aura();
 
         On = GetBySoul(Saat[1]);
-        if(!SHIO(On.Shio).owner(msg.sender)) revert NotShioOwner(On.Shio, msg.sender);
+        if(!On.Shio.owner(msg.sender)) revert NotShioOwner(address(On.Shio), msg.sender);
         _mintToCap();
     }
 
@@ -132,8 +132,8 @@ contract VOID is DYSNOMIA {
     function Enter(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory On) {
         if(_activeUsers[msg.sender] != 0) revert UserAlreadyCreated(msg.sender);
         (Saat, On) = Nu.Miu(name, symbol);
-        SHIO(On.Shio).addOwner(msg.sender);
-        if(!SHIO(On.Shio).owner(msg.sender)) revert NotShioOwner(On.Shio, msg.sender);
+        On.Shio.addOwner(msg.sender);
+        if(!On.Shio.owner(msg.sender)) revert NotShioOwner(address(On.Shio), msg.sender);
         _activeUsers[msg.sender] = Saat[1];
         _mintToCap();
     }
