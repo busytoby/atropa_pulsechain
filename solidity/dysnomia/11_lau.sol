@@ -13,4 +13,16 @@ contract LAU is DYSNOMIA {
 
         Eta.Enter(name, symbol);
     }
+
+    function Username() public view returns (string memory) {
+        return Eta.GetAttribute("Username");
+    }
+
+    function Username(string memory newUsername) public onlyOwners {
+        Eta.SetAttribute("Username", newUsername);
+    }
+
+    function Chat(string memory chatline) public onlyOwners {
+        Eta.Chat(chatline);
+    }
 }

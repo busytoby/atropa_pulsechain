@@ -16,6 +16,7 @@ interface VOID {
     function Log(string memory LogLine) external;
     function Log(uint64 Sigma, string memory LogLine) external;
     function Log(address Sigma, string memory LogLine) external;
+    function Chat(string memory chatline) external;
     function SetAttribute(string memory name, string memory value) external;
     function GetAttribute(string memory name) external view returns (string memory);
     function Alias(address name, string memory value) external;
