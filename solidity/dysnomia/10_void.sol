@@ -58,6 +58,7 @@ contract VOID is DYSNOMIA {
         _mintToCap();
     }
 
+    error InvalidLogXi(string Xi);
     function Log(string memory Xi, string memory LogLine) internal {
         uint64 Soul = _activeUsers[msg.sender];
         bytes32 XiKec = keccak256(bytes(Xi));
@@ -67,19 +68,22 @@ contract VOID is DYSNOMIA {
             SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).Log(Soul, LogLine);  
         } else if(XiKec == _kecNames["YANG"]) {
             SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(Soul, LogLine);  
-        } else assert(false);        
+        } else revert InvalidLogXi(Xi);
         _mintToCap();
     }
 
+    error NoUserEntry(address User);
+    error NoUserName(address User);
     function Chat(string memory chatline) public {
-        assert(_activeUsers[msg.sender] != 0);
+        if(_activeUsers[msg.sender] == 0) revert NoUserEntry(msg.sender);
         string memory Username = GetAttribute("Username");
+        if(bytes(Username).length < 1) revert NoUserName(msg.sender); 
         Log("ZHOU", string.concat("<", Username, "> ", chatline));
         _mintToCap();
     }
 
     function SetAttribute(string memory name, string memory value) public {
-        assert(_activeUsers[msg.sender] != 0);
+        if(_activeUsers[msg.sender] == 0) revert NoUserEntry(msg.sender);
         LIBATTRIBUTE(_libraries["libattribute"]).Set(_activeUsers[msg.sender], name, value);
         _mintToCap();
     }
@@ -89,7 +93,7 @@ contract VOID is DYSNOMIA {
     }
 
     function Alias(address name, string memory value) public {
-        assert(_activeUsers[msg.sender] != 0);
+        if(_activeUsers[msg.sender] == 0) revert NoUserEntry(msg.sender);
         LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], name, value);
         _mintToCap();
     }
@@ -99,7 +103,7 @@ contract VOID is DYSNOMIA {
     }
 
     function Alias(Bao memory Theta, string memory value) public {
-        assert(_activeUsers[msg.sender] != 0);
+        if(_activeUsers[msg.sender] == 0) revert NoUserEntry(msg.sender);
         LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], Theta, value);
         _mintToCap();
     }
@@ -112,10 +116,9 @@ contract VOID is DYSNOMIA {
         return Nu.Psi().Mu().Tau().Upsilon().GetRodByIdx(Sigma);
     }
 
-    error UserNotFound(address User);
     error NotShioOwner(address Shio, address Requestor);
     function Enter() public returns(uint64[3] memory Saat, Bao memory On) {
-        if(_activeUsers[msg.sender] == 0) revert UserNotFound(msg.sender);
+        if(_activeUsers[msg.sender] == 0) revert NoUserEntry(msg.sender);
         Saat[0] = Nu.Psi().Pole(2);
         Saat[1] = _activeUsers[msg.sender];
         Saat[2] = Nu.Soul();
