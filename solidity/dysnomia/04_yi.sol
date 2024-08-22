@@ -16,7 +16,7 @@ contract YI is DYSNOMIA {
     SHAFactory public SHAFactoryInterface;
     SHIOFactory public SHIOFactoryInterface;
 
-    constructor(address _shaFactory, address _shioFactory, address MathLib) DYSNOMIA(unicode"VM Yi", unicode"YI", MathLib) MultiOwnable(msg.sender) {
+    constructor(address _shaFactory, address _shioFactory, address MathLib) DYSNOMIA(unicode"VM Yi", unicode"YI", MathLib) {
         SHAFactoryInterface = SHAFactory(_shaFactory);
         SHIOFactoryInterface = SHIOFactory(_shioFactory);
         SHA Rod = SHAFactoryInterface.New("Shio Rod", "SROD", MathLib);
@@ -26,23 +26,27 @@ contract YI is DYSNOMIA {
         Psi.Generate(Xi, Xiao.Random(), Xiao.Random());
         Ionize();
         Ring = Psi.Magnetize();
-        AddMarketRate(address(Rod), 1 * 10 ** decimals());
-        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        Augment();
+    }
+
+    function Augment() internal {
         AddMarketRate(address(Psi), 1 * 10 ** decimals());
-        mintToCap();
+        AddMarketRate(address(Psi.Rod()), 1 * 10 ** decimals());
+        AddMarketRate(address(Psi.Cone()), 1 * 10 ** decimals());
+        _mintToCap();
     }
 
     function Beta(string calldata Name, string calldata Symbol) public onlyOwners returns(SHA) {
         SHA Xun = SHAFactoryInterface.New(Name, Symbol, address(Xiao));
         Xun.addOwner(msg.sender);
-        mintToCap();
+        _mintToCap();
         return Xun;
     }
 
     function Bing(Bao memory _b) public onlyOwners {
         Nu[_b.Phi] = _b;
         SHIO(_b.Shio).Log(0, "Added to Yi.Nu");
-        mintToCap();
+        _mintToCap();
     }
 
     function Bang(address _a) public view returns(Bao memory) {
@@ -52,12 +56,12 @@ contract YI is DYSNOMIA {
     function Ionize() private {
         Psi.Isomerize();
         Psi.Isolate();
-        mintToCap();
+        _mintToCap();
     }
 
     function React(Bao memory Gamma, uint64 Pi) public returns(Bao memory) {
         (Gamma.Omicron, Gamma.Omega) = SHIO(Gamma.Shio).React(Pi);
-        mintToCap();
+        _mintToCap();
         return Gamma;
     }
 }

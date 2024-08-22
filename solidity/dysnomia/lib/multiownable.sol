@@ -4,16 +4,16 @@ pragma solidity ^0.8.21;
 abstract contract MultiOwnable {
     mapping(address => bool) private _owners;
 
-    error OwnableUnauthorizedAccount(address account);
-    error OwnableInvalidOwner(address owner);
+    error OwnableUnauthorizedAccount(address origin, address account, address what);
+    error OwnableInvalidOwner(address origin, address owner, address what);
     event OwnershipUpdate(address indexed newOwner, bool indexed state);
 
     constructor(address initialOwner) {
         if (initialOwner == address(0)) {
-            revert OwnableInvalidOwner(address(0));
+            revert OwnableInvalidOwner(tx.origin, address(0), address(this));
         }
         _changeOwnership(initialOwner, true);
-        if(initialOwner != tx.origin) _changeOwnership(tx.origin, true);
+        //if(initialOwner != tx.origin) _changeOwnership(tx.origin, true);
     }
 
     modifier onlyOwners() {
@@ -27,7 +27,7 @@ abstract contract MultiOwnable {
 
     function _checkOwner() internal view virtual {
         if (!owner(msg.sender) && !owner(tx.origin)) {
-            revert OwnableUnauthorizedAccount(msg.sender);
+            revert OwnableUnauthorizedAccount(tx.origin, msg.sender, address(this));
         }
     }
 
@@ -37,7 +37,7 @@ abstract contract MultiOwnable {
 
     function addOwner(address newOwner) public virtual onlyOwners {
         if (newOwner == address(0)) {
-            revert OwnableInvalidOwner(address(0));
+            revert OwnableInvalidOwner(tx.origin, address(0), address(this));
         }
         _changeOwnership(newOwner, true);
     }

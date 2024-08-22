@@ -16,8 +16,13 @@ contract YANG is DYSNOMIA {
     Tai public Rho;
     uint64[3] public Pole;
 
-    constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) MultiOwnable(msg.sender) {
+    constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) {
         Mu = YAU(YauAddress);
+        Mu.addOwner(address(this));
+        Mu.Tau().addOwner(address(this));
+        Mu.Tau().Upsilon().addOwner(address(this));
+        Mu.Tau().Upsilon().Eta().addOwner(address(this));
+        
         Rho.Bang = Mu.React(); 
         Rho.Bang.Xi = Pole[0] = Rho.Bang.Omicron;
 
@@ -28,20 +33,24 @@ contract YANG is DYSNOMIA {
         Rho.Lai.Mu = Mu.Tau().Alpha("Yang Rod", "MROD");
         SHA Cone = Mu.Tau().Upsilon().Eta().Beta("Yang Cone", "MCONE");
         SHIO ZhengShio = Mu.Tau().Upsilon().Eta().SHIOFactoryInterface().New(address(Rho.Lai.Mu), address(Cone), address(DYSNOMIA(YauAddress).Xiao()));
-        Rho.Lai.Mu.addOwner(address(ZhengShio));
-        Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Mu.Tau()));
+        ZhengShio.addOwner(address(Mu.Tau().Upsilon()));
+        ZhengShio.addOwner(address(Mu.Tau().Upsilon().Eta()));
         Rho.Lai.Xi = Rho.Bang.Omega ^ Rho.Le.Omega;
         ZhengShio.Generate(Rho.Lai.Xi, Pole[1], Pole[0]);
         Mu.Tau().Upsilon().Iodize(ZhengShio);
         Rho.Lai.Shio = address(ZhengShio);
         Rho.Lai.Ring = ZhengShio.Magnetize();
         Rho.Lai = Mu.Tau().Upsilon().Eta().React(Rho.Lai, Pole[1]);
-        Pole[2] = Rho.Lai.Omicron; // South Pole
+        Pole[2] = Rho.Lai.Omicron;
         Rho.Lai = Mu.Tau().Upsilon().InstallRod(Rho.Lai.Xi, Rho.Lai, Pole[2]);
+        Augment();
+    }
+
+    function Augment() internal {
         AddMarketRate(address(Mu), 1 * 10 ** decimals());
         AddMarketRate(address(Rho.Lai.Mu), 1 * 10 ** decimals());
-        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Rho.Lai.Shio).Cone()), 1 * 10 ** decimals());
         AddMarketRate(Rho.Lai.Shio, 1 * 10 ** decimals());
         
         AddMarketRate(Rho.Bang.Phi, 1 * 10 ** decimals());
@@ -55,6 +64,6 @@ contract YANG is DYSNOMIA {
         AddMarketRate(address(Rho.Le.Shio), 1 * 10 ** decimals());
         AddMarketRate(address(SHIO(Rho.Le.Shio).Rod()), 1 * 10 ** decimals());
         AddMarketRate(address(SHIO(Rho.Le.Shio).Cone()), 1 * 10 ** decimals());
-        mintToCap();
+        _mintToCap();
     }
 }

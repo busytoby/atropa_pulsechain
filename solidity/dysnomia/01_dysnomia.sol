@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./00c_multiownable.sol";
+import "./lib/multiownable.sol";
 import "../addresses.sol";
 
 interface atropaMath {
@@ -26,7 +26,7 @@ abstract contract DYSNOMIA is MultiOwnable {
     uint256 public maxSupply;
     mapping(address => uint256) private _marketRates;
 
-    constructor(string memory name_, string memory symbol_, address mathContract) {
+    constructor(string memory name_, string memory symbol_, address mathContract) MultiOwnable(msg.sender) {
         __name = name_;
         __symbol = symbol_;
         Xiao = atropaMath(mathContract);
@@ -42,6 +42,10 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function mintToCap() public onlyOwners {
+        _mintToCap();
+    }
+
+    function _mintToCap() internal {
         if(totalSupply() < (maxSupply * 10 ** decimals()))
             _mint(address(this), 1 * 10 ** decimals());
     }
@@ -54,8 +58,9 @@ abstract contract DYSNOMIA is MultiOwnable {
         return _marketRates[_a];
     }
 
+    error MarketRateNotFound(address asset);
     function Purchase(address _t, uint256 _a) public {
-        assert(_marketRates[_t] > 0);
+        if(_marketRates[_t] == 0) revert MarketRateNotFound(_t);
         DYSNOMIA BuyToken = DYSNOMIA(_t);
         uint256 cost = (_a * _marketRates[_t]) / (10 ** decimals());
         bool success1 = BuyToken.transferFrom(msg.sender, address(this), cost);
@@ -64,7 +69,7 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function Redeem(address _t, uint256 _a) public {
-        assert(_marketRates[_t] > 0);
+        if(_marketRates[_t] == 0) revert MarketRateNotFound(_t);
         DYSNOMIA BuyToken = DYSNOMIA(_t);
         uint256 cost = (_a * _marketRates[_t]) / (10 ** decimals());
         bool success1 = DYSNOMIA(address(this)).transferFrom(msg.sender, address(this), _a);

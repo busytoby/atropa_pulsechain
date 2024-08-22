@@ -12,35 +12,53 @@ contract VOID is DYSNOMIA {
     mapping(string => bytes32) private _kecNames;
     mapping(string => address) private _libraries;
 
-    constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao())) MultiOwnable(msg.sender) {
+    constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao())) {
         Nu = SIU(SiuAddress);
         Nu.addOwner(address(this));
+        Nu.Psi().addOwner(address(this));
+        Nu.Psi().Mu().addOwner(address(this));
+        Nu.Psi().Mu().Tau().addOwner(address(this));
+        Nu.Psi().Mu().Tau().Upsilon().addOwner(address(this));
+        Nu.Psi().Mu().Tau().Upsilon().Eta().addOwner(address(this));
+
+        SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).addOwner(address(this));
+        SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).addOwner(address(this));
+        SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).addOwner(address(this));
+
         _kecNames["ZHOU"] = keccak256("ZHOU");
         _kecNames["YAU"] = keccak256("YAU");
         _kecNames["YANG"] = keccak256("YANG");
+        Augment();
+    }
+
+    function Augment() internal {
         AddMarketRate(address(Nu), 1 * 10 ** decimals());
-        mintToCap();
+        _mintToCap();
     }
 
     function AddLibrary(string memory name, address _a) public onlyOwners {
         _libraries[name] = _a;
+        _mintToCap();
     }
 
-    function Log(string memory LogLine) public onlyOwners {
+    function Log(string memory LogLine) internal {
         uint64 Soul = _activeUsers[msg.sender];
         SHIO(GetBySoul(Soul).Shio).Log(Soul, LogLine);
+        _mintToCap();
     }
 
-    function Log(uint64 Sigma, string memory LogLine) public onlyOwners {
+    function Log(uint64 Sigma, string memory LogLine) internal {
         SHIO(GetBySoul(Sigma).Shio).Log(Sigma, LogLine);
+        _mintToCap();
     }
 
-    function Log(address Sigma, string memory LogLine) public onlyOwners {
+    function Log(address Sigma, string memory LogLine) internal {
         uint64 Soul = _activeUsers[Sigma];
         SHIO(GetBySoul(_activeUsers[Sigma]).Shio).Log(Soul, LogLine);
+        _mintToCap();
     }
 
-    function Log(string memory Xi, string memory LogLine) public onlyOwners {
+    function Log(string memory Xi, string memory LogLine) internal {
         uint64 Soul = _activeUsers[msg.sender];
         bytes32 XiKec = keccak256(bytes(Xi));
         if(XiKec == _kecNames["ZHOU"]) {
@@ -50,17 +68,20 @@ contract VOID is DYSNOMIA {
         } else if(XiKec == _kecNames["YANG"]) {
             SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).Log(Soul, LogLine);  
         } else assert(false);        
+        _mintToCap();
     }
 
     function Chat(string memory chatline) public {
         assert(_activeUsers[msg.sender] != 0);
         string memory Username = GetAttribute("Username");
         Log("ZHOU", string.concat("<", Username, "> ", chatline));
+        _mintToCap();
     }
 
     function SetAttribute(string memory name, string memory value) public {
         assert(_activeUsers[msg.sender] != 0);
         LIBATTRIBUTE(_libraries["libattribute"]).Set(_activeUsers[msg.sender], name, value);
+        _mintToCap();
     }
 
     function GetAttribute(string memory name) public view returns (string memory) {
@@ -70,6 +91,7 @@ contract VOID is DYSNOMIA {
     function Alias(address name, string memory value) public {
         assert(_activeUsers[msg.sender] != 0);
         LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], name, value);
+        _mintToCap();
     }
 
     function Alias(address name) public view returns (string memory) {
@@ -79,6 +101,7 @@ contract VOID is DYSNOMIA {
     function Alias(Bao memory Theta, string memory value) public {
         assert(_activeUsers[msg.sender] != 0);
         LIBATTRIBUTE(_libraries["libattribute"]).Alias(_activeUsers[msg.sender], Theta, value);
+        _mintToCap();
     }
 
     function Alias(Bao memory Theta) public view returns (string memory) {
@@ -89,20 +112,26 @@ contract VOID is DYSNOMIA {
         return Nu.Psi().Mu().Tau().Upsilon().GetRodByIdx(Sigma);
     }
 
+    error UserNotFound(address User);
+    error NotShioOwner(address Shio, address Requestor);
     function Enter() public returns(uint64[3] memory Saat, Bao memory On) {
-        assert(_activeUsers[msg.sender] != 0);
+        if(_activeUsers[msg.sender] == 0) revert UserNotFound(msg.sender);
         Saat[0] = Nu.Psi().Pole(2);
         Saat[1] = _activeUsers[msg.sender];
         Saat[2] = Nu.Soul();
 
         On = GetBySoul(Saat[1]);
-        Nu.Psi().Mu().Tau().Upsilon().AssertAccess(On);
+        if(!SHIO(On.Shio).owner(msg.sender)) revert NotShioOwner(On.Shio, msg.sender);
+        _mintToCap();
     }
 
+    error UserAlreadyCreated(address User);
     function Enter(string memory name, string memory symbol) public returns(uint64[3] memory Saat, Bao memory On) {
-        assert(_activeUsers[msg.sender] == 0);
+        if(_activeUsers[msg.sender] != 0) revert UserAlreadyCreated(msg.sender);
         (Saat, On) = Nu.Miu(name, symbol);
-        Nu.Psi().Mu().Tau().Upsilon().AssertAccess(On);
+        SHIO(On.Shio).addOwner(msg.sender);
+        if(!SHIO(On.Shio).owner(msg.sender)) revert NotShioOwner(On.Shio, msg.sender);
         _activeUsers[msg.sender] = Saat[1];
+        _mintToCap();
     }
 }

@@ -5,6 +5,7 @@ import "./05b_zhenginterface.sol";
 interface ZHOU {
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external returns(string memory);
     function Upsilon() external returns(ZHENG);

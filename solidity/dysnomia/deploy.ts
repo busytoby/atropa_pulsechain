@@ -41,10 +41,10 @@ let zhengaddress
 let zhouaddress
 let yauaddress
 let yangaddress
-let siuaddress //= ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
-let voidaddress = ethers.utils.getAddress("0x5801a94Acb16E7Ee17E87b490759d5A2785cB82d")
-let libattributeaddress = ethers.utils.getAddress("0x6B166f2452dA78F3A4e3CD39F5b855B22FbCf837")
-let START = 99;
+let siuaddress = ethers.utils.getAddress("0x3be998c75ae8CD79E808B0038DAFF593D60DC4f4")
+let voidaddress //= ethers.utils.getAddress("0xaBb8aB7447263083455214d630e6d44aEF3BB7c8")
+let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199da0d56a5Ca25223b")
+let START = 9;
 // set pre-requisite address to deploy only subset ie: = ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
 
 (async () => {
@@ -109,10 +109,23 @@ let START = 99;
         let voidcontract = await getContract('VOID', voidaddress)
         try { result = await voidcontract["Enter(string,string)"]("Test", "TEST") } catch {}
         result = await voidcontract["Enter()"]()
+        console.log("successful Enter from origin")
         result = await voidcontract["SetAttribute(string,string)"]("Username", "mariarahel")
+        console.log("successful SetAttribute from origin")
         result = await voidcontract["Chat(string)"]("Chat Test")
+        console.log("successful Chat from origin")
         //console.log(result)
-        console.log("successful")
+        console.log("successful from origin")
+
+        voidcontract = await getContract('VOID', voidaddress, 2)
+        try { result = await voidcontract["Enter(string,string)"]("Test2", "TEST2") } catch {}
+        result = await voidcontract["Enter()"]()
+        console.log("successful Enter from non-origin")
+        result = await voidcontract["SetAttribute(string,string)"]("Username", "TestUser")
+        console.log("successful SetAttribute from non-origin")
+        result = await voidcontract["Chat(string)"]("Chat Test 2")
+        console.log("successful Chat from non-origin")
+        console.log("successful from non-origin")
     }
   } catch (e) {
     console.log(e.message)

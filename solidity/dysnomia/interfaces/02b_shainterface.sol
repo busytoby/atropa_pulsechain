@@ -5,6 +5,7 @@ import "../include/fa.sol";
 interface SHA {
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external returns (string memory);
     function Dynamo() external returns (uint64);

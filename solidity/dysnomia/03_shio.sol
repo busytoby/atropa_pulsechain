@@ -19,10 +19,14 @@ contract SHIO is DYSNOMIA {
 
     event LogEvent(uint64 Soul, string LogLine);
 
-    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO", MathLib) MultiOwnable(msg.sender) {
+    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO", MathLib) {
         Rho.Rod = SHA(RodAddress);
         Rho.Cone = SHA(ConeAddress);
-        mintToCap();
+        Augment();
+    }
+
+    function Augment() internal {
+        _mintToCap();
     }
 
     function Log(uint64 Soul, string memory LogLine) public onlyOwners {
@@ -46,7 +50,7 @@ contract SHIO is DYSNOMIA {
 
         Rho.Rod.Polarize();
         Rho.Cone.Polarize();
-        mintToCap();
+        _mintToCap();
     }
 
     function Generate(uint64 Xi, uint64 Alpha, uint64 Beta) public onlyOwners {
@@ -59,41 +63,47 @@ contract SHIO is DYSNOMIA {
 
         Rho.Rod.Saturate(Alpha, Rho.Cone.View().Foundation, Rho.Cone.View().Channel);
         Rho.Cone.Saturate(Beta, Rho.Rod.View().Foundation, Rho.Rod.View().Channel);
-        mintToCap();
+        _mintToCap();
     }
 
     function Isomerize() public onlyOwners {
         Rho.Rod.Bond();
-        mintToCap();
+        _mintToCap();
     }
 
     function Isolate() public onlyOwners {
         Rho.Cone.Bond();
-        mintToCap();
+        _mintToCap();
     }
 
+    error ManifoldInequality(uint64 Manifold);
+    error RingInequality(uint64 Ring);
+    error BarnInequality(uint64 Barn);
     function Magnetize() public onlyOwners returns(uint64) {
         Manifold = Rho.Rod.Adduct(Rho.Cone.Dynamo());
-        assert(Manifold == Rho.Cone.Adduct(Rho.Rod.Dynamo()));
+        if(Manifold != Rho.Cone.Adduct(Rho.Rod.Dynamo())) revert ManifoldInequality(Manifold);
 
         uint64 Ring = Xiao.modExp64(Rho.Rod.View().Coordinate, Manifold, Rho.Rod.View().Element);
+        if(Ring != Xiao.modExp64(Rho.Cone.View().Coordinate, Manifold, Rho.Cone.View().Element)) revert RingInequality(Ring);
+
         Rho.Barn = Xiao.modExp64(Ring, Manifold, Rho.Rod.View().Element);
-        assert(Ring == Xiao.modExp64(Rho.Cone.View().Coordinate, Manifold, Rho.Cone.View().Element));
-        assert(Rho.Barn == Xiao.modExp64(Ring, Manifold, Rho.Cone.View().Element));
+        if(Rho.Barn != Xiao.modExp64(Ring, Manifold, Rho.Cone.View().Element)) revert BarnInequality(Rho.Barn);
 
         Monopole = Xiao.modExp64(Rho.Rod.View().Chin, Rho.Cone.View().Chin, MotzkinPrime);
-        mintToCap();
+        _mintToCap();
         Rho.Rod.mintToCap();
         Rho.Cone.mintToCap();
         return Ring;
     }
 
-    function React(uint64 Pi) public onlyOwners returns(uint64, uint64) {
+    error ReactionZeroError(uint64 Eta, uint64 Kappa);
+    error ReactionInequalityError(uint64 Eta, uint64 Kappa);
+    function React(uint64 Pi) public returns(uint64, uint64) {
         Pi = Pi ^ Monopole;
         (uint64 Eta, uint64 Kappa) = Rho.Rod.React(Pi, Rho.Cone.View().Channel);
         (uint64 Omicron, uint64 Omega) = Rho.Cone.React(Pi, Rho.Rod.View().Channel);
-        assert((Omicron == Kappa && Omega == Eta));
-        assert(Omega != 0 && Omicron != 0);
+        if((Omicron != Kappa || Omega != Eta)) revert ReactionInequalityError(Eta, Kappa);
+        if(Omega == 0 || Omicron == 0) revert ReactionZeroError(Eta, Kappa);
         mintToCap();
         return(Omicron, Omega);
     }

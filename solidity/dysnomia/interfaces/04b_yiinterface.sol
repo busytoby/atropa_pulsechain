@@ -8,6 +8,7 @@ import "./03d_shiofactoryinterface.sol";
 interface YI {
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external returns(string memory);
     function Psi() external returns(SHIO);

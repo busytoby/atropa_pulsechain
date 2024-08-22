@@ -9,25 +9,26 @@ contract ZHENG is DYSNOMIA {
     YI public Eta;
     mapping(uint64 => Bao) private Sigma;  // Rods
 
-    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao())) MultiOwnable(msg.sender) {
+    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao())) {
         Eta = YI(YiContract);
+        Eta.addOwner(address(this));
+        Augment();
+    }
+
+    function Augment() internal {
         AddMarketRate(address(Eta), 1 * 10 ** decimals());
-        mintToCap();
+        _mintToCap();
     }
 
     function GetRodByIdx(uint64 _theta) public returns(Bao memory) {
-        mintToCap();
+        _mintToCap();
         return Sigma[_theta];
     }
 
-    function AssertAccess(Bao memory Beta) public onlyOwners {
-        if(!(SHIO(Beta.Shio).owner(msg.sender)))
-            SHIO(Beta.Shio).addOwner(msg.sender);
-    }
-
+    error SigmaAlreadyInstalled(address Phi);
     function InstallRod(uint64 Theta, Bao memory Beta, uint64 Monopole) public onlyOwners returns(Bao memory) {
-        assert(Sigma[Theta].Phi == address(0x0));
-        mintToCap();
+        if(Sigma[Theta].Phi != address(0x0)) revert SigmaAlreadyInstalled(Sigma[Theta].Phi);
+        _mintToCap();
         Eta.Bing(Beta);
         Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
@@ -40,8 +41,8 @@ contract ZHENG is DYSNOMIA {
     }
 
     function InstallCone(uint64 Theta, Bao memory Beta, uint64 Monopole) public onlyOwners returns(Bao memory) {
-        assert(Sigma[Theta].Phi == address(0x0));
-        mintToCap();
+        if(Sigma[Theta].Phi != address(0x0)) revert SigmaAlreadyInstalled(Sigma[Theta].Phi);
+        _mintToCap();
         Eta.Bing(Beta);
         Beta = Eta.React(Beta, Monopole);
         Sigma[Theta] = Beta;
@@ -50,9 +51,26 @@ contract ZHENG is DYSNOMIA {
         return Beta;
     }
 
+    function Mau(address Rod, address Cone, uint64 Xi, uint64 Rho, uint64 Upsilon) public onlyOwners returns (Bao memory On) {
+        On.Phi = msg.sender;
+        On.Mu = SHA(Rod);
+        SHIO ZhengShio = Eta.SHIOFactoryInterface().New(Rod, Cone, address(Xiao));
+        On.Phi = address(ZhengShio);
+        ZhengShio.addOwner(msg.sender);
+        ZhengShio.addOwner(address(Eta));
+        On.Xi = Xi;
+        ZhengShio.Generate(On.Xi, Rho, Upsilon);
+        Iodize(ZhengShio);
+        On.Shio = address(ZhengShio);
+        On.Ring = ZhengShio.Magnetize();
+
+        On = InstallCone(Upsilon, On, Rho);        
+        _mintToCap();
+    }
+
     function Iodize(SHIO Shio) public {
         Shio.Isomerize();
         Shio.Isolate();
-        mintToCap();
+        _mintToCap();
     }
 }

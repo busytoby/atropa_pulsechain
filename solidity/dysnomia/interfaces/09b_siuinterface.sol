@@ -5,6 +5,7 @@ import "./08b_yanginterface.sol";
 interface SIU {
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external returns(string memory);
     function Psi() external returns(YANG);

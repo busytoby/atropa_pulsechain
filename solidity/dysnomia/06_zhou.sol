@@ -10,17 +10,17 @@ contract ZHOU is DYSNOMIA {
     uint64 public Xi;
     uint64 public Monopole;
 
-    constructor(address ZhengContract) DYSNOMIA(unicode"VM Zhou", unicode"ZHOU", address(DYSNOMIA(ZhengContract).Xiao())) MultiOwnable(msg.sender) {
+    constructor(address ZhengContract) DYSNOMIA(unicode"VM Zhou", unicode"ZHOU", address(DYSNOMIA(ZhengContract).Xiao())) {
         Upsilon = ZHENG(ZhengContract);
         Upsilon.addOwner(address(this));
+        Upsilon.Eta().addOwner(address(this));
 
         Bao memory Theta;
         Theta.Phi = address(this);
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
+        Cone.addOwner(address(Upsilon));
         SHIO ZhengShio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhengContract).Xiao()));
-        Theta.Mu.addOwner(address(ZhengShio));
-        Cone.addOwner(address(ZhengShio));
         ZhengShio.addOwner(address(Upsilon));
         ZhengShio.addOwner(address(Upsilon.Eta()));
         Theta.Xi = Xiao.Random();
@@ -32,22 +32,29 @@ contract ZHOU is DYSNOMIA {
         Monopole = Theta.Omicron;
         Theta = Upsilon.InstallRod(Theta.Xi, Theta, Monopole);
         Xi = Theta.Xi;
-        AddMarketRate(address(Upsilon), 1 * 10 ** decimals());
-        AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
-        AddMarketRate(address(Cone), 1 * 10 ** decimals());
-        AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
-        mintToCap();
+        Augment(Theta);
     }
 
-    function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA) {
-        mintToCap();
-        return Upsilon.Eta().SHAFactoryInterface().New(Name, Symbol, address(address(Xiao)));
+    function Augment(Bao memory Theta) internal {
+        AddMarketRate(address(Upsilon), 1 * 10 ** decimals());
+        AddMarketRate(address(Theta.Mu), 1 * 10 ** decimals());
+        AddMarketRate(address(SHIO(Theta.Shio).Cone()), 1 * 10 ** decimals());
+        AddMarketRate(Theta.Shio, 1 * 10 ** decimals());
+        _mintToCap();
+    }
+
+    function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA Epsilon) {
+        _mintToCap();
+        Epsilon = Upsilon.Eta().SHAFactoryInterface().New(Name, Symbol, address(address(Xiao)));
+        Epsilon.addOwner(msg.sender);
+        Epsilon.addOwner(address(Upsilon));
+        Epsilon.addOwner(address(Upsilon.Eta()));
     }
 
     function React(uint64 Iota) public returns (Bao memory) {
         Bao memory Theta = Upsilon.GetRodByIdx(Xi);        
         Theta = Upsilon.Eta().React(Theta, Iota);
-        mintToCap();
+        _mintToCap();
         return Theta;
     }
 }
