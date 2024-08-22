@@ -41,7 +41,7 @@ contract VOID is DYSNOMIA {
         _mintToCap();
     }
 
-    function Log(string memory LogLine) internal {
+    function Log(string memory LogLine) public {
         uint64 Soul = _activeUsers[msg.sender];
         SHIO(GetBySoul(Soul).Shio).Log(Soul, LogLine);
         _mintToCap();
