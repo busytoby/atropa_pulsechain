@@ -10,6 +10,7 @@ contract LAU is DYSNOMIA {
     VOID public Eta;
     uint64[3] public Saat;
     Bao public On;
+    address public CurrentArea;
 
     constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
         Eta = VOID(VoidAddress);
@@ -28,6 +29,11 @@ contract LAU is DYSNOMIA {
         if(really1 && really2) (Saat, On) = Eta.Enter();
         Eta.Log("Reset To Void");
         _mintToCap();
+    }
+
+    function Leave() public onlyOwners {
+        CurrentArea = address(0x0);
+        Eta.Log("Left Play");
     }
 
     function Username() public view returns (string memory) {
