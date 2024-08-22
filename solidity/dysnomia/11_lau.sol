@@ -7,11 +7,16 @@ contract LAU is DYSNOMIA {
     string public constant Type = "LAU";
 
     VOID public Eta;
+    uint64[3] public Saat;
+    Bao public On;
 
     constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
         Eta = VOID(VoidAddress);
+        (Saat, On) = Eta.Enter(name, symbol);
+    }
 
-        Eta.Enter(name, symbol);
+    function Void(bool really1, bool really2) public onlyOwners {
+        if(really1 && really2) (Saat, On) = Eta.Enter();
     }
 
     function Username() public view returns (string memory) {
