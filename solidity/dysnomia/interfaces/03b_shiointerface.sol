@@ -27,5 +27,5 @@ interface SHIO {
     function Isolate() external;
     function Magnetize() external returns(uint64);
     function React(uint64 Pi) external returns(uint64, uint64);
-    function Log(uint64 Soul, string memory LogLine) external;
+    function Log(uint64 Soul, uint64 Aura, string memory LogLine) external;
 }

@@ -9,6 +9,6 @@ interface SIU {
     function mintToCap() external;
     function Type() external returns(string memory);
     function Psi() external returns(YANG);
-    function Soul() external view returns (uint64);
+    function Aura() external view returns (uint64);
     function Miu(string memory name, string memory symbol) external returns(uint64[3] memory Saat, Bao memory On);
 }
