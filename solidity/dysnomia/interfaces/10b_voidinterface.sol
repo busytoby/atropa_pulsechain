@@ -9,13 +9,13 @@ interface VOID {
     function mintToCap() external;
     function Type() external returns(string memory);
     function Nu() external returns(SIU);
+    function GetLibraryAddress(string memory name) external view returns (address);
     function AddLibrary(string memory name, address _a) external;
     function Clear(uint64 Iota) external returns(uint64);
     function Sign(uint64 DIRAC1) external returns(Bao memory);
     function Log(string memory LogLine) external;
     function Log(uint64 Sigma, string memory LogLine) external;
     function Log(address Sigma, string memory LogLine) external;
-    function Log(string memory Xi, string memory LogLine) external;
     function SetAttribute(string memory name, string memory value) external;
     function GetAttribute(string memory name) external view returns (string memory);
     function Alias(address name, string memory value) external;

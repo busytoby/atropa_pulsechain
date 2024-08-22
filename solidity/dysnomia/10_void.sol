@@ -34,6 +34,10 @@ contract VOID is DYSNOMIA {
         _mintToCap();
     }
 
+    function GetLibraryAddress(string memory name) public view returns (address) {
+        return _libraries[name];
+    }
+
     function AddLibrary(string memory name, address _a) public onlyOwners {
         _libraries[name] = _a;
         _mintToCap();
