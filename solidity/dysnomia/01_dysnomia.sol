@@ -189,7 +189,6 @@ abstract contract DYSNOMIA is MultiOwnable {
 
     function log10(uint256 value) internal pure returns (uint256) {
         uint256 result = 0;
-
         unchecked {
             for(uint8 _e = 64; _e >= 1; _e /= 2) {
                 if (value >= 10 ** _e) {
@@ -201,29 +200,18 @@ abstract contract DYSNOMIA is MultiOwnable {
         return result;
     }
 
-    //function String(uint64 value) internal pure returns (string memory) {
-    //    return String(uint256(value));
-    //}
-
-    function String(uint256 value) internal pure returns (string memory) {
+    function String(uint256 value) internal pure returns (string memory buffer) {
         unchecked {
             uint256 length = log10(value) + 1;
-            string memory buffer = new string(length);
+            buffer = new string(length);
             uint256 ptr;
-            /// @solidity memory-safe-assembly
-            assembly {
-                ptr := add(buffer, add(32, length))
-            }
+            assembly { ptr := add(buffer, add(32, length)) }
             while (true) {
                 ptr--;
-                /// @solidity memory-safe-assembly
-                assembly {
-                    mstore8(ptr, byte(mod(value, 10), "0123456789abcdef"))
-                }
+                assembly { mstore8(ptr, byte(mod(value, 10), "0123456789abcdef")) }
                 value /= 10;
                 if (value == 0) break;
             }
-            return buffer;
         }
     }
 
@@ -232,10 +220,6 @@ abstract contract DYSNOMIA is MultiOwnable {
     }
 
     function Hex(uint256 value) internal pure returns(string memory) {
-        return Hex(abi.encodePacked(value));
-    }
-
-    function Hex(uint64 value) internal pure returns(string memory) {
         return Hex(abi.encodePacked(value));
     }
 
