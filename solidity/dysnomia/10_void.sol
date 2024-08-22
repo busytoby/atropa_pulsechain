@@ -22,7 +22,6 @@ contract VOID is DYSNOMIA {
         Nu.Psi().Mu().Tau().Upsilon().Eta().addOwner(address(this));
 
         SHIO(GetBySoul(ZHOU(Nu.Psi().Mu().Tau()).Xi()).Shio).addOwner(address(this));
-        SHIO(GetBySoul(YAU(Nu.Psi().Mu()).Theta().Xi).Shio).addOwner(address(this));
         SHIO(GetBySoul(YANG(Nu.Psi()).Rho().Lai.Xi).Shio).addOwner(address(this));
 
         _kecNames["ZHOU"] = keccak256("ZHOU");
