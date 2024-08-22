@@ -44,9 +44,11 @@ let zhouaddress
 let yauaddress
 let yangaddress
 let siuaddress //= ethers.utils.getAddress("0x3be998c75ae8CD79E808B0038DAFF593D60DC4f4")
-let voidaddress //= ethers.utils.getAddress("0xaBb8aB7447263083455214d630e6d44aEF3BB7c8")
+let voidaddress //= ethers.utils.getAddress("0x556110FC672b5Dd5e211373cc6c761Ad6c5a1360")
 let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199da0d56a5Ca25223b")
-let START = 0;
+let laufactoryaddress = ethers.utils.getAddress("0x5C61b88B26c124B7e3451425caE218BF318e0429")
+let lauaddress
+let START = 99;
 // set pre-requisite address to deploy only subset ie: = ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
 
 (async () => {
@@ -107,27 +109,33 @@ let START = 0;
         console.log(`ATTRIBUTE address: ${result.address}`)
         libattributeaddress = result.address
 
-      case 99:
-        let voidcontract = await getContract('VOID', voidaddress)
-        try { result = await voidcontract["Enter(string,string)"]("Test", "TEST") } catch {}
-        result = await voidcontract["Enter()"]()
-        console.log("successful Enter from origin")
-        result = await voidcontract["SetAttribute(string,string)"]("Username", "mariarahel")
-        console.log("successful SetAttribute from origin")
-        result = await voidcontract["Chat(string)"]("Chat Test")
-        console.log("successful Chat from origin")
-        //console.log(result)
-        console.log("successful from origin")
+      case 11:
+        result = await deploy('LAUFactory', [voidaddress]) 
+        console.log(`LAUFactory address: ${result.address}`)
+        laufactoryaddress = result.address
 
-        voidcontract = await getContract('VOID', voidaddress, 2)
-        try { result = await voidcontract["Enter(string,string)"]("Test2", "TEST2") } catch {}
-        result = await voidcontract["Enter()"]()
-        console.log("successful Enter from non-origin")
-        result = await voidcontract["SetAttribute(string,string)"]("Username", "TestUser")
-        console.log("successful SetAttribute from non-origin")
-        result = await voidcontract["Chat(string)"]("Chat Test 2")
+      case 99:
+        let laufactorycontract = await getContract('LAUFactory', laufactoryaddress)
+        result = await laufactorycontract["New(string,string)"]("User Test", "USERTOKEN")
+        let r2wtf = await result.wait()
+        lauaddress = r2wtf.events[0].address
+        console.log(`LAU Deployed: ${lauaddress} from origin`)
+        let laucontract = await getContract('LAU', lauaddress)
+        result = await laucontract["Username(string)"]("mariarahel")
+        console.log("successful Set Username from origin")
+        result = await laucontract["Chat(string)"]("Chat Test")
+        console.log("successful Chat from origin")
+
+        laufactorycontract = await getContract('LAUFactory', laufactoryaddress, 2)
+        result = await laufactorycontract["New(string,string)"]("User Test 2", "USERTOKEN2")
+        r2wtf = await result.wait()
+        lauaddress = r2wtf.events[0].address
+        console.log(`LAU Deployed: ${lauaddress} from non-origin`)
+        laucontract = await getContract('LAU', lauaddress, 2)
+        result = await laucontract["Username(string)"]("TestUser")
+        console.log("successful Set Username from non-origin")
+        result = await laucontract["Chat(string)"]("Chat Test 2")
         console.log("successful Chat from non-origin")
-        console.log("successful from non-origin")
     }
   } catch (e) {
     console.log(e.message)
