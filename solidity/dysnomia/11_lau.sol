@@ -4,7 +4,6 @@ import "./01_dysnomia.sol";
 import "./interfaces/10b_voidinterface.sol";
 
 contract LAU is DYSNOMIA {
-    using ToString for *;
     string public constant Type = "LAU";
 
     VOID public Eta;
@@ -22,7 +21,7 @@ contract LAU is DYSNOMIA {
     function Withdraw(address what, uint256 amount) public onlyOwners {
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
-        Eta.Log(string.concat("Withdraw Of ", amount.String(), " ", withdrawToken.name(), " To ", msg.sender.String()));
+        Eta.Log(string.concat("Withdraw Of ", String(amount), " ", withdrawToken.name(), " To ", Hex(msg.sender)));
     }
 
     function Void(bool really1, bool really2) public onlyOwners {
@@ -53,7 +52,7 @@ contract LAU is DYSNOMIA {
 
     function Alias(address name, string memory value) public onlyOwners {
         Eta.Alias(name, value);
-        Eta.Log(string.concat("Alias[", name.String(), "] set to ", value));
+        Eta.Log(string.concat("Alias[", Hex(name), "] set to ", value));
         _mintToCap();
     }
 
@@ -63,7 +62,7 @@ contract LAU is DYSNOMIA {
 
     function Alias(Bao memory Theta, string memory value) public onlyOwners {
          Eta.Alias(Theta, value);
-        Eta.Log(string.concat("Alias[", Theta.Phi.String(), "] set to ", value));
+        Eta.Log(string.concat("Alias[", Hex(Theta.Phi), "] set to ", value));
         _mintToCap();
     }
 

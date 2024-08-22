@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./lib/multiownable.sol";
-import "./lib/tostring.sol";
 import "../addresses.sol";
 
 interface atropaMath {
@@ -187,4 +186,93 @@ abstract contract DYSNOMIA is MultiOwnable {
 
     error DysnomiaInsufficientBalance(address origin, address sender, address from, address to, address what, uint256 balance, uint256 needed);
     error DysnomiaInsufficientAllowance(address origin, address sender, address owner, address spender, address what, uint256 allowance, uint256 needed);
+
+    function log10(uint256 value) internal pure returns (uint256) {
+        uint256 result = 0;
+        unchecked {
+            if (value >= 10 ** 64) {
+                value /= 10 ** 64;
+                result += 64;
+            }
+            if (value >= 10 ** 32) {
+                value /= 10 ** 32;
+                result += 32;
+            }
+            if (value >= 10 ** 16) {
+                value /= 10 ** 16;
+                result += 16;
+            }
+            if (value >= 10 ** 8) {
+                value /= 10 ** 8;
+                result += 8;
+            }
+            if (value >= 10 ** 4) {
+                value /= 10 ** 4;
+                result += 4;
+            }
+            if (value >= 10 ** 2) {
+                value /= 10 ** 2;
+                result += 2;
+            }
+            if (value >= 10 ** 1) {
+                result += 1;
+            }
+        }
+        return result;
+    }
+
+    function String(uint64 value) internal pure returns (string memory) {
+        return String(uint256(value));
+    }
+
+    function String(uint256 value) internal pure returns (string memory) {
+        unchecked {
+            uint256 length = log10(value) + 1;
+            string memory buffer = new string(length);
+            uint256 ptr;
+            /// @solidity memory-safe-assembly
+            assembly {
+                ptr := add(buffer, add(32, length))
+            }
+            while (true) {
+                ptr--;
+                /// @solidity memory-safe-assembly
+                assembly {
+                    mstore8(ptr, byte(mod(value, 10), "0123456789abcdef"))
+                }
+                value /= 10;
+                if (value == 0) break;
+            }
+            return buffer;
+        }
+    }
+
+    function Hex(address account) internal pure returns(string memory) {
+        return Hex(abi.encodePacked(account));
+    }
+
+    function Hex(uint256 value) internal pure returns(string memory) {
+        return Hex(abi.encodePacked(value));
+    }
+
+    function Hex(uint64 value) internal pure returns(string memory) {
+        return Hex(abi.encodePacked(value));
+    }
+
+    function Hex(bytes32 value) internal pure returns(string memory) {
+        return Hex(abi.encodePacked(value));
+    }
+
+    function Hex(bytes memory data) internal pure returns(string memory) {
+        bytes memory hexa = "0123456789abcdef";
+
+        bytes memory str = new bytes(2 + data.length * 2);
+        str[0] = "0";
+        str[1] = "x";
+        for (uint i = 0; i < data.length; i++) {
+            str[2+i*2] = hexa[uint(uint8(data[i] >> 4))];
+            str[3+i*2] = hexa[uint(uint8(data[i] & 0x0f))];
+        }
+        return string(str);
+    }
 }
