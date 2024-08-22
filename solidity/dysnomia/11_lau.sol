@@ -16,7 +16,6 @@ contract LAU is DYSNOMIA {
         (Saat, On) = Eta.Enter(name, symbol);
         On.Shio.addOwner(address(this));
         On.Shio.Rho().Rod.addOwner(address(this));
-        On.Shio.Rho().Cone.addOwner(address(this));
         _mintToCap();
     }
 
