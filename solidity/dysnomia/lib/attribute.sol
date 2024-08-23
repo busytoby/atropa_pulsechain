@@ -12,7 +12,7 @@ contract ATTRIBUTE is DYSNOMIA {
     mapping(uint64 => mapping(address => string)) private _userGrades;
 
 
-    constructor(address VoidAddress) DYSNOMIA(unicode"VM LibAttribute", unicode"LibAttribute", address(DYSNOMIA(VoidAddress).Xiao())) {
+    constructor(address VoidAddress) DYSNOMIA(unicode"CHATLOG LibAttribute", unicode"LibAttribute", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
         addOwner(VoidAddress);
         Void.AddLibrary("libattribute", address(this));
