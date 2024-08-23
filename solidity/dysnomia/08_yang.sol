@@ -16,7 +16,7 @@ contract YANG is DYSNOMIA {
     Tai public Rho;
     uint64[3] public Pole;
 
-    constructor(address YauAddress) DYSNOMIA(unicode"VM Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) {
+    constructor(address YauAddress) DYSNOMIA(unicode"CHATLOG Yang", unicode"YANG", address(DYSNOMIA(YauAddress).Xiao())) {
         Mu = YAU(YauAddress);
         Mu.addOwner(address(this));
         Mu.Tau().addOwner(address(this));

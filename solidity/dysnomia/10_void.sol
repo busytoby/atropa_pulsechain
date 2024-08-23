@@ -12,7 +12,7 @@ contract VOID is DYSNOMIA {
     mapping(string => bytes32) private _kecNames;
     mapping(string => address) private _libraries;
 
-    constructor(address SiuAddress) DYSNOMIA(unicode"VM Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao())) {
+    constructor(address SiuAddress) DYSNOMIA(unicode"CHATLOG Void", unicode"VOID", address(DYSNOMIA(SiuAddress).Xiao())) {
         Nu = SIU(SiuAddress);
         Nu.addOwner(address(this));
         Nu.Psi().addOwner(address(this));

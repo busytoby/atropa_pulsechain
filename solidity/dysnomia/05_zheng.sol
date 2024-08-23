@@ -9,7 +9,7 @@ contract ZHENG is DYSNOMIA {
     YI public Eta;
     mapping(uint64 => Bao) private Sigma;  // Rods
 
-    constructor(address YiContract) DYSNOMIA(unicode"VM Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao())) {
+    constructor(address YiContract) DYSNOMIA(unicode"CHATLOG Zheng", unicode"ZHENG", address(DYSNOMIA(YiContract).Xiao())) {
         Eta = YI(YiContract);
         Eta.addOwner(address(this));
         Augment();

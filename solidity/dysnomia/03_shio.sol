@@ -19,7 +19,7 @@ contract SHIO is DYSNOMIA {
 
     event LogEvent(uint64 Soul, uint64 Aura, string LogLine);
 
-    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"VM Shio", unicode"SHIO", MathLib) {
+    constructor(address RodAddress, address ConeAddress, address MathLib) DYSNOMIA(unicode"CHATLOG Shio", unicode"SHIO", MathLib) {
         Rho.Rod = SHA(RodAddress);
         Rho.Cone = SHA(ConeAddress);
         Augment();

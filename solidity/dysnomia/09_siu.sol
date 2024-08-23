@@ -8,7 +8,7 @@ contract SIU is DYSNOMIA {
 
     YANG public Psi;
 
-    constructor(address YangAddress) DYSNOMIA(unicode"VM Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao())) {
+    constructor(address YangAddress) DYSNOMIA(unicode"CHATLOG Siu", unicode"SIU", address(DYSNOMIA(YangAddress).Xiao())) {
         Psi = YANG(YangAddress);
         Psi.addOwner(address(this));
         Psi.Mu().addOwner(address(this));

@@ -10,7 +10,7 @@ contract YAU is DYSNOMIA {
     Bao public Theta;
     uint64[2] public Monopole;
 
-    constructor(address ZhouAddress) DYSNOMIA(unicode"VM Yau", unicode"YAU", address(DYSNOMIA(ZhouAddress).Xiao())) {
+    constructor(address ZhouAddress) DYSNOMIA(unicode"CHATLOG Yau", unicode"YAU", address(DYSNOMIA(ZhouAddress).Xiao())) {
         Tau = ZHOU(ZhouAddress);
         Tau.addOwner(address(this));
         Tau.Upsilon().addOwner(address(this));

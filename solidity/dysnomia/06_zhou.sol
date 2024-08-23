@@ -10,7 +10,7 @@ contract ZHOU is DYSNOMIA {
     uint64 public Xi;
     uint64 public Monopole;
 
-    constructor(address ZhengContract) DYSNOMIA(unicode"VM Zhou", unicode"ZHOU", address(DYSNOMIA(ZhengContract).Xiao())) {
+    constructor(address ZhengContract) DYSNOMIA(unicode"CHATLOG Zhou", unicode"ZHOU", address(DYSNOMIA(ZhengContract).Xiao())) {
         Upsilon = ZHENG(ZhengContract);
         Upsilon.addOwner(address(this));
         Upsilon.Eta().addOwner(address(this));

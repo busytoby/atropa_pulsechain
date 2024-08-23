@@ -49,7 +49,7 @@ let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199d
 let laufactoryaddress //= ethers.utils.getAddress("0x492043DbfaAA1AC15E1566750ab7EDb63F05C85C")
 let lauaddress
 let START = 0;
-// set pre-requisite address to deploy only subset ie: = ethers.utils.getAddress("0xD2F5793e91D3043002f478aa06A023D4FAE12777")
+// set pre-requisite address to deploy only subset
 
 (async () => {
   try {
