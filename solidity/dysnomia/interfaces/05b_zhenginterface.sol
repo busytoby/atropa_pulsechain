@@ -12,6 +12,6 @@ interface ZHENG {
     function GetRodByIdx(uint64 _theta) external returns(Bao memory);
     function InstallRod(uint64 Theta, Bao memory Beta, uint64 DIRAC) external returns(Bao memory);
     function InstallCone(uint64 Theta, Bao memory Beta, uint64 DIRAC) external returns(Bao memory);
-    function Mau(address Rod, address Cone, uint64 Xi, uint64 Rho, uint64 Upsilon) external returns (Bao memory On);
+    function Mau(string memory name, string memory symbol, uint64 Xi, uint64 Rho, uint64 Upsilon) external returns (Bao memory On);
     function Iodize(SHIO Shio) external;
 }

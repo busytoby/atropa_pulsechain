@@ -32,7 +32,7 @@ contract YANG is DYSNOMIA {
         Rho.Lai.Phi = address(this);
         Rho.Lai.Mu = Mu.Tau().Alpha("Yang Rod", "MROD");
         SHA Cone = Mu.Tau().Upsilon().Eta().Beta("Yang Cone", "MCONE");
-        Rho.Lai.Shio = Mu.Tau().Upsilon().Eta().SHIOFactoryInterface().New(address(Rho.Lai.Mu), address(Cone), address(DYSNOMIA(YauAddress).Xiao()));
+        Rho.Lai.Shio = Mu.Tau().Upsilon().Eta().Kappa(Rho.Lai.Mu, Cone);
         Rho.Lai.Shio.addOwner(address(Mu.Tau()));
         Rho.Lai.Shio.addOwner(address(Mu.Tau().Upsilon()));
         Rho.Lai.Shio.addOwner(address(Mu.Tau().Upsilon().Eta()));

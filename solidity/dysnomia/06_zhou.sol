@@ -20,7 +20,7 @@ contract ZHOU is DYSNOMIA {
         Theta.Mu = Alpha("Zheng Rod", "ZROD");
         SHA Cone = Upsilon.Eta().Beta("Yi Shio Cone", "ZCONE");
         Cone.addOwner(address(Upsilon));
-        Theta.Shio = Upsilon.Eta().SHIOFactoryInterface().New(address(Theta.Mu), address(Cone), address(DYSNOMIA(ZhengContract).Xiao()));
+        Theta.Shio = Upsilon.Eta().Kappa(Theta.Mu, Cone);
         Theta.Shio.addOwner(address(Upsilon));
         Theta.Shio.addOwner(address(Upsilon.Eta()));
         Theta.Xi = Xiao.Random();
@@ -44,7 +44,7 @@ contract ZHOU is DYSNOMIA {
 
     function Alpha(string memory Name, string memory Symbol) public onlyOwners returns (SHA Epsilon) {
         _mintToCap();
-        Epsilon = Upsilon.Eta().SHAFactoryInterface().New(Name, Symbol, address(address(Xiao)));
+        Epsilon = Upsilon.Eta().Beta(Name, Symbol);
         Epsilon.addOwner(msg.sender);
         Epsilon.addOwner(address(Upsilon));
         Epsilon.addOwner(address(Upsilon.Eta()));

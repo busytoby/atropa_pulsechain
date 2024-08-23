@@ -33,12 +33,10 @@ contract SIU is DYSNOMIA {
         Saat[1] = Xiao.Random();
         Saat[2] = Aura();
 
-        SHA Rod = Psi.Mu().Tau().Upsilon().Eta().SHAFactoryInterface().New(string.concat(name, " Rod"), string.concat(symbol, "ROD"), address(address(Xiao)));
-        SHA Cone = Psi.Mu().Tau().Upsilon().Eta().Beta(string.concat(name, " Siu Cone"), string.concat(symbol, "VCONE"));
-        On = Psi.Mu().Tau().Upsilon().Mau(address(Rod), address(Cone), Saat[0], Saat[2], Saat[1]);        
+        On = Psi.Mu().Tau().Upsilon().Mau(name, symbol, Saat[0], Saat[2], Saat[1]);        
 
-        Cone.renounceOwnership(tx.origin);
-        AddMarketRate(address(Cone), 1 * 10 ** decimals());
+        On.Shio.Cone().renounceOwnership(tx.origin);
+        AddMarketRate(address(On.Shio.Cone()), 1 * 10 ** decimals());
         _mintToCap();
         return (Saat, On);
     }

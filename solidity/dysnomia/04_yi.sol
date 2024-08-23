@@ -43,6 +43,13 @@ contract YI is DYSNOMIA {
         return Xun;
     }
 
+    function Kappa(SHA Rod, SHA Cone) public onlyOwners returns(SHIO) {
+        SHIO Xie = SHIOFactoryInterface.New(address(Rod), address(Cone), address(Xiao));
+        Xie.addOwner(msg.sender);
+        _mintToCap();
+        return Xie;
+    }
+
     function Bing(Bao memory _b) public onlyOwners {
         Nu[_b.Phi] = _b;
         SHIO(_b.Shio).Log(0, 0, "Added to Yi.Nu");

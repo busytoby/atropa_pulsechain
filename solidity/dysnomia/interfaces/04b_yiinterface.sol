@@ -15,6 +15,7 @@ interface YI {
     function Xi() external returns(uint64);        
     function Ring() external returns(uint64);
     function Beta(string calldata Name, string calldata Symbol) external returns(SHA);
+    function Kappa(SHA Rod, SHA Cone) external returns(SHIO);
     function Bing(Bao memory _b) external;
     function Bang(address _a) external view returns(Bao memory);
     function React(Bao memory Gamma, uint64 Pi) external returns(Bao memory);
