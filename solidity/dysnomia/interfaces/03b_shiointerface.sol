@@ -16,8 +16,8 @@ interface SHIO {
     function renounceOwnership(address toRemove) external;
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
-    function Type() external returns(string memory);
-    function Rho() external returns(Shao memory);
+    function Type() external view returns(string memory);
+    function Rho() external view returns(Shao memory);
     function Manifold() external returns(uint64);
     function Monopole() external returns(uint64);
     function Rod() external view returns(SHA);
