@@ -73,7 +73,7 @@ abstract contract DYSNOMIA is MultiOwnable {
         DYSNOMIA BuyToken = DYSNOMIA(_t);
         uint256 cost = (_a * _marketRates[_t]) / (10 ** decimals());
         bool success1 = DYSNOMIA(address(this)).transferFrom(msg.sender, address(this), _a);
-        require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
+        require(success1, string.concat(unicode"Need Approved ", DYSNOMIA(address(this)).name()));
         BuyToken.transfer(msg.sender, cost);
     }
 
