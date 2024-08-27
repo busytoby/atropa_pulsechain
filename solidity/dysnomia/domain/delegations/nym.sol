@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 import "../../12_delegation.sol";
 
-struct Acronym {
+struct ACRONYM {
     string[7] ACRONYM;
     string PHRASE;
     uint16 VOTES;
@@ -16,12 +16,13 @@ struct UserVote {
 contract Nym is DELEGATION {
     uint64 public RoundNumber = 0;
     uint16 public AcronymCount = 0;
-    mapping(uint16 => Acronym) public Acronyms;
+    mapping(uint16 => ACRONYM) public Acronyms;
     UserVote[] public UserVotes;
     mapping(uint64 => uint64) public LastUserVote;
     User[] private _users;
-    Acronym[] public History;
+    ACRONYM[] public History;
     bool public Active;
+    bytes public Acronym;
 
     constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
@@ -63,10 +64,26 @@ contract Nym is DELEGATION {
             }
         }
 
-        if(_users.length >= 5)
-            RoundNumber = RoundNumber + 1;
-        else
+        if(_users.length >= 5) {
+            NewAcronym();
+        } else
             Active = false;
+    }
+
+    function NewAcronym() internal {
+        bytes memory LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        Acronym = new bytes(7);
+        uint64 length = (Xiao.Random() % 5) + 3;
+        for(uint i = 0; i < length; i++) {
+            uint64 nxtchar = Xiao.Random() % 26;
+            Acronym[i] = LETTERS[nxtchar];
+        }
+
+        On.Shio.Log(Saat[1], Void.Nu().Aura(), string.concat("New Acronym :: ", GetAcronym()));
+    }
+
+    function GetAcronym() public view returns(string memory) {
+        return string(Acronym);
     }
 
     function Chat(string memory chatline) public override onlyOwners {
