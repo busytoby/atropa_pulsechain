@@ -129,27 +129,29 @@ contract Nym is DELEGATION {
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
-        return(A == B || uint8(A) == (uint8(B) - 32));
+        return(A == B || uint8(A) == (uint8(B) + 32));
     }
 
-    function CheckAcronym(bytes memory _acronym, bytes memory Beta) public pure returns(bool) {
-        if(!CaseInsensitiveCompare(Beta[0], _acronym[0])) return false;
+    error CheckAcronymError(uint which, uint8 A, uint8 B);
+    function CheckAcronym(bytes memory _acronym, string memory _Beta) public pure returns(bool) {
+        bytes memory Beta = bytes(_Beta);
+        if(!CaseInsensitiveCompare(Beta[0], _acronym[0])) revert CheckAcronymError(1, uint8(Beta[0]), uint8(_acronym[0]));
         uint8 _pos = 1;
         for(uint256 i = 1; i < Beta.length; i++) {
             if(uint8(Beta[i]) == 32)
-                if(!CaseInsensitiveCompare(Beta[i+1], _acronym[_pos])) return false;
+                if(!CaseInsensitiveCompare(Beta[i+1], _acronym[_pos])) revert CheckAcronymError(2, uint8(Beta[i+1]), uint8(_acronym[_pos]));
                 else {
                     _pos = _pos + 1;
                     i = i + 1;
                 }
-            if(_pos > _acronym.length) return false;
+            if(_pos > _acronym.length) revert CheckAcronymError(3, _pos, uint8(_acronym.length));
         }
-        if(_pos != _acronym.length) return false;
+        if(_pos != _acronym.length) revert CheckAcronymError(4, _pos, uint8(_acronym.length));
         return true;
     }
 
-    error InvalidAcronym(bytes Acronym, bytes Phrase);
-    function Submit(bytes memory Beta) public {
+    error InvalidAcronym(bytes Acronym, string Phrase);
+    function Submit(string memory Beta) public {
         if(!CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
 
         User memory Alpha = GetUser();

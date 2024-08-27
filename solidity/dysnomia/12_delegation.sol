@@ -41,7 +41,7 @@ abstract contract DELEGATION is DYSNOMIA {
     error InvalidOwnership(address UserToken, address User);
     error AlreadyEntered(address UserAddress, address User);
     function Enter(address UserToken) internal returns(User memory) { // inheriting class should implement Join() & Call Enter(), see nym.sol
-        if(Delegates[tx.origin].Soul == 0) revert AlreadyEntered(UserToken, tx.origin);
+        if(Delegates[tx.origin].Soul != 0) revert AlreadyEntered(UserToken, tx.origin);
         LAU UserLau = LAU(UserToken);
         if(!UserLau.owner(msg.sender)) revert InvalidOwnership(UserToken, msg.sender);
 
