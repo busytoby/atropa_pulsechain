@@ -7,6 +7,7 @@ import "./interfaces/11b_lauinterface.sol";
 struct User {
     uint64 Soul;
     Bao On;
+    string Username;
 }
 
 abstract contract DELEGATION is DYSNOMIA {
@@ -49,6 +50,7 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha.Soul = UserLau.Saat(1);
         Alpha.On = UserLau.On();
         Alpha.On.Phi = UserToken;
+        Alpha.Username = GetUsername(Alpha);
         Delegates[tx.origin] = Alpha;
         
         (Alpha.On.Omicron, Alpha.On.Omega) = Alpha.On.Shio.React(Saat[2]);

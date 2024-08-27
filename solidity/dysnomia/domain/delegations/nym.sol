@@ -4,7 +4,7 @@ import "../../12_delegation.sol";
 
 struct ACRONYM {
     uint16 Id;
-    address UserAddress;
+    User UserInfo;
     string Phrase;
     uint16 Votes;
 }
@@ -64,11 +64,11 @@ contract Nym is DELEGATION {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", GetUsername(Alpha)));
+        On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", Alpha.Username));
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
-    function NewRound() internal {
+    function NewRound() public onlyOwners {
         for(uint16 i = 0; i < AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
@@ -78,7 +78,7 @@ contract Nym is DELEGATION {
             if(LastUserVote[_users[i].Soul].Round < RoundNumber - 2) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
-                On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", GetUsername(_users[i])));
+                On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
                 i = i - 1;
@@ -86,6 +86,7 @@ contract Nym is DELEGATION {
         }
 
         if(_users.length >= MinPlayers) {
+            Active = true;
             NewAcronym();
         } else
             Active = false;
@@ -104,10 +105,11 @@ contract Nym is DELEGATION {
         if(LastUserVote[Alpha.Soul].Round <= RoundNumber) _mint(Alpha.On.Phi, 1 * 10 ** decimals());
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
+        Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
-    function EndRound() internal {
+    function EndRound() public onlyOwners {
         uint16[] memory Tally = new uint16[](AcronymCount);
         uint16 winners = 0;
         uint16 winningvotes = 0;
@@ -124,8 +126,8 @@ contract Nym is DELEGATION {
 
         for(uint16 i = 0; i < AcronymCount; i++)
             if(Tally[i] == winningvotes) {
-                On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", GetUsername(Delegates[Acronyms[i].UserAddress]), " !! ", Acronyms[i].Phrase));
-                _mint(Acronyms[i].UserAddress, (Prize / winners) * 10 ** decimals());
+                On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
+                _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
             }
         
         NewRound();
@@ -163,11 +165,11 @@ contract Nym is DELEGATION {
         Kappa.Phrase = string(Beta);
         Kappa.Votes = 0;
         Kappa.Id = AcronymCount;
-        Kappa.UserAddress = Alpha.On.Phi;
+        Kappa.UserInfo = Alpha;
         Acronyms[AcronymCount] = Kappa;
-        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", GetUsername(Alpha), "> Submitted :: ", string(Beta)));
+        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: ", string(Beta)));
         React(Alpha, Kappa.Id);
-        _mint(Kappa.UserAddress, 1 * 10 ** decimals());        
+        _mint(Alpha.On.Phi, 1 * 10 ** decimals());        
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
@@ -192,8 +194,7 @@ contract Nym is DELEGATION {
     function Chat(string memory chatline) public override onlyOwners {
         User memory Alpha = GetUser();
 
-        string memory Username = GetUsername(Alpha);
-        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Username, "> ", chatline));
+        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
         React(Alpha, Xiao.Random());
 
         _mintToCap();
