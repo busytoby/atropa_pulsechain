@@ -63,6 +63,7 @@ contract Nym is DELEGATION {
     function Join(address UserToken) public {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
+        LastUserVote[Alpha.Soul].Round = RoundNumber;
         On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", GetUsername(Alpha)));
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
