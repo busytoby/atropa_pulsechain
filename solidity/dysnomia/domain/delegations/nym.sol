@@ -48,7 +48,7 @@ contract Nym is DELEGATION {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
         On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", GetUsername(Alpha)));
-        if(!Active && _users.length >= 5) NewRound();
+        if(!Active && _users.length >= 1) NewRound(); //CHANGEMEBACK to 5
     }
 
     function NewRound() internal {
@@ -67,7 +67,7 @@ contract Nym is DELEGATION {
             }
         }
 
-        if(_users.length >= 5) {
+        if(_users.length >= 1) { //CHANGEMEBACK to 5
             NewAcronym();
         } else
             Active = false;
@@ -86,7 +86,7 @@ contract Nym is DELEGATION {
         if(LastUserVote[Alpha.Soul].Round <= RoundNumber) _mint(Alpha.On.Phi, 1 * 10 ** decimals());
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        if(block.timestamp >= (RoundStartTime + 10 minutes)) EndRound();
+        if(block.timestamp >= (RoundStartTime + 1 minutes)) EndRound(); //CHANGEMEBACK to 10
     }
 
     function EndRound() internal {
@@ -148,7 +148,7 @@ contract Nym is DELEGATION {
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", GetUsername(Alpha), "> Submitted :: ", string(Beta)));
         React(Alpha, Kappa.Id);
         _mint(Kappa.UserAddress, 1 * 10 ** decimals());        
-        if(block.timestamp >= (RoundStartTime + 10 minutes)) EndRound();
+        if(block.timestamp >= (RoundStartTime + 1 minutes)) EndRound(); //CHANGEMEBACK to 10
     }
 
     function NewAcronym() internal {
