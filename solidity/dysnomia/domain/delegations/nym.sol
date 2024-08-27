@@ -20,7 +20,7 @@ contract Nym is DELEGATION {
     UserVote[] public UserVotes;
     mapping(uint64 => uint64) public LastUserVote;
 
-    constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", address(DYSNOMIA(VoidAddress).Xiao())) {
+    constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
     }
 
