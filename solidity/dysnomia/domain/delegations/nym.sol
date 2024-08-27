@@ -19,9 +19,13 @@ contract Nym is DELEGATION {
     mapping(uint16 => Acronym) public Acronyms;
     UserVote[] public UserVotes;
     mapping(uint64 => uint64) public LastUserVote;
+    User[] private _users;
+    Acronym[] public History;
+    bool public Active;
 
     constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
+        Active = false;
     }
 
     function Rules() public pure returns (string memory) {
@@ -35,6 +39,34 @@ contract Nym is DELEGATION {
         "Players Who Don't Vote For 2 Rounds Will Be Kicked Out Of The Delegation .\n"
         "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
         "";
+    }
+
+    function Join(address UserToken) public {
+        User memory Alpha = Enter(UserToken);
+        _users.push(Alpha);
+        if(!Active && _users.length >= 5) NewRound();
+    }
+
+    function NewRound() internal {
+        for(uint16 i = 0; i < AcronymCount; i++)
+            delete Acronyms[i];
+        AcronymCount = 0;
+        delete UserVotes;
+
+        for(uint256 i = 0; i < _users.length; i++) {
+            if(LastUserVote[_users[i].Soul] < RoundNumber - 2) {
+                delete LastUserVote[_users[i].Soul];
+                delete Delegates[_users[i].On.Phi];
+                _users[i] = _users[_users.length - 1];
+                _users.pop();
+                i = i - 1;
+            }
+        }
+
+        if(_users.length >= 5)
+            RoundNumber = RoundNumber + 1;
+        else
+            Active = false;
     }
 
     function Chat(string memory chatline) public override onlyOwners {
