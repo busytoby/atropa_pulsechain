@@ -3,14 +3,13 @@ pragma solidity ^0.8.21;
 import "../../12_delegation.sol";
 
 struct ACRONYM {
-    string[7] ACRONYM;
-    string PHRASE;
-    uint16 VOTES;
+    string Phrase;
+    uint16 Votes;
 }
 
 struct UserVote {
-    uint64 soul;
-    uint16 vote;
+    uint64 Soul;
+    uint16 Vote;
 }
 
 contract Nym is DELEGATION {
@@ -73,10 +72,41 @@ contract Nym is DELEGATION {
             Active = false;
     }
 
+    function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
+        return(A != B && uint8(A) != (uint8(B) + 32));
+    }
+
+    function CheckAcronym(bytes memory _acronym, bytes memory Beta) public pure returns(bool) {
+        if(!CaseInsensitiveCompare(Beta[0], _acronym[0])) return false;
+        uint8 _pos = 1;
+        for(uint256 i = 1; i < Beta.length; i++) {
+            if(uint8(Beta[i]) == 32)
+                if(!CaseInsensitiveCompare(Beta[i+1], _acronym[_pos])) return false;
+                else {
+                    _pos = _pos + 1;
+                    i = i + 1;
+                }
+            if(_pos > _acronym.length) return false;
+        }
+        if(_pos != _acronym.length) return false;
+        return true;
+    }
+
+    error InvalidAcronym(bytes Acronym, bytes Phrase);
+    function Submit(bytes memory Beta) public {
+        if(!CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
+
+        ACRONYM memory Kappa;
+        Kappa.Phrase = string(Beta);
+        Kappa.Votes = 0;
+        AcronymCount = AcronymCount + 1;
+        Acronyms[AcronymCount] = Kappa;
+    }
+
     function NewAcronym() internal {
         bytes memory LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        Acronym = new bytes(7);
         uint64 length = (Xiao.Random() % 5) + 3;
+        Acronym = new bytes(length);
         for(uint i = 0; i < length; i++) {
             uint64 nxtchar = Xiao.Random() % 26;
             Acronym[i] = LETTERS[nxtchar];
