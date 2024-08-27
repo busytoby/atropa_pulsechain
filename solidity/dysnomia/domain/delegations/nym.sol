@@ -24,6 +24,19 @@ contract Nym is DELEGATION {
         maxSupply = 11111111111111111111;
     }
 
+    function Rules() public pure returns (string memory) {
+        return ""
+        "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
+        "The Game Will Start, A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
+        "Calling GetAcronym(), Each Round Will Last For 10 Minutes .\n"
+        "Submit As Many Acronyms As You Want Within The Round By Calling Submit(Acronym String)\n"
+        "See The Active Acronyms Up For Vote By Calling GetVotes()\n"
+        "Vote Or Change Your Vote For This Round's Acronym By Calling Vote(Acronym Number)\n"
+        "Players Who Don't Vote For 2 Rounds Will Be Kicked Out Of The Delegation .\n"
+        "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
+        "";
+    }
+
     function Chat(string memory chatline) public override onlyOwners {
         if(Delegates[tx.origin].Soul == 0) revert UserNotEntered(tx.origin);
         User memory Alpha = Delegates[tx.origin];
