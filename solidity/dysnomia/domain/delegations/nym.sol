@@ -23,6 +23,7 @@ contract Nym is DELEGATION {
     ACRONYM[] public History;
     bool public Active;
     bytes public Acronym;
+    uint256 public RoundStartTime;
 
     constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
@@ -45,6 +46,7 @@ contract Nym is DELEGATION {
     function Join(address UserToken) public {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
+        On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", GetUsername(Alpha)));
         if(!Active && _users.length >= 5) NewRound();
     }
 
@@ -58,6 +60,7 @@ contract Nym is DELEGATION {
             if(LastUserVote[_users[i].Soul] < RoundNumber - 2) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
+                On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", GetUsername(_users[i])));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
                 i = i - 1;
@@ -79,7 +82,8 @@ contract Nym is DELEGATION {
             Acronym[i] = LETTERS[nxtchar];
         }
 
-        On.Shio.Log(Saat[1], Void.Nu().Aura(), string.concat("New Acronym :: ", GetAcronym()));
+        On.Shio.Log(Saat[1], Saat[2], string.concat("New Acronym :: ", GetAcronym()));
+        RoundStartTime = block.timestamp;
     }
 
     function GetAcronym() public view returns(string memory) {
