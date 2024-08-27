@@ -1,18 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../12_delegation.sol";
-
-struct ACRONYM {
-    uint16 Id;
-    User UserInfo;
-    string Phrase;
-    uint16 Votes;
-}
-
-struct UserVote {
-    uint16 Vote;
-    uint64 Round;
-}
+import "../../include/acronym.sol";
+import "../../include/uservote.sol";
 
 contract Nym is DELEGATION {
     uint64 public RoundNumber;
@@ -33,8 +23,8 @@ contract Nym is DELEGATION {
         RoundNumber = 0;
         AcronymCount = 0;
         Prize = 100;
-        SetRoundMinutes(1);
-        SetMinPlayers(1);
+        SetRoundMinutes(10);
+        SetMinPlayers(5);
     }
 
     function SetRoundMinutes(uint8 _m) public onlyOwners {
@@ -105,6 +95,7 @@ contract Nym is DELEGATION {
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
+        React(Alpha, Acronyms[Id].UserInfo.Soul);
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
@@ -127,6 +118,7 @@ contract Nym is DELEGATION {
             if(Tally[i] == winningvotes) {
                 On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
+                React(Acronyms[i].UserInfo, Acronyms[i].UserInfo.Soul);
             }
         
         NewRound();

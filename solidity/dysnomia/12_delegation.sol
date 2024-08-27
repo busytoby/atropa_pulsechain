@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "./include/user.sol";
 import "./01_dysnomia.sol";
 import "./interfaces/10b_voidinterface.sol";
 import "./interfaces/11b_lauinterface.sol";
-
-struct User {
-    uint64 Soul;
-    Bao On;
-    string Username;
-}
 
 abstract contract DELEGATION is DYSNOMIA {
     string public constant Type = "DELEGATION";
