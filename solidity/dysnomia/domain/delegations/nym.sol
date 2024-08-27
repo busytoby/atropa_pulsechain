@@ -42,7 +42,7 @@ contract Nym is DELEGATION {
         User memory Alpha = Delegates[tx.origin];
 
         string memory Username = GetUsername(Alpha);
-        On.Shio.Log(Saat[1], Void.Nu().Aura(), string.concat("<", Username, "> ", chatline));
+        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Username, "> ", chatline));
         React(Alpha, Xiao.Random());
         
         _mintToCap();
