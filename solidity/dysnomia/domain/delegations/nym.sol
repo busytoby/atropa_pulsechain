@@ -68,13 +68,13 @@ contract Nym is DELEGATION {
     }
 
     function NewRound() public onlyOwners {
-        for(uint16 i = 1; i < AcronymCount + 1; i++)
+        for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
 
-        for(uint256 i = 0; i < _users.length; i++) {
+        for(uint16 i = 0; i < _users.length; i++) {
             if(LastUserVote[_users[i].Soul].Round == 0) continue;
-            if(LastUserVote[_users[i].Soul].Round < RoundNumber - 2) {
+            if((LastUserVote[_users[i].Soul].Round + 2) < RoundNumber) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
                 On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
@@ -116,20 +116,20 @@ contract Nym is DELEGATION {
             if(LastUserVote[_users[i].Soul].Round == RoundNumber)
                 Tally[LastUserVote[_users[i].Soul].Vote] += 1;
         
-        for(uint16 i = 1; i < AcronymCount + 1; i++)
+        for(uint16 i = 1; i <= AcronymCount; i++)
             if(Tally[i] > winningvotes) {
                 winningvotes = Tally[i];
                 winners = 1;
             } else if(Tally[i] == winningvotes)
                 winners += 1;
 
-        for(uint16 i = 1; i < AcronymCount + 1; i++)
+        for(uint16 i = 1; i <= AcronymCount; i++)
             if(Tally[i] == winningvotes) {
                 On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
             }
         
-        //NewRound();
+        NewRound();
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
@@ -172,7 +172,7 @@ contract Nym is DELEGATION {
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
-    function NewAcronym() internal {
+    function NewAcronym() public onlyOwners {
         bytes memory LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         uint64 length = (Xiao.Random() % 5) + 3;
         Acronym = new bytes(length);
