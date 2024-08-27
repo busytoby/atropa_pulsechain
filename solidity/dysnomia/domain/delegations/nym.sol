@@ -67,7 +67,7 @@ contract Nym is DELEGATION {
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
-    function NewRound() public onlyOwners {
+    function NewRound() internal {
         for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
@@ -108,7 +108,7 @@ contract Nym is DELEGATION {
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
-    function EndRound() public onlyOwners {
+    function EndRound() internal {
         uint16[] memory Tally = new uint16[](AcronymCount + 1);
         uint16 winners = 0;
         uint16 winningvotes = 0;
@@ -172,7 +172,7 @@ contract Nym is DELEGATION {
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
-    function NewAcronym() public onlyOwners {
+    function NewAcronym() internal {
         bytes memory LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         uint64 length = (Xiao.Random() % 5) + 3;
         Acronym = new bytes(length);
