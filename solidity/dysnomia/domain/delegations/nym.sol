@@ -20,7 +20,6 @@ contract Nym is DELEGATION {
     mapping(uint16 => ACRONYM) public Acronyms;
     mapping(uint64 => UserVote) public LastUserVote;
     User[] private _users;
-    ACRONYM[] public History;
     bool public Active;
     bytes private Acronym;
     uint256 public RoundStartTime;
@@ -130,7 +129,7 @@ contract Nym is DELEGATION {
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
             }
         
-        NewRound();
+        //NewRound();
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
