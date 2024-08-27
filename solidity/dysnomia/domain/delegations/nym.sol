@@ -15,26 +15,27 @@ struct UserVote {
 }
 
 contract Nym is DELEGATION {
-    uint64 public RoundNumber = 0;
-    uint16 public AcronymCount = 0;
+    uint64 public RoundNumber;
+    uint16 public AcronymCount;
     mapping(uint16 => ACRONYM) public Acronyms;
     mapping(uint64 => UserVote) public LastUserVote;
     User[] private _users;
     ACRONYM[] public History;
     bool public Active;
-    bytes public Acronym;
+    bytes private Acronym;
     uint256 public RoundStartTime;
-    uint16 public Prize = 131;
-    uint8 public RoundMinutes = 1; // CHANGEME back to 10
-    uint8 public MinPlayers = 1; //CHANGEME back to 5
+    uint16 public Prize;
+    uint8 public RoundMinutes;
+    uint8 public MinPlayers;
 
     constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
         Active = false;
-    }
-
-    function SetPrize(uint16 _p) public onlyOwners {
-        Prize = _p;
+        RoundNumber = 0;
+        AcronymCount = 0;
+        Prize = 100;
+        SetRoundMinutes(1);
+        SetMinPlayers(1);
     }
 
     function SetRoundMinutes(uint8 _m) public onlyOwners {
@@ -54,8 +55,8 @@ contract Nym is DELEGATION {
         "See The Active Acronyms Up For Vote By Calling GetVotes()\n"
         "Vote Or Change Your Vote For This Round's Acronym By Calling Vote(Acronym Number)\n"
         "Players Who Don't Vote For 2 Rounds Will Be Kicked Out Of The Delegation .\n"
-        "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 131 NYM For Winning !\n"
-        "If More Than One Acronym Ties Then The 131 NYM Will Be Split ."
+        "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
+        "If More Than One Acronym Ties Then The 100 NYM Will Be Split ."
         "";
     }
 
@@ -72,6 +73,7 @@ contract Nym is DELEGATION {
         AcronymCount = 0;
 
         for(uint256 i = 0; i < _users.length; i++) {
+            if(LastUserVote[_users[i].Soul].Round == 0) continue;
             if(LastUserVote[_users[i].Soul].Round < RoundNumber - 2) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
@@ -179,6 +181,7 @@ contract Nym is DELEGATION {
 
         On.Shio.Log(Saat[1], Saat[2], string.concat("New Acronym :: ", GetAcronym()));
         RoundStartTime = block.timestamp;
+        RoundNumber = RoundNumber + 1;
     }
 
     function GetAcronym() public view returns(string memory) {
