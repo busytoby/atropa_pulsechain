@@ -39,7 +39,8 @@ contract Nym is DELEGATION {
         "See The Active Acronyms Up For Vote By Calling GetVotes()\n"
         "Vote Or Change Your Vote For This Round's Acronym By Calling Vote(Acronym Number)\n"
         "Players Who Don't Vote For 2 Rounds Will Be Kicked Out Of The Delegation .\n"
-        "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
+        "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 131 NYM For Winning !\n"
+        "If More Than One Acronym Ties Then The 131 NYM Will Be Split ."
         "";
     }
 
@@ -72,10 +73,10 @@ contract Nym is DELEGATION {
             Active = false;
     }
 
-    function GetVotes() public view returns (ACRONYM[] memory Votable) {
-        Votable = new ACRONYM[](AcronymCount);
+    function GetVotes() public view returns (string[] memory Votable) {
+        Votable = new string[](AcronymCount);
         for(uint16 i = 0; i < AcronymCount; i++)
-            Votable[i] = Acronyms[i];
+            Votable[i] = Acronyms[i].Phrase;
     }
 
     function Vote(uint16 Id) public {
@@ -85,6 +86,31 @@ contract Nym is DELEGATION {
         if(LastUserVote[Alpha.Soul].Round <= RoundNumber) _mint(Alpha.On.Phi, 1 * 10 ** decimals());
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
+        if(block.timestamp >= (RoundStartTime + 10 minutes)) EndRound();
+    }
+
+    function EndRound() internal {
+        uint16[] memory Tally = new uint16[](AcronymCount);
+        uint16 winners = 0;
+        uint16 winningvotes = 0;
+        for(uint16 i = 0; i < _users.length; i++)
+            if(LastUserVote[_users[i].Soul].Round == RoundNumber)
+                Tally[LastUserVote[_users[i].Soul].Vote] += 1;
+        
+        for(uint16 i = 0; i < AcronymCount; i++)
+            if(Tally[i] > winningvotes) {
+                winningvotes = Tally[i];
+                winners = 1;
+            } else if(Tally[i] == winningvotes)
+                winners += 1;
+
+        for(uint16 i = 0; i < AcronymCount; i++)
+            if(Tally[i] == winningvotes) {
+                On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", GetUsername(Delegates[Acronyms[i].UserAddress]), " !! ", Acronyms[i].Phrase));
+                _mint(Acronyms[i].UserAddress, (131 / winners) * 10 ** decimals());
+            }
+        
+        NewRound();
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
@@ -119,7 +145,10 @@ contract Nym is DELEGATION {
         Kappa.Id = AcronymCount;
         Kappa.UserAddress = Alpha.On.Phi;
         Acronyms[AcronymCount] = Kappa;
-        _mint(Kappa.UserAddress, 1 * 10 ** decimals());
+        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", GetUsername(Alpha), "> Submitted :: ", string(Beta)));
+        React(Alpha, Kappa.Id);
+        _mint(Kappa.UserAddress, 1 * 10 ** decimals());        
+        if(block.timestamp >= (RoundStartTime + 10 minutes)) EndRound();
     }
 
     function NewAcronym() internal {
@@ -145,7 +174,7 @@ contract Nym is DELEGATION {
         string memory Username = GetUsername(Alpha);
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Username, "> ", chatline));
         React(Alpha, Xiao.Random());
-        
+
         _mintToCap();
     }
 
