@@ -68,7 +68,7 @@ contract Nym is DELEGATION {
     }
 
     function NewRound() public onlyOwners {
-        for(uint16 i = 0; i < AcronymCount; i++)
+        for(uint16 i = 1; i < AcronymCount + 1; i++)
             delete Acronyms[i];
         AcronymCount = 0;
 
@@ -109,21 +109,21 @@ contract Nym is DELEGATION {
     }
 
     function EndRound() public onlyOwners {
-        uint16[] memory Tally = new uint16[](AcronymCount);
+        uint16[] memory Tally = new uint16[](AcronymCount + 1);
         uint16 winners = 0;
         uint16 winningvotes = 0;
         for(uint16 i = 0; i < _users.length; i++)
             if(LastUserVote[_users[i].Soul].Round == RoundNumber)
                 Tally[LastUserVote[_users[i].Soul].Vote] += 1;
         
-        for(uint16 i = 0; i < AcronymCount; i++)
+        for(uint16 i = 1; i < AcronymCount + 1; i++)
             if(Tally[i] > winningvotes) {
                 winningvotes = Tally[i];
                 winners = 1;
             } else if(Tally[i] == winningvotes)
                 winners += 1;
 
-        for(uint16 i = 0; i < AcronymCount; i++)
+        for(uint16 i = 1; i < AcronymCount + 1; i++)
             if(Tally[i] == winningvotes) {
                 On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
