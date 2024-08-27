@@ -36,7 +36,7 @@ abstract contract DELEGATION is DYSNOMIA {
         Void.SetAttribute("Username", symbol);
 
         _mintToCap();
-    } 
+    }
 
     error InvalidOwnership(address UserToken, address User);
     error AlreadyEntered(address UserAddress, address User);
@@ -63,6 +63,11 @@ abstract contract DELEGATION is DYSNOMIA {
 
     error UserNotEntered(address User);
     error InvalidUser();
+    function GetUser() internal view returns(User memory Alpha) {
+        if(Delegates[tx.origin].Soul == 0) revert UserNotEntered(tx.origin);
+        Alpha = Delegates[tx.origin];
+    }
+
     function GetUsername(User memory Alpha) public view onlyOwners returns (string memory) {
         if(Alpha.Soul == 0) revert InvalidUser();
         return LAU(Alpha.On.Phi).Username();

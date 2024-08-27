@@ -3,21 +3,22 @@ pragma solidity ^0.8.21;
 import "../../12_delegation.sol";
 
 struct ACRONYM {
+    uint16 Id;
+    address UserAddress;
     string Phrase;
     uint16 Votes;
 }
 
 struct UserVote {
-    uint64 Soul;
     uint16 Vote;
+    uint64 Round;
 }
 
 contract Nym is DELEGATION {
     uint64 public RoundNumber = 0;
     uint16 public AcronymCount = 0;
     mapping(uint16 => ACRONYM) public Acronyms;
-    UserVote[] public UserVotes;
-    mapping(uint64 => uint64) public LastUserVote;
+    mapping(uint64 => UserVote) public LastUserVote;
     User[] private _users;
     ACRONYM[] public History;
     bool public Active;
@@ -53,10 +54,9 @@ contract Nym is DELEGATION {
         for(uint16 i = 0; i < AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
-        delete UserVotes;
 
         for(uint256 i = 0; i < _users.length; i++) {
-            if(LastUserVote[_users[i].Soul] < RoundNumber - 2) {
+            if(LastUserVote[_users[i].Soul].Round < RoundNumber - 2) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
                 On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", GetUsername(_users[i])));
@@ -70,6 +70,21 @@ contract Nym is DELEGATION {
             NewAcronym();
         } else
             Active = false;
+    }
+
+    function GetVotes() public view returns (ACRONYM[] memory Votable) {
+        Votable = new ACRONYM[](AcronymCount);
+        for(uint16 i = 0; i < AcronymCount; i++)
+            Votable[i] = Acronyms[i];
+    }
+
+    function Vote(uint16 Id) public {
+        assert(Id > 0 && Id <= AcronymCount);
+        User memory Alpha = GetUser();
+
+        if(LastUserVote[Alpha.Soul].Round <= RoundNumber) _mint(Alpha.On.Phi, 1 * 10 ** decimals());
+        LastUserVote[Alpha.Soul].Vote = Id;
+        LastUserVote[Alpha.Soul].Round = RoundNumber;
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
@@ -96,11 +111,15 @@ contract Nym is DELEGATION {
     function Submit(bytes memory Beta) public {
         if(!CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
 
+        User memory Alpha = GetUser();
         ACRONYM memory Kappa;
+        AcronymCount = AcronymCount + 1;
         Kappa.Phrase = string(Beta);
         Kappa.Votes = 0;
-        AcronymCount = AcronymCount + 1;
+        Kappa.Id = AcronymCount;
+        Kappa.UserAddress = Alpha.On.Phi;
         Acronyms[AcronymCount] = Kappa;
+        _mint(Kappa.UserAddress, 1 * 10 ** decimals());
     }
 
     function NewAcronym() internal {
@@ -121,8 +140,7 @@ contract Nym is DELEGATION {
     }
 
     function Chat(string memory chatline) public override onlyOwners {
-        if(Delegates[tx.origin].Soul == 0) revert UserNotEntered(tx.origin);
-        User memory Alpha = Delegates[tx.origin];
+        User memory Alpha = GetUser();
 
         string memory Username = GetUsername(Alpha);
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Username, "> ", chatline));
