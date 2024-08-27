@@ -24,10 +24,25 @@ contract Nym is DELEGATION {
     bool public Active;
     bytes public Acronym;
     uint256 public RoundStartTime;
+    uint16 public Prize = 131;
+    uint8 public RoundMinutes = 1; // CHANGEME back to 10
+    uint8 public MinPlayers = 1; //CHANGEME back to 5
 
     constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
         Active = false;
+    }
+
+    function SetPrize(uint16 _p) public onlyOwners {
+        Prize = _p;
+    }
+
+    function SetRoundMinutes(uint8 _m) public onlyOwners {
+        RoundMinutes = _m;
+    }
+
+    function SetMinPlayers(uint8 _m) public onlyOwners {
+        MinPlayers = _m;
     }
 
     function Rules() public pure returns (string memory) {
@@ -48,7 +63,7 @@ contract Nym is DELEGATION {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
         On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", GetUsername(Alpha)));
-        if(!Active && _users.length >= 1) NewRound(); //CHANGEMEBACK to 5
+        if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
     function NewRound() internal {
@@ -67,7 +82,7 @@ contract Nym is DELEGATION {
             }
         }
 
-        if(_users.length >= 1) { //CHANGEMEBACK to 5
+        if(_users.length >= MinPlayers) {
             NewAcronym();
         } else
             Active = false;
@@ -86,7 +101,7 @@ contract Nym is DELEGATION {
         if(LastUserVote[Alpha.Soul].Round <= RoundNumber) _mint(Alpha.On.Phi, 1 * 10 ** decimals());
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        if(block.timestamp >= (RoundStartTime + 1 minutes)) EndRound(); //CHANGEMEBACK to 10
+        if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
     function EndRound() internal {
@@ -107,14 +122,14 @@ contract Nym is DELEGATION {
         for(uint16 i = 0; i < AcronymCount; i++)
             if(Tally[i] == winningvotes) {
                 On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", GetUsername(Delegates[Acronyms[i].UserAddress]), " !! ", Acronyms[i].Phrase));
-                _mint(Acronyms[i].UserAddress, (131 / winners) * 10 ** decimals());
+                _mint(Acronyms[i].UserAddress, (Prize / winners) * 10 ** decimals());
             }
         
         NewRound();
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
-        return(A != B && uint8(A) != (uint8(B) + 32));
+        return(A == B || uint8(A) == (uint8(B) - 32));
     }
 
     function CheckAcronym(bytes memory _acronym, bytes memory Beta) public pure returns(bool) {
@@ -148,7 +163,7 @@ contract Nym is DELEGATION {
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", GetUsername(Alpha), "> Submitted :: ", string(Beta)));
         React(Alpha, Kappa.Id);
         _mint(Kappa.UserAddress, 1 * 10 ** decimals());        
-        if(block.timestamp >= (RoundStartTime + 1 minutes)) EndRound(); //CHANGEMEBACK to 10
+        if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
     function NewAcronym() internal {
