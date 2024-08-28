@@ -59,8 +59,8 @@ abstract contract DELEGATION is DYSNOMIA {
     }
 
     function React(User memory Alpha, uint64 Theta) public onlyOwners returns (uint64, uint64) {
-        (On.Omicron, On.Omega) = On.Shio.React(Theta);
-        (Alpha.On.Omicron, Alpha.On.Omega) = Alpha.On.Shio.React(On.Omega);
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Theta);
+        (Alpha.On.Omega, Alpha.On.Omicron) = Alpha.On.Shio.React(On.Omega); // ephemeral
         return (On.Omicron, On.Omega);
     }
 
