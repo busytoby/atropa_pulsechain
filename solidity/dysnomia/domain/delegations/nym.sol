@@ -93,6 +93,7 @@ contract Nym is DELEGATION {
         Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
         (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo, Alpha.Soul);
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Acronyms[Id].UserInfo.Soul);
+        Delegates[tx.origin] = Alpha;
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
@@ -136,8 +137,9 @@ contract Nym is DELEGATION {
         Acronyms[AcronymCount] = Kappa;
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cyun.String(Kappa.Id), "] ", string(Beta)));
         (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Lai.Shio.React(On.Omicron ^ Alpha.Soul);
-        (Kappa.UserInfo.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
+        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
         (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, Kappa.UserInfo.On.Omicron ^ On.Omicron);
+        Delegates[tx.origin] = Alpha;
         _mint(Alpha.On.Phi, 1 * 10 ** decimals());        
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -157,8 +159,9 @@ contract Nym is DELEGATION {
         User memory Alpha = GetUser();
 
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        (Delegates[tx.origin].On.Omicron, Delegates[tx.origin].On.Omega) = Void.Nu().Psi().Rho().Le.Shio.React(Alpha.Soul);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Le.Shio.React(Alpha.Soul);
 
+        Delegates[tx.origin] = Alpha;
         _mintToCap();
     }
 }
