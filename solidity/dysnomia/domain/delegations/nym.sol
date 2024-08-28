@@ -132,7 +132,7 @@ contract Nym is DELEGATION {
         Kappa.Id = AcronymCount;
         Kappa.UserInfo = Alpha;
         Acronyms[AcronymCount] = Kappa;
-        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: ", string(Beta)));
+        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cyun.String(Kappa.Id), "] ", string(Beta)));
         React(Alpha, Kappa.Id);
         _mint(Alpha.On.Phi, 1 * 10 ** decimals());        
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();

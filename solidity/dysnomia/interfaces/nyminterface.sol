@@ -24,7 +24,8 @@ interface NYM {
     //function MinPlayers() external returns (uint8);
     function SetRoundMinutes(uint8 _m) external;
     function SetMinPlayers(uint8 _m) external;
-    function Rules() external pure returns (string memory);
+    function SetRules(string memory _r) external;
+    function Rules() external view returns (string memory);
     function Join(address UserToken) external;
     //function GetVotes() external view returns (string[] memory Votable);
     function Vote(uint16 Id) external;
