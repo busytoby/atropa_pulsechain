@@ -115,7 +115,7 @@ contract Nym is DELEGATION {
             if(Tally[i] == winningvotes) {
                 On.Shio.Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
-                React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Bang.Omicron);
+                React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Bang.Omega);
                 React(Acronyms[i].UserInfo, Acronyms[i].UserInfo.Soul);
             }
         
