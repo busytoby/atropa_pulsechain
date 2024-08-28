@@ -91,8 +91,8 @@ contract Nym is DELEGATION {
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
-        React(Alpha, Acronyms[Id].UserInfo.Soul);
         React(Acronyms[Id].UserInfo, Alpha.Soul);
+        React(Alpha, Acronyms[Id].UserInfo.Soul);
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
