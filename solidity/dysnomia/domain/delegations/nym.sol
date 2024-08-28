@@ -55,7 +55,7 @@ contract Nym is DELEGATION {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        On.Shio.Log(Saat[1], Saat[2], string.concat("New User Joined :: ", Alpha.Username));
+        On.Shio.Log(Alpha.Soul, Saat[2], string.concat("New User Joined :: ", Alpha.Username));
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
@@ -70,7 +70,7 @@ contract Nym is DELEGATION {
             if((LastUserVote[_users[i].Soul].Round + 2) < RoundNumber) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
-                On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
+                On.Shio.Log(_users[i].Soul, Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
             }
@@ -112,7 +112,7 @@ contract Nym is DELEGATION {
 
         for(uint16 i = 1; i <= AcronymCount; i++)
             if(Tally[i] == winningvotes) {
-                On.Shio.Log(Saat[1], Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
+                On.Shio.Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
                 React(Acronyms[i].UserInfo, Acronyms[i].UserInfo.Soul);
             }
