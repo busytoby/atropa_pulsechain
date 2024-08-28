@@ -52,7 +52,6 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha.On = UserLau.On();
         Alpha.On.Phi = UserToken;
         Alpha.Username = LAU(Alpha.On.Phi).Username();
-        Delegates[tx.origin] = Alpha;
         
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[2]);
         Delegates[tx.origin] = Alpha;
