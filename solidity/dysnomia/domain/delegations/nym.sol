@@ -91,8 +91,8 @@ contract Nym is DELEGATION {
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
-        React(Acronyms[Id].UserInfo, Alpha.Soul);
-        React(Alpha, Acronyms[Id].UserInfo.Soul);
+        (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo, Alpha.Soul);
+        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Acronyms[Id].UserInfo.Soul);
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
@@ -115,8 +115,8 @@ contract Nym is DELEGATION {
             if(Tally[i] == winningvotes) {
                 On.Shio.Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
-                React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Bang.Omicron);
-                React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Bang.Omega);
+                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Bang.Omicron);
+                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Bang.Omega ^ Acronyms[i].UserInfo.On.Omicron);
             }
         
         NewRound();
@@ -135,9 +135,9 @@ contract Nym is DELEGATION {
         Kappa.UserInfo = Alpha;
         Acronyms[AcronymCount] = Kappa;
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cyun.String(Kappa.Id), "] ", string(Beta)));
-        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Lai.Shio.React(Alpha.Soul);
-        React(Alpha, Alpha.On.Omicron);
-        (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, On.Omicron);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Lai.Shio.React(On.Omicron ^ Alpha.Soul);
+        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
+        (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, Kappa.UserInfo.On.Omicron ^ On.Omicron);
         _mint(Alpha.On.Phi, 1 * 10 ** decimals());        
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -157,7 +157,7 @@ contract Nym is DELEGATION {
         User memory Alpha = GetUser();
 
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Le.Shio.React(Alpha.Soul);
+        (Delegates[tx.origin].On.Omicron, Delegates[tx.origin].On.Omega) = Void.Nu().Psi().Rho().Le.Shio.React(Alpha.Soul);
 
         _mintToCap();
     }
