@@ -31,6 +31,10 @@ abstract contract DELEGATION is DYSNOMIA {
         On.Shio.Rho().Rod.addOwner(address(this));
         Void.Nu().Psi().Mu().Tau().Upsilon().Eta().Bing(On); // User LAU are not tracked in Bing except at "latest birth" but delegations are
 
+        (On.Omicron, On.Omega) = On.Shio.React(Void.Nu().Psi().Rho().Bang.Omicron);
+        (On.Omega, On.Omicron) = Void.Nu().Psi().Rho().Bang.Shio.React(On.Omega);
+        (On.Omicron, On.Omega) = On.Shio.React(Void.Nu().Psi().Rho().Le.Omicron);
+
         //Void.SetAttribute("Username", symbol);
 
         _mintToCap();
@@ -50,7 +54,7 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha.Username = LAU(Alpha.On.Phi).Username();
         Delegates[tx.origin] = Alpha;
         
-        (Alpha.On.Omicron, Alpha.On.Omega) = Alpha.On.Shio.React(Saat[2]);
+        React(Alpha, Saat[2]);
         return Alpha;
     }
 
