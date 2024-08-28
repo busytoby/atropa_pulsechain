@@ -34,7 +34,8 @@ contract Nym is DELEGATION {
             "Their Own Acronyms Within The Chat Channel While You Can Vote Or Change Your Vote For This\n"
             "Round's Acronym By Calling Vote(Acronym Number).  Players Who Do Not Vote For 2 Rounds Will\n"
             "Be Kicked Out Of The Delegation\n"
-            "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
+            "Earn Up To 5 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round,\n"
+            "Or 100 NYM For Winning !\n"
             "If More Than One Acronym Ties Then The 100 NYM Will Be Split"
         );
     }
