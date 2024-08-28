@@ -87,7 +87,10 @@ contract Nym is DELEGATION {
         assert(Id > 0 && Id <= AcronymCount);
         User memory Alpha = GetUser();
 
-        if(LastUserVote[Alpha.Soul].Round <= RoundNumber) _mint(Alpha.On.Phi, 1 * 10 ** decimals());
+        if(LastUserVote[Alpha.Soul].Round <= RoundNumber) {
+            LastUserVote[Alpha.Soul].Submissions = 0;
+            _mint(Alpha.On.Phi, 1 * 10 ** decimals());
+        }
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
@@ -140,7 +143,10 @@ contract Nym is DELEGATION {
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
         (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, Kappa.UserInfo.On.Omicron ^ On.Omicron);
         Delegates[tx.origin] = Alpha;
-        _mint(Alpha.On.Phi, 1 * 10 ** decimals());        
+        if(LastUserVote[Alpha.Soul].Submissions < 5) {
+            LastUserVote[Alpha.Soul].Submissions = LastUserVote[Alpha.Soul].Submissions + 1;
+            _mint(Alpha.On.Phi, 1 * 10 ** decimals());     
+        }   
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
