@@ -1,26 +1,28 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./include/user.sol";
-import "./01_dysnomia.sol";
-import "./interfaces/10b_voidinterface.sol";
+import "./01_dysnomia_v2.sol";
 import "./interfaces/11b_lauinterface.sol";
+import "./interfaces/libstrings.sol";
 
 abstract contract DELEGATION is DYSNOMIA {
     string public constant Type = "DELEGATION";
 
-    VOID public Void;
-    uint64[3] public Saat;
-    Bao public On;
+    VOID internal Void;
+    uint64[3] internal Saat;
+    Bao internal On;
 
-    mapping(address => User) public Delegates;
+    mapping(address => User) internal Delegates;
 
-    constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
+    constructor(string memory name, string memory symbol, address VoidAddress, address LibStringsAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao()), LibStringsAddress) {
         Void = VOID(VoidAddress);
-        Void.Nu().addOwner(address(this));
-        Void.Nu().Psi().addOwner(address(this));
-        Void.Nu().Psi().Mu().addOwner(address(this));
-        Void.Nu().Psi().Mu().Tau().addOwner(address(this));
-        Void.Nu().Psi().Mu().Tau().Upsilon().addOwner(address(this));
+
+        //Void.addOwner(address(this));
+        //Void.Nu().addOwner(address(this));
+        //Void.Nu().Psi().addOwner(address(this));
+        //Void.Nu().Psi().Mu().addOwner(address(this));
+        //Void.Nu().Psi().Mu().Tau().addOwner(address(this));
+        //Void.Nu().Psi().Mu().Tau().Upsilon().addOwner(address(this));
         Void.Nu().Psi().Mu().Tau().Upsilon().Eta().addOwner(address(this));
 
         (Saat, On) = Void.Enter(name, symbol);
@@ -29,7 +31,7 @@ abstract contract DELEGATION is DYSNOMIA {
         On.Shio.Rho().Rod.addOwner(address(this));
         Void.Nu().Psi().Mu().Tau().Upsilon().Eta().Bing(On); // User LAU are not tracked in Bing except at "latest birth" but delegations are
 
-        Void.SetAttribute("Username", symbol);
+        //Void.SetAttribute("Username", symbol);
 
         _mintToCap();
     }
@@ -45,7 +47,7 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha.Soul = UserLau.Saat(1);
         Alpha.On = UserLau.On();
         Alpha.On.Phi = UserToken;
-        Alpha.Username = GetUsername(Alpha);
+        Alpha.Username = LAU(Alpha.On.Phi).Username();
         Delegates[tx.origin] = Alpha;
         
         (Alpha.On.Omicron, Alpha.On.Omega) = Alpha.On.Shio.React(Saat[2]);
@@ -65,20 +67,8 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha = Delegates[tx.origin];
     }
 
-    function GetUsername(User memory Alpha) public view onlyOwners returns (string memory) {
-        if(Alpha.Soul == 0) revert InvalidUser();
-        return LAU(Alpha.On.Phi).Username();
-    }
-
-    error ChatNotImplemented();
-    function Chat(string memory chatline) public virtual {
-        chatline = "";
-        revert ChatNotImplemented();
-    }
-
-    error OperatorSendMSGNotImplemented();
-    function OperatorSendMSG(string memory chatline) public virtual onlyOwners {
-        chatline = "";
-        revert OperatorSendMSGNotImplemented();
+    function OperatorSendMSG(string memory chatline) public onlyOwners {
+        On.Shio.Log(Saat[1], Void.Nu().Aura(), string.concat(chatline));
+        _mintToCap();
     }
 }

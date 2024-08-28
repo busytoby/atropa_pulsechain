@@ -7,17 +7,18 @@ import "../../include/uservote.sol";
 contract Nym is DELEGATION {
     uint64 public RoundNumber;
     uint16 public AcronymCount;
-    mapping(uint16 => ACRONYM) public Acronyms;
-    mapping(uint64 => UserVote) public LastUserVote;
+    mapping(uint16 => ACRONYM) private Acronyms;
+    mapping(uint64 => UserVote) private LastUserVote;
     User[] private _users;
     bool public Active;
     bytes private Acronym;
-    uint256 public RoundStartTime;
+    uint256 private RoundStartTime;
     uint16 public Prize;
-    uint8 public RoundMinutes;
-    uint8 public MinPlayers;
+    uint8 private RoundMinutes;
+    uint8 private MinPlayers;
+    string public Rules;
 
-    constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
+    constructor(address VoidAddress, address LibStringsAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress, LibStringsAddress) {
         maxSupply = 11111111111111111111;
         Active = false;
         RoundNumber = 0;
@@ -25,6 +26,17 @@ contract Nym is DELEGATION {
         Prize = 100;
         SetRoundMinutes(10);
         SetMinPlayers(5);
+        SetRules(
+            "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
+            "The Game Will Start. A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
+            "Calling GetAcronym(). Each Round Will Last For 10 Minutes While You Submit As Many Acronyms\n"
+            "As You Want Within The Round By Calling Submit(Acronym String) And Observe As Others Submit\n"
+            "Their Own Acronyms Within The Chat Channel While You Can Vote Or Change Your Vote For This\n"
+            "Round's Acronym By Calling Vote(Acronym Number).  Players Who Do Not Vote For 2 Rounds Will\n"
+            "Be Kicked Out Of The Delegation\n"
+            "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
+            "If More Than One Acronym Ties Then The 100 NYM Will Be Split"
+        );
     }
 
     function SetRoundMinutes(uint8 _m) public onlyOwners {
@@ -35,18 +47,8 @@ contract Nym is DELEGATION {
         MinPlayers = _m;
     }
 
-    function Rules() public pure returns (string memory) {
-        return ""
-        "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
-        "The Game Will Start, A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
-        "Calling GetAcronym(), Each Round Will Last For 10 Minutes .\n"
-        "Submit As Many Acronyms As You Want Within The Round By Calling Submit(Acronym String)\n"
-        "See The Active Acronyms Up For Vote By Calling GetVotes()\n"
-        "Vote Or Change Your Vote For This Round's Acronym By Calling Vote(Acronym Number)\n"
-        "Players Who Don't Vote For 2 Rounds Will Be Kicked Out Of The Delegation .\n"
-        "Earn 1 NYM For Each Acryonym Submitted, 1 NYM For Voting Each Round, Or 100 NYM For Winning !\n"
-        "If More Than One Acronym Ties Then The 100 NYM Will Be Split ."
-        "";
+    function SetRules(string memory _r) public onlyOwners {
+        Rules = _r;
     }
 
     function Join(address UserToken) public {
@@ -58,6 +60,7 @@ contract Nym is DELEGATION {
     }
 
     function NewRound() internal {
+        delete Acronym;
         for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
@@ -70,7 +73,6 @@ contract Nym is DELEGATION {
                 On.Shio.Log(Saat[1], Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
-                i = i - 1;
             }
         }
 
@@ -79,12 +81,6 @@ contract Nym is DELEGATION {
             NewAcronym();
         } else
             Active = false;
-    }
-
-    function GetVotes() public view returns (string[] memory Votable) {
-        Votable = new string[](AcronymCount);
-        for(uint16 i = 0; i < AcronymCount; i++)
-            Votable[i] = Acronyms[i].Phrase;
     }
 
     function Vote(uint16 Id) public {
@@ -124,36 +120,14 @@ contract Nym is DELEGATION {
         NewRound();
     }
 
-    function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
-        return(A == B || uint8(A) == (uint8(B) + 32));
-    }
-
-    error CheckAcronymError(uint which, uint8 A, uint8 B);
-    function CheckAcronym(bytes memory _acronym, string memory _Beta) public pure returns(bool) {
-        bytes memory Beta = bytes(_Beta);
-        if(!CaseInsensitiveCompare(Beta[0], _acronym[0])) revert CheckAcronymError(1, uint8(Beta[0]), uint8(_acronym[0]));
-        uint8 _pos = 1;
-        for(uint256 i = 1; i < Beta.length; i++) {
-            if(uint8(Beta[i]) == 32)
-                if(!CaseInsensitiveCompare(Beta[i+1], _acronym[_pos])) revert CheckAcronymError(2, uint8(Beta[i+1]), uint8(_acronym[_pos]));
-                else {
-                    _pos = _pos + 1;
-                    i = i + 1;
-                }
-            if(_pos > _acronym.length) revert CheckAcronymError(3, _pos, uint8(_acronym.length));
-        }
-        if(_pos != _acronym.length) revert CheckAcronymError(4, _pos, uint8(_acronym.length));
-        return true;
-    }
-
     error InvalidAcronym(bytes Acronym, string Phrase);
     function Submit(string memory Beta) public {
-        if(!CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
+        if(!Cyun.CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
 
         User memory Alpha = GetUser();
         ACRONYM memory Kappa;
         AcronymCount = AcronymCount + 1;
-        Kappa.Phrase = string(Beta);
+        Kappa.Phrase = Beta;
         Kappa.Votes = 0;
         Kappa.Id = AcronymCount;
         Kappa.UserInfo = Alpha;
@@ -165,14 +139,7 @@ contract Nym is DELEGATION {
     }
 
     function NewAcronym() internal {
-        bytes memory LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        uint64 length = (Xiao.Random() % 5) + 3;
-        Acronym = new bytes(length);
-        for(uint i = 0; i < length; i++) {
-            uint64 nxtchar = Xiao.Random() % 26;
-            Acronym[i] = LETTERS[nxtchar];
-        }
-
+        Acronym = Cyun.RandomAcronym(7);
         On.Shio.Log(Saat[1], Saat[2], string.concat("New Acronym :: ", GetAcronym()));
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
@@ -182,17 +149,12 @@ contract Nym is DELEGATION {
         return string(Acronym);
     }
 
-    function Chat(string memory chatline) public override onlyOwners {
+    function Chat(string memory chatline) public {
         User memory Alpha = GetUser();
 
         On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
         React(Alpha, Xiao.Random());
 
-        _mintToCap();
-    }
-
-    function OperatorSendMSG(string memory chatline) public override onlyOwners {
-        On.Shio.Log(Saat[1], Void.Nu().Aura(), string.concat(chatline));
         _mintToCap();
     }
 }
