@@ -11,6 +11,7 @@ abstract contract DELEGATION is DYSNOMIA {
     VOID internal Void;
     uint64[3] internal Saat;
     Bao internal On;
+    string public Description;
 
     mapping(address => User) internal Delegates;
 
@@ -38,6 +39,10 @@ abstract contract DELEGATION is DYSNOMIA {
         //Void.SetAttribute("Username", symbol);
 
         _mintToCap();
+    }
+
+    function SetDescription(string memory _d) public onlyOwners {
+        Description = _d;
     }
 
     error InvalidOwnership(address UserToken, address User);

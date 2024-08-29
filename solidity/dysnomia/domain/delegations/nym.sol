@@ -17,7 +17,6 @@ contract Nym is DELEGATION {
     uint8 private RoundMinutes;
     uint8 private MinPlayers;
     uint8 public MaxAcronymLength;
-    string public Rules;
 
     constructor(address VoidAddress, address LibStringsAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress, LibStringsAddress) {
         maxSupply = 11111111111111111111;
@@ -28,7 +27,7 @@ contract Nym is DELEGATION {
         SetRoundMinutes(10);
         SetMinPlayers(5);
         SetMaxAcronymLength(6);
-        SetRules(
+        SetDescription(
             "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
             "The Game Will Start. A 2-6 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
             "Calling GetAcronym(). Each Round Will Last For 10 Minutes While You Submit As Many Acronyms\n"
@@ -52,10 +51,6 @@ contract Nym is DELEGATION {
 
     function SetMinPlayers(uint8 _m) public onlyOwners {
         MinPlayers = _m;
-    }
-
-    function SetRules(string memory _r) public onlyOwners {
-        Rules = _r;
     }
 
     function ActivePlayers() public view returns(uint256) {
