@@ -24,8 +24,8 @@ contract Nym is DELEGATION {
         RoundNumber = 0;
         AcronymCount = 0;
         Prize = 100;
-        SetRoundMinutes(10);
-        SetMinPlayers(5);
+        SetRoundMinutes(1);
+        SetMinPlayers(1);
         SetRules(
             "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
             "The Game Will Start. A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
@@ -60,7 +60,7 @@ contract Nym is DELEGATION {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        On.Shio.Log(Alpha.Soul, Saat[2], string.concat("New User Joined :: ", Alpha.Username));
+        Log(Alpha.Soul, Saat[2], string.concat("New User Joined :: ", Alpha.Username));
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
@@ -74,7 +74,7 @@ contract Nym is DELEGATION {
             if((LastUserVote[_users[i].Soul].Round + 2) < RoundNumber) {
                 delete LastUserVote[_users[i].Soul];
                 delete Delegates[_users[i].On.Phi];
-                On.Shio.Log(_users[i].Soul, Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
+                Log(_users[i].Soul, Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
             }
@@ -97,7 +97,7 @@ contract Nym is DELEGATION {
         }
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        Acronyms[Id].Votes = Acronyms[Id].Votes + 1;
+
         (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo, Alpha.Soul);
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Acronyms[Id].UserInfo.Soul);
         Delegates[tx.origin] = Alpha;
@@ -121,7 +121,7 @@ contract Nym is DELEGATION {
 
         for(uint16 i = 1; i <= AcronymCount; i++)
             if(Tally[i] == winningvotes) {
-                On.Shio.Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
+                Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
                 (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Lai.Omicron);
                 (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Le.Omega ^ Acronyms[i].UserInfo.On.Omicron);
@@ -138,12 +138,11 @@ contract Nym is DELEGATION {
         ACRONYM memory Kappa;
         AcronymCount = AcronymCount + 1;
         Kappa.Phrase = Beta;
-        Kappa.Votes = 0;
         Kappa.Id = AcronymCount;
         Kappa.UserInfo = Alpha;
         Acronyms[AcronymCount] = Kappa;
-        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cyun.String(Kappa.Id), "] ", string(Beta)));
-        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Lai.Shio.React(On.Omicron ^ Alpha.Soul);
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cyun.String(Kappa.Id), "] ", string(Beta)));
+        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Void.Nu().Psi().Rho().Lai.Shio, On.Omicron ^ Alpha.Soul);
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
         (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, Kappa.UserInfo.On.Omicron ^ On.Omicron);
         Delegates[tx.origin] = Alpha;
@@ -156,7 +155,7 @@ contract Nym is DELEGATION {
 
     function NewAcronym() internal {
         Acronym = string(Cyun.RandomAcronym(7));
-        On.Shio.Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
+        Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
     }
@@ -164,7 +163,7 @@ contract Nym is DELEGATION {
     function Chat(string memory chatline) public {
         User memory Alpha = GetUser();
 
-        On.Shio.Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
         (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Le.Shio.React(Alpha.Soul);
 
         Delegates[tx.origin] = Alpha;

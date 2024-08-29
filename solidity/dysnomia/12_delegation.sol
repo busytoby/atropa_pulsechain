@@ -58,18 +58,18 @@ abstract contract DELEGATION is DYSNOMIA {
         return Alpha;
     }
 
-    function ReactUserRod(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
-        return Alpha.On.Shio.Rod().React(Theta ^ Void.Nu().Psi().Rho().Bang.Omega, Alpha.On.Shio.Cone().View().Channel);
+    function ReactShioRod(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
+        return Beta.Rod().React(Theta ^ Void.Nu().Psi().Rho().Bang.Omega, Beta.Cone().View().Channel);
     }
 
-    function ReactUserCone(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
-        return Alpha.On.Shio.Cone().React(Theta ^ On.Omega, Alpha.On.Shio.Cone().View().Channel);
+    function ReactShioCone(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
+        return Beta.Cone().React(Theta ^ On.Omega, Beta.Cone().View().Channel);
     }
 
     function React(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
-        (Alpha.On.Omicron, Alpha.On.Omega) = ReactUserRod(Alpha, Theta);
+        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Alpha.On.Shio, Theta);
         (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Alpha.On.Omega);
-        return ReactUserCone(Alpha, Alpha.On.Omicron);
+        return ReactShioCone(Alpha.On.Shio, Alpha.On.Omicron);
     }
 
     error UserNotEntered(address User);
@@ -79,8 +79,12 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha = Delegates[tx.origin];
     }
 
+    function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
+        On.Shio.Log(Soul, Aura, LogLine);
+    }
+
     function OperatorSendMSG(string memory chatline) public onlyOwners {
-        On.Shio.Log(Saat[1], Void.Nu().Aura(), string.concat(chatline));
+        Log(Saat[1], Void.Nu().Aura(), string.concat(chatline));
         _mintToCap();
     }
 }

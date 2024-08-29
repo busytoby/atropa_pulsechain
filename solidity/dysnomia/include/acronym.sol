@@ -6,5 +6,4 @@ struct ACRONYM {
     uint16 Id;
     User UserInfo;
     string Phrase;
-    uint16 Votes;
 }
