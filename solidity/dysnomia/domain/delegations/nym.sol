@@ -27,9 +27,10 @@ contract Nym is DELEGATION {
         Prize = 100;
         SetRoundMinutes(10);
         SetMinPlayers(5);
+        SetMaxAcronymLength(6);
         SetRules(
             "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
-            "The Game Will Start. A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
+            "The Game Will Start. A 2-6 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
             "Calling GetAcronym(). Each Round Will Last For 10 Minutes While You Submit As Many Acronyms\n"
             "As You Want Within The Round By Calling Submit(Acronym String) And Observe As Others Submit\n"
             "Their Own Acronyms Within The Chat Channel While You Can Vote Or Change Your Vote For This\n"
