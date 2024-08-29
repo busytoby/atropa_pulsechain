@@ -9,6 +9,20 @@ contract STRINGLIB is DYSNOMIA {
         _mint(address(this), 111111 * 10 ** decimals());
     }
 
+    function Reverse(string memory S) public pure returns(string memory Reversed) {
+        return string(Reverse(bytes(S)));
+    }
+
+    function Reverse(bytes memory S) public pure returns(bytes memory Reversed) {
+        Reversed = new bytes(S.length);
+        uint256 j = S.length - 1;
+        uint256 i = 0;
+
+        for (; i < S.length - 1;)      
+            Reversed[j--] = S[i++];
+        Reversed[0] = S[i]; // uint does not like decrement to 0
+    }
+
     error MinimumLength2();
     function RandomAcronym(uint8 MaxLength) public returns(bytes memory Acronym) {
         if(MaxLength < 3) revert MinimumLength2();
