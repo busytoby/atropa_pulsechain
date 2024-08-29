@@ -16,6 +16,7 @@ contract Nym is DELEGATION {
     uint16 public Prize;
     uint8 private RoundMinutes;
     uint8 private MinPlayers;
+    uint8 public MaxAcronymLength;
     string public Rules;
 
     constructor(address VoidAddress, address LibStringsAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress, LibStringsAddress) {
@@ -38,6 +39,10 @@ contract Nym is DELEGATION {
             "Or 100 NYM For Winning !\n"
             "If More Than One Acronym Ties Then The 100 NYM Will Be Split"
         );
+    }
+
+    function SetMaxAcronymLength(uint8 _m) public onlyOwners {
+        MaxAcronymLength = _m;
     }
 
     function SetRoundMinutes(uint8 _m) public onlyOwners {
@@ -154,7 +159,7 @@ contract Nym is DELEGATION {
     }
 
     function NewAcronym() internal {
-        Acronym = string(Cyun.RandomAcronym(7));
+        Acronym = string(Cyun.RandomAcronym(MaxAcronymLength));
         Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
