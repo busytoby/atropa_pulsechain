@@ -24,8 +24,8 @@ contract Nym is DELEGATION {
         RoundNumber = 0;
         AcronymCount = 0;
         Prize = 100;
-        SetRoundMinutes(1);
-        SetMinPlayers(1);
+        SetRoundMinutes(10);
+        SetMinPlayers(5);
         SetRules(
             "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
             "The Game Will Start. A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
