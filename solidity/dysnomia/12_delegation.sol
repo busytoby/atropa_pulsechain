@@ -66,7 +66,7 @@ abstract contract DELEGATION is DYSNOMIA {
         return Alpha.On.Shio.Cone().React(Theta ^ On.Omega, Alpha.On.Shio.Cone().View().Channel);
     }
 
-    function React(User memory Alpha, uint64 Theta) public onlyOwners returns (uint64, uint64) {
+    function React(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
         (Alpha.On.Omicron, Alpha.On.Omega) = ReactUserRod(Alpha, Theta);
         (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Alpha.On.Omega);
         return ReactUserCone(Alpha, Alpha.On.Omicron);
