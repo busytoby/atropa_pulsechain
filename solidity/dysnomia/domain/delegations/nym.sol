@@ -65,6 +65,17 @@ contract Nym is DELEGATION {
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
+    function Kick(uint64 _soul) public onlyOwners {
+        for(uint16 i = 0; i < _users.length; i++) {
+            if(_users[i].Soul == _soul) {
+                delete Delegates[_users[i].On.Phi];
+                Log(_users[i].Soul, Saat[2], string.concat(Delegates[tx.origin].Username, " Kicked User :: ", _users[i].Username));
+                _users[i] = _users[_users.length - 1];
+                _users.pop();
+            }
+        }
+    }
+
     function NewRound() internal {
         for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
