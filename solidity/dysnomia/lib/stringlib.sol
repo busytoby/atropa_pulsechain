@@ -9,6 +9,21 @@ contract STRINGLIB is DYSNOMIA {
         _mint(address(this), 111111 * 10 ** decimals());
     }
 
+    function CheckPalindrome(string memory S) public pure returns(bool) {
+        return CheckPalindrome(bytes(S));
+    }
+
+    function CheckPalindrome(bytes memory S) public pure returns(bool) {
+        bytes memory Reversed = Reverse(S);
+        uint256 j = S.length - 1;
+        uint256 i = 0;
+
+        if (Reversed[0] != S[i]) return false;
+        for (; i < S.length - 1;)      
+            if (Reversed[j--] != S[i++]) return false;
+        return true;
+    }
+
     function Reverse(string memory S) public pure returns(string memory Reversed) {
         return string(Reverse(bytes(S)));
     }
