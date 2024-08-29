@@ -52,6 +52,10 @@ contract Nym is DELEGATION {
         Rules = _r;
     }
 
+    function ActivePlayers() public view returns(uint256) {
+        return _users.length;
+    }
+
     function Join(address UserToken) public {
         User memory Alpha = Enter(UserToken);
         _users.push(Alpha);

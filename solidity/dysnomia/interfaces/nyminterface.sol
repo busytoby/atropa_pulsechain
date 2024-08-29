@@ -13,6 +13,7 @@ interface NYM {
     //function Delegates(address) external returns (User memory);
     function Chat(string memory chatline) external;
     function OperatorSendMSG(string memory chatline) external;
+    function ActivePlayers() external view returns(uint256);
     function RoundNumber() external returns (uint64);
     function AcronymCount() external returns (uint16);
     //function Acronyms(uint16) external returns (ACRONYM memory);
