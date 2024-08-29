@@ -11,7 +11,7 @@ contract Nym is DELEGATION {
     mapping(uint64 => UserVote) private LastUserVote;
     User[] private _users;
     bool public Active;
-    bytes private Acronym;
+    string public Acronym;
     uint256 private RoundStartTime;
     uint16 public Prize;
     uint8 private RoundMinutes;
@@ -24,8 +24,8 @@ contract Nym is DELEGATION {
         RoundNumber = 0;
         AcronymCount = 0;
         Prize = 100;
-        SetRoundMinutes(10);
-        SetMinPlayers(5);
+        SetRoundMinutes(1);
+        SetMinPlayers(1);
         SetRules(
             "Once At Least 5 Players Have Entered By Calling Enter(UserToken) With Their UserToken Address\n" 
             "The Game Will Start. A 3-7 Letter Acronym Will Be Generated And Can Always Be Retrieved By\n"
@@ -61,7 +61,6 @@ contract Nym is DELEGATION {
     }
 
     function NewRound() internal {
-        delete Acronym;
         for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
@@ -127,7 +126,7 @@ contract Nym is DELEGATION {
         NewRound();
     }
 
-    error InvalidAcronym(bytes Acronym, string Phrase);
+    error InvalidAcronym(string Acronym, string Phrase);
     function Submit(string memory Beta) public {
         if(!Cyun.CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
 
@@ -152,14 +151,10 @@ contract Nym is DELEGATION {
     }
 
     function NewAcronym() internal {
-        Acronym = Cyun.RandomAcronym(7);
-        On.Shio.Log(Saat[1], Saat[2], string.concat("New Acronym :: ", GetAcronym()));
+        Acronym = string(Cyun.RandomAcronym(7));
+        On.Shio.Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
-    }
-
-    function GetAcronym() public view returns(string memory) {
-        return string(Acronym);
     }
 
     function Chat(string memory chatline) public {

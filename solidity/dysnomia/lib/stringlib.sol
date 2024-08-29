@@ -9,9 +9,11 @@ contract STRINGLIB is DYSNOMIA {
         _mint(address(this), 111111 * 10 ** decimals());
     }
 
+    error MinimumLength2();
     function RandomAcronym(uint8 MaxLength) public returns(bytes memory Acronym) {
+        if(MaxLength < 3) revert MinimumLength2();
         bytes memory LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        uint64 length = (Xiao.Random() % MaxLength - 2) + 3;
+        uint64 length = 2 + (Xiao.Random() % (MaxLength - 2));
         Acronym = new bytes(length);
         for(uint i = 0; i < length; i++) {
             uint64 nxtchar = Xiao.Random() % 26;
