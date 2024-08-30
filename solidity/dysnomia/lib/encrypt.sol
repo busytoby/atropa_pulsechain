@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 import "../01_dysnomia.sol";
 import "../interfaces/05b_zhenginterface.sol";
+//import "../interfaces/libstrings.sol";
 
 struct Encryption {
     bytes Data;
@@ -12,17 +13,38 @@ contract ENCRYPT is DYSNOMIA {
     string public constant Type = "LibEncrypt";
 
     ZHENG public Zheng;
+    //LIBSTRINGS public Cyun;
     mapping(uint64 => Encryption) private _encryptions;
     uint64[] private _indexes;
 
-    constructor(address ZhengAddress) DYSNOMIA(unicode"CHATLOG LibCrypt", unicode"LibCrypt", address(DYSNOMIA(ZhengAddress).Xiao())) {
+    constructor(address ZhengAddress/*, address StringLibAddress*/) DYSNOMIA(unicode"CHATLOG LibCrypt", unicode"LibCrypt", address(DYSNOMIA(ZhengAddress).Xiao())) {
         Zheng = ZHENG(ZhengAddress);
+        //Cyun = LIBSTRINGS(StringLibAddress);
         _mintToCap();
     }
 
     error NotParty(address from, address to, address party);
     function Encrypt(uint64 From, uint64 to, string memory Key, string memory Data) public returns (uint64 index) {
         return Encrypt(From, to, bytes(Key), bytes(Data));
+    }
+
+    function Encapsulate(Bao memory From, uint64 Gamma, uint64[3] memory Saat) public returns (bytes memory Geng) {
+        bytes memory Gai = new bytes(8);
+        Geng = new bytes(24);
+
+        // These could be significantly more efficient & without calling reverse or including StringLib
+        for(uint i = 0; i < 8; i++)
+            Gai[i] = bytes1(uint8((Gamma >> (8*i)) & 255));
+
+        for(uint i = 0; i < 8; i++)
+            Geng[i] = bytes1(uint8((Saat[0] >> (8*i)) & 255));
+        for(uint i = 8; i < 16; i++)
+            Geng[i] = bytes1(uint8((Saat[1] >> (8*(i-8))) & 255));
+        for(uint i = 16; i < 24; i++)
+            Geng[i] = bytes1(uint8((Saat[2] >> (8*(i-16))) & 255));
+      
+        (Gamma, Geng) = Crypt(From, From, Gai, Geng);
+        // Gamma discarded & Geng returned, not indexed
     }
 
     function Encrypt(uint64 From, uint64 to, bytes memory Key, bytes memory Data) public returns (uint64 index) {
