@@ -77,6 +77,7 @@ contract Nym is DELEGATION {
     }
 
     function NewRound() internal {
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Psi().Rho().Bang.Omicron);
         for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
@@ -95,7 +96,7 @@ contract Nym is DELEGATION {
         if(_users.length >= MinPlayers) {
             Active = true;
             NewAcronym();
-            (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Psi().Rho().Bang.Omicron);
+            (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Psi().Rho().Le.Omicron);
         } else
             Active = false;
 
