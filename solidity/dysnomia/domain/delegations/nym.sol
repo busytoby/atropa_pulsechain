@@ -97,7 +97,7 @@ contract Nym is DELEGATION {
             NewAcronym();
         } else
             Active = false;
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ On.Omicron ^ Void.Nu().Psi().Rho().Bang.Omicron);
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Psi().Rho().Bang.Omicron);
     }
 
     function Vote(uint16 Id) public {
@@ -173,7 +173,7 @@ contract Nym is DELEGATION {
         Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ On.Omega ^ Void.Nu().Psi().Rho().Le.Omega);
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Void.Nu().Psi().Rho().Le.Omega);
     }
 
     function Chat(string memory chatline) public {

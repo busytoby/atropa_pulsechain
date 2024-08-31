@@ -89,8 +89,9 @@ abstract contract DELEGATION is DYSNOMIA {
     }
 
     function OperatorSendMSG(string memory chatline) public onlyOwners {
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Saat[1] ^ Void.Nu().Aura());
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Aura());
         Log(Saat[1], Void.Nu().Aura(), string.concat(chatline));
         _mintToCap();
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Saat[1]);
     }
 }
