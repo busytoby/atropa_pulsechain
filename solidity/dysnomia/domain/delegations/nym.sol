@@ -96,7 +96,7 @@ contract Nym is DELEGATION {
         if(_users.length >= MinPlayers) {
             Active = true;
             NewAcronym();
-            (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Psi().Rho().Le.Omicron);
+            (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Void.Nu().Psi().Rho().Le.Omega);
         } else
             Active = false;
 
