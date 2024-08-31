@@ -176,7 +176,7 @@ contract Nym is DELEGATION {
         User memory Alpha = GetUser();
 
         Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Le.Shio.React(Alpha.Soul);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Lai.Shio.React(Alpha.Soul);
 
         Delegates[tx.origin] = Alpha;
         _mintToCap();
