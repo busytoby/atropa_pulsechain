@@ -84,6 +84,10 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha = Delegates[tx.origin];
     }
 
+    function GetUserTokenAddress(address wallet) public view returns(address UserToken) {
+        return Delegates[wallet].On.Phi;
+    }
+
     function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
         On.Shio.Log(Soul, Aura, LogLine);
     }
