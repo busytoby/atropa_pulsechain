@@ -79,7 +79,7 @@ abstract contract DYSNOMIA is MultiOwnable {
 
     function has(address _contract, string memory what) public view returns (bool does) {
         bytes4 selector = bytes4(keccak256(bytes(what)));
-        bytes memory data = abi.encodeWithSelector(selector);
+        bytes memory data = abi.encodeWithSelector(selector, 22);
         assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 

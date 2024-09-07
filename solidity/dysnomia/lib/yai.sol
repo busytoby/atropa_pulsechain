@@ -8,6 +8,7 @@ contract YAI is DYSNOMIA {
 
     mapping(uint64 => mapping(string => address)) private _muni;
     mapping(uint64 => string[]) private _aliases;
+    mapping(address => bool) private _forbidden;
 
     constructor(address QingAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", address(DYSNOMIA(QingAddress).Xiao())) {
         addOwner(QingAddress);
@@ -15,19 +16,36 @@ contract YAI is DYSNOMIA {
         Void.AddLibrary("yai", address(this));
     }
 
-    function GetAliases(uint64 Soul) public view returns (string[] memory) {
-        return _aliases[Soul]; // might need start & offset parameters
+    error NotOwner(address what, address who);
+    function Forbid(address what) public {
+        if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = true;
+        else if(DYSNOMIA(what).owner(tx.origin)) _forbidden[what] = true;
+        else revert NotOwner(what, tx.origin);
     }
 
-    function Remove(uint64 Soul, string memory value) public onlyOwners {
-        uint64 idx = getaliasidx(Soul, value);
-        delete _muni[Soul][value];
+    function Unforbid(address what) public {
+        if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = false;
+        else if(DYSNOMIA(what).owner(tx.origin)) _forbidden[what] = false;
+        else revert NotOwner(what, tx.origin);
+    }
+
+    function GetAliasCount(uint64 Soul) public view returns (uint256) {
+        return _aliases[Soul].length;
+    }
+
+    function GetAlias(uint64 Soul, uint256 idx) public view returns (string memory) {
+        return _aliases[Soul][idx];
+    }
+
+    function Remove(uint64 Soul, string memory name) public onlyOwners {
+        uint64 idx = getaliasidx(Soul, name);
+        delete _muni[Soul][name];
         _aliases[Soul][idx] = _aliases[Soul][_aliases[Soul].length - 1];
         _aliases[Soul].pop();
     }
 
-    function getaliasidx(uint64 Soul, string memory value) internal view returns (uint64 idx) {
-        bytes memory vB = bytes(value);
+    function getaliasidx(uint64 Soul, string memory name) internal view returns (uint64 idx) {
+        bytes memory vB = bytes(name);
         for(uint64 i=0; i<_aliases[Soul].length; i++) {
             bytes memory aB = bytes(_aliases[Soul][i]);
             if(aB.length != vB.length) continue;
@@ -38,10 +56,13 @@ contract YAI is DYSNOMIA {
         assert(false);
     }
 
-    error MaximumLength(string value, uint256 length, uint8 maxLength);
-    function Alias(uint64 Soul, address name, string memory value) public onlyOwners {
-        if(bytes(value).length > 32) revert MaximumLength(value, bytes(value).length, 32);
-        _muni[Soul][value] = name;
+    error MaximumLength(string name, uint256 length, uint8 maxLength);
+    error AlreadyConnected(address what);
+    function Alias(uint64 Soul, string memory name, address token) public onlyOwners {
+        if(bytes(name).length > 16) revert MaximumLength(name, bytes(name).length, 16);
+        if(_muni[Soul][name] != address(0x0)) revert AlreadyConnected(_muni[Soul][name]);
+        _muni[Soul][name] = token;
+        _aliases[Soul].push(name);
         _mintToCap();
     }
 
