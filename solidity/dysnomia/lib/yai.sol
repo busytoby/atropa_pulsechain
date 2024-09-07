@@ -63,6 +63,7 @@ contract YAI is DYSNOMIA {
     error MaximumLength(string name, uint256 length, uint8 maxLength);
     error AlreadyConnected(address what);
     function Alias(uint64 Soul, string memory name, address token) public onlyOwners {
+        if(IsForbidden(token)) revert NotOwner(token, tx.origin);
         if(bytes(name).length > 16) revert MaximumLength(name, bytes(name).length, 16);
         if(_muni[Soul][name] != address(0x0)) revert AlreadyConnected(_muni[Soul][name]);
         _muni[Soul][name] = token;
@@ -73,6 +74,7 @@ contract YAI is DYSNOMIA {
     error AliasNotFound(string name);
     function Alias(uint64 Soul, string memory name) public view returns (address _a) {
         _a = _muni[Soul][name];
+        if(IsForbidden(_a)) revert NotOwner(_a, tx.origin);
         if(_a == address(0x0)) revert AliasNotFound(name);
     }
 }
