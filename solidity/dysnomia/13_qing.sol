@@ -20,22 +20,9 @@ contract QING is DELEGATION {
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
         setCoverCharge(0);
 
-        (bool hasOwner, bool hasName, bool hasSymbol) = detectAsset(Integrative);
-        if(hasOwner) addOwner(Asset.owner());
-        if(hasName && hasSymbol) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
+        if(has(Integrative, "owner()")) addOwner(Asset.owner());
+        if(has(Integrative, "name()") && has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
         _mintToCap();
-    }
-
-    function detectAsset(address _contract) public view returns (bool hasOwner, bool hasName, bool hasSymbol) {
-        bytes4 selector = bytes4(keccak256("owner()"));
-        bytes memory data = abi.encodeWithSelector(selector);
-        assembly { hasOwner := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
-        selector = bytes4(keccak256("name()"));
-        data = abi.encodeWithSelector(selector);
-        assembly { hasName := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
-        selector = bytes4(keccak256("symbol()"));
-        data = abi.encodeWithSelector(selector);
-        assembly { hasSymbol := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 
     function setBouncerDivisor(uint16 _d) public onlyBouncers {

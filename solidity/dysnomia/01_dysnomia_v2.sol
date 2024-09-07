@@ -77,6 +77,12 @@ abstract contract DYSNOMIA is MultiOwnable {
         BuyToken.transfer(msg.sender, cost);
     }
 
+    function has(address _contract, string memory what) public view returns (bool does) {
+        bytes4 selector = bytes4(keccak256(bytes(what)));
+        bytes memory data = abi.encodeWithSelector(selector);
+        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
+    }
+
     function name() public view virtual returns (string memory) {
         return __name;
     }
