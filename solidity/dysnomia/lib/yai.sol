@@ -72,7 +72,7 @@ contract YAI is DYSNOMIA {
     }
 
     error AliasNotFound(string name);
-    function Alias(uint64 Soul, string memory name) public view onlyOwners returns (address _a) {
+    function Alias(uint64 Soul, string memory name) public view returns (address _a) {
         _a = _muni[Soul][name];
         if(_a == address(0x0)) revert AliasNotFound(name);
     }
