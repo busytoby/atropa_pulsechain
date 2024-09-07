@@ -41,7 +41,7 @@ contract QING is DELEGATION {
     }
 
     modifier onlyBouncers() {
-        _checkOwner();
+        _checkBouncer();
         _;
     }
 
@@ -51,7 +51,7 @@ contract QING is DELEGATION {
         delete Delegates[DelegateAddresses[Soul]];
     }
 
-    function bouncer(address cBouncer) public view virtual returns (bool) {
+    function bouncer(address cBouncer) public view returns (bool) {
         if(_staff[cBouncer]) return true;
 
         uint256 _ts = Asset.totalSupply();
@@ -61,7 +61,7 @@ contract QING is DELEGATION {
     }
 
     error BouncerUnauthorized(address origin, address account, address what);
-    function _checkBouncer() internal view virtual {
+    function _checkBouncer() internal view {
         if (!bouncer(msg.sender) && !bouncer(tx.origin)) {
             revert BouncerUnauthorized(tx.origin, msg.sender, address(this));
         }
@@ -73,7 +73,7 @@ contract QING is DELEGATION {
         if(Delegates[tx.origin].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
             DYSNOMIA AffectionToken = DYSNOMIA(AFFECTIONContract);
-            if(AffectionToken.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
+            //if(AffectionToken.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
             bool paid = AffectionToken.transferFrom(msg.sender, address(this), CoverCharge);
             if(!paid) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
         }
@@ -83,6 +83,7 @@ contract QING is DELEGATION {
         _users.push(Alpha.Soul);
     }
 
+/*
     function Bounce() public {
         for(uint i = 0; i < _users.length; i++) {
             User memory Alpha = Delegates[DelegateAddresses[_users[i]]];
@@ -93,13 +94,18 @@ contract QING is DELEGATION {
         }
         _mintToCap();
     }
+*/
 
     error NoUserName(address User);
     function Chat(string memory chatline) public {
         User memory Alpha = GetUser();
         if(bytes(Alpha.Username).length < 1) revert NoUserName(tx.origin); 
         Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        Bounce();
+        //Bounce();
+        if(_list[Alpha.On.Phi] < block.timestamp) {
+            Log(Alpha.Soul, Void.Nu().Aura(), string.concat("Cover Charge Expired :: (", CYUN().String(Alpha.Soul), ") ", Alpha.Username));
+            delete Delegates[tx.origin];   
+        }
         _mintToCap();
     }
 }

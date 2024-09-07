@@ -6,13 +6,14 @@ import "../13_qing.sol"; // CHANGEME To Interface
 contract YAI is DYSNOMIA {
     string public constant Type = "YAILib";
 
+    VOID public Void;
     mapping(uint64 => mapping(string => address)) private _muni;
     mapping(uint64 => string[]) private _aliases;
     mapping(address => bool) private _forbidden;
 
     constructor(address QingFactoryAddress, address VoidAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", address(DYSNOMIA(VoidAddress).Xiao())) {
         addOwner(QingFactoryAddress);
-        VOID Void = VOID(VoidAddress);
+        Void = VOID(VoidAddress);
         Void.AddLibrary("yai", address(this));
     }
 
@@ -27,6 +28,10 @@ contract YAI is DYSNOMIA {
         if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = false;
         else if(DYSNOMIA(what).owner(tx.origin)) _forbidden[what] = false;
         else revert NotOwner(what, tx.origin);
+    }
+
+    function IsForbidden(address Token) public view returns (bool) {
+        return _forbidden[Token];
     }
 
     function GetAliasCount(uint64 Soul) public view returns (uint256) {

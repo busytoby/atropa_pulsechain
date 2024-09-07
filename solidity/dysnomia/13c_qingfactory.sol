@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./13_qing.sol";
+import "./interfaces/libyai.sol";
 
 contract QINGFactory {
-    VOID public Void;
+    LIBYAI public Yai;
 
-    constructor(address VOIDAddress) {
-        Void = VOID(VOIDAddress);
-        Void.addOwner(address(this));
+    constructor(address YAIAddress) {
+        Yai = LIBYAI(YAIAddress);
+        Yai.addOwner(address(this));
     } 
 
+    error ForbiddenToken(address which);
     function New(address Integrative) public returns(QING Mu) {
-        Mu = new QING(Integrative, address(Void));
-        addOwner(address(Mu));
+        if(Yai.IsForbidden(Integrative)) revert ForbiddenToken(Integrative);
+        Mu = new QING(Integrative, address(Yai.Void()));
+        Yai.addOwner(address(Mu));
         Mu.renounceOwnership(address(this));
     }
 }

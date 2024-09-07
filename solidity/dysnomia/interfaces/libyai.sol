@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "./10b_voidinterface.sol";
 
 interface LIBYAI {
     function Rename(string memory newName, string memory newSymbol) external;
@@ -19,10 +20,13 @@ interface LIBYAI {
     function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external view returns(string memory);
+    function Void() external view returns(VOID);
+    function Forbid(address what) external;
+    function Unforbid(address what) external;
+    function IsForbidden(address Token) external view returns (bool);
     function GetAliasCount(uint64 Soul) external view returns (uint256);
     function GetAlias(uint64 Soul, uint256 idx) external view returns (string memory);
-    function Connect(uint64 Soul, string memory value, address what) external;
-    function Disconnect(uint64 Soul, string memory value) external;
-    function Alias(uint64 Soul, address name, string memory value) external;
+    function Remove(uint64 Soul, string memory name) external;
+    function Alias(uint64 Soul, string memory name, address token) external;
     function Alias(uint64 Soul, string memory name) external view returns (address _a);
 }

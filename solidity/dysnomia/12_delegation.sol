@@ -8,9 +8,8 @@ import "./interfaces/libyai.sol";
 
 abstract contract DELEGATION is DYSNOMIA {
     VOID public Void;
-    uint64[3] internal Saat;
-    Bao internal On;
-    string public Description;
+    uint64[3] public Saat;
+    Bao public On;
 
     mapping(address => User) internal Delegates;
     mapping(uint64 => address) internal DelegateAddresses;
@@ -49,10 +48,6 @@ abstract contract DELEGATION is DYSNOMIA {
         return LIBYAI(Void.GetLibraryAddress("yai"));
     }
 
-    function SetDescription(string memory _d) public onlyOwners {
-        Description = _d;
-    }
-
     error InvalidOwnership(address UserToken, address User);
     error AlreadyEntered(address UserAddress, address User);
     function Enter(address UserToken) internal returns(User memory) { // inheriting class should implement Join() & Call Enter(), see nym.sol
@@ -66,24 +61,9 @@ abstract contract DELEGATION is DYSNOMIA {
         Alpha.On.Phi = UserToken;
         Alpha.Username = LAU(Alpha.On.Phi).Username();
         
-        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[2]);
         Delegates[tx.origin] = Alpha;
         DelegateAddresses[Alpha.Soul] = tx.origin;
         return Alpha;
-    }
-
-    function ReactShioRod(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
-        return Beta.Rod().React(Theta ^ Void.Nu().Psi().Rho().Bang.Omega, Beta.Cone().View().Channel);
-    }
-
-    function ReactShioCone(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
-        return Beta.Cone().React(Theta ^ On.Omega, Beta.Cone().View().Channel);
-    }
-
-    function React(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
-        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Alpha.On.Shio, Theta);
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Alpha.On.Omega);
-        return ReactShioCone(Alpha.On.Shio, Alpha.On.Omicron);
     }
 
     error UserNotEntered(address User);

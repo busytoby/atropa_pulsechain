@@ -14,6 +14,7 @@ contract Nym is DELEGATION {
     User[] private _users;
     bool public Active;
     string public Acronym;
+    string public Description;
     uint256 private RoundStartTime;
     uint16 public Prize;
     uint8 private RoundMinutes;
@@ -43,6 +44,10 @@ contract Nym is DELEGATION {
         );
     }
 
+    function SetDescription(string memory _d) public onlyOwners {
+        Description = _d;
+    }
+
     function SetMaxAcronymLength(uint8 _m) public onlyOwners {
         MaxAcronymLength = _m;
     }
@@ -64,6 +69,7 @@ contract Nym is DELEGATION {
         _users.push(Alpha);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         Log(Alpha.Soul, Saat[2], string.concat("New User Joined :: ", Alpha.Username));
+        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[2]);
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
@@ -187,5 +193,19 @@ contract Nym is DELEGATION {
 
         Delegates[tx.origin] = Alpha;
         _mintToCap();
+    }
+
+    function ReactShioRod(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
+        return Beta.Rod().React(Theta ^ Void.Nu().Psi().Rho().Bang.Omega, Beta.Cone().View().Channel);
+    }
+
+    function ReactShioCone(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
+        return Beta.Cone().React(Theta ^ On.Omega, Beta.Cone().View().Channel);
+    }
+
+    function React(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
+        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Alpha.On.Shio, Theta);
+        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Alpha.On.Omega);
+        return ReactShioCone(Alpha.On.Shio, Alpha.On.Omicron);
     }
 }
