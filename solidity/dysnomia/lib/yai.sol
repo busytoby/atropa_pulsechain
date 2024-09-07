@@ -10,9 +10,9 @@ contract YAI is DYSNOMIA {
     mapping(uint64 => string[]) private _aliases;
     mapping(address => bool) private _forbidden;
 
-    constructor(address QingAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", address(DYSNOMIA(QingAddress).Xiao())) {
-        addOwner(QingAddress);
-        VOID Void = QING(QingAddress).Void();
+    constructor(address QingFactoryAddress, address VoidAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", address(DYSNOMIA(VoidAddress).Xiao())) {
+        addOwner(QingFactoryAddress);
+        VOID Void = VOID(VoidAddress);
         Void.AddLibrary("yai", address(this));
     }
 
