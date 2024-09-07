@@ -21,6 +21,10 @@ abstract contract MultiOwnable {
         _;
     }
 
+    function owner() external view virtual returns (address) {
+        return address(this);
+    }
+
     function owner(address cOwner) public view virtual returns (bool) {
         return (_owners[cOwner]);
     }

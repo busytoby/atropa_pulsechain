@@ -13,16 +13,29 @@ contract QING is DELEGATION {
     mapping(address => uint256) private _list;
     uint64[] private _users;
 
-    constructor(DYSNOMIA Integrative, address VoidAddress) 
-                DELEGATION(string.concat(Integrative.name(), " QING"), 
-                           string.concat("q", Integrative.symbol()), 
-                           VoidAddress) {
+    constructor(address Integrative, address VoidAddress) DELEGATION("Mysterious Qing", "q", VoidAddress) {
 
-        Asset = Integrative;
+        Asset = DYSNOMIA(Integrative);
         Entropy = Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
         setCoverCharge(0);
+
+        (bool hasOwner, bool hasName, bool hasSymbol) = detectAsset(Integrative);
+        if(hasOwner) addOwner(Asset.owner());
+        if(hasName && hasSymbol) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
         _mintToCap();
+    }
+
+    function detectAsset(address _contract) public view returns (bool hasOwner, bool hasName, bool hasSymbol) {
+        bytes4 selector = bytes4(keccak256("owner()"));
+        bytes memory data = abi.encodeWithSelector(selector);
+        assembly { hasOwner := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
+        selector = bytes4(keccak256("name()"));
+        data = abi.encodeWithSelector(selector);
+        assembly { hasName := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
+        selector = bytes4(keccak256("symbol()"));
+        data = abi.encodeWithSelector(selector);
+        assembly { hasSymbol := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 
     function setBouncerDivisor(uint16 _d) public onlyBouncers {
