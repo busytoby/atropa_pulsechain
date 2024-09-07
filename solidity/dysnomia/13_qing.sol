@@ -41,12 +41,12 @@ contract QING is DELEGATION {
     }
 
     function bouncer(address cBouncer) public view virtual returns (bool) {
-        if(Asset.owner(cBouncer)) return true;
         if(_staff[cBouncer]) return true;
 
         uint256 _ts = Asset.totalSupply();
         if(Asset.balanceOf(cBouncer) >= (_ts / BouncerDivisor)) return true;
 
+        if(Asset.owner(cBouncer)) return true;
         return false;
     }
 
