@@ -19,4 +19,6 @@ interface LIBYAI {
     function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external view returns(string memory);
+    function Alias(uint64 Soul, address name, string memory value) external;
+    function Alias(uint64 Soul, string memory name) external view returns (address _a);
 }

@@ -7,7 +7,7 @@ import "./interfaces/libstrings.sol";
 import "./interfaces/libyai.sol";
 
 abstract contract DELEGATION is DYSNOMIA {
-    VOID internal Void;
+    VOID public Void;
     uint64[3] internal Saat;
     Bao internal On;
     string public Description;
