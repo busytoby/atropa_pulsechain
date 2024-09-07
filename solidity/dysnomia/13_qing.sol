@@ -72,9 +72,8 @@ contract QING is DELEGATION {
     function Join(address UserToken) public {
         if(Delegates[tx.origin].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
-            DYSNOMIA AffectionToken = DYSNOMIA(AFFECTIONContract);
-            if(AffectionToken.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
-            bool paid = AffectionToken.transferFrom(msg.sender, address(this), CoverCharge);
+            if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
+            bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
             if(!paid) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
         }
         User memory Alpha = Enter(UserToken);
