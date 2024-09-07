@@ -20,6 +20,7 @@ abstract contract DYSNOMIA is MultiOwnable {
     string internal __name;
     string internal __symbol;
 
+    uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath public Xiao;
     LIBSTRINGS public Cyun;
     uint256 public maxSupply;

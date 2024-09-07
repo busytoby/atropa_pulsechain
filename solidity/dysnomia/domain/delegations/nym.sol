@@ -5,6 +5,8 @@ import "../../include/acronym.sol";
 import "../../include/uservote.sol";
 
 contract Nym is DELEGATION {
+    string public constant Type = "Acronym Game";
+
     uint64 public RoundNumber;
     uint16 public AcronymCount;
     mapping(uint16 => ACRONYM) private Acronyms;

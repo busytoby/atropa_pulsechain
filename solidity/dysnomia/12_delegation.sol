@@ -6,14 +6,13 @@ import "./interfaces/11b_lauinterface.sol";
 import "./interfaces/libstrings.sol";
 
 abstract contract DELEGATION is DYSNOMIA {
-    string public constant Type = "DELEGATION";
-
     VOID internal Void;
     uint64[3] internal Saat;
     Bao internal On;
     string public Description;
 
     mapping(address => User) internal Delegates;
+    mapping(uint64 => address) internal DelegateAddresses;
 
     constructor(string memory name, string memory symbol, address VoidAddress, address LibStringsAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao()), LibStringsAddress) {
         Void = VOID(VoidAddress);
@@ -60,6 +59,7 @@ abstract contract DELEGATION is DYSNOMIA {
         
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[2]);
         Delegates[tx.origin] = Alpha;
+        DelegateAddresses[Alpha.Soul] = tx.origin;
         return Alpha;
     }
 
