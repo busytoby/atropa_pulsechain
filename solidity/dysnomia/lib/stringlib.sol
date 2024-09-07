@@ -5,7 +5,10 @@ import "../01_dysnomia_v2.sol";
 contract STRINGLIB is DYSNOMIA {
     string public constant Type = "LibStrings";
 
-    constructor(address mathlib) DYSNOMIA(unicode"DYSNOMIA LibStrings", unicode"LibStrings", mathlib, address(0x0)) {
+    constructor(address VoidAddress) DYSNOMIA(unicode"DYSNOMIA LibStrings", unicode"LibStrings", address(DYSNOMIA(VoidAddress).Xiao())) {
+        VOID Void = VOID(VoidAddress);
+        addOwner(VoidAddress);
+        Void.AddLibrary("strings", address(this));
         _mint(address(this), 111111 * 10 ** decimals());
     }
 

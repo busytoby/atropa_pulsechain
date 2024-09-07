@@ -80,7 +80,6 @@ contract SHA is DYSNOMIA {
         uint64 Rho = Xiao.modExp64(Theta, Mu.Identity, MotzkinPrime);
         uint64 Eta = Xiao.modExp64(Epsilon, Mu.Signal, MotzkinPrime);
 
-        Mu.Chu = Beta + Rho;
         Mu.Charge = Rho + Eta;       
         Mu.Chin = Beta + Eta; 
         Mu.Element = Beta + Mu.Charge;

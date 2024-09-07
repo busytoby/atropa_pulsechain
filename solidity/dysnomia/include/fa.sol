@@ -13,7 +13,6 @@ struct Fa {
         uint64 Element;
         uint64 Coordinate;
         uint64 Charge;
-        uint64 Chu;
         uint64 Chin;
         uint64 Monopole;
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "./interfaces/11b_lauinterface.sol";
 import "./interfaces/libstrings.sol";
 import "./lib/multiownable.sol";
 import "../addresses.sol";
@@ -22,14 +23,12 @@ abstract contract DYSNOMIA is MultiOwnable {
 
     uint64 constant public MotzkinPrime = 953467954114363;
     atropaMath public Xiao;
-    LIBSTRINGS public Cyun;
     uint256 public maxSupply;
     mapping(address => uint256) private _marketRates;
 
-    constructor(string memory name_, string memory symbol_, address mathContract, address libstringsaddress) MultiOwnable(msg.sender) {
+    constructor(string memory name_, string memory symbol_, address mathContract) MultiOwnable(msg.sender) {
         __name = name_;
         __symbol = symbol_;
-        Cyun = LIBSTRINGS(libstringsaddress);
         Xiao = atropaMath(mathContract);
         maxSupply = Xiao.Random() % 111111;
         uint256 originMint = Xiao.Random() % maxSupply / 10;

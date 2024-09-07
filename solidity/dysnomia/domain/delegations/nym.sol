@@ -20,7 +20,7 @@ contract Nym is DELEGATION {
     uint8 private MinPlayers;
     uint8 public MaxAcronymLength;
 
-    constructor(address VoidAddress, address LibStringsAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress, LibStringsAddress) {
+    constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
         maxSupply = 11111111111111111111;
         Active = false;
         RoundNumber = 0;
@@ -148,7 +148,7 @@ contract Nym is DELEGATION {
 
     error InvalidAcronym(string Acronym, string Phrase);
     function Submit(string memory Beta) public {
-        if(!Cyun.CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
+        if(!CYUN().CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
 
         User memory Alpha = GetUser();
         ACRONYM memory Kappa;
@@ -157,7 +157,7 @@ contract Nym is DELEGATION {
         Kappa.Id = AcronymCount;
         Kappa.UserInfo = Alpha;
         Acronyms[AcronymCount] = Kappa;
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cyun.String(Kappa.Id), "] ", string(Beta)));
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", CYUN().String(Kappa.Id), "] ", string(Beta)));
         (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Void.Nu().Psi().Rho().Lai.Shio, On.Omicron ^ Alpha.Soul);
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
         (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, Kappa.UserInfo.On.Omicron ^ On.Omicron);
@@ -171,7 +171,7 @@ contract Nym is DELEGATION {
 
     function NewAcronym() internal {
         (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Saat[2]);
-        Acronym = string(Cyun.RandomAcronym(MaxAcronymLength));
+        Acronym = string(CYUN().RandomAcronym(MaxAcronymLength));
         (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Saat[1]);
         Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
         RoundStartTime = block.timestamp;

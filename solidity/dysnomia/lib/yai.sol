@@ -9,7 +9,10 @@ contract YAI is DYSNOMIA {
     mapping(address => mapping(string => address)) private _muni;
     mapping(uint64 => mapping(string => address)) private _userAliases;
 
-    constructor(address MathLib, address LibStringsAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", MathLib, LibStringsAddress) {
+    constructor(address VoidAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", address(DYSNOMIA(VoidAddress).Xiao())) {
+        VOID Void = VOID(VoidAddress);
+        addOwner(VoidAddress);
+        Void.AddLibrary("yai", address(this));
     }    
 
     error MaximumLength(string value, uint256 length, uint8 maxLength);

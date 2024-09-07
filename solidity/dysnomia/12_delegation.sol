@@ -4,6 +4,7 @@ import "./include/user.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/11b_lauinterface.sol";
 import "./interfaces/libstrings.sol";
+import "./interfaces/libyai.sol";
 
 abstract contract DELEGATION is DYSNOMIA {
     VOID internal Void;
@@ -14,7 +15,7 @@ abstract contract DELEGATION is DYSNOMIA {
     mapping(address => User) internal Delegates;
     mapping(uint64 => address) internal DelegateAddresses;
 
-    constructor(string memory name, string memory symbol, address VoidAddress, address LibStringsAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao()), LibStringsAddress) {
+    constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
 
         //Void.addOwner(address(this));
@@ -38,6 +39,14 @@ abstract contract DELEGATION is DYSNOMIA {
         //Void.SetAttribute("Username", symbol);
 
         _mintToCap();
+    }
+
+    function CYUN() internal view returns(LIBSTRINGS) {
+        return LIBSTRINGS(Void.GetLibraryAddress("strings"));
+    }
+
+    function VAT() internal view returns (LIBYAI) {
+        return LIBYAI(Void.GetLibraryAddress("yai"));
     }
 
     function SetDescription(string memory _d) public onlyOwners {
