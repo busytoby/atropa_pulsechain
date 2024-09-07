@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: Sharia
+pragma solidity ^0.8.21;
+import "./01b_dysnomia.sol";
+import "./11b_lauinterface.sol";
+import "./libstrings.sol";
+import "./libyai.sol";
+
+interface QING {
+    function Rename(string memory newName, string memory newSymbol) external;
+    function GetMarketRate(address _a) external view returns(uint256);
+    function Purchase(address _t, uint256 _a) external;
+    function Redeem(address _t, uint256 _a) external;
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint256 value) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 value) external returns (bool);
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+    function addOwner(address newOwner) external;
+    function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
+    function mintToCap() external;
+    function Type() external view returns (string memory);
+    function Void() external view returns (VOID);
+    function Saat(uint256) external view returns (uint64);
+    function On() external view returns (Bao memory);
+    function CYUN() external view returns(LIBSTRINGS);
+    function GetUserTokenAddress(address wallet) external view returns(address UserToken);
+    function OperatorSendMSG(string memory chatline) external;
+    function Asset() external returns (DYSNOMIAINTERFACE);
+    function Entropy() external returns (uint64);
+    function BouncerDivisor() external returns (uint16);
+    function CoverCharge() external returns (uint256);
+    function VAT() external view returns (LIBYAI);
+    function setBouncerDivisor(uint16 _d) external;
+    function setCoverCharge(uint256 _c) external;
+    function setStaff(address _a, bool active) external;
+    function setGuestlist(address _a) external;
+    function Kick(uint64 Soul, string memory Why) external;
+    function bouncer(address cBouncer) external view returns (bool);
+    function Join(address UserToken) external;
+    function Alias(string memory name, address _qing) external;
+    function Alias(string memory name) external view returns (address);
+    function Connect(string memory name, address _qing) external;
+    function Disconnect(string memory name) external;
+    function Bounce() external;
+    function Chat(string memory chatline) external;
+}

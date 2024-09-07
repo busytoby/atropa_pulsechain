@@ -44,10 +44,6 @@ abstract contract DELEGATION is DYSNOMIA {
         return LIBSTRINGS(Void.GetLibraryAddress("strings"));
     }
 
-    function VAT() public view returns (LIBYAI) {
-        return LIBYAI(Void.GetLibraryAddress("yai"));
-    }
-
     error InvalidOwnership(address UserToken, address User);
     error AlreadyEntered(address UserAddress, address User);
     function Enter(address UserToken) internal returns(User memory) { // inheriting class should implement Join() & Call Enter(), see nym.sol

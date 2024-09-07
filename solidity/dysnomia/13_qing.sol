@@ -5,7 +5,7 @@ import "./12_delegation.sol";
 contract QING is DELEGATION {
     string public constant Type = "QING";
 
-    DYSNOMIA Asset;
+    DYSNOMIA public Asset;
     uint64 public Entropy;
     uint16 public BouncerDivisor;
     uint256 public CoverCharge;
@@ -21,7 +21,10 @@ contract QING is DELEGATION {
 
         if(has(Integrative, "owner()")) addOwner(Asset.owner());
         if(has(Integrative, "name()") && has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
-        _mintToCap();
+    }
+
+    function VAT() public view returns (LIBYAI) {
+        return LIBYAI(Void.GetLibraryAddress("yai"));
     }
 
     function setBouncerDivisor(uint16 _d) public onlyBouncers {
