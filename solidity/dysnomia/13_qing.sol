@@ -89,6 +89,11 @@ contract QING is DELEGATION {
         VAT().Alias(Alpha.Soul, name, _qing);
     }
 
+    function Alias(string memory name) public view returns (address) {
+        User memory Alpha = GetUser();
+        return VAT().Alias(Alpha.Soul, name);
+    }
+
     function Connect(string memory name, address _qing) public onlyBouncers {
         VAT().Alias(Saat[1], name, _qing);
     }
