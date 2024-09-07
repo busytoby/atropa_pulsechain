@@ -51,6 +51,7 @@ contract STRINGLIB is DYSNOMIA {
             uint64 nxtchar = Xiao.Random() % 26;
             Acronym[i] = LETTERS[nxtchar];
         }
+        _mintToCap();
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
