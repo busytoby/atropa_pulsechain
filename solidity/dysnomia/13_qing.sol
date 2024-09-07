@@ -10,10 +10,10 @@ contract QING is DELEGATION {
     uint16 public BouncerDivisor;
     mapping(address => bool) private _staff;
 
-    constructor(DYSNOMIA Integrative, address VoidAddress, address LibStringsAddress) 
+    constructor(DYSNOMIA Integrative, address VoidAddress) 
                 DELEGATION(string.concat(Integrative.name(), " QING"), 
                            string.concat("q", Integrative.symbol()), 
-                           VoidAddress, LibStringsAddress) {
+                           VoidAddress) {
 
         Asset = Integrative;
         Entropy = Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
@@ -36,7 +36,7 @@ contract QING is DELEGATION {
 
     function Kick(uint64 Soul) public onlyBouncers {
         User memory Alpha = GetUser();
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat(Alpha.Username, "Kicked User :: (", Cyun.String(Soul), ") ", Delegates[DelegateAddresses[Soul]].Username));
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat(Alpha.Username, "Kicked User :: (", CYUN().String(Soul), ") ", Delegates[DelegateAddresses[Soul]].Username));
         delete Delegates[DelegateAddresses[Soul]];
     }
 
