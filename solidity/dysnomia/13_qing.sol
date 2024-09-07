@@ -74,7 +74,7 @@ contract QING is DELEGATION {
         if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
             if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
             bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
-            if(!paid) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
+            if(!paid) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
         }
         User memory Alpha = Enter(UserToken);
         Bounce();
