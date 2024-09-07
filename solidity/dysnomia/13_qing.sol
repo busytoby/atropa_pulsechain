@@ -46,8 +46,7 @@ contract QING is DELEGATION {
         uint256 _ts = Asset.totalSupply();
         if(Asset.balanceOf(cBouncer) >= (_ts / BouncerDivisor)) return true;
 
-        if(Asset.owner(cBouncer)) return true;
-        return false;
+        return Asset.owner(cBouncer);
     }
 
     error BouncerUnauthorized(address origin, address account, address what);
