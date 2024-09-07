@@ -11,6 +11,7 @@ contract QING is DELEGATION {
     uint256 public CoverCharge;
     mapping(address => bool) private _staff;
     mapping(address => uint256) private _list;
+    uint64[] private _users;
 
     constructor(DYSNOMIA Integrative, address VoidAddress) 
                 DELEGATION(string.concat(Integrative.name(), " QING"), 
@@ -67,8 +68,10 @@ contract QING is DELEGATION {
         }
     }
 
+    error AlreadyJoined(address UserToken);
     error CoverChargeUnauthorized(address AffectionAddress, uint256 Amount);
     function Join(address UserToken) public {
+        if(Delegates[tx.origin].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
             DYSNOMIA AffectionToken = DYSNOMIA(AFFECTIONContract);
             if(AffectionToken.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
@@ -78,18 +81,26 @@ contract QING is DELEGATION {
         User memory Alpha = Enter(UserToken);        
         Log(Alpha.Soul, Saat[2], string.concat("Joined :: ", Alpha.Username));
         if(_list[UserToken] < block.timestamp) _list[UserToken] = block.timestamp + 1 days;
+        _users.push(Alpha.Soul);
+    }
+
+    function Bounce() public {
+        for(uint i = 0; i < _users.length; i++) {
+            User memory Alpha = Delegates[DelegateAddresses[_users[i]]];
+            if(_list[Alpha.On.Phi] < block.timestamp) {
+                Log(Alpha.Soul, Void.Nu().Aura(), string.concat("Cover Charge Expired :: (", CYUN().String(Alpha.Soul), ") ", Alpha.Username));
+                delete Delegates[DelegateAddresses[_users[i]]];   
+            }
+        }
+        _mintToCap();
     }
 
     error NoUserName(address User);
     function Chat(string memory chatline) public {
         User memory Alpha = GetUser();
         if(bytes(Alpha.Username).length < 1) revert NoUserName(tx.origin); 
-        if(_list[Alpha.On.Phi] < block.timestamp) {
-            Log(Alpha.Soul, Void.Nu().Aura(), string.concat("Cover Charge Expired :: (", CYUN().String(Alpha.Soul), ") ", Delegates[DelegateAddresses[Alpha.Soul]].Username));
-            delete Delegates[DelegateAddresses[Alpha.Soul]];   
-        } else {
-            Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        }
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+        Bounce();
         _mintToCap();
     }
 }
