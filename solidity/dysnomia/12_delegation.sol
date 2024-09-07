@@ -40,11 +40,11 @@ abstract contract DELEGATION is DYSNOMIA {
         _mintToCap();
     }
 
-    function CYUN() internal view returns(LIBSTRINGS) {
+    function CYUN() public view returns(LIBSTRINGS) {
         return LIBSTRINGS(Void.GetLibraryAddress("strings"));
     }
 
-    function VAT() internal view returns (LIBYAI) {
+    function VAT() public view returns (LIBYAI) {
         return LIBYAI(Void.GetLibraryAddress("yai"));
     }
 
