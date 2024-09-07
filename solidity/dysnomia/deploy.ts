@@ -34,6 +34,22 @@ const deploy = async (contractName: string, args: Array<any>, accountIndex?: num
   return contract
 }
 
+const deploywithregistry = async (contractName: string, args: Array<any>, libraryAddress, accountIndex?: number): Promise<ethers.Contract> => {
+  if(accountIndex == undefined) accountIndex = 0;
+  console.log(`deploying ${contractName} from account ${accountIndex}`)
+  const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
+  const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
+  let metadata
+  try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath)) } catch {
+    metadata = JSON.parse(await remix.call('fileManager', 'getFile', libartifactsPath))
+  }
+  const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
+  const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer, libraries: {LibRegistry: libraryAddress })
+  const contract = await factory.deploy(...args)
+  await contract.deployed()
+  return contract
+}
+
 let result
 let vmreqaddress
 let shafactoryaddress

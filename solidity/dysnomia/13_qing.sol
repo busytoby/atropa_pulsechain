@@ -8,7 +8,9 @@ contract QING is DELEGATION {
     DYSNOMIA Asset;
     uint64 public Entropy;
     uint16 public BouncerDivisor;
+    uint256 public CoverCharge;
     mapping(address => bool) private _staff;
+    mapping(address => uint256) private _list;
 
     constructor(DYSNOMIA Integrative, address VoidAddress) 
                 DELEGATION(string.concat(Integrative.name(), " QING"), 
@@ -18,6 +20,7 @@ contract QING is DELEGATION {
         Asset = Integrative;
         Entropy = Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
+        setCoverCharge(0);
         _mintToCap();
     }
 
@@ -25,8 +28,16 @@ contract QING is DELEGATION {
         BouncerDivisor = _d;
     }
 
-    function setStaff(address _a, bool active) public onlyBouncers {
+    function setCoverCharge(uint256 _c) public onlyBouncers {        
+        CoverCharge = _c;
+    }
+
+    function setStaff(address _a, bool active) public onlyBouncers {        
         _staff[_a] = active;
+    }
+
+    function setGuestlist(address _a) public onlyBouncers {        
+        _list[_a] = block.timestamp + 1 days;
     }
 
     modifier onlyBouncers() {
@@ -34,9 +45,9 @@ contract QING is DELEGATION {
         _;
     }
 
-    function Kick(uint64 Soul) public onlyBouncers {
+    function Kick(uint64 Soul, string memory Why) public onlyBouncers {
         User memory Alpha = GetUser();
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat(Alpha.Username, "Kicked User :: (", CYUN().String(Soul), ") ", Delegates[DelegateAddresses[Soul]].Username));
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat(Alpha.Username, "Kicked User :: (", CYUN().String(Soul), ") ", Delegates[DelegateAddresses[Soul]].Username, " :: ", Why));
         delete Delegates[DelegateAddresses[Soul]];
     }
 
@@ -56,11 +67,29 @@ contract QING is DELEGATION {
         }
     }
 
+    error CoverChargeUnauthorized(address AffectionAddress, uint256 Amount);
+    function Join(address UserToken) public {
+        if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
+            DYSNOMIA AffectionToken = DYSNOMIA(AFFECTIONContract);
+            if(AffectionToken.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
+            bool paid = AffectionToken.transferFrom(msg.sender, address(this), CoverCharge);
+            if(!paid) revert CoverChargeUnauthorized(AFFECTIONContract, CoverCharge + 1);
+        }
+        User memory Alpha = Enter(UserToken);        
+        Log(Alpha.Soul, Saat[2], string.concat("Joined :: ", Alpha.Username));
+        if(_list[UserToken] < block.timestamp) _list[UserToken] = block.timestamp + 1 days;
+    }
+
     error NoUserName(address User);
     function Chat(string memory chatline) public {
         User memory Alpha = GetUser();
         if(bytes(Alpha.Username).length < 1) revert NoUserName(tx.origin); 
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+        if(_list[Alpha.On.Phi] < block.timestamp) {
+            Log(Alpha.Soul, Void.Nu().Aura(), string.concat("Cover Charge Expired :: (", CYUN().String(Alpha.Soul), ") ", Delegates[DelegateAddresses[Alpha.Soul]].Username));
+            delete Delegates[DelegateAddresses[Alpha.Soul]];   
+        } else {
+            Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+        }
         _mintToCap();
     }
 }
