@@ -68,7 +68,7 @@ contract QING is DELEGATION {
     }
 
     error AlreadyJoined(address UserToken);
-    error CoverChargeUnauthorized(address AffectionAddress, uint256 Amount);
+    error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
     function Join(address UserToken) public {
         if(Delegates[tx.origin].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
