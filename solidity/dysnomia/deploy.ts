@@ -49,16 +49,16 @@ let zhouaddress
 let yauaddress
 let yangaddress
 let siuaddress //= ethers.utils.getAddress("0x3be998c75ae8CD79E808B0038DAFF593D60DC4f4")
-let voidaddress = ethers.utils.getAddress("0x7a2B33Fffc8bB109802E8cD069cA28F35658536c")
+let voidaddress = ethers.utils.getAddress("0xadB32aAbfF725AD7CE891dA81681070E6b8d64a0")
 let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199da0d56a5Ca25223b")
 let laufactoryaddress //= ethers.utils.getAddress("0x492043DbfaAA1AC15E1566750ab7EDb63F05C85C")
 let lauaddress
 let libstringsaddress
 let nymaddress
-let libyaiaddress = ethers.utils.getAddress("0x1ccb1BdDC8C876cA3e1C5Fd8c0045D9fE57CcDFE")
-let qingfactoryaddress = ethers.utils.getAddress("0xc27aB5A443CC9b8BE5fE427341FBD8a91f1d8d12")
+let libyaiaddress = ethers.utils.getAddress("0x021Fb1C5D7E94885f443F5E8b774c4f097cF4816")
+let qingfactoryaddress = ethers.utils.getAddress("0x49A7e4307482f48B0980a412CEda05039a6DE077")
 let qingaddress
-let START = 15;
+let START = 0;
 // set pre-requisite address to deploy only subset
 
 (async () => {

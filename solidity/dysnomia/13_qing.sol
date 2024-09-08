@@ -21,6 +21,7 @@ contract QING is DELEGATION {
         setCoverCharge(0);
 
         if(has(Integrative, "owner()")) addOwner(Asset.owner());
+        if(has(Integrative, "Type()") && Asset.owner(tx.origin)) addOwner(tx.origin);
         if(has(Integrative, "name()") && has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
     }
 
