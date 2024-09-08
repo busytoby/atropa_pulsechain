@@ -31,7 +31,7 @@ abstract contract DYSNOMIA is MultiOwnable {
         __symbol = symbol_;
         Xiao = atropaMath(mathContract);
         maxSupply = Xiao.Random() % 111111;
-        AddMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
     }
 
     function Rename(string memory newName, string memory newSymbol) public onlyOwners {
@@ -48,7 +48,7 @@ abstract contract DYSNOMIA is MultiOwnable {
             _mint(address(this), 1 * 10 ** decimals());
     }
 
-    function AddMarketRate(address _a, uint256 _r) internal {
+    function _addMarketRate(address _a, uint256 _r) internal {
         _marketRates[_a] = _r;
     }
 
@@ -73,12 +73,6 @@ abstract contract DYSNOMIA is MultiOwnable {
         bool success1 = DYSNOMIA(address(this)).transferFrom(msg.sender, address(this), _a);
         require(success1, string.concat(unicode"Need Approved ", DYSNOMIA(address(this)).name()));
         BuyToken.transfer(msg.sender, cost);
-    }
-
-    function has(address _contract, string memory what) public view returns (bool does) {
-        bytes4 selector = bytes4(keccak256(bytes(what)));
-        bytes memory data = abi.encodeWithSelector(selector);
-        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 
     function name() public view virtual returns (string memory) {

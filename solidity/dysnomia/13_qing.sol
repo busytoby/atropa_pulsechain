@@ -20,8 +20,8 @@ contract QING is DELEGATION {
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
         setCoverCharge(0);
 
-        if(has(Integrative, "owner()")) addOwner(Asset.owner());
-        if(has(Integrative, "name()") && has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
+        if(VAT().has(Integrative, "owner()")) addOwner(Asset.owner());
+        if(VAT().has(Integrative, "name()") && VAT().has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
     }
 
     function VAT() public view returns (LIBYAI) {

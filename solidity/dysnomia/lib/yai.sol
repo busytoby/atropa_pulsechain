@@ -16,6 +16,12 @@ contract YAI is DYSNOMIA {
         Void.AddLibrary("yai", address(this));
     }
 
+    function has(address _contract, string memory what) public view returns (bool does) {
+        bytes4 selector = bytes4(keccak256(bytes(what)));
+        bytes memory data = abi.encodeWithSelector(selector);
+        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
+    }
+
     error NotOwner(address what, address who);
     function Forbid(address what) public {
         if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = true;
