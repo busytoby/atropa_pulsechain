@@ -75,7 +75,7 @@ contract QING is DELEGATION {
     error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
     function Join(address UserToken) public {
         if(Delegates[tx.origin].On.Phi == UserToken) revert AlreadyJoined(UserToken);
-        if(_list[UserToken] < block.timestamp && CoverCharge >= 0) {
+        if(_list[UserToken] < block.timestamp && CoverCharge > 0) {
             if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
             bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
             if(!paid) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
