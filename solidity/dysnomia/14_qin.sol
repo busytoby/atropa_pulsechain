@@ -11,5 +11,10 @@ contract QIN is DYSNOMIA {
     Bao public On;
 
     constructor(string memory name, string memory symbol, address VoidQingAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidQingAddress).Xiao())) {
+        addOwner(tx.origin);
+    }
+
+    function AddMarketRate(address _a, uint256 _r) public onlyOwners {
+        _addMarketRate(_a, _r);
     }
 }
