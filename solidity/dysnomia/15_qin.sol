@@ -1,19 +1,38 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./14_qi.sol";
+import "./interfaces/libencrypt.sol";
 
 contract QIN is DYSNOMIA {
-    uint64[3] public Saat;
     Bao public On;
+    LAU public Alt;
+    VOID public Void;
     uint256 public qp;
-    address[3][] private _inventory;
+    uint64 public Entropy;
+    address[5][9] private _inventory;
 
-    constructor(string memory name, string memory symbol, address VoidQingAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidQingAddress).Xiao())) {
+    constructor(address VoidQingAddress. address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(VoidQingAddress).Xiao())) {
+        Void = QING(VoidQingAddress).Void();
+        SelectAlt(UserToken);
         addOwner(tx.origin);
     }
 
     function AddMarketRate(address _a, uint256 _r) public onlyOwners {
         _addMarketRate(_a, _r);
+    }
+
+    function SelectAlt(address UserToken) public onlyOwners {
+        Alt = LAU(UserToken);
+        On = Alt.On();
+        Entropy = Entropy ^ Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
+    }
+
+    function SUN() public view returns (LIBEncrypt) {
+        return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
+    }
+
+    function Conjure(uint64 Gamma) public onlyOwners returns (bytes memory Geng) {        
+        (Entropy, Geng) = SUN().Encapsulate(On, Entropy ^ Gamma, Alt.Saat(0), Alt.Saat(1), Alt.Saat(2));
     }
 
     function GetInventoryCount(uint256 class) public view returns (uint256) {
