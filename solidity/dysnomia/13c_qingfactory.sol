@@ -20,7 +20,6 @@ contract QINGFactory {
         if(Yai.IsForbidden(Integrative)) revert ForbiddenToken(Integrative);
         Mu = new QING(Integrative, address(Yai.Void()));
         Yai.addOwner(address(Mu));
-        Mu.setStaff(mariarahelContract, true);
         Mu.renounceOwnership(address(this));
         _qings[Integrative] = address(Mu);
     }

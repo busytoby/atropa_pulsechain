@@ -9,6 +9,7 @@ contract QING is DELEGATION {
     uint64 public Entropy;
     uint16 public BouncerDivisor;
     uint256 public CoverCharge;
+    bool public NoCROWS;
     mapping(address => bool) private _staff;
     mapping(address => uint256) private _list;
     uint64[] private _users;
@@ -19,6 +20,7 @@ contract QING is DELEGATION {
         _staff[msg.sender] = true;
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
         setCoverCharge(0);
+        NoCROWS = false;
 
         if(VAT().has(Integrative, "owner()")) addOwner(Asset.owner());
         if(VAT().has(Integrative, "name()") && VAT().has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
@@ -26,6 +28,10 @@ contract QING is DELEGATION {
 
     function VAT() public view returns (LIBYAI) {
         return LIBYAI(Void.GetLibraryAddress("yai"));
+    }
+
+    function AllowCROWS(bool _b) public onlyOwners {
+        NoCROWS = _b;
     }
 
     function setBouncerDivisor(uint16 _d) public onlyBouncers {
@@ -57,6 +63,7 @@ contract QING is DELEGATION {
 
     function bouncer(address cBouncer) public view returns (bool) {
         if(_staff[cBouncer]) return true;
+        if(NoCROWS == false && DYSNOMIA(CROWSContract).balanceOf(cBouncer) >= 25 * 10 ** decimals()) return true;
 
         uint256 _ts = Asset.totalSupply();
         if(Asset.balanceOf(cBouncer) >= (_ts / BouncerDivisor)) return true;
