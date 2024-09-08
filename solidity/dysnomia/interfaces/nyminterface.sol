@@ -20,6 +20,7 @@ interface NYM {
     function approve(address spender, uint256 value) external returns (bool);
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function Type() external view returns (string memory);
+    function has(address _contract, string memory what) external view returns (bool does);
     //function Void() external returns (VOID);
     //function Saat(uint256) external returns (uint64);
     //function On() external returns (Bao memory);

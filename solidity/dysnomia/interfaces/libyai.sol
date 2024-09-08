@@ -20,6 +20,7 @@ interface LIBYAI {
     function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external view returns(string memory);
+    function has(address _contract, string memory what) external view returns (bool does);
     function Void() external view returns(VOID);
     function Forbid(address what) external;
     function Unforbid(address what) external;

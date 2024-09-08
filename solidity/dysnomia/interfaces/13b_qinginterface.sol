@@ -24,6 +24,7 @@ interface QING {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
+    function has(address _contract, string memory what) external view returns (bool does);
     function Void() external view returns (VOID);
     function Saat(uint256) external view returns (uint64);
     function On() external view returns (Bao memory);

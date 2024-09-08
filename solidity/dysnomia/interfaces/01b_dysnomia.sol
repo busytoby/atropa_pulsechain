@@ -20,4 +20,5 @@ interface DYSNOMIAINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
+    function has(address _contract, string memory what) external view returns (bool does);
 }

@@ -17,25 +17,12 @@ abstract contract DELEGATION is DYSNOMIA {
     constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
 
-        //Void.addOwner(address(this));
-        //Void.Nu().addOwner(address(this));
-        //Void.Nu().Psi().addOwner(address(this));
-        //Void.Nu().Psi().Mu().addOwner(address(this));
-        //Void.Nu().Psi().Mu().Tau().addOwner(address(this));
-        //Void.Nu().Psi().Mu().Tau().Upsilon().addOwner(address(this));
-        Void.Nu().Psi().Mu().Tau().Upsilon().Eta().addOwner(address(this));
-
         (Saat, On) = Void.Enter(name, symbol);
         On.Phi = address(this);
         On.Shio.addOwner(address(this));
         On.Shio.Rho().Rod.addOwner(address(this));
-        Void.Nu().Psi().Mu().Tau().Upsilon().Eta().Bing(On); // User LAU are not tracked in Bing except at "latest birth" but delegations are
 
         (On.Omicron, On.Omega) = On.Shio.React(Void.Nu().Psi().Rho().Bang.Omicron);
-        (On.Omega, On.Omicron) = Void.Nu().Psi().Rho().Bang.Shio.React(On.Omega);
-        (On.Omicron, On.Omega) = On.Shio.React(Void.Nu().Psi().Rho().Le.Omicron);
-
-        //Void.SetAttribute("Username", symbol);
 
         _mintToCap();
     }

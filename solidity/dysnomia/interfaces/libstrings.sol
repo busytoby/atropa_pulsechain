@@ -19,6 +19,7 @@ interface LIBSTRINGS {
     function renounceOwnership(address toRemove) external;
     function mintToCap() external;
     function Type() external view returns(string memory);
+    function has(address _contract, string memory what) external view returns (bool does);
     function CheckPalindrome(string memory S) external pure returns(bool);
     function CheckPalindrome(bytes memory S) external pure returns(bool);
     function Reverse(string memory S) external pure returns(string memory Reversed);

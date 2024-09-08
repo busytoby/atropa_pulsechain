@@ -16,6 +16,7 @@ contract QING is DELEGATION {
     constructor(address Integrative, address VoidAddress) DELEGATION("Mysterious Qing", "q", VoidAddress) {
         Asset = DYSNOMIA(Integrative);
         Entropy = Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
+        _staff[msg.sender] = true;
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
         setCoverCharge(0);
 

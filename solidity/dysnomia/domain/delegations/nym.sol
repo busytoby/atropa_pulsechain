@@ -42,6 +42,9 @@ contract Nym is DELEGATION {
             "Or 100 NYM For Winning !\n"
             "If More Than One Acronym Ties Then The 100 NYM Will Be Split"
         );
+        
+        (On.Omega, On.Omicron) = Void.Nu().Psi().Rho().Bang.Shio.React(On.Omega);
+        (On.Omicron, On.Omega) = On.Shio.React(Void.Nu().Psi().Rho().Le.Omicron);
     }
 
     function SetDescription(string memory _d) public onlyOwners {

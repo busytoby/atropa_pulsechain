@@ -10,6 +10,7 @@ contract QINGFactory {
     constructor(address YAIAddress) {
         Yai = LIBYAI(YAIAddress);
         Yai.addOwner(address(this));
+        Yai.Void().addOwner(address(this));
     } 
 
     error QingAlreadyExists(address Token, address Qing);
@@ -21,5 +22,6 @@ contract QINGFactory {
         Yai.addOwner(address(Mu));
         Mu.renounceOwnership(address(this));
         _qings[Integrative] = address(Mu);
+
     }
 }
