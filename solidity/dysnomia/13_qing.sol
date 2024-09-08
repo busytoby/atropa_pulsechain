@@ -82,11 +82,14 @@ contract QING is DELEGATION {
             bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
             if(!paid) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
         }
-        User memory Alpha = Enter(UserToken);
+
+        if(_list[UserToken] < block.timestamp) {
+            User memory Alpha = Enter(UserToken);
+            Log(Alpha.Soul, Saat[2], string.concat("Joined :: ", Alpha.Username));
+            _list[UserToken] = block.timestamp + 1 days;
+            _users.push(Alpha.Soul);
+        }
         Bounce();
-        Log(Alpha.Soul, Saat[2], string.concat("Joined :: ", Alpha.Username));
-        if(_list[UserToken] < block.timestamp) _list[UserToken] = block.timestamp + 1 days;
-        _users.push(Alpha.Soul);
     }
 
     function Alias(string memory name, address _qing) public {
