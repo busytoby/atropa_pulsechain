@@ -132,3 +132,6 @@ address constant libAtropaMathContract = address(0xB680F0cc810317933F234f67EB6A9
 address constant AFFECTIONContract = address(0x24F0154C1dCe548AdF15da2098Fdd8B8A3B8151D);
 address constant RESTRAININGORDERContract = address(0xEf2125f5d1f7A3d68038F27e681258d13a73E718);
 address constant WITHOUTContract = address(0x173216Ed67eBF3E6767D86e8b3Ff32e0d64437bF);
+
+//
+address constant mariarahelContract = address(0xD32c39fEE49391c7952d1b30b15921b0D3b42E69);
