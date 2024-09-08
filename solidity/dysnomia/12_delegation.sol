@@ -36,7 +36,7 @@ abstract contract DELEGATION is DYSNOMIA {
     function Enter(address UserToken) internal returns(User memory) { // inheriting class should implement Join() & Call Enter(), see nym.sol
         if(Delegates[tx.origin].Soul != 0) revert AlreadyEntered(UserToken, tx.origin);
         LAU UserLau = LAU(UserToken);
-        if(!UserLau.owner(msg.sender)) revert InvalidOwnership(UserToken, msg.sender);
+        if(!UserLau.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
 
         User memory Alpha;
         Alpha.Soul = UserLau.Saat(1);

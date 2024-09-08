@@ -11,7 +11,7 @@ contract QIN is DYSNOMIA {
     uint64 public Entropy;
     address[5][9] private _inventory;
 
-    constructor(address VoidQingAddress. address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(VoidQingAddress).Xiao())) {
+    constructor(address VoidQingAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(VoidQingAddress).Xiao())) {
         Void = QING(VoidQingAddress).Void();
         SelectAlt(UserToken);
         addOwner(tx.origin);
@@ -21,8 +21,10 @@ contract QIN is DYSNOMIA {
         _addMarketRate(_a, _r);
     }
 
+    error InvalidOwnership(address UserToken, address User);
     function SelectAlt(address UserToken) public onlyOwners {
         Alt = LAU(UserToken);
+        if(!Alt.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
         On = Alt.On();
         Entropy = Entropy ^ Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
     }
