@@ -10,6 +10,6 @@ contract QIN is DYSNOMIA {
     uint64[3] public Saat;
     Bao public On;
 
-    constructor(string memory name, string memory symbol, address VoidAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidAddress).Xiao())) {
+    constructor(string memory name, string memory symbol, address VoidQingAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidQingAddress).Xiao())) {
     }
 }
