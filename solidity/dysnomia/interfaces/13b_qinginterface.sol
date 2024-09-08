@@ -32,6 +32,7 @@ interface QING {
     function OperatorSendMSG(string memory chatline) external;
     function Asset() external returns (DYSNOMIAINTERFACE);
     function Entropy() external returns (uint64);
+    function AllowCROWS(bool _b) external;
     function BouncerDivisor() external returns (uint16);
     function CoverCharge() external returns (uint256);
     function VAT() external view returns (LIBYAI);
