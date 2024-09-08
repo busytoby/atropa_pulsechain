@@ -8,6 +8,7 @@ import "./interfaces/13d_qingfactoryinterface.sol";
 contract QIN is DYSNOMIA {
     uint64[3] public Saat;
     Bao public On;
+    uint256 public qp;
     address[3][] private _inventory;
 
     constructor(string memory name, string memory symbol, address VoidQingAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(VoidQingAddress).Xiao())) {
