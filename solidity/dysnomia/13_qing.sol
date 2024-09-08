@@ -66,8 +66,7 @@ contract QING is DELEGATION {
 
     error BouncerUnauthorized(address origin, address account, address what);
     function _checkBouncer() internal view {
-        User memory Alpha = GetUser();
-        if (!bouncer(Alpha.On.Phi) && !bouncer(msg.sender) && !bouncer(tx.origin)) {
+        if((Delegates[tx.origin].Soul != 0 && !bouncer(Delegates[tx.origin].On.Phi)) && !bouncer(msg.sender) && !bouncer(tx.origin)) {
             revert BouncerUnauthorized(tx.origin, msg.sender, address(this));
         }
     }
