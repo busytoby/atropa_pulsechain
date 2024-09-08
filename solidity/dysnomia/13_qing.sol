@@ -116,8 +116,10 @@ contract QING is DELEGATION {
     }
 
     error NoUserName(address User);
+    error Forbidden(address Asset);
     function Chat(string memory chatline) public {
         User memory Alpha = GetUser();
+        if(VAT().IsForbidden(address(Asset))) revert Forbidden(address(Asset));
         if(bytes(Alpha.Username).length < 1) revert NoUserName(tx.origin); 
         Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
         Bounce();
