@@ -6,6 +6,8 @@ import "./interfaces/13b_qinginterface.sol";
 import "./interfaces/13d_qingfactoryinterface.sol";
 
 contract QI is DYSNOMIA {
+    string public constant Type = "QI";
+
     User public Creator;
     uint64 public Quality;
     mapping(uint64 => int64) private _flux;

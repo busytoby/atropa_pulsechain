@@ -4,15 +4,16 @@ import "./14_qi.sol";
 import "./interfaces/libencrypt.sol";
 
 contract QIN is DYSNOMIA {
-    Bao public On;
+    string public constant Type = "QIN";
+    QING public Location;
     LAU public Alt;
-    VOID public Void;
+    Bao public On;
     uint256 public qp;
     uint64 public Entropy;
     address[5][9] private _inventory;
 
     constructor(address VoidQingAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(VoidQingAddress).Xiao())) {
-        Void = QING(VoidQingAddress).Void();
+        Location = QING(VoidQingAddress);
         SelectAlt(UserToken);
         addOwner(tx.origin);
     }
@@ -30,11 +31,12 @@ contract QIN is DYSNOMIA {
     }
 
     function SUN() public view returns (LIBEncrypt) {
-        return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
+        return LIBEncrypt(Location.Void().GetLibraryAddress("encrypt"));
     }
 
     function Conjure(uint64 Gamma) public onlyOwners returns (bytes memory Geng) {        
         (Entropy, Geng) = SUN().Encapsulate(On, Entropy ^ Gamma, Alt.Saat(0), Alt.Saat(1), Alt.Saat(2));
+
     }
 
     function GetInventoryCount(uint256 class) public view returns (uint256) {
