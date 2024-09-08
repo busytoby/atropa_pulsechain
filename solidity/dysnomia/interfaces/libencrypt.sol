@@ -24,6 +24,7 @@ interface LIBEncrypt {
     function Void() external returns (VOID);
     function Encrypt(uint64 From, uint64 to, string memory Key, string memory Data) external returns (uint64 index);
     function Encapsulate(Bao memory From, uint64 Gamma, uint64 Rho, uint64 Upsilon, uint64 Ohm) external returns (uint64 Entropy, bytes memory Geng);
+    function Saat(bytes memory Geng) external pure returns (uint64[4] memory Go);
     function Encrypt(uint64 From, uint64 to, bytes memory Key, bytes memory Data) external returns (uint64 index);
     function Decrypt(uint64 From, uint64 to, uint64 Index, string memory Key) external returns (bytes memory);
     function Prune() external;

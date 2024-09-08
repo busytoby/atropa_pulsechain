@@ -26,6 +26,11 @@ contract QING is DELEGATION {
         if(VAT().has(Integrative, "name()") && VAT().has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
     }
 
+    function React(uint64 Gamma) public returns (uint64) {
+        Entropy = Xiao.modExp64(Gamma, Entropy, MotzkinPrime);
+        return Entropy;
+    }
+
     function VAT() public view returns (LIBYAI) {
         return LIBYAI(Void.GetLibraryAddress("yai"));
     }

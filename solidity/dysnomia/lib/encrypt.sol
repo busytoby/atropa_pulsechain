@@ -46,6 +46,22 @@ contract ENCRYPT is DYSNOMIA {
         (Entropy, Geng) = Crypt(From, From, Gai, Geng);
     }
 
+    error ChromosomeLength(uint8 minimum, uint256 length);
+    function Saat(bytes memory Geng) public pure returns (uint64[3] memory Go) {
+        if(Geng.length < 18) revert ChromosomeLength(18, Geng.length);
+        uint j=0;
+        Go[j] = Go[j] + uint8(Geng[0]);
+        for(uint i = 1; i < Geng.length; i++){
+            Go[j] = Go[j] + uint8(Geng[i]);
+            if(i%8 == 0 && j<2) j++;
+        }
+    }
+
+    function slice(bytes memory bs, uint start, uint count) public pure returns (uint64 x) {
+        require(bs.length >= start + count, "slicing out of range");
+        assembly { x := mload(add(bs, add(count, start))) }
+    }
+
     function Encrypt(uint64 From, uint64 to, bytes memory Key, bytes memory Data) public returns (uint64 index) {
         Bao memory _from = Zheng.GetRodByIdx(From);
         Bao memory _to = Zheng.GetRodByIdx(to);
