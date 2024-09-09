@@ -18,17 +18,18 @@ contract CONJURELIB is DYSNOMIA {
 
     error NotTokenOwner(address Token, address originRequestor);
     error NotAQiToken(address Token);
-    function Rename(uint64 _c, string memory _name, string memory _symbol) public onlyOwners {
+    function RenameQi(string memory _name, string memory _symbol) public onlyOwners {
         if(!DYSNOMIA(msg.sender).owner(tx.origin)) revert NotTokenOwner(msg.sender, tx.origin);
-        _qi[_c][0] = _name;
-        _qi[_c][1] = _symbol;
+        uint64 Soul = QIINTERFACE(msg.sender).Saat(1);
+        _qi[Soul][0] = _name;
+        _qi[Soul][1] = _symbol;
     }
 
-    function name(uint64 _c) public view returns (string memory) {
-        return _qi[_c][0];
+    function qName() public view returns (string memory) {
+        return _qi[QIINTERFACE(msg.sender).Saat(1)][0];
     }
 
-    function symbol(uint64 _c) public view returns (string memory) {
-        return _qi[_c][1];
+    function qSymbol() public view returns (string memory) {
+        return _qi[QIINTERFACE(msg.sender).Saat(1)][1];
     }
 }

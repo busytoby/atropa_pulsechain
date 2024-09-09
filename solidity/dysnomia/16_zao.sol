@@ -1,28 +1,38 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
-import "./14_qi.sol";
 import "./15_qin.sol";
-import "./interfaces/15b_qininterface.sol";
+//import "./interfaces/15b_qininterface.sol";
 
 contract ZAO is DYSNOMIA {
     string public constant Type = "ZAO";
 
     QING public VoidQing;
-    mapping(address => uint64) private _qi;
     mapping(address => uint64) private _qin;
+    mapping(address => address) private _qinpresences;
+    mapping(address => address) private _players;
 
     constructor(address VoidQingAddress) DYSNOMIA("Dysnomia Zao", "ZAO", address(DYSNOMIA(VoidQingAddress).Xiao())) {
         VoidQing = QING(VoidQingAddress);
         addOwner(tx.origin);
     }
 
-    error UnknownQin(address token);
-    function Conjure(uint64 Gamma) public onlyOwners returns (QI Conjuring, bytes memory Geng) {
-        if(_qin[msg.sender] == 0) revert UnknownQin(msg.sender);
-        QININTERFACE Conjuror = QININTERFACE(msg.sender);
-        (_qin[msg.sender], Geng) = Conjuror.SUN().Encapsulate(Conjuror.On(), _qin[msg.sender] ^ Gamma, Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
-        Conjuring = new QI(address(this), Geng, address(Conjuror.Location()));
+    function SetQinEntropy(address who, uint64 value) public onlyOwners {
+        _qin[who] = value;
     }
+
+    function GetQinEntropy(address who) public view returns (uint64) {
+        return _qin[who];
+    }
+
+    error AlreadyRegistered(address who);
+    function Register(address UserToken) public returns (QIN Beta) {
+        if(_players[tx.origin] != address(0x0)) revert AlreadyRegistered(tx.origin);
+        Beta = new QIN(address(VoidQing), UserToken);
+        addOwner(address(Beta));
+        _qinpresences[address(Beta)] = address(VoidQing);
+        _qin[address(Beta)] = Beta.Entropy();
+    }
+
 
 }

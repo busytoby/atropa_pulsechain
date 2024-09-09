@@ -21,7 +21,7 @@ interface LIBCONJURE {
     function mintToCap() external;
     function Type() external view returns(string memory);
     function VoidQing() external view returns(QING);
-    function Rename(uint64 _c, string memory name, string memory symbol) external;
-    function name(uint64 _a) external view returns (string memory);
-    function symbol(uint64 _a) external view returns (string memory);
+    function RenameQi(string memory name, string memory symbol) external;
+    function qName() external view returns (string memory);
+    function qSymbol() external view returns (string memory);
 }

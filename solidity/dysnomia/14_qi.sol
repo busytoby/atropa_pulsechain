@@ -28,15 +28,15 @@ contract QI is DYSNOMIA {
     }
 
     function Rename(string memory newName, string memory newSymbol) public override onlyOwners {
-        VAI().Rename(Saat[1], newName, newSymbol);
+        VAI().RenameQi(newName, newSymbol);
     }
 
     function name() public view override returns (string memory) {
-        return VAI().name(Saat[1]);
+        return VAI().qName();
     }
 
     function symbol() public view override returns (string memory) {
-        return VAI().symbol(Saat[1]);
+        return VAI().qSymbol();
     }
 
     function AddMarketRate(address _a, uint256 _r) public onlyOwners {
