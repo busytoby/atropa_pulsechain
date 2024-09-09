@@ -16,8 +16,8 @@ contract QI is DYSNOMIA {
     uint64 public Quality;
     mapping(uint64 => int64) private _flux;
 
-    constructor(address  _creator, bytes memory Geng, address Location) DYSNOMIA("Geng Qi", "QI", address(DYSNOMIA(Location).Xiao())) {
-        Creator = _creator;
+    constructor(bytes memory Geng, address Location) DYSNOMIA("Geng Qi", "QI", address(DYSNOMIA(Location).Xiao())) {
+        Creator = tx.origin;
         Void = QING(Location).Void();
         Saat = SUN().Saat(Geng);
         addOwner(tx.origin);

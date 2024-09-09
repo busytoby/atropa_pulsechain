@@ -9,7 +9,7 @@ contract CONJURELIB is DYSNOMIA {
     ZAO public Zao;
     mapping(uint64 => string[2]) private _qi;
 
-    constructor(address ZaoAddress) DYSNOMIA(unicode"CHATLOG ConjureLib", unicode"ConjureLib", address(DYSNOMIA(ZaoAddress).Xiao())) {
+    constructor(address ZaoAddress) DYSNOMIA(unicode"DYSNOMIA ConjureLib", unicode"ConjureLib", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAO(ZaoAddress);
         addOwner(ZaoAddress);
         addOwner(tx.origin);

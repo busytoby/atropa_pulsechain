@@ -9,7 +9,6 @@ contract ZAI is DYSNOMIA {
     string public constant Type = "ZAI";
 
     ZAO public Zao;
-    mapping(address => uint64) private _qi;
 
     constructor(address ZaoAddress) DYSNOMIA("Dysnomia Zai", "ZAI", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAO(ZaoAddress);
@@ -24,13 +23,13 @@ contract ZAI is DYSNOMIA {
 
     error UnknownQin(address token);
     function Conjure() public onlyOwners returns (QI Conjuring, bytes memory Geng, uint64 Entropy) {
-        if(Zao.GetQinEntropy(msg.sender) == 0) revert UnknownQin(msg.sender);
-        QININTERFACE Conjuror = QININTERFACE(msg.sender);
-        (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.On(), Zao.GetQinEntropy(msg.sender), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
-        Zao.SetQinEntropy(msg.sender, Entropy);
-        Conjuring = new QI(address(this), Geng, address(Conjuror.Location()));
+        if(Zao.GetQinEntropy(tx.origin) == 0) revert UnknownQin(msg.sender);
+        QININTERFACE Conjuror = QININTERFACE(Zao.GetPlayerQin(tx.origin));
+        (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.On(), Zao.GetQinEntropy(tx.origin), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
+        Zao.SetQinEntropy(tx.origin, Entropy);
+        Conjuring = new QI(Geng, address(Conjuror.Location()));
         Conjuring.addOwner(tx.origin);
         VAI().addOwner(address(Conjuring));
+        Conjuring.Rename("Mysterious Qi", "QI");
     }
-
 }

@@ -18,17 +18,21 @@ contract ZAO is DYSNOMIA {
     }
 
     function SetQinEntropy(address who, uint64 value) public onlyOwners {
-        _qin[who] = value;
+        _qin[_players[who]] = value;
     }
 
     function GetQinEntropy(address who) public view returns (uint64) {
-        return _qin[who];
+        return _qin[_players[who]];
+    }
+
+    function GetPlayerQin(address who) public view onlyOwners returns (address) {
+        return _players[who];
     }
 
     error AlreadyRegistered(address who);
     function Register(address UserToken) public returns (QIN Beta) {
         if(_players[tx.origin] != address(0x0)) revert AlreadyRegistered(tx.origin);
-        Beta = new QIN(address(VoidQing), UserToken);
+        Beta = new QIN(address(this), UserToken);
         Beta.addOwner(address(this));
         addOwner(address(Beta));
         _qin[address(Beta)] = Beta.Entropy();
