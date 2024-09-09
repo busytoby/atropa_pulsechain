@@ -26,6 +26,7 @@ contract ENCRYPT is DYSNOMIA {
 
     error NotParty(address from, address to, address party);
     function Encrypt(uint64 From, uint64 to, string memory Key, string memory Data) public returns (uint64 index) {
+        _mintToCap();
         return Encrypt(From, to, bytes(Key), bytes(Data));
     }
 
@@ -44,6 +45,7 @@ contract ENCRYPT is DYSNOMIA {
             Geng[i] = bytes1(uint8((Ohm >> (8*(i-16))) & 255));
       
         (Entropy, Geng) = Crypt(From, From, Gai, Geng);
+        _mintToCap();
     }
 
     error ChromosomeLength(uint8 minimum, uint256 length);
@@ -72,6 +74,7 @@ contract ENCRYPT is DYSNOMIA {
         _encryptions[index].Data = result;
         _encryptions[index].Expiry = block.timestamp + (10 days);
         _indexes.push(index);
+        _mintToCap();
     }
 
     error TooManyCrypts(uint64 max, uint256 count);
@@ -94,9 +97,11 @@ contract ENCRYPT is DYSNOMIA {
             (_e, _m) = From.Shio.Rho().Rod.React(_b, From.Shio.Rho().Cone.View().Channel);
         }
         indexable = _e;
+        _mintToCap();
     }
 
     function Decrypt(uint64 From, uint64 to, uint64 Index, string memory Key) public returns (bytes memory) {
+        _mintToCap();
         return Decrypt(From, to, Index, bytes(Key));
     }
 
@@ -108,6 +113,7 @@ contract ENCRYPT is DYSNOMIA {
                 _indexes.pop();
             }
         }
+        _mintToCap();
     }
 
     function Decrypt(uint64 From, uint64 to, uint64 Index, bytes memory Key) public returns (bytes memory result) {
@@ -118,9 +124,11 @@ contract ENCRYPT is DYSNOMIA {
         if(!_to.Shio.owner(msg.sender)) revert NotParty(address(_from.Shio), address(_to.Shio), msg.sender);
         (_e, result) = Crypt(_from, _to, Key, _encryptions[Index].Data);
         if(_encryptions[Index].Expiry < block.timestamp) delete _encryptions[Index];
+        _mintToCap();
     }
 
     function hashKey(bytes memory Key) public returns (uint64 result) {
+        _mintToCap();
         return uint64(uint256(keccak256(Key)) % Xiao.MotzkinPrime());
     }
 }

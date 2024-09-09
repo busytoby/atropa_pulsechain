@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./10b_voidinterface.sol";
+import "./14b_qiinterface.sol";
 
-interface LIBEncrypt {
+interface QININTERFACE  {
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
@@ -18,16 +18,24 @@ interface LIBEncrypt {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Zheng() external returns (ZHENG);
-    function Void() external returns (VOID);
-    function Encrypt(uint64 From, uint64 to, string memory Key, string memory Data) external returns (uint64 index);
-    function Encapsulate(Bao memory From, uint64 Gamma, uint64 Rho, uint64 Upsilon, uint64 Ohm) external returns (uint64 Entropy, bytes memory Geng);
-    function Saat(bytes memory Geng) external pure returns (uint64[3] memory Go);
-    function Encrypt(uint64 From, uint64 to, bytes memory Key, bytes memory Data) external returns (uint64 index);
-    function Decrypt(uint64 From, uint64 to, uint64 Index, string memory Key) external returns (bytes memory);
-    function Prune() external;
-    function Decrypt(uint64 From, uint64 to, uint64 Index, bytes memory Key) external returns (bytes memory result);        
-    function hashKey(bytes memory Key) external returns (uint64 result);
+    function Location() external view returns (QING);
+    function Alt() external view returns (LAU);
+    function On() external view returns (Bao memory);
+    function qp() external view returns (uint256);
+    function Entropy() external view returns (uint64);
+    function AddMarketRate(address _a, uint256 _r) external;
+    function SelectAlt(address UserToken) external;
+    function SUN() external view returns (LIBEncrypt);
+    function Conjure(uint64 Gamma) external returns (QIINTERFACE Conjuring, bytes memory Geng);
+    function GetInventoryCount(uint256 class) external view returns (uint256);
+    function GetDefense(uint256 n) external view returns (address);
+    function GetDecoration(uint256 n) external view returns (address);
+    function GetOffense(uint256 n) external view returns (address);
+    function Throw() external view returns (uint64);
+    function Save(uint64 pQi) external view returns (uint64);
+    function Equip(address qi) external;
+    function Remove(address qi) external;
 }

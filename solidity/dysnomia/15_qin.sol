@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./14_qi.sol";
+import "./01_dysnomia_v2.sol";
+import "./interfaces/14b_qiinterface.sol";
 
 contract QIN is DYSNOMIA {
     string public constant Type = "QIN";
@@ -32,11 +33,6 @@ contract QIN is DYSNOMIA {
 
     function SUN() public view returns (LIBEncrypt) {
         return LIBEncrypt(Location.Void().GetLibraryAddress("encrypt"));
-    }
-
-    function Conjure(uint64 Gamma) public onlyOwners returns (QI Conjuring, bytes memory Geng) {
-        (Entropy, Geng) = SUN().Encapsulate(On, Entropy ^ Gamma, Alt.Saat(0), Alt.Saat(1), Alt.Saat(2));
-        Conjuring = new QI(address(this), Geng, address(Location));
     }
 
     function GetInventoryCount(uint256 class) public view returns (uint256) {

@@ -5,13 +5,14 @@ import "./01_dysnomia_v2.sol";
 import "./interfaces/13b_qinginterface.sol";
 import "./interfaces/13d_qingfactoryinterface.sol";
 import "./interfaces/libencrypt.sol";
+import "./interfaces/libconjure.sol";
 
 contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
-    address Creator;
+    address public Creator;
     VOID public Void;
-    uint64[4] public Saat;
+    uint64[3] public Saat;
     uint64 public Quality;
     mapping(uint64 => int64) private _flux;
 
@@ -20,6 +21,22 @@ contract QI is DYSNOMIA {
         Void = QING(Location).Void();
         Saat = SUN().Saat(Geng);
         addOwner(tx.origin);
+    }
+
+    function VAI() public view returns (LIBCONJURE) {
+        return LIBCONJURE(Void.GetLibraryAddress("conjure"));
+    }
+
+    function Rename(string memory newName, string memory newSymbol) public override onlyOwners {
+        VAI().Rename(Saat[1], newName, newSymbol);
+    }
+
+    function name() public view override returns (string memory) {
+        return VAI().name(Saat[1]);
+    }
+
+    function symbol() public view override returns (string memory) {
+        return VAI().symbol(Saat[1]);
     }
 
     function AddMarketRate(address _a, uint256 _r) public onlyOwners {

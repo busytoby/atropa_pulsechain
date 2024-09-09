@@ -34,7 +34,7 @@ abstract contract DYSNOMIA is MultiOwnable {
         _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
     }
 
-    function Rename(string memory newName, string memory newSymbol) public onlyOwners {
+    function Rename(string memory newName, string memory newSymbol) public virtual onlyOwners {
         __name = newName;
         __symbol = newSymbol;
     }
