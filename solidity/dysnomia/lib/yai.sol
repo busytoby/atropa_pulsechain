@@ -13,6 +13,7 @@ contract YAI is DYSNOMIA {
 
     constructor(address VoidAddress) DYSNOMIA(unicode"Dysnomia YAILib", unicode"YAI", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
+        addOwner(tx.origin);
         Void.AddLibrary("yai", address(this));
     }
 

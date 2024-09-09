@@ -35,6 +35,10 @@ contract QIN is DYSNOMIA {
         return LIBEncrypt(Location.Void().GetLibraryAddress("encrypt"));
     }
 
+    function Move(address toQing) public onlyOwners {
+        Location = QING(toQing);
+    }
+
     function GetInventoryCount(uint256 class) public view returns (uint256) {
         return _inventory[class].length;
     }

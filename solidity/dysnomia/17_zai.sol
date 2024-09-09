@@ -14,7 +14,12 @@ contract ZAI is DYSNOMIA {
     constructor(address ZaoAddress) DYSNOMIA("Dysnomia Zai", "ZAI", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAO(ZaoAddress);
         Zao.addOwner(address(this));
+        VAI().addOwner(address(this));
         addOwner(tx.origin);
+    }
+
+    function VAI() public view returns (LIBCONJURE) {
+        return LIBCONJURE(Zao.VoidQing().Void().GetLibraryAddress("conjure"));
     }
 
     error UnknownQin(address token);
@@ -22,8 +27,9 @@ contract ZAI is DYSNOMIA {
         if(Zao.GetQinEntropy(msg.sender) == 0) revert UnknownQin(msg.sender);
         QININTERFACE Conjuror = QININTERFACE(msg.sender);
         (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.On(), Zao.GetQinEntropy(msg.sender), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
-        Conjuring = new QI(address(this), Geng, address(Conjuror.Location()));
         Zao.SetQinEntropy(msg.sender, Entropy);
+        Conjuring = new QI(address(this), Geng, address(Conjuror.Location()));
+        Conjuring.addOwner(tx.origin);
     }
 
 }

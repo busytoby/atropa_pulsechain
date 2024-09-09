@@ -29,10 +29,16 @@ contract ZAO is DYSNOMIA {
     function Register(address UserToken) public returns (QIN Beta) {
         if(_players[tx.origin] != address(0x0)) revert AlreadyRegistered(tx.origin);
         Beta = new QIN(address(VoidQing), UserToken);
+        Beta.addOwner(address(this));
         addOwner(address(Beta));
-        _qinpresences[address(Beta)] = address(VoidQing);
         _qin[address(Beta)] = Beta.Entropy();
+        _qinpresences[address(VoidQing)] = address(Beta);
+        _players[tx.origin] = address(Beta);
     }
 
-
+    error Unregistered(address who);
+    function Move(address toQing) public onlyOwners {
+        if(_players[tx.origin] == address(0x0)) revert Unregistered(tx.origin);
+        _qinpresences[toQing] = tx.origin; 
+    }
 }

@@ -12,6 +12,7 @@ contract CONJURELIB is DYSNOMIA {
     constructor(address ZaoAddress) DYSNOMIA(unicode"CHATLOG LibCrypt", unicode"LibCrypt", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAO(ZaoAddress);
         addOwner(ZaoAddress);
+        addOwner(tx.origin);
         Zao.VoidQing().Void().AddLibrary("conjure", address(this));
         _mintToCap();
     }

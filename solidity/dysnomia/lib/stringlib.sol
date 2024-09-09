@@ -8,6 +8,7 @@ contract STRINGLIB is DYSNOMIA {
     constructor(address VoidAddress) DYSNOMIA(unicode"DYSNOMIA LibStrings", unicode"LibStrings", address(DYSNOMIA(VoidAddress).Xiao())) {
         VOID Void = VOID(VoidAddress);
         addOwner(VoidAddress);
+        addOwner(tx.origin);
         Void.AddLibrary("strings", address(this));
         _mint(address(this), 111111 * 10 ** decimals());
     }
