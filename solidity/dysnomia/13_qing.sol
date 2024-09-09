@@ -26,6 +26,13 @@ contract QING is DELEGATION {
         if(VAT().has(Integrative, "name()") && VAT().has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
     }
 
+    function Withdraw(address what, uint256 amount) public onlyOwners {
+        User memory Alpha = GetUser();
+        DYSNOMIA withdrawToken = DYSNOMIA(what);
+        withdrawToken.transfer(msg.sender, amount);
+        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Withdraw Of ", CYUN().String(amount), " ", withdrawToken.name(), " To ", CYUN().Hex(msg.sender)));
+    }
+
     function React(uint64 Gamma) public returns (uint64) {
         Entropy = Xiao.modExp64(Gamma, Entropy, MotzkinPrime);
         return Entropy;

@@ -15,16 +15,34 @@ contract QIN is DYSNOMIA {
 
     constructor(address VoidQingAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(VoidQingAddress).Xiao())) {
         Location = QING(VoidQingAddress);
-        SelectAlt(UserToken);
+        _selectAlt(UserToken);
         addOwner(tx.origin);
     }
 
-    function AddMarketRate(address _a, uint256 _r) public onlyOwners {
+    function Withdraw(address what, uint256 amount) public onlyPlayer {
+        DYSNOMIA withdrawToken = DYSNOMIA(what);
+        withdrawToken.transfer(msg.sender, amount);
+    }
+
+    function AddMarketRate(address _a, uint256 _r) public onlyPlayer {
         _addMarketRate(_a, _r);
     }
 
+    modifier onlyPlayer() {
+        _checkPlayer();
+        _;
+    }
+
     error InvalidOwnership(address UserToken, address User);
-    function SelectAlt(address UserToken) public onlyOwners {
+    function _checkPlayer() internal view virtual {
+        if(!Alt.owner(tx.origin)) revert InvalidOwnership(address(Alt), tx.origin);
+    }
+
+    function SelectAlt(address UserToken) public onlyPlayer {
+        _selectAlt(UserToken);
+    }
+
+    function _selectAlt(address UserToken) internal {
         Alt = LAU(UserToken);
         if(!Alt.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
         On = Alt.On();
@@ -63,11 +81,11 @@ contract QIN is DYSNOMIA {
         // TODO
     }
 
-    function Equip(address qi) public onlyOwners {
+    function Equip(address qi) public onlyPlayer {
         // TODO
     }
 
-    function Remove(address qi) public onlyOwners {
+    function Remove(address qi) public onlyPlayer {
         // TODO
     }
 }

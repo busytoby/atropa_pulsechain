@@ -43,6 +43,11 @@ contract QI is DYSNOMIA {
         _addMarketRate(_a, _r);
     }
 
+    function Withdraw(address what, uint256 amount) public onlyOwners {
+        DYSNOMIA withdrawToken = DYSNOMIA(what);
+        withdrawToken.transfer(msg.sender, amount);
+    }
+
     function SUN() public view returns (LIBEncrypt) {
         return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
     }
