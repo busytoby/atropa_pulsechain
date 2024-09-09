@@ -21,6 +21,7 @@ contract QI is DYSNOMIA {
         Void = QING(Location).Void();
         Saat = SUN().Saat(Geng);
         addOwner(tx.origin);
+        addOwner(address(VAI()));
     }
 
     function VAI() public view returns (LIBCONJURE) {
