@@ -30,6 +30,7 @@ contract ZAI is DYSNOMIA {
         Zao.SetQinEntropy(msg.sender, Entropy);
         Conjuring = new QI(address(this), Geng, address(Conjuror.Location()));
         Conjuring.addOwner(tx.origin);
+        VAI().addOwner(address(Conjuring));
     }
 
 }

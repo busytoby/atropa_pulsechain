@@ -3,9 +3,15 @@ pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
 import "./interfaces/14b_qiinterface.sol";
 
+interface ZAOINTERFACE {
+    function VoidQing() external returns (QING);
+    function SetQinEntropy(address who, uint64 value) external;
+}
+
 contract QIN is DYSNOMIA {
     string public constant Type = "QIN";
 
+    ZAOINTERFACE public Zao;
     QING public Location;
     LAU public Alt;
     Bao public On;
@@ -13,8 +19,9 @@ contract QIN is DYSNOMIA {
     uint64 public Entropy;
     address[5][9] private _inventory;
 
-    constructor(address VoidQingAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(VoidQingAddress).Xiao())) {
-        Location = QING(VoidQingAddress);
+    constructor(address ZaoAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(ZaoAddress).Xiao())) {
+        Zao = ZAOINTERFACE(ZaoAddress);
+        Location = Zao.VoidQing();
         _selectAlt(UserToken);
         addOwner(tx.origin);
     }
@@ -40,6 +47,7 @@ contract QIN is DYSNOMIA {
 
     function SelectAlt(address UserToken) public onlyPlayer {
         _selectAlt(UserToken);
+        Zao.SetQinEntropy(address(this), Entropy);
     }
 
     function _selectAlt(address UserToken) internal {

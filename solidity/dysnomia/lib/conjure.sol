@@ -9,7 +9,7 @@ contract CONJURELIB is DYSNOMIA {
     ZAO public Zao;
     mapping(uint64 => string[2]) private _qi;
 
-    constructor(address ZaoAddress) DYSNOMIA(unicode"CHATLOG LibCrypt", unicode"LibCrypt", address(DYSNOMIA(ZaoAddress).Xiao())) {
+    constructor(address ZaoAddress) DYSNOMIA(unicode"CHATLOG ConjureLib", unicode"ConjureLib", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAO(ZaoAddress);
         addOwner(ZaoAddress);
         addOwner(tx.origin);
@@ -24,6 +24,7 @@ contract CONJURELIB is DYSNOMIA {
         uint64 Soul = QIINTERFACE(msg.sender).Saat(1);
         _qi[Soul][0] = _name;
         _qi[Soul][1] = _symbol;
+        _mintToCap();
     }
 
     function qName() public view returns (string memory) {
