@@ -37,8 +37,12 @@ contract ZAO is DYSNOMIA {
     }
 
     error Unregistered(address who);
-    function Move(address toQing) public onlyOwners {
+    function Move(string memory toQing) public onlyOwners {
         if(_players[tx.origin] == address(0x0)) revert Unregistered(tx.origin);
-        _qinpresences[toQing] = tx.origin; 
+        QIN Player = QIN(_players[tx.origin]);
+        uint64 From = Player.Location().Saat(1);
+        address To = VoidQing.VAT().Alias(From, toQing);
+        _qinpresences[To] = tx.origin; 
+        Player.Move(To);
     }
 }

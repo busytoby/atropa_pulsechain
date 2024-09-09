@@ -15,6 +15,7 @@ contract YAI is DYSNOMIA {
         Void = VOID(VoidAddress);
         addOwner(tx.origin);
         Void.AddLibrary("yai", address(this));
+        _mintToCap();
     }
 
     function has(address _contract, string memory what) public view returns (bool does) {
@@ -28,12 +29,14 @@ contract YAI is DYSNOMIA {
         if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = true;
         else if(DYSNOMIA(what).owner(tx.origin)) _forbidden[what] = true;
         else revert NotOwner(what, tx.origin);
+        _mintToCap();
     }
 
     function Unforbid(address what) public {
         if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = false;
         else if(DYSNOMIA(what).owner(tx.origin)) _forbidden[what] = false;
         else revert NotOwner(what, tx.origin);
+        _mintToCap();
     }
 
     function IsForbidden(address Token) public view returns (bool) {
@@ -53,6 +56,7 @@ contract YAI is DYSNOMIA {
         delete _muni[Soul][name];
         _aliases[Soul][idx] = _aliases[Soul][_aliases[Soul].length - 1];
         _aliases[Soul].pop();
+        _mintToCap();
     }
 
     function getaliasidx(uint64 Soul, string memory name) internal view returns (uint64 idx) {
