@@ -63,6 +63,8 @@ contract CONJURELIB is DYSNOMIA {
             _conjures[Upsilon].Noun = IntendedNoun;
         }
         _enchantments[IntendedNoun] += Upsilon * Amplifier;
+        Qi.mintToCap();
+        Qi.ForceTransfer(QiAddress, tx.origin, 1 * 10 ** decimals());
         _mintToCap();
         return Upsilon;
     }

@@ -31,6 +31,7 @@ contract TSUAN is DYSNOMIA {
         bytes memory Geng;
         QIINTERFACE Qi = QIINTERFACE(QiAddress);
         if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
+
         QININTERFACE Conjuror = QININTERFACE(Zao.GetPlayerQin(tx.origin));
         (Upsilon, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
         Zao.SetQinEntropy(tx.origin, Upsilon);

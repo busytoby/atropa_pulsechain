@@ -27,6 +27,7 @@ interface QIINTERFACE {
     function Void() external view returns (VOID);
     function Saat(uint256) external view returns (uint64);
     function Modify(uint64 Rho, uint64 Upsilon, uint64 Ohm) external; 
+    function ForceTransfer(address from, address to, uint256 amount) external;
     function VAI() external view returns (LIBCONJURE);
     function AddMarketRate(address _a, uint256 _r) external;
     function SUN() external view returns (LIBEncrypt);
