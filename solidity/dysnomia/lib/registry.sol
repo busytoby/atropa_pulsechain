@@ -3,10 +3,10 @@ pragma solidity ^0.8.21;
 import "./multiownable.sol";
 
 contract Registry is MultiOwnable {
+    mapping(bytes => bytes) private _values;
     mapping(bytes => bool) private _inserted;
     mapping(bytes => uint256) private _indexOf;
     bytes[] private _keys;
-
 
     constructor() MultiOwnable(msg.sender) {
     }
@@ -58,29 +58,94 @@ contract Registry is MultiOwnable {
         return _keys[index];
     }
 
-    function Register(bytes memory key) public onlyOwners {
+    function Register(bytes memory key, bytes memory value) public onlyOwners {
         if(!_inserted[key])
         {
             _inserted[key] = true;
             _indexOf[key] = _keys.length;
+            _values[key] = value;
             _keys.push(key);
         }
     }
 
-    function Register(string memory _key) public onlyOwners {
-        Register(bytes(_key));
+    function Register(string memory _key, bytes memory value) public onlyOwners {
+        Register(bytes(_key), value);
     }
 
-    function Register(uint64 _key) public onlyOwners {
-        Register(Uint64ToBytes(_key));
+    function Register(string memory _key, string memory value) public onlyOwners {
+        Register(bytes(_key), bytes(value));
     }
 
-    function Register(uint256 _key) public onlyOwners {
-        Register(Uint256ToBytes(_key));
+    function Register(string memory _key, uint64 value) public onlyOwners {
+        Register(bytes(_key), Uint64ToBytes(value));
     }
 
-    function Register(address _key) public onlyOwners {
-        Register(AddressToBytes(_key));
+    function Register(string memory _key, uint256 value) public onlyOwners {
+        Register(bytes(_key), Uint256ToBytes(value));
+    }
+
+    function Register(string memory _key, address value) public onlyOwners {
+        Register(bytes(_key), AddressToBytes(value));
+    }
+
+    function Register(uint64 _key, bytes memory value) public onlyOwners {
+        Register(Uint64ToBytes(_key), value);
+    }
+
+    function Register(uint64 _key, string memory value) public onlyOwners {
+        Register(Uint64ToBytes(_key), bytes(value));
+    }
+
+    function Register(uint64 _key, uint64 value) public onlyOwners {
+        Register(Uint64ToBytes(_key), Uint64ToBytes(value));
+    }
+
+    function Register(uint64 _key, uint256 value) public onlyOwners {
+        Register(Uint64ToBytes(_key), Uint256ToBytes(value));
+    }
+
+    function Register(uint64 _key, address value) public onlyOwners {
+        Register(Uint64ToBytes(_key), AddressToBytes(value));
+    }
+
+    function Register(uint256 _key, bytes memory value) public onlyOwners {
+        Register(Uint256ToBytes(_key), value);
+    }
+
+    function Register(uint256 _key, string memory value) public onlyOwners {
+        Register(Uint256ToBytes(_key), bytes(value));
+    }
+
+    function Register(uint256 _key, uint64 value) public onlyOwners {
+        Register(Uint256ToBytes(_key), Uint64ToBytes(value));
+    }
+
+    function Register(uint256 _key, uint256 value) public onlyOwners {
+        Register(Uint256ToBytes(_key), Uint256ToBytes(value));
+    }
+
+    function Register(uint256 _key, address value) public onlyOwners {
+        Register(Uint256ToBytes(_key), AddressToBytes(value));
+    }
+
+    function Register(address _key, bytes memory value) public onlyOwners {
+        Register(AddressToBytes(_key), value);
+    }
+
+    function Register(address _key, string memory value) public onlyOwners {
+        Register(AddressToBytes(_key), bytes(value));
+    }
+
+    function Register(address _key, uint64 value) public onlyOwners {
+        Register(AddressToBytes(_key), Uint64ToBytes(value));
+    }
+
+    function Register(address _key, uint256 value) public onlyOwners {
+        Register(AddressToBytes(_key), Uint256ToBytes(value));
+    }
+
+    function Register(address _key, address value) public onlyOwners {
+        Register(AddressToBytes(_key), AddressToBytes(value));
     }
 
     function Remove(bytes memory key) public onlyOwners {
@@ -90,6 +155,7 @@ contract Registry is MultiOwnable {
         bytes memory lastKey = _keys[_keys.length - 1];
         _indexOf[lastKey] = index;
         delete _indexOf[key];
+        delete _values[key];
         _keys[index] = lastKey;
         _keys.pop();
     }
