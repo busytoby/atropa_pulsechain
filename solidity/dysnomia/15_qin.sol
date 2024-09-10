@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
-import "./interfaces/14b_qiinterface.sol";
-
-interface ZAOINTERFACE {
-    function VoidQing() external returns (QING);
-    function SetQinEntropy(address who, uint64 value) external;
-}
+import "./interfaces/16b_zaointerface.sol";
 
 contract QIN is DYSNOMIA {
     string public constant Type = "QIN";

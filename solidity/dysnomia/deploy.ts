@@ -57,7 +57,14 @@ let libstringsaddress
 let nymaddress
 let libyaiaddress = ethers.utils.getAddress("0x1ccb1BdDC8C876cA3e1C5Fd8c0045D9fE57CcDFE")
 let qingfactoryaddress = ethers.utils.getAddress("0xc27aB5A443CC9b8BE5fE427341FBD8a91f1d8d12")
-let qingaddress
+let voidqingaddress
+let yaiqingaddress
+let libencryptaddress
+let libconjureaddress
+let qiaddress
+let qinaddress
+let zaoaddress
+let zaiaddress
 let START = 0;
 // set pre-requisite address to deploy only subset
 
@@ -149,14 +156,34 @@ let START = 0;
         result = await qingfactorycontract["New(address)"](voidaddress)
         console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
         r2wtf = await result.wait()
-        qingaddress = r2wtf.events[0].address
-        console.log(`QING Deployed: ${qingaddress} from origin`)
+        voidqingaddress = r2wtf.events[0].address
+        console.log(`VOID QING Deployed: ${voidqingaddress} from origin`)
 
         qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress, 2)
         result = await qingfactorycontract["New(address)"](libyaiaddress)
         r2wtf = await result.wait()
-        qingaddress = r2wtf.events[0].address
-        console.log(`QING Deployed: ${qingaddress} from non-origin`)
+        yaiqingaddress = r2wtf.events[0].address
+        console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
+
+      case 17:
+        result = await deploy('ENCRYPT', [voidaddress]) 
+        console.log(`ENCRYPT address: ${result.address}`)
+        libencryptaddress = result.address
+
+      case 18:
+        result = await deploy('ZAO', [voidqingaddress]) 
+        console.log(`ZAO address: ${result.address}`)
+        zaoaddress = result.address
+
+      case 19:
+        result = await deploy('CONJURELIB', [zaoaddress]) 
+        console.log(`CONJURELIB address: ${result.address}`)
+        libconjureaddress = result.address
+
+      case 20:
+        result = await deploy('ZAI', [zaoaddress]) 
+        console.log(`ZAI address: ${result.address}`)
+        zaiaddress = result.address
 
       case 99:
         let laufactorycontract = await getContract('LAUFactory', laufactoryaddress)

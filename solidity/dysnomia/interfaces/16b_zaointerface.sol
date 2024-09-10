@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 import "./15b_qininterface.sol";
 
-interface ZAO {
+interface ZAOINTERFACE {
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
