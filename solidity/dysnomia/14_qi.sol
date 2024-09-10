@@ -84,25 +84,4 @@ contract QI is DYSNOMIA {
     function SUN() public view returns (LIBEncrypt) {
         return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
     }
-
-    function Consider(uint64 _user) public onlyOwners returns (int64) {
-        // TODO
-        //return _flux[User];
-    }
-
-    function BlessForUser(uint64 _user) public onlyOwners {
-        // TODO
-    }
-
-    function CurseForUser(uint64 _user) public onlyOwners {
-        // TODO
-    }
-
-    function Bless() public onlyOwners {
-        // TODO
-    }
-
-    function Curse() public onlyOwners {
-        // TODO
-    }
 }
