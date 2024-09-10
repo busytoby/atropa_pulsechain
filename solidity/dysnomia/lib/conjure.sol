@@ -7,12 +7,12 @@ import "../interfaces/16b_zaointerface.sol";
 contract CONJURELIB is DYSNOMIA {
     string public constant Type = "ConjureLib";
 
-    ZAO public Zao;
+    ZAOINTERFACE public Zao;
     mapping(uint64 => Enchantment) private _enchantments;
     uint64[10] public Levels = [5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800, 87178291200, 1307674368000, 20922789888000];
 
     constructor(address ZaoAddress) DYSNOMIA(unicode"DYSNOMIA ConjureLib", unicode"ConjureLib", address(DYSNOMIA(ZaoAddress).Xiao())) {
-        Zao = ZAO(ZaoAddress);
+        Zao = ZAOINTERFACE(ZaoAddress);
         addOwner(ZaoAddress);
         addOwner(tx.origin);
         Zao.VoidQing().Void().AddLibrary("conjure", address(this));

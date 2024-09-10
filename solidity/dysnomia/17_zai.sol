@@ -7,10 +7,10 @@ import "./interfaces/16b_zaointerface.sol";
 contract ZAI is DYSNOMIA {
     string public constant Type = "ZAI";
 
-    ZAO public Zao;
+    ZAOINTERFACE public Zao;
 
     constructor(address ZaoAddress) DYSNOMIA("Dysnomia Zai", "ZAI", address(DYSNOMIA(ZaoAddress).Xiao())) {
-        Zao = ZAO(ZaoAddress);
+        Zao = ZAOINTERFACE(ZaoAddress);
         Zao.addOwner(address(this));
         VAI().addOwner(address(this));
         addOwner(tx.origin);
