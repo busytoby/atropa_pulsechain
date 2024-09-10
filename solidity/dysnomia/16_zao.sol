@@ -17,6 +17,10 @@ contract ZAO is DYSNOMIA {
         addOwner(tx.origin);
     }
 
+    function AddLibraryOwner(string memory what) public onlyOwners {
+        _addLibraryOwner(VoidQing.Void(), what);
+    }
+
     function SetQinEntropy(address who, uint64 value) public onlyOwners {
         _qin[_players[who]] = value;
     }

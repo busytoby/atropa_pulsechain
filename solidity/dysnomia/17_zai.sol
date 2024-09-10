@@ -17,6 +17,10 @@ contract ZAI is DYSNOMIA {
         addOwner(tx.origin);
     }
 
+    function AddLibraryOwner(string memory what) public onlyOwners {
+        _addLibraryOwner(Zao.VoidQing().Void(), what);
+    }
+
     function VAI() public view returns (LIBCONJURE) {
         return LIBCONJURE(Zao.VoidQing().Void().GetLibraryAddress("conjure"));
     }
@@ -29,6 +33,7 @@ contract ZAI is DYSNOMIA {
         Zao.SetQinEntropy(tx.origin, Entropy);
         Conjuring = new QI(Geng, address(Conjuror.Location()));
         Conjuring.addOwner(tx.origin);
+        Conjuring.addOwner(address(VAI()));
         VAI().addOwner(address(Conjuring));
         Conjuring.Rename("Mysterious Qi", "QI");
     }

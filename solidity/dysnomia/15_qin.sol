@@ -18,6 +18,7 @@ contract QIN is DYSNOMIA {
     uint256 public qp;
     uint64 public Entropy;
     address[5][9] private _inventory;
+    uint256 private _lastMove;
 
     constructor(address ZaoAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAOINTERFACE(ZaoAddress);
@@ -61,8 +62,11 @@ contract QIN is DYSNOMIA {
         return LIBEncrypt(Location.Void().GetLibraryAddress("encrypt"));
     }
 
+    error OneMovePerBlock();
     function Move(address toQing) public onlyOwners {
+        if(_lastMove >= block.timestamp) revert OneMovePerBlock();
         Location = QING(toQing);
+        _lastMove = block.timestamp;
     }
 
     function GetInventoryCount(uint256 class) public view returns (uint256) {

@@ -27,6 +27,10 @@ abstract contract DELEGATION is DYSNOMIA {
         _mintToCap();
     }
 
+    function AddLibraryOwner(string memory what) public onlyOwners {
+        _addLibraryOwner(Void, what);
+    }
+
     function CYUN() public view returns(LIBSTRINGS) {
         return LIBSTRINGS(Void.GetLibraryAddress("strings"));
     }

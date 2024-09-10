@@ -21,7 +21,25 @@ contract QI is DYSNOMIA {
         Void = QING(Location).Void();
         Saat = SUN().Saat(Geng);
         addOwner(tx.origin);
-        addOwner(address(VAI()));
+        _addLibraryOwner(Void, "conjure");
+    }
+
+     modifier onlyPlayer() {
+        _checkPlayer();
+        _;
+    }
+
+    error InvalidOwnership(address UserToken, address User);
+    function _checkPlayer() internal view virtual {
+        if(Creator != tx.origin) revert InvalidOwnership(Creator, tx.origin);
+    }
+
+    function transferOwnership(address to) public onlyPlayer {
+        Creator = to;
+    }
+
+    function AddLibraryOwner(string memory what) public onlyOwners {
+        _addLibraryOwner(Void, what);
     }
 
     function VAI() public view returns (LIBCONJURE) {
@@ -40,11 +58,15 @@ contract QI is DYSNOMIA {
         return VAI().qSymbol();
     }
 
-    function AddMarketRate(address _a, uint256 _r) public onlyOwners {
+    function AddMarketRate(address _a, uint256 _r) public onlyPlayer {
         _addMarketRate(_a, _r);
     }
 
-    function Withdraw(address what, uint256 amount) public onlyOwners {
+    function ForceTransfer(address from, address to, uint256 amount) public onlyOwners {
+        _transfer(from, to, amount);
+    }
+
+    function Withdraw(address what, uint256 amount) public onlyPlayer {
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
     }
