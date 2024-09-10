@@ -27,15 +27,15 @@ contract TSUAN is DYSNOMIA {
     error NotTokenOwner(address Token, address originRequestor);
     function Train(address QiAddress, string memory IntendedNoun) public {
         uint64[3] memory Saat;
-        uint64 Entropy;
+        uint64 Upsilon;
         bytes memory Geng;
         QIINTERFACE Qi = QIINTERFACE(QiAddress);
         if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
         QININTERFACE Conjuror = QININTERFACE(Zao.GetPlayerQin(tx.origin));
-        (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
-        Zao.SetQinEntropy(tx.origin, Entropy);
+        (Upsilon, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
+        Zao.SetQinEntropy(tx.origin, Upsilon);
         Saat = SUN().Saat(Geng);
-        VAI().TrainFromOrigin(QiAddress, Saat[0], Saat[1], Saat[2], IntendedNoun);
+        Upsilon = VAI().TrainFromOrigin(QiAddress, Saat[0], Saat[1], Saat[2], IntendedNoun);
     }
 
     function SUN() public view returns (LIBEncrypt) {
