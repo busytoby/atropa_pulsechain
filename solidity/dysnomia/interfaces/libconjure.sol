@@ -22,6 +22,7 @@ interface LIBCONJURE {
     function Type() external view returns(string memory);
     function VoidQing() external view returns(QING);
     function Levels(uint256) external view returns(uint64);
+    function TrainFromOrigin(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedNoun) external;
     function RenameQi(string memory Adverb, string memory Noun, string memory Adjective) external;
     function qName() external view returns (string memory);
     function qSymbol() external view returns (string memory);

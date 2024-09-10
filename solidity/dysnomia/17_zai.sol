@@ -28,7 +28,7 @@ contract ZAI is DYSNOMIA {
     function Conjure() public onlyOwners returns (QI Conjuring, bytes memory Geng, uint64 Entropy) {
         if(Zao.GetQinEntropy(tx.origin) == 0) revert UnknownQin(msg.sender);
         QININTERFACE Conjuror = QININTERFACE(Zao.GetPlayerQin(tx.origin));
-        (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.On(), Zao.GetQinEntropy(tx.origin), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
+        (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Zao.GetQinEntropy(tx.origin), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
         Zao.SetQinEntropy(tx.origin, Entropy);
         Conjuring = new QI(Geng, address(Conjuror.Location()));
         Conjuring.addOwner(tx.origin);

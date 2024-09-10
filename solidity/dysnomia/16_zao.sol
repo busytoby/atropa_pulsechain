@@ -21,15 +21,19 @@ contract ZAO is DYSNOMIA {
         _addLibraryOwner(VoidQing.Void(), what);
     }
 
+    error Unregistered(address who);
     function SetQinEntropy(address who, uint64 value) public onlyOwners {
+        if(_players[tx.origin] == address(0x0)) revert Unregistered(tx.origin);
         _qin[_players[who]] = value;
     }
 
     function GetQinEntropy(address who) public view returns (uint64) {
+        if(_players[tx.origin] == address(0x0)) revert Unregistered(tx.origin);
         return _qin[_players[who]];
     }
 
     function GetPlayerQin(address who) public view onlyOwners returns (address) {
+        if(_players[tx.origin] == address(0x0)) revert Unregistered(tx.origin);
         return _players[who];
     }
 
@@ -44,7 +48,6 @@ contract ZAO is DYSNOMIA {
         _players[tx.origin] = address(Beta);
     }
 
-    error Unregistered(address who);
     function Move(string memory toQing) public onlyOwners {
         if(_players[tx.origin] == address(0x0)) revert Unregistered(tx.origin);
         QIN Player = QIN(_players[tx.origin]);

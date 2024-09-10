@@ -26,13 +26,8 @@ interface QIINTERFACE {
     function Creator() external view returns (address);
     function Void() external view returns (VOID);
     function Saat(uint256) external view returns (uint64);
-    function Quality() external view returns (uint64);
+    function Modify(uint64 Rho, uint64 Upsilon, uint64 Ohm) external; 
     function VAI() external view returns (LIBCONJURE);
     function AddMarketRate(address _a, uint256 _r) external;
     function SUN() external view returns (LIBEncrypt);
-    function Consider(uint64 User) external returns (int64);
-    function BlessForUser(uint64 User) external;
-    function CurseForUser(uint64 User) external;
-    function Bless() external;
-    function Curse() external;
 }

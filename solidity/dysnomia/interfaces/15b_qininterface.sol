@@ -23,19 +23,8 @@ interface QININTERFACE  {
     function Type() external view returns (string memory);
     function Location() external view returns (QING);
     function Alt() external view returns (LAU);
-    function On() external view returns (Bao memory);
-    function qp() external view returns (uint256);
     function Entropy() external view returns (uint64);
     function AddMarketRate(address _a, uint256 _r) external;
     function SelectAlt(address UserToken) external;
     function SUN() external view returns (LIBEncrypt);
-    function Conjure(uint64 Gamma) external returns (QIINTERFACE Conjuring, bytes memory Geng);
-    function GetInventoryCount(uint256 class) external view returns (uint256);
-    function GetDefense(uint256 n) external view returns (address);
-    function GetDecoration(uint256 n) external view returns (address);
-    function GetOffense(uint256 n) external view returns (address);
-    function Throw() external view returns (uint64);
-    function Save(uint64 pQi) external view returns (uint64);
-    function Equip(address qi) external;
-    function Remove(address qi) external;
 }

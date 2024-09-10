@@ -24,7 +24,27 @@ contract QI is DYSNOMIA {
         addOwner(ConjureLib);
     }
 
-     modifier onlyPlayer() {
+    function Modify(uint64 Rho, uint64 Upsilon, uint64 Ohm) public onlyOwners {
+        Saat[0] = Rho;
+        Saat[1] = Upsilon;
+        Saat[2] = Ohm;
+    }
+
+    function Rename(string memory Adverb, string memory Adjective, string memory Noun) public onlyOwners {
+        VAI().RenameQi(Adverb, Noun, Adjective);
+    }
+
+    function AddLibraryOwner(string memory what) public onlyOwners {
+        _addLibraryOwner(Void, what);
+    }
+
+    error OnlyAvailableToConjureLib(address libconjure);
+    function ForceTransfer(address from, address to, uint256 amount) public onlyOwners {
+        if(msg.sender != ConjureLib) revert OnlyAvailableToConjureLib(ConjureLib);
+        _transfer(from, to, amount);
+    }
+
+    modifier onlyPlayer() {
         _checkPlayer();
         _;
     }
@@ -44,16 +64,8 @@ contract QI is DYSNOMIA {
         Creator = to;
     }
 
-    function AddLibraryOwner(string memory what) public onlyOwners {
-        _addLibraryOwner(Void, what);
-    }
-
     function VAI() public view returns (LIBCONJURE) {
         return LIBCONJURE(ConjureLib);
-    }
-
-    function Rename(string memory Adverb, string memory Adjective, string memory Noun) public onlyOwners {
-        VAI().RenameQi(Adverb, Noun, Adjective);
     }
 
     function name() public view override returns (string memory) {
@@ -68,12 +80,6 @@ contract QI is DYSNOMIA {
 
     function AddMarketRate(address _a, uint256 _r) public onlyPlayer {
         _addMarketRate(_a, _r);
-    }
-
-    error OnlyAvailableToConjureLib(address libconjure);
-    function ForceTransfer(address from, address to, uint256 amount) public onlyOwners {
-        if(msg.sender != ConjureLib) revert OnlyAvailableToConjureLib(ConjureLib);
-        _transfer(from, to, amount);
     }
 
     function Withdraw(address what, uint256 amount) public onlyPlayer {

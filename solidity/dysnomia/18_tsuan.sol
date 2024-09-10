@@ -7,27 +7,35 @@ import "./include/enchantment.sol";
 contract TSUAN is DYSNOMIA {
     string public constant Type = "TSUAN";
 
-    VOID public Void;
+    ZAOINTERFACE public Zao;
     mapping(string => address) internal _libraries;
     mapping(address => Enchantment) internal _enchantments;
 
-    constructor(address VoidAddress) DYSNOMIA("Dysnomia Tsuan", "TSUAN", address(DYSNOMIA(VoidAddress).Xiao())) {
-        Void = VOID(VoidAddress);
+    constructor(address ZaoAddress) DYSNOMIA("Dysnomia Tsuan", "TSUAN", address(DYSNOMIA(ZaoAddress).Xiao())) {
+        Zao = ZAOINTERFACE(ZaoAddress);
+        Zao.addOwner(address(this));
         acceptLibraryUpdate("conjure");
         DYSNOMIA(_libraries["conjure"]).addOwner(address(this));
     }
 
     function acceptLibraryUpdate(string memory lib) public onlyOwners {
         if(_libraries[lib] != address(0x0)) renounceOwnership(_libraries[lib]);
-        _libraries[lib] = Void.GetLibraryAddress(lib);
+        _libraries[lib] = Zao.VoidQing().Void().GetLibraryAddress(lib);
         if(_libraries[lib] != address(0x0)) addOwner(_libraries[lib]);
     }
 
-    function Level(address QiAddress) public view returns(uint8) {
-        uint256 QiSaat1 = QIINTERFACE(QiAddress).Saat(1);
-        for(uint8 i = 0; i < 10; i++)
-            if(QiSaat1 < VAI().Levels(i)) return i;
-        return 10;
+    error NotTokenOwner(address Token, address originRequestor);
+    function Train(address QiAddress, string memory IntendedNoun) public {
+        uint64[3] memory Saat;
+        uint64 Entropy;
+        bytes memory Geng;
+        QIINTERFACE Qi = QIINTERFACE(QiAddress);
+        if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
+        QININTERFACE Conjuror = QININTERFACE(Zao.GetPlayerQin(tx.origin));
+        (Entropy, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
+        Zao.SetQinEntropy(tx.origin, Entropy);
+        Saat = SUN().Saat(Geng);
+        VAI().TrainFromOrigin(QiAddress, Saat[0], Saat[1], Saat[2], IntendedNoun);
     }
 
     function SUN() public view returns (LIBEncrypt) {
