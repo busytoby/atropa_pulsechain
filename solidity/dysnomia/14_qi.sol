@@ -11,6 +11,7 @@ contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
     address public Creator;
+    address public ConjureLib;
     VOID public Void;
     uint64[3] public Saat;
     uint64 public Quality;
@@ -21,7 +22,8 @@ contract QI is DYSNOMIA {
         Void = QING(Location).Void();
         Saat = SUN().Saat(Geng);
         addOwner(tx.origin);
-        _addLibraryOwner(Void, "conjure");
+        ConjureLib = address(VAI());
+        addOwner(ConjureLib);
     }
 
      modifier onlyPlayer() {
@@ -34,6 +36,12 @@ contract QI is DYSNOMIA {
         if(Creator != tx.origin) revert InvalidOwnership(Creator, tx.origin);
     }
 
+    function acceptConjureLib() public onlyPlayer {
+        renounceOwnership(ConjureLib);
+        ConjureLib = address(VAI());
+        addOwner(ConjureLib);
+    }
+
     function transferOwnership(address to) public onlyPlayer {
         Creator = to;
     }
@@ -43,7 +51,7 @@ contract QI is DYSNOMIA {
     }
 
     function VAI() public view returns (LIBCONJURE) {
-        return LIBCONJURE(Void.GetLibraryAddress("conjure"));
+        return LIBCONJURE(ConjureLib);
     }
 
     function Rename(string memory newName, string memory newSymbol) public override onlyOwners {
@@ -62,7 +70,9 @@ contract QI is DYSNOMIA {
         _addMarketRate(_a, _r);
     }
 
+    error OnlyAvailableToConjureLib(address libconjure);
     function ForceTransfer(address from, address to, uint256 amount) public onlyOwners {
+        if(msg.sender != ConjureLib) revert OnlyAvailableToConjureLib(ConjureLib);
         _transfer(from, to, amount);
     }
 

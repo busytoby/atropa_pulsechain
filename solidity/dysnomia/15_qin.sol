@@ -27,6 +27,10 @@ contract QIN is DYSNOMIA {
         addOwner(tx.origin);
     }
 
+    function AddLibraryOwner(string memory what) public onlyOwners {
+        _addLibraryOwner(Zao.VoidQing().Void(), what);
+    }
+
     function Withdraw(address what, uint256 amount) public onlyPlayer {
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
