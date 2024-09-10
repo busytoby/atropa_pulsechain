@@ -8,12 +8,15 @@ contract CONJURELIB is DYSNOMIA {
 
     ZAO public Zao;
     mapping(uint64 => string[2]) private _qi;
+    uint64[10] public Levels = [5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800, 87178291200, 1307674368000, 20922789888000];
 
     constructor(address ZaoAddress) DYSNOMIA(unicode"DYSNOMIA ConjureLib", unicode"ConjureLib", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAO(ZaoAddress);
         addOwner(ZaoAddress);
         addOwner(tx.origin);
         Zao.VoidQing().Void().AddLibrary("conjure", address(this));
+
+
         _mintToCap();
     }
 
