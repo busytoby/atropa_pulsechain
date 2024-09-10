@@ -44,16 +44,12 @@ contract TSUAN is DYSNOMIA {
         QININTERFACE Conjuror = QININTERFACE(Zao.GetPlayerQin(tx.origin));
         (Upsilon, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
         Zao.SetQinEntropy(tx.origin, Upsilon);
-        Saat = SUN().Saat(Geng);
+        Saat = Conjuror.SUN().Saat(Geng);
         Upsilon = VAI().TrainFromOrigin(QiAddress, Saat[0], Saat[1], Saat[2], IntendedNoun);
         if(_enchantments[QiAddress][IntendedNoun].Saat[1] == 0) _knownEnchantments[QiAddress].push(IntendedNoun);
         _enchantments[QiAddress][IntendedNoun].Saat[0] += Saat[0];
         _enchantments[QiAddress][IntendedNoun].Saat[1] += Upsilon;
         _enchantments[QiAddress][IntendedNoun].Saat[2] += Saat[2];
-    }
-
-    function SUN() public view returns (LIBEncrypt) {
-        return LIBEncrypt(_libraries["encrypt"]);
     }
 
     function VAI() public view returns (LIBCONJURE) {
