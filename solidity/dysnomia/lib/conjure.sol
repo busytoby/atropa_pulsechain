@@ -50,7 +50,9 @@ contract CONJURELIB is DYSNOMIA {
 
     function qName() public view returns (string memory) {
         Enchantment memory _p = _enchantments[QIINTERFACE(msg.sender).Saat(1)];
-        if(_p.previousCost == 0) return "Mysterious Qi";
+        if(_p.previousCost == 0 || _p.Saat[1] < Levels[3]) return "Mysterious Qi";
+        if(_p.Saat[1] < Levels[4]) return _p.Noun;
+        if(_p.Saat[1] < Levels[5]) return string.concat(_p.Adjective, " ", _p.Noun);
         return string.concat(_p.Adverb, " ", _p.Adjective, " ", _p.Noun);
     }
 
