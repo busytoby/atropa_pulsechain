@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "./multiownable.sol";
 
-contract Registry {
+contract Registry is MultiOwnable {
     mapping(bytes => bool) private _inserted;
     mapping(bytes => uint256) private _indexOf;
     bytes[] private _keys;
 
-    constructor() {
+
+    constructor() MultiOwnable(msg.sender) {
     }
 
     function Inserted(bytes memory what) public view returns (bool) {
@@ -56,7 +58,7 @@ contract Registry {
         return _keys[index];
     }
 
-    function Register(bytes memory key) public {
+    function Register(bytes memory key) public onlyOwners {
         if(!_inserted[key])
         {
             _inserted[key] = true;
@@ -65,23 +67,23 @@ contract Registry {
         }
     }
 
-    function Register(string memory _key) public {
+    function Register(string memory _key) public onlyOwners {
         Register(bytes(_key));
     }
 
-    function Register(uint64 _key) public {
+    function Register(uint64 _key) public onlyOwners {
         Register(Uint64ToBytes(_key));
     }
 
-    function Register(uint256 _key) public {
+    function Register(uint256 _key) public onlyOwners {
         Register(Uint256ToBytes(_key));
     }
 
-    function Register(address _key) public {
+    function Register(address _key) public onlyOwners {
         Register(AddressToBytes(_key));
     }
 
-    function Remove(bytes memory key) public {
+    function Remove(bytes memory key) public onlyOwners {
         if(!_inserted[key]) return;
         delete _inserted[key];
         uint256 index = _indexOf[key];
@@ -92,19 +94,19 @@ contract Registry {
         _keys.pop();
     }
 
-    function Remove(string memory _key) public {
+    function Remove(string memory _key) public onlyOwners {
         Remove(bytes(_key));
     }
 
-    function Remove(uint64 _key) public {
+    function Remove(uint64 _key) public onlyOwners {
         Remove(Uint64ToBytes(_key));
     }
 
-    function Remove(uint256 _key) public {
+    function Remove(uint256 _key) public onlyOwners {
         Remove(Uint256ToBytes(_key));
     }
 
-    function Remove(address _key) public {
+    function Remove(address _key) public onlyOwners {
         Remove(AddressToBytes(_key));
     }
 }
