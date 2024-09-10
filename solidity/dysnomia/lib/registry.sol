@@ -11,6 +11,14 @@ contract Registry is MultiOwnable {
     constructor() MultiOwnable(msg.sender) {
     }
 
+    function Get(bytes memory key) public view returns (bytes memory) {
+        return _values[key];
+    }
+
+    function Get(uint256 idx) public view returns (bytes memory) {
+        return _values[_keys[idx]];
+    }
+
     function Inserted(bytes memory what) public view returns (bool) {
         return _inserted[what];
     }
