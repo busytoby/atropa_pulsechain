@@ -9,10 +9,7 @@ contract QIN is DYSNOMIA {
     ZAOINTERFACE public Zao;
     QING public Location;
     LAU public Alt;
-    Bao public On;
-    uint256 public qp;
     uint64 public Entropy;
-    address[5][9] private _inventory;
     uint256 private _lastMove;
 
     constructor(address ZaoAddress, address UserToken) DYSNOMIA("Player", "QIN", address(DYSNOMIA(ZaoAddress).Xiao())) {
@@ -53,8 +50,7 @@ contract QIN is DYSNOMIA {
     function _selectAlt(address UserToken) internal {
         Alt = LAU(UserToken);
         if(!Alt.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
-        On = Alt.On();
-        Entropy = Entropy ^ Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
+        Entropy = Xiao.modExp64(Alt.On().Shio.Rho().Cone.View().Chin, Alt.On().Shio.Rho().Rod.View().Chin, MotzkinPrime);
     }
 
     function SUN() public view returns (LIBEncrypt) {

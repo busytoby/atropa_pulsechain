@@ -14,8 +14,6 @@ contract QI is DYSNOMIA {
     address public ConjureLib;
     VOID public Void;
     uint64[3] public Saat;
-    uint64 public Quality;
-    mapping(uint64 => int64) private _flux;
 
     constructor(bytes memory Geng, address Location) DYSNOMIA("Geng Qi", "QI", address(DYSNOMIA(Location).Xiao())) {
         Creator = tx.origin;
