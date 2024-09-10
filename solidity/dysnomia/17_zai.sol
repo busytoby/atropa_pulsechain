@@ -35,6 +35,5 @@ contract ZAI is DYSNOMIA {
         Conjuring.addOwner(tx.origin);
         Conjuring.addOwner(address(VAI()));
         VAI().addOwner(address(Conjuring));
-        Conjuring.Rename("Mysterious Qi", "QI");
     }
 }
