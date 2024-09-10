@@ -74,23 +74,40 @@ contract CONJURELIB is DYSNOMIA {
         _mintToCap();
     }
 
+    function RenameLesserQi(address SuperiorQi, uint64 Saat1, string memory Adverb, string memory Noun, string memory Adjective) public {
+        if(!DYSNOMIA(SuperiorQi).owner(tx.origin)) revert NotTokenOwner(SuperiorQi, tx.origin);
+        QIINTERFACE Qi = QIINTERFACE(SuperiorQi);
+        assert(Saat1 < Qi.Saat(1));
+        _payToRename(Saat1);
+
+        _conjures[Saat1].Adverb = Adverb;
+        _conjures[Saat1].Noun = Noun;
+        _conjures[Saat1].Adjective = Adjective;
+
+        _conjures[Saat1].Saat[0] = Qi.Saat(0);
+        _conjures[Saat1].Saat[2] = Qi.Saat(2);
+    }
+
+    function _payToRename(uint64 Saat) internal {
+        if(_conjures[Saat].previousCost == 0) _conjures[Saat].previousCost = 1 * 10 ** decimals();
+        bool success = DYSNOMIA(AFFECTIONContract).transferFrom(tx.origin, address(this), _conjures[Saat].previousCost);
+        if(!success) revert ApproveAndPay(AFFECTIONContract, address(this), _conjures[Saat].previousCost);
+        _conjures[Saat].previousCost *= 2;
+    }
+
     function RenameQi(string memory Adverb, string memory Noun, string memory Adjective) public onlyOwners {
         if(!DYSNOMIA(msg.sender).owner(tx.origin)) revert NotTokenOwner(msg.sender, tx.origin);
         QIINTERFACE Qi = QIINTERFACE(msg.sender);
         Enchantment memory _p = _conjures[Qi.Saat(1)];
-        if(_p.previousCost == 0) _p.previousCost = 1 * 10 ** decimals();
-        bool success = DYSNOMIA(AFFECTIONContract).transferFrom(tx.origin, address(this), _p.previousCost);
-        if(!success) revert ApproveAndPay(AFFECTIONContract, address(this), _p.previousCost);
+        _payToRename(_p.Saat[1]);
 
         _p.Adverb = Adverb;
         _p.Noun = Noun;
         _p.Adjective = Adjective;
 
         _p.Saat[0] = Qi.Saat(0);
-        _p.Saat[1] = Qi.Saat(1);
         _p.Saat[2] = Qi.Saat(2);
 
-        _p.previousCost *= 2;
         _conjures[_p.Saat[1]] = _p;
         _mintToCap();
     }
