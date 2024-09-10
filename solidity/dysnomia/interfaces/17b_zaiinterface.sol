@@ -21,7 +21,7 @@ interface ZAI {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Zao() external view returns (ZAO);
+    function Zao() external view returns (ZAOINTERFACE);
     function AddLibraryOwner(string memory what) external;
     function VAI() external view returns (LIBCONJURE);
     function Conjure() external returns (QIINTERFACE Conjuring, bytes memory Geng, uint64 Entropy);
