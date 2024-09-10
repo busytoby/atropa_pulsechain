@@ -1,42 +1,110 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 
-library LibRegistry {
-    struct Registry {
-        uint64[] keys;
-        mapping(uint64 => uint64) indexOf;
-        mapping(uint64 => bool) inserted;
+contract Registry {
+    mapping(bytes => bool) private _inserted;
+    mapping(bytes => uint256) private _indexOf;
+    bytes[] private _keys;
+
+    constructor() {
     }
 
-    function GetHashByIndex(Registry storage _registry, uint64 index) public view returns(uint64) {
-        return _registry.keys[index];
+    function Inserted(bytes memory what) public view returns (bool) {
+        return _inserted[what];
     }
 
-    function Count(Registry  storage _registry) public view returns(uint64) {
-        return uint64(_registry.keys.length);
+    function Inserted(string memory what) public view returns (bool) {
+        return _inserted[bytes(what)];
     }
 
-    function Contains(Registry storage _registry, uint64 key) public view returns(bool) {
-        return _registry.inserted[key];
+    function Uint64ToBytes(uint64 what) public pure returns (bytes memory _w) {
+        _w = new bytes(8);
+        for(uint i = 0; i < 8; i++)
+            _w[i] = bytes1(uint8((what >> (8*i)) & 255));
     }
 
-    function Register(Registry storage _registry, uint64 key) public {
-        if(!_registry.inserted[key])
+    function Inserted(uint64 what) public view returns (bool) {
+        return _inserted[Uint64ToBytes(what)];
+    }
+
+    function Uint256ToBytes(uint256 what) public pure returns (bytes memory _w) {
+        _w = new bytes(32);
+        for(uint i = 0; i < 32; i++)
+            _w[i] = bytes1(uint8((what >> (8*i)) & 255));
+    }
+
+    function Inserted(uint256 what) public view returns (bool) {
+        return _inserted[Uint256ToBytes(what)];
+    }
+
+    function AddressToBytes(address what) public pure returns (bytes memory _w) {
+        _w = new bytes(20);
+        bytes20 _w2 = bytes20(what);
+        for(uint i = 0; i < 20; i++)
+            _w[i] = _w2[i];
+    }
+
+    function Inserted(address what) public view returns (bool) {
+        return _inserted[AddressToBytes(what)];
+    }
+
+    function Count() public view returns(uint256) {
+        return uint256(_keys.length);
+    }
+
+    function GetHashByIndex(uint256 index) public view returns(bytes memory) {
+        return _keys[index];
+    }
+
+    function Register(bytes memory key) public {
+        if(!_inserted[key])
         {
-            _registry.inserted[key] = true;
-            _registry.indexOf[key] = uint64(_registry.keys.length);
-            _registry.keys.push(key);
+            _inserted[key] = true;
+            _indexOf[key] = _keys.length;
+            _keys.push(key);
         }
     }
 
-    function Remove(Registry storage _registry, uint64 key) public {
-        if(!_registry.inserted[key]) return;
-        delete _registry.inserted[key];
-        uint64 index = _registry.indexOf[key];
-        uint64 lastKey = _registry.keys[_registry.keys.length - 1];
-        _registry.indexOf[lastKey] = index;
-        delete _registry.indexOf[key];
-        _registry.keys[index] = lastKey;
-        _registry.keys.pop();
+    function Register(string memory _key) public {
+        Register(bytes(_key));
+    }
+
+    function Register(uint64 _key) public {
+        Register(Uint64ToBytes(_key));
+    }
+
+    function Register(uint256 _key) public {
+        Register(Uint256ToBytes(_key));
+    }
+
+    function Register(address _key) public {
+        Register(AddressToBytes(_key));
+    }
+
+    function Remove(bytes memory key) public {
+        if(!_inserted[key]) return;
+        delete _inserted[key];
+        uint256 index = _indexOf[key];
+        bytes memory lastKey = _keys[_keys.length - 1];
+        _indexOf[lastKey] = index;
+        delete _indexOf[key];
+        _keys[index] = lastKey;
+        _keys.pop();
+    }
+
+    function Remove(string memory _key) public {
+        Remove(bytes(_key));
+    }
+
+    function Remove(uint64 _key) public {
+        Remove(Uint64ToBytes(_key));
+    }
+
+    function Remove(uint256 _key) public {
+        Remove(Uint256ToBytes(_key));
+    }
+
+    function Remove(address _key) public {
+        Remove(AddressToBytes(_key));
     }
 }
