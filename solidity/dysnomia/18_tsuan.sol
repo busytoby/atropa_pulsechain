@@ -10,7 +10,7 @@ contract TSUAN is DYSNOMIA {
     ZAOINTERFACE public Zao;
     mapping(string => address) internal _libraries;
     mapping(address => string[]) internal _knownEnchantments;
-    mapping(address => mapping(string => Enchantment)) _enchantments;
+    mapping(address => mapping(string => uint64[3])) _enchantments;
 
     constructor(address ZaoAddress) DYSNOMIA("Dysnomia Tsuan", "TSUAN", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAOINTERFACE(ZaoAddress);
@@ -29,7 +29,7 @@ contract TSUAN is DYSNOMIA {
         return _knownEnchantments[QiAddress].length;
     }
 
-    function GetEnchantment(address QiAddress, string memory Noun) public view returns (Enchantment memory) {
+    function GetEnchantment(address QiAddress, string memory Noun) public view returns (uint64[3] memory) {
         return _enchantments[QiAddress][Noun];
     }
 
@@ -46,10 +46,10 @@ contract TSUAN is DYSNOMIA {
         Zao.SetQinEntropy(tx.origin, Upsilon);
         Saat = Conjuror.SUN().Saat(Geng);
         Upsilon = VAI().TrainFromOrigin(QiAddress, Saat[0], Saat[1], Saat[2], IntendedNoun);
-        if(_enchantments[QiAddress][IntendedNoun].Saat[1] == 0) _knownEnchantments[QiAddress].push(IntendedNoun);
-        _enchantments[QiAddress][IntendedNoun].Saat[0] += Saat[0];
-        _enchantments[QiAddress][IntendedNoun].Saat[1] += Upsilon;
-        _enchantments[QiAddress][IntendedNoun].Saat[2] += Saat[2];
+        if(_enchantments[QiAddress][IntendedNoun][1] == 0) _knownEnchantments[QiAddress].push(IntendedNoun);
+        _enchantments[QiAddress][IntendedNoun][0] += Saat[0];
+        _enchantments[QiAddress][IntendedNoun][1] += Upsilon;
+        _enchantments[QiAddress][IntendedNoun][2] += Saat[2];
     }
 
     function VAI() public view returns (LIBCONJURE) {
