@@ -106,10 +106,6 @@ contract CONJURELIB is DYSNOMIA {
     function qSymbol() public view returns (string memory) {
         Enchantment memory _p = _conjures[QIINTERFACE(msg.sender).Saat(1)];
         if(bytes(_p.Noun).length == 0) return "QI";
-        bytes memory _symbol = new bytes(3);
-        _symbol[0] = bytes(_p.Adverb)[0];
-        _symbol[1] = bytes(_p.Adjective)[0];
-        _symbol[2] = bytes(_p.Noun)[0];
-        return string(_symbol);
+        return _p.Noun;
     }
 }
