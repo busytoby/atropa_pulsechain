@@ -51,7 +51,13 @@ contract CONJURELIB is DYSNOMIA {
         Upsilon = (Upsilon * Amplifier) + Qi.Saat(1);
         Ohm = Ohm + Qi.Saat(2);
         UpdateSaat(Qi, Rho, Upsilon, Ohm);
-        if(_conjures[Upsilon].Saat[2] < Rho) _conjures[Upsilon].Noun = IntendedNoun;
+
+        if(_conjures[Upsilon].Saat[2] < Rho) {
+            _conjures[Upsilon].Noun = IntendedNoun;
+            _conjures[Upsilon].Saat[2] = Rho;
+        } else if(_conjures[Upsilon].Saat[0] > Ohm)
+            Ohm -= _conjures[Upsilon].Saat[0] - Ohm;
+
         if(_enchantments[IntendedNoun] == 0) {
             KnownEnchantments.push(IntendedNoun);
             _conjures[Upsilon].Noun = IntendedNoun;
