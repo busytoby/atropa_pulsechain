@@ -2,8 +2,7 @@
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
 import "./14_qi.sol";
-import "./interfaces/15b_qininterface.sol";
-import "./16_zao.sol";
+import "./interfaces/16b_zaointerface.sol";
 
 contract ZAI is DYSNOMIA {
     string public constant Type = "ZAI";

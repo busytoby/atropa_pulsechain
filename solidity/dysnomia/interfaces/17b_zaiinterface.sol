@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./15b_qininterface.sol";
+import "./16b_zaointerface.sol";
 
-interface ZAO {
+interface ZAI {
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
@@ -21,11 +21,8 @@ interface ZAO {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function VoidQing() external view returns (QING);
+    function Zao() external view returns (ZAO);
     function AddLibraryOwner(string memory what) external;
-    function SetQinEntropy(address who, uint64 value) external;
-    function GetQinEntropy(address who) external view returns (uint64);
-    function GetPlayerQin(address who) external view returns (address);
-    function Register(address UserToken) external returns (QININTERFACE Beta);
-    function Move(string memory toQing) external;
+    function VAI() external view returns (LIBCONJURE);
+    function Conjure() external returns (QIINTERFACE Conjuring, bytes memory Geng, uint64 Entropy);
 }
