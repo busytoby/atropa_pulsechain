@@ -54,15 +54,17 @@ contract QI is DYSNOMIA {
         return LIBCONJURE(ConjureLib);
     }
 
-    function Rename(string memory newName, string memory newSymbol) public override onlyOwners {
-        VAI().RenameQi(newName, newSymbol);
+    function Rename(string memory Adverb, string memory Adjective, string memory Noun) public onlyOwners {
+        VAI().RenameQi(Adverb, Noun, Adjective);
     }
 
     function name() public view override returns (string memory) {
+        if(Saat[1] > VAI().Levels(7)) return __name;
         return VAI().qName();
     }
 
     function symbol() public view override returns (string memory) {
+        if(Saat[1] > VAI().Levels(7)) return __symbol;
         return VAI().qSymbol();
     }
 

@@ -67,36 +67,4 @@ contract QIN is DYSNOMIA {
         Location = QING(toQing);
         _lastMove = block.timestamp;
     }
-
-    function GetInventoryCount(uint256 class) public view returns (uint256) {
-        return _inventory[class].length;
-    }
-
-    function GetDefense(uint256 n) public view returns (address) {
-        return _inventory[0][n];
-    }
-
-    function GetDecoration(uint256 n) public view returns (address) {
-        return _inventory[1][n];
-    }
-
-    function GetOffense(uint256 n) public view returns (address) {
-        return _inventory[2][n];
-    }
-
-    function Throw() public view returns (uint64) {
-        // TODO
-    }
-
-    function Save(uint64 pQi) public view returns (uint64) {
-        // TODO
-    }
-
-    function Equip(address qi) public onlyPlayer {
-        // TODO
-    }
-
-    function Remove(address qi) public onlyPlayer {
-        // TODO
-    }
 }
