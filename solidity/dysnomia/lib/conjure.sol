@@ -46,14 +46,17 @@ contract CONJURELIB is DYSNOMIA {
         bool success = DYSNOMIA(WMContract).transferFrom(tx.origin, address(this), 1 * 10 ** decimals());
         if(!success) revert ApproveAndPay(WMContract, address(this), 1 * 10 ** decimals());
 
-        if(_enchantments[IntendedNoun] == 0) KnownEnchantments.push(IntendedNoun);
         Amplifier = Level(_enchantments[IntendedNoun] + Upsilon + Qi.Saat(1)) ** 2;
-        _enchantments[IntendedNoun] += Upsilon * Amplifier;
         Rho = Rho + Qi.Saat(0);
         Upsilon = (Upsilon * Amplifier) + Qi.Saat(1);
         Ohm = Ohm + Qi.Saat(2);
         UpdateSaat(Qi, Rho, Upsilon, Ohm);
         if(_conjures[Upsilon].Saat[2] < Rho) _conjures[Upsilon].Noun = IntendedNoun;
+        if(_enchantments[IntendedNoun] == 0) {
+            KnownEnchantments.push(IntendedNoun);
+            _conjures[Upsilon].Noun = IntendedNoun;
+        }
+        _enchantments[IntendedNoun] += Upsilon * Amplifier;
         _mintToCap();
         return Upsilon;
     }
