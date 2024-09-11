@@ -59,7 +59,7 @@ contract QI is DYSNOMIA {
 
     function acceptConjureLib() public onlyPlayer {
         renounceOwnership(ConjureLib);
-        ConjureLib = address(VAI());
+        ConjureLib = Void.GetLibraryAddress("conjure");
         addOwner(ConjureLib);
     }
 
