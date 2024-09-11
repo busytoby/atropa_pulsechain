@@ -6,7 +6,7 @@ import { ethers } from 'ethers'
 const getContract = async (contractName: string, contractAddress, accountIndex?: number): Promise<ethers.Contract> => {
   if(accountIndex == undefined) accountIndex = 0;
   console.log(`getting contract ${contractName} as account ${accountIndex}`)
-  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/delegations/artifacts/${contractName}.json`
+  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/cho/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
@@ -23,7 +23,7 @@ const getContract = async (contractName: string, contractAddress, accountIndex?:
 const deploy = async (contractName: string, args: Array<any>, accountIndex?: number): Promise<ethers.Contract> => {
   if(accountIndex == undefined) accountIndex = 0;
   console.log(`deploying ${contractName} from account ${accountIndex}`)
-  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/delegations/artifacts/${contractName}.json`
+  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/cho/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
@@ -54,6 +54,7 @@ let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199d
 let laufactoryaddress //= ethers.utils.getAddress("0x492043DbfaAA1AC15E1566750ab7EDb63F05C85C")
 let lauaddress
 let libstringsaddress
+let choaddress
 let nymaddress
 let libyaiaddress = ethers.utils.getAddress("0x1ccb1BdDC8C876cA3e1C5Fd8c0045D9fE57CcDFE")
 let qingfactoryaddress = ethers.utils.getAddress("0xc27aB5A443CC9b8BE5fE427341FBD8a91f1d8d12")
@@ -137,21 +138,28 @@ let START = 0;
         libstringsaddress = result.address
 
       case 13:
-        result = await deploy('Nym', [voidaddress]) 
+        result = await deploy('CHO', [voidaddress]) 
+        console.log(`CHO address: ${result.address}`)
+        choaddress = result.address
+
+      case 14:
+        result = await deploy('Nym', [choaddress]) 
         console.log(`Nym address: ${result.address}`)
         nymaddress = result.address
 
-      case 14:
+    return;
+
+      case 15:
         result = await deploy('YAI', [voidaddress]) 
         console.log(`YAI address: ${result.address}`)
         libyaiaddress = result.address
 
-      case 15:
+      case 16:
         result = await deploy('QINGFactory', [libyaiaddress]) 
         console.log(`QINGFactory address: ${result.address}`)
         qingfactoryaddress = result.address
 
-      case 16:
+      case 17:
         let qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress)
         result = await qingfactorycontract["New(address)"](voidaddress)
         console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
@@ -165,22 +173,22 @@ let START = 0;
         yaiqingaddress = r2wtf.events[0].address
         console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
 
-      case 17:
+      case 18:
         result = await deploy('ENCRYPT', [voidaddress]) 
         console.log(`ENCRYPT address: ${result.address}`)
         libencryptaddress = result.address
 
-      case 18:
+      case 19:
         result = await deploy('ZAO', [voidqingaddress]) 
         console.log(`ZAO address: ${result.address}`)
         zaoaddress = result.address
 
-      case 19:
+      case 20:
         result = await deploy('CONJURELIB', [zaoaddress]) 
         console.log(`CONJURELIB address: ${result.address}`)
         libconjureaddress = result.address
 
-      case 20:
+      case 21:
         result = await deploy('ZAI', [zaoaddress]) 
         console.log(`ZAI address: ${result.address}`)
         zaiaddress = result.address

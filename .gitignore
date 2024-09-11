@@ -27,7 +27,7 @@
 /artifacts
 /solidity/artifacts
 /solidity/dysnomia/artifacts
-/solidity/dysnomia/domain/delegations/artifacts
+/solidity/dysnomia/domain/cho/artifacts
 /solidity/dysnomia/include/artifacts
 /solidity/dysnomia/interfaces/artifacts
 /solidity/dysnomia/lib/artifacts

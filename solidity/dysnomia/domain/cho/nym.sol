@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../../12_delegation.sol";
+import "../../12_cho.sol";
 import "../../include/acronym.sol";
 import "../../include/uservote.sol";
 
-contract Nym is DELEGATION {
+contract Nym is DYSNOMIA {
     string public constant Type = "Acronym Game";
 
+    CHO public Cho;
+    uint64[3] public Saat;
+    Bao public On;
     uint64 public RoundNumber;
     uint16 public AcronymCount;
     mapping(uint16 => ACRONYM) private Acronyms;
@@ -21,7 +24,19 @@ contract Nym is DELEGATION {
     uint8 private MinPlayers;
     uint8 public MaxAcronymLength;
 
-    constructor(address VoidAddress) DELEGATION(unicode"Champion", unicode"NYM", VoidAddress) {
+    constructor(address ChoAddress) DYSNOMIA(unicode"Champion", unicode"NYM", address(DYSNOMIA(ChoAddress).Xiao())) {
+        Cho = CHO(ChoAddress);
+
+        (Saat, On) = Cho.Void().Enter(__name, __symbol);
+        On.Phi = address(this);
+        On.Shio.addOwner(address(this));
+        On.Shio.Rho().Rod.addOwner(address(this));
+        On.Shio.Rho().Cone.addOwner(address(this));
+
+        (On.Omicron, On.Omega) = _react(Cho.Void().Nu().Psi().Rho().Bang.Omicron);
+        (On.Omega, On.Omicron) = Cho.Void().Nu().Psi().Rho().Bang.Shio.React(On.Omega);
+        (On.Omicron, On.Omega) = _react(Cho.Void().Nu().Psi().Rho().Le.Omicron);
+
         maxSupply = 11111111111111111111;
         Active = false;
         RoundNumber = 0;
@@ -42,9 +57,6 @@ contract Nym is DELEGATION {
             "Or 100 NYM For Winning !\n"
             "If More Than One Acronym Ties Then The 100 NYM Will Be Split"
         );
-        
-        (On.Omega, On.Omicron) = Void.Nu().Psi().Rho().Bang.Shio.React(On.Omega);
-        (On.Omicron, On.Omega) = On.Shio.React(Void.Nu().Psi().Rho().Le.Omicron);
     }
 
     function SetDescription(string memory _d) public onlyOwners {
@@ -67,28 +79,33 @@ contract Nym is DELEGATION {
         return _users.length;
     }
 
+    event JoinedUser(uint64 Soul, string Username);
     function Join(address UserToken) public {
-        User memory Alpha = Enter(UserToken);
+        User memory Alpha = Cho.Enter(UserToken);
         _users.push(Alpha);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
-        Log(Alpha.Soul, Saat[2], string.concat("New User Joined :: ", Alpha.Username));
-        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[2]);
+        emit JoinedUser(Alpha.Soul, Alpha.Username);
+        Log(Alpha.Soul, Saat[1], string.concat("New User Joined :: ", Alpha.Username));
+        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[1]);
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
+    event KickedUser(uint64 OperatorSoul, string OperatorUsername, uint64 UserSoul, string Username);
     function Kick(uint64 _soul) public onlyOwners {
+        User memory Operator = Cho.GetUser();
         for(uint16 i = 0; i < _users.length; i++) {
             if(_users[i].Soul == _soul) {
-                delete Delegates[_users[i].On.Phi];
-                Log(_users[i].Soul, Saat[2], string.concat(Delegates[tx.origin].Username, " Kicked User :: ", _users[i].Username));
+                emit KickedUser(Operator.Soul, Operator.Username, _users[i].Soul, _users[i].Username);
+                Log(_users[i].Soul, Operator.Soul, string.concat(Operator.Username, " Kicked User :: ", _users[i].Username));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
             }
         }
     }
 
+    event InactiveUser(uint64 UserSoul, string Username);
     function NewRound() internal {
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Void.Nu().Psi().Rho().Bang.Omicron);
+        _react(On.Omicron ^ Cho.Void().Nu().Psi().Rho().Bang.Omicron);
         for(uint16 i = 1; i <= AcronymCount; i++)
             delete Acronyms[i];
         AcronymCount = 0;
@@ -97,7 +114,7 @@ contract Nym is DELEGATION {
             if(LastUserVote[_users[i].Soul].Round == 0) continue;
             if((LastUserVote[_users[i].Soul].Round + 2) < RoundNumber) {
                 delete LastUserVote[_users[i].Soul];
-                delete Delegates[_users[i].On.Phi];
+                emit InactiveUser(_users[i].Soul, _users[i].Username);
                 Log(_users[i].Soul, Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
                 _users[i] = _users[_users.length - 1];
                 _users.pop();
@@ -109,12 +126,12 @@ contract Nym is DELEGATION {
             NewAcronym();
         } else
             Active = false;
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Void.Nu().Psi().Rho().Bang.Omega);
+        _react(On.Omega ^ Cho.Void().Nu().Psi().Rho().Bang.Omega);
     }
 
     function Vote(uint16 Id) public {
         assert(Id > 0 && Id <= AcronymCount);
-        User memory Alpha = GetUser();
+        User memory Alpha = Cho.GetUser();
 
         if(LastUserVote[Alpha.Soul].Round <= RoundNumber) {
             LastUserVote[Alpha.Soul].Submissions = 0;
@@ -124,8 +141,8 @@ contract Nym is DELEGATION {
         LastUserVote[Alpha.Soul].Round = RoundNumber;
 
         (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo, Alpha.Soul);
-        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Acronyms[Id].UserInfo.Soul);
-        Delegates[tx.origin] = Alpha;
+        Cho.ReactUser(Alpha.Soul, Acronyms[Id].UserInfo.Soul);
+
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
@@ -148,8 +165,8 @@ contract Nym is DELEGATION {
             if(Tally[i] == winningvotes) {
                 Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
-                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Lai.Omega);
-                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Void.Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
+                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Cho.Void().Nu().Psi().Rho().Lai.Omega);
+                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
             }
         
         NewRound();
@@ -157,20 +174,20 @@ contract Nym is DELEGATION {
 
     error InvalidAcronym(string Acronym, string Phrase);
     function Submit(string memory Beta) public {
-        if(!CYUN().CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
+        if(!Cho.CYUN().CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
 
-        User memory Alpha = GetUser();
+        User memory Alpha = Cho.GetUser();
         ACRONYM memory Kappa;
         AcronymCount = AcronymCount + 1;
         Kappa.Phrase = Beta;
         Kappa.Id = AcronymCount;
         Kappa.UserInfo = Alpha;
         Acronyms[AcronymCount] = Kappa;
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", CYUN().String(Kappa.Id), "] ", string(Beta)));
-        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Void.Nu().Psi().Rho().Lai.Shio, On.Omicron ^ Alpha.Soul);
+        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(Kappa.Id), "] ", string(Beta)));
+        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Void().Nu().Psi().Rho().Lai.Shio.React(On.Omicron ^ Alpha.Soul);
         (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
-        (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = React(Alpha, Kappa.UserInfo.On.Omicron ^ On.Omicron);
-        Delegates[tx.origin] = Alpha;
+        Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron ^ On.Omicron);
+
         if(LastUserVote[Alpha.Soul].Submissions < 5) {
             LastUserVote[Alpha.Soul].Submissions = LastUserVote[Alpha.Soul].Submissions + 1;
             _mint(Alpha.On.Phi, 1 * 10 ** decimals());     
@@ -179,36 +196,44 @@ contract Nym is DELEGATION {
     }
 
     function NewAcronym() internal {
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Saat[2]);
-        Acronym = string(CYUN().RandomAcronym(MaxAcronymLength));
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Saat[1]);
+        _react(On.Omicron ^ Saat[2]);
+        Acronym = string(Cho.CYUN().RandomAcronym(MaxAcronymLength));
+        _react(On.Omega ^ Saat[1]);
         Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omega ^ Void.Nu().Psi().Rho().Le.Omega);
+        _react(On.Omega ^ Cho.Void().Nu().Psi().Rho().Le.Omega);
     }
 
     function Chat(string memory chatline) public {
-        User memory Alpha = GetUser();
+        User memory Alpha = Cho.GetUser();
 
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        (Alpha.On.Omicron, Alpha.On.Omega) = Void.Nu().Psi().Rho().Lai.Shio.React(Alpha.Soul);
+        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+        Cho.ReactUser(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omicron);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Void().Nu().Psi().Rho().Lai.Shio.React(Alpha.Soul);
+        Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
 
-        Delegates[tx.origin] = Alpha;
         _mintToCap();
     }
 
-    function ReactShioRod(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
-        return Beta.Rod().React(Theta ^ Void.Nu().Psi().Rho().Bang.Omega, Beta.Cone().View().Channel);
+    function Log(uint64 Soul, uint64 Aura, string memory LogLine) public onlyOwners {
+        On.Shio.Log(Soul, Aura, LogLine);
     }
 
-    function ReactShioCone(SHIO Beta, uint64 Theta) internal returns (uint64, uint64) {
-        return Beta.Cone().React(Theta ^ On.Omega, Beta.Cone().View().Channel);
+    function OperatorSendMSG(string memory chatline) public onlyOwners {
+        _react(On.Omicron ^ Cho.Void().Nu().Aura());
+        Log(Saat[1], Cho.Void().Nu().Aura(), string.concat(chatline));
+        _mintToCap();
+        _react(On.Omega ^ Saat[1]);
     }
 
-    function React(User memory Alpha, uint64 Theta) internal returns (uint64, uint64) {
-        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioRod(Alpha.On.Shio, Theta);
-        (On.Omicron, On.Omega) = On.Shio.React(On.Omicron ^ Alpha.On.Omega);
-        return ReactShioCone(Alpha.On.Shio, Alpha.On.Omicron);
+    function _react(uint64 Eta) internal returns (uint64 Omicron, uint64 Omega) {
+        (On.Omicron, On.Omega) = On.Shio.React(Eta);
+        return(On.Omicron, On.Omega);
+    }
+
+    function React(User memory Alpha, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
+        (Alpha.On.Omicron, Alpha.On.Omega) = _react(Alpha.On.Omicron ^ Theta);
+        return _react(On.Omicron ^ Alpha.On.Omega);
     }
 }
