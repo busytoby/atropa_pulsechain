@@ -19,6 +19,10 @@ contract QIN is DYSNOMIA {
         addOwner(tx.origin);
     }
 
+    function setMaxSuppy(uint256 _m) public {
+        maxSupply = _m;
+    }
+
     function AddLibraryOwner(string memory what) public onlyOwners {
         _addLibraryOwner(Zao.VoidQing().Void(), what);
     }

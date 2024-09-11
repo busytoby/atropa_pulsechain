@@ -43,8 +43,9 @@ contract CONJURELIB is DYSNOMIA {
         QIINTERFACE Qi = QIINTERFACE(QiAddress);
         if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
 
-        bool success = DYSNOMIA(WMContract).transferFrom(tx.origin, address(this), 1 * 10 ** decimals());
-        if(!success) revert ApproveAndPay(WMContract, address(this), 1 * 10 ** decimals());
+        address wmContract = Zao.VoidQing().VAT().Alias(0, "WM");
+        bool success = DYSNOMIA(wmContract).transferFrom(tx.origin, address(this), 1 * 10 ** decimals());
+        if(!success) revert ApproveAndPay(wmContract, address(this), 1 * 10 ** decimals());
 
         Amplifier = Level(_enchantments[IntendedNoun] + Upsilon) ** 2;
         Upsilon = (Upsilon * Amplifier);
@@ -73,8 +74,9 @@ contract CONJURELIB is DYSNOMIA {
         QIINTERFACE Qi = QIINTERFACE(QiAddress);
         if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
 
-        bool success = DYSNOMIA(WMContract).transferFrom(tx.origin, address(this), 1 * 10 ** decimals());
-        if(!success) revert ApproveAndPay(WMContract, address(this), 1 * 10 ** decimals());
+        address wmContract = Zao.VoidQing().VAT().Alias(0, "WM");
+        bool success = DYSNOMIA(wmContract).transferFrom(tx.origin, address(this), 1 * 10 ** decimals());
+        if(!success) revert ApproveAndPay(wmContract, address(this), 1 * 10 ** decimals());
 
         Amplifier = Level(_enchantments[IntendedAdjective] + Ohm) ** 2;
         Ohm = (Ohm * Amplifier) + Qi.Saat(2);
@@ -120,8 +122,10 @@ contract CONJURELIB is DYSNOMIA {
 
     function _payToRename(uint64 Saat) internal {
         if(_conjures[Saat].previousCost == 0) _conjures[Saat].previousCost = 1 * 10 ** decimals();
-        bool success = DYSNOMIA(AFFECTIONContract).transferFrom(tx.origin, address(this), _conjures[Saat].previousCost);
-        if(!success) revert ApproveAndPay(AFFECTIONContract, address(this), _conjures[Saat].previousCost);
+        address affectionContract = Zao.VoidQing().VAT().Alias(0, "AFFECTION");
+
+        bool success = DYSNOMIA(affectionContract).transferFrom(tx.origin, address(this), _conjures[Saat].previousCost);
+        if(!success) revert ApproveAndPay(affectionContract, address(this), _conjures[Saat].previousCost);
         _conjures[Saat].previousCost *= 2;
     }
 
