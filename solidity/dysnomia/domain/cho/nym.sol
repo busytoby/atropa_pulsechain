@@ -186,7 +186,7 @@ contract Nym is DYSNOMIA {
             } else if(Tally[i] == winningvotes)
                 winners += 1;
 
-        for(uint16 i = 1; i <= AcronymCount; i++)
+        for(uint16 i = 1; i <= AcronymCount && winningvotes > 0; i++)
             if(Tally[i] == winningvotes) {
                 Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 emit Winner(Acronyms[i].UserInfo.Soul, Acronyms[i].UserInfo.Username, Acronyms[i].Phrase, Prize / winners);
