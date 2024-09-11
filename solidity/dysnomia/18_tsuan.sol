@@ -8,9 +8,9 @@ contract TSUAN is DYSNOMIA {
     string public constant Type = "TSUAN";
 
     ZAOINTERFACE public Zao;
-    mapping(string => address) internal _libraries;
-    mapping(address => string[]) internal _knownEnchantments;
-    mapping(address => mapping(string => uint64[3])) _enchantments;
+    mapping(string => address) private _libraries;
+    mapping(address => string[]) private _knownEnchantments;
+    mapping(address => mapping(string => uint64[3])) private _enchantments;
 
     constructor(address ZaoAddress) DYSNOMIA("Dysnomia Tsuan", "TSUAN", address(DYSNOMIA(ZaoAddress).Xiao())) {
         Zao = ZAOINTERFACE(ZaoAddress);

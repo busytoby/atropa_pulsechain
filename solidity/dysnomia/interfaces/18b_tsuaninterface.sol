@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./13b_qinginterface.sol";
+import "./17b_zaiinterface.sol";
 
-interface LIBCONJURE {
+interface TSUAN {
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
@@ -18,13 +18,13 @@ interface LIBCONJURE {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
+    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
-    function Type() external view returns(string memory);
-    function VoidQing() external view returns(QING);
-    function Levels(uint256) external view returns(uint64);
-    function Level(uint64 Saat) external view returns (uint8);
-    function Enchant(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedNoun) external returns (uint64);
-    function RenameQi(string memory Adverb, string memory Noun, string memory Adjective) external;
-    function qName() external view returns (string memory);
-    function qSymbol() external view returns (string memory);
+    function Type() external view returns (string memory);
+    function Zao() external view returns (ZAOINTERFACE);
+    function VAI() external view returns (LIBCONJURE);
+    function acceptLibraryUpdate(string memory lib) external;
+    function KnownEnchantmentCount(address QiAddress) external view returns (uint256);
+    function GetEnchantment(address QiAddress, string memory Noun) external view returns (uint64[3] memory);
+    function Train(address QiAddress, string memory IntendedNoun) external;
 }
