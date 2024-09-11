@@ -15,6 +15,7 @@ contract Nym is DYSNOMIA {
     mapping(uint16 => ACRONYM) private Acronyms;
     mapping(uint64 => UserVote) private LastUserVote;
     User[] private _users;
+    mapping(uint64 => User) private _players;
     bool public Active;
     string public Acronym;
     string public Description;
@@ -31,11 +32,11 @@ contract Nym is DYSNOMIA {
         On.Phi = address(this);
         On.Shio.addOwner(address(this));
         On.Shio.Rho().Rod.addOwner(address(this));
-        On.Shio.Rho().Cone.addOwner(address(this));
+        Cho.addOwner(address(this));
 
-        (On.Omicron, On.Omega) = _react(Cho.Void().Nu().Psi().Rho().Bang.Omicron);
-        (On.Omega, On.Omicron) = Cho.Void().Nu().Psi().Rho().Bang.Shio.React(On.Omega);
-        (On.Omicron, On.Omega) = _react(Cho.Void().Nu().Psi().Rho().Le.Omicron);
+        _react(Cho.Void().Nu().Psi().Rho().Bang.Omicron);
+        (On.Omega, On.Omicron) = Cho.ReactLai(On.Omega);
+        _react(Cho.Void().Nu().Psi().Rho().Le.Omicron);
 
         maxSupply = 11111111111111111111;
         Active = false;
@@ -80,14 +81,35 @@ contract Nym is DYSNOMIA {
     }
 
     event JoinedUser(uint64 Soul, string Username);
+    error AlreadyPlaying(uint64 Soul);
     function Join(address UserToken) public {
         User memory Alpha = Cho.Enter(UserToken);
+        if(_players[Alpha.Soul].Soul == Alpha.Soul) revert AlreadyPlaying(Alpha.Soul);
+        _players[Alpha.Soul] = Alpha;
         _users.push(Alpha);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         emit JoinedUser(Alpha.Soul, Alpha.Username);
         Log(Alpha.Soul, Saat[1], string.concat("New User Joined :: ", Alpha.Username));
-        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, Saat[1]);
+        React(Alpha.Soul, Saat[1]);
         if(!Active && _users.length >= MinPlayers) NewRound();
+    }
+
+    function Leave() public {
+        User memory Alpha = Cho.GetUser();
+        if(_players[Alpha.Soul].Soul == Alpha.Soul)
+            _removeUserBySoul(Alpha.Soul);
+    }
+
+    function _removeUserBySoul(uint64 Soul) internal {
+        for(uint16 i = 0; i < _users.length; i++) {
+            if(_users[i].Soul == Soul) {
+                delete LastUserVote[_users[i].Soul];
+                delete _players[_users[i].Soul];
+                _users[i] = _users[_users.length - 1];
+                _users.pop();
+                return;
+            }
+        }
     }
 
     event KickedUser(uint64 OperatorSoul, string OperatorUsername, uint64 UserSoul, string Username);
@@ -97,8 +119,7 @@ contract Nym is DYSNOMIA {
             if(_users[i].Soul == _soul) {
                 emit KickedUser(Operator.Soul, Operator.Username, _users[i].Soul, _users[i].Username);
                 Log(_users[i].Soul, Operator.Soul, string.concat(Operator.Username, " Kicked User :: ", _users[i].Username));
-                _users[i] = _users[_users.length - 1];
-                _users.pop();
+                _removeUserBySoul(_users[i].Soul);
             }
         }
     }
@@ -113,11 +134,9 @@ contract Nym is DYSNOMIA {
         for(uint16 i = 0; i < _users.length; i++) {
             if(LastUserVote[_users[i].Soul].Round == 0) continue;
             if((LastUserVote[_users[i].Soul].Round + 2) < RoundNumber) {
-                delete LastUserVote[_users[i].Soul];
                 emit InactiveUser(_users[i].Soul, _users[i].Username);
                 Log(_users[i].Soul, Saat[2], string.concat("Removed Inactive User :: ", _users[i].Username));
-                _users[i] = _users[_users.length - 1];
-                _users.pop();
+                _removeUserBySoul(_users[i].Soul);
             }
         }
 
@@ -132,6 +151,7 @@ contract Nym is DYSNOMIA {
     function Vote(uint16 Id) public {
         assert(Id > 0 && Id <= AcronymCount);
         User memory Alpha = Cho.GetUser();
+        if(_players[Alpha.Soul].Soul != Alpha.Soul) revert NotPlaying(Alpha.Soul);
 
         if(LastUserVote[Alpha.Soul].Round <= RoundNumber) {
             LastUserVote[Alpha.Soul].Submissions = 0;
@@ -140,8 +160,8 @@ contract Nym is DYSNOMIA {
         LastUserVote[Alpha.Soul].Vote = Id;
         LastUserVote[Alpha.Soul].Round = RoundNumber;
 
-        (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo, Alpha.Soul);
-        Cho.ReactUser(Alpha.Soul, Acronyms[Id].UserInfo.Soul);
+        (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo.Soul, Alpha.Soul);
+        _players[Alpha.Soul] = Cho.ReactUser(Alpha.Soul, Acronyms[Id].UserInfo.Soul);
 
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -165,8 +185,8 @@ contract Nym is DYSNOMIA {
             if(Tally[i] == winningvotes) {
                 Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
-                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Cho.Void().Nu().Psi().Rho().Lai.Omega);
-                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
+                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
+                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
             }
         
         NewRound();
@@ -181,17 +201,18 @@ contract Nym is DYSNOMIA {
         AcronymCount = AcronymCount + 1;
         Kappa.Phrase = Beta;
         Kappa.Id = AcronymCount;
-        Kappa.UserInfo = Alpha;
+        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(Kappa.Id), "] ", Beta));
+        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactLai(On.Omicron ^ Alpha.Soul);
+        React(Alpha.Soul, On.Omega ^ Alpha.On.Omega);
+        Kappa.UserInfo = Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron ^ On.Omicron);
         Acronyms[AcronymCount] = Kappa;
-        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(Kappa.Id), "] ", string(Beta)));
-        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Void().Nu().Psi().Rho().Lai.Shio.React(On.Omicron ^ Alpha.Soul);
-        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha, On.Omega ^ Alpha.On.Omega);
-        Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron ^ On.Omicron);
 
         if(LastUserVote[Alpha.Soul].Submissions < 5) {
             LastUserVote[Alpha.Soul].Submissions = LastUserVote[Alpha.Soul].Submissions + 1;
             _mint(Alpha.On.Phi, 1 * 10 ** decimals());     
-        }   
+        } else
+            React(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Le.Omega);
+
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
@@ -205,18 +226,20 @@ contract Nym is DYSNOMIA {
         _react(On.Omega ^ Cho.Void().Nu().Psi().Rho().Le.Omega);
     }
 
+    error NotPlaying(uint64 Soul);
     function Chat(string memory chatline) public {
         User memory Alpha = Cho.GetUser();
+        if(_players[Alpha.Soul].Soul == 0) revert NotPlaying(Alpha.Soul);
 
         Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        Cho.ReactUser(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omicron);
-        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Void().Nu().Psi().Rho().Lai.Shio.React(Alpha.Soul);
-        Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
+        Alpha = Cho.ReactUser(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omicron);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactLai(Alpha.Soul);
+        _players[Alpha.Soul] = Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
 
         _mintToCap();
     }
 
-    function Log(uint64 Soul, uint64 Aura, string memory LogLine) public onlyOwners {
+    function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
         On.Shio.Log(Soul, Aura, LogLine);
     }
 
@@ -228,12 +251,13 @@ contract Nym is DYSNOMIA {
     }
 
     function _react(uint64 Eta) internal returns (uint64 Omicron, uint64 Omega) {
-        (On.Omicron, On.Omega) = On.Shio.React(Eta);
+        (On.Omicron, On.Omega) = Cho.ReactShioRod(On.Shio, Eta);
         return(On.Omicron, On.Omega);
     }
 
-    function React(User memory Alpha, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
-        (Alpha.On.Omicron, Alpha.On.Omega) = _react(Alpha.On.Omicron ^ Theta);
-        return _react(On.Omicron ^ Alpha.On.Omega);
+    function React(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
+        if(_players[Soul].Soul != Soul) revert NotPlaying(_players[Soul].Soul);
+        (_players[Soul].On.Omicron, _players[Soul].On.Omega) = _react(_players[Soul].On.Omicron ^ Theta);
+        return _react(On.Omicron ^ _players[Soul].On.Omega);
     }
 }

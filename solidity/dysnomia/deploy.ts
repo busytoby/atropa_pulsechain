@@ -138,62 +138,6 @@ let START = 0;
         libstringsaddress = result.address
 
       case 13:
-        result = await deploy('CHO', [voidaddress]) 
-        console.log(`CHO address: ${result.address}`)
-        choaddress = result.address
-
-      case 14:
-        result = await deploy('Nym', [choaddress]) 
-        console.log(`Nym address: ${result.address}`)
-        nymaddress = result.address
-
-    return;
-
-      case 15:
-        result = await deploy('YAI', [voidaddress]) 
-        console.log(`YAI address: ${result.address}`)
-        libyaiaddress = result.address
-
-      case 16:
-        result = await deploy('QINGFactory', [libyaiaddress]) 
-        console.log(`QINGFactory address: ${result.address}`)
-        qingfactoryaddress = result.address
-
-      case 17:
-        let qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress)
-        result = await qingfactorycontract["New(address)"](voidaddress)
-        console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
-        r2wtf = await result.wait()
-        voidqingaddress = r2wtf.events[0].address
-        console.log(`VOID QING Deployed: ${voidqingaddress} from origin`)
-
-        qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress, 2)
-        result = await qingfactorycontract["New(address)"](libyaiaddress)
-        r2wtf = await result.wait()
-        yaiqingaddress = r2wtf.events[0].address
-        console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
-
-      case 18:
-        result = await deploy('ENCRYPT', [voidaddress]) 
-        console.log(`ENCRYPT address: ${result.address}`)
-        libencryptaddress = result.address
-
-      case 19:
-        result = await deploy('ZAO', [voidqingaddress]) 
-        console.log(`ZAO address: ${result.address}`)
-        zaoaddress = result.address
-
-      case 20:
-        result = await deploy('CONJURELIB', [zaoaddress]) 
-        console.log(`CONJURELIB address: ${result.address}`)
-        libconjureaddress = result.address
-
-      case 21:
-        result = await deploy('ZAI', [zaoaddress]) 
-        console.log(`ZAI address: ${result.address}`)
-        zaiaddress = result.address
-
-      case 99:
         let laufactorycontract = await getContract('LAUFactory', laufactoryaddress)
         result = await laufactorycontract["New(string,string)"]("User Test", "USERTOKEN")
         r2wtf = await result.wait()
@@ -215,6 +159,62 @@ let START = 0;
         console.log("successful Set Username from non-origin")
         result = await laucontract["Chat(string)"]("Chat Test 2")
         console.log("successful Chat from non-origin")
+
+      case 14:
+        result = await deploy('CHO', [voidaddress]) 
+        console.log(`CHO address: ${result.address}`)
+        choaddress = result.address
+
+      case 15:
+        result = await deploy('Nym', [choaddress]) 
+        console.log(`Nym address: ${result.address}`)
+        nymaddress = result.address
+
+    return;
+
+      case 16:
+        result = await deploy('YAI', [voidaddress]) 
+        console.log(`YAI address: ${result.address}`)
+        libyaiaddress = result.address
+
+      case 17:
+        result = await deploy('QINGFactory', [libyaiaddress]) 
+        console.log(`QINGFactory address: ${result.address}`)
+        qingfactoryaddress = result.address
+
+      case 18:
+        let qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress)
+        result = await qingfactorycontract["New(address)"](voidaddress)
+        console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
+        r2wtf = await result.wait()
+        voidqingaddress = r2wtf.events[0].address
+        console.log(`VOID QING Deployed: ${voidqingaddress} from origin`)
+
+        qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress, 2)
+        result = await qingfactorycontract["New(address)"](libyaiaddress)
+        r2wtf = await result.wait()
+        yaiqingaddress = r2wtf.events[0].address
+        console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
+
+      case 19:
+        result = await deploy('ENCRYPT', [voidaddress]) 
+        console.log(`ENCRYPT address: ${result.address}`)
+        libencryptaddress = result.address
+
+      case 20:
+        result = await deploy('ZAO', [voidqingaddress]) 
+        console.log(`ZAO address: ${result.address}`)
+        zaoaddress = result.address
+
+      case 21:
+        result = await deploy('CONJURELIB', [zaoaddress]) 
+        console.log(`CONJURELIB address: ${result.address}`)
+        libconjureaddress = result.address
+
+      case 22:
+        result = await deploy('ZAI', [zaoaddress]) 
+        console.log(`ZAI address: ${result.address}`)
+        zaiaddress = result.address
     }
   } catch (e) {
     console.log(e.message)

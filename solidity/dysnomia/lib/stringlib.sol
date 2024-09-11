@@ -56,7 +56,10 @@ contract STRINGLIB is DYSNOMIA {
     }
 
     function CaseInsensitiveCompare(bytes1 A, bytes1 B) public pure returns (bool) {
-        return(A == B || uint8(A) == (uint8(B) + 32));
+        if(uint8(B) <= 90)
+            return(A == B || uint8(A) == (uint8(B) + 32));
+        else
+            return(A == B || (uint8(A)  + 32) == uint8(B));
     }
 
     function CheckAcronym(string memory _A, string memory _B) public pure returns(bool) {

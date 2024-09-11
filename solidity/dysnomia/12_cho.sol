@@ -7,6 +7,8 @@ import "./interfaces/libstrings.sol";
 import "./interfaces/libyai.sol";
 
 contract CHO is DYSNOMIA {
+    string public constant Type = "CHO";
+
     VOID public Void;
 
     mapping(address => User) internal Delegates;
@@ -55,6 +57,18 @@ contract CHO is DYSNOMIA {
 
     function ReactShioCone(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
         return Beta.Cone().React(Theta, Beta.Rod().View().Channel);
+    }
+
+    function ReactBang(uint64 Eta) public returns (uint64, uint64) {
+        return ReactShioRod(Void.Nu().Psi().Rho().Bang.Shio, Eta);
+    }
+
+    function ReactLai(uint64 Gamma) public returns (uint64, uint64) {
+        return ReactShioRod(Void.Nu().Psi().Rho().Lai.Shio, Gamma);
+    }
+
+    function ReactLe(uint64 Delta) public returns (uint64, uint64) {
+        return ReactShioCone(Void.Nu().Psi().Rho().Le.Shio, Delta);
     }
 
     function ReactUser(uint64 Soul, uint64 Epsilon) public returns (User memory) {

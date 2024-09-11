@@ -37,4 +37,10 @@ interface CHO {
     function GetUserTokenAddress(address wallet) external view returns(address UserToken);
     function Log(uint64 Soul, uint64 Aura, string memory LogLine) external;
     function OperatorSendMSG(string memory chatline) external;
+    function ReactShioRod(SHIO Beta, uint64 Theta) external returns (uint64, uint64);
+    function ReactShioCone(SHIO Beta, uint64 Theta) external returns (uint64, uint64);
+    function ReactBang(uint64 Eta) external returns (uint64, uint64);
+    function ReactLai(uint64 Gamma) external returns (uint64, uint64);
+    function ReactLe(uint64 Delta) external returns (uint64, uint64);
+    function ReactUser(uint64 Soul, uint64 Epsilon) external returns (User memory);
 }
