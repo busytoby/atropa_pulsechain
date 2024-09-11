@@ -124,6 +124,10 @@ contract Nym is DYSNOMIA {
         }
     }
 
+    function Start() public onlyOwners {
+        if(!Active && _users.length > 0) NewRound();
+    }
+
     event InactiveUser(uint64 UserSoul, string Username);
     function NewRound() internal {
         _react(On.Omicron ^ Cho.Void().Nu().Psi().Rho().Bang.Omicron);
