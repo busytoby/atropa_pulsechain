@@ -34,7 +34,9 @@ contract TSUAN is DYSNOMIA {
     }
 
     error NotTokenOwner(address Token, address originRequestor);
+    error ExceedsMaximumLength(string Word, uint8 MaxLength);
     function Train(address QiAddress, string memory IntendedNoun) public {
+        if(bytes(IntendedNoun).length > 8) revert ExceedsMaximumLength(IntendedNoun, 8);
         uint64[3] memory Saat;
         uint64 Upsilon;
         bytes memory Geng;
