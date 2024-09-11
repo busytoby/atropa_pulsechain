@@ -38,7 +38,7 @@ contract CONJURELIB is DYSNOMIA {
 
     error NotTokenOwner(address Token, address originRequestor);
     error ApproveAndPay(address TOKEN, address THIS, uint256 AMOUNT);
-    function TrainFromOrigin(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedNoun) public onlyOwners returns (uint64) {
+    function Enchant(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedNoun) public onlyOwners returns (uint64) {
         uint8 Amplifier;
         QIINTERFACE Qi = QIINTERFACE(QiAddress);
         if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
