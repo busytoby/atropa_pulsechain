@@ -166,6 +166,7 @@ contract Nym is DYSNOMIA {
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
+    event Winner(uint64 Soul, string Username, string Phrase, uint16 Prize);
     function EndRound() internal {
         uint16[] memory Tally = new uint16[](AcronymCount + 1);
         uint16 winners = 0;
@@ -184,6 +185,7 @@ contract Nym is DYSNOMIA {
         for(uint16 i = 1; i <= AcronymCount; i++)
             if(Tally[i] == winningvotes) {
                 Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
+                emit Winner(Acronyms[i].UserInfo.Soul, Acronyms[i].UserInfo.Username, Acronyms[i].Phrase, Prize / winners);
                 _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
                 (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
                 (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
@@ -192,6 +194,7 @@ contract Nym is DYSNOMIA {
         NewRound();
     }
 
+    event AcronymSubmission(uint64 Soul, string Username, uint16 Id, string Phrase);
     error InvalidAcronym(string Acronym, string Phrase);
     function Submit(string memory Beta) public {
         if(!Cho.CYUN().CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
@@ -202,6 +205,7 @@ contract Nym is DYSNOMIA {
         Kappa.Phrase = Beta;
         Kappa.Id = AcronymCount;
         Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(Kappa.Id), "] ", Beta));
+        emit AcronymSubmission(Alpha.Soul, Alpha.Username, Kappa.Id, Beta);
         (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactLai(On.Omicron ^ Alpha.Soul);
         React(Alpha.Soul, On.Omega ^ Alpha.On.Omega);
         Kappa.UserInfo = Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron ^ On.Omicron);
@@ -216,11 +220,13 @@ contract Nym is DYSNOMIA {
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
 
+    event NewRoundAcronym(string Acronym);
     function NewAcronym() internal {
         _react(On.Omicron ^ Saat[2]);
         Acronym = string(Cho.CYUN().RandomAcronym(MaxAcronymLength));
         _react(On.Omega ^ Saat[1]);
         Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
+        emit NewRoundAcronym(Acronym);
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
         _react(On.Omega ^ Cho.Void().Nu().Psi().Rho().Le.Omega);
