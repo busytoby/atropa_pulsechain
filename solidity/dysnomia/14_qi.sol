@@ -25,9 +25,12 @@ contract QI is DYSNOMIA {
     }
 
     function Modify(uint64 Rho, uint64 Upsilon, uint64 Ohm) public onlyOwners {
-        Saat[0] = Rho;
-        Saat[1] = Upsilon;
-        Saat[2] = Ohm;
+        if(Rho < MotzkinPrime)
+            Saat[0] = Rho;
+        if(Upsilon < MotzkinPrime)
+            Saat[1] = Upsilon;
+        if(Ohm < MotzkinPrime)
+            Saat[2] = Ohm;
     }
 
     function Rename(string memory Adverb, string memory Adjective, string memory Noun) public onlyOwners {
