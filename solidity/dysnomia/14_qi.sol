@@ -20,7 +20,7 @@ contract QI is DYSNOMIA {
         Void = QING(Location).Void();
         Saat = SUN().Saat(Geng);
         addOwner(tx.origin);
-        ConjureLib = address(VAI());
+        ConjureLib = Void.GetLibraryAddress("conjure");
         addOwner(ConjureLib);
     }
 
