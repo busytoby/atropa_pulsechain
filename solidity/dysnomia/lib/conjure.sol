@@ -64,7 +64,6 @@ contract CONJURELIB is DYSNOMIA {
         if(_enchantments[IntendedNoun] < MotzkinPrime)
             _enchantments[IntendedNoun] += Upsilon;
         Qi.mintToCap();
-        Qi.ForceTransfer(QiAddress, tx.origin, 1 * 10 ** decimals());
         _mintToCap();
         return Upsilon;
     }
@@ -96,7 +95,6 @@ contract CONJURELIB is DYSNOMIA {
             _enchantments[IntendedAdjective] += Ohm;
 
         Qi.mintToCap();
-        Qi.ForceTransfer(QiAddress, tx.origin, 1 * 10 ** decimals());
         _mintToCap();
         return Ohm;
     }
