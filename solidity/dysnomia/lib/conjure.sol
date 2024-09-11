@@ -70,6 +70,39 @@ contract CONJURELIB is DYSNOMIA {
         return Upsilon;
     }
 
+    function Imbue(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedAdjective) public onlyOwners returns (uint64) {
+        uint8 Amplifier;
+        QIINTERFACE Qi = QIINTERFACE(QiAddress);
+        if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
+
+        bool success = DYSNOMIA(WMContract).transferFrom(tx.origin, address(this), 1 * 10 ** decimals());
+        if(!success) revert ApproveAndPay(WMContract, address(this), 1 * 10 ** decimals());
+
+        Amplifier = Level(_enchantments[IntendedAdjective] + Ohm) ** 2;
+        Rho = Rho + Qi.Saat(0);
+        Upsilon = Upsilon + Qi.Saat(1);
+        Ohm = (Ohm * Amplifier) + Qi.Saat(2);
+        UpdateSaat(Qi, Rho, Upsilon, Ohm);
+
+        if(_conjures[Upsilon].Saat[2] < Rho) {
+            _conjures[Upsilon].Adjective = IntendedAdjective;
+            _conjures[Upsilon].Saat[2] = Rho;
+        } else if(_conjures[Upsilon].Saat[0] > Ohm)
+            Ohm -= _conjures[Upsilon].Saat[0] - Ohm;
+
+        if(_enchantments[IntendedAdjective] == 0) {
+            KnownEnchantments.push(IntendedAdjective);
+            _conjures[Upsilon].Adjective = IntendedAdjective;
+        }
+        if(_enchantments[IntendedAdjective] < MotzkinPrime)
+            _enchantments[IntendedAdjective] += Ohm;
+
+        Qi.mintToCap();
+        Qi.ForceTransfer(QiAddress, tx.origin, 1 * 10 ** decimals());
+        _mintToCap();
+        return Ohm;
+    }
+
     function UpdateSaat(QIINTERFACE Qi, uint64 Rho, uint64 Upsilon, uint64 Ohm) internal {
         Qi.Modify(Rho, Upsilon, Ohm);
         _mintToCap();
@@ -96,6 +129,12 @@ contract CONJURELIB is DYSNOMIA {
         _conjures[Saat].previousCost *= 2;
     }
 
+    function ForceRename(uint64 Saat1, string memory Adverb, string memory Noun, string memory Adjective) public onlyOwners {
+        _conjures[Saat1].Adverb = Adverb;
+        _conjures[Saat1].Noun = Noun;
+        _conjures[Saat1].Adjective = Adjective;
+    }
+
     function RenameQi(string memory Adverb, string memory Noun, string memory Adjective) public onlyOwners {
         if(!DYSNOMIA(msg.sender).owner(tx.origin)) revert NotTokenOwner(msg.sender, tx.origin);
         QIINTERFACE Qi = QIINTERFACE(msg.sender);
@@ -115,15 +154,22 @@ contract CONJURELIB is DYSNOMIA {
 
     function qName() public view returns (string memory) {
         Enchantment memory _p = _conjures[QIINTERFACE(msg.sender).Saat(1)];
-        if(bytes(_p.Noun).length == 0) return "Mysterious Qi";
-        if(_p.Saat[1] < Levels[2]) return _p.Noun;
-        if(_p.Saat[1] < Levels[3]) return string.concat(_p.Adjective, " ", _p.Noun);
-        return string.concat(_p.Adverb, " ", _p.Adjective, " ", _p.Noun);
+        string memory _noun;
+        string memory _adjective;
+        string memory _adverb;
+        
+        if(bytes(_p.Noun).length == 0) _noun = "Qi";
+        else _noun = _p.Noun;
+        if(bytes(_p.Adjective).length == 0) _adjective = "";
+        else _adjective = string.concat(_p.Adjective, " ");
+        if(bytes(_p.Adverb).length == 0) _adverb = "";
+        else _adverb = string.concat(_p.Adverb, " ");
+        return string.concat(_adverb, _adjective, _noun);
     }
 
     function qSymbol() public view returns (string memory) {
         Enchantment memory _p = _conjures[QIINTERFACE(msg.sender).Saat(1)];
-        if(bytes(_p.Noun).length == 0) return "QI";
-        return _p.Noun;
+        if(bytes(_p.Noun).length == 0) return string.concat("QI(", Zao.VoidQing().CYUN().String(_p.Saat[1]), ")");
+        return string.concat(_p.Noun,"(",Zao.VoidQing().CYUN().String(_p.Saat[1]), ")");
     }
 }

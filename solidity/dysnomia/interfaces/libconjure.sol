@@ -24,6 +24,7 @@ interface LIBCONJURE {
     function Levels(uint256) external view returns(uint64);
     function Level(uint64 Saat) external view returns (uint8);
     function Enchant(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedNoun) external returns (uint64);
+    function Imbue(address QiAddress, uint64 Rho, uint64 Upsilon, uint64 Ohm, string memory IntendedAdjective) external returns (uint64);
     function RenameQi(string memory Adverb, string memory Noun, string memory Adjective) external;
     function qName() external view returns (string memory);
     function qSymbol() external view returns (string memory);

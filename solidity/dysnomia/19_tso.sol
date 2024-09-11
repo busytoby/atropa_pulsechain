@@ -36,23 +36,23 @@ contract TSO is DYSNOMIA {
     function Train(address QiAddress, string memory IntendedAdjective, string memory IntendedNoun) public {
         uint64[3] memory Saat;
         uint64[3] memory EnchantmentSaat;
-        uint64 Upsilon;
+        uint64 Ohm;
         bytes memory Geng;
         QIINTERFACE Qi = QIINTERFACE(QiAddress);
         if(!Qi.owner(tx.origin)) revert NotTokenOwner(QiAddress, tx.origin);
 
         QININTERFACE Conjuror = QININTERFACE(Tsuan.Zao().GetPlayerQin(tx.origin));
-        (Upsilon, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
-        Tsuan.Zao().SetQinEntropy(tx.origin, Upsilon);
+        (Ohm, Geng) = Conjuror.SUN().Encapsulate(Conjuror.Alt().On(), Conjuror.Entropy(), Conjuror.Alt().Saat(0), Conjuror.Alt().Saat(1), Conjuror.Alt().Saat(2));
+        Tsuan.Zao().SetQinEntropy(tx.origin, Ohm);
         Saat = Conjuror.SUN().Saat(Geng);
         EnchantmentSaat = Tsuan.GetEnchantment(QiAddress, IntendedNoun);
 
-        Upsilon = Tsuan.VAI().Imbue(QiAddress, Saat[0] + EnchantmentSaat[0], Saat[1] + EnchantmentSaat[1], Saat[2] + EnchantmentSaat[2], IntendedAdjective);
+        Ohm = Tsuan.VAI().Imbue(QiAddress, Saat[0] + EnchantmentSaat[0], Saat[1] + EnchantmentSaat[1], Saat[2] + EnchantmentSaat[2], IntendedAdjective);
 
-        //if(_enchantments[QiAddress][IntendedNoun][1] == 0) _knownEnchantments[QiAddress].push(IntendedNoun);
-        //_enchantments[QiAddress][IntendedNoun][0] += Saat[0];
-        //_enchantments[QiAddress][IntendedNoun][1] += Upsilon;
-        //_enchantments[QiAddress][IntendedNoun][2] += Saat[2];
+        if(_imbuemets[QiAddress][IntendedNoun][1] == 0) _knownImbuements[QiAddress].push(IntendedNoun);
+        _imbuemets[QiAddress][IntendedNoun][0] += Saat[0];
+        _imbuemets[QiAddress][IntendedNoun][1] += Saat[1];
+        _imbuemets[QiAddress][IntendedNoun][2] += Ohm;
     }
 
 }
