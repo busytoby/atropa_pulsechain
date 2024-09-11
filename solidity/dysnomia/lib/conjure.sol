@@ -47,16 +47,15 @@ contract CONJURELIB is DYSNOMIA {
         if(!success) revert ApproveAndPay(WMContract, address(this), 1 * 10 ** decimals());
 
         Amplifier = Level(_enchantments[IntendedNoun] + Upsilon) ** 2;
-        Rho = Rho + Qi.Saat(0);
-        Upsilon = (Upsilon * Amplifier) + Qi.Saat(1);
-        Ohm = Ohm + Qi.Saat(2);
-        UpdateSaat(Qi, Rho, Upsilon, Ohm);
+        Upsilon = (Upsilon * Amplifier);
 
-        if(_conjures[Upsilon].Saat[2] < Rho) {
+        if(_conjures[Upsilon].Saat[2] < Rho + Qi.Saat(0)) {
             _conjures[Upsilon].Noun = IntendedNoun;
-            _conjures[Upsilon].Saat[2] = Rho;
-        } else if(_conjures[Upsilon].Saat[0] > Ohm)
-            Ohm -= _conjures[Upsilon].Saat[0] - Ohm;
+            _conjures[Upsilon].Saat[2] = Ohm;
+        } else if(_conjures[Upsilon].Saat[1] > Upsilon + Qi.Saat(1))
+            Rho /= 2;
+
+        UpdateSaat(Qi, Rho + Qi.Saat(0), Upsilon + Qi.Saat(1), Ohm + Qi.Saat(2));
 
         if(_enchantments[IntendedNoun] == 0) {
             KnownEnchantments.push(IntendedNoun);
@@ -79,16 +78,15 @@ contract CONJURELIB is DYSNOMIA {
         if(!success) revert ApproveAndPay(WMContract, address(this), 1 * 10 ** decimals());
 
         Amplifier = Level(_enchantments[IntendedAdjective] + Ohm) ** 2;
-        Rho = Rho + Qi.Saat(0);
-        Upsilon = Upsilon + Qi.Saat(1);
         Ohm = (Ohm * Amplifier) + Qi.Saat(2);
-        UpdateSaat(Qi, Rho, Upsilon, Ohm);
 
-        if(_conjures[Upsilon].Saat[2] < Rho) {
+        if(_conjures[Upsilon].Saat[2] < Rho + Qi.Saat(0)) {
             _conjures[Upsilon].Adjective = IntendedAdjective;
-            _conjures[Upsilon].Saat[2] = Rho;
-        } else if(_conjures[Upsilon].Saat[0] > Ohm)
-            Ohm -= _conjures[Upsilon].Saat[0] - Ohm;
+            _conjures[Upsilon].Saat[2] = Ohm;
+        } else if(_conjures[Upsilon].Saat[1] > Upsilon + Qi.Saat(1))
+            Rho /= 2;
+
+        UpdateSaat(Qi, Rho + Qi.Saat(0), Upsilon + Qi.Saat(1), Ohm + Qi.Saat(2));
 
         if(_enchantments[IntendedAdjective] == 0) {
             KnownEnchantments.push(IntendedAdjective);
