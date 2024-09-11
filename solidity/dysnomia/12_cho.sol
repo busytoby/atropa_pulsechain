@@ -27,7 +27,7 @@ contract CHO is DYSNOMIA {
 
 
         React(Void.Nu().Psi().Rho().Bang.Omicron);
-        (On.Omega, On.Omicron) = ReactLai(On.Omicron);
+        (On.Omega, On.Omicron) = ReactLai(On.Omega);
         React(Void.Nu().Psi().Rho().Le.Omicron);
 
         _mintToCap();
