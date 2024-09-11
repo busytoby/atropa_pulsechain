@@ -59,11 +59,6 @@ contract ENCRYPT is DYSNOMIA {
         }
     }
 
-    function slice(bytes memory bs, uint start, uint count) public pure returns (uint64 x) {
-        require(bs.length >= start + count, "slicing out of range");
-        assembly { x := mload(add(bs, add(count, start))) }
-    }
-
     function Encrypt(uint64 From, uint64 to, bytes memory Key, bytes memory Data) public returns (uint64 index) {
         Bao memory _from = Zheng.GetRodByIdx(From);
         Bao memory _to = Zheng.GetRodByIdx(to);

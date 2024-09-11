@@ -10,12 +10,26 @@ contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
 
     VOID public Void;
+    uint64[3] public Saat;
+    Bao public On;
 
     mapping(address => User) internal Delegates;
     mapping(uint64 => address) internal DelegateAddresses;
 
     constructor(address VoidAddress) DYSNOMIA("Dysnomia Cho", "CHO", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
+        Void.addOwner(address(this));
+
+        (Saat, On) = Void.Enter(__name, __symbol);
+        On.Phi = address(this);
+        On.Shio.addOwner(address(this));
+        On.Shio.Rho().Rod.addOwner(address(this));
+
+
+        React(Void.Nu().Psi().Rho().Bang.Omicron);
+        (On.Omega, On.Omicron) = ReactLai(On.Omicron);
+        React(Void.Nu().Psi().Rho().Le.Omicron);
+
         _mintToCap();
     }
 
@@ -40,6 +54,7 @@ contract CHO is DYSNOMIA {
         
         Delegates[tx.origin] = Alpha;
         DelegateAddresses[Alpha.Soul] = tx.origin;
+        ReactUser(Alpha.Soul, Saat[1]);
         return Alpha;
     }
 
@@ -49,6 +64,11 @@ contract CHO is DYSNOMIA {
     function GetUser() public view returns(User memory Alpha) {
         if(Delegates[tx.origin].Soul == 0) revert UserNotEntered(tx.origin);
         Alpha = Delegates[tx.origin];
+    }
+
+    function React(uint64 Eta) internal returns (uint64, uint64) {
+        (On.Omicron, On.Omega) = ReactShioRod(On.Shio, Eta);
+        return (On.Omicron, On.Omega);
     }
 
     function ReactShioRod(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
