@@ -25,7 +25,6 @@ contract CHO is DYSNOMIA {
         On.Shio.addOwner(address(this));
         On.Shio.Rho().Rod.addOwner(address(this));
 
-
         React(Void.Nu().Psi().Rho().Bang.Omicron);
         (On.Omega, On.Omicron) = ReactLai(On.Omega);
         React(Void.Nu().Psi().Rho().Le.Omicron);

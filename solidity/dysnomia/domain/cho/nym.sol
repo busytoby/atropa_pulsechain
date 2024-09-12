@@ -125,7 +125,14 @@ contract Nym is DYSNOMIA {
     }
 
     function Start() public onlyOwners {
-        if(!Active && _users.length > 0) NewRound();
+        if(!Active && _users.length > 0) {
+            User memory Alpha = Cho.GetUser();
+            _react(Alpha.On.Omicron ^ Cho.Void().Nu().Psi().Rho().Bang.Omicron);
+            NewRound();
+            Active = true;
+            NewAcronym();
+            _react(Alpha.On.Omega ^ Cho.Void().Nu().Psi().Rho().Bang.Omega);
+        }
     }
 
     event InactiveUser(uint64 UserSoul, string Username);
@@ -186,29 +193,27 @@ contract Nym is DYSNOMIA {
             } else if(Tally[i] == winningvotes)
                 winners += 1;
 
-        for(uint16 i = 1; i <= AcronymCount && winningvotes > 0; i++)
-            if(Tally[i] == winningvotes) {
-                Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
-                emit Winner(Acronyms[i].UserInfo.Soul, Acronyms[i].UserInfo.Username, Acronyms[i].Phrase, Prize / winners);
-                _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
-                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
-                (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
-            }
+        if(winningvotes > 0)
+            for(uint16 i = 1; i <= AcronymCount; i++)
+                if(Tally[i] == winningvotes) {
+                    Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
+                    emit Winner(Acronyms[i].UserInfo.Soul, Acronyms[i].UserInfo.Username, Acronyms[i].Phrase, Prize / winners);
+                    _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
+                    (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
+                    (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
+                }
         
         NewRound();
     }
 
     event AcronymSubmission(uint64 Soul, string Username, uint16 Id, string Phrase);
-    error InvalidAcronym(string Acronym, string Phrase);
-    function Submit(string memory Beta) public {
-        if(!Cho.CYUN().CheckAcronym(Acronym, Beta)) revert InvalidAcronym(Acronym, Beta);
-
-        User memory Alpha = Cho.GetUser();
+    function Submit(User memory Alpha, string memory Beta) internal {
         ACRONYM memory Kappa;
         AcronymCount = AcronymCount + 1;
         Kappa.Phrase = Beta;
         Kappa.Id = AcronymCount;
-        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(Kappa.Id), "] ", Beta));
+        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(uint256(Kappa.Id)), "] ", Beta));
+        if(true) return;
         emit AcronymSubmission(Alpha.Soul, Alpha.Username, Kappa.Id, Beta);
         (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactLai(On.Omicron ^ Alpha.Soul);
         React(Alpha.Soul, On.Omega ^ Alpha.On.Omega);
@@ -239,12 +244,16 @@ contract Nym is DYSNOMIA {
     error NotPlaying(uint64 Soul);
     function Chat(string memory chatline) public {
         User memory Alpha = Cho.GetUser();
-        if(_players[Alpha.Soul].Soul == 0) revert NotPlaying(Alpha.Soul);
+        if(Cho.CYUN().CheckAcronym(Acronym, chatline))
+            Submit(Alpha, chatline);
+        else {
+            if(_players[Alpha.Soul].Soul == 0) revert NotPlaying(Alpha.Soul);
 
-        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
-        Alpha = Cho.ReactUser(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omicron);
-        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactLai(Alpha.Soul);
-        _players[Alpha.Soul] = Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
+            Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+            Alpha = Cho.ReactUser(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omicron);
+            (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactLai(Alpha.Soul);
+            _players[Alpha.Soul] = Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
+        }
 
         _mintToCap();
     }
