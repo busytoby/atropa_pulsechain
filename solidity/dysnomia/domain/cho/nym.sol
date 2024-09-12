@@ -83,16 +83,15 @@ contract Nym is DYSNOMIA {
     }
 
     event JoinedUser(uint64 Soul, string Username);
-    error AlreadyPlaying(uint64 Soul);
     function Join(address UserToken) public {
         User memory Alpha = Cho.Enter(UserToken);
-        if(_players[Alpha.Soul].Soul == Alpha.Soul) revert AlreadyPlaying(Alpha.Soul);
+        if(_players[Alpha.Soul].Soul == Alpha.Soul) return;
         _users.push(Alpha.Soul);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         emit JoinedUser(Alpha.Soul, Alpha.Username);
         Log(Alpha.Soul, Saat[1], string.concat("New User Joined :: ", Alpha.Username));
         _players[Alpha.Soul] = Alpha;
-        (Alpha.On.Omicron, Alpha.On.Omega) = React(Alpha.Soul, Saat[1]);
+        (Alpha.On.Omicron, Alpha.On.Omega) = ReactPlayer(Alpha.Soul, Saat[1]);
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
@@ -174,7 +173,7 @@ contract Nym is DYSNOMIA {
         LastUserVote[_soul].Vote = Id;
         LastUserVote[_soul].Round = RoundNumber;
 
-        (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = React(Acronyms[Id].UserInfo.Soul, _soul);
+        (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = ReactPlayer(Acronyms[Id].UserInfo.Soul, _soul);
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.ReactUser(_soul, Acronyms[Id].UserInfo.Soul);
 
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
@@ -202,8 +201,8 @@ contract Nym is DYSNOMIA {
                     Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                     emit Winner(Acronyms[i].UserInfo.Soul, Acronyms[i].UserInfo.Username, Acronyms[i].Phrase, Prize / winners);
                     _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
-                    (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
-                    (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = React(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
+                    (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = ReactPlayer(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
+                    (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = ReactPlayer(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Le.Omicron ^ Acronyms[i].UserInfo.On.Omicron);
                 }
         
         NewRound();
@@ -222,7 +221,7 @@ contract Nym is DYSNOMIA {
         Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(uint256(Kappa.Id)), "] ", Beta));
         emit AcronymSubmission(Alpha.Soul, Alpha.Username, Kappa.Id, Beta);
         (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Reactor().ReactLai(On.Omicron ^ Alpha.Soul);
-        React(Alpha.Soul, On.Omega ^ Alpha.On.Omega);
+        ReactPlayer(Alpha.Soul, On.Omega ^ Alpha.On.Omega);
         (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron ^ On.Omicron);
         Acronyms[AcronymCount] = Kappa;
 
@@ -230,7 +229,7 @@ contract Nym is DYSNOMIA {
             LastUserVote[Alpha.Soul].Submissions = LastUserVote[Alpha.Soul].Submissions + 1;
             _mint(Alpha.On.Phi, 1 * 10 ** decimals());     
         } else
-            React(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Le.Omega);
+            ReactPlayer(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Le.Omega);
 
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -267,7 +266,7 @@ contract Nym is DYSNOMIA {
         Log(Saat[1], Cho.Void().Nu().Aura(), string.concat(chatline));
     }
 
-    function React(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
+    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
         if(_players[Soul].Soul == 0) revert NotPlaying(_players[Soul].Soul);
         (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(On.Shio, _players[Soul].On.Omicron ^ Theta);
         return Cho.Reactor().ReactShioRod(On.Shio, On.Omicron ^ _players[Soul].On.Omega);
