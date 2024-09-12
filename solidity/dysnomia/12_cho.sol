@@ -5,6 +5,7 @@ import "./01_dysnomia_v2.sol";
 import "./interfaces/11b_lauinterface.sol";
 import "./interfaces/libstrings.sol";
 import "./interfaces/libyai.sol";
+import "./interfaces/libreactions.sol";
 
 contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
@@ -26,7 +27,7 @@ contract CHO is DYSNOMIA {
         On.Shio.Rho().Rod.addOwner(address(this));
 
         React(Void.Nu().Psi().Rho().Bang.Omicron);
-        (On.Omega, On.Omicron) = ReactLai(On.Omega);
+        (On.Omega, On.Omicron) = Reactor().ReactLai(On.Omega);
         React(Void.Nu().Psi().Rho().Le.Omicron);
 
         _mintToCap();
@@ -38,6 +39,10 @@ contract CHO is DYSNOMIA {
 
     function CYUN() public view returns(LIBSTRINGS) {
         return LIBSTRINGS(Void.GetLibraryAddress("strings"));
+    }
+
+    function Reactor() public view returns(LIBREACTIONS) {
+        return LIBREACTIONS(Void.GetLibraryAddress("reactions"));
     }
 
     error InvalidOwnership(address UserToken, address User);
@@ -65,36 +70,22 @@ contract CHO is DYSNOMIA {
         Alpha = Delegates[tx.origin];
     }
 
+    function GetUserSoul() public view returns(uint64) {
+        if(Delegates[tx.origin].Soul == 0) revert UserNotEntered(tx.origin);
+        return Delegates[tx.origin].Soul;
+    }
+
     function React(uint64 Eta) internal returns (uint64, uint64) {
-        (On.Omicron, On.Omega) = ReactShioRod(On.Shio, Eta);
+        (On.Omicron, On.Omega) = Reactor().ReactShioRod(On.Shio, Eta);
         return (On.Omicron, On.Omega);
     }
 
-    function ReactShioRod(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
-        return Beta.Rod().React(Theta, Beta.Cone().View().Channel);
-    }
-
-    function ReactShioCone(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
-        return Beta.Cone().React(Theta, Beta.Rod().View().Channel);
-    }
-
-    function ReactBang(uint64 Eta) public returns (uint64, uint64) {
-        return ReactShioRod(Void.Nu().Psi().Rho().Bang.Shio, Eta);
-    }
-
-    function ReactLai(uint64 Gamma) public returns (uint64, uint64) {
-        return ReactShioRod(Void.Nu().Psi().Rho().Lai.Shio, Gamma);
-    }
-
-    function ReactLe(uint64 Delta) public returns (uint64, uint64) {
-        return ReactShioCone(Void.Nu().Psi().Rho().Le.Shio, Delta);
-    }
-
-    function ReactUser(uint64 Soul, uint64 Epsilon) public returns (User memory) {
+    function ReactUser(uint64 Soul, uint64 Epsilon) public returns (uint64 Omicron, uint64 Omega) {
+        if(DelegateAddresses[Soul] == address(0x0)) revert SoulNotEntered(Soul);
         User memory Alpha = Delegates[DelegateAddresses[Soul]];
-        (Alpha.On.Omicron, Alpha.On.Omega) = ReactShioCone(Alpha.On.Shio, Epsilon);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Reactor().ReactShioCone(Alpha.On.Shio, Epsilon);
         Delegates[DelegateAddresses[Soul]] = Alpha;
-        return(Alpha);
+        return (Alpha.On.Omicron, Alpha.On.Omega);
     }
 
     function GetUserByAddress(address who) public onlyOwners view returns(User memory Alpha) {

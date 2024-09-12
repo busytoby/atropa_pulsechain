@@ -11,7 +11,6 @@ contract ATTRIBUTE is DYSNOMIA {
     mapping(uint64 => mapping(string => string)) private _userAttributes;
     mapping(uint64 => mapping(address => string)) private _userGrades;
 
-
     constructor(address VoidAddress) DYSNOMIA(unicode"CHATLOG LibAttribute", unicode"LibAttribute", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
         addOwner(VoidAddress);

@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../include/user.sol";
-import "./01b_dysnomia.sol";
-import "./11b_lauinterface.sol";
-import "./libstrings.sol";
-import "./libyai.sol";
+import "./12b_chointerface.sol";
 
-interface CHOINTERFACE {
+interface LIBREACTIONS {
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
@@ -22,26 +18,18 @@ interface CHOINTERFACE {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function addOwner(address newOwner) external;
     function renounceOwnership(address toRemove) external;
-    function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
-    function Type() external view returns (string memory);
-    function Void() external view returns (VOID);
-    function Saat(uint256) external view returns (uint64);
-    function On() external view returns (Bao memory);
-    function AddLibraryOwner(string memory what) external;
-    function CYUN() external view returns(LIBSTRINGS);
-    function Enter(address UserToken) external returns(User memory);
-    function GetUser() external view returns(User memory Alpha);
-    function GetUserSoul() external view returns(uint64);
-    function GetUserByAddress(address who) external view returns(User memory Alpha);
-    function GetAddressBySoul(uint64 soul) external view returns(address UserAddress);
-    function GetUserTokenAddress(address wallet) external view returns(address UserToken);
-    function Log(uint64 Soul, uint64 Aura, string memory LogLine) external;
-    function OperatorSendMSG(string memory chatline) external;
+    function Type() external view returns(string memory);
+    function Cho() external view returns (CHOINTERFACE);
+    function Initialize(Bao memory On) external returns (uint64, uint64);
+    function ReactToTalk(User memory Alpha) external returns (uint64, uint64);
+    function ReactToCreation(Bao memory On, uint64 Omicron, uint64 Omega) external returns (uint64, uint64);
+    function ReactToNew(Bao memory On, uint64[3] memory Saat) external returns (uint64, uint64);
+    function OperatorReact(Bao memory On, uint64 Omega) external returns (uint64, uint64);
     function ReactShioRod(SHIO Beta, uint64 Theta) external returns (uint64, uint64);
     function ReactShioCone(SHIO Beta, uint64 Theta) external returns (uint64, uint64);
     function ReactBang(uint64 Eta) external returns (uint64, uint64);
     function ReactLai(uint64 Gamma) external returns (uint64, uint64);
     function ReactLe(uint64 Delta) external returns (uint64, uint64);
-    function ReactUser(uint64 Soul, uint64 Epsilon) external returns (uint64, uint64);
+
 }
