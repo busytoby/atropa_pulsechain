@@ -4,9 +4,7 @@ import "../include/user.sol";
 import "./01b_dysnomia.sol";
 import "./11b_lauinterface.sol";
 import "./libstrings.sol";
-import "./libyai.sol";
 import "./libcorereactions.sol";
-import "./libencrypt.sol";
 
 interface CHOINTERFACE {
     function Rename(string memory newName, string memory newSymbol) external;
@@ -36,7 +34,7 @@ interface CHOINTERFACE {
     function AddLibraryOwner(string memory what) external;
     function CYUN() external view returns(LIBSTRINGS);
     function Reactor() external view returns(LIBCOREREACTIONS);
-    function SUN() external view returns (LIBEncrypt);
+    function Luo() external returns (uint256);
     function Enter(address UserToken) external returns(User memory);
     function GetUser() external view returns(User memory Alpha);
     function GetUserSoul() external view returns(uint64);
@@ -47,5 +45,4 @@ interface CHOINTERFACE {
     function OperatorSendMSG(string memory chatline) external;
     function React(uint64 Eta) external returns (uint64, uint64);
     function ReactUser(uint64 Soul, uint64 Epsilon) external returns (uint64, uint64);
-    function Geng() external returns (bytes memory Iota);
 }

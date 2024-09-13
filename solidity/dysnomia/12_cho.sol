@@ -5,7 +5,6 @@ import "./01_dysnomia_v2.sol";
 import "./interfaces/11b_lauinterface.sol";
 import "./interfaces/libstrings.sol";
 import "./interfaces/libcorereactions.sol";
-import "./interfaces/libencrypt.sol";
 
 contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
@@ -62,13 +61,9 @@ contract CHO is DYSNOMIA {
         return LIBCOREREACTIONS(Void.GetLibraryAddress("corereactions"));
     }
 
-    function SUN() public view returns (LIBEncrypt) {
-        return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
-    }
-
-    function Random() public returns (uint256) {
+    function Luo() public returns (uint256) {
         React(On.Omicron);
-        return Xiao.modExp(On.Omicron, On.Omega, Prime);
+        return Xiao.modExp(On.Omega, On.Omicron, Prime);
     }
 
     error InvalidOwnership(address UserToken, address User);
@@ -138,9 +133,5 @@ contract CHO is DYSNOMIA {
 
     function GetUserTokenAddress(address wallet) public view returns(address UserToken) {
         return Delegates[wallet].On.Phi;
-    }
-
-    function Geng() public returns (bytes memory Iota) {
-        (Entropy, Iota) = SUN().Encapsulate(On, Entropy, Saat[0], Saat[1], Saat[2]);
     }
 }

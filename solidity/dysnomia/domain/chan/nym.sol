@@ -9,7 +9,7 @@ contract Nym is DYSNOMIA {
     string public constant Type = "Acronym Game";
 
     CHOINTERFACE public Cho;
-    uint64[3] public Saat;
+    uint256 public Waat;
     uint64 public RoundNumber;
     uint16 public AcronymCount;
     mapping(uint16 => ACRONYM) private Acronyms;
@@ -27,8 +27,7 @@ contract Nym is DYSNOMIA {
 
     constructor(address ChoAddress) DYSNOMIA(unicode"Champion", unicode"NYM", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
-
-        Saat = Cho.SUN().Saat(Cho.Geng());
+        Waat = Cho.Luo();
         Cho.addOwner(address(this));
        
         maxSupply = 11111111111111111111;
@@ -84,9 +83,9 @@ contract Nym is DYSNOMIA {
         _users.push(Alpha.Soul);
         LastUserVote[Alpha.Soul].Round = RoundNumber;
         emit JoinedUser(Alpha.Soul, Alpha.Username);
-        Log(Alpha.Soul, Saat[1], string.concat("New User Joined :: ", Alpha.Username));
+        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("New User Joined :: ", Alpha.Username));
         _players[Alpha.Soul] = Alpha;
-        (Alpha.On.Omicron, Alpha.On.Omega) = ReactPlayer(Alpha.Soul, Saat[1]);
+        (Alpha.On.Omicron, Alpha.On.Omega) = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
         if(!Active && _users.length >= MinPlayers) NewRound();
     }
 
@@ -142,7 +141,7 @@ contract Nym is DYSNOMIA {
             if(LastUserVote[_users[i]].Round == 0) continue;
             if((LastUserVote[_users[i]].Round + 2) < RoundNumber) {
                 emit InactiveUser(_users[i], _players[_users[i]].Username);
-                Log(_users[i], Saat[2], string.concat("Removed Inactive User :: ", _players[_users[i]].Username));
+                Log(_users[i], 0, string.concat("Removed Inactive User :: ", _players[_users[i]].Username));
                 _removeUserBySoul(_users[i]);
             }
         }
@@ -193,7 +192,7 @@ contract Nym is DYSNOMIA {
         if(winningvotes > 0)
             for(uint16 i = 1; i <= AcronymCount; i++)
                 if(Tally[i] == winningvotes) {
-                    Log(Acronyms[i].UserInfo.Soul, Saat[2], string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
+                    Log(Acronyms[i].UserInfo.Soul, 0, string.concat("WINNER ", Acronyms[i].UserInfo.Username, " !! ", Acronyms[i].Phrase));
                     emit Winner(Acronyms[i].UserInfo.Soul, Acronyms[i].UserInfo.Username, Acronyms[i].Phrase, Prize / winners);
                     _mint(Acronyms[i].UserInfo.On.Phi, (Prize / winners) * 10 ** decimals());
                     (Acronyms[i].UserInfo.On.Omicron, Acronyms[i].UserInfo.On.Omega) = ReactPlayer(Acronyms[i].UserInfo.Soul, Cho.Void().Nu().Psi().Rho().Lai.Omega);
@@ -232,7 +231,7 @@ contract Nym is DYSNOMIA {
     event NewRoundAcronym(string Acronym);
     function NewAcronym() internal {
         Acronym = string(Cho.CYUN().RandomAcronym(MaxAcronymLength));
-        Log(Saat[1], Saat[2], string.concat("New Acronym :: ", Acronym));
+        Log(0, 0, string.concat("New Acronym :: ", Acronym));
         emit NewRoundAcronym(Acronym);
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
@@ -252,13 +251,13 @@ contract Nym is DYSNOMIA {
         }
     }
 
-    event LogEvent(uint64[3] Saat, uint64 Soul, uint64 Aura, string LogLine);
+    event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string LogLine);
     function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
-        emit LogEvent(Saat, Soul, Aura, LogLine);
+        emit LogEvent(Waat, Soul, Aura, LogLine);
     }
 
     function OperatorSendMSG(string memory chatline) public onlyOwners {
-        Log(Saat[1], Cho.Void().Nu().Aura(), string.concat(chatline));
+        Log(0, Cho.Void().Nu().Aura(), string.concat(chatline));
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
