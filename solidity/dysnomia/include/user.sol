@@ -6,4 +6,5 @@ struct User {
     uint64 Soul;
     Bao On;
     string Username;
+    uint64 Entropy;
 }

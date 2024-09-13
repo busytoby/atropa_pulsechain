@@ -21,9 +21,12 @@ interface LIBREACTIONS {
     function mintToCap() external;
     function Type() external view returns(string memory);
     function Cho() external view returns (CHOINTERFACE);
+    function Entropy(Bao memory On) external returns (uint64);
     function Initialize(Bao memory On) external returns (uint64, uint64);
     function ReactToTalk(User memory Alpha) external returns (uint64, uint64);
-    function ReactToCreation(Bao memory On, uint64 Omicron, uint64 Omega) external returns (uint64, uint64);
+    function ReactToBang(Bao memory On, uint64 Omicron, uint64 Omega) external returns (uint64, uint64);
+    function ReactToLai(Bao memory On, uint64 Omicron, uint64 Omega) external returns (uint64, uint64);
+    function ReactToLe(Bao memory On, uint64 Omicron, uint64 Omega) external returns (uint64, uint64);
     function ReactToNew(Bao memory On, uint64[3] memory Saat) external returns (uint64, uint64);
     function OperatorReact(Bao memory On, uint64 Omega) external returns (uint64, uint64);
     function ReactShioRod(SHIO Beta, uint64 Theta) external returns (uint64, uint64);
@@ -31,5 +34,4 @@ interface LIBREACTIONS {
     function ReactBang(uint64 Eta) external returns (uint64, uint64);
     function ReactLai(uint64 Gamma) external returns (uint64, uint64);
     function ReactLe(uint64 Delta) external returns (uint64, uint64);
-
 }
