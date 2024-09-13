@@ -14,8 +14,10 @@ contract CHO is DYSNOMIA {
     uint64[3] public Saat;
     Bao public On;
 
-    mapping(address => User) internal Delegates;
-    mapping(uint64 => address) internal DelegateAddresses;
+    mapping(address => User) private Delegates;
+    mapping(uint64 => address) private DelegateAddresses;
+    mapping(string => address) public Addresses;
+    string[] public Aliases;
 
     constructor(address VoidAddress) DYSNOMIA("Dysnomia Cho", "CHO", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
@@ -31,6 +33,13 @@ contract CHO is DYSNOMIA {
         React(Void.Nu().Psi().Rho().Le.Omicron);
 
         _mintToCap();
+    }
+
+    error SystemAddress(address Address, string Alias);
+    function AddSystemAddress(string memory Alias, address Address) public onlyOwners {
+        if(Addresses[Alias] != address(0x0)) revert SystemAddress(Addresses[Alias], Alias);
+        Addresses[Alias] = Address;
+        Aliases.push(Alias);
     }
 
     function AddLibraryOwner(string memory what) public onlyOwners {
