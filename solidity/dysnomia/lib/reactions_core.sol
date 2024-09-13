@@ -20,7 +20,6 @@ contract COREREACTIONSLIB is DYSNOMIA {
     }
 
     function Initialize(Bao memory On) public returns (uint64, uint64) {
-        _mintToCap();
         (On.Omicron, On.Omega) = ReactShioRod(On.Shio, Cho.Void().Nu().Psi().Rho().Bang.Omicron);
         (On.Omicron, On.Omega) = ReactLai(On.Omega);
         (On.Omicron, On.Omega) = ReactShioRod(On.Shio, Cho.Void().Nu().Psi().Rho().Le.Omicron);
@@ -42,18 +41,15 @@ contract COREREACTIONSLIB is DYSNOMIA {
     }
 
     function ReactToBang(Bao memory On, uint64 Omicron, uint64 Omega) public returns (uint64, uint64) {
-        React(On, Omicron ^ Cho.Void().Nu().Psi().Rho().Bang.Omicron, Omega ^ Cho.Void().Nu().Psi().Rho().Bang.Omega);
-        return (On.Omicron, On.Omega);
+        return React(On, Omicron ^ Cho.Void().Nu().Psi().Rho().Bang.Omicron, Omega ^ Cho.Void().Nu().Psi().Rho().Bang.Omega);
     }
 
-    function ReactToLai(Bao memory On, uint64 Omicron, uint64 Omega) public returns (uint64, uint64) {
-        React(On, Omicron ^ Cho.Void().Nu().Psi().Rho().Lai.Omicron, Omega ^ Cho.Void().Nu().Psi().Rho().Lai.Omega);
-        return (On.Omicron, On.Omega);
+    function ReactToLai(Bao memory On, uint64 Omicron, uint64 Omega) public returns (uint64, uint64) { 
+        return React(On, Omicron ^ Cho.Void().Nu().Psi().Rho().Lai.Omicron, Omega ^ Cho.Void().Nu().Psi().Rho().Lai.Omega); 
     }
 
-    function ReactToLe(Bao memory On, uint64 Omicron, uint64 Omega) public returns (uint64, uint64) {
-        React(On, Omicron ^ Cho.Void().Nu().Psi().Rho().Le.Omicron, Omega ^ Cho.Void().Nu().Psi().Rho().Le.Omega);
-        return (On.Omicron, On.Omega);
+    function ReactToLe(Bao memory On, uint64 Omicron, uint64 Omega) public returns (uint64, uint64) { 
+        return React(On, Omicron ^ Cho.Void().Nu().Psi().Rho().Le.Omicron, Omega ^ Cho.Void().Nu().Psi().Rho().Le.Omega); 
     }
 
     function ReactToNew(Bao memory On, uint64[3] memory Saat) public returns (uint64, uint64) {
@@ -62,10 +58,12 @@ contract COREREACTIONSLIB is DYSNOMIA {
         return (On.Omicron, On.Omega);
     }
 
-    function OperatorReact(Bao memory On, uint64 Omega) public returns (uint64, uint64) {
-        (On.Omicron, On.Omega) = React(On, On.Omicron ^ Cho.Void().Nu().Aura(), On.Omega ^ Omega);
-        return (On.Omicron, On.Omega);
-    }
+    function OperatorReact(Bao memory On, uint64 Omega) public returns (uint64, uint64) { return React(On, On.Omicron ^ Cho.Void().Nu().Aura(), On.Omega ^ Omega); }
+
+    function ReactBang(uint64 Eta) public returns (uint64, uint64) {  return ReactShioRod(Cho.Void().Nu().Psi().Rho().Bang.Shio, Eta); }
+    function ReactLai(uint64 Gamma) public returns (uint64, uint64) { return ReactShioRod(Cho.Void().Nu().Psi().Rho().Lai.Shio, Gamma); }
+    function ReactLe(uint64 Delta) public returns (uint64, uint64) {  return ReactShioCone(Cho.Void().Nu().Psi().Rho().Le.Shio, Delta); }
+
 
     function ReactShioRod(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
         _mintToCap();
@@ -75,20 +73,5 @@ contract COREREACTIONSLIB is DYSNOMIA {
     function ReactShioCone(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
         _mintToCap();
         return Beta.Cone().React(Theta, Beta.Rod().View().Channel);
-    }
-
-    function ReactBang(uint64 Eta) public returns (uint64, uint64) {
-        _mintToCap();
-        return ReactShioRod(Cho.Void().Nu().Psi().Rho().Bang.Shio, Eta);
-    }
-
-    function ReactLai(uint64 Gamma) public returns (uint64, uint64) {
-        _mintToCap();
-        return ReactShioRod(Cho.Void().Nu().Psi().Rho().Lai.Shio, Gamma);
-    }
-
-    function ReactLe(uint64 Delta) public returns (uint64, uint64) {
-        _mintToCap();
-        return ReactShioCone(Cho.Void().Nu().Psi().Rho().Le.Shio, Delta);
     }
 }

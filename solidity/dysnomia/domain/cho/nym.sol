@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../../12_cho.sol";
+import "../../01_dysnomia_v2.sol";
+import "../../interfaces/12b_chointerface.sol";
 import "../../include/acronym.sol";
 import "../../include/uservote.sol";
 
 contract Nym is DYSNOMIA {
     string public constant Type = "Acronym Game";
 
-    CHO public Cho;
+    CHOINTERFACE public Cho;
     uint64[3] public Saat;
     uint64 public RoundNumber;
     uint16 public AcronymCount;
@@ -25,7 +26,7 @@ contract Nym is DYSNOMIA {
     uint8 public MaxAcronymLength;
 
     constructor(address ChoAddress) DYSNOMIA(unicode"Champion", unicode"NYM", address(DYSNOMIA(ChoAddress).Xiao())) {
-        Cho = CHO(ChoAddress);
+        Cho = CHOINTERFACE(ChoAddress);
 
         Saat = Cho.SUN().Saat(Cho.Geng());
         Cho.addOwner(address(this));
@@ -166,7 +167,9 @@ contract Nym is DYSNOMIA {
         LastUserVote[_soul].Round = RoundNumber;
 
         (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = ReactPlayer(Acronyms[Id].UserInfo.Soul, _soul);
+        Cho.React(Acronyms[Id].UserInfo.On.Omega);
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.ReactUser(_soul, Acronyms[Id].UserInfo.Soul);
+        Cho.React(_players[_soul].On.Omicron);
 
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -245,6 +248,7 @@ contract Nym is DYSNOMIA {
         else {
             Log(_soul, Cho.Void().Nu().Aura(), string.concat("<", _players[_soul].Username, "> ", chatline));
             (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
+            Cho.React(_players[_soul].On.Omega);
         }
     }
 

@@ -103,7 +103,7 @@ contract CHO is DYSNOMIA {
         return Delegates[tx.origin].Soul;
     }
 
-    function React(uint64 Eta) internal returns (uint64, uint64) {
+    function React(uint64 Eta) public returns (uint64, uint64) {
         (On.Omicron, On.Omega) = Reactor().ReactShioRod(On.Shio, Entropy ^ Eta);
         Entropy = On.Omega;
         return (On.Omicron, On.Omega);
