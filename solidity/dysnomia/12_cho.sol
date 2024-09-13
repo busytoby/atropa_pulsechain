@@ -4,7 +4,7 @@ import "./include/user.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/11b_lauinterface.sol";
 import "./interfaces/libstrings.sol";
-import "./interfaces/libreactions.sol";
+import "./interfaces/libcorereactions.sol";
 import "./interfaces/libencrypt.sol";
 
 contract CHO is DYSNOMIA {
@@ -56,8 +56,8 @@ contract CHO is DYSNOMIA {
         return LIBSTRINGS(Void.GetLibraryAddress("strings"));
     }
 
-    function Reactor() public view returns(LIBREACTIONS) {
-        return LIBREACTIONS(Void.GetLibraryAddress("reactions"));
+    function Reactor() public view returns(LIBCOREREACTIONS) {
+        return LIBCOREREACTIONS(Void.GetLibraryAddress("corereactions"));
     }
 
     function SUN() public view returns (LIBEncrypt) {

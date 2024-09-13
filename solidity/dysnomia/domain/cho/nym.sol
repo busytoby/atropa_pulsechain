@@ -9,7 +9,6 @@ contract Nym is DYSNOMIA {
 
     CHO public Cho;
     uint64[3] public Saat;
-    //Bao public On;
     uint64 public RoundNumber;
     uint16 public AcronymCount;
     mapping(uint16 => ACRONYM) private Acronyms;

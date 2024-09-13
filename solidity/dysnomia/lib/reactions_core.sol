@@ -3,14 +3,14 @@ pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
 import "../interfaces/12b_chointerface.sol";
 
-contract REACTIONSLIB is DYSNOMIA {
+contract COREREACTIONSLIB is DYSNOMIA {
     string public constant Type = "ReactionsLib";
 
     CHOINTERFACE public Cho;
 
     constructor(address ChoAddress) DYSNOMIA(unicode"DYSNOMIA ReactionsLib", unicode"ReactionsLib", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
-        Cho.Void().AddLibrary("reactions", address(this));
+        Cho.Void().AddLibrary("corereactions", address(this));
         _mintToCap();
     }
 
