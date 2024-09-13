@@ -28,6 +28,9 @@ interface CHOINTERFACE {
     function Void() external view returns (VOID);
     function Saat(uint256) external view returns (uint64);
     function On() external view returns (Bao memory);
+    function Shio() external view returns(SHIO);
+    function Omicron() external view returns(uint64);
+    function Omega() external view returns(uint64);
     function AddLibraryOwner(string memory what) external;
     function CYUN() external view returns(LIBSTRINGS);
     function Enter(address UserToken) external returns(User memory);

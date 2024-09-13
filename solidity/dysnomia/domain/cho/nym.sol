@@ -9,7 +9,7 @@ contract Nym is DYSNOMIA {
 
     CHO public Cho;
     uint64[3] public Saat;
-    Bao public On;
+    //Bao public On;
     uint64 public RoundNumber;
     uint16 public AcronymCount;
     mapping(uint16 => ACRONYM) private Acronyms;
@@ -28,14 +28,9 @@ contract Nym is DYSNOMIA {
     constructor(address ChoAddress) DYSNOMIA(unicode"Champion", unicode"NYM", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHO(ChoAddress);
 
-        (Saat, On) = Cho.Void().Enter(__name, __symbol);
-        On.Phi = address(this);
-        On.Shio.addOwner(address(this));
-        On.Shio.Rho().Rod.addOwner(address(this));
+        Saat = Cho.SUN().Saat(Cho.Geng());
         Cho.addOwner(address(this));
-
-        (On.Omicron, On.Omega) = Cho.Reactor().Initialize(On);
-        
+       
         maxSupply = 11111111111111111111;
         Active = false;
         RoundNumber = 0;
@@ -134,7 +129,6 @@ contract Nym is DYSNOMIA {
             NewRound();
             Active = true;
             NewAcronym();
-            Cho.Reactor().ReactToCreation(On, Alpha.On.Omicron, Alpha.On.Omega);
         }
     }
 
@@ -158,7 +152,6 @@ contract Nym is DYSNOMIA {
             NewAcronym();
         } else
             Active = false;
-        Cho.Reactor().ReactToCreation(On, On.Omicron, On.Omega);
     }
 
     function Vote(uint16 Id) public {
@@ -220,9 +213,9 @@ contract Nym is DYSNOMIA {
         Kappa.Id = AcronymCount;
         Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(uint256(Kappa.Id)), "] ", Beta));
         emit AcronymSubmission(Alpha.Soul, Alpha.Username, Kappa.Id, Beta);
-        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Reactor().ReactLai(On.Omicron ^ Alpha.Soul);
-        ReactPlayer(Alpha.Soul, On.Omega ^ Alpha.On.Omega);
-        (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron ^ On.Omicron);
+        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Reactor().ReactLai(Alpha.On.Omicron ^ Alpha.Soul);
+        ReactPlayer(Alpha.Soul, Alpha.On.Omega);
+        (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron);
         Acronyms[AcronymCount] = Kappa;
 
         if(LastUserVote[Alpha.Soul].Submissions < 5) {
@@ -241,7 +234,6 @@ contract Nym is DYSNOMIA {
         emit NewRoundAcronym(Acronym);
         RoundStartTime = block.timestamp;
         RoundNumber = RoundNumber + 1;
-        (On.Omicron, On.Omega) = Cho.Reactor().ReactToNew(On, Saat);
     }
 
     error NotPlaying(uint64 Soul);
@@ -257,18 +249,18 @@ contract Nym is DYSNOMIA {
         }
     }
 
+    event LogEvent(uint64[3] Saat, uint64 Soul, uint64 Aura, string LogLine);
     function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
-        On.Shio.Log(Soul, Aura, LogLine);
+        emit LogEvent(Saat, Soul, Aura, LogLine);
     }
 
     function OperatorSendMSG(string memory chatline) public onlyOwners {
-        (On.Omicron, On.Omega) = Cho.Reactor().OperatorReact(On, Saat[1]);
         Log(Saat[1], Cho.Void().Nu().Aura(), string.concat(chatline));
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
         if(_players[Soul].Soul == 0) revert NotPlaying(_players[Soul].Soul);
-        (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(On.Shio, _players[Soul].On.Omicron ^ Theta);
-        return Cho.Reactor().ReactShioRod(On.Shio, On.Omicron ^ _players[Soul].On.Omega);
+        (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
+        return Cho.Reactor().ReactShioRod(Cho.Shio(), Cho.Omicron() ^ _players[Soul].On.Omega);
     }
 }

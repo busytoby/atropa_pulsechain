@@ -13,6 +13,9 @@ contract CHO is DYSNOMIA {
     VOID public Void;
     uint64[3] public Saat;
     Bao public On;
+    function Shio() public view returns(SHIO) { return On.Shio; }
+    function Omicron() public view returns(uint64) { return On.Omicron; }
+    function Omega() public view returns(uint64) { return On.Omega; }
     uint64 public Entropy;
 
     mapping(address => User) private Delegates;
@@ -106,7 +109,7 @@ contract CHO is DYSNOMIA {
         return (On.Omicron, On.Omega);
     }
 
-    function ReactUser(uint64 Soul, uint64 Epsilon) public returns (uint64 Omicron, uint64 Omega) {
+    function ReactUser(uint64 Soul, uint64 Epsilon) public returns (uint64 _omicron, uint64 _omega) {
         if(DelegateAddresses[Soul] == address(0x0)) revert SoulNotEntered(Soul);
         User memory Alpha = Delegates[DelegateAddresses[Soul]];
         (Alpha.On.Omicron, Alpha.On.Omega) = Reactor().ReactShioCone(Alpha.On.Shio, Entropy ^ Epsilon);
