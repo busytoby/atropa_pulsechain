@@ -10,6 +10,8 @@ import "./interfaces/libencrypt.sol";
 contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
 
+    uint256 public Prime = 788007780075465850682698395781331007488376212737722608030423588863419947711;
+
     VOID public Void;
     uint64[3] public Saat;
     Bao public On;
@@ -62,6 +64,11 @@ contract CHO is DYSNOMIA {
 
     function SUN() public view returns (LIBEncrypt) {
         return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
+    }
+
+    function Random() public returns (uint256) {
+        React(On.Omicron);
+        return Xiao.modExp(On.Omicron, On.Omega, Prime);
     }
 
     error InvalidOwnership(address UserToken, address User);
