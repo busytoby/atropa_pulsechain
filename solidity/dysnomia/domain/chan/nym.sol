@@ -166,9 +166,9 @@ contract Nym is DYSNOMIA {
         LastUserVote[_soul].Round = RoundNumber;
 
         (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = ReactPlayer(Acronyms[Id].UserInfo.Soul, _soul);
-        Cho.React(Acronyms[Id].UserInfo.On.Omega);
+        (Acronyms[Id].UserInfo.On.Omicron, Acronyms[Id].UserInfo.On.Omega) = Cho.React(Acronyms[Id].UserInfo.On.Omega);
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.ReactUser(_soul, Acronyms[Id].UserInfo.Soul);
-        Cho.React(_players[_soul].On.Omicron);
+        (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.React(_players[_soul].On.Omicron);
 
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -212,10 +212,11 @@ contract Nym is DYSNOMIA {
         AcronymCount = AcronymCount + 1;
         Kappa.Phrase = Beta;
         Kappa.Id = AcronymCount;
+        Kappa.UserInfo = Alpha;
         Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Submitted :: [", Cho.CYUN().String(uint256(Kappa.Id)), "] ", Beta));
         emit AcronymSubmission(Alpha.Soul, Alpha.Username, Kappa.Id, Beta);
         (Alpha.On.Omicron, Alpha.On.Omega) = Cho.Reactor().ReactLai(Alpha.On.Omicron ^ Alpha.Soul);
-        ReactPlayer(Alpha.Soul, Alpha.On.Omega);
+        (_players[Alpha.Soul].On.Omicron, _players[Alpha.Soul].On.Omega) = ReactPlayer(Alpha.Soul, Alpha.On.Omega);
         (Kappa.UserInfo.On.Omicron, Kappa.UserInfo.On.Omega) = Cho.ReactUser(Alpha.Soul, Alpha.On.Omicron);
         Acronyms[AcronymCount] = Kappa;
 
@@ -223,7 +224,7 @@ contract Nym is DYSNOMIA {
             LastUserVote[Alpha.Soul].Submissions = LastUserVote[Alpha.Soul].Submissions + 1;
             _mint(Alpha.On.Phi, 1 * 10 ** decimals());     
         } else
-            ReactPlayer(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Le.Omega);
+            (_players[Alpha.Soul].On.Omicron, _players[Alpha.Soul].On.Omega) = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Psi().Rho().Le.Omega);
 
         if(block.timestamp >= (RoundStartTime + (RoundMinutes * 1 minutes))) EndRound();
     }
@@ -247,7 +248,7 @@ contract Nym is DYSNOMIA {
         else {
             Log(_soul, Cho.Void().Nu().Aura(), string.concat("<", _players[_soul].Username, "> ", chatline));
             (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
-            Cho.React(_players[_soul].On.Omega);
+            (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.React(_players[_soul].On.Omega);
         }
     }
 
