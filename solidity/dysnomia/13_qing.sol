@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./12_delegation.sol";
+import "./01_dysnomia_v2.sol";
+import "./interfaces/12b_chointerface.sol";
+import "./interfaces/libyai.sol";
 
-contract QING is DELEGATION {
+contract QING is DYSNOMIA {
     string public constant Type = "QING";
 
+    CHOINTERFACE public Cho;
     DYSNOMIA public Asset;
-    uint64 public Entropy;
+    uint256 public Waat;
     uint16 public BouncerDivisor;
     uint256 public CoverCharge;
     bool public NoCROWS;
     mapping(address => bool) private _staff;
     mapping(address => uint256) private _list;
+    mapping(uint64 => User) private _players;
     uint64[] private _users;
 
-    constructor(address Integrative, address VoidAddress) DELEGATION("Mysterious Qing", "q", VoidAddress) {
+    constructor(address Integrative, address ChoAddress) DYSNOMIA("Mysterious Qing", "q", address(DYSNOMIA(ChoAddress).Xiao())) {
+        Cho = CHOINTERFACE(ChoAddress);
+        Waat = Cho.Luo();
+        Cho.addOwner(address(this));
+
         Asset = DYSNOMIA(Integrative);
-        Entropy = Xiao.modExp64(On.Shio.Rho().Cone.View().Chin, On.Shio.Rho().Rod.View().Chin, MotzkinPrime);
         _staff[msg.sender] = true;
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
         setCoverCharge(0);
@@ -27,19 +34,14 @@ contract QING is DELEGATION {
     }
 
     function Withdraw(address what, uint256 amount) public onlyOwners {
-        User memory Alpha = GetUser();
+        User memory Alpha = Cho.GetUser();
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> Withdraw Of ", CYUN().String(amount), " ", withdrawToken.name(), " To ", CYUN().Hex(msg.sender)));
-    }
-
-    function React(uint64 Gamma) public returns (uint64) {
-        Entropy = Xiao.modExp64(Gamma, Entropy, MotzkinPrime);
-        return Entropy;
+        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Withdraw Of ", Cho.CYUN().String(amount), " ", withdrawToken.name(), " To ", Cho.CYUN().Hex(msg.sender)));
     }
 
     function VAT() public view returns (LIBYAI) {
-        return LIBYAI(Void.GetLibraryAddress("yai"));
+        return LIBYAI(Cho.Void().GetLibraryAddress("yai"));
     }
 
     function AllowCROWS(bool _b) public onlyOwners {
@@ -67,10 +69,28 @@ contract QING is DELEGATION {
         _;
     }
 
+    event KickedUser(uint64 OperatorSoul, string OperatorUsername, uint64 UserSoul, string Username);
     function Kick(uint64 Soul, string memory Why) public onlyBouncers {
-        User memory Alpha = GetUser();
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat(Alpha.Username, "Kicked User :: (", CYUN().String(Soul), ") ", Delegates[DelegateAddresses[Soul]].Username, " :: ", Why));
-        delete Delegates[DelegateAddresses[Soul]];
+        uint64 _operatorsoul = Cho.GetUserSoul();
+        User memory Operator = _players[_operatorsoul];
+        for(uint16 i = 0; i < _users.length; i++) {
+            if(_users[i] == Soul) {
+                emit KickedUser(Operator.Soul, Operator.Username, _users[i], _players[_users[i]].Username);
+                Log(_users[i], Operator.Soul, string.concat(Operator.Username, " Kicked User :: (", Cho.CYUN().String(Soul), ") ", _players[_users[i]].Username, " :: ", Why));
+                _removeUserBySoul(_users[i]);
+            }
+        }
+    }
+
+    function _removeUserBySoul(uint64 Soul) internal virtual {
+        for(uint16 i = 0; i < _users.length; i++) {
+            if(_users[i] == Soul) {
+                delete _players[_users[i]];
+                _users[i] = _users[_users.length - 1];
+                _users.pop();
+                return;
+            }
+        }
     }
 
     function bouncer(address cBouncer) public view returns (bool) {
@@ -86,16 +106,18 @@ contract QING is DELEGATION {
     error BouncerUnauthorized(address origin, address account, address what);
     function _checkBouncer() internal view {
         if(!bouncer(msg.sender) && !bouncer(tx.origin)) {
-            User memory Alpha = GetUser();
-            if(!bouncer(Alpha.On.Phi))
+            uint64 _soul = Cho.GetUserSoul();
+            if(!bouncer(_players[_soul].On.Phi))
                 revert BouncerUnauthorized(tx.origin, msg.sender, address(this));
         }
     }
 
+    event JoinedUser(uint64 Soul, uint64 Aura, string Username);
     error AlreadyJoined(address UserToken);
     error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
     function Join(address UserToken) public {
-        if(Delegates[tx.origin].On.Phi == UserToken) revert AlreadyJoined(UserToken);
+        uint64 _soul = Cho.GetUserSoul();
+        if(_players[_soul].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge > 0) {
             if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
             bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
@@ -103,50 +125,76 @@ contract QING is DELEGATION {
         }
 
         if(_list[UserToken] < block.timestamp) {
-            User memory Alpha = Enter(UserToken);
-            Log(Alpha.Soul, Saat[2], string.concat("Joined :: ", Alpha.Username));
+            User memory Alpha = Cho.Enter(UserToken);
+            emit JoinedUser(Alpha.Soul, Cho.Void().Nu().Aura(), Alpha.Username);
+            Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("Joined :: ", Alpha.Username));
+            (Alpha.On.Omicron, Alpha.On.Omega) = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
+            _players[Alpha.Soul] = Alpha;
             _list[UserToken] = block.timestamp + 1 days;
             _users.push(Alpha.Soul);
         }
         Bounce();
     }
 
+    function Leave() public {
+        uint64 _soul = Cho.GetUserSoul();
+        if(_players[_soul].Soul == _soul)
+            _removeUserBySoul(_soul);
+    }
+
     function Alias(string memory name, address _qing) public {
-        User memory Alpha = GetUser();
-        VAT().Alias(Alpha.Soul, name, _qing);
+        uint64 _soul = Cho.GetUserSoul();
+        VAT().Alias(_soul, name, _qing);
     }
 
     function Alias(string memory name) public view returns (address) {
-        User memory Alpha = GetUser();
-        return VAT().Alias(Alpha.Soul, name);
+        uint64 _soul = Cho.GetUserSoul();
+        return VAT().Alias(_soul, name);
     }
 
     function Connect(string memory name, address _qing) public onlyBouncers {
-        VAT().Alias(Saat[1], name, _qing);
+        VAT().Alias(Waat, name, _qing);
     }
 
     function Disconnect(string memory name) public onlyBouncers {
-        VAT().Remove(Saat[1], name);
+        VAT().Remove(Waat, name);
     }
 
     function Bounce() public {
         for(uint i = 0; i < _users.length; i++) {
-            User memory Alpha = Delegates[DelegateAddresses[_users[i]]];
+            User memory Alpha = _players[_users[i]];
             if(_list[Alpha.On.Phi] < block.timestamp) {
-                Log(Alpha.Soul, Void.Nu().Aura(), string.concat("Cover Charge Expired :: ", Alpha.Username));
-                delete Delegates[DelegateAddresses[_users[i]]];   
+                Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("Cover Charge Expired :: ", Alpha.Username));
+                delete _players[_users[i]];   
             }
         }
     }
 
-    error NoUserName(address User);
     error Forbidden(address Asset);
+    error NotPlaying(uint64 Soul);
     function Chat(string memory chatline) public {
-        User memory Alpha = GetUser();
+        uint64 _soul = Cho.GetUserSoul();
         if(VAT().IsForbidden(address(Asset))) revert Forbidden(address(Asset));
-        if(bytes(Alpha.Username).length < 1) revert NoUserName(tx.origin); 
-        Log(Alpha.Soul, Void.Nu().Aura(), string.concat("<", Alpha.Username, "> ", chatline));
+        if(_soul == 0) revert NotPlaying(_soul);
+        Log(_soul, Cho.Void().Nu().Aura(), string.concat("<", _players[_soul].Username, "> ", chatline));
+        (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
+        (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.React(_players[_soul].On.Omega);
         Bounce();
         _mintToCap();
+    }
+
+    event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string LogLine);
+    function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
+        emit LogEvent(Waat, Soul, Aura, LogLine);
+    }
+
+    function OperatorSendMSG(string memory chatline) public onlyOwners {
+        Log(0, Cho.Void().Nu().Aura(), string.concat(chatline));
+    }
+
+    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
+        if(_players[Soul].Soul == 0) revert NotPlaying(_players[Soul].Soul);
+        (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
+        return Cho.Reactor().ReactShioRod(Cho.Shio(), Cho.Omicron() ^ _players[Soul].On.Omega);
     }
 }

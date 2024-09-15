@@ -25,9 +25,9 @@ interface LIBYAI {
     function Forbid(address what) external;
     function Unforbid(address what) external;
     function IsForbidden(address Token) external view returns (bool);
-    function GetAliasCount(uint64 Soul) external view returns (uint256);
-    function GetAlias(uint64 Soul, uint256 idx) external view returns (string memory);
-    function Remove(uint64 Soul, string memory name) external;
-    function Alias(uint64 Soul, string memory name, address token) external;
-    function Alias(uint64 Soul, string memory name) external view returns (address _a);
+    function GetAliasCount(uint256 Waat) external view returns (uint256);
+    function GetAlias(uint256 Waat, uint256 idx) external view returns (string memory);
+    function Remove(uint256 Waat, string memory name) external;
+    function Alias(uint256 Waat, string memory name, address token) external;
+    function Alias(uint256 Waat, string memory name) external view returns (address _a);
 }

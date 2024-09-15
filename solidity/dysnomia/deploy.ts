@@ -200,7 +200,7 @@ let START = 0;
       case 17:
         let chocontract = await getContract2('CHO', choaddress)
         let i = 0
-        while(i++ < 200) { // simulate 200 calls, std call + callstatic is required to modify state and then 'simulate' result
+        while(i++ < 10) { // simulate 10 calls, std call + callstatic is required to modify state and then 'simulate' result
           result = await chocontract.Luo()
           r2wtf = await result.wait()
           result = await chocontract.callStatic.Luo()
