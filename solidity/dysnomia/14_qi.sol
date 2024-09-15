@@ -4,67 +4,75 @@ import "./include/user.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/13b_qinginterface.sol";
 
+struct TimeLockedDeposit {
+    uint64 soul;
+    string adjective;
+    uint256 depositId;
+    uint256 amount;
+    uint256 effective;
+    uint256 maturation;
+    uint256 withdrawnTimestamp;
+}
+
 contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
     CHOINTERFACE public Cho;
-    mapping(uint256 QingWaat => mapping(uint64 UserSoul => mapping(uint256 QiWaat => uint256 YUBalance))) public _deposits;
-    mapping(uint64 UserSoul => string[] Adjectives) private _userAdjectives;
-    mapping(uint64 UserSoul => mapping(string Adjective => uint256 _uAidx)) private _userAdjectiveIndexes;
-    mapping(uint256 QingWaat => string[] Adjectives) private _qingAdjectives;
-    mapping(uint256 QingWaat => mapping(string Adjective => uint256 _qAidx)) private _qingAdjectiveIndexes;
-    mapping(uint64 UserSoul => mapping(uint256 QiWaat => uint256 QingWaat)) private _userDeposits;
-    mapping(uint256 QingWaat => mapping(uint256 QiWaat => uint256 YUBalance)) private _qiWaats;
-
-    mapping(string => uint256) public Bhat;
+    mapping(uint256 Id => TimeLockedDeposit Stake) private _deposits;
+    mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
+    mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
     constructor(address ChoAddress) DYSNOMIA("DYSNOMIA Qi", "QI", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
         addOwner(tx.origin);
     }
 
-    function GetUserAdjectives(uint64 UserSoul) public view returns (string[] memory Adjectives) {
-        return _userAdjectives[UserSoul];
+    function GetUserDepositsIds(uint64 UserSoul) public view returns (uint256[] memory DepositIds) {
+        return _userDepositIndexes[UserSoul];
     }
 
-    function GetQingAdjectives(uint256 QingWaat) public view returns (string[] memory Adjectives) {
-        return _qingAdjectives[QingWaat];
+    function GetQingDepositIds(uint256 QingWaat) public view returns (uint256[] memory DepositIds) {
+        return _qingDepositIndexes[QingWaat];
     }
 
-    function AddLibraryOwner(string memory what) public onlyOwners {
-        _addLibraryOwner(Cho.Void(), what);
+    function GetDeposit(uint256 Id) public view returns (TimeLockedDeposit memory Stake) {
+        return _deposits[Id];
     }
 
     error UnknownWaat(uint256 Waat);
-    function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount) public {
+    error Max5555Days();
+    function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount, uint16 Days) public {
+        if(Days > 5555) revert Max5555Days();
         if(Cho.Qu(QingWaat) == address(0x0)) revert UnknownWaat(QingWaat);
-        if(Bhat[Adjective] == 0) Bhat[Adjective] = Cho.Luo();
-        if(Cho.Qu(Bhat[Adjective]) == address(0x0)) revert UnknownWaat(Bhat[Adjective]);
 
         uint64 _soul = Cho.GetUserSoul();
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
         withdrawToken.transferFrom(msg.sender, address(this), amount);
-        _deposits[QingWaat][_soul][Bhat[Adjective]] += amount;
-        if(_userAdjectiveIndexes[_soul][Adjective] == 0) {
-            _userAdjectiveIndexes[_soul][Adjective] = _userAdjectives[_soul].length;
-            _userAdjectives[_soul].push(Adjective);
-        }
-        _userDeposits[_soul][Bhat[Adjective]] += amount;
-        if(_qingAdjectiveIndexes[_soul][Adjective] == 0) {
-            _qingAdjectiveIndexes[_soul][Adjective] = _qingAdjectives[_soul].length;
-            _qingAdjectives[_soul].push(Adjective);
-        }
-        _qiWaats[QingWaat][Bhat[Adjective]] += amount;
+
+        TimeLockedDeposit memory _t;
+        _t.soul = _soul;
+        _t.adjective = Adjective;
+        _t.depositId = Cho.Luo();
+        _t.amount = amount;
+        _t.effective = amount * Days;
+        _t.maturation = block.timestamp + Days * 1 days;
+        _deposits[_t.depositId] = _t;
+        _userDepositIndexes[_soul].push(_t.depositId);
+        _qingDepositIndexes[QingWaat].push(_t.depositId);
     }
 
-    error InsufficientYuBalance(uint256 QingWaat, string Adjective, uint256 QiWaat, uint256 Balance, uint256 Request);
-    function Withdraw(uint256 QingWaat, string memory Adjective, uint256 amount) public {
+    error NotOwner(uint256 DepositId);
+    error AlreadyWithdrawn(uint256 DepositId, uint256 WithdrawnTimestamp);
+    error NotMature(uint256 DepositId, uint256 Maturation);
+    function Withdraw(uint256 Id) public {
         uint64 _soul = Cho.GetUserSoul();
+        if(_deposits[Id].soul != _soul) revert NotOwner(Id);
+        if(_deposits[Id].withdrawnTimestamp > 0) revert AlreadyWithdrawn(Id, _deposits[Id].withdrawnTimestamp);
+        if(_deposits[Id].maturation < block.timestamp) revert NotMature(Id, _deposits[Id].maturation);
+
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
-        if(_deposits[QingWaat][_soul][Bhat[Adjective]] < amount) revert InsufficientYuBalance(QingWaat, Adjective, Bhat[Adjective], _deposits[QingWaat][_soul][Bhat[Adjective]], amount);
-        withdrawToken.transfer(msg.sender, amount);
-        _deposits[QingWaat][_soul][Bhat[Adjective]] -= amount;
-        _userDeposits[_soul][Bhat[Adjective]] -= amount;
-        _qiWaats[QingWaat][Bhat[Adjective]] -= amount;
+        withdrawToken.transfer(msg.sender, _deposits[Id].amount);
+
+        _deposits[Id].withdrawnTimestamp = block.timestamp;
     }
 }
