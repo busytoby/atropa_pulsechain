@@ -42,7 +42,7 @@ contract QI is DYSNOMIA {
         if(Cho.Qu(Bhat[Adjective]) == address(0x0)) revert UnknownWaat(Bhat[Adjective]);
 
         uint64 _soul = Cho.GetUserSoul();
-        DYSNOMIA withdrawToken = DYSNOMIA(YuContract);
+        DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
         withdrawToken.transferFrom(msg.sender, address(this), amount);
         _deposits[QingWaat][_soul][Bhat[Adjective]] += amount;
         if(_userAdjectiveIndexes[_soul][Adjective] == 0) {
@@ -60,7 +60,7 @@ contract QI is DYSNOMIA {
     error InsufficientYuBalance(uint256 QingWaat, string Adjective, uint256 QiWaat, uint256 Balance, uint256 Request);
     function Withdraw(uint256 QingWaat, string memory Adjective, uint256 amount) public {
         uint64 _soul = Cho.GetUserSoul();
-        DYSNOMIA withdrawToken = DYSNOMIA(YuContract);
+        DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
         if(_deposits[QingWaat][_soul][Bhat[Adjective]] < amount) revert InsufficientYuBalance(QingWaat, Adjective, Bhat[Adjective], _deposits[QingWaat][_soul][Bhat[Adjective]], amount);
         withdrawToken.transfer(msg.sender, amount);
         _deposits[QingWaat][_soul][Bhat[Adjective]] -= amount;
