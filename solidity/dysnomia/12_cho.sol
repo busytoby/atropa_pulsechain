@@ -22,6 +22,7 @@ contract CHO is DYSNOMIA {
     mapping(address => User) private Delegates;
     mapping(uint64 => address) private DelegateAddresses;
     mapping(string => address) public Addresses;
+    mapping(uint256 => address) public Qu;
     string[] public Aliases;
 
     constructor(address VoidAddress) DYSNOMIA("Dysnomia Cho", "CHO", address(DYSNOMIA(VoidAddress).Xiao())) {
@@ -61,9 +62,13 @@ contract CHO is DYSNOMIA {
         return LIBCOREREACTIONS(Void.GetLibraryAddress("corereactions"));
     }
 
-    function Luo() public returns (uint256) {
+    function Luo() public returns (uint256 De) {
         React(On.Omicron);
-        return Xiao.modExp(On.Omega, On.Omicron, Prime);
+        De = Xiao.modExp(On.Omega, On.Omicron, Prime);
+        if(Qu[De] == address(0x0))
+            Qu[De] = msg.sender;
+        else
+            De = Luo();
     }
 
     error InvalidOwnership(address UserToken, address User);
