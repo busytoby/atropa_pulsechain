@@ -35,6 +35,10 @@ contract QI is DYSNOMIA {
     }
 
     function GetDeposit(uint256 Id) public view returns (TimeLockedQiDeposit memory Stake) {
+        if(!owner(msg.sender)) {
+            uint64 _soul = Cho.GetUserSoul();
+            if(_deposits[Id].soul != _soul) revert NotOwner(Id);
+        }
         return _deposits[Id];
     }
 
