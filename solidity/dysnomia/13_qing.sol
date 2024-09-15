@@ -31,6 +31,7 @@ contract QING is DYSNOMIA {
 
         if(VAT().has(Integrative, "owner()")) addOwner(Asset.owner());
         if(VAT().has(Integrative, "name()") && VAT().has(Integrative, "symbol()")) Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
+        _mintToCap();
     }
 
     function Withdraw(address what, uint256 amount) public onlyOwners {
@@ -134,6 +135,7 @@ contract QING is DYSNOMIA {
             _users.push(Alpha.Soul);
         }
         Bounce();
+        _mintToCap();
     }
 
     function Leave() public {

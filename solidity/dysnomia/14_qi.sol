@@ -3,94 +3,68 @@ pragma solidity ^0.8.21;
 import "./include/user.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/13b_qinginterface.sol";
-import "./interfaces/13d_qingfactoryinterface.sol";
-import "./interfaces/libencrypt.sol";
-import "./interfaces/libconjure.sol";
 
 contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
-    address public Creator;
-    address public ConjureLib;
-    VOID public Void;
-    uint64[3] public Saat;
+    CHOINTERFACE public Cho;
+    mapping(uint256 QingWaat => mapping(uint64 UserSoul => mapping(uint256 QiWaat => uint256 YUBalance))) public _deposits;
+    mapping(uint64 UserSoul => string[] Adjectives) private _userAdjectives;
+    mapping(uint64 UserSoul => mapping(string Adjective => uint256 _uAidx)) private _userAdjectiveIndexes;
+    mapping(uint256 QingWaat => string[] Adjectives) private _qingAdjectives;
+    mapping(uint256 QingWaat => mapping(string Adjective => uint256 _qAidx)) private _qingAdjectiveIndexes;
+    mapping(uint64 UserSoul => mapping(uint256 QiWaat => uint256 QingWaat)) private _userDeposits;
+    mapping(uint256 QingWaat => mapping(uint256 QiWaat => uint256 YUBalance)) private _qiWaats;
 
-    constructor(bytes memory Geng, address Location) DYSNOMIA("Geng Qi", "QI", address(DYSNOMIA(Location).Xiao())) {
-        Creator = tx.origin;
-        Void = QING(Location).Void();
-        Saat = SUN().Saat(Geng);
+    mapping(string => uint256) public Bhat;
+
+    constructor(address ChoAddress) DYSNOMIA("DYSNOMIA Qi", "QI", address(DYSNOMIA(ChoAddress).Xiao())) {
+        Cho = CHOINTERFACE(ChoAddress);
         addOwner(tx.origin);
-        ConjureLib = Void.GetLibraryAddress("conjure");
-        addOwner(ConjureLib);
     }
 
-    function Modify(uint64 Rho, uint64 Upsilon, uint64 Ohm) public onlyOwners {
-        if(Rho < MotzkinPrime)
-            Saat[0] = Rho;
-        if(Upsilon < MotzkinPrime)
-            Saat[1] = Upsilon;
-        if(Ohm < MotzkinPrime)
-            Saat[2] = Ohm;
+    function GetUserAdjectives(uint64 UserSoul) public view returns (string[] memory Adjectives) {
+        return _userAdjectives[UserSoul];
     }
 
-    function Rename(string memory Adverb, string memory Adjective, string memory Noun) public onlyOwners {
-        VAI().RenameQi(Adverb, Noun, Adjective);
+    function GetQingAdjectives(uint256 QingWaat) public view returns (string[] memory Adjectives) {
+        return _qingAdjectives[QingWaat];
     }
 
     function AddLibraryOwner(string memory what) public onlyOwners {
-        _addLibraryOwner(Void, what);
+        _addLibraryOwner(Cho.Void(), what);
     }
 
-    error OnlyAvailableToConjureLib(address libconjure);
-    function ForceTransfer(address from, address to, uint256 amount) public onlyOwners {
-        if(msg.sender != ConjureLib) revert OnlyAvailableToConjureLib(ConjureLib);
-        _transfer(from, to, amount);
+    error UnknownWaat(uint256 Waat);
+    function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount) public {
+        if(Cho.Qu(QingWaat) == address(0x0)) revert UnknownWaat(QingWaat);
+        if(Bhat[Adjective] == 0) Bhat[Adjective] = Cho.Luo();
+        if(Cho.Qu(Bhat[Adjective]) == address(0x0)) revert UnknownWaat(Bhat[Adjective]);
+
+        uint64 _soul = Cho.GetUserSoul();
+        DYSNOMIA withdrawToken = DYSNOMIA(YuContract);
+        withdrawToken.transferFrom(msg.sender, address(this), amount);
+        _deposits[QingWaat][_soul][Bhat[Adjective]] += amount;
+        if(_userAdjectiveIndexes[_soul][Adjective] == 0) {
+            _userAdjectiveIndexes[_soul][Adjective] = _userAdjectives[_soul].length;
+            _userAdjectives[_soul].push(Adjective);
+        }
+        _userDeposits[_soul][Bhat[Adjective]] += amount;
+        if(_qingAdjectiveIndexes[_soul][Adjective] == 0) {
+            _qingAdjectiveIndexes[_soul][Adjective] = _qingAdjectives[_soul].length;
+            _qingAdjectives[_soul].push(Adjective);
+        }
+        _qiWaats[QingWaat][Bhat[Adjective]] += amount;
     }
 
-    modifier onlyPlayer() {
-        _checkPlayer();
-        _;
-    }
-
-    error InvalidOwnership(address UserToken, address User);
-    function _checkPlayer() internal view virtual {
-        if(Creator != tx.origin) revert InvalidOwnership(Creator, tx.origin);
-    }
-
-    function acceptConjureLib() public onlyPlayer {
-        renounceOwnership(ConjureLib);
-        ConjureLib = Void.GetLibraryAddress("conjure");
-        addOwner(ConjureLib);
-    }
-
-    function transferOwnership(address to) public onlyPlayer {
-        Creator = to;
-    }
-
-    function VAI() public view returns (LIBCONJURE) {
-        return LIBCONJURE(ConjureLib);
-    }
-
-    function name() public view override returns (string memory) {
-        if(Saat[1] > VAI().Levels(7)) return __name;
-        return VAI().qName();
-    }
-
-    function symbol() public view override returns (string memory) {
-        if(Saat[1] > VAI().Levels(7)) return __symbol;
-        return VAI().qSymbol();
-    }
-
-    function AddMarketRate(address _a, uint256 _r) public onlyPlayer {
-        _addMarketRate(_a, _r);
-    }
-
-    function Withdraw(address what, uint256 amount) public onlyPlayer {
-        DYSNOMIA withdrawToken = DYSNOMIA(what);
+    error InsufficientYuBalance(uint256 QingWaat, string Adjective, uint256 QiWaat, uint256 Balance, uint256 Request);
+    function Withdraw(uint256 QingWaat, string memory Adjective, uint256 amount) public {
+        uint64 _soul = Cho.GetUserSoul();
+        DYSNOMIA withdrawToken = DYSNOMIA(YuContract);
+        if(_deposits[QingWaat][_soul][Bhat[Adjective]] < amount) revert InsufficientYuBalance(QingWaat, Adjective, Bhat[Adjective], _deposits[QingWaat][_soul][Bhat[Adjective]], amount);
         withdrawToken.transfer(msg.sender, amount);
-    }
-
-    function SUN() public view returns (LIBEncrypt) {
-        return LIBEncrypt(Void.GetLibraryAddress("encrypt"));
+        _deposits[QingWaat][_soul][Bhat[Adjective]] -= amount;
+        _userDeposits[_soul][Bhat[Adjective]] -= amount;
+        _qiWaats[QingWaat][Bhat[Adjective]] -= amount;
     }
 }
