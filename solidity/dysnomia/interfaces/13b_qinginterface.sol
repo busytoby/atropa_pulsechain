@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01b_dysnomia.sol";
-import "./11b_lauinterface.sol";
+import "./12b_chointerface.sol";
 import "./libstrings.sol";
 import "./libyai.sol";
 
@@ -24,18 +24,17 @@ interface QING {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Void() external view returns (VOID);
-    function Saat(uint256) external view returns (uint64);
-    function On() external view returns (Bao memory);
-    function CYUN() external view returns(LIBSTRINGS);
+    function Cho() external view returns (CHOINTERFACE);
+    function Asset() external view returns (DYSNOMIAINTERFACE);
+    function Waat() external view returns (uint256);
+    function BouncerDivisor() external view returns (uint16);
+    function CoverCharge() external view returns (uint256);
+    function NoCROWS() external view returns (bool);
+    function VAT() external view returns (LIBYAI);
+    function Withdraw(address what, uint256 amount) external;
     function GetUserTokenAddress(address wallet) external view returns(address UserToken);
     function OperatorSendMSG(string memory chatline) external;
-    function Asset() external returns (DYSNOMIAINTERFACE);
-    function Entropy() external returns (uint64);
     function AllowCROWS(bool _b) external;
-    function BouncerDivisor() external returns (uint16);
-    function CoverCharge() external returns (uint256);
-    function VAT() external view returns (LIBYAI);
     function setBouncerDivisor(uint16 _d) external;
     function setCoverCharge(uint256 _c) external;
     function setStaff(address _a, bool active) external;
@@ -43,10 +42,13 @@ interface QING {
     function Kick(uint64 Soul, string memory Why) external;
     function bouncer(address cBouncer) external view returns (bool);
     function Join(address UserToken) external;
+    function Leave() external;
     function Alias(string memory name, address _qing) external;
     function Alias(string memory name) external view returns (address);
     function Connect(string memory name, address _qing) external;
     function Disconnect(string memory name) external;
     function Bounce() external;
     function Chat(string memory chatline) external;
+    function Log(uint64 Soul, uint64 Aura, string memory LogLine) external;
+    function ReactPlayer(uint64 Soul, uint64 Theta) external returns (uint64 Omicron, uint64 Omega);
 }
