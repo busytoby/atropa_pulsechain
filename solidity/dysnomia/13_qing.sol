@@ -142,16 +142,6 @@ contract QING is DYSNOMIA {
             _removeUserBySoul(_soul);
     }
 
-    function Alias(string memory name, address _qing) public {
-        uint64 _soul = Cho.GetUserSoul();
-        VAT().Alias(_soul, name, _qing);
-    }
-
-    function Alias(string memory name) public view returns (address) {
-        uint64 _soul = Cho.GetUserSoul();
-        return VAT().Alias(_soul, name);
-    }
-
     function Connect(string memory name, address _qing) public onlyBouncers {
         VAT().Alias(Waat, name, _qing);
     }
@@ -178,7 +168,6 @@ contract QING is DYSNOMIA {
         if(_soul == 0) revert NotPlaying(_soul);
         Log(_soul, Cho.Void().Nu().Aura(), string.concat("<", _players[_soul].Username, "> ", chatline));
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
-        (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.React(_players[_soul].On.Omega);
         Bounce();
         _mintToCap();
     }
