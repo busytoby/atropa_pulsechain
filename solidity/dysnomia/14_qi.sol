@@ -4,12 +4,11 @@ import "./include/user.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/13b_qinginterface.sol";
 
-struct TimeLockedDeposit {
+struct TimeLockedQiDeposit {
     uint64 soul;
     string adjective;
     uint256 depositId;
     uint256 amount;
-    uint256 effective;
     uint256 maturation;
     uint256 withdrawnTimestamp;
 }
@@ -18,7 +17,7 @@ contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
     CHOINTERFACE public Cho;
-    mapping(uint256 Id => TimeLockedDeposit Stake) private _deposits;
+    mapping(uint256 Id => TimeLockedQiDeposit Stake) private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
@@ -35,7 +34,7 @@ contract QI is DYSNOMIA {
         return _qingDepositIndexes[QingWaat];
     }
 
-    function GetDeposit(uint256 Id) public view returns (TimeLockedDeposit memory Stake) {
+    function GetDeposit(uint256 Id) public view returns (TimeLockedQiDeposit memory Stake) {
         return _deposits[Id];
     }
 
@@ -49,12 +48,11 @@ contract QI is DYSNOMIA {
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
-        TimeLockedDeposit memory _t;
+        TimeLockedQiDeposit memory _t;
         _t.soul = _soul;
         _t.adjective = Adjective;
         _t.depositId = Cho.Luo();
         _t.amount = amount;
-        _t.effective = amount * Days;
         _t.maturation = block.timestamp + Days * 1 days;
         _deposits[_t.depositId] = _t;
         _userDepositIndexes[_soul].push(_t.depositId);
