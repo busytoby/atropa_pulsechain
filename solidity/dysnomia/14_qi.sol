@@ -32,15 +32,16 @@ contract QI is DYSNOMIA {
     }
 
     error UnknownWaat(uint256 Waat);
-    error Max5555Days();
     function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount) public {
-        if(Cho.Qu(QingWaat) == address(0x0)) revert UnknownWaat(QingWaat);
+        TimeDeposit memory _t;
+        _t.qing = Cho.Qu(QingWaat);
+
+        if(_t.qing == address(0x0)) revert UnknownWaat(QingWaat);
 
         uint64 _soul = Cho.GetUserSoul();
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
-        TimeDeposit memory _t;
         _t.soul = _soul;
         _t.adjective = Adjective;
         _t.depositId = Cho.Luo();
@@ -54,7 +55,6 @@ contract QI is DYSNOMIA {
 
     error NotOwner(uint256 DepositId);
     error ExceedsBalance(uint256 DepositId, uint256 Balance);
-    error NotMature(uint256 DepositId, uint256 Maturation);
     function Withdraw(uint256 Id, uint256 Amount) public {
         uint64 _soul = Cho.GetUserSoul();
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../include/timelockeddeposit.sol";
+import "../include/timedeposit.sol";
 import "./13b_qinginterface.sol";
 
 interface QIINTERFACE {
@@ -25,7 +25,7 @@ interface QIINTERFACE {
     function Cho() external view returns (CHOINTERFACE);
     function GetUserDepositsIds(uint64 UserSoul) external view returns (uint256[] memory DepositIds);
     function GetQingDepositIds(uint256 QingWaat) external view returns (uint256[] memory DepositIds);
-    function GetDeposit(uint256 Id) external view returns (TimeLockedQiDeposit memory Stake);
+    function GetDeposit(uint256 Id) external view returns (TimeDeposit memory Stake);
     function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount, uint16 Days) external;
     function Withdraw(uint256 Id) external;
 }
