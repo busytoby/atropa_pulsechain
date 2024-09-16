@@ -14,7 +14,6 @@ contract MAI is DYSNOMIA {
 
     QING public Zuo;
     mapping(uint64 Soul => QIN) private _players;
-    mapping(uint)
 
     constructor(address ZuoQingAddress) DYSNOMIA("Dysnomia MAI", "MAI", address(DYSNOMIA(ZuoQingAddress).Xiao())) {
         Zuo = QING(ZuoQingAddress);
@@ -36,5 +35,8 @@ contract MAI is DYSNOMIA {
         _players[Beta.Soul].Location.Join(Beta.On.Phi);
         _players[Beta.Soul].lastMove = block.timestamp;
 
+        (uint64 Omicron, uint64 Omega) = Zuo.Cho().React(Beta.On.Omicron);
+        (Omicron, Omega) = Zuo.Cho().ReactUser(Beta.Soul, Omega);
+        (Omicron, Omega) = Zuo.ReactPlayer(Beta.Soul, Omicron);
     }
 }
