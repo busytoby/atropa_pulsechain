@@ -10,6 +10,7 @@ contract QI is DYSNOMIA {
 
     CHOINTERFACE public Cho;
     mapping(uint256 Id => TimeDeposit Stake) private _deposits;
+    mapping(uint256 Id => string Adjective) private _adjectives;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
@@ -31,6 +32,10 @@ contract QI is DYSNOMIA {
         return _deposits[Id];
     }
 
+    function GetAdjective(uint256 Id) public view returns (string memory) {
+        return _adjectives[Id];
+    }
+
     error UnknownWaat(uint256 Waat);
     function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
@@ -43,11 +48,11 @@ contract QI is DYSNOMIA {
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
-        _t.adjective = Adjective;
         _t.depositId = Cho.Luo();
         _t.amount = amount;
         _t.timestamp = block.timestamp;
         _deposits[_t.depositId] = _t;
+        _adjectives[_t.depositId] = Adjective;
         _userDepositIndexes[_soul].push(_t.depositId);
         _qingDepositIndexes[QingWaat].push(_t.depositId);
         _mintToCap();

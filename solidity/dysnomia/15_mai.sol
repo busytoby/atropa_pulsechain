@@ -42,20 +42,21 @@ contract MAI is DYSNOMIA {
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) public {
+    function Deposit(address Qing, uint256 amount) public {
         TimeDeposit memory _t;
         _t.qing = Qing;
+        
         uint256 QingWaat = QING(Qing).Waat();
-
         if(QingWaat == 0) revert UnknownQing(Qing);
-        if(_t.qing == Zuo.Cho().Qu(QingWaat)) revert WaatMismatch(Qing, QingWaat);
+        
+        _t.qing == Zuo.Cho().Qu(QingWaat);
+        if(_t.qing != Qing) revert WaatMismatch(Qing, QingWaat);
 
         uint64 _soul = Zuo.Cho().GetUserSoul();
         DYSNOMIA withdrawToken = DYSNOMIA(_t.qing);
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
-        _t.adjective = Adjective;
         if(_userQingDeposits[_soul][QingWaat] == 0)
             _t.depositId = Zuo.Cho().Luo();
         else 
