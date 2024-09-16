@@ -34,11 +34,16 @@ contract QING is DYSNOMIA {
         _mintToCap();
     }
 
+    function Look() public view returns (uint64[] memory) {
+        return _users;
+    }
+
+    event Withdrawal(uint64 Soul, uint64 Aura, address Token, uint256 amount);
     function Withdraw(address what, uint256 amount) public onlyOwners {
         User memory Alpha = Cho.GetUser();
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
-        Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("<", Alpha.Username, "> Withdraw Of ", Cho.CYUN().String(amount), " ", withdrawToken.name(), " To ", Cho.CYUN().Hex(msg.sender)));
+        emit Withdrawal(Alpha.Soul, Cho.Void().Nu().Aura(), what, amount);
     }
 
     function VAT() public view returns (LIBYAI) {
@@ -70,14 +75,13 @@ contract QING is DYSNOMIA {
         _;
     }
 
-    event KickedUser(uint64 OperatorSoul, string OperatorUsername, uint64 UserSoul, string Username);
+    event KickedUser(uint64 OperatorSoul, string OperatorUsername, uint64 UserSoul, string Username, string Why);
     function Kick(uint64 Soul, string memory Why) public onlyBouncers {
         uint64 _operatorsoul = Cho.GetUserSoul();
         User memory Operator = _players[_operatorsoul];
         for(uint16 i = 0; i < _users.length; i++) {
             if(_users[i] == Soul) {
-                emit KickedUser(Operator.Soul, Operator.Username, _users[i], _players[_users[i]].Username);
-                Log(_users[i], Operator.Soul, string.concat(Operator.Username, " Kicked User :: (", Cho.CYUN().String(Soul), ") ", _players[_users[i]].Username, " :: ", Why));
+                emit KickedUser(Operator.Soul, Operator.Username, _users[i], _players[_users[i]].Username, Why);
                 _removeUserBySoul(_users[i]);
             }
         }
@@ -113,7 +117,7 @@ contract QING is DYSNOMIA {
         }
     }
 
-    event JoinedUser(uint64 Soul, uint64 Aura, string Username);
+    event Joined(uint64 Soul, uint64 Aura, string Username);
     error AlreadyJoined(address UserToken);
     error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
     function Join(address UserToken) public {
@@ -127,8 +131,7 @@ contract QING is DYSNOMIA {
 
         if(_list[UserToken] < block.timestamp) {
             User memory Alpha = Cho.Enter(UserToken);
-            emit JoinedUser(Alpha.Soul, Cho.Void().Nu().Aura(), Alpha.Username);
-            Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("Joined :: ", Alpha.Username));
+            emit Joined(Alpha.Soul, Cho.Void().Nu().Aura(), Alpha.Username);
             (Alpha.On.Omicron, Alpha.On.Omega) = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
             _players[Alpha.Soul] = Alpha;
             _list[UserToken] = block.timestamp + 1 days;
@@ -152,11 +155,12 @@ contract QING is DYSNOMIA {
         VAT().Remove(Waat, name);
     }
 
+    event Bounced(string Username);
     function Bounce() public {
         for(uint i = 0; i < _users.length; i++) {
             User memory Alpha = _players[_users[i]];
             if(_list[Alpha.On.Phi] < block.timestamp) {
-                Log(Alpha.Soul, Cho.Void().Nu().Aura(), string.concat("Cover Charge Expired :: ", Alpha.Username));
+                emit Bounced(Alpha.Username);
                 delete _players[_users[i]];   
             }
         }
@@ -168,19 +172,15 @@ contract QING is DYSNOMIA {
         uint64 _soul = Cho.GetUserSoul();
         if(VAT().IsForbidden(address(Asset))) revert Forbidden(address(Asset));
         if(_soul == 0) revert NotPlaying(_soul);
-        Log(_soul, Cho.Void().Nu().Aura(), string.concat("<", _players[_soul].Username, "> ", chatline));
+        emit LogEvent(Waat, _soul, Cho.Void().Nu().Aura(), _players[_soul].Username, chatline);
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
         Bounce();
         _mintToCap();
     }
 
-    event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string LogLine);
-    function Log(uint64 Soul, uint64 Aura, string memory LogLine) internal {
-        emit LogEvent(Waat, Soul, Aura, LogLine);
-    }
-
-    function OperatorSendMSG(string memory chatline) public onlyOwners {
-        Log(0, Cho.Void().Nu().Aura(), string.concat(chatline));
+    event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string Username, string LogLine);
+    function OperatorSendMSG(string memory NAME, string memory chatline) public onlyOwners {
+        emit LogEvent(Waat, 0, Cho.Void().Nu().Aura(), NAME, chatline);
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {

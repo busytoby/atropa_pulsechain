@@ -14,6 +14,7 @@ contract MAI is DYSNOMIA {
 
     QING public Zuo;
     mapping(uint64 Soul => QIN) private _players;
+    mapping(uint)
 
     constructor(address ZuoQingAddress) DYSNOMIA("Dysnomia MAI", "MAI", address(DYSNOMIA(ZuoQingAddress).Xiao())) {
         Zuo = QING(ZuoQingAddress);
