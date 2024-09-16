@@ -191,6 +191,7 @@ let START = 0;
         let corereactionscontract = await getContract2('COREREACTIONSLIB', libcorereactionsaddress)
         result = await corereactionscontract.RegisterChoForTalk(choaddress)
         r2wtf = await result.wait()
+        console.log(`Cho Registered For Talk`)
 
       case 16:
         result = await deploy('Nym', [choaddress]) 
@@ -207,51 +208,39 @@ let START = 0;
           console.log(result)
         }
 
-    return;
-
-      case 17:
+      case 18:
         result = await deploy('YAI', [voidaddress]) 
         console.log(`YAI address: ${result.address}`)
         libyaiaddress = result.address
 
-      case 18:
-        result = await deploy('QINGFactory', [libyaiaddress]) 
+      case 19:
+        result = await deploy('QINGFactory', [choaddress]) 
         console.log(`QINGFactory address: ${result.address}`)
         qingfactoryaddress = result.address
 
-      case 19:
-        let qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress)
+      case 20:
+        let qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress)
         result = await qingfactorycontract.New(voidaddress)
         console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
         r2wtf = await result.wait()
         voidqingaddress = r2wtf.events[0].address
         console.log(`VOID QING Deployed: ${voidqingaddress} from origin`)
 
-        qingfactorycontract = await getContract('QINGFactory', qingfactoryaddress, 2)
+        qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress, 2)
         result = await qingfactorycontract.New(libyaiaddress)
         r2wtf = await result.wait()
         yaiqingaddress = r2wtf.events[0].address
         console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
 
-      case 20:
-        //result = await deploy('ENCRYPT', [voidaddress]) 
-        //console.log(`ENCRYPT address: ${result.address}`)
-        //libencryptaddress = result.address
-
       case 21:
-        result = await deploy('ZAO', [voidqingaddress]) 
-        console.log(`ZAO address: ${result.address}`)
+        result = await deploy('QI', [choaddress]) 
+        console.log(`QI address: ${result.address}`)
         zaoaddress = result.address
 
       case 22:
-        result = await deploy('CONJURELIB', [zaoaddress]) 
-        console.log(`CONJURELIB address: ${result.address}`)
+        result = await deploy('MAI', [voidqingaddress]) 
+        console.log(`MAI address: ${result.address}`)
         libconjureaddress = result.address
-
-      case 23:
-        result = await deploy('ZAI', [zaoaddress]) 
-        console.log(`ZAI address: ${result.address}`)
-        zaiaddress = result.address
     }
   } catch (e) {
     console.log(e.message)

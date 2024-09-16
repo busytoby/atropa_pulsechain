@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
-import "./interfaces/16b_zaointerface.sol";
+import "./interfaces/14b_qiinterface.sol";
 
 struct QIN {
     uint256 Maat;

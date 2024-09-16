@@ -21,7 +21,6 @@ contract QING is DYSNOMIA {
     constructor(address Integrative, address ChoAddress) DYSNOMIA("Mysterious Qing", "q", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
         Waat = Cho.Luo();
-        Cho.addOwner(address(this));
 
         Asset = DYSNOMIA(Integrative);
         _staff[msg.sender] = true;
