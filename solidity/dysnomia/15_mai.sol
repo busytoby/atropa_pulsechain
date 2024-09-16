@@ -25,6 +25,7 @@ contract MAI is DYSNOMIA {
     function Move(string memory To) public onlyOwners {
         User memory Beta = Zuo.Cho().GetUser();
         if(Beta.Soul == 0) revert NotPlaying(Beta.Soul);
+        if(_players[Beta.Soul].Maat == 0) _players[Beta.Soul].Maat = Zuo.Cho().Luo();
         if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
         uint256 From = _players[Beta.Soul].Location.Waat();
         address ToQing = Zuo.VAT().Alias(From, To);
