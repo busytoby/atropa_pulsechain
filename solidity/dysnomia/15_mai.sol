@@ -18,12 +18,14 @@ contract MAI is DYSNOMIA {
     constructor(address ZuoQingAddress) DYSNOMIA("Dysnomia MAI", "MAI", address(DYSNOMIA(ZuoQingAddress).Xiao())) {
         Zuo = QING(ZuoQingAddress);
         addOwner(tx.origin);
+        _mintToCap();
     }
 
     function Maat() public returns (uint256) {
         uint64 _soul = Zuo.Cho().GetUserSoul();
         if(_soul == 0) revert NotPlaying(_soul);
         if(_players[_soul].Maat == 0) _players[_soul].Maat = Zuo.Cho().Luo();
+        _mintToCap();
         return Maat();
     }
 
@@ -36,6 +38,7 @@ contract MAI is DYSNOMIA {
         (uint64 Omicron, uint64 Omega) = Zuo.Cho().React(Beta.On.Omicron);
         (Omicron, Omega) = Zuo.Cho().ReactUser(Beta.Soul, Omega);
         (Omicron, Omega) = Zuo.ReactPlayer(Beta.Soul, Omicron);
+        _mintToCap();
     }
 
     error NotPlaying(uint64 Soul);
