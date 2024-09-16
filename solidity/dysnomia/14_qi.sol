@@ -24,6 +24,7 @@ contract QI is DYSNOMIA {
     constructor(address ChoAddress) DYSNOMIA("DYSNOMIA Qi", "QI", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
         addOwner(tx.origin);
+        _mintToCap();
     }
 
     function GetUserDepositsIds(uint64 UserSoul) public view returns (uint256[] memory DepositIds) {
@@ -57,6 +58,7 @@ contract QI is DYSNOMIA {
         _deposits[_t.depositId] = _t;
         _userDepositIndexes[_soul].push(_t.depositId);
         _qingDepositIndexes[QingWaat].push(_t.depositId);
+        _mintToCap();
     }
 
     error NotOwner(uint256 DepositId);
@@ -72,5 +74,6 @@ contract QI is DYSNOMIA {
         withdrawToken.transfer(msg.sender, _deposits[Id].amount);
 
         _deposits[Id].withdrawnTimestamp = block.timestamp;
+        _mintToCap();
     }
 }
