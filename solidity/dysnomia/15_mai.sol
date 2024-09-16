@@ -36,8 +36,13 @@ contract MAI is DYSNOMIA {
         return _userDepositIndexes[UserSoul];
     }
 
-    function GetDeposit(uint256 Id) public view returns (TimeDeposit memory Stake) {
+    function GetDeposit(uint256 Id) public view returns (TimeDeposit memory) {
         return _deposits[Id];
+    }
+
+    function GetQingDeposit(uint256 QingWaat) public view returns (TimeDeposit memory) {
+        uint64 _soul = Zuo.Cho().GetUserSoul();
+        return _deposits[_userQingDeposits[_soul][QingWaat]];
     }
 
     error WaatMismatch(address Qing, uint256 Waat);
