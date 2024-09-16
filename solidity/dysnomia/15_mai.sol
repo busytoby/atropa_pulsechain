@@ -20,16 +20,7 @@ contract MAI is DYSNOMIA {
         addOwner(tx.origin);
     }
 
-    error NotPlaying(uint64 Soul);
-    error OneMovePerBlock();
-    function Move(string memory To) public onlyOwners {
-        User memory Beta = Zuo.Cho().GetUser();
-        if(Beta.Soul == 0) revert NotPlaying(Beta.Soul);
-        if(_players[Beta.Soul].Maat == 0) _players[Beta.Soul].Maat = Zuo.Cho().Luo();
-        if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
-        uint256 From = _players[Beta.Soul].Location.Waat();
-        address ToQing = Zuo.VAT().Alias(From, To);
-
+    function _updateUserLocation(User memory Beta, address ToQing) internal {
         if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
         _players[Beta.Soul].Location = QING(ToQing);
         _players[Beta.Soul].Location.Join(Beta.On.Phi);
@@ -38,5 +29,26 @@ contract MAI is DYSNOMIA {
         (uint64 Omicron, uint64 Omega) = Zuo.Cho().React(Beta.On.Omicron);
         (Omicron, Omega) = Zuo.Cho().ReactUser(Beta.Soul, Omega);
         (Omicron, Omega) = Zuo.ReactPlayer(Beta.Soul, Omicron);
+    }
+
+    error NotPlaying(uint64 Soul);
+    error OneMovePerBlock();
+    function Move(string memory To) public {
+        User memory Beta = Zuo.Cho().GetUser();
+        if(Beta.Soul == 0) revert NotPlaying(Beta.Soul);
+        if(_players[Beta.Soul].Maat == 0) _players[Beta.Soul].Maat = Zuo.Cho().Luo();
+        if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
+        uint256 From = _players[Beta.Soul].Location.Waat();
+        address ToQing = Zuo.VAT().Alias(From, To);
+
+        _updateUserLocation(Beta, ToQing);
+    }
+
+    function MovePlayer(uint64 Soul, address ToQing) public onlyOwners {
+        User memory Beta = Zuo.Cho().GetUserBySoul(Soul);
+        if(Beta.Soul == 0) revert NotPlaying(Beta.Soul);
+        if(_players[Beta.Soul].Maat == 0) revert NotPlaying(Beta.Soul);
+
+        _updateUserLocation(Beta, ToQing);
     }
 }

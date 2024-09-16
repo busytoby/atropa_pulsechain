@@ -44,6 +44,7 @@ interface CHOINTERFACE {
     function Enter(address UserToken) external returns(User memory);
     function GetUser() external returns(User memory Alpha);
     function GetUserSoul() external view returns(uint64);
+    function GetUserBySoul(uint64 Soul) external returns (User memory Alpha);
     function GetUserByAddress(address who) external returns(User memory Alpha);
     function GetAddressBySoul(uint64 soul) external view returns(address UserAddress);
     function GetUserTokenAddress(address wallet) external view returns(address UserToken);
