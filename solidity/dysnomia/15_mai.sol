@@ -26,7 +26,6 @@ contract MAI is DYSNOMIA {
 
     function Maat() public returns (uint256) {
         uint64 _soul = Zuo.Cho().GetUserSoul();
-        if(_soul == 0) revert NotPlaying(_soul);
         if(_players[_soul].Maat == 0) _players[_soul].Maat = Zuo.Cho().Luo();
         _mintToCap();
         return Maat();
@@ -100,11 +99,9 @@ contract MAI is DYSNOMIA {
         _mintToCap();
     }
 
-    error NotPlaying(uint64 Soul);
     error OneMovePerBlock();
     function Move(string memory To) public {
         User memory Beta = Zuo.Cho().GetUser();
-        if(Beta.Soul == 0) revert NotPlaying(Beta.Soul);
         if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
         uint256 From = _players[Beta.Soul].Location.Waat();
         address ToQing = Zuo.VAT().Alias(From, To);
@@ -114,9 +111,6 @@ contract MAI is DYSNOMIA {
 
     function MovePlayer(uint64 Soul, address ToQing) public onlyOwners {
         User memory Beta = Zuo.Cho().GetUserBySoul(Soul);
-        if(Beta.Soul == 0) revert NotPlaying(Beta.Soul);
-        if(_players[Beta.Soul].Maat == 0) revert NotPlaying(Beta.Soul);
-
         _updateUserLocation(Beta, ToQing);
     }
 }

@@ -156,7 +156,6 @@ contract Nym is DYSNOMIA {
     function Vote(uint16 Id) public {
         uint64 _soul = Cho.GetUserSoul();
         assert(Id > 0 && Id <= AcronymCount);
-        if(_soul == 0) revert NotPlaying(_soul);
 
         if(LastUserVote[_soul].Round <= RoundNumber) {
             LastUserVote[_soul].Submissions = 0;
@@ -241,7 +240,6 @@ contract Nym is DYSNOMIA {
     error NotPlaying(uint64 Soul);
     function Chat(string memory chatline) public {
         uint64 _soul = Cho.GetUserSoul();
-        if(_soul == 0) revert NotPlaying(_soul);
 
         if(Cho.CYUN().CheckAcronym(Acronym, chatline))
             Submit(_players[_soul], chatline);
