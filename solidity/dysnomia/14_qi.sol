@@ -1,17 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./include/user.sol";
+import "./include/timelockeddeposit.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/13b_qinginterface.sol";
-
-struct TimeLockedQiDeposit {
-    uint64 soul;
-    string adjective;
-    uint256 depositId;
-    uint256 amount;
-    uint256 maturation;
-    uint256 withdrawnTimestamp;
-}
 
 contract QI is DYSNOMIA {
     string public constant Type = "QI";

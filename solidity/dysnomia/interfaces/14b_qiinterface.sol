@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "../include/timelockeddeposit.sol";
 import "./13b_qinginterface.sol";
-import "./libconjure.sol";
-import "./libencrypt.sol";
 
 interface QIINTERFACE {
     function Rename(string memory newName, string memory newSymbol) external;
@@ -23,12 +22,10 @@ interface QIINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Creator() external view returns (address);
-    function Void() external view returns (VOID);
-    function Saat(uint256) external view returns (uint64);
-    function Modify(uint64 Rho, uint64 Upsilon, uint64 Ohm) external; 
-    function ForceTransfer(address from, address to, uint256 amount) external;
-    function VAI() external view returns (LIBCONJURE);
-    function AddMarketRate(address _a, uint256 _r) external;
-    function SUN() external view returns (LIBEncrypt);
+    function Cho() external view returns (CHOINTERFACE);
+    function GetUserDepositsIds(uint64 UserSoul) external view returns (uint256[] memory DepositIds);
+    function GetQingDepositIds(uint256 QingWaat) external view returns (uint256[] memory DepositIds);
+    function GetDeposit(uint256 Id) external view returns (TimeLockedQiDeposit memory Stake);
+    function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount, uint16 Days) external;
+    function Withdraw(uint256 Id) external;
 }

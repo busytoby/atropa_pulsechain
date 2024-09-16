@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 import "./14b_qiinterface.sol";
 
-interface QININTERFACE  {
+interface MAI {
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
@@ -21,10 +21,8 @@ interface QININTERFACE  {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Location() external view returns (QING);
-    function Alt() external view returns (LAU);
-    function Entropy() external view returns (uint64);
-    function AddMarketRate(address _a, uint256 _r) external;
-    function SelectAlt(address UserToken) external;
-    function SUN() external view returns (LIBEncrypt);
+    function Zuo() external view returns (QING);
+    function Maat() external returns (uint256);
+    function Move(string memory To) external;
+    function MovePlayer(uint64 Soul, address ToQing) external;
 }
