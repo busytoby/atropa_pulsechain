@@ -6,7 +6,9 @@ import "./interfaces/15b_maiinterface.sol";
 contract XIA is DYSNOMIA {
     string public constant Type = "XIA";
 
-    MAI public Mai;    
+    MAI public Mai;
+    uint256 public Prime = 75140154104069 * 10 ** (decimals() - 2);
+    uint256 public Balance;
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(string Adjective => uint256 DepositId))) private _userQingAdjectiveDeposits;
@@ -47,9 +49,12 @@ contract XIA is DYSNOMIA {
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
+    error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
     function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
         
+        if(Balance + amount > Prime) revert ExceedsMaxSystemDeposit(Prime - Balance, amount);
+
         _t.waat = QING(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
         
@@ -71,6 +76,8 @@ contract XIA is DYSNOMIA {
         _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
         _userQingAdjectiveDeposits[_soul][_t.waat][Adjective] = _t.depositId;
+
+        Balance += amount;
         _mintToCap();
     }
 
@@ -86,6 +93,7 @@ contract XIA is DYSNOMIA {
         withdrawToken.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
 
+        Balance -= Amount;
         _mintToCap();
     }
 }
