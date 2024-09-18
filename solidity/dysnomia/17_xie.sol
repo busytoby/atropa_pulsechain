@@ -15,6 +15,9 @@ contract XIE is DYSNOMIA {
 
     mapping(address => CHAN) private _chan;
 
+    mapping(string Adjective => uint256 Power) private _adjectivePowers;
+    mapping(uint256 QingWaat => uint256 Power) private _qingPowers;
+
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(string Adjective => uint256 DepositId))) private _userQingAdjectiveDeposits;
@@ -31,6 +34,8 @@ contract XIE is DYSNOMIA {
 
     function React(string memory Adjective) public returns (uint256 Omicron, uint256 Omega) {
         // STUB
+
+        // return Chan.SAVE(Adjective, Omicron, Omega)
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
