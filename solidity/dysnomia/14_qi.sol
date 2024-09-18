@@ -20,28 +20,41 @@ contract QI is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetUserDepositsIds(uint64 UserSoul) public view returns (uint256[] memory DepositIds) {
-        return _userDepositIndexes[UserSoul];
+    function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
+        return _userDepositIndexes[UserSoul].length;
     }
 
-    function GetQingDepositIds(uint256 QingWaat) public view returns (uint256[] memory DepositIds) {
-        return _qingDepositIndexes[QingWaat];
+    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) public view returns (TimeDeposit memory Stake, string memory Adjective) {
+        return GetDeposit(_userDepositIndexes[UserSoul][Index]);    
+    }
+    
+    function GetQingDepositCount(uint256 QingWaat) public view returns (uint256) {
+        return _qingDepositIndexes[QingWaat].length;
     }
 
-    function GetDeposit(uint256 Id) public view returns (TimeDeposit memory Stake) {
-        return _deposits[Id];
+    function GetQingDepositByIndex(uint256 QingWaat, uint256 Index) public view returns (TimeDeposit memory Stake, string memory Adjective) {
+        return GetDeposit(_qingDepositIndexes[QingWaat][Index]);
     }
 
-    function GetAdjective(uint256 Id) public view returns (string memory) {
-        return _adjectives[Id];
+    function GetDepositCount() public view returns (uint256) {
+        return _deposits.length;
     }
 
-    error UnknownWaat(uint256 Waat);
-    function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount) public {
+    function GetDeposit(uint256 Id) public view returns (TimeDeposit memory Stake, string memory Adjective) {
+        return (_deposits[Id], _adjectives[Id]);
+    }
+
+    error WaatMismatch(address Qing, uint256 Waat);
+    error UnknownQing(address Qing);
+    function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
-        _t.qing = Cho.Qu(QingWaat);
-
-        if(_t.qing == address(0x0)) revert UnknownWaat(QingWaat);
+        _t.qing = Qing;
+        
+        uint256 QingWaat = QING(Qing).Waat();
+        if(QingWaat == 0) revert UnknownQing(Qing);
+        
+        _t.qing == Cho.Qu(QingWaat);
+        if(_t.qing != Qing) revert WaatMismatch(Qing, QingWaat);
 
         uint64 _soul = Cho.GetUserSoul();
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));

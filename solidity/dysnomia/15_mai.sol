@@ -31,8 +31,16 @@ contract MAI is DYSNOMIA {
         return Maat();
     }
 
-    function GetUserDepositsIds(uint64 UserSoul) public view returns (uint256[] memory DepositIds) {
-        return _userDepositIndexes[UserSoul];
+    function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
+        return _userDepositIndexes[UserSoul].length;
+    }
+
+    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) public view returns (TimeDeposit memory Stake) {
+        return GetDeposit(_userDepositIndexes[UserSoul][Index]);
+    }
+
+    function GetDepositCount() public view returns (uint256) {
+        return _deposits.length;
     }
 
     function GetDeposit(uint256 Id) public view returns (TimeDeposit memory) {
@@ -41,7 +49,7 @@ contract MAI is DYSNOMIA {
 
     function GetQingDeposit(uint256 QingWaat) public view returns (TimeDeposit memory) {
         uint64 _soul = Zuo.Cho().GetUserSoul();
-        return _deposits[_userQingDeposits[_soul][QingWaat]];
+        return GetDeposit(_userQingDeposits[_soul][QingWaat]);
     }
 
     error WaatMismatch(address Qing, uint256 Waat);
