@@ -11,6 +11,7 @@ contract QI is DYSNOMIA {
     CHOINTERFACE public Cho;
     TimeDeposit[] private _deposits;
     string[] private _adjectives;
+    mapping(string => bytes32) private _aKecs;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
@@ -18,6 +19,24 @@ contract QI is DYSNOMIA {
         Cho = CHOINTERFACE(ChoAddress);
         addOwner(tx.origin);
         _mintToCap();
+    }
+
+    function GetUserAdjectiveValue(uint64 UserSoul, string memory Adjective) public view returns (uint256 Sum) {
+        bytes32 _aKec = _aKecs[Adjective];
+        if(_aKec == 0x0) return 0;
+
+        for(uint i=0; i<_userDepositIndexes[UserSoul].length; i++) {
+            if(_aKecs[_adjectives[_userDepositIndexes[UserSoul][i]]] == _aKec) Sum += _deposits[_userDepositIndexes[UserSoul][i]].amount;
+        }
+    }
+
+    function GetQingAdjectiveValue(uint256 QingWaat, string memory Adjective) public view returns (uint256 Sum) {
+        bytes32 _aKec = _aKecs[Adjective];
+        if(_aKec == 0x0) return 0;
+        
+        for(uint i=0; i<_qingDepositIndexes[QingWaat].length; i++) {
+            if(_aKecs[_adjectives[_qingDepositIndexes[QingWaat][i]]] == _aKec) Sum += _deposits[_qingDepositIndexes[QingWaat][i]].amount;
+        }
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
@@ -66,6 +85,7 @@ contract QI is DYSNOMIA {
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _adjectives.push(Adjective);
+        if(_aKecs[Adjective] == 0x0) _aKecs[Adjective] = keccak256(bytes(Adjective));
         _userDepositIndexes[_soul].push(_t.depositId);
         _qingDepositIndexes[QingWaat].push(_t.depositId);
         _mintToCap();
