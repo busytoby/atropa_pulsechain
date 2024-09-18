@@ -21,9 +21,11 @@ interface MAI {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Zuo() external view returns (QING);
+    function Qi() external view returns (QIINTERFACE);
     function Maat() external returns (uint256);
-    function GetUserDepositsIds(uint64 UserSoul) external view returns (uint256[] memory DepositIds);
+    function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
+    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
+    function GetDepositCount() external view returns (uint256);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
     function GetQingDeposit(uint256 QingWaat) external view returns (TimeDeposit memory);
     function Deposit(address Qing, uint256 amount) external;

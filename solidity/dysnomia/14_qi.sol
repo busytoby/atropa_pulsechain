@@ -8,7 +8,7 @@ import "./interfaces/13b_qinginterface.sol";
 contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
-    CHOINTERFACE public Cho;
+    QING public Zuo;
     TimeDeposit[] private _deposits;
     string[] private _adjectives;
     mapping(uint64 UserSoul => mapping(string Adjective => uint256 Sum)) _userSums;
@@ -16,8 +16,8 @@ contract QI is DYSNOMIA {
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
-    constructor(address ChoAddress) DYSNOMIA("DYSNOMIA Qi", "QI", address(DYSNOMIA(ChoAddress).Xiao())) {
-        Cho = CHOINTERFACE(ChoAddress);
+    constructor(address ZuoQingAddress) DYSNOMIA("DYSNOMIA Qi", "QI", address(DYSNOMIA(ZuoQingAddress).Xiao())) {
+        Zuo = QING(ZuoQingAddress);
         addOwner(tx.origin);
         _mintToCap();
     }
@@ -62,11 +62,11 @@ contract QI is DYSNOMIA {
         _t.waat = QING(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
         
-        address _checkQing = Cho.Qu(_t.waat);
+        address _checkQing = Zuo.Cho().Qu(_t.waat);
         if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
-        uint64 _soul = Cho.GetUserSoul();
-        DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
+        uint64 _soul = Zuo.Cho().GetUserSoul();
+        DYSNOMIA withdrawToken = DYSNOMIA(Zuo.Cho().Addresses("Yu"));
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
@@ -85,11 +85,11 @@ contract QI is DYSNOMIA {
     error NotOwner(uint256 DepositId);
     error ExceedsBalance(uint256 DepositId, uint256 Balance);
     function Withdraw(uint256 Id, uint256 Amount) public {
-        uint64 _soul = Cho.GetUserSoul();
+        uint64 _soul = Zuo.Cho().GetUserSoul();
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
-        DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
+        DYSNOMIA withdrawToken = DYSNOMIA(Zuo.Cho().Addresses("Yu"));
         withdrawToken.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
         _userSums[_soul][_adjectives[Id]] -= Amount;

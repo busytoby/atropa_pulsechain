@@ -22,11 +22,15 @@ interface QIINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Cho() external view returns (CHOINTERFACE);
-    function GetUserDepositsIds(uint64 UserSoul) external view returns (uint256[] memory DepositIds);
-    function GetQingDepositIds(uint256 QingWaat) external view returns (uint256[] memory DepositIds);
-    function GetDeposit(uint256 Id) external view returns (TimeDeposit memory Stake);
-    function GetAdjective(uint256 Id) external view returns (string memory);
-    function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount, uint16 Days) external;
-    function Withdraw(uint256 Id) external;
+    function Zuo() external view returns (QING);
+    function GetUserAdjectiveValue(uint64 UserSoul, string memory Adjective) external view returns (uint256 Sum);
+    function GetQingAdjectiveValue(uint256 QingWaat, string memory Adjective) external view returns (uint256 Sum);
+    function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
+    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake, string memory Adjective);
+    function GetQingDepositCount(uint256 QingWaat) external view returns (uint256);
+    function GetQingDepositByIndex(uint256 QingWaat, uint256 Index) external view returns (TimeDeposit memory Stake, string memory Adjective);
+    function GetDepositCount() external view returns (uint256);
+    function GetDeposit(uint256 Id) external view returns (TimeDeposit memory Stake, string memory Adjective);
+    function Deposit(address Qing, string memory Adjective, uint256 amount) external;
+    function Withdraw(uint256 Id, uint256 Amount) external;
 }
