@@ -56,28 +56,27 @@ contract MAI is DYSNOMIA {
     error UnknownQing(address Qing);
     function Deposit(address Qing, uint256 amount) public {
         TimeDeposit memory _t;
-        _t.qing = Qing;
         
-        uint256 QingWaat = QING(Qing).Waat();
-        if(QingWaat == 0) revert UnknownQing(Qing);
+        _t.waat = QING(Qing).Waat();
+        if(_t.waat == 0) revert UnknownQing(Qing);
         
-        _t.qing == Zuo.Cho().Qu(QingWaat);
-        if(_t.qing != Qing) revert WaatMismatch(Qing, QingWaat);
+        address _checkQing = Zuo.Cho().Qu(_t.waat);
+        if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
         uint64 _soul = Zuo.Cho().GetUserSoul();
-        DYSNOMIA withdrawToken = DYSNOMIA(_t.qing);
+        DYSNOMIA withdrawToken = DYSNOMIA(Qing);
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
-        if(_userQingDeposits[_soul][QingWaat] == 0)
+        if(_userQingDeposits[_soul][_t.waat] == 0)
             _t.depositId = _deposits.length;
         else 
-            _t.depositId = _userQingDeposits[_soul][QingWaat];
+            _t.depositId = _userQingDeposits[_soul][_t.waat];
         _t.amount += amount;
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
-        _userQingDeposits[_soul][QingWaat] = _t.depositId;
+        _userQingDeposits[_soul][_t.waat] = _t.depositId;
         _mintToCap();
     }
 
@@ -88,7 +87,8 @@ contract MAI is DYSNOMIA {
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
-        DYSNOMIA withdrawToken = DYSNOMIA(_deposits[Id].qing);
+        address Qing = Zuo.Cho().Qu(_deposits[Id].waat);
+        DYSNOMIA withdrawToken = DYSNOMIA(Qing);
         withdrawToken.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
 

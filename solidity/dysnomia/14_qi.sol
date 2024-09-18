@@ -11,7 +11,8 @@ contract QI is DYSNOMIA {
     CHOINTERFACE public Cho;
     TimeDeposit[] private _deposits;
     string[] private _adjectives;
-    mapping(string => bytes32) private _aKecs;
+    mapping(uint64 UserSoul => mapping(string Adjective => uint256 Sum)) _userSums;
+    mapping(uint256 QingWaat => mapping(string Adjective => uint256 Sum)) _qingSums;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
@@ -22,21 +23,11 @@ contract QI is DYSNOMIA {
     }
 
     function GetUserAdjectiveValue(uint64 UserSoul, string memory Adjective) public view returns (uint256 Sum) {
-        bytes32 _aKec = _aKecs[Adjective];
-        if(_aKec == 0x0) return 0;
-
-        for(uint i=0; i<_userDepositIndexes[UserSoul].length; i++) {
-            if(_aKecs[_adjectives[_userDepositIndexes[UserSoul][i]]] == _aKec) Sum += _deposits[_userDepositIndexes[UserSoul][i]].amount;
-        }
+        return _userSums[UserSoul][Adjective];
     }
 
     function GetQingAdjectiveValue(uint256 QingWaat, string memory Adjective) public view returns (uint256 Sum) {
-        bytes32 _aKec = _aKecs[Adjective];
-        if(_aKec == 0x0) return 0;
-        
-        for(uint i=0; i<_qingDepositIndexes[QingWaat].length; i++) {
-            if(_aKecs[_adjectives[_qingDepositIndexes[QingWaat][i]]] == _aKec) Sum += _deposits[_qingDepositIndexes[QingWaat][i]].amount;
-        }
+        return _qingSums[QingWaat][Adjective];
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
@@ -67,13 +58,12 @@ contract QI is DYSNOMIA {
     error UnknownQing(address Qing);
     function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
-        _t.qing = Qing;
         
-        uint256 QingWaat = QING(Qing).Waat();
-        if(QingWaat == 0) revert UnknownQing(Qing);
+        _t.waat = QING(Qing).Waat();
+        if(_t.waat == 0) revert UnknownQing(Qing);
         
-        _t.qing == Cho.Qu(QingWaat);
-        if(_t.qing != Qing) revert WaatMismatch(Qing, QingWaat);
+        address _checkQing = Cho.Qu(_t.waat);
+        if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
         uint64 _soul = Cho.GetUserSoul();
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
@@ -85,9 +75,10 @@ contract QI is DYSNOMIA {
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _adjectives.push(Adjective);
-        if(_aKecs[Adjective] == 0x0) _aKecs[Adjective] = keccak256(bytes(Adjective));
         _userDepositIndexes[_soul].push(_t.depositId);
-        _qingDepositIndexes[QingWaat].push(_t.depositId);
+        _qingDepositIndexes[_t.waat].push(_t.depositId);
+        _userSums[_soul][Adjective] += amount;
+        _qingSums[_t.waat][Adjective] += amount;
         _mintToCap();
     }
 
@@ -101,6 +92,8 @@ contract QI is DYSNOMIA {
         DYSNOMIA withdrawToken = DYSNOMIA(Cho.Addresses("Yu"));
         withdrawToken.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
+        _userSums[_soul][_adjectives[Id]] -= Amount;
+        _qingSums[_deposits[Id].waat][_adjectives[Id]] -= Amount;
 
         _mintToCap();
     }
