@@ -23,6 +23,11 @@ interface MAI {
     function Type() external view returns (string memory);
     function Zuo() external view returns (QING);
     function Maat() external returns (uint256);
+    function GetUserDepositsIds(uint64 UserSoul) external view returns (uint256[] memory DepositIds);
+    function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
+    function GetQingDeposit(uint256 QingWaat) external view returns (TimeDeposit memory);
+    function Deposit(address Qing, uint256 amount) external;
+    function Withdraw(uint256 Id, uint256 Amount) external;
     function Move(string memory To) external;
     function MovePlayer(uint64 Soul, address ToQing) external;
 }

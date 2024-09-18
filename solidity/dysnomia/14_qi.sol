@@ -9,8 +9,8 @@ contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
     CHOINTERFACE public Cho;
-    mapping(uint256 Id => TimeDeposit Stake) private _deposits;
-    mapping(uint256 Id => string Adjective) private _adjectives;
+    TimeDeposit[] private _deposits;
+    string[] private _adjectives;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
@@ -48,11 +48,11 @@ contract QI is DYSNOMIA {
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
-        _t.depositId = Cho.Luo();
+        _t.depositId = _deposits.length;
         _t.amount = amount;
         _t.timestamp = block.timestamp;
-        _deposits[_t.depositId] = _t;
-        _adjectives[_t.depositId] = Adjective;
+        _deposits.push(_t);
+        _adjectives.push(Adjective);
         _userDepositIndexes[_soul].push(_t.depositId);
         _qingDepositIndexes[QingWaat].push(_t.depositId);
         _mintToCap();

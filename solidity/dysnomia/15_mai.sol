@@ -14,7 +14,7 @@ contract MAI is DYSNOMIA {
 
     QING public Zuo;
     mapping(uint64 Soul => QIN) private _players;
-    mapping(uint256 Id => TimeDeposit Stake) private _deposits;
+    TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint64 UserSoul => mapping(uint256 QingWaat => uint256 DepositIds)) private _userQingDeposits;
 
@@ -62,12 +62,12 @@ contract MAI is DYSNOMIA {
 
         _t.soul = _soul;
         if(_userQingDeposits[_soul][QingWaat] == 0)
-            _t.depositId = Zuo.Cho().Luo();
+            _t.depositId = _deposits.length;
         else 
             _t.depositId = _userQingDeposits[_soul][QingWaat];
-        _t.amount = amount;
+        _t.amount += amount;
         _t.timestamp = block.timestamp;
-        _deposits[_t.depositId] = _t;
+        _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
         _userQingDeposits[_soul][QingWaat] = _t.depositId;
         _mintToCap();

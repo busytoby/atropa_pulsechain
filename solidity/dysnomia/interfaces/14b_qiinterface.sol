@@ -26,6 +26,7 @@ interface QIINTERFACE {
     function GetUserDepositsIds(uint64 UserSoul) external view returns (uint256[] memory DepositIds);
     function GetQingDepositIds(uint256 QingWaat) external view returns (uint256[] memory DepositIds);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory Stake);
+    function GetAdjective(uint256 Id) external view returns (string memory);
     function Deposit(uint256 QingWaat, string memory Adjective, uint256 amount, uint16 Days) external;
     function Withdraw(uint256 Id) external;
 }
