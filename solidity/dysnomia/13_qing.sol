@@ -170,7 +170,7 @@ contract QING is DYSNOMIA {
     function Chat(string memory chatline) public {
         uint64 _soul = Cho.GetUserSoul();
         if(VAT().IsForbidden(address(Asset))) revert Forbidden(address(Asset));
-        if(_soul == 0) revert NotPlaying(_soul);
+        if(_players[_soul].Soul == 0) revert NotPlaying(_soul);
         emit LogEvent(Waat, _soul, Cho.Void().Nu().Aura(), _players[_soul].Username, chatline);
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
         Bounce();
@@ -178,8 +178,9 @@ contract QING is DYSNOMIA {
     }
 
     event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string Username, string LogLine);
-    function OperatorSendMSG(string memory NAME, string memory chatline) public onlyOwners {
-        emit LogEvent(Waat, 0, Cho.Void().Nu().Aura(), NAME, chatline);
+    function YAISendMSG(uint64 Soul, string memory NAME, string memory chatline) public {
+        if(msg.sender != address(VAT())) revert Forbidden(address(this));
+        emit LogEvent(Waat, Soul, Cho.Void().Nu().Aura(), NAME, chatline);
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {

@@ -4,6 +4,7 @@ import "./01_dysnomia_v2.sol";
 import "./interfaces/16b_xiainterface.sol";
 
 struct CHAN {
+    LAU Mu;
     uint256 vaat;
     // STUB
 }
@@ -36,6 +37,14 @@ contract XIE is DYSNOMIA {
         // STUB
 
         // return Chan.SAVE(Adjective, Omicron, Omega)
+    }
+
+    function Move() public {
+        // STUB
+    }
+
+    function Chat() public {
+        // STUB
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
