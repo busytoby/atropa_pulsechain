@@ -53,8 +53,6 @@ contract XIE is DYSNOMIA {
                     _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
                 _adjectivePowers[_a].Charge += _p;
                 _qingPowers[_t.waat].Charge += _p;
-                _adjectivePowers[_a].Block = block.number;
-                _qingPowers[_t.waat].Block = block.number;
             }
         }
     }
