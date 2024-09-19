@@ -9,6 +9,11 @@ struct Xi {
     // STUB
 }
 
+struct Power {
+    uint256 Charge;
+    uint256 Block;
+}
+
 contract XIE is DYSNOMIA {
     string public constant Type = "XIE";
 
@@ -16,8 +21,9 @@ contract XIE is DYSNOMIA {
 
     mapping(address => Xi) private _chan;
 
-    mapping(string Adjective => uint256 Power) private _adjectivePowers;
-    mapping(uint256 QingWaat => uint256 Power) private _qingPowers;
+    mapping(string Adjective => Power) private _adjectivePowers;
+    mapping(uint256 QingWaat => Power) private _qingPowers;
+    uint256 private _lastTsoBlock;
 
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
@@ -26,7 +32,30 @@ contract XIE is DYSNOMIA {
     constructor(address XiaAddress) DYSNOMIA("Dysnomia Xie", "XIE", address(DYSNOMIA(XiaAddress).Xiao())) {
         Xia = XIA(XiaAddress);
         addOwner(tx.origin);
+        _lastTsoBlock = block.number;
         _mintToCap();
+    }
+
+    function Tso() public {
+        for(uint256 i = _lastTsoBlock; i < block.number; i++) {
+            TimeDeposit memory _t;
+            string memory _a;
+            uint256 _p;
+            uint256 _dc = Xia.Mai().Qi().GetDepositCount();
+            for(uint256 qa = 0; qa < _dc; qa++) {
+                (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
+                if(_t.amount == 0) continue;
+                _p = Xia.Charge(_t.waat, _a);
+                for(; _adjectivePowers[_a].Charge > MotzkinPrime && _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
+                    Xia.Decay(_adjectivePowers[_a].Charge);
+                for(; _qingPowers[_t.waat].Charge > MotzkinPrime && _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
+                    Xia.Decay(_qingPowers[_t.waat].Charge);
+                _adjectivePowers[_a].Charge += _p;
+                _qingPowers[_t.waat].Charge += _p;
+                _adjectivePowers[_a].Block = block.number;
+                _qingPowers[_t.waat].Block = block.number;
+            }
+        }
     }
 
     function Register(address ChanAddress, uint256 QingWaat) public {
