@@ -73,15 +73,15 @@ contract CHO is DYSNOMIA {
 
     error InvalidUserToken(address Asset);
     function VerifyUserTokenPermissions(address UserToken) public {
-        Bao memory _on = Void.Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(UserLau.Saat(1));
+        Bao memory _on = Void.Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(LAU(UserToken).Saat(1));
         if(!_on.Shio.owner(UserToken) || !_on.Shio.Rod().owner(UserToken)) revert InvalidUserToken(UserToken);
     }
 
     error InvalidOwnership(address UserToken, address User);
     function Enter(address UserToken) public onlyOwners returns(User memory) {
+        VerifyUserTokenPermissions(UserToken);
         LAU UserLau = LAU(UserToken);
         if(!UserLau.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
-
 
         User memory Alpha;
         Alpha.Soul = UserLau.Saat(1);

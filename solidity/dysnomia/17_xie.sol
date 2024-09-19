@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
 import "./interfaces/16b_xiainterface.sol";
 
-struct CHAN {
+struct Xi {
     LAU Mu;
     uint256 vaat;
     // STUB
@@ -14,7 +14,7 @@ contract XIE is DYSNOMIA {
 
     XIA public Xia;
 
-    mapping(address => CHAN) private _chan;
+    mapping(address => Xi) private _chan;
 
     mapping(string Adjective => uint256 Power) private _adjectivePowers;
     mapping(uint256 QingWaat => uint256 Power) private _qingPowers;
