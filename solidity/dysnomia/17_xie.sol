@@ -47,9 +47,9 @@ contract XIE is DYSNOMIA {
                 (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
                 if(_t.amount == 0) continue;
                 _p = Xia.Charge(_t.waat, _a);
-                for(; _adjectivePowers[_a].Charge > MotzkinPrime && _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
+                for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
                     _adjectivePowers[_a].Charge = Xia.Decay(_adjectivePowers[_a].Charge);
-                for(; _qingPowers[_t.waat].Charge > MotzkinPrime && _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
+                for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
                     _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
                 _adjectivePowers[_a].Charge += _p;
                 _qingPowers[_t.waat].Charge += _p;
