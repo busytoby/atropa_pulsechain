@@ -37,7 +37,7 @@ contract XIE is DYSNOMIA {
     }
 
     function Tso() public {
-        for(uint256 i = _lastTsoBlock; i < block.number; i++) {
+        for(; _lastTsoBlock < block.number; _lastTsoBlock++) {
             TimeDeposit memory _t;
             string memory _a;
             uint256 _p;
