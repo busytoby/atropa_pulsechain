@@ -41,6 +41,7 @@ interface CHOINTERFACE {
     function CYUN() external view returns(LIBSTRINGS);
     function Reactor() external view returns(LIBCOREREACTIONS);
     function Luo() external returns (uint256);
+    function VerifyUserTokenPermissions(address UserToken) external;
     function Enter(address UserToken) external returns(User memory);
     function GetUser() external returns(User memory Alpha);
     function GetUserSoul() external view returns(uint64);

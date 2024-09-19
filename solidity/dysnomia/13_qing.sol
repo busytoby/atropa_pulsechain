@@ -122,8 +122,7 @@ contract QING is DYSNOMIA {
     function Join(address UserToken) public {
         uint64 _soul = Cho.GetUserSoul();
 
-        Bao memory On = Cho.Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(_soul);
-        if(!On.Shio.owner(UserToken) || !On.Shio.Rod().owner(UserToken)) revert Forbidden(UserToken);
+        Cho.VerifyUserTokenPermissions(UserToken);
 
         if(_players[_soul].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge > 0) {
@@ -186,8 +185,7 @@ contract QING is DYSNOMIA {
         if(msg.sender != address(VAT())) revert Forbidden(address(this));
         LAU _user = LAU(UserToken);
         uint64 _soul = _user.Saat(1);
-        Bao memory On = Cho.Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(_soul);
-        if(!On.Shio.owner(UserToken) || !On.Shio.Rod().owner(UserToken)) revert Forbidden(UserToken);
+        Cho.VerifyUserTokenPermissions(UserToken);
         if(CoverCharge != 0 && _list[UserToken] < block.timestamp) revert NotAdmitted(_soul);
     
         emit LogEvent(Waat, _soul, _user.Saat(2), _user.Username(), Chatline);
