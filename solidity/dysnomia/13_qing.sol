@@ -121,6 +121,10 @@ contract QING is DYSNOMIA {
     error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
     function Join(address UserToken) public {
         uint64 _soul = Cho.GetUserSoul();
+
+        Bao memory On = Cho.Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(_soul);
+        if(!On.Shio.owner(UserToken) || !On.Shio.Rod().owner(UserToken)) revert Forbidden(UserToken);
+
         if(_players[_soul].On.Phi == UserToken) revert AlreadyJoined(UserToken);
         if(_list[UserToken] < block.timestamp && CoverCharge > 0) {
             if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
@@ -166,11 +170,11 @@ contract QING is DYSNOMIA {
     }
 
     error Forbidden(address Asset);
-    error NotPlaying(uint64 Soul);
+    error NotAdmitted(uint64 Soul);
     function Chat(string memory chatline) public {
         uint64 _soul = Cho.GetUserSoul();
         if(VAT().IsForbidden(address(Asset))) revert Forbidden(address(Asset));
-        if(_players[_soul].Soul == 0) revert NotPlaying(_soul);
+        if(_players[_soul].Soul == 0) revert NotAdmitted(_soul);
         emit LogEvent(Waat, _soul, Cho.Void().Nu().Aura(), _players[_soul].Username, chatline);
         (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
         Bounce();
@@ -178,13 +182,19 @@ contract QING is DYSNOMIA {
     }
 
     event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string Username, string LogLine);
-    function YAISendMSG(uint64 Soul, string memory NAME, string memory chatline) public {
+    function YAISendMSG(address UserToken, string memory Chatline) public {
         if(msg.sender != address(VAT())) revert Forbidden(address(this));
-        emit LogEvent(Waat, Soul, Cho.Void().Nu().Aura(), NAME, chatline);
+        LAU _user = LAU(UserToken);
+        uint64 _soul = _user.Saat(1);
+        Bao memory On = Cho.Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(_soul);
+        if(!On.Shio.owner(UserToken) || !On.Shio.Rod().owner(UserToken)) revert Forbidden(UserToken);
+        if(CoverCharge != 0 && _list[UserToken] < block.timestamp) revert NotAdmitted(_soul);
+    
+        emit LogEvent(Waat, _soul, _user.Saat(2), _user.Username(), Chatline);
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
-        if(_players[Soul].Soul == 0) revert NotPlaying(_players[Soul].Soul);
+        if(_players[Soul].Soul == 0) revert NotAdmitted(_players[Soul].Soul);
         (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
         return Cho.Reactor().ReactShioRod(Cho.Shio(), Cho.Omicron() ^ _players[Soul].On.Omega);
     }
