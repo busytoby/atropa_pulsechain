@@ -37,11 +37,12 @@ contract XIE is DYSNOMIA {
     }
 
     function Tso() public {
+        TimeDeposit memory _t;
+        string memory _a;
+        uint256 _p;
+        uint256 _dc;
         for(; _lastTsoBlock < block.number; _lastTsoBlock++) {
-            TimeDeposit memory _t;
-            string memory _a;
-            uint256 _p;
-            uint256 _dc = Xia.Mai().Qi().GetDepositCount();
+            _dc = Xia.Mai().Qi().GetDepositCount();
             for(uint256 qa = 0; qa < _dc; qa++) {
                 (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
                 if(_t.amount == 0) continue;
