@@ -45,6 +45,8 @@ contract XIE is DYSNOMIA {
             _dc = Xia.Mai().Qi().GetDepositCount();
             for(uint256 qa = 0; qa < _dc; qa++) {
                 (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
+                if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
+                if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
                 if(_t.amount == 0) continue;
                 _p = Xia.Charge(_t.waat, _a);
                 for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
