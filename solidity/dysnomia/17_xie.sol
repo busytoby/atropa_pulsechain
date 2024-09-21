@@ -37,17 +37,19 @@ contract XIE is DYSNOMIA {
         for(; _lastTsoBlock < block.number; _lastTsoBlock++) {
             for(uint256 qa = 0; qa < _dc; qa++) {
                 (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
-                if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
-                if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
-                if(_t.amount == 0) continue;
-                _p = Xia.Charge(_t.waat, _a);
-                for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
-                    _adjectivePowers[_a].Charge = Xia.Decay(_adjectivePowers[_a].Charge);
-                for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
-                    _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
-                _adjectivePowers[_a].Charge += _p;
-                _qingPowers[_t.waat].Charge += _p;
-                if(--_max == 0) return 0;
+                if(_adjectivePowers[_a].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
+                    if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
+                    if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
+                    if(_t.amount == 0) continue;
+                    _p = Xia.Charge(_t.waat, _a);
+                    for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
+                        _adjectivePowers[_a].Charge = Xia.Decay(_adjectivePowers[_a].Charge);
+                    for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
+                        _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
+                    _adjectivePowers[_a].Charge += _p;
+                    _qingPowers[_t.waat].Charge += _p;
+                    if(--_max == 0) return 0;
+                }
             }
         }
         return _max;
@@ -61,13 +63,13 @@ contract XIE is DYSNOMIA {
         for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++) {
             if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
             if(_t.amount == 0) break;
-            _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
+            if(_adjectivePowers[Adjective].Charge > 0) _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
         }
 
         for(; _qingPowers[Waat].Block < block.number; _qingPowers[Waat].Block++) {
             if(_qingPowers[Waat].Block == 0) _qingPowers[Waat].Block = block.number;
             if(_t.amount == 0) break;
-            _qingPowers[Waat].Charge = Xia.Decay(_qingPowers[Waat].Charge);
+            if(_qingPowers[Waat].Charge > 0) _qingPowers[Waat].Charge = Xia.Decay(_qingPowers[Waat].Charge);
         }
 
         _adjectivePowers[Adjective].Charge += Charge;
