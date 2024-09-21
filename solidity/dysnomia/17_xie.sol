@@ -28,12 +28,11 @@ contract XIE is DYSNOMIA {
         _mintToCap();
     }
 
-    function Tso() public returns (uint8) { // return value > 0 indicates complete
+    function Tso(uint256 Max) public returns (uint256) { // return value > 0 indicates complete
         TimeDeposit memory _t;
         string memory _a;
         uint256 _p;
         uint256 _dc = Xia.Mai().Qi().GetDepositCount();
-        uint8 _max = 12;
         for(; _lastTsoBlock < block.number; _lastTsoBlock++) {
             for(uint256 qa = 0; qa < _dc; qa++) {
                 (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
@@ -48,11 +47,12 @@ contract XIE is DYSNOMIA {
                         _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
                     _adjectivePowers[_a].Charge += _p;
                     _qingPowers[_t.waat].Charge += _p;
-                    if(--_max == 0) return 0;
+                    if(Max == 0) return 0;
+                    --Max;
                 }
             }
         }
-        return _max;
+        return Max;
     }
 
     function _reactUserQingAdjective(uint64 Soul, uint256 Waat, string memory Adjective) internal returns (uint256 Charge) {
@@ -85,7 +85,7 @@ contract XIE is DYSNOMIA {
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().ReactUser(Soul, Omicron);
         Omicron = Xia.Mai().Qi().Zuo().ReactPlayer(Soul, Omega);        
 
-        Tso();
+        Tso(48);
         _mintToCap();
     }
 

@@ -19,12 +19,10 @@ contract STRINGLIB is DYSNOMIA {
 
     function CheckPalindrome(bytes memory S) public pure returns(bool) {
         bytes memory Reversed = Reverse(S);
-        uint256 j = S.length - 1;
+        uint256 j = S.length;
         uint256 i = 0;
-
-        if (Reversed[0] != S[i]) return false;
-        for (; i < S.length - 1;)      
-            if (Reversed[j--] != S[i++]) return false;
+        while (i < S.length)      
+            if (Reversed[--j] != S[i++]) return false;
         return true;
     }
 
@@ -34,12 +32,10 @@ contract STRINGLIB is DYSNOMIA {
 
     function Reverse(bytes memory S) public pure returns(bytes memory Reversed) {
         Reversed = new bytes(S.length);
-        uint256 j = S.length - 1;
+        uint256 j = S.length;
         uint256 i = 0;
-
-        for (; i < S.length - 1;)      
-            Reversed[j--] = S[i++];
-        Reversed[0] = S[i]; // uint does not like decrement to 0
+        while (i < S.length)
+            Reversed[--j] = S[i++];
     }
 
     error MinimumLength3();
