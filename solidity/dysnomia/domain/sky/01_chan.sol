@@ -20,7 +20,9 @@ contract CHAN is DYSNOMIA {
         uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
         uint256 Maat = Xie.Xia().Mai().Maat();
         if(Maat != Player.Maat) revert InvalidQinInstance(Soul, Maat, Player.Maat);
+        uint256 UserQi = Xie.Xia().Mai().Qi().GetUserAdjectiveValue(Soul, Adjective);
         (Charge, Omicron, Omega) = Xie.React(Soul, Adjective);
+        Charge = Charge % UserQi;
         _mintToCap();
     }
 }
