@@ -16,13 +16,12 @@ contract CHAN is DYSNOMIA {
     }
 
     error InvalidQinInstance(uint64 Soul, uint256 SoulMaat, uint256 QinMaat);
-    function React(QIN memory Player, string memory Adjective) public returns (uint256 Charge, uint64 Omicron, uint64 Omega) {
+    function React(QIN memory Player, string memory Adjective) public returns (uint256 Charge, uint256 UserQi, uint64 Omicron, uint64 Omega) {
         uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
         uint256 Maat = Xie.Xia().Mai().Maat();
         if(Maat != Player.Maat) revert InvalidQinInstance(Soul, Maat, Player.Maat);
-        uint256 UserQi = Xie.Xia().Mai().Qi().GetUserAdjectiveValue(Soul, Adjective);
+        UserQi = Xie.Xia().Mai().Qi().GetUserAdjectiveValue(Soul, Adjective);
         (Charge, Omicron, Omega) = Xie.React(Soul, Adjective);
-        Charge = Charge % UserQi;
         _mintToCap();
     }
 }
