@@ -170,25 +170,15 @@ contract QING is DYSNOMIA {
 
     error Forbidden(address Asset);
     error NotAdmitted(uint64 Soul);
-    function Chat(string memory chatline) public {
-        uint64 _soul = Cho.GetUserSoul();
-        if(VAT().IsForbidden(address(Asset))) revert Forbidden(address(Asset));
-        if(_players[_soul].Soul == 0) revert NotAdmitted(_soul);
-        emit LogEvent(Waat, _soul, Cho.Void().Nu().Aura(), _players[_soul].Username, chatline);
-        (_players[_soul].On.Omicron, _players[_soul].On.Omega) = Cho.Reactor().ReactToTalk(_players[_soul]);
-        Bounce();
-        _mintToCap();
-    }
-
-    event LogEvent(uint256 Waat, uint64 Soul, uint64 Aura, string Username, string LogLine);
-    function YAISendMSG(address UserToken, string memory Chatline) public {
+    event LogEvent(string Username, uint64 Soul, uint64 Aura, uint256 Maat, string LogLine);
+    function YAISendMSG(address UserToken, uint256 Maat, string memory MSG) public {
         if(msg.sender != address(VAT())) revert Forbidden(address(this));
         LAU _user = LAU(UserToken);
         uint64 _soul = _user.Saat(1);
         Cho.VerifyUserTokenPermissions(UserToken);
         if(CoverCharge != 0 && _list[UserToken] < block.timestamp) revert NotAdmitted(_soul);
     
-        emit LogEvent(Waat, _soul, _user.Saat(2), _user.Username(), Chatline);
+        emit LogEvent(_user.Username(), _soul, _user.Saat(2), Maat, MSG);
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron) {
