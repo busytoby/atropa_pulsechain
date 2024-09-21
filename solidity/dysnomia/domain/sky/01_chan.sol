@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
+import "../../include/qin.sol";
 import "../../interfaces/17b_xieinterface.sol";
 
 contract CHAN is DYSNOMIA {
@@ -8,7 +9,7 @@ contract CHAN is DYSNOMIA {
 
     XIE public Xie;
 
-     mapping(uint256 Vaat => uint256 Valence) private _chan;
+     mapping(uint256 Maat => mapping(string Adjective => uint256 Valence)) private _chan;
 
     constructor(address XieAddress) DYSNOMIA("Dysnomia Chan", "CHAN", address(DYSNOMIA(XieAddress).Xiao())) {
         Xie = XIE(XieAddress);
@@ -16,5 +17,7 @@ contract CHAN is DYSNOMIA {
         _mintToCap();
     }
 
-    
+    function React(QIN memory Player, string memory Adjective) public onlyOwners {
+        
+    }
 }

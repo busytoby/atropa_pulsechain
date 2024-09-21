@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
+import "./include/qin.sol";
 import "./interfaces/14b_qiinterface.sol";
-
-struct QIN {
-    uint256 Maat;
-    QING Location;
-    uint256 lastMove;
-}
 
 contract MAI is DYSNOMIA {
     string public constant Type = "MAI";
@@ -24,9 +19,9 @@ contract MAI is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetPlayerQing(uint64 Soul) public view returns (QING) {
+    function GetPlayerQin(uint64 Soul) public view returns (QIN memory) {
         if(address(_players[Soul].Location) == address(0x0)) revert UnknownQing(address(0x0));
-        return _players[Soul].Location;
+        return _players[Soul];
     }
 
     function Maat() public returns (uint256) {

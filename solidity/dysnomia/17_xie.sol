@@ -76,8 +76,8 @@ contract XIE is DYSNOMIA {
 
     function React(uint64 Soul, string memory Adjective) public returns (uint256 Charge, uint64 Omicron, uint64 Omega) {
         User memory Player = Xia.Mai().Qi().Zuo().Cho().GetUserBySoul(Soul);
-        QING PlayerLocation = Xia.Mai().GetPlayerQing(Soul);
-        Charge = _reactUserQingAdjective(Soul, PlayerLocation.Waat(), Adjective);
+        QIN memory PlayerQin = Xia.Mai().GetPlayerQin(Soul);
+        Charge = _reactUserQingAdjective(Soul, PlayerQin.Location.Waat(), Adjective);
 
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().React(Player.On.Omega);
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().ReactUser(Soul, Omicron);
