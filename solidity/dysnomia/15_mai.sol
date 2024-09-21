@@ -28,7 +28,7 @@ contract MAI is DYSNOMIA {
         uint64 _soul = Qi.Zuo().Cho().GetUserSoul();
         if(_players[_soul].Maat == 0) _players[_soul].Maat = Qi.Zuo().Cho().Luo();
         _mintToCap();
-        return Maat();
+        return _players[_soul].Maat;
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
