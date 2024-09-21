@@ -28,7 +28,7 @@ contract XIE is DYSNOMIA {
         _mintToCap();
     }
 
-    function Tso() public {
+    function Tso() public returns (uint8) { // return value > 0 indicates complete
         TimeDeposit memory _t;
         string memory _a;
         uint256 _p;
@@ -47,9 +47,10 @@ contract XIE is DYSNOMIA {
                     _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
                 _adjectivePowers[_a].Charge += _p;
                 _qingPowers[_t.waat].Charge += _p;
-                if(--_max == 0) return;
+                if(--_max == 0) return 0;
             }
         }
+        return _max;
     }
 
     function _reactUserQingAdjective(uint64 Soul, uint256 Waat, string memory Adjective) internal returns (uint256 Charge) {
