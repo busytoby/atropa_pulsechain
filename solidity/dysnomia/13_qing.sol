@@ -134,7 +134,7 @@ contract QING is DYSNOMIA {
         if(_list[UserToken] < block.timestamp) {
             User memory Alpha = Cho.Enter(UserToken);
             emit Joined(Alpha.Soul, Cho.Void().Nu().Aura(), Alpha.Username);
-            (Alpha.On.Omicron, Alpha.On.Omega) = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
+            Alpha.On.Omicron = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
             _players[Alpha.Soul] = Alpha;
             _list[UserToken] = block.timestamp + 1 days;
             _users.push(Alpha.Soul);
@@ -191,9 +191,9 @@ contract QING is DYSNOMIA {
         emit LogEvent(Waat, _soul, _user.Saat(2), _user.Username(), Chatline);
     }
 
-    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron, uint64 Omega) {
+    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron) {
         if(_players[Soul].Soul == 0) revert NotAdmitted(_players[Soul].Soul);
         (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
-        return Cho.Reactor().ReactShioRod(Cho.Shio(), Cho.Omicron() ^ _players[Soul].On.Omega);
+        return _players[Soul].On.Omicron;
     }
 }

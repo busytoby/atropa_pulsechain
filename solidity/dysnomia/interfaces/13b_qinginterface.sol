@@ -50,5 +50,5 @@ interface QING {
     function Bounce() external;
     function Chat(string memory chatline) external;
     function Log(uint64 Soul, uint64 Aura, string memory LogLine) external;
-    function ReactPlayer(uint64 Soul, uint64 Theta) external returns (uint64 Omicron, uint64 Omega);
+    function ReactPlayer(uint64 Soul, uint64 Theta) external returns (uint64 Omicron);
 }

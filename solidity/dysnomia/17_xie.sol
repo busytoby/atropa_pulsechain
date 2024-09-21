@@ -81,7 +81,7 @@ contract XIE is DYSNOMIA {
 
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().React(Player.On.Omega);
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().ReactUser(Soul, Omicron);
-        (Omicron, Omega) = Xia.Mai().Qi().Zuo().ReactPlayer(Soul, Omega);        
+        Omicron = Xia.Mai().Qi().Zuo().ReactPlayer(Soul, Omega);        
 
         Tso();
         _mintToCap();

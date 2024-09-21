@@ -95,30 +95,30 @@ contract MAI is DYSNOMIA {
         _mintToCap();
     }
 
-    function _updateUserLocation(User memory Beta, address ToQing) internal {
+    function _updateUserLocation(User memory Beta, address ToQing) internal returns (uint64 Omicron, uint64 Omega) {
         if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
         _players[Beta.Soul].Location = QING(ToQing);
         _players[Beta.Soul].Location.Join(Beta.On.Phi);
         _players[Beta.Soul].lastMove = block.timestamp;
 
-        (uint64 Omicron, uint64 Omega) = Qi.Zuo().Cho().React(Beta.On.Omicron);
+        (Omicron, Omega) = Qi.Zuo().Cho().React(Beta.On.Omicron);
         (Omicron, Omega) = Qi.Zuo().Cho().ReactUser(Beta.Soul, Omega);
-        (Omicron, Omega) = Qi.Zuo().ReactPlayer(Beta.Soul, Omicron);
+        Omicron = Qi.Zuo().ReactPlayer(Beta.Soul, Omicron);
         _mintToCap();
     }
 
     error OneMovePerBlock();
-    function Move(string memory To) public {
+    function Move(string memory To) public returns (uint64 Omicron, uint64 Omega) {
         User memory Beta = Qi.Zuo().Cho().GetUser();
         if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
         uint256 From = _players[Beta.Soul].Location.Waat();
         address ToQing = Qi.Zuo().VAT().Alias(From, To);
 
-        _updateUserLocation(Beta, ToQing);
+        return _updateUserLocation(Beta, ToQing);
     }
 
-    function MovePlayer(uint64 Soul, address ToQing) public onlyOwners {
+    function MovePlayer(uint64 Soul, address ToQing) public onlyOwners returns (uint64 Omicron, uint64 Omega) {
         User memory Beta = Qi.Zuo().Cho().GetUserBySoul(Soul);
-        _updateUserLocation(Beta, ToQing);
+        return _updateUserLocation(Beta, ToQing);
     }
 }
