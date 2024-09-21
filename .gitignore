@@ -27,7 +27,8 @@
 /artifacts
 /solidity/artifacts
 /solidity/dysnomia/artifacts
-/solidity/dysnomia/domain/chan/artifacts
+/solidity/dysnomia/domain/old/artifacts
+/solidity/dysnomia/domain/sky/artifacts
 /solidity/dysnomia/include/artifacts
 /solidity/dysnomia/interfaces/artifacts
 /solidity/dysnomia/lib/artifacts

@@ -3,12 +3,6 @@ pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
 import "./interfaces/16b_xiainterface.sol";
 
-struct Xi {
-    LAU Mu;
-    uint256 vaat;
-    // STUB
-}
-
 struct Power {
     uint256 Charge;
     uint256 Block;
@@ -18,8 +12,6 @@ contract XIE is DYSNOMIA {
     string public constant Type = "XIE";
 
     XIA public Xia;
-
-    mapping(address => Xi) private _chan;
 
     mapping(string Adjective => Power) private _adjectivePowers;
     mapping(uint256 QingWaat => Power) private _qingPowers;
@@ -59,22 +51,10 @@ contract XIE is DYSNOMIA {
         }
     }
 
-    function Register(address ChanAddress, uint256 QingWaat) public {
-        // STUB
-    }
-
-    function React(string memory Adjective) public returns (uint256 Omicron, uint256 Omega) {
+    function React(uint64 Soul, string memory Adjective) public returns (uint256 Omicron, uint256 Omega) {
         // STUB
 
         // return Chan.SAVE(Adjective, Omicron, Omega)
-    }
-
-    function Move() public {
-        // STUB
-    }
-
-    function Chat() public {
-        // STUB
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
