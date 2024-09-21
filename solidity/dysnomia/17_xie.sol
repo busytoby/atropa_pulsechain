@@ -52,16 +52,37 @@ contract XIE is DYSNOMIA {
         }
     }
 
+    function _reactUserQingAdjective(uint64 Soul, uint256 Waat, string memory Adjective) internal returns (uint256 Charge) {
+        TimeDeposit memory _t;
+        (_t, Adjective) = Xia.Mai().Qi().GetDeposit(_userQingAdjectiveDeposits[Soul][Waat][Adjective]);
+        Charge = Xia.Charge(Waat, Adjective) % _t.amount;
+
+        for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++) {
+            if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
+            if(_t.amount == 0) break;
+            _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
+        }
+
+        for(; _qingPowers[Waat].Block < block.number; _qingPowers[Waat].Block++) {
+            if(_qingPowers[Waat].Block == 0) _qingPowers[Waat].Block = block.number;
+            if(_t.amount == 0) break;
+            _qingPowers[Waat].Charge = Xia.Decay(_qingPowers[Waat].Charge);
+        }
+
+        _adjectivePowers[Adjective].Charge += Charge;
+        _qingPowers[Waat].Charge += Charge;
+    }
+
     function React(uint64 Soul, string memory Adjective) public returns (uint256 Charge, uint64 Omicron, uint64 Omega) {
-        Tso();
         User memory Player = Xia.Mai().Qi().Zuo().Cho().GetUserBySoul(Soul);
         QING PlayerLocation = Xia.Mai().GetPlayerQing(Soul);
-        Charge = Xia.Charge(PlayerLocation.Waat(), Adjective);
+        Charge = _reactUserQingAdjective(Soul, PlayerLocation.Waat(), Adjective);
 
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().React(Player.On.Omega);
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().ReactUser(Soul, Omicron);
         (Omicron, Omega) = Xia.Mai().Qi().Zuo().ReactPlayer(Soul, Omega);        
 
+        Tso();
         _mintToCap();
     }
 

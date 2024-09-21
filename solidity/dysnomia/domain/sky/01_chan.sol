@@ -15,4 +15,6 @@ contract CHAN is DYSNOMIA {
         addOwner(tx.origin);
         _mintToCap();
     }
+
+    
 }
