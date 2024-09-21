@@ -32,9 +32,9 @@ contract XIE is DYSNOMIA {
         TimeDeposit memory _t;
         string memory _a;
         uint256 _p;
-        uint256 _dc;
+        uint256 _dc = Xia.Mai().Qi().GetDepositCount();
+        uint8 _max = 12;
         for(; _lastTsoBlock < block.number; _lastTsoBlock++) {
-            _dc = Xia.Mai().Qi().GetDepositCount();
             for(uint256 qa = 0; qa < _dc; qa++) {
                 (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
                 if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
@@ -47,14 +47,22 @@ contract XIE is DYSNOMIA {
                     _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
                 _adjectivePowers[_a].Charge += _p;
                 _qingPowers[_t.waat].Charge += _p;
+                if(--_max == 0) return;
             }
         }
     }
 
-    function React(uint64 Soul, string memory Adjective) public returns (uint256 Omicron, uint256 Omega) {
-        // STUB
+    function React(uint64 Soul, string memory Adjective) public returns (uint256 Charge, uint64 Omicron, uint64 Omega) {
+        Tso();
+        User memory Player = Xia.Mai().Qi().Zuo().Cho().GetUserBySoul(Soul);
+        QING PlayerLocation = Xia.Mai().GetPlayerQing(Soul);
+        Charge = Xia.Charge(PlayerLocation.Waat(), Adjective);
 
-        // return Chan.SAVE(Adjective, Omicron, Omega)
+        (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().React(Player.On.Omega);
+        (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().ReactUser(Soul, Omicron);
+        (Omicron, Omega) = Xia.Mai().Qi().Zuo().ReactPlayer(Soul, Omega);        
+
+        _mintToCap();
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {

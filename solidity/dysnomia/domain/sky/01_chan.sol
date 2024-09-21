@@ -3,11 +3,6 @@ pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
 import "../../interfaces/17b_xieinterface.sol";
 
-struct Xi {
-    uint256 vaat;
-    // STUB
-}
-
 contract CHAN is DYSNOMIA {
     string public constant Type = "CHAN";
 

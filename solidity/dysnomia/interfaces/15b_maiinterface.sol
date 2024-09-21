@@ -22,6 +22,7 @@ interface MAI {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Qi() external view returns (QIINTERFACE);
+    function GetPlayerQing(uint64 Soul) external view returns (QING);
     function Maat() external returns (uint256);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);

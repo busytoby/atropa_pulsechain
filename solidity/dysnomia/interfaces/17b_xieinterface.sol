@@ -23,6 +23,7 @@ interface XIE {
     function Type() external view returns (string memory);
     function Xia() external view returns (XIA);
     function Tso() external;
+    function React(uint64 Soul, string memory Adjective) external returns (uint256 Charge, uint64 Omicron, uint64 Omega);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
     function GetDepositCount() external view returns (uint256);
