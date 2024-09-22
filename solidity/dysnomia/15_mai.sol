@@ -16,6 +16,7 @@ contract MAI is DYSNOMIA {
     constructor(address QiAddress) DYSNOMIA("Dysnomia MAI", "MAI", address(DYSNOMIA(QiAddress).Xiao())) {
         Qi = QIINTERFACE(QiAddress);
         addOwner(tx.origin);
+        addOwner(address(Qi.Zuo().VAT()));
         _mintToCap();
     }
 
@@ -108,7 +109,7 @@ contract MAI is DYSNOMIA {
     }
 
     error OneMovePerBlock();
-    function Move(string memory To) public returns (uint64 Omicron, uint64 Omega) {
+    function Move(string memory To) public onlyOwners returns (uint64 Omicron, uint64 Omega) {
         User memory Beta = Qi.Zuo().Cho().GetUser();
         if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
         uint256 From = _players[Beta.Soul].Location.Waat();

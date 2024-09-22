@@ -29,6 +29,7 @@
 /solidity/dysnomia/artifacts
 /solidity/dysnomia/domain/old/artifacts
 /solidity/dysnomia/domain/sky/artifacts
+/solidity/dysnomia/domain/sky/interfaces/artifacts
 /solidity/dysnomia/include/artifacts
 /solidity/dysnomia/interfaces/artifacts
 /solidity/dysnomia/lib/artifacts
