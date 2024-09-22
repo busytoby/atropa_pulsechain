@@ -17,7 +17,7 @@ contract CHAN is DYSNOMIA {
         _mintToCap();
     }
 
-    function Chuo() public returns (uint64 Omicron) {
+    function Chou() public returns (uint64 Omicron) {
         uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
         uint256 Maat = Xie.Xia().Mai().Maat();
         (Omicron, Entropy[Maat]) = Xie.Xia().Mai().Qi().Zuo().Cho().ReactUser(Soul, Entropy[Maat]);
