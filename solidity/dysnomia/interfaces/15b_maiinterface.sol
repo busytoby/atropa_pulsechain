@@ -25,6 +25,7 @@ interface MAI {
     function Qi() external view returns (QIINTERFACE);
     function GetPlayerQin(uint64 Soul) external view returns (QIN memory);
     function Maat() external returns (uint256);
+    function GetLocationByAddress(address UserToken) external returns (QING);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
     function GetDepositCount() external view returns (uint256);
