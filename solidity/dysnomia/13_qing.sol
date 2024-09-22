@@ -168,6 +168,11 @@ contract QING is DYSNOMIA {
         }
     }
 
+    function Admitted(address UserToken) public view returns (bool) {
+        if(CoverCharge != 0 && _list[UserToken] < block.timestamp) return false;
+        return true;
+    }
+
     error Forbidden(address Asset);
     error NotAdmitted(uint64 Soul);
     event LogEvent(string Username, uint64 Soul, uint64 Aura, uint256 Maat, string LogLine);
@@ -176,7 +181,7 @@ contract QING is DYSNOMIA {
         LAU _user = LAU(UserToken);
         uint64 _soul = _user.Saat(1);
         Cho.VerifyUserTokenPermissions(UserToken);
-        if(CoverCharge != 0 && _list[UserToken] < block.timestamp) revert NotAdmitted(_soul);
+        if(!Admitted(UserToken)) revert NotAdmitted(_soul);
     
         emit LogEvent(_user.Username(), _soul, _user.Saat(2), Maat, MSG);
     }

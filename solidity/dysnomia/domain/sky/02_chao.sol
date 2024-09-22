@@ -16,6 +16,7 @@ contract CHAO is DYSNOMIA {
         Chan = CHAN(ChanAddress);
         Chan.Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         addOwner(tx.origin);
+        addOwner(address(Chan.Xie().Xia().Mai().Qi().Zuo().VAT()));
         _mintToCap();
     }
 

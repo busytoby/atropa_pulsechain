@@ -48,6 +48,7 @@ interface QING {
     function Connect(string memory name, address _qing) external;
     function Disconnect(string memory name) external;
     function Bounce() external;
+    function Admitted(address UserToken) external view returns (bool);
     function YAISendMSG(address UserToken, uint256 Maat, string memory MSG) external;
     function ReactPlayer(uint64 Soul, uint64 Theta) external returns (uint64 Omicron);
 }
