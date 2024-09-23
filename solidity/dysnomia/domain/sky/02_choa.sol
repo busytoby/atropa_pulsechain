@@ -3,8 +3,8 @@ pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
 import "./interfaces/01b_chaninterface.sol";
 
-contract CHAO is DYSNOMIA {
-    string public constant Type = "CHAO";
+contract CHOA is DYSNOMIA {
+    string public constant Type = "CHOA";
 
     CHAN public Chan;
 
