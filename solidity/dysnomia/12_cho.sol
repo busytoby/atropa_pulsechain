@@ -123,14 +123,14 @@ contract CHO is DYSNOMIA {
         return (On.Omicron, On.Omega);
     }
 
-    function ReactUser(uint64 Soul, uint64 Epsilon) public returns (uint64 _omicron, uint64 _omega) {
+    function ReactUser(uint64 Soul, uint64 Epsilon) public returns (uint64 _omicron) {
         if(DelegateAddresses[Soul] == address(0x0)) revert SoulNotEntered(Soul);
         User memory Alpha = Delegates[DelegateAddresses[Soul]];
         Epsilon = Recall(Alpha);
         (Alpha.On.Omicron, Alpha.On.Omega) = Reactor().ReactShioCone(Alpha.On.Shio, Epsilon);
         Delegates[DelegateAddresses[Soul]] = Alpha;
-        Entropy = Alpha.On.Omicron;
-        return (Alpha.On.Omicron, Alpha.On.Omega);
+        Entropy = Alpha.On.Omega;
+        return (Alpha.On.Omicron);
     }
 
     function GetUserBySoul(uint64 Soul) public onlyOwners returns (User memory Alpha) {

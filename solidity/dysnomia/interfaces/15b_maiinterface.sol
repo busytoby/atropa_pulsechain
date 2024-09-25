@@ -33,6 +33,6 @@ interface MAI {
     function GetQingDeposit(uint256 QingWaat) external view returns (TimeDeposit memory);
     function Deposit(address Qing, uint256 amount) external;
     function Withdraw(uint256 Id, uint256 Amount) external;
-    function Move(string memory To) external returns (uint64 Omicron, uint64 Omega);
-    function MovePlayer(uint64 Soul, address ToQing) external returns (uint64 Omicron, uint64 Omega);
+    function Move(string memory To) external;
+    function MovePlayer(uint64 Soul, address ToQing) external;
 }

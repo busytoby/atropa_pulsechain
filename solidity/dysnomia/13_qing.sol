@@ -186,9 +186,9 @@ contract QING is DYSNOMIA {
         emit LogEvent(_user.Username(), _soul, _user.Saat(2), Maat, MSG);
     }
 
-    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omicron) {
+    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omega) {
         if(_players[Soul].Soul == 0) revert NotAdmitted(_players[Soul].Soul);
         (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
-        return _players[Soul].On.Omicron;
+        return _players[Soul].On.Omega;
     }
 }

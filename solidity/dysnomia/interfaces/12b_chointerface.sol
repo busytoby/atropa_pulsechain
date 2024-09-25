@@ -52,5 +52,5 @@ interface CHOINTERFACE {
     function Log(uint64 Soul, uint64 Aura, string memory LogLine) external;
     function OperatorSendMSG(string memory chatline) external;
     function React(uint64 Eta) external returns (uint64, uint64);
-    function ReactUser(uint64 Soul, uint64 Epsilon) external returns (uint64, uint64);
+    function ReactUser(uint64 Soul, uint64 Epsilon) external returns (uint64);
 }
