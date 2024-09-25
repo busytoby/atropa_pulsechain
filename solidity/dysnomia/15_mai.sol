@@ -107,10 +107,14 @@ contract MAI is DYSNOMIA {
         _players[Beta.Soul].Location.Join(Beta.On.Phi);
         _players[Beta.Soul].lastMove = block.timestamp;
 
-        (uint64 Omicron, uint64 Omega) = Qi.Zuo().Cho().React(Beta.On.Omicron);
+        React(Beta, _players[Beta.Soul].Location.Waat());
+        _mintToCap();
+    }
+
+    function React(User memory Beta, uint256 Gamma) public returns (uint64 Omicron, uint64 Omega) {
+        (Omicron, Omega) = Qi.Zuo().Cho().React(uint64(Gamma % MotzkinPrime));
         Omicron = Qi.Zuo().Cho().ReactUser(Beta.Soul, Omicron);
         Omega = Qi.Zuo().ReactPlayer(Beta.Soul, Omega);
-        _mintToCap();
     }
 
     error OneMovePerBlock();

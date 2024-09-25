@@ -81,10 +81,7 @@ contract XIE is DYSNOMIA {
         QIN memory PlayerQin = Xia.Mai().GetPlayerQin(Soul);
         Charge = _reactUserQingAdjective(Soul, PlayerQin.Location.Waat(), Adjective);
 
-        (Omicron, Omega) = Xia.Mai().Qi().Zuo().Cho().React(uint64(Charge % MotzkinPrime));
-        Omicron = Xia.Mai().Qi().Zuo().Cho().ReactUser(Soul, Omicron);
-        Omega = Xia.Mai().Qi().Zuo().ReactPlayer(Soul, Omega);        
-
+        (Omicron, Omega) = Xia.Mai().React(Player, Charge);
         Tso(48);
         _mintToCap();
     }
