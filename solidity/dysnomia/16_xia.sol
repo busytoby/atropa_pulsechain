@@ -29,7 +29,7 @@ contract XIA is DYSNOMIA {
 
     function Decay(uint256 Power) public view returns (uint256) {
         if(Power < MotzkinPrime) return Power;
-        while(Power > Monster) Power = Power / 2;
+        while((Power * 10 ** 38) > Monster) Power = Power / 2;
 
         return Power - ((Power * 10 ** 20) / Lambda());
     }
