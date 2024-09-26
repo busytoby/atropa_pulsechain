@@ -8,7 +8,7 @@ contract XIA is DYSNOMIA {
 
     MAI public Mai;
     uint256 public r = 1577011055923770163200;
-    uint256 public s = 2239488000;
+    uint256 public s = 28740096000;
     uint256 public Monster = 808017424794512875886459904961710757005754368000000000;
     uint256 public Balance;
     TimeDeposit[] private _deposits;
