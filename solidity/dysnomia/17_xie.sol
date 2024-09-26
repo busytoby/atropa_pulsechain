@@ -28,6 +28,14 @@ contract XIE is DYSNOMIA {
         _mintToCap();
     }
 
+    function GetPowerByAdjective(string calldata Adjective) public view returns (uint256 Charge) {
+        return _adjectivePowers[Adjective].Charge;
+    }
+
+    function GetPowerByQing(uint256 Waat) public view returns (uint256 Charge) {
+        return _qingPowers[Waat].Charge;
+    }
+
     function Tso(uint256 Max) public returns (uint256) { // return value > 0 indicates complete
         TimeDeposit memory _t;
         string memory _a;
