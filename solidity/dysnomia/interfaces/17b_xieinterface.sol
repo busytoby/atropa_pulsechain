@@ -31,6 +31,6 @@ interface XIE {
     function GetDepositCount() external view returns (uint256);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
     function GetQingAdjectiveDeposit(uint256 QingWaat, string memory Adjective) external view returns (TimeDeposit memory);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) external;
-    function Withdraw(uint256 Id, uint256 Amount) external;
+    function Deposit(address Qing, string memory Adjective) external;
+    function Withdraw(uint256 Id) external;
 }

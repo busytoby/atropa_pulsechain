@@ -9,7 +9,7 @@ contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
     QING public Zuo;
-    uint64 public _depositAmount = 685676574855766;
+    uint64 private _depositAmount = 685676574855766;
     TimeDeposit[] private _deposits;
     string[] private _adjectives;
     mapping(uint64 UserSoul => mapping(string Adjective => uint256 Sum)) _userSums;
