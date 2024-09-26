@@ -35,7 +35,7 @@ contract XIA is DYSNOMIA {
     }
 
     function Lambda() public view returns (uint256) {
-        return (2 * 10 ** 38) / (1000000001 - (Balance / e));
+        return (2 * 10 ** 38) / (1111111112 - (Balance / e));
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
@@ -65,7 +65,7 @@ contract XIA is DYSNOMIA {
     function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
         
-        if(Balance + amount > e * 1000000000) revert ExceedsMaxSystemDeposit((e * 1000000000) - Balance, amount);
+        if(Balance + amount > e * 1111111111) revert ExceedsMaxSystemDeposit((e * 1111111111) - Balance, amount);
 
         _t.waat = QING(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
