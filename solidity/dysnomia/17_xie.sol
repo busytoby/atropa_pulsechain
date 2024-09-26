@@ -17,7 +17,6 @@ contract XIE is DYSNOMIA {
     mapping(uint256 QingWaat => Power) private _qingPowers;
     uint256 private _lastTsoBlock;
 
-    uint64 private _depositAmount = 239500800;
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(string Adjective => uint256 DepositId))) private _userQingAdjectiveDeposits;
@@ -119,7 +118,7 @@ contract XIE is DYSNOMIA {
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
     error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
-    function Deposit(address Qing, string memory Adjective) public {
+    function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
         
         _t.waat = QING(Qing).Waat();
@@ -131,14 +130,14 @@ contract XIE is DYSNOMIA {
         uint64 _soul = Xia.Mai().Qi().Zuo().Cho().GetUserSoul();
         address WM = Xia.Mai().Qi().Zuo().Cho().Addresses("WM");
         DYSNOMIA withdrawToken = DYSNOMIA(WM);
-        withdrawToken.transferFrom(msg.sender, address(this), _depositAmount);
+        withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
         if(_userQingAdjectiveDeposits[_soul][_t.waat][Adjective] == 0)
             _t.depositId = _deposits.length;
         else 
             _t.depositId = _userQingAdjectiveDeposits[_soul][_t.waat][Adjective];
-        _t.amount += _depositAmount;
+        _t.amount += amount;
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
@@ -149,15 +148,15 @@ contract XIE is DYSNOMIA {
 
     error NotOwner(uint256 DepositId);
     error ExceedsBalance(uint256 DepositId, uint256 Balance);
-    function Withdraw(uint256 Id) public {
+    function Withdraw(uint256 Id, uint256 Amount) public {
         uint64 _soul = Xia.Mai().Qi().Zuo().Cho().GetUserSoul();
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
-        if(_depositAmount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
+        if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
         address WM = Xia.Mai().Qi().Zuo().Cho().Addresses("WM");
         DYSNOMIA withdrawToken = DYSNOMIA(WM);
-        withdrawToken.transfer(msg.sender, _depositAmount);
-        _deposits[Id].amount -= _depositAmount;
+        withdrawToken.transfer(msg.sender, Amount);
+        _deposits[Id].amount -= Amount;
 
         _mintToCap();
     }

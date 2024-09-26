@@ -9,7 +9,7 @@ import "./interfaces/libcorereactions.sol";
 contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
 
-    uint256 public Prime = 788007780075465850682698395781331007488376212737722608030423588863419947711;
+    uint256 constant public Prime = 788007780075465850682698395781331007488376212737722608030423588863419947711;
 
     VOID public Void;
     uint64[3] public Saat;

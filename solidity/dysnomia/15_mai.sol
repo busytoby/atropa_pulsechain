@@ -8,7 +8,7 @@ contract MAI is DYSNOMIA {
     string public constant Type = "MAI";
 
     QIINTERFACE public Qi;
-    uint64 private _depositAmount = 916203939558674;
+    uint256 constant private _depositAmount = 1000000000000000000;
     mapping(uint64 Soul => QIN) private _players;
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;

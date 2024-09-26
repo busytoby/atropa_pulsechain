@@ -7,7 +7,7 @@ contract XIA is DYSNOMIA {
     string public constant Type = "XIA";
 
     MAI public Mai;
-    uint64 private _depositAmount = 273030912000000;
+    uint256 private _depositAmount = 10000000000000000000000;
     uint256 public r = 90745943887872000;
     uint256 public s = 10736731045232640;
     uint256 public Monster = 4154781481226426191177580544000000;
