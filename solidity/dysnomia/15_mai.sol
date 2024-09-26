@@ -8,6 +8,7 @@ contract MAI is DYSNOMIA {
     string public constant Type = "MAI";
 
     QIINTERFACE public Qi;
+    uint64 public _depositAmount = 916203939558674;
     mapping(uint64 Soul => QIN) private _players;
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
@@ -60,7 +61,7 @@ contract MAI is DYSNOMIA {
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
-    function Deposit(address Qing, uint256 amount) public {
+    function Deposit(address Qing) public {
         TimeDeposit memory _t;
         
         _t.waat = QING(Qing).Waat();
@@ -71,14 +72,14 @@ contract MAI is DYSNOMIA {
 
         uint64 _soul = Qi.Zuo().Cho().GetUserSoul();
         DYSNOMIA withdrawToken = DYSNOMIA(Qing);
-        withdrawToken.transferFrom(msg.sender, address(this), amount);
+        withdrawToken.transferFrom(msg.sender, address(this), _depositAmount);
 
         _t.soul = _soul;
         if(_userQingDeposits[_soul][_t.waat] == 0)
             _t.depositId = _deposits.length;
         else 
             _t.depositId = _userQingDeposits[_soul][_t.waat];
-        _t.amount += amount;
+        _t.amount += _depositAmount;
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
@@ -88,15 +89,15 @@ contract MAI is DYSNOMIA {
 
     error NotOwner(uint256 DepositId);
     error ExceedsBalance(uint256 DepositId, uint256 Balance);
-    function Withdraw(uint256 Id, uint256 Amount) public {
+    function Withdraw(uint256 Id) public {
         uint64 _soul = Qi.Zuo().Cho().GetUserSoul();
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
-        if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
+        if(_depositAmount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
         address Qing = Qi.Zuo().Cho().Qu(_deposits[Id].waat);
         DYSNOMIA withdrawToken = DYSNOMIA(Qing);
-        withdrawToken.transfer(msg.sender, Amount);
-        _deposits[Id].amount -= Amount;
+        withdrawToken.transfer(msg.sender, _depositAmount);
+        _deposits[Id].amount -= _depositAmount;
 
         _mintToCap();
     }
