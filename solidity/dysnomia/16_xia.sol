@@ -7,9 +7,9 @@ contract XIA is DYSNOMIA {
     string public constant Type = "XIA";
 
     MAI public Mai;
-    uint256 public r = 1577011055923770163200;
-    uint256 public s = 28740096000;
-    uint256 public Monster = 808017424794512875886459904961710757005754368000000000;
+    uint256 public r = 90745943887872000;
+    uint256 public s = 10736731045232640;
+    uint256 public Monster = 4154781481226426191177580544000000;
     uint256 public Balance;
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
