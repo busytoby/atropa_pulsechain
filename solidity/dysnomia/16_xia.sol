@@ -7,6 +7,7 @@ contract XIA is DYSNOMIA {
     string public constant Type = "XIA";
 
     MAI public Mai;
+    uint256 public e = 751401541040690000000000000000;
     uint256 public Monster = 808017424794512875886459904961710757005754368000000000;
     uint256 public Balance;
     TimeDeposit[] private _deposits;
@@ -34,7 +35,7 @@ contract XIA is DYSNOMIA {
     }
 
     function Lambda() public view returns (uint256) {
-        return (2 * 10 ** 38) / ((1 * 10 ** 12) - (Balance / MotzkinPrime) + 1);
+        return (2 * 10 ** 38) / (1001 - (Balance / e));
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
@@ -64,7 +65,7 @@ contract XIA is DYSNOMIA {
     function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
         
-        if(Balance + amount > MotzkinPrime * (1 * 10 ** 12)) revert ExceedsMaxSystemDeposit((MotzkinPrime * (1 * 10 ** 12)) - Balance, amount);
+        if(Balance + amount > e * 1000) revert ExceedsMaxSystemDeposit((e * 1000) - Balance, amount);
 
         _t.waat = QING(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
