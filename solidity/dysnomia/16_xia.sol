@@ -28,15 +28,13 @@ contract XIA is DYSNOMIA {
         return Xiao.modExp(_b, _e, _m);
     }
 
-    function Decay(uint256 Power) public view returns (uint256) {
-        if(Power < MotzkinPrime) return Power;
-        while((Power * 10 ** 38) > Monster) Power = Power / 2;
-
+    function Decay(uint256 Power) public view returns (uint256) {        
+        while(Power > Monster) Power = Power / 2;
         return Power - ((Power * 10 ** 20) / Lambda());
     }
 
     function Lambda() public view returns (uint256) {
-        return (2 * 10 ** 38) / (s - (Balance / r));
+        return (2 * 10 ** 38) / ((s * r) / Balance);
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
