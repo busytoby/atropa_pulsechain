@@ -66,7 +66,7 @@ contract QI is DYSNOMIA {
         if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
         uint64 _soul = Zuo.Cho().GetUserSoul();
-        DYSNOMIA withdrawToken = DYSNOMIA(Zuo.Cho().Addresses("Yu"));
+        SHIO withdrawToken = SHIO(Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().Eta().Psi());
         withdrawToken.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
@@ -89,7 +89,7 @@ contract QI is DYSNOMIA {
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
-        DYSNOMIA withdrawToken = DYSNOMIA(Zuo.Cho().Addresses("Yu"));
+        SHIO withdrawToken = SHIO(Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().Eta().Psi());
         withdrawToken.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
         _userSums[_soul][_adjectives[Id]] -= Amount;
