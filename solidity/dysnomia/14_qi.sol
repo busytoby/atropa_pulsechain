@@ -66,8 +66,8 @@ contract QI is DYSNOMIA {
         if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
         uint64 _soul = Zuo.Cho().GetUserSoul();
-        SHIO Fornax = SHIO(Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().Eta().Psi());
-        Fornax.transferFrom(msg.sender, address(this), amount);
+        SHIO Eris = Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Zuo.Cho().Void().Nu().Psi().Rho().Lai.Xi).Shio;
+        Eris.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
         _t.depositId = _deposits.length;
@@ -89,8 +89,8 @@ contract QI is DYSNOMIA {
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
-        SHIO Fornax = SHIO(Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().Eta().Psi());
-        Fornax.transfer(msg.sender, Amount);
+        SHIO Eris = Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Zuo.Cho().Void().Nu().Psi().Rho().Lai.Xi).Shio;
+        Eris.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
         _userSums[_soul][_adjectives[Id]] -= Amount;
         _qingSums[_deposits[Id].waat][_adjectives[Id]] -= Amount;
