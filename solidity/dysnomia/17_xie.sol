@@ -48,7 +48,7 @@ contract XIE is DYSNOMIA {
                     if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
                     if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
                     if(_t.amount == 0) continue;
-                    _p = Xia.Charge(_t.waat, _a);
+                    _p = Xia.Charge(_t.waat, _a) % (_t.amount * (block.timestamp - _t.timestamp));
                     for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
                         _adjectivePowers[_a].Charge = Xia.Decay(_adjectivePowers[_a].Charge);
                     for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
@@ -66,7 +66,7 @@ contract XIE is DYSNOMIA {
     function _reactUserQingAdjective(uint64 Soul, uint256 Waat, string memory Adjective) internal returns (uint256 Charge) {
         TimeDeposit memory _t;
         (_t, Adjective) = Xia.Mai().Qi().GetDeposit(_userQingAdjectiveDeposits[Soul][Waat][Adjective]);
-        Charge = Xia.Charge(Waat, Adjective) % _t.amount;
+        Charge = Xia.Charge(Waat, Adjective) % (_t.amount * (block.timestamp - _t.timestamp));
 
         for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++) {
             if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
