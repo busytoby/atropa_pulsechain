@@ -32,7 +32,7 @@ contract XIA is DYSNOMIA {
     }
 
     function Lambda() public view returns (uint256) {
-        return (2 * 10 ** 38) / (10000000001 - (Balance / e));
+        return (4 * 10 ** 38) / (10000000001 - (Balance / e));
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
