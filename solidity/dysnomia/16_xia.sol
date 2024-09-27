@@ -21,8 +21,10 @@ contract XIA is DYSNOMIA {
 
     function Charge(uint256 QingWaat, string memory adjective) public returns (uint256) {
         uint256 _b = Mai.Qi().GetQingAdjectiveValue(QingWaat, adjective);
-        uint256 _e = Mai.GetQingDeposit(QingWaat).amount;
-        uint256 _m = GetQingAdjectiveDeposit(QingWaat, adjective).amount;
+        TimeDeposit memory _d = Mai.GetQingDeposit(QingWaat);
+        uint256 _e = _d.amount * (block.timestamp - _d.timestamp);
+        _d = GetQingAdjectiveDeposit(QingWaat, adjective);
+        uint256 _m = _d.amount * (block.timestamp - _d.timestamp);
         return Xiao.modExp(_b, _e, _m);
     }
 
