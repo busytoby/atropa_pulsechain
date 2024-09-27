@@ -16,7 +16,7 @@ contract MAI is DYSNOMIA {
     constructor(address QiAddress) DYSNOMIA("Dysnomia MAI", "MAI", address(DYSNOMIA(QiAddress).Xiao())) {
         Qi = QIINTERFACE(QiAddress);
         addOwner(tx.origin);
-        addOwner(address(Qi.Zuo().VAT()));
+        addOwner(address(Qi.Zuo().VAT()));        
         _mintToCap();
     }
 

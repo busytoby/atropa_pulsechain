@@ -71,9 +71,8 @@ contract XIA is DYSNOMIA {
         if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
         uint64 _soul = Mai.Qi().Zuo().Cho().GetUserSoul();
-        address Freebies = Mai.Qi().Zuo().Cho().Addresses("Freebies");
-        DYSNOMIA withdrawToken = DYSNOMIA(Freebies);
-        withdrawToken.transferFrom(msg.sender, address(this), amount);
+        SHIO Fomalhaute = Mai.Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Mai.Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Xi()).Shio;
+        Fomalhaute.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
         if(_userQingAdjectiveDeposits[_soul][_t.waat][Adjective] == 0)
@@ -97,9 +96,8 @@ contract XIA is DYSNOMIA {
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
-        address Freebies = Mai.Qi().Zuo().Cho().Addresses("Freebies");
-        DYSNOMIA withdrawToken = DYSNOMIA(Freebies);
-        withdrawToken.transfer(msg.sender, Amount);
+        SHIO Fomalhaute = Mai.Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Mai.Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Xi()).Shio;
+        Fomalhaute.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
 
         Balance -= Amount;
