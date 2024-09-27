@@ -128,9 +128,8 @@ contract XIE is DYSNOMIA {
         if(_checkQing != Qing) revert WaatMismatch(Qing, _t.waat);
 
         uint64 _soul = Xia.Mai().Qi().Zuo().Cho().GetUserSoul();
-        address WM = Xia.Mai().Qi().Zuo().Cho().Addresses("WM");
-        DYSNOMIA withdrawToken = DYSNOMIA(WM);
-        withdrawToken.transferFrom(msg.sender, address(this), amount);
+        SHIO Eris = Xia.Mai().Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Xia.Mai().Qi().Zuo().Cho().Void().Nu().Psi().Rho().Lai.Xi).Shio;
+        Eris.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
         if(_userQingAdjectiveDeposits[_soul][_t.waat][Adjective] == 0)
@@ -153,9 +152,8 @@ contract XIE is DYSNOMIA {
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
 
-        address WM = Xia.Mai().Qi().Zuo().Cho().Addresses("WM");
-        DYSNOMIA withdrawToken = DYSNOMIA(WM);
-        withdrawToken.transfer(msg.sender, Amount);
+        SHIO Eris = Xia.Mai().Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Xia.Mai().Qi().Zuo().Cho().Void().Nu().Psi().Rho().Lai.Xi).Shio;
+        Eris.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
 
         _mintToCap();
