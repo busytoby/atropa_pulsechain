@@ -19,12 +19,34 @@ contract XIA is DYSNOMIA {
         _mintToCap();
     }
 
+    function Amplify(uint256 Amount, uint256 Timestamp) public view returns (uint256 Bonus) {
+        if(Timestamp >= block.timestamp) return 0;
+        uint256 _dt = block.timestamp - Timestamp;
+        Bonus = Amount * _dt;
+        _dt /= 60;
+        if(_dt == 0) return Bonus;
+        Bonus *= _dt * 2;
+        _dt /= 24;
+        if(_dt == 0) return Bonus;
+        Bonus *= _dt * 4;
+        _dt /= 30;
+        if(_dt == 0) return Bonus;
+        Bonus *= _dt * 8;
+        _dt /= 365;
+        uint16 i = 16;
+        while(_dt > 0) {
+            Bonus *= _dt * i;
+            i *= 2;
+            _dt /= 2;
+        }
+    }
+
     function Charge(uint256 QingWaat, string memory adjective) public returns (uint256) {
         uint256 _b = Mai.Qi().GetQingAdjectiveValue(QingWaat, adjective);
         TimeDeposit memory _d = Mai.GetQingDeposit(QingWaat);
-        uint256 _e = _d.amount * (block.timestamp - _d.timestamp);
+        uint256 _e = Amplify(_d.amount, _d.timestamp);
         _d = GetQingAdjectiveDeposit(QingWaat, adjective);
-        uint256 _m = _d.amount * (block.timestamp - _d.timestamp);
+        uint256 _m = Amplify(_d.amount, _d.timestamp);
         return Xiao.modExp(_b, _e, _m);
     }
 

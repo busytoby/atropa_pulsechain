@@ -25,6 +25,7 @@ interface XIA {
     function Mai() external view returns (MAI);
     function e() external view returns (uint256);
     function Balance() external view returns (uint256);
+    function Amplify(uint256 Amount, uint256 Timestamp) external view returns (uint256 Bonus);
     function Charge(uint256 QingWaat, string memory adjective) external returns (uint256);
     function Decay(uint256 Power) external view returns (uint256);
     function Lambda() external view returns (uint256);
