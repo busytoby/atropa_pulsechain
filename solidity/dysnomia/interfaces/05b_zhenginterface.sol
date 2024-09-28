@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 import "./04b_yiinterface.sol";
 
 interface ZHENG {
+    function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;

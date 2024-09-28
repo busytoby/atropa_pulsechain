@@ -4,6 +4,7 @@ import "../include/qin.sol";
 import "./14b_qiinterface.sol";
 
 interface MAI {
+    function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;

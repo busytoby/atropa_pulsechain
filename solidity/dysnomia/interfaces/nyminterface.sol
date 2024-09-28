@@ -6,6 +6,7 @@ import "../include/uservote.sol";
 import "./10b_voidinterface.sol";
 
 interface NYM {
+    function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;

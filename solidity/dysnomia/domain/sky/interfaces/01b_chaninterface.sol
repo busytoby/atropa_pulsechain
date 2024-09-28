@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 import "../../../interfaces/17b_xieinterface.sol";
 
 interface CHAN {
+    function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
     function Purchase(address _t, uint256 _a) external;
