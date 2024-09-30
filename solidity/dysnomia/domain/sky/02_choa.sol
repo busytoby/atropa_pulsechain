@@ -38,7 +38,7 @@ contract CHOA is DYSNOMIA {
         _operations[Adjective][UserToken] = OperationsContract;        
     }
 
-    function React(address YUE, uint256 Waat, string memory Adjective, uint256 Charge) public onlyOwners {
+    function React(address YUEAddress, uint256 Waat, string memory Adjective, uint256 Charge) public onlyOwners {
         // reactions return from YAI and pass to Operators
     }
 }
