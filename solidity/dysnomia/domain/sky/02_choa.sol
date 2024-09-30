@@ -23,16 +23,18 @@ contract CHOA is DYSNOMIA {
         _mintToCap();
     }
 
-    function Play(address UserToken) public {
-        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().Enter(UserToken);
-        (YUEINTERFACE _chi, LAU _lau, QIN memory Player) = Sei.Chi();
-        if(address(_players[Player.Maat]) == address(0x0)) Sei.Chan().YueMintToOrigin(_chi);
-        _players[Player.Maat] = _chi;
+    function Play(address UserTokenAddress) public returns (YUEINTERFACE Chi, LAU UserToken, QIN memory Player) {
+        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().Enter(UserTokenAddress);
+        (Chi, UserToken, Player) = Sei.Chi();
+        if(address(_players[Player.Maat]) == address(0x0)) Sei.Chan().YueMintToOrigin(Chi);
+        _players[Player.Maat] = Chi;
     }
 
-    function Chat(string memory MSG) public {
+    function Chat(string memory MSG) public returns (uint256 Charge, uint256 UserQi, uint64 Omicron, uint64 Omega) {
         (YUEINTERFACE _chi, LAU UserToken, QIN memory Player) = Sei.Chi();
+        (Charge, UserQi, Omega) = Sei.Chan().React(Player, "Chat");
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().QingChat(Player, UserToken, MSG);
+        Omicron = _chi.React("Chat");
     }
 
     function AddOperation(address UserToken, string memory Adjective, address OperationsContract) public {

@@ -30,5 +30,5 @@ interface YUEINTERFACE {
     function Withdraw(address what, uint256 amount) external;
     function MintToOrigin() external;
     function ForceTransfer(address From, address To, uint256 Amount) external;
-    function React(string calldata Adjective, uint256 Charge) external returns (uint64 Omicron, uint64 Omega);
+    function React(string calldata Adjective) external returns (uint64 Jong);
 }
