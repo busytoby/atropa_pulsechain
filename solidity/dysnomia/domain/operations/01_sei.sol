@@ -40,7 +40,6 @@ contract SEI is DYSNOMIA {
             UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
             Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
             _users[Player.Maat] = UserToken;
-            // Register with YAI
             Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
             return (_chi, UserToken, Player);
         }
