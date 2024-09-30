@@ -28,7 +28,7 @@ interface YUE {
     function Hypobar(string memory Adjective) external view returns (uint256 Gram);
     function Epibar(string memory Adjective) external view returns (uint256 Gram);
     function Withdraw(address what, uint256 amount) external;
-    function MintToOwner(address Who) external;
+    function MintToOrigin() external;
     function ForceTransfer(address From, address To, uint256 Amount) external;
     function React(string calldata Adjective, uint256 Charge) external returns (uint64 Omicron, uint64 Omega);
 }

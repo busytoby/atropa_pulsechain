@@ -17,6 +17,18 @@ contract CHAN is DYSNOMIA {
         _mintToCap();
     }
 
+    function YueWithdraw(address Yue, address Asset, uint256 Amount) public onlyOwners {
+        YUE(Yue).Withdraw(Asset, Amount);
+    }
+
+    function YueMintToOrigin(address Yue) public onlyOwners {
+        YUE(Yue).MintToOrigin();
+    }
+
+    function YueForceTransfer(address Yue, address From, address To, uint256 Amount) public onlyOwners {
+        YUE(Yue).ForceTransfer(From, To, Amount);
+    }
+
     function Chou() public returns (uint64) {
         uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
         uint256 Maat = Xie.Xia().Mai().Maat();
