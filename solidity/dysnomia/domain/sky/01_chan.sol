@@ -17,16 +17,16 @@ contract CHAN is DYSNOMIA {
         _mintToCap();
     }
 
-    function YueWithdraw(address Yue, address Asset, uint256 Amount) public onlyOwners {
-        YUE(Yue).Withdraw(Asset, Amount);
+    function YueWithdraw(YUE Yue, address Asset, uint256 Amount) public onlyOwners {
+        Yue.Withdraw(Asset, Amount);
     }
 
-    function YueMintToOrigin(address Yue) public onlyOwners {
-        YUE(Yue).MintToOrigin();
+    function YueMintToOrigin(YUE Yue) public onlyOwners {
+        Yue.MintToOrigin();
     }
 
-    function YueForceTransfer(address Yue, address From, address To, uint256 Amount) public onlyOwners {
-        YUE(Yue).ForceTransfer(From, To, Amount);
+    function YueForceTransfer(YUE Yue, address From, address To, uint256 Amount) public onlyOwners {
+        Yue.ForceTransfer(From, To, Amount);
     }
 
     function Chou() public returns (uint64) {

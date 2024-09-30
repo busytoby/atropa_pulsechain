@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../../interfaces/17b_xieinterface.sol";
+import "../../interfaces/yueinterface.sol";
 
 interface CHAN {
     function maxSupply() external view returns(uint256);
@@ -24,6 +25,9 @@ interface CHAN {
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
     function Entropy(uint256 Maat) external view returns (uint64 Entropy);
+    function YueWithdraw(YUE Yue, address Asset, uint256 Amount) external;
+    function YueMintToOrigin(YUE Yue) external;
+    function YueForceTransfer(YUE Yue, address From, address To, uint256 Amount) external;
     function Chou() external returns (uint64);
     function React(QIN memory Player, string memory Adjective) external returns (uint256 Charge, uint256 UserQi, uint64 Omega);
 }

@@ -25,6 +25,7 @@ contract CHOA is DYSNOMIA {
     function Play(address UserToken) public {
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().Enter(UserToken);
         (YUE _chi, QIN memory Player) = Sei.Chi();
+        if(address(_players[Player.Maat]) == address(0x0)) Sei.Chan().YueMintToOrigin(_chi);
         _players[Player.Maat] = _chi;
     }
 
