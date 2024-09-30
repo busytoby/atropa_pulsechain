@@ -16,6 +16,7 @@ contract CHOA is DYSNOMIA {
 
     constructor(address SeiAddress) DYSNOMIA("Dysnomia Chao", "CHAO", address(DYSNOMIA(SeiAddress).Xiao())) {
         Sei = SEI(SeiAddress);
+        Sei.Chan().addOwner(address(this));
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         addOwner(tx.origin);
         addOwner(address(Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT()));
@@ -27,6 +28,7 @@ contract CHOA is DYSNOMIA {
         (YUE _chi, QIN memory Player) = Sei.Chi();
         if(address(_players[Player.Maat]) == address(0x0)) Sei.Chan().YueMintToOrigin(_chi);
         _players[Player.Maat] = _chi;
+        
     }
 
     function AddOperation(address UserToken, string memory Adjective, address OperationsContract) public {
