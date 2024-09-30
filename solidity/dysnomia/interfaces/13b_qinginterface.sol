@@ -5,7 +5,7 @@ import "./12b_chointerface.sol";
 import "./libstrings.sol";
 import "./libyai.sol";
 
-interface QING {
+interface QINGINTERFACE {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -50,6 +50,6 @@ interface QING {
     function Disconnect(string memory name) external;
     function Bounce() external;
     function Admitted(address UserToken) external view returns (bool);
-    function YAISendMSG(address UserToken, uint256 Maat, string memory MSG) external;
+    function YAISendMSG(LAU UserToken, uint256 Maat, string memory MSG) external;
     function ReactPlayer(uint64 Soul, uint64 Theta) external returns (uint64 Omicron);
 }

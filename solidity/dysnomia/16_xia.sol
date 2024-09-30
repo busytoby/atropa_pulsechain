@@ -88,7 +88,7 @@ contract XIA is DYSNOMIA {
         
         if(Balance + amount > e * 10000000000) revert ExceedsMaxSystemDeposit((e * 10000000000) - Balance, amount);
 
-        _t.waat = QING(Qing).Waat();
+        _t.waat = QINGINTERFACE(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
         
         address _checkQing = Mai.Qi().Zuo().Cho().Qu(_t.waat);

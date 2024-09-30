@@ -8,7 +8,7 @@ import "./interfaces/13b_qinginterface.sol";
 contract QI is DYSNOMIA {
     string public constant Type = "QI";
 
-    QING public Zuo;
+    QINGINTERFACE public Zuo;
     TimeDeposit[] private _deposits;
     string[] private _adjectives;
     mapping(uint64 UserSoul => mapping(string Adjective => uint256 Sum)) _userSums;
@@ -17,7 +17,7 @@ contract QI is DYSNOMIA {
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
     constructor(address ZuoQingAddress) DYSNOMIA("DYSNOMIA Qi", "QI", address(DYSNOMIA(ZuoQingAddress).Xiao())) {
-        Zuo = QING(ZuoQingAddress);
+        Zuo = QINGINTERFACE(ZuoQingAddress);
         addOwner(tx.origin);
         _mintToCap();
     }
@@ -59,7 +59,7 @@ contract QI is DYSNOMIA {
     function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
         
-        _t.waat = QING(Qing).Waat();
+        _t.waat = QINGINTERFACE(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
         
         address _checkQing = Zuo.Cho().Qu(_t.waat);

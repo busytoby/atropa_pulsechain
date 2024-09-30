@@ -176,14 +176,13 @@ contract QING is DYSNOMIA {
     error Forbidden(address Asset);
     error NotAdmitted(uint64 Soul);
     event LogEvent(string Username, uint64 Soul, uint64 Aura, uint256 Maat, string LogLine);
-    function YAISendMSG(address UserToken, uint256 Maat, string memory MSG) public {
+    function YAISendMSG(LAU UserToken, uint256 Maat, string memory MSG) public {
         if(msg.sender != address(VAT())) revert Forbidden(address(this));
-        LAU _user = LAU(UserToken);
-        uint64 _soul = _user.Saat(1);
-        Cho.VerifyUserTokenPermissions(UserToken);
-        if(!Admitted(UserToken)) revert NotAdmitted(_soul);
+        uint64 _soul = UserToken.Saat(1);
+        Cho.VerifyUserTokenPermissions(address(UserToken));
+        if(!Admitted(address(UserToken))) revert NotAdmitted(_soul);
     
-        emit LogEvent(_user.Username(), _soul, _user.Saat(2), Maat, MSG);
+        emit LogEvent(UserToken.Username(), _soul, UserToken.Saat(2), Maat, MSG);
     }
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omega) {

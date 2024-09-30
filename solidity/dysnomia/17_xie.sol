@@ -121,7 +121,7 @@ contract XIE is DYSNOMIA {
     function Deposit(address Qing, string memory Adjective, uint256 amount) public {
         TimeDeposit memory _t;
         
-        _t.waat = QING(Qing).Waat();
+        _t.waat = QINGINTERFACE(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
         
         address _checkQing = Xia.Mai().Qi().Zuo().Cho().Qu(_t.waat);

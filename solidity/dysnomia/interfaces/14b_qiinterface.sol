@@ -23,7 +23,7 @@ interface QIINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Zuo() external view returns (QING);
+    function Zuo() external view returns (QINGINTERFACE);
     function GetUserAdjectiveValue(uint64 UserSoul, string memory Adjective) external view returns (uint256 Sum);
     function GetQingAdjectiveValue(uint256 QingWaat, string memory Adjective) external view returns (uint256 Sum);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);

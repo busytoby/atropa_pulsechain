@@ -4,6 +4,6 @@ import "../interfaces/13b_qinginterface.sol";
 
 struct QIN {
     uint256 Maat;
-    QING Location;
+    QINGINTERFACE Location;
     uint256 lastMove;
 }

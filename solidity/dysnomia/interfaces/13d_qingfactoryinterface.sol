@@ -4,5 +4,5 @@ import "./13b_qinginterface.sol";
 
 interface QINGFactory {  
     function Yai() external returns(LIBYAI);
-    function New(address Integrative) external returns(QING Mu);
+    function New(address Integrative) external returns(QINGINTERFACE Mu);
 }

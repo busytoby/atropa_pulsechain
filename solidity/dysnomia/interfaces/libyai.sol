@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "../include/qin.sol";
 import "./10b_voidinterface.sol";
+import "./11b_lauinterface.sol";
+import "./13b_qinginterface.sol";
 
 interface LIBYAI {
     function maxSupply() external view returns(uint256);
@@ -23,6 +26,7 @@ interface LIBYAI {
     function Type() external view returns(string memory);
     function has(address _contract, string memory what) external view returns (bool does);
     function Void() external view returns(VOID);
+    function QingChat(QIN memory Player, LAU UserToken, string memory MSG) external;
     function Forbid(address what) external;
     function Unforbid(address what) external;
     function IsForbidden(address Token) external view returns (bool);

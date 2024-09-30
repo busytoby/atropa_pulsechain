@@ -20,7 +20,7 @@ contract MAI is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetLocationByAddress(address UserToken) public view returns (QING) {
+    function GetLocationByAddress(address UserToken) public view returns (QINGINTERFACE) {
         uint64 Soul = LAU(UserToken).Saat(1);
         return _players[Soul].Location;
     }
@@ -63,7 +63,7 @@ contract MAI is DYSNOMIA {
     function Deposit(address Qing, uint256 amount) public {
         TimeDeposit memory _t;
         
-        _t.waat = QING(Qing).Waat();
+        _t.waat = QINGINTERFACE(Qing).Waat();
         if(_t.waat == 0) revert UnknownQing(Qing);
         
         address _checkQing = Qi.Zuo().Cho().Qu(_t.waat);
@@ -103,7 +103,7 @@ contract MAI is DYSNOMIA {
 
     function _updateUserLocation(User memory Beta, address ToQing) internal {
         if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
-        _players[Beta.Soul].Location = QING(ToQing);
+        _players[Beta.Soul].Location = QINGINTERFACE(ToQing);
         _players[Beta.Soul].Location.Join(Beta.On.Phi);
         _players[Beta.Soul].lastMove = block.timestamp;
 

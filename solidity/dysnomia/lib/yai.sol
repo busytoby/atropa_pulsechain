@@ -24,6 +24,10 @@ contract YAI is DYSNOMIA {
         assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 
+    function QingChat(QIN memory Player, LAU UserToken, string memory MSG) public onlyOwners {
+        Player.Location.YAISendMSG(UserToken, Player.Maat, MSG);
+    }
+
     error NotOwner(address what, address who);
     function Forbid(address what) public {
         if(has(what, "owner()") && DYSNOMIA(what).owner() == tx.origin) _forbidden[what] = true;

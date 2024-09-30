@@ -9,7 +9,7 @@ contract CHOA is DYSNOMIA {
 
     SEI public Sei;
 
-    mapping(uint256 Maat => YUE) private _players;
+    mapping(uint256 Maat => YUEINTERFACE) private _players;
     mapping(string Adjective => address[] Operators) private _operators;
     mapping(string Adjective => mapping(address Operator => address Contract)) private _operations;
     mapping(address UserToken => mapping(string Adjective => address Contract)) private _userOperations;
@@ -25,10 +25,14 @@ contract CHOA is DYSNOMIA {
 
     function Play(address UserToken) public {
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().Enter(UserToken);
-        (YUE _chi, QIN memory Player) = Sei.Chi();
+        (YUEINTERFACE _chi, LAU _lau, QIN memory Player) = Sei.Chi();
         if(address(_players[Player.Maat]) == address(0x0)) Sei.Chan().YueMintToOrigin(_chi);
         _players[Player.Maat] = _chi;
-        
+    }
+
+    function Chat(string memory MSG) public {
+        (YUEINTERFACE _chi, LAU UserToken, QIN memory Player) = Sei.Chi();
+        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().QingChat(Player, UserToken, MSG);
     }
 
     function AddOperation(address UserToken, string memory Adjective, address OperationsContract) public {
