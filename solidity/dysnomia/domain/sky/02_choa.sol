@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
+import "../operations/interfaces/01b_seiinterface.sol";
 import "./interfaces/01b_chaninterface.sol";
 
 contract CHOA is DYSNOMIA {
@@ -8,6 +9,7 @@ contract CHOA is DYSNOMIA {
 
     CHAN public Chan;
 
+    mapping(address => YUE) private _players;
     mapping(string Adjective => address[] Operators) private _operators;
     mapping(string Adjective => mapping(address Operator => address Contract)) private _operations;
     mapping(address UserToken => mapping(string Adjective => address Contract)) private _userOperations;
