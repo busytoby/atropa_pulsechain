@@ -17,6 +17,7 @@ contract CHOA is DYSNOMIA {
     constructor(address SeiAddress) DYSNOMIA("Dysnomia Chao", "CHAO", address(DYSNOMIA(SeiAddress).Xiao())) {
         Sei = SEI(SeiAddress);
         Sei.Chan().addOwner(address(this));
+        Sei.Chan().Xie().Xia().Mai().addOwner(address(this));
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         addOwner(tx.origin);
         addOwner(address(Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT()));
@@ -35,6 +36,20 @@ contract CHOA is DYSNOMIA {
         (Charge, UserQi, Omega) = Sei.Chan().React(Player, "Chat");
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().QingChat(Player, UserToken, MSG);
         Omicron = _chi.React("Chat");
+    }
+
+    function GetExits() public view returns (string[] memory Exits) {
+        (, , QIN memory Player) = Sei.Chi();
+        uint256 Waat = Player.Location.Waat();
+        uint256 ExitCount = Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().GetAliasCount(Waat);
+        Exits = new string[](ExitCount);
+        for(uint256 i = 0; i < ExitCount; i++) {
+            Exits[i] = Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().GetAlias(Waat, i);
+        }
+    }
+
+    function Move(string memory To) public {
+        Sei.Chan().Xie().Xia().Mai().Move(To);       
     }
 
     function AddOperation(address UserToken, string memory Adjective, address OperationsContract) public {
