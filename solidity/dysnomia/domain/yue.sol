@@ -9,8 +9,8 @@ contract YUE is DYSNOMIA {
     XIE public Xie;
     User public Owner;
     uint256 public Maat;
-    mapping(string Adjective => uint256 Gram) public Hypoblast;
-    mapping(string Adjective => uint256 Gram) public Epiblast;
+    mapping(string Adjective => uint256 Gram) public Hypobar;
+    mapping(string Adjective => uint256 Gram) public Epibar;
 
     constructor(string memory name, string memory symbol, address XieAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(XieAddress).Xiao())) {
         Xie = XIE(XieAddress);
@@ -41,8 +41,8 @@ contract YUE is DYSNOMIA {
     function React(string calldata Adjective) public onlyOwners returns (uint64 Jong) {
         if(balanceOf(tx.origin) == 0) revert ZeroHoldings(tx.origin);
         Jong = Xie.Xia().Mai().Qi().Zuo().Cho().Entropy();
-        Hypoblast[Adjective] += Jong;
+        Hypobar[Adjective] += Jong;
         Jong = Xie.Xia().Mai().Qi().Zuo().Cho().ReactUser(Owner.Soul, Jong);
-        Epiblast[Adjective] += Jong;
+        Epibar[Adjective] += Jong;
     }
 }

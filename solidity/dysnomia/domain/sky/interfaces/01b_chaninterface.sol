@@ -24,5 +24,6 @@ interface CHAN {
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
     function Entropy(uint256 Maat) external view returns (uint64 Entropy);
+    function Chou() external returns (uint64);
     function React(QIN memory Player, string memory Adjective) external returns (uint256 Charge, uint256 UserQi, uint64 Omega);
 }
