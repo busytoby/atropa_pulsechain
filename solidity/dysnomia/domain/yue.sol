@@ -16,6 +16,8 @@ contract YUE is DYSNOMIA {
         //Xie.Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         //addOwner(address(Xie.Xia().Mai().Qi().Zuo().VAT()));
         Origin = tx.origin;
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
     }
 
     function Withdraw(address what, uint256 amount) public onlyOwners {
