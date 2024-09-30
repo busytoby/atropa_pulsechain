@@ -7,29 +7,30 @@ import "./interfaces/01b_chaninterface.sol";
 contract CHOA is DYSNOMIA {
     string public constant Type = "CHOA";
 
-    CHAN public Chan;
+    SEI public Sei;
 
     mapping(address => YUE) private _players;
     mapping(string Adjective => address[] Operators) private _operators;
     mapping(string Adjective => mapping(address Operator => address Contract)) private _operations;
     mapping(address UserToken => mapping(string Adjective => address Contract)) private _userOperations;
 
-    constructor(address ChanAddress) DYSNOMIA("Dysnomia Chao", "CHAO", address(DYSNOMIA(ChanAddress).Xiao())) {
-        Chan = CHAN(ChanAddress);
-        Chan.Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
+    constructor(address SeiAddress) DYSNOMIA("Dysnomia Chao", "CHAO", address(DYSNOMIA(SeiAddress).Xiao())) {
+        Sei = SEI(SeiAddress);
+        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         addOwner(tx.origin);
-        addOwner(address(Chan.Xie().Xia().Mai().Qi().Zuo().VAT()));
+        addOwner(address(Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT()));
         _mintToCap();
     }
 
     function Play(address UserToken) public {
-        Chan.Xie().Xia().Mai().Qi().Zuo().Cho().VerifyUserTokenPermissions(UserToken);
-        // Register with YAI if new player
+        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().VerifyUserTokenPermissions(UserToken);
+        (YUE _chi, QIN memory Player) = Sei.Chi();
+        _players[tx.origin] = _chi;
         // mai.Move to Zuo Qing with YAI if new player
     }
 
     function AddOperation(address UserToken, string memory Adjective, address OperationsContract) public {
-        Chan.Xie().Xia().Mai().Qi().Zuo().Cho().VerifyUserTokenPermissions(UserToken);
+        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().VerifyUserTokenPermissions(UserToken);
         // verify qi deposit
         // verify presence of functions
         // test reflexes for known return value
