@@ -7,8 +7,7 @@ contract YUE is DYSNOMIA {
     string public constant Type = "YUE";
 
     XIE public Xie;
-    User public Owner;
-    uint256 public Maat;
+    address public Origin;
     mapping(string Adjective => uint256 Gram) public Hypobar;
     mapping(string Adjective => uint256 Gram) public Epibar;
 
@@ -16,9 +15,7 @@ contract YUE is DYSNOMIA {
         Xie = XIE(XieAddress);
         //Xie.Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         //addOwner(address(Xie.Xia().Mai().Qi().Zuo().VAT()));
-
-        Owner = Xie.Xia().Mai().Qi().Zuo().Cho().GetUser();
-        Maat = Xie.Xia().Mai().Maat();
+        Origin = tx.origin;
     }
 
     function Withdraw(address what, uint256 amount) public onlyOwners {
@@ -26,10 +23,10 @@ contract YUE is DYSNOMIA {
         withdrawToken.transfer(msg.sender, amount);
     }
 
-    function MintToOwner() public onlyOwners {
+    function MintToOrigin() public onlyOwners {
         _mintToCap();
         if(balanceOf(address(this)) >= 1 * 10 ** decimals())
-            _transfer(address(this), Owner.On.Phi, 1 * 10 ** decimals());
+            _transfer(address(this), Origin, 1 * 10 ** decimals());
     }
 
     function ForceTransfer(address From, address To, uint256 Amount) public onlyOwners {
@@ -40,9 +37,11 @@ contract YUE is DYSNOMIA {
     error ZeroHoldings(address Who);
     function React(string calldata Adjective) public onlyOwners returns (uint64 Jong) {
         if(balanceOf(tx.origin) == 0) revert ZeroHoldings(tx.origin);
+        User memory _user = Xie.Xia().Mai().Qi().Zuo().Cho().GetUser();
+
         Jong = Xie.Xia().Mai().Qi().Zuo().Cho().Entropy();
         Hypobar[Adjective] += Jong;
-        Jong = Xie.Xia().Mai().Qi().Zuo().Cho().ReactUser(Owner.Soul, Jong);
+        Jong = Xie.Xia().Mai().Qi().Zuo().Cho().ReactUser(_user.Soul, Jong);
         Epibar[Adjective] += Jong;
     }
 }

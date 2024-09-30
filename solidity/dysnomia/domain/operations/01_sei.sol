@@ -8,6 +8,7 @@ contract SEI is DYSNOMIA {
     string public constant Type = "SEI";
 
     CHOA public Choa;
+    mapping(uint256 Maat => LAU UserToken) private _users;
     mapping(address => address Chi) private _yan;
 
     constructor(address ChoaAddress) DYSNOMIA("Dysnomia Sei", "SEI", address(DYSNOMIA(ChoaAddress).Xiao())) {
@@ -17,24 +18,32 @@ contract SEI is DYSNOMIA {
         _mintToCap();
     }
 
-    error NotStarted(address);
-    function Chi() public view returns (YUE) {
-        if(_yan[tx.origin] == address(0x0)) revert NotStarted(tx.origin);
-        return YUE(_yan[tx.origin]);
+    function GetUserTokenByMaat(uint256 Maat) public view returns (LAU) {
+        return _users[Maat];
     }
 
-    function Start(string calldata Name, string calldata Symbol) public returns (YUE _chi) {
+    error NotStarted(address);
+    function Chi() public view returns (YUE _chi, QIN memory Player) {
+        if(_yan[tx.origin] == address(0x0)) revert NotStarted(tx.origin);
+        _chi = YUE(_yan[tx.origin]);
+        LAU UserToken = LAU(Choa.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
+        Player =  Choa.Chan().Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
+    }
+
+    function Start(string calldata Name, string calldata Symbol) public returns (YUE _chi, QIN memory Player) {
         if(_yan[tx.origin] == address(0x0)) {
             _chi = new YUE(Name, Symbol, address(Choa.Chan().Xie()));
             _chi.addOwner(address(Choa));
             Choa.Chan().Chou();
             _yan[tx.origin] = address(_chi);
-            return _chi;
+            LAU UserToken = LAU(Choa.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
+            Player =  Choa.Chan().Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
+            _users[Player.Maat] = UserToken;
+            return (_chi, Player);
         }
 
-        _chi = Chi();
+        (_chi, Player) = Chi();
         _chi.Rename(Name, Symbol);
         Choa.Chan().Chou();
-        return _chi;
     }
 }

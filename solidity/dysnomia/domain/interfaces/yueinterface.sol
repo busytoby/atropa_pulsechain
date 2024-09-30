@@ -23,10 +23,10 @@ interface YUE {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
-    function Owner() external view returns (User memory);
+    function Origin() external view returns (User memory);
     function Maat() external view returns (uint256);
-    function Hypoblast(string memory Adjective) external view returns (uint256 Gram);
-    function Epiblast(string memory Adjective) external view returns (uint256 Gram);
+    function Hypobar(string memory Adjective) external view returns (uint256 Gram);
+    function Epibar(string memory Adjective) external view returns (uint256 Gram);
     function Withdraw(address what, uint256 amount) external;
     function MintToOwner(address Who) external;
     function ForceTransfer(address From, address To, uint256 Amount) external;

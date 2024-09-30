@@ -20,7 +20,7 @@ contract MAI is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetLocationByAddress(address UserToken) public returns (QING) {
+    function GetLocationByAddress(address UserToken) public view returns (QING) {
         uint64 Soul = LAU(UserToken).Saat(1);
         return _players[Soul].Location;
     }
