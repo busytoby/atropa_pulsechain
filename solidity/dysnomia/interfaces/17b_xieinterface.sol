@@ -25,7 +25,7 @@ interface XIE {
     function Xia() external view returns (XIA);
     function GetPowerByAdjective(string calldata Adjective) external view returns (uint256 Charge);
     function GetPowerByQing(uint256 Waat) external view returns (uint256 Charge);
-    function Tso() external;
+    function Tso() external returns (uint256 Charge);
     function React(uint64 Soul, string memory Adjective) external returns (uint256 Charge, uint64 Omicron, uint64 Omega);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);

@@ -15,7 +15,6 @@ contract XIE is DYSNOMIA {
 
     mapping(string Adjective => Power) private _adjectivePowers;
     mapping(uint256 QingWaat => Power) private _qingPowers;
-    uint256 private _lastTsoBlock;
 
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
@@ -24,7 +23,6 @@ contract XIE is DYSNOMIA {
     constructor(address XiaAddress) DYSNOMIA("Dysnomia Xie", "XIE", address(DYSNOMIA(XiaAddress).Xiao())) {
         Xia = XIA(XiaAddress);
         addOwner(tx.origin);
-        _lastTsoBlock = block.number;
         _mintToCap();
     }
 
@@ -36,31 +34,36 @@ contract XIE is DYSNOMIA {
         return _qingPowers[Waat].Charge;
     }
 
-    function Tso(uint256 Max) public returns (uint256) { // return value > 0 indicates complete
+    function Tso() public returns (uint256) { // return value > 0 indicates complete
         TimeDeposit memory _t;
         string memory _a;
         uint256 _p;
         uint256 _dc = Xia.Mai().Qi().GetDepositCount();
-        for(; _lastTsoBlock < block.number; _lastTsoBlock++) {
-            for(uint256 qa = 0; qa < _dc; qa++) {
-                (_t, _a) = Xia.Mai().Qi().GetDeposit(qa);
-                if(_adjectivePowers[_a].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
-                    if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
-                    if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
-                    if(_t.amount == 0) continue;
-                    _p = Xia.Charge(_t.waat, _a) % Xia.Amplify(_t.amount, _t.timestamp);
-                    for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
-                        _adjectivePowers[_a].Charge = Xia.Decay(_adjectivePowers[_a].Charge);
-                    for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
-                        _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
-                    _adjectivePowers[_a].Charge += _p;
-                    _qingPowers[_t.waat].Charge += _p;
-                    if(Max == 0) return 0;
-                    --Max;
-                }
+        uint256 _rc = Xiao.Random() % _dc;
+        uint256 _oc = _dc;
+
+        while(_rc < _dc) {
+            (_t, _a) = Xia.Mai().Qi().GetDeposit(_rc);
+            if(_adjectivePowers[_a].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
+                if(_adjectivePowers[_a].Block == 0) _adjectivePowers[_a].Block = block.number;
+                if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
+                if(_t.amount == 0) continue;
+                _p = Xia.Charge(_t.waat, _a) % Xia.Amplify(_t.amount, _t.timestamp);
+                for(; _adjectivePowers[_a].Block < block.number; _adjectivePowers[_a].Block++)
+                    _adjectivePowers[_a].Charge = Xia.Decay(_adjectivePowers[_a].Charge);
+                for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
+                    _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
+                _adjectivePowers[_a].Charge += _p;
+                _qingPowers[_t.waat].Charge += _p;
+                return _p;
             }
+            if(++_rc == _dc && _oc != _dc) return 0;
+            if(_rc == _dc && _oc == _dc) {
+                _dc = _rc;
+                _rc = 0;
+            }                
         }
-        return Max;
+        return 0;
     }
 
     function _reactUserQingAdjective(uint64 Soul, uint256 Waat, string memory Adjective) internal returns (uint256 Charge) {
@@ -90,7 +93,6 @@ contract XIE is DYSNOMIA {
         Charge = _reactUserQingAdjective(Soul, PlayerQin.Location.Waat(), Adjective);
 
         (Omicron, Omega) = Xia.Mai().React(Player, Charge);
-        Tso(48);
         _mintToCap();
     }
 
