@@ -9,6 +9,7 @@ contract YUE is DYSNOMIA {
     CHOINTERFACE public Cho;
     address public Chan;
     address public Origin;
+    string[] public KnownAdjectives;
     mapping(string Adjective => uint256 Gram) public Hypobar;
     mapping(string Adjective => uint256 Gram) public Epibar;
 
@@ -40,11 +41,16 @@ contract YUE is DYSNOMIA {
             _transfer(From, To, Amount);
     }
 
+    function Bar(uint256 n) public view returns (uint256 Hypogram, uint256 Epigram, uint256 BarLength) {
+        return (Hypobar[KnownAdjectives[n]], Epibar[KnownAdjectives[n]], KnownAdjectives.length);
+    }
+
     error ZeroHoldings(address Who);
     function React(string calldata Adjective) public onlyOwners returns (uint64 Jong) {
         if(balanceOf(tx.origin) == 0) revert ZeroHoldings(tx.origin);
         User memory _user = Cho.GetUser();
 
+        if(Hypobar[Adjective] == 0) KnownAdjectives.push(Adjective);
         Jong = Cho.Entropy();
         Hypobar[Adjective] += Jong;
         Jong = Cho.ReactUser(_user.Soul, Jong);
