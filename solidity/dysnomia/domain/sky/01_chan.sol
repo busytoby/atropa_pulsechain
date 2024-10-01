@@ -22,6 +22,10 @@ contract CHAN is DYSNOMIA {
         _optInList[tx.origin][Contract] = Allow;
     }
 
+    function OptedIn(YUEINTERFACE Yue, address Contract) public view returns (bool) {
+        return _optInList[Yue.Origin()][Contract];
+    }
+
     error PlayerMustOptIn(address Player, address Contract);
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) public onlyOwners {
         if(!_optInList[Yue.Origin()][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), msg.sender);

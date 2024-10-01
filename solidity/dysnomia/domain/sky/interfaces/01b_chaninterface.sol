@@ -25,6 +25,8 @@ interface CHAN {
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
     function Entropy(uint256 Maat) external view returns (uint64 Entropy);
+    function OptIn(address Contract, bool Allow) external;
+    function OptedIn(YUEINTERFACE Yue, address Contract) external view returns (bool);
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) external;
     function YueMintToOrigin(YUEINTERFACE Yue) external;
     function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) external;
