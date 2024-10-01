@@ -32,7 +32,7 @@ contract XIA is DYSNOMIA {
         _dt /= 30;
         if(_dt == 0) return Bonus;
         Bonus *= _dt * 8;
-        _dt /= 365;
+        _dt /= 12;
         uint16 i = 16;
         while(_dt > 0) {
             Bonus *= _dt * i;

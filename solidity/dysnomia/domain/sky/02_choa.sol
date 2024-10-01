@@ -32,10 +32,10 @@ contract CHOA is DYSNOMIA {
     }
 
     function Chat(string memory MSG) public returns (uint256 Charge, uint256 UserQi, uint64 Omicron, uint64 Omega) {
-        (YUEINTERFACE _chi, LAU UserToken, QIN memory Player) = Sei.Chi();
+        (YUEINTERFACE Yue, LAU UserToken, QIN memory Player) = Sei.Chi();
         (Charge, UserQi, Omega) = Sei.Chan().React(Player, "Chat");
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().QingChat(Player, UserToken, MSG);
-        Omicron = _chi.React("Chat");
+        Omicron = Yue.React("Chat");
     }
 
     function GetExits() public view returns (string[] memory Exits) {
