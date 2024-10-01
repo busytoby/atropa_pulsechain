@@ -23,29 +23,29 @@ contract SEI is DYSNOMIA {
     }
 
     error NotStarted(address);
-    function Chi() public view returns (YUE _chi, LAU UserToken, QIN memory Player) {
+    function Chi() public view returns (YUE Yue, LAU UserToken, QIN memory Player) {
         if(_yan[tx.origin] == address(0x0)) revert NotStarted(tx.origin);
-        _chi = YUE(_yan[tx.origin]);
+        Yue = YUE(_yan[tx.origin]);
         UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
         Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
     }
 
-    function Start(string calldata Name, string calldata Symbol) public returns (YUE _chi, LAU UserToken, QIN memory Player) {
+    function Start(string calldata Name, string calldata Symbol) public returns (YUE Yue, LAU UserToken, QIN memory Player) {
         _mintToCap();
         if(_yan[tx.origin] == address(0x0)) {
-            _chi = new YUE(Name, Symbol, address(Chan.Xie()));
-            _chi.addOwner(address(Chan));
+            Yue = new YUE(Name, Symbol, address(Chan.Xie()));
+            Yue.addOwner(address(Chan));
             Chan.Chou();
-            _yan[tx.origin] = address(_chi);
+            _yan[tx.origin] = address(Yue);
             UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
             Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
             _users[Player.Maat] = UserToken;
             Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
-            return (_chi, UserToken, Player);
+            return (Yue, UserToken, Player);
         }
 
-        (_chi, UserToken, Player) = Chi();
-        _chi.Rename(Name, Symbol);
+        (Yue, UserToken, Player) = Chi();
+        Yue.Rename(Name, Symbol);
         Chan.Chou();
     }
 }

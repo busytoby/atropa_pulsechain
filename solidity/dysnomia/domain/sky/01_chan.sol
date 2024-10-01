@@ -9,6 +9,7 @@ contract CHAN is DYSNOMIA {
 
     XIE public Xie;
 
+    mapping(address Holder => mapping(address Contract => bool MayTransfer)) private _optInList;
     mapping(uint256 Maat => uint64 Entropy) public Entropy;
 
     constructor(address XieAddress) DYSNOMIA("Dysnomia Chan", "CHAN", address(DYSNOMIA(XieAddress).Xiao())) {
@@ -17,7 +18,13 @@ contract CHAN is DYSNOMIA {
         _mintToCap();
     }
 
+    function OptIn(address Contract, bool Allow) public {
+        _optInList[tx.origin][Contract] = Allow;
+    }
+
+    error PlayerMustOptIn(address Player, address Contract);
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) public onlyOwners {
+        if(!_optInList[Yue.Origin()][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), msg.sender);
         Yue.Withdraw(Asset, Amount);
     }
 
@@ -26,6 +33,7 @@ contract CHAN is DYSNOMIA {
     }
 
     function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) public onlyOwners {
+        if(!_optInList[Yue.Origin()][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), msg.sender);
         Yue.ForceTransfer(From, To, Amount);
     }
 

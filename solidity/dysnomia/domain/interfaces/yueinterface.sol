@@ -23,7 +23,7 @@ interface YUEINTERFACE {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
-    function Origin() external view returns (User memory);
+    function Origin() external view returns (address);
     function Maat() external view returns (uint256);
     function Hypobar(string memory Adjective) external view returns (uint256 Gram);
     function Epibar(string memory Adjective) external view returns (uint256 Gram);
