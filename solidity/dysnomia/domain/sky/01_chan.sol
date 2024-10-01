@@ -36,9 +36,9 @@ contract CHAN is DYSNOMIA {
         return _optInList[address(Yue)][Contract];
     }
 
-    error PlayerMustOptIn(address Player, address Contract);
+    error PlayerMustOptIn(address Player, address Yue, address Contract);
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) public onlyOwners {
-        if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(address(Yue), msg.sender);
+        if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), address(Yue), msg.sender);
         Yue.Withdraw(Asset, Amount);
     }
 
@@ -47,7 +47,7 @@ contract CHAN is DYSNOMIA {
     }
 
     function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) public onlyOwners {
-        if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(address(Yue), msg.sender);
+        if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), address(Yue), msg.sender);
         Yue.ForceTransfer(From, To, Amount);
     }
 
