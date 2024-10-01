@@ -9,7 +9,6 @@ contract SEI is DYSNOMIA {
 
     CHAN public Chan;
     mapping(uint256 Maat => LAU UserToken) private _users;
-    mapping(address => address Chi) private _yan;
 
     constructor(address ChanAddress) DYSNOMIA("Dysnomia Sei", "SEI", address(DYSNOMIA(ChanAddress).Xiao())) {
         Chan = CHAN(ChanAddress);
@@ -23,20 +22,20 @@ contract SEI is DYSNOMIA {
     }
 
     error NotStarted(address);
-    function Chi() public view returns (YUE Yue, LAU UserToken, QIN memory Player) {
-        if(_yan[tx.origin] == address(0x0)) revert NotStarted(tx.origin);
-        Yue = YUE(_yan[tx.origin]);
+    function Chi() public view returns (YUE Yue, LAU UserToken, QIN memory Player) {        
+        if(Chan.Yan(tx.origin) == address(0x0)) revert NotStarted(tx.origin);
+        Yue = YUE(Chan.Yan(tx.origin));
         UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
         Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
     }
 
     function Start(string calldata Name, string calldata Symbol) public returns (YUE Yue, LAU UserToken, QIN memory Player) {
         _mintToCap();
-        if(_yan[tx.origin] == address(0x0)) {
-            Yue = new YUE(Name, Symbol, address(Chan.Xie()));
+        if(Chan.Yan(tx.origin) == address(0x0)) {
+            Yue = new YUE(Name, Symbol, address(Chan.Xie()), address(Chan));
             Yue.addOwner(address(Chan));
             Chan.Chou();
-            _yan[tx.origin] = address(Yue);
+            Chan.AddYue(tx.origin, address(Yue));
             UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
             Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
             _users[Player.Maat] = UserToken;

@@ -24,7 +24,9 @@ interface CHAN {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
+    function Yan(address Origin) external view returns (address Yue);
     function Entropy(uint256 Maat) external view returns (uint64 Entropy);
+    function AddYue(address Origin, address Yue) external;
     function OptIn(address Contract, bool Allow) external;
     function OptedIn(YUEINTERFACE Yue, address Contract) external view returns (bool);
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) external;
