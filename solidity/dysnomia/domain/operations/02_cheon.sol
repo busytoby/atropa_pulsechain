@@ -4,7 +4,6 @@ import "../../01_dysnomia_v2.sol";
 import "./interfaces/01b_seiinterface.sol";
 import "../sky/interfaces/02b_choainterface.sol";
 
-
 contract CHEON is DYSNOMIA {
     string public constant Type = "CHEON";
 
@@ -22,6 +21,10 @@ contract CHEON is DYSNOMIA {
         _mintToCap();
     }
 
+    function GetUserPower(uint256 Maat, string memory Adjective) public view returns (uint256 Power) {
+        return _userPowers[Maat][Adjective];
+    }
+
     error TrainingOnlyAvailableInZuoQing(address ZuoQing, address PlayerQing);
     function Train() public returns (string memory Adjective, uint64 Power, uint256 TotalPower) {
         (YUEINTERFACE Chi, LAU UserToken, QIN memory Player) = Sei.Chi();
@@ -35,6 +38,7 @@ contract CHEON is DYSNOMIA {
             (uint64 Omicron, uint64 Omega) = Choa.Chan().Xie().Xia().Mai().React(_user, Charge);
             Player.Location.ReactPlayer(_user.Soul, Omicron);
             Power = uint64(Charge % Omega);
+            if(Omega < Choa.Chan().Chou()) Power /= 4;
             _userPowers[Player.Maat][Adjective] += Power;
             return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
         }
