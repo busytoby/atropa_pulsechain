@@ -11,6 +11,7 @@ contract CHEON is DYSNOMIA {
     CHOA public Choa;
 
     mapping(uint256 Maat => mapping(string Adjective => uint256 Power)) private _userPowers;
+    mapping(uint256 Waat => mapping(string Adjective => uint256 Power)) private _qingPowers;
 
     constructor(address SeiAddress, address ChoaAddress) DYSNOMIA("Dysnomia Cheon", "CHEON", address(DYSNOMIA(ChoaAddress).Xiao())) {
         Sei = SEI(SeiAddress);
@@ -32,16 +33,14 @@ contract CHEON is DYSNOMIA {
             revert TrainingOnlyAvailableInZuoQing(address(Choa.Chan().Xie().Xia().Mai().Qi().Zuo()), address(Player.Location));
         uint256 Charge;
         (Adjective, Charge) = Choa.Chan().Xie().Tso();
-        if(Charge > 0) {
-            User memory _user = Choa.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserBySoul(UserToken.Saat(1));
-            Chi.React(Adjective);
-            (uint64 Omicron, uint64 Omega) = Choa.Chan().Xie().Xia().Mai().React(_user, Charge);
-            Player.Location.ReactPlayer(_user.Soul, Omicron);
-            Power = uint64(Charge % Omega);
-            if(Omega < Choa.Chan().Chou()) Power /= 4;
-            _userPowers[Player.Maat][Adjective] += Power;
-            return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
-        }
-        return (Adjective, 0, _userPowers[Player.Maat][Adjective]);
+        User memory _user = Choa.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserBySoul(UserToken.Saat(1));
+        Charge += Chi.React(Adjective) + _qingPowers[Player.Location.Waat()][Adjective];
+        (uint64 Omicron, uint64 Omega) = Choa.Chan().Xie().Xia().Mai().React(_user, Charge);
+        Player.Location.ReactPlayer(_user.Soul, Omicron);
+        Power = uint64(Charge % Omega);
+        if(Omega < Choa.Chan().Chou()) Power /= 4;
+        _userPowers[Player.Maat][Adjective] += Power;
+        _qingPowers[Player.Location.Waat()][Adjective] += Power;
+        return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
     }
 }
