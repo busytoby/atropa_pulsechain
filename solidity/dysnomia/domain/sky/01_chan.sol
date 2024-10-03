@@ -25,6 +25,14 @@ contract CHAN is DYSNOMIA {
         Yan[Origin] = Yue;
     }
 
+    error NotOrigin(address YueOrigin, address Requestor);
+    function CopyYue(address Yue, address NewOrigin) public {
+        if(Yan[NewOrigin] != address(0x0)) revert AlreadyAdded(YUEINTERFACE(Yan[NewOrigin]).Origin(), Yue, NewOrigin);
+        YUEINTERFACE _chi = YUEINTERFACE(Yue);
+        if(_chi.Origin() != tx.origin) revert NotOrigin(_chi.Origin(), tx.origin);
+        _chi.ChangeOrigin(NewOrigin);        
+    }
+
     event NewSpenderContractOptIn(address Origin, address Yue, address Contract, bool Allow);
     function OptIn(address Contract, bool Allow) public {
         address Yue = Yan[tx.origin];

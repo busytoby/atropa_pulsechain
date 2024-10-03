@@ -27,6 +27,7 @@ interface YUEINTERFACE {
     function Maat() external view returns (uint256);
     function Hypobar(string memory Adjective) external view returns (uint256 Gram);
     function Epibar(string memory Adjective) external view returns (uint256 Gram);
+    function ChangeOrigin(address NewOrigin) external;
     function Withdraw(address what, uint256 amount) external;
     function MintToOrigin() external;
     function ForceTransfer(address From, address To, uint256 Amount) external;

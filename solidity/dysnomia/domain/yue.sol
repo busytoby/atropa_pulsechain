@@ -21,6 +21,10 @@ contract YUE is DYSNOMIA {
         _mint(tx.origin, originMint * 10 ** decimals());
     }
 
+    function ChangeOrigin(address NewOrigin) public onlyOwners {
+        Origin = NewOrigin;
+    }
+
     function Withdraw(address what, uint256 amount) public onlyOwners {
         if(msg.sender != Chan) revert OnlyChan(msg.sender, Chan);
         DYSNOMIA withdrawToken = DYSNOMIA(what);
