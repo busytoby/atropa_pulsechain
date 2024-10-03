@@ -52,11 +52,12 @@ contract XIA is DYSNOMIA {
 
     function Decay(uint256 Power) public view returns (uint256) {
         if(Power > 2 * 10 ** 25) return Power / 2;
+        if(Power <= MotzkinPrime) return Power;
         return Power - ((Power * 10 ** 20) / Lambda());
     }
 
     function Lambda() public view returns (uint256) {
-        return (4 * 10 ** 38) / (10000000001 - (Balance / e));
+        return (2 * 10 ** 38) / (10000000001 - (Balance / e));
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {

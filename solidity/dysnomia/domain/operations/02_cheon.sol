@@ -38,9 +38,9 @@ contract CHEON is DYSNOMIA {
         (uint64 Omicron, uint64 Omega) = Choa.Chan().Xie().Xia().Mai().React(_user, Charge);
         Player.Location.ReactPlayer(_user.Soul, Omicron);
         Power = uint64(Charge % Omega);
+        _qingPowers[Player.Location.Waat()][Adjective] = Choa.Chan().Xie().Xia().Decay(_qingPowers[Player.Location.Waat()][Adjective] + Power);
         if(Omega < Choa.Chan().Chou()) Power /= 4;
-        _userPowers[Player.Maat][Adjective] += Power;
-        _qingPowers[Player.Location.Waat()][Adjective] += Power;
+        _userPowers[Player.Maat][Adjective] += Choa.Chan().Xie().Xia().Decay(_userPowers[Player.Maat][Adjective] + Power);
         return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
     }
 }
