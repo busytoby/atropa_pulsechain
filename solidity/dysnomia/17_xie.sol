@@ -42,18 +42,20 @@ contract XIE is DYSNOMIA {
 
         while(_rc < _dc) {
             (_t, Adjective) = Xia.Mai().Qi().GetDeposit(_rc);
-            if(_adjectivePowers[Adjective].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
-                if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
-                if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
-                if(_t.amount == 0) continue;
-                Charge = Xia.Charge(_t.waat, Adjective) % Xia.Amplify(_t.amount, _t.timestamp);
-                for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++)
-                    _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
-                for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
-                    _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
-                _adjectivePowers[Adjective].Charge += Charge;
-                _qingPowers[_t.waat].Charge += Charge;
-                return (Adjective, Charge);
+            if(_t.amount > 1 * 10 ** 12) {
+                if(_adjectivePowers[Adjective].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
+                    if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
+                    if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
+
+                    Charge = Xia.Charge(_t.waat, Adjective) % Xia.Amplify(_t.amount, _t.timestamp);
+                    for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++)
+                        _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
+                    for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
+                        _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
+                    _adjectivePowers[Adjective].Charge += Charge;
+                    _qingPowers[_t.waat].Charge += Charge;
+                    return (Adjective, Charge);
+                }
             }
             if(++_rc == _dc && _oc != _dc) return ("", 0);
             if(_rc == _dc && _oc == _dc) {

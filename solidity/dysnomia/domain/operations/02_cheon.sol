@@ -42,6 +42,6 @@ contract CHEON is DYSNOMIA {
             _userPowers[Player.Maat][Adjective] += Power;
             return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
         }
-        return (Adjective, 0, 0);
+        return (Adjective, 0, _userPowers[Player.Maat][Adjective]);
     }
 }
