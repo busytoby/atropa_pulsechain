@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
+import "./include/trait.sol";
 import "./interfaces/15b_maiinterface.sol";
 
 contract XIA is DYSNOMIA {
@@ -11,7 +12,7 @@ contract XIA is DYSNOMIA {
     uint256 public Balance;
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
-    mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(string Adjective => uint256 DepositId))) private _userQingAdjectiveDeposits;
+    mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(TRAIT Trait => uint256 DepositId))) private _userQingTraitDeposits;
 
     constructor(address MaiAddress) DYSNOMIA("Dysnomia Xia", "XIA", address(DYSNOMIA(MaiAddress).Xiao())) {
         Mai = MAI(MaiAddress);
@@ -41,11 +42,11 @@ contract XIA is DYSNOMIA {
         }
     }
 
-    function Charge(uint256 QingWaat, string memory adjective) public returns (uint256) {
-        uint256 _b = Mai.Qi().GetQingAdjectiveValue(QingWaat, adjective);
+    function Charge(uint256 QingWaat, TRAIT Trait) public returns (uint256) {
+        uint256 _b = Mai.Qi().GetQingAdjectiveValue(QingWaat, Trait);
         TimeDeposit memory _d = Mai.GetQingDeposit(QingWaat);
         uint256 _e = Amplify(_d.amount, _d.timestamp);
-        _d = GetQingAdjectiveDeposit(QingWaat, adjective);
+        _d = GetQingAdjectiveDeposit(QingWaat, Trait);
         uint256 _m = Amplify(_d.amount, _d.timestamp);
         return Xiao.modExp(_b, _e, _m);
     }
@@ -76,15 +77,15 @@ contract XIA is DYSNOMIA {
         return _deposits[Id];
     }
 
-    function GetQingAdjectiveDeposit(uint256 QingWaat, string memory Adjective) public view returns (TimeDeposit memory) {
+    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) public view returns (TimeDeposit memory) {
         uint64 _soul = Mai.Qi().Zuo().Cho().GetUserSoul();
-        return GetDeposit(_userQingAdjectiveDeposits[_soul][QingWaat][Adjective]);
+        return GetDeposit(_userQingTraitDeposits[_soul][QingWaat][Trait]);
     }
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
     error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) public {
+    function Deposit(address Qing, TRAIT Trait, uint256 amount) public {
         TimeDeposit memory _t;
         
         if(Balance + amount > e * 10000000000) revert ExceedsMaxSystemDeposit((e * 10000000000) - Balance, amount);
@@ -100,15 +101,15 @@ contract XIA is DYSNOMIA {
         Fomalhaute.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
-        if(_userQingAdjectiveDeposits[_soul][_t.waat][Adjective] == 0)
+        if(_userQingTraitDeposits[_soul][_t.waat][Trait] == 0)
             _t.depositId = _deposits.length;
         else 
-            _t.depositId = _userQingAdjectiveDeposits[_soul][_t.waat][Adjective];
+            _t.depositId = _userQingTraitDeposits[_soul][_t.waat][Trait];
         _t.amount += amount;
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
-        _userQingAdjectiveDeposits[_soul][_t.waat][Adjective] = _t.depositId;
+        _userQingTraitDeposits[_soul][_t.waat][Trait] = _t.depositId;
 
         Balance += amount;
         _mintToCap();

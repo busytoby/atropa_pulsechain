@@ -23,15 +23,15 @@ interface XIE {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Xia() external view returns (XIA);
-    function GetPowerByAdjective(string calldata Adjective) external view returns (uint256 Charge);
+    function GetPowerByAdjective(TRAIT Trait) external view returns (uint256 Charge);
     function GetPowerByQing(uint256 Waat) external view returns (uint256 Charge);
-    function Tso() external returns (string memory Adjective, uint256 Charge);
-    function React(uint64 Soul, string memory Adjective) external returns (uint256 Charge, uint64 Omicron, uint64 Omega);
+    function Tso() external returns (TRAIT Trait, uint256 Charge);
+    function React(uint64 Soul, TRAIT Trait) external returns (uint256 Charge, uint64 Omicron, uint64 Omega);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
     function GetDepositCount() external view returns (uint256);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
-    function GetQingAdjectiveDeposit(uint256 QingWaat, string memory Adjective) external view returns (TimeDeposit memory);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) external;
+    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) external view returns (TimeDeposit memory);
+    function Deposit(address Qing, TRAIT Trait, uint256 amount) external;
     function Withdraw(uint256 Id, uint256 Amount) external;
 }

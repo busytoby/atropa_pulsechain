@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01_dysnomia_v2.sol";
+import "./include/trait.sol";
 import "./interfaces/16b_xiainterface.sol";
 
 struct Power {
@@ -13,12 +14,12 @@ contract XIE is DYSNOMIA {
 
     XIA public Xia;
 
-    mapping(string Adjective => Power) private _adjectivePowers;
+    mapping(TRAIT Trait => Power) private _traitPowers;
     mapping(uint256 QingWaat => Power) private _qingPowers;
 
     TimeDeposit[] private _deposits;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
-    mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(string Adjective => uint256 DepositId))) private _userQingAdjectiveDeposits;
+    mapping(uint64 UserSoul => mapping(uint256 QingWaat => mapping(TRAIT Trait => uint256 DepositId))) private _userQingTraitDeposits;
 
     constructor(address XiaAddress) DYSNOMIA("Dysnomia Xie", "XIE", address(DYSNOMIA(XiaAddress).Xiao())) {
         Xia = XIA(XiaAddress);
@@ -26,55 +27,55 @@ contract XIE is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetPowerByAdjective(string calldata Adjective) public view returns (uint256 Charge) {
-        return _adjectivePowers[Adjective].Charge;
+    function GetPowerByAdjective(TRAIT Trait) public view returns (uint256 Charge) {
+        return _traitPowers[Trait].Charge;
     }
 
     function GetPowerByQing(uint256 Waat) public view returns (uint256 Charge) {
         return _qingPowers[Waat].Charge;
     }
 
-    function Tso() public returns (string memory Adjective, uint256 Charge) { // return value > 0 indicates complete
+    function Tso() public returns (TRAIT Trait, uint256 Charge) { // return value > 0 indicates complete
         TimeDeposit memory _t;
         uint256 _dc = Xia.Mai().Qi().GetDepositCount();
         uint256 _rc = Xiao.Random() % _dc;
         uint256 _oc = _dc;
 
         while(_rc < _dc) {
-            (_t, Adjective) = Xia.Mai().Qi().GetDeposit(_rc);
+            (_t, Trait) = Xia.Mai().Qi().GetDeposit(_rc);
             if(_t.amount > 1 * 10 ** 12) {
-                if(_adjectivePowers[Adjective].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
-                    if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
+                if(_traitPowers[Trait].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
+                    if(_traitPowers[Trait].Block == 0) _traitPowers[Trait].Block = block.number;
                     if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
 
-                    Charge = Xia.Charge(_t.waat, Adjective) % Xia.Amplify(_t.amount, _t.timestamp);
-                    for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++)
-                        _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
+                    Charge = Xia.Charge(_t.waat, Trait) % Xia.Amplify(_t.amount, _t.timestamp);
+                    for(; _traitPowers[Trait].Block < block.number; _traitPowers[Trait].Block++)
+                        _traitPowers[Trait].Charge = Xia.Decay(_traitPowers[Trait].Charge);
                     for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
                         _qingPowers[_t.waat].Charge = Xia.Decay(_qingPowers[_t.waat].Charge);
-                    _adjectivePowers[Adjective].Charge += Charge;
+                    _traitPowers[Trait].Charge += Charge;
                     _qingPowers[_t.waat].Charge += Charge;
-                    return (Adjective, Charge);
+                    return (Trait, Charge);
                 }
             }
-            if(++_rc == _dc && _oc != _dc) return ("", 0);
+            if(++_rc == _dc && _oc != _dc) return (TRAIT.INVALID, 0);
             if(_rc == _dc && _oc == _dc) {
                 _dc = _rc;
                 _rc = 0;
             }                
         }
-        return ("", 0);
+        return (TRAIT.INVALID, 0);
     }
 
-    function _reactUserQingAdjective(uint64 Soul, uint256 Waat, string memory Adjective) internal returns (uint256 Charge) {
+    function _reactUserQingTrait(uint64 Soul, uint256 Waat, TRAIT Trait) internal returns (uint256 Charge) {
         TimeDeposit memory _t;
-        (_t, Adjective) = Xia.Mai().Qi().GetDeposit(_userQingAdjectiveDeposits[Soul][Waat][Adjective]);
-        Charge = Xia.Charge(Waat, Adjective) % Xia.Amplify(_t.amount, _t.timestamp);
+        (_t, Trait) = Xia.Mai().Qi().GetDeposit(_userQingTraitDeposits[Soul][Waat][Trait]);
+        Charge = Xia.Charge(Waat, Trait) % Xia.Amplify(_t.amount, _t.timestamp);
 
-        for(; _adjectivePowers[Adjective].Block < block.number; _adjectivePowers[Adjective].Block++) {
-            if(_adjectivePowers[Adjective].Block == 0) _adjectivePowers[Adjective].Block = block.number;
+        for(; _traitPowers[Trait].Block < block.number; _traitPowers[Trait].Block++) {
+            if(_traitPowers[Trait].Block == 0) _traitPowers[Trait].Block = block.number;
             if(_t.amount == 0) break;
-            if(_adjectivePowers[Adjective].Charge > 0) _adjectivePowers[Adjective].Charge = Xia.Decay(_adjectivePowers[Adjective].Charge);
+            if(_traitPowers[Trait].Charge > 0) _traitPowers[Trait].Charge = Xia.Decay(_traitPowers[Trait].Charge);
         }
 
         for(; _qingPowers[Waat].Block < block.number; _qingPowers[Waat].Block++) {
@@ -83,14 +84,14 @@ contract XIE is DYSNOMIA {
             if(_qingPowers[Waat].Charge > 0) _qingPowers[Waat].Charge = Xia.Decay(_qingPowers[Waat].Charge);
         }
 
-        _adjectivePowers[Adjective].Charge += Charge;
+        _traitPowers[Trait].Charge += Charge;
         _qingPowers[Waat].Charge += Charge;
     }
 
-    function React(uint64 Soul, string memory Adjective) public returns (uint256 Charge, uint64 Omicron, uint64 Omega) {
+    function React(uint64 Soul, TRAIT Trait) public returns (uint256 Charge, uint64 Omicron, uint64 Omega) {
         User memory Player = Xia.Mai().Qi().Zuo().Cho().GetUserBySoul(Soul);
         QIN memory PlayerQin = Xia.Mai().GetPlayerQin(Soul);
-        Charge = _reactUserQingAdjective(Soul, PlayerQin.Location.Waat(), Adjective);
+        Charge = _reactUserQingTrait(Soul, PlayerQin.Location.Waat(), Trait);
 
         (Omicron, Omega) = Xia.Mai().React(Player, Charge);
         _mintToCap();
@@ -112,15 +113,15 @@ contract XIE is DYSNOMIA {
         return _deposits[Id];
     }
 
-    function GetQingAdjectiveDeposit(uint256 QingWaat, string memory Adjective) public view returns (TimeDeposit memory) {
+    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) public view returns (TimeDeposit memory) {
         uint64 _soul = Xia.Mai().Qi().Zuo().Cho().GetUserSoul();
-        return GetDeposit(_userQingAdjectiveDeposits[_soul][QingWaat][Adjective]);
+        return GetDeposit(_userQingTraitDeposits[_soul][QingWaat][Trait]);
     }
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
     error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) public {
+    function Deposit(address Qing, TRAIT Trait, uint256 amount) public {
         TimeDeposit memory _t;
         
         _t.waat = QINGINTERFACE(Qing).Waat();
@@ -134,15 +135,15 @@ contract XIE is DYSNOMIA {
         Fornax.transferFrom(msg.sender, address(this), amount);
 
         _t.soul = _soul;
-        if(_userQingAdjectiveDeposits[_soul][_t.waat][Adjective] == 0)
+        if(_userQingTraitDeposits[_soul][_t.waat][Trait] == 0)
             _t.depositId = _deposits.length;
         else 
-            _t.depositId = _userQingAdjectiveDeposits[_soul][_t.waat][Adjective];
+            _t.depositId = _userQingTraitDeposits[_soul][_t.waat][Trait];
         _t.amount += amount;
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
         _userDepositIndexes[_soul].push(_t.depositId);
-        _userQingAdjectiveDeposits[_soul][_t.waat][Adjective] = _t.depositId;
+        _userQingTraitDeposits[_soul][_t.waat][Trait] = _t.depositId;
 
         _mintToCap();
     }

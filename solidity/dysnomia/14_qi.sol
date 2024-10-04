@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 import "./include/user.sol";
 import "./include/timedeposit.sol";
+import "./include/trait.sol";
 import "./01_dysnomia_v2.sol";
 import "./interfaces/13b_qinginterface.sol";
 
@@ -10,9 +11,9 @@ contract QI is DYSNOMIA {
 
     QINGINTERFACE public Zuo;
     TimeDeposit[] private _deposits;
-    string[] private _adjectives;
-    mapping(uint64 UserSoul => mapping(string Adjective => uint256 Sum)) _userSums;
-    mapping(uint256 QingWaat => mapping(string Adjective => uint256 Sum)) _qingSums;
+    TRAIT[] private _traits;
+    mapping(uint64 UserSoul => mapping(TRAIT => uint256 Sum)) _userSums;
+    mapping(uint256 QingWaat => mapping(TRAIT => uint256 Sum)) _qingSums;
     mapping(uint64 UserSoul => uint256[] DepositIds) private _userDepositIndexes;
     mapping(uint256 QingWaat => uint256[] DepositIds) private _qingDepositIndexes;
 
@@ -22,19 +23,19 @@ contract QI is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetUserAdjectiveValue(uint64 UserSoul, string memory Adjective) public view returns (uint256 Sum) {
-        return _userSums[UserSoul][Adjective];
+    function GetUserAdjectiveValue(uint64 UserSoul, TRAIT Trait) public view returns (uint256 Sum) {
+        return _userSums[UserSoul][Trait];
     }
 
-    function GetQingAdjectiveValue(uint256 QingWaat, string memory Adjective) public view returns (uint256 Sum) {
-        return _qingSums[QingWaat][Adjective];
+    function GetQingAdjectiveValue(uint256 QingWaat, TRAIT Trait) public view returns (uint256 Sum) {
+        return _qingSums[QingWaat][Trait];
     }
 
     function GetUserDepositCount(uint64 UserSoul) public view returns (uint256) {
         return _userDepositIndexes[UserSoul].length;
     }
 
-    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) public view returns (TimeDeposit memory Stake, string memory Adjective) {
+    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) public view returns (TimeDeposit memory Stake, TRAIT Trait) {
         return GetDeposit(_userDepositIndexes[UserSoul][Index]);    
     }
     
@@ -42,7 +43,7 @@ contract QI is DYSNOMIA {
         return _qingDepositIndexes[QingWaat].length;
     }
 
-    function GetQingDepositByIndex(uint256 QingWaat, uint256 Index) public view returns (TimeDeposit memory Stake, string memory Adjective) {
+    function GetQingDepositByIndex(uint256 QingWaat, uint256 Index) public view returns (TimeDeposit memory Stake, TRAIT Trait) {
         return GetDeposit(_qingDepositIndexes[QingWaat][Index]);
     }
 
@@ -50,14 +51,14 @@ contract QI is DYSNOMIA {
         return _deposits.length;
     }
 
-    function GetDeposit(uint256 Id) public view returns (TimeDeposit memory Stake, string memory Adjective) {
-        return (_deposits[Id], _adjectives[Id]);
+    function GetDeposit(uint256 Id) public view returns (TimeDeposit memory Stake, TRAIT Trait) {
+        return (_deposits[Id], _traits[Id]);
     }
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
     error MinimumDepositAmount(uint256 Requested, uint256 Minimum);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) public {        
+    function Deposit(address Qing, TRAIT Trait, uint256 amount) public {        
         if(amount < 1 * 10 ** 12) revert MinimumDepositAmount(amount, 1 * 10 ** 12);
         TimeDeposit memory _t;
         
@@ -76,11 +77,11 @@ contract QI is DYSNOMIA {
         _t.amount = amount;
         _t.timestamp = block.timestamp;
         _deposits.push(_t);
-        _adjectives.push(Adjective);
+        _traits.push(Trait);
         _userDepositIndexes[_soul].push(_t.depositId);
         _qingDepositIndexes[_t.waat].push(_t.depositId);
-        _userSums[_soul][Adjective] += amount;
-        _qingSums[_t.waat][Adjective] += amount;
+        _userSums[_soul][Trait] += amount;
+        _qingSums[_t.waat][Trait] += amount;
         _mintToCap();
     }
 
@@ -97,8 +98,8 @@ contract QI is DYSNOMIA {
         SHIO Eris = Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Zuo.Cho().Void().Nu().Psi().Rho().Lai.Xi).Shio;
         Eris.transfer(msg.sender, Amount);
         _deposits[Id].amount -= Amount;
-        _userSums[_soul][_adjectives[Id]] -= Amount;
-        _qingSums[_deposits[Id].waat][_adjectives[Id]] -= Amount;
+        _userSums[_soul][_traits[Id]] -= Amount;
+        _qingSums[_deposits[Id].waat][_traits[Id]] -= Amount;
 
         _mintToCap();
     }

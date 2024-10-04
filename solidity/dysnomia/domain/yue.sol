@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
+import "../include/trait.sol";
 import "../interfaces/12b_chointerface.sol";
 import "./sky/interfaces/01b_chaninterface.sol";
 
@@ -10,9 +11,8 @@ contract YUE is DYSNOMIA {
     CHOINTERFACE public Cho;
     CHAN public Chan;
     address public Origin;
-    string[] public KnownAdjectives;
-    mapping(string Adjective => uint256 Gram) public Hypobar;
-    mapping(string Adjective => uint256 Gram) public Epibar;
+    mapping(TRAIT Trait => uint256 Gram) public Hypobar;
+    mapping(TRAIT Trait => uint256 Gram) public Epibar;
 
     constructor(string memory name, string memory symbol, address ChoAddress, address ChanAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
@@ -46,19 +46,18 @@ contract YUE is DYSNOMIA {
             _transfer(From, To, Amount);
     }
 
-    function Bar(uint256 n) public view returns (uint256 Hypogram, uint256 Epigram, uint256 BarLength) {
-        return (Hypobar[KnownAdjectives[n]], Epibar[KnownAdjectives[n]], KnownAdjectives.length);
+    function Bar(TRAIT Trait) public view returns (uint256 Hypogram, uint256 Epigram) {
+        return (Hypobar[Trait], Epibar[Trait]);
     }
 
     error ZeroHoldings(address Who);
-    function React(string calldata Adjective) public onlyOwners returns (uint64 Jong) {
+    function React(TRAIT Trait) public onlyOwners returns (uint64 Jong) {
         if(balanceOf(tx.origin) == 0) revert ZeroHoldings(tx.origin);
         User memory _user = Cho.GetUser();
 
-        if(Hypobar[Adjective] == 0) KnownAdjectives.push(Adjective);
-        Hypobar[Adjective] += Chan.Chou();
+        Hypobar[Trait] += Chan.Chou();
         Jong = Cho.ReactUser(_user.Soul, Jong);
         if(Jong < Chan.Chou() / 2) Jong = Jong / 4;
-        Epibar[Adjective] += Jong;
+        Epibar[Trait] += Jong;
     }
 }

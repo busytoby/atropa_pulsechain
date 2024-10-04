@@ -34,5 +34,5 @@ interface CHAN {
     function YueMintToOrigin(YUEINTERFACE Yue) external;
     function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) external;
     function Chou() external returns (uint64);
-    function React(QIN memory Player, string memory Adjective) external returns (uint256 Charge, uint256 UserQi, uint64 Omega);
+    function React(QIN memory Player, TRAIT Trait) external returns (uint256 Charge, uint256 UserQi, uint64 Omega);
 }

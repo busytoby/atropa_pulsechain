@@ -26,14 +26,14 @@ interface XIA {
     function e() external view returns (uint256);
     function Balance() external view returns (uint256);
     function Amplify(uint256 Amount, uint256 Timestamp) external view returns (uint256 Bonus);
-    function Charge(uint256 QingWaat, string memory adjective) external returns (uint256);
+    function Charge(uint256 QingWaat, TRAIT Trait) external returns (uint256);
     function Decay(uint256 Power) external view returns (uint256);
     function Lambda() external view returns (uint256);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
     function GetDepositCount() external view returns (uint256);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
-    function GetQingAdjectiveDeposit(uint256 QingWaat, string memory Adjective) external view returns (TimeDeposit memory);
-    function Deposit(address Qing, string memory Adjective, uint256 amount) external;
+    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) external view returns (TimeDeposit memory);
+    function Deposit(address Qing, TRAIT Trait, uint256 amount) external;
     function Withdraw(uint256 Id, uint256 Amount) external;
 }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
 import "../../include/qin.sol";
+import "../../include/trait.sol";
 import "../interfaces/yueinterface.sol";
 
 contract CHAN is DYSNOMIA {
@@ -69,12 +70,12 @@ contract CHAN is DYSNOMIA {
     }
 
     error InvalidQinInstance(uint64 Soul, uint256 SoulMaat, uint256 QinMaat);
-    function React(QIN memory Player, string memory Adjective) public returns (uint256 Charge, uint256 UserQi, uint64 Omega) {
+    function React(QIN memory Player, TRAIT Trait) public returns (uint256 Charge, uint256 UserQi, uint64 Omega) {
         uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
         uint256 Maat = Xie.Xia().Mai().Maat();
         if(Maat != Player.Maat) revert InvalidQinInstance(Soul, Maat, Player.Maat);
-        UserQi = Xie.Xia().Mai().Qi().GetUserAdjectiveValue(Soul, Adjective);
-        (Charge, Entropy[Maat], Omega) = Xie.React(Soul, Adjective);
+        UserQi = Xie.Xia().Mai().Qi().GetUserAdjectiveValue(Soul, Trait);
+        (Charge, Entropy[Maat], Omega) = Xie.React(Soul, Trait);
         _mintToCap();
     }
 }
