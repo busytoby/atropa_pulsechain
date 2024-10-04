@@ -32,14 +32,17 @@ contract CHEON is DYSNOMIA {
         if(address(Player.Location) != address(Choa.Chan().Xie().Xia().Mai().Qi().Zuo())) 
             revert TrainingOnlyAvailableInZuoQing(address(Choa.Chan().Xie().Xia().Mai().Qi().Zuo()), address(Player.Location));
         uint256 Charge;
+        uint256 Entropy;
         (Adjective, Charge) = Choa.Chan().Xie().Tso();
         User memory _user = Choa.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserBySoul(UserToken.Saat(1));
         Charge += Chi.React(Adjective) + _qingPowers[Player.Location.Waat()][Adjective];
+        Entropy = Choa.Chan().Chou();
         (uint64 Omicron, uint64 Omega) = Choa.Chan().Xie().Xia().Mai().React(_user, Charge);
+        if(Omicron < Entropy) Omicron /= 2;
         Player.Location.ReactPlayer(_user.Soul, Omicron);
         Power = uint64(Charge % Omega);
         _qingPowers[Player.Location.Waat()][Adjective] = Choa.Chan().Xie().Xia().Decay(_qingPowers[Player.Location.Waat()][Adjective] + Power);
-        if(Omega < Choa.Chan().Chou() / 2) Power /= 4;
+        if(Omega < Entropy / 2) Power /= 4;
         _userPowers[Player.Maat][Adjective] = Choa.Chan().Xie().Xia().Decay(_userPowers[Player.Maat][Adjective] + Power);
         return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
     }
