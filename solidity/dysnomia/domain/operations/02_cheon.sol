@@ -27,6 +27,10 @@ contract CHEON is DYSNOMIA {
         return _userPowers[Maat][Trait];
     }
 
+    function GetQingPower(uint256 Waat, TRAIT Trait) public view returns (uint256 Power) {
+        return _qingPowers[Waat][Trait];
+    }
+
     error TrainingOnlyAvailableInZuoQing(address ZuoQing, address PlayerQing);
     function Train() public returns (TRAIT Trait, uint64 Power, uint256 TotalPower) {
         (YUEINTERFACE Chi, LAU UserToken, QIN memory Player) = Sei.Chi();
