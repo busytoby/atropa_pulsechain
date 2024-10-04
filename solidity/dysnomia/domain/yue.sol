@@ -2,12 +2,13 @@
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
 import "../interfaces/12b_chointerface.sol";
+import "./sky/interfaces/01b_chaninterface.sol";
 
 contract YUE is DYSNOMIA {
     string public constant Type = "YUE";
 
     CHOINTERFACE public Cho;
-    address public Chan;
+    CHAN public Chan;
     address public Origin;
     string[] public KnownAdjectives;
     mapping(string Adjective => uint256 Gram) public Hypobar;
@@ -15,7 +16,7 @@ contract YUE is DYSNOMIA {
 
     constructor(string memory name, string memory symbol, address ChoAddress, address ChanAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
-        Chan = ChanAddress;
+        Chan = CHAN(ChanAddress);
         Origin = tx.origin;
         uint256 originMint = Xiao.Random() % maxSupply / 10;
         _mint(tx.origin, originMint * 10 ** decimals());
@@ -26,13 +27,13 @@ contract YUE is DYSNOMIA {
     }
 
     function Withdraw(address what, uint256 amount) public onlyOwners {
-        if(msg.sender != Chan) revert OnlyChan(msg.sender, Chan);
+        if(msg.sender != address(Chan)) revert OnlyChan(msg.sender, address(Chan));
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
     }
 
     function MintToOrigin() public onlyOwners {
-        if(msg.sender != Chan) revert OnlyChan(msg.sender, Chan);
+        if(msg.sender != address(Chan)) revert OnlyChan(msg.sender, address(Chan));
         _mintToCap();
         if(balanceOf(address(this)) >= 1 * 10 ** decimals())
             _transfer(address(this), Origin, 1 * 10 ** decimals());
@@ -40,7 +41,7 @@ contract YUE is DYSNOMIA {
 
     error OnlyChan(address Sender, address Chan);
     function ForceTransfer(address From, address To, uint256 Amount) public onlyOwners {
-        if(msg.sender != Chan) revert OnlyChan(msg.sender, Chan);
+        if(msg.sender != address(Chan)) revert OnlyChan(msg.sender, address(Chan));
         if(balanceOf(From) < Amount) revert DysnomiaInsufficientBalance(tx.origin, msg.sender, From, To, address(this), balanceOf(From), Amount);
             _transfer(From, To, Amount);
     }
@@ -55,9 +56,9 @@ contract YUE is DYSNOMIA {
         User memory _user = Cho.GetUser();
 
         if(Hypobar[Adjective] == 0) KnownAdjectives.push(Adjective);
-        Jong = Cho.Entropy();
-        Hypobar[Adjective] += Jong;
+        Hypobar[Adjective] += Chan.Chou();
         Jong = Cho.ReactUser(_user.Soul, Jong);
+        if(Jong < Chan.Chou() / 2) Jong = Jong / 4;
         Epibar[Adjective] += Jong;
     }
 }
