@@ -14,5 +14,5 @@ enum TRAIT {
     QING,
     QI,
     MAI,
-    INVALID
+    ZERO
 }
