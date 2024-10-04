@@ -35,15 +35,19 @@ contract CHEON is DYSNOMIA {
         uint256 Entropy;
         (Adjective, Charge) = Choa.Chan().Xie().Tso();
         User memory _user = Choa.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserBySoul(UserToken.Saat(1));
-        Charge += Chi.React(Adjective) + _qingPowers[Player.Location.Waat()][Adjective];
+        Charge += Chi.React(Adjective);
         Entropy = Choa.Chan().Chou();
+        _qingPowers[Player.Location.Waat()][Adjective] += Entropy;
         (uint64 Omicron, uint64 Omega) = Choa.Chan().Xie().Xia().Mai().React(_user, Charge);
         if(Omicron < Entropy) Omicron /= 2;
         Player.Location.ReactPlayer(_user.Soul, Omicron);
         Power = uint64(Charge % Omega);
         _qingPowers[Player.Location.Waat()][Adjective] = Choa.Chan().Xie().Xia().Decay(_qingPowers[Player.Location.Waat()][Adjective] + Power);
         if(Omega < Entropy / 2) Power /= 4;
-        _userPowers[Player.Maat][Adjective] = Choa.Chan().Xie().Xia().Decay(_userPowers[Player.Maat][Adjective] + Power);
+        if(_userPowers[Player.Maat][Adjective] <= (Chi.maxSupply() * 1 * 10 ** decimals()) * MotzkinPrime * 111)
+            _userPowers[Player.Maat][Adjective] += Power;
+        else if(_userPowers[Player.Maat][Adjective] > Chi.totalSupply() * MotzkinPrime * 111)
+            Choa.Chan().YueMintToOrigin(Chi);
         return (Adjective, Power, _userPowers[Player.Maat][Adjective]);
     }
 }
