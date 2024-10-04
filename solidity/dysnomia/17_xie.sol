@@ -58,13 +58,13 @@ contract XIE is DYSNOMIA {
                     return (Trait, Charge);
                 }
             }
-            if(++_rc == _dc && _oc != _dc) return (TRAIT.ZERO, 12);
+            if(++_rc == _dc && _oc != _dc) return (TRAIT.ZERO, 2);
             if(_rc == _dc && _oc == _dc) {
                 _dc = _rc;
                 _rc = 0;
             }                
         }
-        return (TRAIT.ZERO, 12);
+        return (TRAIT.ZERO, 2);
     }
 
     function _reactUserQingTrait(uint64 Soul, uint256 Waat, TRAIT Trait) internal returns (uint256 Charge) {
