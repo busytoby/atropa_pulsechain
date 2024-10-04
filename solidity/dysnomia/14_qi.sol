@@ -57,9 +57,7 @@ contract QI is DYSNOMIA {
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
-    error MinimumDepositAmount(uint256 Requested, uint256 Minimum);
     function Deposit(address Qing, TRAIT Trait, uint256 amount) public {        
-        if(amount < 1 * 10 ** 12) revert MinimumDepositAmount(amount, 1 * 10 ** 12);
         TimeDeposit memory _t;
         
         _t.waat = QINGINTERFACE(Qing).Waat();
@@ -87,13 +85,10 @@ contract QI is DYSNOMIA {
 
     error NotOwner(uint256 DepositId);
     error ExceedsBalance(uint256 DepositId, uint256 Balance);
-    error MinimumDepositOneYear(uint256 DepositTimestamp, uint256 MaturationTimestamp);
     function Withdraw(uint256 Id, uint256 Amount) public {
         uint64 _soul = Zuo.Cho().GetUserSoul();
         if(_deposits[Id].soul != _soul) revert NotOwner(Id);
         if(Amount > _deposits[Id].amount) revert ExceedsBalance(Id, _deposits[Id].amount);
-        uint256 maturation = _deposits[Id].timestamp + 365 days;
-        if(block.timestamp < maturation) revert MinimumDepositOneYear(_deposits[Id].timestamp, maturation);
 
         SHIO Eris = Zuo.Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Zuo.Cho().Void().Nu().Psi().Rho().Lai.Xi).Shio;
         Eris.transfer(msg.sender, Amount);
