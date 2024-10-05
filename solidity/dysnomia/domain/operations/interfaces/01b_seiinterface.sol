@@ -25,6 +25,7 @@ interface SEI {
     function Type() external view returns (string memory);
     function Chan() external view returns (CHAN);
     function GetUserTokenByMaat(uint256 Maat) external view returns (LAU);
+    function ChiBySoul(uint64 Soul) external view returns (YUEINTERFACE Yue, LAU UserToken, QIN memory Player);
     function Chi() external view returns (YUEINTERFACE Yue, LAU UserToken, QIN memory Player);
     function Start(string calldata Name, string calldata Symbol) external returns (YUEINTERFACE Yue, LAU UserToken, QIN memory Player);
 }

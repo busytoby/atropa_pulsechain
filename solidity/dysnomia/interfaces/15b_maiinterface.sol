@@ -31,6 +31,7 @@ interface MAI {
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
     function GetDepositCount() external view returns (uint256);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
+    function GetQingDepositBySoul(uint64 Soul, uint256 QingWaat) external view returns (TimeDeposit memory);
     function GetQingDeposit(uint256 QingWaat) external view returns (TimeDeposit memory);
     function Deposit(address Qing, uint256 amount) external;
     function Withdraw(uint256 Id, uint256 Amount) external;

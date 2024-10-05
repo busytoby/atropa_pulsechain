@@ -53,6 +53,10 @@ contract MAI is DYSNOMIA {
         return _deposits[Id];
     }
 
+    function GetQingDepositBySoul(uint64 Soul, uint256 QingWaat) public view returns (TimeDeposit memory) {
+        return GetDeposit(_userQingDeposits[Soul][QingWaat]);
+    }
+
     function GetQingDeposit(uint256 QingWaat) public view returns (TimeDeposit memory) {
         uint64 _soul = Qi.Zuo().Cho().GetUserSoul();
         return GetDeposit(_userQingDeposits[_soul][QingWaat]);

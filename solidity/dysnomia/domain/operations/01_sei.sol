@@ -21,6 +21,14 @@ contract SEI is DYSNOMIA {
         return _users[Maat];
     }
 
+    function ChiBySoul(uint64 Soul) public view returns (YUE Yue, LAU UserToken, QIN memory Player) {
+        address UserTokenAddress = Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetAddressBySoul(Soul);
+        if(Chan.Yan(UserTokenAddress) == address(0x0)) revert NotStarted(UserTokenAddress);
+        Yue = YUE(Chan.Yan(UserTokenAddress));
+        UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(UserTokenAddress));
+        Player =  Chan.Xie().Xia().Mai().GetPlayerQin(Soul);
+    }
+
     error NotStarted(address);
     function Chi() public view returns (YUE Yue, LAU UserToken, QIN memory Player) {        
         if(Chan.Yan(tx.origin) == address(0x0)) revert NotStarted(tx.origin);
