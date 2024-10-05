@@ -26,24 +26,10 @@ contract YUE is DYSNOMIA {
         Origin = NewOrigin;
     }
 
-    function Withdraw(address what, uint256 amount) public onlyOwners {
-        if(msg.sender != address(Chan)) revert OnlyChan(msg.sender, address(Chan));
-        DYSNOMIA withdrawToken = DYSNOMIA(what);
-        withdrawToken.transfer(msg.sender, amount);
-    }
-
     function MintToOrigin() public onlyOwners {
-        if(msg.sender != address(Chan)) revert OnlyChan(msg.sender, address(Chan));
         _mintToCap();
         if(balanceOf(address(this)) >= 1 * 10 ** decimals())
             _transfer(address(this), Origin, 1 * 10 ** decimals());
-    }
-
-    error OnlyChan(address Sender, address Chan);
-    function ForceTransfer(address From, address To, uint256 Amount) public onlyOwners {
-        if(msg.sender != address(Chan)) revert OnlyChan(msg.sender, address(Chan));
-        if(balanceOf(From) < Amount) revert DysnomiaInsufficientBalance(tx.origin, msg.sender, From, To, address(this), balanceOf(From), Amount);
-            _transfer(From, To, Amount);
     }
 
     function Bar(TRAIT Trait) public view returns (uint256 Hypogram, uint256 Epigram) {

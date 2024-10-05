@@ -28,9 +28,7 @@ interface YUEINTERFACE {
     function Hypobar(TRAIT Trait) external view returns (uint256 Gram);
     function Epibar(TRAIT Trait) external view returns (uint256 Gram);
     function ChangeOrigin(address NewOrigin) external;
-    function Withdraw(address what, uint256 amount) external;
     function MintToOrigin() external;
-    function ForceTransfer(address From, address To, uint256 Amount) external;
     function Bar(TRAIT Trait) external view returns (uint256 Hypogram, uint256 Epigram);
     function React(TRAIT Trait) external returns (uint64 Jong);
 }
