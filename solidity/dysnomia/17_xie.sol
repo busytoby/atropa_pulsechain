@@ -43,7 +43,7 @@ contract XIE is DYSNOMIA {
 
         while(_rc < _dc) {
             (_t, Trait) = Xia.Mai().Qi().GetDeposit(_rc);
-            if(_t.amount > MotzkinPrime/86400 && _deposits[_userQingTraitDeposits[_t.soul][_t.waat][Trait]].amount > MotzkinPrime/86400) {
+            if(_t.amount > MotzkinPrime/7776000 && _deposits[_userQingTraitDeposits[_t.soul][_t.waat][Trait]].amount > MotzkinPrime/7776000) {
                 if(_traitPowers[Trait].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
                     if(_traitPowers[Trait].Block == 0) _traitPowers[Trait].Block = block.number;
                     if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
@@ -123,7 +123,7 @@ contract XIE is DYSNOMIA {
     error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
     error MinimumDepositAmount(uint256 Requested, uint256 Minimum);
     function Deposit(address Qing, TRAIT Trait, uint256 amount) public {
-        if(amount < MotzkinPrime) revert MinimumDepositAmount(amount, MotzkinPrime / 86400);
+        if(amount < MotzkinPrime) revert MinimumDepositAmount(amount, MotzkinPrime / 7776000);
         TimeDeposit memory _t;
         
         _t.waat = QINGINTERFACE(Qing).Waat();

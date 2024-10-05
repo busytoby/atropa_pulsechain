@@ -87,7 +87,7 @@ contract XIA is DYSNOMIA {
     error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
     error MinimumDepositAmount(uint256 Requested, uint256 Minimum);
     function Deposit(address Qing, TRAIT Trait, uint256 amount) public {
-        if(amount < MotzkinPrime) revert MinimumDepositAmount(amount, MotzkinPrime / 86400); 
+        if(amount < MotzkinPrime) revert MinimumDepositAmount(amount, MotzkinPrime / 7776000); 
         TimeDeposit memory _t;
         
         if(Balance + amount > e * 10000000000) revert ExceedsMaxSystemDeposit((e * 10000000000) - Balance, amount);
