@@ -40,15 +40,11 @@ contract DING is DYSNOMIA {
         uint256 Hypogram;
         uint256 Epigram;
         uint256 Contour;
-        TimeDeposit memory _t;
         (Charge, UserQi, Omega) = Cheon.Sei().Chan().React(Player, Trait);
         Omicron = Yue.React(Trait);
         (Hypogram, Epigram) = Yue.Bar(Trait);
         if(Trait != TRAIT.ZERO) Contour = GetTraitToken(Trait).balanceOf(Yue.Origin());
-        else {
-            _t = Cheon.Sei().Chan().Xie().Xia().Mai().GetQingDeposit(Player.Location.Waat());        
-            Contour = Cheon.Sei().Chan().Xie().Xia().Amplify(_t.amount, _t.timestamp);
-        }
+        else Contour = Player.Location.balanceOf(Yue.Origin());
         Omega = Xiao.modExp(Hypogram, Omega, Contour);
         Omicron = Xiao.modExp(Epigram, Omicron, Contour);
     }
