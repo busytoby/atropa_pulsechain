@@ -15,7 +15,7 @@ contract DING is DYSNOMIA {
         _mintToCap();
     }
 
-    function React(TRAIT Trait) public onlyOwners returns (uint256 Charge, uint256 UserQi, uint256 Omicron, uint256 Omega) {
+    function Train(TRAIT Trait) public onlyOwners returns (uint256 Charge, uint256 UserQi, uint256 Omicron, uint256 Omega) {
         uint256 Hypogram;
         uint256 Epigram;
         uint256 Contour;
