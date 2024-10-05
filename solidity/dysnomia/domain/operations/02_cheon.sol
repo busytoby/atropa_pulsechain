@@ -9,30 +9,16 @@ contract CHEON is DYSNOMIA {
     string public constant Type = "CHEON";
 
     SEI public Sei;
-    CHOA public Choa;
 
-    mapping(uint256 Maat => mapping(TRAIT Trait => uint256 Power)) private _userPowers;
-    mapping(uint256 Waat => mapping(TRAIT Trait => uint256 Power)) private _qingPowers;
-
-    constructor(address SeiAddress, address ChoaAddress) DYSNOMIA("Dysnomia Cheon", "CHEON", address(DYSNOMIA(ChoaAddress).Xiao())) {
+    constructor(address SeiAddress) DYSNOMIA("Dysnomia Cheon", "CHEON", address(DYSNOMIA(SeiAddress).Xiao())) {
         Sei = SEI(SeiAddress);
-        Choa = CHOA(ChoaAddress);
-        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().addOwner(address(this));
         addOwner(tx.origin);
         _mintToCap();
     }
 
-    function GetUserPower(uint256 Maat, TRAIT Trait) public view returns (uint256 Power) {
-        return _userPowers[Maat][Trait];
-    }
-
-    function GetQingPower(uint256 Waat, TRAIT Trait) public view returns (uint256 Power) {
-        return _qingPowers[Waat][Trait];
-    }
-
     error TrainingOnlyAvailableInZuoQing(address ZuoQing, address PlayerQing);
-    function Train() public returns (TRAIT Trait, uint64 Power, uint256 TotalPower) {
+    function Train() public returns (TRAIT Trait, uint64 Power, uint256 Hypobar, uint256 Epibar) {
         (YUEINTERFACE Chi, LAU UserToken, QIN memory Player) = Sei.Chi();
         if(address(Player.Location) != address(Sei.Chan().Xie().Xia().Mai().Qi().Zuo())) 
             revert TrainingOnlyAvailableInZuoQing(address(Sei.Chan().Xie().Xia().Mai().Qi().Zuo()), address(Player.Location));
@@ -42,16 +28,12 @@ contract CHEON is DYSNOMIA {
         User memory _user = Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().GetUserBySoul(UserToken.Saat(1));
         Charge += Chi.React(Trait);
         Entropy = Sei.Chan().Chou();
-        _qingPowers[Player.Location.Waat()][Trait] += Entropy;
         (uint64 Omicron, uint64 Omega) = Sei.Chan().Xie().Xia().Mai().React(_user, Charge);
         if(Omicron < Entropy) Omicron /= 2;
         Player.Location.ReactPlayer(_user.Soul, Omicron);
         Power = uint64(Charge % Omega);
-        _qingPowers[Player.Location.Waat()][Trait] = Sei.Chan().Xie().Xia().Decay(_qingPowers[Player.Location.Waat()][Trait] + Power);
         if(Omega < Entropy / 2) Power /= 4;
-        if(_userPowers[Player.Maat][Trait] <= (Chi.maxSupply() * MotzkinPrime))
-            _userPowers[Player.Maat][Trait] += Power;
         Sei.Chan().YueMintToOrigin(Chi);
-        return (Trait, Power, _userPowers[Player.Maat][Trait]);
+        (Hypobar, Epibar) = Chi.Bar(Trait);
     }
 }
