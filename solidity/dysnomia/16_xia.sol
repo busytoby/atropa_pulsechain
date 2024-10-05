@@ -43,10 +43,10 @@ contract XIA is DYSNOMIA {
     }
 
     function Charge(uint256 QingWaat, TRAIT Trait) public returns (uint256) {
-        uint256 _b = Mai.Qi().GetQingAdjectiveValue(QingWaat, Trait);
+        uint256 _b = Mai.Qi().GetQingTraitValue(QingWaat, Trait);
         TimeDeposit memory _d = Mai.GetQingDeposit(QingWaat);
         uint256 _e = Amplify(_d.amount, _d.timestamp);
-        _d = GetQingAdjectiveDeposit(QingWaat, Trait);
+        _d = GetQingTraitDeposit(QingWaat, Trait);
         uint256 _m = Amplify(_d.amount, _d.timestamp);
         return Xiao.modExp(_b, _e, _m);
     }
@@ -77,7 +77,7 @@ contract XIA is DYSNOMIA {
         return _deposits[Id];
     }
 
-    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) public view returns (TimeDeposit memory) {
+    function GetQingTraitDeposit(uint256 QingWaat, TRAIT Trait) public view returns (TimeDeposit memory) {
         uint64 _soul = Mai.Qi().Zuo().Cho().GetUserSoul();
         return GetDeposit(_userQingTraitDeposits[_soul][QingWaat][Trait]);
     }

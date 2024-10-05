@@ -74,7 +74,7 @@ contract CHAN is DYSNOMIA {
         uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
         uint256 Maat = Xie.Xia().Mai().Maat();
         if(Maat != Player.Maat) revert InvalidQinInstance(Soul, Maat, Player.Maat);
-        UserQi = Xie.Xia().Mai().Qi().GetUserAdjectiveValue(Soul, Trait);
+        UserQi = Xie.Xia().Mai().Qi().GetUserTraitValue(Soul, Trait);
         (Charge, Entropy[Maat], Omega) = Xie.React(Soul, Trait);
         _mintToCap();
     }

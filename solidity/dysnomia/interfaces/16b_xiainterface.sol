@@ -33,7 +33,7 @@ interface XIA {
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
     function GetDepositCount() external view returns (uint256);
     function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
-    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) external view returns (TimeDeposit memory);
+    function GetQingTraitDeposit(uint256 QingWaat, TRAIT Trait) external view returns (TimeDeposit memory);
     function Deposit(address Qing, TRAIT Trait, uint256 amount) external;
     function Withdraw(uint256 Id, uint256 Amount) external;
 }

@@ -25,8 +25,8 @@ interface QIINTERFACE {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Zuo() external view returns (QINGINTERFACE);
-    function GetUserAdjectiveValue(uint64 UserSoul, TRAIT Trait) external view returns (uint256 Sum);
-    function GetQingAdjectiveValue(uint256 QingWaat, TRAIT Trait) external view returns (uint256 Sum);
+    function GetUserTraitValue(uint64 UserSoul, TRAIT Trait) external view returns (uint256 Sum);
+    function GetQingTraitValue(uint256 QingWaat, TRAIT Trait) external view returns (uint256 Sum);
     function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
     function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake, TRAIT Trait);
     function GetQingDepositCount(uint256 QingWaat) external view returns (uint256);

@@ -23,11 +23,11 @@ contract QI is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetUserAdjectiveValue(uint64 UserSoul, TRAIT Trait) public view returns (uint256 Sum) {
+    function GetUserTraitValue(uint64 UserSoul, TRAIT Trait) public view returns (uint256 Sum) {
         return _userSums[UserSoul][Trait];
     }
 
-    function GetQingAdjectiveValue(uint256 QingWaat, TRAIT Trait) public view returns (uint256 Sum) {
+    function GetQingTraitValue(uint256 QingWaat, TRAIT Trait) public view returns (uint256 Sum) {
         return _qingSums[QingWaat][Trait];
     }
 

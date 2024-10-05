@@ -55,7 +55,8 @@ contract YUE is DYSNOMIA {
         if(balanceOf(tx.origin) == 0) revert ZeroHoldings(tx.origin);
         User memory _user = Cho.GetUser();
 
-        Hypobar[Trait] += Chan.Chou();
+        Jong = Chan.Chou();
+        Hypobar[Trait] += Jong;
         Jong = Cho.ReactUser(_user.Soul, Jong);
         if(Jong < Chan.Chou() / 2) Jong = Jong / 4;
         Epibar[Trait] += Jong;

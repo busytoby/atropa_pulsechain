@@ -27,7 +27,7 @@ contract XIE is DYSNOMIA {
         _mintToCap();
     }
 
-    function GetPowerByAdjective(TRAIT Trait) public view returns (uint256 Charge) {
+    function GetPowerByTrait(TRAIT Trait) public view returns (uint256 Charge) {
         return _traitPowers[Trait].Charge;
     }
 
@@ -113,7 +113,7 @@ contract XIE is DYSNOMIA {
         return _deposits[Id];
     }
 
-    function GetQingAdjectiveDeposit(uint256 QingWaat, TRAIT Trait) public view returns (TimeDeposit memory) {
+    function GetQingTraitDeposit(uint256 QingWaat, TRAIT Trait) public view returns (TimeDeposit memory) {
         uint64 _soul = Xia.Mai().Qi().Zuo().Cho().GetUserSoul();
         return GetDeposit(_userQingTraitDeposits[_soul][QingWaat][Trait]);
     }
