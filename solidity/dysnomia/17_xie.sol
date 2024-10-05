@@ -43,7 +43,7 @@ contract XIE is DYSNOMIA {
 
         while(_rc < _dc) {
             (_t, Trait) = Xia.Mai().Qi().GetDeposit(_rc);
-            if(_t.amount > 1 * 10 ** 12) {
+            if(_t.amount > MotzkinPrime/30 && _deposits[_userQingTraitDeposits[_t.soul][_t.waat][Trait]].amount > MotzkinPrime/30) {
                 if(_traitPowers[Trait].Block < block.number || _qingPowers[_t.waat].Block < block.number) {
                     if(_traitPowers[Trait].Block == 0) _traitPowers[Trait].Block = block.number;
                     if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
