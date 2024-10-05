@@ -48,7 +48,7 @@ contract XIE is DYSNOMIA {
                     if(_traitPowers[Trait].Block == 0) _traitPowers[Trait].Block = block.number;
                     if(_qingPowers[_t.waat].Block == 0) _qingPowers[_t.waat].Block = block.number;
 
-                    Charge = Xia.Charge(_t.waat, Trait) % Xia.Amplify(_t.amount, _t.timestamp);
+                    Charge = Xia.Charge(_t.waat, Trait) % Xia.Amplify(_deposits[_userQingTraitDeposits[_t.soul][_t.waat][Trait]].amount, _deposits[_userQingTraitDeposits[_t.soul][_t.waat][Trait]].timestamp);
                     for(; _traitPowers[Trait].Block < block.number; _traitPowers[Trait].Block++)
                         _traitPowers[Trait].Charge = Xia.Decay(_traitPowers[Trait].Charge);
                     for(; _qingPowers[_t.waat].Block < block.number; _qingPowers[_t.waat].Block++)
@@ -70,7 +70,7 @@ contract XIE is DYSNOMIA {
     function _reactUserQingTrait(uint64 Soul, uint256 Waat, TRAIT Trait) internal returns (uint256 Charge) {
         TimeDeposit memory _t;
         (_t, Trait) = Xia.Mai().Qi().GetDeposit(_userQingTraitDeposits[Soul][Waat][Trait]);
-        Charge = Xia.Charge(Waat, Trait) % Xia.Amplify(_t.amount, _t.timestamp);
+        Charge = Xia.Charge(Waat, Trait) % Xia.Amplify(_deposits[_userQingTraitDeposits[Soul][Waat][Trait]].amount, _deposits[_userQingTraitDeposits[Soul][Waat][Trait]].timestamp);
 
         for(; _traitPowers[Trait].Block < block.number; _traitPowers[Trait].Block++) {
             if(_traitPowers[Trait].Block == 0) _traitPowers[Trait].Block = block.number;
@@ -121,7 +121,9 @@ contract XIE is DYSNOMIA {
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
     error ExceedsMaxSystemDeposit(uint256 MaxDepositRemaining, uint256 RequestedDeposit);
+    error MinimumDepositAmount(uint256 Requested, uint256 Minimum);
     function Deposit(address Qing, TRAIT Trait, uint256 amount) public {
+        if(amount < MotzkinPrime) revert MinimumDepositAmount(amount, MotzkinPrime / 30);
         TimeDeposit memory _t;
         
         _t.waat = QINGINTERFACE(Qing).Waat();
