@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./01b_chaninterface.sol";
-import "../../operations/interfaces/01b_seiinterface.sol";
+import "./01b_seiinterface.sol";
+import "../../sky/interfaces/02b_choainterface.sol";
 
-interface CHOA {
+interface CHEON {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -24,8 +24,8 @@ interface CHOA {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Sei() external view returns (SEI);
-    function Play(address UserTokenAddress) external returns (YUEINTERFACE Chi, LAU UserToken, QIN memory Player);
-    function Chat(string memory MSG) external returns (uint256 Charge, uint256 UserQi, uint64 Omicron, uint64 Omega);
-    function GetExits() external view returns (string[] memory Exits);
-    function Move(string memory To) external;
+    function Choa() external view returns (CHOA);
+    function GetUserPower(uint256 Maat, TRAIT Trait) external view returns (uint256 Power);
+    function GetQingPower(uint256 Waat, TRAIT Trait) external view returns (uint256 Power);
+    function Train() external returns (TRAIT Trait, uint64 Power, uint256 TotalPower);
 }

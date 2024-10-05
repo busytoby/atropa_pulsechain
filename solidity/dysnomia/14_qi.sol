@@ -57,7 +57,9 @@ contract QI is DYSNOMIA {
 
     error WaatMismatch(address Qing, uint256 Waat);
     error UnknownQing(address Qing);
+    error MinimumDepositAmount(uint256 Requested, uint256 Minimum);
     function Deposit(address Qing, TRAIT Trait, uint256 amount) public {        
+        if(amount < MotzkinPrime) revert MinimumDepositAmount(amount, MotzkinPrime); 
         TimeDeposit memory _t;
         
         _t.waat = QINGINTERFACE(Qing).Waat();
