@@ -22,23 +22,13 @@ contract XIA is DYSNOMIA {
 
     function Amplify(uint256 Amount, uint256 Timestamp) public view returns (uint256 Bonus) {
         if(Timestamp >= block.timestamp) return 0;
+        uint16 i = 2;
         uint256 _dt = block.timestamp - Timestamp;
         Bonus = Amount * _dt;
-        _dt /= 60;
-        if(_dt == 0) return Bonus;
-        Bonus *= _dt * 2;
-        _dt /= 24;
-        if(_dt == 0) return Bonus;
-        Bonus *= _dt * 4;
-        _dt /= 30;
-        if(_dt == 0) return Bonus;
-        Bonus *= _dt * 8;
-        _dt /= 12;
-        uint16 i = 16;
+        _dt /= i;
         while(_dt > 0) {
-            Bonus *= _dt * i;
-            i *= 2;
-            _dt /= 2;
+            Bonus += _dt * i;
+            _dt /= ++i;
         }
     }
 
