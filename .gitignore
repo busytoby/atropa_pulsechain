@@ -30,8 +30,8 @@
 /solidity/dysnomia/domain/artifacts
 /solidity/dysnomia/domain/interfaces/artifacts
 /solidity/dysnomia/domain/old/artifacts
-/solidity/dysnomia/domain/operations/artifacts
-/solidity/dysnomia/domain/operations/interfaces/artifacts
+/solidity/dysnomia/domain/tang/artifacts
+/solidity/dysnomia/domain/tang/interfaces/artifacts
 /solidity/dysnomia/domain/sky/artifacts
 /solidity/dysnomia/domain/sky/interfaces/artifacts
 /solidity/dysnomia/include/artifacts

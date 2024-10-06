@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../../01_dysnomia_v2.sol";
-import "./interfaces/02b_cheoninterface.sol";
+import "../01_dysnomia_v2.sol";
+import "./tang/interfaces/02b_cheoninterface.sol";
 
 contract DING is DYSNOMIA {
     string public constant Type = "DING";

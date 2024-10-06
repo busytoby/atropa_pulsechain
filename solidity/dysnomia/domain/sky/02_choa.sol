@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
 import "../../include/trait.sol";
-import "../operations/interfaces/01b_seiinterface.sol";
+import "../tang/interfaces/01b_seiinterface.sol";
 import "./interfaces/01b_chaninterface.sol";
 
 contract CHOA is DYSNOMIA {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "./01b_chaninterface.sol";
-import "../../operations/interfaces/01b_seiinterface.sol";
+import "../../tang/interfaces/01b_seiinterface.sol";
 
 interface CHOA {
     function maxSupply() external view returns(uint256);
