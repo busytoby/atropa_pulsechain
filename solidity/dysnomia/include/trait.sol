@@ -8,7 +8,6 @@ enum TRAIT {
     YAU,
     YANG,
     SIU,
-    VOID,
     LAU,
     CHO,
     QING,
