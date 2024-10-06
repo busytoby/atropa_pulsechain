@@ -69,6 +69,7 @@ contract CHO is DYSNOMIA {
             Qu[De] = msg.sender;
         else
             De = Luo();
+        _mintToCap();
     }
 
     error InvalidUserToken(address Asset);
@@ -79,6 +80,7 @@ contract CHO is DYSNOMIA {
 
     error InvalidOwnership(address UserToken, address User);
     function Enter(address UserToken) public onlyOwners returns(User memory) {
+        _mintToCap();
         VerifyUserTokenPermissions(UserToken);
         LAU UserLau = LAU(UserToken);
         if(!UserLau.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
@@ -118,6 +120,7 @@ contract CHO is DYSNOMIA {
     }
 
     function React(uint64 Eta) public returns (uint64, uint64) {
+        _mintToCap();
         (On.Omicron, On.Omega) = Reactor().ReactShioRod(On.Shio, Entropy ^ Eta);
         Entropy = On.Omega;
         return (On.Omicron, On.Omega);
@@ -125,6 +128,7 @@ contract CHO is DYSNOMIA {
 
     function ReactUser(uint64 Soul, uint64 Epsilon) public returns (uint64 _omicron) {
         if(DelegateAddresses[Soul] == address(0x0)) revert SoulNotEntered(Soul);
+        _mintToCap();
         User memory Alpha = Delegates[DelegateAddresses[Soul]];
         Epsilon = Recall(Alpha);
         (Alpha.On.Omicron, Alpha.On.Omega) = Reactor().ReactShioCone(Alpha.On.Shio, Epsilon);

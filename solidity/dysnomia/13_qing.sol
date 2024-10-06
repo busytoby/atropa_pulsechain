@@ -76,6 +76,7 @@ contract QING is DYSNOMIA {
 
     event KickedUser(uint64 OperatorSoul, string OperatorUsername, uint64 UserSoul, string Username, string Why);
     function Kick(uint64 Soul, string memory Why) public onlyBouncers {
+        _mintToCap();
         uint64 _operatorsoul = Cho.GetUserSoul();
         User memory Operator = _players[_operatorsoul];
         for(uint16 i = 0; i < _users.length; i++) {
@@ -187,6 +188,7 @@ contract QING is DYSNOMIA {
 
     function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omega) {
         if(_players[Soul].Soul == 0) revert NotAdmitted(_players[Soul].Soul);
+        _mintToCap();
         (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
         return _players[Soul].On.Omega;
     }
