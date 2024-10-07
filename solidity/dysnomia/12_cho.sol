@@ -62,7 +62,7 @@ contract CHO is DYSNOMIA {
         return LIBCOREREACTIONS(Void.GetLibraryAddress("corereactions"));
     }
 
-    function Luo() public returns (uint256 De) {
+    function Luo() public onlyOwners returns (uint256 De) {
         React(On.Omicron);
         De = Xiao.modExp(On.Omega, On.Omicron, Prime);
         if(Qu[De] == address(0x0))

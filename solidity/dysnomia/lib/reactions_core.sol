@@ -33,9 +33,9 @@ contract COREREACTIONSLIB is DYSNOMIA {
 
     function ReactToTalk(User memory Alpha) public returns (uint64, uint64) {
         _mintToCap();
-        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactUser(Alpha.Soul, Void.Nu().Psi().Rho().Lai.Omicron);
+        Alpha.On.Omega = Cho.ReactUser(Alpha.Soul, Void.Nu().Psi().Rho().Lai.Omicron);
         (Alpha.On.Omicron, Alpha.On.Omega) = ReactLai(Alpha.Soul);
-        (Alpha.On.Omicron, Alpha.On.Omega) = Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
+        Alpha.On.Omicron = Cho.ReactUser(Alpha.Soul, Alpha.On.Omega);
         return (Alpha.On.Omicron, Alpha.On.Omega);
     }
 
@@ -65,10 +65,12 @@ contract COREREACTIONSLIB is DYSNOMIA {
 
     function OperatorReact(Bao memory On, uint64 Omega) public returns (uint64, uint64) { return React(On, On.Omicron ^ Void.Nu().Aura(), On.Omega ^ Omega); }
 
-    function ReactBang(uint64 Eta) public returns (uint64, uint64) {  return ReactShioRod(Void.Nu().Psi().Rho().Bang.Shio, Eta); }
-    function ReactLai(uint64 Gamma) public returns (uint64, uint64) { return ReactShioRod(Void.Nu().Psi().Rho().Lai.Shio, Gamma); }
+    function ReactBang(uint64 Eta) public returns (uint64, uint64) {  return ReactShioCone(Void.Nu().Psi().Rho().Bang.Shio, Eta); }
+    function ReactLai(uint64 Gamma) public returns (uint64, uint64) { return ReactShioCone(Void.Nu().Psi().Rho().Lai.Shio, Gamma); }
     function ReactLe(uint64 Delta) public returns (uint64, uint64) {  return ReactShioCone(Void.Nu().Psi().Rho().Le.Shio, Delta); }
-
+    function ReactEris(uint64 Iota) public returns (uint64, uint64) { return ReactShioCone(Void.Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Void.Nu().Psi().Rho().Lai.Xi).Shio, Iota);}
+    function ReactFomalhaute(uint64 Mu) public returns (uint64, uint64) { return ReactShioCone(Void.Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Void.Nu().Psi().Mu().Tau().Xi()).Shio, Mu); }
+    function ReactFornax(uint64 Rho) public returns (uint64, uint64) { return ReactShioCone(Void.Nu().Psi().Mu().Tau().Upsilon().Eta().Psi(), Rho); }
 
     function ReactShioRod(SHIO Beta, uint64 Theta) public returns (uint64, uint64) {
         _mintToCap();

@@ -15,7 +15,7 @@ contract CHOA is DYSNOMIA {
     mapping(TRAIT Trait => mapping(address Operator => address Contract)) private _operations;
     mapping(address UserToken => mapping(TRAIT Trait => address Contract)) private _userOperations;
 
-    constructor(address SeiAddress) DYSNOMIA("Dysnomia Chao", "CHAO", address(DYSNOMIA(SeiAddress).Xiao())) {
+    constructor(address SeiAddress) DYSNOMIA("Dysnomia Chao", "CHOA", address(DYSNOMIA(SeiAddress).Xiao())) {
         Sei = SEI(SeiAddress);
         Sei.Chan().addOwner(address(this));
         Sei.Chan().Xie().Xia().Mai().addOwner(address(this));

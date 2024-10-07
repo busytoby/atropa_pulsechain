@@ -6,14 +6,21 @@ import { ethers } from 'ethers'
 const getContract = async (contractName: string, contractAddress, accountIndex?: number): Promise<ethers.Contract> => {
   if(accountIndex == undefined) accountIndex = 0;
   console.log(`getting contract ${contractName} as account ${accountIndex}`)
-  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/chan/artifacts/${contractName}.json`
+  const domainArtifactsPath = `browser/solidity/dysnomia/domain/artifacts/${contractName}.json`
+  const skyArtifactsPath = `browser/solidity/dysnomia/domain/sky/artifacts/${contractName}.json`
+  const tangArtifactsPath = `browser/solidity/dysnomia/domain/tang/artifacts/${contractName}.json`
+  const songArtifactsPath = `browser/solidity/dysnomia/domain/song/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
   try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath)) } catch {
     try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', libartifactsPath)) } catch {
-      metadata = JSON.parse(await remix.call('fileManager', 'getFile', delegationsArtifactsPath)) }
-  }
+      try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', domainArtifactsPath)) } catch {
+        try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', skyArtifactsPath)) } catch {
+          try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', tangArtifactsPath)) } catch {
+            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', songArtifactsPath)) } catch {
+      } } } } } }
+
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   const contract = new ethers.Contract(contractAddress, factory.interface, signer);
@@ -23,14 +30,20 @@ const getContract = async (contractName: string, contractAddress, accountIndex?:
 const getContract2 = async (contractName: string, contractAddress, accountIndex?: number): Promise<ethers.Contract> => {
   if(accountIndex == undefined) accountIndex = 0;
   console.log(`getting contract ${contractName} as account ${accountIndex}`)
-  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/chan/artifacts/${contractName}.json`
+  const domainArtifactsPath = `browser/solidity/dysnomia/domain/artifacts/${contractName}.json`
+  const skyArtifactsPath = `browser/solidity/dysnomia/domain/sky/artifacts/${contractName}.json`
+  const tangArtifactsPath = `browser/solidity/dysnomia/domain/tang/artifacts/${contractName}.json`
+  const songArtifactsPath = `browser/solidity/dysnomia/domain/song/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
   try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath)) } catch {
     try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', libartifactsPath)) } catch {
-      metadata = JSON.parse(await remix.call('fileManager', 'getFile', delegationsArtifactsPath)) }
-  }
+      try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', domainArtifactsPath)) } catch {
+        try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', skyArtifactsPath)) } catch {
+          try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', tangArtifactsPath)) } catch {
+            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', songArtifactsPath)) } catch {
+      } } } } } }
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   //const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   //const contract = new ethers.Contract(contractAddress, factory.interface, signer);
@@ -41,14 +54,20 @@ const getContract2 = async (contractName: string, contractAddress, accountIndex?
 const deploy = async (contractName: string, args: Array<any>, accountIndex?: number): Promise<ethers.Contract> => {
   if(accountIndex == undefined) accountIndex = 0;
   console.log(`deploying ${contractName} from account ${accountIndex}`)
-  const delegationsArtifactsPath = `browser/solidity/dysnomia/domain/chan/artifacts/${contractName}.json`
+  const domainArtifactsPath = `browser/solidity/dysnomia/domain/artifacts/${contractName}.json`
+  const skyArtifactsPath = `browser/solidity/dysnomia/domain/sky/artifacts/${contractName}.json`
+  const tangArtifactsPath = `browser/solidity/dysnomia/domain/tang/artifacts/${contractName}.json`
+  const songArtifactsPath = `browser/solidity/dysnomia/domain/song/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
   try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath)) } catch {
     try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', libartifactsPath)) } catch {
-      metadata = JSON.parse(await remix.call('fileManager', 'getFile', delegationsArtifactsPath)) }
-  }
+      try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', domainArtifactsPath)) } catch {
+        try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', skyArtifactsPath)) } catch {
+          try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', tangArtifactsPath)) } catch {
+            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', songArtifactsPath)) } catch {
+      } } } } } }
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   const contract = await factory.deploy(...args)
@@ -73,17 +92,21 @@ let laufactoryaddress = ethers.utils.getAddress("0x2E69344b68a8a16f754e81e0A2408
 let lauaddress = ethers.utils.getAddress("0xbec5a7e99A1C007049bf0C225658aAb03a07a137")
 let libstringsaddress
 let choaddress = ethers.utils.getAddress("0x3E2F9abADcF76dDc68B5cB347C48A245001469b4")
-let nymaddress
 let libyaiaddress //= ethers.utils.getAddress("0x1ccb1BdDC8C876cA3e1C5Fd8c0045D9fE57CcDFE")
 let qingfactoryaddress //= ethers.utils.getAddress("0xc27aB5A443CC9b8BE5fE427341FBD8a91f1d8d12")
 let voidqingaddress
 let yaiqingaddress
 let libcorereactionsaddress
-let libconjureaddress
 let qiaddress
-let qinaddress
-let zaoaddress
-let zaiaddress
+let maiaddress
+let xiaaddress
+let xieaddress
+let chanaddress
+let choaaddress
+let seiaddress
+let yueaddress
+let cheonaddress
+let dingaddress
 
 let START = 0;
 // set pre-requisite address to deploy only subset
@@ -194,31 +217,16 @@ let START = 0;
         console.log(`Cho Registered For Talk`)
 
       case 16:
-        result = await deploy('Nym', [choaddress]) 
-        console.log(`Nym address: ${result.address}`)
-        nymaddress = result.address
-
-      case 17:
-        let chocontract = await getContract2('CHO', choaddress)
-        let i = 0
-        while(i++ < 10) { // simulate 10 calls, std call + callstatic is required to modify state and then 'simulate' result
-          result = await chocontract.Luo()
-          r2wtf = await result.wait()
-          result = await chocontract.callStatic.Luo()
-          console.log(result)
-        }
-
-      case 18:
         result = await deploy('YAI', [voidaddress]) 
         console.log(`YAI address: ${result.address}`)
         libyaiaddress = result.address
 
-      case 19:
+      case 17:
         result = await deploy('QINGFactory', [choaddress]) 
         console.log(`QINGFactory address: ${result.address}`)
         qingfactoryaddress = result.address
 
-      case 20:
+      case 18:
         let qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress)
         result = await qingfactorycontract.New(voidaddress)
         console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
@@ -232,15 +240,50 @@ let START = 0;
         yaiqingaddress = r2wtf.events[0].address
         console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
 
-      case 21:
-        result = await deploy('QI', [choaddress]) 
+      case 19:
+        result = await deploy('QI', [voidqingaddress]) 
         console.log(`QI address: ${result.address}`)
-        zaoaddress = result.address
+        qiaddress = result.address
+
+      case 20:
+        result = await deploy('MAI', [qiaddress]) 
+        console.log(`MAI address: ${result.address}`)
+        maiaddress = result.address
+
+      case 21:
+        result = await deploy('XIA', [maiaddress]) 
+        console.log(`XIA address: ${result.address}`)
+        xiaaddress = result.address
 
       case 22:
-        result = await deploy('MAI', [voidqingaddress]) 
-        console.log(`MAI address: ${result.address}`)
-        libconjureaddress = result.address
+        result = await deploy('XIE', [xiaaddress]) 
+        console.log(`XIE address: ${result.address}`)
+        xieaddress = result.address
+
+      case 23:
+        result = await deploy('CHAN', [xieaddress]) 
+        console.log(`CHAN address: ${result.address}`)
+        chanaddress = result.address
+
+      case 24:
+        result = await deploy('SEI', [chanaddress]) 
+        console.log(`SEI address: ${result.address}`)
+        seiaddress = result.address
+      
+      case 25:
+        result = await deploy('CHOA', [seiaddress]) 
+        console.log(`CHOA address: ${result.address}`)
+        choaaddress = result.address
+
+      case 26:
+        result = await deploy('CHEON', [seiaddress]) 
+        console.log(`CHEON address: ${result.address}`)
+        cheonaddress = result.address
+
+      case 26:
+        result = await deploy('DING', [cheonaddress]) 
+        console.log(`DING address: ${result.address}`)
+        dingaddress = result.address
     }
   } catch (e) {
     console.log(e.message)
