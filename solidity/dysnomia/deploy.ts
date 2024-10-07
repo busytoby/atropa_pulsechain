@@ -89,7 +89,8 @@ let siuaddress //= ethers.utils.getAddress("0x3be998c75ae8CD79E808B0038DAFF593D6
 let voidaddress = ethers.utils.getAddress("0xE76661d9E763FFa7d6e105243cAfb6806088cD63")
 let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199da0d56a5Ca25223b")
 let laufactoryaddress = ethers.utils.getAddress("0x2E69344b68a8a16f754e81e0A2408ed491329e6E")
-let lauaddress = ethers.utils.getAddress("0xbec5a7e99A1C007049bf0C225658aAb03a07a137")
+let lauaddress1 = ethers.utils.getAddress("0xbec5a7e99A1C007049bf0C225658aAb03a07a137")
+let lauaddress2
 let libstringsaddress
 let choaddress = ethers.utils.getAddress("0x3E2F9abADcF76dDc68B5cB347C48A245001469b4")
 let libyaiaddress //= ethers.utils.getAddress("0x1ccb1BdDC8C876cA3e1C5Fd8c0045D9fE57CcDFE")
@@ -107,6 +108,7 @@ let seiaddress
 let yueaddress
 let cheonaddress
 let dingaddress
+let seicontract
 
 let START = 0;
 // set pre-requisite address to deploy only subset
@@ -183,9 +185,9 @@ let START = 0;
         let laufactorycontract = await getContract2('LAUFactory', laufactoryaddress)
         result = await laufactorycontract.New("User Test", "USERTOKEN")
         r2wtf = await result.wait()
-        lauaddress = r2wtf.events[0].address
-        console.log(`LAU Deployed: ${lauaddress} from origin`)
-        let laucontract = await getContract('LAU', lauaddress)
+        lauaddress1 = r2wtf.events[0].address
+        console.log(`LAU Deployed: ${lauaddress1} from origin`)
+        let laucontract = await getContract('LAU', lauaddress1)
         result = await laucontract["Username(string)"]("mariarahel")
         console.log("successful Set Username from origin")
         result = await laucontract["Chat(string)"]("Chat Test")
@@ -194,9 +196,9 @@ let START = 0;
         laufactorycontract = await getContract2('LAUFactory', laufactoryaddress, 2)
         result = await laufactorycontract.New("User Test 2", "USERTOKEN2")
         r2wtf = await result.wait()
-        lauaddress = r2wtf.events[0].address
-        console.log(`LAU Deployed: ${lauaddress} from non-origin`)
-        laucontract = await getContract('LAU', lauaddress, 2)
+        lauaddress2 = r2wtf.events[0].address
+        console.log(`LAU Deployed: ${lauaddress2} from non-origin`)
+        laucontract = await getContract('LAU', lauaddress2, 2)
         result = await laucontract["Username(string)"]("TestUser")
         console.log("successful Set Username from non-origin")
         result = await laucontract["Chat(string)"]("Chat Test 2")
@@ -284,6 +286,15 @@ let START = 0;
         result = await deploy('DING', [cheonaddress]) 
         console.log(`DING address: ${result.address}`)
         dingaddress = result.address
+
+      case 27:
+        seicontract = await getContract2('SEI', seiaddress)
+        result = await seicontract.Start(lauaddress1, "Yue 1", "YUE1")
+        r2wtf = await result.wait()
+
+        seicontract = await getContract2('SEI', seiaddress, 2)
+        result = await seicontract.Start(lauaddress2, "Yue 2", "YUE2")
+        r2wtf = await result.wait()
     }
   } catch (e) {
     console.log(e.message)

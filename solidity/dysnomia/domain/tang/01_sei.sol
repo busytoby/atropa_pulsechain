@@ -13,6 +13,7 @@ contract SEI is DYSNOMIA {
     constructor(address ChanAddress) DYSNOMIA("Dysnomia Sei", "SEI", address(DYSNOMIA(ChanAddress).Xiao())) {
         Chan = CHAN(ChanAddress);
         Chan.Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
+        Chan.Xie().Xia().Mai().Qi().Zuo().Cho().addOwner(address(this));
         addOwner(tx.origin);
         _mintToCap();
     }
@@ -37,22 +38,26 @@ contract SEI is DYSNOMIA {
         Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
     }
 
-    function Start(string calldata Name, string calldata Symbol) public returns (YUE Yue, LAU UserToken, QIN memory Player) {
+    function _register(string calldata YueName, string calldata YueSymbol) internal returns (YUE Yue, LAU UserToken, QIN memory Player) {
+        Yue = new YUE(YueName, YueSymbol, address(Chan));
+        Yue.addOwner(address(Chan));
+        Chan.Chou();
+        Chan.AddYue(tx.origin, address(Yue));
+        UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
+        Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
+        Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
+        _users[Player.Maat] = UserToken;
+        return (Yue, UserToken, Player);
+    }
+
+    function Start(address LauToken, string calldata YueName, string calldata YueSymbol) public returns (YUE Yue, LAU UserToken, QIN memory Player) {
         _mintToCap();
         if(Chan.Yan(tx.origin) == address(0x0)) {
-            Yue = new YUE(Name, Symbol, address(Chan.Xie()), address(Chan));
-            Yue.addOwner(address(Chan));
-            Chan.Chou();
-            Chan.AddYue(tx.origin, address(Yue));
-            UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
-            Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
-            _users[Player.Maat] = UserToken;
-            Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
-            return (Yue, UserToken, Player);
+            Chan.Xie().Xia().Mai().Qi().Zuo().Cho().Enter(LauToken);
+            return _register(YueName, YueSymbol);
         }
 
         (Yue, UserToken, Player) = Chi();
-        Yue.Rename(Name, Symbol);
         Chan.Chou();
     }
 }

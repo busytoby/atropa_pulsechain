@@ -8,14 +8,12 @@ import "./sky/interfaces/01b_chaninterface.sol";
 contract YUE is DYSNOMIA {
     string public constant Type = "YUE";
 
-    CHOINTERFACE public Cho;
     CHAN public Chan;
     address public Origin;
     mapping(TRAIT Trait => uint256 Gram) public Hypobar;
     mapping(TRAIT Trait => uint256 Gram) public Epibar;
 
-    constructor(string memory name, string memory symbol, address ChoAddress, address ChanAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(ChoAddress).Xiao())) {
-        Cho = CHOINTERFACE(ChoAddress);
+    constructor(string memory name, string memory symbol, address ChanAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(ChanAddress).Xiao())) {
         Chan = CHAN(ChanAddress);
         Origin = tx.origin;
         uint256 originMint = Xiao.Random() % maxSupply / 10;
@@ -39,11 +37,11 @@ contract YUE is DYSNOMIA {
     error ZeroHoldings(address Who);
     function React(TRAIT Trait) public onlyOwners returns (uint64 Jong) {
         if(balanceOf(tx.origin) == 0) revert ZeroHoldings(tx.origin);
-        User memory _user = Cho.GetUser();
+        User memory _user = Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUser();
 
         Jong = Chan.Chou();
         Hypobar[Trait] += Jong;
-        Jong = Cho.ReactUser(_user.Soul, Jong);
+        Jong = Chan.Xie().Xia().Mai().Qi().Zuo().Cho().ReactUser(_user.Soul, Jong);
         if(Jong < Chan.Chou() / 2) Jong = Jong / 4;
         Epibar[Trait] += Jong;
     }
