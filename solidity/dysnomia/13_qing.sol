@@ -18,9 +18,9 @@ contract QING is DYSNOMIA {
     mapping(uint64 => User) private _players;
     uint64[] private _users;
 
-    constructor(address Integrative, address ChoAddress) DYSNOMIA("Mysterious Qing", "q", address(DYSNOMIA(ChoAddress).Xiao())) {
+    constructor(uint256 Luo, address Integrative, address ChoAddress) DYSNOMIA("Mysterious Qing", "q", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
-        Waat = Cho.Luo();
+        Waat = Luo;
 
         Asset = DYSNOMIA(Integrative);
         _staff[msg.sender] = true;

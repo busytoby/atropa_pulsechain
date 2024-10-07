@@ -79,7 +79,7 @@ contract CHO is DYSNOMIA {
     }
 
     error InvalidOwnership(address UserToken, address User);
-    function Enter(address UserToken) public onlyOwners returns(User memory) {
+    function Enter(address UserToken) public returns(User memory) {
         _mintToCap();
         VerifyUserTokenPermissions(UserToken);
         LAU UserLau = LAU(UserToken);

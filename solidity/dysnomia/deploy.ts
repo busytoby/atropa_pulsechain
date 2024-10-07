@@ -86,15 +86,15 @@ let zhouaddress
 let yauaddress
 let yangaddress
 let siuaddress //= ethers.utils.getAddress("0x3be998c75ae8CD79E808B0038DAFF593D60DC4f4")
-let voidaddress = ethers.utils.getAddress("0xE76661d9E763FFa7d6e105243cAfb6806088cD63")
+let voidaddress = ethers.utils.getAddress("0x511048267d5606797C126e54Ca20842D9771906F")
 let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199da0d56a5Ca25223b")
 let laufactoryaddress = ethers.utils.getAddress("0x2E69344b68a8a16f754e81e0A2408ed491329e6E")
 let lauaddress1 = ethers.utils.getAddress("0xbec5a7e99A1C007049bf0C225658aAb03a07a137")
 let lauaddress2
 let libstringsaddress
 let choaddress = ethers.utils.getAddress("0x3E2F9abADcF76dDc68B5cB347C48A245001469b4")
-let libyaiaddress //= ethers.utils.getAddress("0x1ccb1BdDC8C876cA3e1C5Fd8c0045D9fE57CcDFE")
-let qingfactoryaddress //= ethers.utils.getAddress("0xc27aB5A443CC9b8BE5fE427341FBD8a91f1d8d12")
+let libyaiaddress = ethers.utils.getAddress("0x6b3634FcFeF25B69D91EE959B9a1B20B495aBb9a")
+let qingfactoryaddress = ethers.utils.getAddress("0x88B1Ea6a5D4b870070537379f4885382F375E472")
 let voidqingaddress
 let yaiqingaddress
 let libcorereactionsaddress
@@ -233,13 +233,13 @@ let START = 0;
         result = await qingfactorycontract.New(voidaddress)
         console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
         r2wtf = await result.wait()
-        voidqingaddress = r2wtf.events[0].address
+        voidqingaddress = r2wtf.events[4].address
         console.log(`VOID QING Deployed: ${voidqingaddress} from origin`)
 
         qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress, 2)
         result = await qingfactorycontract.New(libyaiaddress)
         r2wtf = await result.wait()
-        yaiqingaddress = r2wtf.events[0].address
+        yaiqingaddress = r2wtf.events[4].address
         console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
 
       case 19:

@@ -24,7 +24,7 @@ interface LAU {
     function Type() external view returns(string memory);
     function Eta() external returns(VOID);
     function Saat(uint256) external view returns(uint64);
-    function On() external returns(Bao memory);
+    function On() external view returns(Bao memory);
     function Withdraw(address what, uint256 amount) external;
     function Username() external view returns (string memory);
     function Username(string memory newUsername) external;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
+import "../include/qin.sol";
 import "../interfaces/13b_qinginterface.sol";
 
 contract YAI is DYSNOMIA {

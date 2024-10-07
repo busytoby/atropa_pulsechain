@@ -21,9 +21,11 @@ contract QINGFactory {
     error QingAlreadyExists(address Token, address Qing);
     error ForbiddenToken(address which);
     function New(address Integrative) public returns(QING Mu) {
+        uint256 Luo;
         if(_qings[Integrative] != address(0x0)) revert QingAlreadyExists(Integrative, _qings[Integrative]);
         if(YAI().IsForbidden(Integrative)) revert ForbiddenToken(Integrative);
-        Mu = new QING(Integrative, address(Cho));
+        Luo = Cho.Luo();
+        Mu = new QING(Luo, Integrative, address(Cho));
         Cho.addOwner(address(Mu));
         YAI().addOwner(address(Mu));
         Mu.renounceOwnership(address(this));
