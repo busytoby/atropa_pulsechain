@@ -25,6 +25,8 @@ contract CHOA is DYSNOMIA {
         _mintToCap();
     }
 
+    
+
     function Play(address UserTokenAddress) public returns (YUEINTERFACE Chi, LAU UserToken, QIN memory Player) {
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().Enter(UserTokenAddress);
         (Chi, UserToken, Player) = Sei.Chi();

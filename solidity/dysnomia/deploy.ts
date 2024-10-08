@@ -77,29 +77,29 @@ const deploy = async (contractName: string, args: Array<any>, accountIndex?: num
 
 let result
 let r2wtf
-let vmreqaddress
-let shafactoryaddress
-let shiofactoryaddress
-let yiaddress
-let zhengaddress
-let zhouaddress
-let yauaddress
-let yangaddress
-let siuaddress //= ethers.utils.getAddress("0x3be998c75ae8CD79E808B0038DAFF593D60DC4f4")
-let voidaddress = ethers.utils.getAddress("0x511048267d5606797C126e54Ca20842D9771906F")
-let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199da0d56a5Ca25223b")
-let laufactoryaddress = ethers.utils.getAddress("0x2E69344b68a8a16f754e81e0A2408ed491329e6E")
-let lauaddress1 = ethers.utils.getAddress("0xbec5a7e99A1C007049bf0C225658aAb03a07a137")
-let lauaddress2
+let vmreqaddress = ethers.utils.getAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3")
+let shafactoryaddress = ethers.utils.getAddress("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512")
+let shiofactoryaddress = ethers.utils.getAddress("0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0")
+let yiaddress = ethers.utils.getAddress("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9")
+let zhengaddress = ethers.utils.getAddress("0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9")
+let zhouaddress = ethers.utils.getAddress("0x5FC8d32690cc91D4c39d9d3abcBD16989F875707")
+let yauaddress = ethers.utils.getAddress("0x0165878A594ca255338adfa4d48449f69242Eb8F")
+let yangaddress = ethers.utils.getAddress("0xa513E6E4b8f2a923D98304ec87F64353C4D5C853")
+let siuaddress = ethers.utils.getAddress("0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6")
+let voidaddress = ethers.utils.getAddress("0x8A791620dd6260079BF849Dc5567aDC3F2FdC318")
+let libattributeaddress = ethers.utils.getAddress("0x610178dA211FEF7D417bC0e6FeD39F05609AD788")
+let laufactoryaddress = ethers.utils.getAddress("0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e")
+let lauaddress1 = ethers.utils.getAddress("0x8dAF17A20c9DBA35f005b6324F493785D239719d")
+let lauaddress2 = ethers.utils.getAddress("0x3Ca8f9C04c7e3E1624Ac2008F92f6F366A869444")
 let lauaddress3
 let lauaddress4
-let libstringsaddress
+let libstringsaddress = ethers.utils.getAddress("0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0")
 let choaddress = ethers.utils.getAddress("0x3E2F9abADcF76dDc68B5cB347C48A245001469b4")
 let libyaiaddress = ethers.utils.getAddress("0x6b3634FcFeF25B69D91EE959B9a1B20B495aBb9a")
 let qingfactoryaddress = ethers.utils.getAddress("0x88B1Ea6a5D4b870070537379f4885382F375E472")
 let voidqingaddress
 let yaiqingaddress
-let libcorereactionsaddress
+let libcorereactionsaddress = ethers.utils.getAddress("0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1")
 let qiaddress
 let maiaddress
 let xiaaddress
@@ -204,7 +204,7 @@ let START = 0;
         result = await laufactorycontract.New("User Test 2", "USERTOKEN2")
         r2wtf = await result.wait()
         lauaddress2 = r2wtf.events[0].address
-        console.log(`LAU Deployed: ${lauaddress2} from non-origin`)
+        console.log(`LAU Deployed: ${lauaddress2} from non-origin 2`)
         laucontract = await getContract('LAU', lauaddress2, 2)
         result = await laucontract["Username(string)"]("TestUser")
         console.log("successful Set Username from non-origin")
@@ -215,6 +215,7 @@ let START = 0;
         result = await laufactorycontract.New("User Test 3", "USERTOKEN3")
         r2wtf = await result.wait()
         lauaddress3 = r2wtf.events[0].address
+        console.log(`LAU Deployed: ${lauaddress3} from non-origin 3`)
         laucontract = await getContract('LAU', lauaddress3, 3)
         result = await laucontract["Username(string)"]("TestUser")
 
@@ -222,6 +223,7 @@ let START = 0;
         result = await laufactorycontract.New("User Test 4", "USERTOKEN3")
         r2wtf = await result.wait()
         lauaddress4 = r2wtf.events[0].address
+        console.log(`LAU Deployed: ${lauaddress4} from non-origin 4`)
         laucontract = await getContract('LAU', lauaddress4, 4)
         result = await laucontract["Username(string)"]("TestUser")        
 
@@ -240,13 +242,19 @@ let START = 0;
         console.log(`Cho Registered For Talk`)
 
         let chocontract = await getContract2('CHO', choaddress)
+        result = await chocontract.Enter(lauaddress1)
         user1soul = await chocontract.GetUserSoul()
+        console.log(`Test GetUserSoul(User1): ${user1soul}`)
 
         chocontract = await getContract2('CHO', choaddress, 2)
+        result = await chocontract.Enter(lauaddress2)
         user2soul = await chocontract.GetUserSoul()
+        console.log(`Test GetUserSoul(User2): ${user2soul}`)
 
         chocontract = await getContract2('CHO', choaddress, 3)
+        result = await chocontract.Enter(lauaddress3)
         user3soul = await chocontract.GetUserSoul()
+        console.log(`Test GetUserSoul(User3): ${user3soul}`)
 
         chocontract = await getContract2('CHO', choaddress, 4)
         result = await chocontract.Enter(lauaddress4)
