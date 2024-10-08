@@ -112,7 +112,7 @@ contract MAI is DYSNOMIA {
         if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
         _players[Beta.Soul].Location = QINGINTERFACE(ToQing);
         _players[Beta.Soul].Location.Join(Beta.On.Phi);
-        _players[Beta.Soul].lastMove = block.timestamp;
+        _players[Beta.Soul].lastMove = block.number;
 
         React(Beta, _players[Beta.Soul].Location.Waat());
         _mintToCap();
@@ -121,13 +121,13 @@ contract MAI is DYSNOMIA {
     function React(User memory Beta, uint256 Gamma) public returns (uint64 Omicron, uint64 Omega) {
         (Omicron, Omega) = Qi.Zuo().Cho().React(uint64(Gamma % MotzkinPrime));
         Omicron = Qi.Zuo().Cho().ReactUser(Beta.Soul, Omicron);
-        Omega = Qi.Zuo().ReactPlayer(Beta.Soul, Omega);
+        Omega = Qi.Zuo().ReactPlayer(Beta, Omega);
     }
 
     error OneMovePerBlock();
     function Move(string memory To) public onlyOwners {
         User memory Beta = Qi.Zuo().Cho().GetUser();
-        if(_players[Beta.Soul].lastMove >= block.timestamp) revert OneMovePerBlock();
+        if(_players[Beta.Soul].lastMove >= block.number) revert OneMovePerBlock();
         uint256 From = _players[Beta.Soul].Location.Waat();
         address ToQing = Qi.Zuo().VAT().Alias(From, To);
 

@@ -305,6 +305,14 @@ let START = 0;
         console.log(`MAI address: ${result.address}`)
         maiaddress = result.address
 
+        let maicontract = await getContract2('MAI', maiaddress)
+        result = await maicontract.MovePlayer(user1soul, voidqingaddress)
+        console.log(`Mai ownerPlayer Move Test 1 Successful`)
+        result = await maicontract.MovePlayer(user1soul, yaiqingaddress)
+        console.log(`Mai ownerPlayer Move Test 2 Successful`)
+        result = await maicontract.MovePlayer(user1soul, voidqingaddress)
+        console.log(`Mai ownerPlayer Move Test 3 Successful`)
+
       case 21:
         result = await deploy('XIA', [maiaddress]) 
         console.log(`XIA address: ${result.address}`)

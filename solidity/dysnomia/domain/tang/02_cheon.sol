@@ -30,7 +30,7 @@ contract CHEON is DYSNOMIA {
         Entropy = Sei.Chan().Chou();
         (uint64 Omicron, uint64 Omega) = Sei.Chan().Xie().Xia().Mai().React(_user, Charge);
         if(Omicron < Entropy) Omicron /= 2;
-        Player.Location.ReactPlayer(_user.Soul, Omicron);
+        Player.Location.ReactPlayer(_user, Omicron);
         Power = uint64(Charge % Omega);
         if(Omega < Entropy / 2) Power /= 4;
         Sei.Chan().YueMintToOrigin(Chi);

@@ -117,6 +117,10 @@ contract QING is DYSNOMIA {
         }
     }
 
+    function GetPlayerBySoul(uint64 Soul) public view onlyOwners returns(User memory Player) {
+        return _players[Soul];
+    }
+
     event Joined(uint64 Soul, uint64 Aura, string Username);
     error AlreadyJoined(address UserToken);
     error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
@@ -124,18 +128,20 @@ contract QING is DYSNOMIA {
         Cho.VerifyUserTokenPermissions(UserToken);
 
         if(CoverCharge > 0 && _list[UserToken] < block.timestamp) {
-            if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
+            if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge);
             bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
-            if(!paid) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
+            if(!paid) revert CoverChargeUnauthorized(address(Asset), CoverCharge);
         }
 
-        if(_list[UserToken] < block.timestamp) {
-            User memory Alpha = Cho.Enter(UserToken);
+        if(_list[UserToken] < block.timestamp)
+            _list[UserToken] = block.timestamp + 1 days;
+
+        User memory Alpha = Cho.Enter(UserToken);
+        if(_players[Alpha.Soul].Soul == 0) {
             emit Joined(Alpha.Soul, Cho.Void().Nu().Aura(), Alpha.Username);
             _players[Alpha.Soul] = Alpha;
-            _list[UserToken] = block.timestamp + 1 days;
             _users.push(Alpha.Soul);
-            Alpha.On.Omicron = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
+            Alpha.On.Omicron = ReactPlayer(Alpha, Cho.Void().Nu().Aura());
         }
         Bounce();
         _mintToCap();
@@ -183,10 +189,10 @@ contract QING is DYSNOMIA {
         emit LogEvent(UserToken.Username(), _soul, UserToken.Saat(2), Maat, MSG);
     }
 
-    function ReactPlayer(uint64 Soul, uint64 Theta) public returns (uint64 Omega) {
-        if(_players[Soul].Soul == 0) revert NotAdmitted(_players[Soul].Soul);
+    function ReactPlayer(User memory Player, uint64 Theta) public returns (uint64 Omega) {
+        if(_players[Player.Soul].Soul == 0) revert NotAdmitted(_players[Player.Soul].Soul);
         _mintToCap();
-        (_players[Soul].On.Omicron, _players[Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Soul].On.Omicron ^ Theta);
-        return _players[Soul].On.Omega;
+        (_players[Player.Soul].On.Omicron, _players[Player.Soul].On.Omega) = Cho.Reactor().ReactShioRod(Cho.Shio(), _players[Player.Soul].On.Omicron ^ Theta);
+        return _players[Player.Soul].On.Omega;
     }
 }

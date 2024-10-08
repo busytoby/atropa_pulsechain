@@ -32,6 +32,7 @@ interface QINGINTERFACE {
     function CoverCharge() external view returns (uint256);
     function NoCROWS() external view returns (bool);
     function VAT() external view returns (LIBYAI);
+    function Look() external view returns (uint64[] memory);
     function Withdraw(address what, uint256 amount) external;
     function OperatorSendMSG(string memory chatline) external;
     function AllowCROWS(bool _b) external;
@@ -43,6 +44,7 @@ interface QINGINTERFACE {
     function bouncer(address cBouncer) external view returns (bool);
     function Join(address UserToken) external;
     function Leave() external;
+    function GetPlayerBySoul(uint64 Soul) external view returns(User memory Player);
     function Alias(string memory name, address _qing) external;
     function Alias(string memory name) external view returns (address);
     function Connect(string memory name, address _qing) external;
@@ -50,5 +52,5 @@ interface QINGINTERFACE {
     function Bounce() external;
     function Admitted(address UserToken) external view returns (bool);
     function YAISendMSG(LAU UserToken, uint256 Maat, string memory MSG) external;
-    function ReactPlayer(uint64 Soul, uint64 Theta) external returns (uint64 Omicron);
+    function ReactPlayer(User memory Player, uint64 Theta) external returns (uint64 Omega);
 }
