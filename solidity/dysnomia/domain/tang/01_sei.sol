@@ -39,10 +39,10 @@ contract SEI is DYSNOMIA {
             Yue = new YUE(YueName, YueSymbol, address(Chan));
             Yue.addOwner(address(Chan));
             Chan.Chou();
-            //Chan.AddYue(tx.origin, address(Yue));
-            //Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
-            //Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
-            //_users[Player.Maat] = UserToken;
+            Chan.AddYue(tx.origin, address(Yue));
+            Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
+            Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
+            _users[Player.Maat] = UserToken;
             return (Yue, UserToken, Player);
         }
 
