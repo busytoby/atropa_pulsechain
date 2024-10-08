@@ -91,6 +91,8 @@ let libattributeaddress //= ethers.utils.getAddress("0x53D09dc8896bf463A7561199d
 let laufactoryaddress = ethers.utils.getAddress("0x2E69344b68a8a16f754e81e0A2408ed491329e6E")
 let lauaddress1 = ethers.utils.getAddress("0xbec5a7e99A1C007049bf0C225658aAb03a07a137")
 let lauaddress2
+let lauaddress3
+let lauaddress4
 let libstringsaddress
 let choaddress = ethers.utils.getAddress("0x3E2F9abADcF76dDc68B5cB347C48A245001469b4")
 let libyaiaddress = ethers.utils.getAddress("0x6b3634FcFeF25B69D91EE959B9a1B20B495aBb9a")
@@ -109,6 +111,11 @@ let yueaddress
 let cheonaddress
 let dingaddress
 let seicontract
+
+let user1soul
+let user2soul
+let user3soul
+let user4soul
 
 let START = 0;
 // set pre-requisite address to deploy only subset
@@ -204,6 +211,20 @@ let START = 0;
         result = await laucontract["Chat(string)"]("Chat Test 2")
         console.log("successful Chat from non-origin")
 
+        laufactorycontract = await getContract2('LAUFactory', laufactoryaddress, 3)
+        result = await laufactorycontract.New("User Test 3", "USERTOKEN3")
+        r2wtf = await result.wait()
+        lauaddress3 = r2wtf.events[0].address
+        laucontract = await getContract('LAU', lauaddress3, 3)
+        result = await laucontract["Username(string)"]("TestUser")
+
+        laufactorycontract = await getContract2('LAUFactory', laufactoryaddress, 4)
+        result = await laufactorycontract.New("User Test 4", "USERTOKEN3")
+        r2wtf = await result.wait()
+        lauaddress4 = r2wtf.events[0].address
+        laucontract = await getContract('LAU', lauaddress4, 4)
+        result = await laucontract["Username(string)"]("TestUser")        
+
       case 14:
         result = await deploy('COREREACTIONSLIB', [voidaddress]) 
         console.log(`COREREACTIONSLIB address: ${result.address}`)
@@ -217,6 +238,22 @@ let START = 0;
         result = await corereactionscontract.RegisterChoForTalk(choaddress)
         r2wtf = await result.wait()
         console.log(`Cho Registered For Talk`)
+
+        let chocontract = await getContract2('CHO', choaddress)
+        user1soul = await chocontract.GetUserSoul()
+
+        chocontract = await getContract2('CHO', choaddress, 2)
+        user2soul = await chocontract.GetUserSoul()
+
+        chocontract = await getContract2('CHO', choaddress, 3)
+        user3soul = await chocontract.GetUserSoul()
+
+        chocontract = await getContract2('CHO', choaddress, 4)
+        result = await chocontract.Enter(lauaddress4)
+        console.log(`Cho Entered From Lau 4: ${lauaddress4}`)
+        user4soul = await chocontract.GetUserSoul()
+        console.log(`Test GetUserSoul(User4): ${user4soul}`)
+        result = await chocontract.ReactUser(user4soul, 5555)
 
       case 16:
         result = await deploy('YAI', [voidaddress]) 

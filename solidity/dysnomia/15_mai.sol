@@ -108,7 +108,6 @@ contract MAI is DYSNOMIA {
     }
 
     function _updateUserLocation(User memory Beta, address ToQing) internal {
-        if(_players[Beta.Soul].Maat == 0) Maat();
         if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
         _players[Beta.Soul].Location = QINGINTERFACE(ToQing);
         _players[Beta.Soul].Location.Join(Beta.On.Phi);

@@ -21,7 +21,7 @@ contract CHAN is DYSNOMIA {
 
     error AlreadyAdded(address Origin, address Yue, address New);
     function AddYue(address Origin, address Yue) public onlyOwners {
-        if(Yan[Origin] != address(0x0)) revert AlreadyAdded(Origin, Yan[Origin], Yue);
+        //if(Yan[Origin] != address(0x0)) revert AlreadyAdded(Origin, Yan[Origin], Yue);
         Yan[Origin] = Yue;
     }
 

@@ -13,6 +13,7 @@ contract SEI is DYSNOMIA {
     constructor(address ChanAddress) DYSNOMIA("Dysnomia Sei", "SEI", address(DYSNOMIA(ChanAddress).Xiao())) {
         Chan = CHAN(ChanAddress);
         Chan.addOwner(address(this));
+        Chan.Xie().Xia().Mai().addOwner(address(this));
         Chan.Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         Chan.Xie().Xia().Mai().Qi().Zuo().Cho().addOwner(address(this));
         addOwner(tx.origin);
