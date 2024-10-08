@@ -121,12 +121,9 @@ contract QING is DYSNOMIA {
     error AlreadyJoined(address UserToken);
     error CoverChargeUnauthorized(address AssetAddress, uint256 Amount);
     function Join(address UserToken) public {
-        uint64 _soul = Cho.GetUserSoul();
-
         Cho.VerifyUserTokenPermissions(UserToken);
 
-        if(_players[_soul].On.Phi == UserToken) revert AlreadyJoined(UserToken);
-        if(_list[UserToken] < block.timestamp && CoverCharge > 0) {
+        if(CoverCharge > 0 && _list[UserToken] < block.timestamp) {
             if(Asset.allowance(msg.sender, address(this)) <= CoverCharge) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
             bool paid = Asset.transferFrom(msg.sender, address(this), CoverCharge);
             if(!paid) revert CoverChargeUnauthorized(address(Asset), CoverCharge + 1);
@@ -135,10 +132,10 @@ contract QING is DYSNOMIA {
         if(_list[UserToken] < block.timestamp) {
             User memory Alpha = Cho.Enter(UserToken);
             emit Joined(Alpha.Soul, Cho.Void().Nu().Aura(), Alpha.Username);
-            Alpha.On.Omicron = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
             _players[Alpha.Soul] = Alpha;
             _list[UserToken] = block.timestamp + 1 days;
             _users.push(Alpha.Soul);
+            Alpha.On.Omicron = ReactPlayer(Alpha.Soul, Cho.Void().Nu().Aura());
         }
         Bounce();
         _mintToCap();

@@ -33,7 +33,6 @@ interface QINGINTERFACE {
     function NoCROWS() external view returns (bool);
     function VAT() external view returns (LIBYAI);
     function Withdraw(address what, uint256 amount) external;
-    function GetUserTokenAddress(address wallet) external view returns(address UserToken);
     function OperatorSendMSG(string memory chatline) external;
     function AllowCROWS(bool _b) external;
     function setBouncerDivisor(uint16 _d) external;

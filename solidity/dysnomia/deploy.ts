@@ -281,11 +281,19 @@ let START = 0;
         voidqingaddress = r2wtf.events[4].address
         console.log(`VOID QING Deployed: ${voidqingaddress} from origin`)
 
+        let voidqingcontract = await getContract2('QING', voidqingaddress)
+        result = await voidqingcontract.Join(lauaddress1)
+        console.log(`Joined Void Qing From LAU 1`)
+
         qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress, 2)
         result = await qingfactorycontract.New(libyaiaddress)
         r2wtf = await result.wait()
         yaiqingaddress = r2wtf.events[4].address
         console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
+
+        voidqingcontract = await getContract2('QING', voidqingaddress, 2)
+        result = await voidqingcontract.Join(lauaddress2)
+        console.log(`Joined Void Qing From LAU 2`)
 
       case 19:
         result = await deploy('QI', [voidqingaddress]) 
