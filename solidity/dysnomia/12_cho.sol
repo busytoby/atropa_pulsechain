@@ -137,18 +137,18 @@ contract CHO is DYSNOMIA {
         return (Alpha.On.Omicron);
     }
 
-    function GetUserBySoul(uint64 Soul) public onlyOwners returns (User memory Alpha) {
+    function GetUserBySoul(uint64 Soul) public returns (User memory Alpha) {
         address _a = GetAddressBySoul(Soul);
         return GetUserByAddress(_a);
     }
 
-    function GetUserByAddress(address who) public onlyOwners returns(User memory Alpha) {
+    function GetUserByAddress(address who) public returns(User memory Alpha) {
         if(Delegates[who].Soul == 0) revert UserNotEntered(who);
         Alpha = Delegates[who];
         Alpha.Entropy = Recall(Alpha);
     }
 
-    function GetAddressBySoul(uint64 soul) public onlyOwners view returns(address UserAddress) {
+    function GetAddressBySoul(uint64 soul) public view returns(address UserAddress) {
         if(DelegateAddresses[soul] == address(0x0)) revert SoulNotEntered(soul);
         return DelegateAddresses[soul];
     }

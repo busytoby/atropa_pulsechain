@@ -108,10 +108,11 @@ contract MAI is DYSNOMIA {
         _mintToCap();
     }
 
+    // leave & join will need to be manual because gas estimations fail
     function _updateUserLocation(User memory Beta, address ToQing) internal {
-        if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
+        //if(address(_players[Beta.Soul].Location) != address(0x0)) _players[Beta.Soul].Location.Leave();
         _players[Beta.Soul].Location = QINGINTERFACE(ToQing);
-        _players[Beta.Soul].Location.Join(Beta.On.Phi);
+        //_players[Beta.Soul].Location.Join(Beta.On.Phi);
         _players[Beta.Soul].lastMove = block.number;
 
         React(Beta, _players[Beta.Soul].Location.Waat());

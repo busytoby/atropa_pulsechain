@@ -117,7 +117,7 @@ contract QING is DYSNOMIA {
         }
     }
 
-    function GetPlayerBySoul(uint64 Soul) public view onlyOwners returns(User memory Player) {
+    function GetPlayerBySoul(uint64 Soul) public view returns(User memory Player) {
         return _players[Soul];
     }
 
