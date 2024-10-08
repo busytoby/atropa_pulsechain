@@ -36,6 +36,7 @@ contract SEI is DYSNOMIA {
         _mintToCap();
         if(Chan.Yan(tx.origin) == address(0x0)) {
             Chan.Xie().Xia().Mai().Qi().Zuo().Cho().Enter(LauToken);
+            UserToken = LAU(LauToken);
             Yue = new YUE(YueName, YueSymbol, address(Chan));
             Yue.addOwner(address(Chan));
             Chan.Chou();
