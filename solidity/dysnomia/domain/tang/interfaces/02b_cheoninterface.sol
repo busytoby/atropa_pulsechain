@@ -25,7 +25,5 @@ interface CHEON {
     function Type() external view returns (string memory);
     function Sei() external view returns (SEI);
     function Choa() external view returns (CHOA);
-    function GetUserPower(uint256 Maat, TRAIT Trait) external view returns (uint256 Power);
-    function GetQingPower(uint256 Waat, TRAIT Trait) external view returns (uint256 Power);
-    function Train() external returns (TRAIT Trait, uint64 Power, uint256 TotalPower);
+    function Su() external returns (uint256 Charge, uint256 Hypobar, uint256 Epibar);
 }
