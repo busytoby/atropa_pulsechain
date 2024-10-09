@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../include/user.sol";
-import "./01b_dysnomia.sol";
-import "./11b_lauinterface.sol";
-import "./libstrings.sol";
-import "./libcorereactions.sol";
+import "../../../include/user.sol";
+import "../../../interfaces/11b_lauinterface.sol";
+import "../../../interfaces/libstrings.sol";
+import "../../../interfaces/libcorereactions.sol";
 
 interface CHOINTERFACE {
     function maxSupply() external view returns(uint256);

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./01b_dysnomia.sol";
-import "./12b_chointerface.sol";
-import "./libstrings.sol";
-import "./13d_qingfactoryinterface.sol";
+import "../../../interfaces/01b_dysnomia.sol";
+import "./01b_chointerface.sol";
+import "../../../interfaces/libstrings.sol";
+import "./04d_qingfactoryinterface.sol";
 
 interface QINGINTERFACE {
     function maxSupply() external view returns(uint256);

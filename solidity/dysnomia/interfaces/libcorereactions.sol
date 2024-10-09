@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 import "../include/bao.sol";
 import "../include/user.sol";
-import "./12b_chointerface.sol";
+import "../domain/dan/interfaces/01b_chointerface.sol";
 
 interface LIBCOREREACTIONS {
     function maxSupply() external view returns(uint256);

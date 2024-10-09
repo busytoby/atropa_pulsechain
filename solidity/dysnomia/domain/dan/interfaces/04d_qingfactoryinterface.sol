@@ -1,6 +1,6 @@
     // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./13b_qinginterface.sol";
+import "./03b_qinginterface.sol";
 
 interface QINGFactoryInterface {  
     function hasOwner(address _contract) external view returns (bool does);

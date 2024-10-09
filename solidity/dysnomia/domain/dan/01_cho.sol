@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./include/user.sol";
-import "./01_dysnomia_v2.sol";
-import "./interfaces/11b_lauinterface.sol";
-import "./interfaces/libstrings.sol";
-import "./interfaces/libcorereactions.sol";
+import "../../include/user.sol";
+import "../../01_dysnomia_v2.sol";
+import "../../interfaces/11b_lauinterface.sol";
+import "../../interfaces/libstrings.sol";
+import "../../interfaces/libcorereactions.sol";
 
 contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
