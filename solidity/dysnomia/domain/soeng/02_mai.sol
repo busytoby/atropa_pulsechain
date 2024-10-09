@@ -22,6 +22,7 @@ contract MAI is DYSNOMIA {
     }
 
     function React(uint64 Soul, uint256 QingWaat) public returns (uint256 Mai) {
+        _mintToCap();
         User memory Alpha = Qi.Zuo().Cho().GetUserBySoul(Soul);
         QINGINTERFACE Qing = Qi.Zuo().GetQing(QingWaat);
         return Qing.balanceOf(Alpha.On.Phi) / Alpha.Entropy;

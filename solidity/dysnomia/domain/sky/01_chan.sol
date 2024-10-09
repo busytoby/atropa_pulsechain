@@ -25,8 +25,9 @@ contract CHAN is DYSNOMIA {
 
     error AlreadyAdded(address Origin, address Yue, address New);
     function AddYue(address Origin, address Yue) public onlyOwners {
-        //if(Yan[Origin] != address(0x0)) revert AlreadyAdded(Origin, Yan[Origin], Yue);
+        if(Yan[Origin] != address(0x0)) revert AlreadyAdded(Origin, Yan[Origin], Yue);
         Yan[Origin] = Yue;
+        _mintToCap();
     }
 
     error NotOrigin(address YueOrigin, address Requestor);
@@ -37,6 +38,7 @@ contract CHAN is DYSNOMIA {
         Yan[_chi.Origin()] = address(0x0);
         _chi.ChangeOrigin(NewOrigin);
         Yan[NewOrigin] = Yue;
+        _mintToCap();
     }
 
     function ReactYue(YUEINTERFACE Yue, address Qing) public onlyOwners returns(uint256 Charge) {
@@ -48,6 +50,7 @@ contract CHAN is DYSNOMIA {
         address Yue = Yan[tx.origin];
         _optInList[Yue][Contract] = Allow;
         emit NewSpenderContractOptIn(tx.origin, Yue, Contract, Allow);
+        _mintToCap();
     }
 
     function OptedIn(YUEINTERFACE Yue, address Contract) public view returns (bool) {
@@ -58,14 +61,17 @@ contract CHAN is DYSNOMIA {
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) public onlyOwners {
         if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), address(Yue), msg.sender);
         Yue.Withdraw(Asset, Amount);
+        _mintToCap();
     }
 
     function YueMintToOrigin(YUEINTERFACE Yue) public onlyOwners {
         Yue.MintToOrigin();
+        _mintToCap();
     }
 
     function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) public onlyOwners {
         if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), address(Yue), msg.sender);
         Yue.ForceTransfer(From, To, Amount);
+        _mintToCap();
     }
 }

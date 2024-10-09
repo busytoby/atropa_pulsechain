@@ -26,6 +26,7 @@ contract QI is DYSNOMIA {
     }
 
     function ReactSoul(uint64 Soul) public returns (uint256 Qi) {
+        _mintToCap();
         User memory Alpha = Zuo.Cho().GetUserBySoul(Soul);
         return Eris.balanceOf(Alpha.On.Phi) / Alpha.Entropy;
     }

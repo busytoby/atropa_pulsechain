@@ -26,6 +26,7 @@ contract XIE is DYSNOMIA {
     }
 
     function Power(uint256 QingWaat) public returns (uint256 Charge, uint256 Omicron, uint256 Omega) {
+        _mintToCap();
         User memory Alpha = Xia.Mai().Qi().Zuo().Cho().GetUser();
         QINGINTERFACE Qing = Xia.Mai().Qi().Zuo().GetQing(QingWaat);
         Charge = Xia.Charge(QingWaat);

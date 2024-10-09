@@ -26,6 +26,7 @@ contract XIA is DYSNOMIA {
     }
 
     function Charge(uint256 QingWaat) public returns (uint256) {
+        _mintToCap();
         User memory Alpha = Mai.Qi().Zuo().Cho().GetUser();
 
         uint256 _b = Mai.Qi().ReactWaat(QingWaat);

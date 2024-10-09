@@ -36,6 +36,7 @@ contract CHOA is DYSNOMIA {
         (Chi, UserToken) = Sei.Chi();
         if(address(_players[UserToken.Saat(1)]) == address(0x0)) Sei.Chan().YueMintToOrigin(Chi);
         _players[UserToken.Saat(1)] = Chi;
+        _mintToCap();
     }
 
     function Chat(address Qing, string memory MSG) public returns (uint256 Charge) {
