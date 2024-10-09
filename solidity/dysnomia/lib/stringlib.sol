@@ -10,7 +10,8 @@ contract STRINGLIB is DYSNOMIA {
         addOwner(VoidAddress);
         addOwner(tx.origin);
         Void.AddLibrary("strings", address(this));
-        _mint(address(this), 111111 * 10 ** decimals());
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _mintToCap();
     }
 
     function CheckPalindrome(string memory S) public pure returns(bool) {

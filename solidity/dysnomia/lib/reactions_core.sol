@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
-import "../interfaces/12b_chointerface.sol";
+import "../domain/dan/interfaces/01b_chointerface.sol";
 
 contract COREREACTIONSLIB is DYSNOMIA {
     string public constant Type = "ReactionsLib";
@@ -12,6 +12,7 @@ contract COREREACTIONSLIB is DYSNOMIA {
     constructor(address VoidAddress) DYSNOMIA(unicode"DYSNOMIA ReactionsLib", unicode"ReactionsLib", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
         Void.AddLibrary("corereactions", address(this));
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
         _mintToCap();
     }
 
