@@ -23,7 +23,13 @@ contract CHOA is DYSNOMIA {
         _addMarketRate(SeiAddress, 1 * 10 ** decimals());
 
         _mintToCap();
-    }    
+    }
+
+    function Yuan(address Currency) public view returns (uint256 Bae) {
+        (YUEINTERFACE Yue, LAU UserToken) = Sei.Chi();
+        DYSNOMIA Bai = DYSNOMIA(Currency);
+        return Bai.balanceOf(tx.origin) + (10 * Bai.balanceOf(address(UserToken))) + (40 * Bai.balanceOf(address(Yue)));
+    }
 
     function Play(address UserTokenAddress) public returns (YUEINTERFACE Chi, LAU UserToken) {
         Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().Enter(UserTokenAddress);
