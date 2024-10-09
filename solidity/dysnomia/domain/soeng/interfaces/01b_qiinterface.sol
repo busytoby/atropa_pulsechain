@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../include/qin.sol";
-import "./14b_qiinterface.sol";
+import "../../../interfaces/13b_qinginterface.sol";
 
-interface MAI {
+interface QIINTERFACE {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -23,6 +22,8 @@ interface MAI {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Qi() external view returns (QIINTERFACE);
-    function React(uint64 Soul, uint256 QingWaat) external returns (uint256 Mai);
+    function Zuo() external view returns (QINGINTERFACE);
+    function Eris() external view returns (SHIO);
+    function ReactSoul(uint64 Soul) external returns (uint256 Qi);
+    function ReactWaat(uint256 Waat) external view returns (uint256 Qi);
 }

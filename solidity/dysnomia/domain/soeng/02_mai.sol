@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./01_dysnomia_v2.sol";
-import "./include/qin.sol";
-import "./interfaces/14b_qiinterface.sol";
+import "../../01_dysnomia_v2.sol";
+import "./interfaces/01b_qiinterface.sol";
 
 contract MAI is DYSNOMIA {
     string public constant Type = "MAI";

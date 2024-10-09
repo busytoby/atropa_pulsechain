@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./include/user.sol";
-import "./include/timedeposit.sol";
-import "./include/trait.sol";
-import "./01_dysnomia_v2.sol";
-import "./interfaces/13b_qinginterface.sol";
+import "../../include/user.sol";
+import "../../01_dysnomia_v2.sol";
+import "../../interfaces/13b_qinginterface.sol";
 
 contract QI is DYSNOMIA {
     string public constant Type = "QI";
