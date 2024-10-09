@@ -30,9 +30,6 @@ interface CHOINTERFACE {
     function Void() external view returns (VOID);
     function Saat(uint256) external view returns (uint64);
     function On() external view returns (Bao memory);
-    function Shio() external view returns(SHIO);
-    function Omicron() external view returns(uint64);
-    function Omega() external view returns(uint64);
     function Entropy() external view returns (uint64);
     function Addresses(string memory) external view returns (address);
     function Qu(uint256) external view returns (address);

@@ -25,12 +25,10 @@ interface CHAN {
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
     function Yan(address Origin) external view returns (address Yue);
-    function Entropy(uint256 Maat) external view returns (uint64 Entropy);
     function AddYue(address Origin, address Yue) external;
     function TransferYue(address Yue, address NewOrigin) external;
+    function ReactYue(YUEINTERFACE Yue, address Qing) external returns(uint256 Charge);
     function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) external;
     function YueMintToOrigin(YUEINTERFACE Yue) external;
     function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) external;
-    function Chou() external returns (uint64);
-    function React(QIN memory Player, TRAIT Trait) external returns (uint256 Charge, uint256 UserQi, uint64 Omega);
 }

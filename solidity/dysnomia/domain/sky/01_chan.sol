@@ -11,7 +11,7 @@ contract CHAN is DYSNOMIA {
     XIE public Xie;
 
     mapping(address => address Yue) public Yan;
-    mapping(uint256 Maat => uint64 Entropy) public Entropy;
+    mapping(address Holder => mapping(address Contract => bool MayTransfer)) private _optInList;
 
     constructor(address XieAddress) DYSNOMIA("Dysnomia Chan", "CHAN", address(DYSNOMIA(XieAddress).Xiao())) {
         Xie = XIE(XieAddress);
@@ -35,24 +35,33 @@ contract CHAN is DYSNOMIA {
         Yan[NewOrigin] = Yue;
     }
 
+    function ReactYue(YUEINTERFACE Yue, address Qing) public onlyOwners returns(uint256 Charge) {
+        return Yue.React(Qing);
+    }
+
+    event NewSpenderContractOptIn(address Origin, address Yue, address Contract, bool Allow);
+    function OptIn(address Contract, bool Allow) public {
+        address Yue = Yan[tx.origin];
+        _optInList[Yue][Contract] = Allow;
+        emit NewSpenderContractOptIn(tx.origin, Yue, Contract, Allow);
+    }
+
+    function OptedIn(YUEINTERFACE Yue, address Contract) public view returns (bool) {
+        return _optInList[address(Yue)][Contract];
+    }
+
+    error PlayerMustOptIn(address Player, address Yue, address Contract);
+    function YueWithdraw(YUEINTERFACE Yue, address Asset, uint256 Amount) public onlyOwners {
+        if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), address(Yue), msg.sender);
+        Yue.Withdraw(Asset, Amount);
+    }
+
     function YueMintToOrigin(YUEINTERFACE Yue) public onlyOwners {
         Yue.MintToOrigin();
     }
 
-    function Chou() public returns (uint64) {
-        uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
-        uint256 Maat = Xie.Xia().Mai().Maat();
-        Entropy[Maat] = Xie.Xia().Mai().Qi().Zuo().Cho().ReactUser(Soul, Entropy[Maat]);
-        return Entropy[Maat];
-    }
-
-    error InvalidQinInstance(uint64 Soul, uint256 SoulMaat, uint256 QinMaat);
-    function React(QIN memory Player, TRAIT Trait) public returns (uint256 Charge, uint256 UserQi, uint64 Omega) {
-        uint64 Soul = Xie.Xia().Mai().Qi().Zuo().Cho().GetUserSoul();
-        uint256 Maat = Xie.Xia().Mai().Maat();
-        if(Maat != Player.Maat) revert InvalidQinInstance(Soul, Maat, Player.Maat);
-        UserQi = Xie.Xia().Mai().Qi().GetUserTraitValue(Soul, Trait);
-        (Charge, Entropy[Maat], Omega) = Xie.React(Soul, Trait);
-        _mintToCap();
+    function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) public onlyOwners {
+        if(!_optInList[address(Yue)][msg.sender]) revert PlayerMustOptIn(Yue.Origin(), address(Yue), msg.sender);
+        Yue.ForceTransfer(From, To, Amount);
     }
 }

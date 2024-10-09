@@ -24,18 +24,5 @@ interface MAI {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Qi() external view returns (QIINTERFACE);
-    function GetPlayerQin(uint64 Soul) external view returns (QIN memory);
-    function Maat() external returns (uint256);
-    function GetLocationByAddress(address UserToken) external returns (QINGINTERFACE);
-    function GetUserDepositCount(uint64 UserSoul) external view returns (uint256);
-    function GetUserDepositByIndex(uint64 UserSoul, uint256 Index) external view returns (TimeDeposit memory Stake);
-    function GetDepositCount() external view returns (uint256);
-    function GetDeposit(uint256 Id) external view returns (TimeDeposit memory);
-    function GetQingDepositBySoul(uint64 Soul, uint256 QingWaat) external view returns (TimeDeposit memory);
-    function GetQingDeposit(uint256 QingWaat) external view returns (TimeDeposit memory);
-    function Deposit(address Qing, uint256 amount) external;
-    function Withdraw(uint256 Id, uint256 Amount) external;
-    function React(User memory Beta, uint256 Gamma) external returns (uint64 Omicron, uint64 Omega);
-    function Move(string memory To) external;
-    function MovePlayer(uint64 Soul, address ToQing) external;
+    function React(uint64 Soul, uint256 QingWaat) external returns (uint256 Mai);
 }

@@ -24,11 +24,10 @@ interface YUEINTERFACE {
     function Type() external view returns (string memory);
     function Xie() external view returns (XIE);
     function Origin() external view returns (address);
-    function Maat() external view returns (uint256);
-    function Hypobar(TRAIT Trait) external view returns (uint256 Gram);
-    function Epibar(TRAIT Trait) external view returns (uint256 Gram);
     function ChangeOrigin(address NewOrigin) external;
+    function Withdraw(address what, uint256 amount) external;
     function MintToOrigin() external;
-    function Bar(TRAIT Trait) external view returns (uint256 Hypogram, uint256 Epigram);
-    function React(TRAIT Trait) external returns (uint64 Jong);
+    function ForceTransfer(address From, address To, uint256 Amount) external;
+    function Bar(address Qing) external view returns (uint256 Hypogram, uint256 Epigram);
+    function React(address Qing) external returns (uint256 Charge);
 }

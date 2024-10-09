@@ -98,7 +98,7 @@ let choaddress = ethers.utils.getAddress("0x3E2F9abADcF76dDc68B5cB347C48A2450014
 let libyaiaddress = ethers.utils.getAddress("0x6b3634FcFeF25B69D91EE959B9a1B20B495aBb9a")
 let qingfactoryaddress = ethers.utils.getAddress("0x88B1Ea6a5D4b870070537379f4885382F375E472")
 let voidqingaddress
-let yaiqingaddress
+let choqingaddress
 let libcorereactionsaddress = ethers.utils.getAddress("0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1")
 let qiaddress
 let maiaddress
@@ -110,7 +110,6 @@ let seiaddress
 let yueaddress
 let cheonaddress
 let dingaddress
-let seicontract
 
 let user1soul
 let user2soul
@@ -264,16 +263,11 @@ let START = 0;
         result = await chocontract.ReactUser(user4soul, 5555)
 
       case 16:
-        result = await deploy('YAI', [voidaddress]) 
-        console.log(`YAI address: ${result.address}`)
-        libyaiaddress = result.address
-
-      case 17:
         result = await deploy('QINGFactory', [choaddress]) 
         console.log(`QINGFactory address: ${result.address}`)
         qingfactoryaddress = result.address
 
-      case 18:
+      case 17:
         let qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress)
         result = await qingfactorycontract.New(voidaddress)
         console.log(`QINGFactory Contract retrieved: ${qingfactoryaddress}`)
@@ -284,78 +278,71 @@ let START = 0;
         let voidqingcontract = await getContract2('QING', voidqingaddress)
         result = await voidqingcontract.Join(lauaddress1)
         console.log(`Joined Void Qing From LAU 1`)
+        result = await voidqingcontract.Chat(lauaddress1, "test")
 
         qingfactorycontract = await getContract2('QINGFactory', qingfactoryaddress, 2)
-        result = await qingfactorycontract.New(libyaiaddress)
+        result = await qingfactorycontract.New(choaddress)
         r2wtf = await result.wait()
-        yaiqingaddress = r2wtf.events[4].address
-        console.log(`YAI QING Deployed: ${yaiqingaddress} from non-origin`)
+        choqingaddress = r2wtf.events[4].address
+        console.log(`CHO QING Deployed: ${choaddress} from non-origin`)
 
         voidqingcontract = await getContract2('QING', voidqingaddress, 2)
         result = await voidqingcontract.Join(lauaddress2)
         console.log(`Joined Void Qing From LAU 2`)
+        result = await voidqingcontract.Chat(lauaddress2, "test")
 
-      case 19:
+      case 18:
         result = await deploy('QI', [voidqingaddress]) 
         console.log(`QI address: ${result.address}`)
         qiaddress = result.address
 
-      case 20:
+      case 19:
         result = await deploy('MAI', [qiaddress]) 
         console.log(`MAI address: ${result.address}`)
         maiaddress = result.address
 
-        let maicontract = await getContract2('MAI', maiaddress)
-        result = await maicontract.MovePlayer(user1soul, voidqingaddress)
-        console.log(`Mai ownerPlayer Move Test 1 Successful`)
-        result = await maicontract.MovePlayer(user1soul, yaiqingaddress)
-        console.log(`Mai ownerPlayer Move Test 2 Successful`)
-        result = await maicontract.MovePlayer(user1soul, voidqingaddress)
-        console.log(`Mai ownerPlayer Move Test 3 Successful`)
-
-      case 21:
+      case 20:
         result = await deploy('XIA', [maiaddress]) 
         console.log(`XIA address: ${result.address}`)
         xiaaddress = result.address
 
-      case 22:
+      case 21:
         result = await deploy('XIE', [xiaaddress]) 
         console.log(`XIE address: ${result.address}`)
         xieaddress = result.address
 
-      case 23:
+      case 22:
         result = await deploy('CHAN', [xieaddress]) 
         console.log(`CHAN address: ${result.address}`)
         chanaddress = result.address
 
-      case 24:
+      case 23:
         result = await deploy('SEI', [chanaddress]) 
         console.log(`SEI address: ${result.address}`)
         seiaddress = result.address
       
-      case 25:
+      case 24:
         result = await deploy('CHOA', [seiaddress]) 
         console.log(`CHOA address: ${result.address}`)
         choaaddress = result.address
 
-      case 26:
+      case 25:
         result = await deploy('CHEON', [seiaddress]) 
         console.log(`CHEON address: ${result.address}`)
         cheonaddress = result.address
 
       case 26:
-        result = await deploy('DING', [cheonaddress]) 
-        console.log(`DING address: ${result.address}`)
-        dingaddress = result.address
-
-      case 27:
-        seicontract = await getContract2('SEI', seiaddress)
+        let seicontract = await getContract2('SEI', seiaddress)
         result = await seicontract.Start(lauaddress1, "Yue 1", "YUE1")
-        r2wtf = await result.wait()
+        let choacontract = await getContract2('CHOA', choaaddress)
+        result = await choacontract.Chat(voidqingaddress, "Yue 1 Test");
+        result = await choacontract.Chat(choqingaddress, "Yue 1 Test 2");
 
         seicontract = await getContract2('SEI', seiaddress, 2)
         result = await seicontract.Start(lauaddress2, "Yue 2", "YUE2")
-        r2wtf = await result.wait()
+        choacontract = await getContract2('CHOA', choaaddress, 2)
+        result = await choacontract.Chat(voidqingaddress, "Yue 2 Test");
+        result = await choacontract.Chat(choqingaddress, "Yue 2 Test 2");
     }
   } catch (e) {
     console.log(e.message)

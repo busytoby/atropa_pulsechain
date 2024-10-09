@@ -8,47 +8,34 @@ contract SEI is DYSNOMIA {
     string public constant Type = "SEI";
 
     CHAN public Chan;
-    mapping(uint256 Maat => LAU UserToken) private _users;
 
     constructor(address ChanAddress) DYSNOMIA("Dysnomia Sei", "SEI", address(DYSNOMIA(ChanAddress).Xiao())) {
         Chan = CHAN(ChanAddress);
         Chan.addOwner(address(this));
-        Chan.Xie().Xia().Mai().addOwner(address(this));
-        Chan.Xie().Xia().Mai().Qi().Zuo().VAT().addOwner(address(this));
         Chan.Xie().Xia().Mai().Qi().Zuo().Cho().addOwner(address(this));
         addOwner(tx.origin);
         _mintToCap();
     }
 
-    function GetUserTokenByMaat(uint256 Maat) public view returns (LAU) {
-        return _users[Maat];
-    }
-
     error NotStarted(address);
-    function Chi() public view returns (YUE Yue, LAU UserToken, QIN memory Player) {        
+    function Chi() public view returns (YUE Yue, LAU UserToken) {        
         if(Chan.Yan(tx.origin) == address(0x0)) revert NotStarted(tx.origin);
         Yue = YUE(Chan.Yan(tx.origin));
         UserToken = LAU(Chan.Xie().Xia().Mai().Qi().Zuo().Cho().GetUserTokenAddress(tx.origin));
-        Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
     }
 
-    function Start(address LauToken, string calldata YueName, string calldata YueSymbol) public returns (YUE Yue, LAU UserToken, QIN memory Player) {
+    function Start(address LauToken, string calldata YueName, string calldata YueSymbol) public returns (YUE Yue, LAU UserToken) {
         _mintToCap();
         if(Chan.Yan(tx.origin) == address(0x0)) {
             Chan.Xie().Xia().Mai().Qi().Zuo().Cho().Enter(LauToken);
             UserToken = LAU(LauToken);
             Yue = new YUE(YueName, YueSymbol, address(Chan));
             Yue.addOwner(address(Chan));
-            Chan.Chou();
             Chan.AddYue(tx.origin, address(Yue));
-            Chan.Xie().Xia().Mai().MovePlayer(UserToken.Saat(1), address(Chan.Xie().Xia().Mai().Qi().Zuo()));
-            Player =  Chan.Xie().Xia().Mai().GetPlayerQin(UserToken.Saat(1));
-            _users[Player.Maat] = UserToken;
-            return (Yue, UserToken, Player);
+            return (Yue, UserToken);
         }
 
-        (Yue, UserToken, Player) = Chi();
+        (Yue, UserToken) = Chi();
         Yue.Rename(YueName, YueSymbol);
-        Chan.Chou();
     }
 }

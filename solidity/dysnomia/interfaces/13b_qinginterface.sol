@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 import "./01b_dysnomia.sol";
 import "./12b_chointerface.sol";
 import "./libstrings.sol";
-import "./libyai.sol";
+import "./13d_qingfactoryinterface.sol";
 
 interface QINGINTERFACE {
     function maxSupply() external view returns(uint256);
@@ -27,30 +27,22 @@ interface QINGINTERFACE {
     function Type() external view returns (string memory);
     function Cho() external view returns (CHOINTERFACE);
     function Asset() external view returns (DYSNOMIAINTERFACE);
+    function Factory() external view returns (QINGFactoryInterface);
     function Waat() external view returns (uint256);
+    function Entropy() external view returns (uint64);
     function BouncerDivisor() external view returns (uint16);
     function CoverCharge() external view returns (uint256);
     function NoCROWS() external view returns (bool);
-    function VAT() external view returns (LIBYAI);
-    function Look() external view returns (uint64[] memory);
+    function GetQing(uint256 _waat) external view returns (QINGINTERFACE);
     function Withdraw(address what, uint256 amount) external;
-    function OperatorSendMSG(string memory chatline) external;
     function AllowCROWS(bool _b) external;
     function setBouncerDivisor(uint16 _d) external;
     function setCoverCharge(uint256 _c) external;
     function setStaff(address _a, bool active) external;
     function setGuestlist(address _a) external;
-    function Kick(uint64 Soul, string memory Why) external;
+    function removeGuest(address _a) external;
     function bouncer(address cBouncer) external view returns (bool);
     function Join(address UserToken) external;
-    function Leave() external;
-    function GetPlayerBySoul(uint64 Soul) external view returns(User memory Player);
-    function Alias(string memory name, address _qing) external;
-    function Alias(string memory name) external view returns (address);
-    function Connect(string memory name, address _qing) external;
-    function Disconnect(string memory name) external;
-    function Bounce() external;
     function Admitted(address UserToken) external view returns (bool);
-    function YAISendMSG(LAU UserToken, uint256 Maat, string memory MSG) external;
-    function ReactPlayer(User memory Player, uint64 Theta) external returns (uint64 Omega);
+    function Chat(LAU UserToken, string memory MSG) external;
 }

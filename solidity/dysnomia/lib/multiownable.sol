@@ -30,7 +30,7 @@ abstract contract MultiOwnable {
     }
 
     function _checkOwner() internal view virtual {
-        if (!(msg.sender == address(this)) && !owner(msg.sender) && !owner(tx.origin)) {
+        if (!owner(msg.sender) && !owner(tx.origin)) {
             revert OwnableUnauthorizedAccount(tx.origin, msg.sender, address(this));
         }
     }

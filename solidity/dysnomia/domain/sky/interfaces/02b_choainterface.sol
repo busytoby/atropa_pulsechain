@@ -26,6 +26,4 @@ interface CHOA {
     function Sei() external view returns (SEI);
     function Play(address UserTokenAddress) external returns (YUEINTERFACE Chi, LAU UserToken, QIN memory Player);
     function Chat(string memory MSG) external returns (uint256 Charge, uint256 UserQi, uint64 Omicron, uint64 Omega);
-    function GetExits() external view returns (string[] memory Exits);
-    function Move(string memory To) external;
 }
