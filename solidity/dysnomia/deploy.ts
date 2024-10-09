@@ -9,7 +9,8 @@ const getContract = async (contractName: string, contractAddress, accountIndex?:
   const domainArtifactsPath = `browser/solidity/dysnomia/domain/artifacts/${contractName}.json`
   const skyArtifactsPath = `browser/solidity/dysnomia/domain/sky/artifacts/${contractName}.json`
   const tangArtifactsPath = `browser/solidity/dysnomia/domain/tang/artifacts/${contractName}.json`
-  const songArtifactsPath = `browser/solidity/dysnomia/domain/song/artifacts/${contractName}.json`
+  const soengArtifactsPath = `browser/solidity/dysnomia/domain/soeng/artifacts/${contractName}.json`
+  const danArtifactsPath = `browser/solidity/dysnomia/domain/dan/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
@@ -18,8 +19,9 @@ const getContract = async (contractName: string, contractAddress, accountIndex?:
       try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', domainArtifactsPath)) } catch {
         try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', skyArtifactsPath)) } catch {
           try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', tangArtifactsPath)) } catch {
-            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', songArtifactsPath)) } catch {
-      } } } } } }
+            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', soengArtifactsPath)) } catch {
+              try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', danArtifactsPath)) } catch {
+      } } } } } } }
 
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
@@ -33,7 +35,8 @@ const getContract2 = async (contractName: string, contractAddress, accountIndex?
   const domainArtifactsPath = `browser/solidity/dysnomia/domain/artifacts/${contractName}.json`
   const skyArtifactsPath = `browser/solidity/dysnomia/domain/sky/artifacts/${contractName}.json`
   const tangArtifactsPath = `browser/solidity/dysnomia/domain/tang/artifacts/${contractName}.json`
-  const songArtifactsPath = `browser/solidity/dysnomia/domain/song/artifacts/${contractName}.json`
+  const soengArtifactsPath = `browser/solidity/dysnomia/domain/soeng/artifacts/${contractName}.json`
+  const danArtifactsPath = `browser/solidity/dysnomia/domain/dan/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
@@ -42,8 +45,9 @@ const getContract2 = async (contractName: string, contractAddress, accountIndex?
       try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', domainArtifactsPath)) } catch {
         try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', skyArtifactsPath)) } catch {
           try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', tangArtifactsPath)) } catch {
-            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', songArtifactsPath)) } catch {
-      } } } } } }
+            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', soengArtifactsPath)) } catch {
+              try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', danArtifactsPath)) } catch {
+      } } } } } } }
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   //const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   //const contract = new ethers.Contract(contractAddress, factory.interface, signer);
@@ -57,7 +61,8 @@ const deploy = async (contractName: string, args: Array<any>, accountIndex?: num
   const domainArtifactsPath = `browser/solidity/dysnomia/domain/artifacts/${contractName}.json`
   const skyArtifactsPath = `browser/solidity/dysnomia/domain/sky/artifacts/${contractName}.json`
   const tangArtifactsPath = `browser/solidity/dysnomia/domain/tang/artifacts/${contractName}.json`
-  const songArtifactsPath = `browser/solidity/dysnomia/domain/song/artifacts/${contractName}.json`
+  const soengArtifactsPath = `browser/solidity/dysnomia/domain/soeng/artifacts/${contractName}.json`
+  const danArtifactsPath = `browser/solidity/dysnomia/domain/dan/artifacts/${contractName}.json`
   const libartifactsPath = `browser/solidity/dysnomia/lib/artifacts/${contractName}.json`
   const artifactsPath = `browser/solidity/dysnomia/artifacts/${contractName}.json`
   let metadata
@@ -66,8 +71,9 @@ const deploy = async (contractName: string, args: Array<any>, accountIndex?: num
       try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', domainArtifactsPath)) } catch {
         try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', skyArtifactsPath)) } catch {
           try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', tangArtifactsPath)) } catch {
-            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', songArtifactsPath)) } catch {
-      } } } } } }
+            try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', soengArtifactsPath)) } catch {
+              try { metadata = JSON.parse(await remix.call('fileManager', 'getFile', danArtifactsPath)) } catch {
+      } } } } } } }
   const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner(accountIndex)
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
   const contract = await factory.deploy(...args)
