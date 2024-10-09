@@ -15,6 +15,13 @@ contract CHOA is DYSNOMIA {
         Sei = SEI(SeiAddress);
         Sei.Chan().addOwner(address(this));
         addOwner(tx.origin);
+
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(SeiAddress, 1 * 10 ** decimals());
+
         _mintToCap();
     }    
 

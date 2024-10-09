@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
-import "../yue.sol";
+import "..//yue.sol";
 import "../sky/interfaces/01b_chaninterface.sol";
 
 contract SEI is DYSNOMIA {
@@ -14,6 +14,13 @@ contract SEI is DYSNOMIA {
         Chan.addOwner(address(this));
         Chan.Xie().Xia().Mai().Qi().Zuo().Cho().addOwner(address(this));
         addOwner(tx.origin);
+
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(ChanAddress, 1 * 10 ** decimals());
+
         _mintToCap();
     }
 

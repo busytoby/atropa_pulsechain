@@ -11,7 +11,13 @@ contract MAI is DYSNOMIA {
     constructor(address QiAddress) DYSNOMIA("Dysnomia MAI", "MAI", address(DYSNOMIA(QiAddress).Xiao())) {
         Qi = QIINTERFACE(QiAddress);
         addOwner(tx.origin);
+
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
       
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(QiAddress, 1 * 10 ** decimals());
+
         _mintToCap();
     }
 

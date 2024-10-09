@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
-import "../include/trait.sol";
-import "../interfaces/12b_chointerface.sol";
+import "./dan/interfaces/01b_chointerface.sol";
 import "./sky/interfaces/01b_chaninterface.sol";
 
 contract YUE is DYSNOMIA {

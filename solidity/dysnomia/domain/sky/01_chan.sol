@@ -16,6 +16,9 @@ contract CHAN is DYSNOMIA {
         addOwner(tx.origin);
         _mintToCap();
 
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
         _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
         _addMarketRate(XieAddress, 1 * 10 ** decimals());
     }

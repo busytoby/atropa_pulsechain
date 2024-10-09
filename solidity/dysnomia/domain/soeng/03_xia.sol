@@ -15,6 +15,13 @@ contract XIA is DYSNOMIA {
 
         Fomalhaute = Mai.Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(Mai.Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Xi()).Shio;
 
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(MaiAddress, 1 * 10 ** decimals());
+        _addMarketRate(address(Fomalhaute), 1 * 10 ** decimals());
+
         _mintToCap();
     }
 

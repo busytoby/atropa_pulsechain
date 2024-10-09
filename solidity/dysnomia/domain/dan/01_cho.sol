@@ -38,6 +38,9 @@ contract CHO is DYSNOMIA {
         (On.Omega, On.Omicron) = Reactor().ReactLai(On.Omega);
         React(Void.Nu().Psi().Rho().Le.Omicron);
 
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
         _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
         _addMarketRate(VoidAddress, 1 * 10 ** decimals());
         _addMarketRate(address(On.Shio), 1 * 10 ** decimals());
@@ -45,6 +48,10 @@ contract CHO is DYSNOMIA {
         _addMarketRate(address(On.Shio.Cone()), 1 * 10 ** decimals());
 
         _mintToCap();
+    }
+
+    function AddContractOwner(address Contract, address Owner) public onlyOwners {
+        DYSNOMIA(Contract).addOwner(Owner);
     }
 
     function has(address _contract, string memory what) public view returns (bool does) {

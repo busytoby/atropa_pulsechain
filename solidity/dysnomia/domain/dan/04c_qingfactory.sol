@@ -49,6 +49,7 @@ contract QINGFactory {
         if(has(Integrative, "owner()")) Mu.addOwner(Asset.owner());
         if(has(Integrative, "name()") && has(Integrative, "symbol()")) Mu.Rename(string.concat(Asset.name(), " QING"), string.concat("q", Asset.symbol()));
         Cho.addOwner(address(Mu));
+        Mu.addOwner(address(Cho));
         Mu.renounceOwnership(address(this));
         _qings[Integrative] = address(Mu);
         _waats[Luo] = Mu;

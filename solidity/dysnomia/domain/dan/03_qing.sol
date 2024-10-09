@@ -30,12 +30,15 @@ contract QING is DYSNOMIA {
         setCoverCharge(0);
         NoCROWS = false;
 
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(address(this), originMint * 10 ** decimals());
+
         (Entropy, ) = Cho.React(Xiao.Random());
 
         _mintToCap();
     }
 
-    function AddMarketRate(address Contract, uint256 Rate) public onlyBouncers {
+    function AddMarketRate(address Contract, uint256 Rate) public onlyOwners {
         _addMarketRate(Contract, Rate);
     }
 
@@ -52,7 +55,7 @@ contract QING is DYSNOMIA {
     }
 
     function AllowCROWS(bool _b) public onlyOwners {
-        NoCROWS = _b;
+        NoCROWS = !_b;
     }
 
     function setBouncerDivisor(uint16 _d) public onlyBouncers {

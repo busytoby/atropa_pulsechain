@@ -14,6 +14,14 @@ contract XIE is DYSNOMIA {
         addOwner(tx.origin);
 
         Fornax = SHIO(Xia.Mai().Qi().Zuo().Cho().Void().Nu().Psi().Mu().Tau().Upsilon().Eta().Psi());
+
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(XiaAddress, 1 * 10 ** decimals());
+        _addMarketRate(address(Fornax), 1 * 10 ** decimals());
+
         _mintToCap();
     }
 
