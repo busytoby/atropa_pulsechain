@@ -38,6 +38,12 @@ contract CHO is DYSNOMIA {
         (On.Omega, On.Omicron) = Reactor().ReactLai(On.Omega);
         React(Void.Nu().Psi().Rho().Le.Omicron);
 
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(VoidAddress, 1 * 10 ** decimals());
+        _addMarketRate(address(On.Shio), 1 * 10 ** decimals());
+        _addMarketRate(address(On.Shio.Rod()), 1 * 10 ** decimals());
+        _addMarketRate(address(On.Shio.Cone()), 1 * 10 ** decimals());
+
         _mintToCap();
     }
 

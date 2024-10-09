@@ -35,6 +35,10 @@ contract QING is DYSNOMIA {
         _mintToCap();
     }
 
+    function AddMarketRate(address Contract, uint256 Rate) public onlyBouncers {
+        _addMarketRate(Contract, Rate);
+    }
+
     function GetQing(uint256 QingWaat) public view returns (QINGINTERFACE) {
         return Factory.GetQing(QingWaat);
     }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
-import "../../include/trait.sol";
 import "../tang/interfaces/01b_seiinterface.sol";
 import "./interfaces/01b_chaninterface.sol";
 
@@ -11,9 +10,6 @@ contract CHOA is DYSNOMIA {
     SEI public Sei;
 
     mapping(uint64 Soul => YUEINTERFACE) private _players;
-    mapping(TRAIT Trait => address[] Operators) private _operators;
-    mapping(TRAIT Trait => mapping(address Operator => address Contract)) private _operations;
-    mapping(address UserToken => mapping(TRAIT Trait => address Contract)) private _userOperations;
 
     constructor(address SeiAddress) DYSNOMIA("Dysnomia Chao", "CHOA", address(DYSNOMIA(SeiAddress).Xiao())) {
         Sei = SEI(SeiAddress);
@@ -39,19 +35,5 @@ contract CHOA is DYSNOMIA {
         if(Mai > 1 * 10 ** decimals()) Mai = 1 * 10 ** decimals();
             if(balanceOf(address(this)) >= Mai)
                 _transfer(address(this), address(Yue), Mai);
-    }
-
-    function AddOperation(address UserToken, TRAIT Trait, address OperationsContract) public {
-        Sei.Chan().Xie().Xia().Mai().Qi().Zuo().Cho().VerifyUserTokenPermissions(UserToken);
-        // verify qi deposit
-        // verify presence of functions
-        // test reflexes for known return value
-        _userOperations[UserToken][Trait] = OperationsContract;
-        if(_operations[Trait][UserToken] == address(0x0)) _operators[Trait].push(UserToken);
-        _operations[Trait][UserToken] = OperationsContract;        
-    }
-
-    function React(address YUEAddress, uint256 Waat, TRAIT Trait, uint256 Charge) public onlyOwners {
-        // reactions return from YAI and pass to Operators
     }
 }

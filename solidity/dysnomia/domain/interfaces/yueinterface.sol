@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../../interfaces/17b_xieinterface.sol";
+import "../soeng/interfaces/04b_xieinterface.sol";
 
 interface YUEINTERFACE {
     function maxSupply() external view returns(uint256);

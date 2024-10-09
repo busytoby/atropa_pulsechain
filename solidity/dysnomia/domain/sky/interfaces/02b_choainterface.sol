@@ -24,6 +24,6 @@ interface CHOA {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Sei() external view returns (SEI);
-    function Play(address UserTokenAddress) external returns (YUEINTERFACE Chi, LAU UserToken, QIN memory Player);
+    function Play(address UserTokenAddress) external returns (YUEINTERFACE Chi, LAU UserToken);
     function Chat(string memory MSG) external returns (uint256 Charge, uint256 UserQi, uint64 Omicron, uint64 Omega);
 }

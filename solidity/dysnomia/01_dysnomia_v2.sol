@@ -24,7 +24,6 @@ abstract contract DYSNOMIA is MultiOwnable {
         __symbol = symbol_;
         Xiao = atropaMath(mathContract);
         maxSupply = Xiao.Random() % 111111;
-        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
     }
 
     function _addLibraryOwner(VOID Void, string memory what) internal {

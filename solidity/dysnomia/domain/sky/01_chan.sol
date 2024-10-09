@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
-import "../../include/qin.sol";
-import "../../include/trait.sol";
 import "../interfaces/yueinterface.sol";
 
 contract CHAN is DYSNOMIA {
@@ -17,6 +15,9 @@ contract CHAN is DYSNOMIA {
         Xie = XIE(XieAddress);
         addOwner(tx.origin);
         _mintToCap();
+
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(XieAddress, 1 * 10 ** decimals());
     }
 
     error AlreadyAdded(address Origin, address Yue, address New);
