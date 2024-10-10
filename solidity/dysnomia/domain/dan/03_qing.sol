@@ -134,6 +134,7 @@ contract QING is DYSNOMIA {
     error NotAdmitted(uint64 Soul);
     event LogEvent(string Username, uint64 Soul, uint64 Aura, string LogLine);
     function Chat(LAU UserToken, string memory MSG) public {
+        if(Factory.Forbidden(address(Asset))) revert Forbidden(address(Asset));
         _mintToCap();
         uint64 _soul = UserToken.Saat(1);
         Cho.VerifyUserTokenPermissions(address(UserToken));

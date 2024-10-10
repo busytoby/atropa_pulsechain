@@ -26,11 +26,15 @@ contract QINGFactory {
         assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 
+    function Forbidden(address Asset) public view returns (bool) {
+        return _forbidden[Asset];
+    }
+
     error NotOwner(address what, address who);
-    function Forbid(address Token, bool Forbidden) public {
-        if(has(Token, "owner()") && DYSNOMIA(Token).owner() == tx.origin) _forbidden[Token] = Forbidden;
-        else if(DYSNOMIA(Token).owner(tx.origin)) _forbidden[Token] = Forbidden;
-        else revert NotOwner(Token, tx.origin);
+    function Forbid(address Token, bool Disallow) public {
+        if(has(Token, "owner()") && DYSNOMIA(Token).owner() == msg.sender) _forbidden[Token] = Disallow;
+        else if(DYSNOMIA(Token).owner(msg.sender)) _forbidden[Token] = Disallow;
+        else revert NotOwner(Token, msg.sender);
     }
 
     function GetQing(uint256 Waat) public view returns (QING) {
