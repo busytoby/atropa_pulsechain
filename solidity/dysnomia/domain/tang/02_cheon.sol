@@ -23,7 +23,6 @@ contract CHEON is DYSNOMIA {
         _mintToCap();
     }
 
-    error TrainingOnlyAvailableInZuoQing(address ZuoQing, address PlayerQing);
     function Su(address Qing) public returns (uint256 Charge, uint256 Hypobar, uint256 Epibar) {
         (YUEINTERFACE Chi, LAU UserToken) = Sei.Chi();
 
