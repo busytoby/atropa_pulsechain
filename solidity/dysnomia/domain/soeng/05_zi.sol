@@ -9,7 +9,7 @@ contract ZI is DYSNOMIA {
     CHOA public Choa;
     CHOINTERFACE public Tethys;
 
-    constructor(address ChoaAddress) DYSNOMIA("Dysnomia Xie", "XIE", address(DYSNOMIA(ChoaAddress).Xiao())) {
+    constructor(address ChoaAddress) DYSNOMIA("Dysnomia Zi", "ZI", address(DYSNOMIA(ChoaAddress).Xiao())) {
         Choa = CHOA(ChoaAddress);
         addOwner(tx.origin);
 
