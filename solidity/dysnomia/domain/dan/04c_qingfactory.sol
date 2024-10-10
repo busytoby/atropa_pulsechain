@@ -39,6 +39,7 @@ contract QINGFactory {
 
     error QingAlreadyExists(address Token, address Qing);
     error ForbiddenToken(address which);
+    event NewQing(address Qing, address Integrative, uint256 Waat);
     function New(address Integrative) public returns(QING Mu) {
         uint256 Luo;
         if(_qings[Integrative] != address(0x0)) revert QingAlreadyExists(Integrative, _qings[Integrative]);
@@ -53,5 +54,6 @@ contract QINGFactory {
         Mu.renounceOwnership(address(this));
         _qings[Integrative] = address(Mu);
         _waats[Luo] = Mu;
+        emit NewQing(address(Mu), Integrative, Luo);
     }
 }
