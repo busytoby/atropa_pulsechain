@@ -9,7 +9,7 @@ contract Hecke {
         }
     }
 
-uint256[82] public Meridians = [
+uint256[80] public Meridians = [
 476733977057179,
 476733977059987,
 476733977057387,
