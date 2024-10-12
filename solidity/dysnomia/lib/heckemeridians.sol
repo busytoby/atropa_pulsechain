@@ -40,7 +40,7 @@ contract Hecke {
         } else
             Longitude = (4+(End/4) - (Waat - (3*(End/4))));
 
-        Latitude /= 666;
+        Latitude /= 667;
     }
 
     function GetMeridian(uint256 Waat) public view returns (uint256 Meridian) {

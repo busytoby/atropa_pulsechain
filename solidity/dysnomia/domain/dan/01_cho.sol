@@ -76,12 +76,12 @@ contract CHO is DYSNOMIA {
     }
 
     function Luo() public onlyOwners returns (uint256 De) {
-        React(On.Omicron);
-        De = Xiao.modExp(On.Omega, On.Omicron, Prime);
-        if(Qu[De] == address(0x0))
-            Qu[De] = msg.sender;
-        else
-            De = Luo();
+        De = 0;
+        while(De == 0 || Qu[De] != address(0x0)) {
+            React(On.Omicron);
+            De = Xiao.modExp(On.Omega, On.Omicron, Prime);
+        }
+        Qu[De] = msg.sender;
         _mintToCap();
     }
 
