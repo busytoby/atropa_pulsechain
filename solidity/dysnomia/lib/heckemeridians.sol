@@ -3,13 +3,14 @@ pragma solidity ^0.8.21;
 
 contract Hecke {
 
-    function Compliment(uint256 Waat) public view returns (uint256 Longitude, uint256 Latitude, bool South, bool East) {
+    function Compliment(uint256 Waat) public view returns (uint256 Longitude, uint256 Latitude, bool South, bool East, bool Obverse) {
         assert(Waat <= Meridians[89]);
         uint256 Meridian = GetMeridian(Waat);
         uint256 Start = 0;
         uint256 End;
         South = true;
         East = true;
+        Obverse = false;
 
         if(Meridian == 89) {
             South = false;
@@ -35,10 +36,13 @@ contract Hecke {
             Longitude = Waat;
         } else if (Waat < End/2) {
             Longitude = (4+(End/4) - (Waat - (End/4)));
+            Obverse = true;
         } else if (Waat < (3*(End/4))) {
             Longitude = (Waat - (End/2));
-        } else
+        } else {
             Longitude = (4+(End/4) - (Waat - (3*(End/4))));
+            Obverse = true;
+        }
 
         Latitude /= 667;
     }
