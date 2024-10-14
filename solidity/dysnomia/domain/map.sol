@@ -6,6 +6,7 @@ import "../interfaces/heckeinterface.sol";
 contract MAP is DYSNOMIA {
     CHOINTERFACE public Cho;
     HECKE public Map;
+
     mapping(address Asset => address Qing) private _qings;
     mapping(uint256 Waat => QING) private _waats;
     mapping(address Asset => bool Forbidden) private _forbidden;
@@ -47,6 +48,7 @@ contract MAP is DYSNOMIA {
     }
 
     function Forbidden(address Asset) public view returns (bool) {
+        if(DYSNOMIA(WITHOUTContract).balanceOf(tx.origin) > 0) return true;
         return _forbidden[Asset];
     }
 

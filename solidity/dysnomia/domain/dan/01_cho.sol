@@ -87,6 +87,7 @@ contract CHO is DYSNOMIA {
 
     error InvalidUserToken(address Asset);
     function VerifyUserTokenPermissions(address UserToken) public {
+        assert((DYSNOMIA(WITHOUTContract).balanceOf(tx.origin) == 0));
         Bao memory _on = Void.Nu().Psi().Mu().Tau().Upsilon().GetRodByIdx(LAU(UserToken).Saat(1));
         if(!_on.Shio.owner(UserToken) || !_on.Shio.Rod().owner(UserToken)) revert InvalidUserToken(UserToken);
     }
@@ -94,6 +95,7 @@ contract CHO is DYSNOMIA {
     error InvalidOwnership(address UserToken, address User);
     function Enter(address UserToken) public returns(User memory) {
         _mintToCap();
+        assert((DYSNOMIA(WITHOUTContract).balanceOf(tx.origin) == 0));
         VerifyUserTokenPermissions(UserToken);
         LAU UserLau = LAU(UserToken);
         if(!UserLau.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);
