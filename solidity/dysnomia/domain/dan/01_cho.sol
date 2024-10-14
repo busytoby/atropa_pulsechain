@@ -9,7 +9,7 @@ import "../../interfaces/libcorereactions.sol";
 contract CHO is DYSNOMIA {
     string public constant Type = "CHO";
 
-    uint256 constant public Prime = 788007780075465850682698395781331007488376212737722608030423588863419947711;
+    uint256 constant public Gua = 1652929763764148448182513644633101239607891671119935657884642;
 
     VOID public Void;
     uint64[3] public Saat;
@@ -79,7 +79,7 @@ contract CHO is DYSNOMIA {
         De = 0;
         while(De == 0 || Qu[De] != address(0x0)) {
             React(On.Omicron);
-            De = Xiao.modExp(On.Omega, On.Omicron, Prime);
+            De = Xiao.modExp(On.Omega, On.Omicron, Gua);
         }
         Qu[De] = msg.sender;
         _mintToCap();
