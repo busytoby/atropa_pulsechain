@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 import "../../../interfaces/01b_dysnomia.sol";
 import "./01b_chointerface.sol";
 import "../../../interfaces/libstrings.sol";
-import "./04d_qingfactoryinterface.sol";
+import "../../interfaces/mapinterface.sol";
 
 interface QINGINTERFACE {
     function maxSupply() external view returns(uint256);
@@ -27,7 +27,7 @@ interface QINGINTERFACE {
     function Type() external view returns (string memory);
     function Cho() external view returns (CHOINTERFACE);
     function Asset() external view returns (DYSNOMIAINTERFACE);
-    function Factory() external view returns (QINGFactoryInterface);
+    function Factory() external view returns (MAPINTERFACE);
     function Waat() external view returns (uint256);
     function Entropy() external view returns (uint64);
     function BouncerDivisor() external view returns (uint16);

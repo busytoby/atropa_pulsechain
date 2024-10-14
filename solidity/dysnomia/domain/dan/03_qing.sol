@@ -2,14 +2,14 @@
 pragma solidity ^0.8.21;
 import "../../01_dysnomia_v2.sol";
 import "./interfaces/01b_chointerface.sol";
-import "./interfaces/04d_qingfactoryinterface.sol";
+import "../interfaces/mapinterface.sol";
 
 contract QING is DYSNOMIA {
     string public constant Type = "QING";
 
     CHOINTERFACE public Cho;
     DYSNOMIA public Asset;
-    QINGFactoryInterface public Factory;
+    MAPINTERFACE public Map;
     uint256 public Waat;
     uint64 public Entropy;
     uint16 public BouncerDivisor;
@@ -23,7 +23,7 @@ contract QING is DYSNOMIA {
         Waat = Luo;
 
         Asset = DYSNOMIA(Integrative);
-        Factory = QINGFactoryInterface(msg.sender);
+        Map = MAPINTERFACE(msg.sender);
 
         _staff[tx.origin] = true;
         setBouncerDivisor(32); // Default Based On Holding 25 CROWS
@@ -43,7 +43,7 @@ contract QING is DYSNOMIA {
     }
 
     function GetQing(uint256 QingWaat) public view returns (QINGINTERFACE) {
-        return Factory.GetQing(QingWaat);
+        return Map.GetQing(QingWaat);
     }
 
     event Withdrawal(uint64 Soul, uint64 Aura, address Token, uint256 amount);
@@ -90,7 +90,7 @@ contract QING is DYSNOMIA {
         uint256 _ts = Asset.totalSupply();
         if(Asset.balanceOf(cBouncer) >= (_ts / BouncerDivisor)) return true;
 
-        if(Factory.hasOwner(address(Asset)))
+        if(Map.hasOwner(address(Asset)))
             return Asset.owner(cBouncer);
         return false;
     }
@@ -134,7 +134,7 @@ contract QING is DYSNOMIA {
     error NotAdmitted(uint64 Soul);
     event LogEvent(string Username, uint64 Soul, uint64 Aura, string LogLine);
     function Chat(LAU UserToken, string memory MSG) public {
-        if(Factory.Forbidden(address(Asset))) revert Forbidden(address(Asset));
+        if(Map.Forbidden(address(Asset))) revert Forbidden(address(Asset));
         _mintToCap();
         uint64 _soul = UserToken.Saat(1);
         Cho.VerifyUserTokenPermissions(address(UserToken));

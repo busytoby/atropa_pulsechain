@@ -1,18 +1,38 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./03_qing.sol";
+import "./dan/03_qing.sol";
+import "../interfaces/heckeinterface.sol";
 
-contract QINGFactory {
+contract MAP is DYSNOMIA {
     CHOINTERFACE public Cho;
+    HECKE public Map;
     mapping(address Asset => address Qing) private _qings;
     mapping(uint256 Waat => QING) private _waats;
     mapping(address Asset => bool Forbidden) private _forbidden;
+    mapping(int256 Latitude => mapping(int256 Longitude => mapping(int256 Altitude => address Qing))) private _map;
 
-    constructor(address ChoAddress) {
+    constructor(address ChoAddress, address HeckeAddress) DYSNOMIA("Dysnomia Map", "MAP", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
+        Map = HECKE(HeckeAddress);
         Cho.addOwner(address(this));
         Cho.Void().addOwner(address(this));
-    } 
+
+        uint256 originMint = Xiao.Random() % maxSupply / 10;
+        _mint(tx.origin, originMint * 10 ** decimals());
+
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(ChoAddress, 1 * 10 ** decimals());
+    }
+
+    function addToMap(uint256 Waat, address Qing) internal {
+        (int256 Longitude, int256 Latitude) = Map.Compliment(Waat);
+        assert(_map[Latitude][Longitude][0] == address(0x0));
+        _map[Latitude][Longitude][0] = Qing;
+    }
+
+    function GetMapQing(int256 Latitude, int256 Longitude, int256 Altitude) public view returns (QINGINTERFACE) {
+        return QINGINTERFACE(_map[Latitude][Longitude][Altitude]);
+    }
 
     function hasOwner(address _contract) public view returns (bool does) {
         bytes4 selector = bytes4(keccak256(bytes("owner(address)")));
@@ -58,6 +78,8 @@ contract QINGFactory {
         Mu.renounceOwnership(address(this));
         _qings[Integrative] = address(Mu);
         _waats[Luo] = Mu;
+        addToMap(Luo, address(Mu));
+        _addMarketRate(address(Mu), 1 * 10 ** decimals());
         emit NewQing(address(Mu), Integrative, Luo);
     }
 }

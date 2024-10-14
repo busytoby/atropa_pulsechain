@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "../01_dysnomia_v2.sol";
 
-contract Hecke {
+contract Hecke is DYSNOMIA {
+    constructor(address ChoAddress) DYSNOMIA("Dysnomia Hecke", "HECKE", address(DYSNOMIA(ChoAddress).Xiao())) {
+        _mint(address(this), maxSupply * 10 ** decimals());
 
-    function Compliment(uint256 Waat) public view returns (uint256 Longitude, uint256 Latitude, bool South, bool East, bool Obverse) {
+        _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+        _addMarketRate(ChoAddress, 1 * 10 ** decimals());
+    }
+
+    function Compliment(uint256 Waat) public view returns (int256 Longitude, int256 Latitude) {
         assert(Waat <= Meridians[89]);
         uint256 Meridian = GetMeridian(Waat);
         uint256 Start = 0;
         uint256 End;
-        South = true;
-        East = true;
-        Obverse = false;
+        bool South = true;
 
         if(Meridian == 89) {
             South = false;
@@ -19,7 +24,7 @@ contract Hecke {
         }
         
         if(Waat == Meridians[88]) Latitude = 0;
-        else Latitude = Meridians[88] - Waat;
+        else Latitude = int256(Meridians[88] - Waat);
 
         if(Meridian > 0) {
             Start = Meridians[Meridian-1];
@@ -28,23 +33,19 @@ contract Hecke {
 
         End = Meridians[Meridian] - Start;
 
-        if((South && Waat > End / 2) || (!South && Waat < End / 2)) {
-            East = false;
-        }
-
         if(Waat < End/4) {
-            Longitude = Waat;
+            Longitude = int256(Waat);
         } else if (Waat < End/2) {
-            Longitude = (4+(End/4) - (Waat - (End/4)));
-            Obverse = true;
+            Longitude = int256((4+(End/4) - (Waat - (End/4)))) * -1;
         } else if (Waat < (3*(End/4))) {
-            Longitude = (Waat - (End/2));
+            Longitude = int256((Waat - (End/2)));
         } else {
-            Longitude = (4+(End/4) - (Waat - (3*(End/4))));
-            Obverse = true;
+            Longitude = int256((4+(End/4) - (Waat - (3*(End/4))))) * -1;
         }
 
         Latitude /= 667;
+        if(South) Latitude = Latitude * -1;
+
     }
 
     function GetMeridian(uint256 Waat) public view returns (uint256 Meridian) {
