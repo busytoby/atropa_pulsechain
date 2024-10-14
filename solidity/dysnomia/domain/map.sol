@@ -11,7 +11,7 @@ contract MAP is DYSNOMIA {
     mapping(address Asset => address Qing) private _qings;
     mapping(uint256 Waat => QING) private _waats;
     mapping(address Asset => bool Forbidden) private _forbidden;
-    mapping(int256 Latitude => mapping(int256 Longitude => mapping(int256 Altitude => address Qing))) private _map;
+    mapping(int256 Latitude => mapping(int256 Longitude => address Qing)) private _map;
 
     constructor(address ChoAddress, address HeckeAddress) DYSNOMIA("Dysnomia Map", "MAP", address(DYSNOMIA(ChoAddress).Xiao())) {
         Cho = CHOINTERFACE(ChoAddress);
@@ -29,12 +29,12 @@ contract MAP is DYSNOMIA {
 
     function addToMap(uint256 Waat, address Qing) internal {
         (int256 Longitude, int256 Latitude) = Map.Compliment(Waat);
-        assert(_map[Latitude][Longitude][0] == address(0x0));
-        _map[Latitude][Longitude][0] = Qing;
+        assert(_map[Latitude][Longitude] == address(0x0));
+        _map[Latitude][Longitude] = Qing;
     }
 
-    function GetMapQing(int256 Latitude, int256 Longitude, int256 Altitude) public view returns (QINGINTERFACE) {
-        return QINGINTERFACE(_map[Latitude][Longitude][Altitude]);
+    function GetMapQing(int256 Latitude, int256 Longitude) public view returns (QINGINTERFACE) {
+        return QINGINTERFACE(_map[Latitude][Longitude]);
     }
 
     function hasOwner(address _contract) public view returns (bool does) {

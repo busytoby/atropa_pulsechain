@@ -38,9 +38,9 @@ contract Hecke is DYSNOMIA {
         } else if (Waat < End/2) {
             Longitude = int256((4+(End/4) - (Waat - (End/4)))) * -1;
         } else if (Waat < (3*(End/4))) {
-            Longitude = int256((Waat - (End/2)));
+            Longitude = int256((Waat - (End/2))) * -1;
         } else {
-            Longitude = int256((4+(End/4) - (Waat - (3*(End/4))))) * -1;
+            Longitude = int256((4+(End/4) - (Waat - (3*(End/4)))));
         }
 
         Latitude /= 667;
