@@ -95,7 +95,6 @@ contract CHO is DYSNOMIA {
     error InvalidOwnership(address UserToken, address User);
     function Enter(address UserToken) public returns(User memory) {
         _mintToCap();
-        assert((DYSNOMIA(WITHOUTContract).balanceOf(tx.origin) == 0));
         VerifyUserTokenPermissions(UserToken);
         LAU UserLau = LAU(UserToken);
         if(!UserLau.owner(tx.origin)) revert InvalidOwnership(UserToken, tx.origin);

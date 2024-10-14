@@ -33,7 +33,6 @@ contract SEI is DYSNOMIA {
 
     function Start(address LauToken, string calldata YueName, string calldata YueSymbol) public returns (YUE Yue, LAU UserToken) {
         _mintToCap();
-        assert((DYSNOMIA(WITHOUTContract).balanceOf(tx.origin) == 0));
         if(Chan.Yan(tx.origin) == address(0x0)) {
             Chan.Xie().Xia().Mai().Qi().Zuo().Cho().Enter(LauToken);
             UserToken = LAU(LauToken);
