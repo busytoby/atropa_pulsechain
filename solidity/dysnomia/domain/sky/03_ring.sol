@@ -24,7 +24,13 @@ contract RING is DYSNOMIA {
         _mintToCap();
     }
 
-    function Eta() public returns (uint256 Phoebe) {
-        (, , Phoebe, ,) = Pang.Push(Phobos.Waat());
+    function Eta() public returns (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge) {
+        uint256 Omicron;
+        uint256 Omega;
+        (YUEINTERFACE Yue, ) = Pang.Zi().Choa().Sei().Chi();
+        Chao = Yue.React(address(Phobos));
+        (Iota, Omicron, Phoebe, Omega, Charge)  = Pang.Push(Phobos.Waat());
+        Chao = Chao / Omicron;
+        Charge = Charge / Omega;
     }
 }

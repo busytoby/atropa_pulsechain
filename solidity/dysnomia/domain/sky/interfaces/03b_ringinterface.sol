@@ -24,5 +24,5 @@ interface RING {
     function Type() external view returns (string memory);
     function Pang() external view returns (PANG);
     function Phobos() external view returns (QINGINTERFACE);
-    function Eta() external returns (uint256 Phoebe);
+    function Eta() external returns (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge);
 }
