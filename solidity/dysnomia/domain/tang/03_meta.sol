@@ -21,18 +21,14 @@ contract META is DYSNOMIA {
         _mintToCap();
     }
 
-    function Beat(uint256 QingWaat) public returns (uint256 Deimos, uint256 Yeo, uint256 Charge) {
+    function Beat(uint256 QingWaat) public returns (uint256 Dione, uint256 Charge, uint256 Deimos, uint256 Yeo) {
         uint256 Omicron;
         uint256 Omega;
-        uint256 Iota2;
-        uint256 Dione;
-        uint256 Charge2;
         QINGINTERFACE Qing = Ring.Pang().Zi().Choa().Sei().Chan().Xie().Xia().Mai().Qi().Zuo().GetQing(QingWaat);
         (uint256 Phoebe, uint256 Iota1, uint256 Chao, uint256 Charge1) = Ring.Eta();
-        (Iota2, Omicron, Dione, Omega, Charge2) = Ring.Pang().Push(QingWaat);
+        (Yeo, Omicron, Dione, Omega, Charge) = Ring.Pang().Push(QingWaat);
+        Charge = Charge1 * Charge  / Iota1;
         Deimos = Xiao.modExp(Dione, Phoebe, Ring.Pang().Zi().Choa().Yuan(address(Qing)));
-
-        Yeo = Iota2 / Chao;
-        Charge = Charge1 * Charge2 / Iota1;
+        Yeo = Yeo / Chao;
     }
 }
