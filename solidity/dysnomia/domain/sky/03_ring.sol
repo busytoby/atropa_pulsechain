@@ -34,5 +34,6 @@ contract RING is DYSNOMIA {
         Chao = Chao / Omicron;
         Charge = Charge / Omega;
         Moments[Usertoken.Saat(1)] = Iota;
+        Iota = Iota * Iota;
     }
 }
