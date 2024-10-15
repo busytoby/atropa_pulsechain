@@ -8,6 +8,7 @@ contract RING is DYSNOMIA {
 
     PANG public Pang;
     QINGINTERFACE public Phobos;
+    mapping(uint64 Soul => uint256 Iota) public Moments;
 
     constructor(address PangAddress) DYSNOMIA("Dysnomia Ring", "RING", address(DYSNOMIA(PangAddress).Xiao())) {
         Pang = PANG(PangAddress);
@@ -27,10 +28,11 @@ contract RING is DYSNOMIA {
     function Eta() public returns (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge) {
         uint256 Omicron;
         uint256 Omega;
-        (YUEINTERFACE Yue, ) = Pang.Zi().Choa().Sei().Chi();
+        (YUEINTERFACE Yue, LAU Usertoken) = Pang.Zi().Choa().Sei().Chi();
         Chao = Yue.React(address(Phobos));
         (Iota, Omicron, Phoebe, Omega, Charge)  = Pang.Push(Phobos.Waat());
         Chao = Chao / Omicron;
         Charge = Charge / Omega;
+        Moments[Usertoken.Saat(1)] = Iota;
     }
 }

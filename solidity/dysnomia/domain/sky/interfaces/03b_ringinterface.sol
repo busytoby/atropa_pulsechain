@@ -23,6 +23,7 @@ interface RING {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Pang() external view returns (PANG);
+    function Moments(uint64 Soul) external view returns (uint256 Iota);
     function Phobos() external view returns (QINGINTERFACE);
     function Eta() external returns (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge);
 }
