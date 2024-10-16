@@ -66,13 +66,15 @@ contract MAP is DYSNOMIA {
     }
 
     error QingAlreadyExists(address Token, address Qing);
+    error DerivativeQing(address Integrative, uint256 Waat);
     error ForbiddenToken(address which);
     event NewQing(address Qing, address Integrative, uint256 Waat);
     function New(address Integrative) public returns(QING Mu) {
         uint256 Luo;
         if(_qings[Integrative] != address(0x0)) revert QingAlreadyExists(Integrative, _qings[Integrative]);
         if(_forbidden[Integrative]) revert ForbiddenToken(Integrative);
-        DYSNOMIA Asset = DYSNOMIA(Integrative);
+        QING Asset = QING(Integrative);
+        if(has(Integrative, "Waat()")) revert DerivativeQing(Integrative, Asset.Waat());
         Luo = Cho.Luo() * Offset;
         Mu = new QING(Luo, Integrative, address(Cho));
         if(has(Integrative, "owner()")) Mu.addOwner(Asset.owner());
