@@ -48,6 +48,12 @@ contract Hecke is DYSNOMIA {
 
     }
 
+    function GetWaat(int256 Latitude) public view returns (uint256 Waat) {
+        if(Latitude > 0)
+            return Meridians[88] + uint256(Latitude * 667);
+        return Meridians[88] - uint256(Latitude * -1 * 667);
+    }
+
     function GetMeridian(uint256 Waat) public view returns (uint256 Meridian) {
         for(uint256 i = 0; i < Meridians.length; i++) {
             if(Meridians[i] >= Waat) return i;
