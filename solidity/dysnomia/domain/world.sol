@@ -31,7 +31,7 @@ contract WORLD is DYSNOMIA {
 
     function Distribute(address Caude, address Distributive, uint256 Amount) public {
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
-            uint256 _pdist = Amount / _cauda[Caude].length / _creation[_cauda[Caude][i]].length;
+            uint256 _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 if(_creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]] && (Xiao.Random() % 4 == 2)) {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _creation[_cauda[Caude][i]][j], _pdist);
