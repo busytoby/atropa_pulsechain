@@ -47,9 +47,11 @@ contract WORLD is DYSNOMIA {
                 if(Charge >= _pdist) {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _creation[_cauda[Caude][i]][j], _pdist);
                     Amount -= _pdist;
+                    _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]][Caude] -= _pdist;
                 } else {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _creation[_cauda[Caude][i]][j], _pdist);
                     Amount -= Charge;
+                    _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]][Caude] = 0;
                 }
             }
         }
