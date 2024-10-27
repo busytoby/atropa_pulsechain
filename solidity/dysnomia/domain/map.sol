@@ -4,6 +4,8 @@ import "./dan/03_qing.sol";
 import "../interfaces/heckeinterface.sol";
 
 contract MAP is DYSNOMIA {
+    string public constant Type = "MAP";
+
     CHOINTERFACE public Cho;
     HECKE public Map;
     uint256 public Offset;

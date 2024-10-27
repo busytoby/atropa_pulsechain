@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "./01b_seiinterface.sol";
-import "../../sky/interfaces/02b_choainterface.sol";
 
-interface CHEON {
+
+interface VITUS {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -23,7 +22,5 @@ interface CHEON {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Sei() external view returns (SEI);
-    function Choa() external view returns (CHOA);
-    function Su(address Qing) external returns (uint256 Charge, uint256 Hypobar, uint256 Epibar);
+    function Mint(address To, uint256 Amount) external;
 }

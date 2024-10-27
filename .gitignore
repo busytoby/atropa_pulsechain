@@ -30,6 +30,8 @@
 /solidity/dysnomia/domain/artifacts
 /solidity/dysnomia/domain/interfaces/artifacts
 /solidity/dysnomia/domain/old/artifacts
+/solidity/dysnomia/domain/assets/artifacts
+/solidity/dysnomia/domain/assets/interfaces/artifacts
 /solidity/dysnomia/domain/dan/artifacts
 /solidity/dysnomia/domain/dan/interfaces/artifacts
 /solidity/dysnomia/domain/soeng/artifacts
