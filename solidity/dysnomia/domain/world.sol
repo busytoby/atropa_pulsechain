@@ -39,19 +39,28 @@ contract WORLD is DYSNOMIA {
     }
 
     function Distribute(address Caude, address Distributive, uint256 Amount) public {
+        address l1 = address(0x0);
+        address l2 = address(0x0);
+        address l3 = address(0x0);
+        address _c;
+        uint256 _pdist;
+        uint256 Charge;
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
-            uint256 _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
+            _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
-                uint256 Charge = _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]][Caude];
+                _c = _creation[_cauda[Caude][i]][j];
+                if(_c == l1 || _c == l2 || _c == l3) _creators[_cauda[Caude][i]][_c][Caude] = 0;
+                l1 = l2; l2 = l3; l3 = _c;
+                Charge = _creators[_cauda[Caude][i]][_c][Caude];
                 if(Charge == 0) continue;
                 if(Charge >= _pdist) {
-                    DYSNOMIA(Distributive).transferFrom(msg.sender, _creation[_cauda[Caude][i]][j], _pdist);
+                    DYSNOMIA(Distributive).transferFrom(msg.sender, _c, _pdist);
                     Amount -= _pdist;
-                    _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]][Caude] -= _pdist;
+                    _creators[_cauda[Caude][i]][_c][Caude] -= _pdist;
                 } else {
-                    DYSNOMIA(Distributive).transferFrom(msg.sender, _creation[_cauda[Caude][i]][j], _pdist);
+                    DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
                     Amount -= Charge;
-                    _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]][Caude] = 0;
+                    _creators[_cauda[Caude][i]][_c][Caude] = 0;
                 }
             }
         }
