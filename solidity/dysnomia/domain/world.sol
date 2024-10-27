@@ -54,6 +54,7 @@ contract WORLD is DYSNOMIA {
     function Code(int256 Latitude, int256 Longitude, address Cause) public {
         (YUEINTERFACE Chi, ) = Cheon.Sei().Chi();
         (uint256 Charge, uint256 Hypobar, uint256 Epibar) = Cheon.Su(Cause);
+        if(Charge == 0) return;
         if(Charge >= _world[Latitude][Longitude][Cause]) {
             _world[Latitude][Longitude][Cause] += Hypobar;
             Vitus.Mint(address(Chi), Epibar);
