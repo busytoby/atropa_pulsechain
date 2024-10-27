@@ -34,6 +34,10 @@ contract WORLD is DYSNOMIA {
         return _world[Latitude][Longitude][Caude];
     }
 
+    function Buzz(int256 Latitude, address Coder, address Caude) public view returns (uint256) {
+        return _creators[Latitude][Coder][Caude];
+    }
+
     function Distribute(address Caude, address Distributive, uint256 Amount) public {
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
             uint256 _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
