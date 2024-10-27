@@ -14,7 +14,7 @@ contract WORLD is DYSNOMIA {
     mapping(int256 Latitude => mapping(int256 Longitude => mapping(address Caude => uint256 Bun))) private _world;
     mapping(address Caude => int256[] Latitudes) private _cauda;
     mapping(int256 Latitude => address[] Coders) private _creation;
-    mapping(int256 Latitude => mapping(address Coder => uint256 Buzz)) private _creators;
+    mapping(int256 Latitude => mapping(address Coder => mapping(address Caude => uint256 Buzz))) private _creators;
 
     constructor(address CheonAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
         Cheon = CHEON(CheonAddress);
@@ -38,7 +38,8 @@ contract WORLD is DYSNOMIA {
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
             uint256 _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
-                uint256 Charge = _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]];
+                uint256 Charge = _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][j]][Caude];
+                if(Charge == 0) continue;
                 if(Charge >= _pdist) {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _creation[_cauda[Caude][i]][j], _pdist);
                     Amount -= _pdist;
@@ -57,9 +58,9 @@ contract WORLD is DYSNOMIA {
             _world[Latitude][Longitude][Cause] += Hypobar;
             Vitus.Mint(address(Chi), Epibar);
 
-            if(_creators[Latitude][address(Chi)] == 0)
+            if(_creators[Latitude][address(Chi)][Cause] == 0)
                 _creation[Latitude].push(address(Chi));
-            _creators[Latitude][address(Chi)] += Charge;
+            _creators[Latitude][address(Chi)][Cause] += Charge;
         }
     }
 }
