@@ -38,7 +38,7 @@ contract WORLD is DYSNOMIA {
         return _creators[Latitude][Coder][Caude];
     }
 
-    function Distribute(address Caude, address Distributive, uint256 Amount) public {
+    function Distribute(address Caude, address Distributive, uint256 Amount) public returns (uint256 Remaining) {
         address[111] memory _l;
         address _c;
         uint256 _pdist;
@@ -65,6 +65,7 @@ contract WORLD is DYSNOMIA {
                 }
             }
         }
+        return Amount;
     }
 
     function Code(int256 Latitude, int256 Longitude, address Cause) public {
