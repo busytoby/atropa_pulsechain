@@ -39,9 +39,7 @@ contract WORLD is DYSNOMIA {
     }
 
     function Distribute(address Caude, address Distributive, uint256 Amount) public {
-        address l1 = address(0x0);
-        address l2 = address(0x0);
-        address l3 = address(0x0);
+        address[111] memory _l;
         address _c;
         uint256 _pdist;
         uint256 Charge;
@@ -49,8 +47,11 @@ contract WORLD is DYSNOMIA {
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
-                if(_c == l1 || _c == l2 || _c == l3) _creators[_cauda[Caude][i]][_c][Caude] = 0;
-                l1 = l2; l2 = l3; l3 = _c;
+                for(uint256 k = 0; k < _l.length; k++) {
+                    if(_l[k] == _c) _creators[_cauda[Caude][i]][_c][Caude] = 0;
+                    if(k < _l.length - 1) _l[k] = _l[k+1];
+                    else _l[k] = _c;
+                }
                 Charge = _creators[_cauda[Caude][i]][_c][Caude];
                 if(Charge == 0) continue;
                 if(Charge >= _pdist) {
