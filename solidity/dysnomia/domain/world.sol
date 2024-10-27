@@ -15,6 +15,7 @@ contract WORLD is DYSNOMIA {
     mapping(address Caude => int256[] Latitudes) private _cauda;
     mapping(int256 Latitude => address[] Coders) private _creation;
     mapping(int256 Latitude => mapping(address Coder => mapping(address Caude => uint256 Buzz))) private _creators;
+    mapping(address Caude => mapping(address Distributive => bool Allowed)) private _whitelist;
 
     constructor(address CheonAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
         Cheon = CHEON(CheonAddress);
@@ -30,6 +31,24 @@ contract WORLD is DYSNOMIA {
         Vitus.Mint(address(this), 1);
     }
 
+    function hasOwner(address _contract) public view returns (bool does) {
+        bytes4 selector = bytes4(keccak256(bytes("owner(address)")));
+        bytes memory data = abi.encodeWithSelector(selector, address(0x0));
+        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
+    }
+
+    function has(address _contract, string memory what) public view returns (bool does) {
+        bytes4 selector = bytes4(keccak256(bytes(what)));
+        bytes memory data = abi.encodeWithSelector(selector);
+        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
+    }
+
+    function Whitelist(address Caude, address Distributive, bool Allow) public {
+        QINGINTERFACE Asset = QINGINTERFACE(Caude);
+        if((owner(msg.sender)) || (Asset.owner(msg.sender)))
+            _whitelist[Caude][Distributive] = Allow;
+    }
+
     function Bun(int256 Latitude, int256 Longitude, address Caude) public view returns (uint256) {
         return _world[Latitude][Longitude][Caude];
     }
@@ -43,6 +62,8 @@ contract WORLD is DYSNOMIA {
         address _c;
         uint256 _pdist;
         uint256 Charge;
+        if(_whitelist[Caude][address(0x0)] == false)
+            if(_whitelist[Caude][Distributive] == false) return Amount;
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
