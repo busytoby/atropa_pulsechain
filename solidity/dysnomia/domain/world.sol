@@ -79,6 +79,8 @@ contract WORLD is DYSNOMIA {
     error OutOfRange(int256 QingLatitude, int256 QingLongitude, uint256 Range);
     function Code(int256 Latitude, int256 Longitude, address Cause) public {
         uint256 QingWaat = QINGINTERFACE(Cause).Waat();
+        QINGINTERFACE Qing = Map.GetQing(QingWaat);
+        assert(Cause == address(Qing));
         (YUEINTERFACE Chi, ) = Cheon.Sei().Chi();
         (uint256 Charge, uint256 Hypobar, ) = Cheon.Su(Cause);
         (uint256 Dione, , uint256 Deimos, uint256 Yeo) = Meta.Beat(QingWaat);
