@@ -10,6 +10,7 @@ contract WAR is DYSNOMIA {
 
     constructor(address WorldAddress) DYSNOMIA("Dysnomia War", "WAR", address(DYSNOMIA(WorldAddress).Xiao())) {
         World = WORLDINTERFACE(WorldAddress);
+        World.Cheon().Sei().Chan().addOwner(address(this));
 
         uint256 originMint = Xiao.Random() % maxSupply / 10;
         _mint(tx.origin, originMint * 10 ** decimals());

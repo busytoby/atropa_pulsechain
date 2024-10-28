@@ -22,7 +22,6 @@ contract WORLD is DYSNOMIA {
 
     constructor(address CheonAddress, address MetaAddress, address MapAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
         Cheon = CHEON(CheonAddress);
-        Cheon.addOwner(address(this));
         Meta = META(MetaAddress);
         Map = MAPINTERFACE(MapAddress);
 
