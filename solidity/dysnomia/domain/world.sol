@@ -13,7 +13,7 @@ contract WORLD is DYSNOMIA {
     mapping(int256 Latitude => mapping(int256 Longitude => mapping(address Caude => uint256 Bun))) private _world;
     mapping(address Caude => int256[] Latitudes) private _cauda;
     mapping(int256 Latitude => address[] Coders) private _creation;
-    mapping(int256 Latitude => mapping(address Coder => mapping(address Caude => uint256 Buzz))) private _creators;
+    mapping(address Coder => mapping(address Caude => uint256 Buzz)) private _creators;
     mapping(address Caude => mapping(address Distributive => bool Allowed)) private _whitelist;
 
     constructor(address CheonAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
@@ -30,18 +30,6 @@ contract WORLD is DYSNOMIA {
         Vitus.Mint(address(this), 1);
     }
 
-    function hasOwner(address _contract) public view returns (bool does) {
-        bytes4 selector = bytes4(keccak256(bytes("owner(address)")));
-        bytes memory data = abi.encodeWithSelector(selector, address(0x0));
-        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
-    }
-
-    function has(address _contract, string memory what) public view returns (bool does) {
-        bytes4 selector = bytes4(keccak256(bytes(what)));
-        bytes memory data = abi.encodeWithSelector(selector);
-        assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
-    }
-
     function Whitelist(address Caude, address Distributive, bool Allow) public {
         QINGINTERFACE Asset = QINGINTERFACE(Caude);
         if((owner(msg.sender)) || (Asset.owner(msg.sender)))
@@ -52,12 +40,12 @@ contract WORLD is DYSNOMIA {
         return _world[Latitude][Longitude][Caude];
     }
 
-    function Buzz(int256 Latitude, address Coder, address Caude) public view returns (uint256) {
-        return _creators[Latitude][Coder][Caude];
+    function Buzz(address Coder, address Caude) public view returns (uint256) {
+        return _creators[Coder][Caude];
     }
 
     function Distribute(address Caude, address Distributive, uint256 Amount) public returns (uint256 Remaining) {
-        address[111] memory _l;
+        address[12] memory _l;
         address _c;
         uint256 _pdist;
         uint256 Charge;
@@ -68,20 +56,20 @@ contract WORLD is DYSNOMIA {
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
                 for(uint256 k = 0; k < _l.length; k++) {
-                    if(_l[k] == _c) _creators[_cauda[Caude][i]][_c][Caude] = 0;
+                    if(_l[k] == _c) _creators[_c][Caude] /= 2;
                     if(k < _l.length - 1) _l[k] = _l[k+1];
                     else _l[k] = _c;
                 }
-                Charge = _creators[_cauda[Caude][i]][_c][Caude];
+                Charge = _creators[_c][Caude];
                 if(Charge == 0) continue;
                 if(Charge >= _pdist) {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _c, _pdist);
                     Amount -= _pdist;
-                    _creators[_cauda[Caude][i]][_c][Caude] -= _pdist;
+                    _creators[_c][Caude] -= _pdist;
                 } else {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
                     Amount -= Charge;
-                    _creators[_cauda[Caude][i]][_c][Caude] = 0;
+                    _creators[_c][Caude] = 0;
                 }
             }
         }
@@ -96,9 +84,9 @@ contract WORLD is DYSNOMIA {
             _world[Latitude][Longitude][Cause] += Hypobar;
             Vitus.Mint(address(Chi), Epibar);
 
-            if(_creators[Latitude][address(Chi)][Cause] == 0)
+            if(_creators[address(Chi)][Cause] == 0)
                 _creation[Latitude].push(address(Chi));
-            _creators[Latitude][address(Chi)][Cause] += Charge;
+            _creators[address(Chi)][Cause] += Charge;
         }
     }
 }
