@@ -52,6 +52,7 @@ contract WORLD is DYSNOMIA {
         if(_whitelist[Caude][address(0x0)] == false)
             if(_whitelist[Caude][Distributive] == false) return Amount;
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
+            if(Amount < 1 * 10 ** decimals()) return Amount;
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
