@@ -33,7 +33,7 @@ contract Hecke is DYSNOMIA {
 
         End = Meridians[Meridian] - Start;
 
-        if(Waat < End/2) {
+        if(Waat < ((End/2) - Start)) {
             Longitude = int256(Waat);
         } else {
             Longitude = int256((Waat - ((End/2) - Start))) * -1;
