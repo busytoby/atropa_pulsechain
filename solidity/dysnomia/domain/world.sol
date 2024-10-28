@@ -30,6 +30,8 @@ contract WORLD is DYSNOMIA {
 
         _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
         _addMarketRate(CheonAddress, 1 * 10 ** decimals());
+        _addMarketRate(MetaAddress, 1 * 10 ** decimals());
+        _addMarketRate(MapAddress, 1 * 10 ** decimals());
 
         Vitus = new VITUS(address(this));
         Vitus.Mint(address(this), 1);
