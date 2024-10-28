@@ -24,14 +24,14 @@ contract WAR is DYSNOMIA {
         _addMarketRate(WorldAddress, 1 * 10 ** decimals());
     }
 
-    function Faa(address Caude, uint256 Position) public {
+    function Faa(address Caude, uint256 Position) public returns (uint256 Waat) {
         uint256 Buzz = World.Tail(Caude, Position);
-        if(Buzz == 0) return;
+        if(Buzz == 0) return 0;
         (YUEINTERFACE Chi, ) = World.Cheon().Sei().Chi();
         (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge) = World.Meta().Ring().Eta();
 
-
         Water.Mint(address(Chi), Iota);
         CO2 += Chao;
+        return Xiao.modExp(Phoebe, Charge, World.Map().Map().Meridians(88));
     }
 }
