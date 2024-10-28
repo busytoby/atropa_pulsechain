@@ -55,6 +55,7 @@ contract WORLD is DYSNOMIA {
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
+                if(_creators[_cauda[Caude][i]][_c][Caude] == 0) continue;
                 for(uint256 k = 0; k < _l.length; k++) {
                     if(_l[k] == _c) _creators[_cauda[Caude][i]][_c][Caude] /= 2;
                     if(k < _l.length - 1) _l[k] = _l[k+1];
@@ -62,15 +63,10 @@ contract WORLD is DYSNOMIA {
                 }
                 Charge = _creators[_cauda[Caude][i]][_c][Caude];
                 if(Charge == 0) continue;
-                if(Charge >= _pdist) {
-                    DYSNOMIA(Distributive).transferFrom(msg.sender, _c, _pdist);
-                    Amount -= _pdist;
-                    _creators[_cauda[Caude][i]][_c][Caude] -= _pdist;
-                } else {
-                    DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
-                    Amount -= Charge;
-                    _creators[_cauda[Caude][i]][_c][Caude] = 0;
-                }
+                Charge = Xiao.modExp(Charge, Xiao.Random(), _pdist);
+                DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
+                Amount -= Charge;
+                _creators[_cauda[Caude][i]][_c][Caude] -= Charge;
             }
         }
         return Amount;
