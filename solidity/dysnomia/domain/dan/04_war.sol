@@ -11,6 +11,8 @@ contract WAR is DYSNOMIA {
     H2O public Water;
     uint256 public CO2;
 
+    mapping(address Caude => mapping(uint256 Position => uint256 Carbon)) private _taan;
+
     constructor(address WorldAddress) DYSNOMIA("Dysnomia War", "WAR", address(DYSNOMIA(WorldAddress).Xiao())) {
         World = WORLDINTERFACE(WorldAddress);
         World.Cheon().Sei().Chan().addOwner(address(this));
@@ -30,8 +32,11 @@ contract WAR is DYSNOMIA {
         (YUEINTERFACE Chi, ) = World.Cheon().Sei().Chi();
         (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge) = World.Meta().Ring().Eta();
 
-        Water.Mint(address(Chi), Iota);
-        CO2 += Chao;
-        return Xiao.modExp(Phoebe, Charge, World.Map().Map().Meridians(88));
+        Waat = Xiao.modExp(Phoebe, Charge, World.Map().Map().Meridians(88));
+
+        if(Waat > _taan[Caude][Position]) {
+            Water.Mint(address(Chi), Iota);
+            CO2 += Chao;
+        }
     }
 }
