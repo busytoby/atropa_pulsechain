@@ -79,8 +79,8 @@ contract WORLD is DYSNOMIA {
     function Code(int256 Latitude, int256 Longitude, address Cause) public {
         uint256 QingWaat = QINGINTERFACE(Cause).Waat();
         (YUEINTERFACE Chi, ) = Cheon.Sei().Chi();
-        (uint256 Charge, uint256 Hypobar, uint256 Epibar) = Cheon.Su(Cause);
-        (, , , uint256 Yeo) = Meta.Beat(QingWaat);
+        (uint256 Charge, uint256 Hypobar, ) = Cheon.Su(Cause);
+        (uint256 Dione, , uint256 Deimos, uint256 Yeo) = Meta.Beat(QingWaat);
         (int256 qlat, int256 qlon) = Map.Map().Compliment(QingWaat);
 
         if(Latitude > qlat + int256(Yeo)) revert OutOfRange(qlat, qlon, Yeo);
@@ -91,11 +91,11 @@ contract WORLD is DYSNOMIA {
         if(Charge == 0) return;
         if(Charge >= _world[Latitude][Longitude][Cause]) {
             _world[Latitude][Longitude][Cause] += Hypobar;
-            Vitus.Mint(address(Chi), Epibar);
+            Vitus.Mint(address(Chi), Dione);
 
             if(_creators[Latitude][address(Chi)][Cause] == 0)
                 _creation[Latitude].push(address(Chi));
-            _creators[Latitude][address(Chi)][Cause] += Charge;
+            _creators[Latitude][address(Chi)][Cause] += Deimos;
         }
     }
 }
