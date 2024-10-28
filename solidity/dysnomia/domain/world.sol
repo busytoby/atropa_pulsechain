@@ -45,7 +45,6 @@ contract WORLD is DYSNOMIA {
     }
 
     function Distribute(address Caude, address Distributive, uint256 Amount) public returns (uint256 Remaining) {
-        address[12] memory _l;
         address _c;
         uint256 _pdist;
         uint256 Charge;
@@ -56,16 +55,8 @@ contract WORLD is DYSNOMIA {
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
-                if(_creators[_cauda[Caude][i]][_c][Caude] == 0) continue;
-                for(uint256 k = 0; k < _l.length; k++) {
-                    if(_l[k] == _c) _creators[_cauda[Caude][i]][_c][Caude] /= 2;
-                    if(k < _l.length - 1) _l[k] = _l[k+1];
-                    else _l[k] = _c;
-                }
-                Charge = _creators[_cauda[Caude][i]][_c][Caude];
+                Charge = _creators[_cauda[Caude][i]][_c][Caude] % _pdist;
                 if(Charge == 0) continue;
-                if(Charge >= _pdist)
-                    Charge = Charge % _pdist;
                 DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
                 unchecked {
                     Amount -= Charge;
