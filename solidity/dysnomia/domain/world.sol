@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
 import "./tang/interfaces/02b_cheoninterface.sol";
-import "./interfaces/mapinterface.sol";
 import "./assets/vitus.sol";
 
 contract WORLD is DYSNOMIA {

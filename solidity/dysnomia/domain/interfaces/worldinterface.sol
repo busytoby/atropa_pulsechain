@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../../soeng/interfaces/04b_xieinterface.sol";
-import "../../interfaces/yueinterface.sol";
+import "../tang/interfaces/02b_cheoninterface.sol";
+import "../assets/interfaces/vitusinterface.sol";
 
-interface CHAN {
+interface WORLDINTERFACE {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -23,12 +23,11 @@ interface CHAN {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Xie() external view returns (XIE);
-    function Yan(address Origin) external view returns (address Yue);
-    function AddYue(address Origin, address Yue) external;
-    function TransferYue(address Yue, address NewOrigin) external;
-    function ReactYue(YUEINTERFACE Yue, address Qing) external returns(uint256 Charge);
-    function YueWithdraw(YUEINTERFACE Yue, address Asset, address To, uint256 Amount) external;
-    function YueMintToOrigin(YUEINTERFACE Yue) external;
-    function YueForceTransfer(YUEINTERFACE Yue, address From, address To, uint256 Amount) external;
+    function Cheon() external view returns (CHEON);
+    function Vitus() external view returns (VITUSINTERFACE);
+    function Whitelist(address Caude, address Distributive, bool Allow) external;
+    function Bun(int256 Latitude, int256 Longitude, address Caude) external view returns (uint256);
+    function Buzz(int256 Latitude, address Coder, address Caude) external view returns (uint256);
+    function Distribute(address Caude, address Distributive, uint256 Amount) external returns (uint256 Remaining);
+    function Code(int256 Latitude, int256 Longitude, address Cause) external;
 }

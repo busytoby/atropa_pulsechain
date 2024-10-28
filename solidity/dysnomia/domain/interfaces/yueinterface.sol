@@ -25,7 +25,7 @@ interface YUEINTERFACE {
     function Xie() external view returns (XIE);
     function Origin() external view returns (address);
     function ChangeOrigin(address NewOrigin) external;
-    function Withdraw(address what, uint256 amount) external;
+    function Withdraw(address what, address To, uint256 amount) external;
     function MintToOrigin() external;
     function ForceTransfer(address From, address To, uint256 Amount) external;
     function Bar(address Qing) external view returns (uint256 Hypogram, uint256 Epigram);
