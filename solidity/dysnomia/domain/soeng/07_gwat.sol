@@ -10,7 +10,7 @@ contract GWAT is DYSNOMIA {
 
     WARINTERFACE public War;
 
-    mapping(uint256 Waat => QING) private _waats;
+    mapping(uint256 Waat => address) private _waats;
     mapping(int256 Latitude => mapping(int256 Longitude => address Qing)) private _map;
 
     constructor(address WarAddress) DYSNOMIA(unicode"骨", "GWAT", address(DYSNOMIA(WarAddress).Xiao())) {
@@ -41,7 +41,7 @@ contract GWAT is DYSNOMIA {
         assert(Qing == address(War.World().Map().GetQing(Integrative.Waat())));
         if(War.World().Map().Forbidden(address(Integrative.Asset()))) revert ForbiddenToken(address(Integrative.Asset()));
         uint256 Luo = War.Faa(Qing, Lin);
-        if(Luo % War.World().Map().Offset() == 0) revert SpawningFailure(Lin);
+        if(Luo % War.World().Map().Offset() == 0 || _waats[Luo] != address(0x0)) revert SpawningFailure(Lin);
         Mu = new QING(Luo, Qing, address(War.World().Map().Cho()));
         (YUEINTERFACE Chi, LAU UserToken) = War.World().Cheon().Sei().Chi();
         Mu.Rename(string.concat(UserToken.Username(), "'s ", Integrative.Asset().name(), " GWAT"), string.concat(unicode"骨", Integrative.Asset().symbol()));
@@ -53,7 +53,7 @@ contract GWAT is DYSNOMIA {
         _mint(address(Chi), originMint * 10 ** decimals());
 
         Mu.renounceOwnership(address(this));
-        _waats[Luo] = Mu;
+        _waats[Luo] = address(Mu);
         addToMap(Luo, address(Mu));
         _addMarketRate(address(Mu), 1 * 10 ** decimals());
         emit NewQing(address(Mu), Qing, Luo);
