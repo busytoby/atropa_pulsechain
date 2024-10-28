@@ -51,8 +51,8 @@ contract WORLD is DYSNOMIA {
         uint256 Charge;
         if(_whitelist[Caude][address(0x0)] == false)
             if(_whitelist[Caude][Distributive] == false) return Amount;
+            
         for(uint256 i = 0; i < _cauda[Caude].length; i++) {
-            if(Amount < 1 * 10 ** decimals()) return Amount;
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
@@ -65,13 +65,14 @@ contract WORLD is DYSNOMIA {
                 Charge = _creators[_cauda[Caude][i]][_c][Caude];
                 if(Charge == 0) continue;
                 if(Charge >= _pdist)
-                    Charge = Xiao.modExp(Charge, Xiao.Random(), _pdist);
+                    Charge = Charge % _pdist;
                 DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
                 unchecked {
                     Amount -= Charge;
                     _creators[_cauda[Caude][i]][_c][Caude] -= Charge;
                 }
             }
+            if(Amount <= 1111111111) return Amount;
         }
         return Amount;
     }
