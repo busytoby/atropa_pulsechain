@@ -12,6 +12,7 @@ contract VITUS is DYSNOMIA {
         maxSupply = 0;
 
         World = WORLDINTERFACE(WorldAddress);
+        World.Cheon().Sei().Chan().addOwner(address(this));
 
         DYSNOMIA wmtoken = DYSNOMIA(WMContract);
         _mint(address(this), wmtoken.totalSupply());
