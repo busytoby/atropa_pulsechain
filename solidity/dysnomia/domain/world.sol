@@ -2,13 +2,17 @@
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
 import "./tang/interfaces/02b_cheoninterface.sol";
+import "./tang/interfaces/03b_metainterface.sol";
+import "./interfaces/mapinterface.sol";
 import "./assets/vitus.sol";
 
 contract WORLD is DYSNOMIA {
     string public constant Type = "WORLD";
 
     CHEON public Cheon;
+    META public Meta;
     VITUS public Vitus;
+    MAPINTERFACE public Map;
 
     mapping(int256 Latitude => mapping(int256 Longitude => mapping(address Caude => uint256 Bun))) private _world;
     mapping(address Caude => int256[] Latitudes) private _cauda;
@@ -16,9 +20,11 @@ contract WORLD is DYSNOMIA {
     mapping(int256 Latitude => mapping(address Coder => mapping(address Caude => uint256 Buzz))) private _creators;
     mapping(address Caude => mapping(address Distributive => bool Allowed)) private _whitelist;
 
-    constructor(address CheonAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
+    constructor(address CheonAddress, address MetaAddress, address MapAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
         Cheon = CHEON(CheonAddress);
         Cheon.addOwner(address(this));
+        Meta = META(MetaAddress);
+        Map = MAPINTERFACE(MapAddress);
 
         uint256 originMint = Xiao.Random() % maxSupply / 10;
         _mint(tx.origin, originMint * 10 ** decimals());
@@ -69,9 +75,19 @@ contract WORLD is DYSNOMIA {
         return Amount;
     }
 
+    error OutOfRange(int256 QingLatitude, int256 QingLongitude, uint256 Range);
     function Code(int256 Latitude, int256 Longitude, address Cause) public {
+        uint256 QingWaat = QINGINTERFACE(Cause).Waat();
         (YUEINTERFACE Chi, ) = Cheon.Sei().Chi();
         (uint256 Charge, uint256 Hypobar, uint256 Epibar) = Cheon.Su(Cause);
+        (, uint256 Beat, , ) = Meta.Beat(QingWaat);
+        (int256 qlat, int256 qlon) = Map.Map().Compliment(QingWaat);
+
+        if(Latitude > qlat + int256(Beat)) revert OutOfRange(qlat, qlon, Beat);
+        if(Latitude < qlat - int256(Beat)) revert OutOfRange(qlat, qlon, Beat);
+        if(Longitude > qlon + int256(Beat)) revert OutOfRange(qlat, qlon, Beat);
+        if(Longitude < qlon - int256(Beat)) revert OutOfRange(qlat, qlon, Beat);
+
         if(Charge == 0) return;
         if(Charge >= _world[Latitude][Longitude][Cause]) {
             _world[Latitude][Longitude][Cause] += Hypobar;

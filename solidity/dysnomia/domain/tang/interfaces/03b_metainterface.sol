@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../dan/interfaces/01b_chointerface.sol";
-import "../dan/interfaces/03b_qinginterface.sol";
-import "../../interfaces/heckeinterface.sol";
+import "../../sky/interfaces/03b_ringinterface.sol";
 
-interface MAPINTERFACE {
+interface META {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -24,14 +22,6 @@ interface MAPINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Cho() external view returns (CHOINTERFACE);
-    function Map() external view returns (HECKE);
-    function Offset() external view returns (uint256);
-    function GetMapQing(int256 Latitude, int256 Longitude) external view returns (QINGINTERFACE);
-    function hasOwner(address _contract) external view returns (bool does);
-    function has(address _contract, string memory what) external view returns (bool does);
-    function Forbidden(address Asset) external view returns (bool);
-    function Forbid(address Token, bool Disallow) external;
-    function GetQing(uint256 Waat) external view returns (QINGINTERFACE);
-    function New(address Integrative) external returns(QINGINTERFACE Mu);
+    function Ring() external view returns (RING);
+    function Beat(uint256 QingWaat) external returns (uint256 Dione, uint256 Charge, uint256 Deimos, uint256 Yeo);
 }
