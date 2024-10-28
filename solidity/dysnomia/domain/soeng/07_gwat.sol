@@ -10,7 +10,6 @@ contract GWAT is DYSNOMIA {
 
     WARINTERFACE public War;
 
-    mapping(address Asset => address Qing) private _qings;
     mapping(uint256 Waat => QING) private _waats;
     mapping(int256 Latitude => mapping(int256 Longitude => address Qing)) private _map;
 
@@ -34,24 +33,26 @@ contract GWAT is DYSNOMIA {
         return QINGINTERFACE(_map[Latitude][Longitude]);
     }
 
-    error QingAlreadyExists(address Token, address Qing);
     error ForbiddenToken(address which);
     error SpawningFailure(uint256 Lin);
     event NewQing(address Qing, address Integrative, uint256 Waat);
     function Gwat(address Qing, uint256 Lin) public returns (QING Mu) {
-        if(_qings[Qing] != address(0x0)) revert QingAlreadyExists(Qing, _qings[Qing]);
         QING Integrative = QING(Qing);
         assert(Qing == address(War.World().Map().GetQing(Integrative.Waat())));
         if(War.World().Map().Forbidden(address(Integrative.Asset()))) revert ForbiddenToken(address(Integrative.Asset()));
         uint256 Luo = War.Faa(Qing, Lin);
         if(Luo % War.World().Map().Offset() == 0) revert SpawningFailure(Lin);
         Mu = new QING(Luo, Qing, address(War.World().Map().Cho()));
-        if(Integrative.owner(msg.sender)) Mu.addOwner(msg.sender);
-        Mu.Rename(string.concat(Integrative.Asset().name(), " GWAT"), string.concat(unicode"骨", Integrative.Asset().symbol()));
+        (YUEINTERFACE Chi, LAU UserToken) = War.World().Cheon().Sei().Chi();
+        Mu.Rename(string.concat(UserToken.Username(), "'s ", Integrative.Asset().name(), " GWAT"), string.concat(unicode"骨", Integrative.Asset().symbol()));
         War.World().Map().Cho().addOwner(address(Mu));
         Mu.addOwner(address(War.World().Map().Cho()));
+        Mu.addOwner(msg.sender);
+        
+        uint256 originMint = Mu.Xiao().Random() % Mu.maxSupply() / 10;
+        _mint(address(Chi), originMint * 10 ** decimals());
+
         Mu.renounceOwnership(address(this));
-        _qings[Qing] = address(Mu);
         _waats[Luo] = Mu;
         addToMap(Luo, address(Mu));
         _addMarketRate(address(Mu), 1 * 10 ** decimals());
