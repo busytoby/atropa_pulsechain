@@ -63,7 +63,8 @@ contract WORLD is DYSNOMIA {
                 }
                 Charge = _creators[_cauda[Caude][i]][_c][Caude];
                 if(Charge == 0) continue;
-                Charge = Xiao.modExp(Charge, Xiao.Random(), _pdist);
+                if(Charge >= _pdist)
+                    Charge = Xiao.modExp(Charge, Xiao.Random(), _pdist);
                 DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
                 Amount -= Charge;
                 _creators[_cauda[Caude][i]][_c][Caude] -= Charge;
