@@ -32,7 +32,7 @@ contract WAR is DYSNOMIA {
         (YUEINTERFACE Chi, ) = World.Cheon().Sei().Chi();
         (uint256 Phoebe, uint256 Iota, uint256 Chao, uint256 Charge) = World.Meta().Ring().Eta();
 
-        Waat = Xiao.modExp(Phoebe, Charge, World.Map().Map().Meridians(88));
+        Waat = Xiao.modExp(Phoebe, Charge, World.Map().Map().Meridians(89));
 
         if(Waat > _taan[Caude][Position]) {
             Water.Mint(address(Chi), Iota);
