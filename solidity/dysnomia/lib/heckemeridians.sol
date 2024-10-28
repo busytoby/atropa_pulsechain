@@ -33,25 +33,21 @@ contract Hecke is DYSNOMIA {
 
         End = Meridians[Meridian] - Start;
 
-        if(Waat < End/4) {
+        if(Waat < End/2) {
             Longitude = int256(Waat);
-        } else if (Waat < End/2) {
-            Longitude = int256((4+(End/4) - (Waat - (End/4)))) * -1;
-        } else if (Waat < (3*(End/4))) {
-            Longitude = int256((Waat - (End/2))) * -1;
         } else {
-            Longitude = int256((4+(End/4) - (Waat - (3*(End/4)))));
+            Longitude = int256((Waat - ((End/2) - Start))) * -1;
         }
 
-        Latitude /= 667;
+        Latitude /= 333;
         if(South) Latitude = Latitude * -1;
 
     }
 
     function GetWaat(int256 Latitude) public view returns (uint256 Waat) {
         if(Latitude > 0)
-            return Meridians[88] + uint256(Latitude * 667);
-        return Meridians[88] - uint256(Latitude * -1 * 667);
+            return Meridians[88] + uint256(Latitude * 333);
+        return Meridians[88] - uint256(Latitude * -1 * 333);
     }
 
     function GetMeridian(uint256 Waat) public view returns (uint256 Meridian) {
