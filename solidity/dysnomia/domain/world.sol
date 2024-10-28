@@ -64,7 +64,8 @@ contract WORLD is DYSNOMIA {
                     Amount -= Charge;
                     _creators[_cauda[Caude][i]][_c][Caude] -= Charge;
                 }
-            }        }
+            }        
+        }
         return Amount;
     }
 
