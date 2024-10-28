@@ -9,6 +9,7 @@ contract WAR is DYSNOMIA {
 
     WORLDINTERFACE public World;
     H2O public Water;
+    uint256 public CO2;
 
     constructor(address WorldAddress) DYSNOMIA("Dysnomia War", "WAR", address(DYSNOMIA(WorldAddress).Xiao())) {
         World = WORLDINTERFACE(WorldAddress);
@@ -31,5 +32,6 @@ contract WAR is DYSNOMIA {
 
 
         Water.Mint(address(Chi), Iota);
+        CO2 += Chao;
     }
 }
