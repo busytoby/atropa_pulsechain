@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "../../../interfaces/01b_dysnomia.sol";
+import "../../interfaces/worldinterface.sol";
 
-
-interface VITUSINTERFACE {
+interface WARINTERFACE {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -22,7 +23,6 @@ interface VITUSINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Balance() external view returns (uint256);
-    function Mint(address To, uint256 Amount) external;
-    function Withdraw(uint256 Amount) external;
+    function World() external view returns (WORLDINTERFACE);
+    function Faa(address Caude, uint256 Position) external;
 }

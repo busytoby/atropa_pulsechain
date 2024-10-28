@@ -43,6 +43,17 @@ contract WORLD is DYSNOMIA {
             _whitelist[Caude][Distributive] = Allow;
     }
 
+    function Tail(address Caude, uint256 Position) public view returns (uint256 Bid) {
+        for(uint i = 0; i < _cauda[Caude].length; i++) {
+            if(Position > _creation[_cauda[Caude][i]].length)
+                Position = Position - _creation[_cauda[Caude][i]].length;
+            else {
+                return _creators[_cauda[Caude][i]][_creation[_cauda[Caude][i]][Position - 1]][Caude];
+            }
+        }
+        return 0;
+    }
+
     function Bun(int256 Latitude, int256 Longitude, address Caude) public view returns (uint256) {
         return _world[Latitude][Longitude][Caude];
     }

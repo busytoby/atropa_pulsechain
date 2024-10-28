@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 import "../tang/interfaces/02b_cheoninterface.sol";
+import "../tang/interfaces/03b_metainterface.sol";
 import "../assets/interfaces/vitusinterface.sol";
+import "../interfaces/mapinterface.sol";
 
 interface WORLDINTERFACE {
     function maxSupply() external view returns(uint256);
@@ -24,8 +26,11 @@ interface WORLDINTERFACE {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function Cheon() external view returns (CHEON);
+    function Meta() external view returns (META);
     function Vitus() external view returns (VITUSINTERFACE);
+    function Map() external view returns (MAPINTERFACE);
     function Whitelist(address Caude, address Distributive, bool Allow) external;
+    function Tail(address Caude, uint256 Position) external view returns (uint256 Bid);
     function Bun(int256 Latitude, int256 Longitude, address Caude) external view returns (uint256);
     function Buzz(int256 Latitude, address Coder, address Caude) external view returns (uint256);
     function Distribute(address Caude, address Distributive, uint256 Amount) external returns (uint256 Remaining);

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 
-interface VITUSINTERFACE {
+interface H2O {
     function maxSupply() external view returns(uint256);
     function Rename(string memory newName, string memory newSymbol) external;
     function GetMarketRate(address _a) external view returns(uint256);
@@ -24,5 +24,4 @@ interface VITUSINTERFACE {
     function Type() external view returns (string memory);
     function Balance() external view returns (uint256);
     function Mint(address To, uint256 Amount) external;
-    function Withdraw(uint256 Amount) external;
 }
