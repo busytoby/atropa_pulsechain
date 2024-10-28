@@ -33,10 +33,10 @@ contract Hecke is DYSNOMIA {
 
         End = Meridians[Meridian] - Start;
 
-        if(Waat < ((End/2) - Start)) {
+        if(Waat < End/2) {
             Longitude = int256(Waat);
         } else {
-            Longitude = int256((Waat - ((End/2) - Start))) * -1;
+            Longitude = int256(Waat - (End/2)) * -1;
         }
 
         Latitude /= 333;
