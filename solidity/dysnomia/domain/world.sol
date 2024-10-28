@@ -80,14 +80,13 @@ contract WORLD is DYSNOMIA {
         uint256 QingWaat = QINGINTERFACE(Cause).Waat();
         (YUEINTERFACE Chi, ) = Cheon.Sei().Chi();
         (uint256 Charge, uint256 Hypobar, uint256 Epibar) = Cheon.Su(Cause);
-        (, uint256 Beat, , uint256 Yeo) = Meta.Beat(QingWaat);
+        (, , , uint256 Yeo) = Meta.Beat(QingWaat);
         (int256 qlat, int256 qlon) = Map.Map().Compliment(QingWaat);
 
-        uint256 Range = Beat / Yeo;
-        if(Latitude > qlat + int256(Range)) revert OutOfRange(qlat, qlon, Range);
-        if(Latitude < qlat - int256(Range)) revert OutOfRange(qlat, qlon, Range);
-        if(Longitude > qlon + int256(Range)) revert OutOfRange(qlat, qlon, Range);
-        if(Longitude < qlon - int256(Range)) revert OutOfRange(qlat, qlon, Range);
+        if(Latitude > qlat + int256(Yeo)) revert OutOfRange(qlat, qlon, Yeo);
+        if(Latitude < qlat - int256(Yeo)) revert OutOfRange(qlat, qlon, Yeo);
+        if(Longitude > qlon + int256(Yeo)) revert OutOfRange(qlat, qlon, Yeo);
+        if(Longitude < qlon - int256(Yeo)) revert OutOfRange(qlat, qlon, Yeo);
 
         if(Charge == 0) return;
         if(Charge >= _world[Latitude][Longitude][Cause]) {
