@@ -24,5 +24,5 @@ interface WARINTERFACE {
     function mintToCap() external;
     function Type() external view returns (string memory);
     function World() external view returns (WORLDINTERFACE);
-    function Faa(address Caude, uint256 Position) external;
+    function Faa(address Caude, uint256 Position) external returns (uint256 Waat);
 }
