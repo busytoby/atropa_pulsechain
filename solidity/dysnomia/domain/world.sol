@@ -13,7 +13,7 @@ contract WORLD is DYSNOMIA {
     mapping(int256 Latitude => mapping(int256 Longitude => mapping(address Caude => uint256 Bun))) private _world;
     mapping(address Caude => int256[] Latitudes) private _cauda;
     mapping(int256 Latitude => address[] Coders) private _creation;
-    mapping(address Coder => mapping(address Caude => uint256 Buzz)) private _creators;
+    mapping(int256 Latitude => mapping(address Coder => mapping(address Caude => uint256 Buzz))) private _creators;
     mapping(address Caude => mapping(address Distributive => bool Allowed)) private _whitelist;
 
     constructor(address CheonAddress) DYSNOMIA("Dysnomia World", "WORLD", address(DYSNOMIA(CheonAddress).Xiao())) {
@@ -40,8 +40,8 @@ contract WORLD is DYSNOMIA {
         return _world[Latitude][Longitude][Caude];
     }
 
-    function Buzz(address Coder, address Caude) public view returns (uint256) {
-        return _creators[Coder][Caude];
+    function Buzz(int256 Latitude, address Coder, address Caude) public view returns (uint256) {
+        return _creators[Latitude][Coder][Caude];
     }
 
     function Distribute(address Caude, address Distributive, uint256 Amount) public returns (uint256 Remaining) {
@@ -55,22 +55,21 @@ contract WORLD is DYSNOMIA {
             _pdist = Amount / (_cauda[Caude].length - i) / _creation[_cauda[Caude][i]].length;
             for(uint256 j = 0; j < _creation[_cauda[Caude][i]].length; j++) {
                 _c = _creation[_cauda[Caude][i]][j];
-                if(_creators[_c][Caude] == 0) continue;
                 for(uint256 k = 0; k < _l.length; k++) {
-                    if(_l[k] == _c) _creators[_c][Caude] /= 2;
+                    if(_l[k] == _c) _creators[_cauda[Caude][i]][_c][Caude] /= 2;
                     if(k < _l.length - 1) _l[k] = _l[k+1];
                     else _l[k] = _c;
                 }
-                Charge = _creators[_c][Caude];
+                Charge = _creators[_cauda[Caude][i]][_c][Caude];
                 if(Charge == 0) continue;
                 if(Charge >= _pdist) {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _c, _pdist);
                     Amount -= _pdist;
-                    _creators[_c][Caude] -= _pdist;
+                    _creators[_cauda[Caude][i]][_c][Caude] -= _pdist;
                 } else {
                     DYSNOMIA(Distributive).transferFrom(msg.sender, _c, Charge);
                     Amount -= Charge;
-                    _creators[_c][Caude] = 0;
+                    _creators[_cauda[Caude][i]][_c][Caude] = 0;
                 }
             }
         }
@@ -85,9 +84,9 @@ contract WORLD is DYSNOMIA {
             _world[Latitude][Longitude][Cause] += Hypobar;
             Vitus.Mint(address(Chi), Epibar);
 
-            if(_creators[address(Chi)][Cause] == 0)
+            if(_creators[Latitude][address(Chi)][Cause] == 0)
                 _creation[Latitude].push(address(Chi));
-            _creators[address(Chi)][Cause] += Charge;
+            _creators[Latitude][address(Chi)][Cause] += Charge;
         }
     }
 }
