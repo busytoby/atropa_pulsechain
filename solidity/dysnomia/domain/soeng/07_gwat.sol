@@ -59,7 +59,6 @@ contract GWAT is DYSNOMIA {
         _qings[Qing][address(Chi)] = address(Mu);
         _waats[Luo] = address(Mu);
         addToMap(Luo, address(Mu));
-        _addMarketRate(address(Mu), 1 * 10 ** decimals());
         emit NewQing(address(Mu), Qing, Luo);
     }
 }
