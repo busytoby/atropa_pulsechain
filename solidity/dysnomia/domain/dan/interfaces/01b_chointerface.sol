@@ -25,7 +25,7 @@ interface CHOINTERFACE {
     function owner(address cOwner) external view returns (bool);
     function mintToCap() external;
     function Type() external view returns (string memory);
-    function Prime() external view returns (uint256);
+    function Gua() external view returns (uint256);
     function Void() external view returns (VOID);
     function Saat(uint256) external view returns (uint64);
     function On() external view returns (Bao memory);
