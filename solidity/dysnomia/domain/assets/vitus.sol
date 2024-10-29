@@ -34,8 +34,15 @@ contract VITUS is DYSNOMIA {
     function Mint(address To, uint256 Amount) public onlyOwners {
         _mint(To, Amount);
         uint256 _flip = VITUS(address(this)).balanceOf(To);
-        uint256 _max = World.Map().Cho().Gua();
-        if(_flip > _max)
-          _transfer(To, address(0x0), _flip - _max);
+        uint256 _max = World.Map().Map().Meridians(13);
+        if(_flip > _max) {
+            uint256 _flip2 = VITUS(address(this)).balanceOf(address(World));
+            uint256 _max2 = World.Map().Map().Meridians(20);
+
+            if(_flip2 < _max2)
+                _transfer(To, address(World), _flip - _max);
+            else
+                _transfer(To, address(0x0), _flip - _max);
+        }
     }
 }

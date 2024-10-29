@@ -28,5 +28,16 @@ contract H2O is DYSNOMIA {
 
     function Mint(address To, uint256 Amount) public onlyOwners {
         _mint(To, Amount);
+        uint256 _flip = H2O(address(this)).balanceOf(To);
+        uint256 _max = War.World().Map().Map().Meridians(13);
+        if(_flip > _max) {
+            uint256 _flip2 = H2O(address(this)).balanceOf(address(War.World()));
+            uint256 _max2 = War.World().Map().Map().Meridians(20);
+
+            if(_flip2 < _max2)
+                _transfer(To, address(War.World()), _flip - _max);
+            else
+                _transfer(To, address(0x0), _flip - _max);
+        }
     }
 }
