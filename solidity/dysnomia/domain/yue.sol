@@ -32,7 +32,7 @@ contract YUE is DYSNOMIA {
     error ExchangeRateNotFound(address SpendAsset, address ReceiveAsset);
     function Hong(address QingAsset, uint256 PurchaseAmount) public {
         QINGINTERFACE ReceiveToken = QINGINTERFACE(QingAsset);
-        (address SpendTokenAddress, uint256 Rate) = GetPrimeRate(QingAsset);
+        (address SpendTokenAddress, uint256 Rate) = GetAssetRate(QingAsset);
         DYSNOMIA SpendToken = DYSNOMIA(SpendTokenAddress);
         if(Rate == 0) revert ExchangeRateNotFound(SpendTokenAddress, QingAsset);
         uint256 cost = (PurchaseAmount * Rate) / (10 ** decimals());
@@ -43,7 +43,7 @@ contract YUE is DYSNOMIA {
 
     function Hung(address QingAsset, uint256 RedeemAmount) public {
         QINGINTERFACE SpendToken = QINGINTERFACE(QingAsset);
-        (address ReceiveTokenAddress, uint256 Rate) = GetPrimeRate(QingAsset);
+        (address ReceiveTokenAddress, uint256 Rate) = GetAssetRate(QingAsset);
         DYSNOMIA ReceiveToken = DYSNOMIA(ReceiveTokenAddress);
         if(Rate == 0) revert ExchangeRateNotFound(QingAsset, ReceiveTokenAddress);
         uint256 cost = (RedeemAmount * Rate) / (10 ** decimals());
@@ -52,7 +52,7 @@ contract YUE is DYSNOMIA {
         ReceiveToken.transfer(msg.sender, cost);
     }
 
-    function GetPrimeRate(address QingAsset) public view returns (address Asset, uint256 Rate) {
+    function GetAssetRate(address QingAsset) public view returns (address Asset, uint256 Rate) {
         QINGINTERFACE Qing = QINGINTERFACE(QingAsset);
         address Integrative = address(Qing.Asset());
         return (Integrative, Qing.GetMarketRate(Integrative));
