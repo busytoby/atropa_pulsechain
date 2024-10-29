@@ -45,6 +45,20 @@ contract YUE is DYSNOMIA {
         ReceiveToken.transfer(msg.sender, ReceiveAmount);
     }
 
+    function Hung(address SpendAsset, address ReceiveAsset, uint256 ReceiveAmount) public {
+        QINGINTERFACE SpendToken = QINGINTERFACE(SpendAsset);
+        QINGINTERFACE ReceiveToken = QINGINTERFACE(ReceiveAsset);
+
+        if(address(ReceiveAsset) != address(SpendToken.Asset())) revert IntegrativeAssetOnly(SpendAsset, address(SpendToken.Asset()), ReceiveAsset);
+
+        uint256 Rate = Price(SpendAsset, ReceiveAsset);
+        if(Rate == 0) revert ExchangeRateNotFound(SpendAsset, ReceiveAsset);
+        uint256 cost = (ReceiveAmount * Rate) / (10 ** decimals());
+        bool success1 = SpendToken.transferFrom(msg.sender, address(this), ReceiveAmount);
+        require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
+        ReceiveToken.transfer(msg.sender, cost);
+    }
+
     function Price(address SpendAsset, address ReceiveAsset) public view returns (uint256) {
         return QINGINTERFACE(SpendAsset).GetMarketRate(ReceiveAsset);
     }   
