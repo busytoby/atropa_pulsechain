@@ -30,37 +30,32 @@ contract YUE is DYSNOMIA {
     }
 
     error ExchangeRateNotFound(address SpendAsset, address ReceiveAsset);
-    error IntegrativeAssetOnly(address SpendAsset, address ReceiveAsset, address RequestAsset);
-    function Hong(address SpendAsset, address QingAsset, uint256 QingAssetReceiveAmount) public {
-        DYSNOMIA SpendToken = DYSNOMIA(SpendAsset);
+    function Hong(address QingAsset, uint256 QingAssetReceiveAmount) public {
         QINGINTERFACE ReceiveToken = QINGINTERFACE(QingAsset);
-
-        if(address(SpendToken) != address(ReceiveToken.Asset())) revert IntegrativeAssetOnly(SpendAsset, address(ReceiveToken.Asset()), QingAsset);
-
-        uint256 Rate = Price(QingAsset, SpendAsset);
-        if(Rate == 0) revert ExchangeRateNotFound(SpendAsset, QingAsset);
+        (address SpendTokenAddress, uint256 Rate) = GetPrimeRate(QingAsset);
+        DYSNOMIA SpendToken = DYSNOMIA(SpendTokenAddress);
+        if(Rate == 0) revert ExchangeRateNotFound(SpendTokenAddress, QingAsset);
         uint256 cost = (QingAssetReceiveAmount * Rate) / (10 ** decimals());
         bool success1 = SpendToken.transferFrom(msg.sender, address(this), cost);
         require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
         ReceiveToken.transfer(msg.sender, QingAssetReceiveAmount);
     }
 
-    function Hung(address QingAsset, address RedeemAsset, uint256 RedeemAmount) public {
+    function Hung(address QingAsset, uint256 RedeemAmount) public {
         QINGINTERFACE SpendToken = QINGINTERFACE(QingAsset);
-        DYSNOMIA ReceiveToken = DYSNOMIA(RedeemAsset);
-
-        if(address(RedeemAsset) != address(SpendToken.Asset())) revert IntegrativeAssetOnly(QingAsset, address(SpendToken.Asset()), RedeemAsset);
-
-        uint256 Rate = Price(QingAsset, RedeemAsset);
-        if(Rate == 0) revert ExchangeRateNotFound(QingAsset, RedeemAsset);
+        (address ReceiveTokenAddress, uint256 Rate) = GetPrimeRate(QingAsset);
+        DYSNOMIA ReceiveToken = DYSNOMIA(ReceiveTokenAddress);
+        if(Rate == 0) revert ExchangeRateNotFound(QingAsset, ReceiveTokenAddress);
         uint256 cost = (RedeemAmount * Rate) / (10 ** decimals());
         bool success1 = SpendToken.transferFrom(msg.sender, address(this), RedeemAmount);
         require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
         ReceiveToken.transfer(msg.sender, cost);
     }
 
-    function Price(address QingAsset, address RateAsset) public view returns (uint256) {
-        return QINGINTERFACE(QingAsset).GetMarketRate(RateAsset);
+    function GetPrimeRate(address QingAsset) public view returns (address Asset, uint256 Rate) {
+        QINGINTERFACE Qing = QINGINTERFACE(QingAsset);
+        address Integrative = address(Qing.Asset());
+        return (Integrative, Qing.GetMarketRate(Integrative));
     }   
 
     error OnlyGameTokens(address what);
