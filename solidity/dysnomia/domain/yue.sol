@@ -29,33 +29,46 @@ contract YUE is DYSNOMIA {
         Origin = NewOrigin;
     }
 
+    function IsValidAsset(address GwatAsset, address Integrative) public view returns (bool) {
+        bytes32 QINGCHECK = keccak256(abi.encodePacked("QING"));
+        QINGINTERFACE Gwat = QINGINTERFACE(GwatAsset);
+        while (keccak256(abi.encodePacked(Gwat.Type())) != QINGCHECK) {
+            if(address(Gwat.Asset()) == Integrative) return true;
+            Gwat = QINGINTERFACE(address(Gwat.Asset()));
+        } 
+        if(address(Gwat.Asset()) == Integrative) return true;
+        return false;
+    }
+
+    error InvalidPair(address SpendAsset, address ReceiveAsset);
     error ExchangeRateNotFound(address SpendAsset, address ReceiveAsset);
-    function Hong(address QingAsset, uint256 PurchaseAmount) public {
+    function Hong(address SpendAsset, address QingAsset, uint256 PurchaseAmount) public {
+        if(!IsValidAsset(QingAsset, SpendAsset)) revert InvalidPair(SpendAsset, QingAsset);
         QINGINTERFACE ReceiveToken = QINGINTERFACE(QingAsset);
-        (address SpendTokenAddress, uint256 Rate) = GetAssetRate(QingAsset);
-        DYSNOMIA SpendToken = DYSNOMIA(SpendTokenAddress);
-        if(Rate == 0) revert ExchangeRateNotFound(SpendTokenAddress, QingAsset);
+        uint256 Rate = GetAssetRate(QingAsset, SpendAsset);
+        DYSNOMIA SpendToken = DYSNOMIA(SpendAsset);
+        if(Rate == 0) revert ExchangeRateNotFound(SpendAsset, QingAsset);
         uint256 cost = (PurchaseAmount * Rate) / (10 ** decimals());
         bool success1 = SpendToken.transferFrom(msg.sender, address(this), cost);
         require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
         ReceiveToken.transfer(msg.sender, PurchaseAmount);
     }
 
-    function Hung(address QingAsset, uint256 RedeemAmount) public {
+    function Hung(address QingAsset, address ReceiveAsset, uint256 RedeemAmount) public {
+        if(!IsValidAsset(QingAsset, ReceiveAsset)) revert InvalidPair(QingAsset, ReceiveAsset);
         QINGINTERFACE SpendToken = QINGINTERFACE(QingAsset);
-        (address ReceiveTokenAddress, uint256 Rate) = GetAssetRate(QingAsset);
-        DYSNOMIA ReceiveToken = DYSNOMIA(ReceiveTokenAddress);
-        if(Rate == 0) revert ExchangeRateNotFound(QingAsset, ReceiveTokenAddress);
+        uint256 Rate = GetAssetRate(QingAsset, ReceiveAsset);
+        DYSNOMIA ReceiveToken = DYSNOMIA(ReceiveAsset);
+        if(Rate == 0) revert ExchangeRateNotFound(QingAsset, ReceiveAsset);
         uint256 cost = (RedeemAmount * Rate) / (10 ** decimals());
         bool success1 = SpendToken.transferFrom(msg.sender, address(this), RedeemAmount);
         require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
         ReceiveToken.transfer(msg.sender, cost);
     }
 
-    function GetAssetRate(address QingAsset) public view returns (address Asset, uint256 Rate) {
+    function GetAssetRate(address QingAsset, address Asset) public view returns (uint256 Rate) {
         QINGINTERFACE Qing = QINGINTERFACE(QingAsset);
-        address Integrative = address(Qing.Asset());
-        return (Integrative, Qing.GetMarketRate(Integrative));
+        return Qing.GetMarketRate(Asset);
     }   
 
     error OnlyGameTokens(address what);
