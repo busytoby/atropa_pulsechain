@@ -74,7 +74,7 @@ contract YUE is DYSNOMIA {
             uint256 AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
             if(AssetRate == 0) return 0;
 
-            Rate = Rate/(4 * 10 ** (decimals() - 2));
+            Rate = Rate/(777 * 10 ** (decimals() - 5));
             if(address(Gwat.Asset()) == Integrative) {
                 if(Rate == 0) return AssetRate;
                 return Rate * AssetRate;
@@ -86,7 +86,7 @@ contract YUE is DYSNOMIA {
         }
         if(address(Gwat.Asset()) == Integrative) {
             uint256 AssetRate = Gwat.GetMarketRate(Integrative);
-            Rate = Rate/(4 * 10 ** (decimals() - 2));
+            Rate = Rate/(777 * 10 ** (decimals() - 5));
             if(AssetRate == 0) return 0;
             if(Rate == 0) return Gwat.GetMarketRate(Integrative);
             else return Rate * Gwat.GetMarketRate(Integrative);
