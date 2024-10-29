@@ -30,14 +30,19 @@ contract YUE is DYSNOMIA {
     }
 
     error ExchangeRateNotFound(address SpendAsset, address ReceiveAsset);
+    error IntegrativeAssetOnly(address SpendAsset, address ReceiveAsset, address RequestAsset);
     function Hong(address SpendAsset, address ReceiveAsset, uint256 ReceiveAmount) public {
+        QINGINTERFACE SpendToken = QINGINTERFACE(SpendAsset);
+        QINGINTERFACE ReceiveToken = QINGINTERFACE(ReceiveAsset);
+
+        if(address(ReceiveAsset) != address(SpendToken.Asset())) revert IntegrativeAssetOnly(SpendAsset, address(SpendToken.Asset()), ReceiveAsset);
+
         uint256 Rate = Price(SpendAsset, ReceiveAsset);
         if(Rate == 0) revert ExchangeRateNotFound(SpendAsset, ReceiveAsset);
-        QINGINTERFACE BuyToken = QINGINTERFACE(SpendAsset);
         uint256 cost = (ReceiveAmount * Rate) / (10 ** decimals());
-        bool success1 = BuyToken.transferFrom(msg.sender, address(this), cost);
-        require(success1, string.concat(unicode"Need Approved ", BuyToken.name()));
-        QINGINTERFACE(ReceiveAsset).transfer(msg.sender, ReceiveAmount);
+        bool success1 = SpendToken.transferFrom(msg.sender, address(this), cost);
+        require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
+        ReceiveToken.transfer(msg.sender, ReceiveAmount);
     }
 
     function Price(address SpendAsset, address ReceiveAsset) public view returns (uint256) {
