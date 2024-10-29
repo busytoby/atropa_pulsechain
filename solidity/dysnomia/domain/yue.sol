@@ -66,9 +66,30 @@ contract YUE is DYSNOMIA {
         ReceiveToken.transfer(msg.sender, cost);
     }
 
-    function GetAssetRate(address QingAsset, address Asset) public view returns (uint256 Rate) {
-        QINGINTERFACE Qing = QINGINTERFACE(QingAsset);
-        return Qing.GetMarketRate(Asset);
+    function GetAssetRate(address GwatAsset, address Integrative) public view returns (uint256 Rate) {
+        Rate = 0;
+        bytes32 QINGCHECK = keccak256(abi.encodePacked("QING"));
+        QINGINTERFACE Gwat = QINGINTERFACE(GwatAsset);
+        while (keccak256(abi.encodePacked(Gwat.Type())) != QINGCHECK) {
+            uint256 AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
+            if(AssetRate == 0) return 0;
+
+            if(address(Gwat.Asset()) == Integrative) {
+                if(Rate/4 == 0) return AssetRate;
+                return (Rate / 4) * AssetRate;
+            } else {
+                if(Rate/4 == 0) Rate = AssetRate;
+                else Rate = (Rate / 4) * AssetRate;
+                Gwat = QINGINTERFACE(address(Gwat.Asset()));
+            }
+        }
+        if(address(Gwat.Asset()) == Integrative) {
+            uint256 AssetRate = Gwat.GetMarketRate(Integrative);
+            if(AssetRate == 0) return 0;
+            if(Rate/4 == 0) return Gwat.GetMarketRate(Integrative);
+            else return (Rate / 4) * Gwat.GetMarketRate(Integrative);
+        }
+        return 0;
     }   
 
     error OnlyGameTokens(address what);
