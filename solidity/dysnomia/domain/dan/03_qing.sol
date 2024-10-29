@@ -38,7 +38,9 @@ contract QING is DYSNOMIA {
         _mintToCap();
     }
 
+    error MarketRateCanOnlyBeIncreased(address Contract, uint256 CurrentRate);
     function AddMarketRate(address Contract, uint256 Rate) public onlyOwners {
+        if(Rate < GetMarketRate(Contract)) revert MarketRateCanOnlyBeIncreased(Contract, GetMarketRate(Contract));
         _addMarketRate(Contract, Rate);
     }
 

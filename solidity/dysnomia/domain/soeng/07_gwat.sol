@@ -54,6 +54,7 @@ contract GWAT is DYSNOMIA {
         Mu.addOwner(msg.sender);
         
         _mint(address(Chi), Mu.maxSupply() * 10 ** decimals());
+        Mu.AddMarketRate(Qing, 1 * 10 ** decimals());
 
         Mu.renounceOwnership(address(this));
         _qings[Qing][address(Chi)] = address(Mu);
