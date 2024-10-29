@@ -15,6 +15,7 @@ contract YUE is DYSNOMIA {
     constructor(string memory name, string memory symbol, address ChanAddress) DYSNOMIA(name, symbol, address(DYSNOMIA(ChanAddress).Xiao())) {
         Chan = CHAN(ChanAddress);
         Origin = tx.origin;
+        Divisor = 7 * 10 ** decimals();
         uint256 originMint = Xiao.Random() % maxSupply / 10;
         _mint(tx.origin, originMint * 10 ** decimals());
     }
@@ -74,20 +75,22 @@ contract YUE is DYSNOMIA {
             uint256 AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
             if(AssetRate == 0) return 0;
 
+            uint256 LoanRate = Rate/(9 * 10 ** (decimals() - 1));
             if(address(Gwat.Asset()) == Integrative) {
-                if(Rate/4 == 0) return AssetRate;
-                return (Rate / 4) * AssetRate / (10 ** decimals());
+                if(LoanRate == 0) return AssetRate;
+                return LoanRate * AssetRate;
             } else {
-                if(Rate/4 == 0) Rate = AssetRate;
-                else Rate = (Rate / 4) * AssetRate / (10 ** decimals());
+                if(LoanRate == 0) Rate = AssetRate;
+                else Rate = LoanRate * AssetRate;
                 Gwat = QINGINTERFACE(address(Gwat.Asset()));
             }
         }
         if(address(Gwat.Asset()) == Integrative) {
             uint256 AssetRate = Gwat.GetMarketRate(Integrative);
+            uint256 LoanRate = Rate/(9 * 10 ** (decimals() - 1));
             if(AssetRate == 0) return 0;
-            if(Rate/4 == 0) return Gwat.GetMarketRate(Integrative);
-            else return (Rate / 4) * Gwat.GetMarketRate(Integrative) / (10 ** decimals());
+            if(LoanRate == 0) return Gwat.GetMarketRate(Integrative);
+            else return LoanRate * Gwat.GetMarketRate(Integrative);
         }
         return 0;
     }   
