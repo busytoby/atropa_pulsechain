@@ -30,15 +30,15 @@ contract YUE is DYSNOMIA {
     }
 
     error ExchangeRateNotFound(address SpendAsset, address ReceiveAsset);
-    function Hong(address QingAsset, uint256 QingAssetReceiveAmount) public {
+    function Hong(address QingAsset, uint256 PurchaseAmount) public {
         QINGINTERFACE ReceiveToken = QINGINTERFACE(QingAsset);
         (address SpendTokenAddress, uint256 Rate) = GetPrimeRate(QingAsset);
         DYSNOMIA SpendToken = DYSNOMIA(SpendTokenAddress);
         if(Rate == 0) revert ExchangeRateNotFound(SpendTokenAddress, QingAsset);
-        uint256 cost = (QingAssetReceiveAmount * Rate) / (10 ** decimals());
+        uint256 cost = (PurchaseAmount * Rate) / (10 ** decimals());
         bool success1 = SpendToken.transferFrom(msg.sender, address(this), cost);
         require(success1, string.concat(unicode"Need Approved ", SpendToken.name()));
-        ReceiveToken.transfer(msg.sender, QingAssetReceiveAmount);
+        ReceiveToken.transfer(msg.sender, PurchaseAmount);
     }
 
     function Hung(address QingAsset, uint256 RedeemAmount) public {
