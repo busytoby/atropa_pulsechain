@@ -42,7 +42,7 @@ namespace Wallet
         {
             Process _p = new Process();
             _p.StartInfo.FileName = Solc_bin;
-            _p.StartInfo.Arguments = "--bin --abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " -o " + OutputFolder + " --evm-version=shanghai " + file;
+            _p.StartInfo.Arguments = "--bin --abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --overwrite -o " + OutputFolder + " --evm-version=shanghai " + file;
             //_p.StartInfo.RedirectStandardOutput = true;
             //_p.StartInfo.RedirectStandardInput = true;
             //_p.StartInfo.RedirectStandardError = true;
