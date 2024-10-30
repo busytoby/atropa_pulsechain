@@ -55,13 +55,13 @@ namespace Dysnomia.Domain.bin
                 BigInteger Epsilon = new BigInteger(Nu);
                 if (!Controller.Fi.Psi.ContainsKey(Epsilon)) throw new Exception("Invalid Query Host");
                 Controller.Fi.Psi[Epsilon].Handshake("Query", 0x14, Controller.Fi.Psi[Epsilon].Rho[0]);
-                Controller.Fi.Psi[Epsilon].Handshake("Query", Controller.Fi.Nu.Serialize(1), Controller.Fi.Psi[Epsilon].Rho[0]);
+                Controller.Fi.Psi[Epsilon].Handshake("Query", Controller.Fi.Nu.Serialize(1), Controller.Fi.Psi[Epsilon].Rho[Controller.Fi.Psi[Epsilon].Rho.ProxyId]);
 
-                while (Controller.Fi.Psi[Epsilon].Rho[0].Sigma.Count < 2) Thread.Sleep(200);
-                while (Controller.Fi.Psi[Epsilon].Rho[0].Sigma.Count > 0)
+                while (Controller.Fi.Psi[Epsilon].Rho[Controller.Fi.Psi[Epsilon].Rho.ProxyId].Sigma.Count < 2) Thread.Sleep(200);
+                while (Controller.Fi.Psi[Epsilon].Rho[Controller.Fi.Psi[Epsilon].Rho.ProxyId].Sigma.Count > 0)
                 {
-                    byte[] OpCode = Controller.Fi.Psi[Epsilon].Rho[0].Sigma.NextBytes();
-                    BigInteger SubId = Controller.Fi.Psi[Epsilon].Rho[0].Sigma.Next();
+                    byte[] OpCode = Controller.Fi.Psi[Epsilon].Rho[Controller.Fi.Psi[Epsilon].Rho.ProxyId].Sigma.NextBytes();
+                    BigInteger SubId = Controller.Fi.Psi[Epsilon].Rho[Controller.Fi.Psi[Epsilon].Rho.ProxyId].Sigma.Next();
 #if !DEBUG
                     if (Epsilon == SubId) continue;
 #endif

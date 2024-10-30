@@ -2,16 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Domain\Data\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Wallet\Wallet.csproj" />
+    <PackageReference Include="Nethereum.Web3" Version="4.26.0" />
   </ItemGroup>
 
 </Project>

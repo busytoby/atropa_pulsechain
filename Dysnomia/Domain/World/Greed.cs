@@ -36,6 +36,7 @@ namespace Dysnomia.Domain.World
         public Greed(BigInteger Proxy, Conjunction Chi)
         {
             ClientId = Math.Random();
+            if (Controller.Fi.Psi[Proxy].Cone != true) throw new Exception("Proxy Must Be Cone");
             Host = Controller.Fi.Psi[Proxy].Host;
             Port = Controller.Fi.Psi[Proxy].Port;
             Mu = Controller.Fi.Psi[Proxy].Mu;
@@ -88,7 +89,7 @@ namespace Dysnomia.Domain.World
 
         public byte[] ProxyEncrypt(byte[] Data, Fang Iota)
         {
-            byte[][] Proxies = Iota.Upsilon.ToArray();
+            byte[][] Proxies = new byte[][] { Controller.Fi.Nu.ToArray()[0] }.Concat(Iota.Upsilon.ToArray()).ToArray();
             foreach (byte[] Omicron in Proxies)
             {
                 BigInteger Lambda = new BigInteger(Omicron);
@@ -301,6 +302,9 @@ namespace Dysnomia.Domain.World
                     Logging.Log("QUERY", Encoding.Default.GetString(Iota), 1);
                     break;
                 case 0x16:
+                    BigInteger NuProxyId = new BigInteger(Controller.Fi.Nu.ToArray()[0]);
+                    Controller.Fi.Psi[NuProxyId].Rho[Controller.Fi.Psi[NuProxyId].Rho.ProxyId].Psi.Encode(
+                        Iota.ToArray(), ref Controller.Fi.Psi[NuProxyId].Rho[Controller.Fi.Psi[NuProxyId].Rho.ProxyId].Eta.In);
                     Omicron.Psi.Encode(Iota.ToArray(), ref Omicron.Eta.In);
                     Omega = Conjunction.Deserialize(Omicron.Psi.Bytes);
                     ProxyTo = new BigInteger(Omega.ToArray()[0]);

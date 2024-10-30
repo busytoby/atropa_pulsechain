@@ -11,6 +11,7 @@ namespace Dysnomia
     {
         public BigInteger Base, Secret, Signal, Channel, Pole, Identity, Foundation, Element, Dynamo, Manifold, Ring, Barn, Coordinate;
         public BigInteger Tau, Eta, Kappa, Rho, Beta, Phi, Alpha;
+        public BigInteger Entropy, Pulse;
         public short Nu;
         public int Gamma = 1;
         public delegate BigInteger Modulator(BigInteger A, BigInteger B, BigInteger C);
@@ -121,7 +122,9 @@ namespace Dysnomia
             Rho = Mu(Theta, Identity, Math.Prime);
             Eta = Mu(Epsilon, Signal, Math.Prime);
 
+            Entropy = Beta + Rho;
             Phi = Rho + Eta;
+            Pulse = Beta + Eta;
             Element = Beta + Phi;
 
             Dynamo = Mu(Theta, Signal, Math.Prime);

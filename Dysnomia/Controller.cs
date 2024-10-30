@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Wallet;
 
 namespace Dysnomia
 {
@@ -12,6 +13,7 @@ namespace Dysnomia
     {
         static public Oracle Oracle;
         static public Fi Fi;
+        static public LocalWallet LocalWallet;
         //static public Serialization Serialization;
 
         static Controller()
@@ -19,6 +21,7 @@ namespace Dysnomia
             Oracle = new Oracle();
             Fi = new Fi();
             Fi.Rho.Subscribers.Add(Oracle.Fi);
+            LocalWallet = new LocalWallet("http://127.0.0.1:8545/");
             //Serialization = new Serialization();
         }
     }
