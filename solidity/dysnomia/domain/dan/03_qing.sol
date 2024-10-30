@@ -57,6 +57,7 @@ contract QING is DYSNOMIA {
 
     event Withdrawal(uint64 Soul, uint64 Aura, address Token, uint256 amount);
     function Withdraw(address what, uint256 amount) public onlyOwners {
+        assert(!GWAT);
         User memory Alpha = Cho.GetUser();
         DYSNOMIA withdrawToken = DYSNOMIA(what);
         withdrawToken.transfer(msg.sender, amount);
