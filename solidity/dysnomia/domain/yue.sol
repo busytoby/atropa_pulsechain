@@ -70,15 +70,19 @@ contract YUE is DYSNOMIA {
         Rate = 0;
         uint256 AssetRate;
         uint256 Mod;
+        uint256 AssetDecimals;
         bytes32 QINGCHECK = keccak256(abi.encodePacked("QING"));
         QINGINTERFACE Gwat = QINGINTERFACE(GwatAsset);
         while (keccak256(abi.encodePacked(Gwat.Type())) != QINGCHECK) {
             AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
+            AssetDecimals = Gwat.Asset().decimals();
             if(AssetRate == 0) return 0;
 
-            Mod = (AssetRate / (10 ** (decimals() - 2)));
-            if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (decimals() - 5));
-            else if(Rate > 10 ** decimals()) Rate = Rate / 10 ** decimals();
+            if(AssetDecimals > 5) {
+                Mod = (AssetRate / (10 ** (AssetDecimals - 2)));
+                if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (AssetDecimals - 5));
+            }
+            if(Rate > 10 ** AssetDecimals) Rate = Rate / 10 ** AssetDecimals;
             if(address(Gwat.Asset()) == Integrative) {
                 if(Rate == 0) return AssetRate;
                 return Rate * AssetRate;
@@ -90,9 +94,13 @@ contract YUE is DYSNOMIA {
         }
         if(address(Gwat.Asset()) == Integrative) {
             AssetRate = Gwat.GetMarketRate(Integrative);
-            Mod = (AssetRate / (10 ** (decimals() - 2)));
-            if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (decimals() - 5));
-            else if(Rate > 10 ** decimals()) Rate = Rate / 10 ** decimals();
+            AssetDecimals = Gwat.Asset().decimals();
+
+            if(AssetDecimals > 5) {
+                Mod = (AssetRate / (10 ** (AssetDecimals - 2)));
+                if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (AssetDecimals - 5));
+            }
+            if(Rate > 10 ** AssetDecimals) Rate = Rate / 10 ** AssetDecimals;
             if(AssetRate == 0) return 0;
             if(Rate == 0) return Gwat.GetMarketRate(Integrative);
             else return Rate * Gwat.GetMarketRate(Integrative);
