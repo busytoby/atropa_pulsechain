@@ -76,7 +76,7 @@ contract YUE is DYSNOMIA {
             AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
             if(AssetRate == 0) return 0;
 
-            Mod = (AssetRate / (10 ** decimals() - 3));
+            Mod = (AssetRate / (10 ** decimals() - 2));
             if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (decimals() - 5));
             if(address(Gwat.Asset()) == Integrative) {
                 if(Rate == 0) return AssetRate;
@@ -89,7 +89,7 @@ contract YUE is DYSNOMIA {
         }
         if(address(Gwat.Asset()) == Integrative) {
             AssetRate = Gwat.GetMarketRate(Integrative);
-            Mod = (AssetRate / (10 ** decimals() - 3));
+            Mod = (AssetRate / (10 ** decimals() - 2));
             if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (decimals() - 5));
             if(AssetRate == 0) return 0;
             if(Rate == 0) return Gwat.GetMarketRate(Integrative);
