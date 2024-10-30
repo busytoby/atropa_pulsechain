@@ -22,6 +22,9 @@ namespace Dysnomia
             Fi = new Fi();
             Fi.Rho.Subscribers.Add(Oracle.Fi);
             LocalWallet = new LocalWallet("http://127.0.0.1:8545/");
+            Contracts.Init(@"C:\Users\mariarahel\source\solc.exe",
+                           @"C:\Users\mariarahel\source\repos\atropa_pulsechain\solidity",  
+                           @"C:\Users\mariarahel\source\repos\atropa_pulsechain\Wallet\bin\Contracts");
             //Serialization = new Serialization();
         }
     }
