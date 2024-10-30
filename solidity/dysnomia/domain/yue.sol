@@ -78,12 +78,13 @@ contract YUE is DYSNOMIA {
 
             Mod = (AssetRate / (10 ** decimals() - 2));
             if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (decimals() - 5));
+            else Rate = 1;
             if(address(Gwat.Asset()) == Integrative) {
                 if(Rate == 0) return AssetRate;
                 return Rate * AssetRate / 10 ** decimals();
             } else {
                 if(Rate == 0) Rate = AssetRate;
-                else Rate = Rate * AssetRate / 10 ** decimals();
+                else Rate = Rate * AssetRate;
                 Gwat = QINGINTERFACE(address(Gwat.Asset()));
             }
         }
@@ -91,9 +92,10 @@ contract YUE is DYSNOMIA {
             AssetRate = Gwat.GetMarketRate(Integrative);
             Mod = (AssetRate / (10 ** decimals() - 2));
             if(Mod < 777) Rate = Rate/((777 - Mod) * 10 ** (decimals() - 5));
+            else Rate = 1;
             if(AssetRate == 0) return 0;
             if(Rate == 0) return Gwat.GetMarketRate(Integrative);
-            else return Rate * Gwat.GetMarketRate(Integrative) / 10 ** decimals();
+            else return Rate * Gwat.GetMarketRate(Integrative);
         }
         return 0;
     }   
