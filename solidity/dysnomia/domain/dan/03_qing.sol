@@ -39,8 +39,11 @@ contract QING is DYSNOMIA {
     }
 
     error MarketRateCanOnlyBeIncreased(address Contract, uint256 CurrentRate);
+    error TokenMaximumRate(address Contract, uint256 MaximumRate);
     function AddMarketRate(address Contract, uint256 Rate) public onlyOwners {
         if(Rate < GetMarketRate(Contract)) revert MarketRateCanOnlyBeIncreased(Contract, GetMarketRate(Contract));
+        uint256 _maxRate = DYSNOMIA(Contract).totalSupply() / 777;
+        if(Rate > _maxRate) revert TokenMaximumRate(Contract, _maxRate);
         _addMarketRate(Contract, Rate);
     }
 
