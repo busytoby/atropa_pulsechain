@@ -68,13 +68,18 @@ contract YUE is DYSNOMIA {
 
     function GetAssetRate(address GwatAsset, address Integrative) public view returns (uint256 Rate) {
         Rate = 0;
+        uint256 AssetRate;
+        uint256 Mod;
         bytes32 QINGCHECK = keccak256(abi.encodePacked("QING"));
         QINGINTERFACE Gwat = QINGINTERFACE(GwatAsset);
         while (keccak256(abi.encodePacked(Gwat.Type())) != QINGCHECK) {
-            uint256 AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
+            AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
             if(AssetRate == 0) return 0;
 
-            Rate = Rate/(777 * 10 ** (decimals() - 5));
+            Mod = (AssetRate / (10 ** decimals() - 3));
+            if(Mod >= 777) Mod = 0;
+            else Mod = 777 - Mod;
+            Rate = Rate/(Mod * 10 ** (decimals() - 5));
             if(address(Gwat.Asset()) == Integrative) {
                 if(Rate == 0) return AssetRate;
                 return Rate * AssetRate;
@@ -85,8 +90,11 @@ contract YUE is DYSNOMIA {
             }
         }
         if(address(Gwat.Asset()) == Integrative) {
-            uint256 AssetRate = Gwat.GetMarketRate(Integrative);
-            Rate = Rate/(777 * 10 ** (decimals() - 5));
+            AssetRate = Gwat.GetMarketRate(Integrative);
+            Mod = (AssetRate / (10 ** decimals() - 3));
+            if(Mod >= 777) Mod = 0;
+            else Mod = 777 - Mod;
+            Rate = Mod/(777 * 10 ** (decimals() - 5));
             if(AssetRate == 0) return 0;
             if(Rate == 0) return Gwat.GetMarketRate(Integrative);
             else return Rate * Gwat.GetMarketRate(Integrative);
