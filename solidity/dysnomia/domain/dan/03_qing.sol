@@ -5,7 +5,7 @@ import "./interfaces/01b_chointerface.sol";
 import "../interfaces/mapinterface.sol";
 
 contract QING is DYSNOMIA {
-    string public constant Type = "QING";
+    string public Type;
 
     CHOINTERFACE public Cho;
     DYSNOMIA public Asset;
@@ -19,6 +19,9 @@ contract QING is DYSNOMIA {
     mapping(address => uint256) private _list;
 
     constructor(uint256 Luo, address Integrative, address ChoAddress) DYSNOMIA("Mysterious Qing", "q", address(DYSNOMIA(ChoAddress).Xiao())) {
+        if(Luo % 476733977057179 == 0) Type = "QING";
+        else Type = "GWAT";
+        
         Cho = CHOINTERFACE(ChoAddress);
         Waat = Luo;
 
