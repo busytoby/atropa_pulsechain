@@ -53,7 +53,7 @@ contract GWAT is DYSNOMIA {
         Mu.addOwner(address(War.World().Map().Cho()));
         Mu.addOwner(msg.sender);
         
-        _mint(address(Chi), Mu.maxSupply() * 10 ** decimals());
+        _mint(msg.sender, Mu.maxSupply() * 10 ** decimals());
         Mu.AddMarketRate(Qing, 1 * 10 ** decimals());
 
         Mu.renounceOwnership(address(this));
