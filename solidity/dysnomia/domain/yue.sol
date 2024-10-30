@@ -70,9 +70,8 @@ contract YUE is DYSNOMIA {
         Rate = 0;
         uint256 AssetRate;
         uint256 Mod;
-        bytes32 QINGCHECK = keccak256(abi.encodePacked("QING"));
         QINGINTERFACE Gwat = QINGINTERFACE(GwatAsset);
-        while (keccak256(abi.encodePacked(Gwat.Type())) != QINGCHECK) {
+        while (!Gwat.GWAT()) {
             AssetRate = Gwat.GetMarketRate(address(Gwat.Asset()));
             if(AssetRate == 0) return 0;
 

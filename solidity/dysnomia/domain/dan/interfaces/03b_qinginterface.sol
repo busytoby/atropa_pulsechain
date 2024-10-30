@@ -33,6 +33,7 @@ interface QINGINTERFACE {
     function BouncerDivisor() external view returns (uint16);
     function CoverCharge() external view returns (uint256);
     function NoCROWS() external view returns (bool);
+    function GWAT() external view returns (bool);
     function GetQing(uint256 _waat) external view returns (QINGINTERFACE);
     function Withdraw(address what, uint256 amount) external;
     function AllowCROWS(bool _b) external;
