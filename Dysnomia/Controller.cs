@@ -13,7 +13,8 @@ namespace Dysnomia
     {
         static public Oracle Oracle;
         static public Fi Fi;
-        static public LocalWallet LocalWallet;
+        static public Wallet.Wallet LocalWallet;
+        static public Contracts LocalContracts;
         //static public Serialization Serialization;
 
         static Controller()
@@ -21,9 +22,11 @@ namespace Dysnomia
             Oracle = new Oracle();
             Fi = new Fi();
             Fi.Rho.Subscribers.Add(Oracle.Fi);
-            LocalWallet = new LocalWallet("http://127.0.0.1:8545/");
+            LocalWallet = new Wallet.Wallet("http://127.0.0.1:8545/");
+            LocalWallet.SwitchAccount(0);
             Contracts.Init(@"C:\Users\mariarahel\source\solc.exe",
                            @"C:\Users\mariarahel\source\repos\atropa_pulsechain\solidity");
+            LocalContracts = new Contracts(LocalWallet);
             //Serialization = new Serialization();
         }
     }

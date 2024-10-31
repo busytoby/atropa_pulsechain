@@ -9,14 +9,14 @@ using Nethereum.Web3.Accounts;
 
 namespace Wallet
 {
-    public class LocalWallet
+    public class Wallet
     {
         public string ConnectionString;
         public Web3 w3;
         public IEthApiContractService eth;
         public Account Account;
 
-        public LocalWallet(string connectionString)
+        public Wallet(string connectionString)
         {
             ConnectionString = connectionString;
             w3 = new Web3(ConnectionString);
