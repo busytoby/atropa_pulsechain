@@ -15,12 +15,10 @@ namespace Wallet
     {
         static public string Solc_bin;
         static public string SolidityFolder;
-        static public string OutputFolder;
-
         static Contracts() {            
         }
 
-        public static void Init(string solc, string input, string output)
+        public static void Init(string solc, string input)
         {
             if (File.Exists(solc))
             {
@@ -31,12 +29,6 @@ namespace Wallet
             if (Directory.Exists(input))
             {
                 SolidityFolder = input;
-            }
-            else throw (new Exception("No Such Folder"));
-
-            if (Directory.Exists(output))
-            {
-                OutputFolder = output;
             }
             else throw (new Exception("No Such Folder"));
         }
