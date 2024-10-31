@@ -24,11 +24,13 @@ namespace Dysnomia.Domain.bin
 
             if (Args.Length == 1)
             {
-                Output(From, Encoding.Default.GetBytes("Not Yet Supported"), 6);
+                Contracts.Compile(Args[0]);
+                Output(From, Encoding.Default.GetBytes("Done"), 6);
             }
             else
             {
-                Contracts.Compile();
+                Output(From, Encoding.Default.GetBytes("No File Provided"), 6);
+                Contracts.Compile(Args[0]);
                 Output(From, Encoding.Default.GetBytes("Done, See: " + Contracts.OutputFolder), 6);
             }
         }
