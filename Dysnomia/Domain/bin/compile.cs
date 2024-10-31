@@ -31,7 +31,7 @@ namespace Dysnomia.Domain.bin
             {
                 Output(From, Encoding.Default.GetBytes("No File Provided"), 6);
                 Contracts.Compile(Args[0]);
-                Output(From, Encoding.Default.GetBytes("Done, See: " + Contracts.OutputFolder), 6);
+                Output(From, Encoding.Default.GetBytes("Done"), 6);
             }
         }
     }

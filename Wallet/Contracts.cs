@@ -36,10 +36,10 @@ namespace Wallet
         public static (string ABI, string BIN) Compile(string file)
         {
             string ABI = "", BIN = "";
-            file = SolidityFolder + @"\" + file;
+            string diskfile = SolidityFolder + @"\" + file;
             Process _p = new Process();
             _p.StartInfo.FileName = Solc_bin;
-            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=shanghai " + file;
+            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=shanghai " + diskfile;
             _p.StartInfo.RedirectStandardOutput = true;
             _p.StartInfo.RedirectStandardError = true;
             _p.StartInfo.UseShellExecute = false;
@@ -50,8 +50,9 @@ namespace Wallet
             JsonProperty t1 = t.RootElement.EnumerateObject().ToArray()[0];
             foreach (JsonProperty t2 in t1.Value.EnumerateObject().ToArray())
             {
-                JsonProperty[] t3 = t2.Value.EnumerateObject().ToArray();
-                if (t3[1].Value.ToString().Length > 0) {
+                if (t2.Name.Contains(file))
+                {
+                    JsonProperty[] t3 = t2.Value.EnumerateObject().ToArray();
                     ABI = t3[0].Value.ToString();
                     BIN = t3[1].Value.ToString();
                     break;
