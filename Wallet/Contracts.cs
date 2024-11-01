@@ -16,6 +16,10 @@ using System.Threading.Tasks;
 using System.Xml;
 using Nethereum.ABI.ABIDeserialisation;
 using Nethereum.Generators.Model;
+using Nethereum.Web3;
+using Nethereum.ABI.FunctionEncoding.Attributes;
+using Dysnomia.Contracts.VMREQ.ContractDefinition;
+using Nethereum.Contracts.ContractHandlers;
 
 namespace Wallet
 {
@@ -47,6 +51,20 @@ namespace Wallet
             Aliases.Add(alias, cxid);
         }
 
+        public dynamic Execute(Contract _c, string Function, params dynamic[] Args) {
+            Task<dynamic> _t2 = _c.GetFunction(Function).CallAsync<dynamic>(Args);
+            _t2.Wait();
+            dynamic rx = _t2.Result;
+            /*
+            Event _e = _c.GetEvent("Approval");
+            NewFilterInput _f = _e.CreateFilterInput();
+            Task<List<EventLog<dynamic>>> _l = _e.GetAllChangesAsync<dynamic>(_f);
+            _l.Wait();
+            List<EventLog<dynamic>> _rx2 = _l.Result;
+            */
+            return rx;
+        }
+
         private Contract DeployContract(string ABI,string BIN, params dynamic[] Args) {
             Task<string> _t = Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, new HexBigInteger(2000000), Args);
             _t.Wait();
@@ -61,14 +79,19 @@ namespace Wallet
 
         public string Deploy(string file, params dynamic[] Args) {
             (string ABI, string BIN) = Compile(file);
+
             Contract _c = DeployContract(ABI, BIN, Args);
 
-
-            /*
-            Task<dynamic> _t2 = _c.GetFunction("approve").CallAsync<dynamic>(Args);
+            Dysnomia.Contracts.VMREQ.VmreqService _v = new Dysnomia.Contracts.VMREQ.VmreqService(Wallet.w3, _c.Address);
+            Task<ViewOutputDTO> _t2 = _v.ViewQueryAsync();
             _t2.Wait();
-            dynamic rx = _t2.Result;
-            */
+            ViewOutputDTO rx = _t2.Result;
+
+            dynamic _t = Execute(_c, "Random");
+            _t = Execute(_c, "approve", _c.Address, "123");
+            _t = Execute(_c, "totalSupply");
+            _t = Execute(_c, "modExp", 123, 456, 789);
+
             return _c.Address;
         }
 
