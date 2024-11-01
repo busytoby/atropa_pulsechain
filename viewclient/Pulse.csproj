@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.11" />
+    <PackageReference Include="Nethereum.Generators" Version="4.21.4" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,7 +13,7 @@ namespace Dysnomia.Lib
     {
         new public static string Name = "Command";
         new public static string Description = "Not Set Description";
-        public string[]? Args;
+        public dynamic[]? Args;
 
         public Command() : base()
         {

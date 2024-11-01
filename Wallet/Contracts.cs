@@ -3,15 +3,19 @@ using Nethereum.Contracts.Standards.ENS;
 using Nethereum.Contracts.Standards.ENS.PublicResolver.ContractDefinition;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Generators;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Xml;
+using Nethereum.ABI.ABIDeserialisation;
+using Nethereum.Generators.Model;
 
 namespace Wallet
 {
@@ -43,8 +47,8 @@ namespace Wallet
             Aliases.Add(alias, cxid);
         }
 
-        private Contract DeployContract(string ABI,string BIN) {
-            Task<string> _t = Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, new HexBigInteger(2000000));
+        private Contract DeployContract(string ABI,string BIN, params dynamic[] Args) {
+            Task<string> _t = Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, new HexBigInteger(2000000), Args);
             _t.Wait();
             string txid = _t.Result;
             Task<TransactionReceipt> _t1 = Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
@@ -55,15 +59,17 @@ namespace Wallet
             return Contract[cxid];
         }
 
-        public string Deploy(string file) {
+        public string Deploy(string file, params dynamic[] Args) {
             (string ABI, string BIN) = Compile(file);
-            Contract _c = DeployContract(ABI, BIN);
-            return _c.Address;
+            Contract _c = DeployContract(ABI, BIN, Args);
+
+
             /*
-            Task<Int64> _t2 = _c.GetFunction("Random").CallAsync<Int64>();
+            Task<dynamic> _t2 = _c.GetFunction("approve").CallAsync<dynamic>(Args);
             _t2.Wait();
-            Int64 rx = _t2.Result;
+            dynamic rx = _t2.Result;
             */
+            return _c.Address;
         }
 
         public static (string ABI, string BIN) Compile(string file) {
