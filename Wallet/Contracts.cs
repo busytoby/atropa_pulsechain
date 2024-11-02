@@ -18,8 +18,9 @@ using Nethereum.ABI.ABIDeserialisation;
 using Nethereum.Generators.Model;
 using Nethereum.Web3;
 using Nethereum.ABI.FunctionEncoding.Attributes;
-using Dysnomia.Contracts.VMREQ.ContractDefinition;
+using Dysnomia.Contracts;
 using Nethereum.Contracts.ContractHandlers;
+using Dysnomia.Contracts.VMREQ.ContractDefinition;
 
 namespace Wallet
 {
@@ -28,8 +29,8 @@ namespace Wallet
         public Wallet Wallet;
         public Dictionary<string, Contract> Contract;
         public Dictionary<string, string> Aliases;
-        static public string Solc_bin;
-        static public string SolidityFolder;
+        static public string? Solc_bin;
+        static public string? SolidityFolder;
 
         public Contracts(Wallet wallet) {
             Wallet = wallet;
@@ -81,6 +82,13 @@ namespace Wallet
             (string ABI, string BIN) = Compile(file);
 
             Contract _c = DeployContract(ABI, BIN, Args);
+
+            Function _f = _c.GetFunction("View");
+            /*
+            Task<ViewOutputDTO> _t2 = _f.CallDeserializingToObjectAsync<ViewOutputDTO>(Args);
+            _t2.Wait();
+            ViewOutputDTO rx = _t2.Result;
+            */
 
             Dysnomia.Contracts.VMREQ.VmreqService _v = new Dysnomia.Contracts.VMREQ.VmreqService(Wallet.w3, _c.Address);
             Task<ViewOutputDTO> _t2 = _v.ViewQueryAsync();
