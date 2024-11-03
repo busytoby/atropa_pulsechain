@@ -57,7 +57,7 @@ namespace Dysnomia.Lib
         public Type[] GetCommands()
         {
             return Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => string.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal))
+                .Where(t => string.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal) && t.ReflectedType == null)
                 .ToArray();
         }
     }

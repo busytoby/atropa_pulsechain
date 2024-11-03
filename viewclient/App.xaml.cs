@@ -19,7 +19,6 @@ namespace Pulse
         private void Bootstrap(object sender, StartupEventArgs e)
         {
             ShowApparitionWindow();
-            Controller.Fi.Listen(5555);
         }
 
         private void ShowApparitionWindow()
