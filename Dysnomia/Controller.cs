@@ -14,7 +14,6 @@ namespace Dysnomia
         static public Oracle Oracle;
         static public Wallet.Wallet LocalWallet;
         static public Wallet.Contracts LocalContracts;
-        //static public Serialization Serialization;
 
         static Controller()
         {
@@ -24,7 +23,6 @@ namespace Dysnomia
             Wallet.Contracts.Init(@"C:\Users\mariarahel\source\solc.exe",
                            @"C:\Users\mariarahel\source\repos\atropa_pulsechain\solidity");
             LocalContracts = new Wallet.Contracts(LocalWallet);
-            //Serialization = new Serialization();
         }
     }
 }

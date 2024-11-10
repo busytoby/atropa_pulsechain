@@ -11,6 +11,7 @@
         Background="Transparent" 
         MouseDown="RetaliationWindow_MouseDown"
         ResizeMode="CanResizeWithGrip"
+        FontFamily="Reprise Script Std"
         Title="RetaliationWindow" Height="450" Width="800">
     <Border Padding="0" Margin="0" BorderThickness="0" CornerRadius="22" Background="Pink">
         <Border.Effect>
