@@ -23,6 +23,7 @@ using Nethereum.Contracts.ContractHandlers;
 using Dysnomia.Contracts.VMREQ.ContractDefinition;
 using Nethereum.Contracts.QueryHandlers.MultiCall;
 using System.Xml.Linq;
+using Nethereum.ABI.FunctionEncoding;
 
 namespace Wallet
 {
@@ -30,6 +31,7 @@ namespace Wallet
     {
         public Wallet Wallet;
         public Dictionary<string, Contract> Contract;
+        public Dictionary<string, (Event Event, NewFilterInput Filter)> Event;
         public Dictionary<string, string> Aliases;
         static public string? Solc_bin;
         static public string? SolidityFolder;
@@ -38,6 +40,7 @@ namespace Wallet
         public Contracts(Wallet wallet) {
             Wallet = wallet;
             Contract = new Dictionary<string, Contract>();
+            Event = new Dictionary<string, (Event Event, NewFilterInput Filter)>();
             Aliases = new Dictionary<string, string>();
         }
 
@@ -90,7 +93,8 @@ dysnomia/lib/stringlib.sol
 dysnomia/lib/yai.sol.old
         */
 
-        public class LogEvent {
+        [Event("LogEvent")]
+        public class LogEvent : IEventDTO {
             [Parameter("uint64", "Soul", 1, false)]
             public virtual ulong Soul { get; set; }
             [Parameter("uint64", "Aura", 2, false)]
@@ -128,6 +132,16 @@ dysnomia/lib/yai.sol.old
             dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Testing");
+            Event YiShioLogEvent = Contract[Aliases["YiShio"]].GetEvent("LogEvent");
+            dynamic latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+            //NewFilterInput _n = YiShioLogEvent.CreateFilterInput(fromBlock: new BlockParameter(0), toBlock: new BlockParameter(latestBlock));
+            NewFilterInput _n = YiShioLogEvent.CreateFilterInput();
+            Event["YiShioLogEvent"] = (YiShioLogEvent, _n);
+            List<EventLog<LogEvent>> logs = await Event["YiShioLogEvent"].Event.GetAllChangesAsync<LogEvent>(Event["YiShioLogEvent"].Filter);
+            List<EventLog<List<ParameterOutput>>> t = await Event["YiShioLogEvent"].Event.GetAllChangesDefaultAsync(YiShioLogEvent.CreateFilterInput());
+
+            throw new Exception("neither logs nor t contains the Testing call");
 
             Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
             _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
