@@ -41,8 +41,8 @@ namespace Dysnomia.Domain.bin
             }
             else
             {
-                Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
-                Controller.LocalContracts.Install();
+                Task Install = Controller.LocalContracts.Install(Output);
+                Install.Wait();
             }
         }
     }

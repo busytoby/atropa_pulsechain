@@ -141,6 +141,9 @@ namespace Dysnomia.Domain
                     lock (Tau)
                         foreach (byte[] Key in ProcessTable.Keys)
                         {
+                            while(ProcessTable[Key].Theta.Out.Count > 0)
+                                if(ProcessTable[Key].Theta.Out.TryDequeue(out Pi))
+                                    Logging.Log(Pi);
                             Enqueue(new byte[] { 0x02 });
                             Enqueue(Key);
                         }

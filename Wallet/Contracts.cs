@@ -22,6 +22,7 @@ using Dysnomia.Contracts;
 using Nethereum.Contracts.ContractHandlers;
 using Dysnomia.Contracts.VMREQ.ContractDefinition;
 using Nethereum.Contracts.QueryHandlers.MultiCall;
+using System.Xml.Linq;
 
 namespace Wallet
 {
@@ -32,12 +33,15 @@ namespace Wallet
         public Dictionary<string, string> Aliases;
         static public string? Solc_bin;
         static public string? SolidityFolder;
+        byte[] From = Encoding.Default.GetBytes("Contracts");
 
         public Contracts(Wallet wallet) {
             Wallet = wallet;
             Contract = new Dictionary<string, Contract>();
             Aliases = new Dictionary<string, string>();
         }
+
+        public delegate void OutputCallback(byte[] From, byte[] Data, short Priority);
 
         public static void Init(string solc, string input) {
             if (File.Exists(solc))
@@ -54,13 +58,6 @@ namespace Wallet
         }
 
         /*
-dysnomia/00b_vmreq.sol
-dysnomia/02c_shafactory.sol
-dysnomia/02_sha.sol
-dysnomia/03c_shiofactory.sol
-dysnomia/03_shio.sol
-dysnomia/04_yi.sol
-dysnomia/05_zheng.sol
 dysnomia/06_zhou.sol
 dysnomia/07_yau.sol
 dysnomia/08_yang.sol
@@ -72,23 +69,12 @@ dysnomia/deploy.ts
 dysnomia/domain
 dysnomia/domain/assets
 dysnomia/domain/assets/h2o.sol
-dysnomia/domain/assets/interfaces
-dysnomia/domain/assets/interfaces/h2ointerface.sol
-dysnomia/domain/assets/interfaces/vitusinterface.sol
 dysnomia/domain/assets/vitus.sol
 dysnomia/domain/dan
 dysnomia/domain/dan/01_cho.sol
 dysnomia/domain/dan/02c_systemaddresses.sol
 dysnomia/domain/dan/03_qing.sol
 dysnomia/domain/dan/04_war.sol
-dysnomia/domain/dan/interfaces
-dysnomia/domain/dan/interfaces/01b_chointerface.sol
-dysnomia/domain/dan/interfaces/03b_qinginterface.sol
-dysnomia/domain/dan/interfaces/04b_warinterface.sol
-dysnomia/domain/interfaces
-dysnomia/domain/interfaces/mapinterface.sol
-dysnomia/domain/interfaces/worldinterface.sol
-dysnomia/domain/interfaces/yueinterface.sol
 dysnomia/domain/map.sol
 dysnomia/domain/old
 dysnomia/domain/old/nym.sol
@@ -96,10 +82,6 @@ dysnomia/domain/sky
 dysnomia/domain/sky/01_chan.sol
 dysnomia/domain/sky/02_choa.sol
 dysnomia/domain/sky/03_ring.sol
-dysnomia/domain/sky/interfaces
-dysnomia/domain/sky/interfaces/01b_chaninterface.sol
-dysnomia/domain/sky/interfaces/02b_choainterface.sol
-dysnomia/domain/sky/interfaces/03b_ringinterface.sol
 dysnomia/domain/soeng
 dysnomia/domain/soeng/01_qi.sol
 dysnomia/domain/soeng/02_mai.sol
@@ -108,53 +90,12 @@ dysnomia/domain/soeng/04_xie.sol
 dysnomia/domain/soeng/05_zi.sol
 dysnomia/domain/soeng/06_pang.sol
 dysnomia/domain/soeng/07_gwat.sol
-dysnomia/domain/soeng/interfaces
-dysnomia/domain/soeng/interfaces/01b_qiinterface.sol
-dysnomia/domain/soeng/interfaces/02b_maiinterface.sol
-dysnomia/domain/soeng/interfaces/03b_xiainterface.sol
-dysnomia/domain/soeng/interfaces/04b_xieinterface.sol
-dysnomia/domain/soeng/interfaces/05b_ziinterface.sol
-dysnomia/domain/soeng/interfaces/06b_panginterface.sol
 dysnomia/domain/tang
 dysnomia/domain/tang/01_sei.sol
 dysnomia/domain/tang/02_cheon.sol
 dysnomia/domain/tang/03_meta.sol
-dysnomia/domain/tang/interfaces
-dysnomia/domain/tang/interfaces/01b_seiinterface.sol
-dysnomia/domain/tang/interfaces/02b_cheoninterface.sol
-dysnomia/domain/tang/interfaces/03b_metainterface.sol
 dysnomia/domain/world.sol
 dysnomia/domain/yue.sol
-dysnomia/etc
-dysnomia/etc/DysnomiaSelfSnipe.sol
-dysnomia/include
-dysnomia/include/acronym.sol
-dysnomia/include/bao.sol
-dysnomia/include/fa.sol
-dysnomia/include/user.sol
-dysnomia/include/uservote.sol
-dysnomia/interfaces
-dysnomia/interfaces/01b_dysnomia.sol
-dysnomia/interfaces/02b_shainterface.sol
-dysnomia/interfaces/02d_shafactoryinterface.sol
-dysnomia/interfaces/03b_shiointerface.sol
-dysnomia/interfaces/03d_shiofactoryinterface.sol
-dysnomia/interfaces/04b_yiinterface.sol
-dysnomia/interfaces/05b_zhenginterface.sol
-dysnomia/interfaces/06b_zhouinterface.sol
-dysnomia/interfaces/07b_yauinterface.sol
-dysnomia/interfaces/08b_yanginterface.sol
-dysnomia/interfaces/09b_siuinterface.sol
-dysnomia/interfaces/10b_voidinterface.sol
-dysnomia/interfaces/11b_lauinterface.sol
-dysnomia/interfaces/atropaMath.sol
-dysnomia/interfaces/heckeinterface.sol
-dysnomia/interfaces/libattribute.sol
-dysnomia/interfaces/libcorereactions.sol
-dysnomia/interfaces/libencrypt.sol
-dysnomia/interfaces/libstrings.sol
-dysnomia/interfaces/libyai.sol
-dysnomia/interfaces/nyminterface.sol
 dysnomia/lib
 dysnomia/lib/attribute.sol
 dysnomia/lib/encrypt.sol
@@ -166,17 +107,25 @@ dysnomia/lib/stringlib.sol
 dysnomia/lib/yai.sol.old
         */
 
-        public void Install() {
-            Deploy("VMREQ", "dysnomia/00b_vmreq.sol");
-            Deploy("SHAFactory", "dysnomia/02c_shafactory.sol");
-            Deploy("SHIOFactory", "dysnomia/03c_shiofactory.sol");
-            Deploy("YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
+        public async Task Install(OutputCallback Output) {
+            if(Output != null)
+                Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
+
+            await _deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
+            await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
+            await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
+            await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
+            await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
+            await _deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
+            await _deploy(Output, "YAU", "dysnomia/07_yau.sol", Aliases["ZHOU"]);
+            await _deploy(Output, "YANG", "dysnomia/08_yang.sol", Aliases["YAU"]);
+            await _deploy(Output, "SIU", "dysnomia/09_siu.sol", Aliases["YANG"]);
+            await _deploy(Output, "VOID", "dysnomia/10_void.sol", Aliases["SIU"]);
+            return;
         }
 
-        public dynamic Execute(Contract _c, string Function, params dynamic[] Args) {
-            Task<dynamic> _t2 = _c.GetFunction(Function).CallAsync<dynamic>(Args);
-            _t2.Wait();
-            dynamic rx = _t2.Result;
+        public async Task<dynamic> Execute(Contract _c, string Function, params dynamic[] Args) {
+            dynamic rx = await _c.GetFunction(Function).CallAsync<dynamic>(Args);
             /*
             Event _e = _c.GetEvent("Approval");
             NewFilterInput _f = _e.CreateFilterInput();
@@ -187,46 +136,47 @@ dysnomia/lib/yai.sol.old
             return rx;
         }
 
-        private Contract DeployContract(string ABI,string BIN, params dynamic[] Args) {
-            Task<string> _t = Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, new HexBigInteger(12000000), Args);
-            _t.Wait();
-            string txid = _t.Result;
-            Task<TransactionReceipt> _t1 = Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
-            _t1.Wait();
-            TransactionReceipt Receipt = _t1.Result;
+        private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
+            string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, new HexBigInteger(12000000), Args);
+            TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
             string cxid = Receipt.ContractAddress;
             Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
             return Contract[cxid];
         }
 
-        public string Deploy(string name, string file, params dynamic[] Args) {
+        public async Task<string> _deploy(OutputCallback Output, string name, string file, params dynamic[] Args) {
             (string ABI, string BIN) = Compile(file);
 
-            Contract _c = DeployContract(ABI, BIN, Args);
+            Contract _c = await DeployContract(ABI, BIN, Args);
             AddAlias(name, _c.Address);
 
-            
-            //Function _f = _c.GetFunction("View");
-            /*
-            Task<ViewOutputDTO> _t2 = _f.CallDeserializingToObjectAsync<ViewOutputDTO>(Args);
-            _t2.Wait();
-            ViewOutputDTO rx = _t2.Result;
-            */
-
-            /*
-            Dysnomia.Contracts.VMREQ.VmreqService _v = new Dysnomia.Contracts.VMREQ.VmreqService(Wallet.w3, _c.Address);
-            Task<ViewOutputDTO> _t2 = _v.ViewQueryAsync();
-            _t2.Wait();
-            ViewOutputDTO rx = _t2.Result;
-
-            dynamic _t = Execute(_c, "Random");
-            _t = Execute(_c, "approve", _c.Address, "123");
-            _t = Execute(_c, "totalSupply");
-            _t = Execute(_c, "modExp", 123, 456, 789);
-            */
-
+            if(Output != null)
+                Output(From, Encoding.Default.GetBytes(name + " Deployed To: " + Aliases[name]), 6);
             return Aliases[name];
         }
+
+        public async Task<string> Deploy(string name, string file, params dynamic[] Args) {
+            return await _deploy(null, name, file, Args);
+        }
+
+        //Function _f = _c.GetFunction("View");
+        /*
+        Task<ViewOutputDTO> _t2 = _f.CallDeserializingToObjectAsync<ViewOutputDTO>(Args);
+        _t2.Wait();
+        ViewOutputDTO rx = _t2.Result;
+        */
+
+        /*
+        Dysnomia.Contracts.VMREQ.VmreqService _v = new Dysnomia.Contracts.VMREQ.VmreqService(Wallet.w3, _c.Address);
+        Task<ViewOutputDTO> _t2 = _v.ViewQueryAsync();
+        _t2.Wait();
+        ViewOutputDTO rx = _t2.Result;
+
+        dynamic _t = Execute(_c, "Random");
+        _t = Execute(_c, "approve", _c.Address, "123");
+        _t = Execute(_c, "totalSupply");
+        _t = Execute(_c, "modExp", 123, 456, 789);
+        */
 
         public static (string ABI, string BIN) Compile(string file) {
             string ABI = "", BIN = "";
