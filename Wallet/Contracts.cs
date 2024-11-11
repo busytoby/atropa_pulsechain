@@ -132,7 +132,11 @@ dysnomia/lib/yai.sol.old
             dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Testing");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Testing 1");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5557, 0554, "Testing 2");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5558, 0553, "Testing 3");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5559, 0552, "Testing 4");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5560, 0551, "Testing 5");
             Event YiShioLogEvent = Contract[Aliases["YiShio"]].GetEvent("LogEvent");
             dynamic latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
             //NewFilterInput _n = YiShioLogEvent.CreateFilterInput(fromBlock: new BlockParameter(0), toBlock: new BlockParameter(latestBlock));
