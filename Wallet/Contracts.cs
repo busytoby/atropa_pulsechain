@@ -129,8 +129,7 @@ dysnomia/lib/yai.sol.old
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
 
-
-            Shao rho = await Contract[Aliases["YiShio"]].GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
+            Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
             _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
             Output(From, Encoding.Default.GetBytes("YiShioRod" + " Deployed To: " + Aliases["YiShioRod"]), 6);
             _ = AddAliasWithABI("YiShioCone", rho.Cone, "dysnomia/02_sha.sol");
@@ -151,7 +150,16 @@ dysnomia/lib/yai.sol.old
         }
 
         public async Task<dynamic> Execute(Contract _c, string Function, params dynamic[] Args) {
-            dynamic rx = await _c.GetFunction(Function).CallAsync<dynamic>(Args);
+            dynamic rx;
+            switch (Function) {
+                case "Rho":
+                    rx = await _c.GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
+                    break;
+                default:
+                    rx = await _c.GetFunction(Function).CallAsync<dynamic>(Args);
+                    break;
+        }
+            
             /*
             Event _e = _c.GetEvent("Approval");
             NewFilterInput _f = _e.CreateFilterInput();
