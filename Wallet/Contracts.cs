@@ -58,31 +58,17 @@ namespace Wallet
         }
 
         /*
-dysnomia/06_zhou.sol
-dysnomia/07_yau.sol
-dysnomia/08_yang.sol
-dysnomia/09_siu.sol
-dysnomia/10_void.sol
-dysnomia/11c_laufactory.sol
 dysnomia/11_lau.sol
-dysnomia/deploy.ts
-dysnomia/domain
-dysnomia/domain/assets
 dysnomia/domain/assets/h2o.sol
 dysnomia/domain/assets/vitus.sol
-dysnomia/domain/dan
 dysnomia/domain/dan/01_cho.sol
 dysnomia/domain/dan/02c_systemaddresses.sol
 dysnomia/domain/dan/03_qing.sol
 dysnomia/domain/dan/04_war.sol
 dysnomia/domain/map.sol
-dysnomia/domain/old
-dysnomia/domain/old/nym.sol
-dysnomia/domain/sky
 dysnomia/domain/sky/01_chan.sol
 dysnomia/domain/sky/02_choa.sol
 dysnomia/domain/sky/03_ring.sol
-dysnomia/domain/soeng
 dysnomia/domain/soeng/01_qi.sol
 dysnomia/domain/soeng/02_mai.sol
 dysnomia/domain/soeng/03_xia.sol
@@ -90,14 +76,11 @@ dysnomia/domain/soeng/04_xie.sol
 dysnomia/domain/soeng/05_zi.sol
 dysnomia/domain/soeng/06_pang.sol
 dysnomia/domain/soeng/07_gwat.sol
-dysnomia/domain/tang
 dysnomia/domain/tang/01_sei.sol
 dysnomia/domain/tang/02_cheon.sol
 dysnomia/domain/tang/03_meta.sol
 dysnomia/domain/world.sol
 dysnomia/domain/yue.sol
-dysnomia/lib
-dysnomia/lib/attribute.sol
 dysnomia/lib/encrypt.sol
 dysnomia/lib/heckemeridians.sol
 dysnomia/lib/multiownable.sol
@@ -121,6 +104,9 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "YANG", "dysnomia/08_yang.sol", Aliases["YAU"]);
             await _deploy(Output, "SIU", "dysnomia/09_siu.sol", Aliases["YANG"]);
             await _deploy(Output, "VOID", "dysnomia/10_void.sol", Aliases["SIU"]);
+            await _deploy(Output, "ATTRIBUTE", "dysnomia/lib/attribute.sol", Aliases["VOID"]);
+            await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
+            await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
             return;
         }
 
