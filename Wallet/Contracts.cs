@@ -90,6 +90,32 @@ dysnomia/lib/stringlib.sol
 dysnomia/lib/yai.sol.old
         */
 
+        public class LogEvent {
+            [Parameter("uint64", "Soul", 1, false)]
+            public virtual ulong Soul { get; set; }
+            [Parameter("uint64", "Aura", 2, false)]
+            public virtual ulong Aura { get; set; }
+            [Parameter("string", "LogLine", 3, false)]
+            public virtual string? LogLine { get; set; }
+        }
+
+        [FunctionOutput]
+        public class Shao : IFunctionOutputDTO {
+            [Parameter("address", "Rod", 1)]
+            public virtual string? Rod { get; set; }
+            [Parameter("address", "Cone", 2)]
+            public virtual string? Cone { get; set; }
+            [Parameter("uint64", "Barn", 3)]
+            public virtual ulong Barn { get; set; }
+        }
+
+        public async Task AddAliasWithABI(string alias, string cxid, string file) {
+            (string ABI, string BIN) = Compile(file);
+            Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
+            Aliases[alias] = cxid;
+
+        }
+
         public async Task Install(OutputCallback Output) {
             if(Output != null)
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
@@ -98,6 +124,18 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
             await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
             await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
+
+            dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
+            AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
+            Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
+
+
+            Shao rho = await Contract[Aliases["YiShio"]].GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
+            _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
+            Output(From, Encoding.Default.GetBytes("YiShioRod" + " Deployed To: " + Aliases["YiShioRod"]), 6);
+            _ = AddAliasWithABI("YiShioCone", rho.Cone, "dysnomia/02_sha.sol");
+            Output(From, Encoding.Default.GetBytes("YiShioCone" + " Deployed To: " + Aliases["YiShioCone"]), 6);
+
             await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
             await _deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
             await _deploy(Output, "YAU", "dysnomia/07_yau.sol", Aliases["ZHOU"]);
@@ -107,6 +145,8 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "ATTRIBUTE", "dysnomia/lib/attribute.sol", Aliases["VOID"]);
             await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
             await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
+            //Contract[Aliases["VOID"]]
+            //Aliases["VOID"].GetEvent("LogEvent");
             return;
         }
 
