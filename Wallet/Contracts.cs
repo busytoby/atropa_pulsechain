@@ -31,7 +31,7 @@ namespace Wallet
     {
         public Wallet Wallet;
         public Dictionary<string, Contract> Contract;
-        public Dictionary<string, (Event Event, NewFilterInput Filter)> Event;
+        (Event<LogEvent> Event, NewFilterInput Filter) Logs;
         public Dictionary<string, string> Aliases;
         static public string? Solc_bin;
         static public string? SolidityFolder;
@@ -40,7 +40,6 @@ namespace Wallet
         public Contracts(Wallet wallet) {
             Wallet = wallet;
             Contract = new Dictionary<string, Contract>();
-            Event = new Dictionary<string, (Event Event, NewFilterInput Filter)>();
             Aliases = new Dictionary<string, string>();
         }
 
@@ -123,6 +122,13 @@ dysnomia/lib/yai.sol.old
         public async Task Install(OutputCallback Output) {
             if(Output != null)
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
+            
+            HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+
+            Event<LogEvent> YiShioLogEvent = Wallet.w3.Eth.GetEvent<LogEvent>();
+            NewFilterInput _n = YiShioLogEvent.CreateFilterInput();
+            _n.FromBlock = new BlockParameter(latestBlock);
+            Logs = (YiShioLogEvent, _n);
 
             await _deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
             await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
@@ -132,20 +138,8 @@ dysnomia/lib/yai.sol.old
             dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Testing 1");
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5557, 0554, "Testing 2");
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5558, 0553, "Testing 3");
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5559, 0552, "Testing 4");
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5560, 0551, "Testing 5");
-            Event YiShioLogEvent = Contract[Aliases["YiShio"]].GetEvent("LogEvent");
-            dynamic latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-            //NewFilterInput _n = YiShioLogEvent.CreateFilterInput(fromBlock: new BlockParameter(0), toBlock: new BlockParameter(latestBlock));
-            NewFilterInput _n = YiShioLogEvent.CreateFilterInput();
-            Event["YiShioLogEvent"] = (YiShioLogEvent, _n);
-            List<EventLog<LogEvent>> logs = await Event["YiShioLogEvent"].Event.GetAllChangesAsync<LogEvent>(Event["YiShioLogEvent"].Filter);
-            List<EventLog<List<ParameterOutput>>> t = await Event["YiShioLogEvent"].Event.GetAllChangesDefaultAsync(YiShioLogEvent.CreateFilterInput());
-
-            throw new Exception("neither logs nor t contains the Testing call");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Logging Test Successful");
+            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Logging Test Successful 2");
 
             Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
             _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
@@ -202,8 +196,15 @@ dysnomia/lib/yai.sol.old
             Contract _c = await DeployContract(ABI, BIN, Args);
             AddAlias(name, _c.Address);
 
-            if(Output != null)
+            if(Output != null) {
+                HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                List<EventLog<LogEvent>> logs = await Logs.Event.GetAllChangesAsync(Logs.Filter);
+                foreach(EventLog<LogEvent> _e in logs) 
+                    Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
+
                 Output(From, Encoding.Default.GetBytes(name + " Deployed To: " + Aliases[name]), 6);
+                Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+            }
             return Aliases[name];
         }
 
