@@ -157,6 +157,7 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
             await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
 
+            await GetLog(Output);
             return;
         }
 
@@ -179,18 +180,10 @@ dysnomia/lib/yai.sol.old
                             }
                         }
                     }
-                    //if(_c.ContractBuilder.ContractABI.Functions[])
 
                     break;
             }
 
-            /*
-            Event _e = _c.GetEvent("Approval");
-            NewFilterInput _f = _e.CreateFilterInput();
-            Task<List<EventLog<dynamic>>> _l = _e.GetAllChangesAsync<dynamic>(_f);
-            _l.Wait();
-            List<EventLog<dynamic>> _rx2 = _l.Result;
-            */
             return rx;
         }
 
@@ -202,21 +195,24 @@ dysnomia/lib/yai.sol.old
             return Contract[cxid];
         }
 
+        public async Task GetLog(OutputCallback Output) {
+            if(Output != null) {
+                HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                List<EventLog<LogEvent>> logs = await Logs.Event.GetAllChangesAsync(Logs.Filter);
+                foreach(EventLog<LogEvent> _e in logs)
+                    Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
+                Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+            }
+        }
+
         public async Task<string> _deploy(OutputCallback Output, string name, string file, params dynamic[] Args) {
             (string ABI, string BIN) = Compile(file);
 
             Contract _c = await DeployContract(ABI, BIN, Args);
             AddAlias(name, _c.Address);
 
-            if(Output != null) {
-                HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-                List<EventLog<LogEvent>> logs = await Logs.Event.GetAllChangesAsync(Logs.Filter);
-                foreach(EventLog<LogEvent> _e in logs) 
-                    Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
-
-                Output(From, Encoding.Default.GetBytes(name + " Deployed To: " + Aliases[name]), 6);
-                Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
-            }
+            await GetLog(Output);
+            Output(From, Encoding.Default.GetBytes(name + " Deployed To: " + Aliases[name]), 6);
             return Aliases[name];
         }
 
