@@ -112,6 +112,26 @@ dysnomia/lib/yai.sol.old
             public virtual ulong Barn { get; set; }
         }
 
+        [FunctionOutput]
+        public class Bao : IFunctionOutputDTO {
+            [Parameter("address", "Phi", 1)]
+            public virtual string Phi { get; set; }
+            [Parameter("address", "Mu", 2)]
+            public virtual string Mu { get; set; }
+            [Parameter("uint64", "Xi", 3)]
+            public virtual ulong Xi { get; set; }
+            [Parameter("uint64", "Pi", 4)]
+            public virtual ulong Pi { get; set; }
+            [Parameter("address", "Shio", 5)]
+            public virtual string Shio { get; set; }
+            [Parameter("uint64", "Ring", 6)]
+            public virtual ulong Ring { get; set; }
+            [Parameter("uint64", "Omicron", 7)]
+            public virtual ulong Omicron { get; set; }
+            [Parameter("uint64", "Omega", 8)]
+            public virtual ulong Omega { get; set; }
+        }
+
         public async Task AddAliasWithABI(string alias, string cxid, string file) {
             (string ABI, string BIN) = Compile(file);
             Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
@@ -119,7 +139,45 @@ dysnomia/lib/yai.sol.old
 
         }
 
+        public async Task AddShioAliases(OutputCallback Output, string symbol, string address) {
+            AddAliasWithABI(symbol + "Shio", address, "dysnomia/03_shio.sol");
+            Output(From, Encoding.Default.GetBytes(symbol + "Shio" + " Deployed To: " + Aliases[symbol + "Shio"]), 6);
+            _ = await Execute(Contract[Aliases[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
+
+            Shao rho = await Execute(Contract[Aliases[symbol + "Shio"]], "Rho");
+            _ = AddAliasWithABI(symbol + "ShioRod", rho.Rod, "dysnomia/02_sha.sol");
+            Output(From, Encoding.Default.GetBytes(symbol + "ShioRod" + " Deployed To: " + Aliases[symbol + "ShioRod"]), 6);
+            _ = AddAliasWithABI(symbol + "ShioCone", rho.Cone, "dysnomia/02_sha.sol");
+            Output(From, Encoding.Default.GetBytes(symbol + "ShioCone" + " Deployed To: " + Aliases[symbol + "ShioCone"]), 6);
+        }
+
+        public async Task DeployLau(OutputCallback Output, int walletnumber, string name, string symbol) {
+            Wallet.SwitchAccount(walletnumber);
+            (string ABI, string BIN) = Compile("dysnomia/11c_laufactory.sol");
+
+            Contract _c = Wallet.eth.GetContract(ABI, Contract[Aliases["LAUFactory"]].Address);
+
+            string lautx = await Execute(_c, "New", name, symbol);
+            TransactionReceipt receipt = await Wallet.w3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(lautx);
+            while(receipt == null) {
+                Thread.Sleep(1000);
+                receipt = await Wallet.w3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(lautx);
+            }
+
+            string lau = receipt.Logs.First.Values<dynamic>().ToList()[0].Value;
+            _ = AddAliasWithABI(symbol, lau, "dysnomia/11_lau.sol");
+            string lautypeverifier = await Execute(Contract[lau], "Type");
+            if(lautypeverifier != "LAU") throw new Exception("LAU Type Verification Failed");
+
+            Output(From, Encoding.Default.GetBytes(symbol +  " Deployed To: " + Aliases[symbol] + "From Wallet " + walletnumber), 6);
+            Bao On = await Execute(Contract[lau], "On");
+
+            await AddShioAliases(Output, symbol, On.Shio);
+
+        }
+
         public async Task Install(OutputCallback Output) {
+            Aliases = new Dictionary<string, string>();
             if(Output != null)
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
             
@@ -136,15 +194,7 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
 
             dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
-            AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
-            Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
-            _= await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 1551, "Logging Test Successful");
-
-            Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
-            _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
-            Output(From, Encoding.Default.GetBytes("YiShioRod" + " Deployed To: " + Aliases["YiShioRod"]), 6);
-            _ = AddAliasWithABI("YiShioCone", rho.Cone, "dysnomia/02_sha.sol");
-            Output(From, Encoding.Default.GetBytes("YiShioCone" + " Deployed To: " + Aliases["YiShioCone"]), 6);
+            await AddShioAliases(Output, "Yi", psi);
 
             await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
             await _deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
@@ -156,6 +206,13 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
             await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
 
+            await DeployLau(Output, 0, "User Test", "UT0");
+            await DeployLau(Output, 0, "User Test", "UT0_2");
+            await DeployLau(Output, 1, "User Test", "UT1");
+            await DeployLau(Output, 2, "User Test", "UT2");
+            await DeployLau(Output, 3, "User Test", "UT3");
+            await DeployLau(Output, 4, "User Test", "UT4");
+
             await GetLog(Output);
             return;
         }
@@ -166,16 +223,21 @@ dysnomia/lib/yai.sol.old
                 case "Rho":
                     rx = await _c.GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
                     break;
+                case "On":
+                    rx = await _c.GetFunction("On").CallDeserializingToObjectAsync<Bao>();
+                    break;
                 default:
                     Function _f = _c.GetFunction(Function);
                     foreach(Nethereum.ABI.Model.FunctionABI _a in _c.ContractBuilder.ContractABI.Functions) {
                         if(_a.Name == Function) {
-                            if(_a.Constant == true)
+                            if(_a.Constant == true) {
                                 rx = await _f.CallAsync<dynamic>(Args);
-                            else {
+                                break;
+                            } else {
                                 HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
                                 gas = new HexBigInteger(gas.ToUlong() * 2);
                                 rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                                break;
                             }
                         }
                     }

@@ -37,7 +37,7 @@ namespace Dysnomia.Lib
 
         public override String ToString()
         {
-            return String.Format("d{0:0000} {1:00}{2:00}{3:00}", Day, Hour, Minute, Second);
+            return String.Format("[d{0:0000}/{1:00}{2:00}{3:00}]", Day, Hour, Minute, Second);
         }
     }
 }
