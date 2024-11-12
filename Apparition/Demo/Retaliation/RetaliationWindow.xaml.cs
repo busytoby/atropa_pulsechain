@@ -36,7 +36,7 @@ namespace Apparition.Retaliation
                             if (Beta.Priority > Dysnomia.Apparition.LogLevel)
                                 Application.Current.Dispatcher.Invoke((Action)delegate
                                 {
-                                    TerminalOutput.AppendText("<" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
+                                    TerminalOutput.AppendText(DysnomiaTime.Now.ToString() + "  <" + Encoding.Default.GetString(Beta.From) + "> " + Encoding.Default.GetString(Beta.Data) + "\n");
                                     TerminalOutput.ScrollToEnd();
                                 });
                         }

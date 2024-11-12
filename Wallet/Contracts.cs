@@ -139,7 +139,6 @@ dysnomia/lib/yai.sol.old
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
             _= await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 1551, "Logging Test Successful");
-            _= await Execute(Contract[Aliases["YiShio"]], "Log", 5557, 1551, "Logging Test Successful 2");
 
             Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
             _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
@@ -219,25 +218,6 @@ dysnomia/lib/yai.sol.old
         public async Task<string> Deploy(string name, string file, params dynamic[] Args) {
             return await _deploy(null, name, file, Args);
         }
-
-        //Function _f = _c.GetFunction("View");
-        /*
-        Task<ViewOutputDTO> _t2 = _f.CallDeserializingToObjectAsync<ViewOutputDTO>(Args);
-        _t2.Wait();
-        ViewOutputDTO rx = _t2.Result;
-        */
-
-        /*
-        Dysnomia.Contracts.VMREQ.VmreqService _v = new Dysnomia.Contracts.VMREQ.VmreqService(Wallet.w3, _c.Address);
-        Task<ViewOutputDTO> _t2 = _v.ViewQueryAsync();
-        _t2.Wait();
-        ViewOutputDTO rx = _t2.Result;
-
-        dynamic _t = Execute(_c, "Random");
-        _t = Execute(_c, "approve", _c.Address, "123");
-        _t = Execute(_c, "totalSupply");
-        _t = Execute(_c, "modExp", 123, 456, 789);
-        */
 
         public static (string ABI, string BIN) Compile(string file) {
             string ABI = "", BIN = "";
