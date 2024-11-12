@@ -142,9 +142,9 @@ dysnomia/lib/yai.sol.old
         public async Task AddShioAliases(OutputCallback Output, string symbol, string address) {
             AddAliasWithABI(symbol + "Shio", address, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes(symbol + "Shio" + " Deployed To: " + Aliases[symbol + "Shio"]), 6);
-            _ = await Execute(Contract[Aliases[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
+            _ = await Execute(Output, Contract[Aliases[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
 
-            Shao rho = await Execute(Contract[Aliases[symbol + "Shio"]], "Rho");
+            Shao rho = await Execute(Output, Contract[Aliases[symbol + "Shio"]], "Rho");
             _ = AddAliasWithABI(symbol + "ShioRod", rho.Rod, "dysnomia/02_sha.sol");
             Output(From, Encoding.Default.GetBytes(symbol + "ShioRod" + " Deployed To: " + Aliases[symbol + "ShioRod"]), 6);
             _ = AddAliasWithABI(symbol + "ShioCone", rho.Cone, "dysnomia/02_sha.sol");
@@ -157,7 +157,7 @@ dysnomia/lib/yai.sol.old
 
             Contract _c = Wallet.eth.GetContract(ABI, Contract[Aliases["LAUFactory"]].Address);
 
-            string lautx = await Execute(_c, "New", name, symbol);
+            string lautx = await Execute(Output, _c, "New", name, symbol);
             TransactionReceipt receipt = await Wallet.w3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(lautx);
             while(receipt == null) {
                 Thread.Sleep(1000);
@@ -166,14 +166,14 @@ dysnomia/lib/yai.sol.old
 
             string lau = receipt.Logs.First.Values<dynamic>().ToList()[0].Value;
             _ = AddAliasWithABI(symbol, lau, "dysnomia/11_lau.sol");
-            string lautypeverifier = await Execute(Contract[lau], "Type");
+            string lautypeverifier = await Execute(Output, Contract[lau], "Type");
             if(lautypeverifier != "LAU") throw new Exception("LAU Type Verification Failed");
 
             Output(From, Encoding.Default.GetBytes(symbol +  " Deployed To: " + Aliases[symbol] + "From Wallet " + walletnumber), 6);
-            Bao On = await Execute(Contract[lau], "On");
+            Bao On = await Execute(Output, Contract[lau], "On");
 
             await AddShioAliases(Output, symbol, On.Shio);
-
+            await GetLog(Output);
         }
 
         public async Task Install(OutputCallback Output) {
@@ -193,7 +193,7 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
             await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
 
-            dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
+            dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
             await AddShioAliases(Output, "Yi", psi);
 
             await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
@@ -207,17 +207,29 @@ dysnomia/lib/yai.sol.old
             await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
 
             await DeployLau(Output, 0, "User Test", "UT0");
+            await Execute(Output, Contract[Aliases["UT0"]], 0, "Username(string)", "Zero");
             await DeployLau(Output, 0, "User Test", "UT0_2");
+            await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Username(string)", "Zero Two");
             await DeployLau(Output, 1, "User Test", "UT1");
+            await Execute(Output, Contract[Aliases["UT1"]], 1, "Username(string)", "One");
             await DeployLau(Output, 2, "User Test", "UT2");
+            await Execute(Output, Contract[Aliases["UT2"]], 2, "Username(string)", "Two");
             await DeployLau(Output, 3, "User Test", "UT3");
+            await Execute(Output, Contract[Aliases["UT3"]], 3, "Username(string)", "Three");
             await DeployLau(Output, 4, "User Test", "UT4");
+            await Execute(Output, Contract[Aliases["UT4"]], 4, "Username(string)", "Four");
 
             await GetLog(Output);
             return;
         }
 
-        public async Task<dynamic> Execute(Contract _c, string Function, params dynamic[] Args) {
+        public async Task<dynamic> Execute(OutputCallback Output, Contract _c, int Walletnumber, string Function, params dynamic[] Args) {
+            Wallet.SwitchAccount(Walletnumber);
+            // should possibly detect & reinstantiate contract for local wallet if it is not installed as so
+            return await Execute(Output, _c, Function, Args);
+        }
+
+        public async Task<dynamic> Execute(OutputCallback Output, Contract _c, string Function, params dynamic[] Args) {
             dynamic rx = null;
             switch(Function) {
                 case "Rho":
@@ -227,24 +239,23 @@ dysnomia/lib/yai.sol.old
                     rx = await _c.GetFunction("On").CallDeserializingToObjectAsync<Bao>();
                     break;
                 default:
-                    Function _f = _c.GetFunction(Function);
-                    foreach(Nethereum.ABI.Model.FunctionABI _a in _c.ContractBuilder.ContractABI.Functions) {
-                        if(_a.Name == Function) {
-                            if(_a.Constant == true) {
-                                rx = await _f.CallAsync<dynamic>(Args);
-                                break;
-                            } else {
-                                HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
-                                gas = new HexBigInteger(gas.ToUlong() * 2);
-                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
-                                break;
-                            }
+                    Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.Contains(Function));
+                    FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
+                    Function _f = new Function(_c, _fb);
+                    if(_a.Signature.Contains(Function)) {
+                        if(_a.Constant == true) {
+                            rx = await _f.CallAsync<dynamic>(Args);
+                            break;
+                        } else {
+                            HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
+                            gas = new HexBigInteger(gas.ToUlong() * 2);
+                            rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                            break;
                         }
-                    }
-
-                    break;
+                    } else throw new Exception("Error");
             }
 
+            await GetLog(Output);
             return rx;
         }
 
