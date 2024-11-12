@@ -138,20 +138,11 @@ dysnomia/lib/yai.sol.old
             dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Logging Test Successful");
-            await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 0550, "Logging Test Successful 2");
+            HexBigInteger gas = await Contract[Aliases["YiShio"]].GetFunction("Log").EstimateGasAsync(Wallet.Account.Address, null, null, 5556, 1551, "Estimate");
+            gas = new HexBigInteger(gas.ToUlong() * 2);
+            await Contract[Aliases["YiShio"]].GetFunction("Log").SendTransactionAsync(Wallet.Account.Address, gas, null, null, 5556, 1551, "Logging Test Successful");
+            await Contract[Aliases["YiShio"]].GetFunction("Log").SendTransactionAsync(Wallet.Account.Address, gas, null, null, 5556, 1551, "Logging Test Successful 2");
             
-            /* this doesn't work
-            Event<LogEvent> ysle = Contract[Aliases["YiShio"]].GetEvent<LogEvent>();
-            NewFilterInput _n2 = ysle.CreateFilterInput();
-            HexBigInteger _f = await ysle.CreateFilterAsync();
-            //_n.FromBlock = new BlockParameter(latestBlock);
-            //List<EventLog<LogEvent>> logs = await ysle.GetAllChangesAsync(_n2);
-            List<EventLog<LogEvent>> logs = await ysle.GetFilterChangesAsync(_f);
-            foreach(EventLog<LogEvent> _e in logs)
-                Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
-            */ 
-
             Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
             _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
             Output(From, Encoding.Default.GetBytes("YiShioRod" + " Deployed To: " + Aliases["YiShioRod"]), 6);
