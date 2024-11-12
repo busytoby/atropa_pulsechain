@@ -138,11 +138,9 @@ dysnomia/lib/yai.sol.old
             dynamic psi = await Execute(Contract[Aliases["YI"]], "Psi");
             AddAliasWithABI("YiShio", psi, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes("YiShio" + " Deployed To: " + Aliases["YiShio"]), 6);
-            HexBigInteger gas = await Contract[Aliases["YiShio"]].GetFunction("Log").EstimateGasAsync(Wallet.Account.Address, null, null, 5556, 1551, "Estimate");
-            gas = new HexBigInteger(gas.ToUlong() * 2);
-            await Contract[Aliases["YiShio"]].GetFunction("Log").SendTransactionAsync(Wallet.Account.Address, gas, null, null, 5556, 1551, "Logging Test Successful");
-            await Contract[Aliases["YiShio"]].GetFunction("Log").SendTransactionAsync(Wallet.Account.Address, gas, null, null, 5556, 1551, "Logging Test Successful 2");
-            
+            _= await Execute(Contract[Aliases["YiShio"]], "Log", 5556, 1551, "Logging Test Successful");
+            _= await Execute(Contract[Aliases["YiShio"]], "Log", 5557, 1551, "Logging Test Successful 2");
+
             Shao rho = await Execute(Contract[Aliases["YiShio"]], "Rho");
             _ = AddAliasWithABI("YiShioRod", rho.Rod, "dysnomia/02_sha.sol");
             Output(From, Encoding.Default.GetBytes("YiShioRod" + " Deployed To: " + Aliases["YiShioRod"]), 6);
@@ -163,16 +161,29 @@ dysnomia/lib/yai.sol.old
         }
 
         public async Task<dynamic> Execute(Contract _c, string Function, params dynamic[] Args) {
-            dynamic rx;
-            switch (Function) {
+            dynamic rx = null;
+            switch(Function) {
                 case "Rho":
                     rx = await _c.GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
                     break;
                 default:
-                    rx = await _c.GetFunction(Function).CallAsync<dynamic>(Args);
+                    Function _f = _c.GetFunction(Function);
+                    foreach(Nethereum.ABI.Model.FunctionABI _a in _c.ContractBuilder.ContractABI.Functions) {
+                        if(_a.Name == Function) {
+                            if(_a.Constant == true)
+                                rx = await _f.CallAsync<dynamic>(Args);
+                            else {
+                                HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
+                                gas = new HexBigInteger(gas.ToUlong() * 2);
+                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                            }
+                        }
+                    }
+                    //if(_c.ContractBuilder.ContractABI.Functions[])
+
                     break;
-        }
-            
+            }
+
             /*
             Event _e = _c.GetEvent("Approval");
             NewFilterInput _f = _e.CreateFilterInput();
