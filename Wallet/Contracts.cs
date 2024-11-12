@@ -208,16 +208,23 @@ dysnomia/lib/yai.sol.old
 
             await DeployLau(Output, 0, "User Test", "UT0");
             await Execute(Output, Contract[Aliases["UT0"]], 0, "Username(string)", "Zero");
+            await Execute(Output, Contract[Aliases["UT0"]], 0, "Chat", "Lau Test Chat Zero");
             await DeployLau(Output, 0, "User Test", "UT0_2");
             await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Username(string)", "Zero Two");
+            await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Chat", "Lau Test Chat Zero Two");
             await DeployLau(Output, 1, "User Test", "UT1");
             await Execute(Output, Contract[Aliases["UT1"]], 1, "Username(string)", "One");
+            await Execute(Output, Contract[Aliases["UT1"]], 1, "Chat", "Lau Test Chat One");
             await DeployLau(Output, 2, "User Test", "UT2");
             await Execute(Output, Contract[Aliases["UT2"]], 2, "Username(string)", "Two");
+            await Execute(Output, Contract[Aliases["UT2"]], 2, "Chat", "Lau Test Chat Two");
             await DeployLau(Output, 3, "User Test", "UT3");
             await Execute(Output, Contract[Aliases["UT3"]], 3, "Username(string)", "Three");
+            await Execute(Output, Contract[Aliases["UT3"]], 3, "Chat", "Lau Test Chat Three");
             await DeployLau(Output, 4, "User Test", "UT4");
             await Execute(Output, Contract[Aliases["UT4"]], 4, "Username(string)", "Four");
+            await Execute(Output, Contract[Aliases["UT4"]], 4, "Chat", "Lau Test Chat Four");
+            Wallet.SwitchAccount(0);
 
             await GetLog(Output);
             return;
