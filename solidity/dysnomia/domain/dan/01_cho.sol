@@ -153,13 +153,9 @@ contract CHO is DYSNOMIA {
 
     function GetUserBySoul(uint64 Soul) public returns (User memory Alpha) {
         address _a = GetAddressBySoul(Soul);
-        return GetUserByAddress(_a);
-    }
-
-    function GetUserByAddress(address who) public returns(User memory) {
-        if(Delegates[who].Soul == 0) revert UserNotEntered(who);
-        Delegates[who].Entropy = Recall(Delegates[who]);
-        return Delegates[who];
+        if(Delegates[_a].Soul == 0) revert UserNotEntered(_a);
+        Delegates[_a].Entropy = Recall(Delegates[_a]);
+        return Delegates[_a];
     }
 
     function GetAddressBySoul(uint64 soul) public view returns(address UserAddress) {

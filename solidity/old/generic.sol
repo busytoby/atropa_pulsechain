@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../addresses.sol";
 
-contract ASGARD is ERC20, ERC20Burnable {
-    constructor() ERC20(unicode"Make The Grade", unicode"ÁSGARD") {
-        _mint(address(0xBF182955401aF3f2f7e244cb31184E93E74a2501), 5554 * 10 ** decimals());
+contract GBABY is ERC20, ERC20Burnable {
+    constructor() ERC20(unicode"In The Know", unicode"GBABY") {
+        _mint(address(0x7a20189B297343CF26d8548764b04891f37F3414), 121212 * 10 ** decimals());
     }
 }
