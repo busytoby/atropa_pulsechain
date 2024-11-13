@@ -59,39 +59,6 @@ namespace Wallet
             Aliases.Add(alias, cxid);
         }
 
-        /*
-dysnomia/11_lau.sol
-dysnomia/domain/assets/h2o.sol
-dysnomia/domain/assets/vitus.sol
-dysnomia/domain/dan/01_cho.sol
-dysnomia/domain/dan/02c_systemaddresses.sol
-dysnomia/domain/dan/03_qing.sol
-dysnomia/domain/dan/04_war.sol
-dysnomia/domain/map.sol
-dysnomia/domain/sky/01_chan.sol
-dysnomia/domain/sky/02_choa.sol
-dysnomia/domain/sky/03_ring.sol
-dysnomia/domain/soeng/01_qi.sol
-dysnomia/domain/soeng/02_mai.sol
-dysnomia/domain/soeng/03_xia.sol
-dysnomia/domain/soeng/04_xie.sol
-dysnomia/domain/soeng/05_zi.sol
-dysnomia/domain/soeng/06_pang.sol
-dysnomia/domain/soeng/07_gwat.sol
-dysnomia/domain/tang/01_sei.sol
-dysnomia/domain/tang/02_cheon.sol
-dysnomia/domain/tang/03_meta.sol
-dysnomia/domain/world.sol
-dysnomia/domain/yue.sol
-dysnomia/lib/encrypt.sol
-dysnomia/lib/heckemeridians.sol
-dysnomia/lib/multiownable.sol
-dysnomia/lib/reactions_core.sol
-dysnomia/lib/registry.sol
-dysnomia/lib/stringlib.sol
-dysnomia/lib/yai.sol.old
-        */
-
         [Event("LogEvent")]
         public class LogEvent : IEventDTO {
             [Parameter("uint64", "Soul", 1, false)]
@@ -180,55 +147,93 @@ dysnomia/lib/yai.sol.old
             Aliases = new Dictionary<string, string>();
             if(Output != null)
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
-            
-            HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
-            Event<LogEvent> YiShioLogEvent = Wallet.w3.Eth.GetEvent<LogEvent>();
-            NewFilterInput _n = YiShioLogEvent.CreateFilterInput();
-            _n.FromBlock = new BlockParameter(latestBlock);
-            Logs = (YiShioLogEvent, _n);
+            try {
+                HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
-            await _deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
-            await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
-            await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
-            await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
+                Event<LogEvent> YiShioLogEvent = Wallet.w3.Eth.GetEvent<LogEvent>();
+                NewFilterInput _n = YiShioLogEvent.CreateFilterInput();
+                _n.FromBlock = new BlockParameter(latestBlock);
+                Logs = (YiShioLogEvent, _n);
 
-            dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
-            await AddShioAliases(Output, "Yi", psi);
+                await _deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
+                await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
+                await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
+                await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
 
-            await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
-            await _deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
-            await _deploy(Output, "YAU", "dysnomia/07_yau.sol", Aliases["ZHOU"]);
-            await _deploy(Output, "YANG", "dysnomia/08_yang.sol", Aliases["YAU"]);
-            await _deploy(Output, "SIU", "dysnomia/09_siu.sol", Aliases["YANG"]);
-            await _deploy(Output, "VOID", "dysnomia/10_void.sol", Aliases["SIU"]);
-            await _deploy(Output, "ATTRIBUTE", "dysnomia/lib/attribute.sol", Aliases["VOID"]);
-            await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
-            await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
+                dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
+                await AddShioAliases(Output, "Yi", psi);
 
-            await DeployLau(Output, 0, "User Test", "UT0");
-            await Execute(Output, Contract[Aliases["UT0"]], 0, "Username(string)", "Zero");
-            await Execute(Output, Contract[Aliases["UT0"]], 0, "Chat", "Lau Test Chat Zero");
-            await DeployLau(Output, 0, "User Test", "UT0_2");
-            await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Username(string)", "Zero Two");
-            await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Chat", "Lau Test Chat Zero Two");
-            await DeployLau(Output, 1, "User Test", "UT1");
-            await Execute(Output, Contract[Aliases["UT1"]], 1, "Username(string)", "One");
-            await Execute(Output, Contract[Aliases["UT1"]], 1, "Chat", "Lau Test Chat One");
-            await DeployLau(Output, 2, "User Test", "UT2");
-            await Execute(Output, Contract[Aliases["UT2"]], 2, "Username(string)", "Two");
-            await Execute(Output, Contract[Aliases["UT2"]], 2, "Chat", "Lau Test Chat Two");
-            await DeployLau(Output, 3, "User Test", "UT3");
-            await Execute(Output, Contract[Aliases["UT3"]], 3, "Username(string)", "Three");
-            await Execute(Output, Contract[Aliases["UT3"]], 3, "Chat", "Lau Test Chat Three");
-            await DeployLau(Output, 4, "User Test", "UT4");
-            await Execute(Output, Contract[Aliases["UT4"]], 4, "Username(string)", "Four");
-            await Execute(Output, Contract[Aliases["UT4"]], 4, "Chat", "Lau Test Chat Four");
-            Wallet.SwitchAccount(0);
+                await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
+                await _deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
+                await _deploy(Output, "YAU", "dysnomia/07_yau.sol", Aliases["ZHOU"]);
+                await _deploy(Output, "YANG", "dysnomia/08_yang.sol", Aliases["YAU"]);
+                await _deploy(Output, "SIU", "dysnomia/09_siu.sol", Aliases["YANG"]);
+                await _deploy(Output, "VOID", "dysnomia/10_void.sol", Aliases["SIU"]);
+                await _deploy(Output, "ATTRIBUTE", "dysnomia/lib/attribute.sol", Aliases["VOID"]);
+                await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
+                await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
 
-            await GetLog(Output);
+                await DeployLau(Output, 0, "User Test", "UT0");
+                await Execute(Output, Contract[Aliases["UT0"]], 0, "Username(string)", "Zero");
+                await Execute(Output, Contract[Aliases["UT0"]], 0, "Chat", "Lau Test Chat Zero");
+                await DeployLau(Output, 0, "User Test", "UT0_2");
+                await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Username(string)", "Zero Two");
+                await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Chat", "Lau Test Chat Zero Two");
+                await DeployLau(Output, 1, "User Test", "UT1");
+                await Execute(Output, Contract[Aliases["UT1"]], 1, "Username(string)", "One");
+                await Execute(Output, Contract[Aliases["UT1"]], 1, "Chat", "Lau Test Chat One");
+                await DeployLau(Output, 2, "User Test", "UT2");
+                await Execute(Output, Contract[Aliases["UT2"]], 2, "Username(string)", "Two");
+                await Execute(Output, Contract[Aliases["UT2"]], 2, "Chat", "Lau Test Chat Two");
+                await DeployLau(Output, 3, "User Test", "UT3");
+                await Execute(Output, Contract[Aliases["UT3"]], 3, "Username(string)", "Three");
+                await Execute(Output, Contract[Aliases["UT3"]], 3, "Chat", "Lau Test Chat Three");
+                await DeployLau(Output, 4, "User Test", "UT4");
+                await Execute(Output, Contract[Aliases["UT4"]], 4, "Username(string)", "Four");
+                await Execute(Output, Contract[Aliases["UT4"]], 4, "Chat", "Lau Test Chat Four");
+                Wallet.SwitchAccount(0);
+
+                await _deploy(Output, "react", "dysnomia/lib/reactions_core.sol", Aliases["VOID"]);
+                await _deploy(Output, "CHO", "dysnomia/domain/dan/01_cho.sol", Aliases["VOID"]);
+                //await _deploy(Output, "dan02csystemaddressscript", "dysnomia/domain/dan/02c_systemaddresses.sol", Aliases["CHO"]);
+
+
+                await GetLog(Output);
+            } catch (Exception _e) {
+                int i = 99;
+            }
             return;
         }
+
+        /*
+dysnomia/domain/assets/h2o.sol
+dysnomia/domain/assets/vitus.sol
+dysnomia/domain/dan/03_qing.sol
+dysnomia/domain/dan/04_war.sol
+dysnomia/domain/map.sol
+dysnomia/domain/sky/01_chan.sol
+dysnomia/domain/sky/02_choa.sol
+dysnomia/domain/sky/03_ring.sol
+dysnomia/domain/soeng/01_qi.sol
+dysnomia/domain/soeng/02_mai.sol
+dysnomia/domain/soeng/03_xia.sol
+dysnomia/domain/soeng/04_xie.sol
+dysnomia/domain/soeng/05_zi.sol
+dysnomia/domain/soeng/06_pang.sol
+dysnomia/domain/soeng/07_gwat.sol
+dysnomia/domain/tang/01_sei.sol
+dysnomia/domain/tang/02_cheon.sol
+dysnomia/domain/tang/03_meta.sol
+dysnomia/domain/world.sol
+dysnomia/domain/yue.sol
+dysnomia/lib/encrypt.sol
+dysnomia/lib/heckemeridians.sol
+dysnomia/lib/multiownable.sol
+dysnomia/lib/registry.sol
+dysnomia/lib/stringlib.sol
+dysnomia/lib/yai.sol.old
+*/
 
         public async Task<dynamic> Execute(OutputCallback Output, Contract _c, int Walletnumber, string Function, params dynamic[] Args) {
             Wallet.SwitchAccount(Walletnumber);
@@ -255,7 +260,7 @@ dysnomia/lib/yai.sol.old
                             break;
                         } else {
                             HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
-                            gas = new HexBigInteger(gas.ToUlong() * 2);
+                            gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
                             rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
                             break;
                         }
@@ -267,7 +272,10 @@ dysnomia/lib/yai.sol.old
         }
 
         private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
-            string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, new HexBigInteger(12000000), Args);
+            HexBigInteger gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
+            gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
+
+            string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, gas, Args);
             TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
             string cxid = Receipt.ContractAddress;
             Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
