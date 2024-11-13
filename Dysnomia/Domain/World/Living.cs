@@ -28,14 +28,9 @@ namespace Dysnomia.Domain.World
             Sigma = new Tare();
         }
 
-        public Living(活 O)
+        public Living(活 O) : this()
         {
-            In = new ConcurrentQueue<Tare>();
-            Out = new ConcurrentQueue<Tare>();
-            Sigma = new Tare();
-            Omega = O;
-            Omicron = new Thread(new ThreadStart(Omega));
-            Omicron.Start();
+            Run(O);
         }
 
         public void Run(活 O)

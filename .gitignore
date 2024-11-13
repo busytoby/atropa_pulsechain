@@ -44,3 +44,14 @@
 /solidity/dysnomia/interfaces/artifacts
 /solidity/dysnomia/lib/artifacts
 /solidity/old/artifacts
+/viewclient/bin/Debug/net9.0-windows10.0.18362.0
+/Wallet/bin/Debug
+/Wallet/obj
+/Apparition/bin/Debug/net9.0-windows10.0.18362.0
+/Dysnomia/bin/Debug/net9.0
+/solidity/dysnomia/00b_vmreq.sol
+/solidity/openzeppelin/contracts
+/solidity/last_compile
+/Wallet/bin/Contracts
+/solidity/bin/dysnomia
+/solidity/nethereum-gen.settings

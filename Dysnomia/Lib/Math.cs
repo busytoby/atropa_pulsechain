@@ -25,8 +25,6 @@ namespace Dysnomia
             "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" +
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.AllowHexSpecifier);
 
-
-
         private static Random rand;
         private static Object randLock;
 

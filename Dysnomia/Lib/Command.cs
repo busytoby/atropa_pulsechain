@@ -13,7 +13,7 @@ namespace Dysnomia.Lib
     {
         new public static string Name = "Command";
         new public static string Description = "Not Set Description";
-        public string[]? Args;
+        public dynamic[]? Args;
 
         public Command() : base()
         {
@@ -57,7 +57,7 @@ namespace Dysnomia.Lib
         public Type[] GetCommands()
         {
             return Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => string.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal))
+                .Where(t => string.Equals(t.Namespace, "Dysnomia.Domain.bin", StringComparison.Ordinal) && t.ReflectedType == null)
                 .ToArray();
         }
     }

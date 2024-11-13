@@ -13,23 +13,6 @@ namespace ExtensionMethods
 {
     public static class ExtensionMethods
     {
-        public static String GetPublicKey(this Faung Upsilon)
-        {
-            return String.Format("{0}.{1}.{2}", Upsilon.Cone.Manifold, Upsilon.Cone.Ring, Upsilon.Rod.Barn);
-        }
-
-        public static Conjunction OpenSerialization(this Fa Rho)
-        {
-            Conjunction Nu = new Conjunction();
-            Nu.Enqueue(new byte[] { 0x07 });
-            Nu.Enqueue(Rho.Ring.ToByteArray());
-            Nu.Enqueue(Rho.Coordinate.ToByteArray());
-            Nu.Enqueue(Rho.Manifold.ToByteArray());
-            Nu.Enqueue(Rho.Barn.ToByteArray());
-            Nu.Enqueue(Rho.Element.ToByteArray());
-            return Nu;
-        }
-
         public static DysnomiaTime ToDysnomia(this DateTime Mu)
         {
             return new DysnomiaTime(Mu);
