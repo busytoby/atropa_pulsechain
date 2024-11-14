@@ -93,13 +93,13 @@ contract VMREQ is ERC20, ERC20Burnable {
         Mu.Omicron = Mu.Cone.Kappa;
         React(Mu.Rod, Mu.Pi, Mu.Rod.Dynamo);
         Mu.Omega = Mu.Omega ^ Mu.Rod.Kappa;
-        
+
         Mu.Upsilon = Mu.Upsilon ^ Mu.Ohm ^ Mu.Pi;
-        
+
         return Mu.Upsilon;
     }
 
-    function hashWith(address a, address b) public returns (uint256 hash) {        
+    function hashWith(address a, address b) public returns (uint256 hash) {
         hash = 0;
         uint160 _a = uint160(a);
         uint160 _b = uint160(b) / 15;
