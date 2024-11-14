@@ -24,6 +24,7 @@ using Dysnomia.Contracts.VMREQ.ContractDefinition;
 using Nethereum.Contracts.QueryHandlers.MultiCall;
 using System.Xml.Linq;
 using Nethereum.ABI.FunctionEncoding;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Wallet
 {
@@ -272,14 +273,19 @@ dysnomia/lib/yai.sol.old
         }
 
         private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
-            HexBigInteger gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
-            gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
+            try {
+                HexBigInteger gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
+                gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
 
-            string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, gas, Args);
-            TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
-            string cxid = Receipt.ContractAddress;
-            Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
-            return Contract[cxid];
+                string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, gas, Args);
+                TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
+                string cxid = Receipt.ContractAddress;
+                Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
+                return Contract[cxid];
+            } catch (Exception _e) {
+                int i = 99;
+            }
+            return null;
         }
 
         public async Task GetLog(OutputCallback Output) {

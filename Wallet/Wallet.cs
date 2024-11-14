@@ -23,6 +23,12 @@ namespace Wallet
             eth = w3.Eth;
         }
 
+        public void SwitchAccount2(int Number) {
+            Account = new Account(Accounts.pkeys[Number], 111111);
+            w3 = new Web3(Account, ConnectionString);
+            eth = w3.Eth;
+        }
+
         public void SwitchAccount(int Number)
         {
             Account = new Account(Accounts.pkeys[Number]);
