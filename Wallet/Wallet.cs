@@ -24,7 +24,7 @@ namespace Wallet
         }
 
         public void SwitchAccount2(int Number) {
-            Account = new Account(Accounts.pkeys[Number], 111111);
+            Account = new Account(Accounts.pkeys[Number], 1111111);
             w3 = new Web3(Account, ConnectionString);
             eth = w3.Eth;
         }

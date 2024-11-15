@@ -150,6 +150,10 @@ namespace Wallet
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
 
             try {
+                HexBigInteger Test = Wallet.EthGetBalance(Wallet.Account.Address);
+                Nethereum.RPC.Eth.DTOs.TransactionReceipt rx = await Wallet.eth.GetEtherTransferService().TransferEtherAndWaitForReceiptAsync("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b", 11, 200);
+                Test = Wallet.EthGetBalance("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b");
+
                 HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
                 Event<LogEvent> YiShioLogEvent = Wallet.w3.Eth.GetEvent<LogEvent>();
@@ -279,6 +283,8 @@ dysnomia/lib/yai.sol.old
 
                 string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, gas, Args);
                 TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
+                while(Receipt == null)
+                    Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
                 string cxid = Receipt.ContractAddress;
                 Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
                 return Contract[cxid];
@@ -318,7 +324,7 @@ dysnomia/lib/yai.sol.old
             string diskfile = SolidityFolder + @"\" + file;
             Process _p = new Process();
             _p.StartInfo.FileName = Solc_bin;
-            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=shanghai " + diskfile;
+            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=paris " + diskfile;
             _p.StartInfo.RedirectStandardOutput = true;
             _p.StartInfo.RedirectStandardError = true;
             _p.StartInfo.UseShellExecute = false;
