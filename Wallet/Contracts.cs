@@ -151,7 +151,7 @@ namespace Wallet
 
             try {
                 HexBigInteger Test = Wallet.EthGetBalance(Wallet.Account.Address);
-                Nethereum.RPC.Eth.DTOs.TransactionReceipt rx = await Wallet.eth.GetEtherTransferService().TransferEtherAndWaitForReceiptAsync("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b", 11, 200);
+                TransactionReceipt rx = await Wallet.eth.GetEtherTransferService().TransferEtherAndWaitForReceiptAsync("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b", 11, 200);
                 Test = Wallet.EthGetBalance("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b");
 
                 HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
@@ -185,6 +185,7 @@ namespace Wallet
                 await DeployLau(Output, 0, "User Test", "UT0_2");
                 await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Username(string)", "Zero Two");
                 await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Chat", "Lau Test Chat Zero Two");
+/*
                 await DeployLau(Output, 1, "User Test", "UT1");
                 await Execute(Output, Contract[Aliases["UT1"]], 1, "Username(string)", "One");
                 await Execute(Output, Contract[Aliases["UT1"]], 1, "Chat", "Lau Test Chat One");
@@ -198,6 +199,7 @@ namespace Wallet
                 await Execute(Output, Contract[Aliases["UT4"]], 4, "Username(string)", "Four");
                 await Execute(Output, Contract[Aliases["UT4"]], 4, "Chat", "Lau Test Chat Four");
                 Wallet.SwitchAccount(0);
+*/
 
                 await _deploy(Output, "react", "dysnomia/lib/reactions_core.sol", Aliases["VOID"]);
                 await _deploy(Output, "CHO", "dysnomia/domain/dan/01_cho.sol", Aliases["VOID"]);
@@ -295,12 +297,16 @@ dysnomia/lib/yai.sol.old
         }
 
         public async Task GetLog(OutputCallback Output) {
-            if(Output != null) {
-                HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-                List<EventLog<LogEvent>> logs = await Logs.Event.GetAllChangesAsync(Logs.Filter);
-                foreach(EventLog<LogEvent> _e in logs)
-                    Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
-                Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+            try {
+                if(Output != null) {
+                    HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                    List<EventLog<LogEvent>> logs = await Logs.Event.GetAllChangesAsync(Logs.Filter);
+                    foreach(EventLog<LogEvent> _e in logs)
+                        Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
+                    Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+                }
+            } catch (Exception _e) {
+                int i = 99;
             }
         }
 
@@ -324,7 +330,7 @@ dysnomia/lib/yai.sol.old
             string diskfile = SolidityFolder + @"\" + file;
             Process _p = new Process();
             _p.StartInfo.FileName = Solc_bin;
-            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=paris " + diskfile;
+            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=shanghai " + diskfile;
             _p.StartInfo.RedirectStandardOutput = true;
             _p.StartInfo.RedirectStandardError = true;
             _p.StartInfo.UseShellExecute = false;
