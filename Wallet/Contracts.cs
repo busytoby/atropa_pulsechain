@@ -50,7 +50,7 @@ namespace Wallet
         public Dictionary<string, string> Aliases;
         public Dictionary<string, string> ReverseAliases;
         static public string? Solc_bin;
-        static public string? SolidityFolder;
+        static public string? RootFolder;
         byte[] From = Encoding.Default.GetBytes("Contracts");
 
         public Contracts(Wallet wallet) {
@@ -69,11 +69,12 @@ namespace Wallet
             else throw (new Exception("No Such File"));
 
             if (Directory.Exists(input))
-                SolidityFolder = input;
+                RootFolder = input;
             else throw (new Exception("No Such Folder"));
         }
 
         public void AddAlias(string alias, string cxid) {
+            if(Aliases.ContainsKey(alias)) Aliases.Remove(alias);
             Aliases.Add(alias, cxid);
             if(!ReverseAliases.ContainsKey(cxid)) ReverseAliases.Add(cxid, alias);
         }      
@@ -151,7 +152,7 @@ namespace Wallet
             await GetLog(Output);
         }
 
-        public async Task Install(OutputCallback Output) {
+        public async Task Install(OutputCallback Output, string g) {
             Aliases = new Dictionary<string, string>();
             if(Output != null)
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
@@ -174,23 +175,23 @@ namespace Wallet
                 _n.FromBlock = new BlockParameter(0);
                 Logs.Add(new wEvent(YiShioLogEvent, _n, "LogEvent"));
 
-                await _deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
-                await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
-                await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
-                await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
+                await Deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
+                await Deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
+                await Deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
+                await Deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
 
                 dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
                 await AddShioAliases(Output, "Yi", psi);
 
-                await _deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
-                await _deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
-                await _deploy(Output, "YAU", "dysnomia/07_yau.sol", Aliases["ZHOU"]);
-                await _deploy(Output, "YANG", "dysnomia/08_yang.sol", Aliases["YAU"]);
-                await _deploy(Output, "SIU", "dysnomia/09_siu.sol", Aliases["YANG"]);
-                await _deploy(Output, "VOID", "dysnomia/10_void.sol", Aliases["SIU"]);
-                await _deploy(Output, "ATTRIBUTE", "dysnomia/lib/attribute.sol", Aliases["VOID"]);
-                await _deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
-                await _deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
+                await Deploy(Output, "ZHENG", "dysnomia/05_zheng.sol", Aliases["YI"]);
+                await Deploy(Output, "ZHOU", "dysnomia/06_zhou.sol", Aliases["ZHENG"]);
+                await Deploy(Output, "YAU", "dysnomia/07_yau.sol", Aliases["ZHOU"]);
+                await Deploy(Output, "YANG", "dysnomia/08_yang.sol", Aliases["YAU"]);
+                await Deploy(Output, "SIU", "dysnomia/09_siu.sol", Aliases["YANG"]);
+                await Deploy(Output, "VOID", "dysnomia/10_void.sol", Aliases["SIU"]);
+                await Deploy(Output, "ATTRIBUTE", "dysnomia/lib/attribute.sol", Aliases["VOID"]);
+                await Deploy(Output, "LAUFactory", "dysnomia/11c_laufactory.sol", Aliases["VOID"]);
+                await Deploy(Output, "STRINGLIB", "dysnomia/lib/stringlib.sol", Aliases["VOID"]);
 
                 await DeployLau(Output, 0, "User Test", "UT0");
                 await Execute(Output, Contract[Aliases["UT0"]], 0, "Username(string)", "Zero");
@@ -212,9 +213,9 @@ namespace Wallet
                 await Execute(Output, Contract[Aliases["UT4"]], 4, "Chat", "Lau Test Chat Four");
                 Wallet.SwitchAccount(0);
 
-                await _deploy(Output, "react", "dysnomia/lib/reactions_core.sol", Aliases["VOID"]);
-                await _deploy(Output, "CHO", "dysnomia/domain/dan/01_cho.sol", Aliases["VOID"]);
-                //await _deploy(Output, "dan02csystemaddressscript", "dysnomia/domain/dan/02c_systemaddresses.sol", Aliases["CHO"]);
+                await Deploy(Output, "react", "dysnomia/lib/reactions_core.sol", Aliases["VOID"]);
+                await Deploy(Output, "CHO", "dysnomia/domain/dan/01_cho.sol", Aliases["VOID"]);
+                //await Deploy(Output, "dan02csystemaddressscript", "dysnomia/domain/dan/02c_systemaddresses.sol", Aliases["CHO"]);
 
 
                 await GetLog(Output);
@@ -350,27 +351,32 @@ dysnomia/lib/yai.sol.old
             }
         }
 
-        public async Task<string> _deploy(OutputCallback Output, string name, string file, params dynamic[] Args) {
-            (string ABI, string BIN) = Compile(file);
+        public async Task<string> Deploy(OutputCallback Output, string file, params dynamic[] Args) {
+            if(file.ToLower().EndsWith(".dys")) {
+                return "not yet supported";
+            } else if(file.ToLower().EndsWith(".sol")) {
+                (string ABI, string BIN) = Compile(file);
 
-            Contract _c = await DeployContract(ABI, BIN, Args);
-            AddAlias(name, _c.Address);
+                Contract _c = await DeployContract(ABI, BIN, Args);
+                string _cSymbol = await Execute(Output, _c, "symbol()");
+                AddAlias(_cSymbol, _c.Address);
 
-            await GetLog(Output);
-            Output(From, Encoding.Default.GetBytes(name + " Deployed To: " + Aliases[name]), 6);
-            return Aliases[name];
-        }
-
-        public async Task<string> Deploy(string name, string file, params dynamic[] Args) {
-            return await _deploy(null, name, file, Args);
+                await GetLog(Output);
+                Output(From, Encoding.Default.GetBytes(_cSymbol + " Deployed To: " + Aliases[_cSymbol]), 6);
+                return Aliases[_cSymbol];
+            } else
+                throw new Exception("Unsupported Type (sol/dys)");
         }
 
         public static (string ABI, string BIN) Compile(string file) {
             string ABI = "", BIN = "";
-            string diskfile = SolidityFolder + @"\" + file;
+            string diskfile = RootFolder + @"\" + file;
+            if(!File.Exists(diskfile)) RootFolder += @"\solidity\";
+            diskfile = RootFolder + @"\" + file;
+            if(!File.Exists(diskfile)) throw new Exception("File Not Found: " + file);
             Process _p = new Process();
             _p.StartInfo.FileName = Solc_bin;
-            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + SolidityFolder + " --evm-version=shanghai " + diskfile;
+            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + RootFolder + " --evm-version=shanghai " + diskfile;
             _p.StartInfo.RedirectStandardOutput = true;
             _p.StartInfo.RedirectStandardError = true;
             _p.StartInfo.UseShellExecute = false;

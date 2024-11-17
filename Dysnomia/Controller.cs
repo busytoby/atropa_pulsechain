@@ -31,7 +31,7 @@ namespace Dysnomia
             //LocalWallet.SwitchAccount(0);
             //Test = Wallet2.EthGetBalance("0x2358B9d8111a0544C79A2Ba53436078eF887c547");
             Wallet.Contracts.Init(@"C:\Users\mariarahel\source\solc.exe",
-                           @"C:\Users\mariarahel\source\repos\atropa_pulsechain\solidity");
+                           @"C:\Users\mariarahel\source\repos\atropa_pulsechain");
             LocalContracts = new Wallet.Contracts(LocalWallet);
         }
     }
