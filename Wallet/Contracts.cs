@@ -353,7 +353,12 @@ dysnomia/lib/yai.sol.old
 
         public async Task<string> Deploy(OutputCallback Output, string file, params dynamic[] Args) {
             if(file.ToLower().EndsWith(".dys")) {
-                return "not yet supported";
+                string diskfile = RootFolder + @"\" + file;
+                if(!File.Exists(diskfile)) diskfile = RootFolder + @"\scripts\" + file;
+                if(!File.Exists(diskfile)) throw new Exception("File Not Found: " + file);
+                foreach(string line in File.ReadAllLines(diskfile))
+                    Wallet.ProcessString(line);
+                return null;
             } else if(file.ToLower().EndsWith(".sol")) {
                 (string ABI, string BIN) = Compile(file);
 
@@ -369,14 +374,15 @@ dysnomia/lib/yai.sol.old
         }
 
         public static (string ABI, string BIN) Compile(string file) {
-            string ABI = "", BIN = "";
-            string diskfile = RootFolder + @"\" + file;
-            if(!File.Exists(diskfile)) RootFolder += @"\solidity\";
-            diskfile = RootFolder + @"\" + file;
+            string ABI = "", BIN = ""; 
+            string _rootFolder = RootFolder;
+            string diskfile = _rootFolder + @"\" + file;
+            if(!File.Exists(diskfile)) _rootFolder += @"\solidity\";
+            diskfile = _rootFolder + @"\" + file;
             if(!File.Exists(diskfile)) throw new Exception("File Not Found: " + file);
             Process _p = new Process();
             _p.StartInfo.FileName = Solc_bin;
-            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + RootFolder + " --evm-version=shanghai " + diskfile;
+            _p.StartInfo.Arguments = "--combined-json=bin,abi --optimize --optimize-runs=200 --base-path " + _rootFolder + " --evm-version=shanghai " + diskfile;
             _p.StartInfo.RedirectStandardOutput = true;
             _p.StartInfo.RedirectStandardError = true;
             _p.StartInfo.UseShellExecute = false;

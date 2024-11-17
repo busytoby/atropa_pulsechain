@@ -33,7 +33,7 @@ namespace Dysnomia.Domain.bin
 
             Task<string> _t = Controller.LocalContracts.Deploy(Output, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
             string Address = _t.Result;
-            Output(From, Encoding.Default.GetBytes("Deployment Address: " + Address), 6);
+            if(Address != null) Output(From, Encoding.Default.GetBytes("Deployment Address: " + Address), 6);
         }
     }
 }

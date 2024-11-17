@@ -15,6 +15,8 @@ namespace Wallet
         public Web3 w3;
         public IEthApiContractService eth;
         public Account Account;
+        internal OracleProcessString ProcessString;
+        public delegate void OracleProcessString(String A);
 
         public Wallet(string connectionString)
         {
@@ -22,6 +24,10 @@ namespace Wallet
             Account = new Account(Accounts.pkeys[0]);
             w3 = new Web3(ConnectionString);
             eth = w3.Eth;
+        }
+
+        public void SetOracleProcessString(OracleProcessString _o) {
+            ProcessString = _o;
         }
 
         public void SwitchAccount(int Number)
