@@ -54,3 +54,4 @@
 /Wallet/bin/Contracts
 /solidity/bin/dysnomia
 /solidity/nethereum-gen.settings
+*.swp
