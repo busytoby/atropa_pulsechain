@@ -19,13 +19,8 @@ namespace Wallet
         public Wallet(string connectionString)
         {
             ConnectionString = connectionString;
+            Account = new Account(Accounts.pkeys[0]);
             w3 = new Web3(ConnectionString);
-            eth = w3.Eth;
-        }
-
-        public void SwitchAccount2(int Number) {
-            Account = new Account(Accounts.pkeys[Number], 1111111);
-            w3 = new Web3(Account, ConnectionString);
             eth = w3.Eth;
         }
 

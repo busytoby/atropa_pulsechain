@@ -25,15 +25,30 @@ using Nethereum.Contracts.QueryHandlers.MultiCall;
 using System.Xml.Linq;
 using Nethereum.ABI.FunctionEncoding;
 using static System.Net.Mime.MediaTypeNames;
+using static Wallet.Events;
+using Nethereum.RPC.Eth.Filters;
 
 namespace Wallet
 {
+    public class wEvent {
+        public object Event;
+        public NewFilterInput Filter;
+        public string Type;
+
+        public wEvent(object @event, NewFilterInput filter, string type) {
+            Event = @event;
+            Filter = filter;
+            Type = type;
+        }
+    }
+
     public class Contracts
     {
         public Wallet Wallet;
         public Dictionary<string, Contract> Contract;
-        (Event<LogEvent> Event, NewFilterInput Filter) Logs;
+        List<wEvent> Logs;
         public Dictionary<string, string> Aliases;
+        public Dictionary<string, string> ReverseAliases;
         static public string? Solc_bin;
         static public string? SolidityFolder;
         byte[] From = Encoding.Default.GetBytes("Contracts");
@@ -41,7 +56,9 @@ namespace Wallet
         public Contracts(Wallet wallet) {
             Wallet = wallet;
             Contract = new Dictionary<string, Contract>();
-            Aliases = new Dictionary<string, string>();
+            Logs = new List<wEvent>();
+            Aliases = new Dictionary<string, string>(); 
+            ReverseAliases = new Dictionary<string, string>();
         }
 
         public delegate void OutputCallback(byte[] From, byte[] Data, short Priority);
@@ -58,17 +75,8 @@ namespace Wallet
 
         public void AddAlias(string alias, string cxid) {
             Aliases.Add(alias, cxid);
-        }
-
-        [Event("LogEvent")]
-        public class LogEvent : IEventDTO {
-            [Parameter("uint64", "Soul", 1, false)]
-            public virtual ulong Soul { get; set; }
-            [Parameter("uint64", "Aura", 2, false)]
-            public virtual ulong Aura { get; set; }
-            [Parameter("string", "LogLine", 3, false)]
-            public virtual string? LogLine { get; set; }
-        }
+            if(!ReverseAliases.ContainsKey(cxid)) ReverseAliases.Add(cxid, alias);
+        }      
 
         [FunctionOutput]
         public class Shao : IFunctionOutputDTO {
@@ -103,8 +111,7 @@ namespace Wallet
         public async Task AddAliasWithABI(string alias, string cxid, string file) {
             (string ABI, string BIN) = Compile(file);
             Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
-            Aliases[alias] = cxid;
-
+            AddAlias(alias, cxid);
         }
 
         public async Task AddShioAliases(OutputCallback Output, string symbol, string address) {
@@ -156,16 +163,22 @@ namespace Wallet
 
                 HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
+                Event<TransferEvent> TransferEvent = Wallet.w3.Eth.GetEvent<TransferEvent>();
+                NewFilterInput _n = TransferEvent.CreateFilterInput();
+                _n.FromBlock = new BlockParameter(0);
+                Logs.Add(new wEvent(TransferEvent, _n, "TransferEvent"));
+
                 Event<LogEvent> YiShioLogEvent = Wallet.w3.Eth.GetEvent<LogEvent>();
-                NewFilterInput _n = YiShioLogEvent.CreateFilterInput();
-                _n.FromBlock = new BlockParameter(latestBlock);
-                Logs = (YiShioLogEvent, _n);
+                _n = YiShioLogEvent.CreateFilterInput();
+                //_n.FromBlock = new BlockParameter(latestBlock);
+                _n.FromBlock = new BlockParameter(0);
+                Logs.Add(new wEvent(YiShioLogEvent, _n, "LogEvent"));
 
                 await _deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
                 await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
                 await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
                 await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
-                dynamic typeverifier = await Execute(Output, Contract[Aliases["YI"]], "Type()");
+
                 dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
                 await AddShioAliases(Output, "Yi", psi);
 
@@ -185,7 +198,6 @@ namespace Wallet
                 await DeployLau(Output, 0, "User Test", "UT0_2");
                 await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Username(string)", "Zero Two");
                 await Execute(Output, Contract[Aliases["UT0_2"]], 0, "Chat", "Lau Test Chat Zero Two");
-/*
                 await DeployLau(Output, 1, "User Test", "UT1");
                 await Execute(Output, Contract[Aliases["UT1"]], 1, "Username(string)", "One");
                 await Execute(Output, Contract[Aliases["UT1"]], 1, "Chat", "Lau Test Chat One");
@@ -199,7 +211,6 @@ namespace Wallet
                 await Execute(Output, Contract[Aliases["UT4"]], 4, "Username(string)", "Four");
                 await Execute(Output, Contract[Aliases["UT4"]], 4, "Chat", "Lau Test Chat Four");
                 Wallet.SwitchAccount(0);
-*/
 
                 await _deploy(Output, "react", "dysnomia/lib/reactions_core.sol", Aliases["VOID"]);
                 await _deploy(Output, "CHO", "dysnomia/domain/dan/01_cho.sol", Aliases["VOID"]);
@@ -311,16 +322,31 @@ dysnomia/lib/yai.sol.old
         }
 
         public async Task GetLog(OutputCallback Output) {
-            try {
-                if(Output != null) {
-                    HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-                    List<EventLog<LogEvent>> logs = await Logs.Event.GetAllChangesAsync(Logs.Filter);
-                    foreach(EventLog<LogEvent> _e in logs)
-                        Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
-                    Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+            foreach(wEvent w in Logs) {
+                try {
+                    if(Output != null) {
+                        HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                        if(w.Type == "TransferEvent") {
+                            List<EventLog<TransferEvent>>  logs = await (w.Event as Event<TransferEvent>).GetAllChangesAsync(w.Filter);
+                            foreach(EventLog<TransferEvent> _e in logs) {
+                                string _from = _e.Event.From, _to = _e.Event.To, _address = _e.Log.Address;
+                                if(ReverseAliases.ContainsKey(_from)) _from = ReverseAliases[_from];
+                                if(ReverseAliases.ContainsKey(_to)) _to = ReverseAliases[_to];
+                                if(ReverseAliases.ContainsKey(_address)) _address = ReverseAliases[_address];
+                                if(_from == Wallet.Account.Address || _to == Wallet.Account.Address)
+                                    Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " t" + _address + " f" + _from + " t" + _to + ": " + _e.Event.Value), 6);
+                            }
+                            w.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+                        } else if(w.Type == "LogEvent") {
+                            List<EventLog<LogEvent>>  logs = await (w.Event as Event<LogEvent>).GetAllChangesAsync(w.Filter);
+                            foreach(EventLog<LogEvent> _e in logs)
+                                Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
+                            w.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
+                        }
+                    }
+                } catch(Exception _e) {
+                    // ignore
                 }
-            } catch (Exception _e) {
-                // ignore
             }
         }
 
