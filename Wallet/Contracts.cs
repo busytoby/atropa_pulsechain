@@ -132,9 +132,9 @@ namespace Wallet
                 receipt = await Wallet.w3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(lautx);
             }
 
-            string lau = receipt.Logs.First.Values<dynamic>().ToList()[0].Value;
+            string lau = receipt.Logs.First.ToArray<dynamic>()[0].Value;
             _ = AddAliasWithABI(symbol, lau, "dysnomia/11_lau.sol");
-            string lautypeverifier = await Execute(Output, Contract[lau], "Type");
+            string lautypeverifier = await Execute(Output, Contract[lau], "Type()");
             if(lautypeverifier != "LAU") throw new Exception("LAU Type Verification Failed");
 
             Output(From, Encoding.Default.GetBytes(symbol +  " Deployed To: " + Aliases[symbol] + "From Wallet " + walletnumber), 6);
@@ -150,9 +150,9 @@ namespace Wallet
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
 
             try {
-                HexBigInteger Test = Wallet.EthGetBalance(Wallet.Account.Address);
-                TransactionReceipt rx = await Wallet.eth.GetEtherTransferService().TransferEtherAndWaitForReceiptAsync("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b", 11, 200);
-                Test = Wallet.EthGetBalance("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b");
+                //HexBigInteger Test = Wallet.EthGetBalance(Wallet.Account.Address);
+                //TransactionReceipt rx = await Wallet.eth.GetEtherTransferService().TransferEtherAndWaitForReceiptAsync("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b", 111111, 200);
+                //Test = Wallet.EthGetBalance("0xC7cB8Eaead0ab55638d090c3a1DDE3E62E8e200b");
 
                 HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
@@ -165,7 +165,7 @@ namespace Wallet
                 await _deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
                 await _deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
                 await _deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
-
+                dynamic typeverifier = await Execute(Output, Contract[Aliases["YI"]], "Type()");
                 dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
                 await AddShioAliases(Output, "Yi", psi);
 
@@ -250,39 +250,53 @@ dysnomia/lib/yai.sol.old
 
         public async Task<dynamic> Execute(OutputCallback Output, Contract _c, string Function, params dynamic[] Args) {
             dynamic rx = null;
-            switch(Function) {
-                case "Rho":
-                    rx = await _c.GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
-                    break;
-                case "On":
-                    rx = await _c.GetFunction("On").CallDeserializingToObjectAsync<Bao>();
-                    break;
-                default:
-                    Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.Contains(Function));
-                    FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
-                    Function _f = new Function(_c, _fb);
-                    if(_a.Signature.Contains(Function)) {
-                        if(_a.Constant == true) {
-                            rx = await _f.CallAsync<dynamic>(Args);
-                            break;
-                        } else {
-                            HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
-                            gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
-                            rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
-                            break;
-                        }
-                    } else throw new Exception("Error");
-            }
+            try {
+                switch(Function) {
+                    case "Rho":
+                        rx = await _c.GetFunction("Rho").CallDeserializingToObjectAsync<Shao>();
+                        break;
+                    case "On":
+                        rx = await _c.GetFunction("On").CallDeserializingToObjectAsync<Bao>();
+                        break;
+                    default:
+                        Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.Contains(Function));
+                        FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
+                        Function _f = new Function(_c, _fb);
+                        if(_a.Signature.Contains(Function)) {
+                            if(_a.Constant == true) {
+                                List<Nethereum.ABI.Model.Parameter> _p = _a.OutputParameters.ToList();
+                                if(_p.Count == 1) {
+                                    if(_p[0].Type == "string" || _p[0].Type == "address")
+                                        rx = await _f.CallAsync<string>(Args);
+                                    else
+                                        rx = await _f.CallAsync<dynamic>(Args);
+                                } else {
+                                    int i = 99;
+                                }
+                                break;
+                            } else {
+                                HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
+                                gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
+                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                                break;
+                            }
+                        } else throw new Exception("Error");
+                }
 
-            await GetLog(Output);
+                await GetLog(Output);
+            } catch (Exception _e) {
+                int i = 99;
+            }
             return rx;
         }
 
         private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
             try {
-                HexBigInteger gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
-                gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
-
+                HexBigInteger gas = new HexBigInteger(2000000);
+                try {
+                    gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
+                    gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.1111));
+                } catch { }
                 string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, gas, Args);
                 TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
                 while(Receipt == null)
@@ -306,7 +320,7 @@ dysnomia/lib/yai.sol.old
                     Logs.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
                 }
             } catch (Exception _e) {
-                int i = 99;
+                // ignore
             }
         }
 

@@ -25,8 +25,8 @@ namespace Dysnomia
 
             //Wallet.Wallet Wallet2 = new Wallet.Wallet("http://dysnomia.airforce:8545/");
             LocalWallet.SwitchAccount(0);
-            Nethereum.Hex.HexTypes.HexBigInteger Test = LocalWallet.EthGetBalance("0x65318e6822d84A556D350Bde46D695712Ac2c93D");
-            Test = LocalWallet.EthGetBalance("0x2358B9d8111a0544C79A2Ba53436078eF887c547");
+            Nethereum.Hex.HexTypes.HexBigInteger Test = LocalWallet.EthGetBalance("0x2358B9d8111a0544C79A2Ba53436078eF887c547");
+            Test = LocalWallet.EthGetBalance("0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
             Test = LocalWallet.EthGetBalance("0x7a20189B297343CF26d8548764b04891f37F3414");
             //LocalWallet.SwitchAccount(0);
             //Test = Wallet2.EthGetBalance("0x2358B9d8111a0544C79A2Ba53436078eF887c547");
