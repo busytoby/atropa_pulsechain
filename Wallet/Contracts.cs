@@ -30,25 +30,13 @@ using Nethereum.RPC.Eth.Filters;
 
 namespace Wallet
 {
-    public class wEvent {
-        public object Event;
-        public NewFilterInput Filter;
-        public string Type;
 
-        public wEvent(object @event, NewFilterInput filter, string type) {
-            Event = @event;
-            Filter = filter;
-            Type = type;
-        }
-    }
 
     public class Contracts
     {
         public Wallet Wallet;
         public Dictionary<string, Contract> Contract;
         List<wEvent> Logs;
-        public Dictionary<string, string> Aliases;
-        public Dictionary<string, string> ReverseAliases;
         static public string? Solc_bin;
         static public string? RootFolder;
         byte[] From = Encoding.Default.GetBytes("Contracts");
@@ -57,8 +45,6 @@ namespace Wallet
             Wallet = wallet;
             Contract = new Dictionary<string, Contract>();
             Logs = new List<wEvent>();
-            Aliases = new Dictionary<string, string>(); 
-            ReverseAliases = new Dictionary<string, string>();
         }
 
         public delegate void OutputCallback(byte[] From, byte[] Data, short Priority);
@@ -71,13 +57,7 @@ namespace Wallet
             if (Directory.Exists(input))
                 RootFolder = input;
             else throw (new Exception("No Such Folder"));
-        }
-
-        public void AddAlias(string alias, string cxid) {
-            if(Aliases.ContainsKey(alias)) Aliases.Remove(alias);
-            Aliases.Add(alias, cxid);
-            if(!ReverseAliases.ContainsKey(cxid)) ReverseAliases.Add(cxid, alias);
-        }      
+        }   
 
         [FunctionOutput]
         public class Shao : IFunctionOutputDTO {
@@ -112,26 +92,26 @@ namespace Wallet
         public async Task AddAliasWithABI(string alias, string cxid, string file) {
             (string ABI, string BIN) = Compile(file);
             Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
-            AddAlias(alias, cxid);
+            Aliases.AddAlias(alias, cxid);
         }
 
         public async Task AddShioAliases(OutputCallback Output, string symbol, string address) {
             AddAliasWithABI(symbol + "Shio", address, "dysnomia/03_shio.sol");
-            Output(From, Encoding.Default.GetBytes(symbol + "Shio" + " Deployed To: " + Aliases[symbol + "Shio"]), 6);
-            _ = await Execute(Output, Contract[Aliases[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
+            Output(From, Encoding.Default.GetBytes(symbol + "Shio" + " Deployed To: " + Aliases.Forward[symbol + "Shio"]), 6);
+            _ = await Execute(Output, Contract[Aliases.Forward[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
 
-            Shao rho = await Execute(Output, Contract[Aliases[symbol + "Shio"]], "Rho");
+            Shao rho = await Execute(Output, Contract[Aliases.Forward[symbol + "Shio"]], "Rho");
             _ = AddAliasWithABI(symbol + "ShioRod", rho.Rod, "dysnomia/02_sha.sol");
-            Output(From, Encoding.Default.GetBytes(symbol + "ShioRod" + " Deployed To: " + Aliases[symbol + "ShioRod"]), 6);
+            Output(From, Encoding.Default.GetBytes(symbol + "ShioRod" + " Deployed To: " + Aliases.Forward[symbol + "ShioRod"]), 6);
             _ = AddAliasWithABI(symbol + "ShioCone", rho.Cone, "dysnomia/02_sha.sol");
-            Output(From, Encoding.Default.GetBytes(symbol + "ShioCone" + " Deployed To: " + Aliases[symbol + "ShioCone"]), 6);
+            Output(From, Encoding.Default.GetBytes(symbol + "ShioCone" + " Deployed To: " + Aliases.Forward[symbol + "ShioCone"]), 6);
         }
 
         public async Task DeployLau(OutputCallback Output, int walletnumber, string name, string symbol) {
             Wallet.SwitchAccount(walletnumber);
             (string ABI, string BIN) = Compile("dysnomia/11c_laufactory.sol");
 
-            Contract _c = Wallet.eth.GetContract(ABI, Contract[Aliases["LAUFactory"]].Address);
+            Contract _c = Wallet.eth.GetContract(ABI, Contract[Aliases.Forward["LAUFactory"]].Address);
 
             string lautx = await Execute(Output, _c, "New", name, symbol);
             TransactionReceipt receipt = await Wallet.w3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(lautx);
@@ -145,7 +125,7 @@ namespace Wallet
             string lautypeverifier = await Execute(Output, Contract[lau], "Type()");
             if(lautypeverifier != "LAU") throw new Exception("LAU Type Verification Failed");
 
-            Output(From, Encoding.Default.GetBytes(symbol +  " Deployed To: " + Aliases[symbol] + "From Wallet " + walletnumber), 6);
+            Output(From, Encoding.Default.GetBytes(symbol +  " Deployed To: " + Aliases.Forward[symbol] + "From Wallet " + walletnumber), 6);
             Bao On = await Execute(Output, Contract[lau], "On");
 
             await AddShioAliases(Output, symbol, On.Shio);
@@ -153,7 +133,6 @@ namespace Wallet
         }
 
         public async Task Install(OutputCallback Output, string g) {
-            Aliases = new Dictionary<string, string>();
             if(Output != null)
                 Output(From, Encoding.Default.GetBytes("Deploying Everything"), 6);
 
@@ -175,10 +154,11 @@ namespace Wallet
                 _n.FromBlock = new BlockParameter(0);
                 Logs.Add(new wEvent(YiShioLogEvent, _n, "LogEvent"));
 
+                /*
                 await Deploy(Output, "VMREQ", "dysnomia/00b_vmreq.sol");
                 await Deploy(Output, "SHAFactory", "dysnomia/02c_shafactory.sol");
                 await Deploy(Output, "SHIOFactory", "dysnomia/03c_shiofactory.sol");
-                await Deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
+                await Deploy(Output, "YI", "dysnomia/04_yi.sol", Aliases.Forward["SHAFactory"], Aliases["SHIOFactory"], Aliases["VMREQ"]);
 
                 dynamic psi = await Execute(Output, Contract[Aliases["YI"]], "Psi");
                 await AddShioAliases(Output, "Yi", psi);
@@ -216,7 +196,7 @@ namespace Wallet
                 await Deploy(Output, "react", "dysnomia/lib/reactions_core.sol", Aliases["VOID"]);
                 await Deploy(Output, "CHO", "dysnomia/domain/dan/01_cho.sol", Aliases["VOID"]);
                 //await Deploy(Output, "dan02csystemaddressscript", "dysnomia/domain/dan/02c_systemaddresses.sol", Aliases["CHO"]);
-
+                */
 
                 await GetLog(Output);
             } catch (Exception _e) {
@@ -309,7 +289,7 @@ dysnomia/lib/yai.sol.old
         private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
             try {
                 for(int i = 0; i < Args.Length; i++)
-                    while(Aliases.ContainsKey(Args[i])) Args[i] = Aliases[Args[i]];
+                    while(Aliases.Forward.ContainsKey(Args[i])) Args[i] = Aliases.Forward[Args[i]];
                 HexBigInteger gas = new HexBigInteger(2000000);
                 try {
                     gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
@@ -334,18 +314,18 @@ dysnomia/lib/yai.sol.old
                     if(Output != null) {
                         HexBigInteger latestBlock = await Wallet.w3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
                         if(w.Type == "TransferEvent") {
-                            List<EventLog<TransferEvent>>  logs = await (w.Event as Event<TransferEvent>).GetAllChangesAsync(w.Filter);
+                            List<EventLog<TransferEvent>>  logs = await (w.WalletEvent as Event<TransferEvent>).GetAllChangesAsync(w.Filter);
                             foreach(EventLog<TransferEvent> _e in logs) {
                                 string _from = _e.Event.From, _to = _e.Event.To, _address = _e.Log.Address;
-                                if(ReverseAliases.ContainsKey(_from)) _from = ReverseAliases[_from];
-                                if(ReverseAliases.ContainsKey(_to)) _to = ReverseAliases[_to];
-                                if(ReverseAliases.ContainsKey(_address)) _address = ReverseAliases[_address];
+                                if(Aliases.Reverse.ContainsKey(_from)) _from = Aliases.Reverse[_from];
+                                if(Aliases.Reverse.ContainsKey(_to)) _to = Aliases.Reverse[_to];
+                                if(Aliases.Reverse.ContainsKey(_address)) _address = Aliases.Reverse[_address];
                                 if(_from == Wallet.Account.Address || _to == Wallet.Account.Address)
                                     Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " t" + _address + " f" + _from + " t" + _to + ": " + _e.Event.Value), 6);
                             }
                             w.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
                         } else if(w.Type == "LogEvent") {
-                            List<EventLog<LogEvent>>  logs = await (w.Event as Event<LogEvent>).GetAllChangesAsync(w.Filter);
+                            List<EventLog<LogEvent>>  logs = await (w.WalletEvent as Event<LogEvent>).GetAllChangesAsync(w.Filter);
                             foreach(EventLog<LogEvent> _e in logs)
                                 Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " s" + _e.Event.Soul + " a" + _e.Event.Aura + ": " + _e.Event.LogLine), 6);
                             w.Filter.FromBlock = new BlockParameter(latestBlock.ToUlong() + 1);
@@ -358,29 +338,29 @@ dysnomia/lib/yai.sol.old
         }
 
         public async Task<string> Deploy(OutputCallback Output, string file, params dynamic[] Args) {
-            if(file.ToLower().EndsWith(".dys")) {
-                string diskfile = RootFolder + @"\" + file;
-                if(!File.Exists(diskfile)) diskfile = RootFolder + @"\scripts\" + file;
-                if(!File.Exists(diskfile)) throw new Exception("File Not Found: " + file);
-                foreach(string line in File.ReadAllLines(diskfile))
-                    Wallet.ProcessString(line);
-                return null;
-            } else if(file.ToLower().EndsWith(".sol")) {
+            string diskfile = RootFolder + @"\" + file;
+            if(file.ToLower().EndsWith(".sol")) {
                 (string ABI, string BIN) = Compile(file);
 
                 Contract _c = await DeployContract(ABI, BIN, Args);
                 string _cSymbol = await Execute(Output, _c, "symbol()");
                 if(_cSymbol != null)
-                    AddAlias(_cSymbol, _c.Address);
+                    Aliases.AddAlias(_cSymbol, _c.Address);
                 else {
-                    AddAlias(Path.GetFileNameWithoutExtension(file), _c.Address);
+                    Aliases.AddAlias(Path.GetFileNameWithoutExtension(file), _c.Address);
                 }
 
                 await GetLog(Output);
-                Output(From, Encoding.Default.GetBytes(_cSymbol + " Deployed To: " + Aliases[_cSymbol]), 6);
-                return Aliases[_cSymbol];
-            } else
-                throw new Exception("Unsupported Type (sol/dys)");
+                Output(From, Encoding.Default.GetBytes(_cSymbol + " Deployed To: " + Aliases.Forward[_cSymbol]), 6);
+                return Aliases.Forward[_cSymbol];
+            } else if(!file.ToLower().EndsWith(".dys"))
+                file = file + ".dys";
+
+            if(!File.Exists(diskfile)) diskfile = RootFolder + @"\scripts\" + file;
+            if(!File.Exists(diskfile)) throw new Exception("File Not Found: " + file);
+            foreach(string line in File.ReadAllLines(diskfile))
+                Wallet.ProcessString(line);
+            return null;
         }
 
         public static (string ABI, string BIN) Compile(string file) {

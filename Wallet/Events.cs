@@ -1,4 +1,5 @@
 ﻿using Nethereum.ABI.FunctionEncoding.Attributes;
+using Nethereum.RPC.Eth.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Wallet {
+    public class wEvent {
+        public object WalletEvent;
+        public NewFilterInput Filter;
+        public string Type;
+
+        public wEvent(object @event, NewFilterInput filter, string type) {
+            WalletEvent = @event;
+            Filter = filter;
+            Type = type;
+        }
+    }
+
     public class Events {
         [Event("Approval")]
         public class ApprovalEvent : IEventDTO {
