@@ -22,7 +22,7 @@ namespace Dysnomia
             Oracle = new Oracle();
             //LocalWallet = new Wallet.Wallet("http://127.0.0.1:8545/");
             LocalWallet = new Wallet.Wallet("http://dysnomia.airforce:8545/");
-            LocalWallet.SetOracleProcessString(Oracle.ProcessString);
+            LocalWallet.SetOracleProcessString(Oracle.ProcessStringAndWait);
 
             //Wallet.Wallet Wallet2 = new Wallet.Wallet("http://dysnomia.airforce:8545/");
             LocalWallet.SwitchAccount(0);

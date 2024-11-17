@@ -23,6 +23,8 @@ namespace Dysnomia.Domain.bin
             if (Args == null) throw new Exception("Null Command Args");
             byte[] From = Encoding.Default.GetBytes(Name);
 
+            if(Args[Args.Length-1].Length == 0) Args = Args.Take(Args.Length-1).ToArray();
+
             int _arg = 0;
             bool account = int.TryParse(Args[0], out int _accountnumber);
             if(account) {
@@ -32,8 +34,10 @@ namespace Dysnomia.Domain.bin
             }
 
             Task<string> _t = Controller.LocalContracts.Deploy(Output, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
-            string Address = _t.Result;
-            if(Address != null) Output(From, Encoding.Default.GetBytes("Deployment Address: " + Address), 6);
+            try {
+                string Address = _t.Result;
+                if(Address != null) Output(From, Encoding.Default.GetBytes("Deployment Address: " + Address), 6);
+            } catch { }
         }
     }
 }

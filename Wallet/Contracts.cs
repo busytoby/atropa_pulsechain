@@ -272,27 +272,31 @@ dysnomia/lib/yai.sol.old
                         break;
                     default:
                         Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.Contains(Function));
-                        FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
-                        Function _f = new Function(_c, _fb);
-                        if(_a.Signature.Contains(Function)) {
-                            if(_a.Constant == true) {
-                                List<Nethereum.ABI.Model.Parameter> _p = _a.OutputParameters.ToList();
-                                if(_p.Count == 1) {
-                                    if(_p[0].Type == "string" || _p[0].Type == "address")
-                                        rx = await _f.CallAsync<string>(Args);
-                                    else
-                                        rx = await _f.CallAsync<dynamic>(Args);
+                        if(_a != null) {
+                            FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
+                            Function _f = new Function(_c, _fb);
+                            if(_a.Signature.Contains(Function)) {
+                                if(_a.Constant == true) {
+                                    List<Nethereum.ABI.Model.Parameter> _p = _a.OutputParameters.ToList();
+                                    if(_p.Count == 1) {
+                                        if(_p[0].Type == "string" || _p[0].Type == "address")
+                                            rx = await _f.CallAsync<string>(Args);
+                                        else
+                                            rx = await _f.CallAsync<dynamic>(Args);
+                                    } else {
+                                        int i = 99;
+                                    }
+                                    break;
                                 } else {
-                                    int i = 99;
+                                    HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
+                                    gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
+                                    rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                                    break;
                                 }
-                                break;
-                            } else {
-                                HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
-                                gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
-                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
-                                break;
-                            }
-                        } else throw new Exception("Error");
+                            } else throw new Exception("Error");
+                        }
+                        rx = null;
+                        break;
                 }
 
                 await GetLog(Output);
@@ -304,6 +308,8 @@ dysnomia/lib/yai.sol.old
 
         private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
             try {
+                for(int i = 0; i < Args.Length; i++)
+                    while(Aliases.ContainsKey(Args[i])) Args[i] = Aliases[Args[i]];
                 HexBigInteger gas = new HexBigInteger(2000000);
                 try {
                     gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
@@ -364,7 +370,11 @@ dysnomia/lib/yai.sol.old
 
                 Contract _c = await DeployContract(ABI, BIN, Args);
                 string _cSymbol = await Execute(Output, _c, "symbol()");
-                AddAlias(_cSymbol, _c.Address);
+                if(_cSymbol != null)
+                    AddAlias(_cSymbol, _c.Address);
+                else {
+                    AddAlias(Path.GetFileNameWithoutExtension(file), _c.Address);
+                }
 
                 await GetLog(Output);
                 Output(From, Encoding.Default.GetBytes(_cSymbol + " Deployed To: " + Aliases[_cSymbol]), 6);
