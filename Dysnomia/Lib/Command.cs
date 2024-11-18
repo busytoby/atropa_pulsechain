@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Dysnomia.Domain;
 using Dysnomia.Domain.World;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Dysnomia.Lib
 {
@@ -50,7 +51,11 @@ namespace Dysnomia.Lib
 
         private void Tokenize(string Eta)
         {
-            List<string> _args = Eta.Split(" ").ToList();
+            List<string> _args = Eta.Split('"')
+                     .Select((element, index) => index % 2 == 0  // If even index
+                                           ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)  // Split the item
+                                           : new string[] { element })  // Keep the entire item
+                     .SelectMany(element => element).ToList();
             Name = _args[0];
             Args = _args.Skip(1).ToArray();
         }
