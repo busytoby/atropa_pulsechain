@@ -28,10 +28,11 @@ namespace Dysnomia.Lib
             object? EXE = null;
             Type[] Commands = GetCommands();
 
-            Alias = Name;
-            Type C = Commands.FirstOrDefault(x => x.Name.ToLower().Contains(Name.ToLower()));
-            if(C == null)
-                C = Commands.FirstOrDefault(x => x.Name.ToLower().Contains("execute"));
+            Type C = Commands.FirstOrDefault(x => x.Name.ToLower().StartsWith(Name.ToLower()));
+            if(C == null) {
+                Alias = Name;
+                C = Commands.FirstOrDefault(x => x.Name.ToLower().StartsWith("execute"));
+            } else Alias = C.Name;
             EXE = Activator.CreateInstance(C, null);
             if(EXE == null) throw new Exception("Null Command Instance");
             if(Args == null) throw new Exception("Null Args");

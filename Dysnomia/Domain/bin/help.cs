@@ -32,6 +32,10 @@ namespace Dysnomia.Domain.bin
                 foreach (Type T in GetCommands())
                     CmdList += T.Name + " ";
                 Output(From, Encoding.Default.GetBytes(CmdList), 6);
+                CmdList = "";
+                foreach(string cx in Wallet.Aliases.Reverse.Keys)
+                    CmdList += Wallet.Aliases.Reverse[cx] + " ";
+                Output(From, Encoding.Default.GetBytes(CmdList), 6);
             } else
             {
                 foreach(String A in Args) {

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Dynamic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Wallet;
@@ -28,14 +29,18 @@ namespace Dysnomia.Domain.bin {
 
             int _arg = 0;
             bool account = int.TryParse(Args[0], out int _accountnumber);
-            if(account) {
-                _arg++;
+            bool account2 = false;
+            if(!account) account2 = int.TryParse(Alias, out _accountnumber);
+            if(account || account2) {
+                Alias = Args[_arg++];
                 Controller.LocalWallet.SwitchAccount(_accountnumber);
-                Output(From, Encoding.Default.GetBytes("Deploying From " + Controller.LocalWallet.Account.Address), 6);
+                Output(From, Encoding.Default.GetBytes("Executing From " + Controller.LocalWallet.Account.Address), 6);
             }
 
             try {
-                Task<dynamic> _exe = Controller.LocalContracts.ExecuteWithAliases(Output, Alias, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
+                Task<dynamic> _exe;
+                if(Alias == "execute") _exe = Controller.LocalContracts.ExecuteWithAliases(Output, (string)Args[_arg], (string)Args.Skip(_arg + 1).Take(1).ToArray()[0], Args.Skip(_arg + 2).ToArray());
+                else _exe = Controller.LocalContracts.ExecuteWithAliases(Output, Alias, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
                 _exe.Wait();
                 string _result = _exe.Result;
                 if(_result != null) Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray()) + ": " + _result), 6);
