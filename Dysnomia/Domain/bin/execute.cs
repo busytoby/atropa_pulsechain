@@ -42,7 +42,7 @@ namespace Dysnomia.Domain.bin {
                 if(Alias == "execute") _exe = Controller.LocalContracts.ExecuteWithAliases(Output, (string)Args[_arg], (string)Args.Skip(_arg + 1).Take(1).ToArray()[0], Args.Skip(_arg + 2).ToArray());
                 else _exe = Controller.LocalContracts.ExecuteWithAliases(Output, Alias, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
                 _exe.Wait();
-                string _result = _exe.Result;
+                dynamic _result = _exe.Result;
                 if(_result != null) Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray()) + ": " + _result), 6);
                 else Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray())), 6);
             } catch { }

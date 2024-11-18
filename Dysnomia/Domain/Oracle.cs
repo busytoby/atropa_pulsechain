@@ -14,6 +14,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Wallet;
 
 namespace Dysnomia.Domain
 {
@@ -106,6 +107,17 @@ namespace Dysnomia.Domain
                         if (OpCode == null || OpCode.Length != 1) throw new Exception("Bad OpCode");
                         switch(OpCode[0])
                         {
+                            case 0x00:
+                                if(!Aliases.Forward.ContainsKey(Wallet.Wallet._base)) {
+                                    ProcessStringAndWait("deploy dysnomia/00b_vmreq.sol");
+                                    ProcessStringAndWait("deploy wallet/00_base.sol þ þ VMRNG");
+                                    ProcessStringAndWait("save");
+                                }
+                                if(!Aliases.Forward.ContainsKey(Wallet.Wallet._base)) {
+                                    throw new Exception("Unable To Initizalize þ Base");
+                                }
+                                int i = 99;
+                                break;
                             case 0x02:
                                 Lambda = NextBytes();
                                 if(Lambda == null) throw new Exception("Heap Corrupted");

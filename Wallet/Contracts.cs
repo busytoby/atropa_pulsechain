@@ -48,7 +48,17 @@ namespace Wallet
         public Contracts(Wallet wallet) {
             Wallet = wallet;
             ABIs = new Dictionary<string, string>();
-            Contract = new Dictionary<string, Contract>();           
+            Contract = new Dictionary<string, Contract>();
+
+            if(!Aliases.Forward.ContainsKey(Wallet._base)) {
+                string baseConfigFile = Path.Combine(RootFolder, Wallet._base);
+                if(File.Exists(baseConfigFile)) {
+                    foreach(string line in File.ReadAllLines(baseConfigFile)) {
+                        string[] _alias = line.Split(0x0 + Wallet._base + 0x0);
+                        Aliases.AddAlias(_alias[0], _alias[1]);
+                    }
+                }
+            }
         }
 
         public delegate void OutputCallback(byte[] From, byte[] Data, short Priority);
@@ -61,14 +71,6 @@ namespace Wallet
             if (Directory.Exists(input))
                 RootFolder = input;
             else throw (new Exception("No Such Folder"));
-
-            string baseConfigFile = Path.Combine(RootFolder, Wallet._base);
-            if(File.Exists(baseConfigFile)) {
-                foreach(string line in File.ReadAllLines(baseConfigFile)) {
-                    string[] _alias = line.Split(0x0 + Wallet._base + 0x0);
-                    Aliases.AddAlias(_alias[0], _alias[1]);
-                }
-            }
         }   
 
         [FunctionOutput]
@@ -396,7 +398,7 @@ dysnomia/lib/yai.sol.old
                 (string ABI, string BIN) = Compile(file);
 
                 Contract _c = await DeployContract(ABI, BIN, Args);
-                string _cSymbol = await Execute(Output, _c, "symbol()");
+                string _cSymbol = await ExecuteWithAliases(Output, _c.Address, "symbol()");
                 if(_cSymbol != null)
                     Aliases.AddAlias(_cSymbol, _c.Address);
                 else {

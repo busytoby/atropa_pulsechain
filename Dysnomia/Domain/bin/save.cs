@@ -42,12 +42,10 @@ namespace Dysnomia.Domain.bin {
             }
             if(Args[Args.Length - 1].Length == 0) Args = Args.Take(Args.Length - 1).ToArray();
 
-            using(StreamWriter outputFile = new StreamWriter(Path.Combine(Wallet.Contracts.RootFolder, Wallet.Wallet._base), true)) {
-                for(int i = 0; i < Args.Length; i++) {
-                    string _cx = Controller.LocalContracts.ResolveAlias(Args[i]);
-                    outputFile.WriteLine(Args[i] + 0x0 + Wallet.Wallet._base + 0x0 + _cx);
-                    no++;
-                }
+            for(int i = 0; i < Args.Length; i++) {
+                string _cx = Controller.LocalContracts.ResolveAlias(Args[i]);
+                _ = await Controller.LocalContracts.ExecuteWithAliases(Output, Wallet.Wallet._base, "Set", (string)Args[i], _cx);
+                no++;
             }
             Output(From, Encoding.Default.GetBytes("Saved " + no + " Aliases"), 6);
         }
