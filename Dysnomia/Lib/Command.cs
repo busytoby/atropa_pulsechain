@@ -14,34 +14,35 @@ namespace Dysnomia.Lib
         new public static string Name = "Command";
         new public static string Description = "Not Set Description";
         public dynamic[]? Args;
+        public string? Alias;
 
         public Command() : base()
         {
             Args = null;
         }
 
-        public Command(string Eta)
-        {
+        public Command(string Eta) {
             byte[] From = Encoding.Default.GetBytes(Name);
 
             Tokenize(Eta);
             object? EXE = null;
             Type[] Commands = GetCommands();
 
-            foreach (Type C in Commands)
-                if (C.Name.ToLower() == Name.ToLower())
-                {
-                    EXE = Activator.CreateInstance(C, null);
-                    if (EXE == null) throw new Exception("Null Command Instance");
-                    if (Args == null) throw new Exception("Null Args");
-                    Command CEXE = (Command)EXE;
-                    CEXE.Args = Args;
-                    CEXE.Theta = new Living();
-                    Theta = CEXE.Theta;
-                    if (EXE == null || CEXE.Theta == null) throw new Exception("Catastrophic Failure");
-                    CEXE.Theta.Run(CEXE.Phi);
-                    break;
-                }
+            Type C = Commands.FirstOrDefault(x => x.Name.ToLower().StartsWith(Name.ToLower()));
+            if(C == null) {
+                Alias = Name;
+                C = Commands.FirstOrDefault(x => x.Name.ToLower().StartsWith("execute"));
+            } else Alias = C.Name;
+            EXE = Activator.CreateInstance(C, null);
+            if(EXE == null) throw new Exception("Null Command Instance");
+            if(Args == null) throw new Exception("Null Args");
+            Command CEXE = (Command)EXE;
+            CEXE.Alias = Alias;
+            CEXE.Args = Args;
+            CEXE.Theta = new Living();
+            Theta = CEXE.Theta;
+            if(EXE == null || CEXE.Theta == null) throw new Exception("Catastrophic Failure");
+            CEXE.Theta.Run(CEXE.Phi);
 
             if (EXE == null || Theta == null)
                 Logging.Log(Encoding.Default.GetString(From), Name + ": Not Found", 6);

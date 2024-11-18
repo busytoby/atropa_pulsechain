@@ -46,6 +46,17 @@ namespace Dysnomia.Domain
             Enqueue(Encoding.Default.GetBytes(A));
         }
 
+        public void ProcessStringAndWait(String A) {
+            Command command = new Command(A);
+            Tare? Pi;
+            do {
+                while(command.Theta.Out.Count > 0)
+                    if(command.Theta.Out.TryDequeue(out Pi))
+                        Logging.Log(Pi);
+                Thread.Sleep(100);
+            } while(command.Theta.Alive() || command.Theta.Out.Count > 0);
+        }
+
         /*
         public Buffer Encode(String Beta)        
         {

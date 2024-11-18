@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Apparition\Apparition.csproj" />
-    <ProjectReference Include="..\Dysnomia\Dysnomia.csproj" />
   </ItemGroup>
 
 </Project>
