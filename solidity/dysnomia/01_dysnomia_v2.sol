@@ -22,8 +22,11 @@ abstract contract DYSNOMIA is MultiOwnable {
     constructor(string memory name_, string memory symbol_, address mathContract) MultiOwnable(msg.sender) {
         __name = name_;
         __symbol = symbol_;
-        Xiao = atropaMath(mathContract);
-        maxSupply = Xiao.Random() % 111111;
+        if(mathContract != address(0)) {
+            Xiao = atropaMath(mathContract);
+            maxSupply = Xiao.Random() % 111111;
+        }
+        else _mint(msg.sender, 1111111111 * 10 ** decimals());
     }
 
     function _addLibraryOwner(VOID Void, string memory what) internal {

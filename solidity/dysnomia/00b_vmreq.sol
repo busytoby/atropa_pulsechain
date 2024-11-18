@@ -1,13 +1,56 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
+import "./01_dysnomia_v2.sol";
 import "../addresses.sol";
-import "../old/faung.sol";
 
-contract VMREQ {
-    uint64 constant public MotzkinPrime = 953467954114363;
+struct VMFa {
+        uint64 Base;
+        uint64 Secret;
+        uint64 Signal;
+        uint64 Channel;
+        uint64 Pole;
+        uint64 Identity;
+        uint64 Foundation;
+        uint64 Element;
+        uint64 Dynamo;
+        uint64 Manifold;
+        uint64 Ring;
+        uint64 Barn;
+        uint64 Coordinate;
+
+        uint64 Tau;
+        uint64 Eta;
+        uint64 Kappa;
+//        uint64 Rho;
+//        uint64 Beta;
+//        uint64 Phi;
+        uint64 Alpha;
+
+        uint8 Nu;        
+}
+
+struct Faung {
+    VMFa Rod;
+    VMFa Cone;
+
+    uint64 Phi;
+    uint64 Eta;
+    uint64 Xi;
+    uint64 Sigma;
+    uint64 Rho;
+    uint64 Upsilon;
+    uint64 Ohm;
+    uint64 Pi;
+    uint64 Omicron;
+    uint64 Omega;
+
+    uint8 Chi;
+}
+
+contract VMREQ is DYSNOMIA {
     Faung internal Mu;
 
-    constructor() {
+    constructor() DYSNOMIA("VMREQ", "VMRNG", address(0)) {
         Mu.Rod.Base = 605841066431434;
         Mu.Rod.Secret = 824993723223339;
         Mu.Rod.Signal = 543871960643842;
@@ -63,20 +106,20 @@ contract VMREQ {
         return Mu;
     }
 
-    function Torque(Fa storage Rod, uint64 Sigma) internal returns(uint64) {
+    function Torque(VMFa storage Rod, uint64 Sigma) internal returns(uint64) {
         Rod.Alpha = modExp64(Sigma, Rod.Element, Rod.Channel);
         return Rod.Alpha;
     }
 
-    function Amplify(Fa storage Rod, uint64 Upsilon) internal returns(uint64) {
+    function Amplify(VMFa storage Rod, uint64 Upsilon) internal returns(uint64) {
         return Torque(Rod, Upsilon);
     }
 
-    function Sustain(Fa storage Rod, uint64 Ohm) internal returns(uint64) {
+    function Sustain(VMFa storage Rod, uint64 Ohm) internal returns(uint64) {
         return Torque(Rod, Ohm);
     }
 
-    function React(Fa storage Rod, uint64 Pi, uint64 Theta) internal {
+    function React(VMFa storage Rod, uint64 Pi, uint64 Theta) internal {
         Rod.Eta = modExp64(Pi, Rod.Channel, Theta);
         Rod.Kappa = modExp64(Pi, Theta, Rod.Channel);
         assert(Rod.Eta != 0 && Rod.Kappa != 0);
