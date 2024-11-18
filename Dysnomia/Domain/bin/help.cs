@@ -1,6 +1,8 @@
 ﻿#pragma warning disable CS8981
 
 using Dysnomia.Lib;
+using Nethereum.ABI.Model;
+using Nethereum.Contracts;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
@@ -8,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace Dysnomia.Domain.bin
 {
@@ -31,24 +34,35 @@ namespace Dysnomia.Domain.bin
                 Output(From, Encoding.Default.GetBytes(CmdList), 6);
             } else
             {
-                foreach(String A in Args)
-                {
-                    bool found = false;
-                    foreach (Type T in GetCommands())
-                        if (A == T.Name)
-                        {
+                foreach(String A in Args) {
+                    Type T = GetCommands().FirstOrDefault(x => x.Name.ToLower().Contains(A.ToLower()));
+                    if(T != null) {
+                        if(A == T.Name) {
                             FieldInfo? DF = T.GetField("Description");
-                            if (DF == null) throw new Exception("No Description");
+                            if(DF == null) throw new Exception("No Description");
                             object? DFV = DF.GetValue(null);
-                            if (DFV == null) throw new Exception("Null Description");
+                            if(DFV == null) throw new Exception("Null Description");
                             Output(From, Encoding.Default.GetBytes(A + ": " + DFV.ToString()), 6);
-                            found = true;
                             break;
                         }
-                    if(!found)
-                        Output(From, Encoding.Default.GetBytes("Help For " + A + " Not Found"), 6);
+                    } else {
+                        string _address = Controller.LocalContracts.ResolveAlias(A);
+                        string _functions = "";
+                        if(Controller.LocalContracts.Contract.ContainsKey(_address)) {
+                            foreach(FunctionABI _f in Controller.LocalContracts.Contract[_address].ContractBuilder.ContractABI.Functions) {
+                                _functions += _f.Signature + " ";
+                            }
+                            Output(From, Encoding.Default.GetBytes(A + " Contains Functions: " + _functions), 6);
+                        } else {
+                            Output(From, Encoding.Default.GetBytes("Help For " + A + " Not Found"), 6);
+                        }
+                    }
                 }
             }
+        }
+
+        internal void PrintCxHelp(string _address) {
+
         }
     }
 }

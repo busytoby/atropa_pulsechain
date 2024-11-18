@@ -241,16 +241,21 @@ dysnomia/lib/yai.sol.old
             return await ExecuteWithAliases(Output, _a, Function, Args);
         }
 
-        public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, string Function, params dynamic[] Args) {
-            string key = Aliases.Forward.FirstOrDefault(x => x.Key.ToLower().Contains(_a.ToLower())).Key;
-            while(key != null) {
-                _a = Aliases.Forward[key];
-                if(Aliases.Forward.ContainsKey(_a)) key = Aliases.Forward[_a];
-                else key = null;
+        public string ResolveAlias(string key) {
+            string alias = Aliases.Forward.FirstOrDefault(x => x.Key.ToLower().Contains(key.ToLower())).Key;
+            while(alias != null) {
+                key = Aliases.Forward[alias];
+                if(Aliases.Forward.ContainsKey(key)) alias = Aliases.Forward[key];
+                else alias = null;
             }
+            return key;
+        }
+
+        public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, string Function, params dynamic[] Args) {
+            _a = ResolveAlias(_a);
             Contract _c = Wallet.eth.GetContract(ABIs[_a], _a);
             for(int i = 0; i < Args.Length; i++)
-                while(Aliases.Forward.ContainsKey(Args[i])) Args[i] = Aliases.Forward[Args[i]];
+                Args[i] = ResolveAlias(Args[i]);
             return await Execute(Output, _c, Function, Args);
         }
 
