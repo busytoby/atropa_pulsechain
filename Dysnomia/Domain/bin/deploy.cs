@@ -23,6 +23,11 @@ namespace Dysnomia.Domain.bin
             if (Args == null) throw new Exception("Null Command Args");
             byte[] From = Encoding.Default.GetBytes(Name);
 
+            if(Args.Length == 0) {
+                Output(From, Encoding.Default.GetBytes("Deploy What? "), 6);
+                return;
+            }
+
             if(Args[Args.Length-1].Length == 0) Args = Args.Take(Args.Length-1).ToArray();
 
             int _arg = 0;

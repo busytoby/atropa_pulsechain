@@ -276,8 +276,8 @@ dysnomia/lib/yai.sol.old
                         rx = await _c.GetFunction("On").CallDeserializingToObjectAsync<Bao>();
                         break;
                     default:
-                        Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.Contains(Function));
-                        if(_a == null) _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.ToLower().Contains(Function.ToLower()));
+                        Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.StartsWith(Function));
+                        if(_a == null) _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.ToLower().StartsWith(Function.ToLower()));
                         if(_a != null) {
                             FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
                             Function _f = new Function(_c, _fb);
