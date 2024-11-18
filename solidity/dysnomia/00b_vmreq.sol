@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
-import "../openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../addresses.sol";
 import "../old/faung.sol";
 
-contract VMREQ is ERC20, ERC20Burnable {
+contract VMREQ {
     uint64 constant public MotzkinPrime = 953467954114363;
     Faung internal Mu;
 
-    constructor() ERC20(unicode"VM RNG", unicode"VMRNG") {
+    constructor() {
         Mu.Rod.Base = 605841066431434;
         Mu.Rod.Secret = 824993723223339;
         Mu.Rod.Signal = 543871960643842;
