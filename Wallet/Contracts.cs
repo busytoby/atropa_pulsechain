@@ -35,6 +35,7 @@ namespace Wallet
     public class Contracts
     {
         public Wallet Wallet;
+        public Dictionary<string, string> ABIs;
         public Dictionary<string, Contract> Contract;
         List<wEvent> Logs;
         static public string? Solc_bin;
@@ -43,6 +44,7 @@ namespace Wallet
 
         public Contracts(Wallet wallet) {
             Wallet = wallet;
+            ABIs = new Dictionary<string, string>();
             Contract = new Dictionary<string, Contract>();
             Logs = new List<wEvent>();
         }
@@ -234,6 +236,24 @@ dysnomia/lib/stringlib.sol
 dysnomia/lib/yai.sol.old
 */
 
+        public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, int Walletnumber, string Function, params dynamic[] Args) {
+            Wallet.SwitchAccount(Walletnumber);
+            return await ExecuteWithAliases(Output, _a, Function, Args);
+        }
+
+        public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, string Function, params dynamic[] Args) {
+            string key = Aliases.Forward.FirstOrDefault(x => x.Key.ToLower().Contains(_a.ToLower())).Key;
+            while(key != null) {
+                _a = Aliases.Forward[key];
+                if(Aliases.Forward.ContainsKey(_a)) key = Aliases.Forward[_a];
+                else key = null;
+            }
+            Contract _c = Wallet.eth.GetContract(ABIs[_a], _a);
+            for(int i = 0; i < Args.Length; i++)
+                while(Aliases.Forward.ContainsKey(Args[i])) Args[i] = Aliases.Forward[Args[i]];
+            return await Execute(Output, _c, Function, Args);
+        }
+
         public async Task<dynamic> Execute(OutputCallback Output, Contract _c, int Walletnumber, string Function, params dynamic[] Args) {
             Wallet.SwitchAccount(Walletnumber);
             // should possibly detect & reinstantiate contract for local wallet if it is not installed as so
@@ -252,28 +272,27 @@ dysnomia/lib/yai.sol.old
                         break;
                     default:
                         Nethereum.ABI.Model.FunctionABI _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.Contains(Function));
+                        if(_a == null) _a = _c.ContractBuilder.ContractABI.Functions.FirstOrDefault(x => x.Signature.ToLower().Contains(Function.ToLower()));
                         if(_a != null) {
                             FunctionBuilder _fb = new FunctionBuilder(_c.Address, _a);
                             Function _f = new Function(_c, _fb);
-                            if(_a.Signature.Contains(Function)) {
-                                if(_a.Constant == true) {
-                                    List<Nethereum.ABI.Model.Parameter> _p = _a.OutputParameters.ToList();
-                                    if(_p.Count == 1) {
-                                        if(_p[0].Type == "string" || _p[0].Type == "address")
-                                            rx = await _f.CallAsync<string>(Args);
-                                        else
-                                            rx = await _f.CallAsync<dynamic>(Args);
-                                    } else {
-                                        int i = 99;
-                                    }
-                                    break;
+                            if(_a.Constant == true) {
+                                List<Nethereum.ABI.Model.Parameter> _p = _a.OutputParameters.ToList();
+                                if(_p.Count == 1) {
+                                    if(_p[0].Type == "string" || _p[0].Type == "address")
+                                        rx = await _f.CallAsync<string>(Args);
+                                    else
+                                        rx = await _f.CallAsync<dynamic>(Args);
                                 } else {
-                                    HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
-                                    gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
-                                    rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
-                                    break;
+                                    int i = 99;
                                 }
-                            } else throw new Exception("Error");
+                                break;
+                            } else {
+                                HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
+                                gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
+                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                                break;
+                            }
                         }
                         rx = null;
                         break;
@@ -301,6 +320,7 @@ dysnomia/lib/yai.sol.old
                     Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
                 string cxid = Receipt.ContractAddress;
                 Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
+                ABIs.Add(cxid, ABI);
                 return Contract[cxid];
             } catch (Exception _e) {
                 int i = 99;
