@@ -60,9 +60,5 @@ namespace Dysnomia.Domain.bin
                 }
             }
         }
-
-        internal void PrintCxHelp(string _address) {
-
-        }
     }
 }
