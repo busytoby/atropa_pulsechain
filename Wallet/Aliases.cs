@@ -16,9 +16,9 @@ namespace Wallet {
         }
 
         static public void AddAlias(string alias, string cxid) {
-            int offset = 1;
+            int offset = 0;
             string originalalias = alias;
-            while(Forward.ContainsKey(alias)) alias = originalalias + "[þ" + offset + "]";
+            while(Forward.ContainsKey(alias)) alias = originalalias + "þ" + offset++;
             Forward.Add(alias, cxid);
             if(!Reverse.ContainsKey(cxid)) Reverse.Add(cxid, alias);
         }

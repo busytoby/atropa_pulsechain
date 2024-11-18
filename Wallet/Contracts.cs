@@ -30,8 +30,6 @@ using Nethereum.RPC.Eth.Filters;
 
 namespace Wallet
 {
-
-
     public class Contracts
     {
         public Wallet Wallet;
@@ -63,6 +61,14 @@ namespace Wallet
             if (Directory.Exists(input))
                 RootFolder = input;
             else throw (new Exception("No Such Folder"));
+
+            string baseConfigFile = Path.Combine(RootFolder, Wallet._base);
+            if(File.Exists(baseConfigFile)) {
+                foreach(string line in File.ReadAllLines(baseConfigFile)) {
+                    string[] _alias = line.Split(0x0 + Wallet._base + 0x0);
+                    Aliases.AddAlias(_alias[0], _alias[1]);
+                }
+            }
         }   
 
         [FunctionOutput]
@@ -260,8 +266,8 @@ dysnomia/lib/yai.sol.old
             Contract _c;
             if(ABIs.ContainsKey(_a))
                 _c = Wallet.eth.GetContract(ABIs[_a], _a);
-            else if(ABIs.ContainsKey("þ"))
-                _c = Wallet.eth.GetContract(ABIs["þ"], _a);
+            else if(ABIs.ContainsKey(Wallet._base))
+                _c = Wallet.eth.GetContract(ABIs[Wallet._base], _a);
             else
                 _c = Wallet.eth.GetContract(ABIs.First().Value, _a);
             for(int i = 0; i < Args.Length; i++)

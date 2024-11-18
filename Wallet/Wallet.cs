@@ -8,11 +8,13 @@ using Nethereum.RPC.Eth;
 using Nethereum.Web3.Accounts;
 using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
+using System.Reflection.Metadata;
 
 namespace Wallet
 {
     public class Wallet
     {
+        static public string _base = "þ";
         public string ConnectionString;
         public Web3 w3;
         public IEthApiContractService eth;
