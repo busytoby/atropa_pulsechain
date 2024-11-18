@@ -1,4 +1,5 @@
 deploy dysnomia/00b_vmreq.sol
+deploy wallet/00_base.sol þ þ VMRNG
 deploy dysnomia/02c_shafactory.sol 
 deploy dysnomia/03c_shiofactory.sol
 deploy dysnomia/04_yi.sol 02c_shafactory 03c_shiofactory VMRNG

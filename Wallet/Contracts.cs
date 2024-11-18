@@ -37,16 +37,20 @@ namespace Wallet
         public Wallet Wallet;
         public Dictionary<string, string> ABIs;
         public Dictionary<string, Contract> Contract;
-        List<wEvent> Logs;
+        internal static List<wEvent> Logs;
         static public string? Solc_bin;
         static public string? RootFolder;
         byte[] From = Encoding.Default.GetBytes("Contracts");
 
+        static Contracts() {
+            Logs = new List<wEvent>();
+            Aliases.AddAlias("ZERO", "0x0000000000000000000000000000000000000000");
+        }
+
         public Contracts(Wallet wallet) {
             Wallet = wallet;
             ABIs = new Dictionary<string, string>();
-            Contract = new Dictionary<string, Contract>();
-            Logs = new List<wEvent>();
+            Contract = new Dictionary<string, Contract>();           
         }
 
         public delegate void OutputCallback(byte[] From, byte[] Data, short Priority);
@@ -131,7 +135,7 @@ namespace Wallet
             Bao On = await Execute(Output, Contract[lau], "On");
 
             await AddShioAliases(Output, symbol, On.Shio);
-            await GetLog(Output);
+            await ProcessLog(Output);
         }
 
         public async Task Install(OutputCallback Output, string g) {
@@ -200,7 +204,7 @@ namespace Wallet
                 //await Deploy(Output, "dan02csystemaddressscript", "dysnomia/domain/dan/02c_systemaddresses.sol", Aliases["CHO"]);
                 */
 
-                await GetLog(Output);
+                await ProcessLog(Output);
             } catch (Exception _e) {
                 int i = 99;
             }
@@ -253,7 +257,13 @@ dysnomia/lib/yai.sol.old
 
         public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, string Function, params dynamic[] Args) {
             _a = ResolveAlias(_a);
-            Contract _c = Wallet.eth.GetContract(ABIs[_a], _a);
+            Contract _c;
+            if(ABIs.ContainsKey(_a))
+                _c = Wallet.eth.GetContract(ABIs[_a], _a);
+            else if(ABIs.ContainsKey("þ"))
+                _c = Wallet.eth.GetContract(ABIs["þ"], _a);
+            else
+                _c = Wallet.eth.GetContract(ABIs.First().Value, _a);
             for(int i = 0; i < Args.Length; i++)
                 Args[i] = ResolveAlias(Args[i]);
             return await Execute(Output, _c, Function, Args);
@@ -302,8 +312,6 @@ dysnomia/lib/yai.sol.old
                         rx = null;
                         break;
                 }
-
-                await GetLog(Output);
             } catch (Exception _e) {
                 int i = 99;
             }
@@ -333,7 +341,7 @@ dysnomia/lib/yai.sol.old
             return null;
         }
 
-        public async Task GetLog(OutputCallback Output) {
+        public async Task ProcessLog(OutputCallback Output) {
             foreach(wEvent w in Logs) {
                 try {
                     if(Output != null) {
@@ -345,6 +353,20 @@ dysnomia/lib/yai.sol.old
                                 if(Aliases.Reverse.ContainsKey(_from)) _from = Aliases.Reverse[_from];
                                 if(Aliases.Reverse.ContainsKey(_to)) _to = Aliases.Reverse[_to];
                                 if(Aliases.Reverse.ContainsKey(_address)) _address = Aliases.Reverse[_address];
+
+                                if(_address.StartsWith("0x") && _address.Length == 42) {
+                                    if(ABIs.ContainsKey(_address) && Contract.ContainsKey(_address)) {
+                                        dynamic _symbol = await ExecuteWithAliases(Output, _address, "symbol");
+                                        int i = 99;
+                                    } else {
+                                        dynamic _symbol = await ExecuteWithAliases(Output, _address, "symbol");
+                                        if(_symbol.Length > 0 && _symbol != _address) {
+                                            Aliases.AddAlias(_symbol, _address);
+                                            _address = _symbol;
+                                        }
+                                    }
+                                }
+
                                 if(_from == Wallet.Account.Address || _to == Wallet.Account.Address)
                                     Output(From, Encoding.Default.GetBytes("b" + _e.Log.BlockNumber + " t" + _address + " f" + _from + " t" + _to + ": " + _e.Event.Value), 6);
                             }
@@ -372,11 +394,11 @@ dysnomia/lib/yai.sol.old
                 if(_cSymbol != null)
                     Aliases.AddAlias(_cSymbol, _c.Address);
                 else {
-                    Aliases.AddAlias(Path.GetFileNameWithoutExtension(file), _c.Address);
+                    Aliases.AddAlias(Path.GetFileNameWithoutExtension(file), _c. Address);
                 }
 
-                await GetLog(Output);
                 Output(From, Encoding.Default.GetBytes(_cSymbol + " Deployed To: " + Aliases.Forward[_cSymbol]), 6);
+                await ProcessLog(Output);
                 return Aliases.Forward[_cSymbol];
             } else if(!file.ToLower().EndsWith(".dys"))
                 file = file + ".dys";

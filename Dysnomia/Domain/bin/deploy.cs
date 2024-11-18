@@ -40,8 +40,8 @@ namespace Dysnomia.Domain.bin
 
             Task<string> _t = Controller.LocalContracts.Deploy(Output, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
             try {
-                string Address = _t.Result;
-                if(Address != null) Output(From, Encoding.Default.GetBytes("Deployment Address: " + Address), 6);
+                string Result = _t.Result;
+                if(Result != null) Output(From, Encoding.Default.GetBytes("Deployment Result: " + Result), 6);
             } catch { }
         }
     }
