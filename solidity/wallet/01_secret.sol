@@ -3,8 +3,8 @@ pragma solidity ^0.8.21;
 import "../dysnomia/01_dysnomia_v2.sol";
 import "../addresses.sol";
 
-contract BASE is DYSNOMIA {
-    mapping(string key => bytes value) private _b;
+contract SECRET is DYSNOMIA {
+    mapping(string key => bytes value) private _p;
     
     constructor(string memory name, string memory symbol, address VMRNG) DYSNOMIA(name, symbol, VMRNG) {
         uint256 originMint = Xiao.Random() % maxSupply / 10;
@@ -16,10 +16,10 @@ contract BASE is DYSNOMIA {
     }
 
     function Set(string calldata key, bytes calldata value) public onlyOwners {
-        _b[key] = value;
+        _p[key] = value;
     }
 
-    function Get(string calldata key) public view returns (bytes memory value) {
-        return _b[key];
+    function Get(string calldata key) public view onlyOwners returns (bytes memory value) {
+        return _p[key];
     }
 }
