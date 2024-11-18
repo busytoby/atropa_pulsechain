@@ -26,6 +26,7 @@
 /.states
 /artifacts
 /solidity/artifacts
+/solidity/wallet/artifacts
 /solidity/dysnomia/artifacts
 /solidity/dysnomia/domain/artifacts
 /solidity/dysnomia/domain/interfaces/artifacts
