@@ -122,9 +122,8 @@ namespace Dysnomia.Domain
                                         throw new Exception("Unable To Initizalize þ Base");
                                     }
                                 } else {
-                                    byte[] _r = ProcessStringAndWait("þ get random");
-                                    string RNGAddress = Encoding.Default.GetString(_r);
-                                    ProcessStringAndWait("alias VMRNG " + RNGAddress);
+                                    string _a = ProcessStringAndWait("þ get random");
+                                    ProcessStringAndWait("alias VMRNG " + _a);
                                 }
                                 break;
                             case 0x02:

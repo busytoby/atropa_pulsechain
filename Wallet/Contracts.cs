@@ -106,6 +106,7 @@ namespace Wallet
         public async Task AddAliasWithABI(string alias, string cxid, string file) {
             (string ABI, string BIN) = Compile(file);
             Contract[cxid] = Wallet.eth.GetContract(ABI, cxid);
+            ABIs[cxid] = ABI;
             Aliases.AddAlias(alias, cxid);
         }
 
@@ -266,8 +267,7 @@ dysnomia/lib/yai.sol.old
                 return key;
 
             if(Aliases.Forward.ContainsKey(Wallet._base) && ABIs.ContainsKey(Aliases.Forward[Wallet._base])) {
-                Task<dynamic> _t = Execute(Wallet.eth.GetContract(ABIs[Aliases.Forward[Wallet._base]], Aliases.Forward[Wallet._base]), "get", original);
-                _t.Wait();
+                dynamic _t = Execute(Wallet.eth.GetContract(ABIs[Aliases.Forward[Wallet._base]], Aliases.Forward[Wallet._base]), "get", original);
                 string result = Encoding.Default.GetString(_t.Result);
                 if(result.Length > 0) return result;
             }
@@ -289,6 +289,8 @@ dysnomia/lib/yai.sol.old
             }
             for(int i = 0; i < Args.Length; i++)
                 Args[i] = ResolveAlias(Args[i]);
+
+            if(Function == "get" && Args.Length == 1) return Args[0];
             return await Execute(_c, Function, Args);
         }
 
@@ -426,11 +428,14 @@ dysnomia/lib/yai.sol.old
                     Args[i] = ResolveAlias(Args[i]);
                 Contract _c = await DeployContract(ABI, BIN, Args);
                 string _cSymbol = await ExecuteWithAliases(_c.Address, "symbol()");
-                if(_cSymbol != null)
-                    Aliases.AddAlias(_cSymbol, _c.Address);
-                else {
-                    Aliases.AddAlias(Path.GetFileNameWithoutExtension(file), _c. Address);
+                if(_cSymbol == null) _cSymbol = Path.GetFileNameWithoutExtension(file);
+
+                string address = _c.Address;
+                if(Aliases.Forward.ContainsKey(Wallet._base) && ABIs.ContainsKey(Aliases.Forward[Wallet._base])) {
+                    _c = Contract[Aliases.Forward[Wallet._base]];
+                    Execute(_c, "set", _cSymbol, address);
                 }
+                Aliases.AddAlias(_cSymbol, address);
 
                 Output(From, Encoding.Default.GetBytes(_cSymbol + " Deployed To: " + Aliases.Forward[_cSymbol]), 6);
                 await ProcessLog(Output);
