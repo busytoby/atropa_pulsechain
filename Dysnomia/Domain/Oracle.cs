@@ -47,7 +47,7 @@ namespace Dysnomia.Domain
             Enqueue(Encoding.Default.GetBytes(A));
         }
 
-        public void ProcessStringAndWait(String A) {
+        public dynamic ProcessStringAndWait(String A) {
             Command command = new Command(A);
             Tare? Pi;
             do {
@@ -56,6 +56,7 @@ namespace Dysnomia.Domain
                         Logging.Log(Pi);
                 Thread.Sleep(100);
             } while(command.Theta.Alive() || command.Theta.Out.Count > 0);
+            return Command.Result;
         }
 
         /*
@@ -111,12 +112,16 @@ namespace Dysnomia.Domain
                                 if(!Aliases.Forward.ContainsKey(Wallet.Wallet._base)) {
                                     ProcessStringAndWait("deploy dysnomia/00b_vmreq.sol");
                                     ProcessStringAndWait("deploy wallet/00_base.sol þ þ VMRNG");
+                                    ProcessStringAndWait("þ set random VMRNG");
                                     ProcessStringAndWait("save");
+                                    if(!Aliases.Forward.ContainsKey(Wallet.Wallet._base)) {
+                                        throw new Exception("Unable To Initizalize þ Base");
+                                    }
+                                } else {
+                                    byte[] _r = ProcessStringAndWait("þ get random");
+                                    string RNGAddress = Encoding.Default.GetString(_r);
+                                    ProcessStringAndWait("alias VMRNG " + RNGAddress);
                                 }
-                                if(!Aliases.Forward.ContainsKey(Wallet.Wallet._base)) {
-                                    throw new Exception("Unable To Initizalize þ Base");
-                                }
-                                int i = 99;
                                 break;
                             case 0x02:
                                 Lambda = NextBytes();

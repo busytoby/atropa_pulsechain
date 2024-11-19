@@ -20,7 +20,7 @@ namespace Wallet
         public IEthApiContractService eth;
         public Account Account;
         internal OracleProcessString ProcessString;
-        public delegate void OracleProcessString(String A);
+        public delegate dynamic OracleProcessString(String A);
 
         public Wallet(string connectionString)
         {

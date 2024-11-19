@@ -14,6 +14,7 @@ namespace Dysnomia.Lib
     {
         new public static string Name = "Command";
         new public static string Description = "Not Set Description";
+        new public static dynamic Result;
         public dynamic[]? Args;
         public string? Alias;
 

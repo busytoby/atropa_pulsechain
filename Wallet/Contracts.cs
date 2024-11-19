@@ -270,8 +270,12 @@ dysnomia/lib/yai.sol.old
                 _c = Wallet.eth.GetContract(ABIs[_a], _a);
             else if(ABIs.ContainsKey(Wallet._base))
                 _c = Wallet.eth.GetContract(ABIs[Wallet._base], _a);
-            else
+            else if(ABIs.Count > 0) {
                 _c = Wallet.eth.GetContract(ABIs.First().Value, _a);
+            } else {
+                (string ABI, string BIN) = Compile("wallet/00_base.sol");
+                _c = Wallet.eth.GetContract(ABI, _a);
+            }
             for(int i = 0; i < Args.Length; i++)
                 Args[i] = ResolveAlias(Args[i]);
             return await Execute(Output, _c, Function, Args);
@@ -311,9 +315,20 @@ dysnomia/lib/yai.sol.old
                                 }
                                 break;
                             } else {
-                                HexBigInteger gas = await _f.EstimateGasAsync(Wallet.Account.Address, null, null, Args);
-                                gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.111));
-                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, Args);
+                                HexBigInteger gas = new HexBigInteger(2000000);
+                                if(Args.Length != _fb.FunctionABI.InputParameters.Length) throw new Exception("Wrong Number Of Arguments");
+                                object[] callargs = new object[Args.Length];
+                                for(int i = 0; i < Args.Length; i++) {
+                                    if(_fb.FunctionABI.InputParameters[i].Type == "bytes")
+                                        callargs[i] = Encoding.Default.GetBytes(Args[i]);
+                                    else
+                                        callargs[i] = Args[i];
+                                }
+                                try {
+                                    gas = await _f.EstimateGasAsync(Wallet.Account.Address, gas, null, callargs);
+                                    gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.1111));
+                                } catch { }
+                                rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, callargs);
                                 break;
                             }
                         }

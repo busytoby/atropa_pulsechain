@@ -1,4 +1,5 @@
 ﻿using Dysnomia.Lib;
+using Nethereum.Contracts.QueryHandlers.MultiCall;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
 using System;
@@ -42,8 +43,9 @@ namespace Dysnomia.Domain.bin {
                 if(Alias == "execute") _exe = Controller.LocalContracts.ExecuteWithAliases(Output, (string)Args[_arg], (string)Args.Skip(_arg + 1).Take(1).ToArray()[0], Args.Skip(_arg + 2).ToArray());
                 else _exe = Controller.LocalContracts.ExecuteWithAliases(Output, Alias, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
                 _exe.Wait();
-                dynamic _result = _exe.Result;
-                if(_result != null) Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray()) + ": " + _result), 6);
+                Result = _exe.Result;
+                string display = Result is string ? Result : Encoding.Default.GetString(Result);
+                if(display != null) Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray()) + ": " + display), 6);
                 else Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray())), 6);
             } catch { }
         }
