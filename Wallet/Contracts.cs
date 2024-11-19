@@ -112,9 +112,9 @@ namespace Wallet
         public async Task AddShioAliases(OutputCallback Output, string symbol, string address) {
             AddAliasWithABI(symbol + "Shio", address, "dysnomia/03_shio.sol");
             Output(From, Encoding.Default.GetBytes(symbol + "Shio" + " Deployed To: " + Aliases.Forward[symbol + "Shio"]), 6);
-            _ = await Execute(Output, Contract[Aliases.Forward[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
+            _ = await Execute(Contract[Aliases.Forward[symbol + "Shio"]], "Log", 5556, 1551, symbol + "Shio Logging Test Successful");
 
-            Shao rho = await Execute(Output, Contract[Aliases.Forward[symbol + "Shio"]], "Rho");
+            Shao rho = await Execute(Contract[Aliases.Forward[symbol + "Shio"]], "Rho");
             _ = AddAliasWithABI(symbol + "ShioRod", rho.Rod, "dysnomia/02_sha.sol");
             Output(From, Encoding.Default.GetBytes(symbol + "ShioRod" + " Deployed To: " + Aliases.Forward[symbol + "ShioRod"]), 6);
             _ = AddAliasWithABI(symbol + "ShioCone", rho.Cone, "dysnomia/02_sha.sol");
@@ -127,7 +127,7 @@ namespace Wallet
 
             Contract _c = Wallet.eth.GetContract(ABI, Contract[Aliases.Forward["LAUFactory"]].Address);
 
-            string lautx = await Execute(Output, _c, "New", name, symbol);
+            string lautx = await Execute(_c, "New", name, symbol);
             TransactionReceipt receipt = await Wallet.w3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(lautx);
             while(receipt == null) {
                 Thread.Sleep(1000);
@@ -136,11 +136,11 @@ namespace Wallet
 
             string lau = receipt.Logs.First.ToArray<dynamic>()[0].Value;
             _ = AddAliasWithABI(symbol, lau, "dysnomia/11_lau.sol");
-            string lautypeverifier = await Execute(Output, Contract[lau], "Type()");
+            string lautypeverifier = await Execute(Contract[lau], "Type()");
             if(lautypeverifier != "LAU") throw new Exception("LAU Type Verification Failed");
 
             Output(From, Encoding.Default.GetBytes(symbol +  " Deployed To: " + Aliases.Forward[symbol] + "From Wallet " + walletnumber), 6);
-            Bao On = await Execute(Output, Contract[lau], "On");
+            Bao On = await Execute(Contract[lau], "On");
 
             await AddShioAliases(Output, symbol, On.Shio);
             await ProcessLog(Output);
@@ -248,22 +248,33 @@ dysnomia/lib/stringlib.sol
 dysnomia/lib/yai.sol.old
 */
 
-        public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, int Walletnumber, string Function, params dynamic[] Args) {
+        public async Task<dynamic> ExecuteWithAliases(string _a, int Walletnumber, string Function, params dynamic[] Args) {
             Wallet.SwitchAccount(Walletnumber);
-            return await ExecuteWithAliases(Output, _a, Function, Args);
+            return await ExecuteWithAliases(_a, Function, Args);
         }
 
         public string ResolveAlias(string key) {
+            string original = key;
             string alias = Aliases.Forward.FirstOrDefault(x => x.Key.ToLower().Contains(key.ToLower())).Key;
             while(alias != null) {
                 key = Aliases.Forward[alias];
                 if(Aliases.Forward.ContainsKey(key)) alias = Aliases.Forward[key];
                 else alias = null;
+                if(alias == key) break;
+            }
+            if(original != key || (key.StartsWith("0x") && key.Length == 42))
+                return key;
+
+            if(Aliases.Forward.ContainsKey(Wallet._base) && ABIs.ContainsKey(Aliases.Forward[Wallet._base])) {
+                Task<dynamic> _t = Execute(Wallet.eth.GetContract(ABIs[Aliases.Forward[Wallet._base]], Aliases.Forward[Wallet._base]), "get", original);
+                _t.Wait();
+                string result = Encoding.Default.GetString(_t.Result);
+                if(result.Length > 0) return result;
             }
             return key;
         }
 
-        public async Task<dynamic> ExecuteWithAliases(OutputCallback Output, string _a, string Function, params dynamic[] Args) {
+        public async Task<dynamic> ExecuteWithAliases(string _a, string Function, params dynamic[] Args) {
             _a = ResolveAlias(_a);
             Contract _c;
             if(ABIs.ContainsKey(_a))
@@ -273,21 +284,21 @@ dysnomia/lib/yai.sol.old
             else if(ABIs.Count > 0) {
                 _c = Wallet.eth.GetContract(ABIs.First().Value, _a);
             } else {
-                (string ABI, string BIN) = Compile("wallet/00_base.sol");
-                _c = Wallet.eth.GetContract(ABI, _a);
+                AddAliasWithABI(Wallet._base, _a, "wallet/00_base.sol");
+                _c = Contract[_a];
             }
             for(int i = 0; i < Args.Length; i++)
                 Args[i] = ResolveAlias(Args[i]);
-            return await Execute(Output, _c, Function, Args);
+            return await Execute(_c, Function, Args);
         }
 
-        public async Task<dynamic> Execute(OutputCallback Output, Contract _c, int Walletnumber, string Function, params dynamic[] Args) {
+        public async Task<dynamic> Execute(Contract _c, int Walletnumber, string Function, params dynamic[] Args) {
             Wallet.SwitchAccount(Walletnumber);
             // should possibly detect & reinstantiate contract for local wallet if it is not installed as so
-            return await Execute(Output, _c, Function, Args);
+            return await Execute(_c, Function, Args);
         }
 
-        public async Task<dynamic> Execute(OutputCallback Output, Contract _c, string Function, params dynamic[] Args) {
+        public async Task<dynamic> Execute(Contract _c, string Function, params dynamic[] Args) {
             dynamic rx = null;
             try {
                 switch(Function) {
@@ -344,7 +355,7 @@ dysnomia/lib/yai.sol.old
         private async Task<Contract> DeployContract(string ABI,string BIN, params dynamic[] Args) {
             try {
                 for(int i = 0; i < Args.Length; i++)
-                    while(Aliases.Forward.ContainsKey(Args[i])) Args[i] = Aliases.Forward[Args[i]];
+                    Args[i] = ResolveAlias(Args[i]);
                 HexBigInteger gas = new HexBigInteger(2000000);
                 try {
                     gas = await Wallet.eth.DeployContract.EstimateGasAsync(ABI, BIN, Wallet.Account.Address, Args);
@@ -379,10 +390,10 @@ dysnomia/lib/yai.sol.old
 
                                 if(_address.StartsWith("0x") && _address.Length == 42) {
                                     if(ABIs.ContainsKey(_address) && Contract.ContainsKey(_address)) {
-                                        dynamic _symbol = await ExecuteWithAliases(Output, _address, "symbol");
+                                        dynamic _symbol = await ExecuteWithAliases(_address, "symbol");
                                         int i = 99;
                                     } else {
-                                        dynamic _symbol = await ExecuteWithAliases(Output, _address, "symbol");
+                                        dynamic _symbol = await ExecuteWithAliases(_address, "symbol");
                                         if(_symbol.Length > 0 && _symbol != _address) {
                                             Aliases.AddAlias(_symbol, _address);
                                             _address = _symbol;
@@ -411,9 +422,10 @@ dysnomia/lib/yai.sol.old
             string diskfile = RootFolder + @"\" + file;
             if(file.ToLower().EndsWith(".sol")) {
                 (string ABI, string BIN) = Compile(file);
-
+                for(int i = 0; i < Args.Length; i++)
+                    Args[i] = ResolveAlias(Args[i]);
                 Contract _c = await DeployContract(ABI, BIN, Args);
-                string _cSymbol = await ExecuteWithAliases(Output, _c.Address, "symbol()");
+                string _cSymbol = await ExecuteWithAliases(_c.Address, "symbol()");
                 if(_cSymbol != null)
                     Aliases.AddAlias(_cSymbol, _c.Address);
                 else {

@@ -13,9 +13,9 @@ using System.Threading.Tasks;
 using Wallet;
 
 namespace Dysnomia.Domain.bin {
-    internal class execute : Command {
-        new public static String Name = "cmd_Execute";
-        new public static String Description = "Execute [account] [contract or alias] [function]  [options...]";
+    internal class e2 : Command {
+        new public static String Name = "cmd_E2";
+        new public static String Description = "E2 [account] [contract or alias] [function]  [options...]";
 
         protected override async void Phi() {
             if(Theta == null) throw new Exception("Null Command Theta");
@@ -40,8 +40,9 @@ namespace Dysnomia.Domain.bin {
 
             try {
                 Task<dynamic> _exe;
-                if(Alias == "execute") _exe = Controller.LocalContracts.ExecuteWithAliases((string)Args[_arg], (string)Args.Skip(_arg + 1).Take(1).ToArray()[0], Args.Skip(_arg + 2).ToArray());
-                else _exe = Controller.LocalContracts.ExecuteWithAliases(Alias, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
+                string cx = Controller.LocalContracts.ResolveAlias(Args[_arg]);
+                Nethereum.Contracts.Contract _c = Controller.LocalContracts.Contract[cx];
+                _exe = Controller.LocalContracts.Execute(_c, (string)Args[_arg + 1], Args.Skip(_arg + 2).ToArray());
                 _exe.Wait();
                 Result = _exe.Result;
                 string display = Result is string ? Result : Encoding.Default.GetString(Result);

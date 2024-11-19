@@ -44,7 +44,7 @@ namespace Dysnomia.Domain.bin {
 
             for(int i = 0; i < Args.Length; i++) {
                 string _cx = Controller.LocalContracts.ResolveAlias(Args[i]);
-                _ = await Controller.LocalContracts.ExecuteWithAliases(Output, Wallet.Wallet._base, "Set", (string)Args[i], _cx);
+                _ = await Controller.LocalContracts.ExecuteWithAliases(Wallet.Wallet._base, "Set", (string)Args[i], _cx);
                 no++;
             }
             Output(From, Encoding.Default.GetBytes("Saved " + no + " Aliases"), 6);

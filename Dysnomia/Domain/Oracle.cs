@@ -113,6 +113,10 @@ namespace Dysnomia.Domain
                                     ProcessStringAndWait("deploy dysnomia/00b_vmreq.sol");
                                     ProcessStringAndWait("deploy wallet/00_base.sol þ þ VMRNG");
                                     ProcessStringAndWait("þ set random VMRNG");
+                                    ProcessStringAndWait("deploy dysnomia/02c_shafactory.sol");
+                                    ProcessStringAndWait("deploy dysnomia/03c_shiofactory.sol");
+                                    ProcessStringAndWait("deploy dysnomia/04_yi.sol 02c_shafactory 03c_shiofactory random");
+
                                     ProcessStringAndWait("save");
                                     if(!Aliases.Forward.ContainsKey(Wallet.Wallet._base)) {
                                         throw new Exception("Unable To Initizalize þ Base");
