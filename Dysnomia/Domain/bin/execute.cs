@@ -44,7 +44,14 @@ namespace Dysnomia.Domain.bin {
                 else _exe = Controller.LocalContracts.ExecuteWithAliases(Alias, (string)Args[_arg], Args.Skip(_arg + 1).ToArray());
                 _exe.Wait();
                 Result = _exe.Result;
-                string display = Result is string ? Result : Encoding.Default.GetString(Result);
+                string display = null;
+                if(Result is string) {
+                    display = Result;
+                } else if (Result is HexBigInteger || Result is System.Numerics.BigInteger) {
+                    display = Result.ToString();
+                } else {
+                    Encoding.Default.GetString(Result);
+                }
                 if(display != null) Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray()) + ": " + display), 6);
                 else Output(From, Encoding.Default.GetBytes(Alias + " " + string.Join(" ", Args.Skip(_arg).ToArray())), 6);
             } catch { }

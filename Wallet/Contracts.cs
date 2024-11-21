@@ -27,6 +27,7 @@ using Nethereum.ABI.FunctionEncoding;
 using static System.Net.Mime.MediaTypeNames;
 using static Wallet.Events;
 using Nethereum.RPC.Eth.Filters;
+using Nethereum.RPC.TransactionManagers;
 
 namespace Wallet
 {
@@ -334,6 +335,10 @@ dysnomia/lib/yai.sol.old
                                 for(int i = 0; i < Args.Length; i++) {
                                     if(_fb.FunctionABI.InputParameters[i].Type == "bytes")
                                         callargs[i] = Encoding.Default.GetBytes(Args[i]);
+                                    else if(_fb.FunctionABI.InputParameters[i].Type == "address")
+                                        callargs[i] = (string)Args[i];
+                                    else if(_fb.FunctionABI.InputParameters[i].Type.Contains("int"))
+                                        callargs[i] = System.Numerics.BigInteger.Parse(Args[i]);
                                     else
                                         callargs[i] = Args[i];
                                 }
@@ -342,6 +347,16 @@ dysnomia/lib/yai.sol.old
                                     gas = new HexBigInteger((int)((double)gas.ToUlong() * 1.1111));
                                 } catch { }
                                 rx = await _f.SendTransactionAsync(Wallet.Account.Address, gas, null, null, callargs);
+                                TransactionReceipt tx = await this.Wallet.w3.TransactionManager.TransactionReceiptService.PollForReceiptAsync(rx);
+                                if(tx.Status.Value == 1) {
+                                    return "Success";
+                                }
+                                //rx = await _f.SendTransactionAndWaitForReceiptAsync(Wallet.Account.Address, gas, new HexBigInteger(0), new HexBigInteger(1), new HexBigInteger(70), new HexBigInteger(2), callargs);
+
+                                /*
+                string txid = await Wallet.eth.DeployContract.SendRequestAsync(ABI, BIN, Wallet.Account.Address, gas, Args);
+                TransactionReceipt Receipt = await Wallet.eth.Transactions.GetTransactionReceipt.SendRequestAsync(txid);
+                                */
                                 break;
                             }
                         }
