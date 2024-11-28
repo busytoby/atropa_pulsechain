@@ -21,6 +21,10 @@ contract SECRET is DYSNOMIA {
         _mintToCap();
     }
 
+    function Length(string calldata key) public view returns (uint256) {
+        return _b[key].length;
+    }
+
     function Get(string calldata key, uint256 position) public view onlyOwners returns (bytes memory value) {
         return _b[key][position];
     }

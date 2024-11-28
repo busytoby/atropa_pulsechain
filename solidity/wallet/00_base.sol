@@ -21,6 +21,10 @@ contract BASE is DYSNOMIA {
         _mintToCap();
     }
 
+    function Length(string calldata key) public view returns (uint256) {
+        return _a[key].length;
+    }
+
     function Get(string calldata key, uint256 position) public view returns (bytes memory value) {
         return _a[key][position];
     }
