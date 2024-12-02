@@ -5,6 +5,7 @@ import "../addresses.sol";
 
 contract BASE is DYSNOMIA {
     mapping(string key => bytes[] iter) private _a;
+    uint64 public Color;
     
     constructor(string memory name, string memory symbol, address VMRNG) DYSNOMIA(name, symbol, VMRNG) {
         uint256 originMint = Xiao.Random() % maxSupply / 10;
@@ -16,14 +17,13 @@ contract BASE is DYSNOMIA {
         _mintToCap();
     }
 
-    function Ryu(string calldata key) public view returns (uint256 R) {
+    function Ryu(string calldata key) public returns (uint64 R) {
         bytes memory L = _a[key][_a[key].length - 1];
         uint8 M;
         uint8[5] memory V = [ 0, 1, 2, 3, 4 ];
         uint8[8] memory K = [ 1, 2, 4, 8, 16, 32, 64, 128 ];
 
         R = 0;
-        unchecked{
         for(uint i = 0; i < L.length;) {
             M = 1;
             for(uint j=0; j<5; j++) {
@@ -39,9 +39,9 @@ contract BASE is DYSNOMIA {
                 V[j] += 5;
             }
             if(R == 0) R = M;
-            else if(M > 1) R = (R ** M) % MotzkinPrime;
+            else if(M > 1) R = Xiao.modExp64(R, M, MotzkinPrime);
         }
-        }
+        Color = R;
     }
 
     function Set(string calldata key, bytes calldata value) public onlyOwners {
