@@ -3,9 +3,15 @@ pragma solidity ^0.8.21;
 import "../dysnomia/01_dysnomia_v2.sol";
 import "../addresses.sol";
 
+interface BASE {
+    function Last(string calldata key) external view returns (bytes memory);
+}
+
 contract SIGNAL is DYSNOMIA {
+    BASE public Base;
    
-    constructor(string memory name, string memory symbol, address VMRNG) DYSNOMIA(name, symbol, VMRNG) {
+    constructor(address BaseAddress) DYSNOMIA(unicode"Dysnomia Signal", unicode"SIGNAL", address(DYSNOMIA(BaseAddress).Xiao())) {
+        Base = BASE(BaseAddress);
         uint256 originMint = Xiao.Random() % maxSupply / 10;
         _mint(tx.origin, originMint * 10 ** decimals());
     }
@@ -15,7 +21,11 @@ contract SIGNAL is DYSNOMIA {
         _mintToCap();
     }
 
-    function Ryu(bytes calldata L) internal returns (uint64 R) {
+    function Signal(string calldata S) public returns (uint64 R) {
+        return Ryu(Base.Last(S));
+    }
+
+    function Ryu(bytes memory L) internal returns (uint64 R) {
         uint8 M;
         uint8[5] memory V = [ 0, 1, 2, 3, 4 ];
         uint8[8] memory K = [ 1, 2, 4, 8, 16, 32, 64, 128 ];
