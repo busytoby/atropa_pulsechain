@@ -21,8 +21,12 @@ contract SIGNAL is DYSNOMIA {
         _mintToCap();
     }
 
-    function Signal(string calldata S) public returns (uint64 R) {
-        return Ryu(Base.Last(S));
+    error Weak(uint64 _b, uint64 _e);
+    function Signal(string calldata S, address SecretAddress) public returns (uint64 R) {
+        uint64 _b = Ryu(Base.Last(S));
+        uint64 _e = Ryu(BASE(SecretAddress).Last(S));
+        if(_b < 1551 || _e < 1551) revert Weak(_b, _e);
+        return Xiao.modExp64(_b, _e, MotzkinPrime);
     }
 
     function Ryu(bytes memory L) internal returns (uint64 R) {
