@@ -64,8 +64,6 @@ address constant ZuoContract = address(0x583d1C1427308f7f96BFd3E0d7A3F9674D8BF8e
 address constant HegelBetContract = address(0x51C36aA04ffC2139F6d34436d0EDC7f5ffc6D6Fb);
 address constant HahnarchContract = address(0x4a458D04909a42F79d31805762B2abc38ab9407d);
 address constant RabContract = address(0x89E8cD6306AbbAB8e39eeD0D53566d8dC2E02c01);
-address constant LoanContract = address(0xeE67825eF27588FAeE39cfefb465eB0A242A740c);
-address constant FreebiesContract = address(0x48F628c079353ECC4DB75F0d05de9299e083f3C2);
 
 address constant WMContract = address(0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29);
 address constant IRCContract = address(0xD64f26Bcf78df919D587b6743fcFf5b155815bd6);
