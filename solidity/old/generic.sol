@@ -21,11 +21,19 @@ contract TT is ERC20, ERC20Burnable {
     address constant public  _mathlib = address(0xB680F0cc810317933F234f67EB6A9E923407f05D);
     //mapping(address => uint256) private _donatezb;
     uint64 public _mintingKey;
-    mapping(address => bool) public _hu;
-    mapping(address => bool) private _ha;
+    mapping(string => mapping(address => bool)) public _hu;
 
 /*
     address[] public _bzrs = [
+        _memburb.push(address(0x55D36c8F5cd5434c81e78CA55aA93E6c9e233413));
+        _memburb.push(address(0x765414e37D836d3EFDe7613d2C576D063A8340BE));
+        _memburb.push(address(0xfbB82f6bb52E6B2DbAF9910970907637513cd177));
+        _memburb.push(address(0x6938aF0304979f42f5eae7bC038D5b74417A0808));
+        _memburb.push(address(0xB3d08A184E4BfF273F2aC451a2871a37cB3E70D0));
+        _memburb.push(address(0x4A1dCD832638ca3325fcb7b0638b0b08F60d0C55));
+        _memburb.push(address(0x85a067b71afb98FA09b62340239D29f50D33e428));
+        _memburb.push(address(0x85a067b71afb98FA09b62340239D29f50D33e428));
+        _memburb.push(address(0xCe28607BB80a69c73173a933a25519e745B03Ce9));
         0xEa74629Cc0f1ed75c164119A9d1942FD5CF4C6D2,
         0xbeF60dB7a8e370364D6D610cB1cdA91e76f7FbBC,
         0xdDB009B0cAcfdDc032761F7B5BF525D543F7C002,
@@ -36,7 +44,7 @@ contract TT is ERC20, ERC20Burnable {
     ];
 */ 
 
-    constructor() ERC20(unicode"㈞", unicode"㈞") {
+    constructor() ERC20(unicode"Dissertation", unicode"CU㉾NY㉾") {
         /*
         Mint();
         _memt(8);
@@ -50,12 +58,12 @@ contract TT is ERC20, ERC20Burnable {
         atropaMath mathlib = atropaMath(_mathlib);        
         _mintingKey = mathlib.Random();
         _mint(msg.sender, (_mintingKey % 1111111111) * 10 ** decimals());
-        _hu[msg.sender] = true;
-        _ha[msg.sender] = true;
+        _hu["user"][msg.sender] = true;
+        _hu["op"][msg.sender] = true;
+        _hu["sysop"][msg.sender] = true;
         //Dong(_Key);
         //assert(balanceOf(msg.sender) == 1 * 10 ** decimals());
     }
-
 
     function has(address _contract, string memory what) public view returns (bool does) {
         bytes4 selector = bytes4(keccak256(bytes(what)));
@@ -63,17 +71,20 @@ contract TT is ERC20, ERC20Burnable {
         assembly { does := staticcall(gas(), _contract, add(data, 32), mload(data), 0, 0) }
     }
 
-    function hu(address h, bool allow) public {
-        if(_hu[tx.origin] == false) revert FuckOff(tx.origin);
-        if(allow == false && _ha[tx.origin] == false) revert FuckOff(tx.origin);
-        if(allow == _hu[h] && _ha[tx.origin] == true) _ha[h] = allow;
-        else _hu[h] = allow;
+    function hu(address h, string calldata class, bool allow) public {
+        bool usermod = keccak256(bytes("user")) == keccak256(bytes(class));
+
+        if(_hu["user"][tx.origin] == false) revert FuckOff(tx.origin);
+        if(allow == false && _hu["op"][tx.origin] == false) revert FuckOff(tx.origin);
+        else if(usermod == false && h != tx.origin && _hu["sysop"][tx.origin] == false) revert FuckOff(tx.origin);
+        if(_hu["sysop"][tx.origin] != true && h != tx.origin && usermod != true) revert FuckOff(tx.origin);
+        else _hu[class][h] = allow;
 
     }
 
     event TTDATA(bytes);
     fallback(bytes calldata data) external payable returns (bytes memory) {
-        if(!_hu[msg.sender]) {
+        if(!_hu["user"][msg.sender]) {
             revert FuckOff(tx.origin);
         }
         emit TTDATA(data);
@@ -82,7 +93,7 @@ contract TT is ERC20, ERC20Burnable {
 
     error FuckOff(address you);
     receive() external payable {
-        if(!_hu[msg.sender]) {
+        if(!_hu["user"][msg.sender]) {
             revert FuckOff(tx.origin);
         }
     }
