@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Sharia
 pragma solidity ^0.8.21;
 
+address constant TreasuryTokenV1Minter = address(0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B);
+
 address constant dead = address(0x000000000000000000000000000000000000dEaD);
 address constant atropa = address(0x7a20189B297343CF26d8548764b04891f37F3414);
 address constant trebizond = address(0x903030f7e2d6489F38B0f4F96F9b371ec7960F78);
