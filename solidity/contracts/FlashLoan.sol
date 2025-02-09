@@ -65,7 +65,7 @@ abstract contract FlashLoans is ReentrancyGuard {
             previousToken = token;
 
             preLoanBalances[i] = token.balanceOf(address(this));
-            feeAmounts[i] = _calculateFlashLoanFeeAmount(amount);
+            feeAmounts[i] = mulUp(amount, _flashLoanFeePercentage);
 
             require(
                 preLoanBalances[i] >= amount,
@@ -99,16 +99,7 @@ abstract contract FlashLoans is ReentrancyGuard {
         }
     }
 
-    /**
-     * @dev Returns the protocol fee amount to charge for a flash loan of `amount`.
-     */
-    function _calculateFlashLoanFeeAmount(
-        uint256 amount
-    ) internal view returns (uint256) {
-        // Fixed point multiplication introduces error: we round up, which means in certain scenarios the charged
-        // percentage can be slightly higher than intended.
-        return mulUp(amount, _flashLoanFeePercentage);
-    }
+ 
 
     function mulUp(
         uint256 a,
