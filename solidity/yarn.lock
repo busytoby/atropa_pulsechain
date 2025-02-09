@@ -12,6 +12,18 @@
   resolved "https://registry.yarnpkg.com/@adraffy/ens-normalize/-/ens-normalize-1.10.1.tgz#63430d04bd8c5e74f8d7d049338f1cd9d4f02069"
   integrity sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==
 
+"@balancer-labs/v2-interfaces@0.4.0", "@balancer-labs/v2-interfaces@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/v2-interfaces/-/v2-interfaces-0.4.0.tgz#9bfc2aed7bed4208ebf4b18a14664d8e90d4c141"
+  integrity sha512-K0ij26m8/UOvdPmrAnuh/C7kT8OQupsgV8KRyIt+aTHW1KbPOi4v8zLMwW2AwSYMSRjPK2A/ttlnNizT0iA4Qg==
+
+"@balancer-labs/v2-solidity-utils@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/v2-solidity-utils/-/v2-solidity-utils-4.0.0.tgz#9ba68f98cdcdf15848c45825ae5939b162e90625"
+  integrity sha512-BB9bawgywV8q8v/m3xhYVI5X0rJ3ox64t4IYiAQvgdrR7+Sgn6AAkAP++odjbDJdCcM5wQMi92zwt50rq2nn6A==
+  dependencies:
+    "@balancer-labs/v2-interfaces" "0.4.0"
+
 "@clrfund/waffle-mock-contract@^0.0.11":
   version "0.0.11"
   resolved "https://registry.yarnpkg.com/@clrfund/waffle-mock-contract/-/waffle-mock-contract-0.0.11.tgz#4e5917ca19ce90ae9e3160b6a1d5858e7121e408"

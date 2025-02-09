@@ -6,7 +6,7 @@ import { expect } from "chai";
 
 
 
-describe("BurnStorage.sol", () => {
+describe("Minter.sol", () => {
 
     // initalise test harness for  minter contract
     async function deployContracts() {
@@ -14,11 +14,12 @@ describe("BurnStorage.sol", () => {
 
         let {
             NT,
-            TT
+            TT,
+            flashLoan
 
         } = await deployContractInfra(owner);
 
-        return { NT, TT };
+        return { NT, TT, flashLoan };
     }
 
     describe('deploy and config', () => {
@@ -90,7 +91,67 @@ describe("BurnStorage.sol", () => {
 
         })
 
+        it('shall make NEW', async () => {
+            const [owner, vibePass] = await hre.ethers.getSigners();
+            const { NT } = await loadFixture(deployContracts);
+            let user = "0xBF182955401aF3f2f7e244cb31184E93E74a2501"; // address that holds tokens
 
+            // Impersonate the account
+            await hre.network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: [user],
+            });
+
+            // Get signer
+            let userS = await hre.ethers.getSigner(user);
+            
+            const erc20 = await hre.ethers.getContractAt('ERC20', '0xE1030d35B912dd2a209998788dBCD564869a522C', userS);
+            expect(await erc20.connect(userS).approve(NT, 999999999999999999999999999999999n)).not.to.be.reverted
+            const erc202 = await hre.ethers.getContractAt('ERC20', '0xa1bee1dae9af77dac73aa0459ed63b4d93fc6d29', userS);
+            expect(await erc202.connect(userS).approve(NT, 999999999999999999999999999999999n)).not.to.be.reverted
+            //test mint
+            expect(await NT.connect(userS).New('r', 'r', 1, '0xE1030d35B912dd2a209998788dBCD564869a522C')).not.to.be.reverted
+         
+
+
+
+        })
+
+
+
+    })
+
+    describe('deploy and check', () => {
+        it('shall calculate flashLoan fee correctly', async () => {
+            const [owner, vibePass] = await hre.ethers.getSigners();
+            const { flashLoan, TT } = await loadFixture(deployContracts);
+
+            let user = "0xBF182955401aF3f2f7e244cb31184E93E74a2501"; // address that holds tokens
+
+            // Impersonate the account
+            await hre.network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: [user],
+            });
+
+            // Get signer
+            let userS = await hre.ethers.getSigner(user);
+
+            const erc202 = await hre.ethers.getContractAt('ERC20', '0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', userS);
+            expect(await erc202.balanceOf(TT)).to.be.equal(0n)
+            expect(await erc202.balanceOf(flashLoan)).to.be.equal(0n)
+            expect(await erc202.transfer(flashLoan, 250000000000000000n)).to.not.be.reverted
+            expect(await erc202.balanceOf(flashLoan)).to.be.equal(250000000000000000n)
+            expect(await erc202.connect(userS).approve(TT, 999999999999999999999999999999999n)).not.to.be.reverted
+            expect(await erc202.balanceOf(TT)).to.be.equal(0n)
+            expect(await TT.connect(userS).mint(100000000000000000000n)).not.to.be.reverted
+            expect(await erc202.balanceOf(TT)).to.be.equal(100000000000000000000n)
+            
+            expect(await flashLoan.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.not.be.reverted
+            expect(await erc202.balanceOf(TT)).to.be.equal(100250000000000000000n)
+            expect(await erc202.balanceOf(flashLoan)).to.be.equal(0n)
+
+        })
 
     })
 

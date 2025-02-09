@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./addresses.sol";
+import "./FlashLoan.sol";
 
 interface atropaMath {
     function Random() external returns (uint64);
@@ -55,7 +56,7 @@ interface TTI {
     function Debenture() external returns (bool);
 }
 
-contract TT is ERC20, ERC20Burnable {
+contract TT is ERC20, ERC20Burnable, FlashLoans {
 
     NT public V2Minter;
     ERC20 public Parent;

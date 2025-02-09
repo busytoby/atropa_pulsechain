@@ -4,16 +4,16 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "compile": "npx hardhat compile",    
+    "compile": "npx hardhat compile",
     "test": "npx hardhat test",
     "typechain": "npx hardhat typechain"
-   
   },
-  "dependencies": {   
+  "dependencies": {
+    "@balancer-labs/v2-interfaces": "^0.4.0",
+    "@balancer-labs/v2-solidity-utils": "^4.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
-    "@openzeppelin/contracts": "^5.1.0", 
+    "@openzeppelin/contracts": "^5.1.0",
     "ethers": "^6.13.4"
- 
   },
   "devDependencies": {
     "@clrfund/waffle-mock-contract": "^0.0.11",
