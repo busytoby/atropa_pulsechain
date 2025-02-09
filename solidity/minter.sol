@@ -120,6 +120,7 @@ contract TT is ERC20, ERC20Burnable {
         Parent.transfer(msg.sender, Amount);
         emit Recovery(msg.sender, Contract, Amount);
     }
+    
 
     function mint(uint256 amount) public { 
         bool success1 = Parent.transferFrom(msg.sender, address(this), amount);
