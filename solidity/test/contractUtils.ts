@@ -13,11 +13,13 @@ async function deployContractInfra(owner: HardhatEthersSigner) {
     let NT = await createMinter(owner);  
     let TT = await createTT(owner, NT)
     let flashLoan = await createFlashoan(owner, TT)
+    let flashLoanRevert = await createFlashoanRevert(owner, TT)
 
     return {
        NT,
        TT,
-       flashLoan
+       flashLoan,
+       flashLoanRevert
     };
 }
 
@@ -40,6 +42,11 @@ async function createFlashoan(owner: HardhatEthersSigner, Tt: TT) {
     return await NTFactory.connect(owner).deploy(Tt);
 }
 
+async function createFlashoanRevert(owner: HardhatEthersSigner, Tt: TT) {
+
+    let NTFactory = await hre.ethers.getContractFactory('minterFlashRevert');
+    return await NTFactory.connect(owner).deploy(Tt);
+}
 
 
 

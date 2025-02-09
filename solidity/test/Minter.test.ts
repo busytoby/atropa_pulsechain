@@ -4,7 +4,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 
 
-
+const INPUT_LENGTH_MISMATCH = 'INPUT_LENGTH_MISMATCH';
 
 describe("Minter.sol", () => {
 
@@ -15,11 +15,12 @@ describe("Minter.sol", () => {
         let {
             NT,
             TT,
-            flashLoan
+            flashLoan,
+            flashLoanRevert
 
         } = await deployContractInfra(owner);
 
-        return { NT, TT, flashLoan };
+        return { NT, TT, flashLoan, flashLoanRevert };
     }
 
     describe('deploy and config', () => {
@@ -150,6 +151,36 @@ describe("Minter.sol", () => {
             expect(await flashLoan.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.not.be.reverted
             expect(await erc202.balanceOf(TT)).to.be.equal(100250000000000000000n)
             expect(await erc202.balanceOf(flashLoan)).to.be.equal(0n)
+
+        })
+
+        it('shall revert with flashloan', async () => {
+            const [owner, vibePass] = await hre.ethers.getSigners();
+            const { flashLoanRevert, TT } = await loadFixture(deployContracts);
+
+            let user = "0xBF182955401aF3f2f7e244cb31184E93E74a2501"; // address that holds tokens
+
+            // Impersonate the account
+            await hre.network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: [user],
+            });
+
+            // Get signer
+            let userS = await hre.ethers.getSigner(user);
+
+            const erc202 = await hre.ethers.getContractAt('ERC20', '0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', userS);
+            expect(await erc202.balanceOf(TT)).to.be.equal(0n)
+            expect(await erc202.balanceOf(flashLoanRevert)).to.be.equal(0n)
+            expect(await erc202.transfer(flashLoanRevert, 250000000000000000n)).to.not.be.reverted
+            expect(await erc202.balanceOf(flashLoanRevert)).to.be.equal(250000000000000000n)
+            expect(await erc202.connect(userS).approve(TT, 999999999999999999999999999999999n)).not.to.be.reverted
+            expect(await erc202.balanceOf(TT)).to.be.equal(0n)
+            expect(await TT.connect(userS).mint(100000000000000000000n)).not.to.be.reverted
+            expect(await erc202.balanceOf(TT)).to.be.equal(100000000000000000000n)
+            
+            await expect(flashLoanRevert.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.be.revertedWith(INPUT_LENGTH_MISMATCH)
+          
 
         })
 
