@@ -6,7 +6,8 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
-    "typechain": "npx hardhat typechain"
+    "typechain": "npx hardhat typechain",
+    "coverage": "npx hardhat coverage"
   },
   "dependencies": {
     "@balancer-labs/v2-interfaces": "^0.4.0",

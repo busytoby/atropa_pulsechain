@@ -5,6 +5,7 @@ import { expect } from "chai";
 
 
 const INPUT_LENGTH_MISMATCH = 'INPUT_LENGTH_MISMATCH';
+const INSUFFICIENT_FLASH_LOAN_BALANCE = 'INSUFFICIENT_FLASH_LOAN_BALANCE'
 
 describe("Minter.sol", () => {
 
@@ -156,7 +157,7 @@ describe("Minter.sol", () => {
 
         it('shall revert with flashloan', async () => {
             const [owner, vibePass] = await hre.ethers.getSigners();
-            const { flashLoanRevert, TT } = await loadFixture(deployContracts);
+            const { flashLoanRevert, TT, flashLoan } = await loadFixture(deployContracts);
 
             let user = "0xBF182955401aF3f2f7e244cb31184E93E74a2501"; // address that holds tokens
 
@@ -178,7 +179,7 @@ describe("Minter.sol", () => {
             expect(await erc202.balanceOf(TT)).to.be.equal(0n)
             expect(await TT.connect(userS).mint(100000000000000000000n)).not.to.be.reverted
             expect(await erc202.balanceOf(TT)).to.be.equal(100000000000000000000n)
-            
+            await expect(flashLoan.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000000000000000n)).to.be.revertedWith(INSUFFICIENT_FLASH_LOAN_BALANCE)
             await expect(flashLoanRevert.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.be.revertedWith(INPUT_LENGTH_MISMATCH)
           
 
