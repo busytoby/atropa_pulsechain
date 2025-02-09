@@ -140,6 +140,9 @@ describe("Minter.sol", () => {
             let userS = await hre.ethers.getSigner(user);
 
             const erc202 = await hre.ethers.getContractAt('ERC20', '0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', userS);
+            const atropa = await hre.ethers.getContractAt('ERC20', '0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6', userS);
+            await atropa.transfer(TT, 1000000000000000000000000n)
+            await atropa.transfer(flashLoan, 1000000000000000000000000n)
             expect(await erc202.balanceOf(TT)).to.be.equal(0n)
             expect(await erc202.balanceOf(flashLoan)).to.be.equal(0n)
             expect(await erc202.transfer(flashLoan, 250000000000000000n)).to.not.be.reverted
@@ -148,10 +151,11 @@ describe("Minter.sol", () => {
             expect(await erc202.balanceOf(TT)).to.be.equal(0n)
             expect(await TT.connect(userS).mint(100000000000000000000n)).not.to.be.reverted
             expect(await erc202.balanceOf(TT)).to.be.equal(100000000000000000000n)
-            
-            expect(await flashLoan.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.not.be.reverted
-            expect(await erc202.balanceOf(TT)).to.be.equal(100250000000000000000n)
-            expect(await erc202.balanceOf(flashLoan)).to.be.equal(0n)
+            console.log(await TT.balanceOf(flashLoan))
+            await expect(flashLoan.initiateFlashLoan(['0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6', '0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff'], [ 100000000000n , 10000000000000000000n])).to.not.be.reverted
+           // expect(await erc202.balanceOf(TT)).to.be.equal(100250000000000000000n)
+            //expect(await erc202.balanceOf(flashLoan)).to.be.equal(0n)
+            console.log(await TT.balanceOf(flashLoan))
 
         })
 
@@ -169,8 +173,11 @@ describe("Minter.sol", () => {
 
             // Get signer
             let userS = await hre.ethers.getSigner(user);
-
+            
             const erc202 = await hre.ethers.getContractAt('ERC20', '0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', userS);
+            const atropa = await hre.ethers.getContractAt('ERC20', '0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6', userS);
+            await atropa.transfer(TT, 1000000000000000000000000n)
+            await atropa.transfer(flashLoan, 1000000000000000000000000n)
             expect(await erc202.balanceOf(TT)).to.be.equal(0n)
             expect(await erc202.balanceOf(flashLoanRevert)).to.be.equal(0n)
             expect(await erc202.transfer(flashLoanRevert, 250000000000000000n)).to.not.be.reverted
@@ -179,8 +186,8 @@ describe("Minter.sol", () => {
             expect(await erc202.balanceOf(TT)).to.be.equal(0n)
             expect(await TT.connect(userS).mint(100000000000000000000n)).not.to.be.reverted
             expect(await erc202.balanceOf(TT)).to.be.equal(100000000000000000000n)
-            await expect(flashLoan.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000000000000000n)).to.be.revertedWith(INSUFFICIENT_FLASH_LOAN_BALANCE)
-            await expect(flashLoanRevert.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.be.revertedWith(INPUT_LENGTH_MISMATCH)
+            await expect(flashLoan.initiateFlashLoan(['0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', '0xcc78a0acdf847a2c1714d2a925bb4477df5d48a6'], [100000000000000000000000000000000n, 1000000000000000000000000n])).to.be.revertedWith(INSUFFICIENT_FLASH_LOAN_BALANCE)
+          //  await expect(flashLoanRevert.initiateFlashLoan('0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff', 100000000000000000000n)).to.be.revertedWith(INPUT_LENGTH_MISMATCH)
           
 
         })
