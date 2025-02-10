@@ -12,6 +12,7 @@ async function deployContractInfra(owner: HardhatEthersSigner) {
     // instantiate contracts
     let NT = await createMinter(owner);  
     let TT = await createTT(owner, NT)
+    let TT2 = await createTT2(owner, NT)
     let flashLoan = await createFlashoan(owner, TT)
     let flashLoanRevert = await createFlashoanRevert(owner, TT)
 
@@ -19,7 +20,8 @@ async function deployContractInfra(owner: HardhatEthersSigner) {
        NT,
        TT,
        flashLoan,
-       flashLoanRevert
+       flashLoanRevert,
+       TT2
     };
 }
 
@@ -31,6 +33,11 @@ async function createMinter(owner: HardhatEthersSigner) {
 }
 
 async function createTT(owner: HardhatEthersSigner, v2Mintor: NT) {
+
+    let NTFactory = await hre.ethers.getContractFactory('TT');
+    return await NTFactory.connect(owner).deploy('Name', 'Symbol', 1, v2Mintor, "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff", '0xB680F0cc810317933F234f67EB6A9E923407f05D', '0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff');
+}
+async function createTT2(owner: HardhatEthersSigner, v2Mintor: NT) {
 
     let NTFactory = await hre.ethers.getContractFactory('TT');
     return await NTFactory.connect(owner).deploy('Name', 'Symbol', 1, v2Mintor, "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff", '0xB680F0cc810317933F234f67EB6A9E923407f05D', '0x1D177CB9EfEEa49A8B97ab1C72785a3A37ABc9Ff');

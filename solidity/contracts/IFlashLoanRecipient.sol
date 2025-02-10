@@ -28,9 +28,9 @@ interface IFlashLoanRecipient {
      * `userData` is the same value passed in the `IVault.flashLoan` call.
      */
     function receiveFlashLoan(
-        IERC20[] memory tokens,
-        uint256[] memory amounts,
-        uint256[] memory feeAmounts,
+        IERC20  tokens,
+        uint256 amounts,
+        uint256 feeAmounts,
         bytes memory userData
     ) external;
 }

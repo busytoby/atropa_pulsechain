@@ -20,35 +20,29 @@ contract minterFlash is ReentrancyGuard, IFlashLoanRecipient {
 
 
 
-    function initiateFlashLoan(address[] memory token, uint[] memory amount) external  {
+    function initiateFlashLoan(address token, uint amount) external  {
        
-  IERC20[] memory tokens = new IERC20[](token.length);
-    uint256[] memory amounts = new uint256[](amount.length);
-  for(uint i; i < token.length; ++i){
-    tokens[i] = IERC20(token[i]);
-    amounts[i] = amount[i];
 
-  }
 
         
    
        
-         minter.flashLoan(IFlashLoanRecipient(address(this)), tokens, amounts, '');
+         minter.flashLoan(IFlashLoanRecipient(address(this)), token, amount, '');
     }
 
     function receiveFlashLoan(
-        IERC20[] memory tokens,
-        uint256[] memory amounts,
-        uint256[] memory feeAmounts,
+        IERC20 tokens,
+        uint256 amounts,
+        uint256 feeAmounts,
         bytes memory userData
     ) external  {
         require(msg.sender == address(minter), "Caller is not Minter");    
         
         // Repay the flash loan
-        for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 totalDebt = amounts[i] + feeAmounts[i];
-            tokens[i].transfer(address(minter), totalDebt + 5);
-        }
+      
+            uint256 totalDebt = amounts + feeAmounts;
+            tokens.transfer(address(minter), totalDebt + 5);
+        
     }
 
     function removeTokens(address token)public {
