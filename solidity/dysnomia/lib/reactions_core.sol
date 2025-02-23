@@ -2,17 +2,48 @@
 pragma solidity ^0.8.21;
 import "../01_dysnomia_v2.sol";
 import "../domain/dan/interfaces/01b_chointerface.sol";
+import "../interfaces/10b_voidinterface.sol";
 
 contract COREREACTIONSLIB is DYSNOMIA {
     string public constant Type = "ReactionsLib";
 
     VOID public Void;
     CHOINTERFACE public Cho;
+    uint64 public BLACK;
+    uint64 public HYUN;
+    uint64 public SHUTTER;
+    uint64 public BRIGHTNESS;
+    uint64 public HUE;
+    uint64 public WHITE;
 
     constructor(address VoidAddress) DYSNOMIA(unicode"DYSNOMIA ReactionsLib", unicode"ReactionsLib", address(DYSNOMIA(VoidAddress).Xiao())) {
         Void = VOID(VoidAddress);
         Void.AddLibrary("corereactions", address(this));
         _addMarketRate(AFFECTIONContract, 1 * 10 ** decimals());
+
+        (uint64[3] memory Saat, Bao memory On) = Void.Enter(unicode"DYSNOMIA ReactionsLib", unicode"ReactionsLib");
+        On.Shio.addOwner(address(this));
+        On.Shio.Rho().Rod.addOwner(address(this));
+
+        BLACK = Entropy(On);
+        (BRIGHTNESS, HUE) = Initialize(On);
+        (BRIGHTNESS, HUE) = React(On, BRIGHTNESS, HUE);
+        (HYUN, SHUTTER) = ReactToBang(On, BRIGHTNESS, HUE);
+        (BRIGHTNESS, HUE) = ReactToNew(On, Saat);
+        (BRIGHTNESS, HUE) = ReactToLai(On, BRIGHTNESS, HUE);
+        (BRIGHTNESS, HUE) = OperatorReact(On, BLACK);
+        (BRIGHTNESS/**/, HUE/**/) = ReactToLe(On, BLACK, HYUN);
+        (BRIGHTNESS, HUE) = ReactBang(BRIGHTNESS);
+        (BRIGHTNESS, HUE) = ReactEris(HUE);
+        (BRIGHTNESS, HUE) = ReactLai(BRIGHTNESS);
+        (BRIGHTNESS, HUE) = ReactFomalhaute(HUE);
+        (BRIGHTNESS, HUE) = ReactLe(BRIGHTNESS);
+        (BRIGHTNESS, HUE) = ReactFornax(HUE);
+        (BRIGHTNESS, WHITE) = ReactShioCone(On.Shio, BLACK);
+        assert(BLACK > 1551);
+        assert(BRIGHTNESS > 1551);
+        assert(HUE > 1551);
+        assert(WHITE > 1551);
         _mintToCap();
     }
 
