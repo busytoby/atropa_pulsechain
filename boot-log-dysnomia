@@ -1,0 +1,1002 @@
+Nov 18 16:14:59 cli systemd-journald[622]: Journal started
+Nov 18 16:14:59 cli systemd-journald[622]: Runtime Journal (/run/log/journal/44c8ad77aa0b4d13bbce14149284f593) is 8M, max 1.8G, 1.8G free.
+Nov 18 16:14:59 cli systemd-modules-load[623]: Using 2 probe threads
+Nov 18 16:14:59 cli systemd-modules-load[623]: Inserted module 'i2c_dev'
+Nov 18 16:14:59 cli systemd-modules-load[623]: Inserted module 'msr'
+Nov 18 16:14:59 cli systemd[1]: Mounted dev-mqueue.mount - POSIX Message Queue File System.
+Nov 18 16:14:59 cli systemd[1]: Mounted sys-kernel-tracing.mount - Kernel Trace File System.
+Nov 18 16:14:59 cli systemd[1]: Finished kmod-static-nodes.service - Create List of Static Device Nodes.
+Nov 18 16:14:59 cli systemd[1]: modprobe@configfs.service: Deactivated successfully.
+Nov 18 16:14:59 cli systemd[1]: Finished modprobe@configfs.service - Load Kernel Module configfs.
+Nov 18 16:14:59 cli systemd[1]: modprobe@drm.service: Deactivated successfully.
+Nov 18 16:14:59 cli systemd[1]: Finished modprobe@drm.service - Load Kernel Module drm.
+Nov 18 16:14:59 cli systemd[1]: modprobe@efi_pstore.service: Deactivated successfully.
+Nov 18 16:14:59 cli systemd[1]: Finished modprobe@efi_pstore.service - Load Kernel Module efi_pstore.
+Nov 18 16:14:59 cli systemd[1]: modprobe@fuse.service: Deactivated successfully.
+Nov 18 16:14:59 cli systemd[1]: Finished modprobe@fuse.service - Load Kernel Module fuse.
+Nov 18 16:14:59 cli systemd[1]: Finished keyboard-setup.service - Set the console keyboard layout.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-modules-load.service - Load Kernel Modules.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-remount-fs.service - Remount Root and Kernel File Systems.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-udev-load-credentials.service - Load udev Rules from Credentials.
+Nov 18 16:14:59 cli systemd[1]: Mounting sys-fs-fuse-connections.mount - FUSE Control File System...
+Nov 18 16:14:59 cli systemd[1]: sys-kernel-config.mount - Kernel Configuration File System was skipped because of an unmet condition check (ConditionPathExists=/sys/kernel/config).
+Nov 18 16:14:59 cli systemd[1]: systemd-hwdb-update.service - Rebuild Hardware Database was skipped because of an unmet condition check (ConditionNeedsUpdate=/etc).
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-sysctl.service - Apply Kernel Variables...
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully...
+Nov 18 16:14:59 cli systemd[1]: Mounted sys-fs-fuse-connections.mount - FUSE Control File System.
+Nov 18 16:14:59 cli systemd-sysctl[695]: Couldn't write '1' to 'kernel/unprivileged_userns_clone', ignoring: No such file or directory
+Nov 18 16:14:59 cli systemd-sysctl[695]: Couldn't write '0x01b6' to 'kernel/sysrq', ignoring: No such file or directory
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-sysctl.service - Apply Kernel Variables.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+Nov 18 16:14:59 cli systemd[1]: systemd-sysusers.service - Create System Users was skipped because no trigger condition checks were met.
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev...
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+Nov 18 16:14:59 cli systemd[1]: Reached target local-fs-pre.target - Preparation for Local File Systems.
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-udevd.service - Rule-based Manager for Device Events and Files...
+Nov 18 16:14:59 cli (systemd-udevd)[702]: systemd-udevd.service: ProtectHostname=yes is configured, but the kernel does not support UTS namespaces, ignoring namespace setup.
+Nov 18 16:14:59 cli systemd-udevd[702]: Using default interface naming scheme 'v259'.
+Nov 18 16:14:59 cli systemd-udevd[702]: /usr/lib/udev/rules.d/90-alsa-restore.rules:18 GOTO="alsa_restore_std" has no matching label, ignoring.
+Nov 18 16:14:59 cli systemd-udevd[702]: /usr/lib/udev/rules.d/90-alsa-restore.rules:18 The line has no effect any more, dropping.
+Nov 18 16:14:59 cli systemd-udevd[702]: /usr/lib/udev/rules.d/90-alsa-restore.rules:22 GOTO="alsa_restore_std" has no matching label, ignoring.
+Nov 18 16:14:59 cli systemd-udevd[702]: /usr/lib/udev/rules.d/90-alsa-restore.rules:22 The line has no effect any more, dropping.
+Nov 18 16:14:59 cli systemd[1]: Started systemd-udevd.service - Rule-based Manager for Device Events and Files.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-udev-trigger.service - Coldplug All udev Devices.
+Nov 18 16:14:59 cli systemd[1]: Starting ifupdown-pre.service - Helper to synchronize boot up for ifupdown...
+Nov 18 16:14:59 cli systemd[1]: Finished ifupdown-pre.service - Helper to synchronize boot up for ifupdown.
+Nov 18 16:14:59 cli systemd[1]: Starting modprobe@configfs.service - Load Kernel Module configfs...
+Nov 18 16:14:59 cli systemd[1]: modprobe@efi_pstore.service - Load Kernel Module efi_pstore was skipped because of an unmet condition check (ConditionKernelModuleLoaded=!efi_pstore).
+Nov 18 16:14:59 cli systemd[1]: systemd-fsck-root.service - File System Check on Root Device was skipped because of an unmet condition check (ConditionPathExists=!/run/initramfs/fsck-root).
+Nov 18 16:14:59 cli systemd[1]: systemd-hibernate-clear.service - Clear Stale Hibernate Storage Info was skipped because of an unmet condition check (ConditionPathExists=/sys/firmware/efi/efivars/HibernateLocation-8cf2644b-4b0b-428f-9387-6d876050dc67).
+Nov 18 16:14:59 cli systemd[1]: systemd-hwdb-update.service - Rebuild Hardware Database was skipped because of an unmet condition check (ConditionNeedsUpdate=/etc).
+Nov 18 16:14:59 cli systemd[1]: systemd-pcrmachine.service - TPM PCR Machine ID Measurement was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:14:59 cli systemd[1]: systemd-pcrproduct.service - TPM NvPCR Product ID Measurement was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:14:59 cli systemd[1]: systemd-sysusers.service - Create System Users was skipped because no trigger condition checks were met.
+Nov 18 16:14:59 cli systemd[1]: systemd-tpm2-setup-early.service - Early TPM SRK Setup was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:14:59 cli (udev-worker)[728]: 1-7: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[728]: 1-7: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-7 1 3": No such file or directory
+Nov 18 16:14:59 cli systemd[1]: modprobe@configfs.service: Deactivated successfully.
+Nov 18 16:14:59 cli systemd[1]: Finished modprobe@configfs.service - Load Kernel Module configfs.
+Nov 18 16:14:59 cli systemd[1]: modprobe@efi_pstore.service - Load Kernel Module efi_pstore was skipped because of an unmet condition check (ConditionKernelModuleLoaded=!efi_pstore).
+Nov 18 16:14:59 cli systemd[1]: systemd-fsck-root.service - File System Check on Root Device was skipped because of an unmet condition check (ConditionPathExists=!/run/initramfs/fsck-root).
+Nov 18 16:14:59 cli systemd[1]: systemd-hibernate-clear.service - Clear Stale Hibernate Storage Info was skipped because of an unmet condition check (ConditionPathExists=/sys/firmware/efi/efivars/HibernateLocation-8cf2644b-4b0b-428f-9387-6d876050dc67).
+Nov 18 16:14:59 cli systemd[1]: systemd-hwdb-update.service - Rebuild Hardware Database was skipped because of an unmet condition check (ConditionNeedsUpdate=/etc).
+Nov 18 16:14:59 cli systemd[1]: systemd-pcrmachine.service - TPM PCR Machine ID Measurement was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:14:59 cli systemd[1]: systemd-pcrproduct.service - TPM NvPCR Product ID Measurement was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:14:59 cli systemd[1]: systemd-sysusers.service - Create System Users was skipped because no trigger condition checks were met.
+Nov 18 16:14:59 cli systemd[1]: systemd-tpm2-setup-early.service - Early TPM SRK Setup was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:14:59 cli (udev-worker)[773]: 1-3.4: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[773]: 1-3.4: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.4 1 11": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[717]: 1-3.2: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[717]: 1-3.2: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.2 1 7": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[741]: 1-3.3: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[741]: 1-3.3: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.3 1 10": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[708]: 1-3.1: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:14:59 cli (udev-worker)[708]: 1-3.1: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.1 1 4": No such file or directory
+Nov 18 16:14:59 cli systemd[1]: Found device dev-disk-by\x2duuid-8866c695\x2db2b9\x2d4977\x2db009\x2d22bceac36d14.device - WD_BLACK SN8100 2000GB 4.
+Nov 18 16:14:59 cli systemd[1]: Found device dev-disk-by\x2duuid-0c02026c\x2dbd13\x2d4944\x2db50a\x2dcd8a1b5f8162.device - WD_BLACK SN8100 2000GB 6.
+Nov 18 16:14:59 cli systemd[1]: Found device dev-disk-by\x2duuid-AB6B\x2d88C7.device - WD_BLACK SN8100 2000GB 1.
+Nov 18 16:14:59 cli systemd[1]: Found device dev-disk-by\x2duuid-f007b048\x2dd2c9\x2d44d2\x2da338\x2d13dd3fc65ea8.device - WD_BLACK SN8100 2000GB 3.
+Nov 18 16:14:59 cli systemd[1]: Found device dev-disk-by\x2duuid-c09c5e67\x2d1ba1\x2d4e66\x2d8953\x2dc13ff1a1d14e.device - WD_BLACK SN8100 2000GB 5.
+Nov 18 16:14:59 cli systemd[1]: Condition check resulted in dev-tpmrm0.device - /dev/tpmrm0 being skipped.
+Nov 18 16:14:59 cli systemd[1]: Condition check resulted in dev-tpm0.device - /dev/tpm0 being skipped.
+Nov 18 16:14:59 cli systemd[1]: Reached target tpm2.target - Trusted Platform Module.
+Nov 18 16:14:59 cli systemd[1]: Activating swap dev-disk-by\x2duuid-8866c695\x2db2b9\x2d4977\x2db009\x2d22bceac36d14.swap - /dev/disk/by-uuid/8866c695-b2b9-4977-b009-22bceac36d14...
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-fsck@dev-disk-by\x2duuid-0c02026c\x2dbd13\x2d4944\x2db50a\x2dcd8a1b5f8162.service - File System Check on /dev/disk/by-uuid/0c02026c-bd13-4944-b50a-cd8a1b5f8162...
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-fsck@dev-disk-by\x2duuid-c09c5e67\x2d1ba1\x2d4e66\x2d8953\x2dc13ff1a1d14e.service - File System Check on /dev/disk/by-uuid/c09c5e67-1ba1-4e66-8953-c13ff1a1d14e...
+Nov 18 16:14:59 cli systemd[1]: Starting systemd-fsck@dev-disk-by\x2duuid-f007b048\x2dd2c9\x2d44d2\x2da338\x2d13dd3fc65ea8.service - File System Check on /dev/disk/by-uuid/f007b048-d2c9-44d2-a338-13dd3fc65ea8...
+Nov 18 16:14:59 cli systemd-fsck[862]: /dev/nvme0n1p5: clean, 77/183264 files, 33337/732416 blocks
+Nov 18 16:14:59 cli systemd-fsck[864]: /dev/nvme0n1p3: clean, 17384/2444624 files, 1888946/9765632 blocks
+Nov 18 16:14:59 cli systemd[1]: Activated swap dev-disk-by\x2duuid-8866c695\x2db2b9\x2d4977\x2db009\x2d22bceac36d14.swap - /dev/disk/by-uuid/8866c695-b2b9-4977-b009-22bceac36d14.
+Nov 18 16:14:59 cli systemd-fsck[863]: /dev/nvme0n1p6: clean, 70759/106848256 files, 7563018/427364608 blocks
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-fsck@dev-disk-by\x2duuid-0c02026c\x2dbd13\x2d4944\x2db50a\x2dcd8a1b5f8162.service - File System Check on /dev/disk/by-uuid/0c02026c-bd13-4944-b50a-cd8a1b5f8162.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-fsck@dev-disk-by\x2duuid-c09c5e67\x2d1ba1\x2d4e66\x2d8953\x2dc13ff1a1d14e.service - File System Check on /dev/disk/by-uuid/c09c5e67-1ba1-4e66-8953-c13ff1a1d14e.
+Nov 18 16:14:59 cli systemd[1]: Finished systemd-fsck@dev-disk-by\x2duuid-f007b048\x2dd2c9\x2d44d2\x2da338\x2d13dd3fc65ea8.service - File System Check on /dev/disk/by-uuid/f007b048-d2c9-44d2-a338-13dd3fc65ea8.
+Nov 18 16:14:59 cli systemd[1]: Reached target swap.target - Swaps.
+Nov 18 16:15:00 cli systemd[1]: Mounting boot-efi.mount - /boot/efi...
+Nov 18 16:15:00 cli systemd[1]: dev-hugepages.mount - Huge Pages File System was skipped because of an unmet condition check (ConditionPathExists=/sys/kernel/mm/hugepages).
+Nov 18 16:15:00 cli systemd[1]: Mounting home.mount - /home...
+Nov 18 16:15:00 cli systemd[1]: sys-kernel-config.mount - Kernel Configuration File System was skipped because of an unmet condition check (ConditionPathExists=/sys/kernel/config).
+Nov 18 16:15:00 cli systemd[1]: sys-kernel-debug.mount - Kernel Debug File System was skipped because of an unmet condition check (ConditionPathExists=/sys/kernel/debug).
+Nov 18 16:15:00 cli systemd[1]: tmp.mount: Directory /tmp to mount over is not empty, mounting anyway.
+Nov 18 16:15:00 cli systemd[1]: Mounting tmp.mount - /tmp...
+Nov 18 16:15:00 cli systemd[1]: var.mount: Directory /var to mount over is not empty, mounting anyway.
+Nov 18 16:15:00 cli systemd[1]: Mounting var.mount - /var...
+Nov 18 16:15:00 cli systemd[1]: Mounted boot-efi.mount - /boot/efi.
+Nov 18 16:15:00 cli systemd[1]: Mounted tmp.mount - /tmp.
+Nov 18 16:15:00 cli systemd[1]: Mounted var.mount - /var.
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-journal-flush.service - Flush Journal to Persistent Storage...
+Nov 18 16:15:00 cli systemd[1]: systemd-pstore.service - Platform Persistent Storage Archival was skipped because of an unmet condition check (ConditionDirectoryNotEmpty=/sys/fs/pstore).
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-random-seed.service - Load/Save OS Random Seed...
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-timesyncd.service - Network Time Synchronization...
+Nov 18 16:15:00 cli systemd[1]: systemd-tpm2-setup.service - TPM SRK Setup was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:15:00 cli systemd[1]: systemd-pcrnvdone.service - TPM PCR NvPCR Initialization Separator was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:15:00 cli systemd-journald[622]: Time spent on flushing to /var/log/journal/44c8ad77aa0b4d13bbce14149284f593 is 2.525ms for 112 entries.
+Nov 18 16:15:00 cli systemd-journald[622]: System Journal (/var/log/journal/44c8ad77aa0b4d13bbce14149284f593) is 3.6G, max 3.6G, 8.7M free.
+Nov 18 16:15:00 cli systemd[1]: Mounted home.mount - /home.
+Nov 18 16:15:00 cli systemd[1]: Reached target local-fs.target - Local File Systems.
+Nov 18 16:15:00 cli systemd[1]: Listening on systemd-sysext.socket - System Extension Image Management.
+Nov 18 16:15:00 cli systemd[1]: apparmor.service - Load AppArmor profiles was skipped because of an unmet condition check (ConditionSecurity=apparmor).
+Nov 18 16:15:00 cli systemd[1]: Starting console-setup.service - Set console font and keymap...
+Nov 18 16:15:00 cli systemd[1]: Starting networking.service - Raise network interfaces...
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-binfmt.service - Set Up Additional Binary Formats...
+Nov 18 16:15:00 cli systemd[1]: Finished systemd-random-seed.service - Load/Save OS Random Seed.
+Nov 18 16:15:00 cli systemd[1]: Finished console-setup.service - Set console font and keymap.
+Nov 18 16:15:00 cli systemd[1]: proc-sys-fs-binfmt_misc.automount: Got automount request for /proc/sys/fs/binfmt_misc, triggered by 952 (systemd-binfmt)
+Nov 18 16:15:00 cli systemd[1]: Mounting proc-sys-fs-binfmt_misc.mount - Arbitrary Executable File Formats File System...
+Nov 18 16:15:00 cli (systemd-timesyncd)[946]: systemd-timesyncd.service: ProtectHostname=yes is configured, but the kernel does not support UTS namespaces, ignoring namespace setup.
+Nov 18 16:15:00 cli systemd[1]: Mounted proc-sys-fs-binfmt_misc.mount - Arbitrary Executable File Formats File System.
+Nov 18 16:15:00 cli systemd[1]: Started systemd-timesyncd.service - Network Time Synchronization.
+Nov 18 16:15:00 cli systemd[1]: Reached target time-set.target - System Time Set.
+Nov 18 16:15:00 cli systemd[1]: Finished systemd-binfmt.service - Set Up Additional Binary Formats.
+Nov 18 16:15:00 cli systemd[1]: Finished networking.service - Raise network interfaces.
+Nov 18 16:15:00 cli systemd[1]: Finished systemd-journal-flush.service - Flush Journal to Persistent Storage.
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-tmpfiles-setup.service - Create System Files and Directories...
+Nov 18 16:15:00 cli systemd-tmpfiles[987]: /usr/lib/tmpfiles.d/legacy.conf:14: Duplicate line for path "/run/lock", ignoring.
+Nov 18 16:15:00 cli systemd-timesyncd[946]: Network configuration changed, trying to establish connection.
+Nov 18 16:15:00 cli systemd-timesyncd[946]: Network configuration changed, trying to establish connection.
+Nov 18 16:15:00 cli systemd-timesyncd[946]: Network configuration changed, trying to establish connection.
+Nov 18 16:15:00 cli systemd[1]: Finished systemd-tmpfiles-setup.service - Create System Files and Directories.
+Nov 18 16:15:00 cli systemd[1]: ldconfig.service - Rebuild Dynamic Linker Cache was skipped because no trigger condition checks were met.
+Nov 18 16:15:00 cli systemd[1]: systemd-firstboot.service - Initial Setup was skipped because of an unmet condition check (ConditionFirstBoot=yes).
+Nov 18 16:15:00 cli systemd[1]: first-boot-complete.target - First Boot Complete was skipped because of an unmet condition check (ConditionFirstBoot=yes).
+Nov 18 16:15:00 cli systemd[1]: systemd-journal-catalog-update.service - Rebuild Journal Catalog was skipped because of an unmet condition check (ConditionNeedsUpdate=/var).
+Nov 18 16:15:00 cli systemd[1]: systemd-machine-id-commit.service - Save Transient machine-id to Disk was skipped because of an unmet condition check (ConditionPathIsMountPoint=/etc/machine-id).
+Nov 18 16:15:00 cli systemd[1]: systemd-update-done.service - Update is Completed was skipped because no trigger condition checks were met.
+Nov 18 16:15:00 cli systemd[1]: Reached target sysinit.target - System Initialization.
+Nov 18 16:15:00 cli systemd[1]: Started anacron.timer - Trigger anacron every hour.
+Nov 18 16:15:00 cli systemd[1]: Started apt-daily.timer - Daily apt download activities.
+Nov 18 16:15:00 cli systemd[1]: Started apt-daily-upgrade.timer - Daily apt upgrade and clean activities.
+Nov 18 16:15:00 cli systemd[1]: Started dpkg-db-backup.timer - Daily dpkg database backup timer.
+Nov 18 16:15:00 cli systemd[1]: Started e2scrub_all.timer - Periodic ext4 Online Metadata Check for All Filesystems.
+Nov 18 16:15:00 cli systemd[1]: Started fstrim.timer - Discard unused filesystem blocks once a week.
+Nov 18 16:15:00 cli systemd[1]: Started fwupd-refresh.timer - Refresh fwupd metadata regularly.
+Nov 18 16:15:00 cli systemd[1]: Started logrotate.timer - Daily rotation of log files.
+Nov 18 16:15:00 cli systemd[1]: Started man-db.timer - Daily man-db regeneration.
+Nov 18 16:15:00 cli systemd[1]: Started systemd-tmpfiles-clean.timer - Daily Cleanup of Temporary Directories.
+Nov 18 16:15:00 cli systemd[1]: Reached target timers.target - Timer Units.
+Nov 18 16:15:00 cli systemd[1]: Listening on dbus.socket - D-Bus System Message Bus Socket.
+Nov 18 16:15:00 cli systemd[1]: Listening on systemd-hostnamed.socket - Hostname Service Socket.
+Nov 18 16:15:00 cli systemd[1]: Listening on systemd-logind-varlink.socket - User Login Management Varlink Socket.
+Nov 18 16:15:00 cli systemd[1]: Reached target sockets.target - Socket Units.
+Nov 18 16:15:00 cli systemd[1]: systemd-pcrphase-sysinit.service - TPM PCR Barrier (Initialization) was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:15:00 cli systemd[1]: Reached target basic.target - Basic System.
+Nov 18 16:15:00 cli systemd[1]: System is tainted: unmerged-bin
+Nov 18 16:15:00 cli systemd[1]: Starting accounts-daemon.service - Accounts Service...
+Nov 18 16:15:00 cli systemd[1]: Started anacron.service - Run anacron jobs.
+Nov 18 16:15:00 cli systemd[1]: Started cron.service - Regular background program processing daemon.
+Nov 18 16:15:00 cli systemd[1]: Starting dbus.service - D-Bus System Message Bus...
+Nov 18 16:15:00 cli (accounts-daemon)[990]: accounts-daemon.service: PrivateNetwork=yes is configured, but the kernel does not support or we lack privileges for network namespace, proceeding without.
+Nov 18 16:15:00 cli systemd[1]: Starting e2scrub_reap.service - Remove Stale Online ext4 Metadata Check Snapshots...
+Nov 18 16:15:00 cli systemd[1]: getty-static.service - getty on tty2-tty6 if dbus and logind are not available was skipped because of an unmet condition check (ConditionPathExists=!/usr/bin/dbus-daemon).
+Nov 18 16:15:00 cli systemd[1]: Reached target getty.target - Login Prompts.
+Nov 18 16:15:00 cli systemd[1]: Starting grub2-common.service - Record successful boot for GRUB...
+Nov 18 16:15:00 cli systemd[1]: Starting polkit.service - Authorization Manager...
+Nov 18 16:15:00 cli anacron[991]: Anacron 2.3 started on 2025-11-18
+Nov 18 16:15:00 cli systemd[1]: Starting smartmontools.service - Self Monitoring and Reporting Technology (SMART) Daemon...
+Nov 18 16:15:00 cli cron[992]: (CRON) INFO (pidfile fd = 3)
+Nov 18 16:15:00 cli (e2scrub_all)[994]: e2scrub_reap.service: PrivateNetwork=yes is configured, but the kernel does not support or we lack privileges for network namespace, proceeding without.
+Nov 18 16:15:00 cli systemd[1]: Starting switcheroo-control.service - Switcheroo Control Proxy service...
+Nov 18 16:15:00 cli anacron[991]: Normal exit (0 jobs run)
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-logind.service - User Login Management...
+Nov 18 16:15:00 cli systemd[1]: systemd-pcrphase.service - TPM PCR Barrier (User) was skipped because of an unmet condition check (ConditionSecurity=measured-uki).
+Nov 18 16:15:00 cli cron[992]: (CRON) INFO (Running @reboot jobs)
+Nov 18 16:15:00 cli systemd[1]: Starting udisks2.service - Disk Manager...
+Nov 18 16:15:00 cli systemd[1]: Starting wtmpdb-update-boot.service - Write boot and shutdown times into wtmpdb...
+Nov 18 16:15:00 cli systemd[1]: anacron.service: Deactivated successfully.
+Nov 18 16:15:00 cli (polkitd)[996]: polkit.service: PrivateNetwork=yes is configured, but the kernel does not support or we lack privileges for network namespace, proceeding without.
+Nov 18 16:15:00 cli systemd[1]: e2scrub_reap.service: Deactivated successfully.
+Nov 18 16:15:00 cli systemd[1]: Finished e2scrub_reap.service - Remove Stale Online ext4 Metadata Check Snapshots.
+Nov 18 16:15:00 cli (systemd-logind)[1001]: systemd-logind.service: ProtectHostname=yes is configured, but the kernel does not support UTS namespaces, ignoring namespace setup.
+Nov 18 16:15:00 cli smartd[997]: smartd 7.5 2025-04-30 r5714 [x86_64-linux-6.17.8-dysnomia-test] (local build)
+Nov 18 16:15:00 cli smartd[997]: Opened configuration file /etc/smartd.conf
+Nov 18 16:15:00 cli smartd[997]: Drive: DEVICESCAN, implied '-a' Directive on line 18 of file /etc/smartd.conf
+Nov 18 16:15:00 cli smartd[997]: Configuration file /etc/smartd.conf was parsed, found DEVICESCAN, scanning devices
+Nov 18 16:15:00 cli smartd[997]: Device: /dev/nvme0, opened
+Nov 18 16:15:00 cli smartd[997]: Device: /dev/nvme0, WD_BLACK SN8100 2000GB, S/N:25216Y800400, FW:830ZRR02, 2.00 TB
+Nov 18 16:15:00 cli systemd[1]: grub2-common.service: Deactivated successfully.
+Nov 18 16:15:00 cli systemd[1]: Finished grub2-common.service - Record successful boot for GRUB.
+Nov 18 16:15:00 cli (polkitd)[996]: polkit.service: ProtectHostname=yes is configured, but the kernel does not support UTS namespaces, ignoring namespace setup.
+Nov 18 16:15:00 cli smartd[997]: Device: /dev/nvme0, is SMART capable. Adding to "monitor" list.
+Nov 18 16:15:00 cli smartd[997]: Device: /dev/nvme0, state read from /var/lib/smartmontools/smartd.WD_BLACK_SN8100_2000GB-25216Y800400.nvme.state
+Nov 18 16:15:00 cli smartd[997]: Monitoring 0 ATA/SATA, 0 SCSI/SAS and 1 NVMe devices
+Nov 18 16:15:00 cli smartd[997]: Device: /dev/nvme0, state written to /var/lib/smartmontools/smartd.WD_BLACK_SN8100_2000GB-25216Y800400.nvme.state
+Nov 18 16:15:00 cli systemd[1]: Started smartmontools.service - Self Monitoring and Reporting Technology (SMART) Daemon.
+Nov 18 16:15:00 cli systemd-logind[1001]: Watching system buttons on /dev/input/event4 (SEMICO X9 USB Keyboard )
+Nov 18 16:15:00 cli systemd-logind[1001]: Watching system buttons on /dev/input/event5 (SEMICO X9 USB Keyboard  Consumer Control)
+Nov 18 16:15:00 cli systemd-logind[1001]: Watching system buttons on /dev/input/event6 (SEMICO X9 USB Keyboard  System Control)
+Nov 18 16:15:00 cli systemd-logind[1001]: New seat seat0.
+Nov 18 16:15:00 cli systemd[1]: Started systemd-logind.service - User Login Management.
+Nov 18 16:15:00 cli systemd[1]: Started dbus.service - D-Bus System Message Bus.
+Nov 18 16:15:00 cli polkitd[996]: Started polkitd version 126
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.systemd1'
+Nov 18 16:15:00 cli systemd[1]: Started switcheroo-control.service - Switcheroo Control Proxy service.
+Nov 18 16:15:00 cli systemd[1]: Starting NetworkManager.service - Network Manager...
+Nov 18 16:15:00 cli wtmpdb[1005]: Failed to connect to audit daemon: Protocol not supported
+Nov 18 16:15:00 cli polkitd[996]: Loading rules from directory /etc/polkit-1/rules.d
+Nov 18 16:15:00 cli polkitd[996]: Loading rules from directory /run/polkit-1/rules.d
+Nov 18 16:15:00 cli polkitd[996]: Error opening rules directory: Error opening directory “/run/polkit-1/rules.d”: No such file or directory (g-file-error-quark, 4)
+Nov 18 16:15:00 cli polkitd[996]: Loading rules from directory /usr/local/share/polkit-1/rules.d
+Nov 18 16:15:00 cli polkitd[996]: Error opening rules directory: Error opening directory “/usr/local/share/polkit-1/rules.d”: No such file or directory (g-file-error-quark, 4)
+Nov 18 16:15:00 cli polkitd[996]: Loading rules from directory /usr/share/polkit-1/rules.d
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Activating via systemd: service name='org.freedesktop.PolicyKit1' unit='polkit.service' requested by ':1.5' (uid=0 pid=990 comm="/usr/libexec/accounts-daemon")
+Nov 18 16:15:00 cli polkitd[996]: Finished loading, compiling and executing 7 rules
+Nov 18 16:15:00 cli systemd[1]: Finished wtmpdb-update-boot.service - Write boot and shutdown times into wtmpdb.
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.PolicyKit1'
+Nov 18 16:15:00 cli systemd[1]: Started polkit.service - Authorization Manager.
+Nov 18 16:15:00 cli polkitd[996]: Acquired the name org.freedesktop.PolicyKit1 on the system bus
+Nov 18 16:15:00 cli accounts-daemon[990]: started daemon version 23.13.9
+Nov 18 16:15:00 cli systemd[1]: Starting ModemManager.service - Modem Manager...
+Nov 18 16:15:00 cli systemd[1]: Starting bolt.service - Thunderbolt system service...
+Nov 18 16:15:00 cli systemd[1]: Started accounts-daemon.service - Accounts Service.
+Nov 18 16:15:00 cli boltd[1078]: bolt 0.9.10 starting up.
+Nov 18 16:15:00 cli boltd[1078]: manager: initializing store
+Nov 18 16:15:00 cli boltd[1078]: store: located at: /var/lib/boltd
+Nov 18 16:15:00 cli boltd[1078]: config: loading user config
+Nov 18 16:15:00 cli boltd[1078]: bouncer: initializing polkit
+Nov 18 16:15:00 cli boltd[1078]: watchdog: enabled [pulse: 90s]
+Nov 18 16:15:00 cli boltd[1078]: udev: initializing udev
+Nov 18 16:15:00 cli boltd[1078]: store: loading domains
+Nov 18 16:15:00 cli boltd[1078]: store: loading devices
+Nov 18 16:15:00 cli boltd[1078]: power: state located at: /run/boltd/power
+Nov 18 16:15:00 cli boltd[1078]: power: force power support: no
+Nov 18 16:15:00 cli boltd[1078]: udev: enumerating devices
+Nov 18 16:15:00 cli ModemManager[1077]: <msg> ModemManager (version 1.24.2) starting in system bus...
+Nov 18 16:15:00 cli boltd[1078]: probing: adding /sys/devices/pci0000:00/0000:00:02.2/0000:0d:00.0 to roots
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-domain0                    ] newly connected [user] (/sys/devices/pci0000:00/0000:00:02.2/0000:0d:00.0/0000:0e:03.0/0000:74:00.0/domain0/0-0)
+Nov 18 16:15:00 cli boltd[1078]: security level set to 'user'
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-domain0                    ] domain: registered (bootacl: 0/0)
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-domain0                    ] bootacl: bootacl not supported, no sync
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-domain0                    ] udev: failed to determine if uid is stable: unknown NHI PCI id '0x2425'
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-domain0                    ] udev: uuid is stable: no (for NHI: 0x2425)
+Nov 18 16:15:00 cli boltd[1078]: global 'generation' set to '4'
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-ASM4242                    ] device added, status: authorized, at /sys/devices/pci0000:00/0000:00:02.2/0000:0d:00.0/0000:0e:03.0/0000:74:00.0/domain0/0-0
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-ASM4242                    ] labeling device: ASMedia Technology Inc. ASM4242
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-domain0                    ] dbus: exported domain at /org/freedesktop/bolt/domains/631b4c17_007f_94af_ffff_ffffffffffff
+Nov 18 16:15:00 cli boltd[1078]: [631b4c17-007f-ASM4242                    ] dbus: exported device at /org/freedesktop/bolt/devices/631b4c17_007f...
+Nov 18 16:15:00 cli systemd[1]: Started bolt.service - Thunderbolt system service.
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.3995] NetworkManager (version 1.54.2) is starting... (boot:f45c703d-6f2d-4cc7-97aa-1e70c3a3860b)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.3995] Read config: /etc/NetworkManager/NetworkManager.conf
+Nov 18 16:15:00 cli systemd[1]: Started udisks2.service - Disk Manager.
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4022] manager[0x5589b1503370]: monitoring kernel firmware directory '/lib/firmware'.
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4022] monitoring ifupdown state file '/run/network/ifstate'.
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Activating via systemd: service name='org.freedesktop.hostname1' unit='dbus-org.freedesktop.hostname1.service' requested by ':1.10' (uid=0 pid=1066 comm="/usr/sbin/NetworkManager --no-daemon")
+Nov 18 16:15:00 cli systemd[1]: Starting systemd-hostnamed.service - Hostname Service...
+Nov 18 16:15:00 cli systemd[1]: Started ModemManager.service - Modem Manager.
+Nov 18 16:15:00 cli (systemd-hostnamed)[1098]: systemd-hostnamed.service: PrivateNetwork=yes is configured, but the kernel does not support or we lack privileges for network namespace, proceeding without.
+Nov 18 16:15:00 cli systemd[1]: Started systemd-hostnamed.service - Hostname Service.
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.hostname1'
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4258] hostname: hostname: using hostnamed
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4258] hostname: static hostname changed from (none) to "cli"
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4260] dns-mgr: init: dns=default,systemd-resolved rc-manager=symlink (auto)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4278] Loaded device plugin: NMTeamFactory (/usr/lib/x86_64-linux-gnu/NetworkManager/1.54.2/libnm-device-plugin-team.so)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4290] Loaded device plugin: NMWwanFactory (/usr/lib/x86_64-linux-gnu/NetworkManager/1.54.2/libnm-device-plugin-wwan.so)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4293] Loaded device plugin: NMAtmManager (/usr/lib/x86_64-linux-gnu/NetworkManager/1.54.2/libnm-device-plugin-adsl.so)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4300] Loaded device plugin: NMBluezManager (/usr/lib/x86_64-linux-gnu/NetworkManager/1.54.2/libnm-device-plugin-bluetooth.so)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4304] Loaded device plugin: NMWifiFactory (/usr/lib/x86_64-linux-gnu/NetworkManager/1.54.2/libnm-device-plugin-wifi.so)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4305] manager: rfkill: Wi-Fi enabled by radio killswitch; enabled by state file
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4305] manager: rfkill: WWAN enabled by radio killswitch; enabled by state file
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4305] manager: Networking is enabled by state file
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Activating via systemd: service name='org.freedesktop.nm_dispatcher' unit='dbus-org.freedesktop.nm-dispatcher.service' requested by ':1.10' (uid=0 pid=1066 comm="/usr/sbin/NetworkManager --no-daemon")
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] settings: Loaded settings plugin: ifupdown ("/usr/lib/x86_64-linux-gnu/NetworkManager/1.54.2/libnm-settings-plugin-ifupdown.so")
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] settings: Loaded settings plugin: keyfile (internal)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] ifupdown: management mode: unmanaged
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] ifupdown:       interface-parser: parsing file /etc/network/interfaces
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] ifupdown:       interface-parser: source line includes interfaces file(s) /etc/network/interfaces.d/*
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] ifupdown: interfaces file /etc/network/interfaces.d/* doesn't exist
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4310] ifupdown:       interface-parser: finished parsing file /etc/network/interfaces
+Nov 18 16:15:00 cli systemd[1]: Starting NetworkManager-dispatcher.service - Network Manager Script Dispatcher Service...
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4320] dhcp: init: Using DHCP client 'internal'
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4321] manager: (lo): new Loopback device (/org/freedesktop/NetworkManager/Devices/1)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4326] device (lo): state change: unmanaged -> unavailable (reason 'connection-assumed', managed-type: 'external')
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4328] device (lo): state change: unavailable -> disconnected (reason 'connection-assumed', managed-type: 'external')
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4330] device (lo): Activation: starting connection 'lo' (93de710f-0702-47f1-8fd8-3d9506564117)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4335] manager: (eno1): new Ethernet device (/org/freedesktop/NetworkManager/Devices/2)
+Nov 18 16:15:00 cli NetworkManager[1066]: <info>  [1763511300.4337] device (eno1): state change: unmanaged -> unavailable (reason 'managed', managed-type: 'external')
+Nov 18 16:15:00 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.nm_dispatcher'
+Nov 18 16:15:00 cli systemd[1]: Started NetworkManager-dispatcher.service - Network Manager Script Dispatcher Service.
+Nov 18 16:15:01 cli systemd[1]: Started NetworkManager.service - Network Manager.
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1641] bus-manager: acquired D-Bus service "org.freedesktop.NetworkManager"
+Nov 18 16:15:01 cli systemd[1]: Reached target network.target - Network.
+Nov 18 16:15:01 cli systemd[1]: Starting systemd-user-sessions.service - Permit User Sessions...
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1645] device (lo): state change: disconnected -> prepare (reason 'none', managed-type: 'external')
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1645] device (lo): state change: prepare -> config (reason 'none', managed-type: 'external')
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1646] device (lo): state change: config -> ip-config (reason 'none', managed-type: 'external')
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1646] device (lo): state change: ip-config -> ip-check (reason 'none', managed-type: 'external')
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1648] modem-manager: oFono is not available
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1651] modem-manager: ModemManager available
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1652] device (lo): state change: ip-check -> secondaries (reason 'none', managed-type: 'external')
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1652] device (lo): state change: secondaries -> activated (reason 'none', managed-type: 'external')
+Nov 18 16:15:01 cli NetworkManager[1066]: <info>  [1763511301.1654] device (lo): Activation: successful, device activated.
+Nov 18 16:15:01 cli systemd[1]: Finished systemd-user-sessions.service - Permit User Sessions.
+Nov 18 16:15:01 cli systemd[1]: Reached target multi-user.target - Multi-User System.
+Nov 18 16:15:01 cli systemd[1]: Started sddm.service - Simple Desktop Display Manager.
+Nov 18 16:15:01 cli systemd[1]: Reached target graphical.target - Graphical Interface.
+Nov 18 16:15:01 cli systemd[1]: Startup finished in 27.055s (firmware) + 2.869s (loader) + 25.920s (kernel) + 2.015s (userspace) = 57.861s.
+Nov 18 16:15:01 cli sddm[1156]: Initializing...
+Nov 18 16:15:01 cli sddm[1156]: Starting...
+Nov 18 16:15:01 cli sddm[1156]: Logind interface found
+Nov 18 16:15:01 cli sddm[1156]: Adding new display...
+Nov 18 16:15:01 cli sddm[1156]: Loaded empty theme configuration
+Nov 18 16:15:01 cli sddm[1156]: Xauthority path: "/run/sddm/xauth_mnAhJx"
+Nov 18 16:15:01 cli sddm[1156]: Using VT 2
+Nov 18 16:15:01 cli sddm[1156]: Display server starting...
+Nov 18 16:15:01 cli sddm[1156]: Writing cookie to "/run/sddm/xauth_mnAhJx"
+Nov 18 16:15:01 cli sddm[1156]: Running: /usr/bin/X -nolisten tcp -background none -seat seat0 vt2 -auth /run/sddm/xauth_mnAhJx -noreset -displayfd 16
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0129] device (eno1): carrier: link connected
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0130] device (eno1): state change: unavailable -> disconnected (reason 'carrier-changed', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0131] policy: auto-activating connection 'Wired connection 1' (76b08f8c-1e32-47f5-9da8-5e3dfa2a94ca)
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0133] device (eno1): Activation: starting connection 'Wired connection 1' (76b08f8c-1e32-47f5-9da8-5e3dfa2a94ca)
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0133] device (eno1): state change: disconnected -> prepare (reason 'none', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0133] manager: NetworkManager state is now CONNECTING
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0134] device (eno1): state change: prepare -> config (reason 'none', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0137] device (eno1): state change: config -> ip-config (reason 'none', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0138] dhcp4 (eno1): activation: beginning transaction (timeout in 45 seconds)
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.0179] dhcp4 (eno1): state changed new lease, address=172.16.132.51, acd pending
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1432] dhcp4 (eno1): state changed new lease, address=172.16.132.51
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1433] policy: set 'Wired connection 1' (eno1) as default for IPv4 routing and DNS
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1453] device (eno1): state change: ip-config -> ip-check (reason 'none', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1456] device (eno1): state change: ip-check -> secondaries (reason 'none', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1456] device (eno1): state change: secondaries -> activated (reason 'none', managed-type: 'full')
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1457] manager: NetworkManager state is now CONNECTED_SITE
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1458] device (eno1): Activation: successful, device activated.
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1459] manager: NetworkManager state is now CONNECTED_GLOBAL
+Nov 18 16:15:04 cli NetworkManager[1066]: <info>  [1763511304.1460] manager: startup complete
+Nov 18 16:15:04 cli ModemManager[1077]: <msg> [base-manager] couldn't check support for device '/sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:06.0/0000:08:00.0': not supported by any plugin
+Nov 18 16:15:04 cli sddm[1156]: Setting default cursor
+Nov 18 16:15:04 cli sddm[1156]: Running display setup script  "/usr/share/sddm/scripts/Xsetup"
+Nov 18 16:15:04 cli sddm[1156]: Display server started.
+Nov 18 16:15:04 cli sddm[1156]: Socket server starting...
+Nov 18 16:15:04 cli sddm[1156]: Socket server started.
+Nov 18 16:15:04 cli sddm[1156]: Loading theme configuration from "/usr/share/sddm/themes/debian-theme/theme.conf"
+Nov 18 16:15:04 cli sddm[1156]: Greeter starting...
+Nov 18 16:15:04 cli sddm[1186]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+Nov 18 16:15:04 cli sddm[1186]: Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+Nov 18 16:15:04 cli sddm[1186]: If this causes problems, reconfigure your locale. See the locale(1) manual
+Nov 18 16:15:04 cli sddm[1186]: for more information.
+Nov 18 16:15:04 cli sddm-helper[1186]: [PAM] Starting...
+Nov 18 16:15:04 cli sddm-helper[1186]: [PAM] Authenticating...
+Nov 18 16:15:04 cli sddm-helper[1186]: [PAM] returning.
+Nov 18 16:15:04 cli sddm-helper[1186]: pam_unix(sddm-greeter:session): session opened for user sddm(uid=106) by (uid=0)
+Nov 18 16:15:04 cli systemd[1]: Created slice user-106.slice - User Slice of UID 106.
+Nov 18 16:15:04 cli systemd[1]: Starting user-runtime-dir@106.service - User Runtime Directory /run/user/106...
+Nov 18 16:15:04 cli systemd-logind[1001]: New session 'c1' of user 'sddm' with class 'greeter' and type 'x11'.
+Nov 18 16:15:04 cli systemd[1]: Finished user-runtime-dir@106.service - User Runtime Directory /run/user/106.
+Nov 18 16:15:04 cli systemd[1]: Starting user@106.service - User Manager for UID 106...
+Nov 18 16:15:04 cli (systemd)[1207]: pam_unix(systemd-user:session): session opened for user sddm(uid=106) by (uid=0)
+Nov 18 16:15:04 cli systemd-logind[1001]: New session 'c2' of user 'sddm' with class 'manager-early' and type 'unspecified'.
+Nov 18 16:15:04 cli systemd[1207]: Queued start job for default target default.target.
+Nov 18 16:15:04 cli systemd[1207]: Created slice app.slice - User Application Slice.
+Nov 18 16:15:04 cli systemd[1207]: Created slice session.slice - User Core Session Slice.
+Nov 18 16:15:04 cli systemd[1207]: Started drkonqi-sentry-postman.path - Submitting pending crash events (file monitor).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-cleanup.timer - Cleanup lingering KCrash metadata was skipped because of an unmet condition check (ConditionPathExistsGlob=/var/lib/sddm/.cache/kcrash-metadata/*.ini).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-sentry-postman.timer - Submitting pending crash events was skipped because of an unmet condition check (ConditionPathExistsGlob=/var/lib/sddm/.cache/drkonqi/sentry-envelopes/*).
+Nov 18 16:15:04 cli systemd[1207]: Reached target paths.target - Paths.
+Nov 18 16:15:04 cli systemd[1207]: Reached target timers.target - Timers.
+Nov 18 16:15:04 cli systemd[1207]: Starting dbus.socket - D-Bus User Message Bus Socket...
+Nov 18 16:15:04 cli systemd[1207]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: Listening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Nov 18 16:15:04 cli systemd[1207]: Listening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).
+Nov 18 16:15:04 cli systemd[1207]: Starting gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...
+Nov 18 16:15:04 cli systemd[1207]: Starting gpg-agent.socket - GnuPG cryptographic agent and passphrase cache...
+Nov 18 16:15:04 cli systemd[1207]: Listening on keyboxd.socket - GnuPG public key management service.
+Nov 18 16:15:04 cli systemd[1207]: Listening on pipewire-pulse.socket - PipeWire PulseAudio.
+Nov 18 16:15:04 cli systemd[1207]: Listening on pipewire.socket - PipeWire Multimedia System Sockets.
+Nov 18 16:15:04 cli systemd[1207]: Listening on pk-debconf-helper.socket - debconf communication socket.
+Nov 18 16:15:04 cli systemd[1207]: Starting ssh-agent.socket - OpenSSH Agent socket...
+Nov 18 16:15:04 cli systemd[1207]: Listening on systemd-ask-password.socket - Query the User Interactively for a Password.
+Nov 18 16:15:04 cli systemd[1207]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+Nov 18 16:15:04 cli systemd[1207]: Listening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.
+Nov 18 16:15:04 cli systemd[1207]: Listening on ssh-agent.socket - OpenSSH Agent socket.
+Nov 18 16:15:04 cli systemd[1207]: Listening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).
+Nov 18 16:15:04 cli systemd[1207]: Starting gcr-ssh-agent.socket - GCR ssh-agent wrapper...
+Nov 18 16:15:04 cli systemd[1207]: Listening on gcr-ssh-agent.socket - GCR ssh-agent wrapper.
+Nov 18 16:15:04 cli systemd[1207]: Reached target sockets.target - Sockets.
+Nov 18 16:15:04 cli systemd[1207]: Reached target basic.target - Basic System.
+Nov 18 16:15:04 cli systemd[1]: Started user@106.service - User Manager for UID 106.
+Nov 18 16:15:04 cli systemd[1207]: Starting dbus.service - D-Bus User Message Bus...
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-cleanup.service - Cleanup lingering KCrash metadata was skipped because of an unmet condition check (ConditionPathExistsGlob=/var/lib/sddm/.cache/kcrash-metadata/*.ini).
+Nov 18 16:15:04 cli systemd[1]: Started session-c1.scope - Session c1 of User sddm.
+Nov 18 16:15:04 cli systemd[1207]: Started pipewire.service - PipeWire Multimedia Service.
+Nov 18 16:15:04 cli systemd[1207]: Started filter-chain.service - PipeWire filter chain daemon.
+Nov 18 16:15:04 cli systemd[1207]: Started pipewire-pulse.service - PipeWire PulseAudio.
+Nov 18 16:15:04 cli systemd[1207]: Reached target default.target - Main User Target.
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:04 cli systemd[1207]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:15:04 cli sddm-helper[1186]: Writing cookie to "/tmp/xauth_fbsIET"
+Nov 18 16:15:04 cli sddm-helper[1186]: Starting X11 session: "" "/usr/bin/sddm-greeter-qt6 --socket /tmp/sddm-:0-JVvhNS --theme /usr/share/sddm/themes/debian-theme"
+Nov 18 16:15:04 cli sddm[1156]: Greeter session started successfully
+Nov 18 16:15:04 cli systemd[1207]: Started dbus.service - D-Bus User Message Bus.
+Nov 18 16:15:04 cli systemd[1207]: Startup finished in 73ms.
+Nov 18 16:15:04 cli pipewire[1237]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:04 cli pipewire[1237]: mod.rt: RTKit does not give us MaxRealtimePriority, using 1
+Nov 18 16:15:04 cli pipewire[1237]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:04 cli pipewire[1237]: mod.rt: RTKit does not give us MinNiceLevel, using 0
+Nov 18 16:15:04 cli pipewire-pulse[1240]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:04 cli pipewire-pulse[1240]: mod.rt: RTKit does not give us MaxRealtimePriority, using 1
+Nov 18 16:15:04 cli pipewire[1237]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:04 cli pipewire[1237]: mod.rt: RTKit does not give us RTTimeUSecMax, using -1
+Nov 18 16:15:04 cli pipewire-pulse[1240]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:04 cli pipewire-pulse[1240]: mod.rt: RTKit does not give us MinNiceLevel, using 0
+Nov 18 16:15:04 cli pipewire-pulse[1240]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:04 cli pipewire-pulse[1240]: mod.rt: RTKit does not give us RTTimeUSecMax, using -1
+Nov 18 16:15:04 cli sddm-greeter-qt6[1241]: High-DPI autoscaling Enabled
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Reading from "/usr/local/share/wayland-sessions/plasma.desktop"
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Reading from "/usr/share/wayland-sessions/plasma.desktop"
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Reading from "/usr/local/share/xsessions/plasmax11.desktop"
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Reading from "/usr/share/xsessions/plasmax11.desktop"
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Loading theme configuration from "/usr/share/sddm/themes/debian-theme/theme.conf"
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Connected to the daemon.
+Nov 18 16:15:05 cli sddm[1156]: Message received from greeter: Connect
+Nov 18 16:15:05 cli (udev-worker)[714]: controlC1: /usr/lib/udev/rules.d/78-sound-card.rules:5 ATTR{../uevent}="change": Could not chase sysfs attribute "/sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.2/1-3.2:1.0/sound/card1/controlC1/../uevent", ignoring: No such file or directory
+Nov 18 16:15:05 cli systemd[1207]: Reached target sound.target - Sound Card.
+Nov 18 16:15:05 cli systemd[1]: alsa-state.service - Manage Sound Card State (restore and store) was skipped because of an unmet condition check (ConditionPathExists=/etc/alsa/state-daemon.conf).
+Nov 18 16:15:05 cli systemd[1]: Starting alsa-restore.service - Save/Restore Sound Card State...
+Nov 18 16:15:05 cli systemd[1]: Finished alsa-restore.service - Save/Restore Sound Card State.
+Nov 18 16:15:05 cli systemd[1]: Reached target sound.target - Sound Card.
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Loading file:///usr/share/sddm/themes/debian-theme/Main.qml...
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Adding view for "DisplayPort-0" QRect(0,0 3840x2160)
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Loading file:///usr/share/sddm/themes/debian-theme/Main.qml...
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Adding view for "HDMI-A-0" QRect(3840,0 3440x1440)
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Message received from daemon: Capabilities
+Nov 18 16:15:05 cli sddm-greeter-qt6[1241]: Message received from daemon: HostName
+Nov 18 16:15:06 cli (udev-worker)[761]: 1-3.2: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:15:06 cli (udev-worker)[761]: 1-3.2: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.2 1 12": No such file or directory
+Nov 18 16:15:06 cli (udev-worker)[761]: 1-3.2: Failed to find and pin callout binary "/usr/lib/udev/mtp-probe": No such file or directory
+Nov 18 16:15:06 cli (udev-worker)[761]: 1-3.2: /usr/lib/udev/rules.d/69-libmtp.rules:34 PROGRAM="/usr/lib/udev/mtp-probe /sys$env{DEVPATH} $attr{busnum} $attr{devnum}": Failed to execute "/usr/lib/udev/mtp-probe /sys/devices/pci0000:00/0000:00:02.1/0000:05:00.0/0000:06:0c.0/0000:0b:00.0/usb1/1-3/1-3.2 1 12": No such file or directory
+Nov 18 16:15:10 cli systemd[1]: NetworkManager-dispatcher.service: Deactivated successfully.
+Nov 18 16:15:13 cli sddm-greeter-qt6[1241]: file:///usr/share/sddm/themes/debian-theme/Main.qml:242:17 Parameter "username" is not declared. Injection of parameters into signal handlers is deprecated. Use JavaScript functions with formal parameters instead.
+Nov 18 16:15:13 cli sddm-greeter-qt6[1241]: Reading from "/usr/share/wayland-sessions/plasma.desktop"
+Nov 18 16:15:13 cli sddm[1156]: Message received from greeter: Login
+Nov 18 16:15:13 cli sddm[1156]: Reading from "/usr/share/wayland-sessions/plasma.desktop"
+Nov 18 16:15:13 cli sddm[1156]: Session "/usr/share/wayland-sessions/plasma.desktop" selected, command: "/usr/lib/x86_64-linux-gnu/libexec/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland" for VT 1
+Nov 18 16:15:13 cli sddm[1324]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+Nov 18 16:15:13 cli sddm[1324]: Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+Nov 18 16:15:13 cli sddm[1324]: If this causes problems, reconfigure your locale. See the locale(1) manual
+Nov 18 16:15:13 cli sddm[1324]: for more information.
+Nov 18 16:15:13 cli sddm-helper[1324]: [PAM] Starting...
+Nov 18 16:15:13 cli sddm-helper[1324]: [PAM] Authenticating...
+Nov 18 16:15:13 cli sddm-helper[1324]: [PAM] Preparing to converse...
+Nov 18 16:15:13 cli sddm-helper[1324]: [PAM] Conversation with 1 messages
+Nov 18 16:15:13 cli sddm-helper[1324]: pam_kwallet5(sddm:auth): pam_kwallet5: pam_sm_authenticate
+Nov 18 16:15:13 cli sddm-helper[1324]: [PAM] returning.
+Nov 18 16:15:13 cli sddm[1156]: Authentication for user  "mariarahel"  successful
+Nov 18 16:15:13 cli sddm-greeter-qt6[1241]: Message received from daemon: LoginSucceeded
+Nov 18 16:15:13 cli sddm-helper[1324]: pam_kwallet5(sddm:setcred): pam_kwallet5: pam_sm_setcred
+Nov 18 16:15:13 cli sddm-helper[1324]: pam_unix(sddm:session): session opened for user mariarahel(uid=1000) by (uid=0)
+Nov 18 16:15:13 cli systemd-logind[1001]: New session 'c3' of user 'mariarahel' with class 'user' and type 'wayland'.
+Nov 18 16:15:13 cli systemd[1]: Created slice user-1000.slice - User Slice of UID 1000.
+Nov 18 16:15:13 cli systemd[1]: Starting user-runtime-dir@1000.service - User Runtime Directory /run/user/1000...
+Nov 18 16:15:13 cli sddm-helper[1186]: [PAM] Closing session
+Nov 18 16:15:13 cli sddm-helper[1186]: pam_unix(sddm-greeter:session): session closed for user sddm
+Nov 18 16:15:13 cli sddm-helper[1186]: [PAM] Ended.
+Nov 18 16:15:13 cli systemd[1]: session-c1.scope: Deactivated successfully.
+Nov 18 16:15:13 cli sddm[1156]: Auth: sddm-helper exited successfully
+Nov 18 16:15:13 cli sddm[1156]: Greeter stopped. SDDM::Auth::HELPER_SUCCESS
+Nov 18 16:15:13 cli systemd-logind[1001]: Session c1 logged out. Waiting for processes to exit.
+Nov 18 16:15:13 cli systemd-logind[1001]: Removed session c1.
+Nov 18 16:15:13 cli systemd[1]: Finished user-runtime-dir@1000.service - User Runtime Directory /run/user/1000.
+Nov 18 16:15:13 cli systemd[1]: Starting user@1000.service - User Manager for UID 1000...
+Nov 18 16:15:13 cli (systemd)[1381]: pam_unix(systemd-user:session): session opened for user mariarahel(uid=1000) by (uid=0)
+Nov 18 16:15:13 cli systemd-logind[1001]: New session 'c4' of user 'mariarahel' with class 'manager' and type 'unspecified'.
+Nov 18 16:15:13 cli systemd[1381]: Queued start job for default target default.target.
+Nov 18 16:15:13 cli systemd[1381]: Created slice app.slice - User Application Slice.
+Nov 18 16:15:13 cli systemd[1381]: Created slice session.slice - User Core Session Slice.
+Nov 18 16:15:13 cli systemd[1381]: Started drkonqi-sentry-postman.path - Submitting pending crash events (file monitor).
+Nov 18 16:15:13 cli systemd[1381]: drkonqi-coredump-cleanup.timer - Cleanup lingering KCrash metadata was skipped because of an unmet condition check (ConditionPathExistsGlob=/home/mariarahel/.cache/kcrash-metadata/*.ini).
+Nov 18 16:15:13 cli systemd[1381]: drkonqi-sentry-postman.timer - Submitting pending crash events was skipped because of an unmet condition check (ConditionPathExistsGlob=/home/mariarahel/.cache/drkonqi/sentry-envelopes/*).
+Nov 18 16:15:13 cli systemd[1381]: Reached target paths.target - Paths.
+Nov 18 16:15:13 cli systemd[1381]: Reached target timers.target - Timers.
+Nov 18 16:15:13 cli systemd[1381]: Starting dbus.socket - D-Bus User Message Bus Socket...
+Nov 18 16:15:13 cli systemd[1381]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+Nov 18 16:15:13 cli systemd[1381]: Listening on drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash.
+Nov 18 16:15:13 cli systemd[1381]: Listening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Nov 18 16:15:13 cli systemd[1381]: Listening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).
+Nov 18 16:15:13 cli systemd[1381]: Starting gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...
+Nov 18 16:15:13 cli systemd[1381]: Starting gpg-agent.socket - GnuPG cryptographic agent and passphrase cache...
+Nov 18 16:15:13 cli systemd[1381]: Listening on keyboxd.socket - GnuPG public key management service.
+Nov 18 16:15:13 cli systemd[1381]: Listening on pipewire-pulse.socket - PipeWire PulseAudio.
+Nov 18 16:15:13 cli systemd[1381]: Listening on pipewire.socket - PipeWire Multimedia System Sockets.
+Nov 18 16:15:13 cli systemd[1381]: Listening on pk-debconf-helper.socket - debconf communication socket.
+Nov 18 16:15:13 cli systemd[1381]: Starting ssh-agent.socket - OpenSSH Agent socket...
+Nov 18 16:15:13 cli systemd[1381]: Listening on systemd-ask-password.socket - Query the User Interactively for a Password.
+Nov 18 16:15:13 cli systemd[1381]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+Nov 18 16:15:13 cli systemd[1381]: Listening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).
+Nov 18 16:15:13 cli systemd[1381]: Starting gcr-ssh-agent.socket - GCR ssh-agent wrapper...
+Nov 18 16:15:13 cli systemd[1381]: Listening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.
+Nov 18 16:15:13 cli systemd[1381]: Listening on ssh-agent.socket - OpenSSH Agent socket.
+Nov 18 16:15:13 cli systemd[1381]: Listening on gcr-ssh-agent.socket - GCR ssh-agent wrapper.
+Nov 18 16:15:13 cli systemd[1381]: Reached target sockets.target - Sockets.
+Nov 18 16:15:13 cli systemd[1381]: Reached target basic.target - Basic System.
+Nov 18 16:15:13 cli systemd[1]: Started user@1000.service - User Manager for UID 1000.
+Nov 18 16:15:13 cli systemd[1381]: Starting dbus.service - D-Bus User Message Bus...
+Nov 18 16:15:13 cli systemd[1381]: drkonqi-coredump-cleanup.service - Cleanup lingering KCrash metadata was skipped because of an unmet condition check (ConditionPathExistsGlob=/home/mariarahel/.cache/kcrash-metadata/*.ini).
+Nov 18 16:15:13 cli systemd[1]: Started session-c3.scope - Session c3 of User mariarahel.
+Nov 18 16:15:13 cli systemd[1381]: Started pipewire.service - PipeWire Multimedia Service.
+Nov 18 16:15:13 cli sddm-helper[1324]: pam_kwallet5(sddm:session): pam_kwallet5: pam_sm_open_session
+Nov 18 16:15:13 cli systemd[1381]: Started filter-chain.service - PipeWire filter chain daemon.
+Nov 18 16:15:13 cli systemd[1381]: Started pipewire-pulse.service - PipeWire PulseAudio.
+Nov 18 16:15:13 cli systemd[1381]: Reached target default.target - Main User Target.
+Nov 18 16:15:13 cli systemd[1381]: Started dbus.service - D-Bus User Message Bus.
+Nov 18 16:15:13 cli systemd[1381]: Startup finished in 65ms.
+Nov 18 16:15:13 cli pipewire[1411]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:13 cli pipewire[1411]: mod.rt: RTKit does not give us MaxRealtimePriority, using 1
+Nov 18 16:15:13 cli pipewire[1411]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:13 cli pipewire[1411]: mod.rt: RTKit does not give us MinNiceLevel, using 0
+Nov 18 16:15:13 cli pipewire[1411]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:13 cli pipewire[1411]: mod.rt: RTKit does not give us RTTimeUSecMax, using -1
+Nov 18 16:15:13 cli pipewire-pulse[1413]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:13 cli pipewire-pulse[1413]: mod.rt: RTKit does not give us MaxRealtimePriority, using 1
+Nov 18 16:15:13 cli pipewire-pulse[1413]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:13 cli pipewire-pulse[1413]: mod.rt: RTKit does not give us MinNiceLevel, using 0
+Nov 18 16:15:13 cli pipewire-pulse[1413]: mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+Nov 18 16:15:13 cli pipewire-pulse[1413]: mod.rt: RTKit does not give us RTTimeUSecMax, using -1
+Nov 18 16:15:13 cli sddm-helper[1421]: pam_kwallet5: final socket path: /run/user/1000/kwallet5.socket
+Nov 18 16:15:13 cli sddm-helper[1324]: pam_env(sddm:session): deprecated reading of user environment enabled
+Nov 18 16:15:13 cli sddm-helper[1324]: Starting Wayland user session: "/etc/sddm/wayland-session" "/usr/lib/x86_64-linux-gnu/libexec/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland"
+Nov 18 16:15:13 cli sddm-helper[1424]: Jumping to VT 1
+Nov 18 16:15:13 cli sddm-helper[1424]: VT mode didn't need to be fixed
+Nov 18 16:15:13 cli sddm[1156]: Session started true
+Nov 18 16:15:13 cli sddm-helper[1324]: Failed to write utmpx:  No such file or directory
+Nov 18 16:15:13 cli systemd[1381]: Reached target sound.target - Sound Card.
+Nov 18 16:15:13 cli dbus-daemon[993]: [system] Activating via systemd: service name='org.freedesktop.locale1' unit='dbus-org.freedesktop.locale1.service' requested by ':1.25' (uid=1000 pid=1424 comm="/usr/bin/startplasma-wayland")
+Nov 18 16:15:13 cli systemd[1]: Starting systemd-localed.service - Locale Service...
+Nov 18 16:15:13 cli (systemd-localed)[1434]: systemd-localed.service: PrivateNetwork=yes is configured, but the kernel does not support or we lack privileges for network namespace, proceeding without.
+Nov 18 16:15:13 cli (systemd-localed)[1434]: systemd-localed.service: ProtectHostname=yes is configured, but the kernel does not support UTS namespaces, ignoring namespace setup.
+Nov 18 16:15:13 cli systemd[1]: Started systemd-localed.service - Locale Service.
+Nov 18 16:15:13 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.locale1'
+Nov 18 16:15:13 cli systemd[1381]: Reload requested from client PID 1424 ('startplasma-way')...
+Nov 18 16:15:13 cli systemd[1381]: Reloading...
+Nov 18 16:15:13 cli systemd[1381]: Reloading finished in 47 ms.
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating service name='org.kde.KSplash' requested by ':1.7' (uid=1000 pid=1424 comm="/usr/bin/startplasma-wayland")
+Nov 18 16:15:13 cli systemd[1381]: Created slice background.slice - User Background Tasks Slice.
+Nov 18 16:15:13 cli systemd[1381]: drkonqi-sentry-postman.timer - Submitting pending crash events was skipped because of an unmet condition check (ConditionPathExistsGlob=/home/mariarahel/.cache/drkonqi/sentry-envelopes/*).
+Nov 18 16:15:13 cli systemd[1381]: Started gcr-ssh-agent.service - GCR ssh-agent wrapper.
+Nov 18 16:15:13 cli systemd[1381]: Starting plasma-kglobalaccel.service - KDE Global Shortcuts Server...
+Nov 18 16:15:13 cli systemd[1381]: Starting plasma-kwin_wayland.service - KDE Window Manager...
+Nov 18 16:15:13 cli systemd[1381]: Started ssh-agent.service - OpenSSH Agent.
+Nov 18 16:15:13 cli systemd[1381]: Starting xdg-desktop-portal-rewrite-launchers.service - Rewrite dynamic launcher portal entries...
+Nov 18 16:15:13 cli systemd[1381]: Starting xdg-user-dirs.service - User folders update...
+Nov 18 16:15:13 cli systemd[1381]: Starting kde-baloo.service - Baloo File Indexer Daemon...
+Nov 18 16:15:13 cli systemd[1381]: Finished xdg-user-dirs.service - User folders update.
+Nov 18 16:15:13 cli systemd[1381]: Finished xdg-desktop-portal-rewrite-launchers.service - Rewrite dynamic launcher portal entries.
+Nov 18 16:15:13 cli systemd[1381]: Reached target graphical-session-pre.target - Session services which should run early before the graphical session is brought up.
+Nov 18 16:15:13 cli systemd[1381]: Started plasma-kwin_wayland.service - KDE Window Manager.
+Nov 18 16:15:13 cli systemd[1381]: Starting plasma-kcminit.service - KDE Config Module Initialization...
+Nov 18 16:15:13 cli systemd[1381]: Starting plasma-ksplash.service - Splash screen shown during boot...
+Nov 18 16:15:13 cli baloo_file[1454]: Baloo File Indexing has been disabled
+Nov 18 16:15:13 cli systemd[1381]: Started kde-baloo.service - Baloo File Indexer Daemon.
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Desktop' unit='xdg-desktop-portal.service' requested by ':1.10' (uid=1000 pid=1462 comm="/usr/bin/kcminit_startup")
+Nov 18 16:15:13 cli systemd[1381]: Starting xdg-desktop-portal.service - Portal service...
+Nov 18 16:15:13 cli systemd[1381]: Started plasma-kglobalaccel.service - KDE Global Shortcuts Server.
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.11' (uid=1000 pid=1465 comm="/usr/libexec/xdg-desktop-portal")
+Nov 18 16:15:13 cli systemd[1381]: Starting xdg-permission-store.service - sandboxed app permission store...
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+Nov 18 16:15:13 cli systemd[1381]: Started xdg-permission-store.service - sandboxed app permission store.
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.11' (uid=1000 pid=1465 comm="/usr/libexec/xdg-desktop-portal")
+Nov 18 16:15:13 cli systemd[1381]: Starting xdg-document-portal.service - flatpak document portal service...
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.freedesktop.portal.Documents'
+Nov 18 16:15:13 cli systemd[1381]: Started xdg-document-portal.service - flatpak document portal service.
+Nov 18 16:15:13 cli /usr/libexec/xdg-desktop-portal[1465]: Choosing gtk.portal for org.freedesktop.impl.portal.Lockdown as a last-resort fallback
+Nov 18 16:15:13 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gtk' unit='xdg-desktop-portal-gtk.service' requested by ':1.11' (uid=1000 pid=1465 comm="/usr/libexec/xdg-desktop-portal")
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1458]: No backend specified, automatically choosing drm
+Nov 18 16:15:14 cli kcminit_startup[1462]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings/kcm_style.so"
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.kde.KSplash'
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.a11y.Bus' unit='at-spi-dbus-bus.service' requested by ':1.16' (uid=1000 pid=1562 comm="busctl call --user org.a11y.Bus /org/a11y/bus org.")
+Nov 18 16:15:14 cli systemd[1381]: Starting at-spi-dbus-bus.service - Accessibility services bus...
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1566]: The XKEYBOARD keymap compiler (xkbcomp) reports:
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1566]: > Warning:          Unsupported maximum keycode 708, clipping.
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1566]: >                   X11 cannot support keycodes above 255.
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1566]: > Warning:          Virtual modifier ScrollLock multiply defined
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1566]: >                   Using 0, ignoring 0
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1566]: Errors from xkbcomp are not fatal to the X server
+Nov 18 16:15:14 cli kcminit_startup[1462]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings/kcm_mouse.so"
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.a11y.Bus'
+Nov 18 16:15:14 cli systemd[1381]: Started at-spi-dbus-bus.service - Accessibility services bus.
+Nov 18 16:15:14 cli kcminit_startup[1462]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings/kcm_fonts.so"
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-kcminit.service - KDE Config Module Initialization.
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-ksmserver.service - KDE Session Management Server...
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-kwallet-pam.service - Unlock kwallet from pam credentials.
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-kded6.service - KDE Daemon 6...
+Nov 18 16:15:14 cli pam_kwallet_init[1617]: 2025/11/18 16:15:14 socat[1617] W address is opened in read-write mode but only supports read-only
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1577]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings/kcm_fonts.so"
+Nov 18 16:15:14 cli kwin_wayland_wrapper[1577]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings/kcm_style.so"
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-kded6.service - KDE Daemon 6.
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-kcminit-phase1.service - KDE Configuration Module Initialization (Phase 1)...
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='ca.desrt.dconf' unit='dconf.service' requested by ':1.22' (uid=1000 pid=1615 comm="/usr/bin/kded6")
+Nov 18 16:15:14 cli systemd[1381]: Starting dconf.service - User preferences database...
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'ca.desrt.dconf'
+Nov 18 16:15:14 cli systemd[1381]: Started dconf.service - User preferences database.
+Nov 18 16:15:14 cli kcminit_startup[1462]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings_qwidgets/kcm_kgamma.so"
+Nov 18 16:15:14 cli kcminit_startup[1462]: Initializing  "/usr/lib/x86_64-linux-gnu/qt6/plugins/plasma/kcms/systemsettings/kcm_touchpad.so"
+Nov 18 16:15:14 cli systemd[1381]: Finished plasma-kcminit-phase1.service - KDE Configuration Module Initialization (Phase 1).
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-ksmserver.service - KDE Session Management Server.
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-plasmashell.service - KDE Plasma Workspace...
+Nov 18 16:15:14 cli at-spi-bus-launcher[1608]: dbus-daemon[1608]: Activating service name='org.a11y.atspi.Registry' requested by ':1.0' (uid=1000 pid=1613 comm="/usr/bin/ksmserver")
+Nov 18 16:15:14 cli at-spi-bus-launcher[1608]: dbus-daemon[1608]: Successfully activated service 'org.a11y.atspi.Registry'
+Nov 18 16:15:14 cli at-spi-bus-launcher[1684]: SpiRegistry daemon is running with well-known name - org.a11y.atspi.Registry
+Nov 18 16:15:14 cli kded6[1615]: QDBusObjectPath: invalid path "/modules/plasma-session-shortcuts"
+Nov 18 16:15:14 cli kded6[1615]: kf.dbusaddons: The kded module name "plasma-session-shortcuts" is invalid!
+Nov 18 16:15:14 cli NetworkManager[1066]: <info>  [1763511314.7285] agent-manager: agent[7c01da073a4c2aa7,:1.28/org.kde.plasma.networkmanagement/1000]: agent registered
+Nov 18 16:15:14 cli kded6[1615]: org.kde.kameleon: found no RGB LED devices
+Nov 18 16:15:14 cli kded6[1615]: QDBusObjectPath: invalid path "/modules/oom-notifier"
+Nov 18 16:15:14 cli kded6[1615]: kf.dbusaddons: The kded module name "oom-notifier" is invalid!
+Nov 18 16:15:14 cli kded6[1615]: QDBusObjectPath: invalid path "/modules/wpad-detector"
+Nov 18 16:15:14 cli kded6[1615]: kf.dbusaddons: The kded module name "wpad-detector" is invalid!
+Nov 18 16:15:14 cli kded6[1615]: QDBusObjectPath: invalid path "/modules/kded_plasma-welcome"
+Nov 18 16:15:14 cli kded6[1615]: kf.dbusaddons: The kded module name "kded_plasma-welcome" is invalid!
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.kde.ActivityManager' unit='plasma-kactivitymanagerd.service' requested by ':1.20' (uid=1000 pid=1615 comm="/usr/bin/kded6")
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-kactivitymanagerd.service - KActivityManager Activity manager Service...
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1705]: kf.config.kconf_update: /usr/share/kconf_update/ark.upd defined Version=5 but Version=6 was expected
+Nov 18 16:15:14 cli kded6[1705]: kf.config.kconf_update: /usr/share/kconf_update/dolphin_directorysizemode.upd defined Version=5 but Version=6 was expected
+Nov 18 16:15:14 cli kded6[1705]: kf.config.kconf_update: /usr/share/kconf_update/filepicker.upd defined Version=5 but Version=6 was expected
+Nov 18 16:15:14 cli kded6[1705]: kf.config.kconf_update: /usr/share/kconf_update/webenginepart.upd defined Version=5 but Version=6 was expected
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.kde.ActivityManager'
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-kactivitymanagerd.service - KActivityManager Activity manager Service.
+Nov 18 16:15:14 cli dbus-daemon[993]: [system] Activating service name='org.kde.kded.smart' requested by ':1.28' (uid=1000 pid=1615 comm="/usr/bin/kded6") (using servicehelper)
+Nov 18 16:15:14 cli org.kde.kded.smart[1719]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+                                              Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+                                              If this causes problems, reconfigure your locale. See the locale(1) manual
+                                              for more information.
+Nov 18 16:15:14 cli dbus-daemon[993]: [system] Successfully activated service 'org.kde.kded.smart'
+Nov 18 16:15:14 cli kded6[1615]: Known activities: QList("88e9237c-1f28-4f32-b986-5a69c2ce440a")
+Nov 18 16:15:14 cli kded6[1615]: Known activities: QList("88e9237c-1f28-4f32-b986-5a69c2ce440a")
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli kded6[1615]: org.kde.pulseaudio: No object for name "@DEFAULT_SINK@"
+Nov 18 16:15:14 cli kded6[1615]: org.kde.pulseaudio: No object for name "@DEFAULT_SOURCE@"
+Nov 18 16:15:14 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-plasmashell.service - KDE Plasma Workspace.
+Nov 18 16:15:14 cli systemd[1381]: Reached target plasma-core.target - KDE Plasma Workspace Core.
+Nov 18 16:15:14 cli systemd[1381]: Started drkonqi-coredump-pickup.service - Consume pending crashes using DrKonqi.
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-gmenudbusmenuproxy.service - Proxies GTK DBus menus to a Plasma readable format.
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-kaccess.service - KAccess.
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-polkit-agent.service - KDE PolicyKit Authentication Agent...
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-xembedsniproxy.service - Handle legacy xembed system tray icons.
+Nov 18 16:15:14 cli kded6[1758]: xsettingsd: Loaded 16 settings from /home/mariarahel/.config/xsettingsd/xsettingsd.conf
+Nov 18 16:15:14 cli kded6[1758]: xsettingsd: Created window 0x800001 on screen 0 with timestamp 41556
+Nov 18 16:15:14 cli kded6[1758]: xsettingsd: Selection _XSETTINGS_S0 is owned by 0x0
+Nov 18 16:15:14 cli kded6[1758]: xsettingsd: Took ownership of selection _XSETTINGS_S0
+Nov 18 16:15:14 cli kaccess[1753]: Xlib XKB extension major= 1  minor= 0
+Nov 18 16:15:14 cli systemd[1381]: Started plasma-polkit-agent.service - KDE PolicyKit Authentication Agent.
+Nov 18 16:15:14 cli systemd[1381]: Reached target plasma-workspace.target - KDE Plasma Workspace.
+Nov 18 16:15:14 cli polkit-kde-authentication-agent-1[1754]: New PolkitAgentListener  0x55be9d84efb0
+Nov 18 16:15:14 cli polkit-kde-authentication-agent-1[1754]: Adding new listener  PolkitQt1::Agent::Listener(0x55be9d84ed50) for  0x55be9d84efb0
+Nov 18 16:15:14 cli polkit-kde-authentication-agent-1[1754]: Listener online
+Nov 18 16:15:14 cli systemd[1381]: Reached target graphical-session.target - Current graphical user session.
+Nov 18 16:15:14 cli systemd[1381]: Reached target plasma-workspace-wayland.target.
+Nov 18 16:15:14 cli systemd[1381]: Starting app-at\x2dspi\x2ddbus\x2dbus@autostart.service - AT-SPI D-Bus Bus...
+Nov 18 16:15:14 cli systemd[1381]: Starting app-konqy_preload@autostart.service - Konqueror preloading during desktop environment startup...
+Nov 18 16:15:14 cli systemd[1381]: Starting app-kup\x2ddaemon@autostart.service - Kup...
+Nov 18 16:15:14 cli systemd[1381]: Starting app-org.kde.discover.notifier@autostart.service - Discover...
+Nov 18 16:15:14 cli systemd[1381]: Starting app-org.kde.kalendarac@autostart.service - Calendar Reminders...
+Nov 18 16:15:14 cli systemd[1381]: Starting app-org.kde.plasma\x2dfallback\x2dsession\x2drestore@autostart.service - Plasma Session Restore...
+Nov 18 16:15:14 cli systemd[1381]: Starting app-org.kde.xwaylandvideobridge@autostart.service - Xwayland Video Bridge...
+Nov 18 16:15:14 cli polkitd[996]: Registered Authentication Agent for unix-session:c3 (system bus name :1.35 [/usr/lib/x86_64-linux-gnu/libexec/polkit-kde-authentication-agent-1], object path /org/kde/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8)
+Nov 18 16:15:14 cli polkit-kde-authentication-agent-1[1754]: Authentication agent result: true
+Nov 18 16:15:14 cli plasmashell[1682]: kf.plasma.quick: Applet preload policy set to 1
+Nov 18 16:15:14 cli systemd[1381]: Starting app-xdg\x2duser\x2ddirs\x2dkde@autostart.service - User folders update...
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-restoresession.service - KDE Session Restoration...
+Nov 18 16:15:14 cli systemd[1381]: Starting xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation)...
+Nov 18 16:15:14 cli systemd[1381]: Started app-org.kde.xwaylandvideobridge@autostart.service - Xwayland Video Bridge.
+Nov 18 16:15:14 cli kaccess[1753]: X server XKB extension major= 1  minor= 0
+Nov 18 16:15:14 cli systemd[1381]: Started app-xdg\x2duser\x2ddirs\x2dkde@autostart.service - User folders update.
+Nov 18 16:15:14 cli systemd[1381]: Started app-at\x2dspi\x2ddbus\x2dbus@autostart.service - AT-SPI D-Bus Bus.
+Nov 18 16:15:14 cli systemd[1381]: Started app-org.kde.plasma\x2dfallback\x2dsession\x2drestore@autostart.service - Plasma Session Restore.
+Nov 18 16:15:14 cli systemd[1381]: Started app-org.kde.discover.notifier@autostart.service - Discover.
+Nov 18 16:15:14 cli systemd[1381]: Started app-org.kde.kalendarac@autostart.service - Calendar Reminders.
+Nov 18 16:15:14 cli systemd[1381]: app-konqy_preload@autostart.service: Skipped due to 'exec-condition'.
+Nov 18 16:15:14 cli systemd[1381]: Condition check resulted in app-konqy_preload@autostart.service - Konqueror preloading during desktop environment startup being skipped.
+Nov 18 16:15:14 cli systemd[1381]: Finished plasma-restoresession.service - KDE Session Restoration.
+Nov 18 16:15:14 cli systemd[1381]: Started app-kup\x2ddaemon@autostart.service - Kup.
+Nov 18 16:15:14 cli systemd[1381]: Reached target xdg-desktop-autostart.target - Startup of XDG autostart applications.
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.gtk'
+Nov 18 16:15:14 cli systemd[1381]: Started xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation).
+Nov 18 16:15:14 cli /usr/libexec/xdg-desktop-portal[1465]: Failed to load RealtimeKit property: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.RealtimeKit1 was not provided by any .service files
+Nov 18 16:15:14 cli /usr/libexec/xdg-desktop-portal[1465]: Failed to load RealtimeKit property: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.RealtimeKit1 was not provided by any .service files
+Nov 18 16:15:14 cli /usr/libexec/xdg-desktop-portal[1465]: Failed to load RealtimeKit property: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.RealtimeKit1 was not provided by any .service files
+Nov 18 16:15:14 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.kde' unit='plasma-xdg-desktop-portal-kde.service' requested by ':1.11' (uid=1000 pid=1465 comm="/usr/libexec/xdg-desktop-portal")
+Nov 18 16:15:14 cli systemd[1381]: Starting plasma-xdg-desktop-portal-kde.service - Xdg Desktop Portal For KDE...
+Nov 18 16:15:14 cli kup-daemon[1838]: kup.daemon: "Kup is not enabled, enable it from the system settings module. You can do that by running kcmshell5 kup"
+Nov 18 16:15:14 cli dbus-daemon[993]: [system] Activating via systemd: service name='org.freedesktop.PackageKit' unit='packagekit.service' requested by ':1.38' (uid=1000 pid=1820 comm="/usr/lib/x86_64-linux-gnu/libexec/DiscoverNotifier")
+Nov 18 16:15:14 cli systemd[1]: Starting NetworkManager-wait-online.service - Network Manager Wait Online...
+Nov 18 16:15:14 cli systemd[1]: Starting packagekit.service - PackageKit Daemon...
+Nov 18 16:15:14 cli PackageKit[1948]: daemon start
+Nov 18 16:15:14 cli systemd[1]: Finished NetworkManager-wait-online.service - Network Manager Wait Online.
+Nov 18 16:15:14 cli systemd[1]: Reached target network-online.target - Network is Online.
+Nov 18 16:15:14 cli kded6[1615]: Registering ":1.44/StatusNotifierItem" to system tray
+Nov 18 16:15:14 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.PackageKit'
+Nov 18 16:15:14 cli systemd[1]: Started packagekit.service - PackageKit Daemon.
+Nov 18 16:15:15 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.kde'
+Nov 18 16:15:15 cli systemd[1381]: Started plasma-xdg-desktop-portal-kde.service - Xdg Desktop Portal For KDE.
+Nov 18 16:15:15 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.freedesktop.portal.Desktop'
+Nov 18 16:15:15 cli systemd[1381]: Started xdg-desktop-portal.service - Portal service.
+Nov 18 16:15:15 cli systemd[1381]: Finished plasma-ksplash.service - Splash screen shown during boot.
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:15 cli systemd[1207]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: Broken filename passed to function
+Nov 18 16:15:15 cli plasmashell[1682]: org.kde.pulseaudio: No object for name "@DEFAULT_SINK@"
+Nov 18 16:15:15 cli plasmashell[1682]: org.kde.pulseaudio: No object for name "@DEFAULT_SOURCE@"
+Nov 18 16:15:18 cli systemd[1381]: Started app-firefox\x2desr@082a1c95a1c740ddab7a6a6264113b6e.service - Firefox ESR - Web Browser.
+Nov 18 16:15:18 cli dbus-daemon[993]: [system] Activating via systemd: service name='org.freedesktop.timedate1' unit='dbus-org.freedesktop.timedate1.service' requested by ':1.42' (uid=1000 pid=2057 comm="/usr/lib/firefox-esr/firefox-esr")
+Nov 18 16:15:18 cli systemd[1]: Starting systemd-timedated.service - Time & Date Service...
+Nov 18 16:15:18 cli (systemd-timedated)[2128]: systemd-timedated.service: ProtectHostname=yes is configured, but the kernel does not support UTS namespaces, ignoring namespace setup.
+Nov 18 16:15:18 cli systemd[1]: Started systemd-timedated.service - Time & Date Service.
+Nov 18 16:15:18 cli dbus-daemon[993]: [system] Successfully activated service 'org.freedesktop.timedate1'
+Nov 18 16:15:23 cli systemd[1]: Stopping user@106.service - User Manager for UID 106...
+Nov 18 16:15:23 cli systemd[1207]: Activating special unit exit.target...
+Nov 18 16:15:23 cli systemd[1207]: Stopped target default.target - Main User Target.
+Nov 18 16:15:23 cli systemd[1207]: Stopped target sound.target - Sound Card.
+Nov 18 16:15:23 cli systemd[1207]: Stopping dbus.service - D-Bus User Message Bus...
+Nov 18 16:15:23 cli systemd[1207]: Stopping filter-chain.service - PipeWire filter chain daemon...
+Nov 18 16:15:23 cli systemd[1207]: Stopping pipewire-pulse.service - PipeWire PulseAudio...
+Nov 18 16:15:23 cli systemd[1207]: Stopped dbus.service - D-Bus User Message Bus.
+Nov 18 16:15:23 cli systemd[1207]: Stopped filter-chain.service - PipeWire filter chain daemon.
+Nov 18 16:15:23 cli systemd[1207]: Stopped pipewire-pulse.service - PipeWire PulseAudio.
+Nov 18 16:15:23 cli systemd[1207]: Stopping pipewire.service - PipeWire Multimedia Service...
+Nov 18 16:15:23 cli systemd[1207]: Stopped pipewire.service - PipeWire Multimedia Service.
+Nov 18 16:15:23 cli systemd[1207]: Removed slice session.slice - User Core Session Slice.
+Nov 18 16:15:23 cli systemd[1207]: Stopped target basic.target - Basic System.
+Nov 18 16:15:23 cli systemd[1207]: Stopped target paths.target - Paths.
+Nov 18 16:15:23 cli systemd[1207]: Stopped drkonqi-sentry-postman.path - Submitting pending crash events (file monitor).
+Nov 18 16:15:23 cli systemd[1207]: Stopped target sockets.target - Sockets.
+Nov 18 16:15:23 cli systemd[1207]: Stopped target timers.target - Timers.
+Nov 18 16:15:23 cli systemd[1207]: Closed dbus.socket - D-Bus User Message Bus Socket.
+Nov 18 16:15:23 cli systemd[1207]: Closed dirmngr.socket - GnuPG network certificate management daemon.
+Nov 18 16:15:23 cli systemd[1207]: Closed gcr-ssh-agent.socket - GCR ssh-agent wrapper.
+Nov 18 16:15:23 cli systemd[1207]: Closed gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Nov 18 16:15:23 cli systemd[1207]: Closed gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).
+Nov 18 16:15:23 cli systemd[1207]: Stopping gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...
+Nov 18 16:15:23 cli systemd[1207]: Stopping gpg-agent.socket - GnuPG cryptographic agent and passphrase cache...
+Nov 18 16:15:23 cli systemd[1207]: Closed keyboxd.socket - GnuPG public key management service.
+Nov 18 16:15:23 cli systemd[1207]: Closed pipewire-pulse.socket - PipeWire PulseAudio.
+Nov 18 16:15:23 cli systemd[1207]: Closed pipewire.socket - PipeWire Multimedia System Sockets.
+Nov 18 16:15:23 cli systemd[1207]: Closed pk-debconf-helper.socket - debconf communication socket.
+Nov 18 16:15:23 cli systemd[1207]: Stopping ssh-agent.socket - OpenSSH Agent socket...
+Nov 18 16:15:23 cli systemd[1207]: Closed systemd-ask-password.socket - Query the User Interactively for a Password.
+Nov 18 16:15:23 cli systemd[1207]: Closed gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).
+Nov 18 16:15:23 cli systemd[1207]: Closed gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.
+Nov 18 16:15:23 cli systemd[1207]: Closed ssh-agent.socket - OpenSSH Agent socket.
+Nov 18 16:15:23 cli systemd[1207]: Removed slice app.slice - User Application Slice.
+Nov 18 16:15:23 cli systemd[1207]: Reached target shutdown.target - Shutdown.
+Nov 18 16:15:23 cli systemd[1207]: Finished systemd-exit.service - Exit the Session.
+Nov 18 16:15:23 cli systemd[1207]: Reached target exit.target - Exit the Session.
+Nov 18 16:15:23 cli systemd-logind[1001]: Removed session c2.
+Nov 18 16:15:23 cli (sd-pam)[1215]: pam_unix(systemd-user:session): session closed for user sddm
+Nov 18 16:15:23 cli systemd[1]: user@106.service: Deactivated successfully.
+Nov 18 16:15:23 cli systemd[1]: Stopped user@106.service - User Manager for UID 106.
+Nov 18 16:15:23 cli systemd[1]: Stopping user-runtime-dir@106.service - User Runtime Directory /run/user/106...
+Nov 18 16:15:23 cli systemd[1]: run-user-106.mount: Deactivated successfully.
+Nov 18 16:15:23 cli systemd[1]: user-runtime-dir@106.service: Deactivated successfully.
+Nov 18 16:15:23 cli systemd[1]: Stopped user-runtime-dir@106.service - User Runtime Directory /run/user/106.
+Nov 18 16:15:23 cli systemd[1]: Removed slice user-106.slice - User Slice of UID 106.
+Nov 18 16:15:24 cli plasmashell[1682]: Connecting to deprecated signal QDBusConnectionInterface::serviceOwnerChanged(QString,QString,QString)
+Nov 18 16:15:24 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Activating via systemd: service name='org.kde.runners.baloo' unit='plasma-baloorunner.service' requested by ':1.28' (uid=1000 pid=1682 comm="/usr/bin/plasmashell --no-respawn")
+Nov 18 16:15:24 cli systemd[1381]: Starting plasma-baloorunner.service - KRunner provider for baloo file indexer...
+Nov 18 16:15:24 cli plasmashell[1682]: kf.kio.core: "/usr/share/applications/libreoffice-startcenter.desktop" contains supported protocols but doesn't use %u or %U in its Exec line! This is inconsistent.
+Nov 18 16:15:24 cli dbus-daemon[1410]: [session uid=1000 pid=1410 pidfd=5] Successfully activated service 'org.kde.runners.baloo'
+Nov 18 16:15:24 cli systemd[1381]: Started plasma-baloorunner.service - KRunner provider for baloo file indexer.
+Nov 18 16:15:24 cli plasmashell[1682]: kf.runner: Error requesting matches; calling "org.kde.runners.baloo"  : "org.freedesktop.DBus.Error.NotSupported" ""
+Nov 18 16:15:24 cli plasmashell[1682]: kf.runner: Error requesting matches; calling "org.kde.runners.baloo"  : "org.freedesktop.DBus.Error.NotSupported" ""
+Nov 18 16:15:24 cli plasmashell[1682]: org.kde.pim.akonadi_search_pim: Xapian Database does not exist at  "/home/mariarahel/.local/share/akonadi/search_db/contacts/"
+Nov 18 16:15:24 cli plasmashell[1682]: org.kde.pim.akonadi_search_pim: Xapian Database does not exist at  "/home/mariarahel/.local/share/akonadi/search_db/emailContacts/"
+Nov 18 16:15:24 cli plasmashell[1682]: org.kde.pim.akonadi_search_pim: Xapian Database does not exist at  "/home/mariarahel/.local/share/akonadi/search_db/contacts/"
+Nov 18 16:15:24 cli plasmashell[1682]: org.kde.pim.akonadi_search_pim: Xapian Database does not exist at  "/home/mariarahel/.local/share/akonadi/search_db/emailContacts/"
+Nov 18 16:15:24 cli plasmashell[1682]: kf.runner: Error requesting matches; calling "org.kde.runners.baloo"  : "org.freedesktop.DBus.Error.NotSupported" ""
+Nov 18 16:15:25 cli systemd[1381]: Started app-org.kde.konsole@17ceed6876384e808b1afb59d76af7b7.service - Konsole - Terminal.
+Nov 18 16:15:25 cli baloorunner[2589]: qt.dbus.integration: QDBusConnection: couldn't handle call to Teardown, no slot matched
+Nov 18 16:15:25 cli baloorunner[2589]: qt.dbus.integration: QDBusConnection: couldn't handle call to Teardown, no slot matched
+Nov 18 16:15:25 cli baloorunner[2589]: qt.dbus.integration: Could not find slot Krunner1Adaptor::Teardown
+Nov 18 16:15:25 cli kwin_wayland_wrapper[1458]: qt.dbus.integration: QDBusConnection: couldn't handle call to Teardown, no slot matched
+Nov 18 16:15:25 cli kwin_wayland_wrapper[1458]: qt.dbus.integration: QDBusConnection: couldn't handle call to Teardown, no slot matched
+Nov 18 16:15:25 cli kwin_wayland_wrapper[1458]: qt.dbus.integration: Could not find slot Krunner1Adaptor::Teardown
+Nov 18 16:15:25 cli konsole[2609]: QLayout: Cannot add a null widget to QHBoxLayout/
+Nov 18 16:15:25 cli systemd[1381]: Started app-org.kde.konsole-2609.scope.
+Nov 18 16:15:30 cli systemd[1]: systemd-hostnamed.service: Deactivated successfully.
+Nov 18 16:15:30 cli systemd-timesyncd[946]: Contacted time server 23.186.168.133:123 (2.debian.pool.ntp.org).
+Nov 18 16:15:30 cli systemd-timesyncd[946]: Initial clock synchronization to Tue 2025-11-18 16:15:30.582932 PST.
+Nov 18 16:15:31 cli su[2638]: (to root) mariarahel on pts/1
+Nov 18 16:15:31 cli su[2638]: pam_unix(su:session): session opened for user root(uid=0) by (uid=1000)
+Nov 18 16:15:31 cli systemd[1]: Created slice user-0.slice - User Slice of UID 0.
+Nov 18 16:15:31 cli systemd[1]: Starting user-runtime-dir@0.service - User Runtime Directory /run/user/0...
+Nov 18 16:15:31 cli systemd-logind[1001]: New session 'c5' of user 'root' with class 'user-early' and type 'tty'.
+Nov 18 16:15:31 cli systemd[1]: Finished user-runtime-dir@0.service - User Runtime Directory /run/user/0.
+Nov 18 16:15:31 cli systemd[1]: Starting user@0.service - User Manager for UID 0...
+Nov 18 16:15:31 cli (systemd)[2665]: pam_unix(systemd-user:session): session opened for user root(uid=0) by (uid=0)
+Nov 18 16:15:31 cli systemd-logind[1001]: New session 'c6' of user 'root' with class 'manager-early' and type 'unspecified'.
+Nov 18 16:15:32 cli systemd[2665]: Queued start job for default target default.target.
+Nov 18 16:15:32 cli systemd[2665]: Created slice app.slice - User Application Slice.
+Nov 18 16:15:32 cli systemd[2665]: Created slice session.slice - User Core Session Slice.
+Nov 18 16:15:32 cli systemd[2665]: Started drkonqi-sentry-postman.path - Submitting pending crash events (file monitor).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-cleanup.timer - Cleanup lingering KCrash metadata was skipped because of an unmet condition check (ConditionPathExistsGlob=/root/.cache/kcrash-metadata/*.ini).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-sentry-postman.timer - Submitting pending crash events was skipped because of an unmet condition check (ConditionPathExistsGlob=/root/.cache/drkonqi/sentry-envelopes/*).
+Nov 18 16:15:32 cli systemd[2665]: Reached target paths.target - Paths.
+Nov 18 16:15:32 cli systemd[2665]: Reached target timers.target - Timers.
+Nov 18 16:15:32 cli systemd[2665]: Starting dbus.socket - D-Bus User Message Bus Socket...
+Nov 18 16:15:32 cli systemd[2665]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: Listening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Nov 18 16:15:32 cli systemd[2665]: Listening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).
+Nov 18 16:15:32 cli systemd[2665]: Starting gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...
+Nov 18 16:15:32 cli systemd[2665]: Starting gpg-agent.socket - GnuPG cryptographic agent and passphrase cache...
+Nov 18 16:15:32 cli systemd[2665]: Listening on keyboxd.socket - GnuPG public key management service.
+Nov 18 16:15:32 cli systemd[2665]: pipewire-pulse.socket - PipeWire PulseAudio was skipped because of an unmet condition check (ConditionUser=!root).
+Nov 18 16:15:32 cli systemd[2665]: pipewire.socket - PipeWire Multimedia System Sockets was skipped because of an unmet condition check (ConditionUser=!root).
+Nov 18 16:15:32 cli systemd[2665]: Listening on pk-debconf-helper.socket - debconf communication socket.
+Nov 18 16:15:32 cli systemd[2665]: Starting ssh-agent.socket - OpenSSH Agent socket...
+Nov 18 16:15:32 cli systemd[2665]: Listening on systemd-ask-password.socket - Query the User Interactively for a Password.
+Nov 18 16:15:32 cli systemd[2665]: Listening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).
+Nov 18 16:15:32 cli systemd[2665]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+Nov 18 16:15:32 cli systemd[2665]: Listening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.
+Nov 18 16:15:32 cli systemd[2665]: Listening on ssh-agent.socket - OpenSSH Agent socket.
+Nov 18 16:15:32 cli systemd[2665]: Starting gcr-ssh-agent.socket - GCR ssh-agent wrapper...
+Nov 18 16:15:32 cli systemd[2665]: Listening on gcr-ssh-agent.socket - GCR ssh-agent wrapper.
+Nov 18 16:15:32 cli systemd[2665]: Reached target sockets.target - Sockets.
+Nov 18 16:15:32 cli systemd[2665]: Reached target basic.target - Basic System.
+Nov 18 16:15:32 cli systemd[1]: Started user@0.service - User Manager for UID 0.
+Nov 18 16:15:32 cli systemd[2665]: Starting dbus.service - D-Bus User Message Bus...
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-cleanup.service - Cleanup lingering KCrash metadata was skipped because of an unmet condition check (ConditionPathExistsGlob=/root/.cache/kcrash-metadata/*.ini).
+Nov 18 16:15:32 cli systemd[2665]: pipewire.service - PipeWire Multimedia Service was skipped because of an unmet condition check (ConditionUser=!root).
+Nov 18 16:15:32 cli systemd[2665]: filter-chain.service: Bound to unit pipewire.service, but unit isn't active.
+Nov 18 16:15:32 cli systemd[2665]: Dependency failed for filter-chain.service - PipeWire filter chain daemon.
+Nov 18 16:15:32 cli systemd[2665]: filter-chain.service: Job filter-chain.service/start failed with result 'dependency'.
+Nov 18 16:15:32 cli systemd[2665]: pipewire-pulse.service - PipeWire PulseAudio was skipped because of an unmet condition check (ConditionUser=!root).
+Nov 18 16:15:32 cli systemd[2665]: Reached target default.target - Main User Target.
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[1]: Started session-c5.scope - Session c5 of User root.
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli su[2638]: pam_systemd(su:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:32 cli systemd[2665]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:15:32 cli systemd[2665]: Started dbus.service - D-Bus User Message Bus.
+Nov 18 16:15:32 cli systemd[2665]: Startup finished in 65ms.
+Nov 18 16:15:36 cli PackageKit[1948]: get-updates transaction /544_beabecda from uid 1000 finished with success after 147ms
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:42 cli systemd[2665]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:15:43 cli systemd[1]: systemd-localed.service: Deactivated successfully.
+Nov 18 16:15:48 cli systemd[1]: systemd-timedated.service: Deactivated successfully.
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:15:52 cli systemd[2665]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:02 cli systemd[2665]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:12 cli systemd[2665]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.
+Nov 18 16:16:15 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:16:15 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:16:15 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:16:15 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:16:15 cli kded6[1615]: Broken filename passed to function
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket - Socket to launch DrKonqi for a systemd-coredump crash was skipped because of an unmet condition check (ConditionUser=!@system).
+Nov 18 16:16:23 cli systemd[2665]: drkonqi-coredump-launcher.socket: Unit needs to be started because active unit sockets.target upholds it, but not starting since we tried this too often recently. Will retry later.

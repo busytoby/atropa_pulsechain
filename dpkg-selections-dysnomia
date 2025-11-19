@@ -32,7 +32,6 @@ autoconf					install
 automake					install
 autopoint					install
 autotools-dev					install
-avahi-daemon					install
 baloo6						install
 base-files					install
 base-passwd					install
@@ -46,9 +45,6 @@ binutils					install
 binutils-common:amd64				install
 binutils-x86-64-linux-gnu			install
 bison						install
-bluedevil					install
-bluez						install
-bluez-obexd					install
 bolt						install
 breeze						install
 breeze-cursor-theme				install
@@ -132,7 +128,6 @@ e2fsprogs					install
 efibootmgr					install
 eject						install
 emacsen-common					install
-evolution-data-server-common			install
 exfatprogs					install
 fakeroot					install
 fdisk						install
@@ -288,9 +283,7 @@ kde-config-screenlocker				install
 kde-config-sddm					install
 kde-config-updates				install
 kde-inotify-survey				install
-kde-plasma-desktop				install
 kde-spectacle					install
-kde-standard					install
 kde-style-breeze				install
 kde-style-breeze-data				install
 kde-style-breeze-qt5				install
@@ -409,7 +402,6 @@ libauthen-sasl-perl				install
 libavahi-client3:amd64				install
 libavahi-common-data:amd64			install
 libavahi-common3:amd64				install
-libavahi-core7:amd64				install
 libavc1394-0:amd64				install
 libavcodec61:amd64				install
 libavfilter10:amd64				install
@@ -463,7 +455,6 @@ libcairo-script-interpreter2:amd64		install
 libcairo2:amd64					install
 libcalendarsupport-data				install
 libcamd3:amd64					install
-libcamel-1.2-64t64:amd64			install
 libcanberra-pulse:amd64				install
 libcanberra0:amd64				install
 libcap-ng0:amd64				install
@@ -504,7 +495,6 @@ libctf0:amd64					install
 libcups2t64:amd64				install
 libcurl3t64-gnutls:amd64			install
 libcurl4t64:amd64				install
-libdaemon0:amd64				install
 libdata-dump-perl				install
 libdatrie1:amd64				install
 libdav1d7:amd64					install
@@ -514,7 +504,6 @@ libdbusmenu-qt5-2:amd64				install
 libdc1394-25:amd64				install
 libdca0:amd64					install
 libdconf1:amd64					install
-libddcutil5:amd64				install
 libde265-0:amd64				install
 libdebconfclient0:amd64				install
 libdebhelper-perl				install
@@ -548,13 +537,8 @@ libdvdread8t64:amd64				install
 libdw-dev:amd64					install
 libdw1t64:amd64					install
 libe-book-0.1-1:amd64				install
-libebackend-1.2-11t64:amd64			install
 libebml5:amd64					install
-libebook-1.2-21t64:amd64			install
-libebook-contacts-1.2-4t64:amd64		install
 libebur128-1:amd64				install
-libedata-book-1.2-27t64:amd64			install
-libedataserver-1.2-27t64:amd64			install
 libedit2:amd64					install
 libeditorconfig0:amd64				install
 libefiboot1t64:amd64				install
@@ -1201,7 +1185,6 @@ libmplex2-2.1-0t64:amd64			install
 libmspub-0.1-1:amd64				install
 libmtdev1t64:amd64				install
 libmtp-common					install
-libmtp-runtime					install
 libmtp9t64:amd64				install
 libmwaw-0.3-3:amd64				install
 libmypaint-1.5-1:amd64				install
@@ -1336,7 +1319,6 @@ libpoppler-qt6-3t64:amd64			install
 libpoppler147:amd64				install
 libpopt0:amd64					install
 libpostproc58:amd64				install
-libpowerdevilcore2:amd64			install
 libproc2-0:amd64				install
 libprocesscore10:amd64				install
 libprotobuf-c1:amd64				install
@@ -1616,7 +1598,6 @@ libuno-sal3t64					install
 libuno-salhelpergcc3-3t64			install
 libunwind8:amd64				install
 libupnp17t64:amd64				install
-libupower-glib3:amd64				install
 liburcu8t64:amd64				install
 liburi-perl					install
 libusb-1.0-0:amd64				install
@@ -1661,7 +1642,6 @@ libwebpdemux2:amd64				install
 libwebpmux3:amd64				install
 libwebrtc-audio-processing-1-3:amd64		install
 libwildmidi2:amd64				install
-libwireplumber-0.5-0:amd64			install
 libwmf-0.2-7:amd64				install
 libwmflite-0.2-7:amd64				install
 libwpd-0.10-10:amd64				install
@@ -1906,9 +1886,6 @@ polkit-kde-agent-1				install
 polkitd						install
 poppler-data					install
 poppler-utils					install
-power-profiles-daemon				install
-powerdevil					install
-powerdevil-data					install
 print-manager					install
 procps						install
 psmisc						install
@@ -2042,7 +2019,6 @@ readline-common					install
 reportbug					install
 rpcsvc-proto					install
 rsync						install
-rtkit						install
 samba-common					install
 samba-common-bin				install
 samba-libs:amd64				install
@@ -2081,7 +2057,6 @@ sysvinit-utils					install
 tar						install
 task-desktop					install
 task-english					install
-task-kde-desktop				install
 tasksel						install
 tasksel-data					install
 tdb-tools					install
@@ -2094,7 +2069,6 @@ udev						install
 udisks2						install
 uno-libs-private				install
 unzip						install
-upower						install
 ure						install
 usb-modeswitch					install
 usb-modeswitch-data				install
@@ -2113,7 +2087,6 @@ wamerican					install
 wayland-utils					install
 webext-plasma-browser-integration		install
 wget						install
-wireplumber					install
 wtmpdb						install
 x11-apps					install
 x11-common					install
