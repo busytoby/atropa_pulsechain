@@ -384,6 +384,7 @@ libargon2-1:amd64				install
 libaribb24-0t64:amd64				install
 libasan8:amd64					install
 libasound2-data					install
+libasound2-plugins:amd64			install
 libasound2t64:amd64				install
 libaspell15:amd64				install
 libass9:amd64					install
@@ -1642,6 +1643,7 @@ libwebpdemux2:amd64				install
 libwebpmux3:amd64				install
 libwebrtc-audio-processing-1-3:amd64		install
 libwildmidi2:amd64				install
+libwireplumber-0.5-0:amd64			install
 libwmf-0.2-7:amd64				install
 libwmflite-0.2-7:amd64				install
 libwpd-0.10-10:amd64				install
@@ -1889,6 +1891,7 @@ poppler-utils					install
 print-manager					install
 procps						install
 psmisc						install
+pulseaudio					install
 pulseaudio-utils				install
 python-apt-common				install
 python3						install
@@ -2019,6 +2022,7 @@ readline-common					install
 reportbug					install
 rpcsvc-proto					install
 rsync						install
+rtkit						install
 samba-common					install
 samba-common-bin				install
 samba-libs:amd64				install
@@ -2087,6 +2091,7 @@ wamerican					install
 wayland-utils					install
 webext-plasma-browser-integration		install
 wget						install
+wireplumber					install
 wtmpdb						install
 x11-apps					install
 x11-common					install
