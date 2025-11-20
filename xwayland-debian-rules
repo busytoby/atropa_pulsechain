@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/pkg-info.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+SUPPORT = https://www.debian.org/support
+
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-Dbuilder_addr="dysnomia999@gmail.com"
+		-Dbuilder_string="$(DEB_SOURCE) $(DEB_VERSION_UPSTREAM) ($(SUPPORT))"
+		-Dauto_features=disabled -Dbuildtype=release -Ddebug=False -Doptimization=2 
+		-Dstrip=True -Dwrap_mode=nodownload -Db_pgo=generate -Db_lto=True -Ddevel-docs=false 
+		-Ddocs=false -Ddocs-pdf=false -Dglamor=False -Dinput_thread=true -Dipv6=false 
+		-Dlibdecor=false -Dmitshm=false -Dscreensaver=false -Dsecure-rpc=False 
+		-Dvendor_name=Dysnomia -Dvendor_name_short=dysnomia.navy 
+		-Dvendor_web=https://dysnomia.navy -Dxdmcp=False -Dxinerama=false -Dxselinux=false 
+		-Dxv=False -Dxvfb=False -Dxwayland_ei=false
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+
+	rm -rf debian/tmp/usr/lib/*/xorg/protocol.txt
+	rm -f debian/tmp/usr/share/man/man1/Xserver.1
+
+override_dh_clean:
+	dh_clean
+	rm -rf debian/build
+	rm -rf build-source
+	rm -f aclocal.m4 ltmain.sh m4/l*.m4
+
+gentarball:
+	git archive --format=tar upstream-unstable --prefix=$(DEB_SOURCE)-$(DEB_VERSION_UPSTREAM)/ \
+		| gzip -9 > ../$(DEB_SOURCE)_$(DEB_VERSION_UPSTREAM).orig.tar.gz
