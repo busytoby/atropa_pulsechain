@@ -135,3 +135,7 @@ address constant WITHOUTContract = address(0x173216Ed67eBF3E6767D86e8b3Ff32e0d64
 
 //
 address constant mariarahelContract = address(0xD32c39fEE49391c7952d1b30b15921b0D3b42E69);
+
+// to ban
+//0x61a76DA4798b7563866Bc1cc5C65Bc68ea447740
+
