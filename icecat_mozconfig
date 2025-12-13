@@ -1,0 +1,20 @@
+#debian unstable/libc6-2.42 package available on request
+
+ac_add_options --with-l10n-base=$PWD/l10n
+ac_add_options --enable-official-branding
+ac_add_options --with-distribution-id=org.gnu
+ac_add_options --enable-release
+ac_add_options --with-unsigned-addon-scopes=app,system
+ac_add_options --allow-addon-sideload
+
+#ac_add_options --enable-wayland-only
+#ac_add_options --disable-rust
+ac_add_options --disable-rust-simd
+ac_add_options --disable-debug
+ac_add_options --disable-tests
+ac_add_options --disable-updater
+ac_add_options --disable-crashreporter
+ac_add_options --disable-eme
+ac_add_options --disable-webdriver
+ac_add_options --without-wasm-sandboxed-libraries
+ac_add_options --disable-nodejs
