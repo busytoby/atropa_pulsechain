@@ -1,0 +1,538 @@
+diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
+index 9957f2dc2e..848a5aa647 100644
+--- a/chrome/browser/about_flags.cc
++++ b/chrome/browser/about_flags.cc
+@@ -12108,20 +12108,6 @@ const FeatureEntry kFeatureEntries[] = {
+      FEATURE_VALUE_TYPE(
+          autofill::features::kAutofillEnableNewFopDisplayDesktop)},
+ 
+-#if BUILDFLAG(IS_CHROMEOS)
+-    {"enable-printing-margins-and-scale",
+-     flag_descriptions::kEnablePrintingMarginsAndScale,
+-     flag_descriptions::kEnablePrintingMarginsAndScaleDescription, kOsCrOS,
+-     FEATURE_VALUE_TYPE(printing::features::kApiPrintingMarginsAndScale)},
+-#endif  // BUILDFLAG(IS_CHROMEOS)
+-
+-    {"align-pdf-default-print-settings-with-html",
+-     flag_descriptions::kAlignPdfDefaultPrintSettingsWithHTMLName,
+-     flag_descriptions::kAlignPdfDefaultPrintSettingsWithHTMLDescription,
+-     kOsAll,
+-     FEATURE_VALUE_TYPE(
+-         printing::features::kAlignPdfDefaultPrintSettingsWithHTML)},
+-
+     {"supervised-user-block-interstitial-v3",
+      flag_descriptions::kSupervisedUserBlockInterstitialV3Name,
+      flag_descriptions::kSupervisedUserBlockInterstitialV3Description, kOsAll,
+diff --git a/chrome/browser/chrome_browser_main_linux.cc b/chrome/browser/chrome_browser_main_linux.cc
+index 2e680ec2eb..6dc04913e5 100644
+--- a/chrome/browser/chrome_browser_main_linux.cc
++++ b/chrome/browser/chrome_browser_main_linux.cc
+@@ -53,7 +53,6 @@ ChromeBrowserMainPartsLinux::ChromeBrowserMainPartsLinux(
+ ChromeBrowserMainPartsLinux::~ChromeBrowserMainPartsLinux() = default;
+ 
+ void ChromeBrowserMainPartsLinux::PostCreateMainMessageLoop() {
+-  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+ #if BUILDFLAG(IS_CHROMEOS)
+   if (command_line->HasSwitch(metrics::kRecordStackSamplingDataSwitch)) {
+     stack_sampling_recorder_ =
+@@ -64,31 +63,6 @@ void ChromeBrowserMainPartsLinux::PostCreateMainMessageLoop() {
+   // FeatureList, and is done elsewhere.
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+-#if !BUILDFLAG(IS_CHROMEOS)
+-  bluez::BluezDBusManager::Initialize(
+-      dbus_thread_linux::GetSharedSystemBus().get());
+-
+-  // Set up crypt config. This needs to be done before anything starts the
+-  // network service, as the raw encryption key needs to be shared with the
+-  // network service for encrypted cookie storage.
+-  // Chrome OS does not need a crypt config as its user data directories are
+-  // already encrypted and none of the true encryption backends used by desktop
+-  // Linux are available on Chrome OS anyway.
+-  std::unique_ptr<os_crypt::Config> config =
+-      std::make_unique<os_crypt::Config>();
+-  // Forward to os_crypt the flag to use a specific password store.
+-  config->store =
+-      command_line->GetSwitchValueASCII(password_manager::kPasswordStore);
+-  // Forward the product name
+-  config->product_name = l10n_util::GetStringUTF8(IDS_PRODUCT_NAME);
+-  // OSCrypt can be disabled in a special settings file.
+-  config->should_use_preference =
+-      base::CommandLine::ForCurrentProcess()->HasSwitch(
+-          password_manager::kEnableEncryptionSelection);
+-  chrome::GetDefaultUserDataDirectory(&config->user_data_path);
+-  OSCrypt::SetConfig(std::move(config));
+-#endif  // !BUILDFLAG(IS_CHROMEOS)
+-
+   ChromeBrowserMainPartsPosix::PostCreateMainMessageLoop();
+ }
+ 
+@@ -130,11 +104,6 @@ void ChromeBrowserMainPartsLinux::PostBrowserStart() {
+ #endif  // BUILDFLAG(USE_DBUS) && !BUILDFLAG(IS_CHROMEOS)
+ 
+ void ChromeBrowserMainPartsLinux::PostDestroyThreads() {
+-#if BUILDFLAG(IS_CHROMEOS)
+-  // No-op; per PostBrowserStart() comment, this is done elsewhere.
+-#else
+-  bluez::BluezDBusManager::Shutdown();
+-#endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+   ChromeBrowserMainPartsPosix::PostDestroyThreads();
+ }
+diff --git a/chrome/browser/external_protocol/external_protocol_handler.cc b/chrome/browser/external_protocol/external_protocol_handler.cc
+index 51f344626c..306e3c308d 100644
+--- a/chrome/browser/external_protocol/external_protocol_handler.cc
++++ b/chrome/browser/external_protocol/external_protocol_handler.cc
+@@ -243,17 +243,6 @@ void OnDefaultSchemeClientWorkerFinished(
+   bool chrome_is_default_handler = state == shell_integration::IS_DEFAULT;
+ 
+   // On ChromeOS, Click to Call is integrated into the external protocol dialog.
+-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+-  if (web_contents && ShouldOfferClickToCallForURL(
+-                          web_contents->GetBrowserContext(), escaped_url)) {
+-    // Handle tel links by opening the Click to Call dialog. This will call back
+-    // into LaunchUrlWithoutSecurityCheck if the user selects a system handler.
+-    ClickToCallUiController::ShowDialog(
+-        web_contents, initiating_origin, std::move(initiator_document),
+-        escaped_url, chrome_is_default_handler, program_name);
+-    return;
+-  }
+-#endif
+ 
+   if (chrome_is_default_handler) {
+     if (delegate)
+diff --git a/chrome/browser/media/cast_mirroring_service_host.cc b/chrome/browser/media/cast_mirroring_service_host.cc
+index b3f55217a0..74c635c7ef 100644
+--- a/chrome/browser/media/cast_mirroring_service_host.cc
++++ b/chrome/browser/media/cast_mirroring_service_host.cc
+@@ -486,15 +486,7 @@ void CastMirroringServiceHost::CreateAudioStreamForDesktop(
+ 
+ void CastMirroringServiceHost::ConnectToRemotingSource(
+     mojo::PendingRemote<media::mojom::Remoter> remoter,
+-    mojo::PendingReceiver<media::mojom::RemotingSource> receiver) {
+-  if (source_media_id_.type == content::DesktopMediaID::TYPE_WEB_CONTENTS) {
+-    content::WebContents* source_contents = web_contents();
+-    if (source_contents) {
+-      CastRemotingConnector::Get(source_contents)
+-          ->ConnectWithMediaRemoter(std::move(remoter), std::move(receiver));
+-    }
+-  }
+-}
++    mojo::PendingReceiver<media::mojom::RemotingSource> receiver) { return; }
+ 
+ void CastMirroringServiceHost::WebContentsDestroyed() {
+   mirroring_service_.reset();
+diff --git a/chrome/browser/media/router/mojo/media_router_desktop.cc b/chrome/browser/media/router/mojo/media_router_desktop.cc
+index 2b4f6e0f9b..509f438f6d 100644
+--- a/chrome/browser/media/router/mojo/media_router_desktop.cc
++++ b/chrome/browser/media/router/mojo/media_router_desktop.cc
+@@ -173,14 +173,6 @@ void MediaRouterDesktop::CreateRoute(const MediaSource::Id& source_id,
+   }
+ 
+   const MediaSource source(source_id);
+-  if (source.IsTabMirroringSource()) {
+-    // Ensure the CastRemotingConnector is created before mirroring starts.
+-    CastRemotingConnector* const connector =
+-        CastRemotingConnector::Get(web_contents);
+-    connector->ResetRemotingPermission();
+-
+-    MediaRouterMojoMetrics::RecordTabMirroringMetrics(web_contents);
+-  }
+ 
+   if (IsSiteInitiatedMirroringSource(source_id)) {
+     MediaRouterMojoMetrics::RecordSiteInitiatedMirroringStarted(web_contents,
+diff --git a/chrome/browser/metrics/bluetooth_metrics_provider.cc b/chrome/browser/metrics/bluetooth_metrics_provider.cc
+index 5def5490f7..2c305a12e2 100644
+--- a/chrome/browser/metrics/bluetooth_metrics_provider.cc
++++ b/chrome/browser/metrics/bluetooth_metrics_provider.cc
+@@ -15,11 +15,7 @@ BluetoothMetricsProvider::BluetoothMetricsProvider() = default;
+ BluetoothMetricsProvider::~BluetoothMetricsProvider() = default;
+ 
+ bool BluetoothMetricsProvider::ProvideHistograms() {
+-  base::UmaHistogramEnumeration("Bluetooth.StackName",
+-                                floss::features::IsFlossEnabled()
+-                                    ? BluetoothStackName::kFloss
+-                                    : BluetoothStackName::kBlueZ);
+-  return true;
++  return false;
+ }
+ 
+ }  // namespace metrics
+diff --git a/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc b/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc
+index 41975497b0..f8cb762d57 100644
+--- a/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc
++++ b/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc
+@@ -193,20 +193,6 @@ enum class PdfRequestStates {
+   kMaxValue = kNonPdfMainDoc_PdfNotFound,
+ };
+ 
+-#if !BUILDFLAG(IS_ANDROID)
+-void RecordPdfRequestState(bool is_pdf_document, bool pdf_found) {
+-  PdfRequestStates state;
+-  if (is_pdf_document) {
+-    state = pdf_found ? PdfRequestStates::kPdfMainDoc_PdfFound
+-                      : PdfRequestStates::kPdfMainDoc_PdfNotFound;
+-  } else {
+-    state = pdf_found ? PdfRequestStates::kNonPdfMainDoc_PdfFound
+-                      : PdfRequestStates::kNonPdfMainDoc_PdfNotFound;
+-  }
+-  UMA_HISTOGRAM_ENUMERATION("Glic.TabContext.PdfContentsRequested", state);
+-}
+-#endif
+-
+ // Coordinates fetching multiple types of page context.
+ class PageContextFetcher : public content::WebContentsObserver {
+  public:
+@@ -248,27 +234,6 @@ class PageContextFetcher : public content::WebContentsObserver {
+     }
+ 
+     pdf_done_ = true;  // Will not fetch PDF contents by default.
+-#if !BUILDFLAG(IS_ANDROID)
+-    if (options.pdf_size_limit > 0) {
+-      bool is_pdf_document =
+-          web_contents()->GetContentsMimeType() == pdf::kPDFMimeType;
+-      pdf::PDFDocumentHelper* pdf_helper =
+-          pdf::PDFDocumentHelper::MaybeGetForWebContents(web_contents());
+-      RecordPdfRequestState(is_pdf_document,
+-                            /*pdf_found=*/pdf_helper != nullptr);
+-      // GetPdfBytes() is not safe before IsDocumentLoadComplete() = true.
+-      if (is_pdf_document && pdf_helper &&
+-          pdf_helper->IsDocumentLoadComplete()) {
+-        const url::Origin& pdf_origin =
+-            pdf_helper->render_frame_host().GetLastCommittedOrigin();
+-        pdf_helper->GetPdfBytes(
+-            options.pdf_size_limit,
+-            base::BindOnce(&PageContextFetcher::ReceivedPdfBytes, GetWeakPtr(),
+-                           pdf_origin, options.pdf_size_limit));
+-        pdf_done_ = false;  // Will fetch PDF contents.
+-      }
+-    }
+-#endif
+ 
+     if (options.annotated_page_content_options) {
+       blink::mojom::AIPageContentOptionsPtr ai_page_content_options =
+@@ -291,32 +256,6 @@ class PageContextFetcher : public content::WebContentsObserver {
+     RunCallbackIfComplete();
+   }
+ 
+-  // TODO: Enable pdf fetching for Android.
+-#if !BUILDFLAG(IS_ANDROID)
+-  void ReceivedPdfBytes(const url::Origin& pdf_origin,
+-                        uint32_t pdf_size_limit,
+-                        pdf::mojom::PdfListener::GetPdfBytesStatus status,
+-                        const std::vector<uint8_t>& pdf_bytes,
+-                        uint32_t page_count) {
+-    pdf_done_ = true;
+-
+-    // Warning!: `pdf_bytes_` can be larger than pdf_size_limit.
+-    // `pdf_size_limit` applies to the original PDF size, but the PDF is
+-    // re-serialized and returned, so it is not identical to the original.
+-    bool size_limit_exceeded =
+-        status ==
+-            pdf::mojom::PdfListener_GetPdfBytesStatus::kSizeLimitExceeded ||
+-        pdf_bytes.size() > pdf_size_limit;
+-
+-    if (size_limit_exceeded) {
+-      pending_result_->pdf_result.emplace(pdf_origin);
+-    } else {
+-      pending_result_->pdf_result.emplace(pdf_origin, pdf_bytes);
+-    }
+-    RunCallbackIfComplete();
+-  }
+-#endif
+-
+   void GetTabScreenshot(content::WebContents& web_contents,
+                         const ScreenshotOptions& screenshot_options) {
+     auto* view = web_contents.GetRenderWidgetHostView();
+diff --git a/chrome/browser/printing/print_preview_dialog_controller.h b/chrome/browser/printing/print_preview_dialog_controller.h
+index 77fea0a881..e0d894d69a 100644
+--- a/chrome/browser/printing/print_preview_dialog_controller.h
++++ b/chrome/browser/printing/print_preview_dialog_controller.h
+@@ -11,7 +11,7 @@
+ #include "base/check.h"
+ #include "base/functional/callback.h"
+ #include "chrome/browser/tab_contents/web_contents_collection.h"
+-#include "components/printing/common/print.mojom.h"
++//#include "components/printing/common/print.mojom.h"
+ #include "components/tabs/public/tab_interface.h"
+ 
+ class GURL;
+@@ -24,168 +24,4 @@ namespace ui {
+ class WebDialogDelegate;
+ }
+ 
+-namespace printing {
+-
+-// For print preview, the WebContents that initiates the printing operation is
+-// the initiator, and the constrained dialog that shows the print preview is the
+-// print preview dialog.
+-// This class manages print preview dialog creation and destruction, and keeps
+-// track of the 1:1 relationship between initiator tabs and print preview
+-// dialogs.
+-class PrintPreviewDialogController : public WebContentsCollection::Observer {
+- public:
+-  // Should only be used by `BrowserProcess`-like classes. Call `GetInstance()`
+-  // to get the active instance.
+-  PrintPreviewDialogController();
+-
+-  PrintPreviewDialogController(const PrintPreviewDialogController&) = delete;
+-  PrintPreviewDialogController& operator=(const PrintPreviewDialogController&) =
+-      delete;
+-
+-  ~PrintPreviewDialogController() override;
+-
+-  // Returns the existing instance in the global `BrowserProcess`.
+-  static PrintPreviewDialogController* GetInstance();
+-
+-  // Returns true if `url` is a Print Preview dialog URL (has `chrome://print`
+-  // origin).
+-  static bool IsPrintPreviewURL(const GURL& url);
+-
+-  // Returns true if `url` is a Print Preview content URL (has
+-  // `chrome-untrusted://print` origin).
+-  static bool IsPrintPreviewContentURL(const GURL& url);
+-
+-  // Initiates print preview for `initiator`.
+-  void PrintPreview(content::WebContents* initiator,
+-                    const mojom::RequestPrintPreviewParams& params);
+-
+-  // Returns the preview dialog for `contents`.
+-  // Returns `contents` if `contents` is a preview dialog.
+-  // Returns nullptr if no preview dialog exists for `contents`.
+-  content::WebContents* GetPrintPreviewForContents(
+-      content::WebContents* contents) const;
+-
+-  // Returns the initiator for `preview_dialog`.
+-  // Returns nullptr if no initiator exists for `preview_dialog`.
+-  content::WebContents* GetInitiator(content::WebContents* preview_dialog);
+-
+-  // Returns the request data associated with `preview_dialog`.
+-  // Returns nullptr if no data exists for `preview_dialog`.
+-  const mojom::RequestPrintPreviewParams* GetRequestParams(
+-      content::WebContents* preview_dialog) const;
+-
+-  // Runs `callback` on the dialog of each active print preview operation.
+-  void ForEachPreviewDialog(
+-      base::RepeatingCallback<void(content::WebContents*)> callback);
+-
+-  // Erases the initiator info associated with `preview_dialog`.
+-  void EraseInitiatorInfo(content::WebContents* preview_dialog);
+-
+-  static std::unique_ptr<ui::WebDialogDelegate>
+-  CreatePrintPreviewDialogDelegateForTesting(content::WebContents* initiator);
+-
+-  // Exposes GetOrCreatePreviewDialog() for testing.
+-  content::WebContents* GetOrCreatePreviewDialogForTesting(
+-      content::WebContents* initiator);
+-
+-#if defined(UNIT_TEST)
+-  // Exposes a way for tests to manually specify the initiator to preview_dialog
+-  // relationship. For use in tests that create their own preview dialogs.
+-  void AssociateWebContentsesForTesting(content::WebContents* initiator,
+-                                        content::WebContents* preview_dialog) {
+-    CHECK(initiator);
+-    CHECK(preview_dialog);
+-    mojom::RequestPrintPreviewParams params;
+-    params.is_modifiable = true;
+-    InitiatorData data(initiator, params, /*scoper=*/nullptr);
+-    preview_dialog_map_.emplace(preview_dialog, std::move(data));
+-  }
+-  void DisassociateWebContentsesForTesting(
+-      content::WebContents* preview_dialog) {
+-    CHECK(preview_dialog);
+-    size_t erased_count = preview_dialog_map_.erase(preview_dialog);
+-    CHECK(erased_count);
+-  }
+-#endif
+-
+-  bool is_creating_print_preview_dialog() const {
+-    return is_creating_print_preview_dialog_;
+-  }
+-
+- private:
+-  // Tracks the initiator, as well as some of its Print Preview properties.
+-  struct InitiatorData {
+-    InitiatorData(content::WebContents* initiator,
+-                  const mojom::RequestPrintPreviewParams& request_params,
+-                  std::unique_ptr<tabs::ScopedTabModalUI> scoper);
+-    InitiatorData(InitiatorData&&) noexcept;
+-    InitiatorData& operator=(InitiatorData&&) noexcept;
+-    ~InitiatorData();
+-
+-    raw_ptr<content::WebContents> initiator;
+-    mojom::RequestPrintPreviewParams request_params;
+-
+-    // Prevents other tab-modal UIs from showing.
+-    std::unique_ptr<tabs::ScopedTabModalUI> scoper;
+-  };
+-
+-  // 1:1 relationship between a print preview dialog and its initiator data.
+-  // Key: Print preview dialog.
+-  // Value: Initiator data.
+-  using PrintPreviewDialogMap = std::map<content::WebContents*, InitiatorData>;
+-
+-  // WebContentsCollection::Observer:
+-  // Handles the closing of the RenderProcessHost. This is observed when the
+-  // initiator renderer crashes.
+-  void RenderProcessGone(content::WebContents* contents,
+-                         base::TerminationStatus status) override;
+-
+-  // Handles the destruction of `contents`. This is observed when either
+-  // the initiator or preview WebContents is closed.
+-  void WebContentsDestroyed(content::WebContents* contents) override;
+-
+-  // Handles the commit of a navigation for `contents`. This is observed when
+-  // the renderer for either WebContents is navigated to a different page.
+-  void DidFinishNavigation(
+-      content::WebContents* contents,
+-      content::NavigationHandle* navigation_handle) override;
+-
+-  // Helpers for DidFinishNavigation().
+-  void OnInitiatorNavigated(content::WebContents* initiator,
+-                            content::NavigationHandle* navigation_handle);
+-  void OnPreviewDialogNavigated(content::WebContents* preview_dialog,
+-                                content::NavigationHandle* navigation_handle);
+-
+-  // Gets/Creates the print preview dialog for `initiator`.
+-  content::WebContents* GetOrCreatePreviewDialog(
+-      content::WebContents* initiator,
+-      const mojom::RequestPrintPreviewParams& params);
+-
+-  // Creates a new print preview dialog if GetOrCreatePreviewDialog() cannot
+-  // find a print preview dialog for `initiator`.
+-  content::WebContents* CreatePrintPreviewDialog(
+-      tabs::TabInterface* tab,
+-      content::WebContents* initiator,
+-      const mojom::RequestPrintPreviewParams& params);
+-
+-  // Helper function to store the title of the initiator associated with
+-  // `preview_dialog` in `preview_dialog`'s PrintPreviewUI.
+-  void SaveInitiatorTitle(content::WebContents* preview_dialog);
+-
+-  // Removes WebContents when they close/crash/navigate.
+-  void RemoveInitiator(content::WebContents* initiator);
+-  void RemovePreviewDialog(content::WebContents* preview_dialog);
+-
+-  // Mapping between print preview dialog and the corresponding initiator.
+-  PrintPreviewDialogMap preview_dialog_map_;
+-
+-  WebContentsCollection web_contents_collection_;
+-
+-  // Whether the PrintPreviewDialogController is in the middle of creating a
+-  // print preview dialog.
+-  bool is_creating_print_preview_dialog_ = false;
+-};
+-
+-}  // namespace printing
+-
+ #endif  // CHROME_BROWSER_PRINTING_PRINT_PREVIEW_DIALOG_CONTROLLER_H_
+diff --git a/chrome/browser/renderer_context_menu/render_view_context_menu.cc b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+index e6f3691486..33e961cd45 100644
+--- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
++++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+@@ -2375,14 +2375,6 @@ void RenderViewContextMenu::AppendLinkToTextItems() {
+ }
+ 
+ void RenderViewContextMenu::AppendPrintItem() {
+-#if BUILDFLAG(ENABLE_PRINTING)
+-  if (GetPrefs(browser_context_)->GetBoolean(prefs::kPrintingEnabled) &&
+-      (params_.media_type == ContextMenuDataMediaType::kNone ||
+-       params_.media_flags & ContextMenuData::kMediaCanPrint) &&
+-      params_.misspelled_word.empty()) {
+-    menu_model_.AddItemWithStringId(IDC_PRINT, IDS_CONTENT_CONTEXT_PRINT);
+-  }
+-#endif  // BUILDFLAG(ENABLE_PRINTING)
+ }
+ 
+ void RenderViewContextMenu::AppendPartialTranslateItem() {
+@@ -2763,31 +2755,7 @@ void RenderViewContextMenu::AppendSharingItems() {
+ }
+ 
+ void RenderViewContextMenu::AppendClickToCallItem() {
+-  SharingClickToCallEntryPoint entry_point;
+-  std::optional<std::string> phone_number;
+-  std::string selection_text;
+-  if (ShouldOfferClickToCallForURL(browser_context_, params_.link_url)) {
+-    entry_point = SharingClickToCallEntryPoint::kRightClickLink;
+-    phone_number = params_.link_url.GetContent();
+-  } else if (!params_.selection_text.empty()) {
+-    entry_point = SharingClickToCallEntryPoint::kRightClickSelection;
+-    selection_text = base::UTF16ToUTF8(params_.selection_text);
+-    phone_number =
+-        ExtractPhoneNumberForClickToCall(browser_context_, selection_text);
+-  }
+-
+-  if (!phone_number || phone_number->empty()) {
+     return;
+-  }
+-
+-  if (!click_to_call_context_menu_observer_) {
+-    click_to_call_context_menu_observer_ =
+-        std::make_unique<ClickToCallContextMenuObserver>(this);
+-    observers_.AddObserver(click_to_call_context_menu_observer_.get());
+-  }
+-
+-  click_to_call_context_menu_observer_->BuildMenu(*phone_number, selection_text,
+-                                                  entry_point);
+ }
+ 
+ void RenderViewContextMenu::AppendRegionSearchItem() {
+@@ -4014,14 +3982,6 @@ bool RenderViewContextMenu::IsPasteAndMatchStyleEnabled() const {
+ }
+ 
+ bool RenderViewContextMenu::IsPrintPreviewEnabled() const {
+-#if BUILDFLAG(ENABLE_GLIC)
+-  if (IsGlicWindow(this, browser_context_) &&
+-      base::FeatureList::IsEnabled(features::kGlicPrintMenuItem) &&
+-      glic::GlicEnabling::IsMultiInstanceEnabled()) {
+-    return GetPrefs(browser_context_)->GetBoolean(prefs::kPrintingEnabled) &&
+-           (source_web_contents_ && !source_web_contents_->IsCrashed());
+-  }
+-#endif  // BUILDFLAG(ENABLE_GLIC)
+ 
+   if (params_.media_type != ContextMenuDataMediaType::kNone &&
+       !(params_.media_flags & ContextMenuData::kMediaCanPrint)) {
+@@ -4426,17 +4386,6 @@ void RenderViewContextMenu::ExecSaveAs() {
+ }
+ 
+ void RenderViewContextMenu::ExecGlicShareImage() {
+-#if BUILDFLAG(ENABLE_GLIC)
+-  if (!glic::GlicEnabling::IsShareImageEnabledForProfile(GetProfile())) {
+-    // If this has changed since the context menu was summoned, bail early.
+-    return;
+-  }
+-  if (auto* glic_service = glic::GlicKeyedService::Get(browser_context_)) {
+-    glic_service->ShareContextImage(
+-        tabs::TabInterface::MaybeGetFromContents(source_web_contents_),
+-        GetRenderFrameHost(), params().src_url);
+-  }
+-#endif  // BUILDLFLAG(ENABLE_GLIC)
+ }
+ 
+ void RenderViewContextMenu::ExecExitFullscreen() {
+diff --git a/chrome/browser/ui/views/user_education/browser_user_education_service.cc b/chrome/browser/ui/views/user_education/browser_user_education_service.cc
+index 7cdd4bcf60..b8008f53b5 100644
+--- a/chrome/browser/ui/views/user_education/browser_user_education_service.cc
++++ b/chrome/browser/ui/views/user_education/browser_user_education_service.cc
+@@ -839,21 +839,6 @@ void MaybeRegisterChromeFeaturePromos(
+                 if (elements.empty()) {
+                   return nullptr;
+                 }
+-                // Ensure a searchified PDF is visible before showing the IPH.
+-                auto* const browser_view =
+-                    views::ElementTrackerViews::GetInstance()
+-                        ->GetFirstMatchingViewAs<BrowserView>(
+-                            kBrowserViewElementId, elements[0]->context());
+-                std::vector<ContentsWebView*> contents_web_views =
+-                    browser_view->GetAllVisibleContentsWebViews();
+-                for (auto* contents_web_view : contents_web_views) {
+-                  auto* pdf_doc_helper =
+-                      pdf::PDFDocumentHelper::MaybeGetForWebContents(
+-                          contents_web_view->GetWebContents());
+-                  if (pdf_doc_helper && pdf_doc_helper->SearchifyStarted()) {
+-                    return elements[0];
+-                  }
+-                }
+                 return nullptr;
+               }))));
+ 
