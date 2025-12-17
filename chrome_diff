@@ -1,8 +1,53 @@
+diff --git a/DEPS b/DEPS
+index cd53845544..8e3f92eb3b 100644
+--- a/DEPS
++++ b/DEPS
+@@ -454,10 +454,6 @@ vars = {
+   # and whatever else without interference from each other.
+   'jetstream_2.2_revision': '2145cedef4ca2777b792cb0059d3400ee2a6153c',
+   # Three lines of non-changing comments so that
+-  # the commit queue can handle CLs rolling wuffs
+-  # and whatever else without interference from each other.
+-  'wuffs_revision': 'e3f919ccfe3ef542cfc983a82146070258fb57f8',
+-  # Three lines of non-changing comments so that
+   # the commit queue can handle CLs rolling crabbyavif
+   # and whatever else without interference from each other.
+   'crabbyavif_revision': '640d2758f8d2e59d1a55ae0933673f0f65de68c4',
+@@ -2991,17 +2987,6 @@ deps = {
+   'src/third_party/webrtc':
+     Var('webrtc_git') + '/src.git' + '@' + 'd20f1291010c2355c411c4d68a28927df1acc3da',
+ 
+-  # Wuffs' canonical repository is at github.com/google/wuffs, but we use
+-  # Skia's mirror of Wuffs, the same as in upstream Skia's DEPS file.
+-  #
+-  # The local directory is called "third_party/wuffs" (matching upstream Skia
+-  # and other non-Chromium, Skia-using projects) even though the git repo we
+-  # clone is called "wuffs-mirror-release-c". The reasons for using w-m-r-c are
+-  # listed in the https://crrev.com/c/3086053 commit message. One reason is
+-  # that the w-m-r-c subset is much smaller and changes much less frequently.
+-  'src/third_party/wuffs/src':
+-    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' +  Var('wuffs_revision'),
+-
+   'src/third_party/weston/src': {
+       'url': Var('chromium_git') + '/external/anongit.freedesktop.org/git/wayland/weston.git' + '@' + 'bdba2f9adaca673fd58339d8140bc04727ee279d',
+       'condition': 'checkout_linux',
+diff --git a/OWNERS b/OWNERS
+index c4b16e7f63..4f3cc3f604 100644
+--- a/OWNERS
++++ b/OWNERS
+@@ -232,7 +232,6 @@ per-file third_party/widevine/cdm/win=*
+ per-file third_party/widevine/scripts=*
+ per-file third_party/widevine/test/license_server=*
+ per-file third_party/wix=*
+-per-file third_party/wuffs/src=*
+ per-file third_party/xdg-utils=*
+ per-file third_party/xnnpack/src=*
+ per-file third_party/zstd/src=*
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
-index 9957f2dc2e..848a5aa647 100644
+index 87ae513327..3aff12dee3 100644
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -12108,20 +12108,6 @@ const FeatureEntry kFeatureEntries[] = {
+@@ -12094,20 +12094,6 @@ const FeatureEntry kFeatureEntries[] = {
       FEATURE_VALUE_TYPE(
           autofill::features::kAutofillEnableNewFopDisplayDesktop)},
  
@@ -23,51 +68,46 @@ index 9957f2dc2e..848a5aa647 100644
      {"supervised-user-block-interstitial-v3",
       flag_descriptions::kSupervisedUserBlockInterstitialV3Name,
       flag_descriptions::kSupervisedUserBlockInterstitialV3Description, kOsAll,
-diff --git a/chrome/browser/chrome_browser_main_linux.cc b/chrome/browser/chrome_browser_main_linux.cc
-index 2e680ec2eb..6dc04913e5 100644
---- a/chrome/browser/chrome_browser_main_linux.cc
-+++ b/chrome/browser/chrome_browser_main_linux.cc
-@@ -53,7 +53,6 @@ ChromeBrowserMainPartsLinux::ChromeBrowserMainPartsLinux(
- ChromeBrowserMainPartsLinux::~ChromeBrowserMainPartsLinux() = default;
- 
- void ChromeBrowserMainPartsLinux::PostCreateMainMessageLoop() {
--  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
- #if BUILDFLAG(IS_CHROMEOS)
-   if (command_line->HasSwitch(metrics::kRecordStackSamplingDataSwitch)) {
-     stack_sampling_recorder_ =
-@@ -64,31 +63,6 @@ void ChromeBrowserMainPartsLinux::PostCreateMainMessageLoop() {
-   // FeatureList, and is done elsewhere.
- #endif  // BUILDFLAG(IS_CHROMEOS)
- 
--#if !BUILDFLAG(IS_CHROMEOS)
--  bluez::BluezDBusManager::Initialize(
--      dbus_thread_linux::GetSharedSystemBus().get());
+diff --git a/chrome/browser/chrome_browser_interface_binders.cc b/chrome/browser/chrome_browser_interface_binders.cc
+index 658a23ae07..e1402fcbfd 100644
+--- a/chrome/browser/chrome_browser_interface_binders.cc
++++ b/chrome/browser/chrome_browser_interface_binders.cc
+@@ -293,21 +293,7 @@ void BindNetworkHintsHandler(
+ void BindSpeechRecognitionContextHandler(
+     content::RenderFrameHost* frame_host,
+     mojo::PendingReceiver<media::mojom::SpeechRecognitionContext> receiver) {
+-  if (!captions::IsLiveCaptionFeatureSupported()) {
+     return;
+-  }
 -
--  // Set up crypt config. This needs to be done before anything starts the
--  // network service, as the raw encryption key needs to be shared with the
--  // network service for encrypted cookie storage.
--  // Chrome OS does not need a crypt config as its user data directories are
--  // already encrypted and none of the true encryption backends used by desktop
--  // Linux are available on Chrome OS anyway.
--  std::unique_ptr<os_crypt::Config> config =
--      std::make_unique<os_crypt::Config>();
--  // Forward to os_crypt the flag to use a specific password store.
--  config->store =
--      command_line->GetSwitchValueASCII(password_manager::kPasswordStore);
--  // Forward the product name
--  config->product_name = l10n_util::GetStringUTF8(IDS_PRODUCT_NAME);
--  // OSCrypt can be disabled in a special settings file.
--  config->should_use_preference =
--      base::CommandLine::ForCurrentProcess()->HasSwitch(
--          password_manager::kEnableEncryptionSelection);
--  chrome::GetDefaultUserDataDirectory(&config->user_data_path);
--  OSCrypt::SetConfig(std::move(config));
--#endif  // !BUILDFLAG(IS_CHROMEOS)
--
-   ChromeBrowserMainPartsPosix::PostCreateMainMessageLoop();
+-  // Bind via the appropriate factory.
+-  Profile* profile = Profile::FromBrowserContext(
+-      frame_host->GetProcess()->GetBrowserContext());
+-#if BUILDFLAG(ENABLE_BROWSER_SPEECH_SERVICE)
+-  auto* factory = SpeechRecognitionServiceFactory::GetForProfile(profile);
+-#elif BUILDFLAG(IS_CHROMEOS)
+-  auto* factory = CrosSpeechRecognitionServiceFactory::GetForProfile(profile);
+-#else
+-#error "No speech recognition service factory on this platform."
+-#endif
+-  factory->BindSpeechRecognitionContext(std::move(receiver));
  }
  
-@@ -130,11 +104,6 @@ void ChromeBrowserMainPartsLinux::PostBrowserStart() {
+ void BindSpeechRecognitionClientBrowserInterfaceHandler(
+diff --git a/chrome/browser/chrome_browser_main_linux.cc b/chrome/browser/chrome_browser_main_linux.cc
+index 2e680ec2eb..bd777a0944 100644
+--- a/chrome/browser/chrome_browser_main_linux.cc
++++ b/chrome/browser/chrome_browser_main_linux.cc
+@@ -65,8 +65,6 @@ void ChromeBrowserMainPartsLinux::PostCreateMainMessageLoop() {
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+ #if !BUILDFLAG(IS_CHROMEOS)
+-  bluez::BluezDBusManager::Initialize(
+-      dbus_thread_linux::GetSharedSystemBus().get());
+ 
+   // Set up crypt config. This needs to be done before anything starts the
+   // network service, as the raw encryption key needs to be shared with the
+@@ -130,11 +128,5 @@ void ChromeBrowserMainPartsLinux::PostBrowserStart() {
  #endif  // BUILDFLAG(USE_DBUS) && !BUILDFLAG(IS_CHROMEOS)
  
  void ChromeBrowserMainPartsLinux::PostDestroyThreads() {
@@ -76,7 +116,7 @@ index 2e680ec2eb..6dc04913e5 100644
 -#else
 -  bluez::BluezDBusManager::Shutdown();
 -#endif  // BUILDFLAG(IS_CHROMEOS)
- 
+-
    ChromeBrowserMainPartsPosix::PostDestroyThreads();
  }
 diff --git a/chrome/browser/external_protocol/external_protocol_handler.cc b/chrome/browser/external_protocol/external_protocol_handler.cc
@@ -159,10 +199,10 @@ index 5def5490f7..2c305a12e2 100644
  
  }  // namespace metrics
 diff --git a/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc b/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc
-index 41975497b0..f8cb762d57 100644
+index 4c3d0180a1..610009ddcd 100644
 --- a/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc
 +++ b/chrome/browser/page_content_annotations/multi_source_page_context_fetcher.cc
-@@ -193,20 +193,6 @@ enum class PdfRequestStates {
+@@ -194,20 +194,6 @@ enum class PdfRequestStates {
    kMaxValue = kNonPdfMainDoc_PdfNotFound,
  };
  
@@ -183,7 +223,7 @@ index 41975497b0..f8cb762d57 100644
  // Coordinates fetching multiple types of page context.
  class PageContextFetcher : public content::WebContentsObserver {
   public:
-@@ -248,27 +234,6 @@ class PageContextFetcher : public content::WebContentsObserver {
+@@ -249,27 +235,6 @@ class PageContextFetcher : public content::WebContentsObserver {
      }
  
      pdf_done_ = true;  // Will not fetch PDF contents by default.
@@ -211,7 +251,7 @@ index 41975497b0..f8cb762d57 100644
  
      if (options.annotated_page_content_options) {
        blink::mojom::AIPageContentOptionsPtr ai_page_content_options =
-@@ -291,32 +256,6 @@ class PageContextFetcher : public content::WebContentsObserver {
+@@ -292,32 +257,6 @@ class PageContextFetcher : public content::WebContentsObserver {
      RunCallbackIfComplete();
    }
  
@@ -427,7 +467,7 @@ index 77fea0a881..e0d894d69a 100644
 -
  #endif  // CHROME_BROWSER_PRINTING_PRINT_PREVIEW_DIALOG_CONTROLLER_H_
 diff --git a/chrome/browser/renderer_context_menu/render_view_context_menu.cc b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
-index e6f3691486..33e961cd45 100644
+index e6f3691486..c32d007a50 100644
 --- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 +++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 @@ -2375,14 +2375,6 @@ void RenderViewContextMenu::AppendLinkToTextItems() {
@@ -445,7 +485,7 @@ index e6f3691486..33e961cd45 100644
  }
  
  void RenderViewContextMenu::AppendPartialTranslateItem() {
-@@ -2763,31 +2755,7 @@ void RenderViewContextMenu::AppendSharingItems() {
+@@ -2763,31 +2755,6 @@ void RenderViewContextMenu::AppendSharingItems() {
  }
  
  void RenderViewContextMenu::AppendClickToCallItem() {
@@ -463,7 +503,7 @@ index e6f3691486..33e961cd45 100644
 -  }
 -
 -  if (!phone_number || phone_number->empty()) {
-     return;
+-    return;
 -  }
 -
 -  if (!click_to_call_context_menu_observer_) {
@@ -477,7 +517,7 @@ index e6f3691486..33e961cd45 100644
  }
  
  void RenderViewContextMenu::AppendRegionSearchItem() {
-@@ -4014,14 +3982,6 @@ bool RenderViewContextMenu::IsPasteAndMatchStyleEnabled() const {
+@@ -4014,15 +3981,6 @@ bool RenderViewContextMenu::IsPasteAndMatchStyleEnabled() const {
  }
  
  bool RenderViewContextMenu::IsPrintPreviewEnabled() const {
@@ -489,29 +529,53 @@ index e6f3691486..33e961cd45 100644
 -           (source_web_contents_ && !source_web_contents_->IsCrashed());
 -  }
 -#endif  // BUILDFLAG(ENABLE_GLIC)
- 
+-
    if (params_.media_type != ContextMenuDataMediaType::kNone &&
        !(params_.media_flags & ContextMenuData::kMediaCanPrint)) {
-@@ -4426,17 +4386,6 @@ void RenderViewContextMenu::ExecSaveAs() {
+     return false;
+diff --git a/chrome/browser/speech/chrome_speech_recognition_manager_delegate.cc b/chrome/browser/speech/chrome_speech_recognition_manager_delegate.cc
+index 1d521ff0b5..a5c21b946b 100644
+--- a/chrome/browser/speech/chrome_speech_recognition_manager_delegate.cc
++++ b/chrome/browser/speech/chrome_speech_recognition_manager_delegate.cc
+@@ -127,36 +127,6 @@ void ChromeSpeechRecognitionManagerDelegate::BindSpeechRecognitionContext(
+     mojo::PendingReceiver<media::mojom::SpeechRecognitionContext>
+         recognition_receiver,
+     const std::string& language) {
+-#if BUILDFLAG(ENABLE_SPEECH_SERVICE)
+-  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+-  content::GetUIThreadTaskRunner({})->PostTask(
+-      FROM_HERE,
+-      base::BindOnce(
+-          [](const std::string& language,
+-             mojo::PendingReceiver<media::mojom::SpeechRecognitionContext>
+-                 receiver) {
+-#if BUILDFLAG(ENABLE_BROWSER_SPEECH_SERVICE)
+-            auto* profile = ProfileManager::GetLastUsedProfileIfLoaded();
+-            auto* factory =
+-                SpeechRecognitionServiceFactory::GetForProfile(profile);
+-#elif BUILDFLAG(IS_CHROMEOS)
+-            auto* profile = ProfileManager::GetPrimaryUserProfile();
+-            auto* factory =
+-                CrosSpeechRecognitionServiceFactory::GetForProfile(profile);
+-#else
+-#error "No speech recognition service factory on this platform."
+-#endif  // BUILDFLAG(ENABLE_BROWSER_SPEECH_SERVICE)
+-            if (factory) {
+-              factory->BindSpeechRecognitionContext(std::move(receiver));
+-            }
+-            // Reset the SODA uninstall timer when used by the Web Speech API.
+-            if (profile) {
+-              SodaInstaller::GetInstance()->SetUninstallTimer(
+-                  g_browser_process->local_state(), language);
+-            }
+-          },
+-          language, std::move(recognition_receiver)));
+-#endif  // BUILDFLAG(ENABLE_SPEECH_SERVICE)
  }
+ #endif  // !BUILDFLAG(IS_ANDROID)
  
- void RenderViewContextMenu::ExecGlicShareImage() {
--#if BUILDFLAG(ENABLE_GLIC)
--  if (!glic::GlicEnabling::IsShareImageEnabledForProfile(GetProfile())) {
--    // If this has changed since the context menu was summoned, bail early.
--    return;
--  }
--  if (auto* glic_service = glic::GlicKeyedService::Get(browser_context_)) {
--    glic_service->ShareContextImage(
--        tabs::TabInterface::MaybeGetFromContents(source_web_contents_),
--        GetRenderFrameHost(), params().src_url);
--  }
--#endif  // BUILDLFLAG(ENABLE_GLIC)
- }
- 
- void RenderViewContextMenu::ExecExitFullscreen() {
 diff --git a/chrome/browser/ui/views/user_education/browser_user_education_service.cc b/chrome/browser/ui/views/user_education/browser_user_education_service.cc
-index 7cdd4bcf60..b8008f53b5 100644
+index 0438968ff7..069c7631d6 100644
 --- a/chrome/browser/ui/views/user_education/browser_user_education_service.cc
 +++ b/chrome/browser/ui/views/user_education/browser_user_education_service.cc
 @@ -839,21 +839,6 @@ void MaybeRegisterChromeFeaturePromos(
@@ -536,3 +600,223 @@ index 7cdd4bcf60..b8008f53b5 100644
                  return nullptr;
                }))));
  
+diff --git a/components/paint_preview/common/serial_utils.cc b/components/paint_preview/common/serial_utils.cc
+index b68f76c5f8..087cf9ddef 100644
+--- a/components/paint_preview/common/serial_utils.cc
++++ b/components/paint_preview/common/serial_utils.cc
+@@ -134,7 +134,6 @@ static sk_sp<SkTypeface> DeserializeTypeface(const void* data,
+ static bool is_supported_codec(sk_sp<const SkData> data) {
+   CHECK(data);
+   return SkBmpDecoder::IsBmp(data->data(), data->size()) ||
+-         SkGifDecoder::IsGif(data->data(), data->size()) ||
+          SkPngRustDecoder::IsPng(data->data(), data->size()) ||
+          SkJpegDecoder::IsJpeg(data->data(), data->size()) ||
+          SkWebpDecoder::IsWebp(data->data(), data->size());
+@@ -209,9 +208,6 @@ sk_sp<SkImage> DeserializeImage(const void* bytes, size_t length, void*) {
+   if (SkBmpDecoder::IsBmp(bytes, length)) {
+     return get_image(SkBmpDecoder::Decode(data, nullptr));
+   }
+-  if (SkGifDecoder::IsGif(bytes, length)) {
+-    return get_image(SkGifDecoder::Decode(data, nullptr));
+-  }
+   if (SkJpegDecoder::IsJpeg(bytes, length)) {
+     return get_image(SkJpegDecoder::Decode(data, nullptr));
+   }
+diff --git a/skia/BUILD.gn b/skia/BUILD.gn
+index 4a67478115..df29a76ceb 100644
+--- a/skia/BUILD.gn
++++ b/skia/BUILD.gn
+@@ -85,7 +85,6 @@ config("skia_config") {
+       "SK_CODEC_DECODES_JPEG",
+       "SK_CODEC_ENCODES_JPEG",
+     ]
+-    include_dirs += [ "//third_party/wuffs/src/release/c" ]
+   }
+ 
+   if (is_component_build) {
+@@ -376,9 +375,8 @@ component("skia") {
+       "//third_party/skia/src/codec/SkJpegSourceMgr.cpp",
+       "//third_party/skia/src/codec/SkJpegUtility.cpp",
+       "//third_party/skia/src/codec/SkWebpCodec.cpp",
+-      "//third_party/skia/src/codec/SkWuffsCodec.cpp",
++#      "//third_party/skia/src/codec/SkWuffsCodec.cpp",
+     ]
+-    deps += [ "//third_party/wuffs" ]
+   } else {
+     sources += skia_no_encode_jpeg_srcs
+   }
+diff --git a/third_party/wuffs/BUILD.gn b/third_party/wuffs/BUILD.gn
+deleted file mode 100644
+index cab4c28518..0000000000
+--- a/third_party/wuffs/BUILD.gn
++++ /dev/null
+@@ -1,98 +0,0 @@
+-# Copyright 2019 The Chromium Authors
+-# Use of this source code is governed by a BSD-style license that can be
+-# found in the LICENSE file.
+-
+-# Most third_party/foobar dependencies are libraries that do one thing: e.g. a
+-# particular codec, regular expressions, a SQL database, etc. Wuffs is unusual
+-# in two respects:
+-#
+-# - The Wuffs project is both a programming language, and a standard library
+-#   written in that programming language (and then transpiled to C). As of
+-#   November 2019, Chromium uses only Wuffs-the-library.
+-#
+-# - That standard library speaks many codecs. As of November 2019, compression
+-#   and images, but in the future, this may grow in scope.
+-#
+-# Third_party/foobar dependencies need to be reviewed before they are added:
+-# https://chromium.googlesource.com/chromium/src.git/+/master/docs/adding_to_third_party.md#Get-a-review
+-#
+-# Normally, this review is a one-off process: once third_party/foobar is
+-# accepted, it doesn't need additional review for e.g. version upgrades.
+-# Because Wuffs is many things, substantial changes (newer versions or newer
+-# configurations) deserve additional review just as if they were a new
+-# third_party dependency. This is especially so for Wuffs-the-language, as
+-# adding a new programming language to Chromium has a very high bar.
+-#
+-# In summary, non-trivial changes to how Chromium uses third_party/wuffs (i.e.
+-# this BUILD.gn file), both adding new build targets or changing existing build
+-# targets' configuration or visibility, require consulting ATL_OWNERS,
+-# as per the "adding_to_third_party.md" link above.
+-
+-import("//third_party/wuffs/config.gni")
+-
+-static_library("wuffs") {
+-  defines = [
+-    # Copy/pasting from "src/release/c/wuffs-*.c":
+-    #
+-    # ----
+-    #
+-    # Wuffs ships as a "single file C library" or "header file library" as per
+-    # https://github.com/nothings/stb/blob/master/docs/stb_howto.txt
+-    #
+-    # To use that single file as a "foo.c"-like implementation, instead of a
+-    # "foo.h"-like header, #define WUFFS_IMPLEMENTATION before #include'ing or
+-    # compiling it.
+-    #
+-    # ----
+-    "WUFFS_IMPLEMENTATION",
+-
+-    # Continuing to copy/paste:
+-    #
+-    # ----
+-    #
+-    # Defining the WUFFS_CONFIG__MODULE* macros are optional, but it lets users
+-    # of Wuffs' .c file whitelist which parts of Wuffs to build. That file
+-    # contains the entire Wuffs standard library, implementing a variety of
+-    # codecs and file formats. Without this macro definition, an optimizing
+-    # compiler or linker may very well discard Wuffs code for unused codecs,
+-    # but listing the Wuffs modules we use makes that process explicit.
+-    # Preprocessing means that such code simply isn't compiled.
+-    #
+-    # ----
+-    #
+-    # For Chromium, we're only interested in particular image codes (e.g. GIF)
+-    # and their dependencies (e.g. BASE, LZW).
+-    #
+-    # Do not modify this list without considering the "consult
+-    # ENG_REVIEW_OWNERS" comment at the top of this file.
+-    "WUFFS_CONFIG__MODULES",
+-    "WUFFS_CONFIG__MODULE__BASE__CORE",
+-  ]
+-
+-  if (use_wuffs_gif_parser) {
+-    defines += [
+-      "WUFFS_CONFIG__MODULE__BASE__INTERFACES",
+-      "WUFFS_CONFIG__MODULE__BASE__PIXCONV",
+-      "WUFFS_CONFIG__MODULE__GIF",
+-      "WUFFS_CONFIG__MODULE__LZW",
+-    ]
+-  }
+-
+-  # Do not modify this list without considering the "consult ENG_REVIEW_OWNERS"
+-  # comment at the top of this file.
+-  visibility = [ "//skia" ]
+-
+-  sources = [ "src/release/c/wuffs-v0.3.c" ]
+-
+-  # Wuffs is said to be memory-safe. Its array bounds safety checks are
+-  # proved entirely at-compile-time (when compiling either Wuffs itself
+-  # or `*.wuffs` source code to `*.c` generated code). There should be
+-  # no need to add the extra instrumentation of `-fsanitize=array-bounds`.
+-  #
+-  # TODO(crbug.com/455614314): consider building a fix directly into
+-  # Wuffs to pacify the compiler.
+-  configs -= [ "//build/config/compiler:sanitize_c_array_bounds" ]
+-}
+-# Do not add build targets, or change their configuration or visibility,
+-# without considering the "consult ENG_REVIEW_OWNERS" comment at the top of
+-# this file.
+diff --git a/third_party/wuffs/DIR_METADATA b/third_party/wuffs/DIR_METADATA
+deleted file mode 100644
+index 73860afb4e..0000000000
+--- a/third_party/wuffs/DIR_METADATA
++++ /dev/null
+@@ -1,6 +0,0 @@
+-monorail: {
+-  component: "Internals>Skia"
+-}
+-buganizer_public: {
+-  component_id: 1457031
+-}
+diff --git a/third_party/wuffs/OWNERS b/third_party/wuffs/OWNERS
+deleted file mode 100644
+index 74a49767cd..0000000000
+--- a/third_party/wuffs/OWNERS
++++ /dev/null
+@@ -1,5 +0,0 @@
+-nigeltao@chromium.org
+-cblume@chromium.org
+-
+-# See the comment at the top of the BUILD.gn file for the rationale.
+-per-file BUILD.gn=file://ATL_OWNERS
+diff --git a/third_party/wuffs/README.chromium b/third_party/wuffs/README.chromium
+deleted file mode 100644
+index fb39856176..0000000000
+--- a/third_party/wuffs/README.chromium
++++ /dev/null
+@@ -1,22 +0,0 @@
+-Name: Wuffs (Wrangling Untrusted File Formats Safely)
+-Short name: Wuffs
+-URL: https://github.com/google/wuffs-mirror-release-c
+-Version: 0.3.3
+-Revision: e3f919ccfe3ef542cfc983a82146070258fb57f8
+-Update Mechanism: Manual
+-Security critical: yes
+-License: Apache-2.0
+-License File: src/LICENSE
+-Shipped: yes
+-
+-Description:
+-Codecs (compression, images, etc.) written in a custom memory-safe programming
+-language, transpiled to C.
+-
+-To map from a https://github.com/google/wuffs-mirror-release-c commit hash
+-(e.g. 600cd96c) to a https://github.com/google/wuffs commit hash (e.g.
+-1b9a6cb8), look for the "Sibling directory" line in
+-https://github.com/google/wuffs-mirror-release-c/blob/600cd96c/sync.txt
+-
+-Local Modifications:
+-None.
+diff --git a/third_party/wuffs/config.gni b/third_party/wuffs/config.gni
+deleted file mode 100644
+index f3a0676bc6..0000000000
+--- a/third_party/wuffs/config.gni
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Copyright 2020 The Chromium Authors
+-# Use of this source code is governed by a BSD-style license that can be
+-# found in the LICENSE file.
+-
+-declare_args() {
+-  use_wuffs_gif_parser = true
+-}
+diff --git a/third_party/wuffs/src b/third_party/wuffs/src
+deleted file mode 160000
+index e3f919ccfe..0000000000
+--- a/third_party/wuffs/src
++++ /dev/null
+@@ -1 +0,0 @@
+-Subproject commit e3f919ccfe3ef542cfc983a82146070258fb57f8
