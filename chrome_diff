@@ -1,3 +1,16 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index 6c30a84bff..a594823c78 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -71,7 +71,7 @@ declare_args() {
+ if (is_official_build) {
+   # An official (maximally optimized!) component (optimized for build times)
+   # build doesn't make sense and usually doesn't work.
+-  assert(!is_component_build)
++  #assert(!is_component_build)
+ }
+ 
+ # The `gn_all` target is used to list all of the main targets in the build, so
 diff --git a/DEPS b/DEPS
 index cd53845544..8e3f92eb3b 100644
 --- a/DEPS
@@ -43,6 +56,52 @@ index c4b16e7f63..4f3cc3f604 100644
  per-file third_party/xdg-utils=*
  per-file third_party/xnnpack/src=*
  per-file third_party/zstd/src=*
+diff --git a/base/debug/proc_maps_linux.cc b/base/debug/proc_maps_linux.cc
+index f8b43188f5..8b448b133c 100644
+--- a/base/debug/proc_maps_linux.cc
++++ b/base/debug/proc_maps_linux.cc
+@@ -19,6 +19,7 @@
+ #include "base/posix/eintr_wrapper.h"
+ #include "base/strings/string_split.h"
+ #include "build/build_config.h"
++#include "base/debug/stack_trace.h" 
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+ #include <inttypes.h>
+@@ -219,31 +220,8 @@ std::optional<SmapsRollup> ParseSmapsRollup(const std::string& buffer) {
+ }
+ 
+ std::optional<SmapsRollup> ReadAndParseSmapsRollup() {
+-  const size_t read_size = base::GetPageSize();
+-
+-  base::ScopedFD fd(HANDLE_EINTR(open("/proc/self/smaps_rollup", O_RDONLY)));
+-  if (!fd.is_valid()) {
+-    DPLOG(ERROR) << "Couldn't open /proc/self/smaps_rollup";
+-    return std::nullopt;
+-  }
+-
+-  std::string buffer;
+-  buffer.resize(read_size);
+-
+-  ssize_t bytes_read = HANDLE_EINTR(
+-      read(fd.get(), static_cast<void*>(buffer.data()), read_size));
+-  if (bytes_read < 0) {
+-    DPLOG(ERROR) << "Couldn't read /proc/self/smaps_rollup";
+-    return std::nullopt;
+-  }
+-
+-  // We expect to read a few hundred bytes, which should be significantly less
+-  // the page size.
+-  DCHECK(static_cast<size_t>(bytes_read) < read_size);
+-
+-  buffer.resize(static_cast<size_t>(bytes_read));
+-
+-  return ParseSmapsRollup(buffer);
++  LOG(ERROR) << base::debug::StackTrace();
++  return std::nullopt;
+ }
+ 
+ std::optional<SmapsRollup> ParseSmapsRollupForTesting(
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 index 87ae513327..3aff12dee3 100644
 --- a/chrome/browser/about_flags.cc
@@ -119,6 +178,28 @@ index 2e680ec2eb..bd777a0944 100644
 -
    ChromeBrowserMainPartsPosix::PostDestroyThreads();
  }
+diff --git a/chrome/browser/compose/compose_enabling.h b/chrome/browser/compose/compose_enabling.h
+index 65e2659aa2..710b585c97 100644
+--- a/chrome/browser/compose/compose_enabling.h
++++ b/chrome/browser/compose/compose_enabling.h
+@@ -10,7 +10,6 @@
+ #include "base/functional/callback_helpers.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/types/expected.h"
+-#include "chrome/browser/compose/proto/compose_optimization_guide.pb.h"
+ #include "components/autofill/core/common/aliases.h"
+ #include "components/compose/core/browser/compose_metrics.h"
+ #include "components/signin/public/identity_manager/identity_manager.h"
+@@ -95,9 +94,6 @@ class ComposeEnabling {
+                                 content::RenderFrameHost* rfh,
+                                 content::ContextMenuParams& params);
+ 
+-  compose::ComposeHintDecision GetOptimizationGuidanceForUrl(const GURL& url,
+-                                                             Profile* profile);
+-
+   // Checks if the page assessed language is supported by Compose.
+   bool IsPageLanguageSupported(translate::TranslateManager* translate_manager);
+ 
 diff --git a/chrome/browser/external_protocol/external_protocol_handler.cc b/chrome/browser/external_protocol/external_protocol_handler.cc
 index 51f344626c..306e3c308d 100644
 --- a/chrome/browser/external_protocol/external_protocol_handler.cc
@@ -284,6 +365,36 @@ index 4c3d0180a1..610009ddcd 100644
    void GetTabScreenshot(content::WebContents& web_contents,
                          const ScreenshotOptions& screenshot_options) {
      auto* view = web_contents.GetRenderWidgetHostView();
+diff --git a/chrome/browser/policy/configuration_policy_handler_list_factory.cc b/chrome/browser/policy/configuration_policy_handler_list_factory.cc
+index 85cc80d1ff..2dd4189a98 100644
+--- a/chrome/browser/policy/configuration_policy_handler_list_factory.cc
++++ b/chrome/browser/policy/configuration_policy_handler_list_factory.cc
+@@ -712,12 +712,6 @@ const PolicyToPreferenceMapEntry kSimplePolicyMap[] = {
+   { key::kIsolateOrigins,
+     prefs::kIsolateOrigins,
+     base::Value::Type::STRING },
+-  { key::kLensDesktopNTPSearchEnabled,
+-    prefs::kLensDesktopNTPSearchEnabled,
+-    base::Value::Type::BOOLEAN },
+-  { key::kLensRegionSearchEnabled,
+-    prefs::kLensRegionSearchEnabled,
+-    base::Value::Type::BOOLEAN },
+   { key::kLocalFontsAllowedForUrls,
+     prefs::kManagedLocalFontsAllowedForUrls,
+     base::Value::Type::LIST },
+diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
+index 5a2d21a6d4..6be272ee5e 100644
+--- a/chrome/browser/prefs/browser_prefs.cc
++++ b/chrome/browser/prefs/browser_prefs.cc
+@@ -2051,8 +2051,6 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
+ 
+   registry->RegisterIntegerPref(prefs::kChromeDataRegionSetting, 0);
+ 
+-  registry->RegisterIntegerPref(prefs::kLensOverlayStartCount, 0);
+-
+   registry->RegisterDictionaryPref(prefs::kReportingEndpoints);
+ 
+   registry->RegisterBooleanPref(prefs::kViewSourceLineWrappingEnabled, false);
 diff --git a/chrome/browser/printing/print_preview_dialog_controller.h b/chrome/browser/printing/print_preview_dialog_controller.h
 index 77fea0a881..e0d894d69a 100644
 --- a/chrome/browser/printing/print_preview_dialog_controller.h
@@ -574,6 +685,98 @@ index 1d521ff0b5..a5c21b946b 100644
  }
  #endif  // !BUILDFLAG(IS_ANDROID)
  
+diff --git a/chrome/browser/startup/startup_launch_manager.cc b/chrome/browser/startup/startup_launch_manager.cc
+index c0831d0220..d3fa0c9aa5 100644
+--- a/chrome/browser/startup/startup_launch_manager.cc
++++ b/chrome/browser/startup/startup_launch_manager.cc
+@@ -81,8 +81,8 @@ StartupLaunchManager* StartupLaunchManager::From(
+ 
+ void StartupLaunchManager::UpdateLaunchOnStartup(
+     std::optional<StartupLaunchMode> startup_launch_mode) {
+-#if BUILDFLAG(IS_WIN)
+   // This functionality is only defined for default profile, currently.
++/*
+   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+           switches::kUserDataDir)) {
+     return;
+@@ -92,9 +92,5 @@ void StartupLaunchManager::UpdateLaunchOnStartup(
+                      ? base::BindOnce(auto_launch_util::EnableStartAtLogin,
+                                       *startup_launch_mode)
+                      : base::BindOnce(auto_launch_util::DisableStartAtLogin));
+-#elif BUILDFLAG(IS_MAC)
+-// Mac does not support forcing launch on startup.
+-#else
+-  NOTIMPLEMENTED();
+-#endif  // BUILDFLAG(IS_WIN)
++*/
+ }
+diff --git a/chrome/browser/sync/prefs/chrome_syncable_prefs_database.cc b/chrome/browser/sync/prefs/chrome_syncable_prefs_database.cc
+index 55bed78d81..608acac69d 100644
+--- a/chrome/browser/sync/prefs/chrome_syncable_prefs_database.cc
++++ b/chrome/browser/sync/prefs/chrome_syncable_prefs_database.cc
+@@ -548,10 +548,6 @@ constexpr auto kChromeSyncablePrefsAllowlist = base::MakeFixedFlatMap<
+      {syncable_prefs_ids::kAccessibilityReadAnythingOmniboxChipIgnoredCount,
+       syncer::PREFERENCES, sync_preferences::PrefSensitivity::kNone,
+       sync_preferences::MergeBehavior::kNone}},
+-    {prefs::kLensRegionSearchEnabled,
+-     {syncable_prefs_ids::kLensRegionSearchEnabled, syncer::PREFERENCES,
+-      sync_preferences::PrefSensitivity::kNone,
+-      sync_preferences::MergeBehavior::kNone}},
+     {prefs::kHatsSurveyMetadata,
+      {syncable_prefs_ids::kHatsSurveyMetadata, syncer::PREFERENCES,
+       sync_preferences::PrefSensitivity::kNone,
+diff --git a/chrome/browser/ui/lens/lens_overlay_controller.cc b/chrome/browser/ui/lens/lens_overlay_controller.cc
+index 663d64a93d..1b74734ed8 100644
+--- a/chrome/browser/ui/lens/lens_overlay_controller.cc
++++ b/chrome/browser/ui/lens/lens_overlay_controller.cc
+@@ -950,13 +950,6 @@ void LensOverlayController::ShowUI(
+   // are considered follow ups that should be fulfilled by AIM.
+   use_aim_for_visual_search_ = IsResultsSidePanelShowing();
+ 
+-  // Increment the counter for the number of times the Lens Overlay has been
+-  // started.
+-  int lens_overlay_start_count =
+-      pref_service_->GetInteger(prefs::kLensOverlayStartCount);
+-  pref_service_->SetInteger(prefs::kLensOverlayStartCount,
+-                            lens_overlay_start_count + 1);
+-
+   // Store reference for later use.
+   invocation_source_ = invocation_source;
+ 
+diff --git a/chrome/browser/ui/lens/lens_overlay_untrusted_ui.cc b/chrome/browser/ui/lens/lens_overlay_untrusted_ui.cc
+index c1fabc8021..12270e6540 100644
+--- a/chrome/browser/ui/lens/lens_overlay_untrusted_ui.cc
++++ b/chrome/browser/ui/lens/lens_overlay_untrusted_ui.cc
+@@ -33,8 +33,6 @@
+ 
+ namespace lens {
+ 
+-// The number of times to show cursor tooltips.
+-constexpr int kNumTimesToShowCursorTooltips = 5;
+ // Time to wait for Lens text response before displaying the selected region
+ // context menu, in milliseconds.
+ constexpr int kTextReceivedTimeoutMs = 2000;
+@@ -351,20 +349,6 @@ LensOverlayUntrustedUI::LensOverlayUntrustedUI(content::WebUI* web_ui)
+   html_source->AddBoolean("expandedComposeboxShowVoiceSearch", false);
+   html_source->AddBoolean("expandedSearchboxShowVoiceSearch", false);
+   html_source->AddBoolean("composeboxContextDragAndDropEnabled", false);
+-
+-  // Determine if the cursor tooltip should appear.
+-  Profile* profile = Profile::FromWebUI(web_ui);
+-  int lens_overlay_start_count =
+-      profile->GetPrefs()->GetInteger(::prefs::kLensOverlayStartCount);
+-  html_source->AddBoolean(
+-      "canShowTooltipFromPrefs",
+-      lens_overlay_start_count <= kNumTimesToShowCursorTooltips);
+-
+-  html_source->AddBoolean(
+-      "enablePrivacyNotice",
+-      lens::features::IsLensOverlayNonBlockingPrivacyNoticeEnabled() &&
+-          !MaybeIncrementPrivacyNoticeShownCountAndGrantPermissions(
+-              profile->GetPrefs()));
+ }
+ 
+ void LensOverlayUntrustedUI::BindInterface(
 diff --git a/chrome/browser/ui/views/user_education/browser_user_education_service.cc b/chrome/browser/ui/views/user_education/browser_user_education_service.cc
 index 0438968ff7..069c7631d6 100644
 --- a/chrome/browser/ui/views/user_education/browser_user_education_service.cc
@@ -600,6 +803,71 @@ index 0438968ff7..069c7631d6 100644
                  return nullptr;
                }))));
  
+diff --git a/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc b/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc
+index d3a1189142..122f807f66 100644
+--- a/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc
++++ b/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc
+@@ -700,12 +700,6 @@ content::WebUIDataSource* CreateAndAddNewTabPageUiHtmlSource(Profile* profile) {
+   source->AddInteger("browserPromoCompletedLimit",
+                      browser_completed_promo_limit);
+ 
+-  SearchboxHandler::SetupWebUIDataSource(
+-      source, profile,
+-      /*enable_voice_search=*/true,
+-      /*enable_lens_search=*/
+-      profile->GetPrefs()->GetBoolean(prefs::kLensDesktopNTPSearchEnabled));
+-
+   webui::SetupWebUIDataSource(source, kNewTabPageResources,
+                               IDR_NEW_TAB_PAGE_NEW_TAB_PAGE_HTML);
+ 
+diff --git a/chrome/browser/ui/webui/settings/settings_ui.cc b/chrome/browser/ui/webui/settings/settings_ui.cc
+index 7e19fb996d..f33a90bbc4 100644
+--- a/chrome/browser/ui/webui/settings/settings_ui.cc
++++ b/chrome/browser/ui/webui/settings/settings_ui.cc
+@@ -356,13 +356,8 @@ SettingsUI::SettingsUI(content::WebUI* web_ui)
+       "enableKeyboardLockPrompt",
+       base::FeatureList::IsEnabled(permissions::features::kKeyboardLockPrompt));
+ 
+-#if BUILDFLAG(ENABLE_COMPOSE)
+-  const bool compose_enabled = ComposeEnabling::IsEnabledForProfile(profile);
+-  const bool compose_visible = ComposeEnabling::IsSettingVisible(profile);
+-#else
+   const bool compose_enabled = false;
+   const bool compose_visible = false;
+-#endif  // BUILDFLAG(ENABLE_COMPOSE)
+ 
+   html_source->AddBoolean(
+       "enableComposeProactiveNudge",
+diff --git a/chrome/common/pref_names.h b/chrome/common/pref_names.h
+index edd63ae5c3..7b45c2f6c3 100644
+--- a/chrome/common/pref_names.h
++++ b/chrome/common/pref_names.h
+@@ -4028,14 +4028,6 @@ inline constexpr char kDesktopSharingHubEnabled[] =
+ // the same major version, the browser should not attempt to auto-open
+ // the page again.
+ inline constexpr char kLastWhatsNewVersion[] = "browser.last_whats_new_version";
+-// A boolean indicating whether the Lens Region search feature should be enabled
+-// if supported.
+-inline constexpr char kLensRegionSearchEnabled[] =
+-    "policy.lens_region_search_enabled";
+-// A boolean indicating whether the Lens NTP searchbox feature should be enabled
+-// if supported.
+-inline constexpr char kLensDesktopNTPSearchEnabled[] =
+-    "policy.lens_desktop_ntp_search_enabled";
+ #endif
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+@@ -4050,10 +4042,6 @@ inline constexpr char kWhatsNewFirstEnabledOrder[] =
+ inline constexpr char kWhatsNewVersionUsed[] = "browser.whats_new.version_used";
+ #endif
+ 
+-// An integer indicating the number of times the Lens Overlay was started.
+-inline constexpr char kLensOverlayStartCount[] =
+-    "lens.lens_overlay_start_count";
+-
+ // A boolean indicating whether the Privacy guide feature has been viewed. This
+ // is set to true if the user has done any of the following: (1) opened the
+ // privacy guide, (2) dismissed the privacy guide promo, (3) seen the privacy
 diff --git a/components/paint_preview/common/serial_utils.cc b/components/paint_preview/common/serial_utils.cc
 index b68f76c5f8..087cf9ddef 100644
 --- a/components/paint_preview/common/serial_utils.cc
@@ -622,6 +890,102 @@ index b68f76c5f8..087cf9ddef 100644
    if (SkJpegDecoder::IsJpeg(bytes, length)) {
      return get_image(SkJpegDecoder::Decode(data, nullptr));
    }
+diff --git a/components/policy/test/data/pref_mapping/LensDesktopNTPSearchEnabled.json b/components/policy/test/data/pref_mapping/LensDesktopNTPSearchEnabled.json
+index 34e3d104d2..f2a0d15c93 100644
+--- a/components/policy/test/data/pref_mapping/LensDesktopNTPSearchEnabled.json
++++ b/components/policy/test/data/pref_mapping/LensDesktopNTPSearchEnabled.json
+@@ -1,34 +1,7 @@
+ [
+   {
+     "os": [
+-      "win",
+-      "linux",
+-      "mac",
+-      "chromeos",
+       "fuchsia"
+-    ],
+-    "policy_pref_mapping_tests": [
+-      {
+-        "policies": {
+-          "LensDesktopNTPSearchEnabled": true
+-        },
+-        "prefs": {
+-          "policy.lens_desktop_ntp_search_enabled": {
+-            "location": "user_profile",
+-            "value": true
+-          }
+-        }
+-      },
+-      {
+-        "note": "Check default values (no policies set)",
+-        "policies": {},
+-        "prefs": {
+-          "policy.lens_desktop_ntp_search_enabled": {
+-            "default_value": true,
+-            "location": "user_profile"
+-          }
+-        }
+-      }
+     ]
+   }
+ ]
+diff --git a/extensions/renderer/native_extension_bindings_system.cc b/extensions/renderer/native_extension_bindings_system.cc
+index 314d4e5d18..b730f8b9bc 100644
+--- a/extensions/renderer/native_extension_bindings_system.cc
++++ b/extensions/renderer/native_extension_bindings_system.cc
+@@ -655,18 +655,6 @@ void NativeExtensionBindingsSystem::UpdateBindingsForContext(
+       }
+     }
+ 
+-    // The chrome.test API has a special case for web page contexts, where it is
+-    // available if the "--ExtensionTestApiOnWebPages" command line flag has
+-    // been used.
+-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+-            switches::kExtensionTestApiOnWebPages) &&
+-        context->GetAvailability("test").is_available()) {
+-      is_any_feature_available_to_page = true;
+-      if (!set_accessor("test")) {
+-        LOG(ERROR) << "Failed to create API on Chrome object.";
+-      }
+-    }
+-
+     // Runtime is special and needs to be provided in two cases:
+     //  - If any extensions have specified themselves as externally connectable
+     //  from this web page's URL.
+diff --git a/google_apis/gcm/engine/registration_request.cc b/google_apis/gcm/engine/registration_request.cc
+index 488faff9f7..b3110c95ba 100644
+--- a/google_apis/gcm/engine/registration_request.cc
++++ b/google_apis/gcm/engine/registration_request.cc
+@@ -28,6 +28,7 @@
+ #include "services/network/public/cpp/simple_url_loader.h"
+ #include "services/network/public/mojom/url_response_head.mojom.h"
+ #include "url/gurl.h"
++#include "base/debug/stack_trace.h"
+ 
+ namespace gcm {
+ 
+diff --git a/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc b/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc
+index 2133e81357..3186e99ab1 100644
+--- a/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc
++++ b/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc
+@@ -311,14 +311,9 @@ uint32_t CountMappings(base::ProcessId pid) {
+ 
+ // Get values from smaps_rollup for the current process.
+ void GetSmapsRollup(base::ByteCount* pss, base::ByteCount* swap_pss) {
+-  auto value = base::debug::ReadAndParseSmapsRollup();
+-  if (!value) {
+-    *pss = base::ByteCount(0);
+-    *swap_pss = base::ByteCount(0);
+-    return;
+-  }
+-  *pss = value->pss;
+-  *swap_pss = value->swap_pss;
++  *pss = base::ByteCount(0);
++  *swap_pss = base::ByteCount(0);
++  return;
+ }
+ 
+ }  // namespace
 diff --git a/skia/BUILD.gn b/skia/BUILD.gn
 index 4a67478115..df29a76ceb 100644
 --- a/skia/BUILD.gn
@@ -645,6 +1009,31 @@ index 4a67478115..df29a76ceb 100644
    } else {
      sources += skia_no_encode_jpeg_srcs
    }
+diff --git a/third_party/blink/renderer/platform/image-decoders/gif/gif_image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/gif/gif_image_decoder.cc
+index 81a319afa9..e0e5396e6c 100644
+--- a/third_party/blink/renderer/platform/image-decoders/gif/gif_image_decoder.cc
++++ b/third_party/blink/renderer/platform/image-decoders/gif/gif_image_decoder.cc
+@@ -27,7 +27,7 @@
+ 
+ #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
+ #include "third_party/skia/include/codec/SkEncodedImageFormat.h"
+-#include "third_party/skia/include/codec/SkGifDecoder.h"
++#include "third_party/skia/include/codec/SkJpegDecoder.h"
+ #include "third_party/skia/include/core/SkStream.h"
+ 
+ namespace blink {
+@@ -47,9 +47,9 @@ std::unique_ptr<SkCodec> GIFImageDecoder::OnCreateSkCodec(
+     std::unique_ptr<SkStream> stream,
+     SkCodec::Result* result) {
+   std::unique_ptr<SkCodec> codec =
+-      SkGifDecoder::Decode(std::move(stream), result);
++      SkJpegDecoder::Decode(std::move(stream), result);
+   if (codec) {
+-    CHECK_EQ(codec->getEncodedFormat(), SkEncodedImageFormat::kGIF);
++    CHECK_EQ(codec->getEncodedFormat(), SkEncodedImageFormat::kJPEG);
+   }
+   return codec;
+ }
 diff --git a/third_party/wuffs/BUILD.gn b/third_party/wuffs/BUILD.gn
 deleted file mode 100644
 index cab4c28518..0000000000
@@ -820,3 +1209,16 @@ index e3f919ccfe..0000000000
 +++ /dev/null
 @@ -1 +0,0 @@
 -Subproject commit e3f919ccfe3ef542cfc983a82146070258fb57f8
+diff --git a/ui/ozone/platform/wayland/host/wayland_wp_color_manager.cc b/ui/ozone/platform/wayland/host/wayland_wp_color_manager.cc
+index c47b9b67b9..cda47a2efe 100644
+--- a/ui/ozone/platform/wayland/host/wayland_wp_color_manager.cc
++++ b/ui/ozone/platform/wayland/host/wayland_wp_color_manager.cc
+@@ -192,8 +192,6 @@ void WaylandWpColorManager::GetImageDescription(
+     return;
+   }
+   if (!PopulateDescriptionCreator(creator.get(), color_space, hdr_metadata)) {
+-    LOG(ERROR) << "Failed to populate image description for color space "
+-               << color_space.ToString();
+     cleanup();
+     return;
+   }
