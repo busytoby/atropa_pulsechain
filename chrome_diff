@@ -102,6 +102,52 @@ index f8b43188f5..8b448b133c 100644
  }
  
  std::optional<SmapsRollup> ParseSmapsRollupForTesting(
+diff --git a/base/threading/platform_thread_linux.cc b/base/threading/platform_thread_linux.cc
+index aa56aae31e..26c17d5aca 100644
+--- a/base/threading/platform_thread_linux.cc
++++ b/base/threading/platform_thread_linux.cc
+@@ -263,15 +263,6 @@ void SetThreadTypeLinux(ProcessId process_id,
+     syscall_tid = kInvalidThreadId;
+   }
+ 
+-  if (thread_type == ThreadType::kRealtimeAudio) {
+-    if (sched_setscheduler(syscall_tid.raw(), SCHED_RR,
+-                           &PlatformThreadLinux::kRealTimeAudioPrio) == 0) {
+-      return;
+-    }
+-    // If failed to set to RT, fallback to setpriority to set nice value.
+-    DPLOG(ERROR) << "Failed to set realtime priority for thread " << thread_id;
+-  }
+-
+   SetThreadNiceFromType(thread_id, thread_type);
+ }
+ 
+diff --git a/chrome/app/chrome_main_delegate.cc b/chrome/app/chrome_main_delegate.cc
+index 0aee283905..4b147b6feb 100644
+--- a/chrome/app/chrome_main_delegate.cc
++++ b/chrome/app/chrome_main_delegate.cc
+@@ -1465,8 +1465,8 @@ void ChromeMainDelegate::PreSandboxStartup() {
+     }
+ #else
+     crash_reporter::InitializeCrashpad(process_type.empty(), process_type);
+-    crash_reporter::SetFirstChanceExceptionHandler(
+-        v8::TryHandleWebAssemblyTrapPosix);
++//    crash_reporter::SetFirstChanceExceptionHandler(
++//        v8::TryHandleWebAssemblyTrapPosix);
+ #endif  // BUILDFLAG(IS_ANDROID)
+   }
+ #endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
+@@ -1590,8 +1590,8 @@ void ChromeMainDelegate::ZygoteForked() {
+   std::string process_type =
+       command_line->GetSwitchValueASCII(switches::kProcessType);
+   crash_reporter::InitializeCrashpad(false, process_type);
+-  crash_reporter::SetFirstChanceExceptionHandler(
+-      v8::TryHandleWebAssemblyTrapPosix);
++//  crash_reporter::SetFirstChanceExceptionHandler(
++//      v8::TryHandleWebAssemblyTrapPosix);
+ 
+   // Reset the command line for the newly spawned process.
+   crash_keys::SetCrashKeysFromCommandLine(*command_line);
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 index 87ae513327..3aff12dee3 100644
 --- a/chrome/browser/about_flags.cc
@@ -929,6 +975,28 @@ index 34e3d104d2..f2a0d15c93 100644
      ]
    }
  ]
+diff --git a/content/shell/renderer/shell_content_renderer_client.cc b/content/shell/renderer/shell_content_renderer_client.cc
+index 71ce909443..3503311823 100644
+--- a/content/shell/renderer/shell_content_renderer_client.cc
++++ b/content/shell/renderer/shell_content_renderer_client.cc
+@@ -266,7 +266,7 @@ void ShellContentRendererClient::SetUpWebAssemblyTrapHandler() {
+     return;
+   }
+ 
+-#if defined(ENABLE_WEB_ASSEMBLY_TRAP_HANDLER_LINUX)
++//#if defined(ENABLE_WEB_ASSEMBLY_TRAP_HANDLER_LINUX)
+   if (base::debug::SetStackDumpFirstChanceCallback(
+           v8::TryHandleWebAssemblyTrapPosix)) {
+     // Crashpad and Breakpad are disabled, but the in-process stack dump
+@@ -277,7 +277,7 @@ void ShellContentRendererClient::SetUpWebAssemblyTrapHandler() {
+ 
+   // As the registration of the callback failed, we don't enable trap
+   // handlers.
+-#endif  // defined(ENABLE_WEB_ASSEMBLY_TRAP_HANDLER_LINUX)
++//#endif  // defined(ENABLE_WEB_ASSEMBLY_TRAP_HANDLER_LINUX)
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+ }
+ 
 diff --git a/extensions/renderer/native_extension_bindings_system.cc b/extensions/renderer/native_extension_bindings_system.cc
 index 314d4e5d18..b730f8b9bc 100644
 --- a/extensions/renderer/native_extension_bindings_system.cc
@@ -963,6 +1031,19 @@ index 488faff9f7..b3110c95ba 100644
 +#include "base/debug/stack_trace.h"
  
  namespace gcm {
+ 
+diff --git a/gpu/command_buffer/service/shared_image/shared_image_manager.cc b/gpu/command_buffer/service/shared_image/shared_image_manager.cc
+index f51e274434..eeb4d51147 100644
+--- a/gpu/command_buffer/service/shared_image/shared_image_manager.cc
++++ b/gpu/command_buffer/service/shared_image/shared_image_manager.cc
+@@ -394,8 +394,6 @@ std::unique_ptr<SkiaImageRepresentation> SharedImageManager::ProduceSkia(
+   AutoLock autolock(this);
+   auto* backing = GetBacking(mailbox);
+   if (!backing) {
+-    LOG(ERROR) << "SharedImageManager::ProduceSkia: Trying to Produce a "
+-                  "Skia representation from a non-existent mailbox.";
+     return nullptr;
+   }
  
 diff --git a/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc b/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc
 index 2133e81357..3186e99ab1 100644
