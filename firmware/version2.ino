@@ -70,24 +70,18 @@ typedef enum
     STATE_TX
 }States_t;
 
+static uint32_t last_tx = 0;
 int16_t txNumber;
 int16_t rxNumber;
 States_t state;
 bool sleepMode = false;
-int16_t Rssi,rxSize;
-
-String rssi = "RSSI --";
-String packSize = "--";
-String packet;
-String send_num;
-String show_lora = "lora data show";
+int16_t rxSize;
 
 unsigned int counter = 0;
 bool receiveflag = false; // software flag for LoRa receiver, received data makes it true.
 long lastSendTime = 0;        // last send time
 int interval = 1000;          // interval between sends
 uint64_t chipid;
-int16_t RssiDetection = 0;
 
 bool lora_idle = true;
 
@@ -125,7 +119,6 @@ void lora_init(void)
 {
   Mcu.begin(HELTEC_BOARD,SLOW_CLK_TPYE);
   txNumber=0;
-  Rssi=0;
   rxNumber = 0;
   RadioEvents.TxDone = OnTxDone;
   RadioEvents.TxTimeout = OnTxTimeout;
@@ -149,7 +142,7 @@ void lora_init(void)
 
 /********************************* lora  *********************************************/
 
-SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
+//SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 
 bool resendflag=true;
 bool deepsleepflag=false;
@@ -169,10 +162,10 @@ void VextOFF(void) //Vext default OFF
 void setup()
 {
 	Serial.begin(115200);
-	VextON();
+	VextOFF();
 	delay(100);
-	factory_display.init();
-	factory_display.clear();
+	//factory_display.init();
+	//factory_display.clear();
 	delay(100);
 
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
@@ -182,18 +175,31 @@ void setup()
 	delay(100);
 
 	lora_init();
-	packet ="waiting lora data!";
-  factory_display.drawString(0, 10, packet);
-  factory_display.display();
   delay(100);
-  factory_display.clear();
 	pinMode(LED ,OUTPUT);
 	digitalWrite(LED, LOW);  
 
 	Radio.Rx(0);
 }
 
-static uint32_t last_tx = 0;
+void SendToRadio(const char* txt) {
+	lora_idle = false;
+	last_tx = millis();
+	memset(txpacket, 0, sizeof(txpacket));	
+  if(txt == NULL) sprintf(txpacket,"失調症 %d 呂 例子:ACM2",++txNumber);
+	else if(txt != txpacket) strcpy(txpacket, txt);
+  Radio.Send((uint8_t *)txpacket, strlen(txpacket));
+	++txNumber;
+}
+
+void ProcessCmd() {
+	while(Serial.available()) {
+		uint8_t sData = Serial.read();
+		if(sData == 'a') Serial.printf("random = %d\n", Radio.Random());
+		else if(sData == 'r') Serial.printf("rxCount = %d\n", rxNumber);
+		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
+	}
+}
 
 void loop()
 {
@@ -202,116 +208,23 @@ void loop()
   if (millis() - last_tx > 500 && lora_idle) {
 		int index = 0;
     if(Serial.available()) {
-			lora_idle = false;
 			memset(txpacket, '\0', sizeof(txpacket));
 			while(Serial.available()) {
 				uint8_t sData = Serial.read();
-				if(sData == '\n') {
-					last_tx = millis();
-					Radio.Send((uint8_t *)txpacket, strlen(txpacket));
+				if(index == 0 && sData == ':') ProcessCmd();
+				else if(sData == '\n') {
+					SendToRadio(txpacket);
 					//vTaskDelay(pdMS_TO_TICKS(100));
-					Serial.printf("%s [%d]\n", txpacket, strlen(txpacket));
 					delay(100);
-					//vTaskDelay(pdMS_TO_TICKS(100));
 					index = 0;
 				} else {
 					txpacket[index++] = sData;
 				}
 			}
-  	} else if (millis() - last_tx > 5555 && lora_idle) {			
-			lora_idle = false;
-			memset(txpacket, 0, sizeof(txpacket));
-  		sprintf(txpacket,"失調症 %d 呂 例子:%d",++txNumber,Rssi);
-			Serial.write('.');
-			last_tx = millis();
-      Radio.Send((uint8_t *)txpacket, strlen(txpacket));
+  	} else if (millis() - last_tx > 55555 && lora_idle) {			
+			SendToRadio(NULL);
 			delay(100);
 		}
 	} else Radio.Send(NULL, NULL);
-
   delay(233);    
-	/*
- if(resendflag)
- {
-	state = STATE_TX;
-	resendflag = false;
- }
-
-if(receiveflag && (state==LOWPOWER) )
-{
-	receiveflag = false;
-	packet ="R_data:";
-	int i = 0;
-	while(i < rxSize)
-	{
-		packet += rxpacket[i];
-		i++;
-	}
-	packSize = "R_Size: ";
-	packSize += String(rxSize,DEC);
-	packSize += " R_rssi: ";
-	packSize += String(Rssi,DEC);
-	send_num = "send num: ";
-	send_num += String(txNumber,DEC);
-	factory_display.drawString(0, 0, show_lora);
-  factory_display.drawString(0, 10, packet);
-  factory_display.drawString(0, 20, packSize);
-  factory_display.drawString(0, 50, send_num);
-  factory_display.display();
-  delay(10);
-  factory_display.clear();
-
-  if((rxNumber%2)==0)
-  {
-   digitalWrite(LED, HIGH);  
-  }
-}
-int i = 0;
-int index = 0;
-switch(state)
-  {
-    case STATE_TX:
-			while(i++ < 120) {
-				if(Serial.available()) {
-					memset(txpacket, '\0', sizeof(txpacket));
-					while(Serial.available()) {
-						uint8_t sData = Serial.read();
-						if(sData == '\n') {
-							Radio.Send((uint8_t *)txpacket, strlen(txpacket));
-							vTaskDelay(pdMS_TO_TICKS(100));
-							Serial.printf("%s [%d]\n", txpacket, strlen(txpacket));
-							delay(100);
-							Radio.Sleep();
-							vTaskDelay(pdMS_TO_TICKS(100));
-							index = 0;
-						} else {
-							txpacket[index++] = sData;
-						}
-					}
-  			}
-				delay(100);
-			}
-			memset(txpacket, 0, sizeof(txpacket));
-      sprintf(txpacket,"失調症 %d 呂 例子:%d",++txNumber,Rssi);
-			delay(10);
-			Serial.write('.');
-			//Serial.printf("%d\n", Radio.Random());
-      delay(100);
-      Radio.Send((uint8_t *)txpacket, strlen(txpacket));
-      state=LOWPOWER;
-      break;
-    case STATE_RX:
-			delay(10);
-      Radio.Rx(0);
-			vTaskDelay(pdMS_TO_TICKS(100));
-      state=LOWPOWER;
-			resendflag = true;
-      break;
-    case LOWPOWER:
-      Radio.IrqProcess( );
-      break;
-    default:
-      break;
-  }
-	*/
 }
