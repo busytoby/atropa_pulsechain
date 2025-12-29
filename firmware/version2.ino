@@ -185,10 +185,16 @@ void setup()
 void SendToRadio(const char* txt) {
 	lora_idle = false;
 	last_tx = millis();
-	memset(txpacket, 0, sizeof(txpacket));	
-  if(txt == NULL) sprintf(txpacket,"失調症 %d 呂 例子:ACM2",++txNumber);
-	else if(txt != txpacket) strcpy(txpacket, txt);
+  if(txt == NULL) {
+		memset(txpacket, 0, sizeof(txpacket));
+		sprintf(txpacket,"失調症 %d 呂 例子:ACM2",++txNumber);
+	}
+	else if(txt != txpacket) {
+		memset(txpacket, 0, sizeof(txpacket));	
+		strcpy(txpacket, txt);
+	}
   Radio.Send((uint8_t *)txpacket, strlen(txpacket));
+	Serial.printf(": %s\n", txpacket);
 	++txNumber;
 }
 
