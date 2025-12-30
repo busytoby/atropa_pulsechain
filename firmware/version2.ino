@@ -177,8 +177,8 @@ void SaveConfig() {
 	File cf = LittleFS.open(cfile, "w");
 	if(!cf) Serial.println("Failed To Open Config File For Writing");
 	else {
-		cf.printf("v %*s\n", 6, Version);
-		cf.printf("h %*s\n", 18, Handle);
+		cf.printf("v %s\n", Version);
+		cf.printf("h %s\n", Handle);
 	}
 	cf.close();
 	Serial.println("Wrote /hel_config");
@@ -242,24 +242,27 @@ void setup()
 		DefaultConfig();
 	} else {
 		Serial.println("Reading /hel_config");
+		int index = 0;
 		while (cf.available()) {
 			uint8_t sData = cf.read();
 			if(sData == 'h') {
-				char* htxt = (char*)calloc(20, sizeof(char));
-				cf.readBytes(htxt, 20);	
-				for(int i = strlen(htxt); i > 0; i--) if(htxt[i] == '\n') htxt[i] = '\0';
-				int j = strlen(htxt);
-				while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
-				if(strlen(htxt) > 1) strcpy(Handle, htxt);
-				Serial.printf("Handle: %s\n", Handle);
-				free(htxt);
+				cf.read(); // skip
+				index = 0;
+				memset(Handle, 0, 20);
+				while(cf.available()) {
+					uint8_t sData = cf.read();
+					if(sData == '\n') break;
+					Handle[index++] = sData;
+			  }
 			} else if(sData == 'v') {
+				cf.read(); // skip
+				index = 0;
 				memset(Version, 0, 8);
-				cf.readBytes(Version, 8);	
-				for(int i = strlen(Version); i > 0; i--) if(Version[i] == '\n') Version[i] = '\0';
-				int j = strlen(Version);
-				while(Version[0] == ' ') for(int i=0; i < j - 1; i++) { Version[i] = Version[i+1]; Version[i+1] = 0; }
-				Serial.printf("Version: %s\n", Version);
+				while(cf.available()) {
+					uint8_t sData = cf.read();
+					if(sData == '\n') break;
+					Version[index++] = sData;
+			  }
 			}
 		}
 		cf.close();
