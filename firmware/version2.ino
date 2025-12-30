@@ -30,6 +30,8 @@
 #include <Wire.h>
 #include "HT_SSD1306Wire.h"
 
+#include <LittleFS.h>
+
 HWCDC HWCDCSerial;
 
 /********************************* lora  *********************************************/
@@ -159,17 +161,118 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
+char Version[8] = "0.2";
+char Handle[20] = "[:h changeme]";
+
+void DefaultConfig() {
+	Serial.printf("Loading Defaults For %d\n",chipid);
+
+	if(chipid == -2056687472)	{
+		strcpy(Handle, "ACM2");
+	}
+}
+
+void SaveConfig() {
+	const char* cfile = "/hel_config";
+	File cf = LittleFS.open(cfile, "w");
+	if(!cf) Serial.println("Failed To Open Config File For Writing");
+	else {
+		cf.printf("v %*s\n", 6, Version);
+		cf.printf("h %*s\n", 18, Handle);
+	}
+	cf.close();
+	Serial.println("Wrote /hel_config");
+}
+
+void PrintConfig() {
+	const char* cfile = "/hel_config";
+	File cf = LittleFS.open(cfile, "r");
+	if(!cf) {
+		Serial.println("No Config File");
+	} else {
+		Serial.println("Reading /hel_config");
+		while (cf.available()) Serial.write(cf.read());
+	}
+	cf.close();
+}
+
+void ProcessCmd() {
+	while(Serial.available()) {
+		uint8_t sData = Serial.read();
+		if(sData == 'a') Serial.printf("random = %d\n", Radio.Random());
+		else if(sData == 'c') PrintConfig();
+		else if(sData == 'h') {
+			char* htxt = (char*)calloc(20, sizeof(char));
+			Serial.readBytes(htxt, 20);	
+			for(int i = strlen(htxt); i > 0; i--) if(htxt[i] == '\n') htxt[i] = '\0';
+			int j = strlen(htxt);
+			while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
+			if(strlen(htxt) > 1) strcpy(Handle, htxt);
+			Serial.printf("Handle: %s\n", Handle);
+			free(htxt);
+		}
+		else if(sData == 'r') Serial.printf("rxCount = %d\n", rxNumber);
+		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
+		else if(sData == 'x') SaveConfig();
+		
+	}
+}
+
 void setup()
 {
 	Serial.begin(115200);
+	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+
+	while(!Serial) continue;
+	Serial.println("\nMounting LittleFS ...");
+
+  // Initialize LittleFS
+  if (!LittleFS.begin(true)) { // 'true' formats the filesystem if the mount fails
+    Serial.println("Failed to mount LittleFS filesystem");
+    return;
+  }
+  Serial.println("LittleFS mounted successfully");
+
+	const char* cfile = "/hel_config";
+	File cf = LittleFS.open(cfile, "r");
+	DefaultConfig();
+
+	if(!cf) {
+		Serial.println("No Existing Config Found");
+		DefaultConfig();
+	} else {
+		Serial.println("Reading /hel_config");
+		while (cf.available()) {
+			uint8_t sData = cf.read();
+			if(sData == 'h') {
+				char* htxt = (char*)calloc(20, sizeof(char));
+				cf.readBytes(htxt, 20);	
+				for(int i = strlen(htxt); i > 0; i--) if(htxt[i] == '\n') htxt[i] = '\0';
+				int j = strlen(htxt);
+				while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
+				if(strlen(htxt) > 1) strcpy(Handle, htxt);
+				Serial.printf("Handle: %s\n", Handle);
+				free(htxt);
+			} else if(sData == 'v') {
+				memset(Version, 0, 8);
+				cf.readBytes(Version, 8);	
+				for(int i = strlen(Version); i > 0; i--) if(Version[i] == '\n') Version[i] = '\0';
+				int j = strlen(Version);
+				while(Version[0] == ' ') for(int i=0; i < j - 1; i++) { Version[i] = Version[i+1]; Version[i+1] = 0; }
+				Serial.printf("Version: %s\n", Version);
+			}
+		}
+		cf.close();
+	}
+
+	SaveConfig();
+
 	VextOFF();
 	delay(100);
 	//factory_display.init();
 	//factory_display.clear();
 	delay(100);
 
-	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
-	delay(100);
 	Serial.printf("ESP32ChipID=%04X",(uint16_t)(chipid>>32));//print High 2 bytes
 	Serial.printf("%08X\n",(uint32_t)chipid);//print Low 4bytes.
 	delay(100);
@@ -187,7 +290,8 @@ void SendToRadio(const char* txt) {
 	last_tx = millis();
   if(txt == NULL) {
 		memset(txpacket, 0, sizeof(txpacket));
-		sprintf(txpacket,"失調症 %d 呂 例子:ACM2",++txNumber);
+		uint32_t r = Radio.Random();
+		sprintf(txpacket,"失調症 %d 呂 例子:%s %d 水%s [約:%d]",++txNumber, Handle, r, Version, rxNumber);
 	}
 	else if(txt != txpacket) {
 		memset(txpacket, 0, sizeof(txpacket));	
@@ -198,15 +302,7 @@ void SendToRadio(const char* txt) {
 	++txNumber;
 }
 
-void ProcessCmd() {
-	while(Serial.available()) {
-		uint8_t sData = Serial.read();
-		if(sData == 'a') Serial.printf("random = %d\n", Radio.Random());
-		else if(sData == 'r') Serial.printf("rxCount = %d\n", rxNumber);
-		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
-	}
-}
-
+int idlemod = 1;
 void loop()
 {
   Radio.IrqProcess();
@@ -221,16 +317,15 @@ void loop()
 				else if(sData == '\n') {
 					SendToRadio(txpacket);
 					//vTaskDelay(pdMS_TO_TICKS(100));
-					delay(100);
 					index = 0;
-				} else {
-					txpacket[index++] = sData;
-				}
+				} else txpacket[index++] = sData;
 			}
-  	} else if (millis() - last_tx > 55555 && lora_idle) {			
-			SendToRadio(NULL);
-			delay(100);
-		}
-	} else Radio.Send(NULL, NULL);
-  delay(233);    
+  	} else if (millis() - last_tx > 55555 && lora_idle) SendToRadio(NULL);
+		delay(10);
+	} 
+	if((millis() - last_tx) > (1551*idlemod)) {
+		idlemod++;
+		Radio.Send(NULL, NULL);
+	}
+  delay(20);    
 }
