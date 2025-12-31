@@ -37,13 +37,13 @@ HWCDC HWCDCSerial;
 /********************************* lora  *********************************************/
 #define RF_FREQUENCY                                954114361 // Hz
 
-#define TX_OUTPUT_POWER                             10        // dBm
+#define TX_OUTPUT_POWER                             26        // dBm
 
-#define LORA_BANDWIDTH                              0         // [0: 125 kHz,
+#define LORA_BANDWIDTH                              1         // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
                                                               //  3: Reserved]
-#define LORA_SPREADING_FACTOR                       7         // [SF7..SF12]
+#define LORA_SPREADING_FACTOR                       9         // [SF7..SF12]
 #define LORA_CODINGRATE                             1         // [1: 4/5,
                                                               //  2: 4/6,
                                                               //  3: 4/7,
@@ -54,7 +54,7 @@ HWCDC HWCDCSerial;
 #define LORA_IQ_INVERSION_ON                        false
 
 
-#define RX_TIMEOUT_VALUE                            1000
+#define RX_TIMEOUT_VALUE                            400
 #define BUFFER_SIZE                                 140 // Define the payload size here
 
 char txpacket[BUFFER_SIZE];
@@ -164,20 +164,11 @@ void VextOFF(void) //Vext default OFF
 char Version[8] = "0.2";
 char Handle[20] = "[:h changeme]";
 
-void DefaultConfig() {
-	Serial.printf("Loading Defaults For %d\n",chipid);
-
-	if(chipid == -2056687472)	{
-		strcpy(Handle, "ACM2");
-	}
-}
-
 void SaveConfig() {
 	const char* cfile = "/hel_config";
 	File cf = LittleFS.open(cfile, "w");
 	if(!cf) Serial.println("Failed To Open Config File For Writing");
 	else {
-		cf.printf("v %s\n", Version);
 		cf.printf("h %s\n", Handle);
 	}
 	cf.close();
@@ -218,12 +209,17 @@ void ProcessCmd() {
 	}
 }
 
+// serials come from https://resource.heltec.cn/search
+// use product id from ie: ESP32ChipID=5C9482697090
+//uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
+
 void setup()
 {
 	Serial.begin(115200);
+	//Mcu.setlicense(license, HELTEC_BOARD);
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
-
 	while(!Serial) continue;
+
 	Serial.println("\nMounting LittleFS ...");
 
   // Initialize LittleFS
@@ -235,11 +231,8 @@ void setup()
 
 	const char* cfile = "/hel_config";
 	File cf = LittleFS.open(cfile, "r");
-	DefaultConfig();
-
 	if(!cf) {
 		Serial.println("No Existing Config Found");
-		DefaultConfig();
 	} else {
 		Serial.println("Reading /hel_config");
 		int index = 0;
@@ -254,16 +247,7 @@ void setup()
 					if(sData == '\n') break;
 					Handle[index++] = sData;
 			  }
-			} else if(sData == 'v') {
-				cf.read(); // skip
-				index = 0;
-				memset(Version, 0, 8);
-				while(cf.available()) {
-					uint8_t sData = cf.read();
-					if(sData == '\n') break;
-					Version[index++] = sData;
-			  }
-			}
+			} 
 		}
 		cf.close();
 	}
@@ -294,7 +278,7 @@ void SendToRadio(const char* txt) {
   if(txt == NULL) {
 		memset(txpacket, 0, sizeof(txpacket));
 		uint32_t r = Radio.Random();
-		sprintf(txpacket,"失調症 %d 呂 例子:%s %d 水%s [約:%d]",++txNumber, Handle, r, Version, rxNumber);
+		sprintf(txpacket,"失調症 %u 呂 例子:%s %u 水%s [約:%u]",++txNumber, Handle, r, Version, rxNumber);
 	}
 	else if(txt != txpacket) {
 		memset(txpacket, 0, sizeof(txpacket));	
