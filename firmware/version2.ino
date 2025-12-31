@@ -103,14 +103,16 @@ void OnTxTimeout( void )
 }
 
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
-{
-	rxNumber++;
+{	
   memcpy(rxpacket, payload, size );
   rxpacket[size]='\0';
 	//Radio.Sleep();
 	int i = 0;
 	for(; i < size; i++) if(payload[i] != '\0') Serial.write(payload[i]);
-	if(i > 0) Serial.write('\n');
+	if(i > 0) {
+		Serial.write('\n');
+		rxNumber++;
+	}
 	receiveflag = true;
   state=STATE_TX;
 	lora_idle = true;
@@ -215,6 +217,7 @@ void ProcessCmd() {
 
 void setup()
 {
+	Serial.setRxBufferSize(8192);
 	Serial.begin(115200);
 	//Mcu.setlicense(license, HELTEC_BOARD);
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
@@ -275,10 +278,11 @@ void setup()
 void SendToRadio(const char* txt) {
 	lora_idle = false;
 	last_tx = millis();
+	++txNumber;
   if(txt == NULL) {
 		memset(txpacket, 0, sizeof(txpacket));
 		uint32_t r = Radio.Random();
-		sprintf(txpacket,"失調症 %u 呂 例子:%s %u 水%s [約:%u]",++txNumber, Handle, r, Version, rxNumber);
+		sprintf(txpacket,"失調症 %u 呂 例子:%s %u 水%s [約:%u]",txNumber, Handle, r, Version, rxNumber);
 	}
 	else if(txt != txpacket) {
 		memset(txpacket, 0, sizeof(txpacket));	
@@ -286,7 +290,6 @@ void SendToRadio(const char* txt) {
 	}
   Radio.Send((uint8_t *)txpacket, strlen(txpacket));
 	Serial.printf(": %s\n", txpacket);
-	++txNumber;
 }
 
 int idlemod = 1;
