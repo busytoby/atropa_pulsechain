@@ -167,7 +167,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.207";
+char Version[8] = "0.209";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -198,7 +198,7 @@ char* mpistring(const mbedtls_mpi V) {
 	int ret;	
 	size_t n_written;
 	memset(mpibuf, 0, sizeof(mpibuf));
-	ret = mbedtls_mpi_write_string(&V, 16, mpibuf, sizeof(mpibuf) - 1, &n_written);
+	ret = mbedtls_mpi_write_string(&V, 10, mpibuf, sizeof(mpibuf) - 1, &n_written);
 	if(ret == 0) {
 		mpibuf[n_written] = '\0';
 		for(int i = 1; i < n_written; i+=2) mpibuf[i] = tolower(mpibuf[i]);
@@ -286,20 +286,20 @@ void MathInit() {
 	mbedtls_mpi_sub_int(&L, &L, Lb);
 
   delay(500);
-	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(50);
-	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(50);
-	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(50);
-	Serial.printf("%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(50);
-	Serial.printf("%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(50);
-	Serial.printf("%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(50);
-	Serial.printf("%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(50);
-	Serial.printf("%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(50);
-	Serial.printf("%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(50);
-	Serial.printf("%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(50);
-	Serial.printf("%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(50);
-	Serial.printf("%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(50);
-	Serial.printf("%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(50);
-	Serial.printf("%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(50);
+	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
+	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
+	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
+	Serial.printf("%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
+	Serial.printf("%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
+	Serial.printf("%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
+	Serial.printf("%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
+	Serial.printf("%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
+	Serial.printf("%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
+	Serial.printf("%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
+	Serial.printf("%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
+	Serial.printf("%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
+	Serial.printf("%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
+	Serial.printf("%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
 
 	mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
                         (const unsigned char *)mpibuf,
@@ -327,39 +327,39 @@ void ProcessCmd() {
 			uint8_t mData = Serial.read();
 			mbedtls_mpi_sint sd;
 			mbedtls_mpi_sint sd2;
-			if(vData == 'l') sd = lb;
-			else if(vData == 'g') sd = gb;
-			else if(vData == 'i') sd = ib;
-			else if(vData == 'o') sd = ob;
-			else if(vData == 'q') sd = qb;
-			else if(vData == 't') sd = tb;
-			else if(vData == 'd') sd = db;
-			else if(vData == 'H') sd = Hb;
-			else if(vData == 'L') sd = Lb;
 			mbedtls_mpi M, M2;
-			int ret;
 			mbedtls_mpi_init(&M);
+			mbedtls_mpi_init(&M2);
+			if(vData == 'l') { sd = lb; mbedtls_mpi_copy(&M, &l);
+			} else if(vData == 'g') { sd = gb; mbedtls_mpi_copy(&M, &g);
+			} else if(vData == 'i') { sd = ib; mbedtls_mpi_copy(&M, &i);
+			} else if(vData == 'o') { sd = ob; mbedtls_mpi_copy(&M, &o);
+			} else if(vData == 'q') { sd = qb; mbedtls_mpi_copy(&M, &q);
+			} else if(vData == 't') { sd = tb; mbedtls_mpi_copy(&M, &t);
+			} else if(vData == 'd') { sd = db; mbedtls_mpi_copy(&M, &d);
+		 	} else if(vData == 'H') { sd = Hb; mbedtls_mpi_copy(&M, &H);
+			} else if(vData == 'L') { sd = Lb; mbedtls_mpi_copy(&M, &L);
+			}
+			int ret;
 			sd2 = sd;
-			mbedtls_mpi_lset(&M, sd2);
 			if(mData == '-') {
 				while(true) {
-					sd2 -= 2;
-					mbedtls_mpi_lset(&M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M, 25, mbedtls_ctr_drbg_random, &ctr_drbg);
+					sd2--;
+					mbedtls_mpi_sub_int(&M2, &M, sd2);
+					ret = mbedtls_mpi_is_prime_ext(&M2, 25, mbedtls_ctr_drbg_random, &ctr_drbg);
 					delay(20);
 					if(ret == 0) break;
 				}
 			} else if (mData == '+') {
 				while(true) {
-					sd2 += 2;
-					mbedtls_mpi_lset(&M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M, 25, mbedtls_ctr_drbg_random, &ctr_drbg );
-					delay(20);
+					sd2++;
+					mbedtls_mpi_add_int(&M2, &M, sd2);
+					ret = mbedtls_mpi_is_prime_ext(&M2, 25, mbedtls_ctr_drbg_random, &ctr_drbg );
+					delay(5);
 					if(ret == 0) break;
 				}
 			}
-			mbedtls_mpi_free(&M);
-			Serial.printf("%cb oldValue: 0x%d newValue: 0x%d\n", (char)(vData), sd, sd2);
+
 			if(sd != sd2) {
 				if(vData == 'l') lb = sd2;
 				else if(vData == 'g') gb = sd2;
@@ -372,6 +372,9 @@ void ProcessCmd() {
 				else if(vData == 'L') Lb = sd2;
 				MathInit();
 			}
+			Serial.printf("%cb [%s] oldValue: %d newValue: %d\n", (char)(vData), mpistring(M), sd, sd2);
+			mbedtls_mpi_free(&M);
+			mbedtls_mpi_free(&M2);
 		}
 		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
 		else if(sData == 'x') SaveConfig();
