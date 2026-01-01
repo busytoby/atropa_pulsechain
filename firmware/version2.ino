@@ -166,7 +166,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.202";
+char Version[8] = "0.205";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -219,9 +219,10 @@ char* mpistring(const mbedtls_mpi V) {
 	int ret;	
 	size_t n_written;
 	memset(mpibuf, 0, sizeof(mpibuf));
-	ret = mbedtls_mpi_write_string(&V, 10, mpibuf, sizeof(mpibuf) - 1, &n_written);
+	ret = mbedtls_mpi_write_string(&V, 16, mpibuf, sizeof(mpibuf) - 1, &n_written);
 	if(ret == 0) {
 		mpibuf[n_written] = '\0';
+		for(int i = 1; i < n_written; i+=2) mpibuf[i] = tolower(mpibuf[i]);
 		return mpibuf;
 	}
 
@@ -274,14 +275,48 @@ void MathInit() {
 	mbedtls_mpi_add_mpi(&g, &g, &b);
 	mbedtls_mpi_mul_mpi(&g, &g, &m);
 	mbedtls_mpi_sub_int(&g, &g, gb);
+	mbedtls_mpi_mul_mpi(&i, &m, &b);
+	mbedtls_mpi_add_mpi(&i, &i, &y);
+	mbedtls_mpi_sub_int(&i, &i, ib);
+	mbedtls_mpi_mul_mpi(&o, &s, &s);
+	mbedtls_mpi_sub_int(&o, &o, ob);
+	mbedtls_mpi_mul_mpi(&q, &i, &i);
+	mbedtls_mpi_sub_int(&q, &q, qb);
+	mbedtls_mpi_mul_mpi(&t, &o, &g);
+	mbedtls_mpi_add_mpi(&t, &t, &q);
+	mbedtls_mpi_sub_int(&t, &t, tb);
+	mbedtls_mpi_mul_mpi(&d, &g, &s);
+	mbedtls_mpi_add_mpi(&d, &d, &o);
+	mbedtls_mpi_mul_mpi(&d, &g, &d);
+	mbedtls_mpi_sub_int(&d, &d, db);
+	mbedtls_mpi_add_int(&H, &d, db);
+	mbedtls_mpi_sub_mpi(&H, &H, &b);
+	mbedtls_mpi_sub_int(&H, &H, Hb);
+	mbedtls_mpi k;
+	mbedtls_mpi_init(&k);
+	mbedtls_mpi_lset (&k, 77);
+	mbedtls_mpi_mul_mpi(&k, &k, &k);
+	mbedtls_mpi_mul_mpi(&L, &t, &t);
+	mbedtls_mpi_sub_mpi(&L, &L, &k);
+	mbedtls_mpi_free(&k);
+	mbedtls_mpi_sub_int(&L, &L, Lb);
 
-	Serial.printf("APOGEE: %s\n", mpistring(m));
-	Serial.printf("APEX: %s\n", mpistring(x));
-	Serial.printf("MotzkinPrime: %s\n", mpistring(b));
-	Serial.printf("DYSNOMIA: %s\n", mpistring(y));
-	Serial.printf("SLOPE: %s\n", mpistring(s));
-	Serial.printf("LOVE: %s\n", mpistring(l));
-	Serial.printf("GAIN: %s\n", mpistring(g));
+  delay(500);
+	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
+	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
+	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
+	Serial.printf("%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
+	Serial.printf("%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
+	Serial.printf("%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
+	Serial.printf("%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
+	Serial.printf("%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
+	Serial.printf("%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
+	Serial.printf("%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
+	Serial.printf("%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
+	Serial.printf("%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
+	Serial.printf("%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
+	Serial.printf("%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
+
 
 }
 
