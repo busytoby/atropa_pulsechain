@@ -15,3 +15,12 @@ math notes:
  //"K7AUSVXy2BRrgVdI4JSEJjmMwfKD2WsGN4ocrpp"                   // d = g(gs+o) - 110
  //"K7AUSVXy2BRrgVdI4JSEJjmMwfKD2WnHyS3FD7S"                   // H = d + 110 - b - 187
  //"4wkTPDSq0FjYZ6INN1fnuUADDb4KgMFfYSqrg4WGsjSbMY1sabo0J3AW5363MDjK9" //  L = t^2 - 77^2 - 591
+
+// hex values from firmware at launch
+APOGEE: 0x0E8C81
+APEX: 0x38DEA139
+MotzkinPrime: 0x03632C8EB5AF3B
+DYSNOMIA: 0x03632DF4566B39
+SLOPE: 0x069E8FC82E18F4
+LOVE: 0x604DE97A7272380291
+GAIN: 0x02CD0313A08B0366CCE9CCC3
