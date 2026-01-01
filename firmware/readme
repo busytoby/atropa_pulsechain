@@ -16,7 +16,7 @@ math notes:
  //"K7AUSVXy2BRrgVdI4JSEJjmMwfKD2WnHyS3FD7S"                   // H = d + 110 - b - 187
  //"4wkTPDSq0FjYZ6INN1fnuUADDb4KgMFfYSqrg4WGsjSbMY1sabo0J3AW5363MDjK9" //  L = t^2 - 77^2 - 591
 
-// hex values from firmware at launch
+// hex values from hardware dongle firmware at launch
 ESP32ChipID=5C9482697090
       APOGEE m= 0x0E8C81
         APEX x= 0x38DEA139
@@ -28,4 +28,4 @@ MotzkinPrime b= 0x03632C8EB5AF3B
         _[1] i= 0x314864889CCEF1FB21
        __[2] o= 0x2BD0F32E0352451FE23A1EA78F
       ___[3] q= 0x097CCAF5005A7072E8DEBACF751BE67BB9CD
-     ____[3] t= 0x7AB8BFE6B546EF243E400D4F2BC1C014A4E8C8250E824D0F
+     ____[4] t= 0x7AB8BFE6B546EF243E400D4F2BC1C014A4E8C8250E824D0F
