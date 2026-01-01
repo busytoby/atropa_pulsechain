@@ -166,7 +166,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.201";
+char Version[8] = "0.202";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -231,7 +231,17 @@ char* mpistring(const mbedtls_mpi V) {
 const char* APOGEE = "953473";
 const char* APEX = "954114361";
 const char* MotzkinPrime = "953467954114363";
-mbedtls_mpi m, x, b, y, s, l, g, i, o, q, t, d, H;
+mbedtls_mpi m, x, b, y, s, l, g, i, o, q, t, d, H, L;
+// sints should be configurable and discoverable in +- order via prime test
+mbedtls_mpi_sint lb = 99;
+mbedtls_mpi_sint gb = 49;
+mbedtls_mpi_sint ib = 211;
+mbedtls_mpi_sint ob = 257;
+mbedtls_mpi_sint qb = 116;
+mbedtls_mpi_sint tb = 683;
+mbedtls_mpi_sint db = 110;
+mbedtls_mpi_sint Hb = 187;
+mbedtls_mpi_sint Lb = 591;
 void MathInit() {
 	mbedtls_mpi m, x, b;
 	mbedtls_mpi_init(&m);
@@ -247,6 +257,7 @@ void MathInit() {
 	mbedtls_mpi_init(&t);
 	mbedtls_mpi_init(&d);
 	mbedtls_mpi_init(&H);
+	mbedtls_mpi_init(&L);
 
 	mbedtls_mpi_read_string(&m, 10, APOGEE);
 	mbedtls_mpi_read_string(&x, 10, APEX);
@@ -257,12 +268,20 @@ void MathInit() {
 	mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
 	mbedtls_mpi_mul_mpi(&s, &m, &x);
 	mbedtls_mpi_add_mpi(&s, &s, &b);
+	mbedtls_mpi_mul_mpi(&l, &m, &s);
+	mbedtls_mpi_sub_int(&l, &l, lb);
+	mbedtls_mpi_mul_mpi(&g, &m, &y);
+	mbedtls_mpi_add_mpi(&g, &g, &b);
+	mbedtls_mpi_mul_mpi(&g, &g, &m);
+	mbedtls_mpi_sub_int(&g, &g, gb);
 
 	Serial.printf("APOGEE: %s\n", mpistring(m));
 	Serial.printf("APEX: %s\n", mpistring(x));
 	Serial.printf("MotzkinPrime: %s\n", mpistring(b));
 	Serial.printf("DYSNOMIA: %s\n", mpistring(y));
 	Serial.printf("SLOPE: %s\n", mpistring(s));
+	Serial.printf("LOVE: %s\n", mpistring(l));
+	Serial.printf("GAIN: %s\n", mpistring(g));
 
 }
 
@@ -327,7 +346,7 @@ void setup()
 
 	lora_init();
   delay(100);
-	pinMode(LED ,OUTPUT);
+	pinMode(LED, OUTPUT);
 	digitalWrite(LED, LOW);  
 
 	Radio.Rx(0);
