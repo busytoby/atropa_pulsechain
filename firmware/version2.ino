@@ -30,6 +30,9 @@
 #include <Wire.h>
 #include "HT_SSD1306Wire.h"
 
+#include <mbedtls/platform.h>
+#include <mbedtls/bignum.h>
+
 #include <LittleFS.h>
 
 HWCDC HWCDCSerial;
@@ -163,7 +166,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.2";
+char Version[8] = "0.201";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -211,6 +214,59 @@ void ProcessCmd() {
 	}
 }
 
+char mpibuf[256];
+char* mpistring(const mbedtls_mpi V) {
+	int ret;	
+	size_t n_written;
+	memset(mpibuf, 0, sizeof(mpibuf));
+	ret = mbedtls_mpi_write_string(&V, 10, mpibuf, sizeof(mpibuf) - 1, &n_written);
+	if(ret == 0) {
+		mpibuf[n_written] = '\0';
+		return mpibuf;
+	}
+
+  Serial.printf("MPIstring Error: -0x%04X\n", -ret);
+}
+
+const char* APOGEE = "953473";
+const char* APEX = "954114361";
+const char* MotzkinPrime = "953467954114363";
+mbedtls_mpi m, x, b, y, s, l, g, i, o, q, t, d, H;
+void MathInit() {
+	mbedtls_mpi m, x, b;
+	mbedtls_mpi_init(&m);
+	mbedtls_mpi_init(&x);
+	mbedtls_mpi_init(&b);
+	mbedtls_mpi_init(&y);
+	mbedtls_mpi_init(&s);
+	mbedtls_mpi_init(&l);
+	mbedtls_mpi_init(&g);
+	mbedtls_mpi_init(&i);
+	mbedtls_mpi_init(&o);
+	mbedtls_mpi_init(&q);
+	mbedtls_mpi_init(&t);
+	mbedtls_mpi_init(&d);
+	mbedtls_mpi_init(&H);
+
+	mbedtls_mpi_read_string(&m, 10, APOGEE);
+	mbedtls_mpi_read_string(&x, 10, APEX);
+	mbedtls_mpi_read_string(&b, 10, MotzkinPrime);
+	char* DysnomiaPrime = (char*) calloc(strlen(APOGEE + strlen(APEX)), sizeof(char));
+	strcpy(DysnomiaPrime, APOGEE);
+	strcat(DysnomiaPrime, APEX);
+	mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
+	mbedtls_mpi_mul_mpi(&s, &m, &x);
+	mbedtls_mpi_add_mpi(&s, &s, &b);
+
+	Serial.printf("APOGEE: %s\n", mpistring(m));
+	Serial.printf("APEX: %s\n", mpistring(x));
+	Serial.printf("MotzkinPrime: %s\n", mpistring(b));
+	Serial.printf("DYSNOMIA: %s\n", mpistring(y));
+	Serial.printf("SLOPE: %s\n", mpistring(s));
+
+}
+
+// needed for first flash & after any flash clear via left+right buttons
 // serials come from https://resource.heltec.cn/search
 // use product id from ie: ESP32ChipID=5C9482697090
 //uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
@@ -222,6 +278,8 @@ void setup()
 	//Mcu.setlicense(license, HELTEC_BOARD);
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
 	while(!Serial) continue;
+
+	MathInit();
 
 	Serial.println("\nMounting LittleFS ...");
 
