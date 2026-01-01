@@ -30,6 +30,7 @@
 #include <Wire.h>
 #include "HT_SSD1306Wire.h"
 
+#include <mbedtls/ctr_drbg.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/bignum.h>
 
@@ -166,7 +167,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.205";
+char Version[8] = "0.207";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -192,28 +193,6 @@ void PrintConfig() {
 	cf.close();
 }
 
-void ProcessCmd() {
-	while(Serial.available()) {
-		uint8_t sData = Serial.read();
-		if(sData == 'a') Serial.printf("random = %d\n", Radio.Random());
-		else if(sData == 'c') PrintConfig();
-		else if(sData == 'h') {
-			char* htxt = (char*)calloc(20, sizeof(char));
-			Serial.readBytes(htxt, 20);	
-			for(int i = strlen(htxt); i > 0; i--) if(htxt[i] == '\n') htxt[i] = '\0';
-			int j = strlen(htxt);
-			while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
-			if(strlen(htxt) > 1) strcpy(Handle, htxt);
-			Serial.printf("Handle: %s\n", Handle);
-			free(htxt);
-		}
-		else if(sData == 'r') Serial.printf("rxCount = %d\n", rxNumber);
-		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
-		else if(sData == 'x') SaveConfig();
-		
-	}
-}
-
 char mpibuf[256];
 char* mpistring(const mbedtls_mpi V) {
 	int ret;	
@@ -229,6 +208,8 @@ char* mpistring(const mbedtls_mpi V) {
   Serial.printf("MPIstring Error: -0x%04X\n", -ret);
 }
 
+mbedtls_entropy_context entropy;
+mbedtls_ctr_drbg_context ctr_drbg;
 const char* APOGEE = "953473";
 const char* APEX = "954114361";
 const char* MotzkinPrime = "953467954114363";
@@ -259,6 +240,9 @@ void MathInit() {
 	mbedtls_mpi_init(&d);
 	mbedtls_mpi_init(&H);
 	mbedtls_mpi_init(&L);
+
+  mbedtls_entropy_init( &entropy );
+  mbedtls_ctr_drbg_init( &ctr_drbg );
 
 	mbedtls_mpi_read_string(&m, 10, APOGEE);
 	mbedtls_mpi_read_string(&x, 10, APEX);
@@ -302,22 +286,97 @@ void MathInit() {
 	mbedtls_mpi_sub_int(&L, &L, Lb);
 
   delay(500);
-	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
-	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
-	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
-	Serial.printf("%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
-	Serial.printf("%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
-	Serial.printf("%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
-	Serial.printf("%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
-	Serial.printf("%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
-	Serial.printf("%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
-	Serial.printf("%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
-	Serial.printf("%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
-	Serial.printf("%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
-	Serial.printf("%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
-	Serial.printf("%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
+	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(50);
+	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(50);
+	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(50);
+	Serial.printf("%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(50);
+	Serial.printf("%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(50);
+	Serial.printf("%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(50);
+	Serial.printf("%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(50);
+	Serial.printf("%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(50);
+	Serial.printf("%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(50);
+	Serial.printf("%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(50);
+	Serial.printf("%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(50);
+	Serial.printf("%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(50);
+	Serial.printf("%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(50);
+	Serial.printf("%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(50);
 
+	mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
+                        (const unsigned char *)mpibuf,
+                        strlen(mpibuf));
+}
 
+void ProcessCmd() {
+	while(Serial.available()) {
+		uint8_t sData = Serial.read();
+		if(sData == 'a') Serial.printf("random = %d\n", Radio.Random());
+		else if(sData == 'c') PrintConfig();
+		else if(sData == 'h') {
+			char* htxt = (char*)calloc(20, sizeof(char));
+			Serial.readBytes(htxt, 20);	
+			for(int i = strlen(htxt); i > 0; i--) if(htxt[i] == '\n') htxt[i] = '\0';
+			int j = strlen(htxt);
+			while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
+			if(strlen(htxt) > 1) strcpy(Handle, htxt);
+			Serial.printf("Handle: %s\n", Handle);
+			free(htxt);
+		}
+		else if(sData == 'r') Serial.printf("rxCount = %d\n", rxNumber);
+		else if(sData == 's') {
+			uint8_t vData = Serial.read();
+			uint8_t mData = Serial.read();
+			mbedtls_mpi_sint sd;
+			mbedtls_mpi_sint sd2;
+			if(vData == 'l') sd = lb;
+			else if(vData == 'g') sd = gb;
+			else if(vData == 'i') sd = ib;
+			else if(vData == 'o') sd = ob;
+			else if(vData == 'q') sd = qb;
+			else if(vData == 't') sd = tb;
+			else if(vData == 'd') sd = db;
+			else if(vData == 'H') sd = Hb;
+			else if(vData == 'L') sd = Lb;
+			mbedtls_mpi M, M2;
+			int ret;
+			mbedtls_mpi_init(&M);
+			sd2 = sd;
+			mbedtls_mpi_lset(&M, sd2);
+			if(mData == '-') {
+				while(true) {
+					sd2 -= 2;
+					mbedtls_mpi_lset(&M, sd2);
+					ret = mbedtls_mpi_is_prime_ext(&M, 25, mbedtls_ctr_drbg_random, &ctr_drbg);
+					delay(20);
+					if(ret == 0) break;
+				}
+			} else if (mData == '+') {
+				while(true) {
+					sd2 += 2;
+					mbedtls_mpi_lset(&M, sd2);
+					ret = mbedtls_mpi_is_prime_ext(&M, 25, mbedtls_ctr_drbg_random, &ctr_drbg );
+					delay(20);
+					if(ret == 0) break;
+				}
+			}
+			mbedtls_mpi_free(&M);
+			Serial.printf("%cb oldValue: 0x%d newValue: 0x%d\n", (char)(vData), sd, sd2);
+			if(sd != sd2) {
+				if(vData == 'l') lb = sd2;
+				else if(vData == 'g') gb = sd2;
+				else if(vData == 'i') ib = sd2;
+				else if(vData == 'o') ob = sd2;
+				else if(vData == 'q') qb = sd2;
+				else if(vData == 't') tb = sd2;
+				else if(vData == 'd') db = sd2;
+				else if(vData == 'H') Hb = sd2;
+				else if(vData == 'L') Lb = sd2;
+				MathInit();
+			}
+		}
+		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
+		else if(sData == 'x') SaveConfig();
+		
+	}
 }
 
 // needed for first flash & after any flash clear via left+right buttons
@@ -362,7 +421,11 @@ void setup()
 					if(sData == '\n') break;
 					Handle[index++] = sData;
 			  }
-			} 
+			}
+			if(cf.available() && sData != '\n') {
+				Serial.println("Malformed Save File");
+				break;
+			}
 		}
 		cf.close();
 	}
