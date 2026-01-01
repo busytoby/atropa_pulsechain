@@ -1,1 +1,17 @@
 arduino firmware for heltec esp32s3 v4
+
+math notes:
+ char* const APOGEE        = "953473";                           // m 
+ char* const APEX          = "954114361";                        // x
+ char* const MotzkinPrime  = "953467954114363";                  // b
+ //"953473954114361"                                             // y = m##x
+ //"1863190236240116"                                            // s = mx+b
+ //"1776501584118572122769"                                     // l = ms - 99
+ //"866814341819618935572122819"                               // g = m(my+b) - 49
+ //base 61: "5biLj3fHZDMjna"                                   // i = mb+y - 211
+ //base 61:"1XRtp2iUaVFDk6RhiZ"                                // o = s^2 - 257
+ //"VYat0jxpT806Mi2podlQy3VmQ9L"                               // q = i^2 - 116
+ //"2DsoP8dmYypSJ9mwTObHkJUx76ylmsEIo"                         // t = og+q - 683 
+ //"K7AUSVXy2BRrgVdI4JSEJjmMwfKD2WsGN4ocrpp"                   // d = g(gs+o) - 110
+ //"K7AUSVXy2BRrgVdI4JSEJjmMwfKD2WnHyS3FD7S"                   // H = d + 110 - b - 187
+ //"4wkTPDSq0FjYZ6INN1fnuUADDb4KgMFfYSqrg4WGsjSbMY1sabo0J3AW5363MDjK9" //  L = t^2 - 77^2 - 591
