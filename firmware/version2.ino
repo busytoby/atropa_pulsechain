@@ -98,6 +98,7 @@ long lastSendTime = 0;        // last send time
 int interval = 1000;          // interval between sends
 uint64_t chipid;
 
+bool ScreenOn=false;
 bool lora_idle = true;
 
 void OnTxDone( void )
@@ -115,7 +116,7 @@ void OnTxTimeout( void )
 	state=STATE_TX;
 }
 
-const size_t DISPLAY_CHARS=38;
+const size_t DISPLAY_CHARS=37;
 char screenlines[6][DISPLAY_CHARS];
 int last_line = 0;
 
@@ -151,9 +152,11 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 		//factory_display.clear();
 		//for(int j = 0; j < 5; j++) factory_display.drawString(0, 10*j, screenlines[j]);
 		//factory_display.display();
-		u8g2.clearBuffer();
-		for(int j = 0; j < last_line; j++) u8g2.drawUTF8(3, 10+(10*j), screenlines[j]);
-		u8g2.sendBuffer();
+		if(ScreenOn) {
+			u8g2.clearBuffer();
+			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
+			u8g2.sendBuffer();
+		}
 		delay(10);
 	}
 	receiveflag = true;
@@ -194,17 +197,27 @@ bool deepsleepflag=false;
 
 void VextON(void)
 {
+	ScreenOn=true;
+	Serial.println("Screen ON");
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, LOW);
 }
 
 void VextOFF(void) //Vext default OFF
 {
+	ScreenOn=false;
+	Serial.println("Screen OFF");
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.214";
+void interrupt_GPIO0(void)
+{
+	if(ScreenOn) VextOFF();
+	else VextON();
+}
+
+char Version[8] = "0.218";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -425,6 +438,7 @@ void ProcessCmd() {
 
 void setup()
 {
+	attachInterrupt(0,interrupt_GPIO0,FALLING);
 	Serial.setRxBufferSize(8192);
 	Serial.begin(115200);
 	//Mcu.setlicense(license, HELTEC_BOARD);
@@ -495,7 +509,7 @@ void setup()
   delay(100);
 	pinMode(LED, OUTPUT);
 	digitalWrite(LED, LOW);  
-
+	VextOFF();
 	Radio.Rx(0);
 }
 
