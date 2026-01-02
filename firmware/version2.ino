@@ -30,6 +30,12 @@
 #include <Wire.h>
 #include "HT_SSD1306Wire.h"
 
+//#include <MUIU8g2.h>
+#include <U8g2lib.h>
+//#include <U8x8lib.h>
+
+#include <mbedtls/rsa.h>
+#include <mbedtls/md.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/bignum.h>
@@ -60,6 +66,9 @@ HWCDC HWCDCSerial;
 
 #define RX_TIMEOUT_VALUE                            400
 #define BUFFER_SIZE                                 140 // Define the payload size here
+
+//SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, RST_OLED, SCL_OLED, SDA_OLED); 
 
 char txpacket[BUFFER_SIZE];
 char rxpacket[BUFFER_SIZE];
@@ -106,8 +115,11 @@ void OnTxTimeout( void )
 	state=STATE_TX;
 }
 
+char screenlines[6][32];
+int last_line = 0;
+
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
-{	
+{		
   memcpy(rxpacket, payload, size );
   rxpacket[size]='\0';
 	//Radio.Sleep();
@@ -116,6 +128,26 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 	if(i > 0) {
 		Serial.write('\n');
 		rxNumber++;
+		
+		if(last_line < 5) {
+			last_line++;
+			memset(screenlines[last_line], 0, 32);
+			strncpy(screenlines[last_line], rxpacket, 32);
+		} else {
+			for(int j = 0; j < 5; j++) {
+				memset(screenlines[j], 0, 32);
+				strcpy(screenlines[j], screenlines[j+1]);
+			}
+			memset(screenlines[5], 0, 32);
+			strncpy(screenlines[5], rxpacket, 32);
+		}
+		//factory_display.clear();
+		//for(int j = 0; j < 5; j++) factory_display.drawString(0, 10*j, screenlines[j]);
+		//factory_display.display();
+		u8g2.clearBuffer();
+		for(int j = 0; j < 6; j++) u8g2.drawUTF8(0, 1+(10*j), screenlines[j]);
+		u8g2.sendBuffer();
+		delay(10);
 	}
 	receiveflag = true;
   state=STATE_TX;
@@ -150,8 +182,6 @@ void lora_init(void)
 
 /********************************* lora  *********************************************/
 
-//SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
-
 bool resendflag=true;
 bool deepsleepflag=false;
 
@@ -167,7 +197,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.209";
+char Version[8] = "0.210";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -435,10 +465,20 @@ void setup()
 
 	SaveConfig();
 
-	VextOFF();
+	VextON();
 	delay(100);
 	//factory_display.init();
 	//factory_display.clear();
+	//factory_display.setFont(ArialMT_Plain_10);
+  //factory_display.setTextAlignment(TEXT_ALIGN_LEFT);
+	//factory_display.display();
+
+	u8g2.begin();
+	u8g2.enableUTF8Print();
+	u8g2.clearBuffer();
+	u8g2.setFont(u8g2_font_boutique_bitmap_7x7_t_all); 
+	u8g2.sendBuffer();
+
 	delay(100);
 
 	Serial.printf("ESP32ChipID=%04X",(uint16_t)(chipid>>32));//print High 2 bytes
