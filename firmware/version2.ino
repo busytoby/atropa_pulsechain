@@ -115,7 +115,8 @@ void OnTxTimeout( void )
 	state=STATE_TX;
 }
 
-char screenlines[6][32];
+const size_t DISPLAY_CHARS=38;
+char screenlines[6][DISPLAY_CHARS];
 int last_line = 0;
 
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
@@ -125,27 +126,33 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 	//Radio.Sleep();
 	int i = 0;
 	for(; i < size; i++) if(payload[i] != '\0') Serial.write(payload[i]);
-	if(i > 0) {
+	if(i > 1) {
 		Serial.write('\n');
 		rxNumber++;
 		
 		if(last_line < 5) {
+			memset(screenlines[last_line], 0, DISPLAY_CHARS);
+			strncpy(screenlines[last_line], rxpacket, DISPLAY_CHARS);
+			screenlines[last_line][DISPLAY_CHARS] = '\0';
 			last_line++;
-			memset(screenlines[last_line], 0, 32);
-			strncpy(screenlines[last_line], rxpacket, 32);
 		} else {
-			for(int j = 0; j < 5; j++) {
-				memset(screenlines[j], 0, 32);
-				strcpy(screenlines[j], screenlines[j+1]);
+			if(last_line > 5) {
+				for(int j = 0; j < 5; j++) {
+					memset(screenlines[j], 0, DISPLAY_CHARS);
+					strncpy(screenlines[j], screenlines[j+1], DISPLAY_CHARS);
+					screenlines[j][DISPLAY_CHARS] = '\0';
+				}
 			}
-			memset(screenlines[5], 0, 32);
-			strncpy(screenlines[5], rxpacket, 32);
+			memset(screenlines[5], 0, DISPLAY_CHARS);
+			strncpy(screenlines[5], rxpacket, DISPLAY_CHARS);
+			screenlines[5][DISPLAY_CHARS] = '\0';
+			if(last_line == 5) last_line++;
 		}
 		//factory_display.clear();
 		//for(int j = 0; j < 5; j++) factory_display.drawString(0, 10*j, screenlines[j]);
 		//factory_display.display();
 		u8g2.clearBuffer();
-		for(int j = 0; j < 6; j++) u8g2.drawUTF8(0, 1+(10*j), screenlines[j]);
+		for(int j = 0; j < last_line; j++) u8g2.drawUTF8(3, 10+(10*j), screenlines[j]);
 		u8g2.sendBuffer();
 		delay(10);
 	}
@@ -197,7 +204,7 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 }
 
-char Version[8] = "0.210";
+char Version[8] = "0.214";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -315,7 +322,6 @@ void MathInit() {
 	mbedtls_mpi_free(&k);
 	mbedtls_mpi_sub_int(&L, &L, Lb);
 
-  delay(500);
 	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
 	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
 	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
@@ -500,7 +506,7 @@ void SendToRadio(const char* txt) {
   if(txt == NULL) {
 		memset(txpacket, 0, sizeof(txpacket));
 		uint32_t r = Radio.Random();
-		sprintf(txpacket,"失調症 %u 呂 例子:%s %u 水%s [約:%u]",txNumber, Handle, r, Version, rxNumber);
+		sprintf(txpacket,"失%u呂%s例%u子水%s約%u",txNumber, Handle, r, Version, rxNumber);
 	}
 	else if(txt != txpacket) {
 		memset(txpacket, 0, sizeof(txpacket));	
