@@ -88,6 +88,12 @@ typedef enum
 }States_t;
 
 static uint32_t last_tx = 0;
+static uint32_t last_refresh = 0;
+static bool ScreenOn=true;
+static const size_t DISPLAY_CHARS=37;
+static char screenlines[6][DISPLAY_CHARS];
+static int last_line = 0;
+
 int16_t txNumber;
 int16_t rxNumber;
 States_t state;
@@ -100,8 +106,6 @@ long lastSendTime = 0;        // last send time
 int interval = 1000;          // interval between sends
 uint64_t chipid;
 
-static uint32_t last_refresh = 0;
-bool ScreenOn=true;
 bool lora_idle = true;
 
 void OnTxDone( void )
@@ -118,10 +122,6 @@ void OnTxTimeout( void )
   Serial.print("# TX Timeout......");
 	state=STATE_TX;
 }
-
-const size_t DISPLAY_CHARS=37;
-char screenlines[6][DISPLAY_CHARS];
-int last_line = 0;
 
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 {		
@@ -213,7 +213,7 @@ void interrupt_GPIO0(void)
 	else VextON();
 }
 
-char Version[8] = "0.220";
+char Version[8] = "0.221";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -351,10 +351,32 @@ void MathInit() {
                         strlen(mpibuf));
 }
 
+char DateTime[40];
+char* DTString() {
+	uint64_t ctime = esp_timer_get_time();
+	uint64_t TPD = 86400000000;
+	uint64_t TPH = TPD / 34;
+  uint64_t TPM = TPH / 100;
+  uint64_t TPS = TPM / 34;
+	uint16_t Day;
+	uint16_t Hour;
+	uint16_t Minute; 
+	uint16_t Second;
+
+	memset(DateTime, 0, 40);
+	Day = (uint16_t)ctime / TPD;
+  Hour = (ctime - (TPD * Day)) / TPH;
+  Minute = ((ctime - (TPD * Day) - (TPH * Hour)) / TPM);
+  Second = ((ctime - (TPD * Day) - (TPH * Hour) - (TPM * Minute)) / TPS);
+	snprintf(DateTime, 40, "Day:%X %02X:%02X.%02X", Day, Hour, Minute, Second);
+	return DateTime;
+}
+
 void ProcessCmd() {
 	while(Serial.available()) {
 		uint8_t sData = Serial.read();
 		if(sData == 'a') Serial.printf("# random = %d\n", Radio.Random());
+		else if(sData == 'b') Serial.printf("# time = %s\n", DTString());
 		else if(sData == 'c') PrintConfig();
 		else if(sData == 'h') {
 			char* htxt = (char*)calloc(20, sizeof(char));
@@ -516,7 +538,6 @@ int idlemod = 1;
 void SendToRadio(const char* txt) {
 	//xSemaphoreTake(mutex, 400);
 	lora_idle = false;
-	last_tx = millis();
 	++txNumber;
 	//xSemaphoreGive(mutex);
   if(txt == NULL) {
@@ -546,11 +567,15 @@ void loop()
 				if(index == 0 && sData == ':') ProcessCmd();
 				else if(sData == '\n') {
 					SendToRadio(txpacket);
+					last_tx = millis();
 					//vTaskDelay(pdMS_TO_TICKS(100));
 					index = 0;					
 				} else txpacket[index++] = sData;
 			}
-  	} else if (millis() - last_tx > 55555 && lora_idle) SendToRadio(NULL);
+  	} else if (millis() - last_tx > 55555 && lora_idle) {
+			SendToRadio(NULL);
+			last_tx = millis();
+		}
 		delay(10);
 	} 
 	if((millis() - last_tx) > (1551*idlemod)) {
