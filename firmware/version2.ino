@@ -159,6 +159,7 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
 			u8g2.sendBuffer();			
 		}
+
 	}
 	receiveflag = true;
   state=STATE_TX;
@@ -181,12 +182,12 @@ void lora_init(void)
   Radio.SetTxConfig( MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
                                  LORA_SPREADING_FACTOR, LORA_CODINGRATE,
                                  LORA_PREAMBLE_LENGTH, LORA_FIX_LENGTH_PAYLOAD_ON,
-                                 true, 0, 0, LORA_IQ_INVERSION_ON, 500 );
+                                 true, 0, 0, LORA_IQ_INVERSION_ON, 400 );
 
   Radio.SetRxConfig( MODEM_LORA, LORA_BANDWIDTH, LORA_SPREADING_FACTOR,
                                  LORA_CODINGRATE, 0, LORA_PREAMBLE_LENGTH,
                                  LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
-                                 0, true, 0, 0, LORA_IQ_INVERSION_ON, 500 );
+                                 0, true, 0, 0, LORA_IQ_INVERSION_ON, 400 );
 	state=STATE_TX;
 }
 
@@ -516,6 +517,7 @@ void setup()
 	Radio.Rx(0);
 }
 
+int idlemod = 1;
 void SendToRadio(const char* txt) {
 	//xSemaphoreTake(mutex, 400);
 	lora_idle = false;
@@ -533,9 +535,9 @@ void SendToRadio(const char* txt) {
 	}
   Radio.Send((uint8_t *)txpacket, strlen(txpacket));
 	Serial.printf(": %s\n", txpacket);
+	idlemod=1;
 }
 
-int idlemod = 1;
 void loop()
 {
   Radio.IrqProcess();
@@ -550,7 +552,7 @@ void loop()
 				else if(sData == '\n') {
 					SendToRadio(txpacket);
 					//vTaskDelay(pdMS_TO_TICKS(100));
-					index = 0;
+					index = 0;					
 				} else txpacket[index++] = sData;
 			}
   	} else if (millis() - last_tx > 55555 && lora_idle) SendToRadio(NULL);
@@ -559,6 +561,11 @@ void loop()
 	if((millis() - last_tx) > (1551*idlemod)) {
 		idlemod++;
 		Radio.Send(NULL, NULL);
+		if(ScreenOn) {
+			u8g2.clearBuffer();
+			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
+			u8g2.sendBuffer();			
+		}
 	}
   delay(20);    
 }
