@@ -43,29 +43,30 @@
 #include <LittleFS.h>
 
 HWCDC HWCDCSerial;
+SemaphoreHandle_t mutex;
 
 /********************************* lora  *********************************************/
 #define RF_FREQUENCY                                954114361 // Hz
 
-#define TX_OUTPUT_POWER                             26        // dBm
+#define TX_OUTPUT_POWER                             12        // dBm
 
-#define LORA_BANDWIDTH                              1         // [0: 125 kHz,
+#define LORA_BANDWIDTH                              2         // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
                                                               //  3: Reserved]
-#define LORA_SPREADING_FACTOR                       9         // [SF7..SF12]
+#define LORA_SPREADING_FACTOR                       11        // [SF7..SF12]
 #define LORA_CODINGRATE                             1         // [1: 4/5,
                                                               //  2: 4/6,
                                                               //  3: 4/7,
                                                               //  4: 4/8]
-#define LORA_PREAMBLE_LENGTH                        8         // Same for Tx and Rx
+#define LORA_PREAMBLE_LENGTH                        5         // Same for Tx and Rx
 #define LORA_SYMBOL_TIMEOUT                         0         // Symbols
 #define LORA_FIX_LENGTH_PAYLOAD_ON                  false
 #define LORA_IQ_INVERSION_ON                        false
 
 
 #define RX_TIMEOUT_VALUE                            400
-#define BUFFER_SIZE                                 140 // Define the payload size here
+#define BUFFER_SIZE                                 232 // Define the payload size here
 
 //SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, RST_OLED, SCL_OLED, SDA_OLED); 
@@ -93,12 +94,13 @@ bool sleepMode = false;
 int16_t rxSize;
 
 unsigned int counter = 0;
+bool sleepflag=false;
 bool receiveflag = false; // software flag for LoRa receiver, received data makes it true.
 long lastSendTime = 0;        // last send time
 int interval = 1000;          // interval between sends
 uint64_t chipid;
 
-bool ScreenOn=false;
+bool ScreenOn=true;
 bool lora_idle = true;
 
 void OnTxDone( void )
@@ -152,12 +154,20 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 		//factory_display.clear();
 		//for(int j = 0; j < 5; j++) factory_display.drawString(0, 10*j, screenlines[j]);
 		//factory_display.display();
+		xSemaphoreTake(mutex, 400);
 		if(ScreenOn) {
 			u8g2.clearBuffer();
 			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
 			u8g2.sendBuffer();
 		}
+		xSemaphoreGive(mutex);
 		delay(10);
+	}
+	if(ScreenOn && sleepflag) {
+		u8g2.clearBuffer();
+		for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
+		u8g2.sendBuffer();
+		sleepflag=false;
 	}
 	receiveflag = true;
   state=STATE_TX;
@@ -193,22 +203,26 @@ void lora_init(void)
 /********************************* lora  *********************************************/
 
 bool resendflag=true;
-bool deepsleepflag=false;
 
 void VextON(void)
 {
+	xSemaphoreTake(mutex, 400);
 	ScreenOn=true;
 	Serial.println("Screen ON");
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, LOW);
+	xSemaphoreGive(mutex);
 }
 
 void VextOFF(void) //Vext default OFF
 {
+	xSemaphoreTake(mutex, 400);
 	ScreenOn=false;
 	Serial.println("Screen OFF");
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, HIGH);
+	xSemaphoreGive(mutex);
+	sleepflag=true;
 }
 
 void interrupt_GPIO0(void)
@@ -438,6 +452,7 @@ void ProcessCmd() {
 
 void setup()
 {
+	mutex = xSemaphoreCreateMutex();
 	attachInterrupt(0,interrupt_GPIO0,FALLING);
 	Serial.setRxBufferSize(8192);
 	Serial.begin(115200);
@@ -493,7 +508,9 @@ void setup()
   //factory_display.setTextAlignment(TEXT_ALIGN_LEFT);
 	//factory_display.display();
 
+	u8g2.initDisplay();
 	u8g2.begin();
+	u8g2.setPowerSave(0);
 	u8g2.enableUTF8Print();
 	u8g2.clearBuffer();
 	u8g2.setFont(u8g2_font_boutique_bitmap_7x7_t_all); 
