@@ -46,6 +46,7 @@ HWCDC HWCDCSerial;
 SemaphoreHandle_t mutex;
 
 /********************************* lora  *********************************************/
+// SCOUT THE PUBLIC LICENSE AMYGDALA AT
 #define RF_FREQUENCY                                954114361 // Hz
 
 #define TX_OUTPUT_POWER                             12        // dBm
@@ -94,7 +95,6 @@ bool sleepMode = false;
 int16_t rxSize;
 
 unsigned int counter = 0;
-bool sleepflag=false;
 bool receiveflag = false; // software flag for LoRa receiver, received data makes it true.
 long lastSendTime = 0;        // last send time
 int interval = 1000;          // interval between sends
@@ -157,9 +157,8 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 		if(ScreenOn) {
 			u8g2.clearBuffer();
 			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
-			u8g2.sendBuffer();
+			u8g2.sendBuffer();			
 		}
-		vTaskDelay(pdMS_TO_TICKS(30));
 	}
 	receiveflag = true;
   state=STATE_TX;
@@ -171,7 +170,7 @@ void lora_init(void)
 {
   Mcu.begin(HELTEC_BOARD,SLOW_CLK_TPYE);
   txNumber=0;
-  rxNumber = 0;
+  rxNumber=0;
   RadioEvents.TxDone = OnTxDone;
   RadioEvents.TxTimeout = OnTxTimeout;
   RadioEvents.RxDone = OnRxDone;
@@ -210,7 +209,6 @@ void VextOFF(void) //Vext default OFF
   digitalWrite(Vext, HIGH);
 	Serial.println("# Screen OFF");
 	ScreenOn=false;
-	sleepflag=true;
 }
 
 void interrupt_GPIO0(void)
