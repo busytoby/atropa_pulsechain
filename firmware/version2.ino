@@ -100,6 +100,7 @@ long lastSendTime = 0;        // last send time
 int interval = 1000;          // interval between sends
 uint64_t chipid;
 
+static uint32_t last_refresh = 0;
 bool ScreenOn=true;
 bool lora_idle = true;
 
@@ -133,6 +134,7 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 		Serial.write('\n');
 		rxNumber++;
 		
+		xSemaphoreTake(mutex, 400);
 		if(last_line < 5) {
 			memset(screenlines[last_line], 0, DISPLAY_CHARS);
 			strncpy(screenlines[last_line], rxpacket, DISPLAY_CHARS);
@@ -151,15 +153,8 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 			screenlines[5][DISPLAY_CHARS] = '\0';
 			if(last_line == 5) last_line++;
 		}
-		//factory_display.clear();
-		//for(int j = 0; j < 5; j++) factory_display.drawString(0, 10*j, screenlines[j]);
-		//factory_display.display();
-		if(ScreenOn) {
-			u8g2.clearBuffer();
-			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
-			u8g2.sendBuffer();			
-		}
-
+		last_refresh = 0;
+		xSemaphoreGive(mutex);
 	}
 	receiveflag = true;
   state=STATE_TX;
@@ -218,7 +213,7 @@ void interrupt_GPIO0(void)
 	else VextON();
 }
 
-char Version[8] = "0.219";
+char Version[8] = "0.220";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -561,11 +556,16 @@ void loop()
 	if((millis() - last_tx) > (1551*idlemod)) {
 		idlemod++;
 		Radio.Send(NULL, NULL);
-		if(ScreenOn) {
-			u8g2.clearBuffer();
-			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
-			u8g2.sendBuffer();			
-		}
 	}
+	if(ScreenOn && (millis() - last_refresh) > 911) {
+		xSemaphoreTake(mutex, 400);
+		if(last_refresh == 0) vTaskDelay(pdMS_TO_TICKS(100));
+		u8g2.clearBuffer();
+		for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
+		u8g2.sendBuffer();
+		last_refresh = millis();
+		xSemaphoreGive(mutex);
+	}
+	if(!ScreenOn && last_refresh != 0) last_refresh = millis();
   delay(20);    
 }
