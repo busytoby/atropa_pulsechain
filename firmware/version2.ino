@@ -435,7 +435,7 @@ void ProcessCmd() {
 void setup()
 {
 	mutex = xSemaphoreCreateMutex();
-	attachInterrupt(0,interrupt_GPIO0,FALLING);
+	attachInterrupt(0,interrupt_GPIO0,RISING);
 	Serial.setRxBufferSize(8192);
 	Serial.begin(115200);
 	//Mcu.setlicense(license, HELTEC_BOARD);
