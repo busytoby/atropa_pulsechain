@@ -114,7 +114,7 @@ void OnTxDone( void )
 void OnTxTimeout( void )
 {
   //Radio.Sleep( );
-  Serial.print("TX Timeout......");
+  Serial.print("# TX Timeout......");
 	state=STATE_TX;
 }
 
@@ -154,20 +154,12 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 		//factory_display.clear();
 		//for(int j = 0; j < 5; j++) factory_display.drawString(0, 10*j, screenlines[j]);
 		//factory_display.display();
-		xSemaphoreTake(mutex, 400);
 		if(ScreenOn) {
 			u8g2.clearBuffer();
 			for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
 			u8g2.sendBuffer();
 		}
-		xSemaphoreGive(mutex);
-		delay(10);
-	}
-	if(ScreenOn && sleepflag) {
-		u8g2.clearBuffer();
-		for(int j = 0; j < last_line; j++) u8g2.drawUTF8(1, 13+(10*j), screenlines[j]);
-		u8g2.sendBuffer();
-		sleepflag=false;
+		vTaskDelay(pdMS_TO_TICKS(30));
 	}
 	receiveflag = true;
   state=STATE_TX;
@@ -206,22 +198,18 @@ bool resendflag=true;
 
 void VextON(void)
 {
-	xSemaphoreTake(mutex, 400);
-	ScreenOn=true;
-	Serial.println("Screen ON");
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, LOW);
-	xSemaphoreGive(mutex);
+	Serial.println("# Screen ON");
+	ScreenOn=true;
 }
 
 void VextOFF(void) //Vext default OFF
 {
-	xSemaphoreTake(mutex, 400);
-	ScreenOn=false;
-	Serial.println("Screen OFF");
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, HIGH);
-	xSemaphoreGive(mutex);
+	Serial.println("# Screen OFF");
+	ScreenOn=false;
 	sleepflag=true;
 }
 
@@ -231,27 +219,27 @@ void interrupt_GPIO0(void)
 	else VextON();
 }
 
-char Version[8] = "0.218";
+char Version[8] = "0.219";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
 	const char* cfile = "/hel_config";
 	File cf = LittleFS.open(cfile, "w");
-	if(!cf) Serial.println("Failed To Open Config File For Writing");
+	if(!cf) Serial.println("# Failed To Open Config File For Writing");
 	else {
 		cf.printf("h %s\n", Handle);
 	}
 	cf.close();
-	Serial.println("Wrote /hel_config");
+	Serial.println("# Wrote /hel_config");
 }
 
 void PrintConfig() {
 	const char* cfile = "/hel_config";
 	File cf = LittleFS.open(cfile, "r");
 	if(!cf) {
-		Serial.println("No Config File");
+		Serial.println("# No Config File");
 	} else {
-		Serial.println("Reading /hel_config");
+		Serial.println("# Reading /hel_config");
 		while (cf.available()) Serial.write(cf.read());
 	}
 	cf.close();
@@ -269,7 +257,7 @@ char* mpistring(const mbedtls_mpi V) {
 		return mpibuf;
 	}
 
-  Serial.printf("MPIstring Error: -0x%04X\n", -ret);
+  Serial.printf("# MPIstring Error: -0x%04X\n", -ret);
 }
 
 mbedtls_entropy_context entropy;
@@ -349,20 +337,20 @@ void MathInit() {
 	mbedtls_mpi_free(&k);
 	mbedtls_mpi_sub_int(&L, &L, Lb);
 
-	Serial.printf("%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
-	Serial.printf("%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
-	Serial.printf("%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
-	Serial.printf("%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
-	Serial.printf("%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
-	Serial.printf("%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
-	Serial.printf("%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
-	Serial.printf("%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
-	Serial.printf("%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
-	Serial.printf("%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
-	Serial.printf("%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
-	Serial.printf("%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
-	Serial.printf("%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
-	Serial.printf("%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
+	Serial.printf("#%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
+	Serial.printf("#%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
+	Serial.printf("#%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
+	Serial.printf("#%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
+	Serial.printf("#%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
+	Serial.printf("#%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
+	Serial.printf("#%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
+	Serial.printf("#%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
+	Serial.printf("#%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
+	Serial.printf("#%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
+	Serial.printf("#%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
+	Serial.printf("#%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
+	Serial.printf("#%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
+	Serial.printf("#%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
 
 	mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
                         (const unsigned char *)mpibuf,
@@ -372,7 +360,7 @@ void MathInit() {
 void ProcessCmd() {
 	while(Serial.available()) {
 		uint8_t sData = Serial.read();
-		if(sData == 'a') Serial.printf("random = %d\n", Radio.Random());
+		if(sData == 'a') Serial.printf("# random = %d\n", Radio.Random());
 		else if(sData == 'c') PrintConfig();
 		else if(sData == 'h') {
 			char* htxt = (char*)calloc(20, sizeof(char));
@@ -381,10 +369,10 @@ void ProcessCmd() {
 			int j = strlen(htxt);
 			while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
 			if(strlen(htxt) > 1) strcpy(Handle, htxt);
-			Serial.printf("Handle: %s\n", Handle);
+			Serial.printf("# Handle: %s\n", Handle);
 			free(htxt);
 		}
-		else if(sData == 'r') Serial.printf("rxCount = %d\n", rxNumber);
+		else if(sData == 'r') Serial.printf("# rxCount = %d\n", rxNumber);
 		else if(sData == 's') {
 			uint8_t vData = Serial.read();
 			uint8_t mData = Serial.read();
@@ -435,11 +423,11 @@ void ProcessCmd() {
 				else if(vData == 'L') Lb = sd2;
 				MathInit();
 			}
-			Serial.printf("%cb [%s] oldValue: %d newValue: %d\n", (char)(vData), mpistring(M), sd, sd2);
+			Serial.printf("# %cb [%s] oldValue: %d newValue: %d\n", (char)(vData), mpistring(M), sd, sd2);
 			mbedtls_mpi_free(&M);
 			mbedtls_mpi_free(&M2);
 		}
-		else if(sData == 't') Serial.printf("txCount = %d\n", txNumber);
+		else if(sData == 't') Serial.printf("# txCount = %d\n", txNumber);
 		else if(sData == 'x') SaveConfig();
 		
 	}
@@ -462,21 +450,21 @@ void setup()
 
 	MathInit();
 
-	Serial.println("\nMounting LittleFS ...");
+	Serial.println("# Mounting LittleFS ...");
 
   // Initialize LittleFS
   if (!LittleFS.begin(true)) { // 'true' formats the filesystem if the mount fails
-    Serial.println("Failed to mount LittleFS filesystem");
+    Serial.println("# Failed to mount LittleFS filesystem");
     return;
   }
-  Serial.println("LittleFS mounted successfully");
+  Serial.println("# LittleFS mounted successfully");
 
 	const char* cfile = "/hel_config";
 	File cf = LittleFS.open(cfile, "r");
 	if(!cf) {
-		Serial.println("No Existing Config Found");
+		Serial.println("# No Existing Config Found");
 	} else {
-		Serial.println("Reading /hel_config");
+		Serial.println("# Reading /hel_config");
 		int index = 0;
 		while (cf.available()) {
 			uint8_t sData = cf.read();
@@ -491,7 +479,7 @@ void setup()
 			  }
 			}
 			if(cf.available() && sData != '\n') {
-				Serial.println("Malformed Save File");
+				Serial.println("# Malformed Save File");
 				break;
 			}
 		}
@@ -518,7 +506,7 @@ void setup()
 
 	delay(100);
 
-	Serial.printf("ESP32ChipID=%04X",(uint16_t)(chipid>>32));//print High 2 bytes
+	Serial.printf("# ESP32ChipID=%04X",(uint16_t)(chipid>>32));//print High 2 bytes
 	Serial.printf("%08X\n",(uint32_t)chipid);//print Low 4bytes.
 	delay(100);
 
@@ -531,9 +519,11 @@ void setup()
 }
 
 void SendToRadio(const char* txt) {
+	//xSemaphoreTake(mutex, 400);
 	lora_idle = false;
 	last_tx = millis();
 	++txNumber;
+	//xSemaphoreGive(mutex);
   if(txt == NULL) {
 		memset(txpacket, 0, sizeof(txpacket));
 		uint32_t r = Radio.Random();
