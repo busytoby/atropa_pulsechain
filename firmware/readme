@@ -4,6 +4,8 @@ bounties:
 1.
     [359167][E][esp32-hal-i2c-ng.c:277] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
     Backtrace: 0x4200A929:0x3FCEBB70 0x42005F7F:0x3FCEBBB0 0x42033449:0x3FCEBBD0 0x42006C07:0x3FCEBBF0 0x420338D1:0x3FCEBC10 0x4200745F:0x3FCEBC30 0x420338E6:0x3FCEBC50 0x4200753F:0x3FCEBC70 0x420075E9:0x3FCEBC90 0x42033971:0x3FCEBCB0 0x42006C3D:0x3FCEBCE0 0x42006C7E:0x3FCEBD00 0x42003A0C:0x3FCEBD20 0x4200E7FC:0x3FCEBD40 0x4037C89D:0x3FCEBD60
+    Patch: packages/esp32/hardware/esp32/3.3.5/cores/esp32/esp32-hal-i2c-ng.c" 277       if(i2c_num != 0 || size > 2)
+
 
 ------------------------------------------------------------\
 math notes:
