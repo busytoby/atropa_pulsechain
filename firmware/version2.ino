@@ -49,9 +49,9 @@ SemaphoreHandle_t mutex;
 // SCOUT THE PUBLIC LICENSE AMYGDALA AT
 #define RF_FREQUENCY                                954114361 // Hz
 
-#define TX_OUTPUT_POWER                             12        // dBm
+#define TX_OUTPUT_POWER                             9        // dBm
 
-#define LORA_BANDWIDTH                              2         // [0: 125 kHz,
+#define LORA_BANDWIDTH                              1         // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
                                                               //  3: Reserved]
@@ -244,7 +244,7 @@ char* mpistring(const mbedtls_mpi V) {
 	int ret;	
 	size_t n_written;
 	memset(mpibuf, 0, sizeof(mpibuf));
-	ret = mbedtls_mpi_write_string(&V, 10, mpibuf, sizeof(mpibuf) - 1, &n_written);
+	ret = mbedtls_mpi_write_string(&V, 16, mpibuf, sizeof(mpibuf) - 1, &n_written);
 	if(ret == 0) {
 		mpibuf[n_written] = '\0';
 		for(int i = 1; i < n_written; i+=2) mpibuf[i] = tolower(mpibuf[i]);
@@ -271,7 +271,6 @@ mbedtls_mpi_sint db = 110;
 mbedtls_mpi_sint Hb = 187;
 mbedtls_mpi_sint Lb = 591;
 void MathInit() {
-	mbedtls_mpi m, x, b;
 	mbedtls_mpi_init(&m);
 	mbedtls_mpi_init(&x);
 	mbedtls_mpi_init(&b);
@@ -331,20 +330,20 @@ void MathInit() {
 	mbedtls_mpi_free(&k);
 	mbedtls_mpi_sub_int(&L, &L, Lb);
 
-	Serial.printf("#%12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
-	Serial.printf("#%12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
-	Serial.printf("#%12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
-	Serial.printf("#%12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
-	Serial.printf("#%12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
-	Serial.printf("#%12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
-	Serial.printf("#%12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
-	Serial.printf("#%12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
-	Serial.printf("#%12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
-	Serial.printf("#%12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
-	Serial.printf("#%12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
-	Serial.printf("#%12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
-	Serial.printf("#%12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
-	Serial.printf("#%12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
+	Serial.printf("# %12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
+	Serial.printf("# %12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
+	Serial.printf("# %12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
+	Serial.printf("# %12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
+	Serial.printf("# %12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
+	Serial.printf("# %12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
+	Serial.printf("# %12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
+	Serial.printf("# %12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
+	Serial.printf("# %12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
+	Serial.printf("# %12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
+	Serial.printf("# %12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
+	Serial.printf("# %12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
+	Serial.printf("# %12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
+	Serial.printf("# %12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
 
 	mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
                         (const unsigned char *)mpibuf,
@@ -372,6 +371,20 @@ char* DTString() {
 	return DateTime;
 }
 
+char* GenKey() {
+	mbedtls_mpi X, Xb;
+	mbedtls_mpi_sint r = Radio.Random();
+	if(r<0) r *= -1;
+	mbedtls_mpi_init(&X);
+	mbedtls_mpi_init(&Xb);
+	mbedtls_mpi_lset(&Xb, r);
+	mbedtls_mpi_exp_mod(&X, &Xb, &x, &L, NULL);
+	mpistring(X);
+	mbedtls_mpi_free(&X);
+	mbedtls_mpi_free(&Xb);
+	return mpibuf;
+}
+
 void ProcessCmd() {
 	while(Serial.available()) {
 		uint8_t sData = Serial.read();
@@ -388,6 +401,7 @@ void ProcessCmd() {
 			Serial.printf("# Handle: %s\n", Handle);
 			free(htxt);
 		}
+		else if(sData == 'n') Serial.printf("256bit Key: %s\n", GenKey());
 		else if(sData == 'r') Serial.printf("# rxCount = %d\n", rxNumber);
 		else if(sData == 's') {
 			uint8_t vData = Serial.read();
@@ -413,7 +427,7 @@ void ProcessCmd() {
 				while(true) {
 					sd2--;
 					mbedtls_mpi_sub_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 25, mbedtls_ctr_drbg_random, &ctr_drbg);
+					ret = mbedtls_mpi_is_prime_ext(&M2, 50, mbedtls_ctr_drbg_random, &ctr_drbg);
 					delay(20);
 					if(ret == 0) break;
 				}
@@ -421,7 +435,7 @@ void ProcessCmd() {
 				while(true) {
 					sd2++;
 					mbedtls_mpi_add_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 25, mbedtls_ctr_drbg_random, &ctr_drbg );
+					ret = mbedtls_mpi_is_prime_ext(&M2, 50, mbedtls_ctr_drbg_random, &ctr_drbg );
 					delay(5);
 					if(ret == 0) break;
 				}
