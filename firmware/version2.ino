@@ -298,6 +298,7 @@ void MathInit() {
 		strcpy(DysnomiaPrime, APOGEE);
 		strcat(DysnomiaPrime, APEX);
 		mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
+		//free(DysnomiaPrime);
 		mbedtls_mpi_mul_mpi(&s, &m, &x);
 		mbedtls_mpi_add_mpi(&s, &s, &b);
 	}
@@ -438,7 +439,7 @@ void ProcessCmd() {
 				while(true) {
 					sd2--;
 					mbedtls_mpi_sub_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 50, mbedtls_ctr_drbg_random, &ctr_drbg);
+					ret = mbedtls_mpi_is_prime_ext(&M2, 60, mbedtls_ctr_drbg_random, &ctr_drbg);
 					delay(20);
 					if(ret == 0) break;
 				}
@@ -446,7 +447,7 @@ void ProcessCmd() {
 				while(true) {
 					sd2++;
 					mbedtls_mpi_add_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 50, mbedtls_ctr_drbg_random, &ctr_drbg );
+					ret = mbedtls_mpi_is_prime_ext(&M2, 60, mbedtls_ctr_drbg_random, &ctr_drbg );
 					delay(5);
 					if(ret == 0) break;
 				}
@@ -477,7 +478,7 @@ void ProcessCmd() {
 // needed for first flash & after any flash clear via left+right buttons
 // serials come from https://resource.heltec.cn/search
 // use product id from ie: ESP32ChipID=5C9482697090
-//uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
+uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
 
 void setup()
 {
@@ -485,7 +486,7 @@ void setup()
 	attachInterrupt(0,interrupt_GPIO0,RISING);
 	Serial.setRxBufferSize(8192);
 	Serial.begin(115200);
-	//Mcu.setlicense(license, HELTEC_BOARD);
+	Mcu.setlicense(license, HELTEC_BOARD);
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
 	while(!Serial) continue;
 
