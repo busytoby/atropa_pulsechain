@@ -245,7 +245,7 @@ char* mpistring(const mbedtls_mpi V) {
 	size_t n_written;
 	memset(mpibuf, 0, sizeof(mpibuf));
 	ret = mbedtls_mpi_write_string(&V, 16, mpibuf, sizeof(mpibuf) - 1, &n_written);
-	if(ret == 0) {
+	if(ret == 0 && n_written > 0) {
 		mpibuf[n_written] = '\0';
 		for(int i = 1; i < n_written; i+=2) mpibuf[i] = tolower(mpibuf[i]);
 		return mpibuf;
@@ -290,18 +290,16 @@ void MathInit() {
 
   	mbedtls_entropy_init( &entropy );
   	mbedtls_ctr_drbg_init( &ctr_drbg );
-
-		mbedtls_mpi_read_string(&m, 10, APOGEE);
-		mbedtls_mpi_read_string(&x, 10, APEX);
-		mbedtls_mpi_read_string(&b, 10, MotzkinPrime);
-		char* DysnomiaPrime = (char*) calloc(strlen(APOGEE + strlen(APEX)), sizeof(char));
-		strcpy(DysnomiaPrime, APOGEE);
-		strcat(DysnomiaPrime, APEX);
-		mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
-		//free(DysnomiaPrime);
-		mbedtls_mpi_mul_mpi(&s, &m, &x);
-		mbedtls_mpi_add_mpi(&s, &s, &b);
 	}
+	mbedtls_mpi_read_string(&m, 10, APOGEE);
+	mbedtls_mpi_read_string(&x, 10, APEX);
+	mbedtls_mpi_read_string(&b, 10, MotzkinPrime);
+	char DysnomiaPrime[strlen(APOGEE) + strlen(APEX)];		
+	strcpy(DysnomiaPrime, APOGEE);
+	strcat(DysnomiaPrime, APEX);
+	mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
+	mbedtls_mpi_mul_mpi(&s, &m, &x);
+	mbedtls_mpi_add_mpi(&s, &s, &b);
 	mbedtls_mpi_mul_mpi(&l, &m, &s);
 	mbedtls_mpi_sub_int(&l, &l, lb);
 	mbedtls_mpi_mul_mpi(&g, &m, &y);
@@ -380,19 +378,30 @@ char* DTString() {
 }
 
 char* GenKey() {
-	mbedtls_mpi Xn, Xb;
+	mbedtls_mpi Xn1, Xn2, Xb;
 	mbedtls_mpi_sint r = Radio.Random();
+	mbedtls_mpi_sint r2 = Radio.Random();
 	if(r<0) r *= -1;
-	mbedtls_mpi_init(&Xn);
+	if(r2<0) r2 *= -1;
+	mbedtls_mpi_init(&Xn1);
+	mbedtls_mpi_init(&Xn2);
 	mbedtls_mpi_init(&Xb);
 	mbedtls_mpi_lset(&Xb, r);
-	mbedtls_mpi_exp_mod(&Xn, &Xb, &m, &L, NULL);
-	//Serial.printf("Xn: %s\n", mpistring(Xn));
-	//Serial.printf("Xb: %s\n", mpistring(Xb));
-	//Serial.printf("m: %s\n", mpistring(m));
-	//Serial.printf("L: %s\n", mpistring(L));
-	mpistring(Xn);
-	mbedtls_mpi_free(&Xn);
+	mbedtls_mpi_exp_mod(&Xn1, &Xb, &m, &l, NULL);
+	mbedtls_mpi_lset(&Xb, r2);
+	mbedtls_mpi_exp_mod(&Xn2, &Xb, &x, &t, NULL);
+	mbedtls_mpi_exp_mod(&Xb, &Xn1, &Xn2, &L, NULL);
+	//mbedtls_mpi_exp_mod(&Xb, &Xb, &b, &L, NULL);
+	Serial.printf("Xn1: %s\n", mpistring(Xn1));
+	Serial.printf("Xn2: %s\n", mpistring(Xn2));
+	Serial.printf("Xb: %s\n", mpistring(Xb));
+	Serial.printf("l: %s\n", mpistring(l));
+	Serial.printf("t: %s\n", mpistring(t));
+	Serial.printf("m: %s\n", mpistring(m));
+	Serial.printf("L: %s\n", mpistring(L));
+	mpistring(Xb);
+	mbedtls_mpi_free(&Xn1);
+	mbedtls_mpi_free(&Xn2);
 	mbedtls_mpi_free(&Xb);
 	return mpibuf;
 }
@@ -404,16 +413,15 @@ void ProcessCmd() {
 		else if(sData == 'b') Serial.printf("# time = %s\n", DTString());
 		else if(sData == 'c') PrintConfig();
 		else if(sData == 'h') {
-			char* htxt = (char*)calloc(20, sizeof(char));
+			char htxt[20];
 			Serial.readBytes(htxt, 20);	
 			for(int i = strlen(htxt); i > 0; i--) if(htxt[i] == '\n') htxt[i] = '\0';
 			int j = strlen(htxt);
 			while(htxt[0] == ' ') for(int i=0; i < j - 1; i++) { htxt[i] = htxt[i+1]; htxt[i+1] = 0; }
 			if(strlen(htxt) > 1) strcpy(Handle, htxt);
 			Serial.printf("# Handle: %s\n", Handle);
-			free(htxt);
 		}
-		else if(sData == 'n') Serial.printf("New Key: %s\n", GenKey());
+		else if(sData == 'n') Serial.printf("# New Key: 0x%s\n", GenKey());
 		else if(sData == 'r') Serial.printf("# rxCount = %d\n", rxNumber);
 		else if(sData == 's') {
 			uint8_t vData = Serial.read();
@@ -478,7 +486,7 @@ void ProcessCmd() {
 // needed for first flash & after any flash clear via left+right buttons
 // serials come from https://resource.heltec.cn/search
 // use product id from ie: ESP32ChipID=5C9482697090
-uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
+//uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
 
 void setup()
 {
@@ -486,7 +494,7 @@ void setup()
 	attachInterrupt(0,interrupt_GPIO0,RISING);
 	Serial.setRxBufferSize(8192);
 	Serial.begin(115200);
-	Mcu.setlicense(license, HELTEC_BOARD);
+	//Mcu.setlicense(license, HELTEC_BOARD);
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
 	while(!Serial) continue;
 
