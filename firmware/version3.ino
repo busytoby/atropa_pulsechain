@@ -451,7 +451,7 @@ char* GenKey() {
 	char NewKey[strlen(mpibuf)+1];
 	for(int i = 0; i <= strlen(mpibuf); i++) {
 		NewKey[i] = (KeyEntropy[i] % 16) + '0';
-		if(NewKey[i] > '9')  NewKey[i] = NewKey[i] - 10 - '0' + 'A';
+		if(NewKey[i] > '9')  NewKey[i] = NewKey[i] - 10 - '0' + ((i%2==0)?'A':'a');
 		//Serial.printf("%d %d %d %d\n", KeyEntropy[i], mpibuf[i], (KeyEntropy[i] % 16) + '0', 'A');
 	}
 	NewKey[strlen(mpibuf)] = '\0';
