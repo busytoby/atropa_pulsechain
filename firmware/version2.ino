@@ -239,7 +239,7 @@ void PrintConfig() {
 	cf.close();
 }
 
-char mpibuf[256];
+static char mpibuf[256] = "0x069e8fC82e18F4";
 char* mpistring(const mbedtls_mpi V) {
 	int ret;	
 	size_t n_written;
@@ -270,7 +270,7 @@ mbedtls_mpi_sint qb = 116;
 mbedtls_mpi_sint tb = 683;
 mbedtls_mpi_sint db = 110;
 mbedtls_mpi_sint Hb = 187;
-mbedtls_mpi_sint Lb = 591;
+mbedtls_mpi_sint Lb = 228;
 void MathInit() {
 	if(!math_init_complete) {
 		mbedtls_mpi_init(&m);
@@ -290,39 +290,108 @@ void MathInit() {
 
   	mbedtls_entropy_init( &entropy );
   	mbedtls_ctr_drbg_init( &ctr_drbg );
-	}
+
+		mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
+                         (const unsigned char *)mpibuf,
+                         strlen(mpibuf));
+		math_init_complete = true;
+	} else mbedtls_ctr_drbg_reseed(&ctr_drbg, (const unsigned char *)mpibuf, strlen(mpibuf));
+	
 	mbedtls_mpi_read_string(&m, 10, APOGEE);
 	mbedtls_mpi_read_string(&x, 10, APEX);
 	mbedtls_mpi_read_string(&b, 10, MotzkinPrime);
+	mbedtls_mpi_mul_mpi(&y, &m, &x);
+	mbedtls_mpi_add_mpi(&y, &y, &b);
 	char DysnomiaPrime[strlen(APOGEE) + strlen(APEX)];		
 	strcpy(DysnomiaPrime, APOGEE);
 	strcat(DysnomiaPrime, APEX);
-	mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
-	mbedtls_mpi_mul_mpi(&s, &m, &x);
-	mbedtls_mpi_add_mpi(&s, &s, &b);
-	mbedtls_mpi_mul_mpi(&l, &m, &s);
+	mbedtls_mpi_read_string(&s, 10, DysnomiaPrime);
+
+	Serial.printf("# %12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
+	Serial.printf("# %12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
+	Serial.printf("# %12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
+	Serial.printf("# %12s y= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
+	Serial.printf("# %12s s= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
+
+	mbedtls_mpi_mul_mpi(&l, &m, &y);
 	mbedtls_mpi_sub_int(&l, &l, lb);
-	mbedtls_mpi_mul_mpi(&g, &m, &y);
+	while(mbedtls_mpi_is_prime_ext(&l, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&l, &l, 1);
+		lb++;
+		delay(20);
+	}
+	Serial.printf("# %12s l= 0x%s [%lld]\n", "LOVE", mpistring(l), (long long)lb); delay(100);
+
+	mbedtls_mpi_mul_mpi(&g, &m, &s);
 	mbedtls_mpi_add_mpi(&g, &g, &b);
 	mbedtls_mpi_mul_mpi(&g, &g, &m);
 	mbedtls_mpi_sub_int(&g, &g, gb);
+	while(mbedtls_mpi_is_prime_ext(&g, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&g, &g, 1);
+		gb++;
+		delay(20);
+	}
+	Serial.printf("# %12s g= 0x%s [%lld]\n", "GAIN", mpistring(g), (long long)gb); delay(100);
+
 	mbedtls_mpi_mul_mpi(&i, &m, &b);
-	mbedtls_mpi_add_mpi(&i, &i, &y);
+	mbedtls_mpi_add_mpi(&i, &i, &s);
 	mbedtls_mpi_sub_int(&i, &i, ib);
-	mbedtls_mpi_mul_mpi(&o, &s, &s);
+	while(mbedtls_mpi_is_prime_ext(&i, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&i, &i, 1);
+		ib++;
+		delay(20);
+	}
+	Serial.printf("# %12s i= 0x%s [%lld]\n", "_[1]", mpistring(i), (long long)ib); delay(100);
+
+	mbedtls_mpi_mul_mpi(&o, &y, &y);
 	mbedtls_mpi_sub_int(&o, &o, ob);
+	while(mbedtls_mpi_is_prime_ext(&o, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&o, &o, 1);
+		ob++;
+		delay(20);
+	}
+	Serial.printf("# %12s o= 0x%s [%lld]\n", "__[2]", mpistring(o), (long long)ob); delay(100);
+	
 	mbedtls_mpi_mul_mpi(&q, &i, &i);
 	mbedtls_mpi_sub_int(&q, &q, qb);
+	while(mbedtls_mpi_is_prime_ext(&q, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&q, &q, 1);
+		qb++;
+		delay(20);
+	}
+	Serial.printf("# %12s q= 0x%s [%lld]\n", "___[3]", mpistring(q), (long long)qb); delay(100);
+	
 	mbedtls_mpi_mul_mpi(&t, &o, &g);
 	mbedtls_mpi_add_mpi(&t, &t, &q);
 	mbedtls_mpi_sub_int(&t, &t, tb);
-	mbedtls_mpi_mul_mpi(&d, &g, &s);
+	while(mbedtls_mpi_is_prime_ext(&t, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&t, &t, 1);
+		tb++;
+		delay(20);
+	}
+	Serial.printf("# %12s t= 0x%s [%lld]\n", "____[4]", mpistring(t), (long long)tb); delay(100);
+	
+	mbedtls_mpi_mul_mpi(&d, &g, &y);
 	mbedtls_mpi_add_mpi(&d, &d, &o);
 	mbedtls_mpi_mul_mpi(&d, &g, &d);
 	mbedtls_mpi_sub_int(&d, &d, db);
+	while(mbedtls_mpi_is_prime_ext(&d, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&d, &d, 1);
+		db++;
+		delay(20);
+	}
+	Serial.printf("# %12s d= 0x%s [%lld]\n", "_____[5]", mpistring(d), (long long)db); delay(100);
+	
 	mbedtls_mpi_add_int(&H, &d, db);
 	mbedtls_mpi_sub_mpi(&H, &H, &b);
 	mbedtls_mpi_sub_int(&H, &H, Hb);
+	while(mbedtls_mpi_is_prime_ext(&H, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&H, &H, 1);
+		Hb++;
+		delay(20);
+	}
+	Serial.printf("# %12s H= 0x%s [%lld]\n", "______[6]", mpistring(H), (long long)Hb); delay(100);
+	
 	mbedtls_mpi k;
 	mbedtls_mpi_init(&k);
 	mbedtls_mpi_lset (&k, Hb - db);
@@ -331,29 +400,12 @@ void MathInit() {
 	mbedtls_mpi_sub_mpi(&L, &L, &k);
 	mbedtls_mpi_free(&k);
 	mbedtls_mpi_sub_int(&L, &L, Lb);
-
-	Serial.printf("# %12s m= 0x%s\n", "APOGEE", mpistring(m)); delay(100);
-	Serial.printf("# %12s x= 0x%s\n", "APEX", mpistring(x)); delay(100);
-	Serial.printf("# %12s b= 0x%s\n", "MotzkinPrime", mpistring(b)); delay(100);
-	Serial.printf("# %12s y= 0x%s\n", "DYSNOMIA", mpistring(y)); delay(100);
-	Serial.printf("# %12s s= 0x%s\n", "SLOPE", mpistring(s)); delay(100);
-	Serial.printf("# %12s l= 0x%s\n", "LOVE", mpistring(l)); delay(100);
-	Serial.printf("# %12s g= 0x%s\n", "GAIN", mpistring(g)); delay(100);
-	Serial.printf("# %12s i= 0x%s\n", "_[1]", mpistring(i)); delay(100);
-	Serial.printf("# %12s o= 0x%s\n", "__[2]", mpistring(o)); delay(100);
-	Serial.printf("# %12s q= 0x%s\n", "___[3]", mpistring(q)); delay(100);
-	Serial.printf("# %12s t= 0x%s\n", "____[4]", mpistring(t)); delay(100);
-	Serial.printf("# %12s d= 0x%s\n", "_____[5]", mpistring(d)); delay(100);
-	Serial.printf("# %12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
-	Serial.printf("# %12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
-
-	if(!math_init_complete) {
-		mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
-                         (const unsigned char *)mpibuf,
-                         strlen(mpibuf));
-		math_init_complete = true;
-	} else
-		mbedtls_ctr_drbg_reseed(&ctr_drbg, (const unsigned char *)mpibuf, strlen(mpibuf));
+	while(mbedtls_mpi_is_prime_ext(&L, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+		mbedtls_mpi_sub_int(&L, &L, 1);
+		Lb++;
+		delay(20);
+	}
+	Serial.printf("# %12s L= 0x%s [%lld]\n", "_______[7]", mpistring(L), (long long)Lb); delay(100);
 }
 
 char DateTime[40];
@@ -377,43 +429,27 @@ char* DTString() {
 	return DateTime;
 }
 
+static char KeyEntropy[96];
 char* GenKey() {
-	mbedtls_mpi Xn1, Xn2, Xb, Xb2;
-	mbedtls_mpi_sint r = Radio.Random();
-	mbedtls_mpi_sint r2 = Radio.Random();
-	if(r<0) r *= -1;
-	if(r2<0) r2 *= -1;
-	mbedtls_mpi_init(&Xn1);
-	mbedtls_mpi_init(&Xn2);
-	mbedtls_mpi_init(&Xb);
-	mbedtls_mpi_init(&Xb2);
+	for(int i = 0; i < 93; i+=4) {
+		long long r3 = Radio.Random();
+		KeyEntropy[i] ^= *(unsigned char*)&r3;
+		KeyEntropy[i+1] ^= *((unsigned char*)&r3+1);
+		KeyEntropy[i+2] ^= *((unsigned char*)&r3+2);
+		KeyEntropy[i+3] ^= *((unsigned char*)&r3+3);
+	}
 
-	mbedtls_mpi_copy(&Xn1, &l);
-	mbedtls_mpi_copy(&Xn2, &t);
-	mbedtls_mpi_copy(&Xb2, &L);
+	KeyEntropy[95] = '\0';
+	mpistring(L);
+	char NewKey[strlen(mpibuf)+1];
+	for(int i = 0; i <= strlen(mpibuf); i++) {
+		NewKey[i] = (KeyEntropy[i] % 16) + '0';
+		if(NewKey[i] > '9')  NewKey[i] = NewKey[i] - 10 - '0' + 'A';
+		//Serial.printf("%d %d %d %d\n", KeyEntropy[i], mpibuf[i], (KeyEntropy[i] % 16) + '0', 'A');
+	}
+	NewKey[strlen(mpibuf)] = '\0';
 
-	mbedtls_mpi_lset(&Xb, r);
-	mbedtls_mpi_exp_mod(&Xn1, &Xb, &m, &l, NULL);
-
-	mbedtls_mpi_lset(&Xb, r2);
-	mbedtls_mpi_exp_mod(&Xn2, &Xb, &x, &t, NULL);
-
-	mbedtls_mpi_exp_mod(&Xb2, &Xn1, &Xn2, &L, NULL);
-
-	//Serial.printf("Xn1: %s\n", mpistring(Xn1));
-	//Serial.printf("Xn2: %s\n", mpistring(Xn2));
-	//Serial.printf("Xb: %s\n", mpistring(Xb));
-	//Serial.printf("m: %s\n", mpistring(m));
-	//Serial.printf("l: %s\n", mpistring(l));
-	//Serial.printf("x: %s\n", mpistring(x));
-	//Serial.printf("t: %s\n", mpistring(t));
-	//Serial.printf("m: %s\n", mpistring(m));
-	//Serial.printf("L: %s\n", mpistring(L));
-	mpistring(Xb2);
-	mbedtls_mpi_free(&Xn1);
-	mbedtls_mpi_free(&Xn2);
-	mbedtls_mpi_free(&Xb);
-	mbedtls_mpi_free(&Xb2);
+	strcpy(mpibuf, NewKey);
 	return mpibuf;
 }
 
@@ -458,7 +494,7 @@ void ProcessCmd() {
 				while(true) {
 					sd2--;
 					mbedtls_mpi_sub_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 60, mbedtls_ctr_drbg_random, &ctr_drbg);
+					ret = mbedtls_mpi_is_prime_ext(&M2, 99, mbedtls_ctr_drbg_random, &ctr_drbg);
 					delay(20);
 					if(ret == 0) break;
 				}
@@ -466,7 +502,7 @@ void ProcessCmd() {
 				while(true) {
 					sd2++;
 					mbedtls_mpi_add_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 60, mbedtls_ctr_drbg_random, &ctr_drbg );
+					ret = mbedtls_mpi_is_prime_ext(&M2, 99, mbedtls_ctr_drbg_random, &ctr_drbg );
 					delay(5);
 					if(ret == 0) break;
 				}
