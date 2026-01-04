@@ -49,11 +49,12 @@ SemaphoreHandle_t mutex;
 // SCOUT THE PUBLIC LICENSE AMYGDALA AT
 //#define RF_FREQUENCY                                954114361 // Hz
 //#define RF_FREQUENCY                                715585771 // Hz
-#define RF_FREQUENCY                                477057180 // Hz
+//#define RF_FREQUENCY                                477057180 // Hz
+#define RF_FREQUENCY                                915000000 // Hz
 
 #define TX_OUTPUT_POWER                             5        // dBm
 
-#define LORA_BANDWIDTH                              1         // [0: 125 kHz,
+#define LORA_BANDWIDTH                              0         // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
                                                               //  3: Reserved]
@@ -215,7 +216,7 @@ void interrupt_GPIO0(void)
 	else VextON();
 }
 
-char Version[8] = "0.300";
+char Version[8] = "0.301";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -433,15 +434,19 @@ char* DTString() {
 
 static char KeyEntropy[96];
 char* GenKey() {
-	for(int i = 0; i < 93; i+=4) {
+	for(int i = 0; i < 89; i+=8) {
 		long long r3 = Radio.Random();
-		KeyEntropy[i] ^= *(unsigned char*)&r3;
-		KeyEntropy[i+1] ^= *((unsigned char*)&r3+1);
-		KeyEntropy[i+2] ^= *((unsigned char*)&r3+2);
-		KeyEntropy[i+3] ^= *((unsigned char*)&r3+3);
+		KeyEntropy[i] ^= *(unsigned char*)&r3 & 0xF;
+		KeyEntropy[i+1] ^= *((unsigned char*)&r3) >> 1 & 0xF;
+		KeyEntropy[i+2] ^= *((unsigned char*)&r3+1) & 0xF;
+		KeyEntropy[i+3] ^= *((unsigned char*)&r3+1) >> 1 & 0xF;
+		KeyEntropy[i+4] ^= *((unsigned char*)&r3+2) & 0xF;
+		KeyEntropy[i+5] ^= *((unsigned char*)&r3+2) >> 1 & 0xF;
+		KeyEntropy[i+6] ^= *((unsigned char*)&r3+3) & 0xF;
+		KeyEntropy[i+7] ^= *((unsigned char*)&r3+3) >> 1 & 0xF;
 	}
 
-	KeyEntropy[95] = '\0';
+	//KeyEntropy[95] = '\0';
 	mpistring(L);
 	char NewKey[strlen(mpibuf)+1];
 	for(int i = 0; i <= strlen(mpibuf); i++) {
