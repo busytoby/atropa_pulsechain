@@ -378,7 +378,7 @@ char* DTString() {
 }
 
 char* GenKey() {
-	mbedtls_mpi Xn1, Xn2, Xb;
+	mbedtls_mpi Xn1, Xn2, Xb, Xb2;
 	mbedtls_mpi_sint r = Radio.Random();
 	mbedtls_mpi_sint r2 = Radio.Random();
 	if(r<0) r *= -1;
@@ -386,23 +386,34 @@ char* GenKey() {
 	mbedtls_mpi_init(&Xn1);
 	mbedtls_mpi_init(&Xn2);
 	mbedtls_mpi_init(&Xb);
+	mbedtls_mpi_init(&Xb2);
+
+	mbedtls_mpi_copy(&Xn1, &l);
+	mbedtls_mpi_copy(&Xn2, &t);
+	mbedtls_mpi_copy(&Xb2, &L);
+
 	mbedtls_mpi_lset(&Xb, r);
 	mbedtls_mpi_exp_mod(&Xn1, &Xb, &m, &l, NULL);
+
 	mbedtls_mpi_lset(&Xb, r2);
 	mbedtls_mpi_exp_mod(&Xn2, &Xb, &x, &t, NULL);
-	mbedtls_mpi_exp_mod(&Xb, &Xn1, &Xn2, &L, NULL);
-	//mbedtls_mpi_exp_mod(&Xb, &Xb, &b, &L, NULL);
-	Serial.printf("Xn1: %s\n", mpistring(Xn1));
-	Serial.printf("Xn2: %s\n", mpistring(Xn2));
-	Serial.printf("Xb: %s\n", mpistring(Xb));
-	Serial.printf("l: %s\n", mpistring(l));
-	Serial.printf("t: %s\n", mpistring(t));
-	Serial.printf("m: %s\n", mpistring(m));
-	Serial.printf("L: %s\n", mpistring(L));
-	mpistring(Xb);
+
+	mbedtls_mpi_exp_mod(&Xb2, &Xn1, &Xn2, &L, NULL);
+
+	//Serial.printf("Xn1: %s\n", mpistring(Xn1));
+	//Serial.printf("Xn2: %s\n", mpistring(Xn2));
+	//Serial.printf("Xb: %s\n", mpistring(Xb));
+	//Serial.printf("m: %s\n", mpistring(m));
+	//Serial.printf("l: %s\n", mpistring(l));
+	//Serial.printf("x: %s\n", mpistring(x));
+	//Serial.printf("t: %s\n", mpistring(t));
+	//Serial.printf("m: %s\n", mpistring(m));
+	//Serial.printf("L: %s\n", mpistring(L));
+	mpistring(Xb2);
 	mbedtls_mpi_free(&Xn1);
 	mbedtls_mpi_free(&Xn2);
 	mbedtls_mpi_free(&Xb);
+	mbedtls_mpi_free(&Xb2);
 	return mpibuf;
 }
 
