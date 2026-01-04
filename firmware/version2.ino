@@ -264,13 +264,13 @@ bool math_init_complete = false;
 // sints should be configurable and discoverable in +- order via prime test
 mbedtls_mpi_sint lb = 99;
 mbedtls_mpi_sint gb = 49;
-mbedtls_mpi_sint ib = 211;
+mbedtls_mpi_sint ib = 269;
 mbedtls_mpi_sint ob = 257;
-mbedtls_mpi_sint qb = 116;
-mbedtls_mpi_sint tb = 683;
+mbedtls_mpi_sint qb = 132;
+mbedtls_mpi_sint tb = 693;
 mbedtls_mpi_sint db = 110;
 mbedtls_mpi_sint Hb = 187;
-mbedtls_mpi_sint Lb = 228;
+mbedtls_mpi_sint Lb = 1427;
 void MathInit() {
 	if(!math_init_complete) {
 		mbedtls_mpi_init(&m);
@@ -357,7 +357,7 @@ void MathInit() {
 	while(mbedtls_mpi_is_prime_ext(&q, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&q, &q, 1);
 		qb++;
-		delay(20);
+		delay(10);
 	}
 	Serial.printf("# %12s q= 0x%s [%lld]\n", "___[3]", mpistring(q), (long long)qb); delay(100);
 	
@@ -367,7 +367,7 @@ void MathInit() {
 	while(mbedtls_mpi_is_prime_ext(&t, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&t, &t, 1);
 		tb++;
-		delay(20);
+		delay(10);
 	}
 	Serial.printf("# %12s t= 0x%s [%lld]\n", "____[4]", mpistring(t), (long long)tb); delay(100);
 	
@@ -378,7 +378,7 @@ void MathInit() {
 	while(mbedtls_mpi_is_prime_ext(&d, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&d, &d, 1);
 		db++;
-		delay(20);
+		delay(5);
 	}
 	Serial.printf("# %12s d= 0x%s [%lld]\n", "_____[5]", mpistring(d), (long long)db); delay(100);
 	
@@ -388,7 +388,7 @@ void MathInit() {
 	while(mbedtls_mpi_is_prime_ext(&H, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&H, &H, 1);
 		Hb++;
-		delay(20);
+		delay(5);
 	}
 	Serial.printf("# %12s H= 0x%s [%lld]\n", "______[6]", mpistring(H), (long long)Hb); delay(100);
 	
@@ -403,7 +403,7 @@ void MathInit() {
 	while(mbedtls_mpi_is_prime_ext(&L, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&L, &L, 1);
 		Lb++;
-		delay(20);
+		delay(5);
 	}
 	Serial.printf("# %12s L= 0x%s [%lld]\n", "_______[7]", mpistring(L), (long long)Lb); delay(100);
 }
