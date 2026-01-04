@@ -260,6 +260,7 @@ const char* APOGEE = "953473";
 const char* APEX = "954114361";
 const char* MotzkinPrime = "953467954114363";
 mbedtls_mpi m, x, b, y, s, l, g, i, o, q, t, d, H, L;
+bool math_init_complete = false;
 // sints should be configurable and discoverable in +- order via prime test
 mbedtls_mpi_sint lb = 99;
 mbedtls_mpi_sint gb = 49;
@@ -271,33 +272,35 @@ mbedtls_mpi_sint db = 110;
 mbedtls_mpi_sint Hb = 187;
 mbedtls_mpi_sint Lb = 591;
 void MathInit() {
-	mbedtls_mpi_init(&m);
-	mbedtls_mpi_init(&x);
-	mbedtls_mpi_init(&b);
-	mbedtls_mpi_init(&y);
-	mbedtls_mpi_init(&s);
-	mbedtls_mpi_init(&l);
-	mbedtls_mpi_init(&g);
-	mbedtls_mpi_init(&i);
-	mbedtls_mpi_init(&o);
-	mbedtls_mpi_init(&q);
-	mbedtls_mpi_init(&t);
-	mbedtls_mpi_init(&d);
-	mbedtls_mpi_init(&H);
-	mbedtls_mpi_init(&L);
+	if(!math_init_complete) {
+		mbedtls_mpi_init(&m);
+		mbedtls_mpi_init(&x);
+		mbedtls_mpi_init(&b);
+		mbedtls_mpi_init(&y);
+		mbedtls_mpi_init(&s);
+		mbedtls_mpi_init(&l);
+		mbedtls_mpi_init(&g);
+		mbedtls_mpi_init(&i);
+		mbedtls_mpi_init(&o);
+		mbedtls_mpi_init(&q);
+		mbedtls_mpi_init(&t);
+		mbedtls_mpi_init(&d);
+		mbedtls_mpi_init(&H);
+		mbedtls_mpi_init(&L);
 
-  mbedtls_entropy_init( &entropy );
-  mbedtls_ctr_drbg_init( &ctr_drbg );
+  	mbedtls_entropy_init( &entropy );
+  	mbedtls_ctr_drbg_init( &ctr_drbg );
 
-	mbedtls_mpi_read_string(&m, 10, APOGEE);
-	mbedtls_mpi_read_string(&x, 10, APEX);
-	mbedtls_mpi_read_string(&b, 10, MotzkinPrime);
-	char* DysnomiaPrime = (char*) calloc(strlen(APOGEE + strlen(APEX)), sizeof(char));
-	strcpy(DysnomiaPrime, APOGEE);
-	strcat(DysnomiaPrime, APEX);
-	mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
-	mbedtls_mpi_mul_mpi(&s, &m, &x);
-	mbedtls_mpi_add_mpi(&s, &s, &b);
+		mbedtls_mpi_read_string(&m, 10, APOGEE);
+		mbedtls_mpi_read_string(&x, 10, APEX);
+		mbedtls_mpi_read_string(&b, 10, MotzkinPrime);
+		char* DysnomiaPrime = (char*) calloc(strlen(APOGEE + strlen(APEX)), sizeof(char));
+		strcpy(DysnomiaPrime, APOGEE);
+		strcat(DysnomiaPrime, APEX);
+		mbedtls_mpi_read_string(&y, 10, DysnomiaPrime);
+		mbedtls_mpi_mul_mpi(&s, &m, &x);
+		mbedtls_mpi_add_mpi(&s, &s, &b);
+	}
 	mbedtls_mpi_mul_mpi(&l, &m, &s);
 	mbedtls_mpi_sub_int(&l, &l, lb);
 	mbedtls_mpi_mul_mpi(&g, &m, &y);
@@ -323,7 +326,7 @@ void MathInit() {
 	mbedtls_mpi_sub_int(&H, &H, Hb);
 	mbedtls_mpi k;
 	mbedtls_mpi_init(&k);
-	mbedtls_mpi_lset (&k, 77);
+	mbedtls_mpi_lset (&k, Hb - db);
 	mbedtls_mpi_mul_mpi(&k, &k, &k);
 	mbedtls_mpi_mul_mpi(&L, &t, &t);
 	mbedtls_mpi_sub_mpi(&L, &L, &k);
@@ -345,9 +348,13 @@ void MathInit() {
 	Serial.printf("# %12s H= 0x%s\n", "______[6]", mpistring(H)); delay(100);
 	Serial.printf("# %12s L= 0x%s\n", "_______[7]", mpistring(L)); delay(100);
 
-	mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
-                        (const unsigned char *)mpibuf,
-                        strlen(mpibuf));
+	if(!math_init_complete) {
+		mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
+                         (const unsigned char *)mpibuf,
+                         strlen(mpibuf));
+		math_init_complete = true;
+	} else
+		mbedtls_ctr_drbg_reseed(&ctr_drbg, (const unsigned char *)mpibuf, strlen(mpibuf));
 }
 
 char DateTime[40];
@@ -372,15 +379,19 @@ char* DTString() {
 }
 
 char* GenKey() {
-	mbedtls_mpi X, Xb;
+	mbedtls_mpi Xn, Xb;
 	mbedtls_mpi_sint r = Radio.Random();
 	if(r<0) r *= -1;
-	mbedtls_mpi_init(&X);
+	mbedtls_mpi_init(&Xn);
 	mbedtls_mpi_init(&Xb);
 	mbedtls_mpi_lset(&Xb, r);
-	mbedtls_mpi_exp_mod(&X, &Xb, &x, &L, NULL);
-	mpistring(X);
-	mbedtls_mpi_free(&X);
+	mbedtls_mpi_exp_mod(&Xn, &Xb, &m, &L, NULL);
+	//Serial.printf("Xn: %s\n", mpistring(Xn));
+	//Serial.printf("Xb: %s\n", mpistring(Xb));
+	//Serial.printf("m: %s\n", mpistring(m));
+	//Serial.printf("L: %s\n", mpistring(L));
+	mpistring(Xn);
+	mbedtls_mpi_free(&Xn);
 	mbedtls_mpi_free(&Xb);
 	return mpibuf;
 }
@@ -401,7 +412,7 @@ void ProcessCmd() {
 			Serial.printf("# Handle: %s\n", Handle);
 			free(htxt);
 		}
-		else if(sData == 'n') Serial.printf("256bit Key: %s\n", GenKey());
+		else if(sData == 'n') Serial.printf("New Key: %s\n", GenKey());
 		else if(sData == 'r') Serial.printf("# rxCount = %d\n", rxNumber);
 		else if(sData == 's') {
 			uint8_t vData = Serial.read();
