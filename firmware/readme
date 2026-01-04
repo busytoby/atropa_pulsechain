@@ -19,6 +19,11 @@ supported commands:
     :t print txCount
     :x save config file
 
+commands can be chained, 
+    :cnnnsl+h ACM999
+    - will print config file, then 3 new random private keys, then increase the l prime modifier to match the next lower prime, then set handle to ACM999
+
+
 ------------------------------------------------------------\
 math notes:
  char* const APOGEE        = "953473";                           // m 
