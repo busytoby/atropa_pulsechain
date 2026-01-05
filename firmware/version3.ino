@@ -216,7 +216,7 @@ void interrupt_GPIO0(void)
 	else VextON();
 }
 
-char Version[8] = "0.301";
+char Version[8] = "0.302";
 char Handle[20] = "[:h changeme]";
 
 void SaveConfig() {
@@ -257,6 +257,7 @@ char* mpistring(const mbedtls_mpi V) {
   Serial.printf("# MPIstring Error: -0x%04X\n", -ret);
 }
 
+#define PRIMEVERIFYROUNDS 1024
 mbedtls_entropy_context entropy;
 mbedtls_ctr_drbg_context ctr_drbg;
 const char* APOGEE = "953473";
@@ -273,7 +274,7 @@ mbedtls_mpi_sint qb = 132;
 mbedtls_mpi_sint tb = 693;
 mbedtls_mpi_sint db = 110;
 mbedtls_mpi_sint Hb = 187;
-mbedtls_mpi_sint Lb = 1427;
+mbedtls_mpi_sint Lb = 100;
 void MathInit() {
 	if(!math_init_complete) {
 		mbedtls_mpi_init(&m);
@@ -318,7 +319,7 @@ void MathInit() {
 
 	mbedtls_mpi_mul_mpi(&l, &m, &y);
 	mbedtls_mpi_sub_int(&l, &l, lb);
-	while(mbedtls_mpi_is_prime_ext(&l, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&l, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&l, &l, 1);
 		lb++;
 		delay(20);
@@ -329,7 +330,7 @@ void MathInit() {
 	mbedtls_mpi_add_mpi(&g, &g, &b);
 	mbedtls_mpi_mul_mpi(&g, &g, &m);
 	mbedtls_mpi_sub_int(&g, &g, gb);
-	while(mbedtls_mpi_is_prime_ext(&g, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&g, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&g, &g, 1);
 		gb++;
 		delay(20);
@@ -339,7 +340,7 @@ void MathInit() {
 	mbedtls_mpi_mul_mpi(&i, &m, &b);
 	mbedtls_mpi_add_mpi(&i, &i, &s);
 	mbedtls_mpi_sub_int(&i, &i, ib);
-	while(mbedtls_mpi_is_prime_ext(&i, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&i, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&i, &i, 1);
 		ib++;
 		delay(20);
@@ -348,7 +349,7 @@ void MathInit() {
 
 	mbedtls_mpi_mul_mpi(&o, &y, &y);
 	mbedtls_mpi_sub_int(&o, &o, ob);
-	while(mbedtls_mpi_is_prime_ext(&o, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&o, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&o, &o, 1);
 		ob++;
 		delay(20);
@@ -357,7 +358,7 @@ void MathInit() {
 	
 	mbedtls_mpi_mul_mpi(&q, &i, &i);
 	mbedtls_mpi_sub_int(&q, &q, qb);
-	while(mbedtls_mpi_is_prime_ext(&q, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&q, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&q, &q, 1);
 		qb++;
 		delay(10);
@@ -367,7 +368,7 @@ void MathInit() {
 	mbedtls_mpi_mul_mpi(&t, &o, &g);
 	mbedtls_mpi_add_mpi(&t, &t, &q);
 	mbedtls_mpi_sub_int(&t, &t, tb);
-	while(mbedtls_mpi_is_prime_ext(&t, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&t, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&t, &t, 1);
 		tb++;
 		delay(10);
@@ -378,7 +379,7 @@ void MathInit() {
 	mbedtls_mpi_add_mpi(&d, &d, &o);
 	mbedtls_mpi_mul_mpi(&d, &g, &d);
 	mbedtls_mpi_sub_int(&d, &d, db);
-	while(mbedtls_mpi_is_prime_ext(&d, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&d, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&d, &d, 1);
 		db++;
 		delay(5);
@@ -388,7 +389,7 @@ void MathInit() {
 	mbedtls_mpi_add_int(&H, &d, db);
 	mbedtls_mpi_sub_mpi(&H, &H, &b);
 	mbedtls_mpi_sub_int(&H, &H, Hb);
-	while(mbedtls_mpi_is_prime_ext(&H, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&H, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&H, &H, 1);
 		Hb++;
 		delay(5);
@@ -397,13 +398,13 @@ void MathInit() {
 	
 	mbedtls_mpi k;
 	mbedtls_mpi_init(&k);
-	mbedtls_mpi_lset (&k, Hb - db);
+	mbedtls_mpi_lset(&k, Hb - db);
 	mbedtls_mpi_mul_mpi(&k, &k, &k);
 	mbedtls_mpi_mul_mpi(&L, &t, &t);
 	mbedtls_mpi_sub_mpi(&L, &L, &k);
 	mbedtls_mpi_free(&k);
 	mbedtls_mpi_sub_int(&L, &L, Lb);
-	while(mbedtls_mpi_is_prime_ext(&L, 99, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+	while(mbedtls_mpi_is_prime_ext(&L, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
 		mbedtls_mpi_sub_int(&L, &L, 1);
 		Lb++;
 		delay(5);
@@ -497,19 +498,20 @@ void ProcessCmd() {
 			}
 			int ret;
 			sd2 = sd;
+			mbedtls_mpi_add_int(&M, &M, sd);
 			if(mData == '-') {
 				while(true) {
 					sd2--;
 					mbedtls_mpi_sub_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 99, mbedtls_ctr_drbg_random, &ctr_drbg);
+					ret = mbedtls_mpi_is_prime_ext(&M2, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg);
 					delay(20);
 					if(ret == 0) break;
 				}
 			} else if (mData == '+') {
 				while(true) {
 					sd2++;
-					mbedtls_mpi_add_int(&M2, &M, sd2);
-					ret = mbedtls_mpi_is_prime_ext(&M2, 99, mbedtls_ctr_drbg_random, &ctr_drbg );
+					mbedtls_mpi_sub_int(&M2, &M, sd2);
+					ret = mbedtls_mpi_is_prime_ext(&M2, PRIMEVERIFYROUNDS, mbedtls_ctr_drbg_random, &ctr_drbg );
 					delay(5);
 					if(ret == 0) break;
 				}
