@@ -54,7 +54,7 @@ SemaphoreHandle_t mutex;
 
 #define TX_OUTPUT_POWER                             10        // dBm
 
-#define LORA_BANDWIDTH                              7         // [0: 125 kHz,
+#define LORA_BANDWIDTH                              2600      // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
                                                               //  3: 62.5 kHz,
@@ -63,8 +63,11 @@ SemaphoreHandle_t mutex;
 																															//	6: 20.83 kHz,
 																															//	7: 15.63 kHz,
 																															//	8: 10.42 kHz,
-																															//	9: 7.81 kHz ]
-#define LORA_SPREADING_FACTOR                       10         // [SF7..SF12]
+																															//	9: 7.81 kHz,
+																															// >9: 2^SPREADING_FACTOR / ## ]
+																															// ie: 50: 20.48kHz @ SPREADING_FACTOR=10
+																															// 129: 15.876kHz @ 11
+#define LORA_SPREADING_FACTOR                       15         // [SF7..SF12]
 #define LORA_CODINGRATE                             3         // [1: 4/5,
                                                               //  2: 4/6,
                                                               //  3: 4/7,
