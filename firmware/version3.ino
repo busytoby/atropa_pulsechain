@@ -47,23 +47,29 @@ SemaphoreHandle_t mutex;
 
 /********************************* lora  *********************************************/
 // SCOUT THE PUBLIC LICENSE AMYGDALA AT
-//#define RF_FREQUENCY                                954114361 // Hz
+#define RF_FREQUENCY                                954114361 // Hz
 //#define RF_FREQUENCY                                715585771 // Hz
 //#define RF_FREQUENCY                                477057180 // Hz
-#define RF_FREQUENCY                                915000000 // Hz
+//#define RF_FREQUENCY                                474000000 // Hz
 
-#define TX_OUTPUT_POWER                             5        // dBm
+#define TX_OUTPUT_POWER                             10        // dBm
 
-#define LORA_BANDWIDTH                              0         // [0: 125 kHz,
+#define LORA_BANDWIDTH                              7         // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
-                                                              //  3: Reserved]
-#define LORA_SPREADING_FACTOR                       12        // [SF7..SF12]
-#define LORA_CODINGRATE                             1         // [1: 4/5,
+                                                              //  3: 62.5 kHz,
+																															//	4: 41.67 kHz,
+																															//	5: 31.25 kHz,
+																															//	6: 20.83 kHz,
+																															//	7: 15.63 kHz,
+																															//	8: 10.42 kHz,
+																															//	9: 7.81 kHz ]
+#define LORA_SPREADING_FACTOR                       10         // [SF7..SF12]
+#define LORA_CODINGRATE                             3         // [1: 4/5,
                                                               //  2: 4/6,
                                                               //  3: 4/7,
                                                               //  4: 4/8]
-#define LORA_PREAMBLE_LENGTH                        5         // Same for Tx and Rx
+#define LORA_PREAMBLE_LENGTH                        9         // Same for Tx and Rx
 #define LORA_SYMBOL_TIMEOUT                         0         // Symbols
 #define LORA_FIX_LENGTH_PAYLOAD_ON                  false
 #define LORA_IQ_INVERSION_ON                        false
@@ -257,7 +263,7 @@ char* mpistring(const mbedtls_mpi V) {
   Serial.printf("# MPIstring Error: -0x%04X\n", -ret);
 }
 
-#define PRIMEVERIFYROUNDS 1024
+#define PRIMEVERIFYROUNDS 1025
 mbedtls_entropy_context entropy;
 mbedtls_ctr_drbg_context ctr_drbg;
 const char* APOGEE = "953473";
@@ -274,7 +280,7 @@ mbedtls_mpi_sint qb = 132;
 mbedtls_mpi_sint tb = 693;
 mbedtls_mpi_sint db = 110;
 mbedtls_mpi_sint Hb = 187;
-mbedtls_mpi_sint Lb = 100;
+mbedtls_mpi_sint Lb = 359;
 void MathInit() {
 	if(!math_init_complete) {
 		mbedtls_mpi_init(&m);
@@ -543,6 +549,8 @@ void ProcessCmd() {
 // serials come from https://resource.heltec.cn/search
 // use product id from ie: ESP32ChipID=5C9482697090
 //uint32_t license[4] = { 0xBF91E8F9,0xA26B051E,0xA310D34A,0x9316739B }; // ACM1
+//uint32_t license[4] = { 0x69EE0235,0x56666CB3,0x7792C797,0xC016BFE2 }; //LIVE
+uint32_t license[4] = { 0x7859CB25,0x7DFCAB52,0x2A0456EE,0xD443EB31 }; //LAKE
 
 void setup()
 {
@@ -552,6 +560,8 @@ void setup()
 	Serial.begin(115200);
 	//Mcu.setlicense(license, HELTEC_BOARD);
 	chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+	//sprintf(screenlines[0], "%s", chipid);
+	//last_line++;
 	while(!Serial) continue;
 
 	MathInit();
