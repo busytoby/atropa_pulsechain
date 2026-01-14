@@ -122,3 +122,10 @@ MathInt modPow(const char* sb, const char* se, const char* sm) {
     mivfree(b); mivfree(e); mivfree(m);
     return res;
 }
+
+char* rmi(size_t length) {
+  MathInt r = { gemalloc(length * sizeof(uint64_t)), length };
+  char* res = mi2str(r);
+  gemfree(r.v);
+  return res;
+}
