@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
-// 1. The List
+// 1. The List remains the same
 #define FUNCTION_LIST(X) \
     X(process_id,   b1, a1_input) \
     X(modify_b1,    VOID, &b1) \
@@ -14,18 +15,24 @@ void        modify_b1_func(const char **b1_ptr);
 const char* compare_tags_func(const char *b1, const char *b2);
 const char* route_data_func(const char *c1, const char *b1, const char *c3);
 
-// 2. Interactive Step Helper
-// Pauses execution if stepping is enabled
-void maybe_step(bool stepping, const char* next_func) {
+// 2. Enhanced Step Helper
+// Now accepts a pointer to b1 to allow mid-pipeline modification
+void maybe_step(bool stepping, const char* next_func, const char** b1_ptr) {
     if (stepping) {
         printf(" [STEP] Next up: %s. Press ENTER to continue...", next_func);
-        while (getchar() != '\n'); // Wait for user input
+        while (getchar() != '\n'); 
+
+        // Specific logic: if we are about to run compare_tags, modify b1 again
+        if (strcmp(next_func, "compare_tags") == 0 && b1_ptr != NULL) {
+            printf(" [INFO] mid-pipeline intercept: modifying b1 before compare_tags...\n");
+            *b1_ptr = "B1_SECOND_MODIFICATION_2026";
+        }
     }
 }
 
-// 3. Updated Dispatcher
+// 3. Updated Dispatcher passes &b1 to the helper
 #define EXEC_FUNC(name, var, ...) \
-    maybe_step(step_mode, #name); \
+    maybe_step(step_mode, #name, &b1); \
     printf(">>> EXECUTING: %s_func\n", #name); \
     EXEC_##var(name, __VA_ARGS__) \
     printf("\n");
@@ -38,13 +45,10 @@ void maybe_step(bool stepping, const char* next_func) {
 int main() {
     const char *a1_input = "Dynamic_Input_2026";
     const char *b1 = NULL, *c1 = NULL, *final_status = NULL;
-
-    // Optional stepping flag - set to true to enable interactive mode
     bool step_mode = true;
 
     printf("==========================================\n");
-    printf("   INTERACTIVE 2026 X-MACRO PIPELINE\n");
-    printf("   Stepping: %s\n", step_mode ? "ENABLED" : "DISABLED");
+    printf("   INTERCEPTING 2026 X-MACRO PIPELINE\n");
     printf("==========================================\n\n");
 
     FUNCTION_LIST(EXEC_FUNC)
@@ -56,5 +60,8 @@ int main() {
 // --- Implementations ---
 const char* process_id_func(const char *a1) { return "B1_Original"; }
 void        modify_b1_func(const char **b1_ptr) { if(b1_ptr) *b1_ptr = "B1_MODIFIED"; }
-const char* compare_tags_func(const char *b1, const char *b2) { return "C1_Value"; }
+const char* compare_tags_func(const char *b1, const char *b2) { 
+    printf("  -> compare_tags: RECEIVED b1 = \"%s\"\n", b1);
+    return "C1_Value"; 
+}
 const char* route_data_func(const char *c1, const char *b1, const char *c3) { return "SUCCESS_2026"; }
