@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// 1. The Single Source of Truth
+// 1. The List
 #define FUNCTION_LIST(X) \
     X(process_id,   ASSIGN, b1, a1_input) \
     X(modify_b1,    VOID,   _,  &b1) \
@@ -14,7 +14,7 @@ void        modify_b1_func(const char **b1_ptr);
 const char* compare_tags_func(const char *b1, const char *b2);
 const char* route_data_func(const char *c1, const char *b1, const char *c3);
 
-// 2. Generate Typedef Enum
+// 2. Metadata Generation
 typedef enum {
 #define AS_ENUM(name, ...) STEP_##name,
     FUNCTION_LIST(AS_ENUM)
@@ -22,7 +22,6 @@ typedef enum {
     TOTAL_STEPS
 } StepID;
 
-// 3. Generate String Array of Names
 static const char* const step_names[] = {
 #define AS_STRING(name, ...) #name,
     FUNCTION_LIST(AS_STRING)
@@ -32,49 +31,55 @@ static const char* const step_names[] = {
 // Global State
 const char *b1 = NULL, *c1 = NULL, *final_status = NULL;
 
-// 4. Specialized Callers
-#define DO_VOID(name, var, ...) \
-    name##_func(__VA_ARGS__); \
-    return "Void Action (Modified State)";
+// 3. Specialized Callers & Return Handlers (The Fix)
+// These macros ensure the '_' token is never evaluated by the compiler
+#define RET_VOID(var)         return "Void Action (In-place Mod)";
+#define RET_ASSIGN(var)       return var;
 
-#define DO_ASSIGN(name, var, ...) \
-    var = name##_func(__VA_ARGS__); \
-    return var;
+#define DO_VOID(name, var, ...)   name##_func(__VA_ARGS__);
+#define DO_ASSIGN(name, var, ...) var = name##_func(__VA_ARGS__);
 
-// 5. Named Step Engine
+// 4. Intermediate Step Engine
 const char* run_step_engine(const char* target_name, const char* a1_input) {
     #define DISPATCH_BY_NAME(name, type, var, ...) \
         if (strcmp(target_name, #name) == 0) { \
-            if (strcmp(target_name, "compare_tags") == 0) { \
-                b1 = "B1_NAMED_MOD_2026"; \
-            } \
+            if (strcmp(target_name, "compare_tags") == 0) { b1 = "B1_STEP_MOD"; } \
             DO_##type(name, var, __VA_ARGS__) \
+            RET_##type(var) /* Selects either RET_VOID or RET_ASSIGN */ \
         }
-
     FUNCTION_LIST(DISPATCH_BY_NAME)
     #undef DISPATCH_BY_NAME
-    return "Function Not Found";
+    return "Not Found";
 }
 
 int main() {
-    const char *a1_input = "Main_Input_2026";
+    const char *a1_input = "Pass1_Input_2026";
 
-    printf("--- 2026 ENUM-DRIVEN NAMED ENGINE ---\n");
-    
-    // Automatically iterate using TOTAL_STEPS and step_names array
+    printf("=== PASS 1: STEP-BY-STEP ===\n");
     for (int i = 0; i < TOTAL_STEPS; i++) {
-        const char* current_name = step_names[i];
-        printf("Executing Step [%d]: %s\n", i, current_name);
-        
-        const char* res = run_step_engine(current_name, a1_input);
-        printf("Result: %s | b1: %s\n\n", res, (b1 ? b1 : "NULL"));
+        const char* res = run_step_engine(step_names[i], a1_input);
+        printf("Step %d (%s) -> Result: %s\n", i, step_names[i], res);
     }
 
+    printf("\n=== PASS 2: FULL ORDER (CARRIED STATE) ===\n");
+    a1_input = "Pass2_Input_2026"; 
+
+    #define EXEC_FULL(name, type, var, ...) \
+        printf("Re-running %s...\n", #name); \
+        DO_##type(name, var, __VA_ARGS__)
+
+    FUNCTION_LIST(EXEC_FULL)
+    #undef EXEC_FULL
+
+    printf("\nFinal Pipeline Status: %s\n", (final_status ? final_status : "NULL"));
     return 0;
 }
 
 // --- Implementations ---
 const char* process_id_func(const char *a1) { return "B1_Original"; }
 void        modify_b1_func(const char **b1_ptr) { if(b1_ptr) *b1_ptr = "B1_MODIFIED"; }
-const char* compare_tags_func(const char *b1, const char *b2) { return "C1_Result"; }
-const char* route_data_func(const char *c1, const char *b1, const char *c3) { return "SUCCESS"; }
+const char* compare_tags_func(const char *b1, const char *b2) { 
+    printf("  [LOG] compare_tags using b1: %s\n", b1);
+    return "C1_Result"; 
+}
+const char* route_data_func(const char *c1, const char *b1, const char *c3) { return "SUCCESS_2026"; }
