@@ -67,7 +67,8 @@ void printgem(void* ptr) {
   struct dm_blk_hdr *blk = (struct dm_blk_hdr*)ptr - 1;
   unsigned char* bytes = (unsigned char*)ptr;
   printf("GEM/%d %s: [", blk->size, blk->cleared ? "(FREE)" : "");
-  for(size_t i = 0; i < blk->size; i++) printf("%02X", (unsigned int)bytes[i]);
+  for(size_t i = 0; i < blk->size; i++) printf("%01X%01x", (unsigned int)bytes[i]>>1, (unsigned int)bytes[i]%0x0F);
+
   printf("]\n");
 }
 
