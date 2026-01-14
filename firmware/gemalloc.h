@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/random.h>
 
+#define DLE 16
 #define ALIGN(size) (((size) + 15) & ~15)
 
 struct dm_blk_hdr {
@@ -17,14 +18,21 @@ struct dm_blk_hdr {
   struct dm_blk_hdr *p;
 };
 
-#define DM_HDR_SIZE sizeof(struct dm_blk_hdr)
+#define DM_HDR_SIZE ALIGN(sizeof(struct dm_blk_hdr))
+
 struct dm_blk_hdr* HEAD = NULL;
 void* tail = NULL;
 int seq_ctr = 0;
 
-bool rand_seeded = false;  
-void ___gem(void* ptr, size_t size) {
+bool rand_seeded = false;
+void ___gem(void* ptr, size_t size, char set) {
   if(!ptr || size == 0) return;
+
+  if(set != DLE) {
+    for(size_t i = 0; i < size; i++) ((char*)ptr)[i] = set;
+    return;
+  } 
+
   uint64_t* dptr = (uint64_t*)ptr;
   size_t len = size / sizeof(uint64_t);
   size_t rem = size % sizeof(uint64_t);
@@ -35,18 +43,19 @@ void ___gem(void* ptr, size_t size) {
     getrandom(&seed, sizeof(seed), 0);
     srandom(seed);
     rand_seeded = true;
-  } 
+  }
 
   for(size_t i = 0; i < len; i++) {
-    getrandom(&r, sizeof(r), 0);
-    dptr[i] = r;
-  } 
-
+    if(set == DLE) {
+      getrandom(&r, sizeof(r), 0);
+      dptr[i] = r;
+    } else dptr[i] = set;  
+  }
 
   if(rem>0) {
     getrandom(&r, sizeof(r), 0);
     unsigned char* bptr = (unsigned char*)(dptr + len);
-    for(size_t i = 0; i < rem; i++) bptr[i] = (unsigned char)(r >> (i*8));
+    for(size_t i = 0; i < rem; i++) bptr[i] = bptr[i] ^ (unsigned char)(r >> (i*8));
   }
 }
 
@@ -62,7 +71,7 @@ void printgem(void* ptr) {
   printf("]\n");
 }
 
-void* gemalloc(size_t size) {
+void* jgemalloc(size_t size, char set) {
   if(size == 0) return NULL;
   size = ALIGN(size);
 
@@ -73,19 +82,20 @@ void* gemalloc(size_t size) {
       hptr->cleared = false;
       hptr->reuse++;
       hptr->seq = ++seq_ctr;
-      ___gem(hptr+1, size);
       return (void*)(hptr+1);
     }
     hptr = hptr->p;
   }
 
-  struct dm_blk_hdr* newblk = sbrk(size + DM_HDR_SIZE);
-  if(newblk == (void*)-1) return NULL;
+  size_t block_size = size + DM_HDR_SIZE;
+  struct dm_blk_hdr* newblk = (struct dm_blk_hdr*)sbrk(block_size);
+  assert(newblk != (void*)-1);
+  ___gem(newblk, block_size, set);
 
   newblk->size = size;
   newblk->cleared = false; 
-  hptr->seq = ++seq_ctr;   
-  ___gem(newblk+1, size);  
+  newblk->reuse = 0;
+  newblk->seq = ++seq_ctr; 
   newblk->n = NULL;
   newblk->p = tail;
 
@@ -95,13 +105,55 @@ void* gemalloc(size_t size) {
   return (void*)(newblk+1);
 }
 
+void* gemalloc(size_t size) {
+  void* ptr = jgemalloc(size, DLE);
+  //___gem(ptr, size, DLE);
+  return ptr;
+}
+
 void gemfree(void* ptr) {  
   if(!ptr) return;
   struct dm_blk_hdr* blk = (struct dm_blk_hdr*)ptr - 1;
   assert(!blk->cleared);   
   blk->cleared = true;
-  printf("cleared\n");
-  ___gem(ptr, blk->size);  
+  ___gem(ptr, blk->size, DLE);
+}
+
+void* gemrealloc(void* ptr, size_t size) {
+  if(!ptr) return jgemalloc(size, DLE);
+  struct dm_blk_hdr* blk = (struct dm_blk_hdr*)ptr - 1;
+
+  size = ALIGN(size);
+  if(size == blk->size) return ptr;
+
+  if(size > blk->size) {   
+    void* newblkptr = jgemalloc(size, 0);
+    assert(newblkptr != NULL);
+    memcpy(newblkptr, ptr, blk->size);
+    gemfree(ptr);
+    return newblkptr;
+  }
+
+  size_t sizediff = blk->size - size;
+  if(sizediff >= (DM_HDR_SIZE + 16)) {
+    struct dm_blk_hdr* splitblk = (struct dm_blk_hdr*)((char*)ptr + size);
+
+    splitblk->size = sizediff - DM_HDR_SIZE;
+    splitblk->cleared = true;
+    splitblk->reuse = 0;   
+    splitblk->seq = ++seq_ctr;
+
+    splitblk->p = blk;
+    splitblk->n = blk->n;  
+
+    if(blk->n) blk->n->p = splitblk;
+    else tail = splitblk;  
+
+    blk->n = splitblk;
+    blk->size = size;
+  }
+
+  return ptr;
 }
 
 void printgemallocstats() {
@@ -125,5 +177,5 @@ void printgemallocstats() {
   }
 
   printf("Total Alloc: %d\nTotal Alloc Bytes: %d\nTotal Cleared: %d\nReuse After Free: %d\nTotal Cleared Bytes: %d\n",
-    total, total_alloc_size, cleared, total_reuse, total_cleared_size);
+        total, total_alloc_size, cleared, total_reuse, total_cleared_size);
 }
