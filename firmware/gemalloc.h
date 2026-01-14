@@ -31,7 +31,7 @@ void ___gem(void* ptr, size_t size, char set) {
   if(set != DLE) {
     for(size_t i = 0; i < size; i++) ((char*)ptr)[i] = set;
     return;
-  } 
+  }
 
   uint64_t* dptr = (uint64_t*)ptr;
   size_t len = size / sizeof(uint64_t);
@@ -47,9 +47,9 @@ void ___gem(void* ptr, size_t size, char set) {
 
   for(size_t i = 0; i < len; i++) {
     if(set == DLE) {
-      getrandom(&r, sizeof(r), 0);
+      getrandom(&r, sizeof(r), 0); 
       dptr[i] = r;
-    } else dptr[i] = set;  
+    } else dptr[i] = set;
   }
 
   if(rem>0) {
@@ -59,9 +59,9 @@ void ___gem(void* ptr, size_t size, char set) {
   }
 }
 
-void printgem(void* ptr) { 
+void printgem(void* ptr) {
   if(!ptr) {
-    printf("NULL GEM\n");  
+    printf("NULL GEM\n");
     return;
   }
   struct dm_blk_hdr *blk = (struct dm_blk_hdr*)ptr - 1;
@@ -79,6 +79,7 @@ void* jgemalloc(size_t size, char set) {
 
   while(hptr) {
     if(hptr->cleared && hptr->size >= size && hptr->size <= size + 40) {
+      ___gem(hptr+1, hptr->size, set);
       hptr->cleared = false;
       hptr->reuse++;
       hptr->seq = ++seq_ctr;
@@ -90,18 +91,18 @@ void* jgemalloc(size_t size, char set) {
   size_t block_size = size + DM_HDR_SIZE;
   struct dm_blk_hdr* newblk = (struct dm_blk_hdr*)sbrk(block_size);
   assert(newblk != (void*)-1);
-  ___gem(newblk, block_size, set);
+  ___gem(newblk+1, block_size, set);
 
   newblk->size = size;
-  newblk->cleared = false; 
+  newblk->cleared = false;
   newblk->reuse = 0;
-  newblk->seq = ++seq_ctr; 
+  newblk->seq = ++seq_ctr;
   newblk->n = NULL;
   newblk->p = tail;
 
   if(tail) ((struct dm_blk_hdr*)tail)->n = newblk;
   tail = newblk;
-  if(!HEAD) HEAD = newblk; 
+  if(!HEAD) HEAD = newblk;
   return (void*)(newblk+1);
 }
 
@@ -111,22 +112,22 @@ void* gemalloc(size_t size) {
   return ptr;
 }
 
-void gemfree(void* ptr) {  
+void gemfree(void* ptr) {
   if(!ptr) return;
   struct dm_blk_hdr* blk = (struct dm_blk_hdr*)ptr - 1;
-  assert(!blk->cleared);   
+  assert(!blk->cleared);
   blk->cleared = true;
   ___gem(ptr, blk->size, DLE);
 }
 
 void* gemrealloc(void* ptr, size_t size) {
-  if(!ptr) return jgemalloc(size, DLE);
+  if(!ptr) return jgemalloc(size, 0);
   struct dm_blk_hdr* blk = (struct dm_blk_hdr*)ptr - 1;
 
   size = ALIGN(size);
   if(size == blk->size) return ptr;
 
-  if(size > blk->size) {   
+  if(size > blk->size) {
     void* newblkptr = jgemalloc(size, 0);
     assert(newblkptr != NULL);
     memcpy(newblkptr, ptr, blk->size);
@@ -140,14 +141,15 @@ void* gemrealloc(void* ptr, size_t size) {
 
     splitblk->size = sizediff - DM_HDR_SIZE;
     splitblk->cleared = true;
-    splitblk->reuse = 0;   
+    splitblk->reuse = 0;
     splitblk->seq = ++seq_ctr;
+    ___gem(splitblk+1, splitblk->size, 0);
 
     splitblk->p = blk;
-    splitblk->n = blk->n;  
+    splitblk->n = blk->n;
 
     if(blk->n) blk->n->p = splitblk;
-    else tail = splitblk;  
+    else tail = splitblk;
 
     blk->n = splitblk;
     blk->size = size;
@@ -176,6 +178,6 @@ void printgemallocstats() {
     hptr = hptr->n;
   }
 
-  printf("Total Alloc: %d\nTotal Alloc Bytes: %d\nTotal Cleared: %d\nReuse After Free: %d\nTotal Cleared Bytes: %d\n",
-        total, total_alloc_size, cleared, total_reuse, total_cleared_size);
+  printf("Total Alloc: %d\nTotal Alloc Bytes: %d\nTotal Cleared: %d\nReuse After Free: %d\nTotal Cleared Bytes: %d\n", 
+    total, total_alloc_size, cleared, total_reuse, total_cleared_size);
 }
