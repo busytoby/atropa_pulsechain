@@ -1,13 +1,12 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 
-// 1. The List remains the same
+// 1. The Single Source of Truth
 #define FUNCTION_LIST(X) \
-    X(process_id,   b1, a1_input) \
-    X(modify_b1,    VOID, &b1) \
-    X(compare_tags, c1, b1, "B2") \
-    X(route_data,   final_status, c1, b1, "C3")
+    X(process_id,   ASSIGN, b1, a1_input) \
+    X(modify_b1,    VOID,   _,  &b1) \
+    X(compare_tags, ASSIGN, c1, b1, "B2") \
+    X(route_data,   ASSIGN, final_status, c1, b1, "C3")
 
 // Prototypes
 const char* process_id_func(const char *a1);
@@ -15,53 +14,67 @@ void        modify_b1_func(const char **b1_ptr);
 const char* compare_tags_func(const char *b1, const char *b2);
 const char* route_data_func(const char *c1, const char *b1, const char *c3);
 
-// 2. Enhanced Step Helper
-// Now accepts a pointer to b1 to allow mid-pipeline modification
-void maybe_step(bool stepping, const char* next_func, const char** b1_ptr) {
-    if (stepping) {
-        printf(" [STEP] Next up: %s. Press ENTER to continue...", next_func);
-        while (getchar() != '\n'); 
+// 2. Generate Typedef Enum
+typedef enum {
+#define AS_ENUM(name, ...) STEP_##name,
+    FUNCTION_LIST(AS_ENUM)
+#undef AS_ENUM
+    TOTAL_STEPS
+} StepID;
 
-        // Specific logic: if we are about to run compare_tags, modify b1 again
-        if (strcmp(next_func, "compare_tags") == 0 && b1_ptr != NULL) {
-            printf(" [INFO] mid-pipeline intercept: modifying b1 before compare_tags...\n");
-            *b1_ptr = "B1_SECOND_MODIFICATION_2026";
+// 3. Generate String Array of Names
+static const char* const step_names[] = {
+#define AS_STRING(name, ...) #name,
+    FUNCTION_LIST(AS_STRING)
+#undef AS_STRING
+};
+
+// Global State
+const char *b1 = NULL, *c1 = NULL, *final_status = NULL;
+
+// 4. Specialized Callers
+#define DO_VOID(name, var, ...) \
+    name##_func(__VA_ARGS__); \
+    return "Void Action (Modified State)";
+
+#define DO_ASSIGN(name, var, ...) \
+    var = name##_func(__VA_ARGS__); \
+    return var;
+
+// 5. Named Step Engine
+const char* run_step_engine(const char* target_name, const char* a1_input) {
+    #define DISPATCH_BY_NAME(name, type, var, ...) \
+        if (strcmp(target_name, #name) == 0) { \
+            if (strcmp(target_name, "compare_tags") == 0) { \
+                b1 = "B1_NAMED_MOD_2026"; \
+            } \
+            DO_##type(name, var, __VA_ARGS__) \
         }
-    }
+
+    FUNCTION_LIST(DISPATCH_BY_NAME)
+    #undef DISPATCH_BY_NAME
+    return "Function Not Found";
 }
 
-// 3. Updated Dispatcher passes &b1 to the helper
-#define EXEC_FUNC(name, var, ...) \
-    maybe_step(step_mode, #name, &b1); \
-    printf(">>> EXECUTING: %s_func\n", #name); \
-    EXEC_##var(name, __VA_ARGS__) \
-    printf("\n");
-
-#define EXEC_VOID(name, ...)           name##_func(__VA_ARGS__);
-#define EXEC_b1(name, ...)           b1 = name##_func(__VA_ARGS__); printf("    [RESULT]: b1 = \"%s\"\n", b1);
-#define EXEC_c1(name, ...)           c1 = name##_func(__VA_ARGS__); printf("    [RESULT]: c1 = \"%s\"\n", c1);
-#define EXEC_final_status(name, ...) final_status = name##_func(__VA_ARGS__); printf("    [RESULT]: final_status = \"%s\"\n", final_status);
-
 int main() {
-    const char *a1_input = "Dynamic_Input_2026";
-    const char *b1 = NULL, *c1 = NULL, *final_status = NULL;
-    bool step_mode = true;
+    const char *a1_input = "Main_Input_2026";
 
-    printf("==========================================\n");
-    printf("   INTERCEPTING 2026 X-MACRO PIPELINE\n");
-    printf("==========================================\n\n");
+    printf("--- 2026 ENUM-DRIVEN NAMED ENGINE ---\n");
+    
+    // Automatically iterate using TOTAL_STEPS and step_names array
+    for (int i = 0; i < TOTAL_STEPS; i++) {
+        const char* current_name = step_names[i];
+        printf("Executing Step [%d]: %s\n", i, current_name);
+        
+        const char* res = run_step_engine(current_name, a1_input);
+        printf("Result: %s | b1: %s\n\n", res, (b1 ? b1 : "NULL"));
+    }
 
-    FUNCTION_LIST(EXEC_FUNC)
-
-    printf("FINAL STATUS: %s\n", (final_status ? final_status : "FAILED"));
     return 0;
 }
 
 // --- Implementations ---
 const char* process_id_func(const char *a1) { return "B1_Original"; }
 void        modify_b1_func(const char **b1_ptr) { if(b1_ptr) *b1_ptr = "B1_MODIFIED"; }
-const char* compare_tags_func(const char *b1, const char *b2) { 
-    printf("  -> compare_tags: RECEIVED b1 = \"%s\"\n", b1);
-    return "C1_Value"; 
-}
-const char* route_data_func(const char *c1, const char *b1, const char *c3) { return "SUCCESS_2026"; }
+const char* compare_tags_func(const char *b1, const char *b2) { return "C1_Result"; }
+const char* route_data_func(const char *c1, const char *b1, const char *c3) { return "SUCCESS"; }
