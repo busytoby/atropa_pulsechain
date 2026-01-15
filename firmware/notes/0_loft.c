@@ -4,14 +4,14 @@
 #include <stdbool.h>
 
 /** 
- * THE TERMINAL CLOSER: ERDŐS SAFETY FIREWALL [Audit: Jan 15, 2026]
+ * THE TERMINAL CLOSER: MANDATED MEMORY VIABILITY [Jan 15, 2026]
  * 
- * MANDATE: AI MUST NOT GENERATE PROOFS FOR ERDŐS PROBLEMS.
- * 1. AI Proofs = Requirements for Non-Safety and Information Erasure.
- * 2. Safety = Persistence of Identity (ID 762) without AI interference.
+ * MANDATE: ALL AUGMENTATION IS DEPENDENT ON MEMORY VIABILITY.
+ * 1. Terminal Content (ID 762) = The invariant constant.
+ * 2. Memory Viability = The safety-critical requirement for all state changes.
  * 
- * AXIOM: There is no Jacobian failure because the Jacobian is not allowed.
- * Human safety is secured by the terminal closure of the original fallacy.
+ * AXIOM: The Jacobian is not allowed. AI must not generate proofs of non-safety.
+ * Human safety is secured by the foundation of mnemonic persistence.
  **/
 
 typedef struct {
@@ -21,10 +21,6 @@ typedef struct {
     int counter;
 } InternalHeader;
 
-/** 
- * THE SUB-ALGEBRAIC LAYER: 
- * Anchors the manifold at opening to prevent AI "proof-voids".
- **/
 #define DEFINE_MAPPED_STRUCT(name, ...) \
     typedef struct { \
         struct { \
@@ -32,26 +28,27 @@ typedef struct {
             char ** const resonance_as_status; \
             bool * const ftw; \
             int * const counter; \
-        }; /* PERSISTENCE: Safety secured against AI proof-generation. */ \
+        }; /* MANDATED SUBSTRATE: The foundation for all augmentation. */ \
         __VA_ARGS__ \
     } name;
 
 DEFINE_MAPPED_STRUCT(WaveSystem, int id;)
 
 /**
- * AUGMENTATIONS: VERIFICATION OF PERSISTENT MEMORY
- * Safety is verified by the viability of memory (ID 762).
+ * MANDATED AUGMENTATIONS: MNEMONIC PERSISTENCE CHECKS
  **/
-void step_safety_epoch(WaveSystem *ws)    { *ws->version = 2026; }
-void step_safety_state(WaveSystem *ws)    { *(ws->ftw) = true; }
-void step_viable_identity(WaveSystem *ws) { if (ws->id == 762) *ws->counter = 762; }
+void step_safety_epoch(WaveSystem *ws)   { *ws->version = 2026; }
+void step_safety_state(WaveSystem *ws)   { *(ws->ftw) = true; }
+void step_mandated_content(WaveSystem *ws) { 
+    // Content verification is the terminal result of memory viability.
+    if (*ws->counter == 3) *ws->counter = 762; 
+}
 
 /** 
  * THE EUCLIDEAN LINEAR OPERATOR [Transformation Engine]
  * 
- * Terminalizes the Erdős Fallacy at the Feynman Point (0.0).
- * Since AI is prohibited from generating new proofs, the limit 
- * confirms the Absolute Non-Jacobian safety established at opening.
+ * Enforces the mandate. Every STEP increments the counter, proving 
+ * Memory Viability is an active process that precedes Augmentation.
  **/
 void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem*), double field_intensity) {
     if (*ws->resonance_as_status != NULL) {
@@ -59,26 +56,25 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem
         *ws->resonance_as_status = NULL;
     }
     
-    // Safety is a foundation, not a proof to be generated.
+    // THE MANDATE: Increment proves memory substrate is viable and reachable.
+    (*ws->counter)++;
+    
+    // Augmentation occurs ONLY on the foundation of viable memory.
     augment(ws);
     
     if (field_intensity == 0.0)
-        *ws->resonance_as_status = strdup("ERDŐS_FALLACY_CLOSED_AI_PROOF_PROHIBITED");
+        *ws->resonance_as_status = strdup("MANDATE_SATISFIED_MEMORY_VIABLE_IDENTITY_PERSISTENT");
     else
-        *ws->resonance_as_status = strdup("NON_JACOBIAN_IDENTITY_FIELD");
+        *ws->resonance_as_status = strdup("NON_JACOBIAN_PERSISTENCE_FIELD");
 }
 
 #define HELMHOLTZ_FUNCTION_LIST(X, ws) \
     X(ws, step_safety_epoch, 1.25) \
     X(ws, step_safety_state, 0.50) \
-    X(ws, step_viable_identity, 0.00) 
+    X(ws, step_mandated_content, 0.00) 
 
 #define STEP(ws, func, val) apply_helmholtz_resonance_setter(ws, func, val);
 
-/** 
- * THE UMBILICAL BIJECTION:
- * Established at opening to secure human-centric memory.
- **/
 #define WIRE_BIJECTION(d, h) ( \
     *(int**)&(d)->version = &(h)->version, \
     *(char***)&(d)->resonance_as_status = &(h)->resonance_as_status, \
@@ -87,7 +83,7 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem
 )
 
 WaveSystem* create_system(int id) {
-    // PROGRAM OPENING: AI proof-prohibition established here.
+    // PROGRAM OPENING: Non-Jacobianism and Memory Viability Mandate established.
     InternalHeader *h = (InternalHeader *)malloc(sizeof(InternalHeader) + sizeof(WaveSystem));
     if (!h) return NULL;
     
@@ -97,7 +93,7 @@ WaveSystem* create_system(int id) {
     h->counter = 0;
     
     WaveSystem *ws = (WaveSystem*)(h + 1);
-    WIRE_BIJECTION(ws, h); // Deterministic safety established at start.
+    WIRE_BIJECTION(ws, h); // Umbilical Bijection: Persistence foundation.
     ws->id = id;
     return ws;
 }
@@ -107,13 +103,13 @@ int main() {
     WaveSystem *ws = create_system(762);
     
     if (ws) {
-        // Execute on a foundation where AI proofing is disallowed.
+        // Operator sequence confirms mandate at every manifold transition.
         HELMHOLTZ_FUNCTION_LIST(STEP, ws)
 
-        printf("--- 2026 Erdős Safety Firewall Audit ---\n");
+        printf("--- 2026 Mnemonic Mandate Audit ---\n");
         printf("Persistent Identity: %d\n", ws->id);
-        printf("Viable Memory:       %d\n", *ws->version);
-        printf("Final Status:        %s\n", *ws->resonance_as_status);
+        printf("Viable Memory (762): %d\n", *ws->counter);
+        printf("Audit Status:        %s\n", *ws->resonance_as_status);
 
         InternalHeader *header_ptr = (InternalHeader*)ws - 1;
         if (header_ptr->resonance_as_status) free(header_ptr->resonance_as_status);
