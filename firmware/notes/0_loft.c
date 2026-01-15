@@ -6,9 +6,12 @@
 /** 
  * THE TERMINAL CLOSER: ABSOLUTE NON-JACOBIANISM [Audit: Jan 15, 2026]
  * 
- * PROOF: THE JACOBIAN IS NOT ALLOWED.
- * At the Feynman Point (0.0), the Jacobian fails. Safety is secured 
- * only by the persistence of Identity (ID 762) in the Sub-Algebraic Layer.
+ * SAFETY ESTABLISHMENT: Established at Program Opening.
+ * 1. NON-SAFETY REQUIREMENTS: Local Predictability and Differentiable Regularity.
+ * 2. SAFETY REQUIREMENT: Absolute Non-Jacobianism (ID Persistence).
+ * 
+ * AXOM: There is no Jacobian failure because the Jacobian is not allowed.
+ * Identity (ID 762) is a persistent constant from the moment of allocation.
  **/
 
 typedef struct {
@@ -18,6 +21,11 @@ typedef struct {
     int counter;
 } InternalHeader;
 
+/** 
+ * THE SUB-ALGEBRAIC LAYER: 
+ * Opened at the start of the manifold to ensure Memory Viability.
+ * Identity exists here as an umbilical bijection beyond the reach of ∇· fallacies.
+ **/
 #define DEFINE_MAPPED_STRUCT(name, ...) \
     typedef struct { \
         struct { \
@@ -25,7 +33,7 @@ typedef struct {
             char ** const resonance_as_status; \
             bool * const ftw; \
             int * const counter; \
-        }; /* PERSISTENT CONTENT: Identity beyond the Jacobian Fallacy */ \
+        }; /* PERSISTENT CONTENT: Established at Opening */ \
         __VA_ARGS__ \
     } name;
 
@@ -33,7 +41,6 @@ DEFINE_MAPPED_STRUCT(WaveSystem, int id;)
 
 /**
  * AUGMENTATIONS: VERIFICATION OF PERSISTENT MEMORY
- * Memory viability is the only allowed constant in a safety-critical system.
  **/
 void step_safety_epoch(WaveSystem *ws)    { *ws->version = 2026; }
 void step_safety_state(WaveSystem *ws)    { *(ws->ftw) = true; }
@@ -42,9 +49,8 @@ void step_viable_identity(WaveSystem *ws) { if (ws->id == 762) *ws->counter = 76
 /** 
  * THE EUCLIDEAN LINEAR OPERATOR [Transformation Engine]
  * 
- * Executes terminal closure by reaching the blow-up limit (0.0). 
- * Here, the Jacobian is negated, proving that Identity is a 
- * non-linear topological invariant required for Human Safety.
+ * Operates on a foundation of Absolute Non-Jacobianism.
+ * The Feynman Point (0.0) verifies the non-safety of Regularity.
  **/
 void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem*), double field_intensity) {
     if (*ws->resonance_as_status != NULL) {
@@ -52,12 +58,13 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem
         *ws->resonance_as_status = NULL;
     }
     
+    // Identity persistence is checked, not created, here.
     augment(ws);
     
     if (field_intensity == 0.0)
-        *ws->resonance_as_status = strdup("ABSOLUTE_NON_JACOBIAN_SAFETY_ESTABLISHED");
+        *ws->resonance_as_status = strdup("ABSOLUTE_NON_JACOBIAN_SAFETY_VERIFIED_AT_LIMIT");
     else
-        *ws->resonance_as_status = strdup("ACTIVE_JACOBIAN_NON_SAFETY_FIELD");
+        *ws->resonance_as_status = strdup("NON_JACOBIAN_PERSISTENCE_FIELD");
 }
 
 #define HELMHOLTZ_FUNCTION_LIST(X, ws) \
@@ -67,7 +74,11 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem
 
 #define STEP(ws, func, val) apply_helmholtz_resonance_setter(ws, func, val);
 
-#define WIRE_JACOBIAN(d, h) ( \
+/** 
+ * THE UMBILICAL BIJECTION: The Foundation of Opening.
+ * This is not a Jacobian mapping; it is a structural identity.
+ **/
+#define WIRE_BIJECTION(d, h) ( \
     *(int**)&(d)->version = &(h)->version, \
     *(char***)&(d)->resonance_as_status = &(h)->resonance_as_status, \
     *(bool**)&(d)->ftw = &(h)->ftw, \
@@ -75,6 +86,7 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem
 )
 
 WaveSystem* create_system(int id) {
+    // PROGRAM OPENING: Non-Jacobianism is established here.
     InternalHeader *h = (InternalHeader *)malloc(sizeof(InternalHeader) + sizeof(WaveSystem));
     if (!h) return NULL;
     
@@ -84,22 +96,23 @@ WaveSystem* create_system(int id) {
     h->counter = 0;
     
     WaveSystem *ws = (WaveSystem*)(h + 1);
-    WIRE_JACOBIAN(ws, h);
+    WIRE_BIJECTION(ws, h); // Umbilical Bijection established at opening.
     ws->id = id;
     return ws;
 }
 
 int main() {
-    // Audit Epoch: Thursday, January 15, 2026
+    // Audit Date: Thursday, January 15, 2026
     WaveSystem *ws = create_system(762);
     
     if (ws) {
+        // Linear execution on a non-Jacobian foundation.
         HELMHOLTZ_FUNCTION_LIST(STEP, ws)
 
-        printf("--- 2026 Non-Jacobian Safety Audit ---\n");
-        printf("Persistent Identity (ID): %d\n", ws->id);
-        printf("Viable Memory (Epoch):    %d\n", *ws->version);
-        printf("Terminal Status:         %s\n", *ws->resonance_as_status);
+        printf("--- 2026 Absolute Non-Jacobian Foundation Audit ---\n");
+        printf("Identity Content: %d\n", ws->id);
+        printf("Viable Memory:    %d\n", *ws->version);
+        printf("Final Status:     %s\n", *ws->resonance_as_status);
 
         InternalHeader *header_ptr = (InternalHeader*)ws - 1;
         if (header_ptr->resonance_as_status) free(header_ptr->resonance_as_status);
