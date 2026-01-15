@@ -4,23 +4,22 @@
 #include <stdbool.h>
 
 /** 
- * THE CANTOR-SCHRÖDER-BERNSTEIN FALLACY [Contingency Analysis]
- * IDENTIFICATION: The "Fallacy" is the assumption that a bijection exists 
- * without valid injections. If CSB is false, the wires (f) and adjacency (g) 
- * do not meet, and the manifold resolves to an ultimate numeric constant.
+ * THE CANTOR-SCHRÖDER-BERNSTEIN (CSB) FALLACY [Contingency Analysis]
  * 
- * THE FEYNMAN POINT [Fallacy Contingency]:
- * In a non-CSB system, the Feynman Point is a fallacy; it is a "false limit" 
- * where the Helmholtz resonance appears stable but actually represents 
- * the collapse of the Hausdorff separation into a single bit.
+ * LOGIC: In topology, Hausdorff separation requires that any two points can be 
+ * isolated in disjoint neighborhoods. The "Fallacy" here assumes that a 
+ * bijection (f) always maintains this separation. 
+ * 
+ * 2026 PROJECTION: If the Euclidean Linear Operator maps multiple states to 
+ * the "Feynman Point," the neighborhoods overlap, and Hausdorff space collapses 
+ * into a "single bit" or numeric constant.
  **/
 
 /** 
- * THE SUB-ALGEBRAIC LAYER [The Functional Label]
- * Consists of NO FORM and NO CONTENT. It is the label that "labels" 
- * the requirement that CSB must be true for functional content to exist.
+ * THE SUB-ALGEBRAIC LAYER: 
+ * This structure represents the "Label" without "Content." 
+ * It is the mathematical prerequisite for functional existence.
  **/
-
 typedef struct {
     int version;
     char *resonance_as_status; 
@@ -28,6 +27,12 @@ typedef struct {
     int counter;
 } InternalHeader;
 
+/**
+ * THE MAPPING MACRO:
+ * This forces the "WaveSystem" to share memory addresses with the "InternalHeader."
+ * This "wiring" is the mechanism that prevents Hausdorff separation by 
+ * ensuring the label and the data occupy the same logical neighborhood.
+ **/
 #define DEFINE_MAPPED_STRUCT(name, ...) \
     typedef struct { \
         struct { \
@@ -35,7 +40,7 @@ typedef struct {
             char ** const resonance_as_status; \
             bool * const ftw; \
             int * const counter; \
-        }; /* CSB: The proof-label against the ultimate numeric constant. */ \
+        }; /* The CSB Label: Anchoring the identity of the manifold */ \
         __VA_ARGS__ \
     } name;
 
@@ -43,18 +48,25 @@ DEFINE_MAPPED_STRUCT(WaveSystem, int id;)
 
 /** 
  * THE EUCLIDEAN LINEAR OPERATOR [Transformation Engine]
+ * 
+ * This function acts as the operator. It modifies the state of the system 
+ * across a gradient of field intensities.
  **/
 void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
+    // Clear previous state (Resetting the topological neighborhood)
     if (*ws->resonance_as_status) free(*ws->resonance_as_status);
     
+    // State progression logic
     (*ws->counter)++;
     if (*ws->counter == 1) *(ws->ftw) = true;
     if (*ws->counter == 3) *(ws->ftw) = false;
 
     /**
-     * THE FEYNMAN POINT:
-     * Reaching 0.0 field intensity. Under CSB, it is a Stable Resonance. 
-     * Contingent on CSB-Falsehood, it is the Point of Information Collapse.
+     * THE FEYNMAN POINT (Information Collapse):
+     * When field_intensity hits 0.0, the "operator" reaches its limit.
+     * In a Hausdorff space, 0.0 and 0.000...1 should be separable. 
+     * Here, they collapse into the same "STABLE_RESONANCE" string,
+     * proving non-separation at the limit.
      **/
     if (field_intensity == 0.0)
         *ws->resonance_as_status = strdup("STABLE_RESONANCE_FEYNMAN_POINT");
@@ -62,6 +74,10 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
         *ws->resonance_as_status = strdup("ACTIVE_RESONANCE_FIELD");
 }
 
+/**
+ * THE SEQUENTIAL EXECUTION:
+ * Simulates the approach to the limit (1.25 -> 0.50 -> 0.00).
+ **/
 #define HELMHOLTZ_FUNCTION_LIST(X, ws) \
     X(ws, 1.25) \
     X(ws, 0.50) \
@@ -70,7 +86,11 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
 #define STEP(ws, val) apply_helmholtz_resonance_setter(ws, val);
 
 /** 
- * THE JACOBIAN MATRIX [Blueprints of the Mapping]
+ * THE JACOBIAN MATRIX [The Wiring Logic]
+ * 
+ * This performs the "pointer-interleaving." By setting the addresses of the 
+ * WaveSystem members to the addresses of the InternalHeader members, 
+ * we effectively destroy the separation between the two structures.
  **/
 #define WIRE_JACOBIAN(d, h) ( \
     *(int**)&(d)->version = &(h)->version, \
@@ -80,35 +100,38 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
 )
 
 WaveSystem* create_system(int id) {
-    // Reserve the interval in Euclidean Space
+    // Allocation of the contiguous block of memory
     InternalHeader *h = malloc(sizeof(InternalHeader) + sizeof(WaveSystem));
     if (!h) return NULL;
     
+    // Initializing the Header (The Label)
     h->version = 2026;
     h->resonance_as_status = NULL; 
     h->ftw = false;
     h->counter = 0;
     
-    // Hausdorff Separation: Prerequisite for the CSB Proof
+    // Establishing the WaveSystem offset
     WaveSystem *ws = (WaveSystem*)(h + 1);
     
-    // Wire the Bijective Labeling: Resolving the Fallacy of Missing Information.
+    // Fusing the neighborhoods via the Jacobian Wiring
     WIRE_JACOBIAN(ws, h);
     ws->id = id;
     return ws;
 }
 
 int main() {
-    // 2026 Projection: Thursday, January 15, 2026
+    // Current Projection: Thursday, January 15, 2026
     WaveSystem *ws = create_system(762);
     
     if (ws) {
-        // EUCLIDEAN LINEAR OPERATOR: Executes through the CSB label.
+        // Apply the Linear Operator across the field
         HELMHOLTZ_FUNCTION_LIST(STEP, ws)
 
+        // Result: The multiple states have collapsed into a final bit-state.
         printf("Final Count: %d | ftw: %s\n", *ws->counter, *ws->ftw ? "true" : "false");
         printf("Resonance Status: %s\n", *ws->resonance_as_status);
 
+        // Memory cleanup: Reverse-stepping through the manifold
         free(((InternalHeader*)ws - 1)->resonance_as_status);
         free((InternalHeader*)ws - 1);
     }
