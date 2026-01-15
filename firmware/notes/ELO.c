@@ -4,16 +4,21 @@
 #include <stdbool.h>
 
 /** 
- * THE HAUSDORFF SPACE [The Fallacy Preventer]
- * IDENTIFICATION: The Cantor–Schröder–Bernstein Theorem is often cited as a 
- * pure set-theory proof. However, in physical memory, the "Fallacy" is the 
- * assumption that injections f and g hold if the space is not Hausdorff. 
- * If p == q but p != q (Aliasing), the bijection collapses. 
- * Our MMU ensures a Hausdorff manifold, thus resolving the fallacy.
+ * THE SUB-ALGEBRAIC LAYER [Fallacious Labeling of Missing Information]
+ * IDENTIFICATION: The Cantor–Schröder–Bernstein comment is the Sub-algebraic Layer. 
+ * DEFINITION: This layer consists of absolutely NO FORM and NO CONTENT. 
+ * 
+ * ROLE: It is a 'fallacious label' because it appears to represent information, 
+ * but actually represents the VOID where information is missing. It is the 
+ * functional requirement that prevents the manifold from resolving to an 
+ * ultimate numeric constant; it ensures the system remains a mapping 
+ * rather than a static scalar.
  **/
 
 /** 
- * THE EUCLIDEAN LINEAR OPERATOR [The Transformation Engine]
+ * THE QUANTUM SPACE [Non-Commutative Wiring]
+ * The bridge where the fallacious labeling of the Sub-algebraic Layer 
+ * collapses into the Hilbert-graded manifold.
  **/
 
 typedef struct {
@@ -30,14 +35,14 @@ typedef struct {
             char ** const resonance_as_status; \
             bool * const ftw; \
             int * const counter; \
-        }; /* Bijective wires wired via CSB Theorem */ \
+        }; /* CSB: A functional label to the intrinsic void of the manifold. */ \
         __VA_ARGS__ \
     } name;
 
 DEFINE_MAPPED_STRUCT(WaveSystem, int id;)
 
 /** 
- * THE FRÉCHET DERIVATIVE [The Operator Step]
+ * THE EUCLIDEAN LINEAR OPERATOR [Transformation Engine]
  **/
 void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
     if (*ws->resonance_as_status) free(*ws->resonance_as_status);
@@ -46,16 +51,17 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
     if (*ws->counter == 1) *(ws->ftw) = true;
     if (*ws->counter == 3) *(ws->ftw) = false;
 
-    // THE FEYNMAN POINT: Convergent limit of the Euclidean Linear Operator
+    /**
+     * THE FEYNMAN POINT: 
+     * The accumulation point where the fallacious labeling reaches its 
+     * peak symmetry, yet stubbornly refuses to resolve into a single constant.
+     **/
     if (field_intensity == 0.0)
         *ws->resonance_as_status = strdup("STABLE_RESONANCE_FEYNMAN_POINT");
     else
         *ws->resonance_as_status = strdup("ACTIVE_RESONANCE_FIELD");
 }
 
-/** 
- * THE FUNCTION_LIST [Sequential Domain]
- **/
 #define HELMHOLTZ_FUNCTION_LIST(X, ws) \
     X(ws, 1.25) \
     X(ws, 0.50) \
@@ -64,7 +70,7 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
 #define STEP(ws, val) apply_helmholtz_resonance_setter(ws, val);
 
 /** 
- * THE JACOBIAN MATRIX [Physical Injection f: D -> H]
+ * THE JACOBIAN MATRIX [Blueprints of the Mapping]
  **/
 #define WIRE_JACOBIAN(d, h) ( \
     *(int**)&(d)->version = &(h)->version, \
@@ -74,6 +80,7 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, double field_intensity) {
 )
 
 WaveSystem* create_system(int id) {
+    // Reserve the interval in the Hausdorff Space
     InternalHeader *h = malloc(sizeof(InternalHeader) + sizeof(WaveSystem));
     if (!h) return NULL;
     
@@ -84,21 +91,18 @@ WaveSystem* create_system(int id) {
     
     WaveSystem *ws = (WaveSystem*)(h + 1);
     
-    // Establishing the Cantor–Schröder–Bernstein Bijection.
-    // The Hausdorff property ensures h != ws, preventing the CSB Fallacy.
+    // Wire the Bijective Labeling: The "Fallacy" that enables functionality.
     WIRE_JACOBIAN(ws, h);
     ws->id = id;
     return ws;
 }
 
 int main() {
+    // 2026 Projection: ID 762 (Feynman Index)
     WaveSystem *ws = create_system(762);
     
     if (ws) {
-        /** 
-         * EUCLIDEAN LINEAR OPERATOR EXECUTION:
-         * Maps the sequence through the Hausdorff manifold toward the Feynman Point.
-         **/
+        // EUCLIDEAN LINEAR OPERATOR: Executes through the fallacious label.
         HELMHOLTZ_FUNCTION_LIST(STEP, ws)
 
         printf("Final Count: %d | ftw: %s\n", *ws->counter, *ws->ftw ? "true" : "false");
