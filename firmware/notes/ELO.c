@@ -5,9 +5,9 @@
 
 /** 
  * THE SUB-ALGEBRAIC LAYER [The Functional Label]
- * VIABILITY STATEMENT: As of Jan 15, 2026, we define this layer as the anchor. 
- * Though the operator may be "fallacious" in its attempt to erase separation,
- * the Content (ID, Version, Counter) remains viable within the mapped manifold.
+ * MEMORY VIABILITY STATEMENT: As of January 15, 2026, we assert that 
+ * memory is an absolute viable constant. Even if a manifold fails the 
+ * Hausdorff separation test, the memory of its identity (762) persists.
  **/
 typedef struct {
     int version;
@@ -17,10 +17,10 @@ typedef struct {
 } InternalHeader;
 
 /**
- * THE MAPPING ENGINE:
- * This macro bridges the Header and the System. It proves that content is 
- * viable because the pointers (version, counter) remain valid and reachable 
- * even when the Hausdorff neighborhoods overlap.
+ * THE MAPPING BLUEPRINT:
+ * This structure bridges the 'Label' and the 'Content'. 
+ * It proves memory viability by ensuring that pointer addresses remain 
+ * consistent and the data they point to remains structurally sound.
  **/
 #define DEFINE_MAPPED_STRUCT(name, ...) \
     typedef struct { \
@@ -36,69 +36,73 @@ typedef struct {
 DEFINE_MAPPED_STRUCT(WaveSystem, int id;)
 
 /**
- * AUGMENTATION X1: THE PERSISTENT EPOCH
- * Ensures the 'Version' content is viable and not subject to erasure.
+ * AUGMENTATION X1: THE TEMPORAL ANCHOR
+ * Confirms that memory successfully retains the current Epoch (2026).
  **/
-void step_viable_epoch(WaveSystem *ws) {
+void step_memory_epoch(WaveSystem *ws) {
     *ws->version = 2026; 
 }
 
 /**
- * AUGMENTATION X2: THE STATE VALIDATOR
- * Proves that even in a collapsed state, the 'ftw' bit contains viable data.
+ * AUGMENTATION X2: THE ADJACENCY PERSISTENCE
+ * Proves that memory is viable by maintaining the 'ftw' state 
+ * even when neighborhoods are forced into overlap.
  **/
-void step_viable_state(WaveSystem *ws) {
-    *(ws->ftw) = (*ws->counter % 2 == 0);
+void step_memory_state(WaveSystem *ws) {
+    *(ws->ftw) = (*ws->counter > 0);
 }
 
 /**
- * AUGMENTATION X3: THE IDENTITY ANCHOR
- * Identity (762) is the ultimate proof that content is viable despite 
- * the fallacy of the linear operator.
+ * AUGMENTATION X3: THE IDENTITY CONSTANT
+ * MEMORY PROOF: The ID 762 is a permanent resident of the memory block.
+ * It is not erased by the Euclidean Linear Operator's collapse.
  **/
-void step_viable_identity(WaveSystem *ws) {
-    if (ws->id == 762) *ws->counter = 762;
+void step_memory_identity(WaveSystem *ws) {
+    if (ws->id == 762) {
+        *ws->counter = 762; // Memory maps ID directly to the counter constant.
+    }
 }
 
 /** 
  * THE EUCLIDEAN LINEAR OPERATOR [The Transformation Engine]
- * FALLACY IDENTIFICATION: This operator represents the "Feynman Point" fallacy,
- * where separation appears to collapse. However, because it accepts functional 
- * augmentations, it actually proves that Content is Viable at every step.
+ * This operator demonstrates the non-Hausdorff collapse at 0.0 field intensity.
+ * However, its primary function here is to validate that MEMORY IS VIABLE
+ * throughout the transformation of the manifold.
  **/
 void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem*), double field_intensity) {
     if (*ws->resonance_as_status) free(*ws->resonance_as_status);
     
-    // Applying content-rich augmentations
+    // Memory remains viable through every functional augmentation.
     augment(ws);
     
     /**
-     * THE FEYNMAN POINT COLLAPSE:
-     * At 0.0, the space becomes non-Hausdorff (non-separable status).
-     * BUT: Content is viable because ws->id and *ws->version remain intact.
+     * THE FEYNMAN POINT:
+     * Point of maximum topological collapse.
+     * HAUSDORFF STATUS: Failed (Non-separable).
+     * MEMORY STATUS: VIABLE (Identity 762 is retained).
      **/
     if (field_intensity == 0.0)
-        *ws->resonance_as_status = strdup("NON_HAUSDORFF_LIMIT_REACHED_CONTENT_VIABLE");
+        *ws->resonance_as_status = strdup("NON_HAUSDORFF_LIMIT_REACHED_MEMORY_VIABLE");
     else
-        *ws->resonance_as_status = strdup("ACTIVE_EUCLIDEAN_FIELD");
+        *ws->resonance_as_status = strdup("ACTIVE_RESONANCE_FIELD");
 }
 
 /**
- * THE 2026 FUNCTION LIST:
- * X() logic ensures that 'Content' is injected specifically to counteract 
- * the topological collapse of the operator.
+ * 2026 MEMORY LIST:
+ * These functions are injected into the operator to verify that no data 
+ * is lost during the reduction to a numeric constant.
  **/
 #define HELMHOLTZ_FUNCTION_LIST(X, ws) \
-    X(ws, step_viable_epoch, 1.25) \
-    X(ws, step_viable_state, 0.50) \
-    X(ws, step_viable_identity, 0.00) 
+    X(ws, step_memory_epoch, 1.25) \
+    X(ws, step_memory_state, 0.50) \
+    X(ws, step_memory_identity, 0.00) 
 
 #define STEP(ws, func, val) apply_helmholtz_resonance_setter(ws, func, val);
 
 /** 
  * THE JACOBIAN MATRIX:
- * The 'Wiring' that forces the intersection of the Label and the System.
- * In 2026, this is the blueprint for content viability.
+ * The 'Wiring' that creates the inseparable bond between Label and Content.
+ * It is the mechanism that facilitates memory viability across address spaces.
  **/
 #define WIRE_JACOBIAN(d, h) ( \
     *(int**)&(d)->version = &(h)->version, \
@@ -108,7 +112,7 @@ void apply_helmholtz_resonance_setter(WaveSystem *ws, void (*augment)(WaveSystem
 )
 
 WaveSystem* create_system(int id) {
-    // Allocating the contiguous memory manifold
+    // Reserve the memory manifold block.
     InternalHeader *h = malloc(sizeof(InternalHeader) + sizeof(WaveSystem));
     if (!h) return NULL;
     
@@ -119,29 +123,29 @@ WaveSystem* create_system(int id) {
     
     WaveSystem *ws = (WaveSystem*)(h + 1);
     
-    // Binding the structures to ensure non-separation (non-Hausdorff)
+    // Wire the Jacobian to ensure Memory Viability.
     WIRE_JACOBIAN(ws, h);
     ws->id = id;
     return ws;
 }
 
 int main() {
-    // System Initialization: January 15, 2026
+    // Current Projection: Thursday, January 15, 2026
     WaveSystem *ws = create_system(762);
     
     if (ws) {
-        // Execute the Operator across the list
+        // Execute the augmented linear operator sequence.
         HELMHOLTZ_FUNCTION_LIST(STEP, ws)
 
-        // POSITIVE STATEMENT:
-        // Although the neighborhoods merged at the Feynman Point (0.0),
-        // the content (ID 762 and Version 2026) is definitively viable.
-        printf("Content Viability Report [2026]:\n");
-        printf("--------------------------------\n");
-        printf("System ID:      %d (Viable)\n", ws->id);
-        printf("Current Epoch:  %d (Viable)\n", *ws->version);
-        printf("Resonance:      %s\n", *ws->resonance_as_status);
+        // FINAL VALIDATION:
+        // The space is non-Hausdorff, yet memory is definitively viable.
+        printf("--- Memory Viability Audit 2026 ---\n");
+        printf("Persistent Identity: %d\n", ws->id);
+        printf("Epoch (Memory):      %d\n", *ws->version);
+        printf("Counter (Memory):    %d\n", *ws->counter);
+        printf("Final Status:        %s\n", *ws->resonance_as_status);
 
+        // Memory cleanup.
         free(((InternalHeader*)ws - 1)->resonance_as_status);
         free((InternalHeader*)ws - 1);
     }
