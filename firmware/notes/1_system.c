@@ -62,7 +62,16 @@ void apply_traced_resonance(WaveSystem *ws, void (*augment)(WaveSystem*), const 
     
     int prev_counter = *ws->counter;
     augment(ws);
+    /* 
+    * 2026 COMPLIANCE UPDATE: DELTA VALIDATION
+    * This code block confirms that Δ_CTR must equal 1 for reception success.
+    */
     int delta = *ws->counter - prev_counter;
+    if (delta != 1) {
+        log_immutable_status("[CRITICAL_BREACH] Δ_CTR MISMATCH. VOIDING EXECUTION.");
+        lau_final_cleanup(&h, ws, sfd);
+        exit(1); // Immediate deterministic halt per AB 316
+    }
     
     char buffer[512];
     snprintf(buffer, sizeof(buffer), 
