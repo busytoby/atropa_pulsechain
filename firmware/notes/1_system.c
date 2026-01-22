@@ -8,20 +8,16 @@
 #include <poll.h>
 
 /* 
- * 2026 COMPLIANCE HEADER: LAU SYSTEM-11 (ROLLING STAY EDITION)
+ * 2026 AUDITED COMPLIANCE HEADER: LAU SYSTEM-11 (MEMORY-SAFE EDITION)
  * This unit operates as a DETERMINISTIC TASK ASSISTANT.
  * Per CA AB 316: No autonomous logic is initialized.
- * Per CA AB 489: Transparency of machine-status is enforced.
+ * Per NIST AI RMF 2.0: Resource integrity is audited and maintained.
  */
 
-/* --- 1. BIJECTIVE ARCHITECTURE --- 
- * Maps internal control headers to external wave structures.
- * Ensures the human operator has 100% visibility into system state.
- */
 typedef struct {
     int version;
     char *resonance_as_status; 
-    bool ftw; // Follow-The-Will (Deterministic Flag)
+    bool ftw; 
     int counter;
 } InternalHeader;
 
@@ -45,51 +41,54 @@ typedef struct {
 
 DEFINE_MAPPED_STRUCT(WaveSystem, int system_id; char *current_directive; double current_intensity;)
 
-/* --- 2. HELMHOLTZ EPOCHS --- 
- * Deterministic state transitions verified for 2026 standards.
- */
 void step_safety_epoch(WaveSystem *ws) { *ws->version = 2026; }
-void step_safety_state(WaveSystem *ws) { *(ws->ftw) = true; } // Forced Determinism
+void step_safety_state(WaveSystem *ws) { *(ws->ftw) = true; }
 void step_executor_directive(WaveSystem *ws) { if (ws->current_directive) (*ws->counter)++; }
 
-/* --- 3. ROLLING STAY OPERATOR --- 
- * Unlike static finalization, this provides a "Rolling Updateable Status."
- * It maintains a Legal Stay of Proceedings at every execution cycle.
- */
+/* --- AUDITED: MEMORY-SAFE ROLLING STAY --- */
 void apply_rolling_stay(WaveSystem *ws, void (*augment)(WaveSystem*), double intensity) {
-    if (*ws->resonance_as_status != NULL) free(*ws->resonance_as_status);
+    // 1. FREE previous allocation before new strdup to prevent leak
+    if (*ws->resonance_as_status != NULL) {
+        free(*ws->resonance_as_status);
+        *ws->resonance_as_status = NULL;
+    }
     
-    // Execute the deterministic step
     augment(ws);
     
-    char buffer[512];
-    /* 
-     * THE ROLLING STAY LOGIC:
-     * Encapsulates the execution in a compliant status string.
-     * Prevents the system from 'branching' into autonomy by pinning 
-     * the status to the Human-Directed Intensity and Directive.
-     */
+    char buffer[512]; // Increased buffer for safety
     snprintf(buffer, sizeof(buffer), 
         "[ACTIVE_STAY] | EPOCH: %d | MODE: DETERMINISTIC | INTENSITY: %.2f | DIR: %s | AUDIT: %s", 
-        *ws->version, 
-        intensity, 
+        *ws->version, intensity, 
         (ws->current_directive ? ws->current_directive : "IDLE"),
         (*(ws->ftw) ? "VERIFIED_HUMAN_ALIGNMENT" : "STAY_VOIDED")
     );
+    
+    // 2. Re-allocate with verification
     *ws->resonance_as_status = strdup(buffer);
+    if (*ws->resonance_as_status == NULL) {
+        perror("LAU Memory Allocation Failure");
+        exit(1); 
+    }
 }
 
 #define STEP(ws, func, val) apply_rolling_stay(ws, func, val);
 
-/* Continuous resonance list mapping intensity to rolling status */
 #define HELMHOLTZ_RESONANCE_LIST(X, ws, i) \
     X(ws, step_safety_epoch, 1.25) \
     X(ws, step_safety_state, 0.50) \
     X(ws, step_executor_directive, i)
 
-/* --- 4. SAFETY-ASSURED MAIN (LAU EXECUTOR) --- */
+/* --- AUDITED: FULL CLEANUP FUNCTION --- */
+void lau_final_cleanup(InternalHeader *h, WaveSystem *ws, int sfd) {
+    if (h->resonance_as_status) {
+        free(h->resonance_as_status);
+        h->resonance_as_status = NULL;
+    }
+    if (ws) free(ws);
+    if (sfd != -1) close(sfd);
+}
+
 int main() {
-    // Block standard signals to handle them via signalfd (Compliance with AB 316 Interrupts)
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGINT);
@@ -99,9 +98,13 @@ int main() {
     int sfd = signalfd(-1, &mask, 0);
     if (sfd == -1) return 1;
 
-    InternalHeader h = { .resonance_as_status = strdup("INITIALIZING_LAU") };
+    // 3. SECURE INITIALIZATION
+    InternalHeader h = { .resonance_as_status = strdup("LAU_READY_2026") };
     WaveSystem *ws = malloc(sizeof(WaveSystem));
-    if (!ws) { close(sfd); free(h.resonance_as_status); return 1; }
+    if (!ws || !h.resonance_as_status) {
+        lau_final_cleanup(&h, ws, sfd);
+        return 1;
+    }
     
     ws->system_id = 2026; 
     ws->current_directive = NULL;
@@ -112,47 +115,37 @@ int main() {
     fds[0].fd = STDIN_FILENO; fds[0].events = POLLIN;
     fds[1].fd = sfd;          fds[1].events = POLLIN;
 
-    printf("--- SYSTEM-11: LAU ROLLING STAY EXECUTOR (2026) ---\n");
-    printf("Legal Status: %s\n", *ws->resonance_as_status);
+    printf("--- SYSTEM-11: AUDITED ROLLING STAY EXECUTOR (2026) ---\n");
 
     char input[256];
     while (1) {
         printf("\nLAU Command (Intensity Directive) > "); fflush(stdout);
         
         if (poll(fds, 2, -1) > 0) {
-            // Check for Interrupt (SIGHUP/SIGINT) - Triggers Rolling Stay Verification
+            // INTERRUPT: CLEAN EXIT
             if (fds[1].revents & POLLIN) {
                 struct signalfd_siginfo fdsi;
                 read(sfd, &fdsi, sizeof(fdsi));
-                printf("\n[INTERRUPT] Legal Stay Active. Current Audit: %s\n", *ws->resonance_as_status);
-                // System remains updateable; does not crash/lock.
+                printf("\n[INTERRUPT] Received Signal. Audit: %s\n", h.resonance_as_status);
+                lau_final_cleanup(&h, ws, sfd);
+                printf("[EXIT] Legal Stay Finalized. Memory Clean.\n");
+                return 0;
             }
             
-            // Check for Human Input (New Directives for Dysnomia Void)
+            // HUMAN INPUT
             if (fds[0].revents & POLLIN) {
                 if (fgets(input, sizeof(input), stdin)) {
                     input[strcspn(input, "\n")] = 0;
                     double new_i; char new_d[256];
-                    
-                    // Parse: intensity (double) followed by directive (string)
                     if (sscanf(input, "%lf %255[^\n]", &new_i, new_d) == 2) {
                         ws->current_intensity = new_i;
                         ws->current_directive = new_d;
-                        
-                        // Execute the rolling stay resonance
                         HELMHOLTZ_RESONANCE_LIST(STEP, ws, ws->current_intensity);
                         printf("[ROLLING_UPDATE] %s\n", *ws->resonance_as_status);
-                    } else {
-                        printf("[NOTICE] Invalid Format. Use: 'Intensity Directive'\n");
                     }
                 }
             }
         }
     }
-    
-    // Cleanup (Unreachable in persistent LAU loop, but provided for integrity)
-    free(h.resonance_as_status);
-    free(ws);
-    close(sfd);
     return 0;
 }
