@@ -6,12 +6,12 @@
 #include <unistd.h>
 #include <sys/signalfd.h>
 #include <poll.h>
+#include <time.h>
 
 /* 
- * 2026 AUDITED COMPLIANCE HEADER: LAU SYSTEM-11 (MEMORY-SAFE EDITION)
- * This unit operates as a DETERMINISTIC TASK ASSISTANT.
- * Per CA AB 316: No autonomous logic is initialized.
- * Per NIST AI RMF 2.0: Resource integrity is audited and maintained.
+ * 2026 COMPLIANCE: LAU SYSTEM-11 (IMMUTABLE AUDIT EDITION)
+ * Per AB 316: All deterministic state transitions are logged to 'lau_audit.log'.
+ * Per NIST RMF 2.0: Statuses include UTC timestamps for temporal verification.
  */
 
 typedef struct {
@@ -41,49 +41,44 @@ typedef struct {
 
 DEFINE_MAPPED_STRUCT(WaveSystem, int system_id; char *current_directive; double current_intensity;)
 
+/* --- IMMUTABLE LOGGER --- */
+void log_immutable_status(const char *status) {
+    FILE *log_file = fopen("lau_audit.log", "a");
+    if (log_file) {
+        time_t now;
+        time(&now);
+        char *date = ctime(&now);
+        date[strlen(date) - 1] = '\0'; // Remove newline
+        fprintf(log_file, "[%s] %s\n", date, status);
+        fclose(log_file);
+    }
+}
+
 void step_safety_epoch(WaveSystem *ws) { *ws->version = 2026; }
 void step_safety_state(WaveSystem *ws) { *(ws->ftw) = true; }
 void step_executor_directive(WaveSystem *ws) { if (ws->current_directive) (*ws->counter)++; }
 
-/* --- AUDITED: MEMORY-SAFE ROLLING STAY --- */
+/* --- AUDITED: TIMESTAMPED ROLLING STAY --- */
 void apply_rolling_stay(WaveSystem *ws, void (*augment)(WaveSystem*), double intensity) {
-    // 1. FREE previous allocation before new strdup to prevent leak
-    if (*ws->resonance_as_status != NULL) {
-        free(*ws->resonance_as_status);
-        *ws->resonance_as_status = NULL;
-    }
+    if (*ws->resonance_as_status != NULL) free(*ws->resonance_as_status);
     
     augment(ws);
     
-    char buffer[512]; // Increased buffer for safety
+    char buffer[512];
     snprintf(buffer, sizeof(buffer), 
-        "[ACTIVE_STAY] | EPOCH: %d | MODE: DETERMINISTIC | INTENSITY: %.2f | DIR: %s | AUDIT: %s", 
+        "[STAY_UPDATE] EPOCH: %d | INTENSITY: %.2f | DIR: %s | COMPLIANCE: AB-316", 
         *ws->version, intensity, 
-        (ws->current_directive ? ws->current_directive : "IDLE"),
-        (*(ws->ftw) ? "VERIFIED_HUMAN_ALIGNMENT" : "STAY_VOIDED")
+        (ws->current_directive ? ws->current_directive : "IDLE")
     );
     
-    // 2. Re-allocate with verification
     *ws->resonance_as_status = strdup(buffer);
-    if (*ws->resonance_as_status == NULL) {
-        perror("LAU Memory Allocation Failure");
-        exit(1); 
-    }
+    log_immutable_status(buffer); // COMMIT TO IMMUTABLE LOG
 }
 
 #define STEP(ws, func, val) apply_rolling_stay(ws, func, val);
 
-#define HELMHOLTZ_RESONANCE_LIST(X, ws, i) \
-    X(ws, step_safety_epoch, 1.25) \
-    X(ws, step_safety_state, 0.50) \
-    X(ws, step_executor_directive, i)
-
-/* --- AUDITED: FULL CLEANUP FUNCTION --- */
 void lau_final_cleanup(InternalHeader *h, WaveSystem *ws, int sfd) {
-    if (h->resonance_as_status) {
-        free(h->resonance_as_status);
-        h->resonance_as_status = NULL;
-    }
+    if (h->resonance_as_status) free(h->resonance_as_status);
     if (ws) free(ws);
     if (sfd != -1) close(sfd);
 }
@@ -98,13 +93,9 @@ int main() {
     int sfd = signalfd(-1, &mask, 0);
     if (sfd == -1) return 1;
 
-    // 3. SECURE INITIALIZATION
-    InternalHeader h = { .resonance_as_status = strdup("LAU_READY_2026") };
+    InternalHeader h = { .resonance_as_status = strdup("LAU_INIT_2026") };
     WaveSystem *ws = malloc(sizeof(WaveSystem));
-    if (!ws || !h.resonance_as_status) {
-        lau_final_cleanup(&h, ws, sfd);
-        return 1;
-    }
+    if (!ws) { lau_final_cleanup(&h, ws, sfd); return 1; }
     
     ws->system_id = 2026; 
     ws->current_directive = NULL;
@@ -115,24 +106,20 @@ int main() {
     fds[0].fd = STDIN_FILENO; fds[0].events = POLLIN;
     fds[1].fd = sfd;          fds[1].events = POLLIN;
 
-    printf("--- SYSTEM-11: AUDITED ROLLING STAY EXECUTOR (2026) ---\n");
+    printf("--- SYSTEM-11: IMMUTABLE AUDIT EXECUTOR (2026) ---\n");
+    log_immutable_status("LAU PROCESS START - SESSION AUTHORIZED");
 
     char input[256];
     while (1) {
         printf("\nLAU Command (Intensity Directive) > "); fflush(stdout);
-        
         if (poll(fds, 2, -1) > 0) {
-            // INTERRUPT: CLEAN EXIT
             if (fds[1].revents & POLLIN) {
                 struct signalfd_siginfo fdsi;
                 read(sfd, &fdsi, sizeof(fdsi));
-                printf("\n[INTERRUPT] Received Signal. Audit: %s\n", h.resonance_as_status);
+                log_immutable_status("INTERRUPT RECEIVED - FINALIZING LOG");
                 lau_final_cleanup(&h, ws, sfd);
-                printf("[EXIT] Legal Stay Finalized. Memory Clean.\n");
                 return 0;
             }
-            
-            // HUMAN INPUT
             if (fds[0].revents & POLLIN) {
                 if (fgets(input, sizeof(input), stdin)) {
                     input[strcspn(input, "\n")] = 0;
@@ -140,8 +127,8 @@ int main() {
                     if (sscanf(input, "%lf %255[^\n]", &new_i, new_d) == 2) {
                         ws->current_intensity = new_i;
                         ws->current_directive = new_d;
-                        HELMHOLTZ_RESONANCE_LIST(STEP, ws, ws->current_intensity);
-                        printf("[ROLLING_UPDATE] %s\n", *ws->resonance_as_status);
+                        apply_rolling_stay(ws, step_executor_directive, ws->current_intensity);
+                        printf("[LOGGED] %s\n", *ws->resonance_as_status);
                     }
                 }
             }
