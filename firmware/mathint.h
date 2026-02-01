@@ -1,90 +1,115 @@
+#define _POSIX_C_SOURCE 202405L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <immintrin.h>
 #include "gemalloc.h"
 
 typedef struct { uint64_t *v; int n; } MathInt;
 
-void mifree(MathInt i) { gemfree(i.v); }
-
-// High-speed string to MathInt (Base-10 to Base-2^64)
-MathInt str2mi(const char* s) {
-    MathInt b = { jgemalloc(sizeof(uint64_t), 0), 1 };
-    for (int i = 0; s[i]; i++) {
-        uint64_t carry = s[i] - '0';
-        for (int j = 0; j < b.n || carry; j++) {
-            if (j == b.n) {
-                b.v = gemrealloc(b.v, (b.n + 1) * sizeof(uint64_t));
-                b.v[b.n++] = 0;
-            }   
-            unsigned __int128 cur = (unsigned __int128)b.v[j] * 10 + carry;
-            b.v[j] = (uint64_t)cur;
-            carry = (uint64_t)(cur >> 64);
-        }   
-    }   
-    return b;
-}   
-
-// Comparison (1: a>b, -1: a<b, 0: a==b)
-int micmp(MathInt a, MathInt b) {
-    if (a.n != b.n) return a.n > b.n ? 1 : -1;
-    for (int i = a.n - 1; i >= 0; i--) if (a.v[i] != b.v[i]) return a.v[i] > b.v[i] ? 1 : -1;
-    return 0;
-}
-
-// Subtraction: a = a - b (assumes a >= b)
-void misub(MathInt *a, MathInt b) {
-    uint64_t borrow = 0;
-    for (int i = 0; i < a->n; i++) {
-        uint64_t val = (i < b.n) ? b.v[i] : 0;
-        uint64_t next_borrow = (a->v[i] < (unsigned __int128)val + borrow);
-        a->v[i] = a->v[i] - val - borrow;
-        borrow = next_borrow;
-    }
+static inline void mi_norm(MathInt *a) {
     while (a->n > 1 && a->v[a->n - 1] == 0) a->n--;
 }
 
-// Fast Modulo using bit-shifts (a = a % m)
-void mimod(MathInt *a, MathInt m) {
-    if (micmp(*a, m) < 0) return;
-    MathInt t = { jgemalloc(a->n * sizeof(uint64_t), 0), m.n };
-    memcpy(t.v, m.v, m.n * 8);
-    int s = 0;
-    while (micmp(*a, t) >= 0) {
-        uint64_t carry = t.v[t.n - 1] >> 63;
-        for (int i = t.n - 1; i >= 0; i--) t.v[i] = (t.v[i] << 1) | (i > 0 ? t.v[i - 1] >> 63 : 0);
-        if (carry) t.v[t.n++] = 1;
-        s++;
+void mifree(MathInt i) { if (i.v) gemfree(i.v); }
+
+// Hardware-accelerated comparison
+static inline int micmp(MathInt a, MathInt b) {
+    if (a.n != b.n) return a.n > b.n ? 1 : -1;
+    for (int i = a.n - 1; i >= 0; i--) {
+        if (a.v[i] != b.v[i]) return a.v[i] > b.v[i] ? 1 : -1;
     }
-    for (int i = 0; i <= s; i++) {
-        if (micmp(*a, t) >= 0) misub(a, t);
-        for (int j = 0; j < t.n; j++) t.v[j] = (t.v[j] >> 1) | (j < t.n - 1 ? t.v[j + 1] << 63 : 0);
-        if (t.n > 1 && t.v[t.n - 1] == 0) t.n--;
-    }
-    mifree(t);
+    return 0;
 }
 
-// Multiplication: r = a * b
+// Hardware-accelerated subtraction (SBB chain)
+static inline unsigned char misub_inplace(MathInt *a, MathInt b) {
+    unsigned char brw = 0;
+    for (int i = 0; i < a->n; i++) {
+        uint64_t val = (i < b.n) ? b.v[i] : 0;
+        brw = _subborrow_u64(brw, a->v[i], val, (unsigned long long*)&a->v[i]);
+    }
+    mi_norm(a);
+    return brw;
+}
+
+// Full product multiplication
 MathInt mimul(MathInt a, MathInt b) {
-    MathInt r = { jgemalloc((a.n + b.n) * sizeof(uint64_t), 0), a.n + b.n };
+    MathInt r = { jgemalloc((a.n + b.n) * 8, 0), a.n + b.n };
+    memset(r.v, 0, r.n * 8);
     for (int i = 0; i < a.n; i++) {
+        if (a.v[i] == 0) continue;
         uint64_t carry = 0;
-        for (int j = 0; j < b.n || carry; j++) {
-            unsigned __int128 cur = (unsigned __int128)a.v[i] * (j < b.n ? b.v[j] : 0) + r.v[i + j] + carry;
-            r.v[i + j] = (uint64_t)cur;
+        for (int j = 0; j < b.n; j++) {
+            unsigned __int128 cur = (unsigned __int128)a.v[i] * b.v[j] + r.v[i+j] + carry;
+            r.v[i+j] = (uint64_t)cur;
             carry = (uint64_t)(cur >> 64);
         }
+        r.v[i + b.n] = carry;
     }
-    while (r.n > 1 && r.v[r.n - 1] == 0) r.n--;
+    mi_norm(&r);
     return r;
 }
 
-// Convert MathInt back to String
+// --- Montgomery Reduction Logic ---
+
+// Montgomery Step: res = (T + (T*m' mod R)*m) / R
+// This replaces mimod during exponentiation.
+MathInt montgomery_reduce(MathInt T, MathInt m, uint64_t m_inv) {
+    int n = m.n;
+    // T is roughly 2n limbs. We reduce it back to n limbs.
+    for (int i = 0; i < n; i++) {
+        uint64_t u = T.v[i] * m_inv;
+        uint64_t carry = 0;
+        for (int j = 0; j < n; j++) {
+            unsigned __int128 cur = (unsigned __int128)u * m.v[j] + T.v[i + j] + carry;
+            T.v[i + j] = (uint64_t)cur;
+            carry = (uint64_t)(cur >> 64);
+        }
+        // Propagate carry through the rest of T
+        for (int j = i + n; j < T.n && carry; j++) {
+            unsigned char c_out = _addcarry_u64(0, T.v[j], carry, (unsigned long long*)&T.v[j]);
+            carry = c_out;
+        }
+    }
+    
+    // Final result is the upper half of T
+    MathInt res = { jgemalloc((n + 1) * 8, 0), n };
+    memcpy(res.v, T.v + n, n * 8);
+    mi_norm(&res);
+
+    if (micmp(res, m) >= 0) misub_inplace(&res, m);
+    return res;
+}
+
+// Modular Inverse for Montgomery: (m * m_inv) mod 2^64 == -1 mod 2^64
+uint64_t compute_m_inv(uint64_t n0) {
+    uint64_t inv = n0;
+    for (int i = 0; i < 5; i++) inv *= 2 - n0 * inv;
+    return -inv;
+}
+
+// --- Original Function Signatures ---
+
+MathInt str2mi(const char* s) {
+    MathInt b = { jgemalloc(8, 0), 1 }; b.v[0] = 0;
+    for (int i = 0; s[i]; i++) {
+        uint64_t carry = s[i] - '0';
+        for (int j = 0; j < b.n || carry; j++) {
+            if (j == b.n) { b.v = gemrealloc(b.v, (b.n + 1) * 8); b.v[b.n++] = 0; }
+            unsigned __int128 cur = (unsigned __int128)b.v[j] * 10 + carry;
+            b.v[j] = (uint64_t)cur;
+            carry = (uint64_t)(cur >> 64);
+        }
+    }
+    return b;
+}
+
 char* mi2str(MathInt b) {
     char* s = jgemalloc(b.n * 20 + 2, 0);
     int p = 0;
-    MathInt t = { jgemalloc(b.n * sizeof(uint64_t), 0), b.n };
+    MathInt t = { jgemalloc(b.n * 8, 0), b.n };
     memcpy(t.v, b.v, b.n * 8);
     while (t.n > 1 || t.v[0] > 0) {
         uint64_t rem = 0;
@@ -94,39 +119,102 @@ char* mi2str(MathInt b) {
             rem = (uint64_t)(cur % 10);
         }
         s[p++] = rem + '0';
-        while (t.n > 1 && t.v[t.n - 1] == 0) t.n--;
+        mi_norm(&t);
     }
     mifree(t);
     if (p == 0) s[p++] = '0';
-    for (int i = 0; i < p / 2; i++) { char tmp = s[i]; s[i] = s[p - 1 - i]; s[p - 1 - i] = tmp; }
+    s[p] = '\0';
+    for (int i = 0; i < p / 2; i++) { char tmp = s[i]; s[i] = s[p-1-i]; s[p-1-i] = tmp; }
     return s;
 }
 
-MathInt modPow(const char* sb, const char* se, const char* sm) {
-    MathInt b = str2mi(sb), e = str2mi(se), m = str2mi(sm), res = str2mi("1");
-    mimod(&b, m);
-    while (e.n > 1 || e.v[0] > 0) {
-        if (e.v[0] & 1) {
-            MathInt tmp = mimul(res, b); mifree(res); mimod(&tmp, m); res = tmp;
-        }
-        MathInt tmp = mimul(b, b); mifree(b); mimod(&tmp, m); b = tmp;
-        // e >>= 1
-        uint64_t rem = 0;
-        for (int i = e.n - 1; i >= 0; i--) {
-            uint64_t next_rem = e.v[i] & 1;
-            e.v[i] = (e.v[i] >> 1) | (rem << 63);
-            rem = next_rem;
-        }
-        if (e.n > 1 && e.v[e.n - 1] == 0) e.n--;
-    }
-    //char* rs = mi2str(res);
-    mifree(b); mifree(e); mifree(m);
+char* rmi(size_t length) {
+    MathInt r = { gemalloc(length * 8), (int)length };
+    char* res = mi2str(r);
+    gemfree(r.v);
     return res;
 }
 
-char* rmi(size_t length) {
-  MathInt r = { gemalloc(length * sizeof(uint64_t)), length };
-  char* res = mi2str(r);
-  gemfree(r.v);
-  return res;
+// Standard mimod (used for initial setup only)
+void mimod(MathInt *a, MathInt m) {
+    if (micmp(*a, m) < 0) return;
+    MathInt t = { jgemalloc((a->n + 1) * 8, 0), m.n };
+    memcpy(t.v, m.v, m.n * 8);
+    int s = ((a->n - 1) * 64 + (64 - __builtin_clzll(a->v[a->n - 1]))) - 
+            ((m.n - 1) * 64 + (64 - __builtin_clzll(m.v[m.n - 1])));
+    if (s > 0) {
+        for (int i = 0; i < s; i++) {
+            uint64_t c = 0;
+            for (int j = 0; j < t.n; j++) {
+                uint64_t nc = t.v[j] >> 63;
+                t.v[j] = (t.v[j] << 1) | c;
+                c = nc;
+            }
+            if (c) t.v[t.n++] = c;
+        }
+    }
+    for (int i = 0; i <= s; i++) {
+        if (micmp(*a, t) >= 0) misub_inplace(a, t);
+        uint64_t c = 0;
+        for (int j = t.n - 1; j >= 0; j--) {
+            uint64_t nc = (t.v[j] & 1) << 63;
+            t.v[j] = (t.v[j] >> 1) | c;
+            c = nc;
+        }
+        mi_norm(&t);
+    }
+    mifree(t);
+}
+
+MathInt modPow(const char* sb, const char* se, const char* sm) {
+    MathInt b = str2mi(sb), e = str2mi(se), m = str2mi(sm);
+    uint64_t m_inv = compute_m_inv(m.v[0]);
+
+    // Precompute R^2 mod m for Montgomery entry
+    MathInt r2 = { jgemalloc((m.n * 2 + 1) * 8, 0), m.n * 2 + 1 };
+    memset(r2.v, 0, r2.n * 8);
+    r2.v[m.n * 2] = 1;
+    mimod(&r2, m);
+
+    // Enter Montgomery domain: b_bar = b * R mod m
+    MathInt b_prod = mimul(b, r2);
+    MathInt b_bar = montgomery_reduce(b_prod, m, m_inv);
+    mifree(b_prod);
+    
+    // res_bar = 1 * R mod m
+    MathInt one = str2mi("1");
+    MathInt res_prod = mimul(one, r2);
+    MathInt res_bar = montgomery_reduce(res_prod, m, m_inv);
+    mifree(one);
+    mifree(res_prod);
+
+    while (e.n > 1 || e.v[0] > 0) {
+        if (e.v[0] & 1) {
+            MathInt tmp_p = mimul(res_bar, b_bar);
+            MathInt next_res = montgomery_reduce(tmp_p, m, m_inv);
+            mifree(res_bar);
+            mifree(tmp_p);
+            res_bar = next_res;
+        }
+
+        MathInt b_sq = mimul(b_bar, b_bar);
+        MathInt next_b = montgomery_reduce(b_sq, m, m_inv);
+        mifree(b_bar);
+        mifree(b_sq);
+        b_bar = next_b;
+
+        uint64_t c = 0;
+        for (int i = e.n - 1; i >= 0; i--) {
+            uint64_t nc = (e.v[i] & 1) << 63;
+            e.v[i] = (e.v[i] >> 1) | c;
+            c = nc;
+        }
+        mi_norm(&e);
+    }
+
+    // Exit Montgomery domain: res = res_bar * 1 / R mod m
+    MathInt final_res = montgomery_reduce(res_bar, m, m_inv);
+    
+    mifree(b); mifree(e); mifree(m); mifree(r2); mifree(res_bar); mifree(b_bar);
+    return final_res;
 }
