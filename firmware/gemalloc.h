@@ -1,18 +1,49 @@
 #ifndef GEMALLOC_H
 #define GEMALLOC_H
 
-#define _POSIX_C_SOURCE 202405L
-#include <unistd.h>
+#ifdef USE_TSFI_MALLOC
+// TSFi Integration Mode
+#include "tsfi_lib/lau_memory.h"
+#include <string.h>
+
+// Macros to map Gemalloc API to TSFi/Lau Memory API
+#define gemalloc(s) lau_malloc_loc(s, __FILE__, __LINE__)
+#define jgemalloc(s, c) ({ void* _p = lau_malloc_loc(s, __FILE__, __LINE__); lau_mem_scramble(_p, s, c); _p; })
+#define gemrealloc(p, s) lau_realloc_loc(p, s, __FILE__, __LINE__)
+#define gemfree(p) lau_free(p)
+#define printgemallocstats() lau_report_memory_metrics()
+
+#else
+
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+/* --- Public Interface --- */
+
+void* gemalloc(size_t size);
+void* jgemalloc(size_t size, char set);
+void* gemrealloc(void* ptr, size_t size);
+void gemfree(void* ptr);
+void printgemallocstats(void);
+
+#endif /* USE_TSFI_MALLOC */
+
+#endif /* GEMALLOC_H */
+
+/* --- Implementation --- */
+#ifdef GEMALLOC_IMPLEMENTATION
+#ifndef USE_TSFI_MALLOC
+
+#define _POSIX_C_SOURCE 202405L
+#include <unistd.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>       /* Required for time() */
 #include <sys/mman.h>   /* Required for mmap() */
 #include <sys/random.h> /* Required for getrandom() */
+#include <stdlib.h>     /* rand, srand */
 
 #define DLE 16
 /* POSIX 2024: 64-byte alignment for AVX-512 and Cache Line efficiency */
@@ -30,7 +61,7 @@ struct dm_blk_hdr {
 
 #define DM_HDR_SIZE ALIGN(sizeof(struct dm_blk_hdr))
 
-/* Global state with static linkage to avoid multi-definition errors */
+/* Global state (confined to the translation unit defining IMPLEMENTATION) */
 static struct dm_blk_hdr* HEAD = NULL;
 static struct dm_blk_hdr* TAIL = NULL;
 static int seq_ctr = 0;
@@ -167,4 +198,5 @@ void printgemallocstats(void) {
     printf("----------------------------------\n");
 }
 
-#endif
+#endif /* !USE_TSFI_MALLOC */
+#endif /* GEMALLOC_IMPLEMENTATION */

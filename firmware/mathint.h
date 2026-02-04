@@ -1,3 +1,30 @@
+#ifndef MATHINT_H
+#define MATHINT_H
+
+#ifdef USE_TSFI_MATH
+// --- TSFi Integration ---
+#include "tsfi_lib/tsfi_math.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "gemalloc.h"
+
+typedef struct { TSFiBigInt *bn; } MathInt;
+
+static inline void mifree(MathInt i) { 
+    if (i.bn) tsfi_bn_free(i.bn); 
+}
+
+// Mapped Prototypes
+MathInt str2mi(const char* s);
+char* mi2str(MathInt b);
+MathInt modPow(const char* sb, const char* se, const char* sm);
+
+// Legacy stubs/helpers if needed by other files (not used in test_mathint)
+static inline int micmp(MathInt a, MathInt b) { return tsfi_bn_cmp_avx512(a.bn, b.bn); }
+
+#else
+
 #define _POSIX_C_SOURCE 202405L
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,11 +35,13 @@
 
 typedef struct { uint64_t *v; int n; } MathInt;
 
+/* --- Inline Helper Functions --- */
+
 static inline void mi_norm(MathInt *a) {
     while (a->n > 1 && a->v[a->n - 1] == 0) a->n--;
 }
 
-void mifree(MathInt i) { if (i.v) gemfree(i.v); }
+static inline void mifree(MathInt i) { if (i.v) gemfree(i.v); }
 
 // Hardware-accelerated comparison
 static inline int micmp(MathInt a, MathInt b) {
@@ -33,6 +62,118 @@ static inline unsigned char misub_inplace(MathInt *a, MathInt b) {
     mi_norm(a);
     return brw;
 }
+
+/* --- Function Prototypes --- */
+MathInt mimul(MathInt a, MathInt b);
+MathInt montgomery_reduce(MathInt T, MathInt m, uint64_t m_inv);
+uint64_t compute_m_inv(uint64_t n0);
+MathInt str2mi(const char* s);
+char* mi2str(MathInt b);
+char* rmi(size_t length);
+void mimod(MathInt *a, MathInt m);
+MathInt modPow(const char* sb, const char* se, const char* sm);
+
+#endif // USE_TSFI_MATH
+#endif /* MATHINT_H */
+
+#ifdef MATHINT_IMPLEMENTATION
+
+#ifdef USE_TSFI_MATH
+// --- TSFi Implementation ---
+
+MathInt str2mi(const char* s) {
+    MathInt m;
+    m.bn = tsfi_bn_alloc(); // Init to 0
+    
+    // Simple decimal parsing: val = val * 10 + digit
+    TSFiBigInt *ten = tsfi_bn_alloc();
+    tsfi_bn_set_u64(ten, 10);
+    
+    TSFiBigInt *digit = tsfi_bn_alloc();
+    TSFiBigInt *tmp_mul = tsfi_bn_alloc();
+    
+    for(int i=0; s[i]; i++) {
+        if (s[i] < '0' || s[i] > '9') continue;
+        
+        tsfi_bn_set_u64(digit, s[i] - '0');
+        
+        // m = m * 10
+        tsfi_bn_mul_avx512(tmp_mul, m.bn, ten);
+        
+        // m = tmp_mul + digit
+        tsfi_bn_add_avx512(m.bn, tmp_mul, digit);
+    }
+    
+    tsfi_bn_free(ten);
+    tsfi_bn_free(digit);
+    tsfi_bn_free(tmp_mul);
+    return m;
+}
+
+char* mi2str(MathInt b) {
+    TSFiBigInt *work = tsfi_bn_alloc();
+    TSFiBigInt *zero = tsfi_bn_alloc();
+    tsfi_bn_add_avx512(work, b.bn, zero); // Deep Copy
+    tsfi_bn_free(zero);
+    
+    TSFiBigInt *ten = tsfi_bn_alloc();
+    tsfi_bn_set_u64(ten, 10);
+    
+    TSFiBigInt *rem = tsfi_bn_alloc();
+    TSFiBigInt *quot = tsfi_bn_alloc();
+    
+    char buf[8192];
+    int pos = 0;
+    
+    if (work->active_limbs == 0) {
+        buf[pos++] = '0';
+    } else {
+        while(work->active_limbs > 0) {
+            tsfi_bn_div_avx512(quot, rem, work, ten);
+            
+            // rem is 0..9.
+            uint64_t digit = rem->limbs[0];
+            buf[pos++] = '0' + (char)digit;
+            
+            // work = quot
+            tsfi_bn_set_u64(rem, 0); // Reuse rem as zero for copy
+            tsfi_bn_add_avx512(work, quot, rem);
+        }
+    }
+    buf[pos] = 0;
+    
+    // Reverse
+    for(int i=0; i<pos/2; i++) {
+        char t = buf[i];
+        buf[i] = buf[pos-1-i];
+        buf[pos-1-i] = t;
+    }
+    
+    tsfi_bn_free(work);
+    tsfi_bn_free(ten);
+    tsfi_bn_free(rem);
+    tsfi_bn_free(quot);
+    
+    char *ret = gemalloc(pos + 1);
+    memcpy(ret, buf, pos + 1);
+    return ret;
+}
+
+MathInt modPow(const char* sb, const char* se, const char* sm) {
+    MathInt b = str2mi(sb);
+    MathInt e = str2mi(se);
+    MathInt m = str2mi(sm);
+    
+    MathInt res;
+    res.bn = tsfi_bn_alloc();
+    
+    tsfi_bn_modpow_avx512(res.bn, b.bn, e.bn, m.bn);
+    
+    mifree(b); mifree(e); mifree(m);
+    return res;
+}
+
+#else
 
 // Full product multiplication
 MathInt mimul(MathInt a, MathInt b) {
@@ -218,3 +359,6 @@ MathInt modPow(const char* sb, const char* se, const char* sm) {
     mifree(b); mifree(e); mifree(m); mifree(r2); mifree(res_bar); mifree(b_bar);
     return final_res;
 }
+
+#endif // USE_TSFI_MATH
+#endif /* MATHINT_IMPLEMENTATION */
