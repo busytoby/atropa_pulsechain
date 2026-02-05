@@ -14,4 +14,10 @@
     <ProjectReference Include="..\Wallet\Wallet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="libtsfi_interop.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Dysnomia
 {
@@ -53,10 +54,42 @@ namespace Dysnomia
             return M;
         }
 
+        [DllImport("libtsfi_interop.so", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Interop_ModPow(
+            byte[] base_bytes, ulong base_len,
+            byte[] exp_bytes, ulong exp_len,
+            byte[] mod_bytes, ulong mod_len,
+            byte[] result_buf, ulong result_cap, out ulong result_written
+        );
+
         public static BigInteger ModPow(BigInteger A, BigInteger B, BigInteger C)
         {
-            BigInteger M = BigInteger.ModPow(A, B, C);
-            return M;
+            try 
+            {
+                byte[] bBase = A.ToByteArray();
+                byte[] bExp = B.ToByteArray();
+                byte[] bMod = C.ToByteArray();
+                
+                // Result size matches modulus size mostly. Allocate extra padding.
+                byte[] bRes = new byte[bMod.Length + 64]; 
+                ulong written = 0;
+
+                int ret = Interop_ModPow(bBase, (ulong)bBase.Length, 
+                                         bExp, (ulong)bExp.Length, 
+                                         bMod, (ulong)bMod.Length, 
+                                         bRes, (ulong)bRes.Length, out written);
+                
+                if (ret == 0) {
+                    byte[] actualRes = new byte[written];
+                    Array.Copy(bRes, actualRes, (int)written);
+                    return new BigInteger(actualRes);
+                }
+            } 
+            catch (Exception) 
+            {
+                // Fallback to legacy logic if DLL missing or error
+            }
+            return BigInteger.ModPow(A, B, C);
         }
     }
 
