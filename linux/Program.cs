@@ -12,11 +12,10 @@ namespace Pulse {
 
 	static void Main(string[] args) {
 	    Logging.Add(Input);
-	    Output = Controller.Oracle.ProcessString;
-	    Controller.Fi.Listen(5555);
-
-            try {
-                Console.In.Peek();
+	                Output = Controller.Oracle.ProcessString;
+	                // Controller.Fi.Listen(5555);
+	    
+	                try {                Console.In.Peek();
 	        string? consoleinput;
 	        while((consoleinput = Console.ReadLine()) != null)
 		    Output(consoleinput);
