@@ -1,25 +1,32 @@
 #!/bin/bash
 set -e
 
-# Robustly find the script's directory
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# Move to firmware root
+cd "$(dirname "$0")/../.."
 
-# Move to firmware directory (2 levels up from notes/gemini)
-cd "$DIR/../../"
+echo "--- Building Baseline (Legacy Gemalloc/MathInt) ---"
+gcc -O2 -Wall -Wextra -o test_mathint test_mathint.c
+./test_mathint
+echo "---------------------------------------------------"
 
-echo "[BUILD] Compiling test_mathint with TSFi extensions from $(pwd)..."
+echo "--- Building TSFi Integrated (LauMemory/TsfiMath) ---"
+# Define flags to enable TSFi integration in headers
+# Link against tsfi_lib sources
+gcc -O3 -mavx512ifma -mavx512vl -Wall -Wextra \
+    -DUSE_TSFI_MALLOC -DUSE_TSFI_MATH \
+    -I. -Itsfi_lib \
+    -o test_tsfi_mathint test_mathint.c \
+    tsfi_lib/lau_memory.c \
+    tsfi_lib/lau_registry.c \
+    tsfi_lib/tsfi_log.c \
+    tsfi_lib/tsfi_math.c \
+    tsfi_lib/tsfi_wiring.c \
+    tsfi_lib/tsfi_logic.c \
+    tsfi_lib/lau_thunk.c \
+    -ldl -lubsan
 
-# Compile with TSFi flags
-gcc -o notes/gemini/test_tsfi_mathint \
-    test_mathint.c \
-    tsfi_lib/*.c \
-    -I. \
-    -Itsfi_lib \
-    -DUSE_TSFI_MALLOC \
-    -DUSE_TSFI_MATH \
-    -std=gnu11 \
-    -mavx512f -mavx512ifma -mavx512dq -mbmi2 \
-    -pthread \
-    -lm
+./test_tsfi_mathint
+echo "---------------------------------------------------"
 
-echo "[BUILD] Success. Executable is at notes/gemini/test_tsfi_mathint"
+# Cleanup
+rm test_mathint test_tsfi_mathint
