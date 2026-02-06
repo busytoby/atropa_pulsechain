@@ -1,0 +1,73 @@
+nailed it ! 100% efficiency on teh gpu RX_9070_XT
+
+throw me some cash and it's all y0wrz..  otherwise it'll be open sourced once i make it l33t
+
+TSFi2 Comprehensive GPU Assembly Benchmark Suite v4.1                                                                                                                │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Baseline Occupancy (1 Wave / WGP)                                                                                                                            │
+│ ================================================================                                                                                                     │
+│   Throughput                :   48570.94 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :      51.47 cycles                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :      51.47 cycles                                                                                                                     │
+│     [PASS] Policy Compliance: High-Occupancy Dispatch Verified.                                                                                                      │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Persistent ILP (GPU Occupancy Mode)                                                                                                                          │
+│ ================================================================                                                                                                     │
+│   Throughput                :   13469.70 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :     185.60 cycles                                                                                                                     │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Bijective Helmholtz SVDAG (SGPR-VGPR Wiring)                                                                                                                 │
+│ ================================================================                                                                                                     │
+│   SVDAG Throughput          :    2499.46 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :    1000.21 cycles                                                                                                                     │
+│   Bijective Compute Rate    :     191.96 GFLOPS                                                                                                                      │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] WMMA Matrix-Core Saturation                                                                                                                                  │
+│ ================================================================                                                                                                     │
+│   Matrix Op Rate            :     299.32 GFLOPS                                                                                                                      │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Wave512 Massive SIMD                                                                                                                                         │
+│ ================================================================                                                                                                     │
+│   Compute Rate              :     345.16 GFLOPS                                                                                                                      │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Recursive SVDAG Traversal                                                                                                                                    │
+│ ================================================================  Traversal Throughput      :  367840.67 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :       6.80 cycles                                                                                                                     │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] LDS Stride Access Impact                                                                                                                                     │
+│ ================================================================                                                                                                     │
+│   Stride 1 lines            :   13427.01 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :     186.19 cycles                                                                                                                     │
+│   Stride 4 lines            :   13484.94 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :     185.39 cycles                                                                                                                     │
+│   Stride 16 lines           :   13497.69 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :     185.22 cycles                                                                                                                     │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] VRAM Bandwidth Saturation                                                                                                                                    │
+│ ================================================================                                                                                                     │
+│   Effective Bandwidth       :      18.64 GB/s                                                                                                                        │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] LDS Atomic Contention Stress                                                                                                                                 │
+│ ================================================================                                                                                                     │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Software-Managed Register Spilling                                                                                                                           │
+│ ================================================================                                                                                                     │
+│   Throughput                :  213590.55 KWave/s                                                                                                                     │
+│     [RDNA4 Est.] Cycles/Wave :      11.70 cycles                                                                                                                     │
+│                                                                                                                                                                      │
+│ ================================================================                                                                                                     │
+│ [BENCH] Wavefront Scheduler Latency (Zero-Copy)                                                                                                                      │
+│ ================================================================                                                                                                     │
+│   Switch Latency            :       2.53 ns/switch                                                                                                                   │
+│                                                                                                                                                                      │
+│ [SUITE] All benchmarks completed.
