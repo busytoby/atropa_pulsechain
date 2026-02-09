@@ -1,0 +1,5 @@
+this code is completely unsafe, it exhibits SFENCE+CLWB "open holographic continuity" and uses WAVE512 assembly mnemonic intrinsics which do not obey hardware cache line size limits even though they "align"
+
+the purpose is to exhibit the theoretical "quantum security" speed limit that is potentially a threat to ethereum and other blockchains
+
+my verdict is the same as popcat's at this time
