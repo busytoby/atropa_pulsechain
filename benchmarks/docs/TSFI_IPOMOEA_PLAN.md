@@ -1,50 +1,49 @@
-# TSFi Phase 2: Project Ipomoea (Automated Vision-Guided Evolution)
+# TSFi Project Ipomoea: Resonant Photorealism Roadmap
 
-**Objective:** Autonomous evolution of the HelmK0Rn voxel/SDF substrate into a "White Ipomoea" flower structure using advanced, real-time Computer Vision metrics (AVX-512).
+**Status:** Phase 5 - Resonant Photorealism (2026-02-12)
+**Objective:** Autonomous evolution of the HelmK0Rn substrate into a "White Ipomoea" with organic tissue fidelity using Shimmer Resonance and CV-Augmented thunks.
 
-## 1. The "Ipomoea" Target Definition
-To guide the genetic algorithm, we must mathematically define the visual characteristics of an Ipomoea flower so the Vision Engine can "see" it.
+## 1. Accomplished Milestones (Substrate)
+- [x] **High-Speed SSAA Renderer:** 2x2 vectorized AVX-512 sampling.
+- [x] **PBR Shading Pipeline:** Real-time normal mapping, SSS (Subsurface Scattering), and Fresnel edge-glow.
+- [x] **Shimmer Resonance:** Deterministic XOR-based bloom and sampling barriers (No Shim protocol).
+- [x] **Progression Analytics:** Target correlation and mission completion metrics.
+- [x] **Ray-Query Thunk:** CPU-side AVX-512 ray-marching for topological depth analysis.
 
-*   **Metric A: Radial Symmetry (The Funnel):**
-    *   Ipomoea flowers exhibit high rotational symmetry.
-    *   *Implementation:* An AVX-512 kernel that samples pixels at `(x, y)` and compares them to pixels at `(-x, -y)` (180-degree) or rotated coordinates.
-    *   *Target:* `Symmetry Score > 0.85`.
+## 2. The "Photorealistic" Definition (Updated)
+To achieve final fidelity, the Vision Engine must now perceive material quality, not just shape.
 
-*   **Metric B: Radial Density Profile (The Throat):**
-    *   Cross-section: An Ipomoea has a deep, empty "throat" (dark/low density at absolute center) surrounded by a blooming "limb" (high density ring).
-    *   *Implementation:* A radial histogram kernel. It calculates the average brightness at Ring 0 (Center), Ring 1 (Mid), and Ring 2 (Rim).
-    *   *Target:* `Center < Rim` (The "Void Center" topology).
+*   **Metric D: Specular Contrast (The Waxy Look):**
+    *   Measures the ratio between specular highlights and diffuse shadows.
+    *   *Target:* High contrast without "clipping" to white noise.
+*   **Metric E: Lobe Frequency (Pentagonal Lock):**
+    *   Radial variance analysis to ensure exactly 5 major petals.
+    *   *Target:* Dominant 5th harmonic in radial mass distribution.
+*   **Metric F: Shadow Softness (Tissue Density):**
+    *   Measures penumbra width using ray-query results.
+    *   *Target:* Soft shadow falloff indicating translucent organic tissue.
 
-*   **Metric C: Edge Smoothness (The Petals):**
-    *   The rim must be continuous, not scattered noise (which our current Laplacian filter already helps with).
-    *   *Target:* `Complexity < 0.2` (Smooth curves) AND `Coverage > 0.3` (Sufficient mass).
+## 3. Advanced Thunk Implementation Path
 
-## 2. Advanced Vision Kernels (src/tsfi_vision.c)
+### A. Anisotropic Sheen Thunk (`thunks/aniso_sheen.c`)
+- **Role:** Simulates the radial grain of flower petals.
+- **Mechanism:** Modulates specular intensity based on the bitwise XOR of the surface tangent and the Simulation Secret.
 
-We will implement two new high-speed kernels:
+### B. Rotational MSE Vision (`src/tsfi_vision.c`)
+- **Role:** Precise 5-fold symmetry verification.
+- **Mechanism:** Bit-shifts the radial buckets by 72-degree increments and calculates MSE vs. the baseline state.
 
-1.  `tsfi_vision_analyze_symmetry_avx512`:
-    *   Folding the image buffer onto itself using SIMD permutations.
-    *   Calculates the Mean Squared Error (MSE) between the left and right halves (or quadrants).
+### C. Atmospheric Resonance Thunk (`thunks/ambient_shimmer.c`)
+- **Role:** Environmentally aware background bleed.
+- **Mechanism:** Low-frequency shimmer that links the flower's "aura" to the system's global resonance state.
 
-2.  `tsfi_vision_analyze_radial_avx512`:
-    *   Uses a pre-computed distance lookup table (LUT) or fast approximation to bin pixels into "Center", "Mid", and "Rim" buckets during the scan.
+## 4. Autonomous Gardener Evolution (tests/test_auto_flower.c)
+The gardener is now "Progression-Aware":
+1.  **Stage 1 (Topology):** Lock the 5-petal structure and hollow core.
+2.  **Stage 2 (Material):** Optimize for specular contrast and SSS depth.
+3.  **Stage 3 (Fidelity):** Refine surface grain and shimmering bloom for final "Golden" approval.
 
-## 3. The Autonomous Loop (tests/test_auto_flower.c)
-
-We will create a specialized "Gardener" test harness:
-
-1.  **Initialization:** Spawn a random population of K0Rn genomes (spheres/folds).
-2.  **Render Cycle:** Render the genome to the framebuffer (headless or visible).
-3.  **Vision Pass:** Run `Symmetry` + `Radial` analysis.
-4.  **Decision Engine:**
-    *   *Score = (Symmetry * 2.0) + (RadialFit * 1.5) + Smoothness*
-    *   If `Score > BestScore`: Keep genome (Save to `best_flower.k0rn`).
-    *   If `Score < BestScore`: Revert and Mutate.
-5.  **Termination:** Stop when `Score > Threshold` (A recognizable flower exists).
-
-## 4. Execution Strategy
-
-1.  **Implement Kernels:** Upgrade `tsfi_vision.c` with symmetry/radial logic.
-2.  **Verify Metrics:** Create a test that renders a known circle vs. noise and proves the metrics distinguish them.
-3.  **Launch Gardener:** Run the automated evolution and watch the shape emerge from the chaos.
+## 5. Architectural Mandate: No Shim
+- All jitter/noise must be replaced by **Shimmer** (Identity XOR Context).
+- All offsets/bias must be replaced by **Secrets** (Probabilistic Identity).
+- All gaps must be filled by **Resonance** (Temporal Alignment).
