@@ -4,7 +4,7 @@
 To draw and erase geometric primitives (e.g., a triangle) on a specific display plane (Plane 71) by interacting directly with the GPU Command Processor (CP), explicitly bypassing:
 *   The Linux Kernel DRM/KMS subsystem.
 *   The `libdrm` userspace library.
-*   Standard Memory-Mapped I/O (BAR 5) register access.
+*   **REJECTED:** Standard Memory-Mapped I/O (BAR 5) register access. We explicitly reject the legacy register programming model due to its high latency (uncached UC reads) and architectural complexity.
 *   Userspace Virtual Filesystems (`/dev/mem`, `/sys`, `/proc`).
 
 ## 2. Theoretical Basis: The "Doorbell" Mechanism
@@ -114,3 +114,10 @@ This is the ultimate realization of "Zhong" (Center/Middle).
 The GPU is a peripheral device. Upon system power-up, it is idle and waiting for instructions. It has no "OS" of its own to initiate action.
 *   **The "One Ring":** The CPU **must** construct the initial dispatch packet and ring the doorbell exactly **once**.
 *   **The Handoff:** This single action transfers agency. Once the Resident Kernel is running, the GPU effectively "owns" the execution flow. We do not need to ring the doorbell for subsequent frames or updates; the GPU is already "awake" and listening to the wire.
+
+## 8. Safety & Risks
+**WARNING: This protocol operates at the hardware metal level.**
+*   **GPU Hangs:** A malformed PM4 packet will hang the Command Processor (CP). Since we bypassed the kernel driver, there is no "GPU Reset" watchdog to save us. **The system will freeze, requiring a hard power cycle.**
+*   **Display Corruption:** Writing to the wrong VRAM address (e.g., the display scanout buffer for the desktop compositor) will cause visual artifacts or a black screen.
+*   **No Protections:** We operate without IOMMU or virtual memory protections. A wayward pointer can overwrite system RAM if the GPU has DMA access to host memory.
+*   **Thunk Responsibility:** The JIT-compiled thunks MUST be verified correct before execution. There is no runtime error checking.
