@@ -17,8 +17,8 @@ Based on hardware introspection:
 *   **BAR 2 (Doorbell):** `0xfc00000000` (256MB)
     *   *Usage:* The only "register" we touch. Writing an index here tells the CP "There is work waiting in the ring."
 
-### 2.2 The Command Flow (Standard/Driver Model)
-In a typical driver (like Mesa/AMDGPU), this cycle repeats thousands of times per second:
+### 2.2 The Command Flow (Hardware Mechanism)
+Regardless of the software stack (Driver or Bare Metal), the hardware expects this sequence:
 1.  **Craft Packet:** The CPU writes a `PM4` (Programming Model 4) packet into a circular buffer ("Ring") located in BAR 0 VRAM.
     *   *Example Packet:* `PKT3_WRITE_DATA` (Write Color X to Address Y).
 2.  **Update Write Pointer:** The CPU calculates the new write pointer position (wptr) for the ring.
