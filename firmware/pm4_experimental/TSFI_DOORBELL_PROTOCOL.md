@@ -38,3 +38,33 @@ Based on hardware introspection:
 
 ## 5. Next Steps
 Implement `tsfi_ring_probe.c` to scan BAR 0 for the active ring buffer signature.
+
+## 6. TSFi Architecture Integration
+
+### 6.1 Latency & The "Wired" State
+In standard architectures, latency is introduced by the kernel's context switching and validation layers. In TSFi/Zhong, we define the CPU and GPU as being **"Wired"**—sharing a single, coherent memory reality.
+*   **Zero-Copy:** Data is not "sent" to the GPU; it is placed in `LauWiredHeader` structures that reside in BAR 0 (VBAR).
+*   **Zero-Latency Trigger:** The "Doorbell" is not a syscall; it is a single 64-bit write instruction handled by a JIT-compiled thunk.
+
+### 6.2 `lau_memory` & Alignment
+The GPU's Command Processor (CP) requires strict alignment (usually 256 bytes or 4KB for ring bases).
+*   **`LauWiredHeader`:** We utilize `lau_malloc_wired` to allocate packet buffers directly in BAR 0.
+*   **`DEFINE_MAPPED_STRUCT`:** We map the hardware-defined packet structures (PM4) directly to C structs, ensuring binary compatibility.
+
+```c
+// Example Mapping
+DEFINE_MAPPED_STRUCT(PM4_WRITE_DATA,
+    uint32_t header;      // PKT3_WRITE_DATA
+    uint32_t dest_addr_lo;
+    uint32_t dest_addr_hi;
+    uint32_t payload[];
+);
+```
+
+### 6.3 Thunks as Drivers
+Instead of a heavy kernel driver, we use lightweight userspace **Thunks**.
+*   **Role:** A thunk is a small, pre-compiled (or JIT'd) function that performs the atomic operation of:
+    1.  Serializing the `DEFINE_MAPPED_STRUCT` into the Ring (BAR 0).
+    2.  Updating the `wptr`.
+    3.  Writing to the Doorbell (BAR 2).
+*   **Benefit:** This reduces the "Draw Triangle" operation to a handful of assembly instructions, completely removing the OS from the critical path.
