@@ -37,6 +37,13 @@ The Doorbell Aperture is not a single switch; it is a vast **array** of switches
 *   **Longevity:** Introduced with the R300 series (2002), PM4 proved so extensible that it has never been replaced. **There is no PM5.** Instead of reinventing the packet format, the industry shifted complexity into the *payloads* (Shaders/Compute) and Firmware schedulers.
 *   **Structure:** A PM4 stream consists almost entirely of 32-bit `TYPE-3` packets, which are variable-length commands containing a header (Opcode + Count) and a data payload.
 
+### 2.5 Does the CP have an ISA?
+Yes, but it exists at two levels:
+1.  **The Hidden ISA (Firmware):** The CP hardware itself (often based on custom RISC microcontrollers) executes opaque, signed firmware blobs. We cannot write code for this layer.
+2.  **The Public ISA (PM4):** The PM4 stream acts as an interpreted **Bytecode**.
+    *   It is **Turing-Complete**: PM4 supports packets for `WHILE` loops, `IF/ELSE` conditionals (`PKT3_COND_EXEC`), and memory-based branching.
+    *   **The "Zhong" Advantage:** By using these control-flow packets, we can program the CP to spin in a loop monitoring VRAM, effectively creating a "CP-Resident" program without launching a shader.
+
 ## 3. Constraints & Challenges
 *   **Ring Initialization:** Normally, the kernel initializes the Ring Buffer location. Without `BAR 5` to program the Ring Base Address, we must either:
     *   *Hijack:* Locate where the kernel *already* put the ring (via scanning BAR 0).
