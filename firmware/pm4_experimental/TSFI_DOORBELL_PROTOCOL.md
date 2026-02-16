@@ -17,12 +17,13 @@ Based on hardware introspection:
 *   **BAR 2 (Doorbell):** `0xfc00000000` (256MB)
     *   *Usage:* The only "register" we touch. Writing an index here tells the CP "There is work waiting in the ring."
 
-### 2.2 The Command Flow
+### 2.2 The Command Flow (Standard/Driver Model)
+In a typical driver (like Mesa/AMDGPU), this cycle repeats thousands of times per second:
 1.  **Craft Packet:** The CPU writes a `PM4` (Programming Model 4) packet into a circular buffer ("Ring") located in BAR 0 VRAM.
     *   *Example Packet:* `PKT3_WRITE_DATA` (Write Color X to Address Y).
 2.  **Update Write Pointer:** The CPU calculates the new write pointer position (wptr) for the ring.
-3.  **Ring Doorbell:** The CPU writes this `wptr` value to the specific offset in BAR 2 corresponding to the Compute or GFX engine.
-4.  **GPU Execution:** The CP wakes up, reads the Ring from VRAM (BAR 0) up to the new `wptr`, and executes the commands (Drawing the triangle).
+3.  **Ring Doorbell (The Trigger):** The CPU writes this `wptr` value to the specific offset in BAR 2 corresponding to the Compute or GFX engine.
+4.  **GPU Execution:** The CP wakes up, reads the Ring from VRAM (BAR 0) up to the new `wptr`, executes the commands, and then goes back to sleep.
 
 ## 3. Constraints & Challenges
 *   **Ring Initialization:** Normally, the kernel initializes the Ring Buffer location. Without `BAR 5` to program the Ring Base Address, we must either:
@@ -88,3 +89,9 @@ This is the ultimate realization of "Zhong" (Center/Middle).
 *   **No Interrupts:** The GPU never stops, so it never interrupts the CPU.
 *   **Speed of Light:** The latency is reduced to the time it takes for a cache line update to propagate across the PCIe bus (write combining).
 *   **Autonomy:** The GPU becomes a sovereign entity, reacting to the environment (memory) rather than obeying a stream of orders.
+
+### 7.4 The Bootstrap Reality: Can we start on the GPU?
+**Strictly speaking: No.**
+The GPU is a peripheral device. Upon system power-up, it is idle and waiting for instructions. It has no "OS" of its own to initiate action.
+*   **The "One Ring":** The CPU **must** construct the initial dispatch packet and ring the doorbell exactly **once**.
+*   **The Handoff:** This single action transfers agency. Once the Resident Kernel is running, the GPU effectively "owns" the execution flow. We do not need to ring the doorbell for subsequent frames or updates; the GPU is already "awake" and listening to the wire.
