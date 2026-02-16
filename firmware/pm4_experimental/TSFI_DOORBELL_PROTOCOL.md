@@ -25,6 +25,12 @@ In a typical driver (like Mesa/AMDGPU), this cycle repeats thousands of times pe
 3.  **Ring Doorbell (The Trigger):** The CPU writes this `wptr` value to the specific offset in BAR 2 corresponding to the Compute or GFX engine.
 4.  **GPU Execution:** The CP wakes up, reads the Ring from VRAM (BAR 0) up to the new `wptr`, executes the commands, and then goes back to sleep.
 
+### 2.3 Why 256MB?
+The Doorbell Aperture is not a single switch; it is a vast **array** of switches.
+*   **Capacity:** 256MB allows for thousands of distinct Doorbell "Pages" (typically 4KB or 8KB strides).
+*   **Virtualization (SR-IOV):** This enables the GPU to expose dedicated hardware queues to hundreds of Virtual Machines or distinct processes simultaneously.
+*   **Isolation:** Each process can map a single 4KB page containing its specific doorbell, ensuring it cannot ring the doorbell of another process or the kernel.
+
 ## 3. Constraints & Challenges
 *   **Ring Initialization:** Normally, the kernel initializes the Ring Buffer location. Without `BAR 5` to program the Ring Base Address, we must either:
     *   *Hijack:* Locate where the kernel *already* put the ring (via scanning BAR 0).
