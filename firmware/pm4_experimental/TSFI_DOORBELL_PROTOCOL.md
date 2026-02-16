@@ -68,3 +68,23 @@ Instead of a heavy kernel driver, we use lightweight userspace **Thunks**.
     2.  Updating the `wptr`.
     3.  Writing to the Doorbell (BAR 2).
 *   **Benefit:** This reduces the "Draw Triangle" operation to a handful of assembly instructions, completely removing the OS from the critical path.
+
+## 7. Inversion of Control: GPU Residence (The "Infinite Kernel")
+
+### 7.1 The Limitation of Push
+Even with the Doorbell optimization, the CPU is still the "Driver," pushing commands. This incurs:
+1.  **PCIe Bus Traversal:** Every doorbell write must cross the bus.
+2.  **Synchronization:** The CPU must wait or check fences to know when the GPU is done.
+
+### 7.2 The "Stay on GPU" Paradigm
+Instead of constantly pushing, we perform a **Single Launch**:
+1.  **Upload:** We upload a Persistent Compute Kernel (Shader) to BAR 0.
+2.  **Launch:** We ring the Doorbell *once* to start this kernel.
+3.  **Resident Loop:** The kernel enters an infinite loop, monitoring a specific "Command Slot" in VRAM (BAR 0).
+4.  **Signal:** When the CPU wants to draw a triangle, it simply updates the data in that VRAM slot. The GPU, already running and watching, sees the change immediately and executes the draw logic internally.
+
+### 7.3 Why this Fits TSFi
+This is the ultimate realization of "Zhong" (Center/Middle).
+*   **No Interrupts:** The GPU never stops, so it never interrupts the CPU.
+*   **Speed of Light:** The latency is reduced to the time it takes for a cache line update to propagate across the PCIe bus (write combining).
+*   **Autonomy:** The GPU becomes a sovereign entity, reacting to the environment (memory) rather than obeying a stream of orders.
