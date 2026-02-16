@@ -8,7 +8,7 @@ To draw and erase geometric primitives (e.g., a triangle) on a specific display 
 *   Userspace Virtual Filesystems (`/dev/mem`, `/sys`, `/proc`).
 
 ## 2. Theoretical Basis: The "Doorbell" Mechanism
-Modern AMD RDNA architectures (Navi) utilize a "Doorbell" mechanism to reduce CPU-GPU latency. Instead of the CPU constantly writing to device registers (MMIO BAR 5), the CPU writes a simple pointer update to a special memory region called the **Doorbell Aperture (BAR 2)**.
+Modern AMD RDNA architectures (Navi) expose a **Doorbell Aperture (BAR 2)**. This is a dedicated memory-mapped region that serves as the hardware trigger for the GPU's Command Processor (CP). Writing to a specific offset in this region signals the CP to fetch and execute commands from the associated Ring Buffer.
 
 ### 2.1 Memory Map (Navi 48)
 Based on hardware introspection:
