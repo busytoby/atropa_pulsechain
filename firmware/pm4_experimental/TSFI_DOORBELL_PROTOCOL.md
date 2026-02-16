@@ -31,6 +31,12 @@ The Doorbell Aperture is not a single switch; it is a vast **array** of switches
 *   **Virtualization (SR-IOV):** This enables the GPU to expose dedicated hardware queues to hundreds of Virtual Machines or distinct processes simultaneously.
 *   **Isolation:** Each process can map a single 4KB page containing its specific doorbell, ensuring it cannot ring the doorbell of another process or the kernel.
 
+### 2.4 What is PM4?
+**PM4 (Programming Model 4)** is the command stream protocol used by all modern AMD GPUs.
+*   **Lineage:** It succeeded PM1, PM2, and PM3, which drove legacy architectures (ATI Rage 128, Radeon 7000/R100) in the late 1990s and early 2000s.
+*   **Longevity:** Introduced with the R300 series (2002), PM4 proved so extensible that it has never been replaced. **There is no PM5.** Instead of reinventing the packet format, the industry shifted complexity into the *payloads* (Shaders/Compute) and Firmware schedulers.
+*   **Structure:** A PM4 stream consists almost entirely of 32-bit `TYPE-3` packets, which are variable-length commands containing a header (Opcode + Count) and a data payload.
+
 ## 3. Constraints & Challenges
 *   **Ring Initialization:** Normally, the kernel initializes the Ring Buffer location. Without `BAR 5` to program the Ring Base Address, we must either:
     *   *Hijack:* Locate where the kernel *already* put the ring (via scanning BAR 0).
