@@ -82,3 +82,15 @@ The "Hex Escape" protocol proved brittle due to multi-layer interpretation. The 
 -   Instead of string literals like `"\n"`, use `char delim[2] = {10, 0};`.
 -   Use `snprintf` to construct format strings dynamically: `snprintf(fmt, ..., "%%s %%[^%c]", 10);`.
 -   This bypasses the `write_file` -> `C Compiler` -> `Execution` escaping chain entirely for control characters.
+
+## 9. Strictly Deterministic Raw Syscall Architecture
+**Concept:** Replacement of all `_GNU_SOURCE` dependencies and glibc wrappers with internal assembly-based syscall thunks to eliminate hidden state (like vDSO) and ensure bit-for-bit repeatability across different glibc versions.
+
+**Math Principles:**
+-   **Direct Kernel Entry:** By bypassing glibc's `clock_gettime`, we eliminate the non-deterministic timing jitter introduced by the vDSO (virtual Dynamic Shared Object) layer.
+-   **Register-Preserving Thunks:** `tsfi_raw_clone` and `tsfi_raw_sched_setaffinity` use minimal assembly wrappers that guarantee no side effects on user registers, ensuring perfect execution manifold integrity.
+
+**Key Files:**
+-   `inc/tsfi_raw.h`: Defines `tsfi_cpu_set_t` and `static inline` assembly wrappers for syscalls 56 (clone), 203 (sched_setaffinity), 228 (clock_gettime), and 35 (nanosleep).
+-   `src/tsfi_elf_reflect.c`: Internal ELF parser providing `tsfi_raw_dladdr` to replace the GNU `dladdr` extension for provenance tracking.
+-   `Makefile`: Transitioned to `-D_POSIX_C_SOURCE=200809L` and `-std=c11`.
