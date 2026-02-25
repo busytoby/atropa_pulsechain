@@ -1,19 +1,19 @@
 # TSFi ZMM VM & TSFi Technology Notes
 
 ## 1. Wave512 ISA (Instruction Set Architecture)
-**Concept:** A 512-bit Wide Vector Architecture derived from AVX-512 but abstracted into a "Wave" metaphor.
+**Concept:** A pure 4096-bit Wide Vector Architecture. It is a standalone instruction set including native instructions such as `VADDPS` and `VMULPS`.
 **Math Principles:**
--   **SIMD Parallelism:** Operations apply to 16 floats (single precision) or 8 doubles/integers simultaneously. This exploits data parallelism.
--   **Lattice Math:** Used in `tsfi_scramble_wave512` (in `src/tsfi_opt_zmm.c`) for memory scrambling. This relies on high-dimensional vector mixing (Rotations, XORs) to create cryptographic diffusion/confusion at memory bandwidth speeds.
--   **Density Functions:** The "Neurology" aspect uses mass density accumulation (integrals over time/execution) to trigger state changes.
+-   **4096-bit SIMD Parallelism:** Operations apply to 128 floats (single precision) or 64 doubles/integers simultaneously.
+-   **Lattice Math:** Used in `tsfi_scramble_wave512` for cryptographic diffusion at memory bandwidth speeds.
+-   **Pure SIMD Logic:** The architecture enforces 4096-bit wide data paths for all neural state transitions.
 
-**Transition Status:** Moving into Firmware Standard Cells.
-The 32x512-bit register file and basic arithmetic (Add, Mul) are now modeled as combinatorial logic within `LauWireFirmware.v`. This shift establishes the ZMM as a first-class hardware manifold, allowing for strictly deterministic hardware-synced neural state transitions without reliance on non-bijective CPU register allocation.
+**Implementation Status:** Transitioning to Firmware.
+The register file and execution unit (ZMM) are being moved into the `LauWireFirmware` standard cells. This establishes Wave512 as a first-class hardware manifold, ensuring strictly deterministic execution independent of host CPU register allocation.
 
 **Key Files:**
--   `inc/tsfi_wave512.h`: Defines the `wave512` struct and maps high-level macros.
--   `src/firmware/LauWireFirmware.v`: RTL implementation of the Wavefront register file.
--   `src/tsfi_zmm_vm.c`: Interprets ASM into the firmware command bus.
+-   `inc/tsfi_wave512.h`: Defines the 4096-bit `wave512` register structure and ISA macros.
+-   `src/firmware/LauWireFirmware.v`: RTL implementation of the Wave512 execution manifold.
+-   `src/tsfi_zmm_vm.c`: Command bridge for the Wave512 ISA.
 
 ## 2. Lau Memory (Wired Memory System)
 **Concept:** A custom allocator that "wires" memory objects into a global registry, enabling introspection, provenance tracking, and zero-copy passing.
@@ -48,7 +48,7 @@ The 32x512-bit register file and basic arithmetic (Add, Mul) are now modeled as 
 -   `src/tsfi_opt_zmm.c`: Implements the feedback check and kernel pointer swap.
 
 ## 5. Lau Master Wavefront (Singular Command Channel)
-**Concept:** A unified dielectric manifold that supersedes dedicated log and command wavefronts. Established as the singular Host-to-Plugin command and data channel.
+**Concept:** A unified dielectric manifold that supersedes dedicated log and command wavefronts. Established as the singular Host-to-Plugin command and data channel for the Wave512 ISA.
 **Integration:** It serves as the primary transactional interface for the `LauWireFirmware`. Commands are issued via the Control Plane (`command_id`, `arg0`, `arg1`) and data flows through the zero-copy Data Plane (`stdin_log`, `stdout_log`).
 **Key Files:**
 -   `inc/lau_wire_mcp.h`: Defines the `LauMasterWavefront` structure.
