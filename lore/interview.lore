@@ -1,0 +1,63 @@
+#define _POSIX_C_SOURCE 200809L
+#include "tsfi_types.h"
+#include "tsfi_wiring.h"
+#include "lau_memory.h"
+#include "tsfi_cli.h"
+#include "tsfi_io.h"
+#include "tsfi_wire_firmware.h"
+#include "vulkan/vulkan_system.h"
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+#include <poll.h>
+#include <string.h>
+#include <time.h>
+
+#define TSFiFST(ws, cmd) tsfi_cli_process_line(ws, (char[]){cmd})
+
+int main(int argc, char **argv) {
+    (void)argc; (void)argv;
+    
+    // Initialize System
+    WaveSystem *ws = tsfi_create_system();
+    if (!ws) {
+        fprintf(stderr, "FATAL: System creation failed\n");
+        return 1;
+    }
+    LauWireFirmware *fw = (LauWireFirmware *)ws->fw;
+
+    if (fw && fw->cell_printf) fw->cell_printf(0, "--- SYSTEM-11: AUDITED (2026)---\n");
+    
+    // Initial Provenance Check (Loads Plugins)
+    if (ws->provenance) ws->provenance();
+
+    // Initial Epoch Phase (BEFORE Window Open)
+    if (ws->step_safety_epoch) ws->step_safety_epoch();
+
+    // First State Phase (Triggers Window Open via Directive)
+    if (ws->step_executor_directive) {
+        // Load the Vulkan Plugin explicitly via CLI logic
+        TSFiFST(ws, "LOAD plugins/tsfi_vulkan");
+
+        // Force the creation of the system here without hanging
+        TSFiFST(ws, "1.0 OPEN_WINDOW");
+
+        // Let the user see the window by running the epoch phase for 2 seconds
+        printf("[TEST] Window should be visible. Dispatching for 2 seconds...\n");
+        for (int i = 0; i < 200; i++) {
+            if (ws->step_safety_epoch) ws->step_safety_epoch();
+            struct timespec req = {0, 10000000}; // 10ms
+            nanosleep(&req, NULL);
+        }
+
+        // Close the window using the firmware directive
+        TSFiFST(ws, "1.0 CLOSE_WINDOW");
+    }
+    
+    if (fw && fw->cell_printf) fw->cell_printf(0, "SYSTEM_AT_REST_SUCCESS\n");
+    lau_final_cleanup(ws, -1);
+    
+    lau_report_memory_to_log(); // Persist metrics
+    lau_report_memory_metrics();
+    return 0;
+}
