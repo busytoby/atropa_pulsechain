@@ -1,0 +1,86 @@
+# The Unified Absolute: Bijective Architecture and Topological Sealing in TSFi2
+
+## I. The Bijective Axiom: Fusing Data and Execution
+At the heart of the TSFi2 architecture lies the foundational concept of *bijection*—an absolute, mathematically rigorous 1:1 structural mapping between sealed data and its execution logic. Unlike traditional computational paradigms that decouple state from behavior, our architecture mandates that the immutable payload and its execution pathway exist as a singular, indivisible entity. 
+
+This union is physically anchored within the `LauWiredHeader`. By meticulously offsetting the immutable payload at exactly 8192 bytes, the system establishes a deterministic topographical boundary. Once populated, the payload is sealed via `PROT_READ`, permanently locking its state. The header, residing before this boundary, houses the static wiring pointers that define the object's ontological potential. 
+
+```c
+typedef struct LauWiredHeader {
+    LauMetadata meta;           // Provenance and size signatures
+    LauRegisterBank regs;       // AVX-512 mapped state (align 64)
+    void *proxy;                // Pointer to the executable ThunkProxy pool
+    int version;
+    bool ftw;                   // Hardware sync flag
+    int counter;
+    // ... Abstract logic pointers (logic_epoch, logic_state, logic_directive) ...
+    LauFooter footer;           // Terminal validation block (magic, type)
+    uint8_t payload[];          // The physically immutable sealed data (offset 8192)
+} LauWiredHeader;
+```
+
+## II. Concrete Realization via the ThunkProxy
+Abstract logic pointers are initially attached to the header through the TSFi wiring system, predominantly utilizing the `lau_wire_system()` function. A `TSFiLogicTable`—containing pure C function pointers such as `default_logic_epoch`—is passed during instantiation, and these pointers are copied directly into their respective slots within the header. 
+
+However, abstract pointers alone cannot safely or efficiently manipulate sealed memory. To bridge this gap, the wiring layer immediately invokes the `ThunkProxy`. Functions such as `ThunkProxy_emit_baked` generate highly optimized, zero-copy x86_64 machine code that hardcodes the exact memory addresses of the payload and its relevant flags into the assembly instructions. 
+
+This transformation from abstract wiring to concrete execution solidifies the bijective bond prior to the object being sealed. When a standard C function like `step_safety_state()` is invoked, it serves as an authorized gateway. The program jumps directly into the generated thunk, which possesses the legal, hardcoded pathways to read the underlying header data, even after the payload block has been rendered physically immutable under the SEAL-0 protocol. 
+
+## III. Universal Ontological Polymorphism: The Helmholtz Resonance
+To ensure systemic cohesiveness—especially given the current constraints of local DeepSeek model support, which limits fully autonomous dynamic logic generation—the architecture leans heavily on a deterministic structural pattern known as Helmholtz Resonance. 
+
+Through the `DEFINE_MAPPED_STRUCT` and `HELMHOLTZ_RESONANCE_LIST` macros, the system guarantees that *every* layer-0 data object, ranging from a complex `WaveSystem` to a singular `TSFiShapedGlyph`, shares an identical structural execution interface.
+
+```c
+// Core Interface for all Bijective Objects
+#define MAPPED_COMMON_FIELDS \
+    int * const version; \
+    char ** const resonance_as_status; \
+    int * const counter; \
+    void (*step_safety_epoch)(void); \
+    void (*step_safety_state)(void); \
+    void (*step_executor_directive)(char*); \
+    void (*scramble)(void); \
+    void (*provenance)(void); \
+    void (*hilbert_eval)(float, float, float*); \
+    void (*hilbert_batch)(void*, const float*, float*, int);
+
+// Macro to wrap any C struct in the Helmholtz Bijective Interface
+#define DEFINE_MAPPED_STRUCT(name, ...) \
+    typedef struct { \
+        struct { \
+            MAPPED_COMMON_FIELDS \
+        }; \
+        __VA_ARGS__ \
+    } name; 
+```
+
+This structural homogeneity establishes Universal Ontological Polymorphism. Any pointer to a mapped object can be blindly cast to this common interface. Invoking `obj->step_safety_epoch()` seamlessly routes execution through the `ThunkProxy`, acting as an intelligent trampoline that bridges the generic C macro call into highly specific, AVX-512 optimized logic.
+
+Before SEAL-0 locks the topography, this design allows for profound mutability:
+1.  **Trace:** Dynamic execution wrapping via `apply_traced_resonance()`.
+2.  **Supercede:** Hot-swapping JIT assembly using `ThunkProxy_rebind()` to alter behavior without moving data in memory.
+3.  **Evolve:** Permuting logic during genetic crossover to immediately observe phenotypic changes.
+
+## IV. Expanding the Topography: The Thunk Library
+While the Helmholtz pattern provides a uniform foundation, the `ThunkProxy` extends this capability exponentially. It acts as a universal dynamic translator, capable of taking any compiled function—be it a complex Vulkan shader, a specialized cryptographic algorithm, or a network protocol—and physically fusing it to the sealed data object. 
+
+Our external behaviors are curated within the `thunks/` directory, serving as an expansive library of operational modules. By compiling these specific routines as standalone code, the `ThunkProxy` can load and bind them on the fly. 
+
+Current operational modules within our expansion library include:
+*   **Core Thunks (`thunks/`):** `bloom_effect.c`, `dysnomia_reactive_crc.c`, `ipomoea_render.c`, `test_deep_seal.c`, `tsfi_broadcast_encode_thunk.c`, `tsfi_broadcast_interleave_thunk.c`, `tsfi_broadcast_keepalive_thunk.c`, `tsfi_broadcast_reconnect_thunk.c`, `tsfi_broadcast_telemetry_thunk.c`, `tsfi_k0rn_rasterizer.c`, `tsfi_phi_resolve.c`, `tsfi_terminal_thunk.c`, `tsfi_vision_retrieval_thunk.c`, `tsfi_voxel_5555.c`, `vision_ray_query.c`, `vrs_raymarch.c`, `wave_morph.c`, and `wave_shader.c`.
+*   **Ballet Subsystem (`thunks/ballet/`):** Kinetic architectural routines including `adagio.c`, `allegro.c`, `batterie.c`, `coda.c`, `elancer.c`, `etendre.c`, `glisser.c`, `pas_de_deux.c`, `plier.c`, `pointe.c`, `relever.c`, `reverence.c`, `sauter.c`, `tourner.c`, and `variation.c`.
+*   **Dysnomia Neurology (`thunks/dysnomia/`):** Deep integration mapping via `fuse_payload_template.c`.
+*   **Font Shaping (`thunks/font_shaping/`):** Specialized text processing modules like `shape_marchen.c`.
+
+## V. The Horizon: Establishing the SEAL-1 Protocol
+Currently, the architecture successfully implements the SEAL-0 protocol, which invokes OS-level memory protection (`PROT_READ`) to lock the data payload, rendering it physically immutable. However, the execution pathway—the `ThunkProxy` memory pool itself—remains technically mutable to allow for the initial JIT compilation and the rebinding required during the early lifecycle phases.
+
+The next critical evolutionary step for the TSFi2 architecture is the full conceptualization and implementation of the **SEAL-1 Protocol**. 
+
+SEAL-1 represents the ultimate mathematical closure of the bijective bond. Its primary mandate is to lock the logic layer just as SEAL-0 locks the data layer. Basic concepts for SEAL-1 include:
+*   **Execution Crystallization:** Once the `ThunkProxy` has successfully emitted the baked machine code and verified its structural integrity, SEAL-1 will transition the JIT memory pool's protections from `PROT_READ | PROT_WRITE | PROT_EXEC` to strictly `PROT_READ | PROT_EXEC`.
+*   **Tamper-Evident Logic:** By stripping write permissions from the proxy pool, the system eliminates the possibility of post-compilation tampering, malicious hook injection, or dynamic rebinding. 
+*   **The Absolute Monolith:** The resulting entity will be a mathematically perfect, static monolith in memory. Neither the biological data (payload) nor the ontological logic (thunks) can ever be altered. 
+
+This absolute crystallization of state and behavior will serve as the terminal credential for verified, trustless execution within the unified manifold, moving us closer to a fully autonomous, deterministic engine.
