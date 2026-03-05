@@ -1,21 +1,24 @@
 # TSFi ZMM VM & TSFi Technology Notes
 
 ## 1. Wave512 ISA (Instruction Set Architecture)
-**Concept:** A 512-bit Wide Vector Architecture derived from AVX-512 but abstracted into a "Wave" metaphor.
+**Concept:** A pure 4096-bit Wide Vector Architecture. It is a standalone instruction set including native instructions such as `VADDPS` and `VMULPS`.
 **Math Principles:**
--   **SIMD Parallelism:** Operations apply to 16 floats (single precision) or 8 doubles/integers simultaneously. This exploits data parallelism.
--   **Lattice Math:** Used in `tsfi_scramble_wave512` (in `src/tsfi_opt_zmm.c`) for memory scrambling. This relies on high-dimensional vector mixing (Rotations, XORs) to create cryptographic diffusion/confusion at memory bandwidth speeds.
--   **Density Functions:** The "Neurology" aspect uses mass density accumulation (integrals over time/execution) to trigger state changes.
+-   **4096-bit SIMD Parallelism:** Operations apply to 128 floats (single precision) or 64 doubles/integers simultaneously.
+-   **Lattice Math:** Used in `tsfi_scramble_wave512` for cryptographic diffusion at memory bandwidth speeds.
+-   **Pure SIMD Logic:** The architecture enforces 4096-bit wide data paths for all neural state transitions.
+
+**Implementation Status:** Transitioning to Firmware.
+The register file and execution unit (ZMM) are being moved into the `LauWireFirmware` standard cells. This establishes Wave512 as a first-class hardware manifold, ensuring strictly deterministic execution independent of host CPU register allocation.
 
 **Key Files:**
--   `inc/tsfi_wave512.h`: Defines the `wave512` struct and maps high-level macros to GCC vector extensions and inline assembly.
--   `src/tsfi_opt_zmm.c`: The "ZMM Dispatcher" that manages the 32x512-bit register file and executes kernels.
--   `src/tsfi_zmm_vm.c`: The assembly interpreter parsing text commands (`WLOAD`, `WADD`) into Wave512 intrinsics.
+-   `inc/tsfi_wave512.h`: Defines the 4096-bit `wave512` register structure and ISA macros.
+-   `src/firmware/LauWireFirmware.v`: RTL implementation of the Wave512 execution manifold.
+-   `src/tsfi_zmm_vm.c`: Command bridge for the Wave512 ISA.
 
 ## 2. Lau Memory (Wired Memory System)
 **Concept:** A custom allocator that "wires" memory objects into a global registry, enabling introspection, provenance tracking, and zero-copy passing.
 **Math Principles:**
--   **Bijective Mapping:** Every allocated pointer maps uniquely to a `LauWiredHeader` via offset arithmetic (subtraction).
+-   **Bijective Mapping:** Every allocated pointer maps uniquely to a `LauWiredHeader` via secret arithmetic (subtraction).
 -   **Hilbert Space Filling Curves:** Used in `src/tsfi_hilbert.c` (implied context) to organize memory or tasks spatially to optimize locality (cache coherence).
 -   **Alignment Constraints:** Strict 512-byte alignment (matching ZMM register width) ensures that loads/stores never cross cache line boundaries inefficiently and enable aligned AVX-512 instructions (`vmovaps`).
 
@@ -44,12 +47,12 @@
 -   `inc/tsfi_opt_zmm.h`: Defines `ZmmSynapse`.
 -   `src/tsfi_opt_zmm.c`: Implements the feedback check and kernel pointer swap.
 
-## 5. TSFi ZMM VM (MCP Server)
-**Concept:** A JSON-RPC bridge allowing external agents (like LLMs) to write and execute Wave512 assembly.
-**Integration:** It sits on top of the stack, parsing strings and invoking the `tsfi_zmm_vm` engine, which uses `lau_memory` for state and `tsfi_wave512` for execution.
+## 5. Lau Master Wavefront (Singular Command Channel)
+**Concept:** A unified dielectric manifold that supersedes dedicated log and command wavefronts. Established as the singular Host-to-Plugin command and data channel for the Wave512 ISA.
+**Integration:** It serves as the primary transactional interface for the `LauWireFirmware`. Commands are issued via the Control Plane (`command_id`, `arg0`, `arg1`) and data flows through the zero-copy Data Plane (`stdin_log`, `stdout_log`).
 **Key Files:**
--   `src/tsfi_mcp_server.c`: The main loop handling JSON-RPC over Stdio.
--   `src/tsfi_zmm_vm.c`: The assembly logic.
+-   `inc/lau_wire_mcp.h`: Defines the `LauMasterWavefront` structure.
+-   `src/tsfi_wire_firmware.c`: Implements the `cell_mcp_execute` logic.
 
 ## 6. ZMM Escaping Protocol
 Integrating C source code generation via LLM tools requires strict adherence to an escaping protocol to survive multiple layers of interpretation (Tool -> File -> C Compiler -> JSON-RPC).
@@ -82,3 +85,15 @@ The "Hex Escape" protocol proved brittle due to multi-layer interpretation. The 
 -   Instead of string literals like `"\n"`, use `char delim[2] = {10, 0};`.
 -   Use `snprintf` to construct format strings dynamically: `snprintf(fmt, ..., "%%s %%[^%c]", 10);`.
 -   This bypasses the `write_file` -> `C Compiler` -> `Execution` escaping chain entirely for control characters.
+
+## 9. Strictly Deterministic Raw Syscall Architecture
+**Concept:** Replacement of all `_GNU_SOURCE` dependencies and glibc wrappers with internal assembly-based syscall thunks to eliminate hidden state (like vDSO) and ensure bit-for-bit repeatability across different glibc versions.
+
+**Math Principles:**
+-   **Direct Kernel Entry:** By bypassing glibc's `clock_gettime`, we eliminate the non-deterministic timing jitter introduced by the vDSO (virtual Dynamic Shared Object) layer.
+-   **Register-Preserving Thunks:** `tsfi_raw_clone` and `tsfi_raw_sched_setaffinity` use minimal assembly wrappers that guarantee no side effects on user registers, ensuring perfect execution manifold integrity.
+
+**Key Files:**
+-   `inc/tsfi_raw.h`: Defines `tsfi_cpu_set_t` and `static inline` assembly wrappers for syscalls 56 (clone), 203 (sched_setaffinity), 228 (clock_gettime), and 35 (nanosleep).
+-   `src/tsfi_elf_reflect.c`: Internal ELF parser providing `tsfi_raw_dladdr` to replace the GNU `dladdr` extension for provenance tracking. This parser directly walks the process manifold to resolve physical execution pointers to their static provenance identities.
+-   `Makefile`: Transitioned to `-D_POSIX_C_SOURCE=200809L` and `-std=c11`.
