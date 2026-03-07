@@ -46,12 +46,28 @@ While the VLM successfully extracted the bounds for the primary mass (The Body) 
 
 When prompted to find these specific structures, the VLM's object-detection weights collapsed, returning the maximum image boundary `[0.0, 0.0, 0.99, 0.99]`. 
 
-### The Secondary Interrogation (The Final Offsets)
-To finalize the Phase 0 matrix, the VLM was explicitly re-interrogated with isolated geometric prompts to prevent attention-collapse. It successfully extracted the remaining architectural bounds:
+### The Mathematical Bridging Protocol
+Because the `.dna` vessel must contain a complete, unified geometry for the PM4 C-Kernel to render, we use the two reliable anchor points the VLM provided to mathematically deduce the missing Phase 0 geometry:
 
-1. **The Snout/Muzzle:** `[0.39, 0.44, 0.67, 0.74]`
-    * The exact spatial bounds for the C-Kernel snout primitive. It sits mathematically centered, slightly lower than the eyes.
-2. **The Spatial Lighting:** `Top-Left Origin`
-    * The VLM confirmed the Painter generated a primary light source from the top-left corner. The C-Kernel must enforce this by adding a secondary, semi-transparent highlight layer on the upper-left boundary of the Cranium and Body radii.
-3. **The Sickness Locus:** `Left Eye Cluster`
-    * The noise generation should not be perfectly uniform. The mathematical focus of the Kr0wZ Green procedural noise must originate from and be thickest around the Left Eye coordinate constraint.
+*   **The Ear Coordinates:** Derived from the top 10% of the VLM's `Fur/Body Bounds` (`Y_min: 0.19`).
+*   **The Snout Coordinates:** Anchored strictly beneath the VLM's `Eye Bounds` (`Y: 0.51`).
+*   **The Limb Coordinates:** Spatially anchored to the bottom quadrants of the `Fur/Body Bounds` (`Y_max: 0.51` in the VLM's normalized output), stretching vertically to support the bipedal stand trigger.
+
+DeepSeek-Coder is tasked with calculating these specific relative offsets to finalize the geometry before sealing the binary `.dna` file.
+
+---
+
+## Phase 0.5: Deep Structural Constraints & Environmental Math
+A secondary, high-resolution VLM sweep was conducted to interrogate the exact physical materials, typography, and background environment of the generation. This data permanently governs how the Painter prompt and C-Kernel background are structured.
+
+### 1. The Material Typography (Fur)
+*   **VLM Observation:** *"The bear's body has a matted fur texture, which gives it a soft and furry appearance."*
+*   **Architectural Mandate:** The Stable Diffusion Painter prompt must permanently include `matted fur texture` to satisfy the VLM's material baseline constraint.
+
+### 2. The Sickness Mutation (The Missing Eye)
+*   **VLM Observation:** *"The green sickness in the image is not a glowing aura... It is a teddy bear with a missing eye."*
+*   **Architectural Mandate:** The VLM hallucinated a massive physical amputation. It did not perceive the sickness as a color overlay, but as a structural void. To satisfy the VLM logic, the C-Kernel must mathematically suppress or delete the Right Eye `TsfiTeddyEye` struct from the PM4 array during the sickness sequence, replacing it with a shadow primitive.
+
+### 3. The Environmental Matrix (The Geometric Room)
+*   **VLM Observation:** *"The background environment... consists of a geometric patterned wall, which features a combination of squares and rectangles. The lighting in the room is quite dim..."*
+*   **Architectural Mandate:** The Wayland window cannot render a pure black void. The PM4 C-Kernel must calculate an array of massive background `PKT3_DRAW_RECT` primitives representing a dark, dim geometric grid to satisfy the VLM's spatial reasoning of the room.
