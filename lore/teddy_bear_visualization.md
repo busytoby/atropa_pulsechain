@@ -9,17 +9,32 @@ The generation of the Sovereign Choreography relies on an Ahead-Of-Time (AOT) ne
 
 ---
 
+## Phase 0: The Primary Offset Matrix
+The defining architectural law of the TSFi pipeline is that we must **get all the offsets first**. 
+
+Before a single pixel is painted by Stable Diffusion or critiqued by the VLM, the absolute mathematical boundaries of the entity must be mapped and frozen. If the geometry is allowed to float, the neural models will experience catastrophic anatomical drift.
+
+We execute this by establishing a rigid hierarchy of relative offsets tied to the main body anchor:
+1.  **The Origin Anchor:** The center of the primary body mass `(X: 512, Y: 875)` becomes the absolute reference point for all other geometry.
+2.  **Cranial Offset:** Calculated relative to the body mass (e.g. `Y - 475`).
+3.  **Auditory Offsets (Ears):** Calculated relative to the Cranium (`Cranial_X ± 150`, `Cranial_Y - 150`).
+4.  **Locus Offsets (Eyes):** Calculated relative to the Cranium (`Cranial_X ± 40`, `Cranial_Y`).
+
+By mathematically locking this entire hierarchy of offsets *first*, we guarantee that when the bipedal stand and walk-cycle triggers, the entire entity moves as a single, structurally unified mass without the limbs detaching from the torso. The AI models are no longer guessing where the bear is; they are strictly obeying the Phase 0 Offset Matrix.
+
+---
+
 ## The Moondream Hallucination & Bounding Box Discovery
 During the initial AOT sequence, the Moondream Vision-Language Model was commanded to extract the precise RGB Hex codes and sickness percentages from the photorealistic reference frame. 
 
 **The VLM Output:**
-> *"The exact RGB hex color of its fur is `[0.19, 0.13, 0.51, 0.49]` and the exact RGB hex color of its eyes is `[0.26, 0.41, 0.51, 0.52]`... The exact percentage of the body covered in sickness is `[0.19, 0.13, 0.51, 0.49]`..."*
+> *"The exact RGB hex color of its fur is `[0.19, 0.13, 0.51, 0.49]` and the exact RGB hex color of its eyes is `[0.26, 0.41, 0.51, 0.52]`..."*
 
 ### The Neural Accident
 Moondream mathematically failed the color request. Instead of hex codes, the neural network collapsed into its foundational object-detection training matrix. It outputted strict normalized spatial bounding boxes in the format `[Y_min, X_min, Y_max, X_max]`.
 
 ### The Geometric Application
-This hallucination is an architectural breakthrough. Rather than arbitrarily guessing the radii of the PM4 circles (`head_radius = 200`), we can feed these VLM bounding boxes directly into DeepSeek to mathematically derive the exact anatomical proportions of the C-structs.
+This hallucination is an architectural breakthrough. Rather than arbitrarily guessing the radii of the PM4 circles (`head_radius = 200`), we feed these VLM bounding boxes directly into DeepSeek to mathematically derive the exact anatomical proportions for the Phase 0 Offsets.
 
 *   **Fur/Body Bounds:** `[0.19, 0.13, 0.51, 0.49]`
     *   The body natively occupies the frame between 13% and 49% on the X-axis, and 19% to 51% on the Y-axis.
@@ -27,20 +42,16 @@ This hallucination is an architectural breakthrough. Rather than arbitrarily gue
     *   The eyes sit precisely between 41% and 52% on the horizontal plane.
 
 ## The Incomplete Anatomy & Missing Geometry
-While the VLM successfully extracted the bounds for the primary mass (The Body) and the locus of observation (The Eyes), it fundamentally failed to map the complete biological structure of the bear.
-
-The VLM entirely omitted:
-1. **The Ears**
-2. **The Snout/Muzzle**
-3. **The Limbs (Arms and Legs)**
+While the VLM successfully extracted the bounds for the primary mass (The Body) and the locus of observation (The Eyes), it fundamentally failed to map the complete biological structure of the bear (omitting Ears, Muzzle, and Limbs).
 
 When prompted to find these specific structures, the VLM's object-detection weights collapsed, returning the maximum image boundary `[0.0, 0.0, 0.99, 0.99]`. 
 
-### The Mathematical Bridging Protocol
-Because the `.dna` vessel must contain a complete, unified geometry for the PM4 C-Kernel to render, we cannot leave the anatomy fractured. We must use the two reliable anchor points the VLM provided to mathematically deduce the missing geometry:
+### The Secondary Interrogation (The Final Offsets)
+To finalize the Phase 0 matrix, the VLM was explicitly re-interrogated with isolated geometric prompts to prevent attention-collapse. It successfully extracted the remaining architectural bounds:
 
-*   **The Ear Coordinates:** Derived from the top 10% of the VLM's `Fur/Body Bounds` (`Y_min: 0.19`). We offset the `head_radius` by 45 degrees left and right to anchor the ears at `X: 362` and `X: 662`.
-*   **The Snout Coordinates:** Anchored strictly beneath the VLM's `Eye Bounds` (`Y: 0.51`). It must form an intersecting oval bridging the Cranium and the Torso.
-*   **The Limb Coordinates:** Spatially anchored to the bottom quadrants of the `Fur/Body Bounds` (`Y_max: 0.51` in the VLM's normalized output), stretching vertically to support the bipedal stand trigger at Frame 9,900.
-
-DeepSeek-Coder is tasked with calculating these specific relative offsets to finalize the geometry before sealing the binary `.dna` file.
+1. **The Snout/Muzzle:** `[0.39, 0.44, 0.67, 0.74]`
+    * The exact spatial bounds for the C-Kernel snout primitive. It sits mathematically centered, slightly lower than the eyes.
+2. **The Spatial Lighting:** `Top-Left Origin`
+    * The VLM confirmed the Painter generated a primary light source from the top-left corner. The C-Kernel must enforce this by adding a secondary, semi-transparent highlight layer on the upper-left boundary of the Cranium and Body radii.
+3. **The Sickness Locus:** `Left Eye Cluster`
+    * The noise generation should not be perfectly uniform. The mathematical focus of the Kr0wZ Green procedural noise must originate from and be thickest around the Left Eye coordinate constraint.
