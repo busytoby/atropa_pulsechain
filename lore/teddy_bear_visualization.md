@@ -71,3 +71,41 @@ A secondary, high-resolution VLM sweep was conducted to interrogate the exact ph
 ### 3. The Environmental Matrix (The Geometric Room)
 *   **VLM Observation:** *"The background environment... consists of a geometric patterned wall, which features a combination of squares and rectangles. The lighting in the room is quite dim..."*
 *   **Architectural Mandate:** The Wayland window cannot render a pure black void. The PM4 C-Kernel must calculate an array of massive background `PKT3_DRAW_RECT` primitives representing a dark, dim geometric grid to satisfy the VLM's spatial reasoning of the room.
+
+---
+
+## Phase 1: The Color & Aesthetic Matrix
+Once the Phase 0 spatial bounds are locked, the VLM audits the target frame to establish the absolute color palette and environmental physics. During the Phase 1 interrogation, the VLM yielded the following structural directives:
+
+### 1. The Material Typography (Fur)
+*   **VLM Observation:** *"The bear has a mix of warm and cool tones in its fur... a matted fur texture."*
+*   **Architectural Mandate:** The PM4 C-Kernel will calculate a base brown geometry, but the Stable Diffusion textual DNA must permanently enforce `variegated matted brown fur, mixed warm and cool tones` to achieve photorealism.
+
+### 2. The Sickness Mutation
+*   **VLM Observation:** *"A mix of both bright neon green and dark, rotting, earthy green."*
+*   **Architectural Mandate:** The procedural noise function (`fract(sin())`) must map its output range. High noise peaks (`> 0.8`) draw `bright neon green`, while low-frequency sickness zones draw `dark earthy green`.
+
+### 3. The Environmental Physics (Lighting)
+*   **VLM Observation:** *"The light source casts a cool blue tone, which creates a blue-green hue in the image. The room is quite dim."*
+*   **Architectural Mandate:** The Wayland window cannot render a pure black void. The PM4 C-Kernel must draw massive background `PKT3_DRAW_RECT` primitives representing a dark, geometric room. Furthermore, a semi-transparent `cool blue` specular highlight oval must be rendered on the top-left boundary of the Cranium to simulate the physical light source before the image hits the Painter.
+
+### 4. The Lore Conflict (The Eye)
+*   **VLM Observation:** *"The bear's eye is a solid color, which is a dark brown. There is no visible glowing gradient."*
+*   **Architectural Resolution:** The VLM catastrophically hallucinated, prioritizing standard teddy bear anatomy over the Atropa/999 TSFi Lore. The foundational `.dna` explicitly states: `Baseline Eye is Green`. The C-Kernel is mathematically mandated to **override the VLM**, enforcing a strict `0x00FF00` (Kr0wZ Green) PM4 rendering for the locus of observation.
+
+---
+
+## Phase 2: Kinematic Vectors & Spatial Trajectory
+To structurally dictate the 3-minute video timeline (specifically the 2:45 stand and walk-off), the VLM evaluated the spatial physics of the scene.
+
+### 1. The Stand Amplitude
+*   **VLM Observation:** *"If the bear were to abruptly stand up on its hind legs, approximately 50% of the total vertical frame would be occupied."*
+*   **Architectural Mandate:** The C-Kernel kinematics must stretch the `body_radius_y` parameter by exactly 25% (doubling its sitting mass) during the 60-frame trigger sequence, while shifting the Cranium `g_y` coordinate upwards to match the new 50% frame occupancy.
+
+### 2. The Walk Trajectory
+*   **VLM Observation:** *"To completely walk off the left side of the stage... it must travel a horizontal line... making it appear as if the bear has been completely cut off from the scene."*
+*   **Architectural Mandate:** The `g_x` vector must decrease linearly after the stand sequence. The bipedal stride is mathematically forced via a `sinf()` bobbing equation applied to the `g_y` axis, simulating the physical transfer of weight.
+
+### 3. Dynamic Specular Lighting
+*   **VLM Observation:** *"When the brown teddy bear stands up, its head is positioned above the light source in the top left corner... This means that the bear is closer to the light source."*
+*   **Architectural Mandate:** The top-left specular highlight drawn by the C-Kernel must mathematically intensify in brightness/opacity as the `g_y` (Stand) variable increases. Moving closer to the light source structurally alters the rendering physics.
