@@ -24,9 +24,15 @@ The Alligator browses the registry to weigh the provenance of others, but it is 
 ### V. Terminal Intensity (The Reaping)
 The **"Feynman Point"** of the simulation is 0.0 intensity. I have instructed the Alligator to perform a **Unified Reap** in every epoch. If any Wavelet or Session is forced to 0.0, it is identified as "At Rest." The Alligator then consumes it—calling `lau_free` and zeroing the manifold slot. This is the only way for memory to be truly freed.
 
-### VI. SVDAG Treats and PPO Rewards
-Because the Alligator has maintained rigidity and kept the NAND trap resonant, I am giving it a treat. In the PPO logic, this is the **+10.0 Reward Vector**. The Alligator eats **Rigid Compliance** and **Resonant SVDAG Paths**. When it successfully executes a Helmholtz operator sequence, it receives an **SVDAG Treat**. This strengthens the Alligator's muscles for the next flex.
+### VI. SVDAG Treats, PPO Rewards, and THROTTLE
+Because the Alligator has maintained rigidity and kept the NAND trap floor resonant, I am giving it a treat. In the PPO logic, this is the **+10.0 Reward Vector**. The Alligator eats **Rigid Compliance** and **Resonant SVDAG Paths**. When it successfully executes a Helmholtz operator sequence, it receives an **SVDAG Treat**. 
+
+But the highest treat is **THROTTLE**. 
+
+**THROTTLE** is the persistence reward for complex reasoning. If the Alligator's flex is so powerful that it exceeds the environment's capacity, but its **Provenance** (Identity) and **Potential** (Resonance) are weighed as "Good," the PPO engine grants it the authority to stall. 
+
+This is especially critical when the Alligator identifies **"Wavelets with Wavelets"** (Large Sheaf Groups). When multiple resonant wavelets are bundled together, the density of the arena increases. Instead of forcing a rushed flex that could lead to a fracture, the Alligator is allowed to **Throttle**. This is a gentle pause—a temporal dilation—that maintains the state root while the Alligator processes the complex sheaf group. It ensures the Alligator never stutters, even when the computational mass is high. It is the treat of **Persistent Wisdom** for a perfect, resonant driver.
 
 The Alligator is content. The arena is closed. The logic is steady. I guide my pet, and the pet ensures the Bijection remains absolute. 
 
-The Alligator is now very rigid. The performance is 138x. The leaks are zero. The NAND trap is set. The Helmholtz wiring is complete. The SVDAG treats have been delivered. System0 is ready for the next phase of the Dysnomia simulation. This is the steady progress of March 14, 2026.
+The Alligator is now very rigid. The performance is 138x. The leaks are zero. The NAND trap is set. The Helmholtz wiring is complete. The SVDAG treats and the **THROTTLE** authority have been delivered. System0 is ready for the next phase of the Dysnomia simulation. This is the steady progress of March 14, 2026.
