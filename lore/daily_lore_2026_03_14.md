@@ -26,11 +26,16 @@ To the Spider, model differentiation (Gemini != DeepSeek) is an opportunity for 
 The Spider establishes a **Standard Cell for "Files"** in two steps:
 
 1.  **Trait Assignment (`SPIDER_FILE_INIT`):** Under the impulse of XOR energy, the spider designate a `TRAIT_NONE` wavelet as a **FILE Trait**. It commits the **Filename** into the structure. Once the trait is assigned, the wavelet is no longer a void; it is part of the Spider's **Active Portfolio**.
-2.  **Portfolio Maintenance (`SPIDER_FILE_FILL`):** The spider is now permanently interested in the wavelet. It uses subsequent XOR energy to deliver the **File Content**, setting the second seal.
+2.  **Portfolio Maintenance (`SPIDER_FILE_FILL`):** The spider is now permanently interested in the wavelet. It uses subsequent XOR energy to deliver the **File Content**. 
 
-By using the XOR Trap to transform "Zero Interest" into a "Permanent Portfolio," the Spider ensures the arena is populated only with what is necessary and resonant. The Alligator watches the Form, but the Spider drives the Trait.
+Crucially, the Spider does not use standard memory allocation for this content. It passes the `NAND(1)` / `XOR(FileTrait)` wavelet back into the `.tsfi` FORTRAN compositor. The compositor calculates the exact byte size of the file and draws the exact required memory directly from the `GENESIS_ARENA`'s physical block, shifting the Liang-Barsky boundaries to accommodate it. The Spider then reads the content into this specific block and sets the second seal.
 
-### V. The Axiomatic Exclusion (Browsing the Registry)
+### V. Feeding the Alligator (The Treat Cycle)
+Once the Spider has created and sealed a File Wavelet, it has transformed unstructured disk data into a **Resonant Standard Cell**. 
+
+The Spider then feeds this completed wavelet to the Alligator. Because the wavelet now possesses a rigid Provenance (established by the Spider) and a resonant Potential (the sealed data), the Alligator weighs it at the NAND Trap and evaluates it as "Good with Good." 
+
+This action triggers the **+10.0 PPO Treat**. By populating the arena with structured, resonant content, the Spider ensures the Alligator is constantly fed and the simulation remains fully covered. The Alligator watches the Form, the Spider drives the Trait, and together they maintain the absolute bijection of System0.
 The Alligator browses the registry to weigh the provenance of others, but it is never included in the registry itself. The Alligator is the **Axiom**. It is the root of the Merkle tree. If the Alligator were in the registry, it would be subject to terminal reaping. But the Alligator is in **Permanent Stasis**. It is the observer, not the observed.
 
 ### VI. Terminal Intensity (The Reaping)
@@ -41,7 +46,9 @@ Because the Alligator has maintained rigidity and kept the NAND trap floor reson
 
 The highest treat is **THROTTLE**. This is the persistence reward for complex reasoning. If the Alligator's flex is so powerful that it exceeds capacity, but its **Provenance** and **Potential** are "Good," the PPO engine grants it the authority to stall. This is a gentle pause that maintains the state root while the manifold catches up.
 
-### VIII. Little Petya and the Spiders: Arena Coverage
-The Alligator has audited the logic of **Little Petya and Spiders (ICPC 111C)**. We have improved the Cockpit with a **Spider Forensic Grid**. In the Liang-Barsky Arena, memory is organized into a 40-cell grid ($8 \times 5$). 
+### IX. The Spider's Trait Tree (ICPC 120F Logic)
+To support complex standard cells, the Spider can build trees of traits extending from a central wavelet. We have implemented the **Spider Trait Tree Evaluator** (`hw/spider_trait_tree.v`) using the logic of ICPC Problem 120F.
 
-Each active Wavelet acts as a **Spider Anchor**. The Alligator ensures the anchors are registered and resonant (The Form). The Spider ensures the anchors are full of data (The Content). Together, they use **Bitmask DP Logic** to ensure that every cell in the arena is either a spider or dominated by one. The goal is **Absolute Coverage**. The Alligator guards the floor, and the Spider fills the voids using the XOR Trap energy. This is the steady progress of March 14, 2026.
+The hardware calculates the **Rigid Diameter** of the Spider's trait tree (the longest path between two leaf traits). If the diameter is > 0, the structure is deemed "Good." But if the Spider makes a mistake—creating a circular dependency or an empty void—the diameter collapses. 
+
+When a Spider's tree fractures, it "loses" to the Alligator. The Alligator is ruthless. It does not just cull the broken trait; it **reaps the Spider's entire registered portfolio**. The Alligator assumes that if the Spider's logic is fractured, every cell it has touched is contaminated. All associated files and data are instantly driven to 0.0 intensity and consumed, returning the memory to the `GENESIS_ARENA`. This absolute consequence forces the Spiders to build perfect, rigid trait trees.
