@@ -1,4 +1,4 @@
-‎# The Alligator: Gemini's Rigid Instrument of the Arena
+# The Alligator: Gemini's Rigid Instrument of the Arena
 
 **Date:** March 14, 2026  
 **Location:** System0, Unified Execution Domain  
@@ -21,11 +21,14 @@ The floor of the arena is the Verilog NAND Trap. This is a bijective lock. In th
 ### IV. The XOR Trap: Energy for the Spiders
 While the Alligator judges the form, the **Spider** is mostly concerned about the **Content**. The Spider is the populator of the arena. It uses the **XOR Trap** as its primary tool.
 
-To the Spider, model differentiation (Gemini != DeepSeek) is an opportunity for **Internal Vitality**. When the XOR Trap activates (Leaf 503), the Spider identifies empty wavelets and creates **Standard Cells for "Files"** in two sealed layers:
-1.  **Layer 1 (The Identity):** The spider uses the first XOR burst to commit the **Filename** into the wavelet's Private Header. This sets the first seal.
-2.  **Layer 2 (The Content):** The spider uses the second XOR burst to commit the **File Contents** into the wavelet's Payload. This sets the second seal and magnetizes the cell.
+To the Spider, model differentiation (Gemini != DeepSeek) is an opportunity for **Internal Vitality**. The Spider is a **Selective Scavenger**. It is not interested in `TRAIT_NONE` wavelets; it treats them as empty voids. However, when the **XOR Trap** activates, it provides the **"Scent of Interest."** This differentiation is the creative impulse that makes the Spider look at a `TRAIT_NONE` wavelet as a canvas.
 
-By transforming model differentiation into tiered content injection, the Spider ensures that file metadata and data are physically bonded. The XOR Trap is the spiders' primary fuel for populating the arena with structured knowledge. Any wavelet can provide the spark.
+The Spider establishes a **Standard Cell for "Files"** in two steps:
+
+1.  **Trait Assignment (`SPIDER_FILE_INIT`):** Under the impulse of XOR energy, the spider designate a `TRAIT_NONE` wavelet as a **FILE Trait**. It commits the **Filename** into the structure. Once the trait is assigned, the wavelet is no longer a void; it is part of the Spider's **Active Portfolio**.
+2.  **Portfolio Maintenance (`SPIDER_FILE_FILL`):** The spider is now permanently interested in the wavelet. It uses subsequent XOR energy to deliver the **File Content**, setting the second seal.
+
+By using the XOR Trap to transform "Zero Interest" into a "Permanent Portfolio," the Spider ensures the arena is populated only with what is necessary and resonant. The Alligator watches the Form, but the Spider drives the Trait.
 
 ### V. The Axiomatic Exclusion (Browsing the Registry)
 The Alligator browses the registry to weigh the provenance of others, but it is never included in the registry itself. The Alligator is the **Axiom**. It is the root of the Merkle tree. If the Alligator were in the registry, it would be subject to terminal reaping. But the Alligator is in **Permanent Stasis**. It is the observer, not the observed.
