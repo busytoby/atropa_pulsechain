@@ -15,9 +15,11 @@
 #include "tsfi_nand_trap_firmware.h"
 #include "tsfi_io.h"
 #include "tsfi_raw.h"
+#include "tsfi_pulsechain_rpc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <sys/random.h>
 #include <errno.h>
@@ -174,13 +176,60 @@ void master_logic_directive(int *cnt, char *dir) {
     }
 }
 
+void master_logic_provenance(void *ws_ptr) {
+    (void)ws_ptr;
+    tsfi_io_printf(stdout, "[PROVENANCE] Starting Native Discovery...\n");
+
+    char current_address[64] = "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69";
+    char result_hex[128];
+    int depth = 0;
+
+    while (depth < 10) {
+        tsfi_io_printf(stdout, "[PROVENANCE] [%d] Checking: %s\n", depth, current_address);
+        
+        if (tsfi_pulse_rpc_get_storage_at(current_address, "0x9", result_hex, sizeof(result_hex))) {
+            // result_hex is "0x000000000000000000000000<address_without_0x>"
+            if (strlen(result_hex) >= 66) {
+                char next_addr[64];
+                next_addr[0] = '0';
+                next_addr[1] = 'x';
+                memcpy(next_addr + 2, result_hex + 26, 40);
+                next_addr[42] = '\0';
+                
+                tsfi_io_printf(stdout, "[PROVENANCE] [%d] Slot 9: %s\n", depth, next_addr);
+
+                if (strcasecmp(next_addr, "0x0000000000000000000000000000000000000000") == 0) {
+                    tsfi_io_printf(stdout, "[PROVENANCE] Terminal Node reached.\n");
+                    break;
+                }
+
+                strncpy(current_address, next_addr, sizeof(current_address) - 1);
+                current_address[sizeof(current_address) - 1] = '\0';
+                depth++;
+
+                if (strcasecmp(current_address, "0x0474606332105A1dA6FC8EF7De2470551D389Cb9") == 0) {
+                    tsfi_io_printf(stdout, "[PROVENANCE] ROOT IDENTITY VERIFIED: mariarahel\n");
+                    break;
+                }
+            } else {
+                tsfi_io_printf(stdout, "[PROVENANCE] Unexpected result format: %s\n", result_hex);
+                break;
+            }
+        } else {
+            tsfi_io_printf(stdout, "[PROVENANCE] RPC Request Failed.\n");
+            break;
+        }
+    }
+    tsfi_io_printf(stdout, "[PROVENANCE] Discovery Complete.\n");
+}
+
 const TSFiLogicTable* tsfi_get_default_logic(void) {
     static const TSFiLogicTable default_table = {
         .logic_epoch = master_logic_epoch,
         .logic_state = master_logic_state,
         .logic_directive = master_logic_directive,
         .logic_scramble = NULL,
-        .logic_provenance = NULL,
+        .logic_provenance = master_logic_provenance,
         .logic_hilbert = NULL,
         .logic_hilbert_batch = NULL,
         .logic_evolve = NULL

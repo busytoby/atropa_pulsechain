@@ -11,6 +11,7 @@ void master_logic_epoch(int *ver);
 bool master_logic_state(void *obj);
 void master_logic_directive(int *cnt, char *dir);
 void master_logic_scramble(void *ws_ptr);
+void master_logic_provenance(void *ws_ptr);
 
 // Chained Logic Accessors
 void chained_logic_directive(int *cnt, char *dir);

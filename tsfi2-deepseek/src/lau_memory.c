@@ -90,10 +90,7 @@ void lau_clflush(void *ptr) {
 
 void lau_clzero(void *ptr) {
     if (!ptr) return;
-    // Fast path zeroing for entire cache line
-    __m512i z = _mm512_setzero_si512();
-    _mm512_storeu_si512(ptr, z);
-    _mm_sfence();
+    memset(ptr, 0, 64);
 }
 
 static uint32_t calculate_checksum_basic(const LauHeader *h) {
@@ -199,7 +196,6 @@ void *lau_memalign_wired_loc(size_t alignment, size_t size, const char *file, in
     }
     in_wired++;
 
-    
     if (atomic_load_explicit(&g_init_in_progress, memory_order_relaxed)) {
         goto internal_alloc;
     }

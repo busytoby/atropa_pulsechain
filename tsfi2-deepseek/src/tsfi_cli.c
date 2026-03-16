@@ -72,7 +72,11 @@ static int handle_math_command(WaveSystem *ws, const char *new_d) {
 }
 
 static int handle_provenance_command(WaveSystem *ws) {
-    ws->provenance();
+    if (ws->provenance) {
+        ws->provenance();
+    } else {
+        tsfi_io_printf(stdout, "[CLI] Error: Provenance logic not bound.\n");
+    }
     return 0;
 }
 

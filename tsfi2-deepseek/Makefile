@@ -1,10 +1,10 @@
 CC = gcc
 CXX = g++
 CFLAGS = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Iplugins -Iplugins/vulkan -Iplugins/window_inc -Iplugins/window_src -Iassets/sd_cpp/include \
-        -O3 -march=native -flax-vector-conversions \
+        -O3 -g -march=native -flax-vector-conversions \
         -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE -pie -Wl,-z,relro,-z,now \
         -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\"
-CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -march=native -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
+CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g -march=native -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
 LDFLAGS = -ljpeg -rdynamic -lubsan -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp
 
 OBJ_DIR = obj
@@ -30,7 +30,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_vision_analysis.o $(OBJ_DIR)/tsfi_math.o $(OBJ_DIR)/tsfi_config.o \
             $(OBJ_DIR)/tsfi_dys_math.o $(OBJ_DIR)/tsfi_cff.o $(OBJ_DIR)/tsfi_wave512_asm.o \
             $(OBJ_DIR)/tsfi_trace.o $(OBJ_DIR)/tsfi_ottype.o $(OBJ_DIR)/tsfi_dysnomia.o \
-            $(OBJ_DIR)/tsfi_zmm_rpc.o $(OBJ_DIR)/tsfi_font_registry.o \
+            $(OBJ_DIR)/tsfi_zmm_vm.o $(OBJ_DIR)/tsfi_font_registry.o \
             $(OBJ_DIR)/tsfi_ipomoea_lifecycle.o \
             $(OBJ_DIR)/tsfi_shader_dispatch.o $(OBJ_DIR)/lau_memory.o $(OBJ_DIR)/tsfi_elf_reflect.o \
             $(OBJ_DIR)/tsfi_opt_zmm_unity.o $(OBJ_DIR)/tsfi_opt_zmm.o $(OBJ_DIR)/tsfi_glob.o \
@@ -38,9 +38,9 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_c_math.o $(OBJ_DIR)/firmware/LauWireFirmware_rtl.o \
             $(OBJ_DIR)/tsfi_vision_classify.o $(OBJ_DIR)/tsfi_cli.o $(OBJ_DIR)/tsfi_svdag.o \
             $(OBJ_DIR)/lau_thunk.o $(OBJ_DIR)/tsfi_wiring.o $(OBJ_DIR)/tsfi_vulkan_cells.o \
-            $(OBJ_DIR)/tsfi_zmm_vm.o $(OBJ_DIR)/thunks/bloom_effect.o $(OBJ_DIR)/tsfi_merkle.o \
+            $(OBJ_DIR)/tsfi_zmm_vm.o $(OBJ_DIR)/tsfi_merkle.o \
             $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o \
-            $(OBJ_DIR)/tsfi_sd_thunk.o $(OBJ_DIR)/tsfi_safetensors_cache.o \
+            $(OBJ_DIR)/tsfi_safetensors_cache.o \
             $(OBJ_DIR)/tsfi_vae_firmware.o $(OBJ_DIR)/tsfi_liang_barsky.o \
             $(OBJ_DIR)/tsfi_nand_trap_firmware.o $(OBJ_DIR)/tsfi_vessel_anchor.o \
             $(OBJ_DIR)/tsfi_vae_upsampler.o \
@@ -52,7 +52,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_pbr.o \
             $(OBJ_DIR)/tsfi_hair.o \
             $(OBJ_DIR)/tsfi_merkle_fast.o $(OBJ_DIR)/tsfi_scramble_fast.o $(OBJ_DIR)/tsfi_jpeg_encoder.o $(OBJ_DIR)/tsfi_yang_baseline.o $(OBJ_DIR)/tsfi_yang_fast.o $(OBJ_DIR)/tsfi_comm.o \
-            $(OBJ_DIR)/tsfi_nand_vae_bridge.o $(OBJ_DIR)/tsfi_controlnet_shm.o $(OBJ_DIR)/tsfi_puppetry.o
+            $(OBJ_DIR)/tsfi_controlnet_shm.o $(OBJ_DIR)/tsfi_puppetry.o \
+            $(OBJ_DIR)/tsfi_pulsechain_rpc.o $(OBJ_DIR)/tsfi_tls.o
 
 
 VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR)/vulkan_render.o \
@@ -73,7 +74,7 @@ TARGET = tsfi2
 
 .PHONY: all clean debug release
 
-debug: $(TARGET) bin/tsfi_time bin/tsfi_cockpit bin/tsfi_poll bin/tsfi_teacher bin/tsfi_font_editor bin/tsfi_teddy_editor bin/tsfi_discovery bin/tsfi_fetch $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory
+debug: $(TARGET) bin/tsfi_time bin/tsfi_cockpit bin/tsfi_poll bin/tsfi_teacher bin/tsfi_font_editor bin/tsfi_teddy_editor bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory
 
 release: CFLAGS += -O3 -DNDEBUG -march=native
 release: LDFLAGS += -s
@@ -85,7 +86,7 @@ bin/tsfi_dna_crossover: src/tsfi_dna_crossover.c $(CORE_OBJS)
 bin/tsfi_puppeteer: src/tsfi_puppeteer.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
-all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher $(BIN_DIR)/tsfi_font_editor bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory
+all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher $(BIN_DIR)/tsfi_font_editor bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory
 
 bin/tsfi_teddy_skeleton: src/tsfi_teddy_skeleton.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
@@ -95,15 +96,6 @@ bin/tsfi_cockpit_vae_bridge: src/tsfi_cockpit_vae_bridge.c $(CORE_OBJS)
 
 bin/tsfi_guidance_tuner: src/tsfi_guidance_tuner.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
-
-bin/tsfi_sd_worker: src/tsfi_native_sd.cpp $(CORE_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ \
-		assets/sd_cpp/build/libstable-diffusion.a \
-		assets/sd_cpp/build/ggml/src/libggml.a \
-		assets/sd_cpp/build/ggml/src/libggml-cpu.a \
-		assets/sd_cpp/build/ggml/src/libggml-base.a \
-		assets/sd_cpp/build/ggml/src/ggml-vulkan/libggml-vulkan.a \
-		$(LDFLAGS) -lpthread -ldl
 
 bin/test_fur_synthesis: tests/test_fur_synthesis.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
@@ -161,6 +153,9 @@ bin/tsfi_discovery: src/tsfi_discovery.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
 bin/tsfi_fetch: src/tsfi_fetch.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+bin/tsfi_rpc: tools/tsfi_rpc.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
 bin/ballet_ouverture: tests/ballet_ouverture.c $(CORE_OBJS)
@@ -235,16 +230,6 @@ $(OBJ_DIR)/%.o: plugins/vulkan/%.c | $(OBJ_DIR)
 $(OBJ_DIR)/%.o: plugins/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJ_DIR)/thunks/%.o: thunks/%.c | $(OBJ_DIR)/thunks
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(OBJ_DIR)/thunks:
-	mkdir -p $(OBJ_DIR)/thunks
-
-$(OBJ_DIR)/%.o: thunks/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
@@ -304,7 +289,7 @@ bin/bench_yang_fast: tests/bench_yang_fast.c obj/tsfi_yang_fast.o $(OBJ_DIR)/tsf
 bin/bench_scramble_baseline: tests/bench_scramble_baseline.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lvulkan -lwayland-client -lm
 
-bin/bench_scramble_fast: tests/bench_scramble_fast.c obj/tsfi_scramble_fast.o $(OBJ_DIR)/tsfi_jpeg_encoder.o $(OBJ_DIR)/tsfi_yang_baseline.o $(OBJ_DIR)/tsfi_yang_fast.o $(OBJ_DIR)/tsfi_comm.o $(CORE_OBJS)
+bin/bench_scramble_fast: tests/bench_scramble_fast.c obj/tsfi_scramble_fast.o $(OBJ_DIR)/tsfi_scramble_fast.o $(OBJ_DIR)/tsfi_jpeg_encoder.o $(OBJ_DIR)/tsfi_yang_baseline.o $(OBJ_DIR)/tsfi_yang_fast.o $(OBJ_DIR)/tsfi_comm.o $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lvulkan -lwayland-client -lm
 
 bin/tsfi_teddy_editor: $(OBJ_DIR)/tsfi_teddy_editor.o $(filter-out $(OBJ_DIR)/tsfi_font_editor.o, $(CORE_OBJS)) $(VULKAN_PLUGIN_OBJS)

@@ -2,6 +2,7 @@
 #define TSFI_NAND_TRAP_FIRMWARE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define WIDTH 512
 #define HEIGHT 512
