@@ -1,0 +1,10 @@
+PROGRAM LORE_DATABASE_QUERY
+  ! Query the material stored in the previous session
+  ! Xi=123 Alpha=456 Beta=789
+  
+  QUERY MATERIAL MAT 123 456 789
+  
+  ! If found, the pointer 'MAT' is now valid
+  PRINT_WAVELET MAT
+
+END PROGRAM

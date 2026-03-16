@@ -37,13 +37,13 @@ Benchmark of the raw C API (Zero-Copy Lexer), bypassing JSON-RPC overhead.
 - **Latency:** ~8ns per instruction.
 
 ## 5. Wave512 Transcendence (`bench_svdag_transcendent`)
-Benchmark of Quetta-scale SVDAG traversal simulation.
+Benchmark of Gemini-scale SVDAG traversal simulation.
 - **Throughput:** ~75 M-Traversals/s (Actual). ~380 M-Traversals/s (Logical).
 - **Transcendence:** Verified (Processing sparse data at dense vector speeds).
 
 ## 6. Activation Transcendence (`bench_activation`)
-Benchmark of Quetta-scale Activation Function (Softsign/Sigmoid approx).
-- **Throughput:** ~23 Billion Quetta-Neurons/s.
+Benchmark of Gemini-scale Activation Function (Softsign/Sigmoid approx).
+- **Throughput:** ~23 Billion Gemini-Neurons/s.
 - **Transcendence:** Verified (High parallelism via AVX-512).
 
 ## 7. Genetic Crossover (`tests/run_genetic_bench.sh`)
@@ -61,7 +61,7 @@ Benchmark of the Dysnomia evolution engine (Mu -> Thetan -> Theta-Eta).
 
 ### 7c. In-Place Convergence (`bench_genetic_convergence_inplace`)
 - **Optimization:** AVX-512 `vpavgb`, 4-way Unroll, Aligned Streaming Stores.
-- **DNA Length:** 4096 bytes (Quetta-Scale).
+- **DNA Length:** 4096 bytes (Gemini-Scale).
 - **Throughput:** **~1.41 Million InPlace-XO/s**.
 - **Conclusion:** Achievement of high-frequency neurological evolution.
 

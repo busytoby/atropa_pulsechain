@@ -1,0 +1,34 @@
+PROGRAM AcousticBufferAudit
+    ARENA main_arena 4096
+    WAVELET W1 IN main_arena
+    WAVELET W2 IN main_arena
+    CONNECT W1 W2
+
+    ! 1. Establish State
+    ! GENERATE Rod Cone Domain Link Cost
+    GENERATE W1 W2 4919 43690 1000
+
+    IONIZE W1 W2
+    MAGNETIZE W1 W2
+    
+    SEAL_HEADER W1
+    SEAL_HEADER W2
+    ACTIVATE_YANG W1 12345
+    ACTIVATE_YANG W2 12345
+
+    ! 2. Stage valid pulses
+    ! STAGE_PULSE wavelet selection alpha_proof beta_payment
+    STAGE_PULSE W1 ICHI 43690 100
+    STAGE_PULSE W2 ICHI 43690 100
+
+    ! 3. Stage pulse with WRONG Alpha Proof (Fracture)
+    STAGE_PULSE W1 DAI 99999 100
+
+    ! 4. Stage pulse with Insufficient Quota
+    STAGE_PULSE W1 ICHI 43690 2000
+
+    ! 5. Commit
+    COMMIT_PULSES
+
+    LOG_TELEMETRY "Acoustic Buffer Audit Complete"
+END PROGRAM

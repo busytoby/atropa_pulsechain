@@ -1,0 +1,330 @@
+#include "tsfi_math.h"
+#include "tsfi_wave512.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+// --- Math System Logic ---
+static void math_logic_scramble(void *ws_ptr) {
+    TSFiBigInt *bn = (TSFiBigInt*)ws_ptr;
+    lau_mem_scramble(bn->limbs, sizeof(bn->limbs), LAU_SCRAMBLE_MODE_RANDOM);
+    for (int i = 0; i < TSFI_NUM_LIMBS; i++) bn->limbs[i] &= TSFI_LIMB_MASK;
+    bn->active_limbs = TSFI_NUM_LIMBS;
+}
+static void math_logic_epoch(int *ver) { (*ver)++; }
+static void math_logic_state(bool *ftw) { (void)ftw; }
+static void math_logic_directive(int *cnt, char *dir) { (void)cnt; (void)dir; }
+static void math_logic_provenance(void *ws) { (void)ws; }
+
+static const TSFiLogicTable kMathLogic = {
+    .logic_epoch = math_logic_epoch,
+    .logic_state = math_logic_state,
+    .logic_directive = math_logic_directive,
+    .logic_scramble = math_logic_scramble,
+    .logic_provenance = math_logic_provenance
+};
+
+TSFiBigInt* tsfi_bn_alloc(void) {
+    TSFiBigInt* bn = (TSFiBigInt*)lau_memalign_wired(64, sizeof(TSFiBigInt));
+    if (!bn) return NULL;
+    memset(bn, 0, sizeof(TSFiBigInt));
+    LauSystemHeader *h = (LauSystemHeader *)((char *)bn - offsetof(LauWiredHeader, payload));
+    h->resonance_as_status = lau_strdup("MATH_INIT");
+    lau_wire_system((WaveSystem*)bn, h, &kMathLogic);
+    return bn;
+}
+
+void tsfi_bn_free(TSFiBigInt *bn) { lau_free(bn); }
+void tsfi_bn_randomize(TSFiBigInt *bn) { if (bn) bn->scramble(); }
+
+static int get_bit(const uint8_t *bytes, size_t len, size_t bit_idx) {
+    size_t byte_idx = len - 1 - (bit_idx / 8);
+    if (byte_idx >= len) return 0;
+    int bit_in_byte = bit_idx % 8;
+    return (bytes[byte_idx] >> bit_in_byte) & 1;
+}
+
+void tsfi_bn_from_bytes(TSFiBigInt *bn, const uint8_t *bytes, size_t len) {
+    if (!bn) return;
+    memset(bn->limbs, 0, sizeof(bn->limbs));
+    size_t num_bits = len * 8;
+    if (num_bits > TSFI_MATH_MAX_BITS) num_bits = TSFI_MATH_MAX_BITS;
+    for (size_t i = 0; i < num_bits; i++) {
+        if (get_bit(bytes, len, i)) {
+            size_t limb_idx = i / TSFI_LIMB_BITS;
+            size_t bit_in_limb = i % TSFI_LIMB_BITS;
+            bn->limbs[limb_idx] |= (1ULL << bit_in_limb);
+        }
+    }
+    bn->active_limbs = 0;
+    for (int i = TSFI_NUM_LIMBS - 1; i >= 0; i--) {
+        if (bn->limbs[i] != 0) { bn->active_limbs = i + 1; break; }
+    }
+}
+
+void tsfi_bn_to_bytes(const TSFiBigInt *bn, uint8_t *bytes, size_t len) {
+    if (!bn || !bytes) return;
+    memset(bytes, 0, len);
+    size_t max_bits = len * 8;
+    for (size_t i = 0; i < max_bits; i++) {
+        size_t limb_idx = i / TSFI_LIMB_BITS;
+        size_t bit_in_limb = i % TSFI_LIMB_BITS;
+        if (limb_idx < TSFI_NUM_LIMBS) {
+            if ((bn->limbs[limb_idx] >> bit_in_limb) & 1) {
+                size_t byte_idx = len - 1 - (i / 8);
+                size_t bit_in_byte = i % 8;
+                bytes[byte_idx] |= (1 << bit_in_byte);
+            }
+        }
+    }
+}
+
+static uint64_t calc_k0(uint64_t m0) {
+    uint64_t x = m0;
+    for (int i = 0; i < 5; i++) x *= (2ULL - m0 * x);
+    return -x;
+}
+
+static void bn_copy(TSFiBigInt *dst, const TSFiBigInt *src) {
+    memcpy(dst->limbs, src->limbs, sizeof(src->limbs));
+    dst->active_limbs = src->active_limbs;
+}
+
+int tsfi_bn_cmp_avx512(const TSFiBigInt *a, const TSFiBigInt *b) {
+    size_t n_a = a->active_limbs;
+    size_t n_b = b->active_limbs;
+    if (n_a > n_b) return 1;
+    if (n_a < n_b) return -1;
+    if (n_a == 0) return 0;
+    int k = ((int)n_a + 7) / 8 * 8 - 8;
+    for (; k >= 0; k -= 8) {
+        wave512_i va = VMOVDQA64(&a->limbs[k]);
+        wave512_i vb = VMOVDQA64(&b->limbs[k]);
+        if (!VPCMPEQQ(va, vb)) {
+            for(int i=7; i>=0; i--) {
+                if (a->limbs[k+i] > b->limbs[k+i]) return 1;
+                if (a->limbs[k+i] < b->limbs[k+i]) return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int bn_cmp(const TSFiBigInt *a, const TSFiBigInt *b) { return tsfi_bn_cmp_avx512(a, b); }
+
+void tsfi_bn_set_u64(TSFiBigInt *bn, uint64_t val) {
+    if (!bn) return;
+    memset(bn->limbs, 0, sizeof(bn->limbs));
+    bn->limbs[0] = val & TSFI_LIMB_MASK;
+    bn->limbs[1] = val >> TSFI_LIMB_BITS;
+    if (bn->limbs[1]) bn->active_limbs = 2;
+    else if (bn->limbs[0]) bn->active_limbs = 1;
+    else bn->active_limbs = 0;
+}
+
+static void bn_sub_safe(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
+    uint64_t borrow = 0;
+    for (size_t i = 0; i < a->active_limbs; i++) {
+        uint64_t va = a->limbs[i];
+        uint64_t vb = (i < b->active_limbs) ? b->limbs[i] : 0;
+        uint64_t diff = va - vb - borrow;
+        r->limbs[i] = diff & TSFI_LIMB_MASK;
+        if (va < vb + borrow) borrow = 1; else borrow = 0;
+    }
+    r->active_limbs = a->active_limbs;
+    while(r->active_limbs > 0 && r->limbs[r->active_limbs-1] == 0) r->active_limbs--;
+}
+
+static void avx512_mont_mul(TSFiBigInt *res, const TSFiBigInt *a, const TSFiBigInt *b, const TSFiBigInt *m, uint64_t k0) {
+    int n = (int)m->active_limbs; 
+    if (n % 8 != 0) n = ((n / 8) + 1) * 8;
+    if (n > TSFI_NUM_LIMBS) n = TSFI_NUM_LIMBS;
+    uint64_t T[2 * TSFI_NUM_LIMBS + 8] __attribute__((aligned(512)));
+    memset(T, 0, sizeof(T));
+    const uint64_t *A = a->limbs;
+    const uint64_t *B = b->limbs;
+    const uint64_t *M = m->limbs;
+    for (int i = 0; i < n; i++) {
+        uint64_t bi = B[i];
+        unsigned __int128 temp = (unsigned __int128)A[0] * bi + T[i];
+        uint64_t q = (uint64_t)(temp * k0) & TSFI_LIMB_MASK;
+        
+        wave512_i v_bi = VBROADCASTSD(&bi);
+        wave512_i v_q  = VBROADCASTSD(&q);
+        
+        uint64_t carry = 0;
+        for (int j = 0; j < n; j += 8) {
+             wave512_i v_a = VMOVDQA64(&A[j]);
+             wave512_i v_m = VMOVDQA64(&M[j]);
+             wave512_i v_lo = VZERO_I(); v_lo = VPMADD52LUQ(v_lo, v_a, v_bi);
+             wave512_i v_m_lo = VZERO_I(); v_m_lo = VPMADD52LUQ(v_m_lo, v_m, v_q);
+             wave512_i v_hi = VZERO_I(); v_hi = VPMADD52HUQ(v_hi, v_a, v_bi);
+             wave512_i v_m_hi = VZERO_I(); v_m_hi = VPMADD52HUQ(v_m_hi, v_m, v_q);
+             
+             uint64_t p_a_lo[8], p_m_lo[8], p_a_hi[8], p_m_hi[8];
+             memcpy(p_a_lo, &v_lo, 64); memcpy(p_m_lo, &v_m_lo, 64);
+             memcpy(p_a_hi, &v_hi, 64); memcpy(p_m_hi, &v_m_hi, 64);
+             
+             for(int k=0; k<8; k++) {
+                 if (j+k >= n) break;
+                 unsigned __int128 sum = (unsigned __int128)T[i+j+k] + carry + p_a_lo[k] + p_m_lo[k];
+                 T[i+j+k] = (uint64_t)sum & TSFI_LIMB_MASK;
+                 carry = (uint64_t)(sum >> TSFI_LIMB_BITS) + p_a_hi[k] + p_m_hi[k];
+             }
+        }
+        int k = i + n;
+        while (carry) {
+            unsigned __int128 sum = (unsigned __int128)T[k] + carry;
+            T[k] = (uint64_t)sum & TSFI_LIMB_MASK;
+            carry = (uint64_t)(sum >> TSFI_LIMB_BITS); k++;
+        }
+    }
+    TSFiBigInt temp_res; memset(&temp_res, 0, sizeof(temp_res));
+    for(int i=0; i<n; i++) temp_res.limbs[i] = T[n+i];
+    temp_res.active_limbs = (size_t)n;
+    while(temp_res.active_limbs > 0 && temp_res.limbs[temp_res.active_limbs-1] == 0) temp_res.active_limbs--;
+    if (bn_cmp(&temp_res, m) >= 0) bn_sub_safe(res, &temp_res, m);
+    else bn_copy(res, &temp_res);
+}
+
+void tsfi_bn_modpow_avx512(TSFiBigInt *result, const TSFiBigInt *base, const TSFiBigInt *exp, const TSFiBigInt *mod) {
+    if (mod->active_limbs == 0 || (mod->limbs[0] & 1) == 0) return; 
+    uint64_t k0 = calc_k0(mod->limbs[0]);
+    int n = (int)mod->active_limbs; if (n % 8 != 0) n = ((n / 8) + 1) * 8;
+    TSFiBigInt *RR = tsfi_bn_alloc();
+    TSFiBigInt *One = tsfi_bn_alloc(); One->limbs[0] = 1; One->active_limbs = 1;
+    TSFiBigInt *Accum = tsfi_bn_alloc(); Accum->limbs[0] = 1; Accum->active_limbs = 1;
+    for(int i=0; i < n * TSFI_LIMB_BITS * 2; i++) {
+        uint64_t carry = 0;
+        for(size_t j=0; j<Accum->active_limbs; j++) {
+            uint64_t val = (Accum->limbs[j] << 1) | carry;
+            Accum->limbs[j] = val & TSFI_LIMB_MASK; carry = val >> TSFI_LIMB_BITS;
+        }
+        if(carry) Accum->limbs[Accum->active_limbs++] = carry;
+        if (bn_cmp(Accum, mod) >= 0) bn_sub_safe(Accum, Accum, mod);
+    }
+    bn_copy(RR, Accum); tsfi_bn_free(Accum);
+    TSFiBigInt *base_m = tsfi_bn_alloc(); avx512_mont_mul(base_m, base, RR, mod, k0);
+    TSFiBigInt *res_m = tsfi_bn_alloc(); avx512_mont_mul(res_m, One, RR, mod, k0);
+    size_t exp_bits = exp->active_limbs * TSFI_LIMB_BITS;
+    for (int i = (int)exp_bits - 1; i >= 0; i--) {
+        avx512_mont_mul(res_m, res_m, res_m, mod, k0);
+        if ((exp->limbs[i / TSFI_LIMB_BITS] >> (i % TSFI_LIMB_BITS)) & 1) avx512_mont_mul(res_m, res_m, base_m, mod, k0);
+    }
+    avx512_mont_mul(result, res_m, One, mod, k0);
+    tsfi_bn_free(RR); tsfi_bn_free(One); tsfi_bn_free(base_m); tsfi_bn_free(res_m);
+}
+
+void tsfi_bn_mul_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
+    memset(r->limbs, 0, sizeof(r->limbs));
+    int n_a = (int)a->active_limbs; int n_b = (int)b->active_limbs;
+    if (n_a == 0 || n_b == 0) { r->active_limbs = 0; return; }
+    int r_limbs = n_a + n_b; if (r_limbs > TSFI_NUM_LIMBS) r_limbs = TSFI_NUM_LIMBS;
+    for (int j = 0; j < n_b; j++) {
+        uint64_t bj = b->limbs[j]; if (bj == 0) continue;
+        uint64_t carry = 0;
+        wave512_i v_b = VBROADCASTSD(&bj);
+        for (int i = 0; i < ((n_a + 7) / 8) * 8; i += 8) {
+            if (i >= n_a) break;
+            wave512_i v_a = VMOVDQA64(&a->limbs[i]);
+            wave512_i v_lo = VZERO_I(); v_lo = VPMADD52LUQ(v_lo, v_a, v_b);
+            wave512_i v_hi = VZERO_I(); v_hi = VPMADD52HUQ(v_hi, v_a, v_b);
+            uint64_t p_lo[8], p_hi[8];
+            memcpy(p_lo, &v_lo, 64); memcpy(p_hi, &v_hi, 64);
+            for (int k = 0; k < 8; k++) {
+                if (i+k >= n_a || i+j+k >= TSFI_NUM_LIMBS) break;
+                unsigned __int128 sum = (unsigned __int128)r->limbs[i+j+k] + carry + p_lo[k];
+                r->limbs[i+j+k] = (uint64_t)sum & TSFI_LIMB_MASK;
+                carry = (uint64_t)(sum >> TSFI_LIMB_BITS) + p_hi[k];
+            }
+        }
+        int k = n_a + j;
+        while (carry && k < TSFI_NUM_LIMBS) {
+            unsigned __int128 sum = (unsigned __int128)r->limbs[k] + carry;
+            r->limbs[k] = (uint64_t)sum & TSFI_LIMB_MASK; carry = (uint64_t)(sum >> TSFI_LIMB_BITS); k++;
+        }
+    }
+    r->active_limbs = (size_t)r_limbs; while(r->active_limbs > 0 && r->limbs[r->active_limbs-1] == 0) r->active_limbs--;
+}
+
+void tsfi_bn_add_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
+    size_t n = (a->active_limbs > b->active_limbs) ? a->active_limbs : b->active_limbs;
+    if (n == 0) { r->active_limbs = 0; return; }
+    uint64_t carry = 0;
+    for (int i = 0; i < (((int)n + 7) / 8) * 8; i += 8) {
+        if (i >= TSFI_NUM_LIMBS) break;
+        wave512_i va = VMOVDQA64(&a->limbs[i]);
+        wave512_i vb = VMOVDQA64(&b->limbs[i]);
+        wave512_i vsum = VPADDQ(va, vb);
+        uint64_t temp[8]; memcpy(temp, &vsum, 64);
+        for (int k = 0; k < 8; k++) {
+            if (i+k >= TSFI_NUM_LIMBS) break;
+            uint64_t sum = temp[k] + carry;
+            r->limbs[i+k] = sum & TSFI_LIMB_MASK; carry = sum >> TSFI_LIMB_BITS;
+        }
+    }
+    if (carry && n < TSFI_NUM_LIMBS) r->limbs[n++] = carry;
+    r->active_limbs = n;
+}
+
+void tsfi_bn_sub_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
+    size_t n = a->active_limbs; uint64_t borrow = 0;
+    for (size_t i = 0; i < n; i++) {
+        uint64_t va = a->limbs[i]; uint64_t vb = (i < b->active_limbs) ? b->limbs[i] : 0;
+        uint64_t res = va - vb - borrow; r->limbs[i] = res & TSFI_LIMB_MASK;
+        if (va < vb + borrow) borrow = 1; else borrow = 0;
+    }
+    r->active_limbs = n; while(r->active_limbs > 0 && r->limbs[r->active_limbs-1] == 0) r->active_limbs--;
+}
+
+void tsfi_bn_lshift_avx512(TSFiBigInt *r, const TSFiBigInt *a, int bits) {
+    if (bits <= 0) { if(bits==0) bn_copy(r, a); return; }
+    int limb_shift = bits / TSFI_LIMB_BITS; int bit_rem = bits % TSFI_LIMB_BITS;
+    TSFiBigInt temp; if (r == a) { bn_copy(&temp, a); a = &temp; }
+    memset(r->limbs, 0, sizeof(r->limbs));
+    uint64_t carry = 0; int anti = TSFI_LIMB_BITS - bit_rem;
+    for (int i = 0; i < (int)a->active_limbs; i++) {
+        uint64_t val = a->limbs[i];
+        if (i + limb_shift < TSFI_NUM_LIMBS) r->limbs[i + limb_shift] = ((val << bit_rem) & TSFI_LIMB_MASK) | carry;
+        carry = val >> anti;
+    }
+    if ((int)a->active_limbs + limb_shift < TSFI_NUM_LIMBS) r->limbs[a->active_limbs + limb_shift] = carry;
+    r->active_limbs = a->active_limbs + (size_t)limb_shift + (carry?1:0);
+    while(r->active_limbs > 0 && r->limbs[r->active_limbs-1] == 0) r->active_limbs--;
+}
+
+void tsfi_bn_rshift_avx512(TSFiBigInt *r, const TSFiBigInt *a, int bits) {
+    if (bits <= 0) { if(bits==0) bn_copy(r, a); return; }
+    int limb_shift = bits / TSFI_LIMB_BITS; int bit_rem = bits % TSFI_LIMB_BITS;
+    if (limb_shift >= (int)a->active_limbs) { memset(r->limbs, 0, sizeof(r->limbs)); r->active_limbs = 0; return; }
+    TSFiBigInt temp; if (r == a) { bn_copy(&temp, a); a = &temp; }
+    memset(r->limbs, 0, sizeof(r->limbs));
+    int anti = TSFI_LIMB_BITS - bit_rem; uint64_t upper = 0;
+    for (int i = (int)a->active_limbs - 1; i >= limb_shift; i--) {
+        uint64_t val = a->limbs[i];
+        r->limbs[i - limb_shift] = (val >> bit_rem) | upper;
+        upper = (val << anti) & TSFI_LIMB_MASK;
+    }
+    r->active_limbs = a->active_limbs - (size_t)limb_shift;
+    while(r->active_limbs > 0 && r->limbs[r->active_limbs-1] == 0) r->active_limbs--;
+}
+
+void tsfi_bn_div_avx512(TSFiBigInt *q, TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
+    if (b->active_limbs == 0) return;
+    TSFiBigInt *rem = tsfi_bn_alloc(); TSFiBigInt *quot = tsfi_bn_alloc();
+    for (int i = (int)a->active_limbs * TSFI_LIMB_BITS - 1; i >= 0; i--) {
+        tsfi_bn_lshift_avx512(rem, rem, 1);
+        if ((a->limbs[i / TSFI_LIMB_BITS] >> (i % TSFI_LIMB_BITS)) & 1) rem->limbs[0] |= 1;
+        if (rem->active_limbs == 0 && rem->limbs[0]) rem->active_limbs = 1;
+        tsfi_bn_lshift_avx512(quot, quot, 1);
+        if (bn_cmp(rem, b) >= 0) {
+            bn_sub_safe(rem, rem, b);
+            quot->limbs[0] |= 1;
+            if(quot->active_limbs==0) quot->active_limbs=1;
+        }
+    }
+    if (q) bn_copy(q, quot);
+    if (r) bn_copy(r, rem);
+    tsfi_bn_free(rem); tsfi_bn_free(quot);
+}

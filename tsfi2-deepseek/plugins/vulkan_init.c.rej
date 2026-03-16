@@ -1,0 +1,30 @@
+--- plugins/vulkan_init.c
++++ plugins/vulkan_init.c
+@@ -34,18 +34,22 @@
+ 
+         if (vk->command_pool) vk->vkDestroyCommandPool(vk->device, vk->command_pool, NULL);
+         printf("  [CLEANUP] Swapchain Image Views\n"); fflush(stdout);
+-        if (vk->swapchainImageViews != NULL && vk->swapchainImageCount < 100) {
++        
++        // The segfault might be inside vkDestroyImageView if the swapchain image view is already implicitly destroyed.
++        // Or the count is garbage.
++        if (vk->swapchainImageViews != NULL && vk->swapchainImageCount > 0 && vk->swapchainImageCount < 16) {
+             if (vk->vkDestroyImageView != NULL) {
+                 for (uint32_t i = 0; i < vk->swapchainImageCount; i++) {
+-                    if (vk->swapchainImageViews[i] != VK_NULL_HANDLE) {
+-                        vk->vkDestroyImageView(vk->device, vk->swapchainImageViews[i], NULL);
+-                    }
++                     // printf("      vkDestroyImageView(%p, %p)\n", vk->device, vk->swapchainImageViews[i]); fflush(stdout);
++                     if (vk->swapchainImageViews[i]) {
++                         vk->vkDestroyImageView(vk->device, vk->swapchainImageViews[i], NULL);
++                     }
+                 }
+             }
+             printf("    [CLEANUP] Freeing array...\n"); fflush(stdout);
+             lau_free(vk->swapchainImageViews);
+-            vk->swapchainImageViews = NULL;
+         }
++        vk->swapchainImageViews = NULL;
+         
+         printf("  [CLEANUP] Swapchain Images\n"); fflush(stdout);
+         if (vk->swapchainImages) {

@@ -1,0 +1,22 @@
+PROGRAM GeneralizedHandshake
+    ARENA my_arena 4096
+    WAVELET W1 IN my_arena
+    WAVELET W2 IN my_arena
+    CONNECT W1 W2
+
+    ! Generalized Trilateral Procedure
+    ! GENERATE Rod Cone Domain Link Cost Prime
+    GENERATE W1 W2 4919 43690 48059
+
+    IONIZE W1 W2
+    MAGNETIZE W1 W2
+    
+    SEAL_HEADER W1
+    SEAL_HEADER W2
+    ACTIVATE_YANG W1 12345
+    ACTIVATE_YANG W2 12345
+
+    LOG_TELEMETRY "Generalized Handshake Complete"
+    PRINT_WAVELET W1
+    PRINT_WAVELET W2
+END PROGRAM

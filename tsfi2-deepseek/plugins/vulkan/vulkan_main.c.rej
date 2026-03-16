@@ -1,0 +1,16 @@
+--- plugins/vulkan/vulkan_main.c
++++ plugins/vulkan/vulkan_main.c
+@@ -311,8 +305,13 @@
+         s->display = NULL;
+     }
+     
+     lau_free(s);
+     printf("[TSFI_VULKAN] Destroyed\n");
++
++    if (vk) {
++        printf("[TSFI_VULKAN] Cleaning up Vulkan Context...\n"); fflush(stdout);
++        cleanup_vulkan(vk);
++    }
+ }
+ 
+ // --- Master Logic ---

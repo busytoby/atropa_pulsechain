@@ -1,0 +1,106 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int main(int argc, char **argv) {
+    if (argc < 2) return 1;
+    FILE *f = fopen(argv[1], "r");
+    if (!f) return 1;
+    FILE *h = fopen("src/firmware/LauWireFirmware_rtl.h", "w");
+    FILE *c = fopen("src/firmware/LauWireFirmware_rtl.c", "w");
+    
+    fprintf(h, "#ifndef RTL_H\n#define RTL_H\n#include <stdint.h>\n#include <stdbool.h>\n#include <immintrin.h>\n");
+    fprintf(h, "#include \"tsfi_math.h\"\n");
+    fprintf(h, "typedef struct {\n");
+    fprintf(h, "  bool epoch_strobe, reset_strobe, directive_strobe, state_ready, prov_strobe, exec_strobe, exec_done, wave_instr_strobe, wave_instr_done, pty_rx_valid, pty_rx_ready, pty_tx_valid, pty_tx_ready, periph_directive_strobe, periph_epoch_strobe, periph_state_ready, spawn_gemini_strobe, cell_ftw, cell_autonomous_excuse_active, val_strobe, epoch_error, zhong_strobe, zhong_done;\n");
+    fprintf(h, "  uint32_t directive_cmd, sys_version, sys_counter, periph_directive_cmd, cell_version, cell_counter, last_directive, log_stdout_head, log_stdout_tail, log_stdout_valid_head, log_stdout_lock, host_epoch, plugin_epoch, last_host_epoch, cell_status, log_stdin_head, log_stdin_tail, log_stdin_lock, session_id, wave_instr_op, zhong_status, zhong_op;\n");
+    fprintf(h, "  uint8_t wave_instr_dest, wave_instr_src1, wave_instr_src2, wave_instr_src3;\n");
+    fprintf(h, "  uint64_t prov_data, prov_addr, exec_handle, exec_context, provenance_hash, cell_resonance_status_ptr, periph_wave_handle, log_stdin_ptr, log_stdout_ptr, bunch_session_mask, zhong_rebar_ptr, zhong_rebar_size, zhong_timeline_handle, zhong_timeline_wait_val, zhong_timeline_sig_val;\n");
+    fprintf(h, "  uint64_t cell_logic_epoch_handle, cell_logic_state_handle, cell_logic_directive_handle, cell_logic_scramble_handle, cell_logic_provenance_handle, cell_logic_hilbert_handle, cell_logic_hilbert_batch_handle, cell_logic_classify_handle;\n");
+    fprintf(h, "  uint64_t cell_slot_ptr[32];\n");
+    fprintf(h, "  __m512i wrf[128];\n");
+    fprintf(h, "  __m512i pty_rx_wave, pty_tx_wave, wave_in_a, wave_in_b, wave_out;\n");
+    fprintf(h, "  // Qing Standard Cells Cache\n");
+    fprintf(h, "  uint8_t dys_ctx_mod_slot;\n");
+    fprintf(h, "  bool dys_ctx_valid;\n");
+    fprintf(h, "  TSFiModContextBatch8 dys_ctx;\n");
+    fprintf(h, "} LauWireFirmware_State;\nvoid LauWireFirmware_eval_combinatorial(LauWireFirmware_State *s);\nvoid LauWireFirmware_eval_sequential(LauWireFirmware_State *s);\n#endif\n");
+    fclose(h);
+
+    fprintf(c, "#include \"LauWireFirmware_rtl.h\"\n#include \"tsfi_math.h\"\n#include <string.h>\nvoid LauWireFirmware_eval_combinatorial(LauWireFirmware_State *state) {\n");
+    fprintf(c, "  state->pty_rx_ready=1; state->pty_tx_ready=1; state->state_ready=1; state->provenance_hash=state->cell_logic_epoch_handle;\n");
+    fprintf(c, "  state->periph_epoch_strobe = state->periph_state_ready && (state->host_epoch > state->plugin_epoch) && !state->epoch_error;\n");
+    fprintf(c, "  state->pty_tx_wave = state->pty_rx_wave; state->pty_tx_valid = state->pty_rx_valid; }\n");
+    fprintf(c, "void LauWireFirmware_eval_sequential(LauWireFirmware_State *state) {\n");
+    fprintf(c, "  if (state->reset_strobe) {\n");
+    fprintf(c, "    state->cell_version=0; state->cell_counter=0; state->last_directive=0; state->exec_done=0; state->spawn_gemini_strobe=0; state->log_stdout_head=0; state->log_stdout_tail=0; state->log_stdout_valid_head=0; state->log_stdout_lock=0; state->host_epoch=0; state->plugin_epoch=0; state->last_host_epoch=0; state->epoch_error=0; state->cell_status=0; state->log_stdin_head=0; state->log_stdin_tail=0; state->log_stdin_lock=0; state->log_stdin_ptr=0; state->log_stdout_ptr=0;\n");
+    fprintf(c, "    state->wave_instr_done=0; state->zhong_rebar_ptr=0; state->zhong_rebar_size=0; state->zhong_timeline_handle=0; state->zhong_timeline_wait_val=0; state->zhong_timeline_sig_val=0; state->zhong_status=0; state->zhong_done=0; for(int i=0; i<128; i++) state->wrf[i]=_mm512_setzero_si512();\n");
+    fprintf(c, "    state->dys_ctx_valid=false;\n");
+    fprintf(c, "  } else {\n");
+    fprintf(c, "    if (state->prov_strobe) {\n");
+    fprintf(c, "      if (state->prov_addr < 0x10) {\n");
+    fprintf(c, "        if(state->prov_addr==0x00) state->cell_version=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x01) state->cell_resonance_status_ptr=state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x03) state->cell_counter=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x0F) state->cell_status=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x0D) {\n");
+    fprintf(c, "          if((uint32_t)state->prov_data >= state->last_host_epoch) { state->host_epoch=(uint32_t)state->prov_data; state->last_host_epoch=(uint32_t)state->prov_data; state->epoch_error=0; }\n");
+    fprintf(c, "          else state->epoch_error=1;\n");
+    fprintf(c, "        }\n");
+    fprintf(c, "        if(state->prov_addr==0x0E) state->plugin_epoch=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr>=0x05 && state->prov_addr<=0x0C) {\n");
+    fprintf(c, "           uint64_t *l = (uint64_t*)&state->cell_logic_epoch_handle; l[state->prov_addr-0x05] = state->prov_data;\n");
+    fprintf(c, "        }\n");
+    fprintf(c, "      } else if (state->prov_addr >= 0x20 && state->prov_addr < 0x30) {\n");
+    fprintf(c, "        if(state->prov_addr==0x20) state->log_stdin_head=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x21) state->log_stdin_tail=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x22) state->log_stdin_lock=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x23) state->log_stdin_ptr=state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x24) state->log_stdout_head=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x25) state->log_stdout_tail=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x26) state->log_stdout_lock=(uint32_t)state->prov_data;\n");
+    fprintf(c, "        if(state->prov_addr==0x27) state->log_stdout_ptr=state->prov_data;\n");
+    fprintf(c, "      } else if (state->prov_addr >= 0x80) {\n");
+    fprintf(c, "        int r = state->prov_addr & 0x7F; int s = (state->prov_data >> 56) & 7;\n");
+    fprintf(c, "        ((uint64_t*)&state->wrf[r])[s] = state->prov_data & 0x00FFFFFFFFFFFFFFULL;\n");
+    fprintf(c, "        if (r == state->dys_ctx_mod_slot) state->dys_ctx_valid = false;\n");
+    fprintf(c, "      }\n    }\n");
+    fprintf(c, "    if (state->val_strobe) state->log_stdout_valid_head = state->log_stdout_head;\n");
+    fprintf(c, "    if (state->wave_instr_strobe) {\n");
+    fprintf(c, "      if (state->wave_instr_op == 1) { // VADDPS\n");
+    fprintf(c, "        for(int i=0; i<8; i++) state->wrf[state->wave_instr_dest*8+i] = (__m512i)_mm512_add_ps((__m512)state->wrf[state->wave_instr_src1*8+i], (__m512)state->wrf[state->wave_instr_src2*8+i]);\n");
+    fprintf(c, "      } else if (state->wave_instr_op == 2) { // VMULPS\n");
+    fprintf(c, "        for(int i=0; i<8; i++) state->wrf[state->wave_instr_dest*8+i] = (__m512i)_mm512_mul_ps((__m512)state->wrf[state->wave_instr_src1*8+i], (__m512)state->wrf[state->wave_instr_src2*8+i]);\n");
+    fprintf(c, "      } else if (state->wave_instr_op == 0x11) { // VDYS_MODPOW\n");
+    fprintf(c, "        TSFiBigInt *res_ptrs[8], *base_ptrs[8], *exp_ptrs[8], *mod_ptrs[8];\n");
+    fprintf(c, "        TSFiBigInt b_objs[8], e_objs[8], m_objs[8], r_objs[8];\n");
+    fprintf(c, "        for(int i=0; i<8; i++) {\n");
+    fprintf(c, "          res_ptrs[i]=&r_objs[i]; base_ptrs[i]=&b_objs[i]; exp_ptrs[i]=&e_objs[i]; mod_ptrs[i]=&m_objs[i];\n");
+    fprintf(c, "          memset(&b_objs[i], 0, sizeof(TSFiBigInt)); b_objs[i].limbs[0]=((uint64_t*)&state->wrf[state->wave_instr_src1])[i]; b_objs[i].active_limbs=1;\n");
+    fprintf(c, "          memset(&e_objs[i], 0, sizeof(TSFiBigInt)); e_objs[i].limbs[0]=((uint64_t*)&state->wrf[state->wave_instr_src2])[i]; e_objs[i].active_limbs=1;\n");
+    fprintf(c, "          memset(&m_objs[i], 0, sizeof(TSFiBigInt)); m_objs[i].limbs[0]=((uint64_t*)&state->wrf[state->wave_instr_src3])[i]; m_objs[i].active_limbs=1;\n");
+    fprintf(c, "        }\n");
+    fprintf(c, "        if (!state->dys_ctx_valid || state->dys_ctx_mod_slot != state->wave_instr_src3) {\n");
+    fprintf(c, "          tsfi_bn_mod_setup_batch8(&state->dys_ctx, mod_ptrs);\n");
+    fprintf(c, "          state->dys_ctx_mod_slot = state->wave_instr_src3; state->dys_ctx_valid = true;\n");
+    fprintf(c, "        }\n");
+    fprintf(c, "        tsfi_bn_modpow_batch8_ctx(res_ptrs, base_ptrs, exp_ptrs, mod_ptrs, &state->dys_ctx);\n");
+    fprintf(c, "        for(int i=0; i<8; i++) ((uint64_t*)&state->wrf[state->wave_instr_dest])[i] = r_objs[i].limbs[0];\n");
+    fprintf(c, "      }\n      state->wave_instr_done = 1;\n");
+    fprintf(c, "    } else state->wave_instr_done = 0;\n");
+    fprintf(c, "    if (state->directive_strobe) {\n");
+    fprintf(c, "      state->cell_counter++; state->last_directive = state->directive_cmd;\n");
+    fprintf(c, "      if (state->directive_cmd == 0x47454D49 || state->directive_cmd == 0x48454C4D) {\n");
+    fprintf(c, "        state->periph_directive_cmd = state->directive_cmd; state->periph_directive_strobe = 1;\n");
+    fprintf(c, "        if (state->directive_cmd == 0x47454D49) state->spawn_gemini_strobe = 1;\n");
+    fprintf(c, "      } else { state->periph_directive_strobe = 0; state->spawn_gemini_strobe = 0; }\n");
+    fprintf(c, "    } else { state->periph_directive_strobe = 0; state->spawn_gemini_strobe = 0; }\n");
+    fprintf(c, "    if (state->exec_strobe && state->exec_handle) { ((void(*)(void*))state->exec_handle)((void*)state->exec_context); state->exec_done=1; } else state->exec_done=0;\n");
+    fprintf(c, "    state->cell_status = (state->cell_status & ~1u) | (state->periph_state_ready ? 1u : 0u);\n");
+    fprintf(c, "    state->sys_version = state->cell_version; state->sys_counter = state->cell_counter;\n");
+    fprintf(c, "  }\n}\n");
+    fclose(c);
+    fclose(f);
+    return 0;
+}

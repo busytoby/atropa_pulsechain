@@ -1,0 +1,21 @@
+#ifndef VULKAN_CONFIG_H
+#define VULKAN_CONFIG_H
+
+#include <vulkan/vulkan.h>
+
+// Window Configuration
+#define TSFI_WINDOW_WIDTH_DEFAULT  1460
+#define TSFI_WINDOW_HEIGHT_DEFAULT 840
+#define TSFI_WINDOW_TITLE "TSFi Vulkan"
+
+// Memory & Staging
+#define TSFI_STAGING_ALIGNMENT 4096
+#define TSFI_PIXEL_FORMAT VK_FORMAT_B8G8R8A8_SRGB
+#define TSFI_COLOR_SPACE VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+
+// UI Layout
+#define TSFI_UI_MARGIN 20
+#define TSFI_INPUT_BOX_HEIGHT 40
+#define TSFI_INPUT_BOX_RADIUS 10
+
+#endif // VULKAN_CONFIG_H

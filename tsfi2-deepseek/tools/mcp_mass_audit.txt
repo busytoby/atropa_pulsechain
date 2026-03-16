@@ -1,0 +1,4 @@
+  File "/home/mariarahel/src/tsfi2/tools/kr0wz_mass_audit.py", line 29
+    print(f"
+          ^
+SyntaxError: unterminated f-string literal (detected at line 29)

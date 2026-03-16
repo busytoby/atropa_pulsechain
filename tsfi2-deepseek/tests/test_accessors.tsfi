@@ -1,0 +1,35 @@
+PROGRAM AccessorAudit
+    ARENA main_arena 4096
+    WAVELET W1 IN main_arena
+    WAVELET W2 IN main_arena
+    CONNECT W1 W2
+
+    ! 1. Establish Handshake
+    GENERATE W1 W2 4919 43690 1000
+    IONIZE W1 W2
+    MAGNETIZE W1 W2
+    
+    ! Now at SEAL9: Dynamic Topography Establishment
+    ATTACH_FIELD W1 STRING Owner "Senator Light"
+    ATTACH_FIELD W2 STRING Owner "Quetzalcoatl"
+    ATTACH_FIELD W1 UNIT Balance0 5000000
+    ATTACH_FIELD W2 UNIT Balance0 1000000
+
+    ! Finalize
+    SEAL_HEADER W1
+    SEAL_HEADER W2
+    ACTIVATE_YANG W1 12345
+    ACTIVATE_YANG W2 12345
+
+    ! 2. Specialized Logic (Evolve)
+    PULSE W1 ICHI
+    PULSE W2 ICHI
+
+    ! 3. Verify Accessors
+    PRINT_BALANCE W1 0
+    PRINT_BALANCE W2 0
+    PRINT_WAVELET W1
+    PRINT_WAVELET W2
+
+    LOG_TELEMETRY "Accessor Audit Complete"
+END PROGRAM

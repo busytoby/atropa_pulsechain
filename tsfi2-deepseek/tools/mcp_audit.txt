@@ -1,0 +1,261 @@
+WARNING: radv is not a conformant Vulkan implementation, testing use only.
+ggml_vulkan: Found 1 Vulkan devices:
+ggml_vulkan: 0 = AMD Radeon RX 9070 XT (RADV GFX1201) (radv) | uma: 0 | fp16: 1 | bf16: 1 | warp size: 64 | shared memory: 65536 | int dot: 1 | matrix cores: KHR_coopmat
+llama_model_load_from_file_impl: using device Vulkan0 (AMD Radeon RX 9070 XT (RADV GFX1201)) - 16304 MiB free
+llama_model_loader: loaded meta data with 26 key-value pairs and 291 tensors from assets/DeepSeek-Coder-6.7B.gguf (version GGUF V3 (latest))
+llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+llama_model_loader: - kv   0:                       general.architecture str              = llama
+llama_model_loader: - kv   1:                               general.name str              = deepseek-ai
+llama_model_loader: - kv   2:                       llama.context_length u32              = 16384
+llama_model_loader: - kv   3:                     llama.embedding_length u32              = 4096
+llama_model_loader: - kv   4:                          llama.block_count u32              = 32
+llama_model_loader: - kv   5:                  llama.feed_forward_length u32              = 11008
+llama_model_loader: - kv   6:                 llama.rope.dimension_count u32              = 128
+llama_model_loader: - kv   7:                 llama.attention.head_count u32              = 32
+llama_model_loader: - kv   8:              llama.attention.head_count_kv u32              = 32
+llama_model_loader: - kv   9:     llama.attention.layer_norm_rms_epsilon f32              = 0.000001
+llama_model_loader: - kv  10:                       llama.rope.freq_base f32              = 100000.000000
+llama_model_loader: - kv  11:                    llama.rope.scaling.type str              = linear
+llama_model_loader: - kv  12:                  llama.rope.scaling.factor f32              = 4.000000
+llama_model_loader: - kv  13:                          general.file_type u32              = 2
+llama_model_loader: - kv  14:                       tokenizer.ggml.model str              = gpt2
+llama_model_loader: - kv  15:                      tokenizer.ggml.tokens arr[str,32256]   = ["!", "\"", "#", "$", "%", "&", "'", ...
+llama_model_loader: - kv  16:                      tokenizer.ggml.scores arr[f32,32256]   = [0.000000, 0.000000, 0.000000, 0.0000...
+llama_model_loader: - kv  17:                  tokenizer.ggml.token_type arr[i32,32256]   = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+llama_model_loader: - kv  18:                      tokenizer.ggml.merges arr[str,31757]   = ["Ġ Ġ", "Ġ t", "Ġ a", "i n", "h e...
+llama_model_loader: - kv  19:                tokenizer.ggml.bos_token_id u32              = 32013
+llama_model_loader: - kv  20:                tokenizer.ggml.eos_token_id u32              = 32021
+llama_model_loader: - kv  21:            tokenizer.ggml.padding_token_id u32              = 32014
+llama_model_loader: - kv  22:               tokenizer.ggml.add_bos_token bool             = true
+llama_model_loader: - kv  23:               tokenizer.ggml.add_eos_token bool             = false
+llama_model_loader: - kv  24:                    tokenizer.chat_template str              = {% if not add_generation_prompt is de...
+llama_model_loader: - kv  25:               general.quantization_version u32              = 2
+llama_model_loader: - type  f32:   65 tensors
+llama_model_loader: - type q4_0:  225 tensors
+llama_model_loader: - type q6_K:    1 tensors
+print_info: file format = GGUF V3 (latest)
+print_info: file type   = Q4_0
+print_info: file size   = 3.56 GiB (4.54 BPW) 
+load: missing pre-tokenizer type, using: 'default'
+load:                                             
+load: ************************************        
+load: GENERATION QUALITY WILL BE DEGRADED!        
+load: CONSIDER REGENERATING THE MODEL             
+load: ************************************        
+load:                                             
+init_tokenizer: initializing tokenizer for type 2
+load: control-looking token:  32015 '<｜fim▁hole｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+load: control-looking token:  32017 '<｜fim▁end｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+load: control-looking token:  32016 '<｜fim▁begin｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+load: control token:  32015 '<｜fim▁hole｜>' is not marked as EOG
+load: control token:  32014 '<｜end▁of▁sentence｜>' is not marked as EOG
+load: control token:  32021 '<|EOT|>' is not marked as EOG
+load: control token:  32017 '<｜fim▁end｜>' is not marked as EOG
+load: control token:  32016 '<｜fim▁begin｜>' is not marked as EOG
+load: control token:  32013 '<｜begin▁of▁sentence｜>' is not marked as EOG
+load: special_eos_id is not in special_eog_ids - the tokenizer config may be incorrect
+load: special_eot_id is not in special_eog_ids - the tokenizer config may be incorrect
+load: printing all EOG tokens:
+load:   - 32014 ('<｜end▁of▁sentence｜>')
+load:   - 32021 ('<|EOT|>')
+load: special tokens cache size = 256
+load: token to piece cache size = 0.1792 MB
+print_info: arch             = llama
+print_info: vocab_only       = 0
+print_info: n_ctx_train      = 16384
+print_info: n_embd           = 4096
+print_info: n_layer          = 32
+print_info: n_head           = 32
+print_info: n_head_kv        = 32
+print_info: n_rot            = 128
+print_info: n_swa            = 0
+print_info: is_swa_any       = 0
+print_info: n_embd_head_k    = 128
+print_info: n_embd_head_v    = 128
+print_info: n_gqa            = 1
+print_info: n_embd_k_gqa     = 4096
+print_info: n_embd_v_gqa     = 4096
+print_info: f_norm_eps       = 0.0e+00
+print_info: f_norm_rms_eps   = 1.0e-06
+print_info: f_clamp_kqv      = 0.0e+00
+print_info: f_max_alibi_bias = 0.0e+00
+print_info: f_logit_scale    = 0.0e+00
+print_info: f_attn_scale     = 0.0e+00
+print_info: n_ff             = 11008
+print_info: n_expert         = 0
+print_info: n_expert_used    = 0
+print_info: causal attn      = 1
+print_info: pooling type     = 0
+print_info: rope type        = 0
+print_info: rope scaling     = linear
+print_info: freq_base_train  = 100000.0
+print_info: freq_scale_train = 0.25
+print_info: n_ctx_orig_yarn  = 16384
+print_info: rope_finetuned   = unknown
+print_info: model type       = 7B
+print_info: model params     = 6.74 B
+print_info: general.name     = deepseek-ai
+print_info: vocab type       = BPE
+print_info: n_vocab          = 32256
+print_info: n_merges         = 31757
+print_info: BOS token        = 32013 '<｜begin▁of▁sentence｜>'
+print_info: EOS token        = 32021 '<|EOT|>'
+print_info: EOT token        = 32014 '<｜end▁of▁sentence｜>'
+print_info: PAD token        = 32014 '<｜end▁of▁sentence｜>'
+print_info: LF token         = 185 'Ċ'
+print_info: FIM PRE token    = 32016 '<｜fim▁begin｜>'
+print_info: FIM SUF token    = 32015 '<｜fim▁hole｜>'
+print_info: FIM MID token    = 32017 '<｜fim▁end｜>'
+print_info: EOG token        = 32014 '<｜end▁of▁sentence｜>'
+print_info: EOG token        = 32021 '<|EOT|>'
+print_info: max token length = 128
+load_tensors: loading model tensors, this can take a while... (mmap = true)
+load_tensors: layer   0 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   1 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   2 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   3 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   4 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   5 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   6 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   7 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   8 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer   9 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  10 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  11 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  12 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  13 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  14 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  15 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  16 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  17 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  18 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  19 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  20 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  21 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  22 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  23 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  24 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  25 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  26 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  27 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  28 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  29 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  30 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  31 assigned to device Vulkan0, is_swa = 0
+load_tensors: layer  32 assigned to device Vulkan0, is_swa = 0
+load_tensors: tensor 'token_embd.weight' (q4_0) (and 0 others) cannot be used with preferred buffer type Vulkan_Host, using CPU instead
+load_tensors: offloading 32 repeating layers to GPU
+load_tensors: offloading output layer to GPU
+load_tensors: offloaded 33/33 layers to GPU
+load_tensors:      Vulkan0 model buffer size =  3578.38 MiB
+load_tensors:   CPU_Mapped model buffer size =    70.88 MiB
+..................................................................................................
+llama_context: constructing llama_context
+llama_context: n_seq_max     = 1
+llama_context: n_ctx         = 16384
+llama_context: n_ctx_per_seq = 16384
+llama_context: n_batch       = 512
+llama_context: n_ubatch      = 512
+llama_context: causal_attn   = 1
+llama_context: flash_attn    = 0
+llama_context: kv_unified    = false
+llama_context: freq_base     = 100000.0
+llama_context: freq_scale    = 0.25
+set_abort_callback: call
+llama_context: Vulkan_Host  output buffer size =     0.12 MiB
+create_memory: n_ctx = 16384 (padded)
+llama_kv_cache_unified: layer   0: dev = Vulkan0
+llama_kv_cache_unified: layer   1: dev = Vulkan0
+llama_kv_cache_unified: layer   2: dev = Vulkan0
+llama_kv_cache_unified: layer   3: dev = Vulkan0
+llama_kv_cache_unified: layer   4: dev = Vulkan0
+llama_kv_cache_unified: layer   5: dev = Vulkan0
+llama_kv_cache_unified: layer   6: dev = Vulkan0
+llama_kv_cache_unified: layer   7: dev = Vulkan0
+llama_kv_cache_unified: layer   8: dev = Vulkan0
+llama_kv_cache_unified: layer   9: dev = Vulkan0
+llama_kv_cache_unified: layer  10: dev = Vulkan0
+llama_kv_cache_unified: layer  11: dev = Vulkan0
+llama_kv_cache_unified: layer  12: dev = Vulkan0
+llama_kv_cache_unified: layer  13: dev = Vulkan0
+llama_kv_cache_unified: layer  14: dev = Vulkan0
+llama_kv_cache_unified: layer  15: dev = Vulkan0
+llama_kv_cache_unified: layer  16: dev = Vulkan0
+llama_kv_cache_unified: layer  17: dev = Vulkan0
+llama_kv_cache_unified: layer  18: dev = Vulkan0
+llama_kv_cache_unified: layer  19: dev = Vulkan0
+llama_kv_cache_unified: layer  20: dev = Vulkan0
+llama_kv_cache_unified: layer  21: dev = Vulkan0
+llama_kv_cache_unified: layer  22: dev = Vulkan0
+llama_kv_cache_unified: layer  23: dev = Vulkan0
+llama_kv_cache_unified: layer  24: dev = Vulkan0
+llama_kv_cache_unified: layer  25: dev = Vulkan0
+llama_kv_cache_unified: layer  26: dev = Vulkan0
+llama_kv_cache_unified: layer  27: dev = Vulkan0
+llama_kv_cache_unified: layer  28: dev = Vulkan0
+llama_kv_cache_unified: layer  29: dev = Vulkan0
+llama_kv_cache_unified: layer  30: dev = Vulkan0
+llama_kv_cache_unified: layer  31: dev = Vulkan0
+llama_kv_cache_unified:    Vulkan0 KV buffer size =  8192.00 MiB
+llama_kv_cache_unified: size = 8192.00 MiB ( 16384 cells,  32 layers,  1/1 seqs), K (f16): 4096.00 MiB, V (f16): 4096.00 MiB
+llama_context: enumerating backends
+llama_context: backend_ptrs.size() = 2
+llama_context: max_nodes = 2328
+llama_context: worst-case: n_tokens = 512, n_seqs = 1, n_outputs = 0
+graph_reserve: reserving a graph for ubatch with n_tokens =  512, n_seqs =  1, n_outputs =  512
+graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+graph_reserve: reserving a graph for ubatch with n_tokens =  512, n_seqs =  1, n_outputs =  512
+llama_context:    Vulkan0 compute buffer size =  1104.01 MiB
+llama_context: Vulkan_Host compute buffer size =    56.02 MiB
+llama_context: graph nodes  = 1126
+llama_context: graph splits = 2
+CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX_VNNI = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | AVX512 = 1 | AVX512_VBMI = 1 | AVX512_VNNI = 1 | AVX512_BF16 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+Model metadata: {'tokenizer.chat_template': "{% if not add_generation_prompt is defined %}\n{% set add_generation_prompt = false %}\n{% endif %}\n{%- set ns = namespace(found=false) -%}\n{%- for message in messages -%}\n    {%- if message['role'] == 'system' -%}\n        {%- set ns.found = true -%}\n    {%- endif -%}\n{%- endfor -%}\n{{bos_token}}{%- if not ns.found -%}\n{{'You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer\\n'}}\n{%- endif %}\n{%- for message in messages %}\n    {%- if message['role'] == 'system' %}\n{{ message['content'] }}\n    {%- else %}\n        {%- if message['role'] == 'user' %}\n{{'### Instruction:\\n' + message['content'] + '\\n'}}\n        {%- else %}\n{{'### Response:\\n' + message['content'] + '\\n<|EOT|>\\n'}}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{% if add_generation_prompt %}\n{{'### Response:'}}\n{% endif %}", 'tokenizer.ggml.add_eos_token': 'false', 'tokenizer.ggml.padding_token_id': '32014', 'tokenizer.ggml.eos_token_id': '32021', 'general.quantization_version': '2', 'tokenizer.ggml.model': 'gpt2', 'general.file_type': '2', 'general.architecture': 'llama', 'llama.rope.freq_base': '100000.000000', 'llama.context_length': '16384', 'general.name': 'deepseek-ai', 'llama.rope.scaling.factor': '4.000000', 'llama.feed_forward_length': '11008', 'llama.attention.layer_norm_rms_epsilon': '0.000001', 'llama.rope.dimension_count': '128', 'tokenizer.ggml.bos_token_id': '32013', 'llama.attention.head_count': '32', 'llama.block_count': '32', 'llama.attention.head_count_kv': '32', 'tokenizer.ggml.add_bos_token': 'true', 'llama.embedding_length': '4096', 'llama.rope.scaling.type': 'linear'}
+Available chat formats from metadata: chat_template.default
+Using gguf chat template: {% if not add_generation_prompt is defined %}
+{% set add_generation_prompt = false %}
+{% endif %}
+{%- set ns = namespace(found=false) -%}
+{%- for message in messages -%}
+    {%- if message['role'] == 'system' -%}
+        {%- set ns.found = true -%}
+    {%- endif -%}
+{%- endfor -%}
+{{bos_token}}{%- if not ns.found -%}
+{{'You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer\n'}}
+{%- endif %}
+{%- for message in messages %}
+    {%- if message['role'] == 'system' %}
+{{ message['content'] }}
+    {%- else %}
+        {%- if message['role'] == 'user' %}
+{{'### Instruction:\n' + message['content'] + '\n'}}
+        {%- else %}
+{{'### Response:\n' + message['content'] + '\n<|EOT|>\n'}}
+        {%- endif %}
+    {%- endif %}
+{%- endfor %}
+{% if add_generation_prompt %}
+{{'### Response:'}}
+{% endif %}
+Using chat eos_token: <|EOT|>
+Using chat bos_token: <｜begin▁of▁sentence｜>
+llama_perf_context_print:        load time =   14173.25 ms
+llama_perf_context_print: prompt eval time =   14172.96 ms / 15860 tokens (    0.89 ms per token,  1119.03 tokens per second)
+llama_perf_context_print:        eval time =   18662.34 ms /   397 runs   (   47.01 ms per token,    21.27 tokens per second)
+llama_perf_context_print:       total time =   32926.00 ms / 16257 tokens
+llama_perf_context_print:    graphs reused =        383
+Querying DeepSeek for Helmholtz MCP Kr0wZ Topology Analysis...
+\n=== DeepSeek Kr0wZ Audit ===
+Analyzing the provided source code, there are several potential bottlenecks:
+
+1. In the `tsfi_mcp_server.c`, the server uses a blocking `select()` function to wait for network activity. This can potentially become a bottleneck if the server receives a high volume of network requests. This can be addressed by using a non-blocking variant of the `select()` function, such as `poll()` or `epoll_wait()`.
+
+2. The `tsfi_zmm_rpc.c` uses a blocking `read()` function to read from the network socket. This could potentially block the server while waiting for data, leading to a bottleneck. This can be addressed by using a non-blocking variant of the `read()` function.
+
+3. In the `kr0wz_bridge_daemon.py`, the script polls the MCP server for new lore updates every second (`time.sleep(1.0)`). If the MCP server is not able to provide updates at the same rate as the daemon polls, this could lead to a significant delay in receiving updates. This can be improved by using a more efficient method for notifying the Python script about changes, such as using zero-copy memory triggers or Vulkan ReBAR interrupt events.
+
+4. The source code does not provide the specific method for eliminating polling (time.sleep), but the general idea is to replace the blocking I/O operations (like the `select()`, `read()`, etc.) with non-blocking ones and use a more efficient notification mechanism like zero-copy memory triggers or Vulkan ReBAR interrupt events.
+
+Please note that without the actual code implementation, the provided analysis may not cover every potential bottleneck.
+============================\n

@@ -1,0 +1,17 @@
+PROGRAM LORE_DATABASE_TEST
+  ARENA DB_ARENA 1048576
+  WAVELET W1 ARENA DB_ARENA
+  WAVELET W2 ARENA DB_ARENA
+  
+  ! Initialize Trilateral Yi (Xi=123 Alpha=456 Beta=789)
+  CREATE_YI W1 W2 123 456 789
+  
+  ! Attach some material data
+  ATTACH_FIELD W1 "STRING" "Name" "Ancient Wavelet"
+  ATTACH_FIELD W1 "STRING" "Origin" "Acoustic Substrate"
+  
+  ! Store in Infinite Journal
+  STORE MATERIAL W1
+  
+  ! End session
+END PROGRAM

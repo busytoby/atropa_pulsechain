@@ -1,0 +1,24 @@
+--- tsfi_staging.c
++++ tsfi_staging.c
+@@ -355,6 +359,21 @@
+ 
+ static LauGlyph *g_glyph_cache[0x10000] = {0};
+ 
++void destroy_staging_buffer_system_impl(void) {
++    if (g_font_buffer) {
++        lau_free(g_font_buffer);
++        g_font_buffer = NULL;
++        g_font_loaded = false;
++    }
++    for (int i = 0; i < 0x10000; i++) {
++        if (g_glyph_cache[i]) {
++            if (g_glyph_cache[i]->bitmap) lau_free(g_glyph_cache[i]->bitmap);
++            lau_free(g_glyph_cache[i]);
++            g_glyph_cache[i] = NULL;
++        }
++    }
++}
++
+ static LauGlyph *get_glyph(uint32_t codepoint) {
+     if (codepoint >= 32 && codepoint <= 126) {
+         LauGlyph *lg = NULL;

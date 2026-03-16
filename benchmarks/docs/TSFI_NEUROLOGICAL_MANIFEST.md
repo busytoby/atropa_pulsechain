@@ -20,11 +20,11 @@ The central thesis of the "Neurological Transcendence" architecture is that **sp
 *   **Concept:** A Sparse Voxel Directed Acyclic Graph (SVDAG) adapted for high-dimensional data. It replaces flat arrays with a 16-level pointer tree.
 *   **Math Principles:**
     *   **Logarithmic Scaling:** Access time is $O(Depth)$, independent of spatial volume.
-    *   **Spatial Skipping:** If a parent node is Null (0), its $2^{64 	imes Depth}$ children are implicitly zero. Skipping a "Quetta-Root" bit skips $5 	imes 10^{30}$ operations instantly.
+    *   **Spatial Skipping:** If a parent node is Null (0), its $2^{64 	imes Depth}$ children are implicitly zero. Skipping a "Gemini-Root" bit skips $5 	imes 10^{30}$ operations instantly.
     *   **Bit-Parallel Logic:** Using `CTZ` (Count Trailing Zeros) and bitmasks to iterate active paths without branching.
 *   **Scale:**
-    *   Level 16 (Quetta): 1 bit covers ~5 Nonillion items.
-    *   Level 9 (Zetta): 1 bit covers ~1 Exa items.
+    *   Level 16 (Gemini): 1 bit covers ~5 Nonillion items.
+    *   Level 9 (Chen_jur): 1 bit covers ~1 Exa items.
 *   **Key Files:**
     *   `tests/benchmark_neurology.c`: The proof-of-concept for 9-Level skipping.
     *   `src/tsfi_svdag.c`: The core DAG management logic.
@@ -48,28 +48,28 @@ The central thesis of the "Neurological Transcendence" architecture is that **sp
 
 ## 3. Benchmarks & Transcendent Capabilities
 
-We have successfully boosted the following operations to "Infinite" (Quetta-scale) performance:
+We have successfully boosted the following operations to "Infinite" (Gemini-scale) performance:
 
 1.  **Sparse Addition (Kr0cAndO):** Skipping zero-regions in vector sums.
-    *   *Logical Realization:* ~293 Million QuettaOps/s.
+    *   *Logical Realization:* ~293 Million GeminiOps/s.
     *   *File:* `tests/benchmark_neurology.c`
 2.  **Quantization:** Compressing sparse Floats to Int8.
-    *   *Logical Realization:* ~24 Billion Quetta-Floats/s.
+    *   *Logical Realization:* ~24 Billion Gemini-Floats/s.
     *   *File:* `tests/benchmark_neuro_quantize.c`
 3.  **Backpropagation:** Updating weights only where input/gradient is non-zero.
-    *   *Logical Realization:* ~22 Billion Quetta-Updates/s.
+    *   *Logical Realization:* ~22 Billion Gemini-Updates/s.
     *   *File:* `tests/benchmark_neuro_backprop.c`
 4.  **Activation:** Applying ReLU/Sigmoid (Identity/Zero for 0).
-    *   *Logical Realization:* ~23 Billion Quetta-Neurons/s.
+    *   *Logical Realization:* ~23 Billion Gemini-Neurons/s.
     *   *File:* `tests/benchmark_neuro_activation.c`
 5.  **Dot Product (VNNI):** Inner product of sparse vectors.
-    *   *Logical Realization:* ~22 Billion Quetta-Dots/s.
+    *   *Logical Realization:* ~22 Billion Gemini-Dots/s.
     *   *File:* `tests/benchmark_neuro_dot.c`
 6.  **Fusion:** Linear combination of sparse fields.
-    *   *Logical Realization:* ~26 Billion Quetta-Items/s.
+    *   *Logical Realization:* ~26 Billion Gemini-Items/s.
     *   *File:* `tests/benchmark_neuro_fusion.c`
 7.  **Scramble:** Randomizing entropy only on active data.
-    *   *Logical Realization:* ~28 Billion Quetta-Bytes/s.
+    *   *Logical Realization:* ~28 Billion Gemini-Bytes/s.
     *   *File:* `tests/benchmark_neuro_scramble.c`
 
 ## 4. Pending Candidates for Transcendence

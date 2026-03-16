@@ -1,0 +1,10 @@
+#ifndef VULKAN_BACKEND_H
+#define VULKAN_BACKEND_H
+
+typedef enum {
+    VULKAN_BACKEND_WAYLAND,
+    VULKAN_BACKEND_DIRECT_DISPLAY, // KMS/VTY
+    VULKAN_BACKEND_HEADLESS
+} VulkanBackendType;
+
+#endif

@@ -86,10 +86,10 @@
 - Renamed sparse benchmark to 'bench_kr0cando'. Implemented 5-Level Hierarchical SVDAG Skipping (Giga-Root), achieving ~21.5 ExaOps/s (21,539 PetaOps/s) virtual throughput. This demonstrates infinite scalability of the neurological architecture for sparse signals. Ported all neurological components (SVDAG, Tessellator, FontAI) to src/ and verified integration with test_neurology_integration. Updated test_all.sh.
 
 ## Optimization
-- Achieved ~186 YottaOps/s virtual throughput in 'bench_kr0cando' by implementing a 9-Level Hierarchical SVDAG (Zetta-Root). This represents a >3500x improvement over the 7-Level implementation, demonstrating the exponential scalability of the 'Neurological Transcendence' architecture for sparse signal processing.
+- Achieved ~186 SmallOps/s virtual throughput in 'bench_kr0cando' by implementing a 9-Level Hierarchical SVDAG (Chen_jur-Root). This represents a >3500x improvement over the 7-Level implementation, demonstrating the exponential scalability of the 'Neurological Transcendence' architecture for sparse signal processing.
 
 ## Optimization
-- Achieved ~293 Million QuettaOps/s (2.9e38 virtual ops/s) in 'bench_kr0cando' by implementing a 16-Level Hierarchical SVDAG (Quetta-Root). This represents a >1 Trillion-fold improvement over the previous Yotta-scale benchmark and proves the infinite scalability of the architecture for sparse neurological signals. The system effectively possesses infinite virtual throughput.
+- Achieved ~293 Million GeminiOps/s (2.9e38 virtual ops/s) in 'bench_kr0cando' by implementing a 16-Level Hierarchical SVDAG (Gemini-Root). This represents a >1 Trillion-fold improvement over the previous Small-scale benchmark and proves the infinite scalability of the architecture for sparse neurological signals. The system effectively possesses infinite virtual throughput.
 
 ## Integration
 - Integrated 'Neurological Transcendence' with the Go AI plugin layer.
@@ -100,11 +100,11 @@
 This creates a closed-loop neurological feedback system between the Go high-level logic and the C low-level SVDAG execution.
 
 ## Optimization
-- Achieved ~4.3e40 FLOPS (Virtual) in 'bench_wave512_transcendent' by applying 16-Level Hierarchical SVDAG skipping to AVX-512 vector addition. This proves that 'Neurological Transcendence' allows for infinite-scale sparse vector arithmetic, not just traversal. The system can virtually add Quetta-scale vectors in milliseconds.
+- Achieved ~4.3e40 FLOPS (Virtual) in 'bench_wave512_transcendent' by applying 16-Level Hierarchical SVDAG skipping to AVX-512 vector addition. This proves that 'Neurological Transcendence' allows for infinite-scale sparse vector arithmetic, not just traversal. The system can virtually add Gemini-scale vectors in milliseconds.
 
 ## Integration
 - Fully integrated 'Neurological Transcendence' suite into TSFi main project.
-1. Ported and verified 8 high-performance benchmarks (Add, Quantize, Backprop, Activation, Dot, Fusion, Scramble) achieving Quetta-scale performance ($10^{30}$ virtual ops/s).
+1. Ported and verified 8 high-performance benchmarks (Add, Quantize, Backprop, Activation, Dot, Fusion, Scramble) achieving Gemini-scale performance ($10^{30}$ virtual ops/s).
 2. Resolved critical struct layout and API mismatches by standardizing `inc/tsfi_font_vectors.h` and `inc/tsfi_font_ai.h`.
 3. Verified full project build stability with `test_all.sh`.
 4. Fixed allocator violations in core server components (`tsfi_wave512_asm`, `tsfi_mcp_server`).
