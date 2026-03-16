@@ -1,0 +1,88 @@
+# Build Artifacts
+bin/
+obj/
+__pycache__/
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+*.out
+
+# Models, Weights, & DNA
+assets/
+models/
+*.gguf
+*.bin
+*.pth
+*.safetensors
+*.onnx
+*.data
+*.flower
+*.checkpoint
+*.class
+*.glyph
+*.spv
+*.dna
+
+# Generated Media & Datasets
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.ppm
+*.obj
+*.json
+*.txt
+*.log
+*.pos
+core
+eof_corpus_*.txt
+
+# Exclude generated frame directories
+demo_24sec_frames/
+depth_maps/
+frames/
+kinematics/
+kinematics_ballet/
+masterpiece_matrix/
+robust_12sec_frames/
+separation/
+skeletal_test/
+sovereign_frames/
+timeline_frames/
+ultimate_12sec_frames/
+ultimate_animation/
+ultimate_frames/
+unified_frames/
+vlm_frames/
+volumetric_test/
+
+# Experiments and Third-Party Bloat
+experiments/
+thunks/
+sd_cpp/
+SPIRV-Tools/
+tsfi-vulkan-dist/
+libwebsockets/
+go-ethereum-fork/
+ethminer-fork/
+
+# Temporary Fix Scripts
+tools/fix_*.py
+tools/patch_*.py
+tools/test_*.py
+tools/update_*.py
+tests/fix_*.c
+
+# Editor/OS backups
+*~
+*.orig
+.DS_Store
+.vscode/
+
+# Ensure core exceptions
+!tools/vlm_score.txt
+!tools/mcp_audit.txt
+!tools/mcp_mass_audit.txt
