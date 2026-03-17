@@ -1,0 +1,41 @@
+! TSFi Bridge Connection Test
+! Orchestrates two separate systems in Fortran/TSFI, then bridges to C
+! to execute the W1->Connect(W2) wired method.
+
+PROGRAM BRIDGE_TEST
+  ARENA TEST_ARENA 1048576
+  SET_PRIME 953473
+  
+  ! System A
+  WAVELET WA1 FROM TEST_ARENA
+  WAVELET WA2 FROM TEST_ARENA
+  SEED_WAVELET WA1 11111 22222 33333
+  SEED_WAVELET WA2 44444 55555 66666
+  W_YI_A = CREATE_YI WA1 WA2 1001 2026 777
+  SEAL_HEADER WA1
+  ACTIVATE_YANG WA1 2026
+  
+  ! System B
+  WAVELET WB1 FROM TEST_ARENA
+  WAVELET WB2 FROM TEST_ARENA
+  SEED_WAVELET WB1 77777 88888 99999
+  SEED_WAVELET WB2 12345 23456 34567
+  W_YI_B = CREATE_YI WB1 WB2 1002 2026 777
+  SEAL_HEADER WB1
+  ACTIVATE_YANG WB1 2026
+  
+  LOG_TELEMETRY "Orchestration Complete. Passing WA1 and WB1 to C Bridge..."
+  
+  ! Bridge to C: calls tsfi_BridgeConnect(WA1, WB1)
+  ! which executes WA1->Connect(WB1)
+  BRIDGE_CONNECT WA1 WB1
+  
+  LOG_TELEMETRY "Connection Established via C Bridge."
+  
+  ! Verify synchronized evolution on the connected pair
+  EVOLVE_DAI WA1 ICHI
+  EVOLVE_DAI WB1 ICHI
+  
+  PRINT_WAVELET WA1
+  PRINT_WAVELET WB1
+END PROGRAM

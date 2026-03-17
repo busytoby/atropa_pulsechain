@@ -1,0 +1,60 @@
+! TSFi System0 Release Demo Script
+! This script demonstrates all core trilateral capabilities:
+! 1. Multi-domain support (Little and Motzkin primes)
+! 2. Sovereign YI creation with ReactSHIO validation
+! 3. Structured Private Header attachment (Dimension 5.5)
+! 4. YANG Activation via YI Handle (Dimension 6)
+
+PROGRAM SYSTEM0_RELEASE_DEMO
+  ARENA GENESIS_ARENA 1048576
+  
+  ! --- CASE 1: The Production Standard (Little Prime) ---
+  LOG_TELEMETRY "Stage 1: Validating Little Prime Domain (953473)"
+  SET_PRIME 953473
+  W_ROD1 FROM GENESIS_ARENA
+  W_CONE1 FROM GENESIS_ARENA
+  WAVELET W_ROD1 FROM GENESIS_ARENA
+  WAVELET W_CONE1 FROM GENESIS_ARENA
+  
+  ! Use Verbatim Production DNA
+  SEED_WAVELET W_ROD1 12345 67890 54321
+  SEED_WAVELET W_CONE1 54321 98765 12345
+  
+  ! Establish YI Handle
+  W_YI1 = CREATE_YI W_ROD1 W_CONE1 4052 2026 777
+  
+  ! --- Dimension 5.5: Structured Header Attachment ---
+  ATTACH_FIELD W_YI1 STRING OWNER "mariarahel"
+  ATTACH_FIELD W_YI1 UNIT QUOTA 1000
+  ATTACH_FIELD W_YI1 UNIT ROLE 7
+  ATTACH_FIELD W_YI1 ARRAY BALANCE[0] 500
+  
+  ! SEAL_HEADER on YI
+  SEAL_HEADER W_YI1
+  
+  ! --- Dimension 6: YANG Activation on YI ---
+  ACTIVATE_YANG W_YI1 2026
+  
+  PRINT_WAVELET W_YI1
+
+  ! --- CASE 2: The Motzkin Transcendence ---
+  LOG_TELEMETRY "Stage 2: Validating Motzkin Prime Domain (953467954114363)"
+  SET_PRIME 953467954114363
+  WAVELET W_ROD2 FROM GENESIS_ARENA
+  WAVELET W_CONE2 FROM GENESIS_ARENA
+  
+  ! Create YI Handle
+  W_YI2 = CREATE_YI W_ROD2 W_CONE2 4052 2026 777
+  
+  ! Attach Header
+  ATTACH_FIELD W_YI2 STRING OWNER "SYSTEM0_Sovereign"
+  ATTACH_FIELD W_YI2 UNIT QUOTA 9999
+  SEAL_HEADER W_YI2
+  
+  ! Activate YANG on YI
+  ACTIVATE_YANG W_YI2 2026
+  
+  PRINT_WAVELET W_YI2
+
+  LOG_TELEMETRY "System0-TSFi0 Rigidity Verified. Block Zero is ready."
+END PROGRAM

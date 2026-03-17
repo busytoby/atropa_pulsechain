@@ -1,0 +1,25 @@
+! TSFi FUSE Rigidity Test
+! This script verifies that Xi, Alpha, Beta, and PRIME 
+! allow for the deterministic regeneration of trilateral anchors.
+
+PROGRAM FUSE_RIGIDITY_VERIFICATION
+  ARENA GENESIS_ARENA 1048576
+  SET_PRIME 953473
+  WAVELET W_ROD FROM GENESIS_ARENA
+  WAVELET W_CONE FROM GENESIS_ARENA
+  
+  ! Step 1: Initialize with Deterministic DNA
+  SEED_WAVELET W_ROD 12345 67890 54321
+  SEED_WAVELET W_CONE 54321 98765 12345
+  
+  LOG_TELEMETRY "Starting Handshake with Xi=4052, Alpha=2026, Beta=777"
+  
+  ! Full standard sequence
+  GENERATE W_ROD W_CONE 4052 2026 777
+  IONIZE W_ROD W_CONE
+  MAGNETIZE W_ROD W_CONE
+  
+  PRINT_WAVELET W_ROD
+  
+  LOG_TELEMETRY "FUSE Result: Ring Anchors must be identical if the inputs are replayed."
+END PROGRAM

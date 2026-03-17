@@ -1,0 +1,12 @@
+! TSFi FA Tuning Script
+PROGRAM FA_TUNING_MATRIX
+  ARENA GLOBAL_ARENA 4096
+  SET_PRIME 953473
+  WAVELET W1 FROM GLOBAL_ARENA
+  
+  ! In standard, STAT already performs initial Tune.
+  ! We re-tune to demonstrate the primitive.
+  LOG_TELEMETRY "Tuning Wavelet W1..."
+  SEAL W1
+  EXECUTE W1
+END PROGRAM

@@ -1,0 +1,39 @@
+! TSFi Epoch 1 Sheafing Test
+! Bundles three wavelets into a Sheaf and performs trilateral reduction.
+
+PROGRAM SHEAFING_TEST
+  ARENA TEST_ARENA 1048576
+  SET_PRIME 953473
+  
+  WAVELET WA1 FROM TEST_ARENA
+  WAVELET WA2 FROM TEST_ARENA
+  WAVELET WB1 FROM TEST_ARENA
+  WAVELET WB2 FROM TEST_ARENA
+  
+  ! Step 1: Establish physical basis for all
+  SEED_WAVELET WA1 100 200 300
+  SEED_WAVELET WA2 400 500 600
+  SEED_WAVELET WB1 700 800 900
+  SEED_WAVELET WB2 111 222 333
+  
+  ! Step 2: Form joint manifolds (Handshake A and B)
+  W_YI_A = CREATE_YI WA1 WA2 4052 2026 777
+  W_YI_B = CREATE_YI WB1 WB2 4052 2026 777
+  
+  ! Step 3: Activate YANG (Epoch 0 Finality)
+  SEAL_HEADER WA1
+  SEAL_HEADER WB1
+  ACTIVATE_YANG WA1 2026
+  ACTIVATE_YANG WB1 2026
+  
+  ! Step 4: Epoch 1 Sheafing
+  LOG_TELEMETRY "Bundling WA1 and WB1 into S1..."
+  S1 = CREATE_SHEAF WA1 WB1
+  
+  ! Step 5: Trilateral Reduction
+  LOG_TELEMETRY "Reducing S1 into recursive receipt..."
+  REDUCE_SHEAF S1
+  
+  PRINT_SHEAF S1
+  LOG_TELEMETRY "Epoch 1 Sheafing Verified."
+END PROGRAM

@@ -1,0 +1,17 @@
+! Spider File Allocation Test
+PROGRAM Test_Spider_File_Allocator
+  ARENA TEST_ARENA SIZE 1048576
+  
+  ! 1. The Alligator creates a raw, empty wavelet
+  WAVELET W_FILE FROM TEST_ARENA
+  
+  ! 2. The Spider initializes it via Directives (simulated as XOR energy in C)
+  ! We use the native C blocks generated to mock the XOR assignment
+  
+  ALLOCATE_FILE_CONTENT W_FILE "creative/daily_lore_2026_03_14.md"
+  
+  ! 3. The Alligator audits the Spider's taste to ensure it comprehended the file
+  AUDIT_SPIDER_TASTE W_FILE
+  
+  LOG_TELEMETRY "Spider successfully requested exact memory and verified taste."
+END PROGRAM

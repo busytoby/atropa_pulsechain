@@ -1,0 +1,27 @@
+! TSFi Header Sealing Negative Test
+! This script verifies that ATTACH_FIELD fractures if called
+! after the header has been solidified via SEAL_HEADER.
+
+PROGRAM HEADER_SEALING_FRACTURE_TEST
+  ARENA GENESIS_ARENA 1048576
+  SET_PRIME 953473
+  
+  WAVELET W_ROD FROM GENESIS_ARENA
+  WAVELET W_CONE FROM GENESIS_ARENA
+  
+  ! Step 1: Create Validated YI (Reaches SEAL9)
+  W_YI = CREATE_YI W_ROD W_CONE 4052 2026 777
+  
+  ! Step 2: Valid Attachment
+  ATTACH_FIELD W_YI STRING OWNER "authorized_agent"
+  
+  ! Step 3: Seal Header (Reaches SEAL 9.5)
+  SEAL_HEADER W_YI
+  
+  LOG_TELEMETRY "Header sealed. Attempting illegal attachment..."
+  
+  ! Step 4: Illegal Attachment (Must FRACTURE)
+  ATTACH_FIELD W_YI UNIT QUOTA 9999
+  
+  PRINT_WAVELET W_YI
+END PROGRAM

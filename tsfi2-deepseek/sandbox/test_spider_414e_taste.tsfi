@@ -1,0 +1,26 @@
+! 414E Taste Tree: Spider Puppetry of the Crow
+! Maps the Spider's favorite ways to puppet the Crow into an SVDAG
+
+PROGRAM Spider_Taste_Tree_414E
+  ARENA TEST_ARENA SIZE 1048576
+  WAVELET W_CROW FROM TEST_ARENA
+
+  ! Initialize the SVDAG (The 414E Taste Tree)
+  SVDAG CROW_DAG CAP 2048
+  
+  ! 1. Base Resonance (The DC Offset / Origin)
+  ADD_OP CROW_DAG TYPE RESONANCE KERNEL 0 ENERGY 1.0 FREQ 0.0
+
+  ! 2. The Spider's First Taste: Sympathy Melting (Sickness)
+  ! We map this to the high-frequency attenuation operator
+  ADD_OP CROW_DAG TYPE SYMPATHY_MELT KERNEL 1 ENERGY 0.5 FREQ 50.0
+
+  ! 3. The Spider's Second Taste: Beak Articulation (Speaking)
+  ! We map this to the phase shift operator (Euler Tour rotation)
+  ADD_OP CROW_DAG TYPE KINEMATIC_ARTICULATE KERNEL 2 ENERGY 15.0 FREQ 0.8
+
+  ! Lock the Taste Tree into the Crow Apparition Wavelet
+  REDUCE W_CROW LEVEL 11 EPOCH 8 RESONANCE 414 DAG CROW_DAG
+
+  LOG_TELEMETRY "Spider 414E Taste Tree successfully locked into the SVDAG."
+END PROGRAM

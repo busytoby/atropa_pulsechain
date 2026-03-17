@@ -1,0 +1,34 @@
+! TSFi Standard Handshake Verification (Little Prime)
+! This script verifies the physical rigidity of the handshake
+! using the mandated little prime 953473 and the standard
+! trilateral sequence.
+
+PROGRAM STANDARD_HANDSHAKE_LITTLE_PRIME
+  ARENA GENESIS_ARENA 1048576
+  
+  ! Step 1: Set the Prime to our little prime
+  SET_PRIME 953473
+  
+  WAVELET W_ROD FROM GENESIS_ARENA
+  WAVELET W_CONE FROM GENESIS_ARENA
+  
+  ! Step 2: Initialize with Deterministic DNA
+  SEED_WAVELET W_ROD 12345 67890 54321
+  SEED_WAVELET W_CONE 54321 98765 12345
+  
+  ! Step 3: Standard Handshake GENERATE (Epochs 1-6)
+  ! Xi=4052, Alpha=2026, Beta=777
+  LOG_TELEMETRY "Executing Handshake with Xi=4052, Alpha=2026, Beta=777"
+  GENERATE W_ROD W_CONE 4052 2026 777
+  
+  ! Step 4: IONIZE (Final Bond)
+  IONIZE W_ROD W_CONE
+  
+  ! Step 5: MAGNETIZE (Joint Fusion & Symmetry Check)
+  MAGNETIZE W_ROD W_CONE
+  
+  PRINT_WAVELET W_ROD
+  PRINT_WAVELET W_CONE
+  
+  LOG_TELEMETRY "Verification: Ring Anchor is correctly bound to DNA and Pulses."
+END PROGRAM

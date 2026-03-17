@@ -1,0 +1,10 @@
+! TSFi Wavelet Registry Script
+PROGRAM TELEMETRY_MATRIX
+  ARENA GLOBAL_ARENA 4096
+  SET_PRIME 953473
+  WAVELET W1 FROM GLOBAL_ARENA
+  ATTACH_DATA W1 "Physical Geometry Test with Zero-Copy Telemetry"
+  LOG_TELEMETRY "Wavelet Attached and Telemetry Active"
+  SEAL W1
+  EXECUTE W1
+END PROGRAM

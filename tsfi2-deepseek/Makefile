@@ -41,6 +41,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_zmm_vm.o $(OBJ_DIR)/tsfi_merkle.o \
             $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o \
             $(OBJ_DIR)/tsfi_safetensors_cache.o \
+            $(OBJ_DIR)/tsfi_taste_cache.o \
             $(OBJ_DIR)/tsfi_vae_firmware.o $(OBJ_DIR)/tsfi_liang_barsky.o \
             $(OBJ_DIR)/tsfi_nand_trap_firmware.o $(OBJ_DIR)/tsfi_vessel_anchor.o \
             $(OBJ_DIR)/tsfi_vae_upsampler.o \
@@ -95,6 +96,15 @@ bin/tsfi_cockpit_vae_bridge: src/tsfi_cockpit_vae_bridge.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -mavx512f -o $@ $^ $(LDFLAGS) -lrt
 
 bin/tsfi_guidance_tuner: src/tsfi_guidance_tuner.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_spider_crow_taste: src/tsfi_spider_crow_taste.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_taste_atoms: tests/test_taste_atoms.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_taste_cache: tests/test_taste_cache.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 bin/test_fur_synthesis: tests/test_fur_synthesis.c $(CORE_OBJS)

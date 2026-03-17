@@ -1,0 +1,46 @@
+! TSFi Cartesian Tree Memory Benchmark
+! Demonstrates Arena Allocation, Telemetry, and Registry linkages
+
+PROGRAM CARTESIAN_BENCHMARK
+  ! Pre-allocate a 256MB contiguous Arena (268435456 bytes) to simulate the Codeforces limit
+  ARENA CARTESIAN_ARENA 268435456
+  
+  LOG_TELEMETRY "Initializing Cartesian Tree Arena (256 MB Limit)"
+  SET_PRIME 953473
+  
+  ! Simulate root node allocation
+  LOG_TELEMETRY "Allocating Root Node (Minimum Element)"
+  WAVELET ROOT FROM CARTESIAN_ARENA
+  ATTACH_FIELD ROOT STRING ROLE "CARTESIAN_ROOT"
+  ATTACH_FIELD ROOT UNIT VALUE 10
+  SEAL_HEADER ROOT
+  
+  ! Simulate left child
+  LOG_TELEMETRY "Allocating Left Child"
+  WAVELET LEFT_CHILD FROM CARTESIAN_ARENA
+  ATTACH_FIELD LEFT_CHILD STRING ROLE "LEFT_NODE"
+  ATTACH_FIELD LEFT_CHILD UNIT VALUE 20
+  SEAL_HEADER LEFT_CHILD
+  
+  ! Simulate right child
+  LOG_TELEMETRY "Allocating Right Child"
+  WAVELET RIGHT_CHILD FROM CARTESIAN_ARENA
+  ATTACH_FIELD RIGHT_CHILD STRING ROLE "RIGHT_NODE"
+  ATTACH_FIELD RIGHT_CHILD UNIT VALUE 15
+  SEAL_HEADER RIGHT_CHILD
+  
+  ! Connect nodes (Isomorphism to Treaps)
+  LOG_TELEMETRY "Establishing Tree Connections (Pointers)"
+  CONNECT ROOT LEFT_CHILD
+  CONNECT ROOT RIGHT_CHILD
+  
+  ! Register in Journal for Persistence / State Hashing
+  LOG_TELEMETRY "Committing Tree State to Registry Journal"
+  STORE MATERIAL ROOT
+  STORE MATERIAL LEFT_CHILD
+  STORE MATERIAL RIGHT_CHILD
+  
+  PRINT_WAVELET ROOT
+  
+  LOG_TELEMETRY "Cartesian Benchmark Memory Phase Complete"
+END PROGRAM

@@ -1,0 +1,25 @@
+! 414E Taste Tree: Layered Shell Allocator
+! Maps the requirements of ICPC 414E to the Liang-Barsky Fortran allocator.
+! Specifically allocating layered shells of trait-specific memories.
+
+PROGRAM Spider_Taste_Tree_414E_Layered_Shell
+  ARENA LIANG_BARSKY_ARENA SIZE 2097152
+  WAVELET W_SHELL_A FROM LIANG_BARSKY_ARENA
+  WAVELET W_SHELL_B FROM LIANG_BARSKY_ARENA
+
+  ! Allocate layered shells using the new Liang-Barsky verified allocator
+  ALLOCATE_LAYERED_SHELL W_SHELL_A TSFI_TRAIT_PUPPET 1024
+  ALLOCATE_LAYERED_SHELL W_SHELL_B TSFI_TRAIT_FILE 2048
+
+  ! Initialize the SVDAG (The 414E Taste Tree for the shells)
+  SVDAG SHELL_DAG CAP 2048
+  
+  ! Base Resonance
+  ADD_OP SHELL_DAG TYPE RESONANCE KERNEL 0 ENERGY 1.0 FREQ 0.0
+
+  ! Lock the Taste Tree into the wavelets
+  REDUCE W_SHELL_A LEVEL 11 EPOCH 8 RESONANCE 414 DAG SHELL_DAG
+  REDUCE W_SHELL_B LEVEL 11 EPOCH 8 RESONANCE 414 DAG SHELL_DAG
+
+  LOG_TELEMETRY "414E Layered Shells allocated and locked."
+END PROGRAM

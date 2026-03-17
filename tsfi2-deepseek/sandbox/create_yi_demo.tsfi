@@ -1,0 +1,35 @@
+! TSFi Sovereign YI Creation Script
+! This script utilizes the CREATE_YI standard function
+! to establish a YI handle, then attaches private fields.
+
+PROGRAM SOVEREIGN_YI_GENESIS
+  ARENA GENESIS_ARENA 1048576
+  SET_PRIME 953467954114363
+  
+  WAVELET W_ROD FROM GENESIS_ARENA
+  WAVELET W_CONE FROM GENESIS_ARENA
+  
+  ! Step 1: Initialize DNA
+  SEED_WAVELET W_ROD 12345 67890 54321
+  SEED_WAVELET W_CONE 54321 98765 12345
+  
+  ! Step 2: Create Validated YI (Reaches SEAL9)
+  ! We assign the resulting YI to a new handle
+  W_YI = CREATE_YI W_ROD W_CONE 4052 2026 777
+  
+  ! Step 3: Attach Private Header Fields (Dimension 5.5)
+  ! Fields are attached directly to the YI wavelet
+  ATTACH_FIELD W_YI STRING OWNER "mariarahel"
+  ATTACH_FIELD W_YI UNIT QUOTA 5000
+  ATTACH_FIELD W_YI ARRAY BALANCE[0] 1000
+  
+  ! Step 4: Seal Header and Activate YANG (Reaches SEAL10)
+  ! ACTIVATE_YANG now only requires the YI handle and Epsilon
+  SEAL_HEADER W_YI
+  ACTIVATE_YANG W_YI 2026
+  
+  ! Step 5: Final Physical State Output
+  PRINT_WAVELET W_YI
+  
+  LOG_TELEMETRY "Sovereign YI with Private Header Established."
+END PROGRAM

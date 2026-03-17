@@ -1,0 +1,49 @@
+! TSFi Inter-Wavelet Connection Rigidity Test
+! Verifies W1->Connect(W2) and synchronized recursive evolution.
+
+PROGRAM CONNECTION_RIGIDITY_TEST
+  ARENA TEST_ARENA 1048576
+  SET_PRIME 953473
+  
+  WAVELET W1 FROM TEST_ARENA
+  WAVELET W2 FROM TEST_ARENA
+  
+  ! Step 1: Establish unique bases
+  SEED_WAVELET W1 12345 67890 54321
+  SEED_WAVELET W2 54321 98765 12345
+  
+  ! Step 2: Create Sovereign Handshake (Joint Manifold)
+  ! This establishes the physical basis for both.
+  W_YI = CREATE_YI W1 W2 4052 2026 777
+  
+  ! Step 3: Activate YANG for both handles
+  ATTACH_FIELD W1 STRING OWNER "SYSTEM_ROD"
+  ATTACH_FIELD W2 STRING OWNER "SYSTEM_CONE"
+  SEAL_HEADER W1
+  SEAL_HEADER W2
+  ACTIVATE_YANG W1 2026
+  ACTIVATE_YANG W2 2026
+  
+  ! Step 4: Inter-Wavelet Connection (W1 -> Connect(W2))
+  LOG_TELEMETRY "Establishing Inter-Wavelet Connection..."
+  CONNECT W1 W2
+  
+  ! Step 5: Synchronized Evolution Sequence
+  LOG_TELEMETRY "Executing Synchronized Evolution..."
+  EVOLVE_DAI W1 ICHI
+  EVOLVE_DAI W2 ICHI
+  
+  EVOLVE_DAI W1 DAI
+  EVOLVE_DAI W2 DAI
+  
+  EVOLVE_DAI W_YI1 ICHI
+  EVOLVE_DAI W_YI2 ICHI
+  
+  EVOLVE_DAI W_YI1 DAI
+  EVOLVE_DAI W_YI2 DAI
+
+  PRINT_WAVELET W_YI1
+  PRINT_WAVELET W_YI2
+  
+  LOG_TELEMETRY "Inter-Wavelet Connection and Evolution Verified."
+END PROGRAM
