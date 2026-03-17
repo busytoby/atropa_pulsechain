@@ -5,7 +5,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/types.h>
+
+#ifdef __cplusplus
+#include <atomic>
+#define ATOMIC(X) std::atomic<X>
+#else
 #include <stdatomic.h>
+#define ATOMIC(X) _Atomic X
+#endif
+
+extern ATOMIC(int) g_init_in_progress;
+extern ATOMIC(int) g_teardown_in_progress;
 
 // ---------------------------------------------------------
 struct TSFiBigInt;
@@ -75,7 +85,7 @@ typedef struct LauMetadata {
 typedef struct {
     uint64_t search_index[LAU_REGISTRY_CAPACITY] __attribute__((aligned(64)));
     LauMetadata slots[LAU_REGISTRY_CAPACITY];
-    _Atomic uint32_t count;
+    ATOMIC(uint32_t) count;
     uint8_t _alignment_guard[508];
 } LauRegistryManifold;
 
@@ -83,36 +93,36 @@ typedef struct {
 
 typedef struct {
     uint32_t magic;
-    _Atomic uint32_t sequence_number;
+    ATOMIC(uint32_t) sequence_number;
     uint32_t pid;
-    _Atomic uint32_t header_crc;
-    _Atomic uint32_t system_integrity_fault;
-    _Atomic float current_intensity;
+    ATOMIC(uint32_t) header_crc;
+    ATOMIC(uint32_t) system_integrity_fault;
+    ATOMIC(float) current_intensity;
     
-    _Atomic uint64_t total_allocs;
-    _Atomic uint64_t total_frees;
-    _Atomic uint64_t active_allocs;
-    _Atomic uint64_t active_bytes;
-    _Atomic uint64_t peak_bytes;
+    ATOMIC(uint64_t) total_allocs;
+    ATOMIC(uint64_t) total_frees;
+    ATOMIC(uint64_t) active_allocs;
+    ATOMIC(uint64_t) active_bytes;
+    ATOMIC(uint64_t) peak_bytes;
     
-    _Atomic uint64_t exec_steps;
-    _Atomic uint64_t exec_last_ts;
-    _Atomic uint64_t throttle_count;
-    _Atomic uint64_t total_stall_ns;
+    ATOMIC(uint64_t) exec_steps;
+    ATOMIC(uint64_t) exec_last_ts;
+    ATOMIC(uint64_t) throttle_count;
+    ATOMIC(uint64_t) total_stall_ns;
     
     // --- Little Petya Spider Coverage (Grid 8x5 = 40 cells) ---
-    _Atomic uint64_t spider_grid;   // 40 bits used for occupancy
-    _Atomic uint64_t covered_grid;  // 40 bits used for coverage
-    _Atomic float    coverage_pct;
-    _Atomic bool     xor_trap_active;
+    ATOMIC(uint64_t) spider_grid;   // 40 bits used for occupancy
+    ATOMIC(uint64_t) covered_grid;  // 40 bits used for coverage
+    ATOMIC(float)    coverage_pct;
+    ATOMIC(bool)     xor_trap_active;
     
     char last_directive_str[64];
-    _Atomic float recip_symmetry;
+    ATOMIC(float) recip_symmetry;
     char recip_dai[128];
     char zmm_msg[128];
     uint64_t zmm_val;
     char request_cmd[4096];
-    _Atomic uint32_t request_id;
+    ATOMIC(uint32_t) request_id;
     struct { 
         uint64_t last_shutter_ts; 
         float shutter_fps; 
@@ -195,6 +205,18 @@ DEFINE_MAPPED_STRUCT(WavefrontContext,
     void (*load_z_to_vgpr)(void);
     void (*store_output_from_vgpr)(void);
     void (*execute_vgpr_kernel)(void);
+)
+
+// --- TSFi Subjective WaveSystem (The Unified Descriptor) ---
+// Used to anchor the Helmholtz Command Queue to a specific Taste Awareness.
+DEFINE_MAPPED_STRUCT(TsfiSubjectiveWaveSystem,
+    uint64_t subjective_hash;
+    uint32_t htile_mask;
+    float    guardband;
+    uint32_t vop_seeds;
+    uint32_t msaa_samples;
+    uint32_t sdma_anchor;
+    float    taste_secrets[16];
 )
 
 typedef struct {

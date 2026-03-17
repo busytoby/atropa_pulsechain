@@ -98,6 +98,12 @@ bin/tsfi_cockpit_vae_bridge: src/tsfi_cockpit_vae_bridge.c $(CORE_OBJS)
 bin/tsfi_guidance_tuner: src/tsfi_guidance_tuner.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
+bin/test_graph_cards: tests/test_graph_cards.c obj/tsfi_graph_cards.o $(CORE_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+obj/tsfi_graph_cards.o: src/tsfi_graph_cards.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 bin/tsfi_spider_crow_taste: src/tsfi_spider_crow_taste.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
