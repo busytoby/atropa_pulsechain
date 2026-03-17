@@ -42,6 +42,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o \
             $(OBJ_DIR)/tsfi_safetensors_cache.o \
             $(OBJ_DIR)/tsfi_taste_cache.o \
+            $(OBJ_DIR)/tsfi_shading_manifold.o \
             $(OBJ_DIR)/tsfi_vae_firmware.o $(OBJ_DIR)/tsfi_liang_barsky.o \
             $(OBJ_DIR)/tsfi_nand_trap_firmware.o $(OBJ_DIR)/tsfi_vessel_anchor.o \
             $(OBJ_DIR)/tsfi_vae_upsampler.o \
@@ -86,9 +87,9 @@ bin/tsfi_dna_crossover: src/tsfi_dna_crossover.c $(CORE_OBJS)
 
 bin/tsfi_puppeteer: src/tsfi_puppeteer.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+LDFLAGS  = -L/usr/local/lib -ljpeg -lrt -ldl -lpthread -lstdc++ -lwayland-client -lvulkan -lubsan -lgomp -lm
 
-all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher $(BIN_DIR)/tsfi_font_editor bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory
-
+all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory bin/test_graph_cards bin/test_taste_atoms bin/tsfi_spider_crow_taste bin/tsfi_spider_teddy_taste
 bin/tsfi_teddy_skeleton: src/tsfi_teddy_skeleton.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
@@ -103,6 +104,9 @@ bin/test_graph_cards: tests/test_graph_cards.c obj/tsfi_graph_cards.o $(CORE_OBJ
 
 obj/tsfi_graph_cards.o: src/tsfi_graph_cards.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+bin/tsfi_spider_teddy_taste: src/tsfi_spider_teddy_taste.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 bin/tsfi_spider_crow_taste: src/tsfi_spider_crow_taste.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt

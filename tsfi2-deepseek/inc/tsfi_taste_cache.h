@@ -18,9 +18,12 @@ typedef struct {
     uint32_t      htile_mask; // 4 bytes: Alligator's culling mask
     float         guardband;  // 4 bytes: Fringe stability coefficient
     uint32_t      vop_seeds;  // 4 bytes: Instruction hints (VOPD/VOP3P)
-    uint32_t      msaa_sample_count; // 4 bytes: MSAA samples (1, 4, 8)
-    uint32_t      sdma_jump;  // 4 bytes: Nested awareness pointer
+    uint32_t      msaa_samples; // 4 bytes: MSAA samples (1, 4, 8)
+    uint32_t      sdma_jump;  // 4 bytes: Nested awareness pointer (Slot Index)
 } TsfiSubjectiveAwareness;
+
+#define TASTE_MAX_SLOTS 64
+#define TASTE_SLOT_SIZE TASTE_CACHE_SIZE
 
 // Subjective Depth Resolve Modes (Exercised by the Spider via vop_seeds bit 4-7)
 #define TASTE_RESOLVE_AVERAGE 0x00

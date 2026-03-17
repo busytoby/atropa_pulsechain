@@ -77,15 +77,12 @@ int main(int argc, char** argv) {
     memset(&gen_params, 0, sizeof(sd_img_gen_params_t));
     sd_img_gen_params_init(&gen_params);
     
-    // Mandated 4-Quadrant Prompt
-    static char full_prompt[1024];
-    snprintf(full_prompt, sizeof(full_prompt), 
-             "four distinct photorealistic 16-inch teddy bears, one in each quadrant, %s", prompt);
-    gen_params.prompt = full_prompt;
+    // Use prompt directly for high-fidelity realization
+    gen_params.prompt = prompt;
     gen_params.negative_prompt = "";
     gen_params.clip_skip = -1;
-    gen_params.width = 512;
-    gen_params.height = 512;
+    gen_params.width = 1280;
+    gen_params.height = 720;
     gen_params.batch_count = 1;
     gen_params.seed = -1;
     gen_params.strength = 0.75f;
