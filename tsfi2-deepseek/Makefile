@@ -105,6 +105,18 @@ bin/test_graph_cards: tests/test_graph_cards.c obj/tsfi_graph_cards.o $(CORE_OBJ
 obj/tsfi_graph_cards.o: src/tsfi_graph_cards.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+bin/tsfi_sd_worker: src/tsfi_native_sd.cpp $(CORE_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ \
+		assets/sd_cpp/build/libstable-diffusion.a \
+		assets/sd_cpp/build/ggml/src/libggml.a \
+		assets/sd_cpp/build/ggml/src/libggml-cpu.a \
+		assets/sd_cpp/build/ggml/src/libggml-base.a \
+		assets/sd_cpp/build/ggml/src/ggml-vulkan/libggml-vulkan.a \
+		$(LDFLAGS) -lpthread -ldl
+
+bin/tsfi_native_sd: src/tsfi_native_sd.cpp $(OBJ_DIR)/tsfi_sd_thunk.o $(CORE_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
 bin/tsfi_icpc_taste_tournament: src/tsfi_icpc_taste_tournament.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 

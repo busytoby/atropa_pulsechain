@@ -147,6 +147,12 @@ void *lau_memalign_loc(size_t alignment, size_t size, const char *file, int line
     LauHeader *h = (LauHeader *)((char *)payload - header_size);
     
     memset(&h->meta, 0, sizeof(LauMetadata));
+    // MANDATE: 4GB Memory Guard
+    size_t current_active = atomic_load(&g_active_bytes);
+    if (current_active + total_size > (4ULL * 1024 * 1024 * 1024)) {
+        fprintf(stderr, "[FRACTURE] CRITICAL: 4GB RAM Limit Exceeded\n");
+        abort();
+    }
     h->meta.seal_level = LAU_SEAL_NONE;
     h->footer.magic = LAU_MAGIC;
     h->footer.type = LAU_TYPE_BASIC;
@@ -220,6 +226,12 @@ internal_alloc:
     void *block = lau_rebar_alloc(total_size);
     if (!block) {
         block = mmap(NULL, total_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    }
+    // MANDATE: 4GB Memory Guard
+    size_t current_active_w = atomic_load(&g_active_bytes);
+    if (current_active_w + total_size > (4ULL * 1024 * 1024 * 1024)) {
+        fprintf(stderr, "[FRACTURE] CRITICAL: 4GB RAM Limit Exceeded (Wired)\n");
+        abort();
     }
     
     if (block == MAP_FAILED || block == NULL) {

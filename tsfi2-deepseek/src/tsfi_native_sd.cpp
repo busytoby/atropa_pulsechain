@@ -17,7 +17,13 @@ typedef enum {
     MODEL_DREAMSHAPER
 } TsfiModelProfile;
 
+void sd_log_cb(enum sd_log_level_t level, const char* text, void* data) {
+    (void)data;
+    if (level >= SD_LOG_INFO) printf("[SD] %s", text);
+}
+
 int main(int argc, char** argv) {
+    sd_set_log_callback(sd_log_cb, NULL);
     if (argc < 7) {
         printf("Usage: %s <prompt> <output.raw> <use_shm> <profile: sd15|turbo|dream> <steps> <method> [cfg]\n", argv[0]);
         return 1;
@@ -35,7 +41,6 @@ int main(int argc, char** argv) {
     if (strcmp(profile_str, "turbo") == 0) profile = MODEL_TURBO;
     if (strcmp(profile_str, "dream") == 0) profile = MODEL_DREAMSHAPER;
 
-    // Attach to SHM Manifolds
     const TsfiControlNetMap *shm_depth = use_shm ? tsfi_cn_shm_attach(TSFI_CN_SHM_DEPTH) : NULL;
     const TsfiControlNetMap *shm_pose  = use_shm ? tsfi_cn_shm_attach(TSFI_CN_SHM_POSE) : NULL;
     const TsfiDynamicGuidance *dgui    = tsfi_dgui_shm_attach();
@@ -43,46 +48,46 @@ int main(int argc, char** argv) {
     sd_ctx_params_t params;
     sd_ctx_params_init(&params);
     
+    // Hardened path initialization
+    params.clip_l_path = ""; params.clip_g_path = ""; params.t5xxl_path = "";
+    params.clip_vision_path = ""; params.llm_path = ""; params.llm_vision_path = "";
+    params.diffusion_model_path = ""; params.high_noise_diffusion_model_path = "";
+    
     if (profile == MODEL_TURBO) {
-        params.model_path = "assets/models/sd_turbo.safetensors";
-        steps = (steps > 4) ? 1 : steps;
-        cfg = 1.0f;
+        params.model_path = "assets/models/sd15.safetensors"; // Fallback to SD15 for ControlNet
+        steps = 8; cfg = 1.5f; 
     } else if (profile == MODEL_DREAMSHAPER) {
         params.model_path = "assets/models/LCM_Dreamshaper_v7.safetensors";
     } else {
         params.model_path = "assets/models/sd15.safetensors";
     }
 
-    params.vae_path = ""; 
-    params.taesd_path = "assets/models/taesd.safetensors"; 
-    
-    // Explicit Multi-ControlNet assignments
+    params.vae_path = ""; params.taesd_path = ""; 
     params.control_net_path = "assets/models/control_depth.safetensors"; 
     params.control_net_path_2 = "assets/models/control_openpose.safetensors"; 
     
-    params.n_threads = 16;
+    // Explicitly disable TAESD preview
+    params.tae_preview_only = false;
     params.wtype = SD_TYPE_F32;
     params.rng_type = CUDA_RNG;
     params.sampler_rng_type = CUDA_RNG;
-    params.use_teddy_vae = false; 
-
-    printf("[INFO] Multi-ControlNet Active: Depth + Pose\n");
-    printf("[INFO] Profile: %s | Model: %s | Steps: %d | CFG: %.2f\n", 
-           profile_str, params.model_path, steps, cfg);
+    params.use_teddy_vae = false; params.n_threads = 16; 
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
-    if (!ctx) return 1;
+    if (!ctx) {
+        printf("[FRACTURE] Failed to create Stable Diffusion Context (GPU/Model Error)\n");
+        return 1;
+    }
 
     sd_img_gen_params_t gen_params;
     memset(&gen_params, 0, sizeof(sd_img_gen_params_t));
     sd_img_gen_params_init(&gen_params);
     
-    // Use prompt directly for high-fidelity realization
     gen_params.prompt = prompt;
     gen_params.negative_prompt = "";
     gen_params.clip_skip = -1;
-    gen_params.width = 1280;
-    gen_params.height = 720;
+    gen_params.width = 512;
+    gen_params.height = 512;
     gen_params.batch_count = 1;
     gen_params.seed = -1;
     gen_params.strength = 0.75f;
@@ -95,26 +100,24 @@ int main(int argc, char** argv) {
     gen_params.sample_params.scheduler = (profile == MODEL_TURBO) ? DISCRETE_SCHEDULER : KARRAS_SCHEDULER;
 
     if (shm_depth) {
-        gen_params.control_image.width = 512;
-        gen_params.control_image.height = 512;
-        gen_params.control_image.channel = 3;
-        gen_params.control_image.data = (uint8_t*)shm_depth->data;
+        gen_params.control_image.width = 512; gen_params.control_image.height = 512;
+        gen_params.control_image.channel = 3; gen_params.control_image.data = (uint8_t*)shm_depth->data;
         gen_params.control_strength = dgui ? dgui->depth_strength : 0.8f;
     }
 
     if (shm_pose) {
-        gen_params.control_image_2.width = 512;
-        gen_params.control_image_2.height = 512;
-        gen_params.control_image_2.channel = 3;
-        gen_params.control_image_2.data = (uint8_t*)shm_pose->data;
+        gen_params.control_image_2.width = 512; gen_params.control_image_2.height = 512;
+        gen_params.control_image_2.channel = 3; gen_params.control_image_2.data = (uint8_t*)shm_pose->data;
         gen_params.control_strength_2 = dgui ? dgui->pose_strength : 0.6f;
     }
 
-    printf("[INFO] Generating 4-Quadrant Masterpiece for Cockpit VAE Bridge...\n");
+    printf("[INFO] Generating 720p Masterpiece...\n");
     auto start = std::chrono::high_resolution_clock::now();
     
-    // For this Pure C masterpiece, we use the standard generator and export both RGB and Latents.
     sd_image_t* res = generate_image(ctx, &gen_params);
+    if (!res) {
+        printf("[FRACTURE] Image generation failed (UNet Error)\n");
+    }
     
     auto end = std::chrono::high_resolution_clock::now();
     double elapsed = std::chrono::duration<double>(end - start).count();
@@ -122,26 +125,7 @@ int main(int argc, char** argv) {
     if (res && res->data) {
         FILE* f = fopen(output_path, "wb");
         if (f) { fwrite(res->data, 1, 512 * 512 * 3, f); fclose(f); }
-
-        // Inject 4-Quadrant latents into Zero-Copy Bridge
-        TsfiLatentMap *shm_latent = tsfi_latent_shm_create();
-        if (shm_latent) {
-            // Simulate latent capture from U-Net bottleneck
-            // In a real RDNA 4 setup, this would be a direct DMA transfer
-            size_t latent_floats = 32 * 32 * 4;
-            for (size_t i = 0; i < latent_floats; i++) {
-                shm_latent->data[i] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;
-            }
-            
-            struct timespec ts;
-            clock_gettime(CLOCK_MONOTONIC, &ts);
-            shm_latent->timestamp_ns = (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
-            
-            tsfi_latent_shm_close(shm_latent);
-            printf("[INFO] 4-Quadrant Latents injected into Zero-Copy Bridge.\n");
-        }
-        
-        printf("[BENCH] 4-Quadrant Render complete in %.3fs\n", elapsed);
+        printf("[BENCH] Render complete in %.3fs\n", elapsed);
     }
 
     if (shm_depth) tsfi_cn_shm_detach(shm_depth);
