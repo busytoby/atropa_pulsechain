@@ -105,6 +105,9 @@ bin/test_graph_cards: tests/test_graph_cards.c obj/tsfi_graph_cards.o $(CORE_OBJ
 obj/tsfi_graph_cards.o: src/tsfi_graph_cards.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+bin/tsfi_icpc_taste_tournament: src/tsfi_icpc_taste_tournament.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
 bin/tsfi_spider_teddy_taste: src/tsfi_spider_teddy_taste.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 

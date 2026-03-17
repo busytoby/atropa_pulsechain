@@ -14,7 +14,7 @@
 static float *g_basis_lut = NULL; 
 static _Atomic int g_lut_init_state = 0;
 
-static void init_basis_lut() {
+void tsfi_svdag_init_lut(void) {
     int expected = 0;
     if (atomic_compare_exchange_strong(&g_lut_init_state, &expected, 1)) {
         g_basis_lut = (float*)lau_memalign(64, BASIS_COUNT * LUT_SIZE * sizeof(float));
@@ -44,7 +44,7 @@ TSFiHelmholtzSVDAG* tsfi_svdag_create(size_t initial_cap) {
     dag->root_entropy = 1.0f;
     dag->is_logical = false;
     dag->logical_glyph = NULL;
-    init_basis_lut();
+    tsfi_svdag_init_lut();
     return dag;
 }
 

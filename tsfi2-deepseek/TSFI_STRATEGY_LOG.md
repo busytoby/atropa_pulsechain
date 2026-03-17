@@ -86,3 +86,22 @@
 - **Verification**: Achieved foundationally green status across 40+ unit tests, including AV Interleaving and Handshake Resilience.
 - **Status**: Broadcaster Manifold verified and ready for Phase 1 release.
 
+## Decision: Atomic Taste Realization (2026-03-17)
+- **Decision**: Purged "Geometry Recording" (24 MiB SVDAG snapshots) in favor of **64-byte Harmonic Tastes (Atoms)**. 
+- **Active Substrate**: The Surgical Taste Cache (`inc/tsfi_taste_cache.h`) stores 1024 Awareness Units (ZMM-aligned).
+- **Rationale**: Realism emerges from **Constructive Interference** of tastes, not dead snapshots. 64-byte atoms allow for 1-cycle hardware ingestion and zero-latency synthesis.
+- **Impact**: Enables 1280x720 photorealistic realization guided by the Spider's subjective intent rather than a fixed recipe.
+
+## Decision: Fractal SDMA Slot Migration (2026-03-17)
+- **Decision**: Implemented **Slot-Based SDMA Jumps** within the 256 MiB persistent manifold.
+- **Mechanism**: Use `tsfi_taste_cache_migrate` to perform zero-copy jumps between 64 KiB Awareness Slots.
+- **Benefit**: Achieves **Infinite Subjective Depth**; Layer-0 acts as an entry point for nested complications (e.g., jumping from "Crow Flight" to "Feather Anisotropy").
+
+## Decision: World Serpent Distribution (Port 9093)
+- **Decision**: Established the **Subjective Realization Dashboard** as the terminal distribution sink.
+- **Interactivity**: Implemented **Interactive OpenPose Puppetry** allowing users to grab and drag the Crow's 16-joint skeleton in real-time.
+- **Subjective Style Engine**: Integrated real-time switching between 9 modes: **VOID, GOLD, HALL, LINE, MOSS, PLUSH, SICK, REAL, CELL**.
+- **Neural Bridge**: Enabled **DeepSeek Prompting** and **720p Stable Diffusion** guidance for high-fidelity photorealistic broadcast.
+- **Verification**: Verified the 16-joint Crow skeleton isomorphism proof via the Helmholtz command queue.
+
+

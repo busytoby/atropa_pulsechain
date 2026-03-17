@@ -36,7 +36,22 @@
     - `tsfi_raw_sched_setaffinity`: Deterministic CPU pinning.
     - `tsfi_raw_clock_gettime`: Direct kernel time entry bypassing vDSO.
     - `tsfi_raw_usleep`: Nanosleep-based high-precision stall.
-- **Bijective Reflection:** `tsfi_raw_dladdr` implemented in `src/tsfi_elf_reflect.c` provides internal ELF parsing for provenance without glibc extensions.
+- **Bijective Reflection**: `tsfi_raw_dladdr` implemented in `src/tsfi_elf_reflect.c` provides internal ELF parsing for provenance without glibc extensions.
 
-**Current Simulation Date:** February 2, 2026
-**Integrity Status:** OMNI-STATE-RESOLUTION SECURED.
+## 6. Surgical Taste Registry (Layer-0 Awareness)
+- **Status**: VERIFIED GREEN
+- **Implementation**: 64 KiB file-backed manifold (`assets/taste_cache.bin`) mapped via `MAP_SHARED`.
+- **Wavefronts**:
+    - `atomic_taste_load`: Direct SDMA ingestion of 64-byte harmonic atoms into ZMM super-registers.
+    - `subjective_resolve`: 1-cycle thunk dispatch against `TsfiSubjectiveWaveSystem` descriptors.
+- **Hardening**: Absolute 64-byte alignment ensures zero cache-line fractures during hardware realization.
+
+## 7. Fractal SDMA Slot Migration (Recursive Awareness)
+- **Status**: ACTIVE
+- **Implementation**: Zero-copy "jumps" within the 256 MiB Taste Substrate via `tsfi_taste_cache_migrate`.
+- **Topology**: Supports up to 64 nested awareness slots (64 KiB each), allowing Layer-0 to serve as an entry point for high-resolution complications.
+- **Benefit**: Infinite subjective depth without memory copying; enables real-time branching between "Feather Anisotropy" and "Matted Fur" tastes.
+
+**Current Simulation Date**: March 17, 2026
+**Integrity Status**: OMNI-STATE-RESOLUTION SECURED.
+

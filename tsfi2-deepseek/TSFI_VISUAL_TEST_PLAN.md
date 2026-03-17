@@ -69,8 +69,40 @@ This document outlines display-specific test cases to verify the integration of 
 *   **Visual Outcome (Success):** The letter 'A' smoothly morphs into 'B' and back across all sizes simultaneously, maintaining sharp edges (Density rendering) without pixelation.
 *   **Visual Outcome (Failure):** Jittering geometry, "popping" between shapes, or blurry edges (Rasterizer fallback).
 
+## 7. Test Case: "The Puppet Master" (OpenPose Interactivity)
+**Objective:** Verify **Subjective Rigidity** during manual 16-joint skeletal manipulation via Port 9093.
+
+*   **Logic:**
+    1.  User "grabs" a joint (e.g., `beak_u` or `wing_tip`) on the World Serpent Dashboard.
+    2.  Web UI sends `/puppet_move` RPCs to the realizer.
+    3.  Realizer updates the manifold and applies **ICPC 414A (Speech)** jitter to the new pose.
+    4.  Alligator audits the 1MB arena for unicyclic isomorphism consistency during the drag.
+*   **Visual Outcome (Success):** The Crow follows the mouse with zero latency, maintains its skeletal structure, and continues its staccato clicking rhythm.
+*   **Visual Outcome (Failure):** Limb detachment, joint "snapping," or manifold fracture (0,0 state).
+
+## 8. Test Case: "The Iridescent Wing" (Anisotropic Shading)
+**Objective:** Verify the mathematical distinction between **Feathers** and **Fur**.
+
+*   **Logic:**
+    1.  Renders the Crow and Teddy Bear side-by-side using the 720p realizer.
+    2.  Exercises **`TASTE_CROW_FEATHERS`** (Anisotropic) and **`TASTE_TEDDY_FUR`** (Isotropic).
+    3.  Path-tracer samples the 256 KiB **Packed Shading Manifold** (Normal, AO, Rim).
+*   **Visual Outcome (Success):** The Crow shows a dynamic "oil-slick" sheen that shifts with the light, while the Teddy Bear exhibits soft, occluded fur depth.
+*   **Visual Outcome (Failure):** Flat, non-material shading; both entities look like grey plastic.
+
+## 9. Test Case: "The Neural Bridge" (720p Photorealism)
+**Objective:** Verify **DeepSeek + Stable Diffusion** guidance at distribution resolution.
+
+*   **Logic:**
+    1.  Generates a 1280x720 Depth Map of the stabilized Crow.
+    2.  DeepSeek-Coder-V2 generates a visual prompt based on the active Taste Atom.
+    3.  Stable Diffusion (SD-CPP) synthesizes the final image using the depth map as a rigid structural guide.
+*   **Visual Outcome (Success):** A hyper-photorealistic 12-inch Crow plush with detailed stitching and iridescent feathers, perfectly aligned with the underlying OpenPose skeleton.
+*   **Visual Outcome (Failure):** Neural hallucinations (extra limbs), low resolution (512x512), or lack of subjective materiality.
+
 ## Execution Strategy
 The tests will be implemented as a single interactive binary `tests/test_visual_hierarchy` controlled by the `lau_memory` system directives.
+
 
 *   **Command:** `./test_visual_hierarchy [CASE_ID]`
 *   **Verification:** User observes the window for the specific Visual Outcome described above.
