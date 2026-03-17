@@ -196,6 +196,8 @@ void tsfi_wire_firmware_init(void) {
         return;
     }
     
+    fw->magic = TSFI_FIRMWARE_MAGIC;
+    
     if (is_creator) {
         memset(fw, 0, fw_size);
         // Bind Standard Cells only on creation

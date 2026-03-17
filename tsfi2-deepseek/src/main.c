@@ -7,15 +7,13 @@
 #include "tsfi_wire_firmware.h"
 #include <stdio.h>
 #include <signal.h>
-#include <unistd.h>
-#include <poll.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int main(int argc, char **argv) {
-    bool auto_gemini = false;
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--gemini") == 0) auto_gemini = true;
-    }
+    bool auto_gemini = true;
+    for(int i=1; i<argc; i++) if(strcmp(argv[i], "--cli") == 0) auto_gemini = false;
 
     // Initialize System
     WaveSystem *ws = tsfi_create_system();
@@ -27,9 +25,6 @@ int main(int argc, char **argv) {
 
     if (fw && fw->cell_printf) fw->cell_printf(0, "--- SYSTEM-11: AUDITED (2026)---\n");
     
-    // Initial Provenance Check (Loads Plugins)
-    if (ws->provenance) ws->provenance();
-
     // Initial Epoch Phase (BEFORE Window Open)
     if (ws->step_safety_epoch) ws->step_safety_epoch();
 

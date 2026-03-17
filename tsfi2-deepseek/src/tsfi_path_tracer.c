@@ -54,7 +54,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
             }
 
             float total_r = 0, total_g = 0, total_b = 0;
-            float first_hit_avg = 0;
+            float samples_depth[4] = {10.0f, 10.0f, 10.0f, 10.0f};
 
             for (int s = 0; s < 4; s++) {
                 float fx = ((float)x + jx[s]) / w * 2.0f - 1.0f;
@@ -122,10 +122,16 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                     }
                 }
                 total_r += accum_r; total_g += accum_g; total_b += accum_b;
-                first_hit_avg += first_hit_dist;
+                samples_depth[s] = first_hit_dist;
             }
 
-            if (depth_buffer) depth_buffer[idx] = first_hit_avg * 0.25f;
+            // --- Subjective MSAA Depth Resolve ---
+            float final_depth = (samples_depth[0] + samples_depth[1] + samples_depth[2] + samples_depth[3]) * 0.25f;
+            
+            // Note: In a full implementation, we would query the active taste's vop_seeds here.
+            // For now, we default to AVERAGE, but the infrastructure is ready for MIN/MAX exercise.
+            if (depth_buffer) depth_buffer[idx] = final_depth;
+
             uint8_t final_r = (uint8_t)(fminf(1.0f, powf(total_r * 0.25f, 0.4545f)) * 255);
             uint8_t final_g = (uint8_t)(fminf(1.0f, powf(total_g * 0.25f, 0.4545f)) * 255);
             uint8_t final_b = (uint8_t)(fminf(1.0f, powf(total_b * 0.25f, 0.4545f)) * 255);

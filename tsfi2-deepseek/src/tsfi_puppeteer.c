@@ -66,7 +66,22 @@ int main(int argc, char **argv) {
         p->sickness = 0.0f;
     }
 
-    if (p->animal_type == PUPPET_TYPE_CROW) {
+    if (p->animal_type == PUPPET_TYPE_TEDDY) {
+        if (strcmp(action, "sick") == 0) {
+            p->sickness = param > 0.0f ? param : 1.0f; // Default to full sickness if no param
+            printf("[PUPPET] Teddy %d: SYMPATHY active. Sickness=%.2f.\n", id, p->sickness);
+        } else if (strcmp(action, "sit") == 0) {
+            printf("[PUPPET] Teddy %d: Sitting.\n", id);
+        }
+        // Always initialize structural defaults for Teddy if not already set
+        if (p->stuffing == 0.0f) {
+            p->stuffing = 1.0f;
+            p->arm_length = 1.0f;
+            p->leg_length = 1.0f;
+            p->head_size = 1.0f;
+            p->ear_size = 1.0f;
+        }
+    } else if (p->animal_type == PUPPET_TYPE_CROW) {
         if (strcmp(action, "fly") == 0) {
             float flap = sinf(param * 10.0f) * 40.0f;
             p->l_hand = (TsfiJoint){cx - 50, cy - 10 - flap, 90};

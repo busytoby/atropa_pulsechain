@@ -22,6 +22,12 @@ typedef struct {
     uint32_t      sdma_jump;  // 4 bytes: Nested awareness pointer
 } TsfiSubjectiveAwareness;
 
+// Subjective Depth Resolve Modes (Exercised by the Spider via vop_seeds bit 4-7)
+#define TASTE_RESOLVE_AVERAGE 0x00
+#define TASTE_RESOLVE_MIN     0x10 // Fuzzy / Matted Fur
+#define TASTE_RESOLVE_MAX     0x20 // Skeletal / Hollow
+#define TASTE_RESOLVE_MASK    0xF0
+
 typedef struct {
     uint64_t subjective_hash; // Xi ^ Alpha ^ Beta
     uint32_t sequence;        // Improvement iteration

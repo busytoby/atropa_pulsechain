@@ -77,13 +77,36 @@ static const TeddyGenome GENOMES[4] = {
     {0.5f, 0.7f, 0.02f, 0.045f, 0.6f, 0.15f, 0.85f, 0.2f, 0.4f, 0.05f, 0.1f, 0.3f, 0.15f}
 };
 
+static inline float smin(float a, float b, float k) {
+    float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
+    return fminf(a, b) - h * h * k * 0.25f;
+}
+
 static inline float ricci_density_field(float px, float py, float pz, const TeddyGenome *g, float c, float s) {
     // 16-inch Scale Normalization
     float dx = px - 0.5f, dy = py - g->body_y, dz = pz;
-    // Tighter curvature for a 16" object mass
-    float d_body = sqrtf(dx*dx*(1.25f+c) + dy*dy*(1.25f+s) + dz*dz*(1.25f-c)) - g->body_r;
-    float d_head = sqrtf(dx*dx*(1.25f+c) + (py-g->cran_y)*(py-g->cran_y)*(1.25f+s) + dz*dz*(1.25f-c)) - g->cran_r;
-    return fminf(d_body, d_head);
+    
+    // Torso Ellipsoid
+    float d_body = sqrtf(dx*dx*(1.25f+c)*1.2f + dy*dy*(1.0f+s)*0.8f + dz*dz*(1.25f-c)) - g->body_r;
+    
+    // Head (Slightly flattened ellipsoid)
+    float hdx = dx, hdy = py - g->cran_y, hdz = dz;
+    float d_head = sqrtf(hdx*hdx*(1.1f+c) + hdy*hdy*(1.3f+s) + hdz*hdz*(1.1f-c)) - g->cran_r;
+    
+    // Smoothly blend body and head
+    float res = smin(d_body, d_head, 0.15f);
+    
+    // Ears (Ellipsoids)
+    float edx = fabsf(dx) - g->ear_x_off, edy = py - g->ear_y, edz = dz + 0.05f;
+    float d_ear = sqrtf(edx*edx*1.5f + edy*edy*1.5f + edz*edz*1.0f) - g->ear_r;
+    res = smin(res, d_ear, 0.05f);
+    
+    // Snout (Pushed forward in Z)
+    float sdx = dx, sdy = py - (g->cran_y + 0.1f), sdz = dz - 0.15f;
+    float d_snout = sqrtf(sdx*sdx*2.0f + sdy*sdy*2.0f + sdz*sdz*1.0f) - (g->cran_r * 0.4f);
+    res = smin(res, d_snout, 0.08f);
+
+    return res;
 }
 
 void render_nand_trap_teddy(uint32_t *pixels, int frame, int genome_idx, const NandTrapState *state) {

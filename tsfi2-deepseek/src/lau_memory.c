@@ -202,7 +202,7 @@ void *lau_memalign_wired_loc(size_t alignment, size_t size, const char *file, in
 
     if (in_wired == 1) {
         LauWireFirmware *fw_check = tsfi_wire_firmware_get_no_init();
-        if (fw_check && fw_check->cell_mem_genesis) {
+        if (fw_check && fw_check->magic == TSFI_FIRMWARE_MAGIC && fw_check->cell_mem_genesis) {
             void *p = fw_check->cell_mem_genesis(size, LAU_TYPE_WIRED, file, line);
             if (p) {
                 in_wired--;

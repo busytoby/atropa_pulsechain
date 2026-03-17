@@ -18,6 +18,10 @@ bool tsfi_pulse_rpc_call(const char *to_address, const char *data_hex, char *out
 // out_hex_buffer should be at least 67 bytes ("0x" + 64 hex chars + null)
 bool tsfi_pulse_rpc_get_storage_at(const char *address, const char *slot_hex, char *out_hex_buffer, size_t out_max_len);
 
+// Send a signed raw transaction to the network
+// out_tx_hash should be at least 67 bytes to hold the resulting transaction hash
+bool tsfi_pulse_rpc_send_raw_transaction(const char *signed_tx_hex, char *out_tx_hash, size_t out_max_len);
+
 #ifdef __cplusplus
 }
 #endif

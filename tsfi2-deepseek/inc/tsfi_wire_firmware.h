@@ -11,8 +11,12 @@
 // Include the generated RTL state structure
 #include "../src/firmware/LauWireFirmware_rtl.h"
 
+#define TSFI_FIRMWARE_MAGIC 0x57495245
+
 // Verilog-modeled Standard Cell Library for Bijective Wavefronts
 DEFINE_MAPPED_STRUCT(LauWireFirmware,
+    uint32_t magic;
+    
     // --- Input Pins (Rx) ---
     void (*rx_pin_pty_out)(void *context, const char *data, size_t len);
     

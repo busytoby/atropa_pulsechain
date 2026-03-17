@@ -100,3 +100,21 @@ bool tsfi_pulse_rpc_get_storage_at(const char *address, const char *slot_hex, ch
              
     return exec_raw_http_rpc(payload, out_hex_buffer, out_max_len);
 }
+
+bool tsfi_pulse_rpc_send_raw_transaction(const char *signed_tx_hex, char *out_tx_hash, size_t out_max_len) {
+    // The signed_tx_hex can be quite large (e.g., contract deployments or large calldata)
+    // We dynamically allocate the payload to ensure it fits.
+    size_t tx_len = strlen(signed_tx_hex);
+    size_t payload_size = tx_len + 256;
+    char *payload = malloc(payload_size);
+    if (!payload) return false;
+
+    snprintf(payload, payload_size, 
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendRawTransaction\",\"params\":[\"%s\"],\"id\":1}",
+             signed_tx_hex);
+             
+    bool result = exec_raw_http_rpc(payload, out_tx_hash, out_max_len);
+    free(payload);
+    return result;
+}
+
