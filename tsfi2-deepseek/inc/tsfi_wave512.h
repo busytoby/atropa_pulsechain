@@ -25,8 +25,13 @@ typedef wave512 VE512;
 typedef wave512_i VX512;
 
 // --- Accessors ---
-#define WAVE512_CAST_TO_I(w) ({ union { wave512 f; wave512_i i; } u; u.f = w; u.i; })
-#define WAVE512_CAST_TO_F(w) ({ union { wave512_i i; wave512 f; } u; u.i = w; u.f; })
+#define WAVE512_CAST_TO_I(w) ({ union { wave512 f; wave512_i i; wave512_u u; } _u; _u.f = (w); _u.i; })
+#define WAVE512_CAST_TO_F(w) ({ union { wave512_i i; wave512 f; wave512_u u; } _u; _u.i = (w); _u.f; })
+#define WAVE512_CAST_TO_U(w) ({ union { wave512_i i; wave512 f; wave512_u u; } _u; _u.i = (w); _u.u; })
+
+// Special case for wave512_u inputs to integer ops
+#define WAVE512_U_TO_I(w) ({ union { wave512_i i; wave512_u u; } _u; _u.u = (w); _u.i; })
+#define WAVE512_I_TO_U(w) ({ union { wave512_i i; wave512_u u; } _u; _u.i = (w); _u.u; })
 
 // --- Pure Assembly Macros ---
 #define _W8_OP1(op, r, a) \
@@ -88,6 +93,15 @@ static inline wave512_i VBROADCASTSD(const uint64_t *ptr) {
 #define VPANDQ(a, b) ({ wave512_i _r; _W8_OP2("vpandq", _r, a, b); _r; })
 #define VPORQ(a, b)  ({ wave512_i _r; _W8_OP2("vporq", _r, a, b); _r; })
 #define VPXORQ(a, b) ({ wave512_i _r; _W8_OP2("vpxorq", _r, a, b); _r; })
+#define VPXNORD(a, b) ({ \
+    wave512_i _r; \
+    for(int i=0; i<8; i++) { \
+        _r.z[i] = a.z[i]; \
+        __asm__ volatile ("vpxorq %2, %1, %0" : "+v"(_r.z[i]) : "v"(a.z[i]), "v"(b.z[i])); \
+        __asm__ volatile ("vpternlogq $0x55, %0, %0, %0" : "+v"(_r.z[i])); \
+    } \
+    _r; \
+})
 #define VPANDNQ(a, b) ({ wave512_i _r; _W8_OP2("vpandnq", _r, a, b); _r; })
 
 // --- Comparison (Vector Mask Semantics) ---

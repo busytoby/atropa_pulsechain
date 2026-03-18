@@ -89,6 +89,9 @@ bin/tsfi_puppeteer: src/tsfi_puppeteer.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 LDFLAGS  = -L/usr/local/lib -ljpeg -lrt -ldl -lpthread -lstdc++ -lwayland-client -lvulkan -lubsan -lgomp -lm
 
+bin/bench_xnor_trap: tests/bench_xnor_trap.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
 all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory bin/test_graph_cards bin/test_taste_atoms bin/tsfi_spider_crow_taste bin/tsfi_spider_teddy_taste
 bin/tsfi_teddy_skeleton: src/tsfi_teddy_skeleton.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
@@ -129,10 +132,31 @@ bin/tsfi_spider_teddy_taste: src/tsfi_spider_teddy_taste.c $(CORE_OBJS)
 bin/tsfi_spider_crow_taste: src/tsfi_spider_crow_taste.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
+bin/tsfi_spider_cow_taste: src/tsfi_spider_cow_taste.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_spider_kefa_taste: src/tsfi_spider_kefa_taste.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_crow_ballet_trainer: tools/tsfi_crow_ballet_trainer.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ \
+		assets/sd_cpp/build/libstable-diffusion.a \
+		assets/sd_cpp/build/ggml/src/libggml.a \
+		assets/sd_cpp/build/ggml/src/libggml-cpu.a \
+		assets/sd_cpp/build/ggml/src/libggml-base.a \
+		assets/sd_cpp/build/ggml/src/ggml-vulkan/libggml-vulkan.a \
+		$(LDFLAGS) -lstdc++ -lpthread -ldl
+
 bin/test_taste_atoms: tests/test_taste_atoms.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 bin/test_taste_cache: tests/test_taste_cache.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_xnor_cow_isomorphism: tests/test_xnor_cow_isomorphism.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_cow_fourier_isomorphism: tests/test_cow_fourier_isomorphism.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 bin/test_fur_synthesis: tests/test_fur_synthesis.c $(CORE_OBJS)

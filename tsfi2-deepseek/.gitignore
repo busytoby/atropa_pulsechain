@@ -86,3 +86,5 @@ tests/fix_*.c
 !tools/vlm_score.txt
 !tools/mcp_audit.txt
 !tools/mcp_mass_audit.txt
+
+tmp/

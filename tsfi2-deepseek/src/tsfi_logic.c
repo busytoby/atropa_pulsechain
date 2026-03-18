@@ -126,7 +126,8 @@ void master_logic_epoch(int *ver) {
                 }
             }
 
-            if (active_count >= 2) {                atomic_fetch_add(&telem->throttle_count, 1);
+            if (active_count >= 4) {
+                atomic_fetch_add(&telem->throttle_count, 1);
                 atomic_fetch_add(&telem->total_stall_ns, 50000000ULL); // 50ms stall
                 tsfi_io_printf(stdout, "[THROTTLE] Sheaf Density Surge (%d active). Stalling 50ms.\n", active_count);
                 tsfi_io_flush(stdout);

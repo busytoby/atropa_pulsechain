@@ -25,7 +25,7 @@ void sd_log_cb(enum sd_log_level_t level, const char* text, void* data) {
 int main(int argc, char** argv) {
     sd_set_log_callback(sd_log_cb, NULL);
     if (argc < 7) {
-        printf("Usage: %s <prompt> <output.raw> <use_shm> <profile: sd15|turbo|dream> <steps> <method> [cfg]\n", argv[0]);
+        printf("Usage: %s <prompt> <output.raw> <use_shm> <profile: sd15|turbo|dream> <steps> <method> [cfg] [strength]\n", argv[0]);
         return 1;
     }
 
@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
     int steps = atoi(argv[5]);
     const char* method_str = argv[6];
     float cfg = (argc > 7) ? atof(argv[7]) : 1.0f;
+    float strength = (argc > 8) ? atof(argv[8]) : 0.75f;
 
     TsfiModelProfile profile = MODEL_SD15;
     if (strcmp(profile_str, "turbo") == 0) profile = MODEL_TURBO;
@@ -43,6 +44,7 @@ int main(int argc, char** argv) {
 
     const TsfiControlNetMap *shm_depth = use_shm ? tsfi_cn_shm_attach(TSFI_CN_SHM_DEPTH) : NULL;
     const TsfiControlNetMap *shm_pose  = use_shm ? tsfi_cn_shm_attach(TSFI_CN_SHM_POSE) : NULL;
+    const TsfiControlNetMap *shm_init  = use_shm ? tsfi_cn_shm_attach(TSFI_CN_SHM_INIT) : NULL;
     const TsfiDynamicGuidance *dgui    = tsfi_dgui_shm_attach();
 
     sd_ctx_params_t params;
@@ -90,7 +92,7 @@ int main(int argc, char** argv) {
     gen_params.height = 720;
     gen_params.batch_count = 1;
     gen_params.seed = -1;
-    gen_params.strength = 0.75f;
+    gen_params.strength = strength;
     gen_params.control_strength = 0.9f;
     gen_params.control_guidance_end = 1.0f;
 
@@ -111,9 +113,15 @@ int main(int argc, char** argv) {
         gen_params.control_strength_2 = dgui ? dgui->pose_strength : 0.6f;
     }
 
+    if (shm_init) {
+        gen_params.init_image.width = shm_init->width; gen_params.init_image.height = shm_init->height;
+        gen_params.init_image.channel = 3; gen_params.init_image.data = (uint8_t*)shm_init->data;
+        printf("[INFO] Temporal Feedback Enabled (Strength: %.2f)\n", gen_params.strength);
+    }
+
     printf("[INFO] Generating 720p Masterpiece (%dx%d)...\n", 
-           shm_depth ? (int)shm_depth->width : 512, 
-           shm_depth ? (int)shm_depth->height : 512);
+           shm_depth ? (int)shm_depth->width : 1280, 
+           shm_depth ? (int)shm_depth->height : 720);
     auto start = std::chrono::high_resolution_clock::now();
     
     sd_image_t* res = generate_image(ctx, &gen_params);
@@ -132,6 +140,7 @@ int main(int argc, char** argv) {
 
     if (shm_depth) tsfi_cn_shm_detach(shm_depth);
     if (shm_pose)  tsfi_cn_shm_detach(shm_pose);
+    if (shm_init)  tsfi_cn_shm_detach(shm_init);
     if (dgui)      tsfi_dgui_shm_detach(dgui);
     free_sd_ctx(ctx);
     return 0;

@@ -31,12 +31,12 @@ void tsfi_svdag_init_lut(void) {
 }
 
 TSFiHelmholtzSVDAG* tsfi_svdag_create(size_t initial_cap) {
-    TSFiHelmholtzSVDAG* dag = (TSFiHelmholtzSVDAG*)lau_memalign(512, sizeof(TSFiHelmholtzSVDAG));
+    TSFiHelmholtzSVDAG* dag = (TSFiHelmholtzSVDAG*)calloc(1, sizeof(TSFiHelmholtzSVDAG));
     if (!dag) return NULL;
-    dag->intensity_stream = (float*)lau_memalign(64, initial_cap * sizeof(float));
-    dag->phase_stream     = (float*)lau_memalign(64, initial_cap * sizeof(float));
-    dag->index_stream     = (uint32_t*)lau_memalign(64, initial_cap * sizeof(uint32_t));
-    dag->vrs_map          = (uint8_t*)lau_memalign(64, 128 * 128); // Standard 1024x1024 / 8x8
+    dag->intensity_stream = (float*)calloc(initial_cap, sizeof(float));
+    dag->phase_stream     = (float*)calloc(initial_cap, sizeof(float));
+    dag->index_stream     = (uint32_t*)calloc(initial_cap, sizeof(uint32_t));
+    dag->vrs_map          = (uint8_t*)calloc(128 * 128, 1);
     dag->vrs_width = 128; dag->vrs_height = 128;
     dag->stream_capacity = initial_cap;
     dag->stream_size = 0;
@@ -50,20 +50,20 @@ TSFiHelmholtzSVDAG* tsfi_svdag_create(size_t initial_cap) {
 
 void tsfi_svdag_destroy(TSFiHelmholtzSVDAG *dag) {
     if (!dag) return;
-    if (dag->intensity_stream) lau_free(dag->intensity_stream);
-    if (dag->phase_stream) lau_free(dag->phase_stream);
-    if (dag->index_stream) lau_free(dag->index_stream);
-    if (dag->vrs_map) lau_free(dag->vrs_map);
-    lau_free(dag);
+    if (dag->intensity_stream) free(dag->intensity_stream);
+    if (dag->phase_stream) free(dag->phase_stream);
+    if (dag->index_stream) free(dag->index_stream);
+    if (dag->vrs_map) free(dag->vrs_map);
+    free(dag);
 }
 
 #include <math.h>
 
 void tsfi_svdag_compile_nand(TSFiHelmholtzSVDAG *dag, const NandTrapState *nand) {
-    if (!dag || !nand) return;
+    if (!dag || !nand || !dag->intensity_stream) return;
     
     // Clear density field
-    memset(dag->intensity_stream, 0, dag->stream_size * sizeof(float));
+    memset(dag->intensity_stream, 0, dag->stream_capacity * sizeof(float));
 
     for (int i = 0; i < GRANS; i++) {
         const TsfiGran *f = &nand->fibers[i];
@@ -83,6 +83,10 @@ void tsfi_svdag_compile_nand(TSFiHelmholtzSVDAG *dag, const NandTrapState *nand)
                     int nx = vx + dx, ny = vy + dy, nz = vz + dz;
                     if (nx < 0 || nx >= 128 || ny < 0 || ny >= 128 || nz < 0 || nz >= 128) continue;
                     size_t idx = (size_t)nz * 16384 + (size_t)ny * 128 + nx;
+                    
+                    // Safety check against stream_capacity
+                    if (idx >= dag->stream_capacity) continue;
+
                     float dist = sqrtf((float)(dx*dx + dy*dy + dz*dz));
                     float impact = f->weight * expf(-dist * 2.0f);
                     dag->intensity_stream[idx] += impact;
@@ -90,6 +94,7 @@ void tsfi_svdag_compile_nand(TSFiHelmholtzSVDAG *dag, const NandTrapState *nand)
             }
         }
     }
+    dag->stream_size = dag->stream_capacity;
 }
 
 void tsfi_svdag_add_operator(TSFiHelmholtzSVDAG *dag, TSFiHelmholtzOpType type, uint32_t kernel_id, float energy, float freq) {
@@ -130,6 +135,7 @@ void tsfi_svdag_compile(TSFiHelmholtzSVDAG *dag, const TSFiHilbertGlyph *g) {
 }
 
 float tsfi_svdag_execute(const TSFiHelmholtzSVDAG *dag) {
+    if (!dag || !dag->intensity_stream) return 0.0f;
     float total_mass = 0.0f;
     for(size_t i=0; i<dag->stream_size; i++) total_mass += dag->intensity_stream[i];
     return total_mass;

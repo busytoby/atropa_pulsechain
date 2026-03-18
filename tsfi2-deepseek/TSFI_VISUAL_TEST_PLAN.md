@@ -100,6 +100,17 @@ This document outlines display-specific test cases to verify the integration of 
 *   **Visual Outcome (Success):** A hyper-photorealistic 12-inch Crow plush with detailed stitching and iridescent feathers, perfectly aligned with the underlying OpenPose skeleton.
 *   **Visual Outcome (Failure):** Neural hallucinations (extra limbs), low resolution (512x512), or lack of subjective materiality.
 
+## 10. Test Case: "The Crow Ballet" (Sovereign Choreography)
+**Objective:** Verify **Kinematic Interpolation** and **Temporal Consistency** in the native animation studio.
+
+*   **Logic:**
+    1.  Loads the 9 classical ballet postures from the Crow Ballet Dictionary.
+    2.  Calculates ease-in-out LERP between skeletal joint matrices.
+    3.  Sequentially triggers the native `bin/tsfi_sd_worker` for frame-by-frame synthesis at 20-step, 7.5 CFG quality.
+    4.  Compiles the resulting frame manifold into an MP4 matrix.
+*   **Visual Outcome (Success):** A fluid, 12fps performance of the Crow transitioning through classical positions without limb detachment or material flickering.
+*   **Visual Outcome (Failure):** Jittery movement (LERP failure), inconsistent plumage textures (Temporal incoherence), or VRAM exhaustion crashes.
+
 ## Execution Strategy
 The tests will be implemented as a single interactive binary `tests/test_visual_hierarchy` controlled by the `lau_memory` system directives.
 

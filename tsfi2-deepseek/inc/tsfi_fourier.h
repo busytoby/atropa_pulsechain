@@ -48,7 +48,24 @@ void tsfi_fourier_articulate(TSFiFourierGlyph *glyph, float phase_shift, int sta
 // Applies a low-pass filter to simulate sickness or melting (attenuates high frequencies)
 void tsfi_fourier_melt(TSFiFourierGlyph *glyph, float sickness_factor);
 
+#include "tsfi_svdag.h"
+
 // Smoothly interpolates between two spectral states (for complex animations like flying)
 void tsfi_fourier_interpolate(TSFiFourierGlyph *out, const TSFiFourierGlyph *a, const TSFiFourierGlyph *b, float t);
+
+/**
+ * @brief Solidifies a Fourier Isomorphism into a Helmholtz Working Model.
+ * 
+ * Logic:
+ * 1. Reconstructs the Voxel Field (Banach) from the Spectrum (Hilbert).
+ * 2. Compiles the resulting coordinates into an SVDAG (Taste Tree).
+ * 3. Uses the XNOR Trap to verify bitwise isomorphism against a target manifold.
+ * 4. On success, anchors the SVDAG as an active Helmholtz Wave System.
+ */
+void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag, 
+                                     const TSFiFourierBasis *basis, 
+                                     const TSFiFourierGlyph *spectrum,
+                                     void *manifold_shm,
+                                     const uint8_t *target_isomorphism_hash);
 
 #endif

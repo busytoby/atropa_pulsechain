@@ -86,6 +86,7 @@ void tsfi_wire_firmware_load_struct(LauWireFirmware *fw, void *ptr);
 void tsfi_wire_firmware_load_manifest(LauWireFirmware *fw, void *manifest);
 void tsfi_wire_firmware_load_waveform(LauWireFirmware *fw, int reg_idx, void *wave_ptr);
 void tsfi_wire_firmware_strobe(LauWireFirmware *fw, uint8_t addr, uint64_t data);
+void tsfi_wire_firmware_establish_sealed_context(LauWireFirmware *fw, uint32_t context);
 void tsfi_wire_firmware_math_strobe(LauWireFirmware *fw);
 void tsfi_wire_firmware_validate(LauWireFirmware *fw);
 

@@ -33,6 +33,7 @@ module LauWireFirmware (
     output reg [63:0] cell_logic_epoch_handle,
     output reg [31:0] last_directive,
     output reg [31:0] cell_status,
+    output reg [31:0] cell_sealed_layer_context,
 
     // --- Zhong Standard Cell Registers ---
     output reg [63:0] zhong_rebar_ptr,
@@ -107,7 +108,7 @@ module LauWireFirmware (
             log_stdout_head <= 0; log_stdout_tail <= 0; log_stdout_valid_head <= 0; log_stdout_lock <= 0; log_stdout_ptr <= 0;
             log_stdin_head <= 0; log_stdin_tail <= 0; log_stdin_lock <= 0; log_stdin_ptr <= 0;
             host_epoch <= 0; plugin_epoch <= 0; last_host_epoch <= 0; epoch_error <= 0;
-            cell_status <= 0;
+            cell_status <= 0; cell_sealed_layer_context <= 0;
             wave_instr_done <= 0;
             zhong_rebar_ptr <= 0; zhong_rebar_size <= 0; zhong_timeline_handle <= 0; zhong_timeline_wait_val <= 0; zhong_timeline_sig_val <= 0; zhong_status <= 0; zhong_done <= 0;
         end else begin
@@ -124,7 +125,8 @@ module LauWireFirmware (
                                 epoch_error <= 0;
                             end else epoch_error <= 1;
                         end
-                        8'h0E: plugin_epoch <= prov_data;
+                        8'h0E: plugin_epoch <= prov_data[31:0];
+                        8'h0F: cell_sealed_layer_context <= prov_data[31:0];
                     endcase
                 end else if (prov_addr >= 8'h20 && prov_addr < 8'h30) begin
                     case (prov_addr)
@@ -169,6 +171,12 @@ module LauWireFirmware (
                         for (j = 0; j < 8; j = j + 1) begin
                             // Simplified component-wise multiply model
                             wrf[wave_instr_dest*8 + j] <= wrf[wave_instr_src1*8 + j] * wrf[wave_instr_src2*8 + j];
+                        end
+                    end
+                    32'h00000003: begin // VXNORD (Genie's XNOR Trap - 4096-bit)
+                        for (j = 0; j < 8; j = j + 1) begin
+                            // Equivalence boundary: (~A ^ B)
+                            wrf[wave_instr_dest*8 + j] <= ~(wrf[wave_instr_src1*8 + j] ^ wrf[wave_instr_src2*8 + j]);
                         end
                     end
                 endcase

@@ -220,3 +220,58 @@ void tsfi_fourier_interpolate(TSFiFourierGlyph *out, const TSFiFourierGlyph *a, 
         _mm512_storeu_ps(&out->coeffs[n][0], v_out);
     }
 }
+
+#include "tsfi_nand_trap_firmware.h"
+#include "tsfi_wavelet_arena.h"
+#include "tsfi_io.h"
+
+void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag, 
+                                     const TSFiFourierBasis *basis, 
+                                     const TSFiFourierGlyph *spectrum,
+                                     void *manifold_shm,
+                                     const uint8_t *target_isomorphism_hash) 
+{
+    if (!dag || !basis || !spectrum || !manifold_shm) return;
+
+    // 1. Reconstruct Banach Coordinate Manifold (512 Samples)
+    float voxels[TSFI_FOURIER_SAMPLES * 2];
+    tsfi_fourier_reconstruct_avx512(voxels, basis, spectrum);
+
+    // 2. Compile into SVDAG (The Taste Tree)
+    // We treat the 2D Fourier contour as a 3D extrusion guide
+    NandTrapState guide = {0};
+    guide.magic = NAND_TRAP_MAGIC;
+    guide.version = NAND_TRAP_VERSION;
+    for (int i = 0; i < GRANS; i++) {
+        // Map Fourier samples to granules (may wrap or skip if SAMPLES != GRANS)
+        int src_idx = i % TSFI_FOURIER_SAMPLES;
+        guide.fibers[i].x = voxels[src_idx*2 + 0];
+        guide.fibers[i].y = voxels[src_idx*2 + 1];
+        guide.fibers[i].z = (float)i / (float)GRANS;
+        guide.fibers[i].weight = 1.0f;
+    }
+    tsfi_svdag_compile_nand(dag, &guide);
+
+    // 3. XNOR Trap Verification (Isomorphism Proof)
+    // We use the XNOR Trap to compare the generated SVDAG signature 
+    // against the mandated 'target_isomorphism_hash' (e.g. The Cow).
+    
+    // Establishing a temporary wavelet for the hardware handshake
+    TsfiWavelet W_Genie = {0}, W_SVDAG = {0};
+    memcpy(W_Genie.payload, target_isomorphism_hash, 32); // Subjective target
+    // SVDAG execution integrates the integral of Feynman points into a rigid ID
+    uint64_t svdag_id = (uint64_t)tsfi_svdag_execute(dag);
+    memcpy(W_SVDAG.payload, &svdag_id, 8); // Objective realization
+
+    tsfi_wavelet_xnor_signal(manifold_shm, &W_Genie, &W_SVDAG);
+
+    // 4. Secure Anchor
+    uint8_t *leaf504 = (uint8_t *)manifold_shm + (504 * 256);
+    if (leaf504[0] == 1) {
+        tsfi_io_printf(stdout, "[FOURIER] Isomorphism Solidified. Helmholtz Standard Model Wave System Active.\n");
+        dag->is_logical = true;
+    } else {
+        tsfi_io_printf(stderr, "[FRACTURE] Fourier Isomorphism Mismatch. Wave System Rejected.\n");
+        dag->is_logical = false;
+    }
+}

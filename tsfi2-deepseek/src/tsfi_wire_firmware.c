@@ -280,3 +280,22 @@ void tsfi_wire_firmware_setup_signals(void) { /* Signal handling setup */ }
 void tsfi_wire_firmware_load_struct(LauWireFirmware *fw, void *ptr) { (void)fw; (void)ptr; }
 void tsfi_wire_firmware_load_waveform(LauWireFirmware *fw, int reg_idx, void *wave_ptr) { (void)fw; (void)reg_idx; (void)wave_ptr; }
 void tsfi_wire_firmware_step_peripheral(LauWireFirmware *fw, void *pty) { (void)fw; (void)pty; }
+
+void tsfi_wire_firmware_strobe(LauWireFirmware *fw, uint8_t addr, uint64_t data) {
+    if (!fw) return;
+    fw->rtl.prov_addr = addr;
+    fw->rtl.prov_data = data;
+    fw->rtl.prov_strobe = true;
+    
+    // Emulate hardware register assignment within the RTL state
+    if (addr == 0x0F) fw->rtl.cell_sealed_layer_context = (uint32_t)data;
+    
+    LauWireFirmware_eval_sequential(&fw->rtl);
+    fw->rtl.prov_strobe = false;
+}
+
+void tsfi_wire_firmware_establish_sealed_context(LauWireFirmware *fw, uint32_t context) {
+    tsfi_wire_firmware_strobe(fw, 0x0F, context);
+    tsfi_io_printf(stdout, "[FIRMWARE] Sealed Layer Context Established: 0x%08x\n", context);
+}
+

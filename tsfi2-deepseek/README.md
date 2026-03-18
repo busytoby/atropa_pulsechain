@@ -45,6 +45,18 @@ The mathematical core (`src/tsfi_math.c`) utilizes **AVX-512 Integer Fused Multi
 *   **Mechanism:** `tests/test_font_pt` renders 'A' <-> 'B' transitions at 18pt, 36pt, 72pt, and 120pt simultaneously.
 *   **Status:** **ACTIVE** (Verified smooth transitions with sub-pixel density accuracy).
 
+### Crow Ballet (Sovereign Animation)
+*   **Objective:** Automate the choreographic realization of the Crow through 9 classical ballet positions using a fully sovereign pipeline.
+*   **Mechanism:** `tools/tsfi_crow_animator.py` interpolates 16-joint OpenPose bird kinematics and triggers the native C++ `bin/tsfi_sd_worker` for frame-by-frame synthesis.
+*   **Feather Focus:** Utilizes hyper-detailed synthetic plumage prompts (20-step, 7.5 CFG) to maintain material integrity during motion.
+*   **Status:** **ACTIVE** (72-frame matrix compiled: `assets/crow_ballet_performance.mp4`).
+
+### YouTube Distribution (Native Broadcaster)
+*   **Objective:** Real-time RTMP distribution of the photorealistic neural masterpiece.
+*   **Mechanism:** `tools/tsfi_native_broadcast.c` provides a utility-free dual-stream implementation targeting `a.rtmp.youtube.com` and `b.rtmp.youtube.com`.
+*   **Security:** Loads stream keys from a secure local manifold (`~/.config/gemini/stream_key.txt`) to prevent repository exposure.
+*   **Status:** **ACTIVE** (Live 30fps stream verified via `tools/tsfi_youtube_broadcast.sh`).
+
 ## 4. Build Instructions
 
 ### Requirements

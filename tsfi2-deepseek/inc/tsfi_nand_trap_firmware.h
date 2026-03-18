@@ -72,6 +72,7 @@ typedef struct {
 typedef struct TsfiWavelet TsfiWavelet;
 void tsfi_wavelet_nand_signal(void *manifold, const TsfiWavelet *W_Prov, const TsfiWavelet *W_Pot, uint64_t resonance_k);
 void tsfi_wavelet_xor_signal(void *manifold, TsfiWavelet *W_Target, const TsfiWavelet *W_G, const TsfiWavelet *W_D, const uint8_t *seed_512b);
+void tsfi_wavelet_xnor_signal(void *manifold, const TsfiWavelet *W_Genie, const TsfiWavelet *W_SVDAG);
 
 // Witness Generation
 void tsfi_witness_establish(TSFiVisualWitness *out, const TsfiWavelet *W, const char *observation, float fitness, uint32_t class_id);

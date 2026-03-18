@@ -288,6 +288,47 @@ static uint32_t hash_payload(const uint8_t *p, size_t s) {
     return h;
 }
 
+#include "tsfi_wave512.h"
+
+void tsfi_wavelet_xnor_signal(void *manifold, const TsfiWavelet *W_Genie, const TsfiWavelet *W_SVDAG) {
+    if (!manifold || !W_Genie || !W_SVDAG) return;
+    uint8_t *leaf504 = (uint8_t *)manifold + (504 * 256);
+
+    // 1. ZMM-Accelerated Pattern Matching (Equivalence Boundary)
+    // We compare the 120-byte payloads using VPXNORD
+    wave512_u va = {0}, vb = {0};
+    memcpy(&va, W_Genie->payload, 120);
+    memcpy(&vb, W_SVDAG->payload, 120);
+    
+    // Results in all 1s if equal, 0s where different
+    wave512_i res = VPXNORD(WAVE512_U_TO_I(va), WAVE512_U_TO_I(vb));
+    
+    // Horizontal reduction to check for absolute equivalence
+    bool is_rigid = true;
+    for (int i = 0; i < 8; i++) {
+        // If any bit is 0, they are not equivalent (since XNOR(1,0)=0, XNOR(0,1)=0)
+        // Note: For absolute equality, VPXNORD result must be all FFs.
+        // Simplified check: Use memcmp for absolute software confirmation, 
+        // but the trap lever is driven by the ZMM state.
+        if (memcmp(&res.z[i], "\xFF\xFF\xFF\xFF", 64) != 0) {
+            is_rigid = false;
+            break;
+        }
+    }
+
+    // 2. Set the Trap Lever (Leaf 504)
+    leaf504[0] = is_rigid ? 1 : 0;
+    
+    // Output silenced for benchmark throughput
+    /*
+    if (is_rigid) {
+        tsfi_io_printf(stdout, "[GENIE] XNOR Trap Solidified: Subjective/Objective Isomorphism Verified.\n");
+    } else {
+        tsfi_io_printf(stdout, "[GENIE] XNOR Trap Fracture: Subjective/Objective Mismatch Detected.\n");
+    }
+    */
+}
+
 void tsfi_witness_establish(TSFiVisualWitness *out, const TsfiWavelet *W, const char *observation, float fitness, uint32_t class_id) {
     if (!out || !W) return;
     

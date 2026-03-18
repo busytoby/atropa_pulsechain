@@ -159,7 +159,7 @@ typedef struct __attribute__((packed)) TsfiWavelet {
     };
     uint32_t total_size;
     uint32_t state;
-    uint8_t payload[123]; // Adjusted for uint32_t state and 512-byte leaf
+    uint8_t payload[127]; // Adjusted to make struct exactly 512 bytes
 } TsfiWavelet;
 
 // Role Definitions (Bijective Intent)

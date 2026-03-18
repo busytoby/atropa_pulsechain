@@ -104,4 +104,11 @@
 - **Neural Bridge**: Enabled **DeepSeek Prompting** and **720p Stable Diffusion** guidance for high-fidelity photorealistic broadcast.
 - **Verification**: Verified the 16-joint Crow skeleton isomorphism proof via the Helmholtz command queue.
 
+## Decision: Sovereign Animation Studio & Crow Ballet (2026-03-18)
+- **Decision**: Upgraded the animation pipeline to a **Fully Sovereign Architecture**, severing all external Python API dependencies.
+- **Native Engine**: Integrated the C++ `bin/tsfi_sd_worker` directly into the animation loop for frame-by-frame synthesis.
+- **Choreography**: Implemented **Crow Ballet Interpolation** (`tools/tsfi_crow_animator.py`), which calculates fluid kinematic transitions between 9 classical positions (Plier, Etendre, Relever, etc.).
+- **Feather Focus**: Mandated **Extreme Macro Prompts** (20-step, 7.5 CFG) to ensure hyper-detailed synthetic plumage and iridescent sheen in every frame.
+- **Matrix Compiled**: Successfully rendered and sealed the first 72-frame sovereign performance: `assets/crow_ballet_performance.mp4`.
+
 
