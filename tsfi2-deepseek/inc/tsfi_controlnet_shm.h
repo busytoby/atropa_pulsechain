@@ -5,9 +5,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define TSFI_CN_MAP_SIZE (512 * 512 * 3) // 256x256 * RGB
+#define TSFI_CN_MAP_SIZE (1280 * 720 * 3) 
 #define TSFI_CN_SHM_DEPTH "/tsfi_cn_depth"
 #define TSFI_CN_SHM_POSE  "/tsfi_cn_pose"
+#define TSFI_CN_SHM_INIT  "/tsfi_cn_init"
 
 typedef struct {
     uint32_t magic;         // 0x54434E4D 'TCNM'

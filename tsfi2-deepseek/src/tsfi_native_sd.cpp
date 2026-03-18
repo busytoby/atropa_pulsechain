@@ -56,8 +56,9 @@ int main(int argc, char** argv) {
     params.diffusion_model_path = ""; params.high_noise_diffusion_model_path = "";
     
     if (profile == MODEL_TURBO) {
-        params.model_path = "assets/models/sd15.safetensors"; // Fallback to SD15 for ControlNet
-        steps = 8; cfg = 1.5f; 
+        params.model_path = "assets/models/sd_turbo.safetensors"; 
+        steps = 4; cfg = 1.5f; 
+        method_str = "euler_a";
     } else if (profile == MODEL_DREAMSHAPER) {
         params.model_path = "assets/models/LCM_Dreamshaper_v7.safetensors";
     } else {
@@ -65,15 +66,25 @@ int main(int argc, char** argv) {
     }
 
     params.vae_path = ""; params.taesd_path = ""; 
-    params.control_net_path = "assets/models/control_depth.safetensors"; 
-    params.control_net_path_2 = "assets/models/control_openpose.safetensors"; 
+    params.control_net_path = shm_depth ? "assets/models/control_depth.safetensors" : ""; 
+    params.control_net_path_2 = shm_pose ? "assets/models/control_openpose.safetensors" : ""; 
     
     // Explicitly disable TAESD preview
     params.tae_preview_only = false;
     params.wtype = SD_TYPE_F32;
-    params.rng_type = CUDA_RNG;
-    params.sampler_rng_type = CUDA_RNG;
-    params.use_teddy_vae = false; params.n_threads = 16; 
+    params.rng_type = STD_DEFAULT_RNG;
+    params.sampler_rng_type = STD_DEFAULT_RNG;
+    params.use_teddy_vae = false; 
+    params.n_threads = 16;
+    params.vae_decode_only = false;
+    params.free_params_immediately = true;
+    params.enable_mmap = true;
+    params.keep_clip_on_cpu = false;
+    params.keep_control_net_on_cpu = false;
+    params.keep_vae_on_cpu = false;
+    params.flash_attn = false;
+    params.diffusion_flash_attn = false;
+    params.tensor_type_rules = ""; 
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
     if (!ctx) {
@@ -88,8 +99,8 @@ int main(int argc, char** argv) {
     gen_params.prompt = prompt;
     gen_params.negative_prompt = "";
     gen_params.clip_skip = -1;
-    gen_params.width = 1280;
-    gen_params.height = 720;
+    gen_params.width = shm_depth ? shm_depth->width : 1280;
+    gen_params.height = shm_depth ? shm_depth->height : 720;
     gen_params.batch_count = 1;
     gen_params.seed = -1;
     gen_params.strength = strength;
@@ -98,7 +109,15 @@ int main(int argc, char** argv) {
 
     gen_params.sample_params.sample_steps = steps; 
     gen_params.sample_params.guidance.txt_cfg = cfg;
-    gen_params.sample_params.sample_method = (strcmp(method_str, "euler_a") == 0) ? EULER_A_SAMPLE_METHOD : EULER_SAMPLE_METHOD;
+    
+    if (strcmp(method_str, "euler_a") == 0) {
+        gen_params.sample_params.sample_method = EULER_A_SAMPLE_METHOD;
+    } else if (strcmp(method_str, "lcm") == 0) {
+        gen_params.sample_params.sample_method = LCM_SAMPLE_METHOD;
+    } else {
+        gen_params.sample_params.sample_method = EULER_SAMPLE_METHOD;
+    }
+
     gen_params.sample_params.scheduler = (profile == MODEL_TURBO) ? DISCRETE_SCHEDULER : KARRAS_SCHEDULER;
 
     if (shm_depth) {

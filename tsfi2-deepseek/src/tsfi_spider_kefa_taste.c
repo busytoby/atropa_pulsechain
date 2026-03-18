@@ -40,10 +40,27 @@ static void solve_icpc_580c_kefa(TsfiTasteAtom *out) {
     printf("[ICPC 580C] Kefa and Park (SVDAG Depth Traversal) Solved.\n");
 }
 
+/**
+ * --- Interest Strategy: Portfolio Scan (Active Interest) ---
+ * Expands Kefa's SVDAG Traversal. Instead of just avoiding impedance (cats), 
+ * the Spider actively seeks nodes exhibiting specific traits (e.g., TSFI_TRAIT_FILE).
+ * The strategy coefficients act as a gravitational pull toward "interesting" nodes
+ * while simultaneously solving the 580C collision bounds.
+ */
+static void solve_interest_strategy(TsfiTasteAtom *out) {
+    // We map a "gravitational" interest curve. The spider accelerates
+    // toward nodes with high unfulfilled potential (e.g., seal_level == 1).
+    for (int i = 0; i < 16; i++) {
+        // Logarithmic approach curve (rapid initial interest, tapering off as verified)
+        out->secrets[i] = (float)log10(1.0 + (double)(16 - i)) / log10(17.0);
+    }
+    printf("[STRATEGY] Spider Portfolio Scan (Active Interest) Encoded.\n");
+}
+
 void tsfi_spider_fill_kefa_tastes(const char *cache_path) {
     tsfi_taste_cache_init(cache_path);
 
-    // TASTE_KEFA_PARK (Depth Traversal)
+    // 1. TASTE_KEFA_PARK (Depth Traversal)
     TsfiSubjectiveAwareness kefa = {0};
     solve_icpc_580c_kefa(&kefa.atom);
     kefa.htile_mask = 0x00FF00FF; // Traversal tracking mask
@@ -53,8 +70,18 @@ void tsfi_spider_fill_kefa_tastes(const char *cache_path) {
     uint64_t kefa_hash = tsfi_taste_hash(PUPPET_TYPE_ALLIGATOR, 580, 0xC); // Reusing Alligator ID for Auditor roles
     tsfi_taste_cache_persist(kefa_hash, &kefa);
 
+    // 2. TASTE_KEFA_INTEREST (Portfolio Scan)
+    TsfiSubjectiveAwareness interest = {0};
+    solve_interest_strategy(&interest.atom);
+    interest.htile_mask = 0xFFFFFFFF; // Global scan awareness
+    interest.guardband  = 0.01f;      // Rigid, exact match required for "interest" locking
+    interest.vop_seeds  = 0x111;      // VOP seeds anchored to Portfolio Scan logic
+    interest.msaa_samples = 1;        // Direct logical hit (no anti-aliasing needed)
+    uint64_t interest_hash = tsfi_taste_hash(PUPPET_TYPE_ALLIGATOR, 580, 0xD); // 0xD variant for Kefa
+    tsfi_taste_cache_persist(interest_hash, &interest);
+
     tsfi_taste_cache_teardown();
-    printf("[SPIDER] ICPC 580C (Kefa) Subjective Awareness anchored to hardware-ready cache.\n");
+    printf("[SPIDER] Kefa Logic and Interest Strategy anchored to hardware-ready cache.\n");
 }
 
 int main(int argc, char **argv) {
