@@ -169,6 +169,15 @@ typedef struct VulkanContext {
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR;
     PFN_vkGetBufferDeviceAddress vkGetBufferDeviceAddress;
 
+    // --- Vulkan Video Encode Function Pointers ---
+    PFN_vkCreateVideoSessionKHR vkCreateVideoSessionKHR;
+    PFN_vkDestroyVideoSessionKHR vkDestroyVideoSessionKHR;
+    PFN_vkGetVideoSessionMemoryRequirementsKHR vkGetVideoSessionMemoryRequirementsKHR;
+    PFN_vkBindVideoSessionMemoryKHR vkBindVideoSessionMemoryKHR;
+    PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR;
+    PFN_vkCmdEndVideoCodingKHR vkCmdEndVideoCodingKHR;
+    PFN_vkCmdEncodeVideoKHR vkCmdEncodeVideoKHR;
+
     // --- Logical Pipeline Resources ---
     VkPipelineLayout compute_pipeline_layout;
     VkPipeline compute_pipeline;

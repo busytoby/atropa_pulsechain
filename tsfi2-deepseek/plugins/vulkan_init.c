@@ -217,7 +217,8 @@ VulkanContext *init_vulkan() {
             "VK_KHR_swapchain", "VK_EXT_host_image_copy", "VK_KHR_maintenance5", 
             "VK_KHR_dynamic_rendering_local_read", "VK_EXT_global_priority", "VK_EXT_robustness2",
             "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_deferred_host_operations",
-            "VK_EXT_image_drm_format_modifier", "VK_KHR_image_format_list", "VK_KHR_bind_memory2"
+            "VK_EXT_image_drm_format_modifier", "VK_KHR_image_format_list", "VK_KHR_bind_memory2",
+            "VK_KHR_video_queue", "VK_KHR_video_encode_queue", "VK_KHR_video_encode_h264"
         };
         
             // We must identify which ones are ACTUALLY supported to avoid vkCreateDevice failure
@@ -228,7 +229,7 @@ VulkanContext *init_vulkan() {
         
             const char *devEnabledExts[32];
             uint32_t devEnabledCount = 0;
-            for (int i = 0; i < 15; i++) {
+            for (int i = 0; i < 18; i++) {
                 for (uint32_t j = 0; j < supportedCount; j++) {
                     if (strcmp(fullExts[i], supported[j].extensionName) == 0) {
                         devEnabledExts[devEnabledCount++] = fullExts[i];
@@ -251,6 +252,15 @@ VulkanContext *init_vulkan() {
         tag_vulkan_object(vk, (uint64_t)vk->device, VK_OBJECT_TYPE_DEVICE, "TSFi_Main_Device");
         tag_vulkan_object(vk, (uint64_t)vk->queue, VK_OBJECT_TYPE_QUEUE, "TSFi_Main_Queue");
     
+        // LOAD VIDEO ENCODE PROCS
+        LOAD_DEV_PROC_OPTIONAL(vkCreateVideoSessionKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkDestroyVideoSessionKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkGetVideoSessionMemoryRequirementsKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkBindVideoSessionMemoryKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkCmdBeginVideoCodingKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkCmdEndVideoCodingKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkCmdEncodeVideoKHR);
+        
         LOAD_DEV_PROC(vkCreateCommandPool);
         LOAD_DEV_PROC(vkDestroyCommandPool);
         LOAD_DEV_PROC(vkResetCommandPool);

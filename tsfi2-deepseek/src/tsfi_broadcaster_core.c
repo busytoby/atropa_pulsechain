@@ -62,21 +62,22 @@ static int vulkan_video_encode_init(LauBroadcaster *lb) {
 static void broadcaster_encode_frame(LauBroadcaster *lb) {
     if (!lb->v_sys || !lb->rtmp_ctx) return;
     
+    // MANDATORY HANDSHAKE: SPS/PPS derived from hardware verification
     if (lb->stream_epoch == 0) {
         uint8_t sps[] = { 0x67, 0x42, 0xC0, 0x1F, 0xDA, 0x01, 0x40, 0x16, 0xE8, 0x06, 0xD0, 0xA1, 0x35 };
         uint8_t pps[] = { 0x68, 0xCE, 0x3C, 0x80 };
         extern int tsfi_rtmp_send_h264_header(void *ctx, uint8_t *sps, size_t slen, uint8_t *pps, size_t plen);
         tsfi_rtmp_send_h264_header(lb->rtmp_ctx, sps, sizeof(sps), pps, sizeof(pps));
+        printf("[QoS] Handshake Headers Pulsed.\n");
     }
 
-    if (lb->soft_encode_active) {
-        extern void tsfi_soft_encode_frame(LauBroadcaster *lb);
-        tsfi_soft_encode_frame(lb);
-    }
-    
-    extern int tsfi_rtmp_send_video(void *ctx, uint8_t *data, size_t len, uint32_t ts);
-    if (lb->bitstream_size > 0 && lb->bitstream_buffer) {
-        tsfi_rtmp_send_video(lb->rtmp_ctx, lb->bitstream_buffer, lb->bitstream_size, lb->stream_epoch * 33);
+    // QoS: Native Vulkan Encoding
+    uint8_t *bitstream; size_t blen;
+    extern int tsfi_vulkan_encode_frame(void *vk, void *pix, uint8_t **out, size_t *olen, uint32_t fidx);
+    if (tsfi_vulkan_encode_frame(lb->v_sys->vk, lb->vulkan_image_handle, &bitstream, &blen, lb->stream_epoch) == 0) {
+        extern int tsfi_rtmp_send_video(void *ctx, uint8_t *data, size_t len, uint32_t ts);
+        // YouTube QoS: Rigid 41ms increment for 24fps
+        tsfi_rtmp_send_video(lb->rtmp_ctx, bitstream, blen, lb->stream_epoch * 41);
     }
 }
 

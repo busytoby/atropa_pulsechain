@@ -86,8 +86,8 @@ int main(int argc, char** argv) {
     gen_params.prompt = prompt;
     gen_params.negative_prompt = "";
     gen_params.clip_skip = -1;
-    gen_params.width = 512;
-    gen_params.height = 512;
+    gen_params.width = 1280;
+    gen_params.height = 720;
     gen_params.batch_count = 1;
     gen_params.seed = -1;
     gen_params.strength = 0.75f;
@@ -100,18 +100,20 @@ int main(int argc, char** argv) {
     gen_params.sample_params.scheduler = (profile == MODEL_TURBO) ? DISCRETE_SCHEDULER : KARRAS_SCHEDULER;
 
     if (shm_depth) {
-        gen_params.control_image.width = 512; gen_params.control_image.height = 512;
+        gen_params.control_image.width = shm_depth->width; gen_params.control_image.height = shm_depth->height;
         gen_params.control_image.channel = 3; gen_params.control_image.data = (uint8_t*)shm_depth->data;
         gen_params.control_strength = dgui ? dgui->depth_strength : 0.8f;
     }
 
     if (shm_pose) {
-        gen_params.control_image_2.width = 512; gen_params.control_image_2.height = 512;
+        gen_params.control_image_2.width = shm_pose->width; gen_params.control_image_2.height = shm_pose->height;
         gen_params.control_image_2.channel = 3; gen_params.control_image_2.data = (uint8_t*)shm_pose->data;
         gen_params.control_strength_2 = dgui ? dgui->pose_strength : 0.6f;
     }
 
-    printf("[INFO] Generating 720p Masterpiece...\n");
+    printf("[INFO] Generating 720p Masterpiece (%dx%d)...\n", 
+           shm_depth ? (int)shm_depth->width : 512, 
+           shm_depth ? (int)shm_depth->height : 512);
     auto start = std::chrono::high_resolution_clock::now();
     
     sd_image_t* res = generate_image(ctx, &gen_params);
@@ -124,7 +126,7 @@ int main(int argc, char** argv) {
 
     if (res && res->data) {
         FILE* f = fopen(output_path, "wb");
-        if (f) { fwrite(res->data, 1, 512 * 512 * 3, f); fclose(f); }
+        if (f) { fwrite(res->data, 1, res->width * res->height * 3, f); fclose(f); }
         printf("[BENCH] Render complete in %.3fs\n", elapsed);
     }
 

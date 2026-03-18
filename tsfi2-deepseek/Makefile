@@ -105,6 +105,9 @@ bin/test_graph_cards: tests/test_graph_cards.c obj/tsfi_graph_cards.o $(CORE_OBJ
 obj/tsfi_graph_cards.o: src/tsfi_graph_cards.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+bin/tsfi_native_broadcast: tools/tsfi_native_broadcast.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
 bin/tsfi_sd_worker: src/tsfi_native_sd.cpp $(CORE_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ \
 		assets/sd_cpp/build/libstable-diffusion.a \
