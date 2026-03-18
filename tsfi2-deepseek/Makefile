@@ -138,7 +138,7 @@ bin/tsfi_spider_cow_taste: src/tsfi_spider_cow_taste.c $(CORE_OBJS)
 bin/tsfi_spider_kefa_taste: src/tsfi_spider_kefa_taste.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
-bin/tsfi_spider_ant_taste: src/tsfi_spider_ant_taste.c $(CORE_OBJS)
+bin/demo_virtual_planes_wayland: tests/demo_virtual_planes_wayland.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 bin/tsfi_crow_ballet_trainer: tools/tsfi_crow_ballet_trainer.c $(CORE_OBJS)

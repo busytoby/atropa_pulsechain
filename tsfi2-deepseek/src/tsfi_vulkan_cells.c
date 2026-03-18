@@ -497,7 +497,54 @@ static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkGetSwapchainImagesKHR(VkDevice devi
 static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkImageView* pView) { (void)device; (void)pCreateInfo; (void)pAllocator; *pView = (VkImageView)0xC000; return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL tsfi_vkDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) { (void)device; (void)imageView; (void)pAllocator; }
 static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) { (void)device; (void)swapchain; (void)timeout; (void)semaphore; (void)fence; *pImageIndex = 0; return VK_SUCCESS; }
+// --- TSFi DRM/ZMM Virtual Plane Extensions State ---
+#define MAX_VIRTUAL_PLANES 16
+static void* g_virtual_planes[MAX_VIRTUAL_PLANES] = {0};
+static uint32_t g_virtual_plane_ids[MAX_VIRTUAL_PLANES] = {0};
+static int g_virtual_plane_count = 0;
+static void* g_scanout_buffer = NULL;
+static int g_scanout_w = 0;
+static int g_scanout_h = 0;
+
 static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) { 
+    if (g_scanout_buffer && g_scanout_w > 0 && g_scanout_h > 0) {
+        // Zero out the scanout buffer first (black background)
+        size_t sz = g_scanout_w * g_scanout_h * 4;
+        memset(g_scanout_buffer, 0, sz);
+        
+        uint32_t *dst = (uint32_t*)g_scanout_buffer;
+        
+        // Simple alpha blending of virtual planes
+        for (int p = 0; p < g_virtual_plane_count; p++) {
+            if (!g_virtual_planes[p]) continue;
+            uint32_t *src = (uint32_t*)g_virtual_planes[p];
+            for (int i = 0; i < g_scanout_w * g_scanout_h; i++) {
+                uint32_t s_color = src[i];
+                if (s_color == 0) continue; // Skip pure transparent pixels (optimization)
+                
+                uint32_t d_color = dst[i];
+                uint8_t sa = (s_color >> 24) & 0xFF;
+                uint8_t sr = (s_color >> 16) & 0xFF;
+                uint8_t sg = (s_color >> 8) & 0xFF;
+                uint8_t sb = s_color & 0xFF;
+                
+                if (sa == 255) {
+                    dst[i] = s_color;
+                } else if (sa > 0) {
+                    uint8_t dr = (d_color >> 16) & 0xFF;
+                    uint8_t dg = (d_color >> 8) & 0xFF;
+                    uint8_t db = d_color & 0xFF;
+                    
+                    uint8_t r = (sr * sa + dr * (255 - sa)) / 255;
+                    uint8_t g = (sg * sa + dg * (255 - sa)) / 255;
+                    uint8_t b = (sb * sa + db * (255 - sa)) / 255;
+                    
+                    dst[i] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+    }
+    
     if (queue == (VkQueue)0x4000) return VK_SUCCESS;
     TSFiQueue* q = (TSFiQueue*)queue;
     if (q && q->present) return q->present(q, pPresentInfo);
@@ -557,10 +604,56 @@ static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkGetSemaphoreCounterValue(VkDevice d
     return VK_SUCCESS;
 }
 
+// --- TSFi DRM/ZMM Virtual Plane Extensions ---
+
+static VKAPI_ATTR int VKAPI_CALL tsfi_drmModeAddPlane(uint32_t plane_id, size_t buffer_size) {
+    if (g_virtual_plane_count >= MAX_VIRTUAL_PLANES) return -1;
+    void *ptr = lau_malloc_wired(buffer_size);
+    if (!ptr) return -1;
+    memset(ptr, 0, buffer_size);
+    g_virtual_planes[g_virtual_plane_count] = ptr;
+    g_virtual_plane_ids[g_virtual_plane_count] = plane_id;
+    g_virtual_plane_count++;
+    return 0;
+}
+
+static VKAPI_ATTR void* VKAPI_CALL tsfi_drmModeGetVirtualPlaneBuffer(uint32_t plane_id) {
+    for (int i = 0; i < g_virtual_plane_count; i++) {
+        if (g_virtual_plane_ids[i] == plane_id) {
+            return g_virtual_planes[i];
+        }
+    }
+    return NULL;
+}
+
+static VKAPI_ATTR void VKAPI_CALL tsfi_zmm_set_scanout_buffer(void* ptr, int w, int h) {
+    g_scanout_buffer = ptr;
+    g_scanout_w = w;
+    g_scanout_h = h;
+}
+
+static VKAPI_ATTR void VKAPI_CALL tsfi_drmModeFreeVirtualPlanes(void) {
+    for (int i = 0; i < g_virtual_plane_count; i++) {
+        if (g_virtual_planes[i]) {
+            lau_free(g_virtual_planes[i]);
+            g_virtual_planes[i] = NULL;
+        }
+    }
+    g_virtual_plane_count = 0;
+}
+
 // Export proc address to act as our "Loader"
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL tsfi_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
     fprintf(stderr, "[DEBUG VK] Requesting proc: %s\n", pName); fflush(stderr);
     (void)instance;
+    
+    // TSFi Custom Extensions
+    if (strcmp(pName, "tsfi_drmModeAddPlane") == 0) { return (PFN_vkVoidFunction)tsfi_drmModeAddPlane; }
+    if (strcmp(pName, "tsfi_drmModeGetVirtualPlaneBuffer") == 0) { return (PFN_vkVoidFunction)tsfi_drmModeGetVirtualPlaneBuffer; }
+    if (strcmp(pName, "tsfi_zmm_set_scanout_buffer") == 0) { return (PFN_vkVoidFunction)tsfi_zmm_set_scanout_buffer; }
+    if (strcmp(pName, "tsfi_drmModeFreeVirtualPlanes") == 0) { return (PFN_vkVoidFunction)tsfi_drmModeFreeVirtualPlanes; }
+    
+    // Debug & Semaphores
     if (strcmp(pName, "vkSetDebugUtilsObjectNameEXT") == 0) { return (PFN_vkVoidFunction)tsfi_vkSetDebugUtilsObjectNameEXT; }
     if (strcmp(pName, "vkCreateDebugUtilsMessengerEXT") == 0) { return (PFN_vkVoidFunction)tsfi_vkCreateDebugUtilsMessengerEXT; }
     if (strcmp(pName, "vkDestroyDebugUtilsMessengerEXT") == 0) { return (PFN_vkVoidFunction)tsfi_vkDestroyDebugUtilsMessengerEXT; }

@@ -99,8 +99,8 @@ int main(int argc, char** argv) {
     gen_params.prompt = prompt;
     gen_params.negative_prompt = "";
     gen_params.clip_skip = -1;
-    gen_params.width = shm_depth ? shm_depth->width : 1280;
-    gen_params.height = shm_depth ? shm_depth->height : 720;
+    gen_params.width = shm_depth ? shm_depth->width : 512;
+    gen_params.height = shm_depth ? shm_depth->height : 512;
     gen_params.batch_count = 1;
     gen_params.seed = -1;
     gen_params.strength = strength;
