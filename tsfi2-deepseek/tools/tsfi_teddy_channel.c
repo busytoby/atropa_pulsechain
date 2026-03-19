@@ -64,6 +64,11 @@ int main() {
     init_vk_swapchain(vk, 1280, 720);
     printf("[PASS] Teddy Bear Channel Swapchain Active.\n");
 
+    // 5.5 Prepare Resampling Buffers for YouTube (NV12 4:2:0)
+    uint8_t *dst_y = (uint8_t*)lau_malloc(1280 * 720);
+    uint8_t *dst_uv = (uint8_t*)lau_malloc(1280 * 720 / 2);
+    extern void tsfi_ab4h_to_nv12(const uint16_t *src, uint8_t *dst_y, uint8_t *dst_uv, int w, int h);
+
     // 6. High-Speed 171 FPS Render Loop
     printf("[INFO] Executing Teddy Bear Animation via ZMM Activation...\n");
     
@@ -129,6 +134,12 @@ int main() {
         VkPresentInfoKHR presentInfo = { .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, .swapchainCount = 1, .pSwapchains = &vk->swapchain, .pImageIndices = &imageIndex };
         vk->vkQueuePresentKHR(vk->queue, &presentInfo);
 
+        // --- NEW: Resample for YouTube Channel ---
+        // (Simulating fetch of AB4H data from VRAM via Zhong)
+        uint16_t *mock_ab4h = (uint16_t*)lau_malloc(1280 * 720 * 8); 
+        tsfi_ab4h_to_nv12(mock_ab4h, dst_y, dst_uv, 1280, 720);
+        lau_free(mock_ab4h);
+
         frame_idx++;
         if (frame_idx % 100 == 0) printf("\r[TEDDY] Streaming Frame: %u (171 FPS Stable)", frame_idx);
         fflush(stdout);
@@ -136,6 +147,8 @@ int main() {
     }
 
     printf("\n[SYSTEM] Teddy Bear Channel Simulation Concluded.\n");
+    lau_free(dst_y);
+    lau_free(dst_uv);
     cleanup_vulkan(vk);
     wl_surface_destroy(surface);
     wl_display_disconnect(display);

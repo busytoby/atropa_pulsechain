@@ -44,8 +44,27 @@ TSFiHelmholtzSVDAG* tsfi_svdag_create(size_t initial_cap) {
     dag->root_entropy = 1.0f;
     dag->is_logical = false;
     dag->logical_glyph = NULL;
+    dag->subjective_intent_norm = 137; // Baseline
     tsfi_svdag_init_lut();
     return dag;
+}
+
+void tsfi_svdag_calculate_intent(TSFiHelmholtzSVDAG *dag, float w_user, float w_deepseek, float w_gemini) {
+    if (!dag) return;
+
+    // The Intent Equation: Weighted Trilateral Potential
+    // Base Resolution Scalar: 1000.0f
+    float total_weighted_potential = (w_user * dag->p_user) + 
+                                     (w_deepseek * dag->p_deepseek) + 
+                                     (w_gemini * dag->p_gemini);
+
+    // Mandate the physical norm for autonomy
+    dag->subjective_intent_norm = (uint64_t)(1000.0f * total_weighted_potential);
+
+    if (dag->subjective_intent_norm < 1) dag->subjective_intent_norm = 137; // Gravitational Lock Minimum
+
+    printf("[AUTONOMY] Intent Projected: 0x%lx (U:%.2f, DS:%.2f, G:%.2f)\n", 
+           (unsigned long)dag->subjective_intent_norm, dag->p_user, dag->p_deepseek, dag->p_gemini);
 }
 
 void tsfi_svdag_destroy(TSFiHelmholtzSVDAG *dag) {

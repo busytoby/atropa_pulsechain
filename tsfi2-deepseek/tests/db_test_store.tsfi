@@ -7,7 +7,7 @@ PROGRAM LORE_DATABASE_TEST
   CREATE_YI W1 W2 123 456 789
   
   ! Attach some material data
-  ATTACH_FIELD W1 "STRING" "Name" "Ancient Wavelet"
+  ATTACH_FIELD W1 "STRING" "Name" "Auncient Wavelet"
   ATTACH_FIELD W1 "STRING" "Origin" "Acoustic Substrate"
   
   ! Store in Infinite Journal

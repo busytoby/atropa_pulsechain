@@ -79,6 +79,10 @@ typedef TSFiHelmholtzSVDAG TSFiTasteTree;
 // API
 TSFiHelmholtzSVDAG* tsfi_svdag_create(size_t initial_cap);
 void tsfi_svdag_destroy(TSFiHelmholtzSVDAG *dag);
+
+// Autonomy: Trilateral Intent Projection
+void tsfi_svdag_calculate_intent(TSFiHelmholtzSVDAG *dag, float w_user, float w_deepseek, float w_gemini);
+
 void tsfi_svdag_init_lut(void);
 void tsfi_svdag_cleanup_lut(void);
 

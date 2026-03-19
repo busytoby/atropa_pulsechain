@@ -7,14 +7,14 @@
 #include <string.h>
 
 /**
- * @brief Evolves the Ancient Wavelet (UID 1000) specifically to resolve foundational faults.
+ * @brief Evolves the Auncient Wavelet (UID 1000) specifically to resolve foundational faults.
  */
-static void tsfi_evolve_ancient_fault(void *manifold_shm, float intensity) {
+static void tsfi_evolve_auncient_fault(void *manifold_shm, float intensity) {
     // In a production TSFi environment, we would locate the physical wavelet in the arena.
     // For this bridge thunk, we simulate the transformation of the Lore Region (Leaf 0).
     uint8_t *leaf0 = (uint8_t *)manifold_shm;
     
-    printf("[AUTONOMY] Evolving Ancient Fault (UID 1000) using Grown Energy %.2f\n", intensity);
+    printf("[AUTONOMY] Evolving Auncient Fault (UID 1000) using Grown Energy %.2f\n", intensity);
 
     // 1. Simulate Yang Activation (SEAL12)
     // 2. Execute Dai Evolution (SEAL13) - Selection based on Intensity
@@ -24,7 +24,7 @@ static void tsfi_evolve_ancient_fault(void *manifold_shm, float intensity) {
     uint64_t evolved_id = (intensity > 5.0f) ? 0xDA11CC41 : 0x1C41DA1;
     memcpy(leaf0, &evolved_id, 8);
     
-    printf("[SUCCESS] Ancient Fault evolved to DAI Rigidity (Selection: %d). Fault resolved.\n", selection);
+    printf("[SUCCESS] Auncient Fault evolved to DAI Rigidity (Selection: %d). Fault resolved.\n", selection);
 }
 
 /**
@@ -47,9 +47,9 @@ void tsfi_resolve_fault_autonomous(void *manifold_shm, VulkanContext *vk) {
         // 1. Identify the Ancestor
         uint64_t svdag_id = *(uint64_t*)leaf502;
         
-        // 2. Special Case: Ancient Fault (UID 1000)
+        // 2. Special Case: Auncient Fault (UID 1000)
         if (svdag_id == 1000) {
-            tsfi_evolve_ancient_fault(manifold_shm, current_energy);
+            tsfi_evolve_auncient_fault(manifold_shm, current_energy);
         } else {
             // 3. Perform K0Rn Evolutionary Step for general SVDAGs
             K0RnStream *genome = tsfi_k0rn_compile_teddy(); 
