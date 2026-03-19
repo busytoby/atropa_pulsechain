@@ -92,6 +92,54 @@ LDFLAGS  = -L/usr/local/lib -ljpeg -lrt -ldl -lpthread -lstdc++ -lwayland-client
 bin/bench_xnor_trap: tests/bench_xnor_trap.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
+bin/test_vulkan_video_encode: tests/test_vulkan_video_encode.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_vulkan_ab4h_capabilities: tests/test_vulkan_ab4h_capabilities.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_vulkan_ab4h_capabilities: tests/test_vulkan_ab4h_capabilities.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/test_vulkan_dmabuf_export: tests/test_vulkan_dmabuf_export.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/bench_ab4h_rebar_throughput: tests/bench_ab4h_rebar_throughput.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_wayland_viewer: tools/tsfi_wayland_viewer.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_wayland_spirv_demo: tools/tsfi_wayland_spirv_demo.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_wayland_lib_demo: tools/tsfi_wayland_lib_demo.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
+bin/tsfi_ab4h_sdl_viewer: tools/tsfi_ab4h_sdl_viewer.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lSDL2 -lm
+
+bin/tsfi_drm_lease_plane71: tools/tsfi_drm_lease_plane71.c plugins/drm-lease-v1-protocol.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -Iplugins -I/usr/include/libdrm -ldrm -lwayland-client -lm
+
+bin/tsfi_pm4_ab4h_doorbell: tools/tsfi_pm4_ab4h_doorbell.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt -lm
+
+bin/tsfi_authenticated_plane71: tools/tsfi_authenticated_plane71.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -I/usr/include/libdrm -ldrm -lwayland-client -lm
+
+bin/tsfi_xdg_plane71_overlay: tools/tsfi_xdg_plane71_overlay.c plugins/xdg-shell-protocol.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -Iplugins -Iplugins/vulkan -lwayland-client -lrt -lm
+
+bin/tsfi_zwlr_plane71_overlay: tools/tsfi_zwlr_plane71_overlay.c plugins/wlr-layer-shell-unstable-v1-protocol.c plugins/xdg-shell-protocol.c $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -Iplugins -lwayland-client -lrt -lm
+
+bin/tsfi_wayland_vulkan_overlay: tools/tsfi_wayland_vulkan_overlay.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwayland-client -lvulkan -lrt
+
+bin/tsfi_vulkan_plane71_demo: tools/tsfi_vulkan_plane71_demo.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
 all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory bin/test_graph_cards bin/test_taste_atoms bin/tsfi_spider_crow_taste bin/tsfi_spider_teddy_taste
 bin/tsfi_teddy_skeleton: src/tsfi_teddy_skeleton.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
@@ -108,7 +156,7 @@ bin/test_graph_cards: tests/test_graph_cards.c obj/tsfi_graph_cards.o $(CORE_OBJ
 obj/tsfi_graph_cards.o: src/tsfi_graph_cards.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-bin/tsfi_native_broadcast: tools/tsfi_native_broadcast.c $(CORE_OBJS)
+bin/tsfi_native_broadcast: tools/tsfi_native_broadcast.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 bin/tsfi_sd_worker: src/tsfi_native_sd.cpp $(CORE_OBJS)

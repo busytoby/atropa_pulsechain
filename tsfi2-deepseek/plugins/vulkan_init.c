@@ -19,20 +19,242 @@
     vk->name = (PFN_##name)vk->vkGetDeviceProcAddr(vk->device, #name); \
     if (!vk->name) { printf("[VULKAN] Optional proc %s not loaded.\n", #name); }
 
-void tag_vulkan_object(VulkanContext *vk, uint64_t handle, VkObjectType type, const char *name);
+#define LOAD_DEV_PROC_FALLBACK(name, fallback_name) \
+    vk->name = (PFN_##name)vk->vkGetDeviceProcAddr(vk->device, #name); \
+    if (!vk->name) { \
+        vk->name = (PFN_##name)vk->vkGetDeviceProcAddr(vk->device, #fallback_name); \
+    } \
+    if (!vk->name) { printf("[VULKAN] Failed to load %s or %s\n", #name, #fallback_name); cleanup_vulkan(vk); return NULL; }
+
+// --- TSFi Liang-Barsky (Lau) Vulkan Allocation Bridge ---
+
+static void* VKAPI_CALL tsfi_vulkan_alloc(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope scope) {
+    (void)pUserData; (void)scope;
+    // We use lau_memalign to ensure driver memory is optimized for AVX-512 thunks.
+    // Default alignment is 64 if not specified higher by the driver.
+    return lau_memalign_loc(alignment > 64 ? alignment : 64, size, "VULKAN_DRIVER", 0);
+}
+
+static void* VKAPI_CALL tsfi_vulkan_realloc(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope scope) {
+    (void)pUserData; (void)scope; (void)alignment;
+    return lau_realloc_loc(pOriginal, size, "VULKAN_DRIVER", 0);
+}
+
+static void VKAPI_CALL tsfi_vulkan_free(void* pUserData, void* pMemory) {
+    (void)pUserData;
+    if (pMemory) lau_free(pMemory);
+}
+
+static void VKAPI_CALL tsfi_vulkan_internal_alloc_notify(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope scope) {
+    (void)pUserData; (void)size; (void)allocationType; (void)scope;
+}
+
+static void VKAPI_CALL tsfi_vulkan_internal_free_notify(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope scope) {
+    (void)pUserData; (void)size; (void)allocationType; (void)scope;
+}
+
+static const VkAllocationCallbacks tsfi_alloc_callbacks = {
+    .pUserData = NULL,
+    .pfnAllocation = tsfi_vulkan_alloc,
+    .pfnReallocation = tsfi_vulkan_realloc,
+    .pfnFree = tsfi_vulkan_free,
+    .pfnInternalAllocation = tsfi_vulkan_internal_alloc_notify,
+    .pfnInternalFree = tsfi_vulkan_internal_free_notify
+};
+
 void lau_init_sync_objects(VulkanContext *vk);
+void lau_init_samplers(VulkanContext *vk);
+void lau_init_stuffed_manifold(VulkanContext *vk);
+void lau_init_queries(VulkanContext *vk);
+
+void lau_init_samplers(VulkanContext *vk) {
+    if (!vk || !vk->device || !vk->vkCreateSampler) return;
+
+    VkSamplerCreateInfo samplerInfo = {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_NEAREST,
+        .minFilter = VK_FILTER_NEAREST,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .anisotropyEnable = VK_FALSE,
+        .maxAnisotropy = 1.0f,
+        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE,
+        .compareEnable = VK_FALSE,
+        .compareOp = VK_COMPARE_OP_ALWAYS,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .mipLodBias = 0.0f,
+        .minLod = 0.0f,
+        .maxLod = 0.0f
+    };
+
+    // 1. Point Sampler
+    vk->vkCreateSampler(vk->device, &samplerInfo, &tsfi_alloc_callbacks, &vk->sampler_point);
+    tag_vulkan_object(vk, (uint64_t)vk->sampler_point, VK_OBJECT_TYPE_SAMPLER, "TSFi_Sampler_Point");
+
+    // 2. Linear Sampler
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    vk->vkCreateSampler(vk->device, &samplerInfo, &tsfi_alloc_callbacks, &vk->sampler_linear);
+    tag_vulkan_object(vk, (uint64_t)vk->sampler_linear, VK_OBJECT_TYPE_SAMPLER, "TSFi_Sampler_Linear");
+
+    // 3. Anisotropic Sampler (Highest Quality)
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 16.0f;
+    vk->vkCreateSampler(vk->device, &samplerInfo, &tsfi_alloc_callbacks, &vk->sampler_aniso);
+    tag_vulkan_object(vk, (uint64_t)vk->sampler_aniso, VK_OBJECT_TYPE_SAMPLER, "TSFi_Sampler_Aniso_16x");
+
+    // --- SAMPLER DESCRIPTOR SET INITIALIZATION ---
+    
+    // 1. Descriptor Set Layout
+    VkDescriptorSetLayoutBinding samplerBindings[3] = {
+        { .binding = 0, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_ALL },
+        { .binding = 1, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_ALL },
+        { .binding = 2, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_ALL }
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 3,
+        .pBindings = samplerBindings
+    };
+
+    vk->vkCreateDescriptorSetLayout(vk->device, &layoutInfo, &tsfi_alloc_callbacks, &vk->sampler_descriptor_layout);
+    tag_vulkan_object(vk, (uint64_t)vk->sampler_descriptor_layout, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, "TSFi_Sampler_Layout");
+
+    // 2. Descriptor Pool
+    VkDescriptorPoolSize poolSize = { .type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 3 };
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize
+    };
+
+    vk->vkCreateDescriptorPool(vk->device, &poolInfo, &tsfi_alloc_callbacks, &vk->sampler_descriptor_pool);
+    tag_vulkan_object(vk, (uint64_t)vk->sampler_descriptor_pool, VK_OBJECT_TYPE_DESCRIPTOR_POOL, "TSFi_Sampler_Pool");
+
+    // 3. Allocate Descriptor Set
+    VkDescriptorSetAllocateInfo allocInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = vk->sampler_descriptor_pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &vk->sampler_descriptor_layout
+    };
+
+    vk->vkAllocateDescriptorSets(vk->device, &allocInfo, &vk->sampler_descriptor_set);
+    tag_vulkan_object(vk, (uint64_t)vk->sampler_descriptor_set, VK_OBJECT_TYPE_DESCRIPTOR_SET, "TSFi_Sampler_Set");
+
+    // 4. Update Descriptor Set with Samplers
+    VkDescriptorImageInfo samplerInfos[3] = {
+        { .sampler = vk->sampler_point },
+        { .sampler = vk->sampler_linear },
+        { .sampler = vk->sampler_aniso }
+    };
+
+    VkWriteDescriptorSet samplerWrites[1] = {
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = vk->sampler_descriptor_set,
+            .dstBinding = 0,
+            .descriptorCount = 3,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .pImageInfo = samplerInfos
+        }
+    };
+
+    vk->vkUpdateDescriptorSets(vk->device, 1, samplerWrites, 0, NULL);
+    printf("[VULKAN] Global Sampler Manifold Formalized (Descriptor Set Active).\n");
+}
+
+void lau_init_stuffed_manifold(VulkanContext *vk) {
+    if (!vk || !vk->device || !vk->vkCreateBufferView || !vk->rebar_buffer) return;
+
+    // 1. STUFFED FUR VIEW (Isotropic Density)
+    // Format: R8_UNORM (8-bit quantized density for 171 FPS efficiency)
+    VkBufferViewCreateInfo furViewInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
+        .buffer = vk->rebar_buffer,
+        .format = VK_FORMAT_R8_UNORM,
+        .offset = 0, // Starts at the beginning of ReBAR
+        .range = 256 * 1024 * 1024 // 256MB for Fur Density Field
+    };
+    vk->vkCreateBufferView(vk->device, &furViewInfo, &tsfi_alloc_callbacks, &vk->stuffed_fur_view);
+    tag_vulkan_object(vk, (uint64_t)vk->stuffed_fur_view, VK_OBJECT_TYPE_BUFFER_VIEW, "TSFi_Stuffed_Fur_Density_View");
+
+    // 2. STUFFED FEATHER VIEW (Anisotropic Tensors)
+    // Format: A2B10G10R10_UNORM_PACK32 (High-precision Tangents for iridescent sheen)
+    VkBufferViewCreateInfo featherViewInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
+        .buffer = vk->rebar_buffer,
+        .format = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+        .offset = 256 * 1024 * 1024, // Starts after fur
+        .range = 256 * 1024 * 1024 // 256MB for Feather Tensor Field
+    };
+    vk->vkCreateBufferView(vk->device, &featherViewInfo, &tsfi_alloc_callbacks, &vk->stuffed_feather_view);
+    tag_vulkan_object(vk, (uint64_t)vk->stuffed_feather_view, VK_OBJECT_TYPE_BUFFER_VIEW, "TSFi_Stuffed_Feather_Tensor_View");
+
+    printf("[VULKAN] Stuffed Animal Texel Manifold Initialized (Fur + Feathers).\n");
+}
+
+void lau_init_queries(VulkanContext *vk) {
+    if (!vk || !vk->device || !vk->vkCreateQueryPool) return;
+
+    // 1. Performance & Timestamp Pool (64 slots)
+    VkQueryPoolCreateInfo perfInfo = {
+        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+        .queryType = VK_QUERY_TYPE_TIMESTAMP,
+        .queryCount = 64
+    };
+    vk->vkCreateQueryPool(vk->device, &perfInfo, &tsfi_alloc_callbacks, &vk->query_pool_perf);
+    tag_vulkan_object(vk, (uint64_t)vk->query_pool_perf, VK_OBJECT_TYPE_QUERY_POOL, "TSFi_Query_Pool_Perf");
+
+    // 2. Pipeline Statistics Pool
+    VkQueryPoolCreateInfo statsInfo = {
+        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+        .queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS,
+        .queryCount = 1,
+        .pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT | 
+                              VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT
+    };
+    vk->vkCreateQueryPool(vk->device, &statsInfo, &tsfi_alloc_callbacks, &vk->query_pool_stats);
+    tag_vulkan_object(vk, (uint64_t)vk->query_pool_stats, VK_OBJECT_TYPE_QUERY_POOL, "TSFi_Query_Pool_Stats");
+
+    // Calculate ReBAR address for Query direct write (last 4KB of 1GB pool)
+    vk->query_manifold_address = vk->rebar_device_address + (vk->rebar_pool_size - 4096);
+    
+    printf("[VULKAN] Query Manifold Formalized. Anchor: 0x%lx\n", (unsigned long)vk->query_manifold_address);
+}
 
 void cleanup_vulkan(VulkanContext *vk) {
     if (!vk) return;
     if (vk->device) {
         if (vk->vkDeviceWaitIdle) vk->vkDeviceWaitIdle(vk->device);
         
+        // Query Cleanup
+        if (vk->query_pool_perf) vk->vkDestroyQueryPool(vk->device, vk->query_pool_perf, &tsfi_alloc_callbacks);
+        if (vk->query_pool_stats) vk->vkDestroyQueryPool(vk->device, vk->query_pool_stats, &tsfi_alloc_callbacks);
+        if (vk->query_pool_ray) vk->vkDestroyQueryPool(vk->device, vk->query_pool_ray, &tsfi_alloc_callbacks);
+
         // ReBAR Cleanup
         if (vk->rebar_mapped_ptr && vk->vkUnmapMemory) vk->vkUnmapMemory(vk->device, vk->rebar_memory);
-        if (vk->rebar_buffer && vk->vkDestroyBuffer) vk->vkDestroyBuffer(vk->device, vk->rebar_buffer, NULL);
-        if (vk->rebar_memory && vk->vkFreeMemory) vk->vkFreeMemory(vk->device, vk->rebar_memory, NULL);
+        if (vk->rebar_buffer && vk->vkDestroyBuffer) vk->vkDestroyBuffer(vk->device, vk->rebar_buffer, &tsfi_alloc_callbacks);
+        if (vk->rebar_memory && vk->vkFreeMemory) vk->vkFreeMemory(vk->device, vk->rebar_memory, &tsfi_alloc_callbacks);
 
-        if (vk->command_pool) vk->vkDestroyCommandPool(vk->device, vk->command_pool, NULL);
+        // Stuffed Manifold Cleanup
+        if (vk->stuffed_fur_view) vk->vkDestroyBufferView(vk->device, vk->stuffed_fur_view, &tsfi_alloc_callbacks);
+        if (vk->stuffed_feather_view) vk->vkDestroyBufferView(vk->device, vk->stuffed_feather_view, &tsfi_alloc_callbacks);
+
+        // Sampler Cleanup
+        if (vk->sampler_descriptor_layout) vk->vkDestroyDescriptorSetLayout(vk->device, vk->sampler_descriptor_layout, &tsfi_alloc_callbacks);
+        if (vk->sampler_descriptor_pool) vk->vkDestroyDescriptorPool(vk->device, vk->sampler_descriptor_pool, &tsfi_alloc_callbacks);
+        if (vk->sampler_point) vk->vkDestroySampler(vk->device, vk->sampler_point, &tsfi_alloc_callbacks);
+        if (vk->sampler_linear) vk->vkDestroySampler(vk->device, vk->sampler_linear, &tsfi_alloc_callbacks);
+        if (vk->sampler_aniso) vk->vkDestroySampler(vk->device, vk->sampler_aniso, &tsfi_alloc_callbacks);
+
+        if (vk->command_pool) vk->vkDestroyCommandPool(vk->device, vk->command_pool, &tsfi_alloc_callbacks);
         if (vk->swapchainImageViews) {
             if (vk->swapchainImageCount > 0 && vk->swapchainImageCount < 16) {
                 for (uint32_t i = 0; i < vk->swapchainImageCount; i++) {
@@ -151,7 +373,7 @@ VulkanContext *init_vulkan() {
         .ppEnabledLayerNames = use_validation ? layers : NULL
     };
 
-    if (vk->vkCreateInstance(&createInfo, NULL, &vk->instance) != VK_SUCCESS) { cleanup_vulkan(vk); return NULL; }
+    if (vk->vkCreateInstance(&createInfo, &tsfi_alloc_callbacks, &vk->instance) != VK_SUCCESS) { cleanup_vulkan(vk); return NULL; }
 
     LOAD_PROC(vkDestroyInstance);
     LOAD_PROC(vkEnumeratePhysicalDevices);
@@ -176,7 +398,7 @@ VulkanContext *init_vulkan() {
     vk->vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vk->vkGetInstanceProcAddr(vk->instance, "vkDestroyDebugUtilsMessengerEXT");
 
     if (vk->vkCreateDebugUtilsMessengerEXT && use_validation) {
-        vk->vkCreateDebugUtilsMessengerEXT(vk->instance, &debugCreateInfo, NULL, &vk->debugMessenger);
+        vk->vkCreateDebugUtilsMessengerEXT(vk->instance, &debugCreateInfo, &tsfi_alloc_callbacks, &vk->debugMessenger);
         printf("[VULKAN] Debug Messenger Initialized.\n");
     }
 
@@ -193,13 +415,26 @@ VulkanContext *init_vulkan() {
     VkQueueFamilyProperties *qProps = (VkQueueFamilyProperties*)lau_malloc(sizeof(VkQueueFamilyProperties) * qCount);
     vk->vkGetPhysicalDeviceQueueFamilyProperties(vk->physical_device, &qCount, qProps);
     int qIndex = -1;
-    for (uint32_t i = 0; i < qCount; i++) { if (qProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) { qIndex = i; break; } }
+    int vqIndex = -1;
+    for (uint32_t i = 0; i < qCount; i++) { 
+        if (qProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) { qIndex = i; }
+        if (qProps[i].queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) { vqIndex = i; }
+    }
     lau_free(qProps);
     if (qIndex < 0) { cleanup_vulkan(vk); return NULL; }
     vk->queue_family_index = qIndex;
     
     float priority = 1.0f;
-    VkDeviceQueueCreateInfo qInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = qIndex, .queueCount = 1, .pQueuePriorities = &priority };
+    VkDeviceQueueCreateInfo qInfos[2];
+    uint32_t qInfoCount = 0;
+    
+    qInfos[qInfoCount] = (VkDeviceQueueCreateInfo){ .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = (uint32_t)qIndex, .queueCount = 1, .pQueuePriorities = &priority };
+    qInfoCount++;
+
+    if (vqIndex >= 0 && vqIndex != qIndex) {
+        qInfos[qInfoCount] = (VkDeviceQueueCreateInfo){ .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = (uint32_t)vqIndex, .queueCount = 1, .pQueuePriorities = &priority };
+        qInfoCount++;
+    }
     
     // Feature Chain
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR, .rayQuery = VK_TRUE };
@@ -210,7 +445,7 @@ VulkanContext *init_vulkan() {
     VkPhysicalDeviceVulkan13Features features13 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &localRead, .dynamicRendering = VK_TRUE, .synchronization2 = VK_TRUE };
     VkPhysicalDeviceFeatures2 features2 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &features13, .features = { .robustBufferAccess = VK_TRUE } };
     
-    VkDeviceCreateInfo devInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .pNext = &features2, .queueCreateInfoCount = 1, .pQueueCreateInfos = &qInfo };
+    VkDeviceCreateInfo devInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .pNext = &features2, .queueCreateInfoCount = qInfoCount, .pQueueCreateInfos = qInfos };
 
         const char *fullExts[] = { 
             "VK_KHR_external_memory", "VK_KHR_external_memory_fd", "VK_EXT_external_memory_dma_buf", 
@@ -241,7 +476,7 @@ VulkanContext *init_vulkan() {
         
             devInfo.enabledExtensionCount = devEnabledCount;
             devInfo.ppEnabledExtensionNames = devEnabledExts;    
-        if (vk->vkCreateDevice(vk->physical_device, &devInfo, NULL, &vk->device) != VK_SUCCESS) {
+        if (vk->vkCreateDevice(vk->physical_device, &devInfo, &tsfi_alloc_callbacks, &vk->device) != VK_SUCCESS) {
             cleanup_vulkan(vk);
             return NULL;
         }
@@ -255,6 +490,8 @@ VulkanContext *init_vulkan() {
         // LOAD VIDEO ENCODE PROCS
         LOAD_DEV_PROC_OPTIONAL(vkCreateVideoSessionKHR);
         LOAD_DEV_PROC_OPTIONAL(vkDestroyVideoSessionKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkCreateVideoSessionParametersKHR);
+        LOAD_DEV_PROC_OPTIONAL(vkDestroyVideoSessionParametersKHR);
         LOAD_DEV_PROC_OPTIONAL(vkGetVideoSessionMemoryRequirementsKHR);
         LOAD_DEV_PROC_OPTIONAL(vkBindVideoSessionMemoryKHR);
         LOAD_DEV_PROC_OPTIONAL(vkCmdBeginVideoCodingKHR);
@@ -268,27 +505,49 @@ VulkanContext *init_vulkan() {
         LOAD_DEV_PROC(vkFreeCommandBuffers);
         LOAD_DEV_PROC(vkBeginCommandBuffer);
         LOAD_DEV_PROC(vkEndCommandBuffer);
+        LOAD_DEV_PROC(vkCmdExecuteCommands);
         LOAD_DEV_PROC(vkQueueSubmit);
         LOAD_DEV_PROC(vkQueueWaitIdle);
         LOAD_DEV_PROC(vkDeviceWaitIdle);
         LOAD_DEV_PROC(vkCmdPipelineBarrier);
         LOAD_DEV_PROC(vkCmdClearColorImage);
+
+        LOAD_DEV_PROC_FALLBACK(vkCmdBeginRendering, vkCmdBeginRenderingKHR);
+        LOAD_DEV_PROC_FALLBACK(vkCmdEndRendering, vkCmdEndRenderingKHR);
+        LOAD_DEV_PROC_FALLBACK(vkCmdPipelineBarrier2, vkCmdPipelineBarrier2KHR);
+        LOAD_DEV_PROC(vkCmdDraw);
         LOAD_DEV_PROC(vkCreateImage);
         LOAD_DEV_PROC(vkDestroyImage);
         LOAD_DEV_PROC(vkCreateImageView);
         LOAD_DEV_PROC(vkDestroyImageView);
+        LOAD_DEV_PROC(vkCreateSampler);
+        LOAD_DEV_PROC(vkDestroySampler);
         LOAD_DEV_PROC(vkAllocateMemory);
         LOAD_DEV_PROC(vkFreeMemory);
         LOAD_DEV_PROC(vkBindImageMemory);
             LOAD_DEV_PROC(vkGetImageMemoryRequirements);
             vk->vkGetImageSubresourceLayout = (PFN_vkGetImageSubresourceLayout)vk->vkGetDeviceProcAddr(vk->device, "vkGetImageSubresourceLayout");
             vk->vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vk->vkGetDeviceProcAddr(vk->device, "vkGetMemoryFdKHR");
-            LOAD_DEV_PROC(vkCreateBuffer);    LOAD_DEV_PROC(vkDestroyBuffer);
-    LOAD_DEV_PROC(vkGetBufferMemoryRequirements);
+            LOAD_DEV_PROC(vkCreateBuffer);
+            LOAD_DEV_PROC(vkDestroyBuffer);
+            LOAD_DEV_PROC(vkCreateBufferView);
+            LOAD_DEV_PROC(vkDestroyBufferView);
+            LOAD_DEV_PROC(vkGetBufferMemoryRequirements);
+
     LOAD_DEV_PROC(vkBindBufferMemory);
     LOAD_DEV_PROC(vkMapMemory);
     LOAD_DEV_PROC(vkUnmapMemory);
     LOAD_DEV_PROC(vkCmdCopyBufferToImage);
+
+    LOAD_DEV_PROC(vkCreateQueryPool);
+    LOAD_DEV_PROC(vkDestroyQueryPool);
+    LOAD_DEV_PROC(vkGetQueryPoolResults);
+    LOAD_DEV_PROC(vkCmdResetQueryPool);
+    LOAD_DEV_PROC(vkCmdWriteTimestamp);
+    LOAD_DEV_PROC(vkCmdBeginQuery);
+    LOAD_DEV_PROC(vkCmdEndQuery);
+    LOAD_DEV_PROC(vkCmdCopyQueryPoolResults);
+
     LOAD_DEV_PROC(vkCreateSwapchainKHR);
     LOAD_DEV_PROC(vkDestroySwapchainKHR);
     LOAD_DEV_PROC(vkGetSwapchainImagesKHR);
@@ -320,6 +579,10 @@ VulkanContext *init_vulkan() {
     LOAD_DEV_PROC(vkCmdDispatch);
     LOAD_DEV_PROC(vkCmdPushConstants);
 
+    LOAD_DEV_PROC_OPTIONAL(vkCreateShadersEXT);
+    LOAD_DEV_PROC_OPTIONAL(vkDestroyShaderEXT);
+    LOAD_DEV_PROC_OPTIONAL(vkCmdBindShadersEXT);
+
     LOAD_DEV_PROC(vkCreateAccelerationStructureKHR);
     LOAD_DEV_PROC(vkDestroyAccelerationStructureKHR);
     LOAD_DEV_PROC(vkGetAccelerationStructureBuildSizesKHR);
@@ -331,7 +594,7 @@ VulkanContext *init_vulkan() {
     vk->vkCmdSetRenderingInputAttachmentIndices = (PFN_vkCmdSetRenderingInputAttachmentIndicesKHR)vk->vkGetDeviceProcAddr(vk->device, "vkCmdSetRenderingInputAttachmentIndicesKHR");
 
     VkCommandPoolCreateInfo poolInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, .queueFamilyIndex = vk->queue_family_index, .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
-    if (vk->vkCreateCommandPool(vk->device, &poolInfo, NULL, &vk->command_pool) == VK_SUCCESS) {
+    if (vk->vkCreateCommandPool(vk->device, &poolInfo, &tsfi_alloc_callbacks, &vk->command_pool) == VK_SUCCESS) {
         tag_vulkan_object(vk, (uint64_t)vk->command_pool, VK_OBJECT_TYPE_COMMAND_POOL, "TSFi_Command_Pool");
         
         VkCommandBufferAllocateInfo cmdAlloc = {
@@ -345,11 +608,19 @@ VulkanContext *init_vulkan() {
             tag_vulkan_object(vk, (uint64_t)vk->command_buffers[1], VK_OBJECT_TYPE_COMMAND_BUFFER, "TSFi_Command_Buffer_1");
             tag_vulkan_object(vk, (uint64_t)vk->command_buffers[2], VK_OBJECT_TYPE_COMMAND_BUFFER, "TSFi_Command_Buffer_2");
         }
+
+        // Allocate Secondary Buffers for Parallel Plane 71 Work
+        cmdAlloc.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+        if (vk->vkAllocateCommandBuffers(vk->device, &cmdAlloc, vk->secondary_command_buffers) == VK_SUCCESS) {
+            tag_vulkan_object(vk, (uint64_t)vk->secondary_command_buffers[0], VK_OBJECT_TYPE_COMMAND_BUFFER, "TSFi_Secondary_Buffer_0");
+            tag_vulkan_object(vk, (uint64_t)vk->secondary_command_buffers[1], VK_OBJECT_TYPE_COMMAND_BUFFER, "TSFi_Secondary_Buffer_1");
+            tag_vulkan_object(vk, (uint64_t)vk->secondary_command_buffers[2], VK_OBJECT_TYPE_COMMAND_BUFFER, "TSFi_Secondary_Buffer_2");
+        }
     }
 
     vk->rebar_pool_size = 1024 * 1024 * 1024;
-    VkBufferCreateInfo rebarInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = vk->rebar_pool_size, .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, .sharingMode = VK_SHARING_MODE_EXCLUSIVE };
-    if (vk->vkCreateBuffer(vk->device, &rebarInfo, NULL, &vk->rebar_buffer) == VK_SUCCESS) {
+    VkBufferCreateInfo rebarInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = vk->rebar_pool_size, .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, .sharingMode = VK_SHARING_MODE_EXCLUSIVE };
+    if (vk->vkCreateBuffer(vk->device, &rebarInfo, &tsfi_alloc_callbacks, &vk->rebar_buffer) == VK_SUCCESS) {
         tag_vulkan_object(vk, (uint64_t)vk->rebar_buffer, VK_OBJECT_TYPE_BUFFER, "Zhong_ReBAR_Buffer");
         VkMemoryRequirements reqs;
         vk->vkGetBufferMemoryRequirements(vk->device, vk->rebar_buffer, &reqs);
@@ -367,16 +638,41 @@ VulkanContext *init_vulkan() {
                 }
             }
         }
-        VkMemoryAllocateInfo allocInfo = { .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .allocationSize = reqs.size, .memoryTypeIndex = typeIndex };
-        if (vk->vkAllocateMemory(vk->device, &allocInfo, NULL, &vk->rebar_memory) == VK_SUCCESS) {
+        VkMemoryAllocateFlagsInfo allocFlags = { .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT };
+        VkMemoryAllocateInfo allocInfo = { .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .pNext = &allocFlags, .allocationSize = reqs.size, .memoryTypeIndex = typeIndex };
+        if (vk->vkAllocateMemory(vk->device, &allocInfo, &tsfi_alloc_callbacks, &vk->rebar_memory) == VK_SUCCESS) {
             tag_vulkan_object(vk, (uint64_t)vk->rebar_memory, VK_OBJECT_TYPE_DEVICE_MEMORY, "Zhong_ReBAR_Memory");
             vk->vkBindBufferMemory(vk->device, vk->rebar_buffer, vk->rebar_memory, 0);
             vk->vkMapMemory(vk->device, vk->rebar_memory, 0, vk->rebar_pool_size, 0, &vk->rebar_mapped_ptr);
-            printf("[VULKAN] 1GB ReBAR Pool Initialized at %p.\n", vk->rebar_mapped_ptr);
+            
+            if (vk->vkGetBufferDeviceAddress) {
+                VkBufferDeviceAddressInfo bdaInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, .buffer = vk->rebar_buffer };
+                vk->rebar_device_address = vk->vkGetBufferDeviceAddress(vk->device, &bdaInfo);
+                printf("[VULKAN] 1GB ReBAR Pool Initialized at Host: %p, GPU BDA: 0x%lx\n", vk->rebar_mapped_ptr, (unsigned long)vk->rebar_device_address);
+
+                // --- NEW: Buffer Aliasing Implementation ---
+                // We create a second buffer handle that aliases the physical memory but with a "Secret" offset (e.g. 512MB)
+                VkBufferCreateInfo secretInfo = rebarInfo;
+                secretInfo.size = vk->rebar_pool_size / 2;
+                if (vk->vkCreateBuffer(vk->device, &secretInfo, &tsfi_alloc_callbacks, &vk->secret_rebar_buffer) == VK_SUCCESS) {
+                    tag_vulkan_object(vk, (uint64_t)vk->secret_rebar_buffer, VK_OBJECT_TYPE_BUFFER, "Zhong_Secret_Aliased_Buffer");
+                    // Bind to the SAME physical memory block but at an offset
+                    vk->vkBindBufferMemory(vk->device, vk->secret_rebar_buffer, vk->rebar_memory, vk->rebar_pool_size / 2);
+                    
+                    VkBufferDeviceAddressInfo sBdaInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, .buffer = vk->secret_rebar_buffer };
+                    VkDeviceAddress secret_bda = vk->vkGetBufferDeviceAddress(vk->device, &sBdaInfo);
+                    printf("[VULKAN] Aliased Secret Buffer Ready. GPU BDA: 0x%lx (Offset Switch Path Active)\n", (unsigned long)secret_bda);
+                }
+            } else {
+                printf("[VULKAN] 1GB ReBAR Pool Initialized at %p.\n", vk->rebar_mapped_ptr);
+            }
         }
     }
 
     lau_init_sync_objects(vk);
+    lau_init_samplers(vk);
+    lau_init_stuffed_manifold(vk);
+    lau_init_queries(vk);
 
     return vk;
 }
@@ -410,7 +706,7 @@ VulkanContext *init_vulkan_display() {
         .ppEnabledExtensionNames = extensions
     };
 
-    if (vk->vkCreateInstance(&createInfo, NULL, &vk->instance) != VK_SUCCESS) { cleanup_vulkan(vk); return NULL; }
+    if (vk->vkCreateInstance(&createInfo, &tsfi_alloc_callbacks, &vk->instance) != VK_SUCCESS) { cleanup_vulkan(vk); return NULL; }
 
     LOAD_PROC(vkDestroyInstance);
     LOAD_PROC(vkEnumeratePhysicalDevices);
@@ -461,7 +757,7 @@ VulkanContext *init_vulkan_display() {
         .imageExtent = modeProps.parameters.visibleRegion
     };
     
-    if (vk->vkCreateDisplayPlaneSurfaceKHR(vk->instance, &surfaceInfo, NULL, &vk->surface) != VK_SUCCESS) {
+    if (vk->vkCreateDisplayPlaneSurfaceKHR(vk->instance, &surfaceInfo, &tsfi_alloc_callbacks, &vk->surface) != VK_SUCCESS) {
         printf("[VULKAN] Failed to create display surface.\n");
         cleanup_vulkan(vk);
         return NULL;
@@ -482,7 +778,7 @@ VulkanContext *init_vulkan_display() {
     const char *devExts[] = { "VK_KHR_swapchain" };
     VkDeviceCreateInfo devInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .queueCreateInfoCount = 1, .pQueueCreateInfos = &qInfo, .enabledExtensionCount = 1, .ppEnabledExtensionNames = devExts };
 
-    if (vk->vkCreateDevice(vk->physical_device, &devInfo, NULL, &vk->device) != VK_SUCCESS) {
+    if (vk->vkCreateDevice(vk->physical_device, &devInfo, &tsfi_alloc_callbacks, &vk->device) != VK_SUCCESS) {
         cleanup_vulkan(vk);
         return NULL;
     }
@@ -509,6 +805,9 @@ VulkanContext *init_vulkan_display() {
     LOAD_DEV_PROC(vkResetFences);
 
     lau_init_sync_objects(vk);
+    lau_init_samplers(vk);
+    lau_init_stuffed_manifold(vk);
+    lau_init_queries(vk);
 
     return vk;
 }
@@ -555,7 +854,7 @@ void init_vk_swapchain(VulkanContext *vk, int width, int height) {
             if (swapInfo.imageExtent.height > caps.maxImageExtent.height) swapInfo.imageExtent.height = caps.maxImageExtent.height;
         }
     
-    if (vk->vkCreateSwapchainKHR(vk->device, &swapInfo, NULL, &vk->swapchain) != VK_SUCCESS) return;
+    if (vk->vkCreateSwapchainKHR(vk->device, &swapInfo, &tsfi_alloc_callbacks, &vk->swapchain) != VK_SUCCESS) return;
     vk->vkGetSwapchainImagesKHR(vk->device, vk->swapchain, &vk->swapchainImageCount, NULL);
     vk->swapchainImages = (VkImage*)lau_malloc(sizeof(VkImage) * vk->swapchainImageCount);
     vk->vkGetSwapchainImagesKHR(vk->device, vk->swapchain, &vk->swapchainImageCount, vk->swapchainImages);
@@ -563,7 +862,7 @@ void init_vk_swapchain(VulkanContext *vk, int width, int height) {
     memset(vk->swapchainImageViews, 0, sizeof(VkImageView) * vk->swapchainImageCount);
     for (uint32_t i = 0; i < vk->swapchainImageCount; i++) {
         VkImageViewCreateInfo viewInfo = { .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = vk->swapchainImages[i], .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = VK_FORMAT_B8G8R8A8_SRGB, .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } };
-        vk->vkCreateImageView(vk->device, &viewInfo, NULL, &vk->swapchainImageViews[i]);
+        vk->vkCreateImageView(vk->device, &viewInfo, &tsfi_alloc_callbacks, &vk->swapchainImageViews[i]);
     }
 }
 
@@ -581,11 +880,11 @@ void lau_init_sync_objects(VulkanContext *vk) {
 
     
 
-                vk->vkCreateSemaphore(vk->device, &semInfo, NULL, &vk->imageAvailableSemaphores[i]);
+                vk->vkCreateSemaphore(vk->device, &semInfo, &tsfi_alloc_callbacks, &vk->imageAvailableSemaphores[i]);
 
     
 
-                vk->vkCreateFence(vk->device, &fenceInfo, NULL, &vk->inFlightFences[i]);
+                vk->vkCreateFence(vk->device, &fenceInfo, &tsfi_alloc_callbacks, &vk->inFlightFences[i]);
 
     
 
@@ -625,7 +924,7 @@ void lau_init_sync_objects(VulkanContext *vk) {
 
     
 
-                vk->vkCreateSemaphore(vk->device, &semInfo, NULL, &vk->renderFinishedSemaphores[i]);
+                vk->vkCreateSemaphore(vk->device, &semInfo, &tsfi_alloc_callbacks, &vk->renderFinishedSemaphores[i]);
 
     
 
@@ -647,7 +946,7 @@ void lau_init_sync_objects(VulkanContext *vk) {
 
     VkSemaphoreTypeCreateInfo timelineInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE, .initialValue = 0 };
     VkSemaphoreCreateInfo tSemInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = &timelineInfo };
-    vk->vkCreateSemaphore(vk->device, &tSemInfo, NULL, &vk->timelineSemaphore);
+    vk->vkCreateSemaphore(vk->device, &tSemInfo, &tsfi_alloc_callbacks, &vk->timelineSemaphore);
     tag_vulkan_object(vk, (uint64_t)vk->timelineSemaphore, VK_OBJECT_TYPE_SEMAPHORE, "Main_Timeline_Semaphore");
 }
 

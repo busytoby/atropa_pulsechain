@@ -560,6 +560,22 @@ static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkCreateWaylandSurfaceKHR(VkInstance 
 // Dummy memory FD
 static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkGetMemoryFdKHR(VkDevice device, const void* pGetFdInfo, int* pFd) { (void)device; (void)pGetFdInfo; *pFd = 1; return VK_SUCCESS; }
 
+static VKAPI_ATTR VkResult VKAPI_CALL tsfi_vkCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) {
+    (void)device; (void)pCreateInfos; (void)pAllocator;
+    for (uint32_t i = 0; i < createInfoCount; i++) {
+        pShaders[i] = (VkShaderEXT)(uintptr_t)(0x7000 + i);
+    }
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL tsfi_vkDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
+    (void)device; (void)shader; (void)pAllocator;
+}
+
+static VKAPI_ATTR void VKAPI_CALL tsfi_vkCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) {
+    (void)commandBuffer; (void)stageCount; (void)pStages; (void)pShaders;
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL dummy_vulkan_success() { 
     static _Atomic int call_count = 0;
     if (atomic_fetch_add(&call_count, 1) < 5) {
@@ -712,6 +728,10 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL tsfi_vkGetInstanceProcAddr(VkInstance i
     if (strcmp(pName, "vkQueuePresentKHR") == 0) { return (PFN_vkVoidFunction)tsfi_vkQueuePresentKHR; }
     
     if (strcmp(pName, "vkGetMemoryFdKHR") == 0) { return (PFN_vkVoidFunction)tsfi_vkGetMemoryFdKHR; }
+
+    if (strcmp(pName, "vkCreateShadersEXT") == 0) { return (PFN_vkVoidFunction)tsfi_vkCreateShadersEXT; }
+    if (strcmp(pName, "vkDestroyShaderEXT") == 0) { return (PFN_vkVoidFunction)tsfi_vkDestroyShaderEXT; }
+    if (strcmp(pName, "vkCmdBindShadersEXT") == 0) { return (PFN_vkVoidFunction)tsfi_vkCmdBindShadersEXT; }
 
     // Optional WSI stuff, we mock returning a success so it doesn't crash
     if (strcmp(pName, "vkDestroySurfaceKHR") == 0) { return (PFN_vkVoidFunction)tsfi_vkDestroyInstance; }

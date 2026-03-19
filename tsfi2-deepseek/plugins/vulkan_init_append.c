@@ -1,4 +1,10 @@
 // Append to plugins/vulkan_init.c
+#include <stdio.h>
+#include <string.h>
+#include "window_inc/vulkan_struct.h"
+#include "lau_memory.h"
+
+extern const VkAllocationCallbacks tsfi_alloc_callbacks;
 
 void init_swapchain(VulkanContext *vk, int width, int height) {
     if (!vk || !vk->device || !vk->surface) return;
@@ -26,7 +32,7 @@ void init_swapchain(VulkanContext *vk, int width, int height) {
         .oldSwapchain = VK_NULL_HANDLE
     };
     
-    if (vk->vkCreateSwapchainKHR(vk->device, &swapInfo, NULL, &vk->swapchain) != VK_SUCCESS) {
+    if (vk->vkCreateSwapchainKHR(vk->device, &swapInfo, &tsfi_alloc_callbacks, &vk->swapchain) != VK_SUCCESS) {
         printf("[VULKAN] Failed to create swapchain.
 ");
         return;
@@ -45,7 +51,7 @@ void init_swapchain(VulkanContext *vk, int width, int height) {
             .format = VK_FORMAT_B8G8R8A8_SRGB,
             .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
         };
-        vk->vkCreateImageView(vk->device, &viewInfo, NULL, &vk->swapchainImageViews[i]);
+        vk->vkCreateImageView(vk->device, &viewInfo, &tsfi_alloc_callbacks, &vk->swapchainImageViews[i]);
     }
     printf("[VULKAN] Swapchain Ready (%d images).
 ", vk->swapchainImageCount);
@@ -57,9 +63,9 @@ void init_sync_objects(VulkanContext *vk) {
     VkSemaphoreCreateInfo semInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
     VkFenceCreateInfo fenceInfo = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT };
     
-    vk->vkCreateSemaphore(vk->device, &semInfo, NULL, &vk->imageAvailableSemaphore);
-    vk->vkCreateSemaphore(vk->device, &semInfo, NULL, &vk->renderFinishedSemaphore);
-    vk->vkCreateFence(vk->device, &fenceInfo, NULL, &vk->inFlightFence);
+    vk->vkCreateSemaphore(vk->device, &semInfo, &tsfi_alloc_callbacks, &vk->imageAvailableSemaphore);
+    vk->vkCreateSemaphore(vk->device, &semInfo, &tsfi_alloc_callbacks, &vk->renderFinishedSemaphore);
+    vk->vkCreateFence(vk->device, &fenceInfo, &tsfi_alloc_callbacks, &vk->inFlightFence);
     
     // Timeline Semaphore for Compute/Transfer Sync (Zhong)
     VkSemaphoreTypeCreateInfo timelineInfo = {
@@ -71,7 +77,7 @@ void init_sync_objects(VulkanContext *vk) {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         .pNext = &timelineInfo
     };
-    vk->vkCreateSemaphore(vk->device, &tSemInfo, NULL, &vk->timelineSemaphore);
+    vk->vkCreateSemaphore(vk->device, &tSemInfo, &tsfi_alloc_callbacks, &vk->timelineSemaphore);
     
     printf("[VULKAN] Sync Objects Initialized (Timeline Active).
 ");

@@ -30,6 +30,7 @@ typedef struct VulkanContext {
     // Commands
     VkCommandPool command_pool;
     VkCommandBuffer command_buffers[3];
+    VkCommandBuffer secondary_command_buffers[3];
     
     // Sync
     VkSemaphore imageAvailableSemaphores[3];
@@ -69,6 +70,7 @@ typedef struct VulkanContext {
     PFN_vkFreeCommandBuffers vkFreeCommandBuffers;
     PFN_vkBeginCommandBuffer vkBeginCommandBuffer;
     PFN_vkEndCommandBuffer vkEndCommandBuffer;
+    PFN_vkCmdExecuteCommands vkCmdExecuteCommands;
     PFN_vkQueueSubmit vkQueueSubmit;
     PFN_vkQueueWaitIdle vkQueueWaitIdle;
     PFN_vkDeviceWaitIdle vkDeviceWaitIdle;
@@ -80,6 +82,7 @@ typedef struct VulkanContext {
     PFN_vkCmdBeginRendering vkCmdBeginRendering;
     PFN_vkCmdEndRendering vkCmdEndRendering;
     PFN_vkCmdPipelineBarrier2 vkCmdPipelineBarrier2;
+    PFN_vkCmdDraw vkCmdDraw;
     
     // Sync Functions
     PFN_vkCreateSemaphore vkCreateSemaphore;
@@ -117,6 +120,8 @@ typedef struct VulkanContext {
     PFN_vkDestroyImage vkDestroyImage;
     PFN_vkCreateImageView vkCreateImageView;
     PFN_vkDestroyImageView vkDestroyImageView;
+    PFN_vkCreateSampler vkCreateSampler;
+    PFN_vkDestroySampler vkDestroySampler;
     PFN_vkAllocateMemory vkAllocateMemory;
     PFN_vkFreeMemory vkFreeMemory;
     PFN_vkBindImageMemory vkBindImageMemory;
@@ -125,9 +130,21 @@ typedef struct VulkanContext {
     PFN_vkGetImageSubresourceLayout vkGetImageSubresourceLayout;
     PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR;
 
+    // Queries
+    PFN_vkCreateQueryPool vkCreateQueryPool;
+    PFN_vkDestroyQueryPool vkDestroyQueryPool;
+    PFN_vkGetQueryPoolResults vkGetQueryPoolResults;
+    PFN_vkCmdResetQueryPool vkCmdResetQueryPool;
+    PFN_vkCmdWriteTimestamp vkCmdWriteTimestamp;
+    PFN_vkCmdBeginQuery vkCmdBeginQuery;
+    PFN_vkCmdEndQuery vkCmdEndQuery;
+    PFN_vkCmdCopyQueryPoolResults vkCmdCopyQueryPoolResults;
+
     // Buffers and Memory Mapping
     PFN_vkCreateBuffer vkCreateBuffer;
     PFN_vkDestroyBuffer vkDestroyBuffer;
+    PFN_vkCreateBufferView vkCreateBufferView;
+    PFN_vkDestroyBufferView vkDestroyBufferView;
     PFN_vkGetBufferMemoryRequirements vkGetBufferMemoryRequirements;
     PFN_vkBindBufferMemory vkBindBufferMemory;
     PFN_vkMapMemory vkMapMemory;
@@ -157,6 +174,11 @@ typedef struct VulkanContext {
     PFN_vkCmdDispatch vkCmdDispatch;
     PFN_vkCmdPushConstants vkCmdPushConstants;
 
+    // Shader Objects (VK_EXT_shader_object)
+    PFN_vkCreateShadersEXT vkCreateShadersEXT;
+    PFN_vkDestroyShaderEXT vkDestroyShaderEXT;
+    PFN_vkCmdBindShadersEXT vkCmdBindShadersEXT;
+
     // Dynamic Rendering Local Read
     PFN_vkCmdSetRenderingAttachmentLocationsKHR vkCmdSetRenderingAttachmentLocations;
     PFN_vkCmdSetRenderingInputAttachmentIndicesKHR vkCmdSetRenderingInputAttachmentIndices;
@@ -172,6 +194,8 @@ typedef struct VulkanContext {
     // --- Vulkan Video Encode Function Pointers ---
     PFN_vkCreateVideoSessionKHR vkCreateVideoSessionKHR;
     PFN_vkDestroyVideoSessionKHR vkDestroyVideoSessionKHR;
+    PFN_vkCreateVideoSessionParametersKHR vkCreateVideoSessionParametersKHR;
+    PFN_vkDestroyVideoSessionParametersKHR vkDestroyVideoSessionParametersKHR;
     PFN_vkGetVideoSessionMemoryRequirementsKHR vkGetVideoSessionMemoryRequirementsKHR;
     PFN_vkBindVideoSessionMemoryKHR vkBindVideoSessionMemoryKHR;
     PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR;
@@ -184,10 +208,30 @@ typedef struct VulkanContext {
     
     // ReBAR Pool (Zhong)
     VkBuffer rebar_buffer;
+    VkBuffer secret_rebar_buffer; // Aliased view for secure context switching
     VkDeviceMemory rebar_memory;
     void* rebar_mapped_ptr;
     size_t rebar_pool_size;
     size_t rebar_pool_offset;
+    VkDeviceAddress rebar_device_address; // 64-bit raw GPU pointer for BDA massing
+
+    // Sampler Manifold
+    VkSampler sampler_point;
+    VkSampler sampler_linear;
+    VkSampler sampler_aniso;
+    VkDescriptorSetLayout sampler_descriptor_layout;
+    VkDescriptorPool sampler_descriptor_pool;
+    VkDescriptorSet sampler_descriptor_set;
+
+    // Stuffed Animal Texel Manifold (Fur & Feathers)
+    VkBufferView stuffed_fur_view;
+    VkBufferView stuffed_feather_view;
+
+    // Query Manifold
+    VkQueryPool query_pool_perf;
+    VkQueryPool query_pool_stats;
+    VkQueryPool query_pool_ray;
+    VkDeviceAddress query_manifold_address; // ReBAR BDA for query direct write
     
 } VulkanContext;
 

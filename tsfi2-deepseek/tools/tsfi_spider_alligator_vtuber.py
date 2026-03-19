@@ -13,7 +13,6 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from PIL import Image, ImageDraw, ImageFont
-import cv2
 import numpy as np
 import ctypes
 import mmap
@@ -763,11 +762,28 @@ def generation_thread():
             mpx_img.paste(skeleton, (0, 0)) 
             mpx_img.paste(painter_img, (0, 512)) 
             
+            # --- TSFi Hardware Encoder Integration (AB4H 1280x720) ---
+            # Pad the 512x1024 vertical stream into a 1280x720 broadcast frame
+            # Scaling down slightly to fit the 720p height
+            scaled_mpx = mpx_img.resize((360, 720))
+            hw_frame = Image.new("RGB", (1280, 720), (0, 0, 0)) # Black background
+            # Center the vertical stack in the 1280x720 frame
+            hw_frame.paste(scaled_mpx, ((1280 - 360) // 2, 0))
+            
+            # Convert RGB to RGBA (AB4H / ARGB format required by Vulkan Encoder)
+            hw_frame_ab4h = hw_frame.convert("RGBA")
+            
+            # The Vulkan 4:4:4 format expects 4 bytes per pixel.
+            ab4h_bytes = hw_frame_ab4h.tobytes()
+            
+            with open("/tmp/tsfi_neural_out.raw", "wb") as f_out:
+                f_out.write(ab4h_bytes)
+            # --------------------------------------------------------
+            
             jpeg_io = io.BytesIO()
             mpx_img.save(jpeg_io, format="JPEG", quality=80)
             
             latest_jpeg_bytes = jpeg_io.getvalue()
-            latest_frame_bytes = mpx_img.tobytes()
             
             global_frame_idx += 1
                 

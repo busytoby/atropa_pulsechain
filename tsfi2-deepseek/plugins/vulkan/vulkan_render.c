@@ -512,18 +512,123 @@ void draw_frame(VulkanSystem *s) {
     VkCommandBufferBeginInfo beginInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     vk->vkBeginCommandBuffer(vk->command_buffers[vk->currentFrame], &beginInfo);
 
+    // 1. Reset and Start Queries
+    if (vk->query_pool_perf) {
+        vk->vkCmdResetQueryPool(vk->command_buffers[vk->currentFrame], vk->query_pool_perf, 0, 2);
+        vk->vkCmdWriteTimestamp(vk->command_buffers[vk->currentFrame], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vk->query_pool_perf, 0);
+    }
+    if (vk->query_pool_stats) {
+        vk->vkCmdResetQueryPool(vk->command_buffers[vk->currentFrame], vk->query_pool_stats, 0, 1);
+        vk->vkCmdBeginQuery(vk->command_buffers[vk->currentFrame], vk->query_pool_stats, 0, 0);
+    }
+
     // Update UI Elements (CPU Side)
     draw_ui_elements(s);
 
+    // 1. Transition Image Layout for Dynamic Rendering (COLOR_ATTACHMENT_OPTIMAL)
+    VkImageMemoryBarrier2 barrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .image = vk->swapchainImages[imageIndex],
+        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+    };
 
-    // Apply High-Quality Post-Processing
+    VkDependencyInfo depInfo = {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &barrier
+    };
+    vk->vkCmdPipelineBarrier2(vk->command_buffers[vk->currentFrame], &depInfo);
+
+    // 2. Begin Dynamic Rendering Session for Plane 71 Promotion
+    VkRenderingAttachmentInfo colorAttachment = {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView = vk->swapchainImageViews[imageIndex],
+        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue = { .color = { .float32 = { 0.0f, 0.1f, 0.2f, 1.0f } } } // TSFi Blue
+    };
+
+    VkRenderingInfo renderingInfo = {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .renderArea = { {0, 0}, vk->swapchainImages[imageIndex] ? (VkExtent2D){1280, 720} : (VkExtent2D){0, 0} }, // Target Plane 71 resolution
+        .layerCount = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachment
+    };
+
+    vk->vkCmdBeginRendering(vk->command_buffers[vk->currentFrame], &renderingInfo);
+
+    // --- SECONDARY COMMAND BUFFER DISPATCH (Plane 71 Promotion) ---
+    // In a production TSFi environment, this recording is performed by a Zhao worker thread.
+    VkCommandBufferInheritanceRenderingInfoKHR inheritanceRenderingInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
+        .colorAttachmentCount = 1,
+        .pColorAttachmentFormats = (VkFormat[]){ VK_FORMAT_B8G8R8A8_SRGB },
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
+    };
+
+    VkCommandBufferInheritanceInfo inheritanceInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        .pNext = &inheritanceRenderingInfo
+    };
+
+    VkCommandBufferBeginInfo secondaryBeginInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
+        .pInheritanceInfo = &inheritanceInfo
+    };
+
+    vk->vkBeginCommandBuffer(vk->secondary_command_buffers[vk->currentFrame], &secondaryBeginInfo);
+    
+    // (Secondary Recording: Apply High-Quality Post-Processing directly to scanout if possible)
     if (tsfi_bloom_thunk) {
         tsfi_bloom_thunk((uint32_t*)s->paint_buffer->data, s->paint_buffer->width, s->paint_buffer->height, 0.85f, 0.4f);
     }
+    
+    vk->vkEndCommandBuffer(vk->secondary_command_buffers[vk->currentFrame]);
 
+    // Merge Secondary Work into Primary Path
+    vk->vkCmdExecuteCommands(vk->command_buffers[vk->currentFrame], 1, &vk->secondary_command_buffers[vk->currentFrame]);
 
-    // Upload Staging Buffer to Swapchain Image
-    upload_staging_to_image(s, s->paint_buffer, vk->swapchainImages[imageIndex], vk->command_buffers[vk->currentFrame]);
+    vk->vkCmdEndRendering(vk->command_buffers[vk->currentFrame]);
+
+    // 2. End and Capture Queries
+    if (vk->query_pool_stats) {
+        vk->vkCmdEndQuery(vk->command_buffers[vk->currentFrame], vk->query_pool_stats, 0);
+    }
+    if (vk->query_pool_perf) {
+        vk->vkCmdWriteTimestamp(vk->command_buffers[vk->currentFrame], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk->query_pool_perf, 1);
+        
+        // Push Timing Facts (Offset 0 in Query Anchor)
+        vk->vkCmdCopyQueryPoolResults(vk->command_buffers[vk->currentFrame], 
+                                      vk->query_pool_perf, 0, 2, 
+                                      vk->rebar_buffer, vk->rebar_pool_size - 4096, 
+                                      sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    }
+    if (vk->query_pool_stats) {
+        // Push Statistics Facts (Offset 128 in Query Anchor to avoid overlap)
+        vk->vkCmdCopyQueryPoolResults(vk->command_buffers[vk->currentFrame], 
+                                      vk->query_pool_stats, 0, 1, 
+                                      vk->rebar_buffer, vk->rebar_pool_size - 4096 + 128, 
+                                      sizeof(uint64_t) * 4, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    }
+
+    // 3. Transition back to PRESENT_SRC_KHR for Physical Scanout
+    barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = 0;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    vk->vkCmdPipelineBarrier2(vk->command_buffers[vk->currentFrame], &depInfo);
+
+    // Upload Staging Buffer to Swapchain Image (Optional Fallback)
+    // upload_staging_to_image(s, s->paint_buffer, vk->swapchainImages[imageIndex], vk->command_buffers[vk->currentFrame]);
     
 
     vk->vkEndCommandBuffer(vk->command_buffers[vk->currentFrame]);

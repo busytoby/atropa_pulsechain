@@ -225,6 +225,19 @@ void tsfi_fourier_interpolate(TSFiFourierGlyph *out, const TSFiFourierGlyph *a, 
 #include "tsfi_wavelet_arena.h"
 #include "tsfi_io.h"
 
+static void tsfi_form_memory_from_fracture(void *manifold_shm, uint64_t svdag_id, const uint8_t *target_hash) {
+    // A fracture is a new memory forming. 
+    // We anchor the objective realization into the Lore region (Leaf 502).
+    uint8_t *leaf502 = (uint8_t *)manifold_shm + (502 * 256);
+
+    // Memory Schema: [8 bytes ID][32 bytes Hash][1 byte Active Flag]
+    memcpy(leaf502, &svdag_id, 8);
+    memcpy(leaf502 + 8, target_hash, 32);
+    leaf502[40] = 1; // Mark as "Captured Fracture Memory"
+
+    tsfi_io_printf(stdout, "[MEMORY] Fracture Re-Integrated. New State Anchored to Lore Leaf 502.\n");
+}
+
 void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag, 
                                      const TSFiFourierBasis *basis, 
                                      const TSFiFourierGlyph *spectrum,
@@ -255,7 +268,7 @@ void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag,
     // 3. XNOR Trap Verification (Isomorphism Proof)
     // We use the XNOR Trap to compare the generated SVDAG signature 
     // against the mandated 'target_isomorphism_hash' (e.g. The Cow).
-    
+
     // Establishing a temporary wavelet for the hardware handshake
     TsfiWavelet W_Genie = {0}, W_SVDAG = {0};
     memcpy(W_Genie.payload, target_isomorphism_hash, 32); // Subjective target
@@ -271,7 +284,8 @@ void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag,
         tsfi_io_printf(stdout, "[FOURIER] Isomorphism Solidified. Helmholtz Standard Model Wave System Active.\n");
         dag->is_logical = true;
     } else {
-        tsfi_io_printf(stderr, "[FRACTURE] Fourier Isomorphism Mismatch. Wave System Rejected.\n");
+        tsfi_io_printf(stderr, "[FRACTURE] Fourier Isomorphism Mismatch. Capturing New Memory...\n");
+        tsfi_form_memory_from_fracture(manifold_shm, svdag_id, target_isomorphism_hash);
         dag->is_logical = false;
     }
 }
