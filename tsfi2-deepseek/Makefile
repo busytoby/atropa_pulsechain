@@ -140,6 +140,9 @@ bin/tsfi_wayland_vulkan_overlay: tools/tsfi_wayland_vulkan_overlay.c $(CORE_OBJS
 bin/tsfi_vulkan_plane71_demo: tools/tsfi_vulkan_plane71_demo.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
+bin/tsfi_teddy_channel: tools/tsfi_teddy_channel.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
+
 all: $(TARGET) $(BIN_DIR)/tsfi_time $(BIN_DIR)/tsfi_cockpit $(BIN_DIR)/tsfi_poll $(BIN_DIR)/tsfi_teacher bin/tsfi_discovery bin/tsfi_fetch bin/tsfi_rpc bin/tsfi_dna_crossover bin/tsfi_puppeteer tests/test_harmonic_pillars $(BALLET_BINS) bin/test_trilateral_rigidity bin/tsfi_trilateral_observatory bin/test_graph_cards bin/test_taste_atoms bin/tsfi_spider_crow_taste bin/tsfi_spider_teddy_taste
 bin/tsfi_teddy_skeleton: src/tsfi_teddy_skeleton.c $(CORE_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt

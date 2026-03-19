@@ -28,6 +28,8 @@
 
 // --- TSFi Liang-Barsky (Lau) Vulkan Allocation Bridge ---
 
+void tag_vulkan_object(VulkanContext *vk, uint64_t handle, VkObjectType type, const char *name);
+
 static void* VKAPI_CALL tsfi_vulkan_alloc(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope scope) {
     (void)pUserData; (void)scope;
     // We use lau_memalign to ensure driver memory is optimized for AVX-512 thunks.
@@ -53,7 +55,7 @@ static void VKAPI_CALL tsfi_vulkan_internal_free_notify(void* pUserData, size_t 
     (void)pUserData; (void)size; (void)allocationType; (void)scope;
 }
 
-static const VkAllocationCallbacks tsfi_alloc_callbacks = {
+const VkAllocationCallbacks tsfi_alloc_callbacks = {
     .pUserData = NULL,
     .pfnAllocation = tsfi_vulkan_alloc,
     .pfnReallocation = tsfi_vulkan_realloc,
@@ -439,10 +441,10 @@ VulkanContext *init_vulkan() {
     // Feature Chain
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR, .rayQuery = VK_TRUE };
     VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR, .pNext = &rayQueryFeatures, .accelerationStructure = VK_TRUE };
-    VkPhysicalDeviceVulkan12Features features12 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .pNext = &asFeatures, .timelineSemaphore = VK_TRUE, .bufferDeviceAddress = VK_TRUE };
+    VkPhysicalDeviceVulkan12Features features12 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .pNext = &asFeatures, .timelineSemaphore = VK_TRUE, .bufferDeviceAddress = VK_TRUE, .descriptorIndexing = VK_TRUE };
     VkPhysicalDeviceRobustness2FeaturesEXT robust2 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT, .pNext = &features12, .robustBufferAccess2 = VK_TRUE, .nullDescriptor = VK_TRUE };
     VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR localRead = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_LOCAL_READ_FEATURES_KHR, .pNext = &robust2, .dynamicRenderingLocalRead = VK_TRUE };
-    VkPhysicalDeviceVulkan13Features features13 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &localRead, .dynamicRendering = VK_TRUE, .synchronization2 = VK_TRUE };
+    VkPhysicalDeviceVulkan13Features features13 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &localRead, .dynamicRendering = VK_TRUE, .synchronization2 = VK_TRUE, .maintenance4 = VK_TRUE };
     VkPhysicalDeviceFeatures2 features2 = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &features13, .features = { .robustBufferAccess = VK_TRUE } };
     
     VkDeviceCreateInfo devInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .pNext = &features2, .queueCreateInfoCount = qInfoCount, .pQueueCreateInfos = qInfos };
