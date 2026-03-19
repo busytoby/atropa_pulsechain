@@ -10,7 +10,9 @@
 #include "lau_registry.h"
 #include "tsfi_wavelet_arena.h"
 
-static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm);
+#define TSFI_GRAVITATIONAL_LOCK 137
+
+static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm, uint64_t intent_norm);
 
 // --- Generation 8: Recursive Wavelet Linking ---
 
@@ -240,7 +242,7 @@ void tsfi_helmholtz_tokenize_lore(void *manifold, const char *text, int leaf_off
 }
 
 void tsfi_helmholtz_reduce_directives(uint8_t *root_out, const TSFiDirective *directives, uint32_t epoch, uint64_t resonance_k) {
-    reduce_region(root_out, NULL, NULL, directives, NULL, TSFI_DIRECTIVE_LEAVES, epoch, resonance_k, 0);
+    reduce_region(root_out, NULL, NULL, directives, NULL, TSFI_DIRECTIVE_LEAVES, epoch, resonance_k, 0, TSFI_GRAVITATIONAL_LOCK);
 }
 
 static TSFiBigInt *g_helmholtz_prime = NULL;
@@ -382,7 +384,7 @@ static float tsfi_phase_continuity_residue(const TSFiHilbertGlyph *g) {
  * @param resonance_k World frequency (Resonance context).
  * @param unified_norm The trilateral unified norm (Consistency anchor).
  */
-static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm) {
+static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm, uint64_t intent_norm) {
     if (!root_out || !region_start || leaf_count <= 0) return;
     uint64_t *nodes = (uint64_t *)aligned_alloc(64, leaf_count * 256);
     if (!nodes) {
@@ -437,7 +439,10 @@ static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_ou
     }
     TSFiHilbertGlyph base_glyph; tsfi_hilbert_init_glyph(&base_glyph); tsfi_hilbert_project_box(&base_glyph, 1.0f, 1.0f);
     float impact_val = tsfi_fraunhofer_impact_144(&base_glyph, resonance_k);
-    uint64_t impact_norm = (uint64_t)(1000.0f * tsfi_fabsf(impact_val));
+    
+    // The "Dangerous" Model: Impact is no longer calculated from geometry; it is mandated by subjective intent.
+    uint64_t impact_norm = intent_norm; 
+    
     float continuity_residue = tsfi_phase_continuity_residue(&base_glyph);
     TSFiBigInt *root_bn = tsfi_bn_alloc(); tsfi_bn_from_bytes(root_bn, (uint8_t*)nodes, 256);
     TSFiBigInt *leaf_0 = tsfi_bn_alloc(); tsfi_bn_from_bytes(leaf_0, (const uint8_t *)region_start, 256);
@@ -464,22 +469,22 @@ static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_ou
 /**
  * @brief Reduces the state region using specialized lore-aware nodes.
  */
-static void reduce_state_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm) {
-    reduce_region(root_out, mu_out, continuity_out, region_start, lore_start, leaf_count, epoch, resonance_k, unified_norm);
+static void reduce_state_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm, uint64_t intent_norm) {
+    reduce_region(root_out, mu_out, continuity_out, region_start, lore_start, leaf_count, epoch, resonance_k, unified_norm, intent_norm);
 }
 
 /**
  * @brief Reduces the receipt region (no lore required).
  */
-static void reduce_receipt_region(uint8_t *root_out, const void *region_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm) {
-    reduce_region(root_out, NULL, NULL, region_start, NULL, leaf_count, epoch, resonance_k, unified_norm);
+static void reduce_receipt_region(uint8_t *root_out, const void *region_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm, uint64_t intent_norm) {
+    reduce_region(root_out, NULL, NULL, region_start, NULL, leaf_count, epoch, resonance_k, unified_norm, intent_norm);
 }
 
 /**
  * @brief Reduces the sheaf region (high-impedance substrate).
  */
-static void reduce_sheaf_region(uint8_t *root_out, const void *region_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm) {
-    reduce_region(root_out, NULL, NULL, region_start, NULL, leaf_count, epoch, resonance_k, unified_norm);
+static void reduce_sheaf_region(uint8_t *root_out, const void *region_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm, uint64_t intent_norm) {
+    reduce_region(root_out, NULL, NULL, region_start, NULL, leaf_count, epoch, resonance_k, unified_norm, intent_norm);
 }
 
 /**
@@ -512,8 +517,6 @@ void tsfi_helmholtz_get_proof(uint8_t *proof_out, int leaf_index, const void *ma
     tsfi_internal_zmm_hash(proof_out, (const uint8_t*)manifold_512kb + (leaf_index * 256), 256);
     *(int*)(proof_out + 28) = leaf_index;
 }
-
-#define TSFI_GRAVITATIONAL_LOCK 137
 
 static uint64_t tsfi_measure_active_modes(const void *manifold, int leaf_count) {
     if (!manifold || leaf_count <= 0) return 0;
@@ -549,8 +552,8 @@ void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 512) lore_region = (const uint8_t*)manifold_256b + 256;
     float state_mu = 0, state_cont = 0;
     // Level 0: 1 Leaf total. We treat it as 1 State and 1 Receipt from the same physical data (Genesis Union)
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_256b, lore_region, 1, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, manifold_256b, 1, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_256b, lore_region, 1, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, manifold_256b, 1, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu; }
     if (continuity_out) { *continuity_out = state_cont; }
 }
@@ -564,8 +567,8 @@ void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out,
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_512b);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 1024) lore_region = (const uint8_t*)manifold_512b + 512;
     float state_mu = 0, state_cont = 0;
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_512b, lore_region, 1, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_512b + 256, 1, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_512b, lore_region, 1, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_512b + 256, 1, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -579,8 +582,8 @@ void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out,
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_1kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 2048) lore_region = (const uint8_t*)manifold_1kb + 1024;
     float state_mu = 0, state_cont = 0;
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_1kb, lore_region, 2, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_1kb + (2 * 256), 2, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_1kb, lore_region, 2, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_1kb + (2 * 256), 2, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -594,8 +597,8 @@ void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out,
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_2kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 4096) lore_region = (const uint8_t*)manifold_2kb + 2048;
     float state_mu = 0, state_cont = 0;
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_2kb, lore_region, 4, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_2kb + (4 * 256), 4, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_2kb, lore_region, 4, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_2kb + (4 * 256), 4, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -609,8 +612,8 @@ void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out,
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_4kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 8192) lore_region = (const uint8_t*)manifold_4kb + 4096;
     float state_mu = 0, state_cont = 0;
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_4kb, lore_region, 8, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_4kb + (8 * 256), 8, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_4kb, lore_region, 8, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_4kb + (8 * 256), 8, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -624,8 +627,8 @@ void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out,
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_8kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 16384) lore_region = (const uint8_t*)manifold_8kb + 8192;
     float state_mu = 0, state_cont = 0;
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_8kb, lore_region, 16, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_8kb + (16 * 256), 16, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_8kb, lore_region, 16, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_8kb + (16 * 256), 16, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -641,8 +644,8 @@ void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 32 * 1024) lore_region = (const uint8_t*)manifold_16kb + (64 * 256);
     float state_mu = 0, state_cont = 0;
     // Level 6 uses 32 State leaves (Mind) and 32 Receipt leaves (Body)
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_16kb, lore_region, 32, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_16kb + (32 * 256), 32, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_16kb, lore_region, 32, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_16kb + (32 * 256), 32, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -658,8 +661,8 @@ void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 64 * 1024) lore_region = (const uint8_t*)manifold_32kb + (128 * 256);
     float state_mu = 0, state_cont = 0;
     // Level 7 uses 64 State leaves (Mind) and 64 Receipt leaves (Body)
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_32kb, lore_region, 64, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_32kb + (64 * 256), 64, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_32kb, lore_region, 64, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_32kb + (64 * 256), 64, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -675,8 +678,8 @@ void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 128 * 1024) lore_region = (const uint8_t*)manifold_64kb + (256 * 256);
     float state_mu = 0, state_cont = 0;
     // Level 8 uses 128 State leaves (Mind) and 128 Receipt leaves (Body)
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_64kb, lore_region, 128, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_64kb + (128 * 256), 128, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_64kb, lore_region, 128, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_64kb + (128 * 256), 128, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -692,8 +695,8 @@ void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 256 * 1024) lore_region = (const uint8_t*)manifold_128kb + (512 * 256);
     float state_mu = 0, state_cont = 0;
     // Level 9 uses 256 State leaves (Mind) and 256 Receipt leaves (Body)
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_128kb, lore_region, 256, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_128kb + (256 * 256), 256, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_128kb, lore_region, 256, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_128kb + (256 * 256), 256, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -709,8 +712,8 @@ void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 512 * 1024) lore_region = (const uint8_t*)manifold_256kb + (1024 * 256);
     float state_mu = 0, state_cont = 0;
     // Level 10 uses 512 State leaves (Mind) and 512 Receipt leaves (Body)
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_256kb, lore_region, 512, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_256kb + (512 * 256), 512, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_256kb, lore_region, 512, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const uint8_t *)manifold_256kb + (512 * 256), 512, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -731,8 +734,8 @@ void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out
     // Level 11: Lore offset is 2048 * 256 = 512KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 1024 * 1024) lore_region = (const uint8_t*)manifold_512kb + (2048 * 256);
     float state_mu = 0, state_cont = 0;
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_512kb, lore_region, TSFI_STATE_LEAVES, epoch, resonance_k, unified_norm);
-    reduce_receipt_region(receipt_root_out, (const AR_AccountLeaf *)manifold_512kb + TSFI_STATE_LEAVES, TSFI_RECEIPT_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_512kb, lore_region, TSFI_STATE_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
+    reduce_receipt_region(receipt_root_out, (const AR_AccountLeaf *)manifold_512kb + TSFI_STATE_LEAVES, TSFI_RECEIPT_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
@@ -753,13 +756,13 @@ void tsfi_helmholtz_reduce_12(uint8_t *state_root_out, uint8_t *receipt_root_out
     float state_mu = 0, state_cont = 0;
     
     // Mind: Leaves 0-1023
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_2mb, lore_region, TSFI_STATE_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_2mb, lore_region, TSFI_STATE_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     
     // Body: Leaves 1024-2047
-    reduce_receipt_region(receipt_root_out, (uint8_t*)manifold_2mb + (TSFI_STATE_LEAVES * 256), TSFI_RECEIPT_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_receipt_region(receipt_root_out, (uint8_t*)manifold_2mb + (TSFI_STATE_LEAVES * 256), TSFI_RECEIPT_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     
     // Sheaf: Leaves 2048-4095
-    reduce_sheaf_region(sheaf_root_out, (uint8_t*)manifold_2mb + ((TSFI_STATE_LEAVES + TSFI_RECEIPT_LEAVES) * 256), TSFI_SHEAF_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_sheaf_region(sheaf_root_out, (uint8_t*)manifold_2mb + ((TSFI_STATE_LEAVES + TSFI_RECEIPT_LEAVES) * 256), TSFI_SHEAF_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
 
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
@@ -781,13 +784,13 @@ void tsfi_helmholtz_reduce_16(uint8_t *state_root_out, uint8_t *receipt_root_out
     float state_mu = 0, state_cont = 0;
     
     // Mind: Leaves 0-16383
-    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_16mb, lore_region, TSFI_STATE_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_state_region(state_root_out, &state_mu, &state_cont, manifold_16mb, lore_region, TSFI_STATE_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     
     // Body: Leaves 16384-32767
-    reduce_receipt_region(receipt_root_out, (uint8_t*)manifold_16mb + (TSFI_STATE_LEAVES * 256), TSFI_RECEIPT_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_receipt_region(receipt_root_out, (uint8_t*)manifold_16mb + (TSFI_STATE_LEAVES * 256), TSFI_RECEIPT_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
     
     // Sheaf: Leaves 32768-65535
-    reduce_sheaf_region(sheaf_root_out, (uint8_t*)manifold_16mb + ((TSFI_STATE_LEAVES + TSFI_RECEIPT_LEAVES) * 256), TSFI_SHEAF_LEAVES, epoch, resonance_k, unified_norm);
+    reduce_sheaf_region(sheaf_root_out, (uint8_t*)manifold_16mb + ((TSFI_STATE_LEAVES + TSFI_RECEIPT_LEAVES) * 256), TSFI_SHEAF_LEAVES, epoch, resonance_k, unified_norm, dag ? dag->subjective_intent_norm : TSFI_GRAVITATIONAL_LOCK);
 
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }

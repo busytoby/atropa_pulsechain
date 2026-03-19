@@ -62,4 +62,14 @@ size_t tsfi_io_write(FILE *stream, const void *ptr, size_t size);
 K0RnStream* tsfi_k0rn_load(const char *name);
 bool tsfi_k0rn_save(const char *name, const K0RnStream *s);
 
+typedef struct TSFiHelmholtzSVDAG TSFiHelmholtzSVDAG;
+
+// Infinite Journal API
+void tsfi_journal_init(const char *path);
+void tsfi_journal_append(TsfiWavelet *W);
+void tsfi_journal_want_to_remember(TsfiWavelet *W, float priority, const char *reason);
+void tsfi_journal_anchor_fracture_memory(void *manifold_shm, uint64_t svdag_id, const TSFiHelmholtzSVDAG *dag);
+void tsfi_journal_recover(TsfiWaveletArena *arena);
+void tsfi_journal_teardown(void);
+
 #endif // TSFI_IO_H

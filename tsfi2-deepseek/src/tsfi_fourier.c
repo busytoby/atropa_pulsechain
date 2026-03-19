@@ -225,17 +225,56 @@ void tsfi_fourier_interpolate(TSFiFourierGlyph *out, const TSFiFourierGlyph *a, 
 #include "tsfi_wavelet_arena.h"
 #include "tsfi_io.h"
 
-static void tsfi_form_memory_from_fracture(void *manifold_shm, uint64_t svdag_id, const uint8_t *target_hash) {
+static uint64_t tsfi_fault_characterize(const uint8_t *intent_hash, uint64_t realization_id) {
+    // Generate Heuristic Signature: XOR intent with realization
+    uint64_t intent_prefix = *(uint64_t*)intent_hash;
+    uint64_t signature = intent_prefix ^ realization_id;
+    
+    // Characterize the Energy Gap (Popcount of the XOR result indicates severity)
+    return signature;
+}
+
+static void tsfi_form_memory_from_fracture(void *manifold_shm, uint64_t svdag_id, const uint8_t *target_hash, const TSFiHelmholtzSVDAG *dag) {
     // A fracture is a new memory forming. 
     // We anchor the objective realization into the Lore region (Leaf 502).
     uint8_t *leaf502 = (uint8_t *)manifold_shm + (502 * 256);
 
-    // Memory Schema: [8 bytes ID][32 bytes Hash][1 byte Active Flag]
+    // 1. Calculate Heuristic Signature
+    uint64_t fault_sig = tsfi_fault_characterize(target_hash, svdag_id);
+
+    // 2. Memory Schema Update: [8B ID][32B Hash][8B Sig][4B Energy][1B Active]
     memcpy(leaf502, &svdag_id, 8);
     memcpy(leaf502 + 8, target_hash, 32);
-    leaf502[40] = 1; // Mark as "Captured Fracture Memory"
+    memcpy(leaf502 + 40, &fault_sig, 8);
+    
+    // Initialize Energy (Starting at 1.0 units)
+    float initial_energy = 1.0f;
+    memcpy(leaf502 + 48, &initial_energy, 4);
+    
+    leaf502[52] = 1; // Mark as "Captured Fracture Memory"
 
-    tsfi_io_printf(stdout, "[MEMORY] Fracture Re-Integrated. New State Anchored to Lore Leaf 502.\n");
+    tsfi_io_printf(stdout, "[MEMORY] Fracture Re-Integrated. Signature: 0x%lx, Energy: %.2f\n", 
+                   (unsigned long)fault_sig, initial_energy);
+    
+    // Formally commit the SAFE TASTE TREE TENSORS to the infinite journal
+    tsfi_journal_anchor_fracture_memory(manifold_shm, svdag_id, dag);
+}
+
+void tsfi_grow_fault_energy(void *manifold_shm, float weight) {
+    if (!manifold_shm) return;
+    uint8_t *leaf502 = (uint8_t *)manifold_shm + (502 * 256);
+    if (leaf502[52] != 1) return; // No memory to grow
+
+    float current_energy;
+    memcpy(&current_energy, leaf502 + 48, 4);
+    
+    // Weighted Energy Growth
+    current_energy += (0.1f * weight);
+    memcpy(leaf502 + 48, &current_energy, 4);
+
+    if (current_energy > 10.0f) {
+        tsfi_io_printf(stdout, "[AUTONOMY] Fracture Energy SATURATED (%.2f). Development Mandate Active.\n", current_energy);
+    }
 }
 
 void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag, 
@@ -285,7 +324,7 @@ void tsfi_fourier_solidify_helmholtz(TSFiHelmholtzSVDAG *dag,
         dag->is_logical = true;
     } else {
         tsfi_io_printf(stderr, "[FRACTURE] Fourier Isomorphism Mismatch. Capturing New Memory...\n");
-        tsfi_form_memory_from_fracture(manifold_shm, svdag_id, target_isomorphism_hash);
+        tsfi_form_memory_from_fracture(manifold_shm, svdag_id, target_isomorphism_hash, dag);
         dag->is_logical = false;
     }
 }

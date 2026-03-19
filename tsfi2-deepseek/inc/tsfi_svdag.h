@@ -38,7 +38,7 @@ typedef struct {
 
 // 3. The Helmholtz SVDAG (The Taste Tree)
 // A linear stream of operators. Traversal = Execution.
-typedef struct {
+typedef struct TSFiHelmholtzSVDAG {
     // The "Genome" of the geometry (SoA Format for Hyper-Throughput)
     float    *intensity_stream;
     float    *phase_stream;
@@ -62,6 +62,9 @@ typedef struct {
 
     // The Helmholtz Operator List (Standard Pattern)
     TSFiHelmholtzList list;
+
+    // Subjective Intent (The Mandated Impact Norm for Autonomy)
+    uint64_t subjective_intent_norm;
 
     // Logical Fast-Path (Zero-Copy)
     bool is_logical;

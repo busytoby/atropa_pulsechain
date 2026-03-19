@@ -53,6 +53,9 @@ void tsfi_fourier_melt(TSFiFourierGlyph *glyph, float sickness_factor);
 // Smoothly interpolates between two spectral states (for complex animations like flying)
 void tsfi_fourier_interpolate(TSFiFourierGlyph *out, const TSFiFourierGlyph *a, const TSFiFourierGlyph *b, float t);
 
+// Autonomy: Fault Heuristics and Energy Growth
+void tsfi_grow_fault_energy(void *manifold_shm, float weight);
+
 /**
  * @brief Solidifies a Fourier Isomorphism into a Helmholtz Working Model.
  * 
