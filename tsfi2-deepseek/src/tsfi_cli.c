@@ -147,6 +147,20 @@ static int handle_genetic_command(WaveSystem *ws, const char *new_d) {
     return 0;
 }
 
+static int handle_promote_plane71_command(WaveSystem *ws) {
+    (void)ws;
+    tsfi_io_printf(stdout, "[ACTION] Promoting Simulation to Physical Plane 71...\n");
+    
+    int unlocked_fd = tsfi_acquire_hardware_lease();
+    if (unlocked_fd >= 0) {
+        tsfi_io_printf(stdout, "[SUCCESS] Physical Plane 71 Promoted. Hardware Lease Secured (FD: %d).\n", unlocked_fd);
+        close(unlocked_fd); 
+    } else {
+        tsfi_io_printf(stderr, "[FRACTURE] Failed to acquire Hardware Lease for Plane 71.\n");
+    }
+    return 0;
+}
+
 static int handle_load_command(WaveSystem *ws, const char *param) {
     char output_so[300];
     char source_c[300];
@@ -205,6 +219,9 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         }
         if (strncmp(new_d, "GENETIC", 7) == 0) {
             return handle_genetic_command(ws, new_d);
+        }
+        if (strcmp(new_d, "PROMOTE_PLANE_71") == 0) {
+            return handle_promote_plane71_command(ws);
         }
         // Default behavior if previous commands not matched
         return handle_default_command(ws, new_i, new_d);

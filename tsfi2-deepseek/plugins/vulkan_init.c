@@ -310,11 +310,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-VulkanContext *init_vulkan() {
+VulkanContext *init_vulkan(int leased_fd) {
     printf("[VULKAN] Initializing Hybrid Context (API 1.4)...\n"); fflush(stdout);
     VulkanContext *vk = (VulkanContext *)lau_memalign(512, sizeof(VulkanContext));
     if (!vk) return NULL;
     memset(vk, 0, sizeof(VulkanContext));
+    vk->leased_fd = leased_fd;
+    vk->is_leased = (leased_fd >= 0);
 
     vk->lib_handle = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
     if (!vk->lib_handle) { printf("[VULKAN] Failed to load libvulkan.so.1\n"); lau_free(vk); return NULL; }
@@ -331,6 +333,7 @@ VulkanContext *init_vulkan() {
         "VK_KHR_get_physical_device_properties2", 
         "VK_KHR_surface", 
         "VK_KHR_wayland_surface",
+        "VK_KHR_display",
         "VK_EXT_debug_utils" 
     };
     const char *layers[] = { "VK_LAYER_KHRONOS_validation" };
@@ -369,7 +372,7 @@ VulkanContext *init_vulkan() {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = use_validation ? &validationFeatures : NULL,
         .pApplicationInfo = &appInfo,
-        .enabledExtensionCount = 5,
+        .enabledExtensionCount = 6,
         .ppEnabledExtensionNames = extensions,
         .enabledLayerCount = use_validation ? 1 : 0,
         .ppEnabledLayerNames = use_validation ? layers : NULL
@@ -402,6 +405,47 @@ VulkanContext *init_vulkan() {
     if (vk->vkCreateDebugUtilsMessengerEXT && use_validation) {
         vk->vkCreateDebugUtilsMessengerEXT(vk->instance, &debugCreateInfo, &tsfi_alloc_callbacks, &vk->debugMessenger);
         printf("[VULKAN] Debug Messenger Initialized.\n");
+    }
+
+    // --- DIRECT DISPLAY SELECTION (PLANE 71 PATH) ---
+    if (vk->is_leased) {
+        LOAD_PROC(vkGetPhysicalDeviceDisplayPropertiesKHR);
+        LOAD_PROC(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
+        LOAD_PROC(vkGetDisplayModePropertiesKHR);
+        LOAD_PROC(vkCreateDisplayPlaneSurfaceKHR);
+
+        uint32_t dev_count = 0;
+        vk->vkEnumeratePhysicalDevices(vk->instance, &dev_count, NULL);
+        VkPhysicalDevice devices[4];
+        vk->vkEnumeratePhysicalDevices(vk->instance, &dev_count, devices);
+        vk->physical_device = devices[0];
+
+        uint32_t displayCount = 0;
+        vk->vkGetPhysicalDeviceDisplayPropertiesKHR(vk->physical_device, &displayCount, NULL);
+        VkDisplayPropertiesKHR displayProps;
+        uint32_t count = 1;
+        vk->vkGetPhysicalDeviceDisplayPropertiesKHR(vk->physical_device, &count, &displayProps);
+
+        uint32_t modeCount = 0;
+        vk->vkGetDisplayModePropertiesKHR(vk->physical_device, displayProps.display, &modeCount, NULL);
+        VkDisplayModePropertiesKHR modeProps;
+        count = 1;
+        vk->vkGetDisplayModePropertiesKHR(vk->physical_device, displayProps.display, &count, &modeProps);
+
+        VkDisplaySurfaceCreateInfoKHR surfaceInfo = {
+            .sType = VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR,
+            .displayMode = modeProps.displayMode,
+            .planeIndex = 1, // MANDATORY: PLANE 71 PROMOTION
+            .planeStackIndex = 0,
+            .transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+            .globalAlpha = 1.0f,
+            .alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR,
+            .imageExtent = modeProps.parameters.visibleRegion
+        };
+
+        if (vk->vkCreateDisplayPlaneSurfaceKHR(vk->instance, &surfaceInfo, &tsfi_alloc_callbacks, &vk->surface) == VK_SUCCESS) {
+            printf("[VULKAN] Physical Plane 71 Surface Promoted via Leased FD.\n");
+        }
     }
 
     uint32_t dev_count = 0;
@@ -484,12 +528,15 @@ VulkanContext *init_vulkan() {
         }
         
         vk->vkGetDeviceQueue(vk->device, vk->queue_family_index, 0, &vk->queue);
+
+        // --- LOAD DEBUG UTILS EARLY ---
         vk->vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vk->vkGetDeviceProcAddr(vk->device, "vkSetDebugUtilsObjectNameEXT");
-    
+
         tag_vulkan_object(vk, (uint64_t)vk->device, VK_OBJECT_TYPE_DEVICE, "TSFi_Main_Device");
         tag_vulkan_object(vk, (uint64_t)vk->queue, VK_OBJECT_TYPE_QUEUE, "TSFi_Main_Queue");
-    
-        // LOAD VIDEO ENCODE PROCS
+
+        LOAD_DEV_PROC(vkResetCommandPool);
+
         LOAD_DEV_PROC_OPTIONAL(vkCreateVideoSessionKHR);
         LOAD_DEV_PROC_OPTIONAL(vkDestroyVideoSessionKHR);
         LOAD_DEV_PROC_OPTIONAL(vkCreateVideoSessionParametersKHR);
@@ -679,11 +726,13 @@ VulkanContext *init_vulkan() {
     return vk;
 }
 
-VulkanContext *init_vulkan_display() {
+VulkanContext *init_vulkan_display(int leased_fd) {
     printf("[VULKAN] Initializing Direct Display Context (KMS/VTY)...\n"); fflush(stdout);
     VulkanContext *vk = (VulkanContext *)lau_memalign(512, sizeof(VulkanContext));
     if (!vk) return NULL;
     memset(vk, 0, sizeof(VulkanContext));
+    vk->leased_fd = leased_fd;
+    vk->is_leased = (leased_fd >= 0);
 
     vk->lib_handle = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
     if (!vk->lib_handle) { printf("[VULKAN] Failed to load libvulkan.so.1\n"); lau_free(vk); return NULL; }
@@ -751,7 +800,7 @@ VulkanContext *init_vulkan_display() {
     VkDisplaySurfaceCreateInfoKHR surfaceInfo = {
         .sType = VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR,
         .displayMode = modeProps.displayMode,
-        .planeIndex = 0, // Assumption: Plane 0 is usable
+        .planeIndex = vk->is_leased ? 1 : 0, // MANDATORY: Plane 71 if leased
         .planeStackIndex = 0,
         .transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
         .globalAlpha = 1.0f,
@@ -954,6 +1003,6 @@ void lau_init_sync_objects(VulkanContext *vk) {
 
 void tag_vulkan_object(VulkanContext *vk, uint64_t handle, VkObjectType type, const char *name) {
     if (!vk || !vk->vkSetDebugUtilsObjectNameEXT || !handle || !name) return;
-    VkDebugUtilsObjectNameInfoEXT nameInfo = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, .objectType = type, .objectHandle = handle, .pObjectName = name };
+    VkDebugUtilsObjectNameInfoEXT nameInfo = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, .objectHandle = handle, .objectType = type, .pObjectName = name };
     vk->vkSetDebugUtilsObjectNameEXT(vk->device, &nameInfo);
 }

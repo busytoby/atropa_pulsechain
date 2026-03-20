@@ -202,11 +202,9 @@ void *lau_memalign_wired_loc(size_t alignment, size_t size, const char *file, in
     }
     in_wired++;
 
-    if (atomic_load_explicit(&g_init_in_progress, memory_order_relaxed)) {
-        goto internal_alloc;
-    }
-
-    if (in_wired == 1) {
+    bool bypass_firmware = atomic_load_explicit(&g_init_in_progress, memory_order_relaxed);
+    
+    if (!bypass_firmware && in_wired == 1) {
         LauWireFirmware *fw_check = tsfi_wire_firmware_get_no_init();
         if (fw_check && fw_check->magic == TSFI_FIRMWARE_MAGIC && fw_check->cell_mem_genesis) {
             void *p = fw_check->cell_mem_genesis(size, LAU_TYPE_WIRED, file, line);
@@ -217,8 +215,7 @@ void *lau_memalign_wired_loc(size_t alignment, size_t size, const char *file, in
         }
     }
 
-internal_alloc:
-
+    // --- Structured Internal Allocation Block ---
     size_t off = 8192; // 512 * 15 (Next 512-aligned block after ~7168)
     size_t total_size = off + size;
 
@@ -323,33 +320,30 @@ void lau_seal_level_loc(void *ptr, uint8_t target_level, const char *file, int l
         if (m->seal_level == LAU_SEAL_NONE) m->seal_level = LAU_SEAL_PLIER;
     }
 
-    if (target_level == LAU_SEAL_PLIER) goto finalize;
+    if (target_level > LAU_SEAL_PLIER) {
+        uint8_t type = (uint8_t)(m->alloc_size >> 56);
+        if (type == LAU_TYPE_WIRED) {
+            LauWiredHeader *h = get_wired_header(ptr);
+            if (h && h->proxy) {
+                // Transition to SEAL-1 (Dai)
+                if (m->seal_level < LAU_SEAL_DAI && target_level >= LAU_SEAL_DAI) {
+                    lau_mprotect(ptr, PROT_READ | PROT_WRITE);
+                    ThunkProxy_unseal((ThunkProxy*)h->proxy);
+                    extern void* ThunkProxy_emit_layer1_seal(ThunkProxy *p, void *target_fn);
+                    ThunkProxy_emit_layer1_seal((ThunkProxy*)h->proxy, NULL);
+                    ThunkProxy_seal((ThunkProxy*)h->proxy);
+                    m->seal_level = LAU_SEAL_DAI;
+                }
 
-    // 2. Linear Progression
-    uint8_t type = (uint8_t)(m->alloc_size >> 56);
-    if (type != LAU_TYPE_WIRED) goto finalize;
-
-    LauWiredHeader *h = get_wired_header(ptr);
-    if (!h || !h->proxy) goto finalize;
-
-    // Transition to SEAL-1 (Dai)
-    if (m->seal_level < LAU_SEAL_DAI && target_level >= LAU_SEAL_DAI) {
-        lau_mprotect(ptr, PROT_READ | PROT_WRITE);
-        ThunkProxy_unseal((ThunkProxy*)h->proxy);
-        extern void* ThunkProxy_emit_layer1_seal(ThunkProxy *p, void *target_fn);
-        ThunkProxy_emit_layer1_seal((ThunkProxy*)h->proxy, NULL);
-        ThunkProxy_seal((ThunkProxy*)h->proxy);
-        m->seal_level = LAU_SEAL_DAI;
+                // Transition to SEAL-2 (Étendre)
+                if (m->seal_level < LAU_SEAL_ETENDRE && target_level >= LAU_SEAL_ETENDRE) {
+                    lau_mprotect(ptr, PROT_READ | PROT_WRITE);
+                    m->seal_level = LAU_SEAL_ETENDRE;
+                }
+            }
+        }
     }
 
-    // Transition to SEAL-2 (Étendre)
-    if (m->seal_level < LAU_SEAL_ETENDRE && target_level >= LAU_SEAL_ETENDRE) {
-        lau_mprotect(ptr, PROT_READ | PROT_WRITE);
-        // Étendre specific thunking would go here.
-        m->seal_level = LAU_SEAL_ETENDRE;
-    }
-
-finalize:
     m->alloc_size |= (1ULL << 55);
     lau_mprotect(ptr, PROT_READ);
 }

@@ -27,6 +27,60 @@ extern VulkanSystem *sys; // Shared across hot-swaps via RTLD_GLOBAL
 
 static void main_noop() {}
 
+#include "drm-lease-v1-client-protocol.h"
+
+// --- DRM Lease Handshake Listeners ---
+
+static void lease_fd_handler(void *data, struct wp_drm_lease_v1 *lease, int32_t fd) {
+    VulkanSystem *s = (VulkanSystem *)data;
+    (void)lease;
+    s->leased_fd = fd;
+    s->lease_active = true;
+    printf("[PASS] TSFi Physical Lease Granted. FD: %d\n", fd);
+}
+
+static void lease_finished_handler(void *data, struct wp_drm_lease_v1 *lease) {
+    VulkanSystem *s = (VulkanSystem *)data;
+    (void)lease;
+    printf("[WARNING] Physical Lease Revoked.\n");
+    s->lease_active = false;
+}
+
+static const struct wp_drm_lease_v1_listener lease_listener = { .lease_fd = lease_fd_handler, .finished = lease_finished_handler };
+
+static void lease_connector_done(void *data, struct wp_drm_lease_connector_v1 *connector) {
+    VulkanSystem *s = (VulkanSystem *)data;
+    if (!s->lease_connector) {
+        s->lease_connector = connector;
+        printf("[HW] Plane 71 Connector Found.\n");
+    }
+}
+
+static const struct wp_drm_lease_connector_v1_listener connector_listener = {
+    .name = (void*)main_noop, .description = (void*)main_noop, .connector_id = (void*)main_noop,
+    .done = lease_connector_done, .withdrawn = (void*)main_noop
+};
+
+static void lease_device_connector(void *data, struct wp_drm_lease_device_v1 *device, struct wp_drm_lease_connector_v1 *connector) {
+    (void)device;
+    wp_drm_lease_connector_v1_add_listener(connector, &connector_listener, data);
+}
+
+static void lease_device_done(void *data, struct wp_drm_lease_device_v1 *device) {
+    VulkanSystem *s = (VulkanSystem *)data;
+    if (s->lease_device && s->lease_connector && !s->active_lease) {
+        printf("[ACTION] Submitting Formal Lease Request for Plane 71...\n");
+        struct wp_drm_lease_request_v1 *req = wp_drm_lease_device_v1_create_lease_request(s->lease_device);
+        wp_drm_lease_request_v1_request_connector(req, s->lease_connector);
+        s->active_lease = wp_drm_lease_request_v1_submit(req);
+        wp_drm_lease_v1_add_listener(s->active_lease, &lease_listener, s);
+    }
+}
+
+static const struct wp_drm_lease_device_v1_listener lease_device_listener = {
+    .drm_fd = (void*)main_noop, .connector = lease_device_connector, .done = lease_device_done, .released = (void*)main_noop
+};
+
 // --- Registry Listener ---
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
     VulkanSystem *s = (VulkanSystem *)data;
@@ -39,29 +93,27 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
     else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0) {
         uint32_t target = (version < 10) ? version : 10;
         s->dmabuf = wl_registry_bind(registry, name, &zwp_linux_dmabuf_v1_interface, target);
-        printf("[TSFI_VULKAN] Negotiated DMABUF: v%u (Available: v%u)\n", target, version);
-        
-        if (target >= 4) {
-            struct zwp_linux_dmabuf_feedback_v1 *fb = zwp_linux_dmabuf_v1_get_default_feedback(s->dmabuf);
-            zwp_linux_dmabuf_feedback_v1_add_listener(fb, &feedback_listener, s);
-            printf("[TSFI_VULKAN] DMABUF Feedback Listener Attached (v4+ Feature).\n");
-        }
+        printf("[TSFI_VULKAN] Negotiated DMABUF: v%u\n", target);
     } 
     else if (strcmp(interface, wl_seat_interface.name) == 0) {
         uint32_t target = (version < 10) ? version : 10;
         s->seat = wl_registry_bind(registry, name, &wl_seat_interface, target);
         wl_seat_add_listener(s->seat, (struct wl_seat_listener*)&seat_listener, s);
-        printf("[TSFI_VULKAN] Negotiated Seat: v%u (Available: v%u)\n", target, version);
+        printf("[TSFI_VULKAN] Negotiated Seat: v%u\n", target);
     }
     else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
+        // Mode A Fallback only
         uint32_t target = (version < 6) ? version : 6;
         s->xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, target);
         xdg_wm_base_add_listener(s->xdg_wm_base, &xdg_wm_base_listener, s);
-        printf("[TSFI_VULKAN] Negotiated XDG Shell: v%u\n", target);
     }
-    else if (strcmp(interface, wl_data_device_manager_interface.name) == 0) {
-        s->data_device_manager = wl_registry_bind(registry, name, &wl_data_device_manager_interface, 3);
-        printf("[TSFI_VULKAN] Negotiated Data Device Manager.\n");
+    else if (strcmp(interface, "wp_drm_lease_device_v1") == 0) {
+        static int l_count = 0;
+        if (++l_count == 2) { 
+            s->lease_device = wl_registry_bind(registry, name, &wp_drm_lease_device_v1_interface, 1);
+            wp_drm_lease_device_v1_add_listener(s->lease_device, &lease_device_listener, s);
+            printf("[TSFI_VULKAN] Bound Physical Lease Device (Plane 71 Sovereignty).\n");
+        }
     }
 }
 
@@ -89,8 +141,8 @@ VulkanSystem* create_vulkan_headless_system() {
     };
     lau_wire_system((WaveSystem*)s, h, &logic);
 
-    extern VulkanContext* init_vulkan(void);
-    s->vk = init_vulkan();
+    extern VulkanContext* init_vulkan(int);
+    s->vk = init_vulkan(-1);
     if (!s->vk) { lau_free(s); return NULL; }
     
     s->running = true;
@@ -108,78 +160,71 @@ VulkanSystem* create_vulkan_headless_system() {
 
 VulkanSystem* create_vulkan_system() {
     VulkanSystem *existing = get_vulkan_system();
-    if (existing) {
-        printf("[TSFI_VULKAN] Using existing system singleton.\n");
-        return existing;
-    }
+    if (existing) return existing;
 
-    printf("[TSFI_VULKAN] Creating Native Vulkan System...\n");
-    
     VulkanSystem *s = (VulkanSystem *)lau_malloc_wired(sizeof(VulkanSystem));
     if (!s) return NULL;
     memset(s, 0, sizeof(VulkanSystem));
-    
     s->width = TSFI_WINDOW_WIDTH_DEFAULT;
     s->height = TSFI_WINDOW_HEIGHT_DEFAULT;
-    printf("[TSFI_VULKAN] Initializing Manifold: %dx%d\n", s->width, s->height);
-
     s->paint_buffer = create_staging_buffer(s->width, s->height);
 
     LauSystemHeader *h = (LauSystemHeader *)((char *)s - offsetof(LauWiredHeader, payload));
     h->resonance_as_status = lau_strdup("VK_INIT");
     
-    TSFiLogicTable vulkan_inner_logic = {
-        .logic_epoch = vulkan_logic_epoch,
-        .logic_state = vulkan_logic_state,
-        .logic_directive = vulkan_logic_directive,
-        .logic_scramble = vulkan_logic_scramble,
+    TSFiLogicTable logic = {
+        .logic_epoch = vulkan_logic_epoch, .logic_state = vulkan_logic_state,
+        .logic_directive = vulkan_logic_directive, .logic_scramble = vulkan_logic_scramble,
         .logic_provenance = vulkan_logic_provenance
     };
-    lau_wire_system((WaveSystem*)s, h, &vulkan_inner_logic);
+    lau_wire_system((WaveSystem*)s, h, &logic);
 
+    // 1. Connection & Discovery (Bind Everything)
     s->display = wl_display_connect(NULL);
     if (!s->display) { lau_free(s); return NULL; }
     s->registry = wl_display_get_registry(s->display);
     wl_registry_add_listener(s->registry, &registry_listener, s);
-    wl_display_roundtrip(s->display);
-    
-    if (!s->compositor || !s->dmabuf || !s->seat || !s->xdg_wm_base) { 
-        printf("[TSFI_VULKAN] Aborting: Essential Wayland interfaces missing.\n");
-        if (s->compositor) wl_compositor_destroy(s->compositor);
-        if (s->seat) wl_seat_destroy(s->seat);
-        if (s->dmabuf) zwp_linux_dmabuf_v1_destroy(s->dmabuf);
-        if (s->xdg_wm_base) xdg_wm_base_destroy(s->xdg_wm_base);
-        wl_registry_destroy(s->registry);
-        wl_display_disconnect(s->display); 
-        lau_free(s); 
-        return NULL; 
-    }
-    
-    s->surface = wl_compositor_create_surface(s->compositor);
-    
-    // Ensure input focus by setting a large input region
-    struct wl_region *region = wl_compositor_create_region(s->compositor);
-    wl_region_add(region, 0, 0, TSFI_WINDOW_WIDTH_DEFAULT, TSFI_WINDOW_HEIGHT_DEFAULT);
-    wl_surface_set_input_region(s->surface, region);
-    wl_region_destroy(region);
+    wl_display_roundtrip(s->display); // First roundtrip to bind interfaces
+    wl_display_roundtrip(s->display); // Second roundtrip to let device_done fire
 
-    s->xdg_surface = xdg_wm_base_get_xdg_surface(s->xdg_wm_base, s->surface);
-    xdg_surface_add_listener(s->xdg_surface, &xdg_surface_listener, s);
-    s->xdg_toplevel = xdg_surface_get_toplevel(s->xdg_surface);
-    xdg_toplevel_add_listener(s->xdg_toplevel, &xdg_toplevel_listener, s);
-    xdg_toplevel_set_title(s->xdg_toplevel, TSFI_WINDOW_TITLE);
-    wl_surface_commit(s->surface); 
+    // 2. The Physical Decision
+    if (s->lease_active) {
+        // Mode B: Sovereign Plane 71 (No Window Created)
+        printf("[TSFI_VULKAN] Mode B Initialized: Direct Physical Scanout.\n");
+        extern VulkanContext* init_vulkan(int);
+        s->vk = init_vulkan(s->leased_fd);
+    } else {
+        // Mode A: Standard Hyprland Window
+        printf("[TSFI_VULKAN] Mode A Initialized: Opening Pass-through Window.\n");
+        if (!s->compositor || !s->xdg_wm_base) {
+            printf("[TSFI_VULKAN] FATAL: Hyprland/XDG interfaces missing for Mode A.\n");
+            wl_display_disconnect(s->display); lau_free(s); return NULL;
+        }
+        s->surface = wl_compositor_create_surface(s->compositor);
+        s->xdg_surface = xdg_wm_base_get_xdg_surface(s->xdg_wm_base, s->surface);
+        s->xdg_toplevel = xdg_surface_get_toplevel(s->xdg_surface);
+        xdg_toplevel_set_title(s->xdg_toplevel, TSFI_WINDOW_TITLE);
+        wl_surface_commit(s->surface);
 
-    if (s->data_device_manager && s->seat) {
-        s->data_device = wl_data_device_manager_get_data_device(s->data_device_manager, s->seat);
-        wl_data_device_add_listener(s->data_device, &data_device_listener, s);
+        extern VulkanContext* init_vulkan(int);
+        s->vk = init_vulkan(-1);
     }
 
-    s->vk = init_vulkan();
     if (s->vk) {
         lau_memory_init_gpu(s->vk);
-        printf("[TSFI_VULKAN] DEBUG: Vulkan ReBAR pool exported to allocator.\n");
+        if (!s->lease_active) {
+            // Standard Wayland Surface Binding
+            VkWaylandSurfaceCreateInfoKHR createInfo = { .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, .display = s->display, .surface = s->surface };
+            PFN_vkCreateWaylandSurfaceKHR createFunc = (PFN_vkCreateWaylandSurfaceKHR)s->vk->vkGetInstanceProcAddr(s->vk->instance, "vkCreateWaylandSurfaceKHR");
+            if (createFunc) createFunc(s->vk->instance, &createInfo, NULL, &s->vk->surface);
+        }
+        init_vk_swapchain(s->vk, s->width, s->height);
     }
+
+    s->running = true;
+    set_vulkan_system(s);
+    return s;
+}
 
     tsfi_wire_firmware_init();
     LauWireFirmware *fw = tsfi_wire_firmware_get();
@@ -199,29 +244,27 @@ VulkanSystem* create_vulkan_system() {
     }
 
     if (s->vk) {
-        printf("[TSFI_VULKAN] DEBUG: Creating Surface...\n"); fflush(stdout);
-        VkWaylandSurfaceCreateInfoKHR createInfo = { .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, .display = s->display, .surface = s->surface };
-        PFN_vkCreateWaylandSurfaceKHR createFunc = (PFN_vkCreateWaylandSurfaceKHR)s->vk->vkGetInstanceProcAddr(s->vk->instance, "vkCreateWaylandSurfaceKHR");
-        if (createFunc && createFunc(s->vk->instance, &createInfo, NULL, &s->vk->surface) == VK_SUCCESS) {
-            printf("[TSFI_VULKAN] Vulkan Wayland Surface Created!\n");
-            
-            s->dma_buffer = create_dma_buffer(s, s->width, s->height);
-            if (s->dma_buffer) {
-                printf("[TSFI_VULKAN] DEBUG: DMA Buffer Created (%dx%d).\n", s->width, s->height); fflush(stdout);
-                // Ensure compositor is ready
-                wl_display_roundtrip(s->display);
-                tsfi_raw_usleep(10000); 
+        if (!s->lease_active) {
+            printf("[TSFI_VULKAN] Mode A: Creating Wayland Surface...\n"); fflush(stdout);
+            VkWaylandSurfaceCreateInfoKHR createInfo = { .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, .display = s->display, .surface = s->surface };
+            PFN_vkCreateWaylandSurfaceKHR createFunc = (PFN_vkCreateWaylandSurfaceKHR)s->vk->vkGetInstanceProcAddr(s->vk->instance, "vkCreateWaylandSurfaceKHR");
+            if (createFunc && createFunc(s->vk->instance, &createInfo, NULL, &s->vk->surface) == VK_SUCCESS) {
+                printf("[TSFI_VULKAN] Vulkan Wayland Surface Created!\n");
                 
-                wl_surface_attach(s->surface, s->dma_buffer, 0, 0);
-                wl_surface_damage_buffer(s->surface, 0, 0, s->width, s->height);
-                wl_surface_commit(s->surface);
-                wl_display_roundtrip(s->display);
+                s->dma_buffer = create_dma_buffer(s, s->width, s->height);
+                if (s->dma_buffer) {
+                    wl_display_roundtrip(s->display);
+                    wl_surface_attach(s->surface, s->dma_buffer, 0, 0);
+                    wl_surface_damage_buffer(s->surface, 0, 0, s->width, s->height);
+                    wl_surface_commit(s->surface);
+                    wl_display_roundtrip(s->display);
+                }
             }
+        }
 
-            printf("[TSFI_VULKAN] DEBUG: Init Swapchain...\n"); fflush(stdout);
-            if (init_swapchain(s)) {
-                printf("[TSFI_VULKAN] DEBUG: Init Staging Buffer...\n"); fflush(stdout);
-                init_staging_vk_buffer(s, s->paint_buffer->size);
+        printf("[TSFI_VULKAN] Finalizing Swapchain...\n"); fflush(stdout);
+        if (init_swapchain(s)) {
+            init_staging_vk_buffer(s, s->paint_buffer->size);
 
                 // Initialize Terminal Logic (CPU Thunk Fallback)
                 extern void* tsfi_hotload_thunk(const char* thunk_path, const char* symbol_name);

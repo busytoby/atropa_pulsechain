@@ -99,6 +99,13 @@ DEFINE_MAPPED_STRUCT(VulkanSystem,
     struct wl_data_device *data_device;
     char *clipboard_buffer;
 
+    // --- DRM Lease Manifold (Sovereign Arbitration) ---
+    struct wp_drm_lease_device_v1 *lease_device;
+    struct wp_drm_lease_connector_v1 *lease_connector;
+    struct wp_drm_lease_v1 *active_lease;
+    int leased_fd;
+    bool lease_active;
+
     // --- Zhong Architecture (Physical Context) ---
     uint64_t *gpu_sem_addr;     // Timeline Counter Pointer
     uint64_t gpu_sem_target;    // Last logical target

@@ -3,13 +3,14 @@
 #include "tsfi_io.h"
 #include "lau_memory.h"
 #include "tsfi_k0rn_ops.h"
+#include "window_inc/vulkan_struct.h"
 #include <stdio.h>
 #include <string.h>
 
 /**
  * @brief Evolves the Auncient Wavelet (UID 1000) specifically to resolve foundational faults.
  */
-static void tsfi_evolve_auncient_fault(void *manifold_shm, float intensity) {
+void tsfi_evolve_auncient_fault(void *manifold_shm, float intensity) {
     // In a production TSFi environment, we would locate the physical wavelet in the arena.
     // For this bridge thunk, we simulate the transformation of the Lore Region (Leaf 0).
     uint8_t *leaf0 = (uint8_t *)manifold_shm;

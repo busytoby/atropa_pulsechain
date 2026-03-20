@@ -665,7 +665,19 @@ void draw_frame(VulkanSystem *s) {
         .pImageIndices = &imageIndex
     };
 
-    vk->vkQueuePresentKHR(vk->queue, &presentInfo);
+    if (vk->is_leased) {
+        // Mode B: Sovereign Plane 71
+        // The display core is directly scanning out from the swapchain image.
+        // On some drivers, vkQueuePresentKHR is still used for the display surface, 
+        // while on others we would perform a direct atomic commit.
+        vk->vkQueuePresentKHR(vk->queue, &presentInfo);
+        static uint32_t p71_count = 0;
+        if (++p71_count % 100 == 0) printf("\r[HW] Directly drawing to Plane 71 (Epoch: %u)  ", vk->currentFrame);
+        fflush(stdout);
+    } else {
+        // Mode A: Standard Wayland Window
+        vk->vkQueuePresentKHR(vk->queue, &presentInfo);
+    }
 
     vk->currentFrame = (vk->currentFrame + 1) % 3;
-}
+    }

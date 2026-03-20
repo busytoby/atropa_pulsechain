@@ -232,7 +232,8 @@ void run_test_marchen_vision_final(const char *font_path) {
     tsfi_ottype_t ot;
     if (!tsfi_ottype_init(&ot, font_data, size, 0)) {
         printf("[WARN] Font parsing failed (expected with dummy data).\n");
-        goto cleanup;
+        tsfi_io_unmap_file(font_data, size);
+        return;
     }
 
     uint32_t cps[] = { 0x11C70, 0x11CB0 }; // Marchen Ka + Subjoined Ka
@@ -240,7 +241,9 @@ void run_test_marchen_vision_final(const char *font_path) {
     num_clusters = tsfi_font_shape_text(&ot, cps, 2, &clusters);
     if (num_clusters <= 0) {
         printf("[WARN] Failed to shape cluster.\n");
-        goto cleanup;
+        tsfi_ottype_destroy(&ot);
+        tsfi_io_unmap_file(font_data, size);
+        return;
     }
 
     TSFiShapeCluster *cluster = clusters[0];
@@ -372,13 +375,15 @@ void run_test_marchen_vision_final(const char *font_path) {
     // Save checkpoint
     tsfi_vision_save_glyph_checkpoint("marchen_dna", NULL, pixels, 128, 128);
 
-cleanup:
-    if (font_data) {
-        lau_unseal_object(font_data);
-        lau_free(font_data);
-    }
+    // Final Structured Cleanup
+    tsfi_ottype_destroy(&ot);
+    if (font_data) tsfi_io_unmap_file(font_data, size);
     if (pixels) lau_free(pixels);
     if (clusters) tsfi_font_free_clusters(clusters, num_clusters);
+    if (dna) {
+        if (dna->ops) lau_free(dna->ops);
+        lau_free(dna);
+    }
 }
 
 int main(int argc, char **argv) {

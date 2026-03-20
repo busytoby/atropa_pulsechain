@@ -47,7 +47,7 @@ static uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type
  * @brief Resamples AB4H (RGBA16F) 4:4:4 to NV12 (YUV 4:2:0) 8-bit.
  * Optimized for AVX-512 (Zhao).
  */
-static void tsfi_ab4h_to_nv12(const uint16_t *src, uint8_t *dst_y, uint8_t *dst_uv, int w, int h) {
+void tsfi_ab4h_to_nv12(const uint16_t *src, uint8_t *dst_y, uint8_t *dst_uv, int w, int h) {
     // BT.709 Coefficients for Luma (Y)
     const float RY = 0.2126f, GY = 0.7152f, BY = 0.0722f;
     const float RU = -0.1146f, GU = -0.3854f, BU = 0.5000f;

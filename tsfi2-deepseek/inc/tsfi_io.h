@@ -9,6 +9,7 @@
 #include "tsfi_io_types.h"
 #include "tsfi_k0rn_ops.h"
 #include "lau_vram.h"
+#include "tsfi_wavelet_arena.h"
 
 // Native AVX-512 Grep Prototypes
 size_t tsfi_io_grep(const uint8_t* buffer, size_t buffer_size, const char* pattern, size_t pattern_len, size_t* match_indices, size_t max_matches);
@@ -71,5 +72,8 @@ void tsfi_journal_want_to_remember(TsfiWavelet *W, float priority, const char *r
 void tsfi_journal_anchor_fracture_memory(void *manifold_shm, uint64_t svdag_id, const TSFiHelmholtzSVDAG *dag);
 void tsfi_journal_recover(TsfiWaveletArena *arena);
 void tsfi_journal_teardown(void);
+
+// Physical Display API (Plane 71 Promotion)
+int tsfi_acquire_hardware_lease(void);
 
 #endif // TSFI_IO_H

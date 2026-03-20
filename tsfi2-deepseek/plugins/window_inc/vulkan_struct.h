@@ -5,6 +5,7 @@
 #define VK_USE_PLATFORM_WAYLAND_KHR
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_wayland.h>
+#include <stdbool.h>
 
 // Minimal Vulkan Context for Hybrid Rendering
 typedef struct VulkanContext {
@@ -214,6 +215,8 @@ typedef struct VulkanContext {
     size_t rebar_pool_size;
     size_t rebar_pool_offset;
     VkDeviceAddress rebar_device_address; // 64-bit raw GPU pointer for BDA massing
+    bool is_leased; // If true, rendering directly to Plane 71
+    int leased_fd;
 
     // Sampler Manifold
     VkSampler sampler_point;

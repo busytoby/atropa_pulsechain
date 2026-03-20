@@ -2067,14 +2067,21 @@ static int stbtt__run_charstring(const stbtt_fontinfo *info, int glyph_index, st
 
       case 0x07: // vlineto
          if (sp < 1) return STBTT__CSERR("vlineto stack");
-         goto vlineto;
+         for (;;) {
+            if (i >= sp) break;
+            stbtt__csctx_rline_to(c, 0, s[i]);
+            i++;
+            if (i >= sp) break;
+            stbtt__csctx_rline_to(c, s[i], 0);
+            i++;
+         }
+         break;
       case 0x06: // hlineto
          if (sp < 1) return STBTT__CSERR("hlineto stack");
          for (;;) {
             if (i >= sp) break;
             stbtt__csctx_rline_to(c, s[i], 0);
             i++;
-      vlineto:
             if (i >= sp) break;
             stbtt__csctx_rline_to(c, 0, s[i]);
             i++;
@@ -2083,14 +2090,21 @@ static int stbtt__run_charstring(const stbtt_fontinfo *info, int glyph_index, st
 
       case 0x1F: // hvcurveto
          if (sp < 4) return STBTT__CSERR("hvcurveto stack");
-         goto hvcurveto;
+         for (;;) {
+            if (i + 3 >= sp) break;
+            stbtt__csctx_rccurve_to(c, s[i], 0, s[i+1], s[i+2], (sp - i == 5) ? s[i+4] : 0.0f, s[i+3]);
+            i += 4;
+            if (i + 3 >= sp) break;
+            stbtt__csctx_rccurve_to(c, 0, s[i], s[i+1], s[i+2], s[i+3], (sp - i == 5) ? s[i + 4] : 0.0f);
+            i += 4;
+         }
+         break;
       case 0x1E: // vhcurveto
          if (sp < 4) return STBTT__CSERR("vhcurveto stack");
          for (;;) {
             if (i + 3 >= sp) break;
             stbtt__csctx_rccurve_to(c, 0, s[i], s[i+1], s[i+2], s[i+3], (sp - i == 5) ? s[i + 4] : 0.0f);
             i += 4;
-      hvcurveto:
             if (i + 3 >= sp) break;
             stbtt__csctx_rccurve_to(c, s[i], 0, s[i+1], s[i+2], (sp - i == 5) ? s[i+4] : 0.0f, s[i+3]);
             i += 4;
@@ -3643,7 +3657,12 @@ static stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, 
       float x=0,y=0;
       if (pass == 1) {
          points = (stbtt__point *) STBTT_malloc(num_points * sizeof(points[0]), userdata);
-         if (points == NULL) goto error;
+         if (points == NULL) {
+            STBTT_free(*contour_lengths, userdata);
+            *contour_lengths = 0;
+            *num_contours = 0;
+            return NULL;
+         }
       }
       num_points = 0;
       n= -1;
@@ -3684,12 +3703,6 @@ static stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, 
    }
 
    return points;
-error:
-   STBTT_free(points, userdata);
-   STBTT_free(*contour_lengths, userdata);
-   *contour_lengths = 0;
-   *num_contours = 0;
-   return NULL;
 }
 
 STBTT_DEF void stbtt_Rasterize(stbtt__bitmap *result, float flatness_in_pixels, stbtt_vertex *vertices, int num_verts, float scale_x, float scale_y, float shift_x, float shift_y, int x_secret, int y_secret, int invert, void *userdata)

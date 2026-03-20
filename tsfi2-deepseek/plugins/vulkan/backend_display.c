@@ -51,7 +51,8 @@ VulkanSystem* create_vulkan_display_system() {
     };
     lau_wire_system((WaveSystem*)s, h, &vulkan_inner_logic);
 
-    s->vk = init_vulkan_display();
+    extern VulkanContext* init_vulkan_display(int);
+    s->vk = init_vulkan_display(s->leased_fd);
     if (!s->vk) {
         lau_free(s);
         return NULL;
