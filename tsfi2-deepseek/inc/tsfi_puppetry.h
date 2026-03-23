@@ -20,21 +20,16 @@ typedef enum {
     PUPPET_TYPE_POPPY = 3
 } TsfiPuppetType;
 
+#define TSFI_MAX_JOINTS 25
+
 typedef struct {
-    TsfiJoint head;
-    TsfiJoint neck;
-    TsfiJoint body;
-    TsfiJoint l_shoulder;
-    TsfiJoint l_hand;
-    TsfiJoint r_shoulder;
-    TsfiJoint r_hand;
-    TsfiJoint l_hip;
-    TsfiJoint l_foot;
-    TsfiJoint r_hip;
-    TsfiJoint r_foot;
-    TsfiJoint beak_upper; // Added for Crow speech articulation
-    TsfiJoint beak_lower; // Added for Crow speech articulation
-    
+    // High-Fidelity Array-based model for OpenPose (BODY_25)
+    TsfiJoint positions[TSFI_MAX_JOINTS];
+    float     rotations[TSFI_MAX_JOINTS][4]; // Quaternions (x,y,z,w)
+    float     confidences[TSFI_MAX_JOINTS];
+    uint32_t  parent_indices[TSFI_MAX_JOINTS]; // Topological links
+
+    // Legacy parameters for backward compatibility with 13-joint logic
     float scale;
     float stuffing;
     float arm_length;

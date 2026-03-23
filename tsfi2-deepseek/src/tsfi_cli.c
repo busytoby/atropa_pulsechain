@@ -191,6 +191,16 @@ static int handle_load_command(WaveSystem *ws, const char *param) {
 }
 
 int tsfi_cli_process_line(WaveSystem *ws, char *input) {
+    // --- ALLIGATOR MANDATORY AUDIT ---
+    size_t active = lau_get_active_count();
+    if (active > 0) {
+        if (strstr(input, "EXIT") == NULL && strstr(input, "MEMORY") == NULL) {
+            tsfi_io_printf(stderr, "\n[ALLIGATOR LOCKDOWN] Fracture Detected: %zu active allocations!\n", active);
+            tsfi_io_printf(stderr, "[ACTION] Mandatory Fix Required. Use '0.0 MEMORY' to audit leaks.\n");
+            return 0; 
+        }
+    }
+
     input[strcspn(input, "\n")] = 0;
     double new_i;
     char new_d[256];

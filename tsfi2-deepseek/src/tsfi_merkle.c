@@ -12,6 +12,27 @@
 
 #define TSFI_GRAVITATIONAL_LOCK 137
 
+#include <math.h>
+
+/**
+ * @brief Calculates the kinematic residue of the skeleton topology.
+ * Binds the parent-child relationships directly into the cryptographic norm.
+ */
+float tsfi_skeleton_topology_residue(const TsfiPuppet *puppet) {
+    if (!puppet) return 0.0f;
+    float total_residue = 0.0f;
+    for (int i = 0; i < TSFI_MAX_JOINTS; i++) {
+        uint32_t p_idx = puppet->parent_indices[i];
+        if (p_idx < TSFI_MAX_JOINTS && p_idx != (uint32_t)i) {
+            float dx = puppet->positions[i].x - puppet->positions[p_idx].x;
+            float dy = puppet->positions[i].y - puppet->positions[p_idx].y;
+            float dz = puppet->positions[i].z - puppet->positions[p_idx].z;
+            total_residue += sqrtf(dx*dx + dy*dy + dz*dz);
+        }
+    }
+    return total_residue;
+}
+
 static void reduce_region(uint8_t *root_out, float *mu_out, float *continuity_out, const void *region_start, const void *lore_start, int leaf_count, uint32_t epoch, uint64_t resonance_k, uint64_t unified_norm, uint64_t intent_norm);
 
 // --- Generation 8: Recursive Wavelet Linking ---
@@ -542,12 +563,12 @@ static uint64_t tsfi_measure_active_modes(const void *manifold, int leaf_count) 
  * @param resonance_k World frequency.
  * @param dag Optional SVDAG context for feynman integration.
  */
-void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_256b) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_256b, 1) + (uint64_t)tsfi_norm_conservation_residue(manifold_256b, 1);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_256b, 1) + (uint64_t)tsfi_norm_conservation_residue(manifold_256b, 1) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_256b);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 512) lore_region = (const uint8_t*)manifold_256b + 256;
     float state_mu = 0, state_cont = 0;
@@ -558,12 +579,12 @@ void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont; }
 }
 
-void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_512b) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_512b, 2) + (uint64_t)tsfi_norm_conservation_residue(manifold_512b, 2);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_512b, 2) + (uint64_t)tsfi_norm_conservation_residue(manifold_512b, 2) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_512b);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 1024) lore_region = (const uint8_t*)manifold_512b + 512;
     float state_mu = 0, state_cont = 0;
@@ -573,12 +594,12 @@ void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_1kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_1kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_1kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_1kb, 4) + (uint64_t)tsfi_norm_conservation_residue(manifold_1kb, 4);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_1kb, 4) + (uint64_t)tsfi_norm_conservation_residue(manifold_1kb, 4) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_1kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 2048) lore_region = (const uint8_t*)manifold_1kb + 1024;
     float state_mu = 0, state_cont = 0;
@@ -588,12 +609,12 @@ void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_2kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_2kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_2kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_2kb, 8) + (uint64_t)tsfi_norm_conservation_residue(manifold_2kb, 8);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_2kb, 8) + (uint64_t)tsfi_norm_conservation_residue(manifold_2kb, 8) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_2kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 4096) lore_region = (const uint8_t*)manifold_2kb + 2048;
     float state_mu = 0, state_cont = 0;
@@ -603,12 +624,12 @@ void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_4kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_4kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_4kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_4kb, 16) + (uint64_t)tsfi_norm_conservation_residue(manifold_4kb, 16);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_4kb, 16) + (uint64_t)tsfi_norm_conservation_residue(manifold_4kb, 16) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_4kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 8192) lore_region = (const uint8_t*)manifold_4kb + 4096;
     float state_mu = 0, state_cont = 0;
@@ -618,12 +639,12 @@ void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_8kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_8kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_8kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_8kb, 32) + (uint64_t)tsfi_norm_conservation_residue(manifold_8kb, 32);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_8kb, 32) + (uint64_t)tsfi_norm_conservation_residue(manifold_8kb, 32) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_8kb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 16384) lore_region = (const uint8_t*)manifold_8kb + 8192;
     float state_mu = 0, state_cont = 0;
@@ -633,12 +654,12 @@ void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_16kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_16kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_16kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_16kb, 64) + (uint64_t)tsfi_norm_conservation_residue(manifold_16kb, 64);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_16kb, 64) + (uint64_t)tsfi_norm_conservation_residue(manifold_16kb, 64) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_16kb);
     // Level 6: Lore offset is 64 * 256 = 16KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 32 * 1024) lore_region = (const uint8_t*)manifold_16kb + (64 * 256);
@@ -650,12 +671,12 @@ void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_32kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_32kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_32kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_32kb, 128) + (uint64_t)tsfi_norm_conservation_residue(manifold_32kb, 128);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_32kb, 128) + (uint64_t)tsfi_norm_conservation_residue(manifold_32kb, 128) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_32kb);
     // Level 7: Lore offset is 128 * 256 = 32KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 64 * 1024) lore_region = (const uint8_t*)manifold_32kb + (128 * 256);
@@ -667,12 +688,12 @@ void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_64kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_64kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_64kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_64kb, 256) + (uint64_t)tsfi_norm_conservation_residue(manifold_64kb, 256);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_64kb, 256) + (uint64_t)tsfi_norm_conservation_residue(manifold_64kb, 256) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_64kb);
     // Level 8: Lore offset is 256 * 256 = 64KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 128 * 1024) lore_region = (const uint8_t*)manifold_64kb + (256 * 256);
@@ -684,12 +705,12 @@ void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_128kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_128kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_128kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_128kb, 512) + (uint64_t)tsfi_norm_conservation_residue(manifold_128kb, 512);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_128kb, 512) + (uint64_t)tsfi_norm_conservation_residue(manifold_128kb, 512) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_128kb);
     // Level 9: Lore offset is 512 * 256 = 128KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 256 * 1024) lore_region = (const uint8_t*)manifold_128kb + (512 * 256);
@@ -701,12 +722,12 @@ void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out,
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_256kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_256kb, 1024) + (uint64_t)tsfi_norm_conservation_residue(manifold_256kb, 1024);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_256kb, 1024) + (uint64_t)tsfi_norm_conservation_residue(manifold_256kb, 1024) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_256kb);
     // Level 10: Lore offset is 1024 * 256 = 256KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 512 * 1024) lore_region = (const uint8_t*)manifold_256kb + (1024 * 256);
@@ -718,7 +739,25 @@ void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+/**
+ * @brief Calculates a cryptographic residue of the skeleton topology (Parent-Child map).
+ * Ensures the skeleton structure is bound to the Merkle root.
+ */
+static uint64_t tsfi_skeleton_topology_residue(const void *manifold_512kb) {
+    if (!manifold_512kb) return 0;
+    // Walk the Sheaf region (e.g. 25 joints in 7 packed leaves starting at index 32768)
+    const TsfiSkeletonPackedLeaf *sheaf = (const TsfiSkeletonPackedLeaf *)((uint8_t *)manifold_512kb + (32768 * 256));
+    uint64_t residue = 0;
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 4; j++) {
+            residue ^= (uint64_t)sheaf[i].joints[j].parent_id << (j * 8);
+            residue ^= (uint64_t)sheaf[i].joints[j].joint_id;
+        }
+    }
+    return residue;
+}
+
+void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_512kb) return;
     tsfi_helmholtz_init();
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
@@ -729,7 +768,12 @@ void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out
         monopole_norm = *(uint64_t*)m_bytes;
     }
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = monopole_norm + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_512kb, 2048) + (uint64_t)tsfi_norm_conservation_residue(manifold_512kb, 2048);
+    uint64_t unified_norm = monopole_norm + feynman_integral + current_user_norm + 
+                            tsfi_measure_active_modes(manifold_512kb, 2048) + 
+                            (uint64_t)tsfi_norm_conservation_residue(manifold_512kb, 2048) +
+                            tsfi_skeleton_topology_residue(manifold_512kb) + // Topological Coupling
+                            (uint64_t)tsfi_skeleton_topology_residue(puppet);
+
     const uint8_t *lore_region = NULL; LauMetadata *m = lau_registry_find((void*)manifold_512kb);
     // Level 11: Lore offset is 2048 * 256 = 512KB
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 1024 * 1024) lore_region = (const uint8_t*)manifold_512kb + (2048 * 256);
@@ -740,13 +784,13 @@ void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_12(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_2mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_12(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_2mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !sheaf_root_out || !manifold_2mb) return;
     tsfi_helmholtz_init();
 
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_2mb, 4096) + (uint64_t)tsfi_norm_conservation_residue(manifold_2mb, 4096);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_2mb, 4096) + (uint64_t)tsfi_norm_conservation_residue(manifold_2mb, 4096) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL;
     LauMetadata *m = lau_registry_find((void*)manifold_2mb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 2 * 1024 * 1024) {
@@ -768,13 +812,13 @@ void tsfi_helmholtz_reduce_12(uint8_t *state_root_out, uint8_t *receipt_root_out
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-void tsfi_helmholtz_reduce_16(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_16mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag) {
+void tsfi_helmholtz_reduce_16(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_16mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !sheaf_root_out || !manifold_16mb) return;
     tsfi_helmholtz_init();
 
     uint64_t feynman_integral = dag ? (uint64_t)tsfi_svdag_execute(dag) : 0;
     uint64_t current_user_norm = atomic_load(&g_user_pole_norm);
-    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_16mb, TSFI_TOTAL_LEAVES) + (uint64_t)tsfi_norm_conservation_residue(manifold_16mb, TSFI_TOTAL_LEAVES);
+    uint64_t unified_norm = TSFI_GRAVITATIONAL_LOCK + feynman_integral + current_user_norm + tsfi_measure_active_modes(manifold_16mb, TSFI_TOTAL_LEAVES) + (uint64_t)tsfi_norm_conservation_residue(manifold_16mb, TSFI_TOTAL_LEAVES) + (uint64_t)tsfi_skeleton_topology_residue(puppet);
     const uint8_t *lore_region = NULL;
     LauMetadata *m = lau_registry_find((void*)manifold_16mb);
     if (m && (m->alloc_size & 0x00FFFFFFFFFFFFFFULL) >= 32 * 1024 * 1024) {
@@ -794,4 +838,63 @@ void tsfi_helmholtz_reduce_16(uint8_t *state_root_out, uint8_t *receipt_root_out
 
     if (mu_out) { *mu_out = state_mu / 2.0f; }
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
+}
+
+#include "tsfi_puppetry.h"
+
+/**
+ * @brief Tokenizes a high-fidelity puppet skeleton into the Merkle Sheaf region using packed leaves.
+ * @param manifold_512kb Pointer to the 512KB manifold substrate.
+ * @param puppet Pointer to the TsfiPuppet data (25 joints).
+ * @param leaf_start_index Starting index in the Sheaf (e.g. 32768).
+ * @param proof Output differential proof metadata.
+ */
+void tsfi_merkle_map_skeleton_high_fid(void *manifold_512kb, const TsfiPuppet *puppet, int leaf_start_index, TsfiDiffProof *proof) {
+    if (!manifold_512kb || !puppet) return;
+    
+    TsfiSkeletonPackedLeaf *sheaf_base = (TsfiSkeletonPackedLeaf *)((uint8_t *)manifold_512kb + (leaf_start_index * 256));
+    uint64_t current_mask = 0;
+
+    for (int leaf_idx = 0; leaf_idx < 7; leaf_idx++) {
+        TsfiSkeletonPackedLeaf new_leaf = {0};
+
+        for (int j = 0; j < 4; j++) {
+            int joint_idx = leaf_idx * 4 + j;
+            if (joint_idx >= TSFI_MAX_JOINTS) break;
+
+            new_leaf.joints[j].x = puppet->positions[joint_idx].x;
+            new_leaf.joints[j].y = puppet->positions[joint_idx].y;
+            new_leaf.joints[j].z = puppet->positions[joint_idx].z;
+            new_leaf.joints[j].qx = puppet->rotations[joint_idx][0];
+            new_leaf.joints[j].qy = puppet->rotations[joint_idx][1];
+            new_leaf.joints[j].qz = puppet->rotations[joint_idx][2];
+            new_leaf.joints[j].qw = puppet->rotations[joint_idx][3];
+            new_leaf.joints[j].confidence = puppet->confidences[joint_idx];
+            new_leaf.joints[j].joint_id = (uint32_t)joint_idx;
+            new_leaf.joints[j].parent_id = puppet->parent_indices[joint_idx];
+            new_leaf.joints[j].timestamp_ns = (uint64_t)time(NULL);
+        }
+
+        // Differential Check: Only update if the leaf data has actually drifted
+        if (memcmp(&sheaf_base[leaf_idx], &new_leaf, sizeof(TsfiSkeletonPackedLeaf)) != 0) {
+            memcpy(&sheaf_base[leaf_idx], &new_leaf, sizeof(TsfiSkeletonPackedLeaf));
+            current_mask |= (1ULL << leaf_idx);
+        }
+    }
+
+    if (proof) {
+        proof->dirty_mask = current_mask;
+        printf("[MERKLE] High-Fid Ingress: Mask 0x%llx (Differential update for Moon Puppets).\n", (unsigned long long)current_mask);
+    }
+}
+
+/**
+ * @brief Tokenizes a 13-joint puppet skeleton into the Merkle Sheaf region.
+ * @param manifold_512kb Pointer to the 512KB manifold substrate.
+ * @param puppet Pointer to the TsfiPuppet data.
+ * @param leaf_start_index Starting index in the Sheaf (e.g. 32768).
+ */
+void tsfi_merkle_map_skeleton(void *manifold_512kb, const TsfiPuppet *puppet, int leaf_start_index) {
+    // Deprecated: Use tsfi_merkle_map_skeleton_high_fid for Moon Puppets simulation
+    tsfi_merkle_map_skeleton_high_fid(manifold_512kb, puppet, leaf_start_index, NULL);
 }

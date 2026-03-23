@@ -37,7 +37,28 @@ typedef struct {
 #define TSFI_TOTAL_LEAVES   65536
 #define TSFI_DIRECTIVE_LEAVES 65536
 
-// --- Unified Epoch Header (216 bytes) ---
+// --- TSFi Skeleton Packed Leaf (256 bytes) ---
+// Packs 4 joints into a single Merkle leaf for high-fidelity OpenPose (16/25 joints)
+typedef struct {
+    struct {
+        float    x, y, z;       // 12 bytes
+        float    qx, qy, qz, qw;// 16 bytes (Rotation Quaternion)
+        float    confidence;    // 4 bytes
+        uint32_t joint_id;      // 4 bytes
+        uint32_t parent_id;     // 4 bytes
+        uint64_t timestamp_ns;  // 8 bytes
+        uint8_t  padding[16];   // 16 bytes -> Total 64 bytes per joint
+    } joints[4];
+} TsfiSkeletonPackedLeaf;
+
+// --- Differential Merkle Proof ---
+typedef struct {
+    uint8_t  root[32];
+    uint64_t dirty_mask;        // Bitmask of changed leaves (for up to 64 leaves in Sheaf)
+    uint32_t epoch;
+} TsfiDiffProof;
+
+// --- Manifold Topography (1 MiB Total) ---
 typedef struct {
     uint8_t  parent_root[32];
     uint8_t  state_root[32];
@@ -202,23 +223,25 @@ void zmm_add_512(uint64_t *r, const uint64_t *a, const uint64_t *b);
 void zmm_xor_512(uint64_t *r, const uint64_t *a, const uint64_t *b);
 void react_reduce_nodes_internal(uint64_t *res, const uint64_t *left, const uint64_t *right, uint32_t level);
 
+#include "tsfi_puppetry.h"
+
 // performs the primary 11-level trilateral reduction of the entire manifold
-void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_1kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_2kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_4kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_8kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_16kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_32kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_64kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_128kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
+void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_1kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_2kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_4kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_8kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_16kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_32kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_64kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_128kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
 
 // performs the extended 12-level reduction supporting the Sheaf Region
-void tsfi_helmholtz_reduce_12(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_2mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_16(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_16mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
+void tsfi_helmholtz_reduce_12(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_2mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
+void tsfi_helmholtz_reduce_16(uint8_t *state_root_out, uint8_t *receipt_root_out, uint8_t *sheaf_root_out, float *mu_out, float *continuity_out, const void *manifold_16mb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet);
 
 // establishes the 11-level Directive Root (The Wave Source)
 void tsfi_helmholtz_reduce_directives(uint8_t *root_out, const TSFiDirective *directives, uint32_t epoch, uint64_t resonance_k);

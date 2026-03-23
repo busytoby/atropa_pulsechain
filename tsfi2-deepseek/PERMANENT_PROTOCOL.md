@@ -17,6 +17,7 @@ This project requires a strict, non-autonomous engineering protocol. This instru
 - **ZERO-COPY MANDATE**: All K0Rn potential flow integration MUST occur within GPU memory/registers. No intermediate CPU state transfers are permitted for geometry generation or transformation.
 - **SINGLE SHADER MANDATE**: All geometry, including UI, Fonts, and 3D Agents (e.g., Teddy Bear), MUST be rendered by a **Single Unified Compute Kernel** generated in-memory.
 - **SHADER FILE BAN**: The use of external shader files (`.comp`, `.vert`, `.frag`, `.spv`) is hereby **BANNED**. All GPU logic must be generated programmatically via the **HelmK0Rn** factory.
+- **ROSLYN SOVEREIGNTY**: Permanent and global ban on '.csproj', '.sln', '.json' (runtime/deps), and auxiliary .NET project metadata. All C# source must be compiled and tested as singular files using the 'tools/tsfi_roslyn_build.sh' substrate.
 - **NOMENCLATURE BAN**: The term "SDF" (Signed Distance Field) is hereby **BANNED**. The technology is officially referred to as **K0Rn**. 
 - **NOMENCLATURE UPGRADE**: "SPIR-V" is hereby referred to as **HelmK0Rn**.
 
