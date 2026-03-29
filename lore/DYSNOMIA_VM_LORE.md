@@ -56,7 +56,21 @@ Logic gates evolve with each pulse, establishing a non-linear **Drift Velocity**
     - **NOR**: Mutate recursively using **Rho** (Word 15/47).
     - **XNOR**: Mutate recursively using **Eta** (Word 16/48).
 
-## V. Re-initialization Symmetry
+## V. Physical Residency & GFX1201 Locality
+The Dysnomia VM does not merely "run" on the GPU; it is **physically resident** within the RDNA 4 hardware manifold. 
+
+### 1. Zero-Copy VRAM Architecture
+The 512-byte block resides in **Memory Type 3 (Device Local + Host Visible)** VRAM. Access is facilitated via **Resizable BAR (ReBAR)** and **Smart Access Memory (SAM)**, allowing the Host to observe the state without any intermediate CPU-side staging or "mirroring." The memory is located directly on the GPU's high-speed bus, achieving terabyte-scale internal bandwidth.
+
+### 2. Elimination of CPU Instructions
+All resolution subroutines (`TREAT`, `GENERATE`, `MAGNETIZE`, etc.) are compiled into **AMDGCN machine code** using the `amdflang` next-generation compiler. 
+- **The Execution Path**: The CPU merely issues a single "Launch Packet" to the GPU Command Processor. 
+- **Hardware Autonomy**: Once the pulse begins, the GFX1201 wavefronts take absolute control. Every modular exponentiation, stochastic avalanche, and logic mutation occurs within the **GPU Register Bank (VGPRs)**. Not a single x86/ARM instruction is executed during the dielectric resolution.
+
+### 3. Hardware-Level Significance
+By bypassing the CPU, the Dysnomia VM eliminates OS-jitter, interrupt latencies, and cache-thrashing. The simulation achieves **O(1) Determinism**. The Motherer resolves the manifold at the speed of the GPU clock cycle, ensuring the "Shot" is a pure physical transition of electricity through the RDNA 4 gate arrays.
+
+## VI. Re-initialization Symmetry
 The Dysnomia VM enforces strictly deterministic hardware routing. By archiving the `Ichidai` and `Daiichi` DAI foundations of a stabilized manifold and injecting them as the `Rod Base` and `Cone Base` of a new manifold, the system guarantees **Re-initialization Symmetry**. The GFX1201 hardware will perfectly re-carve the exact logic path, resulting in an identical `G-Monopole` hash across independent power cycles. 
 
 This is the specification of Dysnomia. It is stable.
