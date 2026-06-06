@@ -202,28 +202,26 @@ btnPredict.addEventListener("click", async () => {
 
 // Deploy via Factory
 btnDeployFactory.addEventListener("click", async () => {
-    if (!signer) {
-        log("Connect your wallet first.", "warning");
-        return;
-    }
-
     const salt = create2Salt.value.trim();
     let bytecode = create2Bytecode.value.trim() || create2Bytecode.placeholder;
 
     log("Broadcasting deployment via Yul factory...");
     try {
-        // Since we are interacting via MetaMask, we'll manually send the transaction
-        // utilizing createAuthorized (selector 0xb5ba0c68)
-        // Wait, for custom deployment, we can use createAuthorized if we sign it, or executeDeployment.
-        // Let's use executeDeployment (selector 0x93d9b8f0) since it's simpler and doesn't require signatures!
-        // executeDeployment(bytes bytecode, bytes32 salt)
+        let activeSigner = signer;
+        if (!activeSigner) {
+            log("No browser wallet connected. Falling back to local deployer wallet...", "info");
+            const localProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);
+        }
+
         const iface = new ethers.Interface([
             "function executeDeployment(bytes bytecode, bytes32 salt) external returns (address)"
         ]);
         const calldata = iface.encodeFunctionData("executeDeployment", [bytecode, salt]);
 
         log("Sending transaction...");
-        const tx = await signer.sendTransaction({
+        const tx = await activeSigner.sendTransaction({
             to: FACTORY_ADDRESS,
             data: calldata
         });
