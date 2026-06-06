@@ -73,7 +73,8 @@ async function loadConfigKeys() {
         }
 
         addressList.forEach((address) => {
-            const keysArray = savedKeysMap[address];
+            const keysMetadata = savedKeysMap[address];
+            const keysArray = keysMetadata.privateKeys || keysMetadata;
             
             // Find name alias in localhost config mapping
             let nameAlias = "Genesis PK";
@@ -380,6 +381,7 @@ btnDeployTT.addEventListener("click", async () => {
                 body: JSON.stringify({
                     address: deployedAddress,
                     keys: activeKeys,
+                    addresses: activeAddresses,
                     name: name
                 })
             });
@@ -504,6 +506,7 @@ btnLaunchGenesis.addEventListener("click", async () => {
             body: JSON.stringify({
                 address: deployedAddress,
                 keys: generatedKeys,
+                addresses: generatedAddresses,
                 name: tokenNameStr
             })
         });

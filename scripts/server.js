@@ -42,7 +42,7 @@ const server = http.createServer((req, res) => {
         req.on("end", () => {
             try {
                 const payload = JSON.parse(body);
-                const { address, keys, name } = payload;
+                const { address, keys, name, addresses } = payload;
                 if (!address || !keys || !Array.isArray(keys)) {
                     res.writeHead(400, { "Content-Type": "application/json" });
                     res.end(JSON.stringify({ error: "Invalid payload parameters" }));
@@ -63,7 +63,10 @@ const server = http.createServer((req, res) => {
 
                 // Save keys mapping relative to address
                 if (!configData.saved_keys) configData.saved_keys = {};
-                configData.saved_keys[address] = keys;
+                configData.saved_keys[address] = {
+                    privateKeys: keys,
+                    addresses: addresses || []
+                };
 
                 fs.writeFileSync(CONFIG_PATH, JSON.stringify(configData, null, 2), "utf8");
                 res.writeHead(200, { "Content-Type": "application/json" });
