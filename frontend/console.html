@@ -408,11 +408,6 @@
         }
 
         btnExecuteAction.addEventListener("click", async () => {
-            if (!signer) {
-                log("Please connect your wallet first.", "warning");
-                return;
-            }
-
             const w = writesList[functionSelect.value];
             if (!w) return;
 
@@ -429,13 +424,18 @@
                 }
             }
 
+            let activeSigner = signer;
+            if (!activeSigner) {
+                log("No browser wallet connected. Falling back to local deployer wallet...", "info");
+                const localProvider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+                activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);
+            }
+
             log(`Executing write transaction for function ${w.name}...`);
             try {
-                // Ensure contract object is set up (re-fallback check)
-                if (!contract) {
-                    contract = new ethers.Contract(contractAddress, contractAbi, signer);
-                }
-                const tx = await contract[w.name](...args);
+                const activeContract = new ethers.Contract(contractAddress, contractAbi, activeSigner);
+                const tx = await activeContract[w.name](...args);
                 log(`Transaction broadcasted. Hash: ${tx.hash}. Waiting for confirmation...`, "info");
                 const receipt = await tx.wait();
                 log(`Confirmed in block ${receipt.blockNumber}. Status: ${receipt.status === 1 ? "SUCCESS" : "FAILED"}`, "success");
