@@ -188,7 +188,7 @@
                         item.style.border = "1px dashed var(--neon-blue)";
                         item.style.marginBottom = "10px";
                         item.addEventListener("click", () => {
-                            window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                            window.location.href = `/console.html?address=${factoryAddress}&name=ImmutableFactory`;
                         });
                         item.title = `Click to open Console for ImmutableFactory`;
                         item.innerHTML = `
@@ -205,7 +205,7 @@
                         item.style.border = "1px dashed var(--neon-blue)";
                         item.style.marginBottom = "10px";
                         item.addEventListener("click", () => {
-                            window.open(`/console.html?address=${yulObj.address}&name=${yulObj.name}`, "_blank");
+                            window.location.href = `/console.html?address=${yulObj.address}&name=${yulObj.name}`;
                         });
                         item.title = `Click to open Console for ${yulObj.name}`;
                         item.innerHTML = `
@@ -233,7 +233,7 @@
                         item.style.cursor = "pointer";
                         item.style.border = "1px dashed var(--neon-blue)";
                         item.addEventListener("click", () => {
-                            window.open(`/console.html?address=${b.address}&name=${b.tokenName}`, "_blank");
+                            window.location.href = `/console.html?address=${b.address}&name=${b.tokenName}`;
                         });
                         item.title = `Click to open Console for ${b.tokenName}`;
                     }
@@ -266,7 +266,7 @@
                             item.style.border = "1px dashed var(--neon-purple)";
                             item.style.marginBottom = "10px";
                             item.addEventListener("click", () => {
-                                window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                                 window.location.href = `/console.html?address=${factoryAddress}&name=ImmutableFactory`;
                             });
                             item.title = `Click to open Console for ImmutableFactory`;
                             item.innerHTML = `
@@ -282,9 +282,9 @@
                             item.style.cursor = "pointer";
                             item.style.border = "1px dashed var(--neon-purple)";
                             item.style.marginBottom = "10px";
-                            item.addEventListener("click", () => {
-                                window.open(`/console.html?address=${yulObj.address}&name=${yulObj.name}`, "_blank");
-                            });
+                             item.addEventListener("click", () => {
+                                 window.location.href = `/console.html?address=${yulObj.address}&name=${yulObj.name}`;
+                             });
                             item.title = `Click to open Console for ${yulObj.name}`;
                             item.innerHTML = `
                                 <span class="balance-token">${yulObj.name} (YUL)</span>
@@ -310,9 +310,9 @@
                         if (b.address) {
                             item.style.cursor = "pointer";
                             item.style.border = "1px dashed var(--neon-purple)";
-                            item.addEventListener("click", () => {
-                                window.open(`/console.html?address=${b.address}&name=${b.tokenName}`, "_blank");
-                            });
+                             item.addEventListener("click", () => {
+                                 window.location.href = `/console.html?address=${b.address}&name=${b.tokenName}`;
+                             });
                             item.title = `Click to open Console for ${b.tokenName}`;
                         }
                         item.innerHTML = `
