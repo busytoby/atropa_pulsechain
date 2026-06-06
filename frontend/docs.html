@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dysnomia Deployment Guide</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Marked Markdown Parser CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation / Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">ATROPA</span>
+                <span class="subtitle">Deployment Guide</span>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+            </div>
+        </header>
+
+        <!-- Main Guide Container -->
+        <main class="dashboard-grid" style="display: block;">
+            <section class="card" style="padding: 40px; line-height: 1.6; font-size: 1.1rem; color: var(--text-primary);">
+                <div id="docsContent" class="markdown-body">
+                    <div class="placeholder">Loading deployment guide...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="terminal-header">
+                <h3>Docs Status</h3>
+            </div>
+            <div class="terminal-body" id="consoleLogs">
+                <div class="log-line info">Loaded guide from secure local storage node successfully.</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        async function loadDocs() {
+            try {
+                const response = await fetch('/api/docs');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch documentation');
+                }
+                const markdown = await response.text();
+                // Replace link formatting with standard styled output
+                document.getElementById('docsContent').innerHTML = marked.parse(markdown);
+            } catch (err) {
+                document.getElementById('docsContent').innerHTML = `<div class="error">Error loading documentation: ${err.message}</div>`;
+            }
+        }
+        window.addEventListener('DOMContentLoaded', loadDocs);
+    </script>
+    <style>
+        /* Additional styled overrides for rendered markdown */
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            text-shadow: 0 0 5px rgba(0, 242, 254, 0.2);
+        }
+        .markdown-body p {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+        .markdown-body code {
+            font-family: 'Courier New', Courier, monospace;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--neon-purple);
+        }
+        .markdown-body pre {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        .markdown-body pre code {
+            border: none;
+            padding: 0;
+            background: transparent;
+            color: var(--text-primary);
+        }
+        .markdown-body ul, .markdown-body ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        .markdown-body li {
+            margin-bottom: 8px;
+        }
+        .markdown-body a {
+            color: var(--neon-blue);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .markdown-body a:hover {
+            color: var(--neon-purple);
+            text-shadow: 0 0 8px var(--neon-purple);
+        }
+    </style>
+</body>
+</html>

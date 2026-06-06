@@ -33,6 +33,23 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API endpoint to serve the Markdown documentation
+    if (req.url === "/api/docs") {
+        const DOCS_PATH = path.join(__dirname, "../frontend/local_deployment_guide.md");
+        if (fs.existsSync(DOCS_PATH)) {
+            const data = fs.readFileSync(DOCS_PATH, "utf8");
+            res.writeHead(200, { 
+                "Content-Type": "text/markdown",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(data);
+        } else {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Docs not found" }));
+        }
+        return;
+    }
+
     // Serve static files from frontend directory
     let filePath = req.url === "/" ? "/index.html" : req.url;
     let absolutePath = path.join(__dirname, "../frontend", filePath);

@@ -42,4 +42,14 @@ contract MockCho {
         return userTokenAddress;
     }
 }
-
+contract MockHecke {
+    function Meridians(uint256 idx) external pure returns (uint256) {
+        return 1000 + idx;
+    }
+    function Compliment(uint256 Waat) external pure returns (int256 Longitude, int256 Latitude) {
+        return (int256(Waat), int256(Waat * 2));
+    }
+    function GetMeridian(uint256 Waat) external pure returns (uint256) {
+        return Waat % 100;
+    }
+}
