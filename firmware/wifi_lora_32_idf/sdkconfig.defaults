@@ -1,0 +1,18 @@
+# Target board details
+CONFIG_IDF_TARGET="esp32s3"
+
+# System and frequency configurations
+CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+
+# FreeRTOS configurations
+CONFIG_FREERTOS_HZ=1000
+
+# SPIFFS (LittleFS fallback) support
+CONFIG_SPIFFS_MAX_PARTITIONS=3
+
+# C++ exceptions support
+CONFIG_COMPILER_CXX_EXCEPTIONS=y
+
+# mbedTLS customizations (ensure MPI algorithms are enabled)
+CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN=y

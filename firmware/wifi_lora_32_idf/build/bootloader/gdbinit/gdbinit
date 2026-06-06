@@ -1,0 +1,2 @@
+source /home/mariarahel/src/tsfi2/atropa_pulsechain/firmware/wifi_lora_32_idf/build/bootloader/gdbinit/symbols
+source /home/mariarahel/src/tsfi2/atropa_pulsechain/firmware/wifi_lora_32_idf/build/bootloader/gdbinit/connect
