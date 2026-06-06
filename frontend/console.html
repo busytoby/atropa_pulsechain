@@ -292,23 +292,23 @@
                 }
 
                 // Initialize local background reader contract
-                const readOnlyContract = new ethers.Contract(contractAddress, contractAbi, tempProvider);
+                const activeProvider = provider || tempProvider;
+                const readOnlyContract = new ethers.Contract(contractAddress, contractAbi, activeProvider);
 
-                populateUI(readOnlyContract);
+                populateUI(readOnlyContract, activeProvider);
             } catch (e) {
                 log(`Failed to load ABI: ${e.message}`, "error");
             }
         }
-        async function populateUI(readOnlyContract) {
+        async function populateUI(readOnlyContract, activeProvider) {
             const reads = contractAbi.filter(x => x.type === "function" && (x.stateMutability === "view" || x.stateMutability === "pure"));
             writesList = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
 
             // Verify if bytecode exists at destination
-            const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
             let hasCode = false;
             try {
-                const code = await tempProvider.getCode(contractAddress);
-                hasCode = (code !== "0x" && code !== "0x00");
+                const code = await activeProvider.getCode(contractAddress);
+                hasCode = (code !== "0x" && code !== "0x00" && code !== "0x0");
             } catch (err) {}
 
             // Populate Read state fields
