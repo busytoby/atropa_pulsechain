@@ -297,11 +297,17 @@
             } catch (e) {
                 log(`Failed to load ABI: ${e.message}`, "error");
             }
-        }
-
         async function populateUI(readOnlyContract) {
             const reads = contractAbi.filter(x => x.type === "function" && (x.stateMutability === "view" || x.stateMutability === "pure"));
             writesList = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
+
+            // Verify if bytecode exists at destination
+            const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            let hasCode = false;
+            try {
+                const code = await tempProvider.getCode(contractAddress);
+                hasCode = (code !== "0x" && code !== "0x00");
+            } catch (err) {}
 
             // Populate Read state fields
             const readStateList = document.getElementById("readStateList");
@@ -315,21 +321,30 @@
                 item.style.gap = "5px";
 
                 if (r.inputs.length === 0) {
-                    try {
-                        const val = await readOnlyContract[r.name]();
+                    if (!hasCode) {
                         item.innerHTML = `
                             <div style="display: flex; justify-content: space-between; width: 100%;">
                                 <span class="balance-token">${r.name}()</span>
-                                <span class="balance-value" style="font-size: 0.95rem; font-family: monospace;">${val.toString()}</span>
+                                <span class="balance-value" style="font-size: 0.8rem; opacity: 0.6;">(no code at address)</span>
                             </div>
                         `;
-                    } catch (e) {
-                        item.innerHTML = `
-                            <div style="display: flex; justify-content: space-between; width: 100%;">
-                                <span class="balance-token" style="color: var(--neon-pink);">${r.name}()</span>
-                                <span class="balance-value" style="font-size: 0.8rem; opacity: 0.6;">(reverted)</span>
-                            </div>
-                        `;
+                    } else {
+                        try {
+                            const val = await readOnlyContract[r.name]();
+                            item.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; width: 100%;">
+                                    <span class="balance-token">${r.name}()</span>
+                                    <span class="balance-value" style="font-size: 0.95rem; font-family: monospace;">${val.toString()}</span>
+                                </div>
+                            `;
+                        } catch (e) {
+                            item.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; width: 100%;">
+                                    <span class="balance-token" style="color: var(--neon-pink);">${r.name}()</span>
+                                    <span class="balance-value" style="font-size: 0.8rem; opacity: 0.6;">(reverted)</span>
+                                </div>
+                            `;
+                        }
                     }
                 } else {
                     const inputsHtml = r.inputs.map((inp, idx) => `
@@ -338,7 +353,7 @@
                     item.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <span class="balance-token">${r.name}(...)</span>
-                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" id="btn_read_${r.name}">Query</button>
+                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" id="btn_read_${r.name}" ${!hasCode ? "disabled" : ""}>Query</button>
                         </div>
                         <div style="display: flex; gap: 5px; margin-top: 5px;">
                             ${inputsHtml}
