@@ -410,3 +410,37 @@ footer {
 .log-line.warning {
     color: #ffd700;
 }
+
+/* Balance item styles */
+.balances-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+.balance-item {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 242, 254, 0.08);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+.balance-item:hover {
+    border-color: var(--neon-blue);
+    background: rgba(0, 242, 254, 0.04);
+}
+.balance-token {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--neon-purple);
+    font-weight: 700;
+}
+.balance-value {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--text-primary);
+    font-weight: 900;
+    font-size: 1.1rem;
+}
+

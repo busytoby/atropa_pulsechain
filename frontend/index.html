@@ -20,6 +20,7 @@
                 <span class="subtitle">PulseChain Hub</span>
             </div>
             <div class="header-actions">
+                <a href="/wallet.html" target="_blank" class="btn btn-secondary">Wallet Hub</a>
                 <a href="/docs.html" target="_blank" class="btn btn-secondary">Deployment Guide</a>
                 <div class="network-badge" id="networkBadge">Disconnected</div>
                 <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
@@ -30,13 +31,15 @@
         <main class="dashboard-grid">
             
             <!-- Left Side: Config & Keys -->
-            <section class="card config-card">
-                <h2><span class="icon">🔑</span> Configured Keys</h2>
-                <p class="description">Loaded from local owner-only configurations.</p>
-                <div class="keys-list" id="keysList">
-                    <div class="key-item placeholder">Loading keys from local server...</div>
-                </div>
-            </section>
+            <div class="left-column" style="display: flex; flex-direction: column; gap: 30px;">
+                <section class="card config-card">
+                    <h2><span class="icon">🔑</span> Configured Keys</h2>
+                    <p class="description">Loaded from local owner-only configurations.</p>
+                    <div class="keys-list" id="keysList">
+                        <div class="key-item placeholder">Loading keys from local server...</div>
+                    </div>
+                </section>
+            </div>
 
             <!-- Center/Right: Contract Controls -->
             <div class="control-column">

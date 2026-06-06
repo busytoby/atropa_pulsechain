@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Interaction Terminal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Ethers v6 CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation / Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">ATROPA</span>
+                <span class="subtitle">Contract Console</span>
+            </div>
+            <div class="header-actions">
+                <a href="/wallet.html" class="btn btn-secondary">← Back to Wallet Hub</a>
+                <div class="network-badge" id="networkBadge">Disconnected</div>
+                <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Panel: Contract Info & Metadata -->
+            <section class="card">
+                <h2><span class="icon">ℹ️</span> Target Contract</h2>
+                <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                    <div><strong>Alias:</strong> <span id="contractName" style="color: var(--neon-blue); font-family: 'Orbitron', sans-serif;">Loading...</span></div>
+                    <div><strong>Address:</strong> <span id="contractAddress" style="color: var(--neon-purple); font-family: 'Orbitron', sans-serif;">Loading...</span></div>
+                </div>
+
+                <h3 style="margin-top: 25px; font-family: 'Orbitron', sans-serif; color: var(--neon-blue); font-size: 0.95rem;">Read State Functions</h3>
+                <div class="balances-list" id="readStateList" style="margin-top: 10px;">
+                    <div class="balance-item placeholder">No state variables parsed yet.</div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Transaction Console -->
+            <section class="card">
+                <h2><span class="icon">🛠️</span> Write Actions</h2>
+                <p class="description">Select a function below to invoke parameters.</p>
+                
+                <div id="writeConsole" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px;">
+                    <div class="form-group">
+                        <label for="functionSelect">Select Function:</label>
+                        <select id="functionSelect" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                            <option>Loading functions...</option>
+                        </select>
+                    </div>
+
+                    <div id="inputsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+                    <button class="btn btn-primary btn-block" id="btnExecuteAction" style="margin-top: 10px;">Execute Transaction</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Console / Logger Terminal -->
+        <footer>
+            <div class="terminal-header">
+                <h3>Console Execution Receipts</h3>
+                <button class="btn-clear" id="btnClearLogs">Clear</button>
+            </div>
+            <div class="terminal-body" id="consoleLogs">
+                <div class="log-line info">Console loaded. Reading ABI from compiled solidity folder...</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let provider;
+        let signer;
+        let contractAddress;
+        let contractName;
+        let contractAbi = [];
+        let contract;
+
+        const btnConnect = document.getElementById("btnConnect");
+        const networkBadge = document.getElementById("networkBadge");
+        const consoleLogs = document.getElementById("consoleLogs");
+        const btnClearLogs = document.getElementById("btnClearLogs");
+        const functionSelect = document.getElementById("functionSelect");
+        const inputsContainer = document.getElementById("inputsContainer");
+        const btnExecuteAction = document.getElementById("btnExecuteAction");
+
+        function log(msg, type = "info") {
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement("div");
+            line.className = `log-line ${type}`;
+            line.innerText = `[${time}] ${msg}`;
+            consoleLogs.appendChild(line);
+            consoleLogs.scrollTop = consoleLogs.scrollHeight;
+        }
+
+        btnClearLogs.addEventListener("click", () => {
+            consoleLogs.innerHTML = "";
+            log("Console cleared.");
+        });
+
+        // Parse query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        contractAddress = urlParams.get("address");
+        contractName = urlParams.get("name") || "Contract";
+
+        document.getElementById("contractAddress").innerText = contractAddress;
+        document.getElementById("contractName").innerText = contractName;
+
+        // Map contract aliases to their compile file source
+        const contractFilesMap = {
+            "VMREQ": "00b_vmreq.sol",
+            "SHAFactory": "02c_shafactory.sol",
+            "SHIOFactory": "03c_shiofactory.sol",
+            "YI": "04_yi.sol",
+            "ZHENG": "05_zheng.sol",
+            "ZHOU": "06_zhou.sol",
+            "YAU": "07_yau.sol",
+            "YANG": "08_yang.sol",
+            "SIU": "09_siu.sol",
+            "VOID": "10_void.sol",
+            "ATTRIBUTE": "attribute.sol",
+            "LAUFactory": "11c_laufactory.sol",
+            "STRINGLIB": "stringlib.sol",
+            "HECKE": "Mocks.sol",
+            "COREREACTIONSLIB": "reactions_core.sol",
+            "CHO": "01_cho.sol",
+            "MAP": "map.sol",
+            "TestLAU": "11_lau.sol",
+            "mariarahelLau": "11_lau.sol",
+            "VOID_QING": "03_qing.sol",
+            "QI": "01_qi.sol",
+            "MAI": "02_mai.sol",
+            "XIA": "03_xia.sol",
+            "XIE": "04_xie.sol",
+            "CHAN": "01_chan.sol",
+            "SEI": "01_sei.sol",
+            "CHOA": "02_choa.sol",
+            "CHEON": "02_cheon.sol",
+            "localPkminter": "pkminter.sol",
+            "PKMinter": "pkminter.sol"
+        };
+
+        async function connectWallet() {
+            if (typeof window.ethereum === "undefined") {
+                log("No wallet detected.", "error");
+                return;
+            }
+            try {
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                const address = await signer.getAddress();
+                btnConnect.innerText = `${address.substring(0,6)}...${address.substring(address.length - 4)}`;
+                log(`Connected wallet: ${address}`, "success");
+
+                const network = await provider.getNetwork();
+                let networkName = `Chain ID: ${network.chainId}`;
+                if (network.chainId === 31337n) networkName = "Localhost (Anvil)";
+                networkBadge.innerText = networkName;
+                networkBadge.className = "network-badge connected";
+
+                if (contractAbi.length > 0) {
+                    contract = new ethers.Contract(contractAddress, contractAbi, signer);
+                }
+            } catch (err) {
+                log(`Connection failed: ${err.message}`, "error");
+            }
+        }
+
+        async function loadContractAbi() {
+            const file = contractFilesMap[contractName];
+            if (!file) {
+                log(`No ABI file mapping found for ${contractName}`, "error");
+                return;
+            }
+
+            try {
+                // Query server API for local compiled JSON
+                const res = await fetch("/api/config");
+                const config = await res.json();
+                
+                // Get the ABI from the build outputs
+                const artifactRes = await fetch(`/Wallet/bin/Contracts/${file}.json`);
+                if (!artifactRes.ok) throw new Error("Artifact compile output missing");
+                const artifact = await artifactRes.json();
+                
+                let matchingContractName = contractName;
+                if (contractName === "mariarahelLau" || contractName === "TestLAU") {
+                    matchingContractName = "LAU";
+                } else if (contractName === "VOID_QING") {
+                    matchingContractName = "QING";
+                } else if (contractName === "HECKE") {
+                    matchingContractName = "MockHecke";
+                }
+
+                let targetAbi;
+                for (const key of Object.keys(artifact.contracts)) {
+                    if (key.endsWith(`:${matchingContractName}`)) {
+                        targetAbi = artifact.contracts[key].abi;
+                        break;
+                    }
+                }
+
+                if (!targetAbi) throw new Error("Could not find matching contract ABI inside file");
+                contractAbi = targetAbi;
+                log(`Successfully loaded ABI containing ${contractAbi.length} items.`, "success");
+
+                // Initialize local background reader contract
+                const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                const readOnlyContract = new ethers.Contract(contractAddress, contractAbi, tempProvider);
+
+                populateUI(readOnlyContract);
+            } catch (e) {
+                log(`Failed to load ABI: ${e.message}`, "error");
+            }
+        }
+
+        async function populateUI(readOnlyContract) {
+            const reads = contractAbi.filter(x => x.type === "function" && (x.stateMutability === "view" || x.stateMutability === "pure"));
+            const writes = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
+
+            // Populate Read state fields
+            const readStateList = document.getElementById("readStateList");
+            readStateList.innerHTML = "";
+            
+            for (const r of reads) {
+                if (r.inputs.length === 0) {
+                    try {
+                        const val = await readOnlyContract[r.name]();
+                        const item = document.createElement("div");
+                        item.className = "balance-item";
+                        item.innerHTML = `
+                            <span class="balance-token">${r.name}()</span>
+                            <span class="balance-value" style="font-size: 0.95rem; font-family: monospace;">${val.toString()}</span>
+                        `;
+                        readStateList.appendChild(item);
+                    } catch (e) {
+                        // Skip if function reverts
+                    }
+                }
+            }
+
+            // Populate Write selector
+            functionSelect.innerHTML = "";
+            writes.forEach((w, index) => {
+                const opt = document.createElement("option");
+                opt.value = index;
+                opt.innerText = `${w.name}(${w.inputs.map(x => x.type).join(",")})`;
+                functionSelect.appendChild(opt);
+            });
+
+            functionSelect.addEventListener("change", () => renderInputs(writes));
+            renderInputs(writes);
+        }
+
+        function renderInputs(writes) {
+            const w = writes[functionSelect.value];
+            inputsContainer.innerHTML = "";
+            if (!w) return;
+
+            w.inputs.forEach((input, index) => {
+                const group = document.createElement("div");
+                group.className = "form-group";
+                group.innerHTML = `
+                    <label for="input_${index}">${input.name} (${input.type}):</label>
+                    <input type="text" id="input_${index}" placeholder="Value..." class="input-glow" style="width: 100%;">
+                `;
+                inputsContainer.appendChild(group);
+            });
+        }
+
+        btnExecuteAction.addEventListener("click", async () => {
+            if (!signer) {
+                log("Please connect your wallet first.", "warning");
+                return;
+            }
+
+            const writes = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
+            const w = writes[functionSelect.value];
+            if (!w) return;
+
+            const args = [];
+            for (let index = 0; index < w.inputs.length; index++) {
+                const val = document.getElementById(`input_${index}`).value.trim();
+                // Basic array / integer formatting
+                if (w.inputs[index].type.endsWith("[]")) {
+                    args.push(JSON.parse(val));
+                } else if (w.inputs[index].type.startsWith("uint") || w.inputs[index].type.startsWith("int")) {
+                    args.push(BigInt(val));
+                } else {
+                    args.push(val);
+                }
+            }
+
+            log(`Executing write transaction for function ${w.name}...`);
+            try {
+                const tx = await contract[w.name](...args);
+                log(`Transaction broadcasted. Hash: ${tx.hash}. Waiting for confirmation...`, "info");
+                const receipt = await tx.wait();
+                log(`Confirmed in block ${receipt.blockNumber}. Status: ${receipt.status === 1 ? "SUCCESS" : "FAILED"}`, "success");
+            } catch (err) {
+                log(`Transaction failed: ${err.message}`, "error");
+            }
+        });
+
+        btnConnect.addEventListener("click", connectWallet);
+        window.addEventListener("DOMContentLoaded", () => {
+            loadContractAbi();
+            connectWallet();
+        });
+    </script>
+</body>
+</html>

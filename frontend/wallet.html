@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dysnomia Wallet Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Ethers v6 CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation / Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">ATROPA</span>
+                <span class="subtitle">Wallet Hub</span>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+                <div class="network-badge" id="networkBadge">Disconnected</div>
+                <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Twin columns: DEPLOYER WALLET & CONNECTED WALLET -->
+        <main class="dashboard-grid">
+            
+            <!-- Column 1: Deployer Wallet -->
+            <section class="card">
+                <h2><span class="icon">🤖</span> Deployer Wallet Holdings</h2>
+                <p class="contract-addr-display">Address: <code>0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</code></p>
+                <div class="balances-list" id="deployerBalancesList">
+                    <div class="balance-item placeholder">Loading deployer balances...</div>
+                </div>
+            </section>
+
+            <!-- Column 2: Connected Browser Wallet -->
+            <section class="card">
+                <h2><span class="icon">🦊</span> Connected Wallet Holdings</h2>
+                <p class="contract-addr-display">Address: <code id="userAddressVal">Disconnected</code></p>
+                <div class="balances-list" id="userBalancesList">
+                    <div class="balance-item placeholder">Please connect wallet to view...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="terminal-header">
+                <h3>Wallet Status Console</h3>
+            </div>
+            <div class="terminal-body" id="consoleLogs">
+                <div class="log-line info">Dashboard running. Wallet connection recommended to view local keys alongside deployer wallet.</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let provider;
+        let signer;
+        let config = {};
+
+        const deployerAddr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+        const btnConnect = document.getElementById("btnConnect");
+        const networkBadge = document.getElementById("networkBadge");
+        const consoleLogs = document.getElementById("consoleLogs");
+        const userAddressVal = document.getElementById("userAddressVal");
+
+        function log(msg, type = "info") {
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement("div");
+            line.className = `log-line ${type}`;
+            line.innerText = `[${time}] ${msg}`;
+            consoleLogs.appendChild(line);
+            consoleLogs.scrollTop = consoleLogs.scrollHeight;
+        }
+
+        async function updateHoldings(userAddress, configData) {
+            const deployerBalancesList = document.getElementById("deployerBalancesList");
+            const userBalancesList = document.getElementById("userBalancesList");
+            
+            deployerBalancesList.innerHTML = "<div class='balance-item placeholder'>Updating...</div>";
+            if (userAddress) {
+                userBalancesList.innerHTML = "<div class='balance-item placeholder'>Updating...</div>";
+            }
+
+            try {
+                const deployerBalances = [];
+                const userBalances = [];
+
+                // 1. Get Native balances
+                const deployerNativeBal = await provider.getBalance(deployerAddr);
+                deployerBalances.push({
+                    name: "Native Token (PLS/ETH)",
+                    value: parseFloat(ethers.formatEther(deployerNativeBal)).toFixed(2)
+                });
+
+                if (userAddress) {
+                    const userNativeBal = await provider.getBalance(userAddress);
+                    userBalances.push({
+                        name: "Native Token (PLS/ETH)",
+                        value: parseFloat(ethers.formatEther(userNativeBal)).toFixed(2)
+                    });
+                }
+
+                // 2. Query all contract tokens deployed on localhost
+                if (configData.networks && configData.networks.localhost) {
+                    const localhostContracts = configData.networks.localhost;
+                    const erc20Abi = [
+                        "function balanceOf(address) external view returns (uint256)",
+                        "function symbol() external view returns (string)"
+                    ];
+
+                    const tokensToQuery = [];
+                    for (const [key, val] of Object.entries(localhostContracts)) {
+                        if (key !== "immutableFactoryAddress" && ethers.isAddress(val)) {
+                            tokensToQuery.push({
+                                address: val,
+                                defaultName: key.replace("Address", "")
+                            });
+                        }
+                    }
+
+                    for (const token of tokensToQuery) {
+                        try {
+                            const contract = new ethers.Contract(token.address, erc20Abi, provider);
+                            const symbol = await contract.symbol().catch(() => "DYS");
+                            
+                            // Fetch Deployer Balance
+                            const depBal = await contract.balanceOf(deployerAddr);
+                            deployerBalances.push({
+                                name: `${token.defaultName} (${symbol})`,
+                                value: parseFloat(ethers.formatEther(depBal)).toFixed(2),
+                                address: token.address,
+                                tokenName: token.defaultName
+                            });
+
+                            // Fetch Connected User Balance
+                            if (userAddress) {
+                                const usrBal = await contract.balanceOf(userAddress);
+                                userBalances.push({
+                                    name: `${token.defaultName} (${symbol})`,
+                                    value: parseFloat(ethers.formatEther(usrBal)).toFixed(2),
+                                    address: token.address,
+                                    tokenName: token.defaultName
+                                });
+                            }
+                        } catch (e) {
+                            // Contract is not an ERC20 or not fully initialized yet
+                        }
+                    }
+                }
+
+                // Render Deployer list
+                deployerBalancesList.innerHTML = "";
+                deployerBalances.forEach(b => {
+                    const item = document.createElement("div");
+                    item.className = "balance-item";
+                    if (b.address) {
+                        item.style.cursor = "pointer";
+                        item.style.border = "1px dashed var(--neon-blue)";
+                        item.addEventListener("click", () => {
+                            window.open(`/console.html?address=${b.address}&name=${b.tokenName}`, "_blank");
+                        });
+                        item.title = `Click to open Console for ${b.tokenName}`;
+                    }
+                    item.innerHTML = `
+                        <span class="balance-token">${b.name}</span>
+                        <span class="balance-value">${b.value}</span>
+                    `;
+                    deployerBalancesList.appendChild(item);
+                });
+
+                // Render User list
+                if (userAddress) {
+                    userBalancesList.innerHTML = "";
+                    userBalances.forEach(b => {
+                        const item = document.createElement("div");
+                        item.className = "balance-item";
+                        if (b.address) {
+                            item.style.cursor = "pointer";
+                            item.style.border = "1px dashed var(--neon-purple)";
+                            item.addEventListener("click", () => {
+                                window.open(`/console.html?address=${b.address}&name=${b.tokenName}`, "_blank");
+                            });
+                            item.title = `Click to open Console for ${b.tokenName}`;
+                        }
+                        item.innerHTML = `
+                            <span class="balance-token">${b.name}</span>
+                            <span class="balance-value">${b.value}</span>
+                        `;
+                        userBalancesList.appendChild(item);
+                    });
+                }
+
+                log("Wallet holdings successfully updated.", "success");
+            } catch (err) {
+                log(`Failed to fetch holdings: ${err.message}`, "error");
+            }
+        }
+
+        async function connectWallet() {
+            if (typeof window.ethereum === "undefined") {
+                log("No Browser wallet detected.", "error");
+                return;
+            }
+            try {
+                log("Requesting wallet connection...");
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                const address = await signer.getAddress();
+                userAddressVal.innerText = address;
+                
+                btnConnect.innerText = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+                log(`Connected: ${address}`, "success");
+
+                const network = await provider.getNetwork();
+                let networkName = `Chain ID: ${network.chainId}`;
+                if (network.chainId === 31337n) networkName = "Localhost (Anvil)";
+                else if (network.chainId === 369n) networkName = "PulseChain Mainnet";
+
+                networkBadge.innerText = networkName;
+                networkBadge.className = "network-badge connected";
+
+                await updateHoldings(address, config);
+            } catch (err) {
+                log(`Connection failed: ${err.message}`, "error");
+            }
+        }
+
+        async function init() {
+            try {
+                const res = await fetch("/api/config");
+                if (!res.ok) throw new Error("Failed to fetch config");
+                config = await res.json();
+
+                // Setup local provider to view deployer holdings directly
+                provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                await updateHoldings(null, config);
+            } catch (e) {
+                log(`Init error: ${e.message}`, "error");
+            }
+        }
+
+        btnConnect.addEventListener("click", connectWallet);
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>
