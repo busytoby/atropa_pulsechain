@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -15,6 +17,7 @@
 #include "esp_spiffs.h"
 #include "nvs_flash.h"
 #include "driver/uart.h"
+#include "driver/usb_serial_jtag.h"
 
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
@@ -389,19 +392,19 @@ void ProcessCmd(const char *cmd) {
 
 // FreeRTOS Worker Task
 void app_loop_task(void *pvParameters) {
-    uint8_t rx_data[128];
     char serial_buffer[232];
     int serial_idx = 0;
 
     last_tx = esp_log_timestamp();
 
     while (1) {
-        // Handle incoming Serial logs/commands
-        int rxBytes = uart_read_bytes(UART_NUM_0, rx_data, sizeof(rx_data) - 1, pdMS_TO_TICKS(10));
+        // Handle incoming Serial logs/commands via native USB-Serial/JTAG driver
+        uint8_t rx_buf[64];
+        int rxBytes = usb_serial_jtag_read_bytes(rx_buf, sizeof(rx_buf), 0);
         if (rxBytes > 0) {
             for (int i = 0; i < rxBytes; i++) {
-                char c = rx_data[i];
-                if (c == '\n' || c == '\r') {
+                char ch = (char)rx_buf[i];
+                if (ch == '\n' || ch == '\r') {
                     serial_buffer[serial_idx] = '\0';
                     if (serial_buffer[0] == ':') {
                         ProcessCmd(serial_buffer + 1);
@@ -411,7 +414,7 @@ void app_loop_task(void *pvParameters) {
                     }
                     serial_idx = 0;
                 } else if (serial_idx < sizeof(serial_buffer) - 1) {
-                    serial_buffer[serial_idx++] = c;
+                    serial_buffer[serial_idx++] = ch;
                 }
             }
         }
@@ -449,17 +452,11 @@ extern "C" void app_main(void) {
 
     mutex = xSemaphoreCreateMutex();
 
-    // Initialize UART for Serial I/O
-    uart_config_t uart_config = {};
-    uart_config.baud_rate = 115200;
-    uart_config.data_bits = UART_DATA_8_BITS;
-    uart_config.parity = UART_PARITY_DISABLE;
-    uart_config.stop_bits = UART_STOP_BITS_1;
-    uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-    uart_config.source_clk = UART_SCLK_DEFAULT;
-
-    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_0, 1024 * 2, 0, 0, NULL, 0));
-    ESP_ERROR_CHECK(uart_param_config(UART_NUM_0, &uart_config));
+    // Initialize USB Serial/JTAG driver for input commands
+    usb_serial_jtag_driver_config_t usb_config = {};
+    usb_config.rx_buffer_size = 512;
+    usb_config.tx_buffer_size = 512;
+    usb_serial_jtag_driver_install(&usb_config);
 
     // Get chip ID (efuse MAC)
     uint8_t mac[6];

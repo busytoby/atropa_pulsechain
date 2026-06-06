@@ -16,3 +16,13 @@ CONFIG_COMPILER_CXX_EXCEPTIONS=y
 
 # mbedTLS customizations (ensure MPI algorithms are enabled)
 CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN=y
+
+# Custom partition table
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
+
+# Enable native USB-Serial/JTAG console for input/output
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+# CONFIG_ESP_CONSOLE_UART_DEFAULT is not set
+
