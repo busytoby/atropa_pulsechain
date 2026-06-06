@@ -55,7 +55,10 @@ const server = http.createServer((req, res) => {
     let absolutePath = path.join(__dirname, "../frontend", filePath);
     
     // Safety check to prevent directory traversal
-    if (!absolutePath.startsWith(path.join(__dirname, "../frontend"))) {
+    if (req.url.startsWith("/Wallet/bin/Contracts/")) {
+        // Expose Solidity compiled output files securely
+        absolutePath = path.join(__dirname, "..", filePath);
+    } else if (!absolutePath.startsWith(path.join(__dirname, "../frontend"))) {
         res.writeHead(403, { "Content-Type": "text/plain" });
         res.end("Forbidden");
         return;
