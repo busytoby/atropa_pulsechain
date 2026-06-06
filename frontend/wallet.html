@@ -134,41 +134,7 @@
                         }
                     }
 
-                    // Add ImmutableFactory Yul Object manually to deployer and user lists
-                    if (factoryAddress) {
-                        deployerBalances.push({
-                            name: "ImmutableFactory (YUL)",
-                            value: "Deployed",
-                            address: factoryAddress,
-                            tokenName: "ImmutableFactory"
-                        });
-                        if (userAddress) {
-                            userBalances.push({
-                                name: "ImmutableFactory (YUL)",
-                                value: "Deployed",
-                                address: factoryAddress,
-                                tokenName: "ImmutableFactory"
-                            });
-                        }
-                    }
 
-                    // Add dynamically created Genesis/Yul objects manually to deployer and user lists
-                    yulObjectsToQuery.forEach(yulObj => {
-                        deployerBalances.push({
-                            name: `${yulObj.name} (YUL)`,
-                            value: "Deployed",
-                            address: yulObj.address,
-                            tokenName: yulObj.name
-                        });
-                        if (userAddress) {
-                            userBalances.push({
-                                name: `${yulObj.name} (YUL)`,
-                                value: "Deployed",
-                                address: yulObj.address,
-                                tokenName: yulObj.name
-                            });
-                        }
-                    });
 
                     for (const token of tokensToQuery) {
                         try {

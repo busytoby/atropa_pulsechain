@@ -183,7 +183,7 @@
             if (!file) {
                 if (contractName.toLowerCase().startsWith("genesis")) {
                     file = "genesis.yul";
-                } else if (contractName.toLowerCase().startsWith("pkminter") || contractName.toLowerCase().startsWith("pki")) {
+                } else if (contractName.toLowerCase().startsWith("pk")) {
                     file = "pkminter.sol";
                 }
             }
@@ -269,8 +269,10 @@
                         matchingContractName = "MockHecke";
                     } else if (contractName.toLowerCase().startsWith("genesis")) {
                         matchingContractName = "Genesis";
-                    } else if (contractName.toLowerCase().startsWith("pkminter") || contractName.toLowerCase().startsWith("pki")) {
+                    } else if (contractName.toLowerCase() === "pkminter") {
                         matchingContractName = "PKMinter";
+                    } else if (contractName.toLowerCase().startsWith("pk")) {
+                        matchingContractName = "TT";
                     }
 
                     for (const key of Object.keys(artifact.contracts)) {
