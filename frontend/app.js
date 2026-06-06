@@ -252,11 +252,6 @@ keySourceMode.addEventListener("change", () => {
 
 // Deploy TT Token via PKMinter
 btnDeployTT.addEventListener("click", async () => {
-    if (!signer) {
-        log("Connect your wallet first.", "warning");
-        return;
-    }
-
     const name = tokenName.value.trim();
     const symbol = tokenSymbol.value.trim();
     const nonce = ttNonce.value.trim();
@@ -325,7 +320,15 @@ btnDeployTT.addEventListener("click", async () => {
 
     log("Preparing PKMinter.New() transaction...");
     try {
-        const pkMinter = new ethers.Contract(PKMINTER_ADDRESS, PKMINTER_ABI, signer);
+        let activeSigner = signer;
+        if (!activeSigner) {
+            log("No browser wallet connected. Falling back to local deployer wallet...", "info");
+            const localProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);
+        }
+
+        const pkMinter = new ethers.Contract(PKMINTER_ADDRESS, PKMINTER_ABI, activeSigner);
         
         log("Sending transaction to PKMinter...");
         const tx = await pkMinter.New(
@@ -340,6 +343,39 @@ btnDeployTT.addEventListener("click", async () => {
         log(`Transaction sent. Hash: ${tx.hash}. Waiting for confirmation...`, "info");
         const receipt = await tx.wait();
         log(`TT Token Deployed! Confirmed in block ${receipt.blockNumber}. Status: ${receipt.status === 1 ? "SUCCESS" : "FAILED"}`, "success");
+        
+        // Save dynamically generated keys to the local server configuration relative to the address
+        if (keySourceMode.value === "random") {
+            log("Saving generated keys locally inside config/user_config.json...");
+            let deployedAddress = null;
+            if (receipt.logs && receipt.logs.length > 0) {
+                for (const rLog of receipt.logs) {
+                    if (rLog.address && rLog.address.toLowerCase() !== PKMINTER_ADDRESS.toLowerCase()) {
+                        deployedAddress = rLog.address;
+                    }
+                }
+            }
+            if (!deployedAddress) {
+                deployedAddress = ethers.getCreate2Address(PKMINTER_ADDRESS, nonce, ethers.keccak256("0x"));
+            }
+            
+            const saveRes = await fetch("/api/save-keys", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    address: deployedAddress,
+                    keys: activeKeys,
+                    name: name
+                })
+            });
+
+            if (saveRes.ok) {
+                log(`Successfully saved keys for ${name} (${deployedAddress}) in config.`, "success");
+                loadConfigKeys();
+            }
+        }
     } catch (err) {
         log(`PKMinter deployment failed: ${err.message}`, "error");
     }
@@ -356,11 +392,6 @@ const genesisSymbol = document.getElementById("genesisSymbol");
 genesisSalt.value = ethers.hexlify(ethers.randomBytes(32));
 
 btnLaunchGenesis.addEventListener("click", async () => {
-    if (!signer) {
-        log("Connect your wallet first.", "warning");
-        return;
-    }
-
     const complexity = parseInt(genesisComplexity.value) || 1;
     const salt = genesisSalt.value.trim();
     const tokenNameStr = genesisName.value.trim();
@@ -400,10 +431,18 @@ btnLaunchGenesis.addEventListener("click", async () => {
     }
 
     // 3. Predict final address using PKMinter's deployed salt predictability or standard CREATE2 logic.
-    // However, to obtain the exact predicted address, let's submit it to PKMinter.New()
-    log("Invoking PKMinter.New() via browser wallet...");
+    log("Invoking PKMinter.New()...");
     try {
-        const pkMinter = new ethers.Contract(PKMINTER_ADDRESS, PKMINTER_ABI, signer);
+        let activeSigner = signer;
+        if (!activeSigner) {
+            log("No browser wallet connected. Falling back to local deployer wallet...", "info");
+            const localProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            // Use the standard Anvil account #0 private key
+            const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);
+        }
+
+        const pkMinter = new ethers.Contract(PKMINTER_ADDRESS, PKMINTER_ABI, activeSigner);
         const tx = await pkMinter.New(
             tokenNameStr,
             tokenSymbolStr,
