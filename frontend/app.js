@@ -60,25 +60,71 @@ async function loadConfigKeys() {
         if (!res.ok) throw new Error("Failed to fetch config");
         config = await res.json();
         
-        privateKeys = config.default.keys || [];
         keysList.innerHTML = "";
         walletAddresses = [];
-
-        privateKeys.forEach((key, index) => {
-            const wallet = new ethers.Wallet(key);
-            walletAddresses.push(wallet.address);
-            
-            const item = document.createElement("div");
-            item.className = "key-item";
-            item.innerHTML = `
-                <div class="key-index">Key #${index + 1}</div>
-                <div class="key-address">Address: ${wallet.address}</div>
-                <div class="key-privkey">Private: ${key.substring(0, 8)}...${key.substring(key.length - 8)}</div>
-            `;
-            keysList.appendChild(item);
-        });
         
-        log(`Loaded ${privateKeys.length} keys from user_config.json successfully.`, "success");
+        // Disregard default static config keys, map dynamically from saved_keys
+        const savedKeysMap = config.saved_keys || {};
+        const addressList = Object.keys(savedKeysMap);
+        
+        if (addressList.length === 0) {
+            keysList.innerHTML = `<div class="balance-item placeholder">No dynamically deployed metadata key sets found.</div>`;
+            return;
+        }
+
+        addressList.forEach((address) => {
+            const keysArray = savedKeysMap[address];
+            
+            // Find name alias in localhost config mapping
+            let nameAlias = "Genesis PK";
+            if (config.networks && config.networks.localhost) {
+                for (const [name, val] of Object.entries(config.networks.localhost)) {
+                    if (val.toLowerCase() === address.toLowerCase()) {
+                        nameAlias = name;
+                        break;
+                    }
+                }
+            }
+
+            const sectionDiv = document.createElement("div");
+            sectionDiv.style.marginBottom = "20px";
+            sectionDiv.style.padding = "10px";
+            sectionDiv.style.border = "1px solid rgba(0, 242, 254, 0.15)";
+            sectionDiv.style.borderRadius = "8px";
+            sectionDiv.style.background = "rgba(0,0,0,0.2)";
+
+            sectionDiv.innerHTML = `
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 0.95rem; color: var(--neon-blue); margin-bottom: 8px;">
+                    ${nameAlias}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; word-break: break-all;">
+                    Address: ${address}
+                </div>
+                <div class="keys-grid" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            `;
+
+            const gridDiv = sectionDiv.querySelector(".keys-grid");
+
+            keysArray.forEach((key, index) => {
+                const wallet = new ethers.Wallet(key);
+                // Dynamically build walletAddresses list for standard index usage
+                walletAddresses.push(wallet.address);
+                
+                const item = document.createElement("div");
+                item.className = "key-item";
+                item.style.padding = "8px";
+                item.style.background = "rgba(255,255,255,0.02)";
+                item.innerHTML = `
+                    <div class="key-index" style="font-size: 0.8rem;">Key #${index + 1}</div>
+                    <div class="key-address" style="font-size: 0.85rem;">Address: ${wallet.address}</div>
+                    <div class="key-privkey" style="font-size: 0.75rem;">Private: ${key.substring(0, 8)}...${key.substring(key.length - 8)}</div>
+                `;
+                gridDiv.appendChild(item);
+            });
+            keysList.appendChild(sectionDiv);
+        });
+
+        log(`Loaded ${addressList.length} deployed metadata key sets successfully.`, "success");
     } catch (err) {
         log(`Could not load local keys: ${err.message}. Make sure server.js is running.`, "error");
     }
