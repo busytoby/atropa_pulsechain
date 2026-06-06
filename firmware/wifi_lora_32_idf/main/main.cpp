@@ -22,12 +22,106 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/bignum.h"
+#include "mbedtls/sha256.h"
+#include "mbedtls/ecdsa.h"
+#include "esp_random.h"
 
 #include "ssd1306_i2c.h"
 #include "lora_sx1262.h"
 
 static const char *TAG = "MainApp";
 static SemaphoreHandle_t mutex;
+
+// Console security variables
+static uint8_t current_challenge[32];
+static bool console_locked = true;
+
+// Master Public Key coordinates (secp256k1)
+static const uint8_t MASTER_PUBKEY_X[32] = {
+    0xc1, 0xa7, 0x22, 0xe4, 0xae, 0x9c, 0x88, 0x50, 0x86, 0xaf, 0x22, 0x4d, 0x25, 0x41, 0x6e, 0x88,
+    0xf9, 0x41, 0x1d, 0x84, 0x06, 0xe0, 0xc6, 0xd0, 0x74, 0x6f, 0x8b, 0x1b, 0x64, 0xd4, 0x50, 0x09
+};
+static const uint8_t MASTER_PUBKEY_Y[32] = {
+    0x50, 0xd0, 0x8d, 0x44, 0xb4, 0x4b, 0x77, 0xd1, 0xef, 0xf0, 0x04, 0x08, 0xf4, 0xc7, 0x10, 0xb1,
+    0xd7, 0xd1, 0x5e, 0xea, 0x70, 0x1c, 0xb2, 0x00, 0x43, 0xda, 0x1b, 0xdf, 0xed, 0xab, 0x5a, 0x24
+};
+
+void GenerateChallenge() {
+    esp_fill_random(current_challenge, sizeof(current_challenge));
+    printf("# Challenge: ");
+    for (int idx = 0; idx < 32; idx++) {
+        printf("%02X", current_challenge[idx]);
+    }
+    printf("\n");
+}
+
+bool VerifySignature(const uint8_t *r_bin, const uint8_t *s_bin) {
+    mbedtls_ecp_group grp;
+    mbedtls_ecp_point Q;
+
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_ecp_point_init(&Q);
+
+    int ret = mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256K1);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to load secp256k1 group: -0x%04X", -ret);
+        mbedtls_ecp_group_free(&grp);
+        mbedtls_ecp_point_free(&Q);
+        return false;
+    }
+
+    // Parse the uncompressed public key: 0x04 prefix + 32 bytes X + 32 bytes Y
+    uint8_t pubkey_bin[65];
+    pubkey_bin[0] = 0x04;
+    memcpy(pubkey_bin + 1, MASTER_PUBKEY_X, 32);
+    memcpy(pubkey_bin + 33, MASTER_PUBKEY_Y, 32);
+
+    ret = mbedtls_ecp_point_read_binary(&grp, &Q, pubkey_bin, sizeof(pubkey_bin));
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to parse public key point: -0x%04X", -ret);
+        mbedtls_ecp_group_free(&grp);
+        mbedtls_ecp_point_free(&Q);
+        return false;
+    }
+
+    // Hash current challenge using SHA-256
+    uint8_t hash[32];
+    ret = mbedtls_sha256(current_challenge, 32, hash, 0);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "SHA256 failed: -0x%04X", -ret);
+        mbedtls_ecp_group_free(&grp);
+        mbedtls_ecp_point_free(&Q);
+        return false;
+    }
+
+    printf("# C++ Hash: ");
+    for (int idx = 0; idx < 32; idx++) printf("%02X", hash[idx]);
+    printf("\n");
+
+    // Validate public key
+    ret = mbedtls_ecp_check_pubkey(&grp, &Q);
+    if (ret != 0) {
+        printf("# Invalid public key: -0x%04X\n", -ret);
+    }
+
+    mbedtls_mpi r, s;
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+    mbedtls_mpi_read_binary(&r, r_bin, 32);
+    mbedtls_mpi_read_binary(&s, s_bin, 32);
+
+    ret = mbedtls_ecdsa_verify(&grp, hash, 32, &Q, &r, &s);
+    if (ret != 0) {
+        printf("# Verify error: -0x%04X\n", -ret);
+    }
+
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    mbedtls_ecp_group_free(&grp);
+    mbedtls_ecp_point_free(&Q);
+
+    return (ret == 0);
+}
 
 // Display constants
 #define SDA_OLED_PIN    18
@@ -364,8 +458,60 @@ void SendToRadio(const char* txt) {
     idlemod = 1;
 }
 
+// Helper to convert hex character to value
+static inline uint8_t hex_to_val(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return 0;
+}
+
 // Custom command processor for serial inputs
 void ProcessCmd(const char *cmd) {
+    if (console_locked) {
+        if (cmd[0] == 'a' && cmd[1] == 'u' && cmd[2] == 't' && cmd[3] == 'h') {
+            const char *p = cmd + 4;
+            while (*p == ' ') p++;
+            uint8_t r_bin[32];
+            uint8_t s_bin[32];
+            bool parse_ok = true;
+            for (int idx = 0; idx < 32; idx++) {
+                if (!isxdigit((unsigned char)p[0]) || !isxdigit((unsigned char)p[1])) {
+                    parse_ok = false;
+                    break;
+                }
+                r_bin[idx] = (hex_to_val(p[0]) << 4) | hex_to_val(p[1]);
+                p += 2;
+            }
+            while (*p == ' ') p++;
+            for (int idx = 0; idx < 32; idx++) {
+                if (!isxdigit((unsigned char)p[0]) || !isxdigit((unsigned char)p[1])) {
+                    parse_ok = false;
+                    break;
+                }
+                s_bin[idx] = (hex_to_val(p[0]) << 4) | hex_to_val(p[1]);
+                p += 2;
+            }
+            printf("# parsed R: ");
+            for (int idx = 0; idx < 32; idx++) printf("%02x", r_bin[idx]);
+            printf("\n");
+            printf("# parsed S: ");
+            for (int idx = 0; idx < 32; idx++) printf("%02x", s_bin[idx]);
+            printf("\n");
+
+            if (parse_ok && VerifySignature(r_bin, s_bin)) {
+                console_locked = false;
+                printf("# AUTH SUCCESS\n");
+            } else {
+                printf("# AUTH FAILED\n");
+                GenerateChallenge();
+            }
+        } else {
+            printf("# LOCKED: Signature verification required. Run :auth <r_hex> <s_hex>\n");
+        }
+        return;
+    }
+
     if (cmd[0] == 'a') {
         printf("# random = %lu\n", (unsigned long)lora_radio_random());
     } else if (cmd[0] == 'b') {
@@ -385,6 +531,10 @@ void ProcessCmd(const char *cmd) {
         printf("# rxCount = %d\n", rxNumber);
     } else if (cmd[0] == 't') {
         printf("# txCount = %d\n", txNumber);
+    } else if (cmd[0] == 'l' && cmd[1] == 'o' && cmd[2] == 'c' && cmd[3] == 'k') {
+        console_locked = true;
+        printf("# Console locked.\n");
+        GenerateChallenge();
     } else if (cmd[0] == 'x') {
         SaveConfig();
     }
@@ -516,6 +666,8 @@ extern "C" void app_main(void) {
     lora_radio_set_channel(954114361); // 954.114 MHz
     lora_radio_set_tx_config(2, 0, 15, 3, 9); // +2dBm, SF15, CR4/7, Preamble 9
     lora_radio_set_rx_config(0, 15, 3, 9);
+
+    GenerateChallenge();
 
     ESP_LOGI(TAG, "Starting main system worker task...");
     xTaskCreate(app_loop_task, "app_loop_task", 1024 * 4, NULL, 5, NULL);
