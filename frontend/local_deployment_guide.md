@@ -81,3 +81,29 @@ node scripts/get_lau_metrics.js
 * **Identity (Pole):** `261640507549433`
 * **Soul:** `525772616431102`
 * **Aura:** `341042560473881`
+
+---
+
+## 6. Interactive DApp Console (`console.html`)
+The **Contract Console** provides a developer-focused terminal to interact with any deployed Solidity or Yul system:
+* **Dynamic ABI Loading**: Enter address and alias query parameters (e.g. `/console.html?address=0x...&name=VMREQ`) to retrieve local Solc JSON build artifacts automatically.
+* **Read State Variables**: Displays real-time values of all read-only fields. Includes input boxes for functions requiring arguments (like `balanceOf(address)`) and interactive querying.
+* **Write Transactions Execution**: Renders input parameters and allows signing and broadcasting write functions directly using the connected browser wallet (such as MetaMask) or local Anvil credentials.
+
+---
+
+## 7. Wallet Hub (`wallet.html`)
+The twin-column **Wallet Hub** lists contract holdings categorized for verification:
+1. **Deployer Wallet Holdings**: Automatically reads native assets and ERC20 balances for the local system deployer (`0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`) directly from the Anvil RPC node without requiring a browser wallet.
+2. **Connected Wallet Holdings**: Displays native assets and custom token balances of your active browser wallet.
+* **Console Redirection**: Click on any token row to open its console interaction interface automatically.
+* **Yul Objects Division**: Highlights custom Yul compilation entities (such as `ImmutableFactory` and `Genesis`) separately from standard ERC20 contracts.
+
+---
+
+## 8. Yul Integration and Genesis Launch Pipeline
+* **Factory Deployment**: [immutableFactory.yul](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/bin/immutableFactory.yul) and [genesis.yul](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/bin/genesis.yul) are compiled using `solc --strict-assembly`.
+* **Genesis Token Creation**: Launches a secure PK token through `PKMinter.New` with customized signers and complexities.
+* **Local Provider Fallback**: Deployments support local provider execution using default EVM wallet keys if no browser wallet is active.
+* **Config Keys Preservation**: Dynamic private key list metadata generated during the launch is automatically posted and saved to [user_config.json](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/config/user_config.json) under the token address for verification.
+
