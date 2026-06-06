@@ -177,7 +177,17 @@
         }
 
         async function loadContractAbi() {
-            const file = contractFilesMap[contractName];
+            let file = contractFilesMap[contractName];
+            
+            // Fallback dynamic resolver for dynamic token aliases (Genesis PK9, Genesis PK4, PKMinterToken_...)
+            if (!file) {
+                if (contractName.toLowerCase().startsWith("genesis")) {
+                    file = "genesis.yul";
+                } else if (contractName.toLowerCase().startsWith("pkminter") || contractName.toLowerCase().startsWith("pki")) {
+                    file = "pkminter.sol";
+                }
+            }
+
             if (!file) {
                 log(`No ABI file mapping found for ${contractName}`, "error");
                 return;
@@ -200,6 +210,10 @@
                     matchingContractName = "QING";
                 } else if (contractName === "HECKE") {
                     matchingContractName = "MockHecke";
+                } else if (contractName.toLowerCase().startsWith("genesis")) {
+                    matchingContractName = "Genesis";
+                } else if (contractName.toLowerCase().startsWith("pkminter") || contractName.toLowerCase().startsWith("pki")) {
+                    matchingContractName = "PKMinter";
                 }
 
                 let targetAbi;
