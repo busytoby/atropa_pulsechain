@@ -226,7 +226,7 @@ btnDeployFactory.addEventListener("click", async () => {
         let activeSigner = signer;
         if (!activeSigner) {
             log("No browser wallet connected. Falling back to local deployer wallet...", "info");
-            const localProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const localProvider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
             const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
             activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);
         }
@@ -337,7 +337,7 @@ btnDeployTT.addEventListener("click", async () => {
         let activeSigner = signer;
         if (!activeSigner) {
             log("No browser wallet connected. Falling back to local deployer wallet...", "info");
-            const localProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const localProvider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
             const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
             activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);
         }
@@ -451,7 +451,7 @@ btnLaunchGenesis.addEventListener("click", async () => {
         let activeSigner = signer;
         if (!activeSigner) {
             log("No browser wallet connected. Falling back to local deployer wallet...", "info");
-            const localProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const localProvider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
             // Use the standard Anvil account #0 private key
             const deployerPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
             activeSigner = new ethers.Wallet(deployerPrivateKey, localProvider);

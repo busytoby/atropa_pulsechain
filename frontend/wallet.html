@@ -365,7 +365,7 @@
                 config = await res.json();
 
                 // Setup local provider to view deployer holdings directly
-                provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                provider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
                 await updateHoldings(null, config);
             } catch (e) {
                 log(`Init error: ${e.message}`, "error");

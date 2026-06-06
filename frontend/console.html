@@ -199,7 +199,7 @@
                 const config = await res.json();
 
                 // If name-based checks fail, query the network directly to detect bytecode signature matching
-                const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                const tempProvider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
                 let deployedBytecode = "0x";
                 try {
                     deployedBytecode = await tempProvider.getCode(contractAddress);
