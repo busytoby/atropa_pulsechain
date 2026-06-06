@@ -67,6 +67,35 @@
                     <div class="result-box hidden" id="factoryResultBox">
                         <p><strong>Predicted Address:</strong> <code id="predictedAddrVal">0x</code></p>
                     </div>
+
+                    <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+
+                    <h3><span class="icon">🌌</span> Genesis Launch (Yul + PKMinter)</h3>
+                    <p class="description" style="font-size: 0.9rem;">Launch a new Genesis PK Token with random keys generated and saved relative to the contract address.</p>
+                    
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label for="genesisComplexity">Genesis Complexity:</label>
+                            <input type="number" id="genesisComplexity" value="8" min="1" max="128" class="input-glow">
+                        </div>
+                        <div class="form-group">
+                            <label for="genesisSalt">Genesis Salt (bytes32):</label>
+                            <input type="text" id="genesisSalt" placeholder="0x..." class="input-glow">
+                        </div>
+                    </div>
+
+                    <div class="grid-form" style="margin-top: 10px;">
+                        <div class="form-group">
+                            <label for="genesisName">Genesis Token Name:</label>
+                            <input type="text" id="genesisName" value="Genesis PK" class="input-glow">
+                        </div>
+                        <div class="form-group">
+                            <label for="genesisSymbol">Genesis Token Symbol:</label>
+                            <input type="text" id="genesisSymbol" value="GPK" class="input-glow">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="btnLaunchGenesis" style="margin-top: 15px;">Launch Genesis</button>
                 </section>
 
                 <!-- PKMinter & TT Token Deployer -->

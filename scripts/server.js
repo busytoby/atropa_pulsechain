@@ -33,6 +33,49 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // POST API endpoint to save deployed keys into user_config.json
+    if (req.url === "/api/save-keys" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => {
+            body += chunk.toString();
+        });
+        req.on("end", () => {
+            try {
+                const payload = JSON.parse(body);
+                const { address, keys, name } = payload;
+                if (!address || !keys || !Array.isArray(keys)) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "Invalid payload parameters" }));
+                    return;
+                }
+
+                let configData = {};
+                if (fs.existsSync(CONFIG_PATH)) {
+                    configData = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+                }
+                
+                // Ensure key structure
+                if (!configData.networks) configData.networks = {};
+                if (!configData.networks.localhost) configData.networks.localhost = {};
+                
+                // Add deployment contract address
+                configData.networks.localhost[name || `PKMinterToken_${address.substring(0, 6)}`] = address;
+
+                // Save keys mapping relative to address
+                if (!configData.saved_keys) configData.saved_keys = {};
+                configData.saved_keys[address] = keys;
+
+                fs.writeFileSync(CONFIG_PATH, JSON.stringify(configData, null, 2), "utf8");
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
     // API endpoint to serve the Markdown documentation
     if (req.url === "/api/docs") {
         const DOCS_PATH = path.join(__dirname, "../frontend/local_deployment_guide.md");

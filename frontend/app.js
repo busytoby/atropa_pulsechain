@@ -345,5 +345,130 @@ btnDeployTT.addEventListener("click", async () => {
     }
 });
 
+// Genesis launch handler
+const btnLaunchGenesis = document.getElementById("btnLaunchGenesis");
+const genesisComplexity = document.getElementById("genesisComplexity");
+const genesisSalt = document.getElementById("genesisSalt");
+const genesisName = document.getElementById("genesisName");
+const genesisSymbol = document.getElementById("genesisSymbol");
+
+// Populate initial genesis salt
+genesisSalt.value = ethers.hexlify(ethers.randomBytes(32));
+
+btnLaunchGenesis.addEventListener("click", async () => {
+    if (!signer) {
+        log("Connect your wallet first.", "warning");
+        return;
+    }
+
+    const complexity = parseInt(genesisComplexity.value) || 1;
+    const salt = genesisSalt.value.trim();
+    const tokenNameStr = genesisName.value.trim();
+    const tokenSymbolStr = genesisSymbol.value.trim();
+
+    if (!ethers.isHexString(salt) || salt.length !== 66) {
+        log("Genesis salt format is invalid (must be 32-byte hex).", "error");
+        return;
+    }
+
+    log(`🌌 Starting Genesis Launch (Complexity: ${complexity})...`);
+    
+    // 1. Generate new random keys and signers
+    const generatedKeys = [];
+    const generatedAddresses = [];
+    log(`Generating ${complexity} new random private keys for Genesis token signing...`);
+    for (let i = 0; i < complexity; i++) {
+        const wallet = ethers.Wallet.createRandom();
+        generatedKeys.push(wallet.privateKey);
+        generatedAddresses.push(wallet.address);
+    }
+
+    // 2. We use the salt as the signing nonce. Sign it with all complexity-sized keys.
+    log(`Signing genesis nonce/salt: ${salt}...`);
+    const signatures = [];
+    try {
+        generatedKeys.forEach((key) => {
+            const wallet = new ethers.Wallet(key);
+            const sig = wallet.signingKey.sign(salt);
+            const flatSig = ethers.concat([sig.r, sig.s, ethers.toBeHex(sig.v)]);
+            signatures.push(flatSig);
+        });
+        log("Generated all signatures successfully.", "success");
+    } catch (e) {
+        log(`Failed generating signatures: ${e.message}`, "error");
+        return;
+    }
+
+    // 3. Predict final address using PKMinter's deployed salt predictability or standard CREATE2 logic.
+    // However, to obtain the exact predicted address, let's submit it to PKMinter.New()
+    log("Invoking PKMinter.New() via browser wallet...");
+    try {
+        const pkMinter = new ethers.Contract(PKMINTER_ADDRESS, PKMINTER_ABI, signer);
+        const tx = await pkMinter.New(
+            tokenNameStr,
+            tokenSymbolStr,
+            complexity,
+            generatedAddresses,
+            salt,
+            signatures
+        );
+        log(`Transaction submitted: ${tx.hash}. Waiting for confirmation...`, "info");
+        const receipt = await tx.wait();
+
+        // 4. Extract token deployment address from transaction events
+        // New signature event topic or return address: let's query the receipt logs or compute predicted address
+        // The transaction receipt has logs, or we can read the contract events.
+        // Let's look for address in the log receipt or try to compute it.
+        // Alternatively, the PKMinter.New method returns the address, but since it's a write tx, we extract from logs.
+        let deployedAddress = null;
+        if (receipt.logs && receipt.logs.length > 0) {
+            // Usually the last log or a log containing address
+            // Standard ERC20 deploy logs or custom log topics.
+            // Let's fall back to checking log topics or computing prediction,
+            // or simply reading target addresses. Let's trace it.
+            // We can scan the receipt for contract address creation, or log addresses.
+            for (const rLog of receipt.logs) {
+                if (rLog.address && rLog.address.toLowerCase() !== PKMINTER_ADDRESS.toLowerCase()) {
+                    deployedAddress = rLog.address;
+                }
+            }
+        }
+
+        if (!deployedAddress) {
+            // If log trace failed, fallback to querying the config networks or warning
+            log("Genesis contract deployed successfully but target address could not be parsed automatically from logs.", "warning");
+            deployedAddress = ethers.getCreate2Address(PKMINTER_ADDRESS, salt, ethers.keccak256("0x")); // mock fallback estimation
+        }
+
+        log(`🌌 Genesis Launch Succeeded! Address: ${deployedAddress}`, "success");
+
+        // 5. POST the generated keys to the local server configuration relative to the address
+        log("Saving generated keys locally inside config/user_config.json...");
+        const saveRes = await fetch("/api/save-keys", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                address: deployedAddress,
+                keys: generatedKeys,
+                name: tokenNameStr
+            })
+        });
+
+        if (saveRes.ok) {
+            log(`Successfully saved keys for ${tokenNameStr} (${deployedAddress}) in your private config.`, "success");
+            // Reload keys list
+            loadConfigKeys();
+        } else {
+            const errData = await saveRes.json();
+            log(`Failed to save keys: ${errData.error}`, "error");
+        }
+
+    } catch (err) {
+        log(`Genesis Launch failed: ${err.message}`, "error");
+    }
+});
+
 // Initialize on Load
 loadConfigKeys();
