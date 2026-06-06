@@ -236,6 +236,20 @@ btnDeployFactory.addEventListener("click", async () => {
     }
 });
 
+// Listen for Key Source Mode dropdown changes to toggle text areas
+const keySourceMode = document.getElementById("keySourceMode");
+const customKeysContainer = document.getElementById("customKeysContainer");
+const customKeysInput = document.getElementById("customKeysInput");
+const tokenComplexity = document.getElementById("tokenComplexity");
+
+keySourceMode.addEventListener("change", () => {
+    if (keySourceMode.value === "provided") {
+        customKeysContainer.classList.remove("hidden");
+    } else {
+        customKeysContainer.classList.add("hidden");
+    }
+});
+
 // Deploy TT Token via PKMinter
 btnDeployTT.addEventListener("click", async () => {
     if (!signer) {
@@ -243,30 +257,67 @@ btnDeployTT.addEventListener("click", async () => {
         return;
     }
 
-    if (privateKeys.length !== 8) {
-        log("Make sure local keys are loaded first.", "warning");
-        return;
-    }
-
     const name = tokenName.value.trim();
     const symbol = tokenSymbol.value.trim();
     const nonce = ttNonce.value.trim();
+    const complexity = parseInt(tokenComplexity.value) || 1;
 
     if (!ethers.isHexString(nonce) || nonce.length !== 66) {
         log("Invalid nonce format (must be 32-byte hex).", "error");
         return;
     }
 
-    log(`Signing nonce: ${nonce} with the 8 local private keys...`);
+    let activeKeys = [];
+    let activeAddresses = [];
+
+    if (keySourceMode.value === "config") {
+        if (privateKeys.length < complexity) {
+            log(`Loaded config only has ${privateKeys.length} keys, but you requested complexity ${complexity}!`, "error");
+            return;
+        }
+        activeKeys = privateKeys.slice(0, complexity);
+    } else if (keySourceMode.value === "random") {
+        log(`Generating ${complexity} random keys/wallets for signing...`);
+        for (let i = 0; i < complexity; i++) {
+            const wallet = ethers.Wallet.createRandom();
+            activeKeys.push(wallet.privateKey);
+        }
+    } else if (keySourceMode.value === "provided") {
+        const rawKeys = customKeysInput.value.split(",")
+            .map(k => k.trim())
+            .filter(k => k.length > 0);
+        if (rawKeys.length < complexity) {
+            log(`You must provide at least ${complexity} private keys (currently provided: ${rawKeys.length})!`, "error");
+            return;
+        }
+        activeKeys = rawKeys.slice(0, complexity);
+    }
+
+    // Convert private keys to matching addresses
+    activeKeys.forEach((key, index) => {
+        try {
+            const wallet = new ethers.Wallet(key);
+            activeAddresses.push(wallet.address);
+        } catch (e) {
+            log(`Invalid private key at position ${index + 1}: ${e.message}`, "error");
+        }
+    });
+
+    if (activeAddresses.length !== complexity) {
+        log("Error validating key mapping. Ensure key list is accurate.", "error");
+        return;
+    }
+
+    log(`Signing nonce: ${nonce} with ${complexity} keys...`);
     const signatures = [];
     try {
-        privateKeys.forEach((key, index) => {
+        activeKeys.forEach((key, index) => {
             const wallet = new ethers.Wallet(key);
             const sig = wallet.signingKey.sign(nonce);
             const flatSig = ethers.concat([sig.r, sig.s, ethers.toBeHex(sig.v)]);
             signatures.push(flatSig);
         });
-        log("All 8 signatures successfully generated locally.", "success");
+        log(`All ${complexity} signatures successfully generated.`, "success");
     } catch (err) {
         log(`Signing failed: ${err.message}`, "error");
         return;
@@ -280,8 +331,8 @@ btnDeployTT.addEventListener("click", async () => {
         const tx = await pkMinter.New(
             name,
             symbol,
-            8, // Complexity
-            walletAddresses,
+            complexity,
+            activeAddresses,
             nonce,
             signatures
         );

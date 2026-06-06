@@ -85,6 +85,26 @@
                         </div>
                     </div>
 
+                    <div class="grid-form" style="margin-top: 10px;">
+                        <div class="form-group">
+                            <label for="tokenComplexity">Complexity (number of signers):</label>
+                            <input type="number" id="tokenComplexity" value="8" min="1" max="128" class="input-glow">
+                        </div>
+                        <div class="form-group">
+                            <label for="keySourceMode">Private Keys Mode:</label>
+                            <select id="keySourceMode" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                                <option value="config">Use Loaded Config Keys</option>
+                                <option value="random">Generate Random Keys</option>
+                                <option value="provided">Provide Custom Private Keys</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group hidden" id="customKeysContainer" style="margin-top: 10px;">
+                        <label for="customKeysInput">Custom Private Keys (Comma-separated hex strings):</label>
+                        <textarea id="customKeysInput" rows="2" placeholder="0xabc123..., 0xdef456..." class="input-glow" style="width: 100%; font-family: monospace;"></textarea>
+                    </div>
+
                     <div class="form-group">
                         <label for="ttNonce">Signing Nonce (bytes32):</label>
                         <div class="input-with-action">
