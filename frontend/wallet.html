@@ -90,6 +90,8 @@
             try {
                 const deployerBalances = [];
                 const userBalances = [];
+                let factoryAddress = null;
+                const yulObjectsToQuery = [];
 
                 // 1. Get Native balances
                 const deployerNativeBal = await provider.getBalance(deployerAddr);
@@ -108,7 +110,6 @@
 
                 // 2. Query all contract tokens deployed on localhost
                 // 2. Query all contract tokens deployed on localhost
-                let factoryAddress = null;
                 if (configData.networks && configData.networks.localhost) {
                     const localhostContracts = configData.networks.localhost;
                     const erc20Abi = [
@@ -117,7 +118,6 @@
                     ];
 
                     const tokensToQuery = [];
-                    const yulObjectsToQuery = [];
                     for (const [key, val] of Object.entries(localhostContracts)) {
                         if (key === "immutableFactoryAddress") {
                             factoryAddress = val;
