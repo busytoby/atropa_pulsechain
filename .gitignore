@@ -58,4 +58,9 @@
 *.swp
 /þ
 /config/
-
+node_modules/
+scripts/node_modules/
+state.json
+*.wav
+*.mp3
+*.tar.gz
