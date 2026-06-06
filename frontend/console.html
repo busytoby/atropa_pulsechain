@@ -188,39 +188,91 @@
                 }
             }
 
-            if (!file) {
-                log(`No ABI file mapping found for ${contractName}`, "error");
-                return;
-            }
-
             try {
                 // Query server API for local compiled JSON
                 const res = await fetch("/api/config");
                 const config = await res.json();
-                
-                // Get the ABI from the build outputs
-                const artifactRes = await fetch(`/Wallet/bin/Contracts/${file}.json`);
-                if (!artifactRes.ok) throw new Error("Artifact compile output missing");
-                const artifact = await artifactRes.json();
-                
-                let matchingContractName = contractName;
-                if (contractName === "mariarahelLau" || contractName === "TestLAU") {
-                    matchingContractName = "LAU";
-                } else if (contractName === "VOID_QING") {
-                    matchingContractName = "QING";
-                } else if (contractName === "HECKE") {
-                    matchingContractName = "MockHecke";
-                } else if (contractName.toLowerCase().startsWith("genesis")) {
-                    matchingContractName = "Genesis";
-                } else if (contractName.toLowerCase().startsWith("pkminter") || contractName.toLowerCase().startsWith("pki")) {
-                    matchingContractName = "PKMinter";
+
+                // If name-based checks fail, query the network directly to detect bytecode signature matching
+                const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                let deployedBytecode = "0x";
+                try {
+                    deployedBytecode = await tempProvider.getCode(contractAddress);
+                } catch (codeErr) {
+                    // Node offline or invalid address
                 }
 
                 let targetAbi;
-                for (const key of Object.keys(artifact.contracts)) {
-                    if (key.endsWith(`:${matchingContractName}`)) {
-                        targetAbi = artifact.contracts[key].abi;
-                        break;
+                let matchedFile = file;
+                let matchingContractName = contractName;
+
+                if (!matchedFile && deployedBytecode && deployedBytecode !== "0x") {
+                    log(`Scanning compiled artifacts to find matching deployment bytecode...`, "info");
+                    
+                    // We query key Solc artifacts directly to scan compile bytecode signatures
+                    const possibleFiles = [
+                        { name: "genesis.yul", cName: "Genesis" },
+                        { name: "pkminter.sol", cName: "PKMinter" },
+                        { name: "00b_vmreq.sol", cName: "VMREQ" },
+                        { name: "01_dysnomia.sol", cName: "DYSNOMIA" },
+                        { name: "11_lau.sol", cName: "LAU" }
+                    ];
+
+                    for (const check of possibleFiles) {
+                        try {
+                            const artifactRes = await fetch(`/Wallet/bin/Contracts/${check.name}.json`);
+                            if (artifactRes.ok) {
+                                const artifact = await artifactRes.json();
+                                for (const key of Object.keys(artifact.contracts)) {
+                                    if (key.endsWith(`:${check.cName}`)) {
+                                        const binary = artifact.contracts[key].bin || artifact.contracts[key].deployedBytecode || "";
+                                        // Match signature snippets or basic metadata size
+                                        if (binary && deployedBytecode.includes(binary.substring(0, 100))) {
+                                            matchedFile = check.name;
+                                            matchingContractName = check.cName;
+                                            targetAbi = artifact.contracts[key].abi;
+                                            log(`Automatically resolved bytecode layout to ${check.name}:${check.cName}`, "success");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (targetAbi) break;
+                        } catch (scanErr) {
+                            // Skip artifact mismatch
+                        }
+                    }
+                }
+
+                // If bytecode scanning didn't run or resolve, fallback to name parsing
+                if (!targetAbi) {
+                    if (!matchedFile) {
+                        log(`No ABI file mapping found for ${contractName}`, "error");
+                        return;
+                    }
+
+                    // Get the ABI from the build outputs
+                    const artifactRes = await fetch(`/Wallet/bin/Contracts/${matchedFile}.json`);
+                    if (!artifactRes.ok) throw new Error("Artifact compile output missing");
+                    const artifact = await artifactRes.json();
+                    
+                    if (contractName === "mariarahelLau" || contractName === "TestLAU") {
+                        matchingContractName = "LAU";
+                    } else if (contractName === "VOID_QING") {
+                        matchingContractName = "QING";
+                    } else if (contractName === "HECKE") {
+                        matchingContractName = "MockHecke";
+                    } else if (contractName.toLowerCase().startsWith("genesis")) {
+                        matchingContractName = "Genesis";
+                    } else if (contractName.toLowerCase().startsWith("pkminter") || contractName.toLowerCase().startsWith("pki")) {
+                        matchingContractName = "PKMinter";
+                    }
+
+                    for (const key of Object.keys(artifact.contracts)) {
+                        if (key.endsWith(`:${matchingContractName}`)) {
+                            targetAbi = artifact.contracts[key].abi;
+                            break;
+                        }
                     }
                 }
 
