@@ -181,10 +181,10 @@
             
             // Fallback dynamic resolver for dynamic token aliases (Genesis PK9, Genesis PK4, PKMinterToken_...)
             if (!file) {
-                if (contractName.toLowerCase().startsWith("genesis")) {
-                    file = "genesis.yul";
-                } else if (contractName.toLowerCase().startsWith("pk")) {
+                if (contractName.toLowerCase().includes("pk")) {
                     file = "pkminter.sol";
+                } else if (contractName.toLowerCase().startsWith("genesis")) {
+                    file = "genesis.yul";
                 }
             }
 
@@ -267,12 +267,12 @@
                         matchingContractName = "QING";
                     } else if (contractName === "HECKE") {
                         matchingContractName = "MockHecke";
-                    } else if (contractName.toLowerCase().startsWith("genesis")) {
-                        matchingContractName = "Genesis";
                     } else if (contractName.toLowerCase() === "pkminter") {
                         matchingContractName = "PKMinter";
-                    } else if (contractName.toLowerCase().startsWith("pk")) {
+                    } else if (contractName.toLowerCase().includes("pk")) {
                         matchingContractName = "TT";
+                    } else if (contractName.toLowerCase().startsWith("genesis")) {
+                        matchingContractName = "Genesis";
                     }
 
                     for (const key of Object.keys(artifact.contracts)) {
