@@ -51,12 +51,14 @@ btnClearLogs.addEventListener("click", () => {
     log("Console cleared.");
 });
 
+let config = {};
+
 // Load Config Keys from Local Server
 async function loadConfigKeys() {
     try {
         const res = await fetch("/api/config");
         if (!res.ok) throw new Error("Failed to fetch config");
-        const config = await res.json();
+        config = await res.json();
         
         privateKeys = config.default.keys || [];
         keysList.innerHTML = "";
@@ -112,39 +114,6 @@ async function connectWallet() {
         log(`Active network: ${networkName} (Chain ID: ${network.chainId})`, "info");
     } catch (err) {
         log(`Connection failed: ${err.message}`, "error");
-    }
-}
-
-let config = {};
-
-// Load Config Keys from Local Server
-async function loadConfigKeys() {
-    try {
-        const res = await fetch("/api/config");
-        if (!res.ok) throw new Error("Failed to fetch config");
-        config = await res.json();
-        
-        privateKeys = config.default.keys || [];
-        keysList.innerHTML = "";
-        walletAddresses = [];
-
-        privateKeys.forEach((key, index) => {
-            const wallet = new ethers.Wallet(key);
-            walletAddresses.push(wallet.address);
-            
-            const item = document.createElement("div");
-            item.className = "key-item";
-            item.innerHTML = `
-                <div class="key-index">Key #${index + 1}</div>
-                <div class="key-address">Address: ${wallet.address}</div>
-                <div class="key-privkey">Private: ${key.substring(0, 8)}...${key.substring(key.length - 8)}</div>
-            `;
-            keysList.appendChild(item);
-        });
-        
-        log(`Loaded ${privateKeys.length} keys from user_config.json successfully.`, "success");
-    } catch (err) {
-        log(`Could not load local keys: ${err.message}. Make sure server.js is running.`, "error");
     }
 }
 
