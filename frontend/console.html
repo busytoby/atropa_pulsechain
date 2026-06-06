@@ -188,6 +188,11 @@
                 }
             }
 
+            if (!file) {
+                log(`No ABI file mapping found for ${contractName}`, "error");
+                return;
+            }
+
             try {
                 // Query server API for local compiled JSON
                 const res = await fetch("/api/config");
