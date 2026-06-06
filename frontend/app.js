@@ -1,5 +1,5 @@
 const FACTORY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-const PKMINTER_ADDRESS = "0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B";
+let PKMINTER_ADDRESS = "0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B";
 
 const FACTORY_ABI = [
     "function resolve(bytes32 salt, bytes32 bytecodeHash) external view returns (address)"
@@ -59,6 +59,9 @@ async function loadConfigKeys() {
         const res = await fetch("/api/config");
         if (!res.ok) throw new Error("Failed to fetch config");
         config = await res.json();
+        if (config.networks && config.networks.localhost) {
+            PKMINTER_ADDRESS = config.networks.localhost.pkminterAddress || PKMINTER_ADDRESS;
+        }
         
         keysList.innerHTML = "";
         walletAddresses = [];
@@ -152,8 +155,14 @@ async function connectWallet() {
         let networkName = `Chain ID: ${network.chainId}`;
         if (network.chainId === 31337n) {
             networkName = "Localhost (Anvil)";
+            if (config.networks && config.networks.localhost) {
+                PKMINTER_ADDRESS = config.networks.localhost.pkminterAddress || PKMINTER_ADDRESS;
+            }
         } else if (network.chainId === 369n) {
             networkName = "PulseChain Mainnet";
+            if (config.networks && config.networks.pulsechain) {
+                PKMINTER_ADDRESS = config.networks.pulsechain.pkminterAddress || "0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B";
+            }
         }
         
         networkBadge.innerText = networkName;
