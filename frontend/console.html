@@ -82,6 +82,7 @@
         let contractName;
         let contractAbi = [];
         let contract;
+        let writesList = [];
 
         const btnConnect = document.getElementById("btnConnect");
         const networkBadge = document.getElementById("networkBadge");
@@ -211,6 +212,10 @@
                 contractAbi = targetAbi;
                 log(`Successfully loaded ABI containing ${contractAbi.length} items.`, "success");
 
+                if (signer) {
+                    contract = new ethers.Contract(contractAddress, contractAbi, signer);
+                }
+
                 // Initialize local background reader contract
                 const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
                 const readOnlyContract = new ethers.Contract(contractAddress, contractAbi, tempProvider);
@@ -223,44 +228,97 @@
 
         async function populateUI(readOnlyContract) {
             const reads = contractAbi.filter(x => x.type === "function" && (x.stateMutability === "view" || x.stateMutability === "pure"));
-            const writes = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
+            writesList = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
 
             // Populate Read state fields
             const readStateList = document.getElementById("readStateList");
             readStateList.innerHTML = "";
             
             for (const r of reads) {
+                const item = document.createElement("div");
+                item.className = "balance-item";
+                item.style.flexDirection = "column";
+                item.style.alignItems = "stretch";
+                item.style.gap = "5px";
+
                 if (r.inputs.length === 0) {
                     try {
                         const val = await readOnlyContract[r.name]();
-                        const item = document.createElement("div");
-                        item.className = "balance-item";
                         item.innerHTML = `
-                            <span class="balance-token">${r.name}()</span>
-                            <span class="balance-value" style="font-size: 0.95rem; font-family: monospace;">${val.toString()}</span>
+                            <div style="display: flex; justify-content: space-between; width: 100%;">
+                                <span class="balance-token">${r.name}()</span>
+                                <span class="balance-value" style="font-size: 0.95rem; font-family: monospace;">${val.toString()}</span>
+                            </div>
                         `;
-                        readStateList.appendChild(item);
                     } catch (e) {
-                        // Skip if function reverts
+                        item.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; width: 100%;">
+                                <span class="balance-token" style="color: var(--neon-pink);">${r.name}()</span>
+                                <span class="balance-value" style="font-size: 0.8rem; opacity: 0.6;">(reverted)</span>
+                            </div>
+                        `;
                     }
+                } else {
+                    const inputsHtml = r.inputs.map((inp, idx) => `
+                        <input type="text" id="read_input_${r.name}_${idx}" placeholder="${inp.name} (${inp.type})" class="input-glow" style="font-size: 0.8rem; padding: 4px 8px; flex: 1;">
+                    `).join('');
+                    item.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span class="balance-token">${r.name}(...)</span>
+                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" id="btn_read_${r.name}">Query</button>
+                        </div>
+                        <div style="display: flex; gap: 5px; margin-top: 5px;">
+                            ${inputsHtml}
+                        </div>
+                        <div id="read_output_${r.name}" style="font-size: 0.85rem; font-family: monospace; color: var(--neon-blue); margin-top: 5px; word-break: break-all;"></div>
+                    `;
+                }
+                readStateList.appendChild(item);
+
+                // Add query event listener for read functions with inputs
+                if (r.inputs.length > 0) {
+                    const queryBtn = item.querySelector(`#btn_read_${r.name}`);
+                    const outputDiv = item.querySelector(`#read_output_${r.name}`);
+                    queryBtn.addEventListener("click", async () => {
+                        try {
+                            const params = [];
+                            r.inputs.forEach((inp, idx) => {
+                                const inputVal = item.querySelector(`#read_input_${r.name}_${idx}`).value.trim();
+                                if (inp.type.endsWith("[]")) {
+                                    params.push(JSON.parse(inputVal));
+                                } else if (inp.type.startsWith("uint") || inp.type.startsWith("int")) {
+                                    params.push(BigInt(inputVal));
+                                } else {
+                                    params.push(inputVal);
+                                }
+                            });
+                            outputDiv.innerText = "Querying...";
+                            const result = await readOnlyContract[r.name](...params);
+                            outputDiv.innerText = `Result: ${result.toString()}`;
+                            outputDiv.style.color = "var(--neon-blue)";
+                        } catch (err) {
+                            outputDiv.innerText = `Error: ${err.message}`;
+                            outputDiv.style.color = "var(--neon-pink)";
+                        }
+                    });
                 }
             }
 
             // Populate Write selector
             functionSelect.innerHTML = "";
-            writes.forEach((w, index) => {
+            writesList.forEach((w, index) => {
                 const opt = document.createElement("option");
                 opt.value = index;
                 opt.innerText = `${w.name}(${w.inputs.map(x => x.type).join(",")})`;
                 functionSelect.appendChild(opt);
             });
 
-            functionSelect.addEventListener("change", () => renderInputs(writes));
-            renderInputs(writes);
+            functionSelect.addEventListener("change", () => renderInputs());
+            renderInputs();
         }
 
-        function renderInputs(writes) {
-            const w = writes[functionSelect.value];
+        function renderInputs() {
+            const w = writesList[functionSelect.value];
             inputsContainer.innerHTML = "";
             if (!w) return;
 
@@ -281,8 +339,7 @@
                 return;
             }
 
-            const writes = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");
-            const w = writes[functionSelect.value];
+            const w = writesList[functionSelect.value];
             if (!w) return;
 
             const args = [];
@@ -300,6 +357,10 @@
 
             log(`Executing write transaction for function ${w.name}...`);
             try {
+                // Ensure contract object is set up (re-fallback check)
+                if (!contract) {
+                    contract = new ethers.Contract(contractAddress, contractAbi, signer);
+                }
                 const tx = await contract[w.name](...args);
                 log(`Transaction broadcasted. Hash: ${tx.hash}. Waiting for confirmation...`, "info");
                 const receipt = await tx.wait();

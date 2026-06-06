@@ -51,11 +51,12 @@ const server = http.createServer((req, res) => {
     }
 
     // Serve static files from frontend directory
-    let filePath = req.url === "/" ? "/index.html" : req.url;
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    let filePath = parsedUrl.pathname === "/" ? "/index.html" : parsedUrl.pathname;
     let absolutePath = path.join(__dirname, "../frontend", filePath);
     
     // Safety check to prevent directory traversal
-    if (req.url.startsWith("/Wallet/bin/Contracts/")) {
+    if (parsedUrl.pathname.startsWith("/Wallet/bin/Contracts/")) {
         // Expose Solidity compiled output files securely
         absolutePath = path.join(__dirname, "..", filePath);
     } else if (!absolutePath.startsWith(path.join(__dirname, "../frontend"))) {

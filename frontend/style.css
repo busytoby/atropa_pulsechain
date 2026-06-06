@@ -427,6 +427,7 @@ footer {
     justify-content: space-between;
     align-items: center;
     transition: all 0.3s ease;
+    word-break: break-all;
 }
 .balance-item:hover {
     border-color: var(--neon-blue);
@@ -443,4 +444,29 @@ footer {
     font-weight: 900;
     font-size: 1.1rem;
 }
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .glass-bg-container {
+        padding: 15px;
+        gap: 20px;
+    }
+}
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    .header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+}
+
 
