@@ -82,6 +82,13 @@ module LauWireFirmware (
     // Gemini Lifecycle
     output reg        spawn_gemini_strobe,
 
+    // --- Level 0: Dai Genesis Registers ---
+    output reg [63:0] ichidai,
+    output reg [63:0] daiichi,
+    parameter [63:0] DAI_PRIME = 64'hFFFFFFFFFFFFFFC5;
+
+    // ... (rest of the ports)
+
     input  wire [511:0] wave_in_a,
     input  wire [511:0] wave_in_b,
     output wire [511:0] wave_out
@@ -110,7 +117,21 @@ module LauWireFirmware (
             host_epoch <= 0; plugin_epoch <= 0; last_host_epoch <= 0; epoch_error <= 0;
             cell_status <= 0; cell_sealed_layer_context <= 0;
             wave_instr_done <= 0;
+            ichidai <= 0; daiichi <= 0;
             zhong_rebar_ptr <= 0; zhong_rebar_size <= 0; zhong_timeline_handle <= 0; zhong_timeline_wait_val <= 0; zhong_timeline_sig_val <= 0; zhong_status <= 0; zhong_done <= 0;
+...
+    if (directive_strobe) begin
+        if (directive_cmd == 32'h44414930) begin // CMD_DAI_GENESIS
+            // If prov_data is non-zero, use it as a specific seed, otherwise use hardware entropy
+            if (prov_data != 0) begin
+                ichidai <= prov_data;
+                daiichi <= prov_data ^ DAI_PRIME;
+            end else begin
+                ichidai <= provenance_hash; // Use existing hardware entropy
+                daiichi <= provenance_hash ^ DAI_PRIME;
+            end
+        end
+    end
         end else begin
             if (prov_strobe) begin
                 if (prov_addr < 8'h10) begin
@@ -127,6 +148,11 @@ module LauWireFirmware (
                         end
                         8'h0E: plugin_epoch <= prov_data[31:0];
                         8'h0F: cell_sealed_layer_context <= prov_data[31:0];
+                        8'h40: dai_alpha <= prov_data;
+                        8'h41: dai_beta <= prov_data;
+                        8'h42: intent_potential <= prov_data;
+                        8'h43: resonance_flux <= prov_data;
+                        8'h44: magnetic_result <= prov_data;
                     endcase
                 end else if (prov_addr >= 8'h20 && prov_addr < 8'h30) begin
                     case (prov_addr)

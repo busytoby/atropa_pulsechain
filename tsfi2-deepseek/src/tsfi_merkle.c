@@ -739,24 +739,6 @@ void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out
     if (continuity_out) { *continuity_out = state_cont / 2.0f; }
 }
 
-/**
- * @brief Calculates a cryptographic residue of the skeleton topology (Parent-Child map).
- * Ensures the skeleton structure is bound to the Merkle root.
- */
-static uint64_t tsfi_skeleton_topology_residue(const void *manifold_512kb) {
-    if (!manifold_512kb) return 0;
-    // Walk the Sheaf region (e.g. 25 joints in 7 packed leaves starting at index 32768)
-    const TsfiSkeletonPackedLeaf *sheaf = (const TsfiSkeletonPackedLeaf *)((uint8_t *)manifold_512kb + (32768 * 256));
-    uint64_t residue = 0;
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 4; j++) {
-            residue ^= (uint64_t)sheaf[i].joints[j].parent_id << (j * 8);
-            residue ^= (uint64_t)sheaf[i].joints[j].joint_id;
-        }
-    }
-    return residue;
-}
-
 void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag, const TsfiPuppet *puppet) {
     if (!state_root_out || !receipt_root_out || !manifold_512kb) return;
     tsfi_helmholtz_init();

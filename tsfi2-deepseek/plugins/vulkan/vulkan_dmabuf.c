@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 
+extern VkAllocationCallbacks tsfi_alloc_callbacks;
+
 // --- DMABUF Feedback REMOVED (Source of Historical Hangs) ---
 
 struct wl_buffer* create_dma_buffer(VulkanSystem *s, int width, int height) {

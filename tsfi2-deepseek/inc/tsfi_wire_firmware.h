@@ -9,7 +9,7 @@
 #include <sys/types.h>
 
 // Include the generated RTL state structure
-#include "../src/firmware/LauWireFirmware_rtl.h"
+#include "LauWireFirmware_rtl.h"
 
 #define TSFI_FIRMWARE_MAGIC 0x57495245
 

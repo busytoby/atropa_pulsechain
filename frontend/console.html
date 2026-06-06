@@ -292,13 +292,13 @@
                 }
 
                 // Initialize local background reader contract
-                const tempProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
                 const readOnlyContract = new ethers.Contract(contractAddress, contractAbi, tempProvider);
 
                 populateUI(readOnlyContract);
             } catch (e) {
                 log(`Failed to load ABI: ${e.message}`, "error");
             }
+        }
         async function populateUI(readOnlyContract) {
             const reads = contractAbi.filter(x => x.type === "function" && (x.stateMutability === "view" || x.stateMutability === "pure"));
             writesList = contractAbi.filter(x => x.type === "function" && x.stateMutability !== "view" && x.stateMutability !== "pure");

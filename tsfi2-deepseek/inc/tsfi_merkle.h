@@ -115,18 +115,6 @@ bool tsfi_ppo_audit_proposal(const void *manifold, TSFiPPOProposal *proposal, ui
 
 void tsfi_helmholtz_init(void);
 void tsfi_helmholtz_cleanup(void);
-void tsfi_helmholtz_reduce_0(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_1(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512b, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_2(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_1kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_3(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_2kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_4(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_4kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_5(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_8kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_6(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_16kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_7(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_32kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_8(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_64kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_9(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_128kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_10(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_256kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
-void tsfi_helmholtz_reduce_11(uint8_t *state_root_out, uint8_t *receipt_root_out, float *mu_out, float *continuity_out, const void *manifold_512kb, uint32_t epoch, uint64_t resonance_k, const TSFiHelmholtzSVDAG *dag);
 void tsfi_helmholtz_get_proof(uint8_t *proof_out, int leaf_index, const void *manifold_512kb);
 void tsfi_helmholtz_tokenize_lore(void *manifold, const char *text, int leaf_offset);
 void tsfi_helmholtz_inject_user_pole(const TSFiUserPole *pole);

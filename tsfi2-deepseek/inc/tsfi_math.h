@@ -10,7 +10,7 @@ void tsfi_bn_pool_cleanup(void);
 #include "tsfi_wiring.h"
 
 // --- Configuration ---
-#define TSFI_MATH_MAX_BYTES 8192
+#define TSFI_MATH_MAX_BYTES 10240
 #define TSFI_MATH_MAX_BITS  (TSFI_MATH_MAX_BYTES * 8)
 
 #define TSFI_LIMB_BITS 52
