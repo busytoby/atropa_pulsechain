@@ -514,7 +514,7 @@ extern "C" void app_main(void) {
     
     // Default config values matching Heltec/version3.ino settings
     lora_radio_set_channel(954114361); // 954.114 MHz
-    lora_radio_set_tx_config(10, 0, 15, 3, 9); // +10dBm, SF15, CR4/7, Preamble 9
+    lora_radio_set_tx_config(2, 0, 15, 3, 9); // +2dBm, SF15, CR4/7, Preamble 9
     lora_radio_set_rx_config(0, 15, 3, 9);
 
     ESP_LOGI(TAG, "Starting main system worker task...");
