@@ -117,9 +117,15 @@
                     ];
 
                     const tokensToQuery = [];
+                    const yulObjectsToQuery = [];
                     for (const [key, val] of Object.entries(localhostContracts)) {
                         if (key === "immutableFactoryAddress") {
                             factoryAddress = val;
+                        } else if (key.toLowerCase().includes("genesis") || key.toLowerCase().includes("factory")) {
+                            yulObjectsToQuery.push({
+                                address: val,
+                                name: key
+                            });
                         } else if (ethers.isAddress(val)) {
                             tokensToQuery.push({
                                 address: val,
@@ -127,6 +133,42 @@
                             });
                         }
                     }
+
+                    // Add ImmutableFactory Yul Object manually to deployer and user lists
+                    if (factoryAddress) {
+                        deployerBalances.push({
+                            name: "ImmutableFactory (YUL)",
+                            value: "Deployed",
+                            address: factoryAddress,
+                            tokenName: "ImmutableFactory"
+                        });
+                        if (userAddress) {
+                            userBalances.push({
+                                name: "ImmutableFactory (YUL)",
+                                value: "Deployed",
+                                address: factoryAddress,
+                                tokenName: "ImmutableFactory"
+                            });
+                        }
+                    }
+
+                    // Add dynamically created Genesis/Yul objects manually to deployer and user lists
+                    yulObjectsToQuery.forEach(yulObj => {
+                        deployerBalances.push({
+                            name: `${yulObj.name} (YUL)`,
+                            value: "Deployed",
+                            address: yulObj.address,
+                            tokenName: yulObj.name
+                        });
+                        if (userAddress) {
+                            userBalances.push({
+                                name: `${yulObj.name} (YUL)`,
+                                value: "Deployed",
+                                address: yulObj.address,
+                                tokenName: yulObj.name
+                            });
+                        }
+                    });
 
                     for (const token of tokensToQuery) {
                         try {
@@ -162,7 +204,7 @@
                 deployerBalancesList.innerHTML = "";
 
                 // Render Yul Objects section for Deployer
-                if (factoryAddress) {
+                if (factoryAddress || yulObjectsToQuery.length > 0) {
                     const sectionHeader = document.createElement("div");
                     sectionHeader.style.color = "var(--neon-blue)";
                     sectionHeader.style.fontFamily = "'Orbitron', sans-serif";
@@ -173,26 +215,46 @@
                     sectionHeader.innerText = "Yul Compile Objects";
                     deployerBalancesList.appendChild(sectionHeader);
 
-                    const item = document.createElement("div");
-                    item.className = "balance-item";
-                    item.style.cursor = "pointer";
-                    item.style.border = "1px dashed var(--neon-blue)";
-                    item.style.marginBottom = "15px";
-                    item.addEventListener("click", () => {
-                        window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                    if (factoryAddress) {
+                        const item = document.createElement("div");
+                        item.className = "balance-item";
+                        item.style.cursor = "pointer";
+                        item.style.border = "1px dashed var(--neon-blue)";
+                        item.style.marginBottom = "10px";
+                        item.addEventListener("click", () => {
+                            window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                        });
+                        item.title = `Click to open Console for ImmutableFactory`;
+                        item.innerHTML = `
+                            <span class="balance-token">ImmutableFactory (YUL)</span>
+                            <span class="balance-value">Deployed</span>
+                        `;
+                        deployerBalancesList.appendChild(item);
+                    }
+
+                    yulObjectsToQuery.forEach(yulObj => {
+                        const item = document.createElement("div");
+                        item.className = "balance-item";
+                        item.style.cursor = "pointer";
+                        item.style.border = "1px dashed var(--neon-blue)";
+                        item.style.marginBottom = "10px";
+                        item.addEventListener("click", () => {
+                            window.open(`/console.html?address=${yulObj.address}&name=${yulObj.name}`, "_blank");
+                        });
+                        item.title = `Click to open Console for ${yulObj.name}`;
+                        item.innerHTML = `
+                            <span class="balance-token">${yulObj.name} (YUL)</span>
+                            <span class="balance-value">Deployed</span>
+                        `;
+                        deployerBalancesList.appendChild(item);
                     });
-                    item.title = `Click to open Console for ImmutableFactory`;
-                    item.innerHTML = `
-                        <span class="balance-token">ImmutableFactory (YUL)</span>
-                        <span class="balance-value">Deployed</span>
-                    `;
-                    deployerBalancesList.appendChild(item);
                 }
 
                 const tokenHeaderDep = document.createElement("div");
                 tokenHeaderDep.style.color = "var(--text-secondary)";
                 tokenHeaderDep.style.fontFamily = "'Orbitron', sans-serif";
                 tokenHeaderDep.style.fontSize = "0.9rem";
+                tokenHeaderDep.style.marginTop = "15px";
                 tokenHeaderDep.style.marginBottom = "5px";
                 tokenHeaderDep.style.textTransform = "uppercase";
                 tokenHeaderDep.innerText = "ERC20 Tokens & Contracts";
@@ -219,9 +281,8 @@
                 // Render User list
                 if (userAddress) {
                     userBalancesList.innerHTML = "";
-
                     // Render Yul Objects section for User
-                    if (factoryAddress) {
+                    if (factoryAddress || yulObjectsToQuery.length > 0) {
                         const sectionHeader = document.createElement("div");
                         sectionHeader.style.color = "var(--neon-purple)";
                         sectionHeader.style.fontFamily = "'Orbitron', sans-serif";
@@ -232,26 +293,46 @@
                         sectionHeader.innerText = "Yul Compile Objects";
                         userBalancesList.appendChild(sectionHeader);
 
-                        const item = document.createElement("div");
-                        item.className = "balance-item";
-                        item.style.cursor = "pointer";
-                        item.style.border = "1px dashed var(--neon-purple)";
-                        item.style.marginBottom = "15px";
-                        item.addEventListener("click", () => {
-                            window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                        if (factoryAddress) {
+                            const item = document.createElement("div");
+                            item.className = "balance-item";
+                            item.style.cursor = "pointer";
+                            item.style.border = "1px dashed var(--neon-purple)";
+                            item.style.marginBottom = "10px";
+                            item.addEventListener("click", () => {
+                                window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                            });
+                            item.title = `Click to open Console for ImmutableFactory`;
+                            item.innerHTML = `
+                                <span class="balance-token">ImmutableFactory (YUL)</span>
+                                <span class="balance-value">Deployed</span>
+                            `;
+                            userBalancesList.appendChild(item);
+                        }
+
+                        yulObjectsToQuery.forEach(yulObj => {
+                            const item = document.createElement("div");
+                            item.className = "balance-item";
+                            item.style.cursor = "pointer";
+                            item.style.border = "1px dashed var(--neon-purple)";
+                            item.style.marginBottom = "10px";
+                            item.addEventListener("click", () => {
+                                window.open(`/console.html?address=${yulObj.address}&name=${yulObj.name}`, "_blank");
+                            });
+                            item.title = `Click to open Console for ${yulObj.name}`;
+                            item.innerHTML = `
+                                <span class="balance-token">${yulObj.name} (YUL)</span>
+                                <span class="balance-value">Deployed</span>
+                            `;
+                            userBalancesList.appendChild(item);
                         });
-                        item.title = `Click to open Console for ImmutableFactory`;
-                        item.innerHTML = `
-                            <span class="balance-token">ImmutableFactory (YUL)</span>
-                            <span class="balance-value">Deployed</span>
-                        `;
-                        userBalancesList.appendChild(item);
                     }
 
                     const tokenHeaderUsr = document.createElement("div");
                     tokenHeaderUsr.style.color = "var(--text-secondary)";
                     tokenHeaderUsr.style.fontFamily = "'Orbitron', sans-serif";
                     tokenHeaderUsr.style.fontSize = "0.9rem";
+                    tokenHeaderUsr.style.marginTop = "15px";
                     tokenHeaderUsr.style.marginBottom = "5px";
                     tokenHeaderUsr.style.textTransform = "uppercase";
                     tokenHeaderUsr.innerText = "ERC20 Tokens & Contracts";
