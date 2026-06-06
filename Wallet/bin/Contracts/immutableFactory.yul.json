@@ -1,0 +1,158 @@
+{
+  "contracts": {
+    "solidity/bin/immutableFactory.yul:ImmutableFactory": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "salt",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "bytecodeHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "resolve",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "salt",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "r",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint8",
+              "name": "v",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "providedMasterKey",
+              "type": "address"
+            }
+          ],
+          "name": "createAuthorized",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "targetHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "r",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint8",
+              "name": "v",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "masterKey",
+              "type": "address"
+            }
+          ],
+          "name": "verifySignature",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "targetAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "salt",
+              "type": "bytes32"
+            }
+          ],
+          "name": "verifyIdempotency",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "bytecode",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "salt",
+              "type": "bytes32"
+            }
+          ],
+          "name": "executeDeployment",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ]
+    }
+  }
+}

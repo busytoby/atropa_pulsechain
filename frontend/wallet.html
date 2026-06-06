@@ -107,6 +107,8 @@
                 }
 
                 // 2. Query all contract tokens deployed on localhost
+                // 2. Query all contract tokens deployed on localhost
+                let factoryAddress = null;
                 if (configData.networks && configData.networks.localhost) {
                     const localhostContracts = configData.networks.localhost;
                     const erc20Abi = [
@@ -116,7 +118,9 @@
 
                     const tokensToQuery = [];
                     for (const [key, val] of Object.entries(localhostContracts)) {
-                        if (key !== "immutableFactoryAddress" && ethers.isAddress(val)) {
+                        if (key === "immutableFactoryAddress") {
+                            factoryAddress = val;
+                        } else if (ethers.isAddress(val)) {
                             tokensToQuery.push({
                                 address: val,
                                 defaultName: key.replace("Address", "")
@@ -156,6 +160,44 @@
 
                 // Render Deployer list
                 deployerBalancesList.innerHTML = "";
+
+                // Render Yul Objects section for Deployer
+                if (factoryAddress) {
+                    const sectionHeader = document.createElement("div");
+                    sectionHeader.style.color = "var(--neon-blue)";
+                    sectionHeader.style.fontFamily = "'Orbitron', sans-serif";
+                    sectionHeader.style.fontSize = "0.9rem";
+                    sectionHeader.style.marginTop = "10px";
+                    sectionHeader.style.marginBottom = "5px";
+                    sectionHeader.style.textTransform = "uppercase";
+                    sectionHeader.innerText = "Yul Compile Objects";
+                    deployerBalancesList.appendChild(sectionHeader);
+
+                    const item = document.createElement("div");
+                    item.className = "balance-item";
+                    item.style.cursor = "pointer";
+                    item.style.border = "1px dashed var(--neon-blue)";
+                    item.style.marginBottom = "15px";
+                    item.addEventListener("click", () => {
+                        window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                    });
+                    item.title = `Click to open Console for ImmutableFactory`;
+                    item.innerHTML = `
+                        <span class="balance-token">ImmutableFactory (YUL)</span>
+                        <span class="balance-value">Deployed</span>
+                    `;
+                    deployerBalancesList.appendChild(item);
+                }
+
+                const tokenHeaderDep = document.createElement("div");
+                tokenHeaderDep.style.color = "var(--text-secondary)";
+                tokenHeaderDep.style.fontFamily = "'Orbitron', sans-serif";
+                tokenHeaderDep.style.fontSize = "0.9rem";
+                tokenHeaderDep.style.marginBottom = "5px";
+                tokenHeaderDep.style.textTransform = "uppercase";
+                tokenHeaderDep.innerText = "ERC20 Tokens & Contracts";
+                deployerBalancesList.appendChild(tokenHeaderDep);
+
                 deployerBalances.forEach(b => {
                     const item = document.createElement("div");
                     item.className = "balance-item";
@@ -177,6 +219,44 @@
                 // Render User list
                 if (userAddress) {
                     userBalancesList.innerHTML = "";
+
+                    // Render Yul Objects section for User
+                    if (factoryAddress) {
+                        const sectionHeader = document.createElement("div");
+                        sectionHeader.style.color = "var(--neon-purple)";
+                        sectionHeader.style.fontFamily = "'Orbitron', sans-serif";
+                        sectionHeader.style.fontSize = "0.9rem";
+                        sectionHeader.style.marginTop = "10px";
+                        sectionHeader.style.marginBottom = "5px";
+                        sectionHeader.style.textTransform = "uppercase";
+                        sectionHeader.innerText = "Yul Compile Objects";
+                        userBalancesList.appendChild(sectionHeader);
+
+                        const item = document.createElement("div");
+                        item.className = "balance-item";
+                        item.style.cursor = "pointer";
+                        item.style.border = "1px dashed var(--neon-purple)";
+                        item.style.marginBottom = "15px";
+                        item.addEventListener("click", () => {
+                            window.open(`/console.html?address=${factoryAddress}&name=ImmutableFactory`, "_blank");
+                        });
+                        item.title = `Click to open Console for ImmutableFactory`;
+                        item.innerHTML = `
+                            <span class="balance-token">ImmutableFactory (YUL)</span>
+                            <span class="balance-value">Deployed</span>
+                        `;
+                        userBalancesList.appendChild(item);
+                    }
+
+                    const tokenHeaderUsr = document.createElement("div");
+                    tokenHeaderUsr.style.color = "var(--text-secondary)";
+                    tokenHeaderUsr.style.fontFamily = "'Orbitron', sans-serif";
+                    tokenHeaderUsr.style.fontSize = "0.9rem";
+                    tokenHeaderUsr.style.marginBottom = "5px";
+                    tokenHeaderUsr.style.textTransform = "uppercase";
+                    tokenHeaderUsr.innerText = "ERC20 Tokens & Contracts";
+                    userBalancesList.appendChild(tokenHeaderUsr);
+
                     userBalances.forEach(b => {
                         const item = document.createElement("div");
                         item.className = "balance-item";
