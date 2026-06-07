@@ -246,6 +246,51 @@
                     </div>
                 </section>
 
+                <!-- DeepSeek Consensus & Input Voting Console -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 255, 127, 0.15); border-color: #00ff7f;">
+                    <h2><span class="icon">🤝</span> DeepSeek Consensus & Input Voting</h2>
+                    <p class="description">Simulate trilateral consensus nodes aligning on emulator input events and state modifications.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <div style="background: rgba(0,0,0,0.5); border: 1px solid #00ff7f; border-radius: 8px; padding: 12px; font-family: 'Orbitron', sans-serif;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">CONSENSUS STATUS:</span>
+                                <span id="consensusStatusLabel" style="font-size: 0.9rem; font-weight: bold; color: #00ff7f; text-shadow: 0 0 5px rgba(0,255,127,0.4);">STABLE (3/3 ALIGNED)</span>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden;">
+                                <div id="consensusProgressBar" style="width: 100%; height: 100%; background: #00ff7f; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Voting Simulation Controls -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-family: 'Rajdhani', sans-serif;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">SIMULATE KEY VOTE</label>
+                                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                    <button class="btn btn-small" id="btnVoteUp" style="font-size: 0.75rem; padding: 5px 8px; border-color: #00ff7f; background: transparent; color: #fff;">⬆️ UP</button>
+                                    <button class="btn btn-small" id="btnVoteDown" style="font-size: 0.75rem; padding: 5px 8px; border-color: #00ff7f; background: transparent; color: #fff;">⬇️ DOWN</button>
+                                    <button class="btn btn-small" id="btnVoteLeft" style="font-size: 0.75rem; padding: 5px 8px; border-color: #00ff7f; background: transparent; color: #fff;">⬅️ LEFT</button>
+                                    <button class="btn btn-small" id="btnVoteRight" style="font-size: 0.75rem; padding: 5px 8px; border-color: #00ff7f; background: transparent; color: #fff;">➡️ RIGHT</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">VOTING THRESHOLD</label>
+                                <select id="consensusThreshold" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; outline: none;">
+                                    <option value="2">Simple Majority (2/3)</option>
+                                    <option value="3" selected>Unanimous (3/3)</option>
+                                    <option value="1">Single Node (1/3)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Consensus Live Logs -->
+                        <div>
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #00ff7f; margin-bottom: 5px;">CONSENSUS RESOLUTION LOG</div>
+                            <div id="consensusLog" style="background: #000; border: 1px solid #00ff7f; border-radius: 4px; padding: 10px; font-family: 'Courier New', Courier, monospace; color: #00ff7f; font-size: 0.8rem; height: 90px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">[SYSTEM] Consensus loop initiated. Listening for node votes...</div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- GameMaster Time-Sharing Network -->
                 <section class="card" style="box-shadow: 0 0 20px rgba(57, 255, 20, 0.15); border-color: #39ff14; margin-bottom: 25px;">
                     <h2><span class="icon">🌐</span> GameMaster Time-Sharing Network</h2>
@@ -3455,6 +3500,41 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        function simulateVote(direction) {
+            const threshold = parseInt(document.getElementById("consensusThreshold").value);
+            const logBox = document.getElementById("consensusLog");
+            const statusLabel = document.getElementById("consensusStatusLabel");
+            const progressBar = document.getElementById("consensusProgressBar");
+            
+            const nodeA_Vote = direction;
+            const nodeB_Vote = Math.random() < 0.75 ? direction : ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random() * 4)];
+            const nodeC_Vote = Math.random() < 0.60 ? direction : ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random() * 4)];
+            
+            logBox.innerText += `\n[VOTE ROUND] Node A voted ${nodeA_Vote} | Node B voted ${nodeB_Vote} | Node C voted ${nodeC_Vote}`;
+            
+            let count = 0;
+            if (nodeA_Vote === direction) count++;
+            if (nodeB_Vote === direction) count++;
+            if (nodeC_Vote === direction) count++;
+            
+            progressBar.style.width = `${(count / 3) * 100}%`;
+            
+            if (count >= threshold) {
+                statusLabel.innerText = `STABLE (${count}/3 AGREED)`;
+                statusLabel.style.color = "#00ff7f";
+                progressBar.style.background = "#00ff7f";
+                logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
+                writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+            } else {
+                statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
+                statusLabel.style.color = "#ff007f";
+                progressBar.style.background = "#ff007f";
+                logBox.innerText += `\n[WARNING] Consensus failed (needed ${threshold}, got ${count}). Input discarded.`;
+            }
+            
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
         function initOregonDashboardEvents() {
             const sendCmd = (cmd) => {
                 const input = document.getElementById("gamemasterTerminalInput");
@@ -3474,6 +3554,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             if (btnAi) {
                 btnAi.addEventListener("click", toggleOtAiAutoplay);
             }
+
+            document.getElementById("btnVoteUp").addEventListener("click", () => simulateVote("UP"));
+            document.getElementById("btnVoteDown").addEventListener("click", () => simulateVote("DOWN"));
+            document.getElementById("btnVoteLeft").addEventListener("click", () => simulateVote("LEFT"));
+            document.getElementById("btnVoteRight").addEventListener("click", () => simulateVote("RIGHT"));
         }
 
         window.onload = init;
