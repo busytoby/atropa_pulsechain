@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commodore B128 On-Chain Console</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Ethers v6 CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        .retro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 25px;
+            align-items: start;
+        }
+        .canvas-container {
+            background: #000;
+            border: 4px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #crtScreen {
+            background: #0d121c;
+            border: 15px solid #282828;
+            border-radius: 8px;
+            image-rendering: pixelated;
+            max-width: 100%;
+            box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.3);
+        }
+        .reg-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .reg-item {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+        }
+        .reg-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+        }
+        .reg-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            font-family: monospace;
+            display: block;
+            margin-top: 3px;
+        }
+        .ledger-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.05);
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+        .ledger-label {
+            color: var(--text-secondary);
+        }
+        .ledger-value {
+            color: var(--neon-blue);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation / Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">COMMODORE B128</span>
+                <span class="subtitle">MOS 6509 Business System</span>
+            </div>
+            <div class="header-actions">
+                <a href="/index.html" class="btn btn-secondary">Dashboard</a>
+                <a href="/datamost.html" class="btn btn-secondary">Datamost Console</a>
+                <a href="/wallet.html" class="btn btn-secondary">Wallet Hub</a>
+                <a href="/docs.html" class="btn btn-secondary">Docs Hub</a>
+                <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="retro-grid">
+            <!-- Left Side: 80x25 CRTC Text Screen -->
+            <div class="canvas-container">
+                <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue);">MOS 6545 80-COLUMN TEXT SCREEN</h3>
+                <canvas id="crtScreen" width="640" height="200"></canvas>
+                <div style="margin-top: 15px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                    Emulating 80x25 line graphics, Zero-Page data segments, and Protecto Enterprises transactions.
+                </div>
+            </div>
+
+            <!-- Right Side: CPU Registers, Ledger, & Order Desk -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- 6509 CPU MMU Status -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.15); border-color: var(--neon-blue);">
+                    <h2><span class="icon">📟</span> MOS 6509 CPU MMU State</h2>
+                    <p class="description">Zero-Page bank switching registers and status flags.</p>
+                    
+                    <div class="reg-grid">
+                        <div class="reg-item">
+                            <span class="reg-label">Reg A</span>
+                            <span id="cpuRegA" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-item">
+                            <span class="reg-label">Reg X</span>
+                            <span id="cpuRegX" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-item">
+                            <span class="reg-label">Reg Y</span>
+                            <span id="cpuRegY" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-item">
+                            <span class="reg-label">Reg PC</span>
+                            <span id="cpuRegPC" class="reg-value">0000</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <!-- $0000 Exec Bank -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.2); text-align: center;">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Code Bank ($0000)</span>
+                            <div id="execBankText" style="font-size: 1.3rem; font-weight: bold; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; margin-top: 5px;">15</div>
+                        </div>
+                        <!-- $0001 Data Bank -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.2); text-align: center;">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Data Bank ($0001)</span>
+                            <div id="dataBankText" style="font-size: 1.3rem; font-weight: bold; color: var(--neon-magenta); font-family: 'Orbitron', sans-serif; margin-top: 5px;">15</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        <span class="reg-label">6509 CPU Emulation Mode:</span>
+                        <select id="selectCpuMode" class="input-glow" style="padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-blue);">
+                            <option value="0">Standard 6502 (C64)</option>
+                            <option value="1" selected>MOS 6509 (B128)</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- CABS Accounting ledger Status -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 255, 204, 0.1); border-color: #00ffcc;">
+                    <h2><span class="icon">📈</span> CABS Accounting Balance</h2>
+                    <p class="description">Real-time ledger updates from the on-chain double-entry ledger.</p>
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.15);">
+                        <div class="ledger-row">
+                            <span class="ledger-label">Account 1100 (User Balance)</span>
+                            <span class="ledger-value" id="ledgerAcc1100">0 OTRT</span>
+                        </div>
+                        <div class="ledger-row">
+                            <span class="ledger-label">Account 1200 (Treasury Vault)</span>
+                            <span class="ledger-value" id="ledgerAcc1200" style="color: #00ffcc;">0 OTRT</span>
+                        </div>
+                        <div class="ledger-row">
+                            <span class="ledger-label">Account 2200 (Accrued Diyat Fees)</span>
+                            <span class="ledger-value" id="ledgerAcc2200" style="color: var(--neon-magenta);">0 OTRT</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Protecto Enterprises Mail-Order Catalog -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(255, 0, 127, 0.15); border-color: var(--neon-magenta);">
+                    <h2><span class="icon">📦</span> Protecto Order Desk (B128 Liquidation)</h2>
+                    <p class="description">Browse and checkout retired Commodore CBM-II system inventory.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="reg-label">SELECT ITEM:</label>
+                            <select id="selectCatalogItem" class="input-glow" style="padding: 4px; font-size: 0.85rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta); width: 60%;">
+                                <option value="1" selected>Commodore B128 Computer</option>
+                                <option value="2">SFD-1001 Dual Disk Drive</option>
+                                <option value="3">Commodore 1902 dual Monitor</option>
+                                <option value="4">Centronics Parallel Cable</option>
+                            </select>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px dashed rgba(255, 0, 127, 0.2); font-family: monospace; font-size: 0.9rem; line-height: 1.5;">
+                            <div><strong>Retail Price:</strong> <span id="itemRetailText" style="text-decoration: line-through; color: var(--text-secondary);">$995.00</span></div>
+                            <div style="color: var(--neon-magenta);"><strong>Protecto Price:</strong> <span id="itemLiquidationText">12 OTRT</span></div>
+                            <div><strong>Availability:</strong> <span id="itemStockText" style="color: #00ffcc;">145 Systems Left</span></div>
+                        </div>
+
+                        <button class="btn btn-primary" id="btnPlaceOrder" style="border-color: var(--neon-magenta); color: var(--text-primary); font-family: 'Orbitron', sans-serif;"><span class="icon">🛒</span> Place Order</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web3 Scripts -->
+    <script>
+        let provider, signer, cpuContract, tokenContract;
+        let config = {};
+        const cbmPalette = [
+            "#000000", "#ffffff", "#880000", "#aaffff",
+            "#cc44cc", "#00cc55", "#0000aa", "#eeee77",
+            "#dd8855", "#664400", "#ff7777", "#333333",
+            "#777777", "#aaffaa", "#0088ff", "#bbbbbb"
+        ];
+
+        const catalogDetails = {
+            "1": { retail: "$995.00", price: 12, name: "B128 Computer", stock: 145 },
+            "2": { retail: "$895.00", price: 8, name: "SFD-1001 Disk Drive", stock: 82 },
+            "3": { retail: "$499.00", price: 6, name: "1902 Monitor", stock: 37 },
+            "4": { retail: "$49.00", price: 1, name: "Centronics Cable", stock: 250 }
+        };
+
+        // Initialize Web3 Connections
+        async function init() {
+            if (window.ethereum) {
+                try {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    const accounts = await provider.send("eth_accounts", []);
+                    if (accounts.length > 0) {
+                        signer = await provider.getSigner();
+                        document.getElementById("btnConnect").innerText = "Wallet Linked";
+                        document.getElementById("btnConnect").classList.add("btn-success");
+                    }
+                    
+                    const res = await fetch("/config/user_config.json");
+                    config = await res.json();
+                    
+                    const localhost = config.networks.localhost;
+                    
+                    const cpuABI = [
+                        "function peek(uint16 addr) external view returns (uint8)",
+                        "function poke(uint16 addr, uint8 val) external",
+                        "function getCPUState() external view returns (uint8 A, uint8 X, uint8 Y, uint8 SR, uint8 SP, uint16 PC)"
+                    ];
+                    
+                    const tokenABI = [
+                        "function balanceOf(address account) external view returns (uint256)"
+                    ];
+
+                    cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer || provider);
+                    tokenContract = new ethers.Contract(localhost.oregonTrailTokenAddress, tokenABI, signer || provider);
+                    
+                    setupCatalogUI();
+                    startSimulationLoop();
+                    
+                } catch (e) {
+                    console.error("Web3 init failed:", e);
+                }
+            } else {
+                console.log("No Ethereum browser extension found.");
+            }
+        }
+
+        // Setup Catalog Selection Change
+        function setupCatalogUI() {
+            document.getElementById("selectCatalogItem").addEventListener("change", (e) => {
+                const item = catalogDetails[e.target.value];
+                if (item) {
+                    document.getElementById("itemRetailText").innerText = item.retail;
+                    document.getElementById("itemLiquidationText").innerText = item.price + " OTRT";
+                    document.getElementById("itemStockText").innerText = item.stock + " Systems Left";
+                }
+            });
+            
+            document.getElementById("btnPlaceOrder").addEventListener("click", async () => {
+                if (!cpuContract) return;
+                const btn = document.getElementById("btnPlaceOrder");
+                btn.innerText = "Ordering...";
+                btn.disabled = true;
+                
+                try {
+                    const itemId = parseInt(document.getElementById("selectCatalogItem").value);
+                    // Write to Protecto catalog selection register
+                    await (await cpuContract.poke(54880, itemId)).wait();
+                    // Strobe Order desk trigger
+                    await (await cpuContract.poke(54892, 1)).wait();
+                    alert("Order placed successfully on-chain!");
+                } catch (err) {
+                    console.error("Order desk transaction failed:", err);
+                    alert("Order failed. Verify token balances and try again.");
+                } finally {
+                    btn.innerHTML = `<span class="icon">🛒</span> Place Order`;
+                    btn.disabled = false;
+                }
+            });
+
+            document.getElementById("selectCpuMode").addEventListener("change", async (e) => {
+                if (!cpuContract) return;
+                const modeVal = parseInt(e.target.value);
+                try {
+                    // Update CPU Mode Register $D50C (54540)
+                    await (await cpuContract.poke(54540, modeVal)).wait();
+                } catch (err) {
+                    console.error("Failed to write CPU Mode register:", err);
+                }
+            });
+        }
+
+        // Draw basic 80-Column CRTC Text layout placeholder on Canvas
+        const canvas = document.getElementById("crtScreen");
+        const ctx = canvas.getContext("2d");
+
+        function drawCRTPlaceholder() {
+            ctx.fillStyle = "#0d121c";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid scanlines effect
+            ctx.fillStyle = "rgba(0, 242, 254, 0.05)";
+            for (let y = 0; y < canvas.height; y += 4) {
+                ctx.fillRect(0, y, canvas.width, 2);
+            }
+            
+            // Header text
+            ctx.fillStyle = "var(--neon-blue)";
+            ctx.font = "bold 11px monospace";
+            ctx.fillText("*** COMMODORE BASIC VERSION 4.0 ***", 160, 40);
+            ctx.fillText("122367 BYTES FREE", 230, 60);
+            ctx.fillText("READY.", 30, 90);
+            
+            // Cursor line
+            if (Math.floor(Date.now() / 400) % 2 === 0) {
+                ctx.fillRect(75, 80, 8, 12);
+            }
+        }
+
+        // Dynamic State Polling Loop
+        async function startSimulationLoop() {
+            setInterval(async () => {
+                if (!cpuContract) return;
+                
+                try {
+                    // 1. Fetch CPU state
+                    const state = await cpuContract.getCPUState();
+                    document.getElementById("cpuRegA").innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0');
+                    document.getElementById("cpuRegX").innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0');
+                    document.getElementById("cpuRegY").innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0');
+                    document.getElementById("cpuRegPC").innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0');
+
+                    // 2. Fetch Zero-Page Bank selectors (Address 0 and 1)
+                    const execBank = await cpuContract.peek(0);
+                    const dataBank = await cpuContract.peek(1);
+                    document.getElementById("execBankText").innerText = execBank;
+                    document.getElementById("dataBankText").innerText = dataBank;
+
+                    // 3. Update CABS Ledger Accounts
+                    if (tokenContract && signer) {
+                        const userAddr = await signer.getAddress();
+                        const userBalance = await tokenContract.balanceOf(userAddr);
+                        document.getElementById("ledgerAcc1100").innerText = ethers.formatUnits(userBalance, 18) + " OTRT";
+                    }
+                    
+                    // Peek accounts receivable dues directly from register 54706-54709
+                    const r0 = await cpuContract.peek(54706);
+                    const r1 = await cpuContract.peek(54707);
+                    const r2 = await cpuContract.peek(54708);
+                    const r3 = await cpuContract.peek(54709);
+                    const taxDue = (r3 << 24) | (r2 << 16) | (r1 << 8) | r0;
+                    document.getElementById("ledgerAcc2200").innerText = taxDue + " OTRT";
+
+                } catch (err) {
+                    console.error("B128 telemetry error:", err);
+                }
+                
+                drawCRTPlaceholder();
+            }, 500);
+        }
+
+        // Wallet link binding
+        document.getElementById("btnConnect").addEventListener("click", async () => {
+            if (window.ethereum) {
+                try {
+                    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                    if (accounts.length > 0) {
+                        signer = await provider.getSigner();
+                        document.getElementById("btnConnect").innerText = "Wallet Linked";
+                        document.getElementById("btnConnect").classList.add("btn-success");
+                        init();
+                    }
+                } catch(e) {}
+            }
+        });
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>
