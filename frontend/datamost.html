@@ -1,0 +1,2711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATAMOST Retro Simulation Console</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        .retro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+            align-items: start;
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.1);
+        }
+        canvas {
+            background-color: #3b5dc9; /* C64 Outer Blue */
+            border: 15px solid #404040; /* Retro bezel */
+            box-shadow: inset 0 0 10px #000;
+            image-rendering: pixelated;
+            max-width: 100%;
+        }
+        .retro-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .register-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            background: rgba(255,255,255,0.02);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .reg-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .reg-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'Orbitron', sans-serif;
+        }
+        .reg-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            font-family: monospace;
+        }
+        .sound-wave-panel {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sprite-editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">DATAMOST</span>
+                <span class="subtitle">VIC-II & 6502 Emulator</span>
+            </div>
+            <div class="header-actions">
+                <a href="/index.html" class="btn btn-secondary">Dashboard</a>
+                <a href="/wallet.html" class="btn btn-secondary">Wallet Hub</a>
+                <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="retro-grid">
+            <!-- Left Side: Simulator Screen -->
+            <div class="canvas-container" style="gap: 20px;">
+                <div style="width: 100%; text-align: center;">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue);">COMMODORE 64 SIMULATOR (DAPP SIDE)</h3>
+                    <canvas id="c64Screen" width="320" height="200"></canvas>
+                </div>
+                <div style="width: 100%; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-magenta);">VULKAN NATIVE RENDERER FRAME</h3>
+                    <canvas id="vulkanScreen" width="320" height="200" style="background-color: #000; border: 15px solid #404040; image-rendering: pixelated; max-width: 100%;"></canvas>
+                </div>
+                <div style="margin-top: 10px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                    Canvas resolves simulated VIC-II coordinates, SID oscillators, and DeepSeek consensus filters.
+                </div>
+            </div>
+
+            <!-- Right Side: Controllers and Registers -->
+            <div class="retro-controls">
+                <!-- Game Cartridge ROM Selector -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(230, 0, 120, 0.15); border-color: var(--neon-magenta);">
+                    <h2><span class="icon">💾</span> Game Cartridge Loader</h2>
+                    <p class="description">Select a retro C64 title to flash into EVM RAM and initialize VIC-II coordinates.</p>
+                    <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+                        <span class="reg-label" style="min-width: 60px;">ACTIVE:</span>
+                        <span id="activeGameText" class="reg-value" style="color: var(--neon-magenta); flex-grow: 1; text-align: left; margin-left: 10px;">Pong-on-Chain</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <select id="selectGame" class="input-glow" style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif;">
+                            <option value="pong">🏓 Pong-on-Chain (Interactive Demo)</option>
+                        </select>
+                        <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
+                        <button class="btn btn-secondary" id="btnToggleDemo" style="min-width: 130px; border-color: var(--neon-magenta); color: var(--text-primary);">Autoplay Demo</button>
+                    </div>
+                </section>
+
+                <!-- Sound Synthesizer Controls -->
+                <section class="card">
+                    <h2><span class="icon">🔊</span> SID Music Synthesizer (Voice 1)</h2>
+                    <p class="description">Web Audio oscillator driven directly by on-chain `musicMaker` registers.</p>
+                    <div class="sound-wave-panel">
+                        <div>
+                            <span class="reg-label">FREQUENCY:</span>
+                            <span id="sidFreqText" class="reg-value" style="color: var(--neon-magenta); margin-left: 10px;">N/A</span> Hz
+                        </div>
+                        <button class="btn btn-primary" id="btnAudioToggle">Enable Audio Synth</button>
+                    </div>
+                </section>
+
+                <!-- Alien Group Voice Box Speech Synthesizer -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.15); border-color: var(--neon-blue);">
+                    <h2><span class="icon">🗣️</span> The Alien Group Voice Box (Votrax SC-01A)</h2>
+                    <p class="description">Virtual speech processor. Plays robotic speech phonemes and animates a C64 mouth avatar.</p>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <!-- Animated face box -->
+                        <div id="voiceBoxFace" style="width: 80px; height: 80px; background: #000; border: 2px solid var(--neon-blue); border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
+                            <!-- Eyes -->
+                            <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                                <div style="width: 8px; height: 8px; background: var(--neon-blue); border-radius: 50%;"></div>
+                                <div style="width: 8px; height: 8px; background: var(--neon-blue); border-radius: 50%;"></div>
+                            </div>
+                            <!-- Mouth -->
+                            <div id="voiceBoxMouth" style="width: 30px; height: 4px; background: var(--neon-blue); transition: height 0.05s ease, border-radius 0.05s ease;"></div>
+                        </div>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div>
+                                <span class="reg-label">PHONEME:</span>
+                                <span id="voicePhonemeText" class="reg-value" style="color: var(--neon-blue); margin-left: 10px;">PA0 (Pause)</span>
+                            </div>
+                            <div>
+                                <span class="reg-label">INFLECTION:</span>
+                                <span id="voiceInflectionText" class="reg-value" style="color: var(--neon-blue); margin-left: 10px;">0</span>
+                            </div>
+                            <div>
+                                <span class="reg-label">STATUS:</span>
+                                <span id="voiceStatusLED" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #39ff14; box-shadow: 0 0 8px #39ff14; margin-left: 10px; vertical-align: middle;"></span>
+                                <span id="voiceStatusText" style="font-size: 0.95rem; font-family: 'Orbitron', monospace; margin-left: 5px; color: #39ff14;">READY</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Type and Speak -->
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <input type="text" id="voiceTextInput" placeholder="Type words (e.g. HELLO COMMODORE)" class="input-glow" style="flex-grow: 1; font-family: 'Orbitron', sans-serif;">
+                        <button class="btn btn-primary" id="btnVoiceSpeak" style="min-width: 100px; border-color: var(--neon-blue); color: var(--text-primary);">Speak</button>
+                    </div>
+                </section>
+
+                <!-- Magic Desk & Wordcraft (On-Chain Home Office) -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(186, 85, 211, 0.15); border-color: #ba55d3;">
+                    <h2><span class="icon">💼</span> Magic Desk & Wordcraft</h2>
+                    <p class="description">Singing word processor & Merkle persistent file editor utilizing the on-chain Disk System.</p>
+                    
+                    <!-- Virtual Desk representation -->
+                    <div style="display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.4); border: 1px dashed #ba55d3; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                        <button class="btn btn-secondary" id="btnDeskTypewriter" style="font-size: 0.9rem; border-color: #ba55d3; color: var(--text-primary);">🖨️ Typewriter (Wordcraft)</button>
+                        <button class="btn btn-secondary" id="btnDeskCabinet" style="font-size: 0.9rem; border-color: #ba55d3; color: var(--text-primary);">🗄️ File Cabinet (DFS)</button>
+                    </div>
+
+                    <!-- Wordcraft text layout screen -->
+                    <div id="wordcraftWorkspace" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: #f4ecd8; border: 3px solid #ba55d3; border-radius: 4px; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);">
+                            <div style="font-family: 'Orbitron', monospace; font-size: 0.75rem; text-align: center; color: #4b382a; border-bottom: 2px solid #4b382a; padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; letter-spacing: 2px;">
+                                WORDCRAFT 80 ULTRA - ON-CHAIN DOCUMENT
+                            </div>
+                            <textarea id="wordcraftText" rows="6" style="width: 100%; background: transparent; border: none; outline: none; font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #3b2f2f; font-size: 1rem; resize: none; line-height: 1.4;" placeholder="Type document content here..."></textarea>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span class="reg-label" style="min-width: 90px; font-size: 0.85rem;">FILE NAME:</span>
+                                <input type="text" id="docNameInput" value="document.txt" placeholder="document.txt" class="input-glow" style="flex-grow: 1; font-family: 'Orbitron', sans-serif;">
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span class="reg-label" style="min-width: 90px; font-size: 0.85rem;">WORKSPACE:</span>
+                                <select id="selectWorkspaceFile" class="input-glow" style="flex-grow: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">
+                                    <option value="">-- Select Workspace File (Read/Write Mode) --</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                <button class="btn btn-primary" id="btnWordcraftSpeak" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">🗣️ Vocalize</button>
+                                <button class="btn btn-primary" id="btnWordcraftSave" style="background: #ba55d3; border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">💾 Save to DFS</button>
+                                <button class="btn btn-primary" id="btnWordcraftLoad" style="background: #4b382a; border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📂 Load from DFS</button>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
+                                <button class="btn btn-secondary" id="btnWordcraftSaveWorkspace" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">💾 Save to Workspace</button>
+                                <button class="btn btn-secondary" id="btnWordcraftLoadWorkspace" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📂 Load from Workspace</button>
+                            </div>
+                        </div>
+                        <div id="wordcraftStatus" style="font-family: 'Orbitron', monospace; font-size: 0.8rem; color: #ba55d3; text-align: center; margin-top: 5px;"></div>
+                    </div>
+                </section>
+
+                <!-- GameMaster Time-Sharing Network -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(57, 255, 20, 0.15); border-color: #39ff14; margin-bottom: 25px;">
+                    <h2><span class="icon">🌐</span> GameMaster Time-Sharing Network</h2>
+                    <p class="description">Early 1980s retro telecomputing. Dial into the GameMaster House to navigate rooms and play on-chain multiplayer games.</p>
+                    
+                    <div style="background: #000; border: 2px solid #39ff14; border-radius: 4px; padding: 15px; font-family: 'Courier New', Courier, monospace; color: #39ff14; box-shadow: inset 0 0 10px rgba(57,255,20,0.3); min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div id="gamemasterTerminalOutput" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.4; max-height: 250px; overflow-y: auto;">GAMEMASTER TERMINAL SYSTEM (300 BAUD)
+DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
+                        <div style="display: flex; border-top: 1px solid #39ff14; padding-top: 10px; margin-top: 10px; align-items: center;">
+                            <span style="font-weight: bold; margin-right: 5px;">&gt;</span>
+                            <input type="text" id="gamemasterTerminalInput" style="background: transparent; border: none; outline: none; font-family: 'Courier New', Courier, monospace; font-size: 1rem; color: #39ff14; flex-grow: 1; padding: 0;" placeholder="Type command..." disabled>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-primary" id="btnGamemasterConnect" style="background: #1e3f20; border-color: #39ff14; color: #39ff14; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📞 Dial GameMaster</button>
+                        <button class="btn btn-secondary" id="btnGamemasterGuide" style="border-color: #39ff14; color: #39ff14; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">🗺️ View Guide Map</button>
+                    </div>
+                </section>
+
+                <!-- CPU 6502 Registers State -->
+                <section class="card">
+                    <h2><span class="icon">🖥️</span> CPU 6502 Register File State</h2>
+                    <p class="description">Active register metrics loaded from on-chain `cpu6502` contract.</p>
+                    <div class="register-grid">
+                        <div class="reg-box">
+                            <span class="reg-label">ACCUM A</span>
+                            <span id="regA" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-box">
+                            <span class="reg-label">REG X</span>
+                            <span id="regX" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-box">
+                            <span class="reg-label">REG Y</span>
+                            <span id="regY" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-box">
+                            <span class="reg-label">STATUS SR</span>
+                            <span id="regSR" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-box">
+                            <span class="reg-label">STACK SP</span>
+                            <span id="regSP" class="reg-value">00</span>
+                        </div>
+                        <div class="reg-box">
+                            <span class="reg-label">PROG PC</span>
+                            <span id="regPC" class="reg-value">0000</span>
+                        </div>
+                    </div>
+
+                    <!-- Direct Opcode Execution -->
+                    <div style="margin-top: 15px;">
+                        <label for="inputAssembly" style="font-size: 0.95rem; font-weight: bold; display: block; margin-bottom: 5px;">Execute 6502 Instruction:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="selectOpcode" class="input-glow" style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                                <option value="0xA9">LDA # (Load Accumulator Immediate)</option>
+                                <option value="0xA2">LDX # (Load X Register Immediate)</option>
+                                <option value="0xA0">LDY # (Load Y Register Immediate)</option>
+                                <option value="0x69">ADC # (Add Immediate with Carry)</option>
+                                <option value="0xE9">SBC # (Subtract Immediate with Carry)</option>
+                                <option value="0x8D">STA absolute (Store Accumulator to Slot)</option>
+                                <option value="0xAA">TAX (Transfer A to X)</option>
+                                <option value="0x8A">TXA (Transfer X to A)</option>
+                            </select>
+                            <input type="number" id="inputOperand" value="0" class="input-glow" style="width: 100px; text-align: center;">
+                            <button class="btn btn-primary" id="btnExecuteOp" style="min-width: 110px;">Execute</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sprite Modifier panel -->
+                <section class="card">
+                    <h2><span class="icon">👾</span> Sprite Controller</h2>
+                    <p class="description">Move Sprite 0 & 1 to test VIC-II coordinate registers and live bounding collisions.</p>
+                    <div class="sprite-editor-grid">
+                        <div class="form-group">
+                            <label>Sprite ID:</label>
+                            <select id="selectSprite" class="input-glow" style="padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; width: 100%;">
+                                <option value="0">Sprite 0</option>
+                                <option value="1">Sprite 1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Coordinates:</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="spriteX" value="100" class="input-glow" placeholder="X (0-320)">
+                                <input type="number" id="spriteY" value="100" class="input-glow" placeholder="Y (0-200)">
+                                <button class="btn btn-primary" id="btnMoveSprite" style="min-width: 90px;">Move</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="collisionStatus" style="margin-top: 15px; text-align: center; font-weight: bold; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">
+                        Collision Status: Calculating...
+                    </div>
+                </section>
+
+                <!-- Virtual Disk System DFS -->
+                <section class="card">
+                    <h2><span class="icon">📁</span> Virtual 1541 Disk System (DFS)</h2>
+                    <p class="description">Query and write 6502 assembly files directly to on-chain simulated floppy sectors.</p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-blue); margin-bottom: 8px;">DISK DIRECTORY:</h4>
+                        <div id="diskDirectoryList" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.95rem; min-height: 80px; max-height: 150px; overflow-y: auto; color: var(--neon-blue);">
+                            Loading directory...
+                        </div>
+                        <button class="btn btn-secondary btn-small" id="btnRefreshDisk" style="margin-top: 8px;">Refresh Directory</button>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <h4 style="color: var(--neon-magenta); margin-bottom: 8px;">FILE MANAGER:</h4>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="text" id="diskFileName" placeholder="Filename (e.g. invaders)" class="input-glow" style="width: 100%;">
+                            <textarea id="diskFileData" placeholder="File Data (Hexadecimal payload up to 256 bytes)" class="input-glow" rows="3" style="width: 100%; font-family: monospace;"></textarea>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" id="btnWriteFile" style="flex: 1; min-width: 80px;">Save</button>
+                                <button class="btn btn-secondary" id="btnReadFile" style="flex: 1; min-width: 80px;">Load</button>
+                                <button class="btn btn-danger" id="btnScratchFile" style="flex: 1; min-width: 80px;">Scratch</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Execution Engine -->
+    <script>
+        let provider, signer;
+        let config = {};
+        let audioCtx;
+        let isAudioPlaying = false;
+        let voices = [];
+        let isDemoModeActive = false;
+        let demoTimer = 0;
+        const demoGameSequence = ["pong"];
+        let demoGameIdx = 0;
+
+        class SIDVoice {
+            constructor(audioCtx, destination) {
+                this.ctx = audioCtx;
+                this.dest = destination;
+                this.osc = null;
+                this.gain = null;
+                this.gate = 0;
+                this.lastFreq = 0;
+                this.lastWave = 0;
+            }
+
+            update(freq, control, ad, sr) {
+                if (!this.ctx) return;
+                const gate = control & 1;
+                const waveBits = control & 0xF0;
+                
+                let type = 'sawtooth';
+                if (waveBits & 0x10) type = 'triangle';
+                else if (waveBits & 0x20) type = 'sawtooth';
+                else if (waveBits & 0x40) type = 'square';
+                else if (waveBits & 0x80) type = 'triangle'; 
+
+                const freqHz = Math.round(freq * 0.06097);
+
+                if (freqHz <= 0 || waveBits === 0) {
+                    if (this.osc) {
+                        this.osc.stop();
+                        this.osc.disconnect();
+                        this.osc = null;
+                    }
+                    return;
+                }
+
+                if (!this.osc || this.lastWave !== waveBits) {
+                    if (this.osc) {
+                        this.osc.stop();
+                        this.osc.disconnect();
+                    }
+                    this.osc = this.ctx.createOscillator();
+                    this.gain = this.ctx.createGain();
+                    this.osc.type = type;
+                    this.osc.connect(this.gain);
+                    this.gain.connect(this.dest);
+                    this.gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    this.osc.start();
+                    this.lastWave = waveBits;
+                    this.gate = 0;
+                }
+
+                if (freqHz !== this.lastFreq) {
+                    this.osc.frequency.setValueAtTime(freqHz, this.ctx.currentTime);
+                    this.lastFreq = freqHz;
+                }
+
+                if (gate !== this.gate) {
+                    const now = this.ctx.currentTime;
+                    const attackIdx = (ad >> 4) & 0xF;
+                    const decayIdx = ad & 0xF;
+                    const sustainIdx = (sr >> 4) & 0xF;
+                    const releaseIdx = sr & 0xF;
+
+                    const attackDurations = [0.002, 0.008, 0.016, 0.024, 0.038, 0.056, 0.068, 0.08, 0.1, 0.25, 0.5, 0.8, 1.0, 3.0, 5.0, 8.0];
+                    const decayDurations = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204, 0.24, 0.3, 0.75, 1.5, 2.4, 3.0, 9.0, 15.0, 24.0];
+                    const sustainLevels = [0, 0.06, 0.13, 0.2, 0.26, 0.33, 0.4, 0.46, 0.53, 0.6, 0.66, 0.73, 0.8, 0.86, 0.93, 1.0];
+
+                    const aTime = attackDurations[attackIdx];
+                    const dTime = decayDurations[decayIdx];
+                    const sVol = sustainLevels[sustainIdx] * 0.15;
+                    const rTime = decayDurations[releaseIdx];
+
+                    this.gain.gain.cancelScheduledValues(now);
+
+                    if (gate === 1) {
+                        this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+                        this.gain.gain.linearRampToValueAtTime(0.15, now + aTime);
+                        this.gain.gain.exponentialRampToValueAtTime(sVol + 0.001, now + aTime + dTime);
+                    } else {
+                        this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+                        this.gain.gain.exponentialRampToValueAtTime(0.0001, now + rTime);
+                    }
+                    this.gate = gate;
+                }
+            }
+
+            stop() {
+                if (this.osc) {
+                    this.osc.stop();
+                    this.osc.disconnect();
+                    this.osc = null;
+                }
+            }
+        }
+
+        // ABIs for Yul Contracts
+        const cpuABI = [
+            "function executeOp(uint8 opcode, uint256 operand) public returns (uint256)",
+            "function getCPUState() public view returns (uint256, uint256, uint256, uint256, uint256, uint256)",
+            "function runSteps(uint256 maxSteps) public returns (uint256)",
+            "function poke(uint256 addr, uint256 val) public returns (uint256)",
+            "function getScreenRAM() public view returns (bytes)",
+            "function getColorRAM() public view returns (bytes)",
+            "function pokeBytes(uint256 startAddr, bytes calldata data) public returns (uint256)",
+            "function fillMemory(uint256 startAddr, uint256 length, uint256 val) public returns (uint256)",
+            "function peek(uint256 addr) public view returns (uint256)",
+            "function batchPoke(uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
+            "function initializeGame(uint256 startPC, bytes calldata program, uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)"
+        ];
+        const graphicsABI = [
+            "function updateSprite(uint8 index, uint16 x, uint8 y) public returns (uint256)",
+            "function checkCollisions() public returns (uint256)",
+            "function setSpriteRow(uint8 index, uint8 row, uint256 val) public returns (uint256)",
+            "function setSpritePatternFull(uint8 index, uint256[21] rows) public returns (uint256)"
+        ];
+        const musicABI = [
+            "function getVoice1Frequency() public view returns (uint256)",
+            "function poke(uint16 addr, uint8 val) public returns (uint256)",
+            "function getSIDState() public view returns (uint256[25])"
+        ];
+        const diskABI = [
+            "function getJiffies() public view returns (uint256)",
+            "function executeDiskCommand(bytes calldata cmd) public returns (bytes)",
+            "event DiskWrite(address indexed writer, bytes32 indexed filename)"
+        ];
+        const speechABI = [
+            "function getSpeechState() public view returns (uint256, uint256, uint256, uint256)",
+            "function writePhoneme(uint256 phoneme, uint256 inflection) public returns (uint256)",
+            "function clearBusy() public returns (uint256)"
+        ];
+
+        let cpuContract, graphicsContract, musicContract, diskContract, speechContract;
+        let lastSpeechCounter = 0;
+        let spritePatterns = [[], [], [], [], [], [], [], []];
+
+        const games = {
+            pong: {
+                name: "Pong-on-Chain",
+                spriteEnableMask: 3,
+                program: [
+                    0xA5, 0x08, 0xD0, 0x0F, 0xA2, 0x27, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA9, 
+                    0x01, 0x85, 0x08, 0xAD, 0x00, 0xDC, 0x29, 0x04, 0xD0, 0x0F, 0xAD, 0x00, 
+                    0xD0, 0x38, 0xE9, 0x04, 0xC9, 0x28, 0xB0, 0x02, 0xA9, 0x28, 0x8D, 0x00, 
+                    0xD0, 0xAD, 0x00, 0xDC, 0x29, 0x08, 0xD0, 0x0F, 0xAD, 0x00, 0xD0, 0x18, 
+                    0x69, 0x04, 0xC9, 0xE0, 0x90, 0x02, 0xA9, 0xE0, 0x8D, 0x00, 0xD0, 0xA5, 
+                    0x02, 0xC9, 0x03, 0xD0, 0x0C, 0xAD, 0x02, 0xD0, 0x18, 0x69, 0x03, 0x8D, 0x02, 0xD0, 0x4C, 0x56, 0x20, 
+                    0xAD, 0x02, 0xD0, 0x38, 0xE9, 0x03, 0x8D, 0x02, 0xD0, 
+                    0xA5, 0x03, 0xC9, 0x03, 0xD0, 0x0C, 0xAD, 0x03, 0xD0, 0x18, 0x69, 0x03, 0x8D, 0x03, 0xD0, 0x4C, 0x71, 0x20, 
+                    0xAD, 0x03, 0xD0, 0x38, 0xE9, 0x03, 0x8D, 0x03, 0xD0, 
+                    0xAD, 0x02, 0xD0, 0xC9, 0x28, 0xB0, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0x03, 0x85, 0x02, 
+                    0xAD, 0x02, 0xD0, 0xC9, 0xE0, 0x90, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0xFD, 0x85, 0x02, 
+                    0xAD, 0x03, 0xD0, 0xC9, 0x23, 0xB0, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0x03, 0x85, 0x03, 
+                    0xAD, 0x03, 0xD0, 0xC9, 0x9B, 0x90, 0x4D, 0xAD, 0x1E, 0xD0, 0x29, 0x03, 0xC9, 0x03, 0xD0, 0x17, 0xA2, 0x80, 0xA0, 0x20, 0x20, 0x1B, 0x21, 0xA9, 0xFD, 0x85, 0x03, 0xE6, 0x04, 
+                    0xA2, 0x2C, 0xA0, 0x21, 0x20, 0x14, 0x21, 0x4C, 0xF7, 0x20, 
+                    0xAD, 0x03, 0xD0, 0xC9, 0xAF, 0x90, 0x26, 0xA2, 0x10, 0xA0, 0x05, 0x20, 0x1B, 0x21, 0xA9, 0x80, 0x8D, 0x02, 0xD0, 0xA9, 0x3C, 0x8D, 0x03, 0xD0, 0xA9, 0x03, 0x85, 0x03, 
+                    0xA2, 0x31, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA5, 0x04, 0xF0, 0x02, 0xC6, 0x04, 
+                    0xA5, 0x04, 0x85, 0x03, 0x20, 0x01, 0x21, 0x00, 0x00, 0x00, 
+                    0xAD, 0x02, 0xD6, 0xD0, 0x0F, 0xAD, 0x27, 0x21, 0xC9, 0xFF, 0xF0, 0x08, 0x8D, 0x00, 0xD6, 0xEE, 0x07, 0x21, 0x60, 
+                    0x8E, 0x07, 0x21, 0x8C, 0x08, 0x21, 0x60, 
+                    0x8E, 0x00, 0xD4, 0x8C, 0x01, 0xD4, 0xA9, 0x21, 0x8D, 0x04, 0xD4, 0x60, 
+                    0x1B, 0x02, 0x18, 0x27, 0xFF, 
+                    0x0E, 0x39, 0x37, 0x1F, 0xFF, 
+                    0x0C, 0x0B, 0x1F, 0xFF
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 155 }, // Player paddle
+                    { id: 1, x: 120, y: 60 },  // Ball
+                    { id: 2, x: 0, y: 200 }    // (unused)
+                ]
+            }
+        };
+
+        async function loadGame(gameId) {
+            const game = games[gameId];
+            if (!game) return;
+            console.log("Loading ROM:", game.name);
+            
+            // Collect batch updates to send them atomically
+            const addrs = [];
+            const vals = [];
+
+            // Load sprites coordinates
+            for (const sp of game.sprites) {
+                addrs.push(53248 + sp.id * 2);   vals.push(sp.x);
+                addrs.push(53248 + sp.id * 2 + 1); vals.push(sp.y);
+            }
+            
+            // Set enabled mask
+            addrs.push(53269); vals.push(game.spriteEnableMask);
+
+            // Initial velocities & score for Pong
+            if (gameId === "pong") {
+                addrs.push(2); vals.push(3);  // Vel X = 3
+                addrs.push(3); vals.push(3);  // Vel Y = 3
+                addrs.push(4); vals.push(0);  // Score = 0
+            }
+
+            // Write game banner in Screen RAM and Color RAM
+            const banner = `--- ${game.name.toUpperCase()} ON-CHAIN ---`;
+            const startCol = Math.max(0, Math.floor((40 - banner.length) / 2));
+            
+            for (let i = 0; i < banner.length; i++) {
+                let charCode = banner.charCodeAt(i);
+                let screenCode = 32;
+                if (charCode >= 65 && charCode <= 90) {
+                    screenCode = charCode - 64; // A-Z -> 1-26
+                } else if (charCode >= 97 && charCode <= 122) {
+                    screenCode = charCode - 96; // a-z -> 1-26
+                } else if (charCode >= 48 && charCode <= 57) {
+                    screenCode = charCode;      // 0-9
+                } else if (charCode === 45) {
+                    screenCode = 64;            // '-'
+                } else if (charCode === 32) {
+                    screenCode = 32;            // space
+                }
+                addrs.push(1024 + startCol + i); vals.push(screenCode);
+                addrs.push(55296 + startCol + i); vals.push(7);
+            }
+
+            // Perform the single atomic initialization call!
+            const programBytes = ethers.getBytes(new Uint8Array(game.program));
+            await (await cpuContract.initializeGame(8192, programBytes, addrs, vals)).wait();
+
+            // Clear Screen RAM (1024-2023) to Space (32) and Color RAM (55296-56295) to White (1) in separate calls!
+            await (await cpuContract.fillMemory(1024, 1000, 32)).wait(); 
+            await (await cpuContract.fillMemory(55296, 1000, 1)).wait();
+
+            // Install the ROM to the 1541 disk system
+            if (diskContract) {
+                try {
+                    const header = "W0:" + gameId + "\x00";
+                    const headerBytes = ethers.toUtf8Bytes(header);
+                    let dataLen = game.program.length;
+                    let paddedLen = Math.ceil(dataLen / 32) * 32;
+                    let payload = new Uint8Array(paddedLen);
+                    payload.set(game.program);
+                    const fullCmdBytes = ethers.concat([headerBytes, payload]);
+                    await (await diskContract.executeDiskCommand(fullCmdBytes)).wait();
+                    console.log(`Installed ROM '${gameId}' (${dataLen} bytes) to 1541 disk system.`);
+                    refreshDiskDirectory();
+                } catch (diskErr) {
+                    console.error("Failed to install ROM to 1541 disk system:", diskErr);
+                }
+            }
+
+            // Update UI status/label if exists
+            const activeGameText = document.getElementById("activeGameText");
+            if (activeGameText) activeGameText.innerText = game.name;
+        }
+
+        function wrapDiskContract(contract, activeSigner) {
+            if (!contract) return contract;
+            contract.executeDiskCommand = async function(cmdBytes, options = {}) {
+                const executeSelector = "0x9812a4df";
+                const offsetSlot = ethers.zeroPadValue(ethers.toBeHex(32), 32);
+                const lengthSlot = ethers.zeroPadValue(ethers.toBeHex(cmdBytes.length), 32);
+                const paddedBytes = ethers.concat([cmdBytes, ethers.zeroPadValue("0x", (32 - (cmdBytes.length % 32)) % 32)]);
+                const calldata = ethers.concat([executeSelector, offsetSlot, lengthSlot, paddedBytes]);
+                return activeSigner.sendTransaction({
+                    to: contract.target,
+                    data: calldata,
+                    ...options
+                });
+            };
+            contract.executeDiskCommand.staticCall = async function(cmdBytes, options = {}) {
+                const executeSelector = "0x9812a4df";
+                const offsetSlot = ethers.zeroPadValue(ethers.toBeHex(32), 32);
+                const lengthSlot = ethers.zeroPadValue(ethers.toBeHex(cmdBytes.length), 32);
+                const paddedBytes = ethers.concat([cmdBytes, ethers.zeroPadValue("0x", (32 - (cmdBytes.length % 32)) % 32)]);
+                const calldata = ethers.concat([executeSelector, offsetSlot, lengthSlot, paddedBytes]);
+                return provider.call({
+                    to: contract.target,
+                    data: calldata,
+                    ...options
+                });
+            };
+            return contract;
+        }
+
+        function setupDiskEventListener(contract) {
+            try {
+                contract.removeAllListeners("DiskWrite");
+                contract.on("DiskWrite", (writer, filenameHash) => {
+                    const bytes = ethers.getBytes(filenameHash);
+                    let filename = "";
+                    for (let i = 0; i < bytes.length; i++) {
+                        if (bytes[i] === 0) break;
+                        filename += String.fromCharCode(bytes[i]);
+                    }
+                    console.log("Real-time Disk Event caught. Writer:", writer, "File:", filename);
+
+                    refreshDiskDirectory();
+
+                    if (filename === "bbs.txt") {
+                        if (gamemasterConnected && gamemasterRoom === "LIBRARY") {
+                            writeToTerminal("\n[SYSTEM] Real-time Update: A new post was written to the BBS board by " + writer.substring(0, 8) + "... Refreshing...");
+                            loadBBSMessages().then(msgs => {
+                                writeToTerminal(msgs.join("\n"));
+                            });
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Failed to setup DiskWrite event listener:", err);
+            }
+        }
+
+        async function init() {
+            drawVulkanPlaceholder();
+            // Setup local provider and wallet by default
+            provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const fallbackPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            signer = new ethers.Wallet(fallbackPrivateKey, provider);
+            document.getElementById("btnConnect").innerText = "EVM Active (Anvil)";
+
+            // Load configurations
+            try {
+                const res = await fetch("/api/config");
+                config = await res.json();
+                const localhost = config.networks.localhost;
+
+                cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer);
+                graphicsContract = new ethers.Contract(localhost.graphicsSystemAddress, graphicsABI, signer);
+                musicContract = new ethers.Contract(localhost.musicMakerAddress, musicABI, signer);
+                diskContract = wrapDiskContract(new ethers.Contract(localhost.diskSystemAddress, diskABI, signer), signer);
+                setupDiskEventListener(diskContract);
+                speechContract = new ethers.Contract(localhost.speechSynthesizerAddress, speechABI, signer);
+
+                console.log("Contracts loaded successfully from registry.");
+                refreshDiskDirectory();
+                loadWorkspaceFileList();
+
+                // Load default game
+                await loadGame("pong");
+
+                // Pre-fetch Sprite Patterns from EVM storage
+                for (let i = 0; i < 8; i++) {
+                    spritePatterns[i] = [];
+                    for (let r = 0; r < 21; r++) {
+                        try {
+                            const val = Number(await provider.getStorage(graphicsContract.target, "0x" + (54000 + i * 32 + r).toString(16)));
+                            spritePatterns[i].push(val);
+                        } catch (err) {
+                            spritePatterns[i].push(0);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load configs:", err);
+            }
+
+            // Start simulation update loops
+            startSimulationLoops();
+        }
+
+        // Connect Browser Wallet
+        document.getElementById("btnConnect").addEventListener("click", async () => {
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    const browserProvider = new ethers.BrowserProvider(window.ethereum);
+                    const browserSigner = await browserProvider.getSigner();
+                    const address = await browserSigner.getAddress();
+                    
+                    // Update active contracts to use browser signer
+                    cpuContract = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, browserSigner);
+                    graphicsContract = new ethers.Contract(config.networks.localhost.graphicsSystemAddress, graphicsABI, browserSigner);
+                    musicContract = new ethers.Contract(config.networks.localhost.musicMakerAddress, musicABI, browserSigner);
+                    diskContract = wrapDiskContract(new ethers.Contract(config.networks.localhost.diskSystemAddress, diskABI, browserSigner), browserSigner);
+                    setupDiskEventListener(diskContract);
+                    speechContract = new ethers.Contract(config.networks.localhost.speechSynthesizerAddress, speechABI, browserSigner);
+                    
+                    document.getElementById("btnConnect").innerText = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+                    console.log("Connected to browser wallet:", address);
+                    refreshDiskDirectory();
+                } catch (err) {
+                    console.error("Wallet connection failed:", err);
+                }
+            } else {
+                alert("No Web3 wallet extension detected.");
+            }
+        });
+
+        // Web Audio Synthesizer Toggle
+        document.getElementById("btnAudioToggle").addEventListener("click", () => {
+            if (!isAudioPlaying) {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                audioCtx.resume();
+                voices = [
+                    new SIDVoice(audioCtx, audioCtx.destination),
+                    new SIDVoice(audioCtx, audioCtx.destination),
+                    new SIDVoice(audioCtx, audioCtx.destination)
+                ];
+                
+                isAudioPlaying = true;
+                document.getElementById("btnAudioToggle").innerText = "Mute Audio";
+                document.getElementById("btnAudioToggle").classList.add("btn-danger");
+            } else {
+                voices.forEach(v => v.stop());
+                voices = [];
+                isAudioPlaying = false;
+                document.getElementById("btnAudioToggle").innerText = "Enable Audio Synth";
+                document.getElementById("btnAudioToggle").classList.remove("btn-danger");
+            }
+        });
+
+        // 6502 Opcode execution transaction
+        document.getElementById("btnExecuteOp").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const opcode = parseInt(document.getElementById("selectOpcode").value, 16);
+            const operand = parseInt(document.getElementById("inputOperand").value);
+
+            try {
+                document.getElementById("btnExecuteOp").innerText = "Processing...";
+                const tx = await cpuContract.executeOp(opcode, operand);
+                await tx.wait();
+                console.log(`Executed Opcode ${opcode} with Operand ${operand}`);
+            } catch (err) {
+                console.error("Opcode failed:", err);
+            } finally {
+                document.getElementById("btnExecuteOp").innerText = "Execute";
+            }
+        });
+
+        // Load Game cartridge selection
+        document.getElementById("btnLoadGame").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const gameId = document.getElementById("selectGame").value;
+            document.getElementById("btnLoadGame").innerText = "Loading...";
+            try {
+                await loadGame(gameId);
+            } catch (err) {
+                console.error("Failed to load cartridge:", err);
+            } finally {
+                document.getElementById("btnLoadGame").innerText = "Load ROM";
+            }
+        });
+
+        document.getElementById("btnToggleDemo").addEventListener("click", () => {
+            isDemoModeActive = !isDemoModeActive;
+            const btn = document.getElementById("btnToggleDemo");
+            if (isDemoModeActive) {
+                btn.innerText = "Stop Demo";
+                btn.style.backgroundColor = "var(--neon-magenta)";
+                btn.style.color = "#000";
+                console.log("Demo Mode Activated!");
+                demoTimer = 0;
+            } else {
+                btn.innerText = "Autoplay Demo";
+                btn.style.backgroundColor = "";
+                btn.style.color = "var(--text-primary)";
+                console.log("Demo Mode Deactivated.");
+            }
+        });
+
+
+        // Helper to convert hex to utf8 in browser
+        function hexToUtf8(hex) {
+            let str = "";
+            for (let i = 0; i < hex.length; i += 2) {
+                const charCode = parseInt(hex.substr(i, 2), 16);
+                if (charCode === 0) break;
+                str += String.fromCharCode(charCode);
+            }
+            return str;
+        }
+
+        // Refresh Directory listing
+        async function refreshDiskDirectory() {
+            if (!diskContract) return;
+            const dirBox = document.getElementById("diskDirectoryList");
+            try {
+                dirBox.innerText = "Loading directory...";
+                const executeSelector = "0x9812a4df";
+                const dirHeader = "R0:$";
+                const dirHeaderBytes = ethers.toUtf8Bytes(dirHeader);
+                const offsetSlot = ethers.zeroPadValue(ethers.toBeHex(32), 32);
+                const dirLengthSlot = ethers.zeroPadValue(ethers.toBeHex(dirHeaderBytes.length), 32);
+                const dirDataBytes = ethers.concat([dirHeaderBytes, ethers.zeroPadValue("0x", (32 - (dirHeaderBytes.length % 32)) % 32)]);
+                const dirCalldata = ethers.concat([executeSelector, offsetSlot, dirLengthSlot, dirDataBytes]);
+
+                const res = await provider.call({
+                    to: diskContract.target,
+                    data: dirCalldata
+                });
+
+                const hex = res.substring(2);
+                let html = "";
+                let count = 0;
+                for (let i = 0; i < 8; i++) {
+                    const slice = hex.substr(i * 64, 64);
+                    if (slice.length < 64) break;
+                    const name = hexToUtf8(slice).trim();
+                    if (name.length > 0) {
+                        html += `<div>File #${i+1}: ${name} (256 bytes)</div>`;
+                        count++;
+                    }
+                }
+                if (count === 0) {
+                    dirBox.innerHTML = '<span style="color: var(--text-secondary);">[Disk Empty]</span>';
+                } else {
+                    dirBox.innerHTML = html;
+                }
+            } catch (err) {
+                console.error("Refresh directory failed:", err);
+                dirBox.innerHTML = '<span style="color: var(--neon-magenta);">[Error loading directory]</span>';
+            }
+        }
+
+        // Write file command
+        document.getElementById("btnWriteFile").addEventListener("click", async () => {
+            if (!diskContract) return;
+            const name = document.getElementById("diskFileName").value.trim();
+            const dataHex = document.getElementById("diskFileData").value.trim();
+
+            if (!name) {
+                alert("Please specify a filename.");
+                return;
+            }
+
+            try {
+                document.getElementById("btnWriteFile").innerText = "Saving...";
+                
+                const header = "W0:" + name + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+                
+                let payload = new Uint8Array(256);
+                if (dataHex) {
+                    const cleanHex = dataHex.replace(/^0x/, "");
+                    for (let i = 0; i < Math.min(256, cleanHex.length / 2); i++) {
+                        payload[i] = parseInt(cleanHex.substr(i * 2, 2), 16);
+                    }
+                }
+
+                const fullCmdBytes = ethers.concat([headerBytes, payload]);
+                
+                const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                await tx.wait();
+                console.log(`Saved file '${name}' to disk.`);
+                refreshDiskDirectory();
+            } catch (err) {
+                console.error("Save file failed:", err);
+            } finally {
+                document.getElementById("btnWriteFile").innerText = "Save";
+            }
+        });
+
+        // Read file command
+        document.getElementById("btnReadFile").addEventListener("click", async () => {
+            if (!diskContract) return;
+            const name = document.getElementById("diskFileName").value.trim();
+            if (!name) {
+                alert("Please specify a filename to load.");
+                return;
+            }
+
+            try {
+                document.getElementById("btnReadFile").innerText = "Loading...";
+                const header = "R0:" + name + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+
+                const res = await diskContract.executeDiskCommand.staticCall(headerBytes);
+                document.getElementById("diskFileData").value = res;
+                console.log(`Loaded file '${name}' successfully.`);
+            } catch (err) {
+                console.error("Load file failed:", err);
+            } finally {
+                document.getElementById("btnReadFile").innerText = "Load";
+            }
+        });
+
+        // Scratch file command
+        document.getElementById("btnScratchFile").addEventListener("click", async () => {
+            if (!diskContract) return;
+            const name = document.getElementById("diskFileName").value.trim();
+            if (!name) {
+                alert("Please specify a filename to scratch.");
+                return;
+            }
+
+            try {
+                document.getElementById("btnScratchFile").innerText = "Deleting...";
+                const header = "S0:" + name + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+
+                const tx = await diskContract.executeDiskCommand(headerBytes);
+                await tx.wait();
+                console.log(`Scratched file '${name}' successfully.`);
+                refreshDiskDirectory();
+            } catch (err) {
+                console.error("Scratch file failed:", err);
+            } finally {
+                document.getElementById("btnScratchFile").innerText = "Scratch";
+            }
+        });
+
+        document.getElementById("btnRefreshDisk").addEventListener("click", refreshDiskDirectory);
+
+        // Sprite movement transaction
+        document.getElementById("btnMoveSprite").addEventListener("click", async () => {
+            if (!graphicsContract) return;
+            const spriteId = parseInt(document.getElementById("selectSprite").value);
+            const x = parseInt(document.getElementById("spriteX").value);
+            const y = parseInt(document.getElementById("spriteY").value);
+
+            try {
+                document.getElementById("btnMoveSprite").innerText = "Moving...";
+                const tx = await graphicsContract.updateSprite(spriteId, x, y);
+                await tx.wait();
+                console.log(`Sprite ${spriteId} moved to (${x}, ${y})`);
+            } catch (err) {
+                console.error("Movement failed:", err);
+            } finally {
+                document.getElementById("btnMoveSprite").innerText = "Move";
+            }
+        });
+
+        const c64Palette = [
+            "#000000", // 0: Black
+            "#FFFFFF", // 1: White
+            "#880000", // 2: Red
+            "#AAFFEE", // 3: Cyan
+            "#CC44CC", // 4: Purple
+            "#00CC55", // 5: Green
+            "#0000AA", // 6: Blue
+            "#EEEE77", // 7: Yellow
+            "#DD8855", // 8: Orange
+            "#664400", // 9: Brown
+            "#FF7777", // 10: Light Red
+            "#333333", // 11: Dark Grey
+            "#777777", // 12: Grey
+            "#AAFF66", // 13: Light Green
+            "#0088FF", // 14: Light Blue
+            "#BBBBBB"  // 15: Light Grey
+        ];
+
+        // Game coordinates and keyboard listener
+        let s0_x = 120;
+        let s0_y = 150;
+        let s1_x = 120;
+        let s1_y = 200;
+        let s2_x = 60;
+        let s2_y = 60;
+
+        let last_s0_x = -1, last_s0_y = -1;
+        let last_s1_x = -1, last_s1_y = -1;
+        let last_s2_x = -1, last_s2_y = -1;
+        let currentCollisionMask = 0;
+        let lastPokedCollisionMask = -1;
+
+        // 8x8 C64 Keyboard Matrix Mapping:
+        let rowStates = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+        const keyMatrixMap = {
+            "arrowdown":  { row: 0, bit: 7 },
+            "f5":         { row: 0, bit: 6 },
+            "f3":         { row: 0, bit: 5 },
+            "f1":         { row: 0, bit: 4 },
+            "f7":         { row: 0, bit: 3 },
+            "arrowright": { row: 0, bit: 2 },
+            "enter":      { row: 0, bit: 1 },
+            "backspace":  { row: 0, bit: 0 },
+            "delete":     { row: 0, bit: 0 },
+            "shiftleft":  { row: 1, bit: 7 },
+            "e":          { row: 1, bit: 6 },
+            "s":          { row: 1, bit: 5 },
+            "z":          { row: 1, bit: 4 },
+            "4":          { row: 1, bit: 3 },
+            "a":          { row: 1, bit: 2 },
+            "w":          { row: 1, bit: 1 },
+            "3":          { row: 1, bit: 0 },
+            "x":          { row: 2, bit: 7 },
+            "t":          { row: 2, bit: 6 },
+            "f":          { row: 2, bit: 5 },
+            "c":          { row: 2, bit: 4 },
+            "6":          { row: 2, bit: 3 },
+            "d":          { row: 2, bit: 2 },
+            "r":          { row: 2, bit: 1 },
+            "5":          { row: 2, bit: 0 },
+            "v":          { row: 3, bit: 7 },
+            "u":          { row: 3, bit: 6 },
+            "h":          { row: 3, bit: 5 },
+            "b":          { row: 3, bit: 4 },
+            "8":          { row: 3, bit: 3 },
+            "g":          { row: 3, bit: 2 },
+            "y":          { row: 3, bit: 1 },
+            "7":          { row: 3, bit: 0 },
+            "n":          { row: 4, bit: 7 },
+            "o":          { row: 4, bit: 6 },
+            "k":          { row: 4, bit: 5 },
+            "m":          { row: 4, bit: 4 },
+            "0":          { row: 4, bit: 3 },
+            "j":          { row: 4, bit: 2 },
+            "i":          { row: 4, bit: 1 },
+            "9":          { row: 4, bit: 0 },
+            ",":          { row: 5, bit: 7 },
+            "@":          { row: 5, bit: 6 },
+            ":":          { row: 5, bit: 5 },
+            ".":          { row: 5, bit: 4 },
+            "-":          { row: 5, bit: 3 },
+            "l":          { row: 5, bit: 2 },
+            "p":          { row: 5, bit: 1 },
+            "+":          { row: 5, bit: 0 },
+            "/":          { row: 6, bit: 7 },
+            "arrowup":    { row: 6, bit: 6 },
+            "=":          { row: 6, bit: 5 },
+            "shiftright": { row: 6, bit: 4 },
+            "home":       { row: 6, bit: 3 },
+            ";":          { row: 6, bit: 2 },
+            "*":          { row: 6, bit: 1 },
+            "£":          { row: 6, bit: 0 },
+            "stop":       { row: 7, bit: 7 },
+            "q":          { row: 7, bit: 6 },
+            "arrowleft":  { row: 7, bit: 5 },
+            " ":          { row: 7, bit: 4 },
+            "2":          { row: 7, bit: 3 },
+            "control":    { row: 7, bit: 2 },
+            "1":          { row: 7, bit: 1 },
+            "escape":     { row: 7, bit: 0 }
+        };
+
+        window.addEventListener("keydown", async (e) => {
+            if (!cpuContract || !graphicsContract || !musicContract) return;
+
+            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) {
+                return;
+            }
+
+            // Keyboard matrix mapping check (non-blocking async poke)
+            const keyLower = e.key.toLowerCase();
+            const map = keyMatrixMap[keyLower];
+            if (map) {
+                rowStates[map.row] &= ~(1 << map.bit);
+                try {
+                    cpuContract.poke(56350 + map.row, rowStates[map.row]);
+                } catch (err) {}
+            }
+
+            let joystick = 0xFF; 
+            let moved = false;
+
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                joystick = joystick & ~0x04; 
+                playSynthTone(180, 150);
+                pokeSIDFreq(1800, 0x21);
+                moved = true;
+            } else if (e.key === "ArrowRight" || e.key === "d") {
+                joystick = joystick & ~0x08; 
+                playSynthTone(180, 150);
+                pokeSIDFreq(1800, 0x21);
+                moved = true;
+            } else if (e.key === " " || e.key === "Spacebar") {
+                e.preventDefault();
+                joystick = joystick & ~0x10; 
+                playLaserSweep();
+                pokeSIDFreq(6000, 0x11);
+                moved = true;
+            }
+
+            if (moved) {
+                try {
+                    cpuContract.poke(56320, joystick);
+                } catch (err) {
+                    console.error("Joystick poke failed:", err);
+                }
+            }
+        });
+
+        window.addEventListener("keyup", async (e) => {
+            if (!cpuContract) return;
+
+            const keyLower = e.key.toLowerCase();
+            const map = keyMatrixMap[keyLower];
+            if (map) {
+                rowStates[map.row] |= (1 << map.bit);
+                try {
+                    cpuContract.poke(56350 + map.row, rowStates[map.row]);
+                } catch (err) {}
+            }
+
+            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "ArrowRight" || e.key === "d" || e.key === " " || e.key === "Spacebar") {
+                try {
+                    cpuContract.poke(56320, 0xFF);
+                } catch (err) {}
+            }
+        });
+
+        function playSynthTone(freqHz, durationMs) {
+            if (isAudioPlaying && audioCtx) {
+                try {
+                    let osc = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(freqHz, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + durationMs/1000);
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + durationMs/1000);
+                } catch (e) {}
+            }
+        }
+
+        function playLaserSweep() {
+            if (isAudioPlaying && audioCtx) {
+                try {
+                    let osc = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } catch (e) {}
+            }
+        }
+
+        async function pokeSIDFreq(freqVal, controlVal = 0x21) {
+            try {
+                const lo = freqVal & 0xFF;
+                const hi = (freqVal >> 8) & 0xFF;
+                await musicContract.poke(54272, lo);
+                await musicContract.poke(54273, hi);
+                await musicContract.poke(54276, controlVal);
+            } catch (err) {
+                console.error("SID poke failed:", err);
+            }
+        }
+
+        // Drawing & Sound Loop
+        const canvas = document.getElementById("c64Screen");
+        const ctx = canvas.getContext("2d");
+
+        async function startSimulationLoops() {
+            setInterval(async () => {
+                if (!provider) return;
+
+                if (isDemoModeActive && cpuContract) {
+                    demoTimer++;
+                    if (demoTimer >= 50) {
+                        demoTimer = 0;
+                        demoGameIdx = (demoGameIdx + 1) % demoGameSequence.length;
+                        const nextGame = demoGameSequence[demoGameIdx];
+                        document.getElementById("selectGame").value = nextGame;
+                        console.log("Demo cycling to next game:", nextGame);
+                        loadGame(nextGame).catch(err => console.error("Demo load failed:", err));
+                    } else {
+                        const rnd = Math.random();
+                        let joystick = 0xFF;
+                        if (rnd < 0.25) {
+                            joystick &= ~0x04; // Left
+                            pokeSIDFreq(1800, 0x21);
+                        } else if (rnd < 0.50) {
+                            joystick &= ~0x08; // Right
+                            pokeSIDFreq(1800, 0x21);
+                        } else if (rnd < 0.70) {
+                            joystick &= ~0x10; // Fire
+                            pokeSIDFreq(6000, 0x11);
+                        }
+                        try {
+                            await cpuContract.poke(56320, joystick);
+                        } catch (e) {}
+                    }
+                }
+
+                // 1. Fetch CPU state
+                if (cpuContract) {
+                    try {
+                        const state = await cpuContract.getCPUState();
+                        document.getElementById("regA").innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0');
+                        document.getElementById("regX").innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0');
+                        document.getElementById("regY").innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0');
+                        document.getElementById("regSR").innerText = Number(state[3]).toString(16).toUpperCase().padStart(2, '0');
+                        document.getElementById("regSP").innerText = Number(state[4]).toString(16).toUpperCase().padStart(2, '0');
+                        document.getElementById("regPC").innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0');
+                    } catch (err) {
+                        console.error("Error fetching CPU state:", err);
+                    }
+                }
+
+                // 2. Fetch Music frequency & modulate synth pitch
+                if (musicContract) {
+                    try {
+                        const state = await musicContract.getSIDState();
+                        
+                        const v1_freq = (Number(state[1]) << 8) | Number(state[0]);
+                        const v1_ctrl = Number(state[4]);
+                        const v1_ad = Number(state[5]);
+                        const v1_sr = Number(state[6]);
+                        
+                        const v2_freq = (Number(state[8]) << 8) | Number(state[7]);
+                        const v2_ctrl = Number(state[11]);
+                        const v2_ad = Number(state[12]);
+                        const v2_sr = Number(state[13]);
+                        
+                        const v3_freq = (Number(state[15]) << 8) | Number(state[14]);
+                        const v3_ctrl = Number(state[18]);
+                        const v3_ad = Number(state[19]);
+                        const v3_sr = Number(state[20]);
+
+                        const freqHz = Math.round(v1_freq * 0.06097);
+                        document.getElementById("sidFreqText").innerText = freqHz;
+
+                        if (isAudioPlaying && voices.length === 3) {
+                            voices[0].update(v1_freq, v1_ctrl, v1_ad, v1_sr);
+                            voices[1].update(v2_freq, v2_ctrl, v2_ad, v2_sr);
+                            voices[2].update(v3_freq, v3_ctrl, v3_ad, v3_sr);
+                        }
+                    } catch (err) {
+                        console.error("Error fetching music frequency:", err);
+                    }
+                }
+
+                // 3. Process 6502 Space Invaders physics tick & sync coordinates
+                if (graphicsContract && cpuContract) {
+                    try {
+                        // 3a. Poke current collision mask to CPU system if it changed since last poke
+                        if (currentCollisionMask !== lastPokedCollisionMask) {
+                            await cpuContract.poke(53278, currentCollisionMask);
+                            lastPokedCollisionMask = currentCollisionMask;
+                        }
+
+                        // 3b. Execute 120 steps on-chain
+                        const tx = await cpuContract.runSteps(120);
+                        await tx.wait();
+
+                        // 3c. Peek updated sprite coordinates
+                        const spr0_x = Number(await cpuContract.peek(0xd000));
+                        const spr0_y = Number(await cpuContract.peek(0xd001));
+                        const spr1_x = Number(await cpuContract.peek(0xd002));
+                        const spr1_y = Number(await cpuContract.peek(0xd003));
+                        const spr2_x = Number(await cpuContract.peek(0xd004));
+                        const spr2_y = Number(await cpuContract.peek(0xd005));
+
+                        s0_x = spr0_x;
+                        s0_y = spr0_y;
+                        s1_x = spr1_x;
+                        s1_y = spr1_y;
+                        s2_x = spr2_x;
+                        s2_y = spr2_y;
+
+                        // 3d. Update on-chain graphics system coordinates asynchronously if they shifted
+                        if (s0_x !== last_s0_x || s0_y !== last_s0_y) {
+                            graphicsContract.updateSprite(0, s0_x, s0_y).catch(() => {});
+                            last_s0_x = s0_x;
+                            last_s0_y = s0_y;
+                        }
+                        if (s1_x !== last_s1_x || s1_y !== last_s1_y) {
+                            graphicsContract.updateSprite(1, s1_x, s1_y).catch(() => {});
+                            last_s1_x = s1_x;
+                            last_s1_y = s1_y;
+                        }
+                        if (s2_x !== last_s2_x || s2_y !== last_s2_y) {
+                            graphicsContract.updateSprite(2, s2_x, s2_y).catch(() => {});
+                            last_s2_x = s2_x;
+                            last_s2_y = s2_y;
+                        }
+
+                        // 3e. Compute next collision mask using local JS check (VIC-II 24x21 overlaps)
+                        let collisionMask = 0;
+                        const checkOverlap = (x1, y1, x2, y2) => {
+                            return Math.abs(x1 - x2) < 24 && Math.abs(y1 - y2) < 21;
+                        };
+                        if (checkOverlap(s0_x, s0_y, s1_x, s1_y)) collisionMask |= 3; // Sprite 0 & 1
+                        if (checkOverlap(s0_x, s0_y, s2_x, s2_y)) collisionMask |= 5; // Sprite 0 & 2
+                        if (checkOverlap(s1_x, s1_y, s2_x, s2_y)) collisionMask |= 6; // Sprite 1 & 2
+                        currentCollisionMask = collisionMask;
+                        const isCollision = (collisionMask & 6) === 6;
+
+                        // Fetch border and background color registers (53280 and 53281)
+                        const borderVal = Number(await cpuContract.peek(0xd020)) & 0xF;
+                        const bgVal = Number(await cpuContract.peek(0xd021)) & 0xF;
+                        const borderHex = c64Palette[borderVal] || c64Palette[14];
+                        const bgHex = c64Palette[bgVal] || c64Palette[6];
+
+                        // Fetch Screen RAM and Color RAM
+                        let screenRam = new Uint8Array(1000);
+                        let colorRam = new Uint8Array(1000);
+                        try {
+                            const screenHex = await cpuContract.getScreenRAM();
+                            const colorHex = await cpuContract.getColorRAM();
+                            screenRam = ethers.getBytes(screenHex);
+                            colorRam = ethers.getBytes(colorHex);
+                        } catch (e) {}
+
+                        const score = Number(await cpuContract.peek(3));
+                        const colStatusText = document.getElementById("collisionStatus");
+                        colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
+                        if (isCollision) {
+                            colStatusText.style.color = "var(--neon-magenta)";
+                            playSynthTone(100, 500); 
+                            pokeSIDFreq(1000, 0x21);
+                        } else {
+                            colStatusText.style.color = "var(--neon-blue)";
+                        }
+
+                        drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, isCollision, borderHex, bgHex, screenRam, colorRam);
+
+                        if (isDemoModeActive) {
+                            ctx.fillStyle = "rgba(255, 0, 127, 0.9)";
+                            ctx.font = "bold 9px 'Orbitron', sans-serif";
+                            ctx.textAlign = "right";
+                            if (Math.floor(Date.now() / 500) % 2 === 0) {
+                                ctx.fillText("● DEMO MODE ACTIVE", canvas.width - 15, 20);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Graphics physics tick error:", err);
+                    }
+                }
+
+                // 4. Fetch speechSynthesizer state
+                if (speechContract) {
+                    try {
+                        const state = await speechContract.getSpeechState();
+                        const phonemeCode = Number(state[0]);
+                        const inflection = Number(state[1]);
+                        const busy = Number(state[2]);
+                        const counter = Number(state[3]);
+
+                        if (counter !== lastSpeechCounter) {
+                            lastSpeechCounter = counter;
+                            playPhoneme(phonemeCode, inflection);
+                        }
+                    } catch (err) {
+                        console.error("Error fetching speech state:", err);
+                    }
+                }
+
+                updateVulkanScreen();
+            }, 400);
+        }
+
+        const phonemeNames = [
+            "EH3", "EH2", "EH1", "PA0", "DT", "A2", "A1", "ZH",
+            "AH2", "I3", "I2", "I1", "M", "N", "B", "V",
+            "CH", "SH", "Z", "AW2", "NG", "AH1", "OO1", "OO",
+            "L", "K", "J", "H", "G", "F", "D", "S",
+            "A", "AY", "Y1", "UH3", "UH2", "UH1", "O", "OU",
+            "AST", "OT", "EL", "Y", "UR", "ER", "R", "THR",
+            "TH", "T", "P", "THV", "KAE", "JK", "PA1", "UN",
+            "AST2", "AW1", "E1", "E2", "VO", "AST3", "AST4", "AST5"
+        ];
+
+        const wordsPhonemes = {
+            "HELLO": ["H", "EH1", "L", "OU"],
+            "COMMODORE": ["K", "A", "M", "O", "D", "OU", "R"],
+            "COMPUTER": ["K", "A", "M", "P", "Y1", "OO1", "T", "ER"],
+            "PLAY": ["P", "L", "AY"],
+            "GAME": ["G", "AY", "M"],
+            "ALIEN": ["AY", "L", "Y1", "UN"],
+            "AHOY": ["AH1", "H", "OY"],
+            "RETRO": ["R", "EH1", "T", "R", "O"],
+            "SOUND": ["S", "AW1", "UN", "D"],
+            "ON": ["O", "N"],
+            "CHAIN": ["CH", "AY", "N"]
+        };
+
+        const phonemeToCode = {};
+        phonemeNames.forEach((name, idx) => {
+            phonemeToCode[name] = idx;
+        });
+
+        const letterToPhonemes = {
+            "A": ["AY"], "B": ["B"], "C": ["S", "E1"], "D": ["D"], "E": ["E1"],
+            "F": ["F"], "G": ["G"], "H": ["H"], "I": ["AY"], "J": ["J"],
+            "K": ["K"], "L": ["L"], "M": ["M"], "N": ["N"], "O": ["O"],
+            "P": ["P"], "Q": ["K"], "R": ["R"], "S": ["S"], "T": ["T"],
+            "U": ["Y1", "OO1"], "V": ["V"], "W": ["OO1"], "X": ["K", "S"],
+            "Y": ["AY"], "Z": ["Z"], " ": ["PA0"]
+        };
+
+        function playPhoneme(code, inflection) {
+            const label = phonemeNames[code] || "PA0";
+            const pText = document.getElementById("voicePhonemeText");
+            const iText = document.getElementById("voiceInflectionText");
+            if (pText) pText.innerText = `${label} (Code: ${code})`;
+            if (iText) iText.innerText = inflection;
+
+            const led = document.getElementById("voiceStatusLED");
+            const ledText = document.getElementById("voiceStatusText");
+            if (led) {
+                led.style.background = "#ff007f";
+                led.style.boxShadow = "0 0 8px #ff007f";
+            }
+            if (ledText) {
+                ledText.innerText = "BUSY";
+                ledText.style.color = "#ff007f";
+            }
+
+            const mouth = document.getElementById("voiceBoxMouth");
+            let mouthHeight = 4;
+            let isConsonant = false;
+            let isPause = false;
+
+            if (label.startsWith("PA")) {
+                isPause = true;
+                mouthHeight = 2;
+            } else if (["M", "N", "B", "V", "P", "F"].includes(label[0])) {
+                mouthHeight = 2;
+            } else if (["S", "Z", "SH", "ZH", "CH", "H", "K", "G", "T", "D"].includes(label.substring(0, 2)) || ["S", "Z", "H", "K", "G", "T", "D"].includes(label[0])) {
+                mouthHeight = 8;
+                isConsonant = true;
+            } else {
+                mouthHeight = 20;
+            }
+
+            if (mouth) {
+                mouth.style.height = `${mouthHeight}px`;
+                mouth.style.borderRadius = mouthHeight > 6 ? "50%" : "4px";
+            }
+
+            if (isAudioPlaying && audioCtx && !isPause) {
+                const now = audioCtx.currentTime;
+                const duration = 0.16;
+                const basePitch = 90 + (inflection * 15);
+
+                if (isConsonant) {
+                    const bufferSize = audioCtx.sampleRate * duration;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = "bandpass";
+                    if (["S", "Z"].includes(label[0])) {
+                        filter.frequency.setValueAtTime(6000, now);
+                    } else if (["SH", "ZH", "CH"].includes(label.substring(0, 2))) {
+                        filter.frequency.setValueAtTime(3000, now);
+                    } else {
+                        filter.frequency.setValueAtTime(1500, now);
+                    }
+                    filter.Q.setValueAtTime(3, now);
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    noise.start(now);
+                    noise.stop(now + duration);
+                } else {
+                    const osc = audioCtx.createOscillator();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(basePitch, now);
+
+                    const formant = audioCtx.createBiquadFilter();
+                    formant.type = "bandpass";
+                    let centerFreq = 1000;
+                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2")) centerFreq = 450;
+                    else if (label.startsWith("OO")) centerFreq = 550;
+                    else if (label.startsWith("AH") || label.startsWith("A")) centerFreq = 950;
+                    
+                    formant.frequency.setValueAtTime(centerFreq, now);
+                    formant.Q.setValueAtTime(6, now);
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    osc.connect(formant);
+                    formant.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + duration);
+                }
+            }
+
+            setTimeout(async () => {
+                if (mouth) {
+                    mouth.style.height = "4px";
+                    mouth.style.borderRadius = "4px";
+                }
+                if (led) {
+                    led.style.background = "#39ff14";
+                    led.style.boxShadow = "0 0 8px #39ff14";
+                }
+                if (ledText) {
+                    ledText.innerText = "READY";
+                    ledText.style.color = "#39ff14";
+                }
+
+                if (speechContract) {
+                    try {
+                        const tx = await speechContract.clearBusy();
+                        await tx.wait();
+                    } catch (e) {}
+                }
+            }, 180);
+        }
+
+        async function speakText(text) {
+            if (!speechContract) {
+                alert("Speech Synthesizer contract is not loaded.");
+                return;
+            }
+            text = text.toUpperCase().trim();
+            if (!text) return;
+
+            const words = text.split(/\s+/);
+            const phonemeSequence = [];
+            
+            words.forEach(word => {
+                if (wordsPhonemes[word]) {
+                    wordsPhonemes[word].forEach(p => phonemeSequence.push(p));
+                } else {
+                    for (let i = 0; i < word.length; i++) {
+                        const letter = word[i];
+                        const list = letterToPhonemes[letter] || ["PA0"];
+                        list.forEach(p => phonemeSequence.push(p));
+                    }
+                }
+                phonemeSequence.push("PA1");
+            });
+
+            const btn = document.getElementById("btnVoiceSpeak");
+            if (btn) btn.innerText = "Speaking...";
+
+            try {
+                for (let i = 0; i < phonemeSequence.length; i++) {
+                    const name = phonemeSequence[i];
+                    const code = phonemeToCode[name] !== undefined ? phonemeToCode[name] : 3;
+                    const tx = await speechContract.writePhoneme(code, 1);
+                    await tx.wait();
+
+                    let isBusy = true;
+                    while (isBusy) {
+                        await new Promise(r => setTimeout(r, 60));
+                        const state = await speechContract.getSpeechState();
+                        isBusy = Number(state[2]) === 1;
+                    }
+                }
+            } catch (err) {
+                console.error("Speech sequence transmission failed:", err);
+            } finally {
+                if (btn) btn.innerText = "Speak";
+            }
+        }
+
+        document.getElementById("btnVoiceSpeak").addEventListener("click", async () => {
+            const inputVal = document.getElementById("voiceTextInput").value.trim();
+            if (!inputVal) {
+                alert("Please type some words to speak.");
+                return;
+            }
+            speakText(inputVal);
+        });
+
+        // --- Magic Desk & Wordcraft Event Handlers ---
+        document.getElementById("btnWordcraftSave").addEventListener("click", async () => {
+            const docName = document.getElementById("docNameInput").value.trim() || "document.txt";
+            const content = document.getElementById("wordcraftText").value;
+            const statusDiv = document.getElementById("wordcraftStatus");
+            
+            if (!diskContract) {
+                alert("Disk System contract not loaded. Please connect wallet first.");
+                return;
+            }
+            
+            statusDiv.innerText = "Saving to Disk System (DFS)...";
+            try {
+                const header = "W0:" + docName + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+                const contentBytes = ethers.toUtf8Bytes(content);
+                const fullCmdBytes = ethers.concat([headerBytes, contentBytes]);
+                
+                const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                await tx.wait();
+                statusDiv.innerText = `SUCCESS: Saved '${docName}' to on-chain DFS!`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Failed to save document.";
+            }
+        });
+
+        document.getElementById("btnWordcraftLoad").addEventListener("click", async () => {
+            const docName = document.getElementById("docNameInput").value.trim() || "document.txt";
+            const statusDiv = document.getElementById("wordcraftStatus");
+            
+            if (!diskContract) {
+                alert("Disk System contract not loaded. Please connect wallet first.");
+                return;
+            }
+            
+            statusDiv.innerText = "Loading from Disk System (DFS)...";
+            try {
+                const header = "R0:" + docName + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+                
+                const rawResult = await diskContract.executeDiskCommand.staticCall(headerBytes);
+                const text = ethers.toUtf8String(rawResult);
+                document.getElementById("wordcraftText").value = text;
+                statusDiv.innerText = `SUCCESS: Loaded '${docName}' from on-chain DFS!`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Document not found or read failed.";
+            }
+        });
+
+        document.getElementById("btnWordcraftSpeak").addEventListener("click", async () => {
+            const content = document.getElementById("wordcraftText").value.trim();
+            if (!content) {
+                alert("Document is empty.");
+                return;
+            }
+            speakText(content);
+        });
+
+        document.getElementById("btnDeskTypewriter").addEventListener("click", () => {
+            document.getElementById("wordcraftWorkspace").style.display = "flex";
+            document.getElementById("wordcraftStatus").innerText = "Typewriter Active (Wordcraft 80 Ultra)";
+        });
+
+        document.getElementById("btnDeskCabinet").addEventListener("click", async () => {
+            const statusDiv = document.getElementById("wordcraftStatus");
+            statusDiv.innerText = "Accessing File Cabinet...";
+            const btnLoadDir = document.getElementById("btnLoadDir");
+            if (btnLoadDir) {
+                btnLoadDir.click();
+                statusDiv.innerText = "DFS Directory updated in File Cabinet.";
+            }
+        });
+
+        // --- Workspace File Sync Handlers ---
+        async function loadWorkspaceFileList() {
+            try {
+                const res = await fetch("/api/workspace-files");
+                if (!res.ok) return;
+                const files = await res.json();
+                const select = document.getElementById("selectWorkspaceFile");
+                
+                // Clear old options except placeholder
+                select.innerHTML = '<option value="">-- Select Workspace File (Read/Write Mode) --</option>';
+                files.forEach(file => {
+                    const opt = document.createElement("option");
+                    opt.value = file;
+                    opt.innerText = file;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Failed to load workspace files list:", err);
+            }
+        }
+
+        document.getElementById("selectWorkspaceFile").addEventListener("change", async (e) => {
+            const pathSelected = e.target.value;
+            if (!pathSelected) return;
+            // Auto update file name text field
+            document.getElementById("docNameInput").value = pathSelected;
+            // Load file content
+            document.getElementById("btnWordcraftLoadWorkspace").click();
+        });
+
+        document.getElementById("btnWordcraftLoadWorkspace").addEventListener("click", async () => {
+            const pathSelected = document.getElementById("docNameInput").value.trim();
+            const statusDiv = document.getElementById("wordcraftStatus");
+            if (!pathSelected) {
+                alert("Please select or enter a workspace file path first.");
+                return;
+            }
+            statusDiv.innerText = "Loading from Workspace...";
+            try {
+                const res = await fetch(`/api/read-file?path=${encodeURIComponent(pathSelected)}`);
+                if (!res.ok) {
+                    throw new Error("Read failed: " + res.statusText);
+                }
+                const text = await res.text();
+                document.getElementById("wordcraftText").value = text;
+                statusDiv.innerText = `SUCCESS: Loaded '${pathSelected}' from Workspace!`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Workspace read failed.";
+            }
+        });
+
+        document.getElementById("btnWordcraftSaveWorkspace").addEventListener("click", async () => {
+            const pathSelected = document.getElementById("docNameInput").value.trim();
+            const content = document.getElementById("wordcraftText").value;
+            const statusDiv = document.getElementById("wordcraftStatus");
+            if (!pathSelected) {
+                alert("Please select or enter a workspace file path first.");
+                return;
+            }
+            statusDiv.innerText = "Saving to Workspace...";
+            try {
+                const res = await fetch("/api/write-file", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ path: pathSelected, content })
+                });
+                if (!res.ok) {
+                    throw new Error("Write failed: " + res.statusText);
+                }
+                statusDiv.innerText = `SUCCESS: Saved '${pathSelected}' to Workspace!`;
+                // Refresh list
+                await loadWorkspaceFileList();
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Workspace write failed.";
+            }
+        });
+
+        // --- GameMaster BBS / Network Terminal Logic ---
+        let gamemasterConnected = false;
+        let gamemasterRoom = "FOYER";
+        let gamemasterTerminalTimer = null;
+
+        // --- GameMaster Pong Game State ---
+        let pongActive = false;
+        let pongMode = "PVAI"; // "PVP", "PVAI", "AIVAI"
+        let pongBoardWidth = 24;
+        let pongBoardHeight = 10;
+        let leftPaddleY = 4;
+        let rightPaddleY = 4;
+        let ballX = 12;
+        let ballY = 5;
+        let ballVx = 1;
+        let ballVy = 1;
+        let scoreLeft = 0;
+        let scoreRight = 0;
+        let pongTimer = null;
+
+        // --- MECC Classroom Game State ---
+        let oregonActive = false;
+        let oregonMile = 0;
+        let oregonFood = 0;
+        let oregonHealth = 0;
+        let lemonadeActive = false;
+        let lemonadeDay = 0;
+        let lemonadeMoney = 0;
+        let lemonadeGlasses = 0;
+        let lemonadePrice = 0;
+        let lemonadeCostPerGlass = 0.05;
+        let lemonadeDayPhase = "SETUP";
+
+        function renderPongBoard() {
+            let board = [];
+            for (let y = 0; y < pongBoardHeight; y++) {
+                board.push(new Array(pongBoardWidth).fill(" "));
+            }
+            // Draw left paddle
+            for (let dy = -1; dy <= 1; dy++) {
+                let py = leftPaddleY + dy;
+                if (py >= 0 && py < pongBoardHeight) {
+                    board[py][0] = "[";
+                }
+            }
+            // Draw right paddle
+            for (let dy = -1; dy <= 1; dy++) {
+                let py = rightPaddleY + dy;
+                if (py >= 0 && py < pongBoardHeight) {
+                    board[py][pongBoardWidth - 1] = "]";
+                }
+            }
+            // Draw ball
+            let bx = Math.round(ballX);
+            let by = Math.round(ballY);
+            if (bx >= 0 && bx < pongBoardWidth && by >= 0 && by < pongBoardHeight) {
+                board[by][bx] = "o";
+            }
+            let border = "=".repeat(pongBoardWidth + 2);
+            let lines = [border];
+            for (let y = 0; y < pongBoardHeight; y++) {
+                lines.push("|" + board[y].join("") + "|");
+            }
+            lines.push(border);
+            lines.push(`Score: User A ${scoreLeft} - ${scoreRight} User B/AI`);
+            lines.push(`Controls: Left (W/S) | Right (I/K) | Type 'EXIT' to quit`);
+            return lines.join("\n");
+        }
+
+        function tickPong() {
+            if (!pongActive) return;
+
+            // AI for Left Paddle if AI vs AI
+            if (pongMode === "AIVAI") {
+                if (ballY < leftPaddleY && leftPaddleY > 1) leftPaddleY--;
+                else if (ballY > leftPaddleY && leftPaddleY < pongBoardHeight - 2) leftPaddleY++;
+            }
+            // AI for Right Paddle if Player vs AI or AI vs AI
+            if (pongMode === "PVAI" || pongMode === "AIVAI") {
+                if (ballY < rightPaddleY && rightPaddleY > 1) rightPaddleY--;
+                else if (ballY > rightPaddleY && rightPaddleY < pongBoardHeight - 2) rightPaddleY++;
+            }
+
+            ballX += ballVx;
+            ballY += ballVy;
+
+            if (ballY <= 0) {
+                ballY = 0;
+                ballVy = -ballVy;
+            } else if (ballY >= pongBoardHeight - 1) {
+                ballY = pongBoardHeight - 1;
+                ballVy = -ballVy;
+            }
+
+            if (ballX <= 0) {
+                if (Math.abs(ballY - leftPaddleY) <= 1) {
+                    ballX = 1;
+                    ballVx = -ballVx;
+                } else {
+                    scoreRight++;
+                    resetBall();
+                }
+            } else if (ballX >= pongBoardWidth - 1) {
+                if (Math.abs(ballY - rightPaddleY) <= 1) {
+                    ballX = pongBoardWidth - 2;
+                    ballVx = -ballVx;
+                } else {
+                    scoreLeft++;
+                    resetBall();
+                }
+            }
+
+            const out = document.getElementById("gamemasterTerminalOutput");
+            let text = out.innerText;
+            let lines = text.split("\n");
+            let boardStart = lines.findIndex(l => l.startsWith("================="));
+            if (boardStart !== -1) {
+                lines = lines.slice(0, boardStart);
+            }
+            out.innerText = lines.join("\n") + "\n" + renderPongBoard();
+            out.scrollTop = out.scrollHeight;
+        }
+
+        function resetBall() {
+            ballX = Math.floor(pongBoardWidth / 2);
+            ballY = Math.floor(pongBoardHeight / 2);
+            ballVx = Math.random() > 0.5 ? 1 : -1;
+            ballVy = Math.random() > 0.5 ? 1 : -1;
+        }
+
+        const gmWelcomeText = `
+************************************************
+*   WELCOME TO GAMEMASTER TIME-SHARING NETWORK  *
+*          ESTABLISHED 1983 - CHICAGO           *
+************************************************
+CONNECT 300 BAUD -- OK
+SYSTEM ONLINE -- 3 ACTIVE USERS
+
+YOU HAVE ENTERED THE GAMEMASTER HOUSE.
+EACH ROOM REPRESENTS A GAME OR UTILITY.
+
+COMMANDS:
+  HELP         - SHOW THIS LIST
+  MAP          - VIEW HOUSE MAP
+  GO <ROOM>    - GO TO A ROOM (FOYER, PARLOR, LIBRARY, KITCHEN, CLASSROOM)
+  BYE          - HANG UP / DISCONNECT
+
+CURRENT LOCATION: GRAND FOYER
+THE HALLWAY LEADS TO THE PARLOR, LIBRARY, KITCHEN, AND MECC CLASSROOM.
+`;
+
+        const gmMapText = `
+      ====================================
+      I        KITCHEN (Recipes)         I
+      I               |                  I
+      I   PARLOR ---- FOYER -------------I
+      I  (Games)      |        (Welcome) I
+      I               |                  I
+      I   CLASSROOM - LIBRARY            I
+      I  (MECC Edu)   (BBS)              I
+      ====================================
+`;
+
+        const gmKitchenText = `
+--- THE GAMEMASTER KITCHEN ---
+RECIPE SHARING EXCHANGE.
+
+TODAY'S RETRO C64 COMPANION RECIPE:
+"RETRO CHIPTUNE COOKIES"
+INGREDIENTS:
+- 2 CUPS FLOUR
+- 1 TSP BAKING SODA
+- 1/2 CUP BUTTER
+- 1 CUP VINTAGE CHOCOLATE CHIPS
+- 8 BITS OF LOVE
+
+DIRECTIONS:
+BAKE AT 350 DEGREES UNTIL GOLDEN BROWN.
+PAIRED WELL WITH A GLASS OF MILK AND SOME RETRO SID MUSIC.
+`;
+
+        const gmClassroomText = `
+--- THE MECC CLASSROOM ---
+MINNESOTA EDUCATIONAL COMPUTING CONSORTIUM
+OFFICIAL PORTED SOFTWARE SERIES FOR THE COMMODORE 64.
+
+AVAILABLE EDUCATIONAL PROGRAMS:
+- OREGON    : THE OREGON TRAIL (TYPE "PLAY OREGON" TO START!)
+- LEMONADE  : LEMONADE STAND (TYPE "PLAY LEMONADE" TO START!)
+`;
+
+        const gmParlorText = `
+--- THE GAMEMASTER PARLOR ---
+ON-LINE GAME CENTER.
+
+GAMES AVAILABLE:
+- TICTACTOE : RETRO TIC-TAC-TOE AGAINST THE MACHINE (TYPE "PLAY TICTACTOE")
+- PONG      : RETRO PONG (2 PLAYERS, PLAYER VS AI, OR AI VS AI)
+              TYPE "PLAY PONG" TO START!
+`;
+
+        const gamemasterLibraryWelcome = `
+--- THE GAMEMASTER LIBRARY ---
+ELECTRONIC MAIL & BULLETIN BOARD EXCHANGE.
+
+RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
+`;
+
+        function writeToTerminal(text) {
+            const out = document.getElementById("gamemasterTerminalOutput");
+            out.innerText += "\n" + text;
+            out.scrollTop = out.scrollHeight;
+        }
+
+        async function loadBBSMessages() {
+            if (!diskContract) return ["No messages found. Post the first one!"];
+            try {
+                const cmd = ethers.toUtf8Bytes("R0:bbs.txt\x00");
+                const resHex = await diskContract.executeDiskCommand(cmd);
+                const text = ethers.toUtf8String(resHex).trim();
+                if (text.startsWith("FILE NOT FOUND")) {
+                    return ["1. System: Welcome to GameMaster BBS! Post your thoughts on-chain."];
+                }
+                return text.split("\n").filter(Boolean);
+            } catch (err) {
+                console.error("Error loading BBS messages from DFS:", err);
+                return ["1. System: Welcome to GameMaster BBS! Post your thoughts on-chain."];
+            }
+        }
+
+        async function saveBBSMessage(msg) {
+            if (!diskContract) return;
+            try {
+                const messages = await loadBBSMessages();
+                messages.push(`${messages.length + 1}. User: ${msg}`);
+                if (messages.length > 8) messages.shift();
+                
+                const combined = messages.join("\n") + "\n";
+                const contentBytes = ethers.toUtf8Bytes(combined);
+                const cmdHeader = ethers.toUtf8Bytes("W0:bbs.txt\x00");
+                const fullCmdBytes = ethers.concat([cmdHeader, contentBytes]);
+                
+                const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                await tx.wait();
+                return messages;
+            } catch (err) {
+                console.error("Error saving BBS message to DFS:", err);
+            }
+        }
+
+        // TicTacToe Game State
+        let tttBoard = [" ", " ", " ", " ", " ", " ", " ", " ", " "];
+        let tttActive = false;
+
+        function printTTTBoard() {
+            return `
+  ${tttBoard[0]} | ${tttBoard[1]} | ${tttBoard[2]}
+ ---+---+---
+  ${tttBoard[3]} | ${tttBoard[4]} | ${tttBoard[5]}
+ ---+---+---
+  ${tttBoard[6]} | ${tttBoard[7]} | ${tttBoard[8]}
+`;
+        }
+
+        function checkTTTWin(board, player) {
+            const wins = [
+                [0,1,2], [3,4,5], [6,7,8],
+                [0,3,6], [1,4,7], [2,5,8],
+                [0,4,8], [2,4,6]
+            ];
+            return wins.some(w => w.every(idx => board[idx] === player));
+        }
+
+        document.getElementById("btnGamemasterConnect").addEventListener("click", () => {
+            if (gamemasterConnected) {
+                // Disconnect
+                gamemasterConnected = false;
+                pongActive = false;
+                if (pongTimer) {
+                    clearInterval(pongTimer);
+                    pongTimer = null;
+                }
+                document.getElementById("gamemasterTerminalInput").disabled = true;
+                document.getElementById("btnGamemasterConnect").innerText = "📞 Dial GameMaster";
+                writeToTerminal("DISCONNECTED. LINE DROP.");
+            } else {
+                // Connect
+                writeToTerminal("DIALING 312-555-4263 (CHICAGO)...");
+                setTimeout(() => {
+                    writeToTerminal("RING... RING... ANSWER...");
+                    setTimeout(() => {
+                        writeToTerminal("CONNECT 300 BAUD -- CARRIER DETECTED");
+                        gamemasterConnected = true;
+                        gamemasterRoom = "FOYER";
+                        document.getElementById("gamemasterTerminalInput").disabled = false;
+                        document.getElementById("btnGamemasterConnect").innerText = "🔌 Hang Up";
+                        writeToTerminal(gmWelcomeText);
+                    }, 1000);
+                }, 1000);
+            }
+        });
+
+        document.getElementById("btnGamemasterGuide").addEventListener("click", () => {
+            alert("GameMaster Users Guide:\n" + gmMapText);
+        });
+
+        document.getElementById("gamemasterTerminalInput").addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                const val = e.target.value.trim();
+                e.target.value = "";
+                if (!val) return;
+
+                writeToTerminal("> " + val);
+
+                const cmd = val.toUpperCase();
+                const args = cmd.split(" ");
+
+                if (cmd === "BYE" || cmd === "QUIT") {
+                    document.getElementById("btnGamemasterConnect").click();
+                    return;
+                }
+
+                if (cmd === "HELP") {
+                    writeToTerminal(gmWelcomeText);
+                    return;
+                }
+
+                if (cmd === "MAP") {
+                    writeToTerminal(gmMapText);
+                    return;
+                }
+
+                if (args[0] === "GO" || args[0] === "GO TO") {
+                    if (pongActive) {
+                        pongActive = false;
+                        if (pongTimer) {
+                            clearInterval(pongTimer);
+                            pongTimer = null;
+                        }
+                    }
+                    oregonActive = false;
+                    lemonadeActive = false;
+                    let dest = args[args.length - 1];
+                    if (dest === "HALLWAY" || dest === "FOYER") {
+                        gamemasterRoom = "FOYER";
+                        writeToTerminal("GO TO FOYER. YOU ARE IN THE GRAND FOYER.");
+                    } else if (dest === "PARLOR") {
+                        gamemasterRoom = "PARLOR";
+                        writeToTerminal(gmParlorText);
+                    } else if (dest === "LIBRARY") {
+                        gamemasterRoom = "LIBRARY";
+                        writeToTerminal(gamemasterLibraryWelcome);
+                        const msgs = await loadBBSMessages();
+                        writeToTerminal(msgs.join("\n"));
+                        writeToTerminal("\nCOMMANDS IN LIBRARY: 'POST <msg>' TO WRITE TO ON-CHAIN BBS.");
+                    } else if (dest === "KITCHEN") {
+                        gamemasterRoom = "KITCHEN";
+                        writeToTerminal(gmKitchenText);
+                    } else if (dest === "CLASSROOM" || dest === "SCHOOLHOUSE" || dest === "MECC") {
+                        gamemasterRoom = "CLASSROOM";
+                        writeToTerminal(gmClassroomText);
+                    } else {
+                        writeToTerminal("UNKNOWN ROOM. CHOOSE: FOYER, PARLOR, LIBRARY, KITCHEN, CLASSROOM");
+                    }
+                    return;
+                }
+
+                if (gamemasterRoom === "LIBRARY" && val.toUpperCase().startsWith("POST ")) {
+                    const msg = val.substring(5).trim();
+                    if (!msg) {
+                        writeToTerminal("USAGE: POST <your message here>");
+                        return;
+                    }
+                    writeToTerminal("WRITING MESSAGE TO ON-CHAIN DFS STORAGE...");
+                    const newMsgs = await saveBBSMessage(msg);
+                    writeToTerminal("POST COMPLETE!");
+                    if (newMsgs) {
+                        writeToTerminal("\n--- UPDATED BBS BOARD ---\n" + newMsgs.join("\n"));
+                    }
+                    return;
+                }
+
+                if (gamemasterRoom === "PARLOR") {
+                    if (pongActive) {
+                        if (cmd === "EXIT" || cmd === "QUIT") {
+                            pongActive = false;
+                            if (pongTimer) clearInterval(pongTimer);
+                            writeToTerminal("PONG EXITED. RETURNED TO PARLOR.");
+                            return;
+                        }
+                        if (cmd === "MODE PVP") {
+                            pongMode = "PVP";
+                            scoreLeft = 0; scoreRight = 0;
+                            resetBall();
+                            writeToTerminal("MODE SET TO PLAYER VS PLAYER. USE W/S (LEFT) AND I/K (RIGHT).");
+                            return;
+                        }
+                        if (cmd === "MODE PVAI") {
+                            pongMode = "PVAI";
+                            scoreLeft = 0; scoreRight = 0;
+                            resetBall();
+                            writeToTerminal("MODE SET TO PLAYER VS AI. USE W/S (LEFT) TO PLAY.");
+                            return;
+                        }
+                        if (cmd === "MODE AIVAI") {
+                            pongMode = "AIVAI";
+                            scoreLeft = 0; scoreRight = 0;
+                            resetBall();
+                            writeToTerminal("MODE SET TO AI VS AI (AUTOMATED IDLE SCREEN).");
+                            return;
+                        }
+                        if (cmd === "START") {
+                            writeToTerminal("GAME STARTED!");
+                            return;
+                        }
+                        if (cmd === "W") {
+                            if (leftPaddleY > 1) leftPaddleY--;
+                            return;
+                        }
+                        if (cmd === "S") {
+                            if (leftPaddleY < pongBoardHeight - 2) leftPaddleY++;
+                            return;
+                        }
+                        if (cmd === "I") {
+                            if (rightPaddleY > 1) rightPaddleY--;
+                            return;
+                        }
+                        if (cmd === "K") {
+                            if (rightPaddleY < pongBoardHeight - 2) rightPaddleY++;
+                            return;
+                        }
+                    }
+
+                    if (cmd === "PLAY PONG") {
+                        if (tttActive) tttActive = false;
+                        pongActive = true;
+                        pongMode = "AIVAI"; // Default to AI vs AI automated display
+                        scoreLeft = 0;
+                        scoreRight = 0;
+                        leftPaddleY = 4;
+                        rightPaddleY = 4;
+                        resetBall();
+                        if (pongTimer) clearInterval(pongTimer);
+                        pongTimer = setInterval(tickPong, 250);
+                        writeToTerminal("\nPONG INITIALIZED -- AI VS AI ACTIVE (IDLE DEMO).");
+                        writeToTerminal("OPTIONS:\n  'MODE PVAI'  - PLAYER VS AI (W/S to move)\n  'MODE PVP'   - PLAYER VS PLAYER (W/S vs I/K)\n  'MODE AIVAI' - AI VS AI SCREEN\n  'EXIT'       - EXIT TO PARLOR");
+                        writeToTerminal(renderPongBoard());
+                        return;
+                    }
+
+                    if (cmd === "PLAY TICTACTOE") {
+                        if (pongActive) {
+                            pongActive = false;
+                            if (pongTimer) clearInterval(pongTimer);
+                        }
+                        tttBoard = [" ", " ", " ", " ", " ", " ", " ", " ", " "];
+                        tttActive = true;
+                        writeToTerminal("TIC-TAC-TOE INITIALIZED. YOU ARE 'X'.");
+                        writeToTerminal("ENTER MOVE index (0-8) corresponding to:\n 0 | 1 | 2\n---+---+---\n 3 | 4 | 5\n---+---+---\n 6 | 7 | 8");
+                        writeToTerminal(printTTTBoard());
+                        return;
+                    }
+
+                    if (tttActive) {
+                        const idx = parseInt(val);
+                        if (isNaN(idx) || idx < 0 || idx > 8 || tttBoard[idx] !== " ") {
+                            writeToTerminal("INVALID MOVE. CHOOSE EMPTY SLOT 0-8.");
+                            return;
+                        }
+
+                        tttBoard[idx] = "X";
+                        writeToTerminal(printTTTBoard());
+
+                        if (checkTTTWin(tttBoard, "X")) {
+                            writeToTerminal("CONGRATULATIONS! YOU BEAT THE MACHINE! (+10 GameMaster Points)");
+                            tttActive = false;
+                            return;
+                        }
+
+                        if (tttBoard.every(s => s !== " ")) {
+                            writeToTerminal("TIE GAME.");
+                            tttActive = false;
+                            return;
+                        }
+
+                        // Machine move
+                        writeToTerminal("MACHINE THINKING...");
+                        const emptyIdxs = tttBoard.map((s, i) => s === " " ? i : null).filter(v => v !== null);
+                        const move = emptyIdxs[Math.floor(Math.random() * emptyIdxs.length)];
+                        tttBoard[move] = "O";
+                        writeToTerminal(printTTTBoard());
+
+                        if (checkTTTWin(tttBoard, "O")) {
+                            writeToTerminal("MACHINE WINS! BETTER LUCK NEXT TIME.");
+                            tttActive = false;
+                            return;
+                        }
+
+                        if (tttBoard.every(s => s !== " ")) {
+                            writeToTerminal("TIE GAME.");
+                            tttActive = false;
+                            return;
+                        }
+                        return;
+                    }
+                }
+
+                if (gamemasterRoom === "CLASSROOM") {
+                    if (oregonActive) {
+                        if (cmd === "EXIT" || cmd === "QUIT") {
+                            oregonActive = false;
+                            writeToTerminal("RETURNING TO CLASSROOM.");
+                            writeToTerminal(gmClassroomText);
+                            return;
+                        }
+                        if (cmd === "HUNT") {
+                            let foodGained = Math.floor(Math.random() * 31) + 20; // 20-50 lbs
+                            oregonFood += foodGained;
+                            oregonFood -= 5; // daily consumption
+                            writeToTerminal(`YOU HUNTED SUCCESSFULLY AND GAINED ${foodGained} LBS OF FOOD!`);
+                            if (oregonFood < 0) oregonFood = 0;
+                            writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            return;
+                        }
+                        if (cmd === "TRAVEL") {
+                            let dist = Math.floor(Math.random() * 51) + 80; // 80-130 miles
+                            oregonMile -= dist;
+                            oregonFood -= 15;
+                            if (oregonFood < 0) {
+                                oregonHealth -= 15;
+                                oregonFood = 0;
+                            }
+                            writeToTerminal(`YOU TRAVELED ${dist} MILES ACROSS THE PLAINS!`);
+                            
+                            // Trigger random event
+                            let eventRnd = Math.random();
+                            if (eventRnd < 0.25) {
+                                oregonHealth -= 20;
+                                writeToTerminal("EVENT: YOU CONTRACTED DYSENTERY! HEALTH DROPPED BY 20.");
+                            } else if (eventRnd < 0.45) {
+                                oregonHealth -= 10;
+                                writeToTerminal("EVENT: A WAGON WHEEL BROKE! HEALTH DROPPED BY 10.");
+                            } else {
+                                writeToTerminal("EVENT: DAY WAS QUIET AND PEACEFUL.");
+                            }
+
+                            if (oregonMile <= 0) {
+                                oregonActive = false;
+                                writeToTerminal("\n************************************************");
+                                writeToTerminal("* CONGRATULATIONS! YOU HAVE REACHED OREGON!   *");
+                                writeToTerminal("************************************************");
+                                writeToTerminal("MECC Software Complete. Returning to Classroom.");
+                                return;
+                            }
+                            if (oregonHealth <= 0) {
+                                oregonActive = false;
+                                writeToTerminal("\n[DEATH] YOU HAVE DIED ON THE OREGON TRAIL.");
+                                writeToTerminal("GAME OVER.");
+                                return;
+                            }
+                            writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            return;
+                        }
+                        if (cmd === "REST") {
+                            oregonHealth = Math.min(100, oregonHealth + 15);
+                            oregonFood -= 5;
+                            if (oregonFood < 0) {
+                                oregonHealth -= 15;
+                                oregonFood = 0;
+                            }
+                            writeToTerminal("YOU RESTED FOR 1 DAY AND RECOVERED HEALTH.");
+                            if (oregonHealth <= 0) {
+                                oregonActive = false;
+                                writeToTerminal("[DEATH] YOU HAVE DIED OF STARVATION WHILE RESTING.");
+                                return;
+                            }
+                            writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            return;
+                        }
+                        writeToTerminal("UNKNOWN ACTION. TYPE 'TRAVEL', 'HUNT', 'REST', OR 'EXIT'.");
+                        return;
+                    }
+
+                    if (lemonadeActive) {
+                        if (cmd === "EXIT" || cmd === "QUIT") {
+                            lemonadeActive = false;
+                            writeToTerminal("RETURNING TO CLASSROOM.");
+                            writeToTerminal(gmClassroomText);
+                            return;
+                        }
+                        if (lemonadeDayPhase === "SETUP") {
+                            if (val.toUpperCase().startsWith("MAKE ")) {
+                                let glasses = parseInt(val.substring(5).trim());
+                                if (isNaN(glasses) || glasses < 0) {
+                                    writeToTerminal("USAGE: MAKE <number>");
+                                    return;
+                                }
+                                let cost = glasses * 0.05;
+                                if (cost > lemonadeMoney) {
+                                    writeToTerminal(`NOT ENOUGH CAPITAL! Need $${cost.toFixed(2)} for ${glasses} glasses. You have $${lemonadeMoney.toFixed(2)}.`);
+                                    return;
+                                }
+                                lemonadeGlasses = glasses;
+                                lemonadeMoney -= cost;
+                                lemonadeDayPhase = "PRICE";
+                                writeToTerminal(`MADE ${glasses} GLASSES. COST: $${cost.toFixed(2)}. Remaining Capital: $${lemonadeMoney.toFixed(2)}.`);
+                                writeToTerminal("WHAT PRICE (IN CENTS) WILL YOU CHARGE PER GLASS? (e.g. 'PRICE 15')");
+                                return;
+                            }
+                            writeToTerminal("USAGE: TYPE 'MAKE <number>' TO MAKE LEMONADE.");
+                            return;
+                        }
+                        if (lemonadeDayPhase === "PRICE") {
+                            if (val.toUpperCase().startsWith("PRICE ")) {
+                                let cents = parseInt(val.substring(6).trim());
+                                if (isNaN(cents) || cents < 0) {
+                                    writeToTerminal("USAGE: PRICE <cents>");
+                                    return;
+                                }
+                                lemonadePrice = cents;
+                                
+                                // Weather Selection
+                                let weathers = [
+                                    { name: "HOT AND SUNNY", mult: 1.5 },
+                                    { name: "CLOUDY AND COOL", mult: 0.8 },
+                                    { name: "RAINY", mult: 0.2 }
+                                ];
+                                let wIdx = Math.floor(Math.random() * weathers.length);
+                                let w = weathers[wIdx];
+
+                                // Demand simulation
+                                let baseDemand = Math.floor(Math.max(0, 30 - cents / 2));
+                                let actualDemand = Math.floor(baseDemand * w.mult);
+                                let sold = Math.min(lemonadeGlasses, actualDemand);
+                                let rev = sold * cents / 100;
+                                lemonadeMoney += rev;
+
+                                writeToTerminal(`\n--- DAY ${lemonadeDay} REPORT ---`);
+                                writeToTerminal(`WEATHER TODAY: ${w.name}`);
+                                writeToTerminal(`YOU SOLD ${sold} OUT OF ${lemonadeGlasses} GLASSES AT ${cents} CENTS.`);
+                                writeToTerminal(`REVENUE: $${rev.toFixed(2)}`);
+                                writeToTerminal(`NET CAPITAL: $${lemonadeMoney.toFixed(2)}`);
+
+                                lemonadeDay++;
+                                lemonadeDayPhase = "SETUP";
+
+                                if (lemonadeMoney < 0.05) {
+                                    writeToTerminal("\nGAME OVER! YOU ARE BANKRUPT.");
+                                    lemonadeActive = false;
+                                    writeToTerminal(gmClassroomText);
+                                    return;
+                                }
+
+                                writeToTerminal(`\nDAY ${lemonadeDay}. CAPITAL: $${lemonadeMoney.toFixed(2)}.`);
+                                writeToTerminal("How many glasses to make today? (TYPE 'MAKE <number>')");
+                                return;
+                            }
+                            writeToTerminal("USAGE: TYPE 'PRICE <cents>' (e.g. 'PRICE 15')");
+                            return;
+                        }
+                    }
+
+                    if (cmd === "PLAY OREGON") {
+                        if (lemonadeActive) lemonadeActive = false;
+                        oregonActive = true;
+                        oregonMile = 2000;
+                        oregonFood = 150;
+                        oregonHealth = 100;
+                        writeToTerminal("\nTHE OREGON TRAIL (MECC C64 VERSION)");
+                        writeToTerminal("YOU START AT INDEPENDENCE, MISSOURI WITH 2000 MILES TO GO.");
+                        writeToTerminal("FOOD: 150 LBS | HEALTH: 100%");
+                        writeToTerminal("COMMANDS: 'TRAVEL' (consume 15 food), 'HUNT' (gain 20-50 food), 'REST', OR 'EXIT'.");
+                        return;
+                    }
+
+                    if (cmd === "PLAY LEMONADE") {
+                        if (oregonActive) oregonActive = false;
+                        lemonadeActive = true;
+                        lemonadeDay = 1;
+                        lemonadeMoney = 5.00;
+                        lemonadeGlasses = 0;
+                        lemonadePrice = 0;
+                        lemonadeDayPhase = "SETUP";
+                        writeToTerminal("\nLEMONADE STAND (MECC C64 VERSION)");
+                        writeToTerminal("DAY 1. CAPITAL: $5.00");
+                        writeToTerminal("COST TO MAKE LEMONADE: $0.05 PER GLASS");
+                        writeToTerminal("How many glasses do you want to make today? (TYPE 'MAKE <number>')");
+                        return;
+                    }
+                }
+
+                // General default
+                writeToTerminal("UNKNOWN COMMAND. TYPE 'HELP' FOR LIST.");
+            }
+        });
+
+        const vulkanCanvas = document.getElementById("vulkanScreen");
+        const vulkanCtx = vulkanCanvas ? vulkanCanvas.getContext("2d") : null;
+
+        function drawVulkanPlaceholder() {
+            if (!vulkanCanvas || !vulkanCtx) return;
+            vulkanCtx.fillStyle = "#110b29"; 
+            vulkanCtx.fillRect(0, 0, vulkanCanvas.width, vulkanCanvas.height);
+            vulkanCtx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+            vulkanCtx.lineWidth = 1;
+            for (let i = 0; i < vulkanCanvas.width; i += 20) {
+                vulkanCtx.beginPath();
+                vulkanCtx.moveTo(i, 0);
+                vulkanCtx.lineTo(i, vulkanCanvas.height);
+                vulkanCtx.stroke();
+            }
+            for (let j = 0; j < vulkanCanvas.height; j += 20) {
+                vulkanCtx.beginPath();
+                vulkanCtx.moveTo(0, j);
+                vulkanCtx.lineTo(vulkanCanvas.width, j);
+                vulkanCtx.stroke();
+            }
+            vulkanCtx.fillStyle = "#00f2fe";
+            vulkanCtx.font = "bold 11px 'Orbitron', monospace";
+            vulkanCtx.textAlign = "center";
+            vulkanCtx.fillText("VULKAN COMPATIBLE DATAMOST DISPLAY", vulkanCanvas.width / 2, vulkanCanvas.height / 2 - 10);
+            vulkanCtx.fillStyle = "#ff007f";
+            vulkanCtx.fillText("LOADING STREAM FROM HOST...", vulkanCanvas.width / 2, vulkanCanvas.height / 2 + 10);
+        }
+
+        async function updateVulkanScreen() {
+            try {
+                const res = await fetch("/vulkan_frame.ppm");
+                if (!res.ok) return;
+                const buffer = await res.arrayBuffer();
+                const arr = new Uint8Array(buffer);
+                
+                let pos = 0;
+                function nextToken() {
+                    while (pos < arr.length && arr[pos] <= 32) { pos++; } 
+                    let start = pos;
+                    while (pos < arr.length && arr[pos] > 32) { pos++; }
+                    let bytes = arr.subarray(start, pos);
+                    let str = "";
+                    for (let i = 0; i < bytes.length; i++) {
+                        str += String.fromCharCode(bytes[i]);
+                    }
+                    return str;
+                }
+
+                const magic = nextToken();
+                if (magic !== "P6") return;
+                const width = parseInt(nextToken(), 10);
+                const height = parseInt(nextToken(), 10);
+                const maxVal = nextToken(); 
+                pos++; 
+                
+                const pixelData = arr.subarray(pos);
+                if (pixelData.length < width * height * 3) return;
+
+                const imgData = vulkanCtx.createImageData(width, height);
+                const data = imgData.data;
+                let srcIdx = 0;
+                for (let i = 0; i < width * height * 4; i += 4) {
+                    data[i] = pixelData[srcIdx];     
+                    data[i+1] = pixelData[srcIdx+1]; 
+                    data[i+2] = pixelData[srcIdx+2]; 
+                    data[i+3] = 255;                 
+                    srcIdx += 3;
+                }
+                vulkanCtx.putImageData(imgData, 0, 0);
+
+                if (isDemoModeActive) {
+                    vulkanCtx.fillStyle = "rgba(255, 0, 127, 0.9)";
+                    vulkanCtx.font = "bold 9px 'Orbitron', sans-serif";
+                    vulkanCtx.textAlign = "right";
+                    if (Math.floor(Date.now() / 500) % 2 === 0) {
+                        vulkanCtx.fillText("● DEMO MODE ACTIVE", vulkanCanvas.width - 15, 20);
+                    }
+                }
+            } catch (err) {
+                console.error("Vulkan frame update failed:", err);
+            }
+        }
+
+        function c64ScreenCodeToChar(code) {
+            code = code & 0x7F; // strip reverse video bit
+            if (code === 0) return "@";
+            if (code >= 1 && code <= 26) return String.fromCharCode(65 + code - 1);
+            if (code === 27) return "[";
+            if (code === 28) return "£";
+            if (code === 29) return "]";
+            if (code === 30) return "↑";
+            if (code === 31) return "←";
+            if (code >= 32 && code <= 63) return String.fromCharCode(code);
+            if (code === 64) return "─";
+            if (code >= 65 && code <= 90) return String.fromCharCode(97 + code - 65); // lowercase a-z
+            if (code === 91) return "│";
+            if (code === 92) return "━";
+            if (code === 93) return "┃";
+            if (code === 94) return "╱";
+            if (code === 95) return "╲";
+            if (code === 96) return "■";
+            if (code === 97) return "◆";
+            if (code === 98) return "▲";
+            if (code === 99) return "▼";
+            if (code === 100) return "◀";
+            if (code === 101) return "▶";
+            if (code === 102) return "●";
+            if (code === 103) return "○";
+            if (code === 104) return "★";
+            if (code === 105) return "☆";
+            return " ";
+        }
+
+        // Draw C64 Screen layout
+        function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
+            // Clear screen
+            ctx.fillStyle = borderCol || "#3b5dc9"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw inner screen border box
+            ctx.fillStyle = bgCol || "#a2b4c2"; 
+            ctx.fillRect(40, 30, 240, 140);
+
+            // Draw characters from Screen RAM (40 columns by 25 rows)
+            if (screenRam && colorRam) {
+                ctx.font = "bold 5.5px monospace";
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
+                const cellW = 240 / 40; 
+                const cellH = 140 / 25; 
+                for (let r = 0; r < 25; r++) {
+                    for (let c = 0; c < 40; c++) {
+                        const idx = r * 40 + c;
+                        const rawCode = screenRam[idx];
+                        const colorIdx = colorRam[idx] & 0xF;
+                        
+                        const isReverse = rawCode >= 128;
+                        const charStr = c64ScreenCodeToChar(rawCode);
+                        
+                        const cellX = 40 + c * cellW;
+                        const cellY = 30 + r * cellH;
+                        
+                        const fgColor = c64Palette[colorIdx] || "#ffffff";
+                        const bgColor = bgCol || "#a2b4c2";
+                        
+                        if (isReverse) {
+                            // Draw reverse-video cell background
+                            ctx.fillStyle = fgColor;
+                            ctx.fillRect(cellX, cellY, cellW, cellH);
+                            // Draw character in screen background color
+                            ctx.fillStyle = bgColor;
+                            ctx.fillText(charStr, cellX, cellY);
+                        } else {
+                            if (rawCode > 0) {
+                                ctx.fillStyle = fgColor;
+                                ctx.fillText(charStr, cellX, cellY);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Draw Sprite 0: Player Ship
+            drawSpriteIcon(0, s0_x, s0_y, "#ff007f", hasCollision);
+
+            // Draw Sprite 1: Bullet
+            drawSpriteIcon(1, s1_x, s1_y, "#00f2fe", hasCollision);
+
+            // Draw Sprite 2: Alien Invader
+            drawSpriteIcon(2, s2_x, s2_y, "#00ff7f", hasCollision);
+        }
+
+        function drawSpriteIcon(index, x, y, color, hasCollision) {
+            // Coordinates translation to fit 320x200 scale
+            const mappedX = (x % 320);
+            const mappedY = (y % 200);
+
+            let pattern = spritePatterns[index] || [];
+            let hasPattern = false;
+            for (let r = 0; r < pattern.length; r++) {
+                if (pattern[r] > 0) {
+                    hasPattern = true;
+                    break;
+                }
+            }
+
+            if (!hasPattern) {
+                // Fallback standard retro patterns if blockchain storage is empty
+                if (index === 0) {
+                    // Bunny / Player
+                    pattern = [0x000c00, 0x000c00, 0x001e00, 0x001e00, 0x003300, 0x003300, 0x007f80, 0x00ffff, 0x01ffe0, 0x03fff0, 0x07ffc0, 0x07ffc0, 0x07ffc0, 0x03ffc0, 0x01ff80, 0x00ff80, 0x007e00, 0x003c00, 0x001800, 0x001800, 0x000000];
+                } else if (index === 1) {
+                    // Bullet / Carrot
+                    pattern = [0x001800, 0x003c00, 0x003c00, 0x003c00, 0x003c00, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x000000, 0x000000];
+                } else {
+                    // Space Invader
+                    pattern = [0x0003c0, 0x0007e0, 0x00ffff, 0x03dbf8, 0x03ffff, 0x00a500, 0x005a00, 0x008100, 0x00c300, 0x018180, 0x0300c0, 0x0300c0, 0x020040, 0x000000, 0, 0, 0, 0, 0, 0, 0];
+                }
+                hasPattern = true;
+            }
+
+            if (hasPattern) {
+                ctx.fillStyle = color;
+                for (let r = 0; r < 21; r++) {
+                    const row_val = pattern[r] || 0;
+                    for (let c = 0; c < 24; c++) {
+                        if ((row_val & (1 << (23 - c))) !== 0) {
+                            ctx.fillRect(mappedX + c, mappedY + r, 1, 1);
+                        }
+                    }
+                }
+
+                // Draw bounding box matching 24x21 sprite size
+                ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(mappedX - 2, mappedY - 2, 28, 25);
+            } else {
+                ctx.fillStyle = color;
+                // Draw simple 12x12 block character representing sprite
+                ctx.fillRect(mappedX, mappedY, 12, 12);
+
+                // Bounding box indicator
+                ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(mappedX - 2, mappedY - 2, 16, 16);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

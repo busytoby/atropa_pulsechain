@@ -96,6 +96,96 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API endpoint to list markdown/json files in the workspace
+    if (req.url === "/api/workspace-files") {
+        const baseDir = path.join(__dirname, "..");
+        try {
+            const getFiles = (dir) => {
+                let results = [];
+                const list = fs.readdirSync(dir);
+                list.forEach(file => {
+                    const fullPath = path.join(dir, file);
+                    const stat = fs.statSync(fullPath);
+                    if (stat && stat.isDirectory()) {
+                        if (file !== "node_modules" && !file.startsWith(".")) {
+                            results = results.concat(getFiles(fullPath));
+                        }
+                    } else if (file.endsWith(".md") || file.endsWith(".json")) {
+                        results.push(path.relative(baseDir, fullPath));
+                    }
+                });
+                return results;
+            };
+            const filesList = getFiles(baseDir);
+            res.writeHead(200, { 
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify(filesList));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+    }
+
+    // API endpoint to read a workspace file
+    if (req.url.startsWith("/api/read-file")) {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const relPath = parsedUrl.searchParams.get("path");
+        const safePath = path.join(__dirname, "..", relPath);
+        
+        // Safety validation to prevent directory traversal
+        if (!safePath.startsWith(path.join(__dirname, ".."))) {
+            res.writeHead(403, { "Content-Type": "text/plain" });
+            res.end("Forbidden");
+            return;
+        }
+
+        if (fs.existsSync(safePath)) {
+            const data = fs.readFileSync(safePath, "utf8");
+            res.writeHead(200, { 
+                "Content-Type": "text/plain",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(data);
+        } else {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("File not found");
+        }
+        return;
+    }
+
+    // API endpoint to write a workspace file
+    if (req.url === "/api/write-file" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => {
+            body += chunk.toString();
+        });
+        req.on("end", () => {
+            try {
+                const payload = JSON.parse(body);
+                const { path: relPath, content } = payload;
+                const safePath = path.join(__dirname, "..", relPath);
+                
+                // Safety validation to prevent directory traversal
+                if (!safePath.startsWith(path.join(__dirname, ".."))) {
+                    res.writeHead(403, { "Content-Type": "text/plain" });
+                    res.end("Forbidden");
+                    return;
+                }
+
+                fs.writeFileSync(safePath, content, "utf8");
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
     // Serve static files from frontend directory
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     let filePath = parsedUrl.pathname === "/" ? "/index.html" : parsedUrl.pathname;
