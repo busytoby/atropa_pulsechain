@@ -23,8 +23,6 @@ object "DiskSystem" {
             // ================================================================
             // FEATURE 1: SWITCH BOUNCE DEBOUNCER (SECURITY LAYER)
             // ================================================================
-            // State: Storage slots mapped by caller address store last block number.
-            // Address mapping base = keccak256(caller, 0x99) to avoid slot collisions.
             mstore(0x00, caller())
             mstore(0x20, 0x99)
             let debounceSlot := keccak256(0x00, 0x40)
@@ -34,12 +32,29 @@ object "DiskSystem" {
             if eq(lastCallBlock, number()) { revert(0, 0) }
             sstore(debounceSlot, number())
 
+            // Helper to convert 20-byte address to 40 hex ASCII characters in memory
+            function writeAddressHex(memPtr, addr) {
+                for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                    let b := byte(add(12, i), addr)
+                    let h1 := shr(4, b)
+                    let h2 := and(b, 0x0F)
+                    
+                    let c1 := add(h1, 48)
+                    if gt(h1, 9) { c1 := add(h1, 55) }
+                    
+                    let c2 := add(h2, 48)
+                    if gt(h2, 9) { c2 := add(h2, 55) }
+                    
+                    mstore8(add(memPtr, mul(i, 2)), c1)
+                    mstore8(add(add(memPtr, mul(i, 2)), 1), c2)
+                }
+            }
+
             // ----------------------------------------------------------------
             // METHOD 1: getJiffies() -> uint256
             // Selector: 0xb5123d47
             // ----------------------------------------------------------------
             if eq(selector, 0xb5123d47) {
-                // EVM block height maps to Jiffies (1 block = 60 jiffies / 1 second)
                 let elapsedJiffies := mul(number(), 60)
                 mstore(0x00, elapsedJiffies)
                 return(0x00, 32)
@@ -50,105 +65,175 @@ object "DiskSystem" {
             // Selector: 0x9812a4df
             // ----------------------------------------------------------------
             if or(eq(selector, 0x9812a4df), eq(selector, 0xeb603a54)) {
-                // Calldata layout:
-                // offset 4: offset of dynamic bytes array (usually 32)
-                // offset 36: length of command bytes array
-                // offset 68: start of raw bytes
                 let cmdLength := calldataload(36)
                 if lt(cmdLength, 3) { revert(0, 0) }
 
-                // Read command characters (first 2 bytes)
-                // W0 = Write, R0 = Read, S0 = Scratch
                 let cmdType := shr(240, calldataload(68))
 
-                // Parse filename until null terminator '\x00'
-                // We start reading characters from offset 70
+                // Parse filename until null terminator
                 let nameHash := 0
                 let fileOffset := 70
                 let charCount := 0
                 
                 for {} lt(charCount, 32) { charCount := add(charCount, 1) } {
                     let char := byte(charCount, calldataload(fileOffset))
-                    if iszero(char) { break } // null terminator reached
-                    // simple hash calculation
+                    if iszero(char) { break }
                     nameHash := add(mul(nameHash, 31), char)
                 }
 
-                // Base slot location calculated from filename hash
-                mstore(0x00, nameHash)
-                let baseSlot := keccak256(0x00, 32)
+                // Check if filename is "bbs.txt" (0x6262732e747874)
+                let nameWord := calldataload(add(fileOffset, 1))
+                let filenameLen := sub(charCount, 1)
+                let nameMask := not(sub(exp(2, mul(8, sub(32, filenameLen))), 1))
+                nameWord := and(nameWord, nameMask)
+                let isBbs := eq(shr(200, nameWord), 0x6262732e747874)
+
+                let baseSlot := 0
+                let lengthSlot := 0
+
+                if isBbs {
+                    // Public Global namespace for BBS message board
+                    mstore(0x00, nameHash)
+                    baseSlot := keccak256(0x00, 32)
+                    
+                    mstore(0x00, nameHash)
+                    mstore(0x20, 0x999)
+                    lengthSlot := keccak256(0x00, 64)
+                }
+                if iszero(isBbs) {
+                    // Sandbox-isolated private namespace per caller wallet
+                    mstore(0x00, caller())
+                    mstore(0x20, nameHash)
+                    baseSlot := keccak256(0x00, 64)
+                    
+                    mstore(0x00, caller())
+                    mstore(0x20, add(nameHash, 0x999))
+                    lengthSlot := keccak256(0x00, 64)
+                }
 
                 // Write Command (W0)
-                if eq(cmdType, 0x5730) { // ASCII for "W0"
+                if eq(cmdType, 0x5730) { // ASCII "W0"
                     let dataStartOffset := add(fileOffset, charCount)
                     dataStartOffset := add(dataStartOffset, 1) // skip null terminator
 
-                    // Data length in bytes: cmdLength - (dataStartOffset - 68)
                     let dataLen := sub(cmdLength, sub(dataStartOffset, 68))
-                    
-                    // Cap maximum data length at 131072 bytes (128KB)
                     if gt(dataLen, 131072) {
                         dataLen := 131072
                     }
 
-                    // Save the file length in a namespaced slot
-                    mstore(0x00, nameHash)
-                    mstore(0x20, 0x999)
-                    let lengthSlot := keccak256(0x00, 64)
-                    sstore(lengthSlot, dataLen)
+                    if isBbs {
+                        // Append-only behavior for global BBS
+                        let globalLen := sload(lengthSlot)
+                        if gt(globalLen, 8192) {
+                            globalLen := 0 // clear/reset if exceeds 8KB
+                        }
 
-                    // Write data in 32-byte words
-                    let numSlots := div(add(dataLen, 31), 32)
-                    for { let i := 0 } lt(i, numSlots) { i := add(i, 1) } {
-                        let word := calldataload(add(dataStartOffset, mul(i, 32)))
-                        sstore(add(baseSlot, i), word)
-                    }
+                        // Load current global content to memory at 0x100
+                        let numSlots := div(add(globalLen, 31), 32)
+                        for { let i := 0 } lt(i, numSlots) { i := add(i, 1) } {
+                            mstore(add(0x100, mul(i, 32)), sload(add(baseSlot, i)))
+                        }
 
-                    // Track directory:
-                    // Read file name as a 32-byte word starting at offset 71 (removing leading ':')
-                    let nameWord := calldataload(add(fileOffset, 1))
-                    let numFiles := sload(0x1000)
-                    let found := 0
-                    for { let i := 0 } lt(i, numFiles) { i := add(i, 1) } {
-                        if eq(sload(add(0x1001, i)), nameWord) {
-                            found := 1
-                            break
+                        let writePtr := add(0x100, globalLen)
+
+                        // 1. Newline divider
+                        if gt(globalLen, 0) {
+                            mstore8(writePtr, 10) // '\n'
+                            writePtr := add(writePtr, 1)
+                        }
+
+                        // 2. Author prefix "[0xHEX]: "
+                        mstore8(writePtr, 91) // '['
+                        mstore8(add(writePtr, 1), 48) // '0'
+                        mstore8(add(writePtr, 2), 120) // 'x'
+                        writePtr := add(writePtr, 3)
+
+                        writeAddressHex(writePtr, caller())
+                        writePtr := add(writePtr, 40)
+
+                        mstore8(writePtr, 93) // ']'
+                        mstore8(add(writePtr, 1), 58) // ':'
+                        mstore8(add(writePtr, 2), 32) // ' '
+                        writePtr := add(writePtr, 3)
+
+                        // 3. Append incoming message
+                        for { let i := 0 } lt(i, dataLen) { i := add(i, 1) } {
+                            let char := byte(0, calldataload(add(dataStartOffset, i)))
+                            mstore8(add(writePtr, i), char)
+                        }
+                        writePtr := add(writePtr, dataLen)
+
+                        // 4. Save consolidated content
+                        let newLen := sub(writePtr, 0x100)
+                        sstore(lengthSlot, newLen)
+
+                        let newSlots := div(add(newLen, 31), 32)
+                        for { let i := 0 } lt(i, newSlots) { i := add(i, 1) } {
+                            sstore(add(baseSlot, i), mload(add(0x100, mul(i, 32))))
                         }
                     }
-                    if iszero(found) {
-                        sstore(add(0x1001, numFiles), nameWord)
-                        sstore(0x1000, add(numFiles, 1))
+                    if iszero(isBbs) {
+                        // Standard overwrite write for private sandbox partitions
+                        sstore(lengthSlot, dataLen)
+                        let numSlots := div(add(dataLen, 31), 32)
+                        for { let i := 0 } lt(i, numSlots) { i := add(i, 1) } {
+                            let word := calldataload(add(dataStartOffset, mul(i, 32)))
+                            sstore(add(baseSlot, i), word)
+                        }
+
+                        // Track private directory listing
+                        let numFilesSlot := 0
+                        mstore(0x00, caller())
+                        mstore(0x20, 0x1000)
+                        numFilesSlot := keccak256(0x00, 64)
+                        let numFiles := sload(numFilesSlot)
+                        let found := 0
+                        for { let i := 0 } lt(i, numFiles) { i := add(i, 1) } {
+                            mstore(0x00, caller())
+                            mstore(0x20, add(0x1001, i))
+                            if eq(sload(keccak256(0x00, 64)), nameWord) {
+                                found := 1
+                                break
+                            }
+                        }
+                        if iszero(found) {
+                            mstore(0x00, caller())
+                            mstore(0x20, add(0x1001, numFiles))
+                            sstore(keccak256(0x00, 64), nameWord)
+                            sstore(numFilesSlot, add(numFiles, 1))
+                        }
                     }
 
-                    // Emit Log Event: DiskWrite(address indexed writer, bytes32 indexed filename)
+                    // Emit event logs
                     log3(0x00, 0, 0x18278cbdbe8ed62bf134676966ade77d7871afa34eabd366196c1e9547b08e63, caller(), nameWord)
-
                     mstore(0x00, 1)
                     return(0x00, 32)
                 }
 
                 // Read Command (R0)
-                if eq(cmdType, 0x5230) { // ASCII for "R0"
+                if eq(cmdType, 0x5230) { // ASCII "R0"
                     // Check if filename is "$"
-                    // ASCII for "$" is 0x24 (36). Filename starting at offset 70 has ':' at index 0 and '$' at index 1.
                     let secondChar := byte(1, calldataload(fileOffset))
                     if and(eq(charCount, 2), eq(secondChar, 0x24)) {
-                        // Directory listing requested: return list of filenames
-                        let numFiles := sload(0x1000)
+                        // Directory listing (isolated per wallet)
+                        let numFilesSlot := 0
+                        mstore(0x00, caller())
+                        mstore(0x20, 0x1000)
+                        numFilesSlot := keccak256(0x00, 64)
+                        let numFiles := sload(numFilesSlot)
                         for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
                             let fileNameVal := 0
                             if lt(i, numFiles) {
-                                fileNameVal := sload(add(0x1001, i))
+                                mstore(0x00, caller())
+                                mstore(0x20, add(0x1001, i))
+                                fileNameVal := sload(keccak256(0x00, 64))
                             }
                             mstore(mul(i, 32), fileNameVal)
                         }
                         return(0x00, 256)
                     }
 
-                    // Standard file read: return stored data from storage slots based on size
-                    mstore(0x00, nameHash)
-                    mstore(0x20, 0x999)
-                    let lengthSlot := keccak256(0x00, 64)
+                    // Read target file content (either global BBS or sandbox file)
                     let dataLen := sload(lengthSlot)
                     if iszero(dataLen) {
                         dataLen := 256
@@ -162,10 +247,12 @@ object "DiskSystem" {
                 }
 
                 // Scratch Command (S0)
-                if eq(cmdType, 0x5330) { // ASCII for "S0"
-                    mstore(0x00, nameHash)
-                    mstore(0x20, 0x999)
-                    let lengthSlot := keccak256(0x00, 64)
+                if eq(cmdType, 0x5330) { // ASCII "S0"
+                    if isBbs {
+                        // Public BBS scratch not allowed for entire file, only private partition is cleanable
+                        revert(0, 0)
+                    }
+                    
                     let dataLen := sload(lengthSlot)
                     if iszero(dataLen) {
                         dataLen := 256
@@ -177,12 +264,18 @@ object "DiskSystem" {
                     }
                     sstore(lengthSlot, 0)
 
-                    // Remove from directory list:
-                    let nameWord := calldataload(add(fileOffset, 1))
-                    let numFiles := sload(0x1000)
+                    // Remove from directory list
+                    let numFilesSlot := 0
+                    mstore(0x00, caller())
+                    mstore(0x20, 0x1000)
+                    numFilesSlot := keccak256(0x00, 64)
+                    let numFiles := sload(numFilesSlot)
                     for { let i := 0 } lt(i, numFiles) { i := add(i, 1) } {
-                        if eq(sload(add(0x1001, i)), nameWord) {
-                            sstore(add(0x1001, i), 0)
+                        mstore(0x00, caller())
+                        mstore(0x20, add(0x1001, i))
+                        let fileSlot := keccak256(0x00, 64)
+                        if eq(sload(fileSlot), nameWord) {
+                            sstore(fileSlot, 0)
                             break
                         }
                     }
