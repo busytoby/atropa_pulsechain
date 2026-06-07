@@ -142,6 +142,8 @@
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
                         <select id="selectGame" class="input-glow" style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif;">
                             <option value="pong">🏓 Pong-on-Chain (Interactive Demo)</option>
+                            <option value="anteater">🐜 Ant Eater (Romox Cartridge)</option>
+                            <option value="princessfrog">🐸 Princess and the Frog (Romox Cartridge)</option>
                         </select>
                         <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
                         <button class="btn btn-secondary" id="btnToggleDemo" style="min-width: 130px; border-color: var(--neon-magenta); color: var(--text-primary);">Autoplay Demo</button>
@@ -650,6 +652,32 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     { id: 0, x: 120, y: 155 }, // Player paddle
                     { id: 1, x: 120, y: 60 },  // Ball
                     { id: 2, x: 0, y: 200 }    // (unused)
+                ]
+            },
+            anteater: {
+                name: "Ant Eater",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0, 0xA9, 0x30, 0x8D, 0x00, 0xD0, 0xA9, 0x60, 
+                    0x8D, 0x01, 0xD0, 0xA9, 0x05, 0x8D, 0x02, 0xD6, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 50, y: 70 },
+                    { id: 1, x: 120, y: 90 },
+                    { id: 2, x: 180, y: 110 }
+                ]
+            },
+            princessfrog: {
+                name: "Princess and the Frog",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x02, 0x8D, 0x15, 0xD0, 0xA9, 0x50, 0x8D, 0x00, 0xD0, 0xA9, 0x80, 
+                    0x8D, 0x01, 0xD0, 0xA9, 0x06, 0x8D, 0x02, 0xD6, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 170 },
+                    { id: 1, x: 80, y: 100 },
+                    { id: 2, x: 220, y: 80 }
                 ]
             }
         };
@@ -2946,10 +2974,168 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             oregonScrollOffset += 1.5;
         }
 
+        let antEaterFrame = 0;
+        function drawAntEaterScreen() {
+            antEaterFrame++;
+            ctx.fillStyle = "#0c0d12";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#4e3629";
+            ctx.fillRect(0, 40, canvas.width, canvas.height - 40);
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(20, 60, 280, 20);
+            ctx.fillRect(60, 60, 20, 100);
+            ctx.fillRect(240, 60, 20, 100);
+            ctx.fillRect(60, 120, 200, 20);
+            ctx.fillRect(140, 120, 20, 60);
+            ctx.fillRect(20, 160, 280, 20);
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(135, 25, 20, 12);
+            ctx.fillRect(142, 37, 6, 8);
+            ctx.strokeStyle = "#e84393";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(145, 45);
+            let tongueLength = 55 + Math.sin(antEaterFrame * 0.1) * 15;
+            ctx.lineTo(145, 45 + tongueLength);
+            if (tongueLength > 50) {
+                let bend = (tongueLength - 50) * 1.5;
+                ctx.lineTo(145 + bend, 95);
+            }
+            ctx.stroke();
+            ctx.fillStyle = "#fbc531";
+            for (let i = 0; i < 8; i++) {
+                let antX = (30 + i * 35 + (antEaterFrame * 0.4)) % 260 + 20;
+                let antY = 70;
+                if (i % 2 === 0) {
+                    antX = 140 + Math.sin(antEaterFrame * 0.05 + i) * 80;
+                    antY = 130;
+                } else if (i % 3 === 0) {
+                    antX = (280 - i * 30 - (antEaterFrame * 0.3)) % 260 + 20;
+                    antY = 170;
+                }
+                ctx.beginPath();
+                ctx.arc(antX, antY, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#fbc531";
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(antX - 3, antY); ctx.lineTo(antX + 3, antY);
+                ctx.stroke();
+            }
+            let spiderY = 90 + Math.sin(antEaterFrame * 0.08) * 25;
+            ctx.fillStyle = "#ea2027";
+            ctx.beginPath();
+            ctx.arc(70, spiderY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ea2027";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(64, spiderY - 2); ctx.lineTo(76, spiderY + 2);
+            ctx.moveTo(64, spiderY + 2); ctx.lineTo(76, spiderY - 2);
+            ctx.stroke();
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ROMOX INC. 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("SCORE: 005390", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillText("ANT EATER", canvas.width / 2, 15);
+        }
+
+        let frogFrame = 0;
+        function drawPrincessFrogScreen() {
+            frogFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#2c2c54";
+            ctx.fillRect(0, 20, canvas.width, 25);
+            ctx.fillStyle = "#0984e3";
+            ctx.fillRect(0, 45, canvas.width, 50);
+            ctx.fillStyle = "#d35400";
+            for (let lane = 0; lane < 3; lane++) {
+                let speed = (lane + 1) * 0.5;
+                let dir = (lane % 2 === 0) ? 1 : -1;
+                let offset = (frogFrame * speed * dir) % 120;
+                let yPos = 50 + lane * 15;
+                for (let i = -1; i < 4; i++) {
+                    let xPos = i * 100 + offset;
+                    if (xPos < -80) xPos += canvas.width + 100;
+                    ctx.fillRect(xPos, yPos, 40, 8);
+                }
+            }
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(0, 95, canvas.width, 15);
+            ctx.fillStyle = "#2d3436";
+            ctx.fillRect(0, 110, canvas.width, 60);
+            ctx.strokeStyle = "#f1c40f";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 10]);
+            ctx.beginPath();
+            ctx.moveTo(0, 130); ctx.lineTo(canvas.width, 130);
+            ctx.moveTo(0, 150); ctx.lineTo(canvas.width, 150);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#e74c3c";
+            let carX1 = (frogFrame * 1.2) % (canvas.width + 40) - 40;
+            ctx.fillRect(carX1, 115, 18, 10);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(carX1 + 12, 117, 4, 6);
+            ctx.fillStyle = "#9b59b6";
+            let carX2 = canvas.width - ((frogFrame * 0.8) % (canvas.width + 40));
+            ctx.fillRect(carX2, 138, 25, 10);
+            ctx.fillStyle = "#fd79a8";
+            ctx.fillRect(145, 22, 30, 20);
+            ctx.fillRect(135, 15, 8, 27);
+            ctx.fillRect(177, 15, 8, 27);
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(160, 29, 3, 0, Math.PI * 2);
+            ctx.fill();
+            let frogX = 160 + Math.sin(frogFrame * 0.03) * 60;
+            let frogY = 165 - (Math.abs(Math.sin(frogFrame * 0.08)) * 30);
+            if (frogY < 95) {
+                frogX = 160 + ((frogFrame * 0.5) % 120);
+                if (frogX > canvas.width) frogX = 0;
+            }
+            ctx.fillStyle = "#2ecc71";
+            ctx.beginPath();
+            ctx.arc(frogX, frogY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#27ae60";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(frogX - 4, frogY + 2); ctx.lineTo(frogX - 7, frogY + 5);
+            ctx.moveTo(frogX + 4, frogY + 2); ctx.lineTo(frogX + 7, frogY + 5);
+            ctx.stroke();
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ROMOX INC. 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("SCORE: 001480", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("PRINCESS & THE FROG", canvas.width / 2, 12);
+        }
+
         // Draw C64 Screen layout
         function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
             if (oregonActive) {
                 drawOregonScreen();
+                return;
+            }
+
+            const activeGameText = document.getElementById("activeGameText");
+            const activeGameName = activeGameText ? activeGameText.innerText : "";
+            
+            if (activeGameName === "Ant Eater") {
+                drawAntEaterScreen();
+                return;
+            }
+            if (activeGameName === "Princess and the Frog") {
+                drawPrincessFrogScreen();
                 return;
             }
 
