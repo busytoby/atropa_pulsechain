@@ -128,12 +128,7 @@ static void manifold_insert(LauRegistryManifold *m, LauMetadata *md) {
     uint32_t count = atomic_load(&m->count);
     if (count < LAU_REGISTRY_CAPACITY) {
         LauMetadata *slot = &m->slots[count];
-        slot->actual_start = md->actual_start;
-        slot->alloc_size = md->alloc_size;
-        slot->alloc_file = md->alloc_file;
-        slot->probe_latency = md->probe_latency;
-        slot->physical_tier = md->physical_tier;
-        slot->current_prot = md->current_prot;
+        *slot = *md;
         slot->next = NULL; slot->prev = NULL; 
         m->search_index[count] = (uintptr_t)md->actual_start;
         atomic_fetch_add(&m->count, 1);

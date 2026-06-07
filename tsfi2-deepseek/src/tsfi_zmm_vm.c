@@ -2,6 +2,9 @@
 #include "tsfi_zmm_rpc.h"
 #include "lau_memory.h"
 #include "tsfi_wire_firmware.h"
+#include "lau_yul_thunk.h"
+#include "tsfi_types.h"
+#include "lau_thunk.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,16 +15,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-// --- Opcodes for Pipelined Execution ---
-enum {
-    ZMM_OP_END = 0,
-    ZMM_OP_WLOAD,   // [OP, REG, FLOAT_VAL]
-    ZMM_OP_WADD,    // [OP, DEST, SRC1, SRC2]
-    ZMM_OP_WMUL,    // [OP, DEST, SRC1, SRC2]
-    ZMM_OP_WSTORE,  // [OP, SRC, IDX]
-    ZMM_OP_WDUMP    // [OP, REG]
-};
 
 // ... Kernels ...
 static void kernel_low(void *regs, ZmmSynapse *syn) {
@@ -133,7 +126,7 @@ static inline void parse_string_arg(const char **p, char *out, size_t max) {
         if (**p == '"') (*p)++;
     } else {
         size_t i = 0;
-        while (**p && **p != ' ' && **p != '\t' && **p != '\n' && i < max - 1) {
+        while (**p && **p != ' ' && **p != '\t' && **p != '\n' && **p != ',' && i < max - 1) {
             out[i++] = *(*p)++;
         }
         out[i] = 0;
@@ -205,13 +198,55 @@ void tsfi_zmm_vm_exec(TsfiZmmVmState *state, const char *code_in) {
                 }
             }
         }
+        else if (*p == 'Y' || *p == 'y') {
+            p++;
+            if (match_kw(&p, "ULINIT")) {
+                char name[256] = {0};
+                char path[512] = {0};
+                parse_string_arg(&p, name, sizeof(name));
+                skip_comma(&p);
+                parse_string_arg(&p, path, sizeof(path));
+                skip_comma(&p);
+                char *end;
+                uint64_t virt_addr = strtoull(p, &end, 10);
+                p = end;
+                
+                lau_yul_thunk_init(name, path, virt_addr);
+            }
+            else if (match_kw(&p, "ULEXEC")) {
+                char name[256] = {0};
+                char calldata_hex[8192] = {0};
+                parse_string_arg(&p, name, sizeof(name));
+                skip_comma(&p);
+                parse_string_arg(&p, calldata_hex, sizeof(calldata_hex));
+                
+                size_t cd_len = 0;
+                uint8_t cd_bytes[4096];
+                size_t len = strlen(calldata_hex);
+                if (len > 8192) len = 8192;
+                for (size_t i = 0; i < len; i += 2) {
+                    unsigned int byteval = 0;
+                    sscanf(&calldata_hex[i], "%02x", &byteval);
+                    cd_bytes[i/2] = (uint8_t)byteval;
+                    cd_len++;
+                }
+                
+                uint8_t retval[4096];
+                size_t retval_len = sizeof(retval);
+                lau_yul_thunk_execute(name, cd_bytes, cd_len, retval, &retval_len);
+                
+                for (size_t i = 0; i < retval_len && state->output_pos < 4090; i++) {
+                    sprintf(&state->output_buffer[state->output_pos], "%02x", retval[i]);
+                    state->output_pos += 2;
+                }
+            }
+        }
         skip_line(&p);
     }
 }
 
 // --- Instruction Pipelining (Fused Block Execution) ---
 
-// Compile to user-provided buffer (No malloc)
 size_t tsfi_zmm_vm_compile_block_buffer(const char *code, void *buffer, size_t max_len) {
     uint32_t *b = (uint32_t*)buffer;
     uint32_t *start = b;
@@ -222,7 +257,7 @@ size_t tsfi_zmm_vm_compile_block_buffer(const char *code, void *buffer, size_t m
         while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
         if (!*p) break;
         
-        if (b + 4 >= limit) break; // Overflow check
+        if (b + 12 >= limit) break;
         
         if (*p == 'W' || *p == 'w') {
             p++;
@@ -265,16 +300,82 @@ size_t tsfi_zmm_vm_compile_block_buffer(const char *code, void *buffer, size_t m
                 }
             }
         }
+        else if (*p == 'Y' || *p == 'y') {
+            p++;
+            if (match_kw(&p, "ULINIT")) {
+                char name[256] = {0};
+                char path[512] = {0};
+                parse_string_arg(&p, name, sizeof(name));
+                skip_comma(&p);
+                parse_string_arg(&p, path, sizeof(path));
+                skip_comma(&p);
+                char *end;
+                uint64_t virt_addr = strtoull(p, &end, 10);
+                p = end;
+
+                char *p_name = strdup(name);
+                char *p_path = strdup(path);
+                uint32_t name_hi = (uint32_t)((uint64_t)p_name >> 32);
+                uint32_t name_lo = (uint32_t)((uint64_t)p_name & 0xFFFFFFFF);
+                uint32_t path_hi = (uint32_t)((uint64_t)p_path >> 32);
+                uint32_t path_lo = (uint32_t)((uint64_t)p_path & 0xFFFFFFFF);
+                uint32_t addr_hi = (uint32_t)(virt_addr >> 32);
+                uint32_t addr_lo = (uint32_t)(virt_addr & 0xFFFFFFFF);
+
+                *b++ = VM_OP_YUL_INIT;
+                *b++ = name_hi; *b++ = name_lo;
+                *b++ = path_hi; *b++ = path_lo;
+                *b++ = addr_hi; *b++ = addr_lo;
+            }
+            else if (match_kw(&p, "ULEXEC")) {
+                char name[256] = {0};
+                char calldata_hex[8192] = {0};
+                parse_string_arg(&p, name, sizeof(name));
+                skip_comma(&p);
+                parse_string_arg(&p, calldata_hex, sizeof(calldata_hex));
+
+                char *p_name = strdup(name);
+                size_t len = strlen(calldata_hex);
+                if (len > 8192) len = 8192;
+                uint8_t *cd_bytes = malloc(len / 2 + 1);
+                size_t cd_len = 0;
+                for (size_t i = 0; i < len; i += 2) {
+                    unsigned int byteval = 0;
+                    sscanf(&calldata_hex[i], "%02x", &byteval);
+                    cd_bytes[i/2] = (uint8_t)byteval;
+                    cd_len++;
+                }
+
+                uint8_t *retval = malloc(65536);
+                size_t *retval_len = malloc(sizeof(size_t));
+                *retval_len = 65536;
+
+                uint32_t name_hi = (uint32_t)((uint64_t)p_name >> 32);
+                uint32_t name_lo = (uint32_t)((uint64_t)p_name & 0xFFFFFFFF);
+                uint32_t cd_hi = (uint32_t)((uint64_t)cd_bytes >> 32);
+                uint32_t cd_lo = (uint32_t)((uint64_t)cd_bytes & 0xFFFFFFFF);
+                uint32_t ret_hi = (uint32_t)((uint64_t)retval >> 32);
+                uint32_t ret_lo = (uint32_t)((uint64_t)retval & 0xFFFFFFFF);
+                uint32_t ret_len_hi = (uint32_t)((uint64_t)retval_len >> 32);
+                uint32_t ret_len_lo = (uint32_t)((uint64_t)retval_len & 0xFFFFFFFF);
+
+                *b++ = VM_OP_YUL_EXEC;
+                *b++ = name_hi; *b++ = name_lo;
+                *b++ = cd_hi; *b++ = cd_lo;
+                *b++ = (uint32_t)cd_len;
+                *b++ = ret_hi; *b++ = ret_lo;
+                *b++ = ret_len_hi; *b++ = ret_len_lo;
+            }
+        }
         skip_line(&p);
     }
     if (b < limit) *b++ = ZMM_OP_END;
     return (size_t)((char*)b - (char*)start);
 }
 
-// Wrapper for allocation
 void* tsfi_zmm_vm_compile_block(const char *code) {
     size_t len = strlen(code);
-    size_t max_size = len * 4 + 1024;
+    size_t max_size = len * 8 + 2048;
     void *buffer = lau_malloc(max_size);
     if (buffer) {
         tsfi_zmm_vm_compile_block_buffer(code, buffer, max_size);
@@ -282,9 +383,6 @@ void* tsfi_zmm_vm_compile_block(const char *code) {
     return buffer;
 }
 
-#include "tsfi_wire_firmware.h"
-
-// Execute a compiled block (Hardware Path)
 void tsfi_zmm_vm_exec_block(TsfiZmmVmState *state, void *block) {
     if (!block) return;
     uint32_t *b = (uint32_t*)block;
@@ -306,19 +404,79 @@ void tsfi_zmm_vm_exec_block(TsfiZmmVmState *state, void *block) {
             case ZMM_OP_WADD: {
                 int d = *b++; int s1 = *b++; int s2 = *b++;
                 if (d < TSFI_ZMM_REG_COUNT) 
-                    fw->cell_wave_exec(1, d, s1, s2); // 1 = VADDPS
+                    fw->cell_wave_exec(1, d, s1, s2);
                 break;
             }
             case ZMM_OP_WMUL: {
                 int d = *b++; int s1 = *b++; int s2 = *b++;
                 if (d < TSFI_ZMM_REG_COUNT)
-                    fw->cell_wave_exec(2, d, s1, s2); // 2 = VMULPS
+                    fw->cell_wave_exec(2, d, s1, s2);
                 break;
             }
             case ZMM_OP_WSTORE: {
-                (void)*b++; (void)*b++; // Skip r and idx
-                // In hardware path, the result is already in the firmware WRF.
+                (void)*b++; (void)*b++;
                 state->output_pos++;
+                break;
+            }
+            case VM_OP_SEAL: {
+                uint32_t hi = *b++; uint32_t lo = *b++;
+                void *ptr = (void*)(((uint64_t)hi << 32) | lo);
+                extern void lau_seal_object_loc(void*, const char*, int);
+                lau_seal_object_loc(ptr, "tsfi_zmm_vm", 0);
+                break;
+            }
+            case VM_OP_UNSEAL: {
+                uint32_t hi = *b++; uint32_t lo = *b++;
+                void *ptr = (void*)(((uint64_t)hi << 32) | lo);
+                extern void lau_unseal_object_loc(void*, const char*, int);
+                lau_unseal_object_loc(ptr, "tsfi_zmm_vm", 0);
+                break;
+            }
+            case VM_OP_INVOKE: {
+                uint32_t hi = *b++; uint32_t lo = *b++; uint32_t offset = *b++;
+                void *ptr = (void*)(((uint64_t)hi << 32) | lo);
+                extern LauMetadata* lau_registry_find(void*);
+                LauMetadata *md = lau_registry_find(ptr);
+                if (md) {
+                    LauWiredHeader *h = (LauWiredHeader*)((char*)md->payload_start - 8192);
+                    if (h->schema) {
+                        for (int i=0; i < h->schema_count; i++) {
+                            if (h->schema[i].offset == offset) {
+                                void **target_member = (void**)((char*)ptr + offset);
+                                if (*target_member) {
+                                    void (*thunk_call)(void*) = (void(*)(void*))*target_member;
+                                    thunk_call(ptr);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            case VM_OP_YUL_INIT: {
+                uint32_t name_hi = *b++; uint32_t name_lo = *b++;
+                uint32_t path_hi = *b++; uint32_t path_lo = *b++;
+                uint32_t addr_hi = *b++; uint32_t addr_lo = *b++;
+                const char *name = (const char*)(((uint64_t)name_hi << 32) | name_lo);
+                const char *path = (const char*)(((uint64_t)path_hi << 32) | path_lo);
+                uint64_t virt_addr = ((uint64_t)addr_hi << 32) | addr_lo;
+                lau_yul_thunk_init(name, path, virt_addr);
+                break;
+            }
+            case VM_OP_YUL_EXEC: {
+                uint32_t name_hi = *b++; uint32_t name_lo = *b++;
+                uint32_t cd_hi = *b++; uint32_t cd_lo = *b++;
+                uint32_t cd_size = *b++;
+                uint32_t ret_hi = *b++; uint32_t ret_lo = *b++;
+                uint32_t ret_len_hi = *b++; uint32_t ret_len_lo = *b++;
+                
+                const char *name = (const char*)(((uint64_t)name_hi << 32) | name_lo);
+                const uint8_t *calldata = (const uint8_t*)(((uint64_t)cd_hi << 32) | cd_lo);
+                uint8_t *retval = (uint8_t*)(((uint64_t)ret_hi << 32) | ret_lo);
+                size_t *retval_len = (size_t*)(((uint64_t)ret_len_hi << 32) | ret_len_lo);
+                
+                lau_yul_thunk_execute(name, calldata, cd_size, retval, retval_len);
                 break;
             }
             default: return;
@@ -327,7 +485,56 @@ void tsfi_zmm_vm_exec_block(TsfiZmmVmState *state, void *block) {
 }
 
 void tsfi_zmm_vm_free_block(void *block) {
-    if (block) lau_free(block);
+    if (block) {
+        uint32_t *b = (uint32_t*)block;
+        while (1) {
+            uint32_t op = *b++;
+            if (op == ZMM_OP_END) break;
+            switch (op) {
+                case ZMM_OP_WLOAD:
+                    b += 2;
+                    break;
+                case ZMM_OP_WADD:
+                case ZMM_OP_WMUL:
+                    b += 3;
+                    break;
+                case ZMM_OP_WSTORE:
+                    b += 2;
+                    break;
+                case VM_OP_SEAL:
+                case VM_OP_UNSEAL:
+                    b += 2;
+                    break;
+                case VM_OP_INVOKE:
+                    b += 3;
+                    break;
+                case VM_OP_YUL_INIT: {
+                    uint32_t name_hi = *b++; uint32_t name_lo = *b++;
+                    uint32_t path_hi = *b++; uint32_t path_lo = *b++;
+                    b += 2;
+                    free((void*)(((uint64_t)name_hi << 32) | name_lo));
+                    free((void*)(((uint64_t)path_hi << 32) | path_lo));
+                    break;
+                }
+                case VM_OP_YUL_EXEC: {
+                    uint32_t name_hi = *b++; uint32_t name_lo = *b++;
+                    uint32_t cd_hi = *b++; uint32_t cd_lo = *b++;
+                    b++;
+                    uint32_t ret_hi = *b++; uint32_t ret_lo = *b++;
+                    uint32_t ret_len_hi = *b++; uint32_t ret_len_lo = *b++;
+                    free((void*)(((uint64_t)name_hi << 32) | name_lo));
+                    free((void*)(((uint64_t)cd_hi << 32) | cd_lo));
+                    free((void*)(((uint64_t)ret_hi << 32) | ret_lo));
+                    free((void*)(((uint64_t)ret_len_hi << 32) | ret_len_lo));
+                    break;
+                }
+                default:
+                    goto done;
+            }
+        }
+done:
+        lau_free(block);
+    }
 }
 
 // --- Binary Evolution Support ---
@@ -340,6 +547,11 @@ static int get_op_size(uint32_t op) {
         case ZMM_OP_WMUL:   return 4;
         case ZMM_OP_WSTORE: return 3;
         case ZMM_OP_WDUMP:  return 2;
+        case VM_OP_SEAL:    return 3;
+        case VM_OP_UNSEAL:  return 3;
+        case VM_OP_INVOKE:  return 4;
+        case VM_OP_YUL_INIT: return 7;
+        case VM_OP_YUL_EXEC: return 10;
         default: return 1;
     }
 }
