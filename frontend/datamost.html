@@ -207,15 +207,16 @@
                     <p class="description">Singing word processor & Merkle persistent file editor utilizing the on-chain Disk System.</p>
                     
                     <!-- Virtual Desk representation -->
-                    <div style="display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.4); border: 1px dashed #ba55d3; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.4); border: 1px dashed #ba55d3; border-radius: 8px; padding: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                         <button class="btn btn-secondary" id="btnDeskTypewriter" style="font-size: 0.9rem; border-color: #ba55d3; color: var(--text-primary);">🖨️ Typewriter (Wordcraft)</button>
+                        <button class="btn btn-secondary" id="btnDeskEasyScript" style="font-size: 0.9rem; border-color: #ba55d3; color: var(--text-primary);">📝 Easy Script 64</button>
                         <button class="btn btn-secondary" id="btnDeskCabinet" style="font-size: 0.9rem; border-color: #ba55d3; color: var(--text-primary);">🗄️ File Cabinet (DFS)</button>
                     </div>
 
                     <!-- Wordcraft text layout screen -->
                     <div id="wordcraftWorkspace" style="display: flex; flex-direction: column; gap: 10px;">
-                        <div style="background: #f4ecd8; border: 3px solid #ba55d3; border-radius: 4px; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);">
-                            <div style="font-family: 'Orbitron', monospace; font-size: 0.75rem; text-align: center; color: #4b382a; border-bottom: 2px solid #4b382a; padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; letter-spacing: 2px;">
+                        <div id="wordcraftTextContainer" style="background: #f4ecd8; border: 3px solid #ba55d3; border-radius: 4px; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); transition: all 0.3s ease;">
+                            <div id="wordcraftHeader" style="font-family: 'Orbitron', monospace; font-size: 0.75rem; text-align: center; color: #4b382a; border-bottom: 2px solid #4b382a; padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; letter-spacing: 2px;">
                                 WORDCRAFT 80 ULTRA - ON-CHAIN DOCUMENT
                             </div>
                             <textarea id="wordcraftText" rows="6" style="width: 100%; background: transparent; border: none; outline: none; font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #3b2f2f; font-size: 1rem; resize: none; line-height: 1.4;" placeholder="Type document content here..."></textarea>
@@ -1842,7 +1843,42 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
         document.getElementById("btnDeskTypewriter").addEventListener("click", () => {
             document.getElementById("wordcraftWorkspace").style.display = "flex";
+            const container = document.getElementById("wordcraftTextContainer");
+            if (container) {
+                container.style.background = "#f4ecd8";
+                container.style.borderColor = "#ba55d3";
+            }
+            const header = document.getElementById("wordcraftHeader");
+            if (header) {
+                header.style.color = "#4b382a";
+                header.style.borderBottomColor = "#4b382a";
+                header.innerText = "WORDCRAFT 80 ULTRA - ON-CHAIN DOCUMENT";
+            }
+            const txt = document.getElementById("wordcraftText");
+            if (txt) {
+                txt.style.color = "#3b2f2f";
+            }
             document.getElementById("wordcraftStatus").innerText = "Typewriter Active (Wordcraft 80 Ultra)";
+        });
+
+        document.getElementById("btnDeskEasyScript").addEventListener("click", () => {
+            document.getElementById("wordcraftWorkspace").style.display = "flex";
+            const container = document.getElementById("wordcraftTextContainer");
+            if (container) {
+                container.style.background = "#3b5dc9";
+                container.style.borderColor = "#a2b4c2";
+            }
+            const header = document.getElementById("wordcraftHeader");
+            if (header) {
+                header.style.color = "#ffffff";
+                header.style.borderBottomColor = "#ffffff";
+                header.innerText = "EASYSCRIPT 64 - COMMODORE HOME OFFICE";
+            }
+            const txt = document.getElementById("wordcraftText");
+            if (txt) {
+                txt.style.color = "#ffffff";
+            }
+            document.getElementById("wordcraftStatus").innerText = "Typewriter Active (Easy Script 64 Mode)";
         });
 
         document.getElementById("btnDeskCabinet").addEventListener("click", async () => {

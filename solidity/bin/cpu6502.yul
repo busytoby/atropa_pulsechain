@@ -29,9 +29,17 @@ object "CPU6502Emulator" {
             
             // Helper to get non-overlapping memory offset for C64 registers
 
+            // Helper to get active context user address
+            function getContextUser() -> user {
+                user := mload(0x1F0)
+                if iszero(user) {
+                    user := caller()
+                }
+            }
+
             // Helper to get namespaced storage slot for a specific user and C64 address
             function getUserSlot(addr) -> slot {
-                mstore(0x00, caller())
+                mstore(0x00, getContextUser())
                 mstore(0x20, addr)
                 slot := keccak256(0x00, 64)
             }
@@ -125,7 +133,38 @@ object "CPU6502Emulator" {
 
             // Helper function to read from memory/registers (handling memory-mapped I/O)
             function readMemory(addr) -> val {
+                // Apply cartridge bank-switching for range $8000-$9FFF (32768-40959) using bank register at $D500 (54528)
+                if and(iszero(lt(addr, 32768)), lt(addr, 40960)) {
+                    let bank := sload(getUserSlot(54528))
+                    addr := add(addr, mul(bank, 8192))
+                }
+
                 switch addr
+                case 54552 { // AABB Collision Detection coprocessor output ($D518)
+                    let x1 := sload(getUserSlot(54544))
+                    let y1 := sload(getUserSlot(54545))
+                    let w1 := sload(getUserSlot(54546))
+                    let h1 := sload(getUserSlot(54547))
+                    let x2 := sload(getUserSlot(54548))
+                    let y2 := sload(getUserSlot(54549))
+                    let w2 := sload(getUserSlot(54550))
+                    let h2 := sload(getUserSlot(54551))
+                    let cond1 := lt(x1, add(x2, w2))
+                    let cond2 := lt(x2, add(x1, w1))
+                    let cond3 := lt(y1, add(y2, h2))
+                    let cond4 := lt(y2, add(y1, h1))
+                    if and(and(cond1, cond2), and(cond3, cond4)) {
+                        val := 1
+                    }
+                }
+                case 54562 { // Ring Buffer Size ($D522)
+                    let head := sload(getUserSlot(54565))
+                    let tail := sload(getUserSlot(54566))
+                    val := and(sub(add(tail, 32), head), 31)
+                }
+                case 54564 { // Last Popped Value ($D524)
+                    val := sload(getUserSlot(54564))
+                }
                 case 56321 { // $DC01 (CIA 1 Data Port B - Keyboard row read)
                     let colMask := sload(getUserSlot(56320))
                     let rowMask := 0xFF
@@ -148,7 +187,36 @@ object "CPU6502Emulator" {
 
             // Helper function to write to memory/registers (handling memory-mapped I/O)
             function writeMemory(addr, val) {
+                // Apply cartridge bank-switching for range $8000-$9FFF (32768-40959) using bank register at $D500 (54528)
+                if and(iszero(lt(addr, 32768)), lt(addr, 40960)) {
+                    let bank := sload(getUserSlot(54528))
+                    addr := add(addr, mul(bank, 8192))
+                }
+
                 switch addr
+                case 54560 { // Ring Buffer Push ($D520)
+                    let head := sload(getUserSlot(54565))
+                    let tail := sload(getUserSlot(54566))
+                    let nextTail := and(add(tail, 1), 31)
+                    if iszero(eq(nextTail, head)) {
+                        sstore(getUserSlot(add(54567, tail)), val)
+                        sstore(getUserSlot(54566), nextTail)
+                    }
+                }
+                case 54561 { // Trigger Ring Buffer Pop transaction ($D521)
+                    let head := sload(getUserSlot(54565))
+                    let tail := sload(getUserSlot(54566))
+                    if iszero(eq(head, tail)) {
+                        let poppedVal := sload(getUserSlot(add(54567, head)))
+                        sstore(getUserSlot(54564), poppedVal) // Save to last popped value
+                        head := and(add(head, 1), 31)
+                        sstore(getUserSlot(54565), head) // Advance head
+                    }
+                }
+                case 54563 { // Ring Buffer Clear ($D523)
+                    sstore(getUserSlot(54565), 0)
+                    sstore(getUserSlot(54566), 0)
+                }
                 case 53265 { // $D011 (VIC-II Control Register 1)
                     // Bit 7 is the high bit of the raster compare target
                     sstore(getUserSlot(53301), and(val, 0x80))
@@ -914,10 +982,17 @@ object "CPU6502Emulator" {
             if eq(selector, 0x0ccd522c) {
                 let user := calldataload(4)
                 let addr := calldataload(36)
-                mstore(0x00, user)
-                mstore(0x20, addr)
-                let slot := keccak256(0x00, 64)
-                let val := sload(slot)
+                
+                // Save context user
+                let oldUser := mload(0x1F0)
+                mstore(0x1F0, user)
+                
+                // Read via readMemory to trigger bank switching and memory-mapped IO behaviors
+                let val := readMemory(addr)
+                
+                // Restore context user
+                mstore(0x1F0, oldUser)
+                
                 mstore(0x00, val)
                 return(0x00, 32)
             }
@@ -930,10 +1005,17 @@ object "CPU6502Emulator" {
                 let user := calldataload(4)
                 let addr := calldataload(36)
                 let val := calldataload(68)
-                mstore(0x00, user)
-                mstore(0x20, addr)
-                let slot := keccak256(0x00, 64)
-                sstore(slot, val)
+                
+                // Save context user
+                let oldUser := mload(0x1F0)
+                mstore(0x1F0, user)
+                
+                // Write via writeMemory to trigger bank switching and side-effects
+                writeMemory(addr, val)
+                
+                // Restore context user
+                mstore(0x1F0, oldUser)
+                
                 mstore(0x00, 1)
                 return(0x00, 32)
             }
