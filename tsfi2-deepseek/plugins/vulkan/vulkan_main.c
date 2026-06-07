@@ -91,9 +91,7 @@ VulkanSystem* create_vulkan_system() {
 
     LauSystemHeader *h = (LauSystemHeader *)((char *)s - 7168);
     h->resonance_as_status = lau_strdup("VK_INIT");
-    
-    TSFiLogicTable logic = { .logic_epoch = vulkan_logic_epoch, .logic_state = vulkan_logic_state, .logic_directive = vulkan_logic_directive, .logic_scramble = vulkan_logic_scramble, .logic_provenance = vulkan_logic_provenance };
-    lau_wire_system((WaveSystem*)s, h, &logic);
+
 
     s->display = wl_display_connect(NULL);
     if (!s->display) { lau_free(s); return NULL; }
@@ -123,6 +121,14 @@ VulkanSystem* create_vulkan_system() {
     }
 
     if (!s->lease_active) {
+        if (!s->compositor || !s->xdg_wm_base) {
+            printf("[TSFI_VULKAN] Wayland compositor or xdg_wm_base not found, failing create_vulkan_system to fallback to headless.\n");
+            if (s->vk) cleanup_vulkan(s->vk);
+            if (s->display) wl_display_disconnect(s->display);
+            if (s->paint_buffer) destroy_staging_buffer(s->paint_buffer);
+            lau_free(s);
+            return NULL;
+        }
         s->surface = wl_compositor_create_surface(s->compositor);
         s->xdg_surface = xdg_wm_base_get_xdg_surface(s->xdg_wm_base, s->surface);
         s->xdg_toplevel = xdg_surface_get_toplevel(s->xdg_surface);
@@ -133,12 +139,12 @@ VulkanSystem* create_vulkan_system() {
         if (createFunc) createFunc(s->vk->instance, &createInfo, NULL, &s->vk->surface);
     }
 
-    lau_memory_init_gpu(s->vk);
-    init_vk_swapchain(s->vk, s->width, s->height);
-    init_staging_vk_buffer(s, s->paint_buffer->size);
-
     s->running = true;
     set_vulkan_system(s);
+
+    TSFiLogicTable logic = { .logic_epoch = vulkan_logic_epoch, .logic_state = vulkan_logic_state, .logic_directive = vulkan_logic_directive, .logic_scramble = vulkan_logic_scramble, .logic_provenance = vulkan_logic_provenance };
+    lau_wire_system((WaveSystem*)s, h, &logic);
+
     return s;
 }
 

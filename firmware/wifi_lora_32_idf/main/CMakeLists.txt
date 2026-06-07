@@ -18,4 +18,8 @@ idf_component_register(
         esp_partition
         efuse
         nvs_flash
+        esp_wifi
+        esp_http_server
+        esp_event
+        esp_netif
 )

@@ -908,6 +908,37 @@ object "CPU6502Emulator" {
             }
 
             // ----------------------------------------------------------------
+            // Method 12: peekUser(address user, uint256 addr) -> uint256
+            // Selector: 0x0ccd522c
+            // ----------------------------------------------------------------
+            if eq(selector, 0x0ccd522c) {
+                let user := calldataload(4)
+                let addr := calldataload(36)
+                mstore(0x00, user)
+                mstore(0x20, addr)
+                let slot := keccak256(0x00, 64)
+                let val := sload(slot)
+                mstore(0x00, val)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 13: pokeUser(address user, uint256 addr, uint256 val) -> uint256
+            // Selector: 0xa7260f02
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa7260f02) {
+                let user := calldataload(4)
+                let addr := calldataload(36)
+                let val := calldataload(68)
+                mstore(0x00, user)
+                mstore(0x20, addr)
+                let slot := keccak256(0x00, 64)
+                sstore(slot, val)
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // Method 11: initializeGame(uint256 startPC, bytes calldata program, uint256[] calldata addrs, uint256[] calldata vals)
             // Selector: 0x914eae91
             // ----------------------------------------------------------------

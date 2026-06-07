@@ -200,30 +200,34 @@ void tsfi_wire_firmware_init(void) {
     
     if (is_creator) {
         memset(fw, 0, fw_size);
-        // Bind Standard Cells only on creation
-        fw->rx_pin_pty_out = rx_pin_pty_out_impl; 
-        fw->tx_pin_pty_in = tx_pin_pty_in_impl;
-        
-        // Initial setup for the creator process
-        fw->cell_inject_stdin = cell_inject_stdin_impl; 
-        fw->cell_extract_stdout = cell_extract_stdout_impl;
-        fw->cell_brush_teeth = cell_brush_teeth_impl;
-        fw->cell_mcp_execute = cell_mcp_execute_impl; 
-        fw->cell_wave_exec = cell_wave_exec_impl;
-        fw->cell_neural_observe = cell_neural_observe_impl; 
-        fw->cell_printf = cell_printf_impl;
-        fw->cell_zhong_sync_wait = cell_zhong_sync_wait_impl; 
-        fw->cell_zhong_sync_signal = cell_zhong_sync_signal_impl;
-        fw->cell_zhong_atomic_wait = cell_zhong_atomic_wait_impl; 
-        fw->cell_seal_capture = cell_seal_capture_impl;
-        fw->cell_seal_release = cell_seal_release_impl; 
-        fw->cell_reg_insert = cell_reg_insert_impl;
-        fw->cell_reg_remove = cell_reg_remove_impl; 
-        fw->cell_reg_lookup = cell_reg_lookup_impl;
-        fw->cell_reg_strobe_zmm = cell_reg_strobe_zmm_impl; 
-        fw->cell_mem_genesis = cell_mem_genesis_impl;
-        fw->cell_mem_reclaim = cell_mem_reclaim_impl;
-        fw->cell_hardware_poll = cell_hardware_poll_impl;
+    }
+
+    // Bind Standard Cells on every attach to ensure correct function addresses with ASLR
+    fw->rx_pin_pty_out = rx_pin_pty_out_impl; 
+    fw->tx_pin_pty_in = tx_pin_pty_in_impl;
+    
+    // Initial setup for standard cells
+    fw->cell_inject_stdin = cell_inject_stdin_impl; 
+    fw->cell_extract_stdout = cell_extract_stdout_impl;
+    fw->cell_brush_teeth = cell_brush_teeth_impl;
+    fw->cell_mcp_execute = cell_mcp_execute_impl; 
+    fw->cell_wave_exec = cell_wave_exec_impl;
+    fw->cell_neural_observe = cell_neural_observe_impl; 
+    fw->cell_printf = cell_printf_impl;
+    fw->cell_zhong_sync_wait = cell_zhong_sync_wait_impl; 
+    fw->cell_zhong_sync_signal = cell_zhong_sync_signal_impl;
+    fw->cell_zhong_atomic_wait = cell_zhong_atomic_wait_impl; 
+    fw->cell_seal_capture = cell_seal_capture_impl;
+    fw->cell_seal_release = cell_seal_release_impl; 
+    fw->cell_reg_insert = cell_reg_insert_impl;
+    fw->cell_reg_remove = cell_reg_remove_impl; 
+    fw->cell_reg_lookup = cell_reg_lookup_impl;
+    fw->cell_reg_strobe_zmm = cell_reg_strobe_zmm_impl; 
+    fw->cell_mem_genesis = cell_mem_genesis_impl;
+    fw->cell_mem_reclaim = cell_mem_reclaim_impl;
+    fw->cell_hardware_poll = cell_hardware_poll_impl;
+
+    if (is_creator) {
 
         memset(&fw->manifold, 0, sizeof(LauRegistryManifold));
         // Backfill manifold using local pointer

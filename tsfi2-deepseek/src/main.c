@@ -30,19 +30,23 @@ int main(int argc, char **argv) {
 
     // First State Phase (Triggers Window Open via Directive)
     if (ws->step_safety_state) {
+        lau_unseal_object(ws);
         if (ws->current_directive) {
             lau_free(ws->current_directive);
             ws->current_directive = NULL;
         }
         ws->current_directive = lau_strdup("OPEN_WINDOW");
+        lau_seal_object(ws);
         ws->step_safety_state();
         
         if (auto_gemini) {
+            lau_unseal_object(ws);
             if (ws->current_directive) lau_free(ws->current_directive);
             const char *cmd = "/usr/local/bin/gemini";
             char dir_buf[512];
             snprintf(dir_buf, sizeof(dir_buf), "START_SESSION 0 %s", cmd);
             ws->current_directive = lau_strdup(dir_buf);
+            lau_seal_object(ws);
             if (fw && fw->cell_printf) fw->cell_printf(0, "[INFO] Auto-launching Gemini manifold...\n");
             ws->step_safety_state();
         }
@@ -52,8 +56,10 @@ int main(int argc, char **argv) {
         
         // Clear directive
         if (ws->current_directive) {
+            lau_unseal_object(ws);
             lau_free(ws->current_directive);
             ws->current_directive = NULL;
+            lau_seal_object(ws);
         }
     }
 
@@ -61,7 +67,17 @@ int main(int argc, char **argv) {
         char input[256] = {0};
 
         // 1. Physical Arbitration (Firmware Domain)
-        if (!fw || !fw->cell_hardware_poll || fw->cell_hardware_poll(16, input, sizeof(input)) < 0) break;
+        int poll_status = -1;
+        if (fw && fw->cell_hardware_poll) {
+            poll_status = fw->cell_hardware_poll(16, input, sizeof(input));
+        }
+
+        if (poll_status < 0) {
+            // Sleep 30ms to prevent CPU saturation when stdin/VTY is disconnected
+            struct timespec req = {0, 30000000}; // 30ms
+            nanosleep(&req, NULL);
+            input[0] = '\0';
+        }
 
         if (input[0] != '\0') {
             if (tsfi_cli_process_line(ws, input) != 0) {

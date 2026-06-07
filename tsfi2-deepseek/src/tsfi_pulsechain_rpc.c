@@ -8,8 +8,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#define RPC_HOST "rpc.pulsechain.com"
-#define RPC_PORT "80"
+#define RPC_HOST "127.0.0.1"
+#define RPC_PORT "8545"
 
 static bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t out_max_len) {
     struct addrinfo hints, *res;
@@ -88,6 +88,15 @@ bool tsfi_pulse_rpc_call(const char *to_address, const char *data_hex, char *out
     snprintf(payload, sizeof(payload), 
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\":\"%s\",\"data\":\"%s\"},\"latest\"],\"id\":1}",
              to_address, data_hex);
+             
+    return exec_raw_http_rpc(payload, out_hex_buffer, out_max_len);
+}
+
+bool tsfi_pulse_rpc_call_from(const char *to_address, const char *from_address, const char *data_hex, char *out_hex_buffer, size_t out_max_len) {
+    char payload[1536];
+    snprintf(payload, sizeof(payload), 
+             "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\":\"%s\",\"from\":\"%s\",\"data\":\"%s\"},\"latest\"],\"id\":1}",
+             to_address, from_address, data_hex);
              
     return exec_raw_http_rpc(payload, out_hex_buffer, out_max_len);
 }

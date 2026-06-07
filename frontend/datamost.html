@@ -12,10 +12,11 @@
     <style>
         .retro-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 30px;
             margin-top: 20px;
             align-items: start;
+            min-width: 0;
         }
         .canvas-container {
             display: flex;
@@ -26,6 +27,18 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.1);
+            min-width: 0;
+        }
+        .retro-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0;
+        }
+        .card {
+            min-width: 0;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
         canvas {
             background-color: #3b5dc9; /* C64 Outer Blue */
@@ -236,7 +249,7 @@
                     <p class="description">Early 1980s retro telecomputing. Dial into the GameMaster House to navigate rooms and play on-chain multiplayer games.</p>
                     
                     <div style="background: #000; border: 2px solid #39ff14; border-radius: 4px; padding: 15px; font-family: 'Courier New', Courier, monospace; color: #39ff14; box-shadow: inset 0 0 10px rgba(57,255,20,0.3); min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div id="gamemasterTerminalOutput" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.4; max-height: 250px; overflow-y: auto;">GAMEMASTER TERMINAL SYSTEM (300 BAUD)
+                        <div id="gamemasterTerminalOutput" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.4; max-height: 250px; overflow-y: auto; word-break: break-all;">GAMEMASTER TERMINAL SYSTEM (300 BAUD)
 DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         <div style="display: flex; border-top: 1px solid #39ff14; padding-top: 10px; margin-top: 10px; align-items: center;">
                             <span style="font-weight: bold; margin-right: 5px;">&gt;</span>
@@ -247,6 +260,101 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
                         <button class="btn btn-primary" id="btnGamemasterConnect" style="background: #1e3f20; border-color: #39ff14; color: #39ff14; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📞 Dial GameMaster</button>
                         <button class="btn btn-secondary" id="btnGamemasterGuide" style="border-color: #39ff14; color: #39ff14; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">🗺️ View Guide Map</button>
+                    </div>
+                </section>
+
+                <!-- Oregon Trail Dashboard -->
+                <section class="card" id="oregonTrailDashboard" style="display: none; box-shadow: 0 0 20px rgba(255, 140, 0, 0.25); border-color: #ff8c00; margin-bottom: 25px;">
+                    <h2><span class="icon">🐂</span> Oregon Trail Telemetry Dashboard</h2>
+                    <p class="description">Real-time status monitor of your wagon's journey to Oregon.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <!-- Progress Row -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin-bottom: 5px; color: #ff8c00;">
+                                <span>JOURNEY PROGRESS (INDEPENDENCE TO OREGON)</span>
+                                <span id="otMilesText">2000 Miles to Go</span>
+                            </div>
+                            <div style="width: 100%; height: 20px; background: rgba(0,0,0,0.5); border: 1px solid #ff8c00; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div id="otMilesBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff8c00, #ffa500); transition: width 0.4s ease;"></div>
+                                <div id="otMilesMarker" style="position: absolute; top: 0; left: 0%; transform: translateX(-50%); font-size: 0.9rem; line-height: 20px; transition: left 0.4s ease;">🐂</div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Row -->
+                        <div style="display: flex; gap: 15px;">
+                            <!-- Health Card -->
+                            <div style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #ff8c00; padding: 10px; border-radius: 6px; text-align: center;">
+                                <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ff8c00; margin-bottom: 5px;">WAGON HEALTH</div>
+                                <div id="otHealthValue" style="font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: bold; color: #39ff14;">100%</div>
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; margin-top: 5px; overflow: hidden;">
+                                    <div id="otHealthBar" style="width: 100%; height: 100%; background: #39ff14; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Food Card -->
+                            <div style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #ff8c00; padding: 10px; border-radius: 6px; text-align: center;">
+                                <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ff8c00; margin-bottom: 5px;">FOOD SUPPLIES</div>
+                                <div id="otFoodValue" style="font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: bold; color: #00f2fe;">150 Lbs</div>
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; margin-top: 5px; overflow: hidden;">
+                                    <div id="otFoodBar" style="width: 75%; height: 100%; background: #00f2fe; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- On-Chain Token Reward Row -->
+                        <div style="background: rgba(0,0,0,0.5); border: 1px dashed #ff8c00; border-radius: 6px; padding: 10px; display: flex; justify-content: space-between; align-items: center; font-family: 'Orbitron', sans-serif;">
+                            <span style="font-size: 0.8rem; color: #ffa500; display: flex; align-items: center; gap: 5px;">
+                                🪙 ON-CHAIN REWARDS (OTRT)
+                            </span>
+                            <span id="otTokenBalance" style="font-size: 1.1rem; font-weight: bold; color: #ff8c00;">0 OTRT</span>
+                        </div>
+
+                        <!-- Detailed Token Components Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem;">
+                            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,140,0,0.3); padding: 5px; border-radius: 4px; text-align: center;">
+                                <span style="color: #ffa500; display: block; font-size: 0.65rem;">WAGONS</span>
+                                <span id="otWgnBalance" style="font-weight: bold; color: #fff;">0 OTWGN</span>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,140,0,0.3); padding: 5px; border-radius: 4px; text-align: center;">
+                                <span style="color: #ffa500; display: block; font-size: 0.65rem;">OXEN</span>
+                                <span id="otOxnBalance" style="font-weight: bold; color: #fff;">0 OTOXN</span>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,140,0,0.3); padding: 5px; border-radius: 4px; text-align: center;">
+                                <span style="color: #ffa500; display: block; font-size: 0.65rem;">CLOTHING</span>
+                                <span id="otClthBalance" style="font-weight: bold; color: #fff;">0 OTCLTH</span>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,140,0,0.3); padding: 5px; border-radius: 4px; text-align: center;">
+                                <span style="color: #ffa500; display: block; font-size: 0.65rem;">AXLES</span>
+                                <span id="otAxlBalance" style="font-weight: bold; color: #fff;">0 OTAXL</span>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,140,0,0.3); padding: 5px; border-radius: 4px; text-align: center;">
+                                <span style="color: #ffa500; display: block; font-size: 0.65rem;">TONGUES</span>
+                                <span id="otTngBalance" style="font-weight: bold; color: #fff;">0 OTTNG</span>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,140,0,0.3); padding: 5px; border-radius: 4px; text-align: center;">
+                                <span style="color: #ffa500; display: block; font-size: 0.65rem;">WHEELS</span>
+                                <span id="otWhlBalance" style="font-weight: bold; color: #fff;">0 OTWHL</span>
+                            </div>
+                        </div>
+
+                        <!-- Mini Log Console -->
+                        <div>
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ff8c00; margin-bottom: 5px;">JOURNEY LOGBOOK</div>
+                            <div id="otLogConsole" style="background: #000; border: 1px solid #ff8c00; border-radius: 4px; padding: 10px; font-family: 'Courier New', Courier, monospace; color: #ffa500; font-size: 0.85rem; height: 100px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 5px rgba(255,140,0,0.2);"></div>
+                        </div>
+
+                        <!-- Actions Row -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <button class="btn btn-primary" id="btnOtTravel" style="background: #3a2200; border-color: #ff8c00; color: #ffa500; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1; font-weight: bold;">🌾 Travel</button>
+                            <button class="btn btn-primary" id="btnOtHunt" style="background: #3a2200; border-color: #ff8c00; color: #ffa500; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1; font-weight: bold;">🎯 Hunt</button>
+                            <button class="btn btn-primary" id="btnOtRest" style="background: #3a2200; border-color: #ff8c00; color: #ffa500; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1; font-weight: bold;">⛺ Rest</button>
+                            <button class="btn btn-secondary" id="btnOtExit" style="border-color: #ff8c00; color: #ffa500; font-size: 0.85rem; padding: 8px 10px; flex-grow: 0.5;">🚪 Abandon</button>
+                        </div>
+                        <!-- AI Autoplay Row -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <button class="btn btn-primary" id="btnOtAiAutoplay" style="background: #1e3f20; border-color: #39ff14; color: #39ff14; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1; font-weight: bold; box-shadow: 0 0 10px rgba(57,255,20,0.2);">🤖 AI Autoplay: OFF</button>
+                        </div>
                     </div>
                 </section>
 
@@ -474,7 +582,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "function fillMemory(uint256 startAddr, uint256 length, uint256 val) public returns (uint256)",
             "function peek(uint256 addr) public view returns (uint256)",
             "function batchPoke(uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
-            "function initializeGame(uint256 startPC, bytes calldata program, uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)"
+            "function initializeGame(uint256 startPC, bytes calldata program, uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
+            "function peekUser(address user, uint256 addr) public view returns (uint256)",
+            "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)"
         ];
         const graphicsABI = [
             "function updateSprite(uint8 index, uint16 x, uint8 y) public returns (uint256)",
@@ -498,7 +608,12 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "function clearBusy() public returns (uint256)"
         ];
 
-        let cpuContract, graphicsContract, musicContract, diskContract, speechContract;
+        let cpuContract, graphicsContract, musicContract, diskContract, speechContract, oregonTrailTokenContract;
+        const erc20ABI = [
+            "function balanceOf(address account) external view returns (uint256)",
+            "function symbol() external view returns (string)",
+            "function name() external view returns (string)"
+        ];
         let lastSpeechCounter = 0;
         let spritePatterns = [[], [], [], [], [], [], [], []];
 
@@ -694,6 +809,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 diskContract = wrapDiskContract(new ethers.Contract(localhost.diskSystemAddress, diskABI, signer), signer);
                 setupDiskEventListener(diskContract);
                 speechContract = new ethers.Contract(localhost.speechSynthesizerAddress, speechABI, signer);
+                if (localhost.oregonTrailToken) {
+                    oregonTrailTokenContract = new ethers.Contract(localhost.oregonTrailToken, erc20ABI, signer);
+                }
 
                 console.log("Contracts loaded successfully from registry.");
                 refreshDiskDirectory();
@@ -720,6 +838,11 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
             // Start simulation update loops
             startSimulationLoops();
+            
+            // Initialize Oregon Trail Dashboard event listeners
+            if (typeof initOregonDashboardEvents === "function") {
+                initOregonDashboardEvents();
+            }
         }
 
         // Connect Browser Wallet
@@ -737,6 +860,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     diskContract = wrapDiskContract(new ethers.Contract(config.networks.localhost.diskSystemAddress, diskABI, browserSigner), browserSigner);
                     setupDiskEventListener(diskContract);
                     speechContract = new ethers.Contract(config.networks.localhost.speechSynthesizerAddress, speechABI, browserSigner);
+                    if (config.networks.localhost.oregonTrailToken) {
+                        oregonTrailTokenContract = new ethers.Contract(config.networks.localhost.oregonTrailToken, erc20ABI, browserSigner);
+                    }
                     
                     document.getElementById("btnConnect").innerText = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
                     console.log("Connected to browser wallet:", address);
@@ -1805,6 +1931,10 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         let oregonMile = 0;
         let oregonFood = 0;
         let oregonHealth = 0;
+        let otAiActive = false;
+        let otAiTimer = null;
+        let oregonWeather = "SUNNY";
+        let oregonTimeOfDay = 0; // 0=Day, 1=Sunset, 2=Night, 3=Sunrise
         let lemonadeActive = false;
         let lemonadeDay = 0;
         let lemonadeMoney = 0;
@@ -1992,6 +2122,13 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const out = document.getElementById("gamemasterTerminalOutput");
             out.innerText += "\n" + text;
             out.scrollTop = out.scrollHeight;
+
+            if (typeof updateOregonDashboard === "function") {
+                updateOregonDashboard();
+            }
+            if (oregonActive && text.trim() && !text.includes("> ") && typeof appendOregonDashboardLog === "function") {
+                appendOregonDashboardLog(text);
+            }
         }
 
         async function loadBBSMessages() {
@@ -2302,10 +2439,28 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             writeToTerminal(`YOU HUNTED SUCCESSFULLY AND GAINED ${foodGained} LBS OF FOOD!`);
                             if (oregonFood < 0) oregonFood = 0;
                             writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            rewardOregonTokens(3);
                             return;
                         }
                         if (cmd === "TRAVEL") {
                             let dist = Math.floor(Math.random() * 51) + 80; // 80-130 miles
+                            
+                            // Weather & Time of Day progression
+                            oregonTimeOfDay = (oregonTimeOfDay + 1) % 4;
+                            let wRnd = Math.random();
+                            if (wRnd < 0.60) {
+                                oregonWeather = "SUNNY";
+                            } else if (wRnd < 0.80) {
+                                oregonWeather = "RAINY";
+                                oregonHealth = Math.max(0, oregonHealth - 2);
+                                writeToTerminal("WEATHER: MUDDY PLOUGHING! RAIN FALLS. HEALTH -2.");
+                            } else {
+                                oregonWeather = "STORMY";
+                                oregonHealth = Math.max(0, oregonHealth - 5);
+                                dist = Math.floor(dist * 0.7);
+                                writeToTerminal("WEATHER: A SEVERE THUNDERSTORM RAGES! TRAVEL SLOWED. HEALTH -5.");
+                            }
+
                             oregonMile -= dist;
                             oregonFood -= 15;
                             if (oregonFood < 0) {
@@ -2320,8 +2475,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 oregonHealth -= 20;
                                 writeToTerminal("EVENT: YOU CONTRACTED DYSENTERY! HEALTH DROPPED BY 20.");
                             } else if (eventRnd < 0.45) {
-                                oregonHealth -= 10;
-                                writeToTerminal("EVENT: A WAGON WHEEL BROKE! HEALTH DROPPED BY 10.");
+                                const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                                let wheelBal = 0;
+                                if (cpuContract && userAddress !== "0x0000000000000000000000000000000000000000") {
+                                    try {
+                                        wheelBal = Number(await cpuContract.peekUser(userAddress, 853));
+                                    } catch (err) {}
+                                }
+                                if (wheelBal > 0) {
+                                    const nextBal = wheelBal - 1;
+                                    if (cpuContract && userAddress !== "0x0000000000000000000000000000000000000000") {
+                                        await (await cpuContract.pokeUser(userAddress, 853, nextBal)).wait();
+                                    }
+                                    oregonHealth -= 2;
+                                    writeToTerminal(`EVENT: A WAGON WHEEL BROKE! REPLACED WITH A SPARE WHEEL TOKEN. SPARE WHEELS REMAINING: ${nextBal}.`);
+                                } else {
+                                    oregonHealth -= 15;
+                                    writeToTerminal("EVENT: A WAGON WHEEL BROKE! NO SPARE WHEELS LEFT. HEALTH DROPPED BY 15.");
+                                }
                             } else {
                                 writeToTerminal("EVENT: DAY WAS QUIET AND PEACEFUL.");
                             }
@@ -2332,6 +2503,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 writeToTerminal("* CONGRATULATIONS! YOU HAVE REACHED OREGON!   *");
                                 writeToTerminal("************************************************");
                                 writeToTerminal("MECC Software Complete. Returning to Classroom.");
+                                rewardOregonTokens(100);
                                 return;
                             }
                             if (oregonHealth <= 0) {
@@ -2341,6 +2513,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 return;
                             }
                             writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            rewardOregonTokens(5);
                             return;
                         }
                         if (cmd === "REST") {
@@ -2357,6 +2530,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 return;
                             }
                             writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            rewardOregonTokens(1);
                             return;
                         }
                         writeToTerminal("UNKNOWN ACTION. TYPE 'TRAVEL', 'HUNT', 'REST', OR 'EXIT'.");
@@ -2448,9 +2622,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         oregonMile = 2000;
                         oregonFood = 150;
                         oregonHealth = 100;
+                        
+                        if (cpuContract) {
+                            const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                            if (userAddress !== "0x0000000000000000000000000000000000000000") {
+                                cpuContract.pokeUser(userAddress, 848, 0).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 849, 1).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 850, 6).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 851, 2).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 852, 2).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 853, 2).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 854, 4).catch(() => {});
+                            }
+                        }
+
                         writeToTerminal("\nTHE OREGON TRAIL (MECC C64 VERSION)");
                         writeToTerminal("YOU START AT INDEPENDENCE, MISSOURI WITH 2000 MILES TO GO.");
                         writeToTerminal("FOOD: 150 LBS | HEALTH: 100%");
+                        writeToTerminal("INVENTORY INITIALIZED: 1 WAGON, 6 OXEN, 2 AXLES, 2 TONGUES, 2 WHEELS, 4 CLOTHES.");
                         writeToTerminal("COMMANDS: 'TRAVEL' (consume 15 food), 'HUNT' (gain 20-50 food), 'REST', OR 'EXIT'.");
                         return;
                     }
@@ -2590,8 +2779,180 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             return " ";
         }
 
+        let oregonScrollOffset = 0;
+        
+        function drawOregonScreen() {
+            // Sky & Celestial Body depending on time of day
+            let skyCol = "#33a2ff";
+            let celestialCol = "#ffdd00";
+            let isNight = false;
+            
+            if (oregonTimeOfDay === 0) { // Day
+                skyCol = "#33a2ff";
+                celestialCol = "#ffdd00";
+            } else if (oregonTimeOfDay === 1) { // Sunset
+                skyCol = "#ff7675";
+                celestialCol = "#e17055";
+            } else if (oregonTimeOfDay === 2) { // Night
+                skyCol = "#090a14";
+                celestialCol = "#dfe6e9";
+                isNight = true;
+            } else if (oregonTimeOfDay === 3) { // Sunrise
+                skyCol = "#8c7ae6";
+                celestialCol = "#fbc531";
+            }
+            
+            // Lightning flash
+            let lightningFlash = false;
+            if (oregonWeather === "STORMY" && Math.random() < 0.04) {
+                lightningFlash = true;
+                skyCol = "#ffffff";
+            }
+
+            ctx.fillStyle = skyCol; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Stars at night
+            if (isNight && !lightningFlash) {
+                ctx.fillStyle = "#ffffff";
+                for (let i = 0; i < 15; i++) {
+                    let starX = (i * 23) % canvas.width;
+                    let starY = (i * 17) % 80;
+                    ctx.fillRect(starX, starY, 1, 1);
+                }
+            }
+
+            // Celestial Body
+            ctx.fillStyle = celestialCol;
+            ctx.beginPath();
+            if (isNight) {
+                ctx.arc(280, 25, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = skyCol;
+                ctx.beginPath();
+                ctx.arc(276, 25, 10, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.arc(280, 25, 12, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Mountains
+            ctx.fillStyle = isNight ? "#1e272e" : "#4a6b82";
+            ctx.beginPath();
+            ctx.moveTo(0, 120);
+            for (let i = 0; i <= canvas.width + 40; i += 40) {
+                let offset = (oregonScrollOffset * 0.1) % 40;
+                let mx = i - offset;
+                let my = 90 - (Math.abs(Math.sin(i * 0.05)) * 15);
+                ctx.lineTo(mx, my);
+            }
+            ctx.lineTo(canvas.width, 120);
+            ctx.fill();
+
+            // Green hills
+            ctx.fillStyle = isNight ? "#1b263b" : "#2ecc71";
+            ctx.beginPath();
+            ctx.moveTo(0, 120);
+            for (let x = 0; x <= canvas.width + 10; x += 10) {
+                let offset = (oregonScrollOffset * 0.3) % 10;
+                let lx = x - offset;
+                let ly = 120 + Math.sin((x + oregonScrollOffset * 0.5) * 0.04) * 3;
+                ctx.lineTo(lx, ly);
+            }
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Path
+            ctx.fillStyle = isNight ? "#3d2e27" : "#8d6e63";
+            ctx.fillRect(0, 130, canvas.width, 25);
+
+            // Trees
+            for (let i = 0; i < canvas.width + 100; i += 80) {
+                let tx = i - ((oregonScrollOffset * 0.8) % (canvas.width + 100));
+                ctx.fillStyle = isNight ? "#271b17" : "#5d4037";
+                ctx.fillRect(tx + 18, 115, 3, 15);
+                ctx.fillStyle = isNight ? "#0d2b10" : "#1b5e20";
+                ctx.beginPath();
+                ctx.arc(tx + 19, 110, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Wagon
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            ctx.arc(95, 138, 4, 0, Math.PI * 2);
+            ctx.arc(115, 138, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = isNight ? "#5d4037" : "#a1887f";
+            ctx.fillRect(88, 124, 32, 10);
+            ctx.fillStyle = isNight ? "#b2bec3" : "#f5f5f5";
+            ctx.beginPath();
+            ctx.moveTo(88, 124);
+            ctx.bezierCurveTo(88, 108, 120, 108, 120, 124);
+            ctx.fill();
+
+            // Draw Ox
+            ctx.fillStyle = isNight ? "#5d4037" : "#8d6e63";
+            ctx.fillRect(135, 126, 16, 9);
+            ctx.fillRect(147, 120, 6, 6);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(148, 117, 1, 3);
+            ctx.fillRect(151, 117, 1, 3);
+            ctx.fillStyle = isNight ? "#2d1f1a" : "#5d4037";
+            let legOffset = Math.sin(oregonScrollOffset * 0.2) * 2;
+            ctx.fillRect(137, 135, 2, 4 + legOffset);
+            ctx.fillRect(141, 135, 2, 4 - legOffset);
+            ctx.fillRect(145, 135, 2, 4 + legOffset);
+            ctx.fillRect(149, 135, 2, 4 - legOffset);
+
+            // Connective yoke
+            ctx.strokeStyle = "#5d4037";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(120, 129);
+            ctx.lineTo(135, 129);
+            ctx.stroke();
+
+            // Weather Particles
+            if (oregonWeather === "RAINY" || oregonWeather === "STORMY") {
+                ctx.fillStyle = "rgba(100, 110, 120, 0.8)";
+                ctx.fillRect(0, 0, canvas.width, 18);
+                
+                ctx.strokeStyle = "rgba(174, 214, 241, 0.6)";
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 20; i++) {
+                    let rx = (i * 27 + oregonScrollOffset * 2) % canvas.width;
+                    let ry = (i * 13 + oregonScrollOffset * 5) % 130;
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    ctx.lineTo(rx - 2, ry + 8);
+                    ctx.stroke();
+                }
+            }
+
+            // Text Overlays
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText(`MILES TO GO: ${oregonMile}`, 10, 14);
+            ctx.fillText(`HEALTH: ${oregonHealth}%`, 10, 23);
+            ctx.fillText(`FOOD: ${oregonFood} LBS`, 10, 32);
+            ctx.fillText(`WEATHER: ${oregonWeather}`, 10, 41);
+
+            // Increment
+            oregonScrollOffset += 1.5;
+        }
+
         // Draw C64 Screen layout
         function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
+            if (oregonActive) {
+                drawOregonScreen();
+                return;
+            }
+
             // Clear screen
             ctx.fillStyle = borderCol || "#3b5dc9"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2702,6 +3063,194 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
                 ctx.lineWidth = 1;
                 ctx.strokeRect(mappedX - 2, mappedY - 2, 16, 16);
+            }
+        }
+
+        function updateOregonDashboard() {
+            const db = document.getElementById("oregonTrailDashboard");
+            if (!db) return;
+            if (!oregonActive) {
+                db.style.display = "none";
+                if (otAiActive) {
+                    toggleOtAiAutoplay();
+                }
+                return;
+            }
+            db.style.display = "block";
+
+            // Update miles
+            const milesText = document.getElementById("otMilesText");
+            const milesBar = document.getElementById("otMilesBar");
+            const milesMarker = document.getElementById("otMilesMarker");
+            if (milesText && milesBar && milesMarker) {
+                milesText.innerText = `${oregonMile} Miles to Go`;
+                let pct = Math.max(0, Math.min(100, ((2000 - oregonMile) / 2000) * 100));
+                milesBar.style.width = pct + "%";
+                milesMarker.style.left = pct + "%";
+            }
+
+            // Update health
+            const healthVal = document.getElementById("otHealthValue");
+            const healthBar = document.getElementById("otHealthBar");
+            if (healthVal && healthBar) {
+                healthVal.innerText = `${oregonHealth}%`;
+                healthBar.style.width = `${Math.max(0, Math.min(100, oregonHealth))}%`;
+                if (oregonHealth > 60) {
+                    healthVal.style.color = "#39ff14";
+                    healthBar.style.backgroundColor = "#39ff14";
+                } else if (oregonHealth > 30) {
+                    healthVal.style.color = "#ffa500";
+                    healthBar.style.backgroundColor = "#ffa500";
+                } else {
+                    healthVal.style.color = "#ff3333";
+                    healthBar.style.backgroundColor = "#ff3333";
+                }
+            }
+
+            // Update food
+            const foodVal = document.getElementById("otFoodValue");
+            const foodBar = document.getElementById("otFoodBar");
+            if (foodVal && foodBar) {
+                foodVal.innerText = `${oregonFood} Lbs`;
+                let foodPct = Math.max(0, Math.min(100, (oregonFood / 200) * 100));
+                foodBar.style.width = `${foodPct}%`;
+                if (oregonFood > 100) {
+                    foodVal.style.color = "#00f2fe";
+                    foodBar.style.backgroundColor = "#00f2fe";
+                } else if (oregonFood > 40) {
+                    foodVal.style.color = "#ffa500";
+                    foodBar.style.backgroundColor = "#ffa500";
+                } else {
+                    foodVal.style.color = "#ff3333";
+                    foodBar.style.backgroundColor = "#ff3333";
+                }
+            }
+
+            // Update token balances (asynchronous)
+            const tokenBalanceEl = document.getElementById("otTokenBalance");
+            const wgnBalanceEl = document.getElementById("otWgnBalance");
+            const oxnBalanceEl = document.getElementById("otOxnBalance");
+            const clthBalanceEl = document.getElementById("otClthBalance");
+            const axlBalanceEl = document.getElementById("otAxlBalance");
+            const tngBalanceEl = document.getElementById("otTngBalance");
+            const whlBalanceEl = document.getElementById("otWhlBalance");
+            
+            if (cpuContract) {
+                const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                if (userAddress !== "0x0000000000000000000000000000000000000000") {
+                    cpuContract.peekUser(userAddress, 848).then(bal => { if (tokenBalanceEl) tokenBalanceEl.innerText = `${bal.toString()} OTRT`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 849).then(bal => { if (wgnBalanceEl) wgnBalanceEl.innerText = `${bal.toString()} OTWGN`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 850).then(bal => { if (oxnBalanceEl) oxnBalanceEl.innerText = `${bal.toString()} OTOXN`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 854).then(bal => { if (clthBalanceEl) clthBalanceEl.innerText = `${bal.toString()} OTCLTH`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 851).then(bal => { if (axlBalanceEl) axlBalanceEl.innerText = `${bal.toString()} OTAXL`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 852).then(bal => { if (tngBalanceEl) tngBalanceEl.innerText = `${bal.toString()} OTTNG`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 853).then(bal => { if (whlBalanceEl) whlBalanceEl.innerText = `${bal.toString()} OTWHL`; }).catch(() => {});
+                }
+            }
+        }
+
+        async function rewardOregonTokens(amount) {
+            if (!cpuContract) return;
+            try {
+                const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                if (userAddress === "0x0000000000000000000000000000000000000000") return;
+                
+                const currentBalanceVal = Number(await cpuContract.peekUser(userAddress, 848));
+                const newBalanceVal = currentBalanceVal + amount;
+                
+                const tx = await cpuContract.pokeUser(userAddress, 848, newBalanceVal);
+                writeToTerminal(`[ON-CHAIN REWARD] +${amount} OTRT tokens minted in CPU RAM! Hash: ${tx.hash.substring(0, 10)}...`);
+                await tx.wait();
+                
+                if (typeof updateOregonDashboard === "function") {
+                    updateOregonDashboard();
+                }
+            } catch (err) {
+                console.error("Error rewarding Oregon tokens on-chain:", err);
+                const errMsg = err.message ? (err.message.substring(0, 120) + (err.message.length > 120 ? "..." : "")) : "Unknown error";
+                writeToTerminal("[ON-CHAIN] Failed to mint reward: " + errMsg);
+            }
+        }
+
+        function appendOregonDashboardLog(text) {
+            const logBox = document.getElementById("otLogConsole");
+            if (!logBox) return;
+            if (text.includes("STATUS:") || text.includes("THE OREGON TRAIL") || text.includes("YOU START AT") || text.includes("COMMANDS: 'TRAVEL'")) {
+                return;
+            }
+            logBox.innerText += "\n" + text.trim();
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function toggleOtAiAutoplay() {
+            const btn = document.getElementById("btnOtAiAutoplay");
+            if (!btn) return;
+            
+            otAiActive = !otAiActive;
+            if (otAiActive) {
+                btn.innerText = "🤖 AI Autoplay: ACTIVE";
+                btn.style.background = "#39ff14";
+                btn.style.color = "#000";
+                
+                if (otAiTimer) clearInterval(otAiTimer);
+                otAiTimer = setInterval(tickOtAi, 2000);
+                appendOregonDashboardLog("[AI] Autoplay activated. Automating wagon decisions...");
+            } else {
+                btn.innerText = "🤖 AI Autoplay: OFF";
+                btn.style.background = "#1e3f20";
+                btn.style.color = "#39ff14";
+                
+                if (otAiTimer) {
+                    clearInterval(otAiTimer);
+                    otAiTimer = null;
+                }
+                appendOregonDashboardLog("[AI] Autoplay deactivated.");
+            }
+        }
+
+        function tickOtAi() {
+            if (!oregonActive) {
+                if (otAiActive) toggleOtAiAutoplay();
+                return;
+            }
+            
+            let action = "TRAVEL";
+            if (oregonHealth <= 45) {
+                action = "REST";
+            } else if (oregonFood <= 50) {
+                action = "HUNT";
+            } else {
+                action = "TRAVEL";
+            }
+            
+            appendOregonDashboardLog(`[AI Decision] Health: ${oregonHealth}%, Food: ${oregonFood} Lbs. Choice: ${action}`);
+            
+            const input = document.getElementById("gamemasterTerminalInput");
+            if (input && !input.disabled) {
+                input.value = action;
+                const event = new KeyboardEvent("keydown", { key: "Enter" });
+                input.dispatchEvent(event);
+            }
+        }
+
+        function initOregonDashboardEvents() {
+            const sendCmd = (cmd) => {
+                const input = document.getElementById("gamemasterTerminalInput");
+                if (input && !input.disabled) {
+                    input.value = cmd;
+                    const event = new KeyboardEvent("keydown", { key: "Enter" });
+                    input.dispatchEvent(event);
+                }
+            };
+            
+            document.getElementById("btnOtTravel").addEventListener("click", () => sendCmd("TRAVEL"));
+            document.getElementById("btnOtHunt").addEventListener("click", () => sendCmd("HUNT"));
+            document.getElementById("btnOtRest").addEventListener("click", () => sendCmd("REST"));
+            document.getElementById("btnOtExit").addEventListener("click", () => sendCmd("EXIT"));
+            
+            const btnAi = document.getElementById("btnOtAiAutoplay");
+            if (btnAi) {
+                btnAi.addEventListener("click", toggleOtAiAutoplay);
             }
         }
 

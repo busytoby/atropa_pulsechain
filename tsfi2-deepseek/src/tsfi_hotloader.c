@@ -63,6 +63,8 @@ int tsfi_compile_plugin(const char *source_path, const char *output_so) {
         args[i++] = "-Iplugins";
         args[i++] = "-Iplugins/vulkan";
         args[i++] = "-Iplugins/window_inc";
+        args[i++] = "-Isrc/firmware";
+        args[i++] = "-Isrc";
         args[i++] = "-I.";
         args[i++] = "-o";
         args[i++] = (char*)output_so;
@@ -83,6 +85,7 @@ int tsfi_compile_plugin(const char *source_path, const char *output_so) {
             args[i++] = "plugins/linux-dmabuf-v1-protocol.c";
             args[i++] = "plugins/linux-explicit-synchronization-unstable-v1-protocol.c";
             args[i++] = "plugins/xdg-shell-protocol.c";
+            args[i++] = "plugins/drm-lease-v1-protocol.c";
             args[i++] = "plugins/window_src/tsfi_input.c";
             args[i++] = "src/tsfi_vision.c";
             args[i++] = "src/tsfi_wiring.c";
@@ -289,6 +292,9 @@ int tsfi_load_plugin(const char *so_path, TSFiLogicTable *table) {
     temp.logic_hilbert = (void (*)(void*, float, float, float*))tsfi_dlsym(handle, "master_logic_hilbert");
     temp.logic_hilbert_batch = (void (*)(void*, const float*, float*, int))tsfi_dlsym(handle, "master_logic_hilbert_batch");
     temp.logic_evolve = (void (*)(void*, float))tsfi_dlsym(handle, "master_logic_evolve");
+
+    tsfi_io_printf(stderr, "[HOTLOADER] Resolved: epoch=%p state=%p directive=%p scramble=%p provenance=%p\n",
+        (void*)temp.logic_epoch, (void*)temp.logic_state, (void*)temp.logic_directive, (void*)temp.logic_scramble, (void*)temp.logic_provenance); tsfi_io_flush(stderr);
 
     if (!temp.logic_epoch || !temp.logic_state || !temp.logic_directive || !temp.logic_scramble || !temp.logic_provenance) {
         tsfi_io_printf(stderr, "[HOTLOADER] Error: Plugin must implement all 5 logic functions.\n");

@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 
-extern VkAllocationCallbacks tsfi_alloc_callbacks;
+extern const VkAllocationCallbacks tsfi_alloc_callbacks;
 
 // --- DMABUF Feedback REMOVED (Source of Historical Hangs) ---
 

@@ -1,11 +1,15 @@
 #include "ssd1306_i2c.h"
 #include "driver/gpio.h"
+#include "driver/i2c_master.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <string.h>
+#include <stdlib.h>
 
 static const char *TAG = "SSD1306";
+static i2c_master_bus_handle_t bus_handle = NULL;
+static i2c_master_dev_handle_t dev_handle = NULL;
 
 // Standard ASCII Font 8x8 (Characters 32 to 127)
 static const uint8_t font8x8[96][8] = {
@@ -52,8 +56,8 @@ static const uint8_t font8x8[96][8] = {
     {0x7F, 0x08, 0x08, 0x08, 0x7F, 0x00, 0x00, 0x00}, // H
     {0x00, 0x41, 0x7F, 0x41, 0x00, 0x00, 0x00, 0x00}, // I
     {0x20, 0x40, 0x41, 0x3F, 0x01, 0x00, 0x00, 0x00}, // J
-    {0x7F, 0x08, 0x14, 0x22, 0x41, 0x00, 0x00, 0x00}, // K
-    {0x7F, 0x40, 0x40, 0x40, 0x40, 0x00, 0x00, 0x00}, // L
+    {0x7F, 0x10, 0x28, 0x44, 0x00, 0x00, 0x00, 0x00}, // K
+    {0x00, 0x41, 0x7F, 0x40, 0x00, 0x00, 0x00, 0x00}, // L
     {0x7F, 0x02, 0x0C, 0x02, 0x7F, 0x00, 0x00, 0x00}, // M
     {0x7F, 0x04, 0x08, 0x10, 0x7F, 0x00, 0x00, 0x00}, // N
     {0x3E, 0x41, 0x41, 0x41, 0x3E, 0x00, 0x00, 0x00}, // O
@@ -108,26 +112,19 @@ static const uint8_t font8x8[96][8] = {
 };
 
 static esp_err_t ssd1306_write_cmd(uint8_t cmd) {
-    i2c_cmd_handle_t cmd_link = i2c_cmd_link_create();
-    i2c_master_start(cmd_link);
-    i2c_master_write_byte(cmd_link, (SSD1306_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd_link, 0x00, true); // Control byte: Command stream
-    i2c_master_write_byte(cmd_link, cmd, true);
-    i2c_master_stop(cmd_link);
-    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd_link, pdMS_TO_TICKS(50));
-    i2c_cmd_link_delete(cmd_link);
-    return ret;
+    if (!dev_handle) return ESP_ERR_INVALID_STATE;
+    uint8_t buf[2] = {0x00, cmd};
+    return i2c_master_transmit(dev_handle, buf, sizeof(buf), pdMS_TO_TICKS(50));
 }
 
 static esp_err_t ssd1306_write_data(const uint8_t *data, size_t len) {
-    i2c_cmd_handle_t cmd_link = i2c_cmd_link_create();
-    i2c_master_start(cmd_link);
-    i2c_master_write_byte(cmd_link, (SSD1306_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd_link, 0x40, true); // Control byte: Data stream
-    i2c_master_write(cmd_link, data, len, true);
-    i2c_master_stop(cmd_link);
-    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd_link, pdMS_TO_TICKS(50));
-    i2c_cmd_link_delete(cmd_link);
+    if (!dev_handle) return ESP_ERR_INVALID_STATE;
+    uint8_t *buf = (uint8_t *)malloc(len + 1);
+    if (!buf) return ESP_ERR_NO_MEM;
+    buf[0] = 0x40;
+    memcpy(buf + 1, data, len);
+    esp_err_t ret = i2c_master_transmit(dev_handle, buf, len + 1, pdMS_TO_TICKS(50));
+    free(buf);
     return ret;
 }
 
@@ -150,21 +147,31 @@ esp_err_t ssd1306_init(int sda_pin, int scl_pin, int rst_pin, int vext_pin) {
     gpio_set_level((gpio_num_t)rst_pin, 1);
     vTaskDelay(pdMS_TO_TICKS(50));
 
-    // 2. Initialize I2C Driver
-    i2c_config_t conf;
-    conf.mode = I2C_MODE_MASTER;
-    conf.sda_io_num = (gpio_num_t)sda_pin;
-    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.scl_io_num = (gpio_num_t)scl_pin;
-    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    conf.clk_flags = 0;
-    
-    esp_err_t ret = i2c_param_config(I2C_MASTER_NUM, &conf);
-    if (ret != ESP_OK) return ret;
-    
-    ret = i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
-    if (ret != ESP_OK) return ret;
+    // 2. Initialize Modern I2C Master Driver
+    i2c_master_bus_config_t bus_config = {};
+    bus_config.i2c_port = I2C_NUM_0;
+    bus_config.sda_io_num = (gpio_num_t)sda_pin;
+    bus_config.scl_io_num = (gpio_num_t)scl_pin;
+    bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    bus_config.glitch_ignore_cnt = 7;
+    bus_config.flags.enable_internal_pullup = true;
+
+    esp_err_t ret = i2c_new_master_bus(&bus_config, &bus_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create I2C master bus: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    i2c_device_config_t dev_config = {};
+    dev_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_config.device_address = SSD1306_I2C_ADDRESS;
+    dev_config.scl_speed_hz = 400000;
+
+    ret = i2c_master_bus_add_device(bus_handle, &dev_config, &dev_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add I2C device: %s", esp_err_to_name(ret));
+        return ret;
+    }
 
     // 3. Send Initialization Sequence
     uint8_t init_cmds[] = {
@@ -190,7 +197,7 @@ esp_err_t ssd1306_init(int sda_pin, int scl_pin, int rst_pin, int vext_pin) {
         ssd1306_write_cmd(init_cmds[i]);
     }
     
-    ESP_LOGI(TAG, "SSD1306 display initialized successfully.");
+    ESP_LOGI(TAG, "SSD1306 display initialized successfully using driver/i2c_master.");
     return ESP_OK;
 }
 

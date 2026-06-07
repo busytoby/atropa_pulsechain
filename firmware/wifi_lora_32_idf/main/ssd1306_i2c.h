@@ -1,10 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include "driver/i2c.h"
+#include "esp_err.h"
 
-#define I2C_MASTER_NUM              I2C_NUM_0
-#define I2C_MASTER_FREQ_HZ          400000
 #define SSD1306_I2C_ADDRESS         0x3C
 
 // Function Declarations

@@ -20,6 +20,7 @@
                 <span class="subtitle">PulseChain Hub</span>
             </div>
             <div class="header-actions">
+                <a href="/datamost.html" class="btn btn-secondary">Datamost Console</a>
                 <a href="/wallet.html" class="btn btn-secondary">Wallet Hub</a>
                 <a href="/docs.html" class="btn btn-secondary">Deployment Guide</a>
                 <div class="network-badge" id="networkBadge">Disconnected</div>
@@ -37,6 +38,64 @@
                     <p class="description">Loaded from local owner-only configurations.</p>
                     <div class="keys-list" id="keysList">
                         <div class="key-item placeholder">Loading keys from local server...</div>
+                    </div>
+                </section>
+
+                <!-- GNSS Tracker Card -->
+                <section class="card gps-card">
+                    <h2><span class="icon">🛰️</span> GNSS Tracker</h2>
+                    <p class="description">Live GPS monitoring and Wireless Command terminal.</p>
+                    
+                    <div class="form-group">
+                        <label for="wsUrl">WebSocket URL:</label>
+                        <div class="input-with-action">
+                            <input type="text" id="wsUrl" value="ws://192.168.4.1/ws" class="input-glow" style="flex-grow: 1; margin-right: 10px;">
+                            <button class="btn btn-small" id="btnConnectWs">Connect</button>
+                        </div>
+                    </div>
+
+                    <!-- WiFi Connection Controls -->
+                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                        <label>Connect Board to Wi-Fi Network:</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <select id="wifiNetworkSelect" class="input-glow" style="flex-grow: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 10px;">
+                                <option value="">Select a Network...</option>
+                            </select>
+                            <button class="btn btn-small" id="btnScanWifi">Scan</button>
+                        </div>
+                        <div class="input-with-action">
+                            <input type="password" id="wifiPass" placeholder="Enter Wi-Fi Password" class="input-glow" style="flex-grow: 1; margin-right: 10px;">
+                            <button class="btn btn-primary" id="btnConnectWifi" style="padding: 6px 15px;">Connect</button>
+                        </div>
+                        <div id="wifiStatus" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 8px;">Board Status: Disconnected from local LAN</div>
+                    </div>
+
+
+                    <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem;">
+                        <div><strong>Time (UTC):</strong> <span id="gpsTime">N/A</span></div>
+                        <div><strong>Satellites:</strong> <span id="gpsSats">0</span></div>
+                        <div><strong>Latitude:</strong> <span id="gpsLat">N/A</span> <span id="gpsNS"></span></div>
+                        <div><strong>Longitude:</strong> <span id="gpsLon">N/A</span> <span id="gpsEW"></span></div>
+                        <div><strong>Altitude:</strong> <span id="gpsAlt">0.0</span> M</div>
+                        <div><strong>Fix Status:</strong> <span id="gpsFix" style="color: var(--neon-magenta);">No Fix</span></div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="wsCmd">Transmit Command:</label>
+                        <div class="input-with-action">
+                            <input type="text" id="wsCmd" placeholder=":auth <r_hex> <s_hex>" class="input-glow" style="flex-grow: 1; margin-right: 10px;">
+                            <button class="btn btn-primary" id="btnSendCmd" style="padding: 6px 15px;">Send</button>
+                        </div>
+                    </div>
+
+                    <div class="terminal-container" style="margin-top: 15px;">
+                        <div class="terminal-header" style="padding: 5px 10px; background: rgba(255, 255, 255, 0.05); border-radius: 4px 4px 0 0; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); border-bottom: none;">
+                            <span style="font-size: 0.85rem; font-family: 'Orbitron', sans-serif; color: var(--neon-blue);">NMEA Stream & CLI</span>
+                            <button class="btn-clear" id="btnClearGpsLogs" style="font-size: 0.8rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">Clear</button>
+                        </div>
+                        <div id="gpsLogs" style="height: 150px; overflow-y: auto; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 0 0 8px 8px; padding: 8px; font-family: monospace; font-size: 0.85rem; color: #a2b4c2; white-space: pre-wrap; word-break: break-all;">
+                            <div class="log-line info" style="color: var(--text-secondary);">Offline. Connect to start stream.</div>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -147,6 +206,101 @@
 
             </div>
         </main>
+
+        <!-- DATAMOST emulator dashboard integration -->
+        <section class="card" style="margin-top: 30px; display: grid; grid-template-columns: 1.1fr 1.1fr 1.5fr; gap: 20px;">
+            <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 15px; color: var(--neon-blue);">C64 SIMULATOR</h3>
+                <canvas id="c64Screen" width="320" height="200" style="background-color: #3b5dc9; border: 12px solid #303030; image-rendering: pixelated; max-width: 100%;"></canvas>
+                <div style="margin-top: 15px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                    VIC-II coordinates and sprite colliders.
+                </div>
+            </div>
+
+            <!-- Vulkan Frame Monitor -->
+            <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 15px; color: var(--neon-magenta);">VULKAN MONITOR</h3>
+                <canvas id="vulkanScreen" width="320" height="200" style="background-color: #000; border: 12px solid #303030; image-rendering: pixelated; max-width: 100%;"></canvas>
+                <div style="margin-top: 15px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                    Live Vulkan framebuffer output.
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- SID sound & 6502 registers -->
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">SID FREQ:</span>
+                        <span id="sidFreqText" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-magenta); font-family: monospace; margin-left: 10px;">N/A</span> Hz
+                    </div>
+                    <button class="btn btn-primary" id="btnAudioToggle">Enable Audio Synth</button>
+                </div>
+
+                <div class="register-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">ACCUM A</span>
+                        <span id="regA" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-blue); font-family: monospace;">00</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">REG X</span>
+                        <span id="regX" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-blue); font-family: monospace;">00</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">REG Y</span>
+                        <span id="regY" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-blue); font-family: monospace;">00</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">STATUS SR</span>
+                        <span id="regSR" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-blue); font-family: monospace;">00</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">STACK SP</span>
+                        <span id="regSP" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-blue); font-family: monospace;">00</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">PROG PC</span>
+                        <span id="regPC" style="font-size: 1.4rem; font-weight: bold; color: var(--neon-blue); font-family: monospace;">0000</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>6502 Opcode Executor:</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="selectOpcode" class="input-glow" style="flex-grow: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-size: 0.9rem;">
+                                <option value="0xA9">LDA #</option>
+                                <option value="0xA2">LDX #</option>
+                                <option value="0xA0">LDY #</option>
+                                <option value="0x69">ADC #</option>
+                                <option value="0xE9">SBC #</option>
+                                <option value="0x8D">STA abs</option>
+                                <option value="0xAA">TAX</option>
+                                <option value="0x8A">TXA</option>
+                            </select>
+                            <input type="number" id="inputOperand" value="0" class="input-glow" style="width: 70px; text-align: center; font-size: 0.9rem;">
+                            <button class="btn btn-primary btn-small" id="btnExecuteOp">Run</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sprite Controller:</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="selectSprite" class="input-glow" style="padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-size: 0.9rem;">
+                                <option value="0">S0</option>
+                                <option value="1">S1</option>
+                            </select>
+                            <input type="number" id="spriteX" value="100" class="input-glow" style="width: 50px; padding: 5px; font-size: 0.85rem;" placeholder="X">
+                            <input type="number" id="spriteY" value="100" class="input-glow" style="width: 50px; padding: 5px; font-size: 0.85rem;" placeholder="Y">
+                            <button class="btn btn-primary btn-small" id="btnMoveSprite">Move</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="collisionStatus" style="text-align: center; font-weight: bold; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 1rem;">
+                    NO COLLISIONS DETECTED
+                </div>
+            </div>
+        </section>
 
         <!-- Console / Logger Terminal -->
         <footer>

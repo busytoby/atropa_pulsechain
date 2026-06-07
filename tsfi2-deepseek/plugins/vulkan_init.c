@@ -103,8 +103,8 @@ void lau_init_samplers(VulkanContext *vk) {
     tag_vulkan_object(vk, (uint64_t)vk->sampler_linear, VK_OBJECT_TYPE_SAMPLER, "TSFi_Sampler_Linear");
 
     // 3. Anisotropic Sampler (Highest Quality)
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = 16.0f;
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.maxAnisotropy = 1.0f;
     vk->vkCreateSampler(vk->device, &samplerInfo, &tsfi_alloc_callbacks, &vk->sampler_aniso);
     tag_vulkan_object(vk, (uint64_t)vk->sampler_aniso, VK_OBJECT_TYPE_SAMPLER, "TSFi_Sampler_Aniso_16x");
 
@@ -213,16 +213,8 @@ void lau_init_queries(VulkanContext *vk) {
     vk->vkCreateQueryPool(vk->device, &perfInfo, &tsfi_alloc_callbacks, &vk->query_pool_perf);
     tag_vulkan_object(vk, (uint64_t)vk->query_pool_perf, VK_OBJECT_TYPE_QUERY_POOL, "TSFi_Query_Pool_Perf");
 
-    // 2. Pipeline Statistics Pool
-    VkQueryPoolCreateInfo statsInfo = {
-        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
-        .queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS,
-        .queryCount = 1,
-        .pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT | 
-                              VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT
-    };
-    vk->vkCreateQueryPool(vk->device, &statsInfo, &tsfi_alloc_callbacks, &vk->query_pool_stats);
-    tag_vulkan_object(vk, (uint64_t)vk->query_pool_stats, VK_OBJECT_TYPE_QUERY_POOL, "TSFi_Query_Pool_Stats");
+    // 2. Pipeline Statistics Pool (Disabled for compatibility in headless/CPU Vulkan environments)
+    vk->query_pool_stats = VK_NULL_HANDLE;
 
     // Calculate ReBAR address for Query direct write (last 4KB of 1GB pool)
     vk->query_manifold_address = vk->rebar_device_address + (vk->rebar_pool_size - 4096);
@@ -668,7 +660,7 @@ VulkanContext *init_vulkan(int leased_fd) {
     }
 
     vk->rebar_pool_size = 1024 * 1024 * 1024;
-    VkBufferCreateInfo rebarInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = vk->rebar_pool_size, .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, .sharingMode = VK_SHARING_MODE_EXCLUSIVE };
+    VkBufferCreateInfo rebarInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = vk->rebar_pool_size, .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, .sharingMode = VK_SHARING_MODE_EXCLUSIVE };
     if (vk->vkCreateBuffer(vk->device, &rebarInfo, &tsfi_alloc_callbacks, &vk->rebar_buffer) == VK_SUCCESS) {
         tag_vulkan_object(vk, (uint64_t)vk->rebar_buffer, VK_OBJECT_TYPE_BUFFER, "Zhong_ReBAR_Buffer");
         VkMemoryRequirements reqs;

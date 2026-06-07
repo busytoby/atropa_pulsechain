@@ -156,7 +156,21 @@ void lau_wire_log(LauWireLog *log) {
 
 void lau_update_logic(WaveSystem *ws, const TSFiLogicTable *new_logic) {
     if (!ws || !new_logic) return; 
+    printf("[WIRING] Rebinding logic_epoch thunk: %p -> %p\n", (void*)ws->step_safety_epoch, (void*)new_logic->logic_epoch);
+    fflush(stdout);
     ThunkProxy_rebind((void*)ws->step_safety_epoch, (void*)new_logic->logic_epoch);
+    if (ws->step_safety_state && new_logic->logic_state) {
+        ThunkProxy_rebind((void*)ws->step_safety_state, (void*)new_logic->logic_state);
+    }
+    if (ws->step_executor_directive && new_logic->logic_directive) {
+        ThunkProxy_rebind((void*)ws->step_executor_directive, (void*)new_logic->logic_directive);
+    }
+    if (ws->scramble && new_logic->logic_scramble) {
+        ThunkProxy_rebind((void*)ws->scramble, (void*)new_logic->logic_scramble);
+    }
+    if (ws->provenance && new_logic->logic_provenance) {
+        ThunkProxy_rebind((void*)ws->provenance, (void*)new_logic->logic_provenance);
+    }
 }
 
 void lau_final_cleanup(WaveSystem *ws, int sfd) {
