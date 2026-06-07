@@ -101,8 +101,8 @@ object "ZMachine" {
 
             case 0xf1ba03f9 {
                 let player := calldataload(4)
-                let cmdLen := calldataload(36)
-                let firstWord := shr(224, calldataload(68))
+                let cmdLen := calldataload(68)
+                let firstWord := shr(224, calldataload(100))
                 
                 let resultPtr := 0x40
                 
