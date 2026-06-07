@@ -481,6 +481,33 @@
                     <div class="sprite-grid" id="sprGrid"></div>
                 </section>
 
+                <!-- EVM Storage Galleries -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(255, 0, 255, 0.15); border-color: #ff00ff;">
+                    <h2><span class="icon">🏛️</span> EVM Storage Galleries</h2>
+                    <p class="description">Save, load, and manage your retro drawings inside persistent on-chain storage slots.</p>
+                    
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-secondary); display: block;">GALLERY SLOT:</label>
+                            <select id="gallerySlotSelector" class="input-glow" style="padding: 6px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid #ff00ff; font-family: 'Orbitron', sans-serif;">
+                                <option value="0">Gallery #1</option>
+                                <option value="1">Gallery #2</option>
+                                <option value="2">Gallery #3</option>
+                                <option value="3">Gallery #4</option>
+                                <option value="4">Gallery #5</option>
+                                <option value="5">Gallery #6</option>
+                                <option value="6">Gallery #7</option>
+                                <option value="7">Gallery #8</option>
+                            </select>
+                        </div>
+                        <div style="flex-grow: 1; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="btn btn-secondary" id="btnGalleryClear" style="border-color: #ff00ff; color: var(--text-primary);">Clear Slot</button>
+                            <button class="btn btn-secondary" id="btnGalleryLoad" style="border-color: #ff00ff; color: var(--text-primary);">Load Canvas</button>
+                            <button class="btn btn-primary" id="btnGallerySave" style="border-color: #ff00ff; color: var(--text-primary); min-width: 130px;">Save Canvas</button>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Alien Group Voice Box Speech Synthesizer -->
                 <section class="card" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.15); border-color: var(--neon-blue);">
                     <h2><span class="icon">🗣️</span> The Alien Group Voice Box (Votrax SC-01A)</h2>
@@ -1309,6 +1336,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
             if (typeof initSpriteEditor === "function") {
                 initSpriteEditor();
+            }
+            if (typeof initGallerySystem === "function") {
+                initGallerySystem();
             }
         }
 
@@ -4661,6 +4691,50 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             });
 
             rebuildGrid();
+        }
+
+        function initGallerySystem() {
+            const btnSave = document.getElementById("btnGallerySave");
+            const btnLoad = document.getElementById("btnGalleryLoad");
+            const btnClear = document.getElementById("btnGalleryClear");
+            const slotSelect = document.getElementById("gallerySlotSelector");
+
+            async function triggerGalleryCommand(cmdType) {
+                if (!cpuContract) {
+                    alert("Connect your wallet first.");
+                    return;
+                }
+                const selectedSlot = parseInt(slotSelect.value);
+                const cmdName = (cmdType === 1) ? "SAVE" : ((cmdType === 2) ? "LOAD" : "CLEAR");
+                
+                let btn = (cmdType === 1) ? btnSave : ((cmdType === 2) ? btnLoad : btnClear);
+                const originalText = btn.innerText;
+                btn.innerText = "Syncing...";
+                btn.disabled = true;
+
+                try {
+                    // Set Gallery Slot at 54896 ($D670)
+                    const slotTx = await cpuContract.poke(54896, selectedSlot);
+                    await slotTx.wait();
+                    
+                    // Trigger command at 54897 ($D671)
+                    const cmdTx = await cpuContract.poke(54897, cmdType);
+                    appendOregonDashboardLog(`[GALLERY] Sent ${cmdName} command to slot ${selectedSlot + 1}: ${cmdTx.hash.substring(0, 10)}...`);
+                    await cmdTx.wait();
+                    appendOregonDashboardLog(`[GALLERY] ${cmdName} command executed successfully on-chain!`);
+                } catch (err) {
+                    console.error("Gallery transaction failed:", err);
+                    appendOregonDashboardLog(`[GALLERY] Error: ${err.message}`);
+                    alert("Transaction failed. Check gas limit or balance.");
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }
+
+            btnSave.addEventListener("click", () => triggerGalleryCommand(1));
+            btnLoad.addEventListener("click", () => triggerGalleryCommand(2));
+            btnClear.addEventListener("click", () => triggerGalleryCommand(3));
         }
 
         function initOregonDashboardEvents() {

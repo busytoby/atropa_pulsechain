@@ -65,6 +65,16 @@ object "CPU6502Emulator" {
                 slot := keccak256(0x00, 64)
             }
 
+            // Helper to resolve double-hashed storage slot for gallery drawings
+            function getGallerySlot(user, gallerySlotIndex, offset) -> slot {
+                mstore(0x00, user)
+                mstore(0x20, gallerySlotIndex)
+                let hash1 := keccak256(0x00, 64)
+                mstore(0x00, hash1)
+                mstore(0x20, offset)
+                slot := keccak256(0x00, 64)
+            }
+
             // Helper to query and excise tax via on-chain ERC20 first, fallback to slot 848 thereafter.
             function exciseOnChainTax(taxAmount) -> taxPaidSuccess {
                 taxPaidSuccess := 0
@@ -782,6 +792,36 @@ object "CPU6502Emulator" {
                         log3(0, 0, 0x9bcbf7ea2838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b999, getContextUser(), itemId)
                         
                         sstore(getUserSlot(54892), 0) // Clear strobe
+                    }
+                }
+                case 54897 { // Gallery Command Trigger ($D671)
+                    sstore(getUserSlot(54897), val)
+                    if val {
+                        let gSlot := and(sload(getUserSlot(54896)), 0x07) // Selected slot 0-7
+                        let user := getContextUser()
+                        
+                        // Command 1: Save current Doodle Canvas (8192 to 16383 -> 8192 bytes)
+                        if eq(val, 1) {
+                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
+                                let pixelVal := and(sload(getUserSlot(add(8192, i))), 0xFF)
+                                sstore(getGallerySlot(user, gSlot, i), pixelVal)
+                            }
+                        }
+                        // Command 2: Load selected Gallery slot into Doodle Canvas
+                        if eq(val, 2) {
+                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
+                                let pixelVal := and(sload(getGallerySlot(user, gSlot, i)), 0xFF)
+                                sstore(getUserSlot(add(8192, i)), pixelVal)
+                            }
+                        }
+                        // Command 3: Clear selected Gallery slot
+                        if eq(val, 3) {
+                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
+                                sstore(getGallerySlot(user, gSlot, i), 0)
+                            }
+                        }
+                        
+                        sstore(getUserSlot(54897), 0) // Clear trigger strobe
                     }
                 }
                 default {
