@@ -151,15 +151,205 @@
                 </section>
 
                 <!-- Sound Synthesizer Controls -->
-                <section class="card">
-                    <h2><span class="icon">🔊</span> SID Music Synthesizer (Voice 1)</h2>
-                    <p class="description">Web Audio oscillator driven directly by on-chain `musicMaker` registers.</p>
-                    <div class="sound-wave-panel">
-                        <div>
-                            <span class="reg-label">FREQUENCY:</span>
-                            <span id="sidFreqText" class="reg-value" style="color: var(--neon-magenta); margin-left: 10px;">N/A</span> Hz
+                <section class="card" style="box-shadow: 0 0 20px rgba(255, 0, 127, 0.15); border-color: var(--neon-magenta);">
+                    <h2><span class="icon">🎹</span> Interrupt Music Maker / Editor (Ahoy! Page 21)</h2>
+                    <p class="description">Pete Lobi's 3-Voice background music driver. Plays polyphonic SID frequencies modulated via virtual interrupts.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <!-- Voice 1 -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.2);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 1 (Bass)</span>
+                            <div id="v1FreqText" style="font-size: 1.2rem; font-weight: bold; color: var(--neon-magenta); font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
+                            <div id="v1NoteText" style="font-size: 0.8rem; color: var(--neon-blue); font-family: monospace;">---</div>
                         </div>
-                        <button class="btn btn-primary" id="btnAudioToggle">Enable Audio Synth</button>
+                        <!-- Voice 2 -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.2);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 2 (Lead)</span>
+                            <div id="v2FreqText" style="font-size: 1.2rem; font-weight: bold; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
+                            <div id="v2NoteText" style="font-size: 0.8rem; color: var(--neon-magenta); font-family: monospace;">---</div>
+                        </div>
+                        <!-- Voice 3 -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.2);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 3 (Arp)</span>
+                            <div id="v3FreqText" style="font-size: 1.2rem; font-weight: bold; color: #00ffcc; font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
+                            <div id="v3NoteText" style="font-size: 0.8rem; color: #ffcc00; font-family: monospace;">---</div>
+                        </div>
+                    </div>
+
+                    <!-- Voice 1 Controls (Waveform, ADSR) -->
+                    <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-magenta); margin-top: 0; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">VOICE 1 SYNTH CONFIG</h4>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
+                            <label style="font-size: 0.8rem; color: var(--text-secondary);">WAVEFORM:</label>
+                            <select id="synthWaveform" class="input-glow" style="padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta);">
+                                <option value="32" selected>Sawtooth</option>
+                                <option value="16">Triangle</option>
+                                <option value="64">Pulse (Square)</option>
+                                <option value="128">Noise</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-secondary); display: block;">ATTACK</label>
+                                <input type="range" id="synthAttack" min="0" max="15" value="1" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-secondary); display: block;">DECAY</label>
+                                <input type="range" id="synthDecay" min="0" max="15" value="9" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-secondary); display: block;">SUSTAIN</label>
+                                <input type="range" id="synthSustain" min="0" max="15" value="9" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-secondary); display: block;">RELEASE</label>
+                                <input type="range" id="synthRelease" min="0" max="15" value="9" style="width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Sequencer Section -->
+                    <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-blue); margin-top: 0; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">8-STEP SEQUENCER / EDITOR</h4>
+                        <div style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 10px;">
+                            <div class="seq-step" data-step="0" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S1</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291" selected>C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406">E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429">G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="1" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S2</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291">C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406" selected>E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429">G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="2" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S3</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291">C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406">E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429" selected>G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="3" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S4</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291">C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406">E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429">G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583" selected>C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="4" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S5</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291">C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406">E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429" selected>G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="5" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S6</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291">C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406" selected>E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429">G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="6" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S7</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291" selected>C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406">E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429">G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0">Rest</option>
+                                </select>
+                            </div>
+                            <div class="seq-step" data-step="7" style="text-align: center; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.2); transition: border-color 0.2s ease;">
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">S8</span>
+                                <select class="seq-note" style="width: 100%; font-size: 0.75rem; background: #000; color: #fff; border: none; text-align-last: center;">
+                                    <option value="4291">C4</option>
+                                    <option value="4816">D4</option>
+                                    <option value="5406">E4</option>
+                                    <option value="5728">F4</option>
+                                    <option value="6429">G4</option>
+                                    <option value="7217">A4</option>
+                                    <option value="8100">B4</option>
+                                    <option value="8583">C5</option>
+                                    <option value="0" selected>Rest</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn btn-secondary btn-small" id="btnPlaySequence" style="flex: 1; border-color: var(--neon-blue); color: var(--text-primary);"><span class="icon">▶️</span> Start Sequencer</button>
+                            <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+                                <label style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">TEMPO:</label>
+                                <input type="range" id="seqTempo" min="150" max="800" value="300" style="width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn btn-primary" id="btnAudioToggle" style="flex: 1;">Enable Audio Synth</button>
+                        <button class="btn btn-secondary" id="btnPlayMelody" style="flex: 1; border-color: var(--neon-magenta); color: var(--text-primary);"><span class="icon">🎶</span> Play Ahoy! Melody</button>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <h4 style="color: var(--neon-blue); margin-bottom: 8px; font-family: 'Orbitron', sans-serif;">MANUAL NOTE CONTROLLER</h4>
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="4291" style="padding: 6px 0;">C</button>
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="4816" style="padding: 6px 0;">D</button>
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="5406" style="padding: 6px 0;">E</button>
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="5728" style="padding: 6px 0;">F</button>
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="6429" style="padding: 6px 0;">G</button>
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="7217" style="padding: 6px 0;">A</button>
+                            <button class="btn btn-secondary btn-small note-btn" data-freq="8100" style="padding: 6px 0;">B</button>
+                        </div>
                     </div>
                 </section>
 
@@ -483,6 +673,58 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     </div>
                 </section>
 
+                <!-- Tax & Security Dashboard Panel -->
+                <section class="card">
+                    <h2><span class="icon">⚖️</span> Tax & Security Controller</h2>
+                    <p class="description">Monitor Diyat tax collections, verify sandboxed CPU namespaces, and check switch bounce debouncer states.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="stat-box" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Calculated Tax Due</span>
+                            <div id="taxDueVal" style="font-size: 1.4rem; font-weight: bold; color: #ffcc00; font-family: 'Orbitron', sans-serif; margin-top: 5px;">0</div>
+                        </div>
+                        <div class="stat-box" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Tax Rate</span>
+                            <div id="taxRateVal" style="font-size: 1.4rem; font-weight: bold; color: #00ffcc; font-family: 'Orbitron', sans-serif; margin-top: 5px;">0%</div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-blue); margin-bottom: 8px; font-family: 'Orbitron', sans-serif;">CRYPTOGRAPHIC NONCE GENERATOR</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-family: monospace; font-size: 0.9rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                            <div style="word-break: break-all; color: var(--neon-blue);">
+                                <strong>Nonce (256-bit Hex):</strong> <span id="nonceHexVal" style="color: var(--text-primary);">0x0000000000000000000000000000000000000000000000000000000000000000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-magenta); margin-bottom: 8px; font-family: 'Orbitron', sans-serif;">SECURITY & SANDBOX ISOLATION</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: monospace; font-size: 0.9rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                            <div>
+                                <strong>Sandbox Context User:</strong><br>
+                                <span id="securityUserAddr" style="color: var(--neon-blue); font-size: 0.8rem;">0x000...</span>
+                            </div>
+                            <div>
+                                <strong>Switch Debouncer:</strong><br>
+                                <span id="securityDebouncerState" style="color: #00ff00;">CLEAN</span> (Last: block <span id="debouncerLastBlock">-</span> / Cur: block <span id="debouncerCurBlock">-</span>)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-bottom: 15px;">
+                        <h4 style="color: var(--neon-blue); margin-bottom: 8px; font-family: 'Orbitron', sans-serif;">RECENT TAX COLLECTIONS RECEIVED</h4>
+                        <div id="recentTaxPaymentsList" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.85rem; min-height: 80px; max-height: 150px; overflow-y: auto; color: #ffcc00; display: flex; flex-direction: column; gap: 4px;">
+                            No tax payments detected yet.
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-primary" id="btnPayTax" style="flex: 1;"><span class="icon">💸</span> Pay Tax</button>
+                        <button class="btn btn-secondary" id="btnRegenNonce" style="flex: 1;"><span class="icon">🔄</span> Regenerate Nonce</button>
+                    </div>
+                </section>
+
                 <!-- Virtual Disk System DFS -->
                 <section class="card">
                     <h2><span class="icon">📁</span> Virtual 1541 Disk System (DFS)</h2>
@@ -632,7 +874,8 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "function batchPoke(uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
             "function initializeGame(uint256 startPC, bytes calldata program, uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
             "function peekUser(address user, uint256 addr) public view returns (uint256)",
-            "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)"
+            "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)",
+            "event TaxPaid(address indexed taxpayer, uint256 amountPaid)"
         ];
         const graphicsABI = [
             "function updateSprite(uint8 index, uint16 x, uint8 y) public returns (uint256)",
@@ -974,6 +1217,129 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
         });
 
+        // Voice 1 ADSR and Waveform logic
+        async function updateVoice1ADSR() {
+            if (!musicContract) return;
+            const attack = parseInt(document.getElementById("synthAttack").value);
+            const decay = parseInt(document.getElementById("synthDecay").value);
+            const sustain = parseInt(document.getElementById("synthSustain").value);
+            const release = parseInt(document.getElementById("synthRelease").value);
+            const ad = (attack << 4) | decay;
+            const sr = (sustain << 4) | release;
+            try {
+                await musicContract.poke(54277, ad);
+                await musicContract.poke(54278, sr);
+            } catch (e) {}
+        }
+
+        ["synthAttack", "synthDecay", "synthSustain", "synthRelease"].forEach(id => {
+            document.getElementById(id).addEventListener("change", updateVoice1ADSR);
+        });
+
+        // Manual Note Trigger
+        document.querySelectorAll(".note-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                if (!musicContract) return;
+                const freqVal = parseInt(btn.getAttribute("data-freq"));
+                await updateVoice1ADSR();
+                const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+                await pokeSIDFreq(freqVal, waveformVal | 1); // Gate On
+                setTimeout(async () => {
+                    await pokeSIDFreq(freqVal, waveformVal & 0xFE); // Gate Off
+                }, 500);
+            });
+        });
+
+        // Play Ahoy! Melody Macro
+        document.getElementById("btnPlayMelody").addEventListener("click", async () => {
+            if (!musicContract) return;
+            const melody = [4291, 5406, 6429, 8583]; // C4, E4, G4, C5
+            const playBtn = document.getElementById("btnPlayMelody");
+            playBtn.innerText = "Playing...";
+            playBtn.disabled = true;
+            try {
+                const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+                for (let freq of melody) {
+                    await updateVoice1ADSR();
+                    await pokeSIDFreq(freq, waveformVal | 1);
+                    await new Promise(r => setTimeout(r, 450));
+                    await pokeSIDFreq(freq, waveformVal & 0xFE);
+                    await new Promise(r => setTimeout(r, 100));
+                }
+            } catch (err) {
+                console.error("Melody playback failed:", err);
+            } finally {
+                playBtn.innerText = "Play Ahoy! Melody";
+                playBtn.disabled = false;
+            }
+        });
+
+        // Sequencer Engine
+        let seqInterval = null;
+        let activeSeqStep = -1;
+
+        async function stepSequencerTick() {
+            if (!musicContract) return;
+            
+            // Un-highlight previous step
+            if (activeSeqStep >= 0) {
+                const prevStepEl = document.querySelector(`.seq-step[data-step="${activeSeqStep}"]`);
+                if (prevStepEl) prevStepEl.style.borderColor = "rgba(0, 242, 254, 0.2)";
+            }
+
+            // Advance step
+            activeSeqStep = (activeSeqStep + 1) % 8;
+
+            // Highlight current step
+            const currentStepEl = document.querySelector(`.seq-step[data-step="${activeSeqStep}"]`);
+            if (currentStepEl) currentStepEl.style.borderColor = "var(--neon-magenta)";
+
+            // Extract value
+            const noteSelect = currentStepEl.querySelector(".seq-note");
+            const freqVal = parseInt(noteSelect.value);
+
+            await updateVoice1ADSR();
+            const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+
+            if (freqVal > 0) {
+                await pokeSIDFreq(freqVal, waveformVal | 1); // Gate On
+            } else {
+                await pokeSIDFreq(0, waveformVal & 0xFE); // Gate Off / Rest
+            }
+        }
+
+        document.getElementById("btnPlaySequence").addEventListener("click", () => {
+            const btn = document.getElementById("btnPlaySequence");
+            if (seqInterval) {
+                // Stop Sequencer
+                clearInterval(seqInterval);
+                seqInterval = null;
+                btn.innerHTML = `<span class="icon">▶️</span> Start Sequencer`;
+                // Clear highlight
+                document.querySelectorAll(".seq-step").forEach(el => el.style.borderColor = "rgba(0, 242, 254, 0.2)");
+                activeSeqStep = -1;
+                // Mute SID voice
+                if (musicContract) {
+                    const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+                    musicContract.poke(54276, waveformVal & 0xFE).catch(() => {});
+                }
+            } else {
+                // Start Sequencer
+                btn.innerHTML = `<span class="icon">⏹️</span> Stop Sequencer`;
+                const tempo = parseInt(document.getElementById("seqTempo").value);
+                seqInterval = setInterval(stepSequencerTick, tempo);
+                stepSequencerTick();
+            }
+        });
+
+        document.getElementById("seqTempo").addEventListener("change", () => {
+            if (seqInterval) {
+                clearInterval(seqInterval);
+                const tempo = parseInt(document.getElementById("seqTempo").value);
+                seqInterval = setInterval(stepSequencerTick, tempo);
+            }
+        });
+
         // 6502 Opcode execution transaction
         document.getElementById("btnExecuteOp").addEventListener("click", async () => {
             if (!cpuContract) return;
@@ -1022,6 +1388,173 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 console.log("Demo Mode Deactivated.");
             }
         });
+
+
+        // Tax & Security Controller Actions & Polling
+        document.getElementById("btnPayTax").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const btn = document.getElementById("btnPayTax");
+            btn.innerText = "Paying...";
+            btn.disabled = true;
+            try {
+                const tx = await cpuContract.poke(54735, 1);
+                appendOregonDashboardLog("[ON-CHAIN] Initiated tax payment transaction: " + tx.hash.substring(0, 10) + "...");
+                await tx.wait();
+                appendOregonDashboardLog("[ON-CHAIN] Tax payment completed!");
+                updateTaxAndSecurityDashboard();
+            } catch (err) {
+                console.error("Tax payment failed:", err);
+                appendOregonDashboardLog("[ERROR] Tax payment failed: " + (err.reason || err.message || err));
+            } finally {
+                btn.innerText = "Pay Tax";
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById("btnRegenNonce").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const btn = document.getElementById("btnRegenNonce");
+            btn.innerText = "Generating...";
+            btn.disabled = true;
+            try {
+                const tx = await cpuContract.poke(54752, 1);
+                appendOregonDashboardLog("[ON-CHAIN] Initiated nonce generation: " + tx.hash.substring(0, 10) + "...");
+                await tx.wait();
+                appendOregonDashboardLog("[ON-CHAIN] Cryptographic nonce regenerated!");
+                updateTaxAndSecurityDashboard();
+            } catch (err) {
+                console.error("Nonce generation failed:", err);
+                appendOregonDashboardLog("[ERROR] Nonce generation failed: " + (err.reason || err.message || err));
+            } finally {
+                btn.innerText = "Regenerate Nonce";
+                btn.disabled = false;
+            }
+        });
+
+        async function updateTaxAndSecurityDashboard() {
+            if (!cpuContract) return;
+            try {
+                const userAddress = signer ? await signer.getAddress() : "0x0000000000000000000000000000000000000000";
+                
+                // Sandbox context user
+                const userAddrEl = document.getElementById("securityUserAddr");
+                if (userAddrEl) userAddrEl.innerText = userAddress;
+
+                // Tax Rate
+                const taxRateEl = document.getElementById("taxRateVal");
+                if (taxRateEl) {
+                    try {
+                        const rate = await cpuContract.peek(54705);
+                        taxRateEl.innerText = `${rate.toString()}%`;
+                    } catch (e) {
+                        taxRateEl.innerText = "N/A";
+                    }
+                }
+
+                // Tax Due
+                const taxDueEl = document.getElementById("taxDueVal");
+                if (taxDueEl) {
+                    try {
+                        const d6 = Number(await cpuContract.peek(54706));
+                        const d7 = Number(await cpuContract.peek(54707));
+                        const d8 = Number(await cpuContract.peek(54708));
+                        const d9 = Number(await cpuContract.peek(54709));
+                        const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                        taxDueEl.innerText = taxDue.toString();
+                    } catch (e) {
+                        taxDueEl.innerText = "N/A";
+                    }
+                }
+
+                // 256-bit Nonce
+                const nonceHexEl = document.getElementById("nonceHexVal");
+                if (nonceHexEl) {
+                    try {
+                        let nonceHex = "";
+                        for (let i = 0; i < 32; i++) {
+                            const val = Number(await cpuContract.peek(54752 + i));
+                            nonceHex += val.toString(16).padStart(2, '0');
+                        }
+                        nonceHexEl.innerText = "0x" + nonceHex;
+                    } catch (e) {
+                        nonceHexEl.innerText = "N/A";
+                    }
+                }
+
+                // Switch debouncer
+                if (diskContract && provider) {
+                    try {
+                        const paddedAddr = ethers.zeroPadValue(userAddress, 32);
+                        const paddedKey = ethers.zeroPadValue(ethers.toBeHex(0x99), 32);
+                        const debounceSlot = ethers.keccak256(ethers.concat([paddedAddr, paddedKey]));
+                        const lastCallBlock = Number(await provider.getStorage(diskContract.target, debounceSlot));
+                        const currentBlock = await provider.getBlockNumber();
+
+                        const lastBlockEl = document.getElementById("debouncerLastBlock");
+                        const curBlockEl = document.getElementById("debouncerCurBlock");
+                        const stateEl = document.getElementById("securityDebouncerState");
+
+                        if (lastBlockEl) lastBlockEl.innerText = lastCallBlock;
+                        if (curBlockEl) curBlockEl.innerText = currentBlock;
+                        
+                        if (stateEl) {
+                            if (lastCallBlock === currentBlock) {
+                                stateEl.innerText = "BOUNCED (REVERTING)";
+                                stateEl.style.color = "var(--neon-magenta)";
+                            } else {
+                                stateEl.innerText = "CLEAN (READY)";
+                                stateEl.style.color = "#00ff00";
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Debouncer status error:", e);
+                    }
+                }
+
+                // Fetch and update recent on-chain tax collection logs
+                await updateTaxPaymentsReceivedList();
+            } catch (err) {
+                console.error("Dashboard update error:", err);
+            }
+        }
+
+        async function updateTaxPaymentsReceivedList() {
+            if (!cpuContract || !provider) return;
+            const listEl = document.getElementById("recentTaxPaymentsList");
+            if (!listEl) return;
+            try {
+                const currentBlock = await provider.getBlockNumber();
+                const fromBlock = Math.max(0, currentBlock - 2000);
+                
+                const logs = await provider.getLogs({
+                    address: cpuContract.target,
+                    topics: ["0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925"],
+                    fromBlock: fromBlock,
+                    toBlock: "latest"
+                });
+
+                if (logs.length === 0) {
+                    listEl.innerText = "No tax payments detected yet.";
+                    return;
+                }
+
+                listEl.innerHTML = "";
+                for (let i = logs.length - 1; i >= 0; i--) {
+                    const log = logs[i];
+                    const taxpayer = "0x" + log.topics[1].substring(26);
+                    const amountPaid = Number(log.data);
+                    
+                    const logItem = document.createElement("div");
+                    logItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                    logItem.style.paddingBottom = "4px";
+                    logItem.innerHTML = `<span style="color: var(--neon-magenta);">[Block ${log.blockNumber}]</span> User <span style="color: var(--neon-blue);">${taxpayer.substring(0, 8)}...</span> paid <span style="color: #ffcc00; font-weight: bold;">${amountPaid}</span> tax units`;
+                    listEl.appendChild(logItem);
+                }
+            } catch (err) {
+                console.error("Error fetching tax logs:", err);
+                listEl.innerText = "Error loading tax payments list.";
+            }
+        }
 
 
         // Helper to convert hex to utf8 in browser
@@ -1401,6 +1934,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
         }
 
+        function freqToNote(freqHz) {
+            if (!freqHz || freqHz <= 0) return "---";
+            const notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+            const n = Math.round(12 * Math.log2(freqHz / 440));
+            const noteIndex = ((n % 12) + 12) % 12;
+            const noteName = notes[noteIndex];
+            const octave = Math.floor((n + 9) / 12) + 4;
+            return `${noteName}${octave}`;
+        }
+
         // Drawing & Sound Loop
         const canvas = document.getElementById("c64Screen");
         const ctx = canvas.getContext("2d");
@@ -1472,8 +2015,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         const v3_ad = Number(state[19]);
                         const v3_sr = Number(state[20]);
 
-                        const freqHz = Math.round(v1_freq * 0.06097);
-                        document.getElementById("sidFreqText").innerText = freqHz;
+                        const v1Hz = Math.round(v1_freq * 0.06097);
+                        const v2Hz = Math.round(v2_freq * 0.06097);
+                        const v3Hz = Math.round(v3_freq * 0.06097);
+
+                        document.getElementById("v1FreqText").innerText = v1Hz + " Hz";
+                        document.getElementById("v2FreqText").innerText = v2Hz + " Hz";
+                        document.getElementById("v3FreqText").innerText = v3Hz + " Hz";
+
+                        document.getElementById("v1NoteText").innerText = freqToNote(v1Hz);
+                        document.getElementById("v2NoteText").innerText = freqToNote(v2Hz);
+                        document.getElementById("v3NoteText").innerText = freqToNote(v3Hz);
 
                         if (isAudioPlaying && voices.length === 3) {
                             voices[0].update(v1_freq, v1_ctrl, v1_ad, v1_sr);
@@ -1603,6 +2155,10 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
                 updateVulkanScreen();
             }, 400);
+
+            // Poll Tax & Security dashboard every 2 seconds
+            setInterval(updateTaxAndSecurityDashboard, 2000);
+            updateTaxAndSecurityDashboard(); // Initial call
         }
 
         const phonemeNames = [

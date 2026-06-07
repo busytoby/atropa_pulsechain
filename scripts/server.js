@@ -80,8 +80,11 @@ const server = http.createServer((req, res) => {
     }
 
     // API endpoint to serve the Markdown documentation
-    if (req.url === "/api/docs") {
-        const DOCS_PATH = path.join(__dirname, "../frontend/local_deployment_guide.md");
+    if (req.url.startsWith("/api/docs")) {
+        const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const docName = urlObj.searchParams.get("doc") || "local_deployment_guide.md";
+        const cleanDocName = path.basename(docName);
+        const DOCS_PATH = path.join(__dirname, "../frontend", cleanDocName);
         if (fs.existsSync(DOCS_PATH)) {
             const data = fs.readFileSync(DOCS_PATH, "utf8");
             res.writeHead(200, { 

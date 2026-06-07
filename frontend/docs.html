@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dysnomia Deployment Guide</title>
+    <title>TSFi2 Documentation Hub</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,18 +17,31 @@
         <header>
             <div class="logo">
                 <span class="pulse-glow">ATROPA</span>
-                <span class="subtitle">Deployment Guide</span>
+                <span class="subtitle">Documentation Hub</span>
             </div>
             <div class="header-actions">
-                <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+                <a href="/index.html" class="btn btn-secondary">← Back to Dashboard</a>
             </div>
         </header>
 
         <!-- Main Guide Container -->
-        <main class="dashboard-grid" style="display: block;">
-            <section class="card" style="padding: 40px; line-height: 1.6; font-size: 1.1rem; color: var(--text-primary);">
+        <main class="dashboard-grid" style="display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start;">
+            <!-- Left Side: Documents Index -->
+            <section class="card" style="padding: 20px; border-color: var(--neon-magenta); box-shadow: 0 0 15px rgba(255, 0, 127, 0.1);">
+                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-magenta); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(255, 0, 127, 0.3); padding-bottom: 5px; text-shadow: 0 0 5px rgba(255, 0, 127, 0.2);">DOCUMENTATION INDEX</h3>
+                <ul id="docsMenu" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+                    <li><button class="btn btn-secondary" data-file="local_deployment_guide.md" style="width: 100%; text-align: left; font-size: 0.9rem; padding: 10px;">🚀 EVM Deployment Guide</button></li>
+                    <li><button class="btn btn-secondary" data-file="interrupt_standards.md" style="width: 100%; text-align: left; font-size: 0.9rem; padding: 10px;">🎹 Interrupt Synth Standards</button></li>
+                    <li><button class="btn btn-secondary" data-file="software_to_go_library.md" style="width: 100%; text-align: left; font-size: 0.9rem; padding: 10px;">📁 Software to Go Library</button></li>
+                    <li><button class="btn btn-secondary" data-file="msd_tax_and_security_analysis.md" style="width: 100%; text-align: left; font-size: 0.9rem; padding: 10px;">🛡️ MSD Security & Tax</button></li>
+                    <li><button class="btn btn-secondary" data-file="micro_world_printer_integration.md" style="width: 100%; text-align: left; font-size: 0.9rem; padding: 10px;">🖨️ Micro World Printer</button></li>
+                </ul>
+            </section>
+
+            <!-- Right Side: Content Area -->
+            <section class="card" style="padding: 40px; line-height: 1.6; font-size: 1.1rem; color: var(--text-primary); border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 242, 254, 0.1);">
                 <div id="docsContent" class="markdown-body">
-                    <div class="placeholder">Loading deployment guide...</div>
+                    <div class="placeholder">Loading documentation...</div>
                 </div>
             </section>
         </main>
@@ -37,27 +50,63 @@
             <div class="terminal-header">
                 <h3>Docs Status</h3>
             </div>
-            <div class="terminal-body" id="consoleLogs">
+            <div class="terminal-body" id="consoleLogs" style="max-height: 80px; overflow-y: auto;">
                 <div class="log-line info">Loaded guide from secure local storage node successfully.</div>
             </div>
         </footer>
     </div>
 
     <script>
-        async function loadDocs() {
+        let activeDocName = 'local_deployment_guide.md';
+
+        async function loadDocs(docFile) {
             try {
-                const response = await fetch('/api/docs');
+                document.getElementById('docsContent').innerHTML = `<div class="placeholder">Loading ${docFile}...</div>`;
+                const response = await fetch(`/api/docs?doc=${docFile}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch documentation');
                 }
                 const markdown = await response.text();
-                // Replace link formatting with standard styled output
                 document.getElementById('docsContent').innerHTML = marked.parse(markdown);
+                
+                // Log action to panel
+                const consoleLogs = document.getElementById('consoleLogs');
+                consoleLogs.innerHTML += `<div class="log-line info">Successfully loaded ${docFile} from storage node.</div>`;
+                consoleLogs.scrollTop = consoleLogs.scrollHeight;
             } catch (err) {
                 document.getElementById('docsContent').innerHTML = `<div class="error">Error loading documentation: ${err.message}</div>`;
             }
         }
-        window.addEventListener('DOMContentLoaded', loadDocs);
+
+        document.querySelectorAll('#docsMenu button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Clear active states
+                document.querySelectorAll('#docsMenu button').forEach(b => {
+                    b.style.borderColor = '';
+                    b.style.color = '';
+                    b.style.boxShadow = '';
+                });
+                
+                // Add active state to clicked button
+                btn.style.borderColor = 'var(--neon-magenta)';
+                btn.style.color = 'var(--neon-magenta)';
+                btn.style.boxShadow = '0 0 8px rgba(255, 0, 127, 0.4)';
+                
+                const file = btn.getAttribute('data-file');
+                loadDocs(file);
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Style initial active button
+            const initBtn = document.querySelector('#docsMenu button[data-file="local_deployment_guide.md"]');
+            if (initBtn) {
+                initBtn.style.borderColor = 'var(--neon-magenta)';
+                initBtn.style.color = 'var(--neon-magenta)';
+                initBtn.style.boxShadow = '0 0 8px rgba(255, 0, 127, 0.4)';
+            }
+            loadDocs(activeDocName);
+        });
     </script>
     <style>
         /* Additional styled overrides for rendered markdown */
@@ -111,6 +160,20 @@
         .markdown-body a:hover {
             color: var(--neon-purple);
             text-shadow: 0 0 8px var(--neon-purple);
+        }
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .markdown-body th, .markdown-body td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+        .markdown-body th {
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--neon-blue);
         }
     </style>
 </body>
