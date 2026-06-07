@@ -61,6 +61,16 @@ object "DiskSystem" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD 1.5: configureSystem(address token)
+            // Selector: 0x6b9c2fdb
+            // ----------------------------------------------------------------
+            if eq(selector, 0x6b9c2fdb) {
+                sstore(0x9999, calldataload(4))
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD 2: executeDiskCommand(bytes calldata cmd)
             // Selector: 0x9812a4df
             // ----------------------------------------------------------------
@@ -111,8 +121,72 @@ object "DiskSystem" {
                     lengthSlot := keccak256(0x00, 64)
                 }
 
+                // Duplicate Command (D0:destfile=srcfile)
+                if eq(cmdType, 0x4430) { // ASCII "D0"
+                    let destHash := 0
+                    let fOffset := 70
+                    let cCount := 0
+                    let eqIdx := 0
+                    
+                    for {} lt(cCount, 32) { cCount := add(cCount, 1) } {
+                        let char := byte(cCount, calldataload(fOffset))
+                        if eq(char, 0x3d) {
+                            eqIdx := cCount
+                            break
+                        }
+                        if iszero(char) { break }
+                        destHash := add(mul(destHash, 31), char)
+                    }
+                    
+                    let srcHash := 0
+                    let srcOffset := add(fOffset, add(eqIdx, 1))
+                    let srcCharCount := 0
+                    for {} lt(srcCharCount, 32) { srcCharCount := add(srcCharCount, 1) } {
+                        let char := byte(srcCharCount, calldataload(srcOffset))
+                        if iszero(char) { break }
+                        srcHash := add(mul(srcHash, 31), char)
+                    }
+                    
+                    mstore(0x00, caller())
+                    mstore(0x20, srcHash)
+                    let srcBaseSlot := keccak256(0x00, 64)
+                    
+                    mstore(0x00, caller())
+                    mstore(0x20, add(srcHash, 0x999))
+                    let srcLengthSlot := keccak256(0x00, 64)
+                    
+                    mstore(0x00, caller())
+                    mstore(0x20, destHash)
+                    let destBaseSlot := keccak256(0x00, 64)
+                    
+                    mstore(0x00, caller())
+                    mstore(0x20, add(destHash, 0x999))
+                    let destLengthSlot := keccak256(0x00, 64)
+                    
+                    let srcLen := sload(srcLengthSlot)
+                    sstore(destLengthSlot, srcLen)
+                    
+                    let numSlots := div(add(srcLen, 31), 32)
+                    for { let i := 0 } lt(i, numSlots) { i := add(i, 1) } {
+                        let data := sload(add(srcBaseSlot, i))
+                        sstore(add(destBaseSlot, i), data)
+                    }
+                    mstore(0x00, 1)
+                    return(0x00, 32)
+                }
+
                 // Write Command (W0)
                 if eq(cmdType, 0x5730) { // ASCII "W0"
+                    let tokenAddr := sload(0x9999)
+                    if and(iszero(iszero(tokenAddr)), isBbs) {
+                        mstore(0x200, shl(224, 0x70a08231))
+                        mstore(0x204, caller())
+                        let success := staticcall(gas(), tokenAddr, 0x200, 36, 0x244, 32)
+                        if iszero(success) { revert(0, 0) }
+                        let bal := mload(0x244)
+                        if lt(bal, 1000000000000000000) { revert(0, 0) } // Must have at least 1 token
+                    }
+
                     let dataStartOffset := add(fileOffset, charCount)
                     dataStartOffset := add(dataStartOffset, 1) // skip null terminator
 
@@ -205,7 +279,7 @@ object "DiskSystem" {
                     }
 
                     // Emit event logs
-                    log3(0x00, 0, 0x18278cbdbe8ed62bf134676966ade77d7871afa34eabd366196c1e9547b08e63, caller(), nameWord)
+                    log3(dataStartOffset, dataLen, 0x18278cbdbe8ed62bf134676966ade77d7871afa34eabd366196c1e9547b08e63, caller(), nameWord)
                     mstore(0x00, 1)
                     return(0x00, 32)
                 }
@@ -216,34 +290,35 @@ object "DiskSystem" {
                     let secondChar := byte(1, calldataload(fileOffset))
                     if and(eq(charCount, 2), eq(secondChar, 0x24)) {
                         // Directory listing (isolated per wallet)
+                        mstore(0x00, 32)
+                        mstore(0x20, 256)
                         let numFilesSlot := 0
-                        mstore(0x00, caller())
-                        mstore(0x20, 0x1000)
-                        numFilesSlot := keccak256(0x00, 64)
+                        mstore(0x40, caller())
+                        mstore(0x60, 0x1000)
+                        numFilesSlot := keccak256(0x40, 64)
                         let numFiles := sload(numFilesSlot)
                         for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
                             let fileNameVal := 0
                             if lt(i, numFiles) {
-                                mstore(0x00, caller())
-                                mstore(0x20, add(0x1001, i))
-                                fileNameVal := sload(keccak256(0x00, 64))
+                                mstore(0x40, caller())
+                                mstore(0x60, add(0x1001, i))
+                                fileNameVal := sload(keccak256(0x40, 64))
                             }
-                            mstore(mul(i, 32), fileNameVal)
+                            mstore(add(0x40, mul(i, 32)), fileNameVal)
                         }
-                        return(0x00, 256)
+                        return(0x00, 320)
                     }
 
                     // Read target file content (either global BBS or sandbox file)
                     let dataLen := sload(lengthSlot)
-                    if iszero(dataLen) {
-                        dataLen := 256
-                    }
+                    mstore(0x00, 32)
+                    mstore(0x20, dataLen)
 
                     let numSlots := div(add(dataLen, 31), 32)
                     for { let i := 0 } lt(i, numSlots) { i := add(i, 1) } {
-                        mstore(mul(i, 32), sload(add(baseSlot, i)))
+                        mstore(add(0x40, mul(i, 32)), sload(add(baseSlot, i)))
                     }
-                    return(0x00, mul(numSlots, 32))
+                    return(0x00, add(64, mul(numSlots, 32)))
                 }
 
                 // Scratch Command (S0)

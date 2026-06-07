@@ -206,6 +206,47 @@
                                 <input type="range" id="synthRelease" min="0" max="15" value="9" style="width: 100%;">
                             </div>
                         </div>
+
+                        <!-- Filter & LFO Controls -->
+                        <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 12px; padding-top: 10px;">
+                            <h5 style="color: var(--neon-blue); margin-top: 0; margin-bottom: 6px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Resonant Filter & LFO</h5>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-secondary);">FILTER CUTOFF</label>
+                                    <input type="range" id="filterCutoff" min="0" max="2047" value="1000" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-secondary);">RESONANCE (Q)</label>
+                                    <input type="range" id="filterReso" min="0" max="15" value="5" style="width: 100%;">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 8px;">
+                                <label style="font-size: 0.7rem; color: var(--text-secondary);">MODE:</label>
+                                <select id="filterMode" class="input-glow" style="padding: 3px; font-size: 0.75rem; background: #000; color: #fff; border: 1px solid var(--neon-blue);">
+                                    <option value="16">Low Pass</option>
+                                    <option value="32">Band Pass</option>
+                                    <option value="64">High Pass</option>
+                                    <option value="0" selected>Bypass (All Pass)</option>
+                                </select>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; margin-top: 6px;">
+                                <div>
+                                    <label style="font-size: 0.65rem; color: var(--text-secondary); display: block;">LFO MODULATION</label>
+                                    <select id="lfoToggle" class="input-glow" style="padding: 2px; font-size: 0.7rem; background: #000; color: #fff; width: 100%;">
+                                        <option value="off" selected>Off</option>
+                                        <option value="on">On</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.65rem; color: var(--text-secondary); display: block;">LFO RATE (Hz)</label>
+                                    <input type="range" id="lfoRate" min="0.5" max="15" step="0.5" value="4" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.65rem; color: var(--text-secondary); display: block;">LFO DEPTH</label>
+                                    <input type="range" id="lfoDepth" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Step Sequencer Section -->
@@ -763,6 +804,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         let isAudioPlaying = false;
         let voices = [];
         let isDemoModeActive = false;
+        let filterNode, lfoNode, lfoGainNode;
         let demoTimer = 0;
         const demoGameSequence = ["pong"];
         let demoGameIdx = 0;
@@ -1199,11 +1241,20 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 }
                 audioCtx.resume();
+                
+                // Initialize BiquadFilter
+                if (!filterNode) {
+                    filterNode = audioCtx.createBiquadFilter();
+                    filterNode.connect(audioCtx.destination);
+                }
+                
                 voices = [
-                    new SIDVoice(audioCtx, audioCtx.destination),
-                    new SIDVoice(audioCtx, audioCtx.destination),
-                    new SIDVoice(audioCtx, audioCtx.destination)
+                    new SIDVoice(audioCtx, filterNode),
+                    new SIDVoice(audioCtx, filterNode),
+                    new SIDVoice(audioCtx, filterNode)
                 ];
+                
+                updateFilterParams();
                 
                 isAudioPlaying = true;
                 document.getElementById("btnAudioToggle").innerText = "Mute Audio";
@@ -1211,9 +1262,103 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             } else {
                 voices.forEach(v => v.stop());
                 voices = [];
+                if (lfoNode) {
+                    try { lfoNode.stop(); } catch(e){}
+                    try { lfoNode.disconnect(); } catch(e){}
+                    lfoNode = null;
+                }
+                if (lfoGainNode) {
+                    try { lfoGainNode.disconnect(); } catch(e){}
+                    lfoGainNode = null;
+                }
                 isAudioPlaying = false;
                 document.getElementById("btnAudioToggle").innerText = "Enable Audio Synth";
                 document.getElementById("btnAudioToggle").classList.remove("btn-danger");
+            }
+        });
+
+        async function updateOnChainFilter() {
+            if (!musicContract) return;
+            const cutoffVal = parseInt(document.getElementById("filterCutoff").value);
+            const resonanceVal = parseInt(document.getElementById("filterReso").value);
+            const mode = parseInt(document.getElementById("filterMode").value);
+            
+            const low = cutoffVal & 0x07;
+            const high = (cutoffVal >> 3) & 0xFF;
+            const resRoute = (resonanceVal << 4) | 0x07;
+            const modeVol = mode | 0x0F;
+            
+            try {
+                await musicContract.poke(54293, low);
+                await musicContract.poke(54294, high);
+                await musicContract.poke(54295, resRoute);
+                await musicContract.poke(54296, modeVol);
+            } catch (e) {}
+        }
+
+        function updateFilterParams() {
+            if (!audioCtx || !filterNode) return;
+            
+            const mode = document.getElementById("filterMode").value;
+            if (mode === "16") {
+                filterNode.type = "lowpass";
+            } else if (mode === "32") {
+                filterNode.type = "bandpass";
+            } else if (mode === "64") {
+                filterNode.type = "highpass";
+            } else {
+                filterNode.type = "allpass"; // Bypass
+            }
+            
+            const cutoffVal = parseInt(document.getElementById("filterCutoff").value);
+            const filterFreq = 30 + (cutoffVal / 2047) * 9000;
+            filterNode.frequency.setValueAtTime(filterFreq, audioCtx.currentTime);
+            
+            const resonanceVal = parseInt(document.getElementById("filterReso").value);
+            const filterQ = 0.5 + (resonanceVal / 15) * 15;
+            filterNode.Q.setValueAtTime(filterQ, audioCtx.currentTime);
+            
+            updateLFO();
+            updateOnChainFilter().catch(() => {});
+        }
+
+        function updateLFO() {
+            if (!audioCtx || !filterNode) return;
+            
+            const lfoActive = document.getElementById("lfoToggle").value === "on";
+            
+            if (lfoNode) {
+                try { lfoNode.stop(); } catch(e){}
+                try { lfoNode.disconnect(); } catch(e){}
+                lfoNode = null;
+            }
+            if (lfoGainNode) {
+                try { lfoGainNode.disconnect(); } catch(e){}
+                lfoGainNode = null;
+            }
+            
+            if (lfoActive && isAudioPlaying) {
+                lfoNode = audioCtx.createOscillator();
+                lfoGainNode = audioCtx.createGain();
+                
+                const rate = parseFloat(document.getElementById("lfoRate").value);
+                const depth = parseFloat(document.getElementById("lfoDepth").value);
+                
+                lfoNode.frequency.value = rate;
+                lfoGainNode.gain.value = depth * 4000;
+                
+                lfoNode.connect(lfoGainNode);
+                lfoGainNode.connect(filterNode.frequency);
+                
+                lfoNode.start();
+            }
+        }
+
+        ["filterCutoff", "filterReso", "filterMode", "lfoToggle", "lfoRate", "lfoDepth"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("change", updateFilterParams);
+                el.addEventListener("input", updateFilterParams);
             }
         });
 

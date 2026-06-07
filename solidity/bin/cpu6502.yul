@@ -193,6 +193,92 @@ object "CPU6502Emulator" {
                     addr := add(addr, mul(bank, 8192))
                 }
 
+                // --- Doodle Graphics Coprocessor Helpers ---
+                function plotPixel(x, y, color) {
+                    if or(gt(x, 319), gt(y, 199)) { leave }
+                    let cellX := div(x, 8)
+                    let cellY := div(y, 8)
+                    let lineY := mod(y, 8)
+                    let bitIdx := sub(7, mod(x, 8))
+                    let byteAddr := add(8192, add(add(mul(cellY, 320), mul(cellX, 8)), lineY))
+                    let currentByte := and(sload(getUserSlot(byteAddr)), 0xFF)
+                    let newByte := 0
+                    if color {
+                        newByte := or(currentByte, shl(bitIdx, 1))
+                    }
+                    if iszero(color) {
+                        newByte := and(currentByte, not(shl(bitIdx, 1)))
+                    }
+                    sstore(getUserSlot(byteAddr), and(newByte, 0xFF))
+                }
+
+                function drawLine(x0, y0, x1, y1, color) {
+                    let absDx := 0
+                    let sx := 1
+                    if gt(x1, x0) { absDx := sub(x1, x0) }
+                    if iszero(gt(x1, x0)) {
+                        absDx := sub(x0, x1)
+                        sx := sub(0, 1)
+                    }
+
+                    let absDy := 0
+                    let sy := 1
+                    if gt(y1, y0) { absDy := sub(y1, y0) }
+                    if iszero(gt(y1, y0)) {
+                        absDy := sub(y0, y1)
+                        sy := sub(0, 1)
+                    }
+
+                    let err := sub(absDx, absDy)
+                    let x := x0
+                    let y := y0
+
+                    for { let steps := 0 } lt(steps, 1000) { steps := add(steps, 1) } {
+                        plotPixel(x, y, color)
+                        if and(eq(x, x1), eq(y, y1)) { break }
+                        let e2 := mul(err, 2)
+                        let negAbsDy := sub(0, absDy)
+                        if sgt(e2, negAbsDy) {
+                            err := sub(err, absDy)
+                            x := add(x, sx)
+                        }
+                        if slt(e2, absDx) {
+                            err := add(err, absDx)
+                            y := add(y, sy)
+                        }
+                    }
+                }
+
+                function plotCirclePoints(xc, yc, px, py, col) {
+                    plotPixel(add(xc, px), add(yc, py), col)
+                    plotPixel(sub(xc, px), add(yc, py), col)
+                    plotPixel(add(xc, px), sub(yc, py), col)
+                    plotPixel(sub(xc, px), sub(yc, py), col)
+                    plotPixel(add(xc, py), add(yc, px), col)
+                    plotPixel(sub(xc, py), add(yc, px), col)
+                    plotPixel(add(xc, py), sub(yc, px), col)
+                    plotPixel(sub(xc, py), sub(yc, px), col)
+                }
+
+                function drawCircle(x0, y0, r, color) {
+                    let x := 0
+                    let y := r
+                    let d := sub(3, mul(2, r))
+
+                    plotCirclePoints(x0, y0, x, y, color)
+                    for { } sgt(y, x) { } {
+                        x := add(x, 1)
+                        if sgt(d, 0) {
+                            y := sub(y, 1)
+                            d := add(d, sub(mul(4, sub(x, y)), 10))
+                        }
+                        if iszero(sgt(d, 0)) {
+                            d := add(d, add(mul(4, x), 6))
+                        }
+                        plotCirclePoints(x0, y0, x, y, color)
+                    }
+                }
+
                 switch addr
                 case 54560 { // Ring Buffer Push ($D520)
                     let head := sload(getUserSlot(54565))
@@ -241,7 +327,358 @@ object "CPU6502Emulator" {
                     let cnt := sload(getUserSlot(54787))
                     sstore(getUserSlot(54787), add(cnt, 1))
                 }
+                case 54624 { // Trigger EVM Contract Call ($D560)
+                    sstore(getUserSlot(54624), val)
+                    if val {
+                         let targetContract := 0
+                         for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                             let b := sload(getUserSlot(add(54576, i)))
+                             targetContract := or(shl(8, targetContract), and(b, 0xFF))
+                         }
+
+                         let methodSel := 0
+                         for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                             let b := sload(getUserSlot(add(54596, i)))
+                             methodSel := or(shl(8, methodSel), and(b, 0xFF))
+                         }
+
+                         let arg1Addr := 0
+                         for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                             let b := sload(getUserSlot(add(54600, i)))
+                             arg1Addr := or(shl(8, arg1Addr), and(b, 0xFF))
+                         }
+
+                         let arg2Val := 0
+                         for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                             let b := sload(getUserSlot(add(54620, i)))
+                             arg2Val := or(shl(8, arg2Val), and(b, 0xFF))
+                         }
+
+                          // Prepare call in memory at 0x300
+                          mstore(0x300, shl(224, methodSel))
+                          mstore(0x304, arg1Addr)
+                          mstore(0x324, arg2Val)
+
+                          // Debug: Save variables
+                          sstore(getUserSlot(54630), 12345)
+                          sstore(getUserSlot(54631), methodSel)
+                          sstore(getUserSlot(54632), arg1Addr)
+                          sstore(getUserSlot(54633), arg2Val)
+                          sstore(getUserSlot(54634), caller())
+
+                          // Execute Call
+                          let success := call(gas(), targetContract, 0, 0x300, 68, 0x344, 32)
+                          sstore(getUserSlot(54625), success)
+
+                          if success {
+                              let retVal := mload(0x344)
+                              sstore(getUserSlot(54626), and(shr(24, retVal), 0xFF))
+                              sstore(getUserSlot(54627), and(shr(16, retVal), 0xFF))
+                              sstore(getUserSlot(54628), and(shr(8, retVal), 0xFF))
+                              sstore(getUserSlot(54629), and(retVal, 0xFF))
+                          }
+                     }
+                 }
+                case 54648 { // Trigger Doodle Graphics Coprocessor ($D578)
+                    sstore(getUserSlot(54648), val)
+                    if val {
+                        let cmd := and(sload(getUserSlot(54640)), 0xFF)
+                        let x0 := or(shl(8, and(sload(getUserSlot(54642)), 0xFF)), and(sload(getUserSlot(54641)), 0xFF))
+                        let y0 := and(sload(getUserSlot(54643)), 0xFF)
+                        let x1 := or(shl(8, and(sload(getUserSlot(54645)), 0xFF)), and(sload(getUserSlot(54644)), 0xFF))
+                        let y1 := and(sload(getUserSlot(54646)), 0xFF)
+                        let color := and(sload(getUserSlot(54647)), 0xFF)
+
+                        switch cmd
+                        case 1 { // Draw Pixel
+                            plotPixel(x0, y0, color)
+                        }
+                        case 2 { // Draw Line
+                            drawLine(x0, y0, x1, y1, color)
+                        }
+                        case 3 { // Draw Circle (Radius is x1)
+                            drawCircle(x0, y0, x1, color)
+                        }
+                        case 4 { // Clear Canvas
+                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
+                                sstore(getUserSlot(add(8192, i)), 0)
+                            }
+                        }
+                        case 5 { // Copy Framebuffer (Fill Screen & Color RAM)
+                            for { let i := 0 } lt(i, 200) { i := add(i, 1) } {
+                                sstore(getUserSlot(add(1024, i)), color)
+                                sstore(getUserSlot(add(55296, i)), color)
+                            }
+                        }
+                    }
+                }
+                case 54700 { // Trigger COMTAX Coprocessor ($D5AC)
+                    if val {
+                        let tokenAddress := 0
+                        for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54672, i)))
+                            tokenAddress := or(shl(8, tokenAddress), and(b, 0xFF))
+                        }
+
+                        let blockStart := 0
+                        for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54692, i)))
+                            blockStart := or(shl(8, blockStart), and(b, 0xFF))
+                        }
+
+                        let blockEnd := 0
+                        for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54696, i)))
+                            blockEnd := or(shl(8, blockEnd), and(b, 0xFF))
+                        }
+
+                        let rate := and(sload(getUserSlot(54705)), 0xFF)
+
+                        // Call balanceOf(getContextUser()) to get balance
+                        mstore(0x300, shl(224, 0x70a08231))
+                        mstore(0x304, getContextUser())
+                        let success := staticcall(gas(), tokenAddress, 0x300, 36, 0x344, 32)
+                        let tokenBal := 0
+                        if success {
+                            tokenBal := mload(0x344)
+                        }
+
+                        // Normalize 18 decimals back to raw unit
+                        let rawBal := div(tokenBal, 1000000000000000000)
+
+                        // Gains = rawBal * (blockEnd - blockStart) / 10000
+                        let blockDiff := 0
+                        if gt(blockEnd, blockStart) {
+                            blockDiff := sub(blockEnd, blockStart)
+                        }
+                        let gains := div(mul(rawBal, blockDiff), 10000)
+                        let taxDue := div(gas(), 1000)
+
+                        // Save results
+                        sstore(getUserSlot(54701), and(shr(24, gains), 0xFF))
+                        sstore(getUserSlot(54702), and(shr(16, gains), 0xFF))
+                        sstore(getUserSlot(54703), and(shr(8, gains), 0xFF))
+                        sstore(getUserSlot(54704), and(gains, 0xFF))
+
+                        sstore(getUserSlot(54706), and(shr(24, taxDue), 0xFF))
+                        sstore(getUserSlot(54707), and(shr(16, taxDue), 0xFF))
+                        sstore(getUserSlot(54708), and(shr(8, taxDue), 0xFF))
+                        sstore(getUserSlot(54709), and(taxDue, 0xFF))
+
+                        // Dynamic Diyat: Automatically excise the calculated tax due
+                        let userBal := sload(getUserSlot(848))
+                        if gt(taxDue, 0) {
+                            if or(gt(userBal, taxDue), eq(userBal, taxDue)) {
+                                sstore(getUserSlot(848), sub(userBal, taxDue))
+                                
+                                mstore(0x300, 0x1111111111111111111111111111111111111111)
+                                mstore(0x320, 848)
+                                let treasurySlot := keccak256(0x300, 64)
+                                let treasuryBal := sload(treasurySlot)
+                                sstore(treasurySlot, add(treasuryBal, taxDue))
+                                
+                                sstore(getUserSlot(54706), 0)
+                                sstore(getUserSlot(54707), 0)
+                                sstore(getUserSlot(54708), 0)
+                                sstore(getUserSlot(54709), 0)
+                                
+                                sstore(getUserSlot(54735), 1)
+                                
+                                log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), taxDue)
+                            }
+                        }
+                    }
+                }
+                case 54725 { // Trigger Matrix Math Coprocessor ($D5C5)
+                    sstore(getUserSlot(54725), val)
+                    if val {
+                        let matrixPtr := or(shl(8, and(sload(getUserSlot(54721)), 0xFF)), and(sload(getUserSlot(54720)), 0xFF))
+                        let rows := and(sload(getUserSlot(54722)), 0xFF)
+                        let cols := and(sload(getUserSlot(54723)), 0xFF)
+                        let op := and(sload(getUserSlot(54724)), 0xFF)
+                        
+                        let total := 0
+                        let size := mul(rows, cols)
+                        
+                        switch op
+                        case 1 { // Sum
+                            for { let i := 0 } lt(i, size) { i := add(i, 1) } {
+                                let cellVal := and(sload(getUserSlot(add(matrixPtr, i))), 0xFF)
+                                total := add(total, cellVal)
+                            }
+                        }
+                        case 2 { // Average
+                            for { let i := 0 } lt(i, size) { i := add(i, 1) } {
+                                let cellVal := and(sload(getUserSlot(add(matrixPtr, i))), 0xFF)
+                                total := add(total, cellVal)
+                            }
+                            if gt(size, 0) {
+                                total := div(total, size)
+                            }
+                        }
+                        case 3 { // Dot Product
+                            for { let i := 0 } lt(i, size) { i := add(i, 1) } {
+                                let valA := and(sload(getUserSlot(add(matrixPtr, i))), 0xFF)
+                                let valB := and(sload(getUserSlot(add(add(matrixPtr, size), i))), 0xFF)
+                                total := add(total, mul(valA, valB))
+                            }
+                        }
+                        
+                        // Store 32-bit result to $D5C6 - $D5C9 (54726 to 54729)
+                        sstore(getUserSlot(54726), and(shr(24, total), 0xFF))
+                        sstore(getUserSlot(54727), and(shr(16, total), 0xFF))
+                        sstore(getUserSlot(54728), and(shr(8, total), 0xFF))
+                        sstore(getUserSlot(54729), and(total, 0xFF))
+                    }
+                }
+                case 54711 { // Trigger Parallel Bus / IEEE-488 ($D5B7)
+                    sstore(getUserSlot(54711), val)
+                    if val {
+                        let ramPtr := or(shl(8, and(sload(getUserSlot(54704)), 0xFF)), and(sload(getUserSlot(54705)), 0xFF))
+                        let length := or(shl(8, and(sload(getUserSlot(54706)), 0xFF)), and(sload(getUserSlot(54707)), 0xFF))
+                        let filePtr := or(shl(8, and(sload(getUserSlot(54708)), 0xFF)), and(sload(getUserSlot(54709)), 0xFF))
+                        let opCode := and(sload(getUserSlot(54710)), 0xFF)
+                        
+                        let diskAddress := 0
+                        for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54712, i)))
+                            diskAddress := or(shl(8, diskAddress), and(b, 0xFF))
+                        }
+                        
+                        // Parallel Bus Diyat Tax: 1 unit per 64 bytes transferred (min 1 unit)
+                        let busTax := add(div(length, 64), 1)
+                        let userBal := sload(getUserSlot(848))
+                        if lt(userBal, busTax) { revert(0, 0) }
+                        sstore(getUserSlot(848), sub(userBal, busTax))
+                        
+                        mstore(0x300, 0x1111111111111111111111111111111111111111)
+                        mstore(0x320, 848)
+                        let treasurySlot := keccak256(0x300, 64)
+                        let treasuryBal := sload(treasurySlot)
+                        sstore(treasurySlot, add(treasuryBal, busTax))
+                        
+                        // Log payment of Parallel Bus tax
+                        log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), busTax)
+                        
+                        mstore(0x300, shl(224, 0x9812a4df))
+                        mstore(0x304, 32)
+                        let payloadPtr := 0x344
+                        
+                        switch opCode
+                        case 1 { // Read
+                            mstore8(payloadPtr, 0x52)
+                            mstore8(add(payloadPtr, 1), 0x30)
+                            mstore8(add(payloadPtr, 2), 0x3a)
+                            let nameLen := 0
+                            for {} lt(nameLen, 32) { nameLen := add(nameLen, 1) } {
+                                let char := and(sload(getUserSlot(add(filePtr, nameLen))), 0xFF)
+                                mstore8(add(add(payloadPtr, 3), nameLen), char)
+                                if iszero(char) { break }
+                            }
+                            let totalCmdLen := add(3, add(nameLen, 1))
+                            mstore(0x324, totalCmdLen)
+                            let success := call(gas(), diskAddress, 0, 0x300, add(68, totalCmdLen), 0x300, 1000)
+                            if iszero(success) { revert(0, 0) }
+                            if success {
+                                let retLen := mload(0x320)
+                                if gt(retLen, length) { retLen := length }
+                                for { let i := 0 } lt(i, retLen) { i := add(i, 1) } {
+                                    let b := byte(0, mload(add(0x340, i)))
+                                    sstore(getUserSlot(add(ramPtr, i)), b)
+                                }
+                            }
+                        }
+                        case 2 { // Write
+                            mstore8(payloadPtr, 0x57)
+                            mstore8(add(payloadPtr, 1), 0x30)
+                            mstore8(add(payloadPtr, 2), 0x3a)
+                            let nameLen := 0
+                            for {} lt(nameLen, 32) { nameLen := add(nameLen, 1) } {
+                                let char := and(sload(getUserSlot(add(filePtr, nameLen))), 0xFF)
+                                mstore8(add(add(payloadPtr, 3), nameLen), char)
+                                if iszero(char) { break }
+                            }
+                            let dataStartOffset := add(3, add(nameLen, 1))
+                            for { let i := 0 } lt(i, length) { i := add(i, 1) } {
+                                let b := and(sload(getUserSlot(add(ramPtr, i))), 0xFF)
+                                mstore8(add(add(payloadPtr, dataStartOffset), i), b)
+                            }
+                            let totalCmdLen := add(dataStartOffset, length)
+                            mstore(0x324, totalCmdLen)
+                            let success := call(gas(), diskAddress, 0, 0x300, add(68, totalCmdLen), 0x300, 32)
+                            if iszero(success) { revert(0, 0) }
+                        }
+                    }
+                }
+                case 54735 { // Tax Payment Trigger ($D5CF)
+                    sstore(getUserSlot(54735), val)
+                    if val {
+                        let taxDue := 0
+                        taxDue := or(shl(24, and(sload(getUserSlot(54706)), 0xFF)), taxDue)
+                        taxDue := or(shl(16, and(sload(getUserSlot(54707)), 0xFF)), taxDue)
+                        taxDue := or(shl(8, and(sload(getUserSlot(54708)), 0xFF)), taxDue)
+                        taxDue := or(and(sload(getUserSlot(54709)), 0xFF), taxDue)
+                        
+                        let userBal := sload(getUserSlot(848))
+                        if gt(taxDue, 0) {
+                            if or(gt(userBal, taxDue), eq(userBal, taxDue)) {
+                                sstore(getUserSlot(848), sub(userBal, taxDue))
+                                
+                                mstore(0x00, 0x1111111111111111111111111111111111111111)
+                                mstore(0x20, 848)
+                                let treasurySlot := keccak256(0x00, 64)
+                                let treasuryBal := sload(treasurySlot)
+                                sstore(treasurySlot, add(treasuryBal, taxDue))
+                                
+                                sstore(getUserSlot(54706), 0)
+                                sstore(getUserSlot(54707), 0)
+                                sstore(getUserSlot(54708), 0)
+                                sstore(getUserSlot(54709), 0)
+                                
+                                sstore(getUserSlot(54735), 1)
+                                
+                                // Emit TaxPaid event: log3(memOffset, memSize, topic1, topic2, topic3)
+                                // Topic1: keccak256("TaxPaid(address,uint256)") = 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925
+                                log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), taxDue)
+                            }
+                        }
+                    }
+                }
+                case 54736 { // Active K-KEYS function key index ($D5D0)
+                    if and(gt(val, 0), lt(val, 9)) {
+                        sstore(getUserSlot(54736), sub(val, 1)) // Save as 0-7
+                    }
+                }
+                case 54737 { // Macro string length ($D5D1)
+                    let activeKey := and(sload(getUserSlot(54736)), 0xFF)
+                    sstore(getUserSlot(add(54752, mul(activeKey, 16))), and(val, 0xFF))
+                }
+                case 54752 { // Nonce Generator Trigger ($D5E0)
+                    sstore(getUserSlot(54752), val)
+                    if val {
+                        let nonceCounter := add(sload(getUserSlot(54800)), 1)
+                        sstore(getUserSlot(54800), nonceCounter)
+                        
+                        mstore(0x300, number())
+                        mstore(0x320, timestamp())
+                        mstore(0x340, blockhash(sub(number(), 1)))
+                        mstore(0x360, getContextUser())
+                        mstore(0x380, nonceCounter)
+                        let hashVal := keccak256(0x300, 160)
+                        
+                        for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
+                            let b := and(byte(i, hashVal), 0xFF)
+                            sstore(getUserSlot(add(54752, i)), b)
+                        }
+                    }
+                }
                 default {
+                    // Check if writing to macro string character registers $D5D2 - $D5DF (54738 to 54751)
+                    if and(iszero(lt(addr, 54738)), lt(addr, 54752)) {
+                        let activeKey := and(sload(getUserSlot(54736)), 0xFF)
+                        let charIdx := sub(addr, 54738)
+                        sstore(getUserSlot(add(add(54753, mul(activeKey, 16)), charIdx)), and(val, 0xFF))
+                    }
                     sstore(getUserSlot(addr), val)
                 }
             }
@@ -530,10 +967,44 @@ object "CPU6502Emulator" {
                         let char := 0
                         if gt(bufLen, 0) {
                             char := sload(getUserSlot(637))
-                            for { let i := 0 } lt(i, sub(bufLen, 1)) { i := add(i, 1) } {
-                                sstore(getUserSlot(add(637, i)), sload(getUserSlot(add(638, i))))
+                            
+                            // Check if the character is a function key F1-F8 (133 to 140)
+                            if and(iszero(lt(char, 133)), lt(char, 141)) {
+                                let keyIdx := sub(char, 133) // 0 to 7
+                                let macroLen := and(sload(getUserSlot(add(54752, mul(keyIdx, 16)))), 0xFF)
+                                if gt(macroLen, 0) {
+                                    // Shift existing buffer elements to the right to make space for the macro string
+                                    let shiftAmt := sub(macroLen, 1)
+                                    let newLen := add(bufLen, shiftAmt)
+                                    if gt(newLen, 10) { newLen := 10 }
+                                    
+                                    for { let j := sub(bufLen, 1) } gt(j, 0) { j := sub(j, 1) } {
+                                        let targetIdx := add(j, shiftAmt)
+                                        if lt(targetIdx, 10) {
+                                            sstore(getUserSlot(add(637, targetIdx)), sload(getUserSlot(add(637, j))))
+                                        }
+                                    }
+                                    
+                                    for { let j := 0 } lt(j, macroLen) { j := add(j, 1) } {
+                                        let mChar := and(sload(getUserSlot(add(add(54753, mul(keyIdx, 16)), j))), 0xFF)
+                                        if lt(j, 10) {
+                                            sstore(getUserSlot(add(637, j)), mChar)
+                                        }
+                                    }
+                                    
+                                    sstore(getUserSlot(198), newLen)
+                                    char := sload(getUserSlot(637))
+                                }
                             }
-                            sstore(getUserSlot(198), sub(bufLen, 1))
+                            
+                            // Normal buffer shift
+                            bufLen := sload(getUserSlot(198))
+                            if gt(bufLen, 0) {
+                                for { let i := 0 } lt(i, sub(bufLen, 1)) { i := add(i, 1) } {
+                                    sstore(getUserSlot(add(637, i)), sload(getUserSlot(add(638, i))))
+                                }
+                                sstore(getUserSlot(198), sub(bufLen, 1))
+                            }
                         }
                         setReg(0x80, char)
                         updateFlags(char)
@@ -541,8 +1012,9 @@ object "CPU6502Emulator" {
                     }
                     
                     if iszero(handled) {
-                        pushStack(shr(8, currentPC))
-                        pushStack(and(currentPC, 0xFF))
+                        let retAddr := add(currentPC, 2)
+                        pushStack(shr(8, retAddr))
+                        pushStack(and(retAddr, 0xFF))
                         setReg(0x85, operand)
                         branchTaken := 1
                     }
@@ -753,6 +1225,26 @@ object "CPU6502Emulator" {
             // Selector: 0xcbe94d1f
             // ----------------------------------------------------------------
             if eq(selector, 0xe0f77c57) {
+                // Dynamic Diyat Rate-Limiting: penalize multiple reads in the same block
+                let lastReadBlock := sload(getUserSlot(54801))
+                if eq(lastReadBlock, number()) {
+                    let userBal := sload(getUserSlot(848))
+                    let readTax := 2 // penalty of 2 OTRT tax units
+                    if or(gt(userBal, readTax), eq(userBal, readTax)) {
+                        sstore(getUserSlot(848), sub(userBal, readTax))
+                        
+                        mstore(0x300, 0x1111111111111111111111111111111111111111)
+                        mstore(0x320, 848)
+                        let treasurySlot := keccak256(0x300, 64)
+                        let treasuryBal := sload(treasurySlot)
+                        sstore(treasurySlot, add(treasuryBal, readTax))
+                        
+                        // Log penalty payment
+                        log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), readTax)
+                    }
+                }
+                sstore(getUserSlot(54801), number())
+
                 loadRegisterCache()
                 mstore(0x00, getReg(0x80))
                 mstore(0x20, getReg(0x81))
@@ -793,30 +1285,143 @@ object "CPU6502Emulator" {
                     }
 
                     let currentPC := getReg(0x85)
-                    let opcode := and(sload(getUserSlot(currentPC)), 0xFF)
-
-                    // BRK instruction (0x00) halts execution
-                    if iszero(opcode) {
-                        halted := 1
+                    
+                    let handledHook := 0
+                    if eq(currentPC, 65493) { // LOAD ($FFD5)
+                        let diskAddress := 0
+                        for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54712, i)))
+                            diskAddress := or(shl(8, diskAddress), and(b, 0xFF))
+                        }
+                        if diskAddress {
+                            // JiffyDOS KERNAL Hook Tax: 5 OTRT units
+                            let hookTax := 5
+                            let userBal := sload(getUserSlot(848))
+                            if lt(userBal, hookTax) { revert(0, 0) }
+                            sstore(getUserSlot(848), sub(userBal, hookTax))
+                            
+                            mstore(0x300, 0x1111111111111111111111111111111111111111)
+                            mstore(0x320, 848)
+                            let treasurySlot := keccak256(0x300, 64)
+                            let treasuryBal := sload(treasurySlot)
+                            sstore(treasurySlot, add(treasuryBal, hookTax))
+                            
+                            // Log payment of JiffyDOS hook tax
+                            log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), hookTax)
+                            let fnPtr := or(shl(8, and(sload(getUserSlot(188)), 0xFF)), and(sload(getUserSlot(187)), 0xFF))
+                            let fnLen := and(sload(getUserSlot(183)), 0xFF)
+                            let destAddr := or(shl(8, getReg(0x82)), getReg(0x81))
+                            
+                            mstore(0x300, shl(224, 0x9812a4df))
+                            mstore(0x304, 32)
+                            let payloadPtr := 0x344
+                            mstore8(payloadPtr, 0x52)
+                            mstore8(add(payloadPtr, 1), 0x30)
+                            mstore8(add(payloadPtr, 2), 0x3a)
+                            for { let i := 0 } lt(i, fnLen) { i := add(i, 1) } {
+                                let char := and(sload(getUserSlot(add(fnPtr, i))), 0xFF)
+                                mstore8(add(add(payloadPtr, 3), i), char)
+                            }
+                            mstore8(add(add(payloadPtr, 3), fnLen), 0x00)
+                            
+                            let totalCmdLen := add(4, fnLen)
+                            mstore(0x324, totalCmdLen)
+                            let success := call(gas(), diskAddress, 0, 0x300, add(68, totalCmdLen), 0x300, 1000)
+                            if iszero(success) { revert(0, 0) }
+                            if success {
+                                let retLen := mload(0x320)
+                                for { let i := 0 } lt(i, retLen) { i := add(i, 1) } {
+                                    let b := byte(0, mload(add(0x340, i)))
+                                    sstore(getUserSlot(add(destAddr, i)), b)
+                                }
+                                setReg(0x84, and(getReg(0x84), 0xFE)) // Clear Carry
+                                let lowPC := pullStack()
+                                let highPC := pullStack()
+                                let retPC := add(or(shl(8, highPC), lowPC), 1)
+                                setReg(0x85, retPC)
+                                handledHook := 1
+                            }
+                        }
                     }
-
+                    if eq(currentPC, 65496) { // SAVE ($FFD8)
+                        let diskAddress := 0
+                        for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54712, i)))
+                            diskAddress := or(shl(8, diskAddress), and(b, 0xFF))
+                        }
+                        if diskAddress {
+                            // JiffyDOS KERNAL Hook Tax: 5 OTRT units
+                            let hookTax := 5
+                            let userBal := sload(getUserSlot(848))
+                            if lt(userBal, hookTax) { revert(0, 0) }
+                            sstore(getUserSlot(848), sub(userBal, hookTax))
+                            
+                            mstore(0x300, 0x1111111111111111111111111111111111111111)
+                            mstore(0x320, 848)
+                            let treasurySlot := keccak256(0x300, 64)
+                            let treasuryBal := sload(treasurySlot)
+                            sstore(treasurySlot, add(treasuryBal, hookTax))
+                            
+                            // Log payment of JiffyDOS hook tax
+                            log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), hookTax)
+                            let fnPtr := or(shl(8, and(sload(getUserSlot(188)), 0xFF)), and(sload(getUserSlot(187)), 0xFF))
+                            let fnLen := and(sload(getUserSlot(183)), 0xFF)
+                            let startAddr := or(shl(8, and(sload(getUserSlot(68)), 0xFF)), and(sload(getUserSlot(67)), 0xFF))
+                            let endAddr := or(shl(8, getReg(0x82)), getReg(0x81))
+                            let saveLen := 0
+                            if gt(endAddr, startAddr) { saveLen := sub(endAddr, startAddr) }
+                            
+                            mstore(0x300, shl(224, 0x9812a4df))
+                            mstore(0x304, 32)
+                            let payloadPtr := 0x344
+                            mstore8(payloadPtr, 0x57)
+                            mstore8(add(payloadPtr, 1), 0x30)
+                            mstore8(add(payloadPtr, 2), 0x3a)
+                            for { let i := 0 } lt(i, fnLen) { i := add(i, 1) } {
+                                let char := and(sload(getUserSlot(add(fnPtr, i))), 0xFF)
+                                mstore8(add(add(payloadPtr, 3), i), char)
+                            }
+                            mstore8(add(add(payloadPtr, 3), fnLen), 0x00)
+                            
+                            let dataStartOffset := add(4, fnLen)
+                            for { let i := 0 } lt(i, saveLen) { i := add(i, 1) } {
+                                let b := and(sload(getUserSlot(add(startAddr, i))), 0xFF)
+                                mstore8(add(payloadPtr, add(dataStartOffset, i)), b)
+                            }
+                            let totalCmdLen := add(dataStartOffset, saveLen)
+                            mstore(0x324, totalCmdLen)
+                            let success := call(gas(), diskAddress, 0, 0x300, add(68, totalCmdLen), 0x300, 32)
+                            if iszero(success) { revert(0, 0) }
+                            if success {
+                                setReg(0x84, and(getReg(0x84), 0xFE)) // Clear Carry
+                                let lowPC := pullStack()
+                                let highPC := pullStack()
+                                let retPC := add(or(shl(8, highPC), lowPC), 1)
+                                setReg(0x85, retPC)
+                                handledHook := 1
+                            }
+                        }
+                    }
+                    
+                    if iszero(handledHook) {
+                        let opcode := and(sload(getUserSlot(currentPC)), 0xFF)
+                        if iszero(opcode) {
+                            halted := 1
+                        }
+                        if iszero(halted) {
+                            let operand := and(sload(getUserSlot(add(currentPC, 1))), 0xFF)
+                            let len := getOpLength(opcode)
+                            if eq(len, 3) {
+                                let highByte := and(sload(getUserSlot(add(currentPC, 2))), 0xFF)
+                                operand := or(shl(8, highByte), operand)
+                            }
+                            let branchTaken := executeInternal(opcode, operand)
+                            if iszero(branchTaken) {
+                                setReg(0x85, add(currentPC, len))
+                            }
+                        }
+                    }
                     if iszero(halted) {
-                        // Read operand based on instruction length (2-byte vs 3-byte)
-                        let operand := and(sload(getUserSlot(add(currentPC, 1))), 0xFF)
-                        let len := getOpLength(opcode)
-                        if eq(len, 3) {
-                            let highByte := and(sload(getUserSlot(add(currentPC, 2))), 0xFF)
-                            operand := or(shl(8, highByte), operand)
-                        }
-
-                        // Execute instruction
-                        let branchTaken := executeInternal(opcode, operand)
-
-                        // If branch/jump did not modify PC, increment it by instruction length
-                        if iszero(branchTaken) {
-                            setReg(0x85, add(currentPC, len))
-                        }
-
                         // --- Simulate VIC-II Raster Line Progression ---
                         let line := sload(getUserSlot(53266))
                         // Fetch bit 7 of $D011 to construct the full 9-bit raster line value
