@@ -1842,6 +1842,13 @@ object "CPU6502Emulator" {
                             if iszero(branchTaken) {
                                 setReg(0x85, add(currentPC, len))
                             }
+                            // Accumulate instruction cycle count (approximate mapping: NOP/implicit = 2, absolute = 4, else = 3)
+                            let cycles := 3
+                            if eq(len, 1) { cycles := 2 }
+                            if eq(len, 3) { cycles := 4 }
+                             
+                            let currentCycles := sload(getUserSlotPrivate(65532))
+                            sstore(getUserSlotPrivate(65532), add(currentCycles, cycles))
                         }
                     }
                     if iszero(halted) {
