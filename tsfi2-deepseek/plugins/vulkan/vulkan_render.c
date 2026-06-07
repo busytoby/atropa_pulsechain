@@ -9,6 +9,11 @@
 #include "window_inc/vulkan_config.h"
 #include <nmmintrin.h>
 
+static const uint32_t *custom_frag_spv = NULL;
+static size_t custom_frag_size = 0;
+static VkPipeline custom_frag_pipeline = VK_NULL_HANDLE;
+static VkPipelineLayout custom_frag_layout = VK_NULL_HANDLE;
+
 static uint32_t calculate_telem_crc(const LauTelemetryState *s) {
     uint64_t crc = 0;
     crc = _mm_crc32_u64(crc, s->magic);
@@ -565,6 +570,56 @@ void draw_frame(VulkanSystem *s) {
 
     vk->vkCmdBeginRendering(vk->command_buffers[vk->currentFrame], &renderingInfo);
 
+    // If custom fragment (compute) shader is loaded and we are in 320x200 bitmap mode, execute it directly
+    if (custom_frag_spv && s->width == 320 && s->height == 200) {
+        if (custom_frag_pipeline == VK_NULL_HANDLE) {
+            VkShaderModuleCreateInfo moduleInfo = {
+                .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                .codeSize = custom_frag_size,
+                .pCode = custom_frag_spv
+            };
+            VkShaderModule mod;
+            if (vk->vkCreateShaderModule(vk->device, &moduleInfo, NULL, &mod) == VK_SUCCESS) {
+                VkDescriptorSetLayoutBinding bindings[2] = {
+                    {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, NULL}, // Input Buffer
+                    {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  1, VK_SHADER_STAGE_COMPUTE_BIT, NULL}  // Output Image
+                };
+                VkDescriptorSetLayoutCreateInfo dslInfo = {
+                    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+                    .bindingCount = 2,
+                    .pBindings = bindings
+                };
+                VkDescriptorSetLayout dsl;
+                if (vk->vkCreateDescriptorSetLayout(vk->device, &dslInfo, NULL, &dsl) == VK_SUCCESS) {
+                    VkPipelineLayoutCreateInfo layoutInfo = {
+                        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                        .setLayoutCount = 1,
+                        .pSetLayouts = &dsl
+                    };
+                    if (vk->vkCreatePipelineLayout(vk->device, &layoutInfo, NULL, &custom_frag_layout) == VK_SUCCESS) {
+                        VkPipelineShaderStageCreateInfo stageInfo = {
+                            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                            .module = mod,
+                            .pName = "main"
+                        };
+                        VkComputePipelineCreateInfo pipelineInfo = {
+                            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+                            .stage = stageInfo,
+                            .layout = custom_frag_layout
+                        };
+                        vk->vkCreateComputePipelines(vk->device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &custom_frag_pipeline);
+                    }
+                }
+                vk->vkDestroyShaderModule(vk->device, mod, NULL);
+            }
+        }
+        if (custom_frag_pipeline != VK_NULL_HANDLE) {
+            vk->vkCmdBindPipeline(vk->command_buffers[vk->currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, custom_frag_pipeline);
+            vk->vkCmdDispatch(vk->command_buffers[vk->currentFrame], 40, 25, 1);
+        }
+    }
+
     // --- SECONDARY COMMAND BUFFER DISPATCH (Plane 71 Promotion) ---
     // In a production TSFi environment, this recording is performed by a Zhao worker thread.
     VkCommandBufferInheritanceRenderingInfoKHR inheritanceRenderingInfo = {
@@ -680,4 +735,11 @@ void draw_frame(VulkanSystem *s) {
     }
 
     vk->currentFrame = (vk->currentFrame + 1) % 3;
-    }
+}
+
+void set_custom_fragment_shader(const uint32_t *spv, size_t size) {
+    custom_frag_spv = spv;
+    custom_frag_size = size;
+    custom_frag_pipeline = VK_NULL_HANDLE;
+    custom_frag_layout = VK_NULL_HANDLE;
+}

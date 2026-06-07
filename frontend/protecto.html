@@ -155,26 +155,136 @@
                     </div>
                 </section>
 
+                <!-- 6509 1MB RAM Bank Map Visualizer -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.15); border-color: var(--neon-blue);">
+                    <h2><span class="icon">💾</span> 6509 1 MB RAM Bank Monitor</h2>
+                    <p class="description">Visualizes the 16 banks of 64 KB RAM. Highlights active Code & Data banks.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px;" id="bankMapGrid">
+                        <!-- 16 bank blocks generated via JS -->
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-around; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                        <span style="color: var(--neon-blue); display: flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:10px; height:10px; background:var(--neon-blue); border-radius: 2px;"></span> Code Bank ($0000)</span>
+                        <span style="color: var(--neon-magenta); display: flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:10px; height:10px; background:var(--neon-magenta); border-radius: 2px;"></span> Data Bank ($0001)</span>
+                        <span style="color: #ba55d3; display: flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:10px; height:10px; background:#ba55d3; border-radius: 2px;"></span> Active Crossing</span>
+                    </div>
+                </section>
+
                 <!-- CABS Accounting ledger Status -->
                 <section class="card" style="box-shadow: 0 0 20px rgba(0, 255, 204, 0.1); border-color: #00ffcc;">
                     <h2><span class="icon">📈</span> CABS Accounting Balance</h2>
                     <p class="description">Real-time ledger updates from the on-chain double-entry ledger.</p>
                     
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <label class="reg-label" style="color: #00ffcc;">Select Ledger Token:</label>
+                        <select id="selectLedgerToken" class="input-glow" style="padding: 4px; font-size: 0.85rem; background: #000; color: #fff; border: 1px solid #00ffcc; width: 60%;">
+                            <option value="default">Loading Tokens...</option>
+                        </select>
+                    </div>
+
                     <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.15);">
                         <div class="ledger-row">
+                            <span class="ledger-label">CABS Target Wallet</span>
+                            <span class="ledger-value" id="ledgerUserAddr" style="font-size: 0.8rem; color: #ba55d3; font-family: monospace;">0x...</span>
+                        </div>
+                        <div class="ledger-row">
                             <span class="ledger-label">Account 1100 (User Balance)</span>
-                            <span class="ledger-value" id="ledgerAcc1100">0 OTRT</span>
+                            <span class="ledger-value" id="ledgerAcc1100">0 TOKEN</span>
                         </div>
                         <div class="ledger-row">
                             <span class="ledger-label">Account 1200 (Treasury Vault)</span>
-                            <span class="ledger-value" id="ledgerAcc1200" style="color: #00ffcc;">0 OTRT</span>
+                            <span class="ledger-value" id="ledgerAcc1200" style="color: #00ffcc;">0 TOKEN</span>
                         </div>
                         <div class="ledger-row">
                             <span class="ledger-label">Account 2200 (Accrued Diyat Fees)</span>
-                            <span class="ledger-value" id="ledgerAcc2200" style="color: var(--neon-magenta);">0 OTRT</span>
+                            <span class="ledger-value" id="ledgerAcc2200" style="color: var(--neon-magenta);">0 TOKEN</span>
+                        </div>
+                    </div>
+
+                    <!-- Token Integration Diagnostics -->
+                    <div id="tokenDiagnosticsSection" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(0, 255, 204, 0.15); display: none;">
+                        <h3 style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #00ffcc; margin-bottom: 8px; text-transform: uppercase;">On-Chain Integration Diagnostics</h3>
+                        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; border: 1px solid rgba(0, 255, 204, 0.1); font-family: monospace; font-size: 0.82rem; line-height: 1.4;">
+                            <div class="ledger-row" id="diagTypeRow" style="display: none;">
+                                <span class="ledger-label">Protocol Type</span>
+                                <span class="ledger-value" id="diagType" style="color: #ba55d3;">-</span>
+                            </div>
+                            <div class="ledger-row" id="diagMaxSupplyRow" style="display: none;">
+                                <span class="ledger-label">Max Supply Limit</span>
+                                <span class="ledger-value" id="diagMaxSupply">-</span>
+                            </div>
+                            <div class="ledger-row" id="diagMarketRateRow" style="display: none;">
+                                <span class="ledger-label">Affection Rate</span>
+                                <span class="ledger-value" id="diagMarketRate">-</span>
+                            </div>
+                            <div class="ledger-row" id="diagYueRow" style="display: none;">
+                                <span class="ledger-label">User Yue Bind</span>
+                                <span class="ledger-value" id="diagYue" style="font-size: 0.72rem; color: #ff7777;">-</span>
+                            </div>
+                            <div class="ledger-row" id="diagParentRow" style="display: none;">
+                                <span class="ledger-label" id="diagParentLabel">Dependency</span>
+                                <span class="ledger-value" id="diagParent" style="font-size: 0.72rem; color: var(--neon-blue);">-</span>
+                            </div>
+                            <div class="ledger-row" id="diagMemoryMappedRow" style="display: none;">
+                                <span class="ledger-label">Memory Mapped</span>
+                                <span class="ledger-value" id="diagMemoryMapped" style="color: var(--neon-magenta); font-weight: bold;">Yes ($D590-$D5B5)</span>
+                            </div>
                         </div>
                     </div>
                 </section>
+
+                <!-- CABS Financial Operations Desk -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 255, 204, 0.15); border-color: #00ffcc;" id="cabsFinOpsCard">
+                    <h2><span class="icon">💼</span> CABS Financial Operations</h2>
+                    <p class="description">DeFi purchase, redemption, and charging terminal for Dysnomia protocols.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Purchase / Redeem section -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.15);">
+                            <span class="reg-label" style="color: #00ffcc;">Market Exchange Desk</span>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                                <div>
+                                    <label style="font-size: 0.75rem; color: var(--text-secondary);">EXCHANGE AMOUNT:</label>
+                                    <input type="number" id="finOpAmount" class="input-glow" style="width: 90%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-family: monospace; font-size: 0.85rem;" placeholder="1.0" value="1.0">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: var(--text-secondary);">COUNTERPARTY TOKEN:</label>
+                                    <select id="selectCounterpartyToken" class="input-glow" style="width: 100%; background: #000; color: #fff; border: 1px solid #00ffcc; padding: 4px; font-size: 0.8rem;">
+                                        <!-- Will be populated dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                                <button class="btn" id="btnFinPurchase" style="border-color: #00ffcc; color: #fff; background: rgba(0,255,204,0.1); font-family: 'Orbitron', sans-serif; font-size: 0.8rem;">Purchase Selected</button>
+                                <button class="btn" id="btnFinRedeem" style="border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,127,0.1); font-family: 'Orbitron', sans-serif; font-size: 0.8rem;">Redeem Selected</button>
+                            </div>
+                        </div>
+
+                        <!-- Special Functions (Charge / Power / OptIn) -->
+                        <div id="finSpecialOps" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(186, 85, 211, 0.15); display: none;">
+                            <span class="reg-label" style="color: #ba55d3;" id="specialOpsLabel">Special Protocol Operations</span>
+                            
+                            <!-- Charge/Power inputs -->
+                            <div id="finChargeOps" style="margin-top: 8px; display: none;">
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">QING WAAT IDENTIFIER:</label>
+                                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                                    <input type="number" id="finQingWaat" class="input-glow" style="width: 50%; background: #000; color: #fff; border: 1px solid #ba55d3; padding: 4px; font-family: monospace; font-size: 0.85rem;" placeholder="0" value="0">
+                                    <button class="btn" id="btnFinCharge" style="width: 50%; border-color: #ba55d3; color: #fff; padding: 4px; font-size: 0.8rem; font-family: 'Orbitron', sans-serif;">Execute Charge</button>
+                                </div>
+                            </div>
+
+                            <!-- OptIn inputs -->
+                            <div id="finOptInOps" style="margin-top: 8px; display: none;">
+                                <label style="font-size: 0.75rem; color: var(--text-secondary);">SPENDER / CONTRACT ADDR:</label>
+                                <input type="text" id="finOptInAddr" class="input-glow" style="width: 95%; background: #000; color: #fff; border: 1px solid #ba55d3; padding: 4px; font-family: monospace; font-size: 0.8rem; margin-top: 4px;" placeholder="0x...">
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                                    <button class="btn" id="btnFinOptInTrue" style="width: 48%; border-color: #00ffcc; font-size: 0.75rem;">Allow Opt-In</button>
+                                    <button class="btn" id="btnFinOptInFalse" style="width: 48%; border-color: var(--neon-magenta); font-size: 0.75rem;">Revoke Opt-In</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 <!-- Protecto Enterprises Mail-Order Catalog -->
                 <section class="card" style="box-shadow: 0 0 20px rgba(255, 0, 127, 0.15); border-color: var(--neon-magenta);">
@@ -189,6 +299,8 @@
                                 <option value="2">SFD-1001 Dual Disk Drive</option>
                                 <option value="3">Commodore 1902 dual Monitor</option>
                                 <option value="4">Centronics Parallel Cable</option>
+                                <option value="5">Crush, Crumble and Chomp! (Epyx)</option>
+                                <option value="6">The Temple of Apshai (Epyx)</option>
                             </select>
                         </div>
 
@@ -208,6 +320,7 @@
     <!-- Web3 Scripts -->
     <script>
         let provider, signer, cpuContract, tokenContract;
+        let readProvider, writeSigner;
         let config = {};
         const cbmPalette = [
             "#000000", "#ffffff", "#880000", "#aaffff",
@@ -220,11 +333,61 @@
             "1": { retail: "$995.00", price: 12, name: "B128 Computer", stock: 145 },
             "2": { retail: "$895.00", price: 8, name: "SFD-1001 Disk Drive", stock: 82 },
             "3": { retail: "$499.00", price: 6, name: "1902 Monitor", stock: 37 },
-            "4": { retail: "$49.00", price: 1, name: "Centronics Cable", stock: 250 }
+            "4": { retail: "$49.00", price: 1, name: "Centronics Cable", stock: 250 },
+            "5": { retail: "$29.95", price: 2, name: "Crush, Crumble & Chomp!", stock: 120 },
+            "6": { retail: "$39.95", price: 3, name: "Temple of Apshai", stock: 95 }
         };
 
-        // Initialize Web3 Connections
+        // Initialize Web3 and DApp Config
         async function init() {
+            // 1. Fetch Configuration first (does not require window.ethereum)
+            try {
+                let res;
+                try {
+                    res = await fetch("/api/config");
+                    if (!res.ok) throw new Error("Relative fetch failed");
+                } catch (e) {
+                    console.log("Relative fetch failed, trying local server fallback...");
+                    res = await fetch("http://127.0.0.1:3000/api/config");
+                }
+                config = await res.json();
+            } catch (err) {
+                console.error("Failed to fetch server config:", err);
+                return;
+            }
+
+            const localhost = config.networks.localhost;
+            
+            const cpuABI = [
+                "function peek(uint256 addr) external view returns (uint256)",
+                "function poke(uint256 addr, uint256 val) external",
+                "function getCPUState() external view returns (uint256 A, uint256 X, uint256 Y, uint256 SR, uint256 SP, uint256 PC)",
+                "function peekUser(address user, uint256 addr) external view returns (uint256)",
+                "function pokeUser(address user, uint256 addr, uint256 val) external"
+            ];
+            
+            const tokenABI = [
+                "function balanceOf(address account) external view returns (uint256)",
+                "function maxSupply() external view returns (uint256)",
+                "function GetMarketRate(address asset) external view returns (uint256)",
+                "function Type() external view returns (string)",
+                "function Zuo() external view returns (address)",
+                "function Qi() external view returns (address)",
+                "function Mai() external view returns (address)",
+                "function Xia() external view returns (address)",
+                "function Xie() external view returns (address)",
+                "function Yan(address user) external view returns (address)",
+                "function approve(address spender, uint256 value) external returns (bool)",
+                "function Purchase(address counterparty, uint256 amount) external",
+                "function Redeem(address counterparty, uint256 amount) external",
+                "function Charge(uint256 waat) external returns (uint256)",
+                "function Power(uint256 waat) external returns (uint256, uint256, uint256)",
+                "function OptIn(address contractAddr, bool allow) external"
+            ];
+
+            readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+
+            // 2. Try to hook up Web3 Provider/Signer if window.ethereum exists
             if (window.ethereum) {
                 try {
                     provider = new ethers.BrowserProvider(window.ethereum);
@@ -234,33 +397,105 @@
                         document.getElementById("btnConnect").innerText = "Wallet Linked";
                         document.getElementById("btnConnect").classList.add("btn-success");
                     }
-                    
-                    const res = await fetch("/config/user_config.json");
-                    config = await res.json();
-                    
-                    const localhost = config.networks.localhost;
-                    
-                    const cpuABI = [
-                        "function peek(uint16 addr) external view returns (uint8)",
-                        "function poke(uint16 addr, uint8 val) external",
-                        "function getCPUState() external view returns (uint8 A, uint8 X, uint8 Y, uint8 SR, uint8 SP, uint16 PC)"
-                    ];
-                    
-                    const tokenABI = [
-                        "function balanceOf(address account) external view returns (uint256)"
-                    ];
-
-                    cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer || provider);
-                    tokenContract = new ethers.Contract(localhost.oregonTrailTokenAddress, tokenABI, signer || provider);
-                    
-                    setupCatalogUI();
-                    startSimulationLoop();
-                    
                 } catch (e) {
-                    console.error("Web3 init failed:", e);
+                    console.warn("Wallet signer connection failed:", e);
                 }
             } else {
                 console.log("No Ethereum browser extension found.");
+            }
+
+            // Set up write signer
+            writeSigner = signer;
+
+            // 3. Instantiate core contracts (read-only for telemetry loop)
+            cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, readProvider);
+
+            // 4. Populate Token Dropdown from localhost config
+            const selectEl = document.getElementById("selectLedgerToken");
+            if (selectEl) {
+                selectEl.innerHTML = "";
+                
+                const tokenKeys = [
+                    { name: "OTRT (Oregon Trail Token)", key: "oregonTrailToken", symbol: "OTRT" },
+                    { name: "OTW (Wagon)", key: "oregonTrailWagon", symbol: "OTW" },
+                    { name: "OTO (Oxen)", key: "oregonTrailOxen", symbol: "OTO" },
+                    { name: "OTA (Axle)", key: "oregonTrailAxle", symbol: "OTA" },
+                    { name: "OTT (Tongue)", key: "oregonTrailTongue", symbol: "OTT" },
+                    { name: "OTWH (Wheel)", key: "oregonTrailWheel", symbol: "OTWH" },
+                    { name: "OTC (Cloth)", key: "oregonTrailCloth", symbol: "OTC" },
+                    { name: "QI Token", key: "QI", symbol: "QI" },
+                    { name: "MAI Token", key: "MAI", symbol: "MAI" },
+                    { name: "XIA Token", key: "XIA", symbol: "XIA" },
+                    { name: "XIE Token", key: "XIE", symbol: "XIE" },
+                    { name: "CHAN Token", key: "CHAN", symbol: "CHAN" },
+                    { name: "SEI Token", key: "SEI", symbol: "SEI" },
+                    { name: "CHOA Token", key: "CHOA", symbol: "CHOA" },
+                    { name: "CHEON Token", key: "CHEON", symbol: "CHEON" },
+                    { name: "CHO Token", key: "CHO", symbol: "CHO" },
+                    { name: "TestLAU Token", key: "TestLAU", symbol: "LAU" }
+                ];
+
+                tokenKeys.forEach(t => {
+                    const addr = localhost[t.key] || localhost[t.key + "Address"];
+                    if (addr && addr.startsWith("0x")) {
+                        const opt = document.createElement("option");
+                        opt.value = addr;
+                        opt.dataset.symbol = t.symbol;
+                        opt.innerText = t.name;
+                        selectEl.appendChild(opt);
+                    }
+                });
+
+                // Set initial tokenContract and sync configuration to CPU registers
+                let initialTokenAddr = selectEl.value;
+                if (initialTokenAddr && initialTokenAddr !== "default") {
+                    tokenContract = new ethers.Contract(initialTokenAddr, tokenABI, readProvider);
+                    syncCpuTokenConfig(initialTokenAddr);
+                } else {
+                    const defaultAddr = localhost.oregonTrailToken || localhost.oregonTrailTokenAddress;
+                    tokenContract = new ethers.Contract(defaultAddr, tokenABI, readProvider);
+                    syncCpuTokenConfig(defaultAddr);
+                }
+
+                // Add change listener
+                selectEl.addEventListener("change", async (e) => {
+                    const tokenAddr = e.target.value;
+                    if (tokenAddr && tokenAddr.startsWith("0x")) {
+                        tokenContract = new ethers.Contract(tokenAddr, tokenABI, readProvider);
+                        await syncCpuTokenConfig(tokenAddr);
+                    }
+                    updateSpecialOpsUI();
+                });
+            } else {
+                tokenContract = new ethers.Contract(localhost.oregonTrailTokenAddress || localhost.oregonTrailToken, tokenABI, activeProvider);
+            }
+            
+            initBankGrid();
+            setupCatalogUI();
+            updateSpecialOpsUI();
+            setupDeFiOperations();
+            startSimulationLoop();
+        }
+
+        // Initialize 6509 1MB RAM Bank Visualizer Grid
+        function initBankGrid() {
+            const grid = document.getElementById("bankMapGrid");
+            if (!grid) return;
+            grid.innerHTML = "";
+            for (let i = 0; i < 16; i++) {
+                const block = document.createElement("div");
+                block.id = `bank-block-${i}`;
+                block.style.background = "rgba(0,0,0,0.4)";
+                block.style.border = "1px solid rgba(255,255,255,0.1)";
+                block.style.borderRadius = "4px";
+                block.style.padding = "6px 0";
+                block.style.textAlign = "center";
+                block.style.fontSize = "0.75rem";
+                block.style.fontFamily = "monospace";
+                block.style.color = "var(--text-secondary)";
+                block.style.transition = "all 0.3s ease";
+                block.innerHTML = `BANK ${i}<br><span style="font-size: 0.65rem; color: rgba(255,255,255,0.25)">64K</span>`;
+                grid.appendChild(block);
             }
         }
 
@@ -283,10 +518,12 @@
                 
                 try {
                     const itemId = parseInt(document.getElementById("selectCatalogItem").value);
+                    const activeSigner = await getWriteSigner();
+                    const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
                     // Write to Protecto catalog selection register
-                    await (await cpuContract.poke(54880, itemId)).wait();
+                    await (await writeCpu.poke(54880, itemId)).wait();
                     // Strobe Order desk trigger
-                    await (await cpuContract.poke(54892, 1)).wait();
+                    await (await writeCpu.poke(54892, 1)).wait();
                     alert("Order placed successfully on-chain!");
                 } catch (err) {
                     console.error("Order desk transaction failed:", err);
@@ -301,8 +538,10 @@
                 if (!cpuContract) return;
                 const modeVal = parseInt(e.target.value);
                 try {
+                    const activeSigner = await getWriteSigner();
+                    const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
                     // Update CPU Mode Register $D50C (54540)
-                    await (await cpuContract.poke(54540, modeVal)).wait();
+                    await (await writeCpu.poke(54540, modeVal)).wait();
                 } catch (err) {
                     console.error("Failed to write CPU Mode register:", err);
                 }
@@ -313,27 +552,141 @@
         const canvas = document.getElementById("crtScreen");
         const ctx = canvas.getContext("2d");
 
+        let demoFrame = 0;
         function drawCRTPlaceholder() {
+            demoFrame++;
+            const selectEl = document.getElementById("selectCatalogItem");
+            const itemId = selectEl ? selectEl.value : "1";
+
             ctx.fillStyle = "#0d121c";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Grid scanlines effect
-            ctx.fillStyle = "rgba(0, 242, 254, 0.05)";
-            for (let y = 0; y < canvas.height; y += 4) {
-                ctx.fillRect(0, y, canvas.width, 2);
+
+            if (itemId === "5") {
+                // Epyx Crush, Crumble & Chomp! Phosphor Green Demo
+                ctx.fillStyle = "#0f2015";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Grid/Streets
+                ctx.strokeStyle = "rgba(0, 255, 100, 0.15)";
+                ctx.lineWidth = 1;
+                for (let x = 15; x < canvas.width; x += 25) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height - 40);
+                    ctx.stroke();
+                }
+                for (let y = 15; y < canvas.height - 40; y += 25) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+
+                // Monster & Helicopter
+                let monsterX = 160 + Math.sin(demoFrame * 0.04) * 60;
+                let monsterY = 80 + Math.cos(demoFrame * 0.03) * 25;
+                let heliX = monsterX + Math.cos(demoFrame * 0.08) * 45;
+                let heliY = monsterY - 25;
+
+                // Draw buildings
+                ctx.fillStyle = "rgba(0, 255, 100, 0.3)";
+                for (let bx = 3; bx < canvas.width; bx += 25) {
+                    for (let by = 3; by < canvas.height - 40; by += 25) {
+                        let dist = Math.hypot(bx + 8 - monsterX, by + 8 - monsterY);
+                        if (dist > 20) {
+                            ctx.fillRect(bx, by, 12, 12);
+                        } else {
+                            ctx.fillStyle = "rgba(0, 255, 100, 0.05)";
+                            ctx.fillRect(bx, by, 12, 12);
+                            ctx.fillStyle = "rgba(0, 255, 100, 0.3)";
+                        }
+                    }
+                }
+
+                // Monster Sprite
+                ctx.fillStyle = "#00ff66";
+                ctx.beginPath();
+                ctx.arc(monsterX, monsterY, 7, 0, Math.PI * 2);
+                ctx.fill();
+                // Flame
+                if (demoFrame % 6 < 3) {
+                    ctx.fillStyle = "#ffaa00";
+                    ctx.beginPath();
+                    ctx.moveTo(monsterX + 4, monsterY - 2);
+                    ctx.lineTo(monsterX + 18, monsterY - 6);
+                    ctx.lineTo(monsterX + 15, monsterY + 6);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Helicopter
+                ctx.fillStyle = "#33ccff";
+                ctx.fillRect(heliX - 5, heliY - 2, 10, 4);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(heliX - 8, heliY - 3, 16, 1);
+
+                // Stats / HUD text
+                ctx.fillStyle = "#00ff66";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("EPYX INC. 1981 - GORGON STOMPING SF", 15, 175);
+                ctx.fillText(`MONSTER COORDS: X=$${Math.round(monsterX).toString(16).toUpperCase()} Y=$${Math.round(monsterY).toString(16).toUpperCase()}`, 15, 188);
+
+            } else if (itemId === "6") {
+                // Epyx Temple of Apshai Phosphor Amber Demo
+                ctx.fillStyle = "#261500";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Dungeon Wall Blocks
+                ctx.strokeStyle = "rgba(255, 150, 0, 0.2)";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(20, 20, 280, 130);
+                ctx.strokeRect(80, 20, 160, 130);
+
+                let playerX = 160 + Math.sin(demoFrame * 0.03) * 50;
+                let playerY = 85 + Math.cos(demoFrame * 0.03) * 20;
+                
+                // Warrior Sprite
+                ctx.fillStyle = "#ffaa00";
+                ctx.fillRect(playerX - 3, playerY - 6, 6, 12);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(playerX + (Math.sin(demoFrame * 0.05) > 0 ? 3 : -6), playerY - 2, 3, 2); 
+
+                // Skeleton Monster
+                let skelX = 160 - Math.sin(demoFrame * 0.03) * 50;
+                let skelY = 85 - Math.cos(demoFrame * 0.03) * 20;
+                ctx.fillStyle = "#dddddd";
+                ctx.fillRect(skelX - 2, skelY - 6, 4, 12); 
+
+                // HUD text
+                ctx.fillStyle = "#ff9900";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("EPYX INC. 1980 - DUNGEONS OF APSHAI", 15, 175);
+                ctx.fillText(`PLAYER COORDS: X=$${Math.round(playerX).toString(16).toUpperCase()} Y=$${Math.round(playerY).toString(16).toUpperCase()} | HEALTH: 92%`, 15, 188);
+
+            } else {
+                // Classic CBM-II 80-Column Screen
+                // Grid scanlines effect
+                ctx.fillStyle = "rgba(0, 242, 254, 0.05)";
+                for (let y = 0; y < canvas.height; y += 4) {
+                    ctx.fillRect(0, y, canvas.width, 2);
+                }
+                
+                // Header text
+                ctx.fillStyle = "var(--neon-blue)";
+                ctx.font = "bold 11px monospace";
+                ctx.fillText("*** COMMODORE BASIC VERSION 4.0 ***", 160, 40);
+                ctx.fillText("122367 BYTES FREE", 230, 60);
+                ctx.fillText("READY.", 30, 90);
+                
+                // Cursor line
+                if (Math.floor(Date.now() / 400) % 2 === 0) {
+                    ctx.fillRect(75, 80, 8, 12);
+                }
             }
-            
-            // Header text
-            ctx.fillStyle = "var(--neon-blue)";
-            ctx.font = "bold 11px monospace";
-            ctx.fillText("*** COMMODORE BASIC VERSION 4.0 ***", 160, 40);
-            ctx.fillText("122367 BYTES FREE", 230, 60);
-            ctx.fillText("READY.", 30, 90);
-            
-            // Cursor line
-            if (Math.floor(Date.now() / 400) % 2 === 0) {
-                ctx.fillRect(75, 80, 8, 12);
-            }
+
+            // Curvature overlay
+            ctx.fillStyle = "rgba(255, 255, 255, 0.01)";
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, 200, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // Dynamic State Polling Loop
@@ -342,33 +695,195 @@
                 if (!cpuContract) return;
                 
                 try {
-                    // 1. Fetch CPU state
-                    const state = await cpuContract.getCPUState();
-                    document.getElementById("cpuRegA").innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0');
-                    document.getElementById("cpuRegX").innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0');
-                    document.getElementById("cpuRegY").innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0');
-                    document.getElementById("cpuRegPC").innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0');
+                    let userAddr;
+                    if (signer) {
+                        try {
+                            userAddr = await signer.getAddress();
+                        } catch (se) {}
+                    }
+                    if (!userAddr) {
+                        userAddr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+                    }
+
+                    // 1. Fetch CPU state using peekUser context
+                    const regA = await cpuContract.peekUser(userAddr, 128);
+                    const regX = await cpuContract.peekUser(userAddr, 129);
+                    const regY = await cpuContract.peekUser(userAddr, 130);
+                    const regPC = await cpuContract.peekUser(userAddr, 133);
+                    document.getElementById("cpuRegA").innerText = Number(regA).toString(16).toUpperCase().padStart(2, '0');
+                    document.getElementById("cpuRegX").innerText = Number(regX).toString(16).toUpperCase().padStart(2, '0');
+                    document.getElementById("cpuRegY").innerText = Number(regY).toString(16).toUpperCase().padStart(2, '0');
+                    document.getElementById("cpuRegPC").innerText = Number(regPC).toString(16).toUpperCase().padStart(4, '0');
 
                     // 2. Fetch Zero-Page Bank selectors (Address 0 and 1)
-                    const execBank = await cpuContract.peek(0);
-                    const dataBank = await cpuContract.peek(1);
+                    const execBank = await cpuContract.peekUser(userAddr, 0);
+                    const dataBank = await cpuContract.peekUser(userAddr, 1);
                     document.getElementById("execBankText").innerText = execBank;
                     document.getElementById("dataBankText").innerText = dataBank;
 
+                    // Update 1 MB Bank map visuals
+                    for (let i = 0; i < 16; i++) {
+                        const block = document.getElementById(`bank-block-${i}`);
+                        if (block) {
+                            if (Number(i) === Number(execBank) && Number(i) === Number(dataBank)) {
+                                block.style.borderColor = "#ba55d3";
+                                block.style.background = "rgba(186, 85, 211, 0.25)";
+                                block.style.boxShadow = "0 0 10px rgba(186, 85, 211, 0.4)";
+                                block.style.color = "#ba55d3";
+                            } else if (Number(i) === Number(execBank)) {
+                                block.style.borderColor = "var(--neon-blue)";
+                                block.style.background = "rgba(0, 242, 254, 0.25)";
+                                block.style.boxShadow = "0 0 10px rgba(0, 242, 254, 0.4)";
+                                block.style.color = "var(--neon-blue)";
+                            } else if (Number(i) === Number(dataBank)) {
+                                block.style.borderColor = "var(--neon-magenta)";
+                                block.style.background = "rgba(255, 0, 127, 0.25)";
+                                block.style.boxShadow = "0 0 10px rgba(255, 0, 127, 0.4)";
+                                block.style.color = "var(--neon-magenta)";
+                            } else {
+                                block.style.borderColor = "rgba(255,255,255,0.1)";
+                                block.style.background = "rgba(0,0,0,0.4)";
+                                block.style.boxShadow = "none";
+                                block.style.color = "var(--text-secondary)";
+                            }
+                        }
+                    }
+
                     // 3. Update CABS Ledger Accounts
-                    if (tokenContract && signer) {
-                        const userAddr = await signer.getAddress();
-                        const userBalance = await tokenContract.balanceOf(userAddr);
-                        document.getElementById("ledgerAcc1100").innerText = ethers.formatUnits(userBalance, 18) + " OTRT";
+                    if (tokenContract) {
+                        // Update target address display in UI
+                        const addrEl = document.getElementById("ledgerUserAddr");
+                        if (addrEl) {
+                            addrEl.innerText = userAddr.substring(0, 8) + "..." + userAddr.substring(38);
+                        }
+
+                        const selectEl = document.getElementById("selectLedgerToken");
+                        const selectedOpt = selectEl ? selectEl.options[selectEl.selectedIndex] : null;
+                        const symbol = selectedOpt ? selectedOpt.dataset.symbol : "TOKEN";
+                        
+                        try {
+                            const userBalance = await tokenContract.balanceOf(userAddr);
+                            document.getElementById("ledgerAcc1100").innerText = parseFloat(ethers.formatUnits(userBalance, 18)).toFixed(4) + " " + symbol;
+                        } catch (be) {
+                            console.error("Failed to fetch user balance:", be);
+                            document.getElementById("ledgerAcc1100").innerText = "Error " + symbol;
+                        }
+
+                        try {
+                            // Query treasury balance
+                            const treasuryAddr = "0x1111111111111111111111111111111111111111";
+                            const treasuryBalance = await tokenContract.balanceOf(treasuryAddr);
+                            document.getElementById("ledgerAcc1200").innerText = parseFloat(ethers.formatUnits(treasuryBalance, 18)).toFixed(4) + " " + symbol;
+                        } catch (te) {
+                            console.error("Failed to fetch treasury balance:", te);
+                            document.getElementById("ledgerAcc1200").innerText = "Error " + symbol;
+                        }
+                            
+                            // --- On-Chain Integration Diagnostics logic ---
+                            const diagSection = document.getElementById("tokenDiagnosticsSection");
+                            const diagTypeRow = document.getElementById("diagTypeRow");
+                            const diagMaxSupplyRow = document.getElementById("diagMaxSupplyRow");
+                            const diagMarketRateRow = document.getElementById("diagMarketRateRow");
+                            const diagYueRow = document.getElementById("diagYueRow");
+                            const diagParentRow = document.getElementById("diagParentRow");
+                            const diagMemoryMappedRow = document.getElementById("diagMemoryMappedRow");
+
+                            if (diagSection) {
+                                // Default hide everything
+                                diagSection.style.display = "block";
+                                diagTypeRow.style.display = "none";
+                                diagMaxSupplyRow.style.display = "none";
+                                diagMarketRateRow.style.display = "none";
+                                diagYueRow.style.display = "none";
+                                diagParentRow.style.display = "none";
+                                diagMemoryMappedRow.style.display = "none";
+
+                                // OTRT maps to memory directly
+                                if (symbol === "OTRT") {
+                                    diagMemoryMappedRow.style.display = "flex";
+                                } else {
+                                    // Try fetching Type
+                                    try {
+                                        const tType = await tokenContract.Type();
+                                        document.getElementById("diagType").innerText = tType;
+                                        diagTypeRow.style.display = "flex";
+                                    } catch (e) {}
+
+                                    // Try fetching maxSupply
+                                    try {
+                                        const maxSup = await tokenContract.maxSupply();
+                                        document.getElementById("diagMaxSupply").innerText = maxSup.toString();
+                                        diagMaxSupplyRow.style.display = "flex";
+                                    } catch (e) {}
+
+                                    // Try fetching Market Rate for Affection Contract
+                                    try {
+                                        const affAddress = "0x24F0154C1dCe548AdF15da2098Fdd8B8A3B8151D";
+                                        const rate = await tokenContract.GetMarketRate(affAddress);
+                                        document.getElementById("diagMarketRate").innerText = parseFloat(ethers.formatUnits(rate, 18)).toFixed(2) + " AFF";
+                                        diagMarketRateRow.style.display = "flex";
+                                    } catch (e) {}
+
+                                    // Try fetching Yan (Yue mapping for CHAN)
+                                    try {
+                                        const yue = await tokenContract.Yan(userAddr);
+                                        if (yue && yue !== "0x0000000000000000000000000000000000000000") {
+                                            document.getElementById("diagYue").innerText = yue.substring(0, 10) + "...";
+                                            diagYueRow.style.display = "flex";
+                                        }
+                                    } catch (e) {}
+
+                                    // Try fetching parents dependencies: Zuo, Qi, Mai, Xia, Xie
+                                    let parentAddr = null;
+                                    let parentName = "";
+                                    try {
+                                        parentAddr = await tokenContract.Xie();
+                                        parentName = "Parent: XIE";
+                                    } catch (e) {
+                                        try {
+                                            parentAddr = await tokenContract.Xia();
+                                            parentName = "Parent: XIA";
+                                        } catch (e2) {
+                                            try {
+                                                parentAddr = await tokenContract.Mai();
+                                                parentName = "Parent: MAI";
+                                            } catch (e3) {
+                                                try {
+                                                    parentAddr = await tokenContract.Qi();
+                                                    parentName = "Parent: QI";
+                                                } catch (e4) {
+                                                    try {
+                                                        parentAddr = await tokenContract.Zuo();
+                                                        parentName = "Parent: ZuoQing";
+                                                    } catch (e5) {}
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (parentAddr && parentAddr !== "0x0000000000000000000000000000000000000000") {
+                                        document.getElementById("diagParentLabel").innerText = parentName;
+                                        document.getElementById("diagParent").innerText = parentAddr.substring(0, 10) + "...";
+                                        diagParentRow.style.display = "flex";
+                                    }
+                                }
+                            }
+                        } catch (be) {
+                            console.error("Failed to fetch token balances:", be);
+                        }
                     }
                     
-                    // Peek accounts receivable dues directly from register 54706-54709
-                    const r0 = await cpuContract.peek(54706);
-                    const r1 = await cpuContract.peek(54707);
-                    const r2 = await cpuContract.peek(54708);
-                    const r3 = await cpuContract.peek(54709);
-                    const taxDue = (r3 << 24) | (r2 << 16) | (r1 << 8) | r0;
-                    document.getElementById("ledgerAcc2200").innerText = taxDue + " OTRT";
+                    // Peek accounts receivable dues directly from register 54706-54709 using user context
+                    const r0 = await cpuContract.peekUser(userAddr, 54706);
+                    const r1 = await cpuContract.peekUser(userAddr, 54707);
+                    const r2 = await cpuContract.peekUser(userAddr, 54708);
+                    const r3 = await cpuContract.peekUser(userAddr, 54709);
+                    const taxDue = (Number(r3) << 24) | (Number(r2) << 16) | (Number(r1) << 8) | Number(r0);
+                    
+                    const selectEl2 = document.getElementById("selectLedgerToken");
+                    const selectedOpt2 = selectEl2 ? selectEl2.options[selectEl2.selectedIndex] : null;
+                    const symbol2 = selectedOpt2 ? selectedOpt2.dataset.symbol : "TOKEN";
+                    document.getElementById("ledgerAcc2200").innerText = taxDue + " " + symbol2;
 
                 } catch (err) {
                     console.error("B128 telemetry error:", err);
@@ -376,6 +891,254 @@
                 
                 drawCRTPlaceholder();
             }, 500);
+        }
+
+        // Non-blocking helper to fetch write signer lazily when needed
+        async function getWriteSigner() {
+            if (writeSigner) return writeSigner;
+            if (signer) {
+                writeSigner = signer;
+                return writeSigner;
+            }
+            try {
+                const fallbackProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                writeSigner = await fallbackProvider.getSigner(0);
+                return writeSigner;
+            } catch (e) {
+                console.warn("Local RPC write signer could not be retrieved:", e);
+                return null;
+            }
+        }
+
+        // Sync the selected token address to CPU memory mapped registers $D590-$D5A3 (54672-54691)
+        async function syncCpuTokenConfig(tokenAddr) {
+            if (!cpuContract || !tokenAddr || !tokenAddr.startsWith("0x")) return;
+            try {
+                // Resolve write signer lazily
+                const activeSigner = await getWriteSigner();
+                // Use a write-capable instance of cpuContract
+                const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
+                // Parse 20-byte address into bytes
+                const bytes = ethers.getBytes(tokenAddr);
+                // Poke each byte into $D590-$D5A3 (54672-54691)
+                for (let i = 0; i < 20; i++) {
+                    await (await writeCpu.poke(54672 + i, bytes[i])).wait();
+                }
+                console.log(`Successfully synced selected token ${tokenAddr} to CPU registers $D590-$D5A3.`);
+            } catch (err) {
+                console.warn("Failed to sync selected token address to CPU memory registers:", err);
+            }
+        }
+
+        // Update Special Operations UI based on Token Type
+        function updateSpecialOpsUI() {
+            const selectEl = document.getElementById("selectLedgerToken");
+            if (!selectEl) return;
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            const symbol = selectedOpt ? selectedOpt.dataset.symbol : "";
+
+            const specialOps = document.getElementById("finSpecialOps");
+            const specialLabel = document.getElementById("specialOpsLabel");
+            const chargeOps = document.getElementById("finChargeOps");
+            const optInOps = document.getElementById("finOptInOps");
+
+            if (specialOps) {
+                if (symbol === "XIA") {
+                    specialOps.style.display = "block";
+                    specialLabel.innerText = "XIA Protocol Charge Desk";
+                    chargeOps.style.display = "block";
+                    optInOps.style.display = "none";
+                } else if (symbol === "XIE") {
+                    specialOps.style.display = "block";
+                    specialLabel.innerText = "XIE Protocol Power Desk";
+                    chargeOps.style.display = "block";
+                    optInOps.style.display = "none";
+                } else if (symbol === "CHAN") {
+                    specialOps.style.display = "block";
+                    specialLabel.innerText = "CHAN Sky Opt-In Desk";
+                    chargeOps.style.display = "none";
+                    optInOps.style.display = "block";
+                } else {
+                    specialOps.style.display = "none";
+                }
+            }
+        }
+
+        // Setup DeFi Operations handlers
+        function setupDeFiOperations() {
+            const selectEl = document.getElementById("selectLedgerToken");
+            const selectCounter = document.getElementById("selectCounterpartyToken");
+            if (selectEl && selectCounter) {
+                const syncCounterparty = () => {
+                    selectCounter.innerHTML = "";
+                    Array.from(selectEl.options).forEach(opt => {
+                        const newOpt = document.createElement("option");
+                        newOpt.value = opt.value;
+                        newOpt.dataset.symbol = opt.dataset.symbol;
+                        newOpt.innerText = opt.innerText;
+                        selectCounter.appendChild(newOpt);
+                    });
+                };
+                syncCounterparty();
+            }
+
+            // Purchase Handler
+            document.getElementById("btnFinPurchase").addEventListener("click", async () => {
+                if (!signer) {
+                    alert("Please connect a wallet to perform write operations.");
+                    return;
+                }
+                const btn = document.getElementById("btnFinPurchase");
+                btn.innerText = "Processing...";
+                btn.disabled = true;
+
+                try {
+                    const amountVal = document.getElementById("finOpAmount").value;
+                    const amount = ethers.parseUnits(amountVal, 18);
+                    const counterpartyAddr = document.getElementById("selectCounterpartyToken").value;
+                    
+                    const selectedTokenAddr = selectEl.value;
+
+                    // 1. Get market rate from selected token contract
+                    const activeProvider = signer;
+                    const contract = new ethers.Contract(selectedTokenAddr, tokenABI, activeProvider);
+                    const rate = await contract.GetMarketRate(counterpartyAddr);
+                    
+                    if (rate === 0n) {
+                        throw new Error("Market rate not found or token pairing invalid.");
+                    }
+
+                    const cost = (amount * rate) / ethers.parseUnits("1", 18);
+
+                    // 2. Approve counterparty token spending to the selected token contract
+                    const counterpartyContract = new ethers.Contract(counterpartyAddr, tokenABI, activeProvider);
+                    console.log(`Approving ${cost.toString()} of counterparty token to ${selectedTokenAddr}...`);
+                    const txApprove = await counterpartyContract.approve(selectedTokenAddr, cost);
+                    await txApprove.wait();
+
+                    // 3. Purchase
+                    console.log(`Purchasing selected token using counterparty token...`);
+                    const txPurchase = await contract.Purchase(counterpartyAddr, amount);
+                    await txPurchase.wait();
+
+                    alert("Purchase successful!");
+                } catch (err) {
+                    console.error("Purchase operation failed:", err);
+                    alert("Purchase failed: " + err.message);
+                } finally {
+                    btn.innerText = "Purchase Selected";
+                    btn.disabled = false;
+                }
+            });
+
+            // Redeem Handler
+            document.getElementById("btnFinRedeem").addEventListener("click", async () => {
+                if (!signer) {
+                    alert("Please connect a wallet to perform write operations.");
+                    return;
+                }
+                const btn = document.getElementById("btnFinRedeem");
+                btn.innerText = "Processing...";
+                btn.disabled = true;
+
+                try {
+                    const amountVal = document.getElementById("finOpAmount").value;
+                    const amount = ethers.parseUnits(amountVal, 18);
+                    const counterpartyAddr = document.getElementById("selectCounterpartyToken").value;
+                    
+                    const selectedTokenAddr = selectEl.value;
+
+                    // 1. Approve selected token spending to itself
+                    const activeProvider = signer;
+                    const contract = new ethers.Contract(selectedTokenAddr, tokenABI, activeProvider);
+                    console.log(`Approving ${amount.toString()} of selected token to itself...`);
+                    const txApprove = await contract.approve(selectedTokenAddr, amount);
+                    await txApprove.wait();
+
+                    // 2. Redeem
+                    console.log(`Redeeming selected token to counterparty...`);
+                    const txRedeem = await contract.Redeem(counterpartyAddr, amount);
+                    await txRedeem.wait();
+
+                    alert("Redemption successful!");
+                } catch (err) {
+                    console.error("Redeem operation failed:", err);
+                    alert("Redemption failed: " + err.message);
+                } finally {
+                    btn.innerText = "Redeem Selected";
+                    btn.disabled = false;
+                }
+            });
+
+            // Charge / Power Handler
+            document.getElementById("btnFinCharge").addEventListener("click", async () => {
+                if (!signer) {
+                    alert("Please connect a wallet to perform write operations.");
+                    return;
+                }
+                const btn = document.getElementById("btnFinCharge");
+                btn.innerText = "Charging...";
+                btn.disabled = true;
+
+                try {
+                    const waatVal = parseInt(document.getElementById("finQingWaat").value);
+                    const selectedTokenAddr = selectEl.value;
+                    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+                    const symbol = selectedOpt ? selectedOpt.dataset.symbol : "";
+
+                    const activeProvider = signer;
+                    const contract = new ethers.Contract(selectedTokenAddr, tokenABI, activeProvider);
+
+                    if (symbol === "XIA") {
+                        const tx = await contract.Charge(waatVal);
+                        await tx.wait();
+                        alert("XIA Charge executed successfully!");
+                    } else if (symbol === "XIE") {
+                        const tx = await contract.Power(waatVal);
+                        await tx.wait();
+                        alert("XIE Power function executed successfully!");
+                    }
+                } catch (err) {
+                    console.error("Charge/Power operation failed:", err);
+                    alert("Operation failed: " + err.message);
+                } finally {
+                    btn.innerText = "Execute Charge";
+                    btn.disabled = false;
+                }
+            });
+
+            // Opt-In true/false Handlers
+            const handleOptIn = (allow) => async () => {
+                if (!signer) {
+                    alert("Please connect a wallet to perform write operations.");
+                    return;
+                }
+                const btnId = allow ? "btnFinOptInTrue" : "btnFinOptInFalse";
+                const btn = document.getElementById(btnId);
+                btn.innerText = "...";
+                btn.disabled = true;
+
+                try {
+                    const contractAddr = document.getElementById("finOptInAddr").value;
+                    const selectedTokenAddr = selectEl.value;
+
+                    const activeProvider = signer;
+                    const contract = new ethers.Contract(selectedTokenAddr, tokenABI, activeProvider);
+
+                    const tx = await contract.OptIn(contractAddr, allow);
+                    await tx.wait();
+                    alert(`CHAN Sky Opt-In set to ${allow} successfully!`);
+                } catch (err) {
+                    console.error("OptIn operation failed:", err);
+                    alert("OptIn failed: " + err.message);
+                } finally {
+                    btn.innerText = allow ? "Allow Opt-In" : "Revoke Opt-In";
+                    btn.disabled = false;
+                }
+            };
+
+            document.getElementById("btnFinOptInTrue").addEventListener("click", handleOptIn(true));
+            document.getElementById("btnFinOptInFalse").addEventListener("click", handleOptIn(false));
         }
 
         // Wallet link binding

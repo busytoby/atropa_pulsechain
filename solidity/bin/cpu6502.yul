@@ -29,7 +29,7 @@ object "CPU6502Emulator" {
             
             // Helper to get non-overlapping memory offset for C64 registers
 
-            // Helper to get active context user address
+            // Helper to resolve context user
             function getContextUser() -> user {
                 user := mload(0x1F0)
                 if iszero(user) {
@@ -37,11 +37,85 @@ object "CPU6502Emulator" {
                 }
             }
 
-            // Helper to get namespaced storage slot for a specific user and C64 address
-            function getUserSlot(addr) -> slot {
-                mstore(0x00, getContextUser())
+            // Helper to get strictly private storage slot for internal registers (avoiding recursion in getUserSlot)
+            function getUserSlotPrivate(addr) -> slot {
+                let user := getContextUser()
+                mstore(0x00, user)
                 mstore(0x20, addr)
                 slot := keccak256(0x00, 64)
+            }
+
+            // Helper to get namespaced storage slot for a specific user and C64 address
+            function getUserSlot(addr) -> slot {
+                let user := getContextUser()
+                
+                // Check if shared screen mode is enabled at register $D50D (54541)
+                let sharedMode := and(sload(getUserSlotPrivate(54541)), 0xFF)
+                if sharedMode {
+                    // Shared ranges: Screen RAM (1024-2047), VIC registers (53248-53311), Color RAM (55296-56295)
+                    if or(and(iszero(lt(addr, 1024)), lt(addr, 2048)),
+                          or(and(iszero(lt(addr, 53248)), lt(addr, 53312)),
+                             and(iszero(lt(addr, 55296)), lt(addr, 56296)))) {
+                        user := 0x5555555555555555555555555555555555555555
+                    }
+                }
+
+                mstore(0x00, user)
+                mstore(0x20, addr)
+                slot := keccak256(0x00, 64)
+            }
+
+            // Helper to query and excise tax via on-chain ERC20 first, fallback to slot 848 thereafter.
+            function exciseOnChainTax(taxAmount) -> taxPaidSuccess {
+                taxPaidSuccess := 0
+                // Target token address: dynamically reconstructed from $D590 - $D5A3 (54672 to 54691)
+                let tokenAddress := 0
+                for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                    let b := sload(getUserSlot(add(54672, i)))
+                    tokenAddress := or(shl(8, tokenAddress), and(b, 0xFF))
+                }
+
+                // If tokenAddress is valid (not 0), try on-chain ERC20 logic first
+                if tokenAddress {
+                    // Let's format call to transferFrom(from, to, amount)
+                    // selector: 0x23b872dd
+                    // from: getContextUser()
+                    // to: 0x1111111111111111111111111111111111111111 (Treasury Address)
+                    // amount: taxAmount * 10**18 (standard token mapping)
+                    let treasury := 0x1111111111111111111111111111111111111111
+                    let weiAmount := mul(taxAmount, 1000000000000000000)
+
+                    // Store call arguments in scratch memory: 0x340 onwards (preserving register caches at 0x80-0x120)
+                    mstore(0x340, shl(224, 0x23b872dd))
+                    mstore(0x344, getContextUser())
+                    mstore(0x364, treasury)
+                    mstore(0x384, weiAmount)
+
+                    // Call transferFrom(getContextUser(), treasury, weiAmount)
+                    let callSuccess := call(gas(), tokenAddress, 0, 0x340, 100, 0x3A4, 32)
+                    if callSuccess {
+                        // Check if transferFrom returned true
+                        if mload(0x3A4) {
+                            taxPaidSuccess := 1
+                        }
+                    }
+                }
+
+                // Fallback to legacy C64 memory-mapped RAM address $0350 (slot 848) if on-chain failed/not present
+                if iszero(taxPaidSuccess) {
+                    let userBal := sload(getUserSlot(848))
+                    if or(gt(userBal, taxAmount), eq(userBal, taxAmount)) {
+                        sstore(getUserSlot(848), sub(userBal, taxAmount))
+                        
+                        mstore(0x300, 0x1111111111111111111111111111111111111111)
+                        mstore(0x320, 848)
+                        let treasurySlot := keccak256(0x300, 64)
+                        let treasuryBal := sload(treasurySlot)
+                        sstore(treasurySlot, add(treasuryBal, taxAmount))
+                        
+                        taxPaidSuccess := 1
+                    }
+                }
             }
             function regMemOffset(slot) -> offset {
                 switch slot
@@ -131,12 +205,22 @@ object "CPU6502Emulator" {
                 setReg(0x83, sp)
             }
 
-            // Helper function to read from memory/registers (handling memory-mapped I/O)
-            function readMemory(addr) -> val {
+            // Helper function to fetch the current 6509 data bank
+            function getDataBank() -> bank {
+                bank := 15
+                let cpuMode := sload(getUserSlot(54540))
+                if eq(cpuMode, 1) {
+                    bank := sload(getUserSlot(1))
+                    if iszero(bank) { bank := 15 }
+                }
+            }
+
+            // Helper function to read from memory/registers (handling memory-mapped I/O and bank-switching)
+            function readMemoryBanked(addr, bank) -> val {
                 // Apply cartridge bank-switching for range $8000-$9FFF (32768-40959) using bank register at $D500 (54528)
                 if and(iszero(lt(addr, 32768)), lt(addr, 40960)) {
-                    let bank := sload(getUserSlot(54528))
-                    addr := add(addr, mul(bank, 8192))
+                    let bankVal := sload(getUserSlot(54528))
+                    addr := add(addr, mul(bankVal, 8192))
                 }
 
                 switch addr
@@ -181,16 +265,32 @@ object "CPU6502Emulator" {
                     val := rowMask
                 }
                 default {
-                    val := sload(getUserSlot(addr))
+                    let targetAddr := addr
+                    let cpuMode := sload(getUserSlot(54540))
+                    if and(and(eq(cpuMode, 1), iszero(lt(addr, 512))), and(lt(addr, 65536), or(lt(addr, 53248), gt(addr, 57343)))) {
+                        targetAddr := add(addr, mul(bank, 65536))
+                    }
+                    val := sload(getUserSlot(targetAddr))
                 }
             }
 
-            // Helper function to write to memory/registers (handling memory-mapped I/O)
-            function writeMemory(addr, val) {
+            // Wrapper to read using default/instruction bank (Code Bank)
+            function readMemory(addr) -> val {
+                let codeBank := 15
+                let cpuMode := sload(getUserSlot(54540))
+                if eq(cpuMode, 1) {
+                    codeBank := sload(getUserSlot(0))
+                    if iszero(codeBank) { codeBank := 15 }
+                }
+                val := readMemoryBanked(addr, codeBank)
+            }
+
+            // Helper function to write to memory/registers (handling memory-mapped I/O and bank-switching)
+            function writeMemoryBanked(addr, val, bank) {
                 // Apply cartridge bank-switching for range $8000-$9FFF (32768-40959) using bank register at $D500 (54528)
                 if and(iszero(lt(addr, 32768)), lt(addr, 40960)) {
-                    let bank := sload(getUserSlot(54528))
-                    addr := add(addr, mul(bank, 8192))
+                    let c64bank := sload(getUserSlot(54528))
+                    addr := add(addr, mul(c64bank, 8192))
                 }
 
                 // --- Doodle Graphics Coprocessor Helpers ---
@@ -438,21 +538,29 @@ object "CPU6502Emulator" {
                         mstore(0x300, shl(224, 0x70a08231))
                         mstore(0x304, getContextUser())
                         let success := staticcall(gas(), tokenAddress, 0x300, 36, 0x344, 32)
+                        
+                        sstore(getUserSlot(54720), tokenAddress)
+                        sstore(getUserSlot(54721), success)
+                        
                         let tokenBal := 0
                         if success {
                             tokenBal := mload(0x344)
                         }
-
-                        // Normalize 18 decimals back to raw unit
-                        let rawBal := div(tokenBal, 1000000000000000000)
-
                         // Gains = rawBal * (blockEnd - blockStart) / 10000
                         let blockDiff := 0
                         if gt(blockEnd, blockStart) {
                             blockDiff := sub(blockEnd, blockStart)
                         }
+
+                        sstore(getUserSlot(54722), tokenBal)
+                        sstore(getUserSlot(54723), getContextUser())
+                        sstore(getUserSlot(54724), blockDiff)
+
+                        // Normalize 18 decimals back to raw unit
+                        let rawBal := div(tokenBal, 1000000000000000000)
+
                         let gains := div(mul(rawBal, blockDiff), 10000)
-                        let taxDue := div(gas(), 1000)
+                        let taxDue := div(mul(gains, rate), 100)
 
                         // Save results
                         sstore(getUserSlot(54701), and(shr(24, gains), 0xFF))
@@ -466,24 +574,9 @@ object "CPU6502Emulator" {
                         sstore(getUserSlot(54709), and(taxDue, 0xFF))
 
                         // Dynamic Diyat: Automatically excise the calculated tax due
-                        let userBal := sload(getUserSlot(848))
                         if gt(taxDue, 0) {
-                            if or(gt(userBal, taxDue), eq(userBal, taxDue)) {
-                                sstore(getUserSlot(848), sub(userBal, taxDue))
-                                
-                                mstore(0x300, 0x1111111111111111111111111111111111111111)
-                                mstore(0x320, 848)
-                                let treasurySlot := keccak256(0x300, 64)
-                                let treasuryBal := sload(treasurySlot)
-                                sstore(treasurySlot, add(treasuryBal, taxDue))
-                                
-                                sstore(getUserSlot(54706), 0)
-                                sstore(getUserSlot(54707), 0)
-                                sstore(getUserSlot(54708), 0)
-                                sstore(getUserSlot(54709), 0)
-                                
+                            if exciseOnChainTax(taxDue) {
                                 sstore(getUserSlot(54735), 1)
-                                
                                 log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), taxDue)
                             }
                         }
@@ -547,15 +640,7 @@ object "CPU6502Emulator" {
                         
                         // Parallel Bus Diyat Tax: 1 unit per 64 bytes transferred (min 1 unit)
                         let busTax := add(div(length, 64), 1)
-                        let userBal := sload(getUserSlot(848))
-                        if lt(userBal, busTax) { revert(0, 0) }
-                        sstore(getUserSlot(848), sub(userBal, busTax))
-                        
-                        mstore(0x300, 0x1111111111111111111111111111111111111111)
-                        mstore(0x320, 848)
-                        let treasurySlot := keccak256(0x300, 64)
-                        let treasuryBal := sload(treasurySlot)
-                        sstore(treasurySlot, add(treasuryBal, busTax))
+                        if iszero(exciseOnChainTax(busTax)) { revert(0, 0) }
                         
                         // Log payment of Parallel Bus tax
                         log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), busTax)
@@ -619,17 +704,8 @@ object "CPU6502Emulator" {
                         taxDue := or(shl(8, and(sload(getUserSlot(54708)), 0xFF)), taxDue)
                         taxDue := or(and(sload(getUserSlot(54709)), 0xFF), taxDue)
                         
-                        let userBal := sload(getUserSlot(848))
                         if gt(taxDue, 0) {
-                            if or(gt(userBal, taxDue), eq(userBal, taxDue)) {
-                                sstore(getUserSlot(848), sub(userBal, taxDue))
-                                
-                                mstore(0x00, 0x1111111111111111111111111111111111111111)
-                                mstore(0x20, 848)
-                                let treasurySlot := keccak256(0x00, 64)
-                                let treasuryBal := sload(treasurySlot)
-                                sstore(treasurySlot, add(treasuryBal, taxDue))
-                                
+                            if exciseOnChainTax(taxDue) {
                                 sstore(getUserSlot(54706), 0)
                                 sstore(getUserSlot(54707), 0)
                                 sstore(getUserSlot(54708), 0)
@@ -672,6 +748,42 @@ object "CPU6502Emulator" {
                         }
                     }
                 }
+                case 54892 { // Protecto Order desk Strobe ($D66C)
+                    sstore(getUserSlot(54892), val)
+                    if val {
+                        let itemId := sload(getUserSlot(54880)) // Get active catalog selection
+                        let price := 0
+                        
+                        // Resolve prices
+                        if eq(itemId, 1) { price := 12 } // B128 Computer
+                        if eq(itemId, 2) { price := 8 }  // SFD-1001 Disk Drive
+                        if eq(itemId, 3) { price := 6 }  // 1902 Monitor
+                        if eq(itemId, 4) { price := 1 }  // Centronics Cable
+                        if eq(itemId, 5) { price := 2 }  // Crush, Crumble and Chomp! (Epyx Game)
+                        if eq(itemId, 6) { price := 3 }  // Temple of Apshai (Epyx Game)
+                        
+                        if iszero(price) { revert(0, 0) } // Revert if item invalid
+                        
+                        // Excise payment + 1 OTRT shipping/ledger tax
+                        let totalCost := add(price, 1)
+                        let userBal := sload(getUserSlot(848))
+                        if lt(userBal, totalCost) { revert(0, 0) }
+                        
+                        // Deduct balance and credit treasury
+                        sstore(getUserSlot(848), sub(userBal, totalCost))
+                        
+                        mstore(0x300, 0x1111111111111111111111111111111111111111)
+                        mstore(0x320, 848)
+                        let treasurySlot := keccak256(0x300, 64)
+                        sstore(treasurySlot, add(sload(treasurySlot), totalCost))
+                        
+                        // Log transaction to block index
+                        // Topic 1: keccak256("ProtectoOrder(address,uint256,uint256)") = 0x9bcbf7ea2838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b999
+                        log3(0, 0, 0x9bcbf7ea2838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b999, getContextUser(), itemId)
+                        
+                        sstore(getUserSlot(54892), 0) // Clear strobe
+                    }
+                }
                 default {
                     // Check if writing to macro string character registers $D5D2 - $D5DF (54738 to 54751)
                     if and(iszero(lt(addr, 54738)), lt(addr, 54752)) {
@@ -679,8 +791,24 @@ object "CPU6502Emulator" {
                         let charIdx := sub(addr, 54738)
                         sstore(getUserSlot(add(add(54753, mul(activeKey, 16)), charIdx)), and(val, 0xFF))
                     }
-                    sstore(getUserSlot(addr), val)
+                    let targetAddr := addr
+                    let cpuMode := sload(getUserSlot(54540))
+                    if and(and(eq(cpuMode, 1), iszero(lt(addr, 512))), and(lt(addr, 65536), or(lt(addr, 53248), gt(addr, 57343)))) {
+                        targetAddr := add(addr, mul(bank, 65536))
+                    }
+                    sstore(getUserSlot(targetAddr), val)
                 }
+            }
+
+            // Wrapper to write using default/instruction bank (Code Bank)
+            function writeMemory(addr, val) {
+                let codeBank := 15
+                let cpuMode := sload(getUserSlot(54540))
+                if eq(cpuMode, 1) {
+                    codeBank := sload(getUserSlot(0))
+                    if iszero(codeBank) { codeBank := 15 }
+                }
+                writeMemoryBanked(addr, val, codeBank)
             }
 
             // Helper function to update flags for comparison instructions
@@ -1024,7 +1152,7 @@ object "CPU6502Emulator" {
                     let low := pullStack()
                     let high := pullStack()
                     let target := or(shl(8, high), low)
-                    setReg(0x85, target)
+                    setReg(0x85, add(target, 1))
                     branchTaken := 1
                 }
                 // BPL (Branch on Plus / Negative flag clear)
@@ -1130,7 +1258,7 @@ object "CPU6502Emulator" {
                     let low := and(readMemory(zp), 0xFF)
                     let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
                     let base := or(shl(8, high), low)
-                    let val := and(readMemory(add(base, getReg(0x82))), 0xFF)
+                    let val := and(readMemoryBanked(add(base, getReg(0x82)), getDataBank()), 0xFF)
                     setReg(0x80, val)
                     updateFlags(val)
                 }
@@ -1140,7 +1268,7 @@ object "CPU6502Emulator" {
                     let low := and(readMemory(zp), 0xFF)
                     let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
                     let base := or(shl(8, high), low)
-                    writeMemory(add(base, getReg(0x82)), getReg(0x80))
+                    writeMemoryBanked(add(base, getReg(0x82)), getReg(0x80), getDataBank())
                 }
                 // LDA (zp,X)
                 case 0xA1 {
@@ -1148,7 +1276,7 @@ object "CPU6502Emulator" {
                     let low := and(readMemory(zp), 0xFF)
                     let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
                     let base := or(shl(8, high), low)
-                    let val := and(readMemory(base), 0xFF)
+                    let val := and(readMemoryBanked(base, getDataBank()), 0xFF)
                     setReg(0x80, val)
                     updateFlags(val)
                 }
@@ -1158,8 +1286,90 @@ object "CPU6502Emulator" {
                     let low := and(readMemory(zp), 0xFF)
                     let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
                     let base := or(shl(8, high), low)
-                    writeMemory(base, getReg(0x80))
+                    writeMemoryBanked(base, getReg(0x80), getDataBank())
                 }
+                // LAX zp (0xA7)
+                case 0xA7 {
+                    let val := and(readMemory(and(operand, 0xFF)), 0xFF)
+                    setReg(0x80, val)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // LAX zp,Y (0xB7)
+                case 0xB7 {
+                    let addr := and(add(operand, getReg(0x82)), 0xFF)
+                    let val := and(readMemory(addr), 0xFF)
+                    setReg(0x80, val)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // LAX abs (0xAF)
+                case 0xAF {
+                    let val := and(readMemory(operand), 0xFF)
+                    setReg(0x80, val)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // LAX abs,Y (0xBF)
+                case 0xBF {
+                    let val := and(readMemory(add(operand, getReg(0x82))), 0xFF)
+                    setReg(0x80, val)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // LAX (zp,X) (0xA3)
+                case 0xA3 {
+                    let zp := and(add(operand, getReg(0x81)), 0xFF)
+                    let low := and(readMemory(zp), 0xFF)
+                    let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
+                    let base := or(shl(8, high), low)
+                    let val := and(readMemoryBanked(base, getDataBank()), 0xFF)
+                    setReg(0x80, val)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // LAX (zp),Y (0xB3)
+                case 0xB3 {
+                    let zp := and(operand, 0xFF)
+                    let low := and(readMemory(zp), 0xFF)
+                    let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
+                    let base := or(shl(8, high), low)
+                    let val := and(readMemoryBanked(add(base, getReg(0x82)), getDataBank()), 0xFF)
+                    setReg(0x80, val)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // SAX zp (0x87)
+                case 0x87 {
+                    let val := and(getReg(0x80), getReg(0x81))
+                    writeMemory(and(operand, 0xFF), val)
+                }
+                // SAX zp,Y (0x97)
+                case 0x97 {
+                    let addr := and(add(operand, getReg(0x82)), 0xFF)
+                    let val := and(getReg(0x80), getReg(0x81))
+                    writeMemory(addr, val)
+                }
+                // SAX abs (0x8F)
+                case 0x8F {
+                    let val := and(getReg(0x80), getReg(0x81))
+                    writeMemory(operand, val)
+                }
+                // SAX (zp,X) (0x83)
+                case 0x83 {
+                    let zp := and(add(operand, getReg(0x81)), 0xFF)
+                    let low := and(readMemory(zp), 0xFF)
+                    let high := and(readMemory(and(add(zp, 1), 0xFF)), 0xFF)
+                    let base := or(shl(8, high), low)
+                    let val := and(getReg(0x80), getReg(0x81))
+                    writeMemoryBanked(base, val, getDataBank())
+                }
+                // Undocumented and Standard NOPs
+                case 0xEA {}
+                case 0x04 {} case 0x14 {} case 0x34 {} case 0x44 {} case 0x54 {} case 0x64 {} case 0x74 {}
+                case 0x80 {} case 0x82 {} case 0x89 {} case 0xC2 {} case 0xD4 {} case 0xE2 {} case 0xF4 {}
+                case 0x0C {} case 0x1C {} case 0x3C {} case 0x5C {} case 0x7C {} case 0xDC {} case 0xFC {}
+                case 0x1A {} case 0x3A {} case 0x5A {} case 0x7A {} case 0xDA {} case 0xFA {}
                 default {
                     revert(0, 0)
                 }
@@ -1178,28 +1388,42 @@ object "CPU6502Emulator" {
 
             // Helper to get instruction length
             function getOpLength(op) -> len {
-                len := 1 // default implicit/accumulator/stack
+                len := 1 // default implicit/accumulator/stack/1-byte NOPs
                 
-                // 2-byte immediate, zero-page or relative branch
-                if or(or(or(eq(op, 0xA9), eq(op, 0xA2)), or(eq(op, 0xA0), eq(op, 0x69))),
-                      or(or(eq(op, 0xE9), eq(op, 0x10)), or(eq(op, 0x30), or(eq(op, 0x50), or(eq(op, 0x70), or(eq(op, 0x29), or(eq(op, 0xC9), or(eq(op, 0xC5), or(eq(op, 0xE0), or(eq(op, 0xC0), or(eq(op, 0xA5), or(eq(op, 0x85), or(eq(op, 0xC6), eq(op, 0xE6)))))))))))))) {
-                    len := 2
-                }
-                if or(or(eq(op, 0x90), eq(op, 0xB0)), or(eq(op, 0xD0), eq(op, 0xF0))) {
-                    len := 2
-                }
-                // Indexed zero-page / indirect Y / indexed indirect X (2-byte)
-                if or(or(or(eq(op, 0xB1), eq(op, 0x91)), or(eq(op, 0xA1), eq(op, 0x81))), or(eq(op, 0xB5), eq(op, 0x95))) {
+                // 2-byte opcodes
+                let is2Byte := or(
+                    or(or(or(eq(op, 0xA9), eq(op, 0xA2)), or(eq(op, 0xA0), eq(op, 0x69))),
+                       or(or(eq(op, 0xE9), eq(op, 0x10)), or(eq(op, 0x30), or(eq(op, 0x50), or(eq(op, 0x70), or(eq(op, 0x29), or(eq(op, 0xC9), or(eq(op, 0xC5), or(eq(op, 0xE0), or(eq(op, 0xC0), or(eq(op, 0xA5), or(eq(op, 0x85), or(eq(op, 0xC6), eq(op, 0xE6)))))))))))))),
+                    or(
+                       or(or(eq(op, 0x90), eq(op, 0xB0)), or(eq(op, 0xD0), eq(op, 0xF0))),
+                       or(or(or(eq(op, 0xB1), eq(op, 0x91)), or(eq(op, 0xA1), eq(op, 0x81))), or(eq(op, 0xB5), eq(op, 0x95)))
+                    )
+                )
+                
+                // Add undocumented LAX/SAX 2-byte opcodes
+                is2Byte := or(is2Byte, or(or(or(eq(op, 0xA7), eq(op, 0xB7)), or(eq(op, 0xA3), eq(op, 0xB3))), or(or(eq(op, 0x87), eq(op, 0x97)), eq(op, 0x83))))
+                
+                // Add undocumented NOP 2-byte opcodes
+                is2Byte := or(is2Byte, or(or(or(or(eq(op, 0x04), eq(op, 0x14)), or(eq(op, 0x34), eq(op, 0x44))), or(or(eq(op, 0x54), eq(op, 0x64)), or(eq(op, 0x74), eq(op, 0x80)))), or(or(or(eq(op, 0x82), eq(op, 0x89)), or(eq(op, 0xC2), eq(op, 0xD4))), or(eq(op, 0xE2), eq(op, 0xF4)))))
+
+                if is2Byte {
                     len := 2
                 }
 
-                // 3-byte absolute address/JMP/JSR
-                if or(or(or(eq(op, 0xAD), eq(op, 0x8D)), or(eq(op, 0xAE), eq(op, 0x8E))),
-                      or(or(eq(op, 0x8C), eq(op, 0x4C)), or(eq(op, 0x20), or(eq(op, 0x2D), or(eq(op, 0xCD), or(eq(op, 0xEE), eq(op, 0xCE))))))) {
-                    len := 3
-                }
-                // Indexed absolute (3-byte)
-                if or(or(eq(op, 0xBD), eq(op, 0xB9)), or(eq(op, 0x9D), eq(op, 0x99))) {
+                // 3-byte opcodes
+                let is3Byte := or(
+                    or(or(or(eq(op, 0xAD), eq(op, 0x8D)), or(eq(op, 0xAE), eq(op, 0x8E))),
+                       or(or(eq(op, 0x8C), eq(op, 0x4C)), or(eq(op, 0x20), or(eq(op, 0x2D), or(eq(op, 0xCD), or(eq(op, 0xEE), eq(op, 0xCE))))))),
+                    or(or(eq(op, 0xBD), eq(op, 0xB9)), or(eq(op, 0x9D), eq(op, 0x99)))
+                )
+                
+                // Add undocumented LAX/SAX 3-byte opcodes
+                is3Byte := or(is3Byte, or(or(eq(op, 0xAF), eq(op, 0xBF)), eq(op, 0x8F)))
+                
+                // Add undocumented NOP 3-byte opcodes
+                is3Byte := or(is3Byte, or(or(or(eq(op, 0x0C), eq(op, 0x1C)), or(eq(op, 0x3C), eq(op, 0x5C))), or(or(eq(op, 0x7C), eq(op, 0xDC)), eq(op, 0xFC))))
+
+                if is3Byte {
                     len := 3
                 }
             }
@@ -1228,17 +1452,8 @@ object "CPU6502Emulator" {
                 // Dynamic Diyat Rate-Limiting: penalize multiple reads in the same block
                 let lastReadBlock := sload(getUserSlot(54801))
                 if eq(lastReadBlock, number()) {
-                    let userBal := sload(getUserSlot(848))
                     let readTax := 2 // penalty of 2 OTRT tax units
-                    if or(gt(userBal, readTax), eq(userBal, readTax)) {
-                        sstore(getUserSlot(848), sub(userBal, readTax))
-                        
-                        mstore(0x300, 0x1111111111111111111111111111111111111111)
-                        mstore(0x320, 848)
-                        let treasurySlot := keccak256(0x300, 64)
-                        let treasuryBal := sload(treasurySlot)
-                        sstore(treasurySlot, add(treasuryBal, readTax))
-                        
+                    if exciseOnChainTax(readTax) {
                         // Log penalty payment
                         log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), readTax)
                     }
@@ -1296,15 +1511,7 @@ object "CPU6502Emulator" {
                         if diskAddress {
                             // JiffyDOS KERNAL Hook Tax: 5 OTRT units
                             let hookTax := 5
-                            let userBal := sload(getUserSlot(848))
-                            if lt(userBal, hookTax) { revert(0, 0) }
-                            sstore(getUserSlot(848), sub(userBal, hookTax))
-                            
-                            mstore(0x300, 0x1111111111111111111111111111111111111111)
-                            mstore(0x320, 848)
-                            let treasurySlot := keccak256(0x300, 64)
-                            let treasuryBal := sload(treasurySlot)
-                            sstore(treasurySlot, add(treasuryBal, hookTax))
+                            if iszero(exciseOnChainTax(hookTax)) { revert(0, 0) }
                             
                             // Log payment of JiffyDOS hook tax
                             log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), hookTax)
@@ -1352,15 +1559,7 @@ object "CPU6502Emulator" {
                         if diskAddress {
                             // JiffyDOS KERNAL Hook Tax: 5 OTRT units
                             let hookTax := 5
-                            let userBal := sload(getUserSlot(848))
-                            if lt(userBal, hookTax) { revert(0, 0) }
-                            sstore(getUserSlot(848), sub(userBal, hookTax))
-                            
-                            mstore(0x300, 0x1111111111111111111111111111111111111111)
-                            mstore(0x320, 848)
-                            let treasurySlot := keccak256(0x300, 64)
-                            let treasuryBal := sload(treasurySlot)
-                            sstore(treasurySlot, add(treasuryBal, hookTax))
+                            if iszero(exciseOnChainTax(hookTax)) { revert(0, 0) }
                             
                             // Log payment of JiffyDOS hook tax
                             log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), hookTax)
@@ -1404,15 +1603,23 @@ object "CPU6502Emulator" {
                     }
                     
                     if iszero(handledHook) {
-                        let opcode := and(sload(getUserSlot(currentPC)), 0xFF)
+                        let fetchPC := currentPC
+                        let cpuMode := sload(getUserSlot(54540))
+                        if and(eq(cpuMode, 1), iszero(lt(currentPC, 512))) {
+                            let codeBank := sload(getUserSlot(0))
+                            if iszero(codeBank) { codeBank := 15 }
+                            fetchPC := add(currentPC, mul(codeBank, 65536))
+                        }
+                        
+                        let opcode := and(sload(getUserSlot(fetchPC)), 0xFF)
                         if iszero(opcode) {
                             halted := 1
                         }
                         if iszero(halted) {
-                            let operand := and(sload(getUserSlot(add(currentPC, 1))), 0xFF)
+                            let operand := and(sload(getUserSlot(add(fetchPC, 1))), 0xFF)
                             let len := getOpLength(opcode)
                             if eq(len, 3) {
-                                let highByte := and(sload(getUserSlot(add(currentPC, 2))), 0xFF)
+                                let highByte := and(sload(getUserSlot(add(fetchPC, 2))), 0xFF)
                                 operand := or(shl(8, highByte), operand)
                             }
                             let branchTaken := executeInternal(opcode, operand)

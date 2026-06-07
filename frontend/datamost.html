@@ -146,9 +146,11 @@
                             <option value="pong">🏓 Pong-on-Chain (Interactive Demo)</option>
                             <option value="anteater">🐜 Ant Eater (Romox Cartridge)</option>
                             <option value="princessfrog">🐸 Princess and the Frog (Romox Cartridge)</option>
+                            <option value="crush">🦖 Crush, Crumble & Chomp! (Epyx Game)</option>
                         </select>
                         <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
                         <button class="btn btn-secondary" id="btnToggleDemo" style="min-width: 130px; border-color: var(--neon-magenta); color: var(--text-primary);">Autoplay Demo</button>
+                        <button class="btn btn-secondary" id="btnToggleShared" style="min-width: 160px; border-color: var(--neon-blue); color: var(--text-primary);">Join Shared Screen</button>
                     </div>
                 </section>
 
@@ -808,7 +810,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         let isDemoModeActive = false;
         let filterNode, lfoNode, lfoGainNode;
         let demoTimer = 0;
-        const demoGameSequence = ["pong"];
+        const demoGameSequence = ["pong", "anteater", "princessfrog", "crush"];
         let demoGameIdx = 0;
 
         class SIDVoice {
@@ -1012,6 +1014,23 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     { id: 1, x: 80, y: 100 },
                     { id: 2, x: 220, y: 80 }
                 ]
+            },
+            crush: {
+                name: "Crush, Crumble and Chomp!",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x03, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0,
+                    0xA9, 0x07, 0x8D, 0x02, 0xD6,
+                    0xEA, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 100, y: 120 },
+                    { id: 1, x: 150, y: 90 },
+                    { id: 2, x: 60, y: 140 },
+                    { id: 3, x: 250, y: 130 }
+                ]
             }
         };
 
@@ -1175,6 +1194,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 }
 
                 console.log("Contracts loaded successfully from registry.");
+                await updateSharedScreenButtonState();
                 refreshDiskDirectory();
                 loadWorkspaceFileList();
 
@@ -1228,6 +1248,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     document.getElementById("btnConnect").innerText = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
                     console.log("Connected to browser wallet:", address);
                     refreshDiskDirectory();
+                    await updateSharedScreenButtonState();
                 } catch (err) {
                     console.error("Wallet connection failed:", err);
                 }
@@ -1533,6 +1554,56 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 btn.style.backgroundColor = "";
                 btn.style.color = "var(--text-primary)";
                 console.log("Demo Mode Deactivated.");
+            }
+        });
+
+        let isSharedScreenActive = false;
+        
+        async function updateSharedScreenButtonState() {
+            if (!cpuContract) return;
+            try {
+                const isShared = Number(await cpuContract.peek(54541)) & 0xFF;
+                isSharedScreenActive = (isShared === 1);
+                const btn = document.getElementById("btnToggleShared");
+                if (btn) {
+                    if (isSharedScreenActive) {
+                        btn.innerText = "Shared Screen: Active";
+                        btn.style.backgroundColor = "var(--neon-blue)";
+                        btn.style.borderColor = "var(--neon-blue)";
+                        btn.style.color = "#000";
+                    } else {
+                        btn.innerText = "Join Shared Screen";
+                        btn.style.backgroundColor = "";
+                        btn.style.borderColor = "var(--neon-blue)";
+                        btn.style.color = "var(--text-primary)";
+                    }
+                }
+            } catch (err) {
+                console.error("Error updating shared screen button state:", err);
+            }
+        }
+
+        document.getElementById("btnToggleShared").addEventListener("click", async () => {
+            if (!cpuContract) {
+                alert("Connect your wallet first.");
+                return;
+            }
+            const btn = document.getElementById("btnToggleShared");
+            btn.innerText = "Syncing...";
+            btn.disabled = true;
+            try {
+                const targetState = isSharedScreenActive ? 0 : 1;
+                const tx = await cpuContract.poke(54541, targetState);
+                appendOregonDashboardLog(`[SHARED SCREEN] Sent toggle transaction: ${tx.hash.substring(0, 10)}...`);
+                await tx.wait();
+                isSharedScreenActive = (targetState === 1);
+                appendOregonDashboardLog(`[SHARED SCREEN] Shared screen mode is now ${isSharedScreenActive ? 'ENABLED' : 'DISABLED'}.`);
+                await updateSharedScreenButtonState();
+            } catch (err) {
+                console.error("Failed to toggle shared screen:", err);
+                appendOregonDashboardLog(`[SHARED SCREEN] Error: ${err.message}`);
+            } finally {
+                btn.disabled = false;
             }
         });
 
@@ -3508,45 +3579,90 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
         async function updateVulkanScreen() {
             try {
-                const res = await fetch("/vulkan_frame.ppm");
-                if (!res.ok) return;
-                const buffer = await res.arrayBuffer();
-                const arr = new Uint8Array(buffer);
-                
-                let pos = 0;
-                function nextToken() {
-                    while (pos < arr.length && arr[pos] <= 32) { pos++; } 
-                    let start = pos;
-                    while (pos < arr.length && arr[pos] > 32) { pos++; }
-                    let bytes = arr.subarray(start, pos);
-                    let str = "";
-                    for (let i = 0; i < bytes.length; i++) {
-                        str += String.fromCharCode(bytes[i]);
+                let ppmLoaded = false;
+                try {
+                    const res = await fetch("/vulkan_frame.ppm");
+                    if (res.ok) {
+                        const buffer = await res.arrayBuffer();
+                        const arr = new Uint8Array(buffer);
+                        
+                        let pos = 0;
+                        function nextToken() {
+                            while (pos < arr.length && arr[pos] <= 32) { pos++; } 
+                            let start = pos;
+                            while (pos < arr.length && arr[pos] > 32) { pos++; }
+                            let bytes = arr.subarray(start, pos);
+                            let str = "";
+                            for (let i = 0; i < bytes.length; i++) {
+                                str += String.fromCharCode(bytes[i]);
+                            }
+                            return str;
+                        }
+
+                        const magic = nextToken();
+                        if (magic === "P6") {
+                            const width = parseInt(nextToken(), 10);
+                            const height = parseInt(nextToken(), 10);
+                            const maxVal = nextToken(); 
+                            pos++; 
+                            
+                            const pixelData = arr.subarray(pos);
+                            if (pixelData.length >= width * height * 3) {
+                                const imgData = vulkanCtx.createImageData(width, height);
+                                const data = imgData.data;
+                                let srcIdx = 0;
+                                for (let i = 0; i < width * height * 4; i += 4) {
+                                    data[i] = pixelData[srcIdx];     
+                                    data[i+1] = pixelData[srcIdx+1]; 
+                                    data[i+2] = pixelData[srcIdx+2]; 
+                                    data[i+3] = 255;                 
+                                    srcIdx += 3;
+                                }
+                                vulkanCtx.putImageData(imgData, 0, 0);
+                                ppmLoaded = true;
+                            }
+                        }
                     }
-                    return str;
-                }
+                } catch (e) {}
 
-                const magic = nextToken();
-                if (magic !== "P6") return;
-                const width = parseInt(nextToken(), 10);
-                const height = parseInt(nextToken(), 10);
-                const maxVal = nextToken(); 
-                pos++; 
-                
-                const pixelData = arr.subarray(pos);
-                if (pixelData.length < width * height * 3) return;
-
-                const imgData = vulkanCtx.createImageData(width, height);
-                const data = imgData.data;
-                let srcIdx = 0;
-                for (let i = 0; i < width * height * 4; i += 4) {
-                    data[i] = pixelData[srcIdx];     
-                    data[i+1] = pixelData[srcIdx+1]; 
-                    data[i+2] = pixelData[srcIdx+2]; 
-                    data[i+3] = 255;                 
-                    srcIdx += 3;
+                if (!ppmLoaded && vulkanCanvas && vulkanCtx && canvas) {
+                    vulkanCtx.clearRect(0, 0, vulkanCanvas.width, vulkanCanvas.height);
+                    vulkanCtx.drawImage(canvas, 0, 0);
+                    
+                    const imgData = vulkanCtx.getImageData(0, 0, vulkanCanvas.width, vulkanCanvas.height);
+                    const data = imgData.data;
+                    const w = vulkanCanvas.width;
+                    const h = vulkanCanvas.height;
+                    
+                    for (let y = 0; y < h; y++) {
+                        const scanlineIntensity = 0.85 + 0.15 * Math.sin(y * 1.5 + Date.now() * 0.01);
+                        for (let x = 0; x < w; x++) {
+                            const idx = (y * w + x) * 4;
+                            let rIdx = idx;
+                            let gIdx = idx;
+                            let bIdx = idx;
+                            if (x > 1) rIdx = (y * w + (x - 1)) * 4;
+                            if (x < w - 1) bIdx = (y * w + (x + 1)) * 4;
+                            
+                            let r = data[rIdx];
+                            let g = data[gIdx + 1];
+                            let b = data[bIdx + 2];
+                            
+                            r = Math.min(255, r * scanlineIntensity);
+                            g = Math.min(255, g * scanlineIntensity);
+                            b = Math.min(255, b * scanlineIntensity);
+                            
+                            const dx = (x - w/2) / (w/2);
+                            const dy = (y - h/2) / (h/2);
+                            const vign = 1.0 - 0.15 * (dx*dx + dy*dy);
+                            
+                            data[idx] = r * vign;
+                            data[idx+1] = g * vign;
+                            data[idx+2] = b * vign;
+                        }
+                    }
+                    vulkanCtx.putImageData(imgData, 0, 0);
                 }
-                vulkanCtx.putImageData(imgData, 0, 0);
 
                 if (isDemoModeActive) {
                     vulkanCtx.fillStyle = "rgba(255, 0, 127, 0.9)";
@@ -3904,6 +4020,99 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillText("PRINCESS & THE FROG", canvas.width / 2, 12);
         }
 
+        let crushFrame = 0;
+        function drawCrushCrumbleChompScreen() {
+            crushFrame++;
+            ctx.fillStyle = "#1e272e"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = "#4b5563";
+            ctx.lineWidth = 1;
+            for (let x = 20; x < canvas.width; x += 30) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 20; y < canvas.height; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Stomp calculations
+            let monsterX = 160 + Math.sin(crushFrame * 0.05) * 60;
+            let monsterY = 100 + Math.cos(crushFrame * 0.04) * 40;
+
+            ctx.fillStyle = "#374151"; 
+            for (let bx = 5; bx < canvas.width; bx += 30) {
+                for (let by = 5; by < canvas.height; by += 30) {
+                    let distToMonster = Math.hypot(bx + 10 - monsterX, by + 10 - monsterY);
+                    if (distToMonster < 25) {
+                        ctx.fillStyle = "#0f172a"; 
+                    } else {
+                        ctx.fillStyle = "#4b5563"; 
+                    }
+                    ctx.fillRect(bx, by, 20, 20);
+                }
+            }
+
+            // Giant Monster Sprite
+            ctx.fillStyle = "#10b981"; 
+            ctx.beginPath();
+            ctx.arc(monsterX, monsterY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "#047857";
+            ctx.beginPath();
+            ctx.arc(monsterX - 6, monsterY + 4, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (crushFrame % 10 < 5) {
+                ctx.fillStyle = "#f59e0b"; 
+                ctx.beginPath();
+                ctx.moveTo(monsterX + 4, monsterY - 2);
+                ctx.lineTo(monsterX + 24, monsterY - 8 + Math.sin(crushFrame) * 4);
+                ctx.lineTo(monsterX + 20, monsterY + 8);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Helicopter Sprite
+            let heliX = monsterX + Math.sin(crushFrame * 0.1) * 40;
+            let heliY = monsterY - 30 + Math.cos(crushFrame * 0.1) * 10;
+            ctx.fillStyle = "#3b82f6"; 
+            ctx.fillRect(heliX - 6, heliY - 2, 12, 5);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(heliX - 10, heliY - 4, 20, 1); 
+
+            // Tank Sprite
+            let tankX = 60 + (crushFrame * 0.5) % 200;
+            let tankY = 140;
+            ctx.fillStyle = "#b45309"; 
+            ctx.fillRect(tankX - 8, tankY - 4, 16, 8);
+            ctx.fillRect(tankX - 4, tankY - 8, 8, 4);
+
+            // Police Car Sprite
+            let policeX = 260 - (crushFrame * 0.7) % 200;
+            let policeY = 80;
+            ctx.fillStyle = "#3b82f6"; 
+            ctx.fillRect(policeX - 8, policeY - 3, 16, 6);
+            ctx.fillStyle = "#ef4444"; 
+            if (crushFrame % 4 < 2) {
+                ctx.fillRect(policeX - 2, policeY - 5, 4, 2);
+            }
+
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("EPYX INC. 1981", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("MONSTER: GORGON", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("CRUSH, CRUMBLE & CHOMP!", canvas.width / 2, 12);
+        }
+
         // Draw C64 Screen layout
         function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
             if (oregonActive) {
@@ -3920,6 +4129,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             if (activeGameName === "Princess and the Frog") {
                 drawPrincessFrogScreen();
+                return;
+            }
+            if (activeGameName === "Crush, Crumble and Chomp!") {
+                drawCrushCrumbleChompScreen();
                 return;
             }
 

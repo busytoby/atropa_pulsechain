@@ -50,6 +50,46 @@ object "DiskSystem" {
                 }
             }
 
+            // Helper to parse track and sector from a command string.
+            // Scans the command starting at index 2 to bypass 'U1'/'U2' command prefix digits.
+            function parseTrackSector(cmdOffset, cmdLen) -> track, sector {
+                let count := 0
+                let curNum := 0
+                let inNum := 0
+                for { let i := 2 } lt(i, cmdLen) { i := add(i, 1) } {
+                    let char := byte(0, calldataload(add(cmdOffset, i)))
+                    if iszero(char) { break }
+                    if and(gt(char, 47), lt(char, 58)) {
+                        curNum := add(mul(curNum, 10), sub(char, 48))
+                        inNum := 1
+                    }
+                    if or(lt(char, 48), gt(char, 57)) {
+                        if inNum {
+                            mstore(add(0x260, mul(count, 32)), curNum)
+                            count := add(count, 1)
+                            curNum := 0
+                            inNum := 0
+                        }
+                    }
+                }
+                if inNum {
+                    mstore(add(0x260, mul(count, 32)), curNum)
+                    count := add(count, 1)
+                }
+                if eq(count, 2) {
+                    track := mload(0x260)
+                    sector := mload(0x280)
+                }
+                if eq(count, 3) {
+                    track := mload(0x280)
+                    sector := mload(0x2A0)
+                }
+                if or(eq(count, 4), gt(count, 4)) {
+                    track := mload(add(0x260, mul(sub(count, 2), 32)))
+                    sector := mload(add(0x260, mul(sub(count, 1), 32)))
+                }
+            }
+
             // ----------------------------------------------------------------
             // METHOD 1: getJiffies() -> uint256
             // Selector: 0xb5123d47
@@ -77,8 +117,60 @@ object "DiskSystem" {
             if or(eq(selector, 0x9812a4df), eq(selector, 0xeb603a54)) {
                 let cmdLength := calldataload(36)
                 if lt(cmdLength, 3) { revert(0, 0) }
-
                 let cmdType := shr(240, calldataload(68))
+
+                // Block Read Command (U1)
+                if eq(cmdType, 0x5531) { // ASCII "U1"
+                    let track, sector := parseTrackSector(68, cmdLength)
+                    if or(iszero(track), gt(track, 40)) { revert(0, 0) }
+                    if gt(sector, 30) { revert(0, 0) }
+                    
+                    mstore(0x00, track)
+                    mstore(0x20, sector)
+                    let sectorKey := keccak256(0x00, 64)
+                    mstore(0x00, caller())
+                    mstore(0x20, sectorKey)
+                    let sectorSlot := keccak256(0x00, 64)
+                    
+                    mstore(0x00, 32)
+                    mstore(0x20, 256)
+                    for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
+                        mstore(add(0x40, mul(i, 32)), sload(add(sectorSlot, i)))
+                    }
+                    return(0x00, 320)
+                }
+
+                // Block Write Command (U2)
+                if eq(cmdType, 0x5532) { // ASCII "U2"
+                    let track, sector := parseTrackSector(68, cmdLength)
+                    if or(iszero(track), gt(track, 40)) { revert(0, 0) }
+                    if gt(sector, 30) { revert(0, 0) }
+                    
+                    let charCount := 0
+                    for {} lt(charCount, cmdLength) { charCount := add(charCount, 1) } {
+                        let char := byte(0, calldataload(add(68, charCount)))
+                        if iszero(char) { break }
+                    }
+                    let dataStartOffset := add(68, add(charCount, 1))
+                    
+                    mstore(0x00, track)
+                    mstore(0x20, sector)
+                    let sectorKey := keccak256(0x00, 64)
+                    mstore(0x00, caller())
+                    mstore(0x20, sectorKey)
+                    let sectorSlot := keccak256(0x00, 64)
+                    
+                    for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
+                        let word := calldataload(add(dataStartOffset, mul(i, 32)))
+                        sstore(add(sectorSlot, i), word)
+                    }
+                    
+                    let sectorID := or(shl(8, track), sector)
+                    log3(dataStartOffset, 256, 0x18278cbdbe8ed62bf134676966ade77d7871afa34eabd366196c1e9547b08e63, caller(), sectorID)
+                    
+                    mstore(0x00, 1)
+                    return(0x00, 32)
+                }
 
                 // Parse filename until null terminator
                 let nameHash := 0

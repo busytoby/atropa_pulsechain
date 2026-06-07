@@ -11,5 +11,6 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
 void recreate_swapchain(VulkanSystem *s);
 void draw_frame(VulkanSystem *s);
 void draw_ui_elements(VulkanSystem *s);
+void set_custom_fragment_shader(const uint32_t *spv, size_t size);
 
 #endif
