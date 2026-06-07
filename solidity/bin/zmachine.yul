@@ -13,9 +13,9 @@ object "ZMachine" {
             // 3. getObjectProperty(uint256 objId, uint256 propId, address player) -> 0xffb51b58
             // 4. executeTokenReward(address token, address player, uint256 amount) -> 0x50e819a9
             // 5. executeTokenPayment(address token, address player, uint256 amount) -> 0x1facf0c7
-            // 6. parseCommand(address player, bytes cmd) -> 0x3d02a9e3
-            // 7. triggerZ6Sound(address musicMaker, uint256 note, uint256 voice) -> 0xb5a0c8d1
-            // 8. decryptInvisiclue(address keySystem, address player, uint256 hintId) -> 0x8a92efd4
+            // 6. parseCommand(address player, bytes cmd) -> 0xf1ba03f9
+            // 7. triggerZ6Sound(address musicMaker, uint256 note, uint256 voice) -> 0xee1db5af
+            // 8. decryptInvisiclue(address keySystem, address player, uint256 hintId) -> 0xe68d22f6
             
             let selector := shr(224, calldataload(0))
 
@@ -99,7 +99,7 @@ object "ZMachine" {
                 return(0, 32)
             }
 
-            case 0x3d02a9e3 {
+            case 0xf1ba03f9 {
                 let player := calldataload(4)
                 let cmdLen := calldataload(36)
                 let firstWord := shr(224, calldataload(68))
@@ -133,7 +133,7 @@ object "ZMachine" {
                 return(0, totalBytes)
             }
 
-            case 0xb5a0c8d1 {
+            case 0xee1db5af {
                 // triggerZ6Sound(address musicMaker, uint256 note, uint256 voice) -> bool
                 let musicMaker := calldataload(4)
                 let note := calldataload(36)
@@ -150,28 +150,28 @@ object "ZMachine" {
                 return(0x00, 32)
             }
 
-            case 0x8a92efd4 {
+            case 0xe68d22f6 {
                 // decryptInvisiclue(address keySystem, address player, uint256 hintId) -> string
                 let keySystem := calldataload(4)
                 let player := calldataload(36)
                 let hintId := calldataload(68)
 
                 // First verify player has registered a secure key on keysystem to authorize decryption
-                // ABI selector for getKey256(address) inside keySystem.yul is 0xd7dc662c
-                mstore(0x00, 0xd7dc662c00000000000000000000000000000000000000000000000000000000)
+                // ABI selector for getKey256(address) inside keySystem.yul is 0xa5f5ddb3
+                mstore(0x00, 0xa5f5ddb300000000000000000000000000000000000000000000000000000000)
                 mstore(0x04, player)
                 let keySuccess := staticcall(gas(), keySystem, 0x00, 0x24, 0x00, 0x20)
                 let secureKey := mload(0x00)
 
                 let resultPtr := 0x40
-                if and(keySuccess, secureKey) {
+                if and(keySuccess, iszero(iszero(secureKey))) {
                     // Pull payment of 1 ERC-20 token before revealing hint
                     let tokenAddr := sload(add(2000000, 99)) // Hint collection contract address bound at ID 99
                     if tokenAddr {
                         let paySuccess := erc20TransferFrom(tokenAddr, player, address(), 1000000000000000000)
                         if paySuccess {
                             mstore(resultPtr, 0x48696e743a2055736520746865206272617373206c616e7465726e2068657265) // "Hint: Use the brass lantern here"
-                            resultPtr := add(resultPtr, 31)
+                            resultPtr := add(resultPtr, 32)
                         }
                     }
                 }

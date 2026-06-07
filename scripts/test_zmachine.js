@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const PROVIDER_URL = "http://127.0.0.1:8545";
+const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 
 // Helper to compile Yul
 function compileYul(yulPath) {
@@ -17,6 +18,9 @@ function compileYul(yulPath) {
 }
 
 async function main() {
+    console.log("Loading registry config...");
+    const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+
     console.log("Compiling zmachine.yul...");
     const yulPath = path.join(__dirname, "../solidity/bin/zmachine.yul");
     const bytecode = compileYul(yulPath);
@@ -44,7 +48,9 @@ async function main() {
         "function decodeZString(uint256 offset) public view returns (string)",
         "function getObjectProperty(uint256 objId, uint256 propId, address player) public view returns (uint256)",
         "function executeTokenReward(address token, address player, uint256 amount) public returns (bool)",
-        "function executeTokenPayment(address token, address player, uint256 amount) public returns (bool)"
+        "function executeTokenPayment(address token, address player, uint256 amount) public returns (bool)",
+        "function triggerZ6Sound(address musicMaker, uint256 note, uint256 voice) public returns (bool)",
+        "function decryptInvisiclue(address keySystem, address player, uint256 hintId) public view returns (string)"
     ];
     const contract = new ethers.Contract(zmachineAddress, abi, deployer);
 
@@ -102,6 +108,47 @@ async function main() {
     const rewardTx = await contract.executeTokenReward(tokenAddress, deployer.address, ethers.parseEther("5"), { gasLimit: 2000000 });
     await rewardTx.wait();
     console.log("Reward successfully distributed!");
+
+    // 6. Test Z6 sound note trigger
+    console.log("\nTesting Z6 Sound note triggers (note=60, voice=1)...");
+    console.log("Compiling and deploying musicMaker.yul...");
+    const musicMakerBytecode = compileYul(path.join(__dirname, "../solidity/bin/musicMaker.yul"));
+    const musicMakerTx = await deployer.sendTransaction({ data: musicMakerBytecode, gasLimit: 3000000 });
+    const musicMakerReceipt = await musicMakerTx.wait();
+    const musicMakerAddress = musicMakerReceipt.contractAddress;
+    console.log("MusicMaker deployed at:", musicMakerAddress);
+
+    const soundTx = await contract.triggerZ6Sound(musicMakerAddress, 60, 1, { gasLimit: 2000000 });
+    await soundTx.wait();
+    console.log("Z6 Note triggered successfully.");
+
+    // 7. Test token-gated Invisiclues hint decrypting
+    console.log("\nTesting token-gated Invisiclues hint decryption...");
+    console.log("Compiling and deploying keySystem.yul...");
+    const keySystemBytecode = compileYul(path.join(__dirname, "../solidity/bin/keySystem.yul"));
+    const keySystemTx = await deployer.sendTransaction({ data: keySystemBytecode, gasLimit: 3000000 });
+    const keySystemReceipt = await keySystemTx.wait();
+    const keySystemAddress = keySystemReceipt.contractAddress;
+    console.log("KeySystem deployed at:", keySystemAddress);
+    
+    // Inject key verification setup on keysystem first
+    const keySystemABI = ["function setKey256(address user, bytes32 key) external returns (uint256)"];
+    const keySystem = new ethers.Contract(keySystemAddress, keySystemABI, deployer);
+    await (await keySystem.setKey256(deployer.address, ethers.id("TSFi2_Secure_Key_Seed"))).wait();
+
+    // Bind Object ID 99 to the ERC-20 token address in Z-machine storage mapping for Invisiclues pull payments
+    const hintStorageSlot = ethers.toBeHex(2000000 + 99);
+    await provider.send("hardhat_setStorageAt", [
+        zmachineAddress,
+        hintStorageSlot,
+        ethers.zeroPadValue(tokenAddress, 32)
+    ]);
+
+    // Approve Z-machine contract to collect fee of 1 ZGC from player
+    await (await token.approve(zmachineAddress, ethers.parseEther("1"))).wait();
+
+    const hintStr = await contract.decryptInvisiclue(keySystemAddress, deployer.address, 1, { gasLimit: 3000000 });
+    console.log("Decrypted hint payload:", hintStr);
 }
 
 main().catch((error) => {

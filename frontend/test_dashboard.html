@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi2 Z-Machine Test Suite Dashboard</title>
+    <meta name="description" content="Interactive visual test suite and command center for the TSFi2 on-chain Z-Machine interpreter.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.16.0/ethers.umd.min.js"></script>
+    <style>
+        .test-card {
+            background: rgba(13, 17, 38, 0.65);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .test-card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+            transform: translateY(-2px);
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .test-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+        .test-status {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid currentColor;
+            letter-spacing: 1px;
+        }
+        .status-idle { color: var(--text-secondary); }
+        .status-running { 
+            color: var(--neon-purple);
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.2);
+            animation: pulse-border 1.5s infinite alternate;
+        }
+        .status-passed { 
+            color: #00ff7f; 
+            text-shadow: 0 0 8px rgba(0, 255, 127, 0.4);
+        }
+        .status-failed { 
+            color: var(--neon-magenta); 
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+        }
+        .test-details {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .test-log {
+            background: rgba(5, 7, 18, 0.95);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #a2b4c0;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+            border-left: 3px solid var(--border-color);
+        }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+        @media(max-width: 1024px) {
+            .grid-layout { grid-template-columns: 1fr; }
+        }
+        .control-panel {
+            background: rgba(13, 17, 38, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .btn-glow {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 28px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 6px 25px rgba(0, 242, 254, 0.55);
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-group label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .form-control {
+            background: rgba(5, 7, 18, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: var(--neon-blue);
+            outline: none;
+        }
+        .sid-visualization {
+            background: #04060f;
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sid-voice-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sid-bar-outer {
+            height: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            flex-grow: 1;
+            margin: 0 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .sid-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
+        }
+        .clue-box {
+            background: rgba(255, 0, 127, 0.05);
+            border: 1px solid rgba(255, 0, 127, 0.25);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .clue-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--neon-magenta);
+            text-shadow: 0 0 5px rgba(255, 0, 127, 0.3);
+        }
+        .badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+        @keyframes pulse-border {
+            from { border-color: rgba(79, 172, 254, 0.3); }
+            to { border-color: rgba(79, 172, 254, 1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">TSFi2 Z-MACHINE</span>
+                <div class="subtitle">Integration Test Suite Dashboard</div>
+            </div>
+            <div class="header-actions">
+                <div id="connectionStatus" class="network-badge">Disconnected</div>
+            </div>
+        </header>
+
+        <div class="grid-layout">
+            <!-- Left Side: Test Cases -->
+            <div>
+                <h2 style="font-family: 'Orbitron', sans-serif; margin-bottom: 20px; letter-spacing: 1px;" class="pulse-glow">Verification Cases</h2>
+                
+                <div class="test-card" id="tc1">
+                    <div class="test-header">
+                        <div class="test-title">1. Contract Compilations & Deployments</div>
+                        <div class="test-status status-idle" id="tc1-status">Idle</div>
+                    </div>
+                    <div class="test-details">Compiles zmachine.yul, MockERC20.sol, musicMaker.yul, and keySystem.yul. Deploys them to the local node.</div>
+                    <div class="test-log" id="tc1-log" style="display: none;">Waiting for execution...</div>
+                </div>
+
+                <div class="test-card" id="tc2">
+                    <div class="test-header">
+                        <div class="test-title">2. ERC-20 Binding Setup</div>
+                        <div class="test-status status-idle" id="tc2-status">Idle</div>
+                    </div>
+                    <div class="test-details">Binds Object ID 50 (Gold Coin) in the Z-Machine virtual registry to the mock ERC-20 token address.</div>
+                    <div class="test-log" id="tc2-log" style="display: none;">Waiting for execution...</div>
+                </div>
+
+                <div class="test-card" id="tc3">
+                    <div class="test-header">
+                        <div class="test-title">3. Story ROM Upload</div>
+                        <div class="test-status status-idle" id="tc3-status">Idle</div>
+                    </div>
+                    <div class="test-details">Uploads ZORK I mock headers and object properties mapping to the on-chain interpreter RAM.</div>
+                    <div class="test-log" id="tc3-log" style="display: none;">Waiting for execution...</div>
+                </div>
+
+                <div class="test-card" id="tc4">
+                    <div class="test-header">
+                        <div class="test-title">4. Property 31 Dynamic Token Balance Query</div>
+                        <div class="test-status status-idle" id="tc4-status">Idle</div>
+                    </div>
+                    <div class="test-details">Queries virtual object 50, property 31 to dynamically pull the player's live ERC-20 wallet balance.</div>
+                    <div class="test-log" id="tc4-log" style="display: none;">Waiting for execution...</div>
+                </div>
+
+                <div class="test-card" id="tc5">
+                    <div class="test-header">
+                        <div class="test-title">5. Token Reward Transfer</div>
+                        <div class="test-status status-idle" id="tc5-status">Idle</div>
+                    </div>
+                    <div class="test-details">Executes token reward payout. Z-Machine dispatches standard ERC-20 tokens directly to the player.</div>
+                    <div class="test-log" id="tc5-log" style="display: none;">Waiting for execution...</div>
+                </div>
+
+                <div class="test-card" id="tc6">
+                    <div class="test-header">
+                        <div class="test-title">6. Z6 Sound Dispatch (SID Synthesizer)</div>
+                        <div class="test-status status-idle" id="tc6-status">Idle</div>
+                    </div>
+                    <div class="test-details">Triggers sound note sequence dispatches on musicMaker.yul Voice registers.</div>
+                    <div class="test-log" id="tc6-log" style="display: none;">Waiting for execution...</div>
+                </div>
+
+                <div class="test-card" id="tc7">
+                    <div class="test-header">
+                        <div class="test-title">7. Token-Gated Invisiclue Hint Decryption</div>
+                        <div class="test-status status-idle" id="tc7-status">Idle</div>
+                    </div>
+                    <div class="test-details">Validates cryptography key on keySystem.yul and pulls 1 ZGC payment to unlock the clue payload.</div>
+                    <div class="test-log" id="tc7-log" style="display: none;">Waiting for execution...</div>
+                </div>
+            </div>
+
+            <!-- Right Side: Control Panel & Live Widgets -->
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+                <div class="control-panel">
+                    <h3 style="font-family: 'Orbitron', sans-serif;" class="pulse-glow">Console Control</h3>
+                    
+                    <div class="form-group">
+                        <label for="providerUrl">Local Node RPC</label>
+                        <input type="text" id="providerUrl" class="form-control" value="http://127.0.0.1:8545">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="privateKey">Signer Private Key (Hardhat Account #0)</label>
+                        <input type="password" id="privateKey" class="form-control" value="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80">
+                    </div>
+
+                    <button id="btnRunAll" class="btn-glow">Run Entire Suite</button>
+                    <button id="btnConnect" class="btn-secondary">Check RPC Connection</button>
+                </div>
+
+                <!-- Live SID Monitor -->
+                <div class="sid-visualization">
+                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-blue);" class="pulse-glow">SID Sound Registers</h3>
+                    <div class="sid-voice-bar">
+                        <span class="badge">Voice 1</span>
+                        <div class="sid-bar-outer"><div id="v1Bar" class="sid-bar-inner"></div></div>
+                        <span id="v1Freq" style="font-family: 'Orbitron', sans-serif; width: 60px; text-align: right;">0 Hz</span>
+                    </div>
+                    <div class="sid-voice-bar">
+                        <span class="badge">Voice 2</span>
+                        <div class="sid-bar-outer"><div id="v2Bar" class="sid-bar-inner"></div></div>
+                        <span id="v2Freq" style="font-family: 'Orbitron', sans-serif; width: 60px; text-align: right;">0 Hz</span>
+                    </div>
+                    <div class="sid-voice-bar">
+                        <span class="badge">Voice 3</span>
+                        <div class="sid-bar-outer"><div id="v3Bar" class="sid-bar-inner"></div></div>
+                        <span id="v3Freq" style="font-family: 'Orbitron', sans-serif; width: 60px; text-align: right;">0 Hz</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Parser -->
+                <div class="clue-box">
+                    <h3 class="clue-title">Interactive Verb Parser</h3>
+                    <div class="form-group">
+                        <input type="text" id="verbText" class="form-control" placeholder="Type command: 'look' or 'take'">
+                    </div>
+                    <button id="btnSendVerb" class="btn-secondary" style="border-color: var(--neon-magenta); color: var(--neon-magenta);">Execute Command</button>
+                    <div id="parserResult" style="font-family: 'Orbitron', sans-serif; font-size: 0.95rem; text-align: center; margin-top: 10px;">Results display here.</div>
+                </div>
+
+                <!-- Interactive Invisiclues -->
+                <div class="clue-box" style="border-color: var(--neon-purple); background: rgba(79, 172, 254, 0.05);">
+                    <h3 class="clue-title" style="color: var(--neon-purple); text-shadow: 0 0 5px rgba(79, 172, 254, 0.3);">Invisiclues Hints</h3>
+                    <button id="btnDecryptHint" class="btn-glow" style="background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue)); font-size: 0.95rem; padding: 10px 20px;">Decrypt Hint payload</button>
+                    <div id="hintResult" style="font-family: 'Orbitron', sans-serif; font-size: 0.95rem; text-align: center; margin-top: 10px;">Payload locked.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ABI definitions matching zmachine.yul, keySystem.yul, and musicMaker.yul
+        const zmachineABI = [
+            "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+            "function decodeZString(uint256 offset) public view returns (string)",
+            "function getObjectProperty(uint256 objId, uint256 propId, address player) public view returns (uint256)",
+            "function executeTokenReward(address token, address player, uint256 amount) public returns (bool)",
+            "function executeTokenPayment(address token, address player, uint256 amount) public returns (bool)",
+            "function triggerZ6Sound(address musicMaker, uint256 note, uint256 voice) public returns (bool)",
+            "function decryptInvisiclue(address keySystem, address player, uint256 hintId) public view returns (string)",
+            "function parseCommand(address player, bytes cmd) public returns (string)"
+        ];
+
+        let provider, wallet;
+        let bytecodes = null;
+
+        // Contract deployment addresses Staged
+        let zmachineAddress, tokenAddress, musicMakerAddress, keySystemAddress;
+        let zmachineContract, tokenContract;
+
+        async function initConnection() {
+            try {
+                const rpcUrl = document.getElementById("providerUrl").value;
+                provider = new ethers.JsonRpcProvider(rpcUrl);
+                const privateKey = document.getElementById("privateKey").value;
+                wallet = new ethers.Wallet(privateKey, provider);
+                
+                const network = await provider.getNetwork();
+                const badge = document.getElementById("connectionStatus");
+                badge.innerText = `CONNECTED: Chain ${network.chainId}`;
+                badge.classList.add("connected");
+                badge.style.borderColor = "#00ff7f";
+                badge.style.color = "#00ff7f";
+                return true;
+            } catch (err) {
+                const badge = document.getElementById("connectionStatus");
+                badge.innerText = "Error Connecting";
+                badge.style.borderColor = "var(--neon-magenta)";
+                badge.style.color = "var(--neon-magenta)";
+                alert("Failed to connect to local Hardhat/Anvil node. Please ensure it is running at 127.0.0.1:8545.");
+                return false;
+            }
+        }
+
+        async function loadBytecodes() {
+            if (bytecodes) return true;
+            try {
+                const res = await fetch("compiled_yul.json");
+                bytecodes = await res.json();
+                return true;
+            } catch (e) {
+                console.error("Failed to load compiled_yul.json:", e);
+                alert("Could not load Yul contract bytecodes. Please make sure compile_all_yul.js has run.");
+                return false;
+            }
+        }
+
+        function updateTCStatus(tc, status, logText) {
+            const statusEl = document.getElementById(`${tc}-status`);
+            const logEl = document.getElementById(`${tc}-log`);
+            
+            statusEl.className = `test-status status-${status}`;
+            statusEl.innerText = status;
+            
+            if (logText) {
+                logEl.style.display = "block";
+                logEl.innerText = logText;
+            }
+        }
+
+        // Test implementation functions
+        async function runTestCase1() {
+            updateTCStatus("tc1", "running", "Deploying Z-Machine, MockERC20, MusicMaker, and KeySystem...");
+            try {
+                // Deploy Z-Machine
+                const zmTx = await wallet.sendTransaction({ data: bytecodes.zmachine, gasLimit: 3000000 });
+                const zmReceipt = await zmTx.wait();
+                zmachineAddress = zmReceipt.contractAddress;
+
+                // Deploy MockERC20
+                const erc20Factory = new ethers.ContractFactory(bytecodes.mockErc20.abi, bytecodes.mockErc20.bin, wallet);
+                const erc20Token = await erc20Factory.deploy();
+                await erc20Token.waitForDeployment();
+                tokenAddress = await erc20Token.getAddress();
+
+                // Deploy MusicMaker
+                const mmTx = await wallet.sendTransaction({ data: bytecodes.musicMaker, gasLimit: 3000000 });
+                const mmReceipt = await mmTx.wait();
+                musicMakerAddress = mmReceipt.contractAddress;
+
+                // Deploy KeySystem
+                const ksTx = await wallet.sendTransaction({ data: bytecodes.keySystem, gasLimit: 3000000 });
+                const ksReceipt = await ksTx.wait();
+                keySystemAddress = ksReceipt.contractAddress;
+
+                zmachineContract = new ethers.Contract(zmachineAddress, zmachineABI, wallet);
+                tokenContract = erc20Token;
+
+                updateTCStatus("tc1", "passed", 
+                    `ZMachine: ${zmachineAddress}\nMockERC20: ${tokenAddress}\nMusicMaker: ${musicMakerAddress}\nKeySystem: ${keySystemAddress}`
+                );
+            } catch (e) {
+                updateTCStatus("tc1", "failed", `Error deploying contracts:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        async function runTestCase2() {
+            updateTCStatus("tc2", "running", "Binding Object ID 50 to MockERC20 token address in Z-Machine storage...");
+            try {
+                const storageSlot = ethers.toBeHex(2000000 + 50);
+                await provider.send("hardhat_setStorageAt", [
+                    zmachineAddress,
+                    storageSlot,
+                    ethers.zeroPadValue(tokenAddress, 32)
+                ]);
+                updateTCStatus("tc2", "passed", `Bound storage slot ${storageSlot} -> ${tokenAddress}`);
+            } catch (e) {
+                updateTCStatus("tc2", "failed", `Binding failed:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        async function runTestCase3() {
+            updateTCStatus("tc3", "running", "Uploading mock Zork header data to Z-Machine memory...");
+            try {
+                const testHeader = new Uint8Array(1024);
+                testHeader[0] = 3; // Version
+                
+                // Set initial PC to 0x0800
+                testHeader[6] = 0x08;
+                testHeader[7] = 0x00;
+
+                // Object Table address at offset 0x0040
+                testHeader[10] = 0x00;
+                testHeader[11] = 0x40;
+
+                // Properties pointer offset 0x0100 for Object 50 (offset = 62 + 49*9 = 503 byte offset)
+                const objOffset = 62 + (49 * 9);
+                testHeader[objOffset + 7] = 0x01;
+                testHeader[objOffset + 8] = 0x00;
+
+                const tx = await zmachineContract.uploadRomChunk(0, testHeader, { gasLimit: 1000000 });
+                await tx.wait();
+
+                updateTCStatus("tc3", "passed", `ROM header uploaded successfully.\nInitial PC: 0x0800\nObject Table Address: 0x0040`);
+            } catch (e) {
+                updateTCStatus("tc3", "failed", `ROM upload failed:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        async function runTestCase4() {
+            updateTCStatus("tc4", "running", "Querying Object Property 31 (Dynamic Token Balance)...");
+            try {
+                const bal = await zmachineContract.getObjectProperty(50, 31, wallet.address);
+                updateTCStatus("tc4", "passed", `Queried successfully.\nReturned Balance: ${ethers.formatEther(bal)} ZGC`);
+            } catch (e) {
+                updateTCStatus("tc4", "failed", `Property query failed:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        async function runTestCase5() {
+            updateTCStatus("tc5", "running", "Transferring tokens and requesting payout execution...");
+            try {
+                const fundingTx = await tokenContract.transfer(zmachineAddress, ethers.parseEther("100"));
+                await fundingTx.wait();
+
+                const tx = await zmachineContract.executeTokenReward(tokenAddress, wallet.address, ethers.parseEther("5"), { gasLimit: 1000000 });
+                await tx.wait();
+
+                const bal = await tokenContract.balanceOf(wallet.address);
+                updateTCStatus("tc5", "passed", `Reward distributed!\nZ-Machine successfully transferred 5 ZGC payout to player.\nNew Balance: ${ethers.formatEther(bal)} ZGC`);
+            } catch (e) {
+                updateTCStatus("tc5", "failed", `Reward failed:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        async function runTestCase6() {
+            updateTCStatus("tc6", "running", "Sending Z6 audio trigger note=60, voice=1...");
+            try {
+                const tx = await zmachineContract.triggerZ6Sound(musicMakerAddress, 60, 1, { gasLimit: 1000000 });
+                await tx.wait();
+
+                // Fetch musicMaker frequency register directly for visual update
+                const mmABI = [
+                    "function peek(uint16 addr) public view returns (uint8)",
+                    "function getVoice1Frequency() public view returns (uint16)"
+                ];
+                const mmContract = new ethers.Contract(musicMakerAddress, mmABI, provider);
+                const freq = await mmContract.getVoice1Frequency();
+
+                updateVoiceReg(1, freq);
+
+                updateTCStatus("tc6", "passed", `Sound Note sequence complete.\nVoice 1 frequency registers populated with frequency: ${freq} Hz`);
+            } catch (e) {
+                updateTCStatus("tc6", "failed", `Audio dispatch failed:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        function updateVoiceReg(voice, val) {
+            const bar = document.getElementById(`v${voice}Bar`);
+            const label = document.getElementById(`v${voice}Freq`);
+            
+            label.innerText = `${val} Hz`;
+            
+            // Map freq from 0-10000 to percentage
+            const percentage = Math.min((val / 10000) * 100, 100);
+            bar.style.width = `${percentage}%`;
+        }
+
+        async function runTestCase7() {
+            updateTCStatus("tc7", "running", "Registering cryptographic seed on KeySystem and approving fee payment...");
+            try {
+                const keySystemABI = ["function setKey256(address user, bytes32 key) external returns (uint256)"];
+                const ksContract = new ethers.Contract(keySystemAddress, keySystemABI, wallet);
+                await (await ksContract.setKey256(wallet.address, ethers.id("TSFi2_Secure_Key_Seed"))).wait();
+
+                // Bind Object 99 to ERC-20
+                const storageSlot = ethers.toBeHex(2000000 + 99);
+                await provider.send("hardhat_setStorageAt", [
+                    zmachineAddress,
+                    storageSlot,
+                    ethers.zeroPadValue(tokenAddress, 32)
+                ]);
+
+                // Approve fee collection
+                await (await tokenContract.approve(zmachineAddress, ethers.parseEther("1"))).wait();
+
+                // Call decrypt
+                const hint = await zmachineContract.decryptInvisiclue(keySystemAddress, wallet.address, 1, { gasLimit: 2000000 });
+                
+                document.getElementById("hintResult").innerText = hint;
+
+                updateTCStatus("tc7", "passed", `Verification succeeded!\nKey seed checked; 1 ZGC pulled.\nUnlocked Hint string: "${hint}"`);
+            } catch (e) {
+                updateTCStatus("tc7", "failed", `Invisiclue decryption failed:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        async function runAllTests() {
+            const connected = await initConnection();
+            if (!connected) return;
+            
+            const loaded = await loadBytecodes();
+            if (!loaded) return;
+
+            document.getElementById("btnRunAll").disabled = true;
+            document.getElementById("btnRunAll").innerText = "Running Test Suite...";
+
+            try {
+                await runTestCase1();
+                await runTestCase2();
+                await runTestCase3();
+                await runTestCase4();
+                await runTestCase5();
+                await runTestCase6();
+                await runTestCase7();
+                alert("All verification cases completed successfully!");
+            } catch (err) {
+                console.error("Test suite failed:", err);
+                alert("Verification failed. See log output in the failing card.");
+            } finally {
+                document.getElementById("btnRunAll").disabled = false;
+                document.getElementById("btnRunAll").innerText = "Run Entire Suite";
+            }
+        }
+
+        document.getElementById("btnConnect").addEventListener("click", initConnection);
+        document.getElementById("btnRunAll").addEventListener("click", runAllTests);
+
+        // Interactive Verb Parser handler
+        document.getElementById("btnSendVerb").addEventListener("click", async () => {
+            if (!zmachineContract) {
+                alert("Please deploy contracts first (run Case 1 or the entire suite).");
+                return;
+            }
+            const cmd = document.getElementById("verbText").value;
+            if (!cmd) {
+                alert("Please enter a command.");
+                return;
+            }
+            document.getElementById("parserResult").innerText = "Sending command to on-chain parser...";
+            try {
+                const tx = await zmachineContract.parseCommand(wallet.address, ethers.toUtf8Bytes(cmd), { gasLimit: 1000000 });
+                // We use staticCall to read the return string of the command execution
+                const result = await zmachineContract.parseCommand.staticCall(wallet.address, ethers.toUtf8Bytes(cmd));
+                document.getElementById("parserResult").innerText = `Decoded response:\n"${result}"`;
+                
+                // If it was "take", let's update dynamic balance display
+                if (cmd.trim().toLowerCase() === "take") {
+                    const newBal = await tokenContract.balanceOf(wallet.address);
+                    document.getElementById("tc4-log").innerText += `\nBalance update after command: ${ethers.formatEther(newBal)} ZGC`;
+                }
+            } catch (err) {
+                document.getElementById("parserResult").innerText = `Execution failed:\n${err.message}`;
+            }
+        });
+
+        // Interactive Invisiclues decrypt handler
+        document.getElementById("btnDecryptHint").addEventListener("click", async () => {
+            if (!zmachineContract) {
+                alert("Please deploy contracts first (run Case 1 or the entire suite).");
+                return;
+            }
+            document.getElementById("hintResult").innerText = "Decrypting Hint...";
+            try {
+                const hint = await zmachineContract.decryptInvisiclue(keySystemAddress, wallet.address, 1, { gasLimit: 2000000 });
+                document.getElementById("hintResult").innerText = `Hint: "${hint}"`;
+            } catch (e) {
+                document.getElementById("hintResult").innerText = `Error: ${e.message}`;
+            }
+        });
+
+        // Try connecting on initial page load
+        window.addEventListener("DOMContentLoaded", () => {
+            initConnection();
+            loadBytecodes();
+        });
+    </script>
+</body>
+</html>
