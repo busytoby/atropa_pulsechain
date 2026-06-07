@@ -5099,7 +5099,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             document.getElementById("btnCompileDeployZgame").addEventListener("click", async () => {
                 if (rooms.length === 0) {
-                    alert("Please add at least one Room before deploying!");
+                    // Fallback to check if user supplied raw ZIL code in the description textarea
+                    const rawZilCode = roomDescInput.value.trim();
+                    if (rawZilCode.startsWith("<ROOM") || rawZilCode.startsWith("<OBJECT")) {
+                        console.log("Found ZIL code block input. Running browser ZILCH compiler...");
+                        // Basic ZIL Regex parser to compile structures
+                        const roomMatches = [...rawZilCode.matchAll(/<ROOM\s+([A-Za-z0-9\-]+)\s+\(DESC\s+"([^"]+)"\)/g)];
+                        roomMatches.forEach(m => {
+                            rooms.push({ name: m[1], desc: m[2] });
+                        });
+                        const objMatches = [...rawZilCode.matchAll(/<OBJECT\s+([A-Za-z0-9\-]+)\s+\(VALUE\s+(\d+)\)/g)];
+                        objMatches.forEach(m => {
+                            items.push({ name: m[1], token: null });
+                        });
+                        console.log("ZILCH compilation successful. Compiled rooms:", rooms.length, "items:", items.length);
+                    }
+                }
+
+                if (rooms.length === 0) {
+                    alert("Please add at least one Room or enter valid ZIL code before deploying!");
                     return;
                 }
                 if (!signer) {

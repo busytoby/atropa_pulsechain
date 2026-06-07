@@ -432,6 +432,11 @@ object "CPU6502Emulator" {
                     sstore(getUserSlot(53273), newVal)
                 }
                 case 54784 { // $D600 (Votrax Phoneme register)
+                    // Excise 1 OTRT unit Diyat Speech Tax per phoneme
+                    let speechTax := 1
+                    if exciseOnChainTax(speechTax) {
+                        log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), speechTax)
+                    }
                     sstore(getUserSlot(54784), val)
                     sstore(getUserSlot(54786), 1) // Set Busy to 1
                     let cnt := sload(getUserSlot(54787))
@@ -800,23 +805,30 @@ object "CPU6502Emulator" {
                         let gSlot := and(sload(getUserSlot(54896)), 0x07) // Selected slot 0-7
                         let user := getContextUser()
                         
-                        // Command 1: Save current Doodle Canvas (8192 to 16383 -> 8192 bytes)
+                        // Command 1: Save current Doodle Canvas (8192 to 16383 -> 8192 bytes packed as 256 words)
                         if eq(val, 1) {
-                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
-                                let pixelVal := and(sload(getUserSlot(add(8192, i))), 0xFF)
-                                sstore(getGallerySlot(user, gSlot, i), pixelVal)
+                            for { let i := 0 } lt(i, 256) { i := add(i, 1) } {
+                                let packedVal := 0
+                                for { let j := 0 } lt(j, 32) { j := add(j, 1) } {
+                                    let pixelVal := and(sload(getUserSlot(add(8192, add(mul(i, 32), j)))), 0xFF)
+                                    packedVal := or(shl(8, packedVal), pixelVal)
+                                }
+                                sstore(getGallerySlot(user, gSlot, i), packedVal)
                             }
                         }
                         // Command 2: Load selected Gallery slot into Doodle Canvas
                         if eq(val, 2) {
-                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
-                                let pixelVal := and(sload(getGallerySlot(user, gSlot, i)), 0xFF)
-                                sstore(getUserSlot(add(8192, i)), pixelVal)
+                            for { let i := 0 } lt(i, 256) { i := add(i, 1) } {
+                                let packedVal := sload(getGallerySlot(user, gSlot, i))
+                                for { let j := 0 } lt(j, 32) { j := add(j, 1) } {
+                                    let pixelVal := and(shr(mul(sub(31, j), 8), packedVal), 0xFF)
+                                    sstore(getUserSlot(add(8192, add(mul(i, 32), j))), pixelVal)
+                                }
                             }
                         }
                         // Command 3: Clear selected Gallery slot
                         if eq(val, 3) {
-                            for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
+                            for { let i := 0 } lt(i, 256) { i := add(i, 1) } {
                                 sstore(getGallerySlot(user, gSlot, i), 0)
                             }
                         }
@@ -1012,6 +1024,29 @@ object "CPU6502Emulator" {
                     setReg(0x80, val)
                     updateFlags(val)
                 }
+                // ADC zero-page (Add with Carry)
+                case 0x65 {
+                    let a := getReg(0x80)
+                    let carry := getCarry()
+                    let zpVal := and(sload(getUserSlot(and(operand, 0xFF))), 0xFF)
+                    let sum := add(add(a, zpVal), carry)
+                    setCarry(gt(sum, 255))
+                    let val := and(sum, 0xFF)
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // SBC zero-page (Subtract with Carry)
+                case 0xE5 {
+                    let a := getReg(0x80)
+                    let carry := getCarry()
+                    let zpVal := and(sload(getUserSlot(and(operand, 0xFF))), 0xFF)
+                    let diff := sub(sub(a, zpVal), sub(1, carry))
+                    let noBorrow := iszero(and(diff, 0x100))
+                    setCarry(noBorrow)
+                    let val := and(diff, 0xFF)
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
                 // INX (Increment X)
                 case 0xE8 {
                     let val := and(add(getReg(0x81), 1), 0xFF)
@@ -1103,6 +1138,10 @@ object "CPU6502Emulator" {
                             row := add(row, 1)
                             cursor := 0
                         }
+                        case 147 { // Clear Screen (CLR)
+                            row := 0
+                            cursor := 0
+                        }
                         default {
                             let screenCode := char
                             if and(iszero(lt(char, 65)), iszero(gt(char, 90))) {
@@ -1176,6 +1215,28 @@ object "CPU6502Emulator" {
                         }
                         setReg(0x80, char)
                         updateFlags(char)
+                        handled := 1
+                    }
+                    case 65520 { // $FFF0 - PLOT (Read/set cursor position)
+                        let sr := getReg(0x84)
+                        let carry := and(sr, 0x01)
+                        if iszero(carry) {
+                            // Carry is clear: SET cursor position
+                            // Y register (0x82) contains row (Y)
+                            // X register (0x81) contains column (X)
+                            let colVal := getReg(0x81)
+                            let rowVal := getReg(0x82)
+                            sstore(getUserSlot(211), colVal)
+                            sstore(getUserSlot(214), rowVal)
+                        }
+                        if carry {
+                            // Carry is set: READ cursor position
+                            // Return row in Y (0x82), column in X (0x81)
+                            let colVal := and(sload(getUserSlot(211)), 0xFF)
+                            let rowVal := and(sload(getUserSlot(214)), 0xFF)
+                            setReg(0x81, colVal)
+                            setReg(0x82, rowVal)
+                        }
                         handled := 1
                     }
                     
@@ -1404,6 +1465,114 @@ object "CPU6502Emulator" {
                     let val := and(getReg(0x80), getReg(0x81))
                     writeMemoryBanked(base, val, getDataBank())
                 }
+                // ASL Accumulator (0x0A)
+                case 0x0A {
+                    let a := getReg(0x80)
+                    setCarry(and(shr(7, a), 0x01))
+                    let val := and(shl(1, a), 0xFF)
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // ASL Zero Page (0x06)
+                case 0x06 {
+                    let addr := and(operand, 0xFF)
+                    let val := and(readMemory(addr), 0xFF)
+                    setCarry(and(shr(7, val), 0x01))
+                    val := and(shl(1, val), 0xFF)
+                    writeMemory(addr, val)
+                    updateFlags(val)
+                }
+                // LSR Accumulator (0x4A)
+                case 0x4A {
+                    let a := getReg(0x80)
+                    setCarry(and(a, 0x01))
+                    let val := shr(1, a)
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // LSR Zero Page (0x46)
+                case 0x46 {
+                    let addr := and(operand, 0xFF)
+                    let val := and(readMemory(addr), 0xFF)
+                    setCarry(and(val, 0x01))
+                    val := shr(1, val)
+                    writeMemory(addr, val)
+                    updateFlags(val)
+                }
+                // ROL Accumulator (0x2A)
+                case 0x2A {
+                    let a := getReg(0x80)
+                    let oldCarry := getCarry()
+                    setCarry(and(shr(7, a), 0x01))
+                    let val := and(or(shl(1, a), oldCarry), 0xFF)
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // ROL Zero Page (0x26)
+                case 0x26 {
+                    let addr := and(operand, 0xFF)
+                    let val := and(readMemory(addr), 0xFF)
+                    let oldCarry := getCarry()
+                    setCarry(and(shr(7, val), 0x01))
+                    val := and(or(shl(1, val), oldCarry), 0xFF)
+                    writeMemory(addr, val)
+                    updateFlags(val)
+                }
+                // ROR Accumulator (0x6A)
+                case 0x6A {
+                    let a := getReg(0x80)
+                    let oldCarry := getCarry()
+                    setCarry(and(a, 0x01))
+                    let val := or(shr(1, a), shl(7, oldCarry))
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // ROR Zero Page (0x66)
+                case 0x66 {
+                    let addr := and(operand, 0xFF)
+                    let val := and(readMemory(addr), 0xFF)
+                    let oldCarry := getCarry()
+                    setCarry(and(val, 0x01))
+                    val := or(shr(1, val), shl(7, oldCarry))
+                    writeMemory(addr, val)
+                    updateFlags(val)
+                }
+                // ORA Zero Page (0x05)
+                case 0x05 {
+                    let val := or(getReg(0x80), and(sload(getUserSlot(and(operand, 0xFF))), 0xFF))
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // ORA Immediate (0x09)
+                case 0x09 {
+                    let val := or(getReg(0x80), and(operand, 0xFF))
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // EOR Zero Page (0x45)
+                case 0x45 {
+                    let val := xor(getReg(0x80), and(sload(getUserSlot(and(operand, 0xFF))), 0xFF))
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // EOR Immediate (0x49)
+                case 0x49 {
+                    let val := xor(getReg(0x80), and(operand, 0xFF))
+                    setReg(0x80, val)
+                    updateFlags(val)
+                }
+                // LDX Zero Page (0xA6)
+                case 0xA6 {
+                    let val := and(readMemory(and(operand, 0xFF)), 0xFF)
+                    setReg(0x81, val)
+                    updateFlags(val)
+                }
+                // LDY Zero Page (0xA4)
+                case 0xA4 {
+                    let val := and(readMemory(and(operand, 0xFF)), 0xFF)
+                    setReg(0x82, val)
+                    updateFlags(val)
+                }
                 // Undocumented and Standard NOPs
                 case 0xEA {}
                 case 0x04 {} case 0x14 {} case 0x34 {} case 0x44 {} case 0x54 {} case 0x64 {} case 0x74 {}
@@ -1443,6 +1612,13 @@ object "CPU6502Emulator" {
                 // Add undocumented LAX/SAX 2-byte opcodes
                 is2Byte := or(is2Byte, or(or(or(eq(op, 0xA7), eq(op, 0xB7)), or(eq(op, 0xA3), eq(op, 0xB3))), or(or(eq(op, 0x87), eq(op, 0x97)), eq(op, 0x83))))
                 
+                // Add new shift/bitwise 2-byte opcodes
+                is2Byte := or(is2Byte, or(
+                    or(or(or(eq(op, 0x06), eq(op, 0x46)), or(eq(op, 0x26), eq(op, 0x66))),
+                       or(or(eq(op, 0x05), eq(op, 0x09)), or(eq(op, 0x45), eq(op, 0x49)))),
+                    or(or(or(eq(op, 0xA6), eq(op, 0xA4)), or(eq(op, 0x65), eq(op, 0xE5))), 0)
+                ))
+
                 // Add undocumented NOP 2-byte opcodes
                 is2Byte := or(is2Byte, or(or(or(or(eq(op, 0x04), eq(op, 0x14)), or(eq(op, 0x34), eq(op, 0x44))), or(or(eq(op, 0x54), eq(op, 0x64)), or(eq(op, 0x74), eq(op, 0x80)))), or(or(or(eq(op, 0x82), eq(op, 0x89)), or(eq(op, 0xC2), eq(op, 0xD4))), or(eq(op, 0xE2), eq(op, 0xF4)))))
 
@@ -1925,6 +2101,30 @@ object "CPU6502Emulator" {
 
                 mstore(0x00, 1)
                 return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 14: peekRange(uint256 startAddr, uint256 length) -> uint256[]
+            // Selector: 0xedf34927
+            // ----------------------------------------------------------------
+            if eq(selector, 0xedf34927) {
+                let startAddr := calldataload(4)
+                let length := calldataload(36)
+                
+                // Return uint256[]:
+                // Offset of the array in the return data is 32 (0x20)
+                mstore(0x00, 0x20)
+                // Length of the array
+                mstore(0x20, length)
+                
+                // Populate elements
+                for { let i := 0 } lt(i, length) { i := add(i, 1) } {
+                    let val := readMemory(add(startAddr, i))
+                    mstore(add(0x40, mul(i, 32)), val)
+                }
+                
+                // Total return size: 32 (offset) + 32 (length) + length * 32
+                return(0x00, add(0x40, mul(length, 32)))
             }
 
             revert(0, 0)

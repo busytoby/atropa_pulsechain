@@ -105,6 +105,136 @@ static uint64_t get_register_val(const char *contract_addr, uint64_t register_ad
     return lau_yul_thunk_sload(register_addr);
 }
 
+static bool get_register_range(const char *contract_addr, uint64_t start_addr, uint64_t length, uint64_t *out_vals) {
+    if (contract_addr && g_cpu_address[0] != '\0' && strcmp(contract_addr, g_cpu_address) == 0) {
+        char data_hex[256];
+        // peekRange selector is 0xedf34927
+        snprintf(data_hex, sizeof(data_hex), "0xedf34927%064lx%064lx", start_addr, length);
+        
+        // Output buffer size calculation: 64 bytes header + length * 32 bytes elements
+        size_t hex_size = (64 + length * 32) * 2 + 3;
+        char *out_hex = malloc(hex_size);
+        if (!out_hex) return false;
+        
+        const char *from_address = g_caller_address;
+        bool success = tsfi_pulse_rpc_call_from(contract_addr, from_address, data_hex, out_hex, hex_size);
+        if (success) {
+            // Hex string starts with 0x. Array elements start at index 2 + 64 (offset) + 64 (length) = 130
+            char *ptr = out_hex + 130;
+            for (uint64_t i = 0; i < length; i++) {
+                char temp[65];
+                memcpy(temp, ptr + i * 64, 64);
+                temp[64] = '\0';
+                out_vals[i] = strtoull(temp, NULL, 16);
+            }
+            free(out_hex);
+            return true;
+        }
+        free(out_hex);
+    }
+    // Fallback: loop and read individually
+    for (uint64_t i = 0; i < length; i++) {
+        out_vals[i] = get_register_val(contract_addr, start_addr + i);
+    }
+    return true;
+}
+
+static void blit_doodle_canvas(StagingBuffer *sb, const char *addr_src) {
+    uint64_t d011 = get_register_val(g_graphics_address, 53265);
+    uint64_t d016 = get_register_val(g_graphics_address, 53270);
+    bool bmm = (d011 & 0x20) != 0;
+    bool mcm = (d016 & 0x10) != 0;
+
+    static const uint32_t c64_palette[16] = {
+        0xFF000000, 0xFFFFFFFF, 0xFF880000, 0xFF00FFFF,
+        0xFFCC00CC, 0xFF00CC00, 0xFF0000CC, 0xFFFFFF00,
+        0xFFDD8800, 0xFF664400, 0xFFFF7777, 0xFF333333,
+        0xFF777777, 0xFFa0ffa0, 0xFF0088FF, 0xFFbbbbbb
+    };
+
+    int start_x = 40;
+    int start_y = 60;
+
+    // Default screen colors
+    uint32_t border_color = c64_palette[get_register_val(g_graphics_address, 53280) & 0xF];
+    uint32_t bg0_color = c64_palette[get_register_val(g_graphics_address, 53281) & 0xF];
+
+    // Render border and screen area
+    draw_rounded_rect(sb, start_x - 8, start_y - 8, 320 + 16, 200 + 16, 4, border_color);
+    draw_rounded_rect(sb, start_x, start_y, 320, 200, 0, bg0_color);
+
+    // Fallback to true if we are displaying Doodle console
+    if (!bmm) {
+        bmm = true;
+    }
+
+    if (bmm) {
+        uint64_t screen_ram[1000];
+        get_register_range(g_graphics_address, 1024, 1000, screen_ram);
+
+        uint64_t canvas_data[8192];
+        for (int chunk = 0; chunk < 8; chunk++) {
+            get_register_range(addr_src, 8192 + chunk * 1024, 1024, canvas_data + chunk * 1024);
+        }
+
+        uint64_t color_ram[1000];
+        get_register_range(g_graphics_address, 55296, 1000, color_ram);
+
+        for (int cell_y = 0; cell_y < 25; cell_y++) {
+            for (int cell_x = 0; cell_x < 40; cell_x++) {
+                int cell_idx = cell_y * 40 + cell_x;
+                uint8_t color_byte = (uint8_t)screen_ram[cell_idx];
+                
+                uint32_t fg_color = c64_palette[(color_byte >> 4) & 0xF];
+                uint32_t bg_color = c64_palette[color_byte & 0xF];
+                if (color_byte == 0) {
+                    fg_color = 0xFFFFFFFF;
+                    bg_color = bg0_color;
+                }
+
+                for (int line_y = 0; line_y < 8; line_y++) {
+                    int pixel_addr_offset = (cell_y * 320) + (cell_x * 8) + line_y;
+                    uint8_t byte_val = (uint8_t)canvas_data[pixel_addr_offset];
+
+                    if (mcm) {
+                        for (int pixel_x = 0; pixel_x < 4; pixel_x++) {
+                            uint8_t bit_pair = (byte_val >> (6 - pixel_x * 2)) & 0x03;
+                            uint32_t pixel_color = bg0_color;
+                            switch (bit_pair) {
+                                case 0x00: pixel_color = bg0_color; break;
+                                case 0x01: pixel_color = fg_color; break;
+                                case 0x02: pixel_color = bg_color; break;
+                                case 0x03: pixel_color = c64_palette[color_ram[cell_idx] & 0xF]; break;
+                            }
+                            
+                            for (int dx = 0; dx < 2; dx++) {
+                                int py = start_y + cell_y * 8 + line_y;
+                                int px = start_x + cell_x * 8 + pixel_x * 2 + dx;
+                                if (px >= 0 && px < (int)sb->width && py >= 0 && py < (int)sb->height) {
+                                    uint32_t *pixels = (uint32_t *)sb->data;
+                                    pixels[py * sb->width + px] = pixel_color;
+                                }
+                            }
+                        }
+                    } else {
+                        for (int pixel_x = 0; pixel_x < 8; pixel_x++) {
+                            bool pixel_set = (byte_val & (1 << (7 - pixel_x))) != 0;
+                            uint32_t pixel_color = pixel_set ? fg_color : bg_color;
+                            
+                            int py = start_y + cell_y * 8 + line_y;
+                            int px = start_x + cell_x * 8 + pixel_x;
+                            if (px >= 0 && px < (int)sb->width && py >= 0 && py < (int)sb->height) {
+                                uint32_t *pixels = (uint32_t *)sb->data;
+                                pixels[py * sb->width + px] = pixel_color;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // --- Globals ---
 static VulkanSystem *logic_sys = NULL;
 
@@ -210,13 +340,43 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
         0x00c300, 0x018180, 0x0300c0, 0x0300c0, 0x020040, 0x000000, 0, 0, 0, 0, 0, 0, 0
     };
 
+    // Draw the active Doodle Canvas
+    blit_doodle_canvas(sb, addr_src);
+
     // Draw Sprites
     for (int i = 0; i < 8; i++) {
         uint64_t x = get_register_val(addr_src, 53248 + i * 2);
         uint64_t y = get_register_val(addr_src, 53249 + i * 2);
         
         bool colliding = (collisionMask & (1 << i)) != 0;
-        uint32_t color = colliding ? 0xFFFF0000 : 0xFF00FF00;
+
+        // Static C64 16-color palette mapping
+        static const uint32_t c64_palette[16] = {
+            0xFF000000, // 0: Black
+            0xFFFFFFFF, // 1: White
+            0xFF880000, // 2: Red
+            0xFF00FFFF, // 3: Cyan
+            0xFFCC00CC, // 4: Purple/Magenta
+            0xFF00CC00, // 5: Green
+            0xFF0000CC, // 6: Blue
+            0xFFFFFF00, // 7: Yellow
+            0xFFDD8800, // 8: Orange
+            0xFF664400, // 9: Brown
+            0xFFFF7777, // 10: Light Red
+            0xFF333333, // 11: Dark Grey
+            0xFF777777, // 12: Grey
+            0xFFa0ffa0, // 13: Light Green
+            0xFF0088FF, // 14: Light Blue
+            0xFFbbbbbb  // 15: Light Grey
+        };
+
+        // Query registers for multi-color mode and extra colors
+        uint64_t multicolor_enable = get_register_val(g_graphics_address, 53276);
+        bool is_multicolor = (multicolor_enable & (1 << i)) != 0;
+
+        uint32_t extra_color_1 = c64_palette[get_register_val(g_graphics_address, 53285) & 0xF];
+        uint32_t extra_color_2 = c64_palette[get_register_val(g_graphics_address, 53286) & 0xF];
+        uint32_t main_color    = colliding ? 0xFFFF0000 : c64_palette[get_register_val(g_graphics_address, 53287 + i) & 0xF];
 
         // Draw Sprite using custom 24x21 bitmap if present
         bool has_pattern = false;
@@ -238,23 +398,48 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
         }
 
         if (pat) {
-            // Draw 24x21 custom pixel pattern
             for (int r = 0; r < 21; r++) {
                 uint32_t row_val = pat[r];
-                for (int c = 0; c < 24; c++) {
-                    if ((row_val & (1 << (23 - c))) != 0) {
-                        int py = y + r;
-                        int px = x + c;
-                        if (px >= 0 && px < (int)sb->width && py >= 0 && py < (int)sb->height) {
-                            uint32_t *pixels = (uint32_t *)sb->data;
-                            pixels[py * sb->width + px] = color;
+                if (is_multicolor) {
+                    // Render 12 double-width pixels
+                    for (int c = 0; c < 12; c++) {
+                        // Extract 2-bit color code from left to right (bits 23-22, 21-20, etc.)
+                        uint8_t bit_pair = (row_val >> (22 - c * 2)) & 0x03;
+                        uint32_t pixel_color = 0;
+                        switch (bit_pair) {
+                            case 0x01: pixel_color = extra_color_1; break;
+                            case 0x02: pixel_color = main_color;    break;
+                            case 0x03: pixel_color = extra_color_2; break;
+                            default:   continue; // 00 is transparent
+                        }
+                        
+                        // Plot double-width pixel
+                        for (int dx = 0; dx < 2; dx++) {
+                            int py = y + r;
+                            int px = x + c * 2 + dx;
+                            if (px >= 0 && px < (int)sb->width && py >= 0 && py < (int)sb->height) {
+                                uint32_t *pixels = (uint32_t *)sb->data;
+                                pixels[py * sb->width + px] = pixel_color;
+                            }
+                        }
+                    }
+                } else {
+                    // Standard single-color mode: 24 pixels
+                    for (int c = 0; c < 24; c++) {
+                        if ((row_val & (1 << (23 - c))) != 0) {
+                            int py = y + r;
+                            int px = x + c;
+                            if (px >= 0 && px < (int)sb->width && py >= 0 && py < (int)sb->height) {
+                                uint32_t *pixels = (uint32_t *)sb->data;
+                                pixels[py * sb->width + px] = main_color;
+                            }
                         }
                     }
                 }
             }
         } else {
             // Fallback to default block
-            draw_rounded_rect(sb, x, y, 24, 21, 4, color);
+            draw_rounded_rect(sb, x, y, 24, 21, 4, main_color);
         }
 
         char lbl[4];
