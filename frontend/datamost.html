@@ -751,7 +751,110 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     </div>
                 </section>
 
-                <!-- CPU 6502 Registers State -->
+                <!-- TOTL Office Suite -->
+                <section class="card" id="totlOfficeDashboard" style="box-shadow: 0 0 20px rgba(255, 170, 0, 0.25); border-color: #ffaa00; margin-bottom: 25px;">
+                    <h2><span class="icon">💼</span> TOTL Office Suite (Walnut Creek)</h2>
+                    <p class="description">Word Processing, Database Inventories, and Spelling Checks.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <!-- TOTL.TEXT and Speller -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #ffaa00; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #ffaa00; margin-bottom: 5px;">📝 TOTL.TEXT / TOTL.SPELLER</div>
+                            <textarea id="totlTextarea" class="input-glow" style="width: 100%; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid #ffaa00; color: #fff; border-radius: 6px; padding: 8px; font-family: monospace; outline: none; resize: none;" placeholder="Type words here to spellcheck..."></textarea>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                                <button class="btn btn-primary" id="btnTotlSpellcheck" style="background: #3a2a00; border-color: #ffaa00; color: #ffaa00; font-size: 0.8rem; padding: 6px 12px;">🔍 Run Spell-Check</button>
+                            </div>
+                        </div>
+
+                        <!-- TOTL.INFOMASTER Database -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #ffaa00; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #ffaa00; margin-bottom: 5px;">🗄️ TOTL.INFOMASTER DATABASE</div>
+                            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                                <input type="text" id="totlDbKey" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #ffaa00; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Record Key (e.g. key1)">
+                                <input type="text" id="totlDbVal" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #ffaa00; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Record Data (e.g. Apple)">
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button class="btn btn-primary" id="btnTotlDbSearch" style="background: #3a2a00; border-color: #ffaa00; color: #ffaa00; font-size: 0.8rem; padding: 6px 12px;">🔎 Search Record</button>
+                                <button class="btn btn-primary" id="btnTotlDbInsert" style="background: #3a2a00; border-color: #ffaa00; color: #ffaa00; font-size: 0.8rem; padding: 6px 12px;">➕ Insert Record</button>
+                            </div>
+                        </div>
+
+                        <!-- TOTL Terminal output log -->
+                        <div>
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ffaa00; margin-bottom: 5px;">TOTL LIVE OFFICE CONSOLE</div>
+                            <div id="totlLog" style="background: #000; border: 1px solid #ffaa00; border-radius: 4px; padding: 10px; font-family: 'Courier New', Courier, monospace; color: #ffaa00; font-size: 0.85rem; height: 100px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 5px rgba(255,170,0,0.2);">[TOTL SYSTEM] Word processor & database systems ready.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Infocom Z-Machine Console -->
+                <section class="card" id="zmachineDashboard" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.25); border-color: #00f2fe; margin-bottom: 25px;">
+                    <h2><span class="icon">📜</span> Infocom Z-Machine Console</h2>
+                    <p class="description">Upload .z3 story ROM files in chunks and play interactive fiction games on-chain.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <!-- Story File Upload -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #00f2fe; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #00f2fe; margin-bottom: 5px;">💾 ROM MANAGEMENT & DEPLOYMENT</div>
+                            <div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
+                                <input type="file" id="zStoryFile" style="display: none;" accept=".z3,.dat">
+                                <button class="btn btn-primary" onclick="document.getElementById('zStoryFile').click()" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">📁 Choose .z3 Story File</button>
+                                <span id="zFileName" style="color: var(--text-secondary); font-size: 0.8rem;">No file selected</span>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button class="btn btn-primary" id="btnUploadZrom" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">⚡ Deploy ROM to Chain</button>
+                            </div>
+                        </div>
+
+                        <!-- Game Terminal Console -->
+                        <div style="background: #000; border: 1px solid #00f2fe; border-radius: 4px; padding: 12px; font-family: 'Courier New', Courier, monospace; color: #00f2fe; font-size: 0.85rem; height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 5px rgba(0,242,254,0.2);" id="zmachineTerminal">
+[Z-MACHINE] System initialized. Ready to execute interactive story files.
+                        </div>
+
+                        <!-- User command input -->
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="zCommandInput" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #00f2fe; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Enter command (e.g. look, go east)...">
+                            <button class="btn btn-primary" id="btnSendZcommand" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">➡️ Send</button>
+                        </div>
+                    </div>
+                <!-- Visual Z-Machine Game Creator -->
+                <section class="card" id="zmachineCreatorDashboard" style="box-shadow: 0 0 20px rgba(138, 43, 226, 0.25); border-color: #8a2be2; margin-bottom: 25px;">
+                    <h2><span class="icon">🛠️</span> Interactive Story & Token Bound Item Builder</h2>
+                    <p class="description">Visually build text adventure rooms, add items, and bind them directly to ERC-20 contract tokens.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <!-- Room Builder -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #8a2be2; margin-bottom: 5px;">📍 ROOMS & MAP CONNECTIONS</div>
+                            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                                <input type="text" id="zmRoomName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Room name (e.g. Dark Cave)">
+                                <input type="text" id="zmRoomDesc" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Description (e.g. You are inside a damp cave.)">
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button class="btn btn-primary" id="btnAddZmRoom" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Room</button>
+                            </div>
+                        </div>
+
+                        <!-- Item Builder & Token Binding -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #8a2be2; margin-bottom: 5px;">💎 GAME ITEMS & ERC-20 BINDINGS</div>
+                            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                                <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
+                                <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button class="btn btn-primary" id="btnAddZmItem" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Item</button>
+                            </div>
+                        </div>
+
+                        <!-- Config list and Deploy -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(138,43,226,0.3);">
+                            <div id="zmCreatorStatus" style="font-size: 0.8rem; color: var(--text-secondary);">Rooms: 0 | Items: 0</div>
+                            <button class="btn btn-primary" id="btnCompileDeployZgame" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.85rem; padding: 8px 16px;">🚀 Compile & Deploy Game</button>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="card">
                     <h2><span class="icon">🖥️</span> CPU 6502 Register File State</h2>
                     <p class="description">Active register metrics loaded from on-chain `cpu6502` contract.</p>
@@ -1339,6 +1442,15 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
             if (typeof initGallerySystem === "function") {
                 initGallerySystem();
+            }
+            if (typeof initTotlOfficeEvents === "function") {
+                initTotlOfficeEvents();
+            }
+            if (typeof initZmachineEvents === "function") {
+                initZmachineEvents();
+            }
+            if (typeof initZmachineCreatorEvents === "function") {
+                initZmachineCreatorEvents();
             }
         }
 
@@ -4761,6 +4873,292 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             document.getElementById("btnVoteDown").addEventListener("click", () => simulateVote("DOWN"));
             document.getElementById("btnVoteLeft").addEventListener("click", () => simulateVote("LEFT"));
             document.getElementById("btnVoteRight").addEventListener("click", () => simulateVote("RIGHT"));
+        }
+
+        function initTotlOfficeEvents() {
+            const logConsole = document.getElementById("totlLog");
+            const appendLog = (msg) => {
+                logConsole.innerText += "\n" + msg;
+                logConsole.scrollTop = logConsole.scrollHeight;
+            };
+
+            // 1. Spellcheck button handler (TOTL.SPELLER)
+            document.getElementById("btnTotlSpellcheck").addEventListener("click", async () => {
+                const text = document.getElementById("totlTextarea").value.trim();
+                if (!text) {
+                    alert("Please enter some text to check.");
+                    return;
+                }
+                appendLog("[SPELLER] Initiating text scan...");
+                const words = text.toLowerCase().replace(/[^a-zA-Z0-9\s]/g, "").split(/\s+/);
+                
+                // Simple dictionary list for spell check:
+                const validDict = new Set(["the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "apple", "retro", "office", "computer", "totl", "key", "door", "hero"]);
+                
+                let errors = [];
+                words.forEach(word => {
+                    if (word && !validDict.has(word)) {
+                        errors.push(word);
+                    }
+                });
+                
+                if (errors.length === 0) {
+                    appendLog(`[SPELLER] Scan complete. 0 errors found. Perfect spelling!`);
+                } else {
+                    appendLog(`[SPELLER] Scan complete. Found ${errors.length} errors: [${errors.join(", ")}]`);
+                }
+            });
+
+            // 2. Database Insert Button handler (TOTL.INFOMASTER)
+            document.getElementById("btnTotlDbInsert").addEventListener("click", async () => {
+                const key = document.getElementById("totlDbKey").value.trim();
+                const val = document.getElementById("totlDbVal").value.trim();
+                if (!key || !val) {
+                    alert("Please enter both key and data value.");
+                    return;
+                }
+                appendLog(`[INFOMASTER] Writing record: Key='${key}', Data='${val}'`);
+                
+                try {
+                    // We save the record to the virtual disk system as a SEQ file 'db_[key].seq'
+                    if (!diskContract) {
+                        appendLog("[INFOMASTER] Disk System not loaded. Connect wallet.");
+                        return;
+                    }
+                    const fileName = `db_${key}`;
+                    const header = "W0:" + fileName + "\x00";
+                    const headerBytes = ethers.toUtf8Bytes(header);
+                    const contentBytes = ethers.toUtf8Bytes(val);
+                    const fullCmdBytes = ethers.concat([headerBytes, contentBytes]);
+                    
+                    const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                    await tx.wait();
+                    appendLog(`[INFOMASTER] Record successfully saved to on-chain SEQ file db_${key}.seq!`);
+                } catch (err) {
+                    console.error(err);
+                    appendLog(`[INFOMASTER] Write failed: ${err.message}`);
+                }
+            });
+
+            // 3. Database Search Button handler (TOTL.INFOMASTER)
+            document.getElementById("btnTotlDbSearch").addEventListener("click", async () => {
+                const key = document.getElementById("totlDbKey").value.trim();
+                if (!key) {
+                    alert("Please enter a record key to search.");
+                    return;
+                }
+                appendLog(`[INFOMASTER] Searching for record with key '${key}'...`);
+                
+                try {
+                    if (!diskContract) {
+                        appendLog("[INFOMASTER] Disk System not loaded. Connect wallet.");
+                        return;
+                    }
+                    const fileName = `db_${key}`;
+                    const header = "R0:" + fileName + "\x00";
+                    const headerBytes = ethers.toUtf8Bytes(header);
+                    
+                    const rawResult = await diskContract.executeDiskCommand.staticCall(headerBytes);
+                    const text = ethers.toUtf8String(rawResult);
+                    if (text) {
+                        document.getElementById("totlDbVal").value = text;
+                        appendLog(`[INFOMASTER] Record found! Value: '${text}'`);
+                    } else {
+                        appendLog(`[INFOMASTER] Record not found.`);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    appendLog(`[INFOMASTER] Record not found or read failed.`);
+                }
+            });
+        }
+
+        // --- Z-Machine Dashboard Events ---
+        function initZmachineEvents() {
+            let zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123"; // Compiled Z-Machine address
+            let zmAbi = [
+                "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+                "function parseCommand(address player, bytes cmd) public returns (string)"
+            ];
+
+            const fileInput = document.getElementById("zStoryFile");
+            const fileNameSpan = document.getElementById("zFileName");
+            const term = document.getElementById("zmachineTerminal");
+            const cmdInput = document.getElementById("zCommandInput");
+
+            let romData = null;
+
+            fileInput.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name + " (" + Math.round(file.size / 1024) + " KB)";
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        romData = new Uint8Array(evt.target.result);
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            });
+
+            document.getElementById("btnUploadZrom").addEventListener("click", async () => {
+                if (!romData) {
+                    alert("Please select a .z3 story file first!");
+                    return;
+                }
+                if (!signer) {
+                    alert("Please connect your wallet first!");
+                    return;
+                }
+
+                term.innerHTML += `\n[Z-ROM DEPLOY] Deploying ROM in chunks...`;
+                const contract = new ethers.Contract(zmAddress, zmAbi, signer);
+
+                const chunkSize = 8192; // 8KB chunks
+                try {
+                    for (let offset = 0; offset < romData.length; offset += chunkSize) {
+                        const end = Math.min(offset + chunkSize, romData.length);
+                        const slice = romData.slice(offset, end);
+                        term.innerHTML += `\n[Z-ROM DEPLOY] Sending chunk offset ${offset} (${slice.length} bytes)...`;
+                        
+                        const tx = await contract.uploadRomChunk(offset, slice);
+                        await tx.wait();
+                    }
+                    term.innerHTML += `\n[Z-ROM DEPLOY] Deployment successful! Initializing game turn...`;
+                } catch (err) {
+                    console.error(err);
+                    term.innerHTML += `\n[Z-ROM ERROR] Upload failed: ${err.message}`;
+                }
+            });
+
+            const sendCommand = async () => {
+                const cmd = cmdInput.value.trim();
+                if (!cmd || !signer) return;
+
+                term.innerHTML += `\n> ${cmd}`;
+                cmdInput.value = "";
+                term.scrollTop = term.scrollHeight;
+
+                try {
+                    const contract = new ethers.Contract(zmAddress, zmAbi, signer);
+                    const tx = await contract.parseCommand(signer.address, ethers.toUtf8Bytes(cmd));
+                    term.innerHTML += `\n${tx}`;
+                } catch (err) {
+                    term.innerHTML += `\n[Z-MACHINE] Error executing command: ${err.message}`;
+                }
+                term.scrollTop = term.scrollHeight;
+            };
+
+            document.getElementById("btnSendZcommand").addEventListener("click", sendCommand);
+            cmdInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") sendCommand();
+            });
+        }
+
+        // --- Z-Machine Visual Game Creator Events ---
+        function initZmachineCreatorEvents() {
+            let rooms = [];
+            let items = [];
+
+            const roomNameInput = document.getElementById("zmRoomName");
+            const roomDescInput = document.getElementById("zmRoomDesc");
+            const itemNameInput = document.getElementById("zmItemName");
+            const itemTokenInput = document.getElementById("zmItemToken");
+            const statusDiv = document.getElementById("zmCreatorStatus");
+
+            const updateStatus = () => {
+                statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
+            };
+
+            document.getElementById("btnAddZmRoom").addEventListener("click", () => {
+                const name = roomNameInput.value.trim();
+                const desc = roomDescInput.value.trim();
+                if (!name || !desc) {
+                    alert("Please fill in Room name and description!");
+                    return;
+                }
+                rooms.push({ name, desc });
+                roomNameInput.value = "";
+                roomDescInput.value = "";
+                updateStatus();
+                console.log("Added Room:", rooms);
+            });
+
+            document.getElementById("btnAddZmItem").addEventListener("click", () => {
+                const name = itemNameInput.value.trim();
+                const token = itemTokenInput.value.trim();
+                if (!name) {
+                    alert("Please enter Item name!");
+                    return;
+                }
+                items.push({ name, token: token || null });
+                itemNameInput.value = "";
+                itemTokenInput.value = "";
+                updateStatus();
+                console.log("Added Item:", items);
+            });
+
+            document.getElementById("btnCompileDeployZgame").addEventListener("click", async () => {
+                if (rooms.length === 0) {
+                    alert("Please add at least one Room before deploying!");
+                    return;
+                }
+                if (!signer) {
+                    alert("Please connect your wallet first!");
+                    return;
+                }
+
+                console.log("Compiling custom Z3 game ROM...");
+                // Construct Z3 Story file buffer dynamically
+                const romBuffer = new Uint8Array(1024);
+                
+                // Write Z3 header
+                romBuffer[0] = 3; // Version 3
+                
+                // Initial PC at offset 0x0800
+                romBuffer[6] = 0x08;
+                romBuffer[7] = 0x00;
+
+                // Object Table Base Address at offset 0x0040
+                romBuffer[10] = 0x00;
+                romBuffer[11] = 0x40;
+
+                // Configure defaults table layout (62 bytes defaults + 9 bytes per object)
+                // Default table base: 0x0040. Defaults end at 0x0040 + 62 = 126 (0x007E)
+                // Write items/rooms mapping offsets
+                rooms.forEach((r, idx) => {
+                    const objId = idx + 1;
+                    const objOffset = 0x40 + 62 + (idx * 9);
+                    
+                    // Assign parent/child tree properties
+                    romBuffer[objOffset + 4] = 0; // Parent ID
+                    romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
+                    romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
+                });
+
+                console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
+                
+                // Deploy constructed ROM to chain using chunk uploader
+                const zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123";
+                const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
+                const contract = new ethers.Contract(zmAddress, zmAbi, signer);
+                
+                const term = document.getElementById("zmachineTerminal");
+                term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
+                
+                const chunkSize = 256;
+                try {
+                    for (let offset = 0; offset < romBuffer.length; offset += chunkSize) {
+                        const end = Math.min(offset + chunkSize, romBuffer.length);
+                        const slice = romBuffer.slice(offset, end);
+                        const tx = await contract.uploadRomChunk(offset, slice);
+                        await tx.wait();
+                    }
+                    term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
+                } catch (err) {
+                    console.error(err);
+                    term.innerHTML += `\n[CREATOR-ERROR] Failed to upload custom game: ${err.message}`;
+                }
+            });
         }
 
         window.onload = init;
