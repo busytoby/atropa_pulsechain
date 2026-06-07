@@ -10,6 +10,45 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
+        /* Sprite Editor Grid Styles */
+        .sprite-grid {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            gap: 1px;
+            background: #202020;
+            border: 1px solid #404040;
+            padding: 2px;
+            width: 100%;
+            max-width: 480px;
+            margin: 15px auto;
+            aspect-ratio: 24 / 21;
+        }
+        .sprite-cell {
+            aspect-ratio: 1;
+            background: #000;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: background 0.1s ease;
+        }
+        .sprite-cell.color-00 { background: #000000; }
+        .sprite-cell.color-01 { background: #ff007f; } /* Neon Magenta */
+        .sprite-cell.color-10 { background: #00f2fe; } /* Neon Blue */
+        .sprite-cell.color-11 { background: #39ff14; } /* Neon Green */
+        .color-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .color-swatch {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+
         .retro-grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -396,6 +435,50 @@
                             <button class="btn btn-secondary btn-small note-btn" data-freq="8100" style="padding: 6px 0;">B</button>
                         </div>
                     </div>
+                </section>
+
+                <!-- VIC-II Multi-Color Sprite Editor -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(57, 255, 20, 0.15); border-color: #39ff14;">
+                    <h2><span class="icon">🎨</span> VIC-II Multi-Color Sprite Editor</h2>
+                    <p class="description">Interactive pixel design grid. Supports standard single-color and multi-color 2-bit cell plotting.</p>
+                    
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-secondary); display: block;">SPRITE INDEX:</label>
+                            <select id="sprEditIndex" class="input-glow" style="padding: 6px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid #39ff14; font-family: 'Orbitron', sans-serif;">
+                                <option value="0">Sprite 0</option>
+                                <option value="1">Sprite 1</option>
+                                <option value="2">Sprite 2</option>
+                                <option value="3">Sprite 3</option>
+                                <option value="4">Sprite 4</option>
+                                <option value="5">Sprite 5</option>
+                                <option value="6">Sprite 6</option>
+                                <option value="7">Sprite 7</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-secondary); display: block;">SPRITE MODE:</label>
+                            <select id="sprEditMode" class="input-glow" style="padding: 6px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid #39ff14; font-family: 'Orbitron', sans-serif;">
+                                <option value="single">Single Color (1-bit)</option>
+                                <option value="multi">Multi-Color (2-bit)</option>
+                            </select>
+                        </div>
+                        <div style="flex-grow: 1; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="btn btn-secondary" id="btnSprClear" style="border-color: #39ff14; color: var(--text-primary);">Clear</button>
+                            <button class="btn btn-primary" id="btnSprUpload" style="border-color: #39ff14; color: var(--text-primary); min-width: 140px;">Upload to EVM</button>
+                        </div>
+                    </div>
+
+                    <!-- Selected Brush / Color indicator -->
+                    <div id="sprBrushContainer" style="display: none; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px solid rgba(57, 255, 20, 0.15); margin-bottom: 12px;">
+                        <div class="color-legend-item"><div class="color-swatch" style="background: #000000;"></div><span>00: Transparent</span></div>
+                        <div class="color-legend-item"><div class="color-swatch" style="background: #ff007f;"></div><span>01: Extra 1 ($D025)</span></div>
+                        <div class="color-legend-item"><div class="color-swatch" style="background: #00f2fe;"></div><span>10: Main ($D027)</span></div>
+                        <div class="color-legend-item"><div class="color-swatch" style="background: #39ff14;"></div><span>11: Extra 2 ($D026)</span></div>
+                    </div>
+
+                    <!-- Interactive Grid Container -->
+                    <div class="sprite-grid" id="sprGrid"></div>
                 </section>
 
                 <!-- Alien Group Voice Box Speech Synthesizer -->
@@ -1223,6 +1306,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             // Initialize Oregon Trail Dashboard event listeners
             if (typeof initOregonDashboardEvents === "function") {
                 initOregonDashboardEvents();
+            }
+            if (typeof initSpriteEditor === "function") {
+                initSpriteEditor();
             }
         }
 
@@ -4449,6 +4535,132 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             
             logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // Interactive VIC-II Multi-Color Sprite Editor JS
+        let sprEditMode = "single"; // "single" or "multi"
+        let sprEditIndex = 0;
+        let sprGridState = []; // 2D array of grid values (21 rows, width depends on mode)
+
+        function initSpriteEditor() {
+            const gridContainer = document.getElementById("sprGrid");
+            const modeSelect = document.getElementById("sprEditMode");
+            const indexSelect = document.getElementById("sprEditIndex");
+            const btnClear = document.getElementById("btnSprClear");
+            const btnUpload = document.getElementById("btnSprUpload");
+            const brushContainer = document.getElementById("sprBrushContainer");
+
+            function rebuildGrid() {
+                gridContainer.innerHTML = "";
+                const width = (sprEditMode === "single") ? 24 : 12;
+                gridContainer.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
+                
+                // Keep brush legend visible only in multi-color mode
+                brushContainer.style.display = (sprEditMode === "multi") ? "flex" : "none";
+
+                sprGridState = [];
+                for (let r = 0; r < 21; r++) {
+                    const row = [];
+                    for (let c = 0; c < width; c++) {
+                        row.push(0);
+                        const cell = document.createElement("button");
+                        cell.className = "sprite-cell color-00";
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        
+                        cell.addEventListener("click", () => {
+                            let val = row[c];
+                            if (sprEditMode === "single") {
+                                val = (val === 0) ? 2 : 0; // Toggle on/off (mapping to 2 / Main color)
+                            } else {
+                                val = (val + 1) % 4; // Cycle 00, 01, 10, 11
+                            }
+                            row[c] = val;
+                            
+                            // Map values to CSS color classes
+                            cell.className = "sprite-cell";
+                            if (val === 0) cell.classList.add("color-00");
+                            else if (val === 1) cell.classList.add("color-01");
+                            else if (val === 2) cell.classList.add("color-10");
+                            else if (val === 3) cell.classList.add("color-11");
+                        });
+                        gridContainer.appendChild(cell);
+                    }
+                    sprGridState.push(row);
+                }
+            }
+
+            modeSelect.addEventListener("change", (e) => {
+                sprEditMode = e.target.value;
+                rebuildGrid();
+            });
+
+            indexSelect.addEventListener("change", (e) => {
+                sprEditIndex = parseInt(e.target.value);
+            });
+
+            btnClear.addEventListener("click", () => {
+                rebuildGrid();
+            });
+
+            btnUpload.addEventListener("click", async () => {
+                if (!cpuContract) {
+                    alert("Connect your wallet first.");
+                    return;
+                }
+                btnUpload.innerText = "Uploading...";
+                btnUpload.disabled = true;
+
+                try {
+                    const width = (sprEditMode === "single") ? 24 : 12;
+                    const addrs = [];
+                    const vals = [];
+
+                    for (let r = 0; r < 21; r++) {
+                        let rowVal = 0;
+                        for (let c = 0; c < width; c++) {
+                            const val = sprGridState[r][c];
+                            if (sprEditMode === "single") {
+                                if (val !== 0) {
+                                    rowVal |= (1 << (23 - c));
+                                }
+                            } else {
+                                rowVal |= (val << ((11 - c) * 2));
+                            }
+                        }
+                        addrs.push(54000 + sprEditIndex * 32 + r);
+                        vals.push(rowVal);
+                    }
+
+                    // Push multi-color register mode change if multi-color is used
+                    // Register 53276 ($D01C) controls multi-color sprite mode
+                    const currentMulticolor = Number(await cpuContract.peek(53276));
+                    let nextMulticolor = currentMulticolor;
+                    if (sprEditMode === "multi") {
+                        nextMulticolor |= (1 << sprEditIndex);
+                    } else {
+                        nextMulticolor &= ~(1 << sprEditIndex);
+                    }
+                    if (nextMulticolor !== currentMulticolor) {
+                        addrs.push(53276);
+                        vals.push(nextMulticolor);
+                    }
+
+                    const tx = await cpuContract.batchPoke(addrs, vals);
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Sent sprite ${sprEditIndex} layout to EVM: ${tx.hash.substring(0, 10)}...`);
+                    await tx.wait();
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Sprite ${sprEditIndex} updated successfully on-chain!`);
+                } catch (err) {
+                    console.error("Sprite upload failed:", err);
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Error: ${err.message}`);
+                    alert("Upload failed. Verify transaction gas limit.");
+                } finally {
+                    btnUpload.innerText = "Upload to EVM";
+                    btnUpload.disabled = false;
+                }
+            });
+
+            rebuildGrid();
         }
 
         function initOregonDashboardEvents() {
