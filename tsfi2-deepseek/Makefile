@@ -71,7 +71,7 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
 
 .PHONY: all clean
 
-all: tsfi2 bin/test_genesis_standalone tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/tsfi_font_editor
+all: tsfi2 bin/test_genesis_standalone tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_hex_rpg tests/test_wayland_lunar_lander
 
 # --- Primary Targets ---
 tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
@@ -79,6 +79,12 @@ tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 
 bin/test_genesis_standalone: tests/test_genesis_standard_cell.c $(CORE_OBJS) $(OBJ_DIR)/Genesis_rtl.o $(OBJ_DIR)/Dai_rtl.o $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -Isrc/firmware -o $@ $^ $(LDFLAGS)
+
+bin/test_spider_registry_reap: tests/test_spider_registry_reap.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_spider_120f_reap: tests/test_spider_120f_reap.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_ahoy_issue1_resonance: tests/test_ahoy_issue1_resonance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
@@ -93,6 +99,12 @@ tests/test_wayland_hardball: tests/test_wayland_hardball.c $(CORE_OBJS) $(VULKAN
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_wayland_smurfs: tests/test_wayland_smurfs.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_wayland_hex_rpg: tests/test_wayland_hex_rpg.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_wayland_lunar_lander: tests/test_wayland_lunar_lander.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_wayland_terminal_shell: tests/test_wayland_terminal_shell.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)

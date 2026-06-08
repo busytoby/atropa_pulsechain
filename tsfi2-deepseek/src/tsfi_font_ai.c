@@ -54,6 +54,9 @@ void tsfi_font_ai_bind_evolve(TSFiFontSystem *fs, void *func_ptr, void *context)
     if (!fs->ai_methods) tsfi_font_ai_init(fs);
     TSFiAiMethodTable *table = (TSFiAiMethodTable*)fs->ai_methods;
     
+    // Reset JIT pool cursor to reuse memory and prevent frame-by-frame overflow
+    table->evolve->thunk_cursor = table->evolve->thunk_pool;
+    
     // Emit new thunk
     table->evolve_entry = ThunkProxy_emit_baked(table->evolve, func_ptr, 1, context);
 }
@@ -62,6 +65,9 @@ void tsfi_font_ai_bind_evolve_wave(TSFiFontSystem *fs, void *func_ptr, void *con
     if (!fs->ai_methods) tsfi_font_ai_init(fs);
     TSFiAiMethodTable *table = (TSFiAiMethodTable*)fs->ai_methods;
     
+    // Reset JIT pool cursor to reuse memory and prevent frame-by-frame overflow
+    table->evolve_wave->thunk_cursor = table->evolve_wave->thunk_pool;
+    
     // Emit new thunk
     table->evolve_wave_entry = ThunkProxy_emit_forwarding(table->evolve_wave, func_ptr, context);
 }
@@ -69,6 +75,9 @@ void tsfi_font_ai_bind_evolve_wave(TSFiFontSystem *fs, void *func_ptr, void *con
 void tsfi_font_ai_bind_evolve_sparse_wave(TSFiFontSystem *fs, void *func_ptr, void *context) {
     if (!fs->ai_methods) tsfi_font_ai_init(fs);
     TSFiAiMethodTable *table = (TSFiAiMethodTable*)fs->ai_methods;
+    
+    // Reset JIT pool cursor to reuse memory and prevent frame-by-frame overflow
+    table->evolve_sparse_wave->thunk_cursor = table->evolve_sparse_wave->thunk_pool;
     
     // Emit new thunk
     table->evolve_sparse_wave_entry = ThunkProxy_emit_forwarding(table->evolve_sparse_wave, func_ptr, context);

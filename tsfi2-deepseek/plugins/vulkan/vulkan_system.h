@@ -69,6 +69,7 @@ DEFINE_MAPPED_STRUCT(VulkanSystem,
     bool fullscreen;
     bool minimized;
     bool external_render_enabled; // If true, skip clearing paint_buffer
+    bool disable_ui_overlay;
     uint32_t last_key_scancode;   // Last pressed key (for Logic triggers)
     void *vty_render_thunk;
     

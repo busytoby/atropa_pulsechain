@@ -324,6 +324,7 @@ void draw_gemini_monitor(VulkanSystem *s) {
 
 void draw_ui_elements(VulkanSystem *s) {
     if (!s || !s->paint_buffer) return;
+    if (s->disable_ui_overlay) return;
 
     // Clear telemetry/cockpit area (top part of the screen)
     staging_blend_over_avx512(s->paint_buffer, 0, 0, s->paint_buffer->width, 90, 0xFF000000);

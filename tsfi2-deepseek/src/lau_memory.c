@@ -1028,12 +1028,11 @@ void lau_wire_mapped_logic(void *ptr) {
         g_in_thunk_create = 1;
         h->proxy = (void*)ThunkProxy_create();
         fprintf(stderr, "[DEBUG] lau_wire_mapped_logic: ptr=%p, proxy=%p\n", ptr, h->proxy);
+        if (h->proxy) {
+            MappedCommon *c = (MappedCommon *)ptr;
+            ThunkProxy_emit_mapped((ThunkProxy*)h->proxy, c, h);
+        }
         g_in_thunk_create = 0;
-    }
-    
-    if (h->proxy && !g_in_thunk_create) {
-        MappedCommon *c = (MappedCommon *)ptr;
-        ThunkProxy_emit_mapped((ThunkProxy*)h->proxy, c, h);
     }
 }
 

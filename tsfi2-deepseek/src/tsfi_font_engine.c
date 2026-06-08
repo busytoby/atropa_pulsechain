@@ -11,17 +11,13 @@
 #include <stdio.h>
 
 // Zero-Copy Reservoir Sizes
-#define RESERVOIR_REGISTRY_CAP 262144   // 256K Glyphs
-#define RESERVOIR_SEGMENT_CAP  4194304  // 4M Segments (64MB)
+#define RESERVOIR_REGISTRY_CAP 4096     // 4K Glyphs (Fits in 64MB instead of 4GB)
+#define RESERVOIR_SEGMENT_CAP  65536    // 64K Segments
 
 TSFiFontSystem* tsfi_font_init() {
     extern void* lau_rebar_alloc_external(size_t size);
     TSFiFontSystem *fs = (TSFiFontSystem*)lau_malloc_wired(sizeof(TSFiFontSystem));
     if (!fs) return NULL;
-
-    LauSystemHeader *h = (LauSystemHeader *)((char *)fs - offsetof(LauWiredHeader, payload));
-    h->resonance_as_status = lau_strdup("FONT_INIT_ZC");
-    lau_wire_system((WaveSystem*)fs, h, tsfi_get_default_logic());
 
     // Zhong-Preferred Reservoirs: enable zero-copy GPU access
     size_t map_sz = TSFI_FONT_MAP_SIZE * sizeof(uint32_t);
@@ -64,6 +60,11 @@ TSFiFontSystem* tsfi_font_init() {
     fs->current_style.softness = 200.0f;
     
     tsfi_font_ai_init(fs);
+
+    LauSystemHeader *h = (LauSystemHeader *)((char *)fs - offsetof(LauWiredHeader, payload));
+    h->resonance_as_status = lau_strdup("FONT_INIT_ZC");
+    lau_wire_system((WaveSystem*)fs, h, tsfi_get_default_logic());
+
     return fs;
 }
 
