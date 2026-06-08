@@ -270,9 +270,20 @@ static float sdf_teddy(float x, float y, float z) {
     float ex = fabsf(x) - 0.2f, ey = y - 0.55f, ez = z;
     float d_ear = sqrtf(ex*ex + ey*ey + ez*ez) - 0.08f;
     float d_snout = sqrtf(x*x + (y - 0.3f)*(y - 0.3f) + (z - 0.2f)*(z - 0.2f)) - 0.1f;
+    
+    // Arms
+    float ax = fabsf(x) - 0.35f, ay = y - 0.1f, az = z;
+    float d_arm = sqrtf(ax*ax*1.5f + ay*ay*1.5f + az*az) - 0.1f;
+    
+    // Legs
+    float lx = fabsf(x) - 0.22f, ly = y + 0.35f, lz = z - 0.1f;
+    float d_leg = sqrtf(lx*lx + ly*ly + lz*lz) - 0.12f;
+    
     float res = smin(d_body, d_head, 0.12f);
     res = smin(res, d_ear, 0.04f);
     res = smin(res, d_snout, 0.05f);
+    res = smin(res, d_arm, 0.05f);
+    res = smin(res, d_leg, 0.05f);
     return res;
 }
 
@@ -345,10 +356,15 @@ static uint32_t get_sdf_color(const char *query, float x, float y, float z, floa
     uint8_t r = 0, g = 0, b = 0;
     if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
         float bx = x - 0.45f, by = y - 0.2f, bz = z;
-        if (sqrtf(bx*bx*5.0f + by*by*5.0f + bz*bz*5.0f) - 0.1f < 0.05f) {
-            r = 255; g = 140; b = 0;
+        float eyex = x - 0.32f, eyey = y - 0.23f, eyez = fabsf(z) - 0.12f;
+        if (sqrtf(eyex*eyex + eyey*eyey + eyez*eyez) < 0.03f) {
+            r = 248; g = 248; b = 242; // White of the eye
+        } else if (sqrtf(eyex*eyex + eyey*eyey + (eyez-0.01f)*(eyez-0.01f)) < 0.015f) {
+            r = 0; g = 0; b = 0; // Black pupil
+        } else if (sqrtf(bx*bx*5.0f + by*by*5.0f + bz*bz*5.0f) - 0.1f < 0.05f) {
+            r = 255; g = 184; b = 108; // Orange beak
         } else {
-            r = 40; g = 42; b = 54;
+            r = 40; g = 42; b = 54; // Dark gray body
         }
     } else if (strcasestr(query, "tree") || strcasestr(query, "plant") || strcasestr(query, "forest")) {
         if (y < -0.1f) {
@@ -357,13 +373,41 @@ static uint32_t get_sdf_color(const char *query, float x, float y, float z, floa
             r = 80; g = 250; b = 123;
         }
     } else if (strcasestr(query, "cat") || strcasestr(query, "dog") || strcasestr(query, "pet")) {
-        r = 255; g = 121; b = 198;
+        float eyex = fabsf(x - 0.3f) - 0.07f;
+        float eyey = y - 0.23f;
+        float eyez = z - 0.15f;
+        float nosex = x - 0.3f, nosey = y - 0.18f, nosez = z - 0.17f;
+        if (sqrtf(eyex*eyex + eyey*eyey + eyez*eyez) < 0.035f) {
+            r = 80; g = 250; b = 123; // Green eyes
+        } else if (sqrtf(nosex*nosex + nosey*nosey + nosez*nosez) < 0.025f) {
+            r = 255; g = 184; b = 108; // Peach nose
+        } else {
+            r = 255; g = 121; b = 198; // Pink body
+        }
     } else if (strcasestr(query, "fish") || strcasestr(query, "ocean") || strcasestr(query, "sea")) {
-        r = 139; g = 233; b = 253;
+        float eyex = x - 0.15f, eyey = y - 0.05f, eyez = fabsf(z) - 0.12f;
+        if (sqrtf(eyex*eyex + eyey*eyey + eyez*eyez) < 0.035f) {
+            r = 255; g = 255; b = 255; // White eye
+        } else if (sqrtf(eyex*eyex + eyey*eyey + (eyez-0.01f)*(eyez-0.01f)) < 0.018f) {
+            r = 0; g = 0; b = 0; // Pupil
+        } else {
+            r = 139; g = 233; b = 253; // Blue body
+        }
     } else if (strcasestr(query, "car") || strcasestr(query, "drive") || strcasestr(query, "vehicle")) {
         r = 255; g = 85; b = 85;
     } else {
-        r = 180; g = 120; b = 80;
+        // Teddy Bear
+        float eyex = fabsf(x) - 0.08f;
+        float eyey = y - 0.4f;
+        float eyez = z - 0.22f;
+        float nosex = x, nosey = y - 0.32f, nosez = z - 0.29f;
+        if (sqrtf(eyex*eyex + eyey*eyey + eyez*eyez) < 0.04f) {
+            r = 10; g = 10; b = 10; // Black eyes
+        } else if (sqrtf(nosex*nosex + nosey*nosey + nosez*nosez) < 0.03f) {
+            r = 0; g = 0; b = 0; // Black nose
+        } else {
+            r = 180; g = 120; b = 80; // Brown body
+        }
     }
     uint32_t cr = (uint32_t)(r * intensity);
     uint32_t cg = (uint32_t)(g * intensity);
