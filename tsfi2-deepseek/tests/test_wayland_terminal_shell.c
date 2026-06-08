@@ -2460,7 +2460,7 @@ int main() {
                           "  YULINIT, YULEXEC, SWIFTLOAD, REU, CALC, MEMDUMP, SPRITE, RULE, OMNICOMM\r\n\r\n"
                           "zmm-vm> ";
     lau_vram_write_string(g_vram, welcome, strlen(welcome));
-    execute_command("PONG");
+    execute_command("GO MENU");
 
     int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
