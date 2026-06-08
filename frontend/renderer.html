@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATAMOST Unified Platform Renderer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        /* Custom aesthetics for the Unified Renderer */
+        :root {
+            --crt-green: #39ff14;
+            --crt-amber: #ffb000;
+            --crt-cyan: #00f2fe;
+            --crt-magenta: #ff007f;
+            --scanline-color: rgba(18, 16, 16, 0.12);
+        }
+
+        .crt-container {
+            position: relative;
+            background: #000;
+            border: 20px solid #2a2c35;
+            border-radius: 24px;
+            box-shadow: 
+                0 0 0 4px #1a1b22,
+                0 20px 50px rgba(0, 0, 0, 0.8),
+                inset 0 0 40px rgba(0, 242, 254, 0.2);
+            overflow: hidden;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .crt-screen {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #0b0c15;
+            display: block;
+        }
+
+        /* Scanline Overlay Effect */
+        .crt-screen::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(var(--scanline-color) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 2;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* Screen Glass Curve & Glare */
+        .crt-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1.0; }
+            100% { opacity: 0.98; }
+        }
+
+        .renderer-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .renderer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Mode Selectors */
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .mode-tab {
+            background: rgba(13, 17, 38, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            padding: 12px 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mode-tab:hover {
+            border-color: var(--neon-blue);
+            color: var(--text-primary);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .mode-tab.active {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 172, 254, 0.1) 100%);
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            font-weight: 700;
+        }
+
+        /* Slider Styles */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slider-label {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .slider-value {
+            color: var(--neon-blue);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #141729;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: 4px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="range"]:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            box-shadow: 0 0 8px var(--neon-blue);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* Watcher / Register panel */
+        .watcher-panel {
+            background: rgba(8, 10, 22, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .watcher-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .watcher-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .watcher-cell {
+            background: rgba(13, 17, 38, 0.5);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .watcher-addr {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .watcher-val {
+            font-size: 1.1rem;
+            color: var(--neon-magenta);
+            font-weight: 700;
+        }
+
+        /* CLI interface styling inside Terminal */
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-top: 15px;
+        }
+
+        .terminal-prompt {
+            color: var(--crt-green);
+            font-family: 'Share Tech Mono', monospace;
+            margin-right: 8px;
+            font-weight: 700;
+        }
+
+        .terminal-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-family: 'Share Tech Mono', monospace;
+            width: 100%;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">DATAMOST</span>
+                <div class="subtitle">Unified Platform Renderer</div>
+            </div>
+            <div class="header-actions">
+                <div id="connStatus" class="network-badge">DISCONNECTED</div>
+            </div>
+        </header>
+
+        <div class="renderer-grid">
+            <!-- Left Side: CRT Screen Simulator -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="crt-container">
+                    <canvas id="renderCanvas" class="crt-screen" width="640" height="480"></canvas>
+                </div>
+
+                <!-- Memory Register Watcher -->
+                <div class="watcher-panel">
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 0.95rem; margin-bottom: 12px; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 8px; color: var(--neon-blue);">
+                        MATRIX REGISTERS & CONTROL WATCHER
+                    </div>
+                    <div class="watcher-grid">
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55100 (Cam X)</div>
+                            <div id="regCamX" class="watcher-val">0</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55101 (Cam Y)</div>
+                            <div id="regCamY" class="watcher-val">0</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55102 (Cam Z)</div>
+                            <div id="regCamZ" class="watcher-val">100</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55103 (Pitch)</div>
+                            <div id="regPitch" class="watcher-val">0</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55104 (Yaw)</div>
+                            <div id="regYaw" class="watcher-val">0</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55105 (Roll)</div>
+                            <div id="regRoll" class="watcher-val">0</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55106 (Mode)</div>
+                            <div id="regMode" class="watcher-val">0</div>
+                        </div>
+                        <div class="watcher-cell">
+                            <div class="watcher-addr">55107 (Scale/FOV)</div>
+                            <div id="regScale" class="watcher-val">300</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Display Styles & Settings -->
+            <div class="retro-controls">
+                <div class="card" style="padding: 25px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--glass-shadow);">
+                    <h3 style="font-family: 'Orbitron', sans-serif; font-size: 1.2rem; margin-bottom: 20px; color: var(--neon-blue); letter-spacing: 1px;">
+                        DISPLAY RENDERING STYLES
+                    </h3>
+                    
+                    <div class="mode-tabs">
+                        <div id="tabTerminal" class="mode-tab active" onclick="setRenderMode(0)">TERMINAL TEXT</div>
+                        <div id="tab2DScroller" class="mode-tab" onclick="setRenderMode(1)">2D SCROLLER</div>
+                        <div id="tabPseudo3D" class="mode-tab" onclick="setRenderMode(2)">PSEUDO-3D RACER</div>
+                        <div id="tab3DWireframe" class="mode-tab" onclick="setRenderMode(3)">3D WIREFRAME</div>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(0, 242, 254, 0.15); padding-top: 20px;">
+                        <h4 style="font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 20px; color: var(--neon-purple);">
+                            MATRIX CONTROLS & CAMERA
+                        </h4>
+
+                        <!-- Cam X Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Camera X (Position)</span>
+                                <span id="valCamX" class="slider-value">0</span>
+                            </div>
+                            <input type="range" id="slideCamX" min="-200" max="200" value="0" oninput="updateMatrix()">
+                        </div>
+
+                        <!-- Cam Y Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Camera Y (Elevation)</span>
+                                <span id="valCamY" class="slider-value">0</span>
+                            </div>
+                            <input type="range" id="slideCamY" min="-200" max="200" value="0" oninput="updateMatrix()">
+                        </div>
+
+                        <!-- Cam Z Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Camera Z (Depth)</span>
+                                <span id="valCamZ" class="slider-value">100</span>
+                            </div>
+                            <input type="range" id="slideCamZ" min="10" max="400" value="100" oninput="updateMatrix()">
+                        </div>
+
+                        <!-- Pitch Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Camera Pitch (Tilt)</span>
+                                <span id="valPitch" class="slider-value">0°</span>
+                            </div>
+                            <input type="range" id="slidePitch" min="-90" max="90" value="0" oninput="updateMatrix()">
+                        </div>
+
+                        <!-- Yaw Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Camera Yaw (Pan)</span>
+                                <span id="valYaw" class="slider-value">0°</span>
+                            </div>
+                            <input type="range" id="slideYaw" min="-180" max="180" value="0" oninput="updateMatrix()">
+                        </div>
+
+                        <!-- Scale/FOV Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Scale Factor / FOV</span>
+                                <span id="valScale" class="slider-value">300</span>
+                            </div>
+                            <input type="range" id="slideScale" min="50" max="600" value="300" oninput="updateMatrix()">
+                        </div>
+
+                        <!-- Extra style-specific slider -->
+                        <div id="styleSpecificGroup" class="slider-group" style="display: none;">
+                            <div class="slider-header">
+                                <span id="styleSpecificLabel" class="slider-label">Curve / Road Bend</span>
+                                <span id="valStyleSpecific" class="slider-value">0</span>
+                            </div>
+                            <input type="range" id="slideStyleSpecific" min="-100" max="100" value="0" oninput="updateStyleSpecific()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Console / Interactive Section -->
+                <div id="interactiveCard" class="card" style="padding: 20px; background: rgba(8, 10, 22, 0.8); border: 1px solid var(--border-color); border-radius: 16px;">
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 0.95rem; margin-bottom: 12px; color: var(--neon-magenta);">
+                        INTERACTIVE COMMAND SHELL
+                    </div>
+                    <div id="terminalLog" style="height: 120px; overflow-y: auto; background: #000; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 0, 127, 0.15); font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: var(--crt-green); line-height: 1.4;">
+                        DATAMOST OS V1.0 - ALL INTERFACES MAPPED.<br>
+                        READY.
+                    </div>
+                    <div id="cliContainer" class="terminal-input-container">
+                        <span class="terminal-prompt">></span>
+                        <input type="text" id="terminalInput" class="terminal-input" placeholder="Type a command (e.g. HELP, PUSH, CLEAR)..." onkeydown="handleCliInput(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Setup Ethers and local RPC bindings
+        let provider, signer, graphicsContract;
+        const PROVIDER_URL = "http://127.0.0.1:8545";
+        let graphicsAddress = "0x14C8dDA9a7ee88723cfb7C25C0c29CfC9BF9D48b"; // Deployed local fallback
+
+        const graphicsABI = [
+            "function getMercenaryGeometry(uint256 objId) public view returns (int256[])",
+            "function getCannonDuelTrajectory(uint256 velocity, uint256 angle, int256 wind) public view returns (uint256[], uint256[])"
+        ];
+
+        // Global State Registers matching C64 & display specifications
+        const reg = {
+            camX: 0,
+            camY: 0,
+            camZ: 100,
+            pitch: 0,
+            yaw: 0,
+            roll: 0,
+            mode: 0, // 0 = Terminal, 1 = 2D Tilemap, 2 = Pseudo-3D Scanline, 3 = Wireframe
+            scale: 300,
+            styleSpecific: 0 // Used for HSCROL, Road Curve, etc.
+        };
+
+        const canvas = document.getElementById("renderCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Initialization
+        window.addEventListener("DOMContentLoaded", async () => {
+            initEthers();
+            setRenderMode(0); // Start in Terminal Mode
+            tick();
+        });
+
+        async function initEthers() {
+            try {
+                // Fetch config from server.js
+                const res = await fetch("/api/config");
+                if (res.ok) {
+                    const config = await res.json();
+                    if (config.networks && config.networks.localhost && config.networks.localhost.graphicsSystemAddress) {
+                        graphicsAddress = config.networks.localhost.graphicsSystemAddress;
+                    }
+                }
+                
+                provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                signer = await provider.getSigner();
+                graphicsContract = new ethers.Contract(graphicsAddress, graphicsABI, signer);
+                
+                document.getElementById("connStatus").innerText = "CONNECTED (LOCAL EVM)";
+                document.getElementById("connStatus").classList.add("connected");
+                writeLog("CONNECTED: GraphicsSystem Contract linked at " + graphicsAddress.substring(0, 10) + "...");
+            } catch (e) {
+                console.log("No local node. Running in standalone mode.");
+                document.getElementById("connStatus").innerText = "STANDALONE MODE";
+                writeLog("STANDALONE RUNTIME: Local contract offline. Simulating display pipeline.");
+            }
+        }
+
+        // Render Mode controller
+        function setRenderMode(modeId) {
+            reg.mode = modeId;
+            document.querySelectorAll(".mode-tab").forEach((tab, index) => {
+                if (index === modeId) tab.classList.add("active");
+                else tab.classList.remove("active");
+            });
+
+            // Adjust sliders based on mode
+            const extraGroup = document.getElementById("styleSpecificGroup");
+            const extraLabel = document.getElementById("styleSpecificLabel");
+            const extraSlide = document.getElementById("slideStyleSpecific");
+
+            if (modeId === 1) { // 2D Scroller
+                extraGroup.style.display = "block";
+                extraLabel.innerText = "Scroll Offset (HSCROL)";
+                extraSlide.min = "0";
+                extraSlide.max = "32";
+                extraSlide.value = reg.styleSpecific;
+                document.getElementById("valStyleSpecific").innerText = reg.styleSpecific + "px";
+            } else if (modeId === 2) { // Pseudo-3D Racer
+                extraGroup.style.display = "block";
+                extraLabel.innerText = "Road Bend Curvature";
+                extraSlide.min = "-100";
+                extraSlide.max = "100";
+                extraSlide.value = reg.styleSpecific;
+                document.getElementById("valStyleSpecific").innerText = reg.styleSpecific;
+            } else {
+                extraGroup.style.display = "none";
+            }
+
+            writeLog("Switched Display Mode to: " + getModeName(modeId));
+            updateWatcher();
+        }
+
+        function getModeName(modeId) {
+            switch(modeId) {
+                case 0: return "Terminal / Text Style";
+                case 1: return "2D Tiled / Scroll Style";
+                case 2: return "Pseudo-3D Scanline Style";
+                case 3: return "True 3D Wireframe Style";
+            }
+        }
+
+        // Handle sliders
+        function updateMatrix() {
+            reg.camX = parseInt(document.getElementById("slideCamX").value);
+            reg.camY = parseInt(document.getElementById("slideCamY").value);
+            reg.camZ = parseInt(document.getElementById("slideCamZ").value);
+            reg.pitch = parseInt(document.getElementById("slidePitch").value);
+            reg.yaw = parseInt(document.getElementById("slideYaw").value);
+            reg.scale = parseInt(document.getElementById("slideScale").value);
+
+            document.getElementById("valCamX").innerText = reg.camX;
+            document.getElementById("valCamY").innerText = reg.camY;
+            document.getElementById("valCamZ").innerText = reg.camZ;
+            document.getElementById("valPitch").innerText = reg.pitch + "°";
+            document.getElementById("valYaw").innerText = reg.yaw + "°";
+            document.getElementById("valScale").innerText = reg.scale;
+
+            updateWatcher();
+        }
+
+        function updateStyleSpecific() {
+            reg.styleSpecific = parseInt(document.getElementById("slideStyleSpecific").value);
+            if (reg.mode === 1) {
+                document.getElementById("valStyleSpecific").innerText = reg.styleSpecific + "px";
+            } else {
+                document.getElementById("valStyleSpecific").innerText = reg.styleSpecific;
+            }
+            updateWatcher();
+        }
+
+        function updateWatcher() {
+            document.getElementById("regCamX").innerText = reg.camX;
+            document.getElementById("regCamY").innerText = reg.camY;
+            document.getElementById("regCamZ").innerText = reg.camZ;
+            document.getElementById("regPitch").innerText = reg.pitch;
+            document.getElementById("regYaw").innerText = reg.yaw;
+            document.getElementById("regMode").innerText = reg.mode;
+            document.getElementById("regScale").innerText = reg.scale;
+        }
+
+        // Terminal Log writer
+        function writeLog(text) {
+            const log = document.getElementById("terminalLog");
+            log.innerHTML += "<br>" + text;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Cli Commands
+        function handleCliInput(e) {
+            if (e.key === "Enter") {
+                const input = document.getElementById("terminalInput");
+                const val = input.value.trim().toUpperCase();
+                if (!val) return;
+                
+                writeLog("> " + val);
+                input.value = "";
+
+                if (val === "HELP") {
+                    writeLog("Commands: MODE [0-3], CLEAR, RESET, GEOMETRY, COLLISION");
+                } else if (val.startsWith("MODE ")) {
+                    const id = parseInt(val.split(" ")[1]);
+                    if (id >= 0 && id <= 3) {
+                        setRenderMode(id);
+                    } else {
+                        writeLog("Invalid Mode. Select 0 to 3.");
+                    }
+                } else if (val === "CLEAR") {
+                    document.getElementById("terminalLog").innerHTML = "DATAMOST CLI READY.";
+                } else if (val === "RESET") {
+                    document.getElementById("slideCamX").value = 0;
+                    document.getElementById("slideCamY").value = 0;
+                    document.getElementById("slideCamZ").value = 100;
+                    document.getElementById("slidePitch").value = 0;
+                    document.getElementById("slideYaw").value = 0;
+                    document.getElementById("slideScale").value = 300;
+                    updateMatrix();
+                    writeLog("Reset camera parameters.");
+                } else if (val === "COLLISION") {
+                    writeLog("Testing GTIA / VIC-II Sprite overlap check...");
+                    // Force sprite collision state
+                    writeLog("Status: Sprites 0 and 1 overlap detected!");
+                } else if (val === "GEOMETRY") {
+                    writeLog("Fetching geometry points from Ethereum local chain...");
+                    if (graphicsContract) {
+                        graphicsContract.getMercenaryGeometry(1)
+                            .then(flat => {
+                                writeLog("Loaded flat array size: " + flat.length + " elements.");
+                            })
+                            .catch(err => {
+                                writeLog("Error fetching geometry: " + err.message);
+                            });
+                    } else {
+                        writeLog("Local contract not bound. Loading offline shape array.");
+                    }
+                } else {
+                    writeLog("Unknown command: " + val);
+                }
+            }
+        }
+
+        // Simulated Vector Assets (Mercenary shape 3D vertices)
+        const vertices = [
+            {x: -1, y: -1, z: -1}, {x: 1, y: -1, z: -1}, {x: 1, y: 1, z: -1}, {x: -1, y: 1, z: -1},
+            {x: -1, y: -1, z: 1},  {x: 1, y: -1, z: 1},  {x: 1, y: 1, z: 1},  {x: -1, y: 1, z: 1},
+            {x: 0, y: 1.5, z: 0} // Pyramid peak or spacecraft needle
+        ];
+
+        const edges = [
+            [0,1], [1,2], [2,3], [3,0], // back face
+            [4,5], [5,6], [6,7], [7,4], // front face
+            [0,4], [1,5], [2,6], [3,7], // connecting lines
+            [4,8], [5,8], [6,8], [7,8]  // peak connections
+        ];
+
+        let tickCounter = 0;
+
+        // Main animation tick loop
+        function tick() {
+            tickCounter++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            switch(reg.mode) {
+                case 0:
+                    drawTerminalMode();
+                    break;
+                case 1:
+                    draw2DScrollerMode();
+                    break;
+                case 2:
+                    drawPseudo3DRacerMode();
+                    break;
+                case 3:
+                    draw3DWireframeMode();
+                    break;
+            }
+
+            requestAnimationFrame(tick);
+        }
+
+        // Mode 0 Renderer: Retro text terminal
+        function drawTerminalMode() {
+            ctx.fillStyle = "#090a12";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Glowing border
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+            // Matrix numbers waterfall effect on sides
+            ctx.fillStyle = "rgba(57, 255, 20, 0.12)";
+            ctx.font = "14px 'Share Tech Mono', monospace";
+            for(let i=0; i<8; i++) {
+                let text = (Math.random() > 0.5 ? "1" : "0") + " " + (Math.random() > 0.5 ? "1" : "0");
+                ctx.fillText(text, 25, 40 + i * 30);
+                ctx.fillText(text, canvas.width - 60, 40 + i * 30);
+            }
+
+            // Text contents
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "20px 'Share Tech Mono', monospace";
+            ctx.fillText("DATAMOST RETRO-KERNEL LOADED", 100, 60);
+
+            ctx.font = "15px 'Share Tech Mono', monospace";
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillText("VIC-II SIM: ACTIVE     SID CH1: OSCILLATING", 100, 100);
+            ctx.fillText("DYSNOMIA CORE: ONLINE  VULKAN INTERFACE: READY", 100, 130);
+
+            ctx.fillStyle = "#fff";
+            ctx.fillText("MAPPED RENDER MODES IN MEMORY:", 100, 180);
+            ctx.fillText("  -> REGISTER 55106 = 0 [TERMINAL TEXT DISPLAY]", 100, 210);
+            ctx.fillText("  -> REGISTER 55106 = 1 [2D SCROLL SIDE-VIEW]", 100, 235);
+            ctx.fillText("  -> REGISTER 55106 = 2 [PSEUDO-3D CURVED RACER]", 100, 260);
+            ctx.fillText("  -> REGISTER 55106 = 3 [TRUE 3D VECTOR GRAPHICS]", 100, 285);
+
+            // Blinking cursor
+            ctx.fillStyle = (Math.floor(tickCounter / 30) % 2 === 0) ? "#39ff14" : "transparent";
+            ctx.fillRect(100 + ctx.measureText("  -> REGISTER 55106 = 3 [TRUE 3D VECTOR GRAPHICS]").width + 10, 272, 10, 16);
+            
+            // Sub-status footer
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.font = "12px 'Orbitron', sans-serif";
+            ctx.fillText("OS LOOPS COMPLETED: " + tickCounter, 100, 420);
+        }
+
+        // Mode 1 Renderer: 2D Scrolling tilemap
+        function draw2DScrollerMode() {
+            ctx.fillStyle = "#050b1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Sky stars
+            ctx.fillStyle = "#fff";
+            for(let i=0; i<15; i++) {
+                let starX = (150 * i + tickCounter * 0.1) % canvas.width;
+                let starY = (80 * i) % 200 + 20;
+                ctx.fillRect(starX, starY, 2, 2);
+            }
+
+            // Scroll offset calculations
+            const hScroll = reg.styleSpecific; 
+            const speed = 2;
+            const scrollOffset = (tickCounter * speed + hScroll) % 80;
+
+            // Draw scrolling mountain range (Background parallax)
+            ctx.fillStyle = "rgba(79, 172, 254, 0.15)";
+            ctx.beginPath();
+            ctx.moveTo(0, 320);
+            for(let i = 0; i <= canvas.width + 100; i += 80) {
+                let x = i - (scrollOffset / 2);
+                let y = 180 + ((i / 80) % 2 === 0 ? 30 : 0);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(canvas.width, 320);
+            ctx.lineTo(0, 320);
+            ctx.fill();
+
+            // Draw scrolling tiles (foreground ground layer)
+            ctx.fillStyle = "#0c1f38";
+            ctx.fillRect(0, 320, canvas.width, canvas.height - 320);
+
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.3)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let i = -80; i < canvas.width + 80; i += 40) {
+                let x = i - scrollOffset;
+                ctx.moveTo(x, 320);
+                ctx.lineTo(x + 40, 480);
+            }
+            ctx.stroke();
+
+            // Horizontal grid perspective lines
+            for(let y = 320; y < canvas.height; y += 20) {
+                ctx.strokeStyle = "rgba(0, 242, 254, " + ((y - 320) / 160) + ")";
+                ctx.strokeRect(0, y, canvas.width, 1);
+            }
+
+            // Animated Sprite: Character running on grid
+            let spriteY = 280 + Math.sin(tickCounter * 0.15) * 10;
+            ctx.fillStyle = varColor("--neon-magenta");
+            // Draw retro sprite shape
+            ctx.beginPath();
+            ctx.arc(160, spriteY, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 14px 'Orbitron', sans-serif";
+            ctx.fillText("PLAYER", 135, spriteY - 25);
+        }
+
+        // Mode 2 Renderer: Pseudo-3D Curved road racer
+        function drawPseudo3DRacerMode() {
+            ctx.fillStyle = "#0a0a0f";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw sky background
+            let gradient = ctx.createLinearGradient(0, 0, 0, 240);
+            gradient.addColorStop(0, "#010103");
+            gradient.addColorStop(1, "#15162a");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, 240);
+
+            // Draw curving road scanline by scanline
+            let curveStrength = reg.styleSpecific;
+            let horizonY = 240;
+
+            for(let y = horizonY; y < canvas.height; y++) {
+                let relativeDepth = (y - horizonY) / (canvas.height - horizonY); // 0 at horizon, 1 at bottom
+                let roadWidth = 40 + relativeDepth * 400; // Widens near bottom
+
+                // Curve bending offset formula: x = x_base + Delta_curve * Depth^2
+                let curveOffset = curveStrength * relativeDepth * relativeDepth;
+                let roadCenter = (canvas.width / 2) + curveOffset;
+
+                // Alternate colors to represent speed lines (horizontal strips)
+                let cycle = Math.floor(tickCounter * 0.2 - (10 / relativeDepth)) % 2 === 0;
+                
+                // Shoulder/grass colors
+                ctx.fillStyle = cycle ? "#1b2c15" : "#111f0d";
+                ctx.fillRect(0, y, canvas.width, 1);
+
+                // Road base
+                ctx.fillStyle = "#1e1e24";
+                ctx.fillRect(roadCenter - roadWidth/2, y, roadWidth, 1);
+
+                // Road side lines (red/white rumble strips)
+                let rumbleWidth = 5 + relativeDepth * 15;
+                ctx.fillStyle = cycle ? "#ff007f" : "#fff";
+                ctx.fillRect(roadCenter - roadWidth/2 - rumbleWidth, y, rumbleWidth, 1);
+                ctx.fillRect(roadCenter + roadWidth/2, y, rumbleWidth, 1);
+
+                // Center dashed lines
+                if (cycle && relativeDepth > 0.1) {
+                    let dashWidth = 2 + relativeDepth * 10;
+                    ctx.fillStyle = "#ffb000";
+                    ctx.fillRect(roadCenter - dashWidth/2, y, dashWidth, 1);
+                }
+            }
+
+            // Draw scaling sprite (car ahead)
+            let zProgress = (tickCounter * 0.005) % 1.0;
+            let enemyDepth = zProgress; // 0 to 1
+            let enemyScale = 10 + enemyDepth * 80;
+            let enemyY = horizonY + enemyDepth * 200;
+            let enemyX = (canvas.width / 2) + curveStrength * enemyDepth * enemyDepth;
+
+            // Draw enemy car silhouette
+            ctx.fillStyle = varColor("--neon-blue");
+            ctx.fillRect(enemyX - enemyScale/2, enemyY - enemyScale/3, enemyScale, enemyScale/3);
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(enemyX - enemyScale/4, enemyY - enemyScale/4, enemyScale/2, enemyScale/10);
+
+            // Perspective HUD text
+            ctx.fillStyle = varColor("--neon-blue");
+            ctx.font = "15px 'Orbitron', sans-serif";
+            ctx.fillText("SPEED: 180 MPH", 30, 40);
+            ctx.fillText("CURVE REG: " + curveStrength, 30, 70);
+        }
+
+        // Mode 3 Renderer: True 3D Wireframe graphics
+        function draw3DWireframeMode() {
+            ctx.fillStyle = "#030408";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Matrix camera details
+            const scale = reg.scale;
+            const camX = reg.camX;
+            const camY = reg.camY;
+            const camZ = reg.camZ;
+            
+            // Dynamic rotation values combined with sliders
+            const rotY = (reg.yaw * Math.PI) / 180 + tickCounter * 0.01;
+            const rotX = (reg.pitch * Math.PI) / 180;
+
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+
+            let projected = [];
+
+            // Project 3D points to 2D screen
+            vertices.forEach(v => {
+                // Apply scaling to the local shape
+                let lx = v.x * 45;
+                let ly = v.y * 45;
+                let lz = v.z * 45;
+
+                // Yaw Rotation (around Y axis)
+                let rx = lx * cosY - lz * sinY;
+                let rz = lx * sinY + lz * cosY;
+
+                // Pitch Rotation (around X axis)
+                let ry = ly * cosX - rz * sinX;
+                rz = ly * sinX + rz * cosX;
+
+                // Camera Position Translation
+                let cx = rx - camX;
+                let cy = ry - camY;
+                let cz = rz + camZ; // Move away from eye point
+
+                // Perspective Division Projection
+                let screenX = (cx * scale) / cz + canvas.width / 2;
+                let screenY = -(cy * scale) / cz + canvas.height / 2;
+
+                projected.push({x: screenX, y: screenY});
+            });
+
+            // Draw Lines (Vector lines)
+            ctx.strokeStyle = varColor("--neon-blue");
+            ctx.lineWidth = 2;
+            
+            edges.forEach(edge => {
+                let p1 = projected[edge[0]];
+                let p2 = projected[edge[1]];
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            });
+
+            // Draw Glowing vertex nodes
+            ctx.fillStyle = varColor("--neon-magenta");
+            projected.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Status label
+            ctx.fillStyle = "rgba(0, 242, 254, 0.6)";
+            ctx.font = "14px 'Orbitron', sans-serif";
+            ctx.fillText("MERCENARY 3D VECTOR MODEL SIMULATOR", 30, 40);
+        }
+
+        // Helper to grab css theme colors
+        function varColor(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+    </script>
+</body>
+</html>
