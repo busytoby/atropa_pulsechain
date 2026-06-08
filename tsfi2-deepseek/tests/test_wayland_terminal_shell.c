@@ -2174,7 +2174,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                                             strncmp(cmd_buf, "west", 4) == 0 ||
                                             strncmp(cmd_buf, "take", 4) == 0 ||
                                             strncmp(cmd_buf, "aim ", 4) == 0 ||
-                                            strncmp(cmd_buf, "shoo", 4) == 0) {
+                                            strncmp(cmd_buf, "shoo", 4) == 0 ||
+                                            strncmp(cmd_buf, "star", 4) == 0 ||
+                                            strncmp(cmd_buf, "stee", 4) == 0 ||
+                                            strncmp(cmd_buf, "acce", 4) == 0 ||
+                                            strncmp(cmd_buf, "fire", 4) == 0) {
                                             is_write_cmd = true;
                                         }
                                     }

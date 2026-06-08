@@ -330,6 +330,116 @@ object "ZMachine" {
                         resultPtr := add(resultPtr, 32)
                     }
                 }
+                case 0x73746172 { // "star" (Start game / start)
+                    sstore(3000800, 10) // 10 drones
+                    sstore(3000801, 20) // player X (center)
+                    sstore(3000802, 1)  // player speed level
+                    sstore(3000803, 15) // drone X (starts at 15)
+                    sstore(3000804, 1)  // stage 1
+                    
+                    mstore(resultPtr, 0x4d4f544845525348495020696e69746564212031302064726f6e657320616865) // "MOTHERSHIP inited! 10 drones ahe"
+                    mstore(add(resultPtr, 32), 0x61642e205479706520277374656572206c6566742f726967687427206f722027) // "ad. Type 'steer left/right' or '"
+                    mstore(add(resultPtr, 64), 0x666972652720746f2073686f6f742e0000000000000000000000000000000000) // "fire' to shoot."
+                    resultPtr := add(resultPtr, 79)
+                }
+                case 0x73746565 { // "stee" (Steer)
+                    let playerX := sload(3000801)
+                    let dir := shr(224, calldataload(106))
+                    
+                    if eq(dir, 0x6c656674) { // "left"
+                        playerX := sub(playerX, 3)
+                    }
+                    if eq(dir, 0x72696768) { // "righ" (right)
+                        playerX := add(playerX, 3)
+                    }
+                    
+                    sstore(3000801, playerX)
+                    
+                    let crashed := 0
+                    if lt(playerX, 5) { crashed := 1 }
+                    if gt(playerX, 35) { crashed := 1 }
+                    
+                    if crashed {
+                        sstore(3000804, 0) // reset stage
+                        mstore(resultPtr, 0x43524153482120596f75206869742074686520636f727269646f722077616c6c) // "CRASH! You hit the corridor wall"
+                        mstore(add(resultPtr, 32), 0x73212047616d65206f7665722e00000000000000000000000000000000000000) // "s! Game over."
+                        resultPtr := add(resultPtr, 45)
+                    }
+                    if iszero(crashed) {
+                        mstore(resultPtr, 0x5374656572696e672e20506f736974696f6e2058203d20000000000000000000) // "Steering. Position X = "
+                        let textPtr := add(resultPtr, 23)
+                        
+                        // Print coordinate character
+                        let char1 := add(48, div(playerX, 10))
+                        let char2 := add(48, mod(playerX, 10))
+                        mstore8(textPtr, char1)
+                        mstore8(add(textPtr, 1), char2)
+                        
+                        resultPtr := add(textPtr, 2)
+                    }
+                }
+                case 0x61636365 { // "acce" (Accelerate)
+                    let spd := sload(3000802)
+                    if lt(spd, 3) { spd := add(spd, 1) }
+                    sstore(3000802, spd)
+                    mstore(resultPtr, 0x416363656c65726174696e672e205370656564203d2030000000000000000000) // "Accelerating. Speed = 0"
+                    mstore8(add(resultPtr, 22), add(48, spd))
+                    resultPtr := add(resultPtr, 23)
+                }
+                case 0x66697265 { // "fire" (Fire / shoot)
+                    let stage := sload(3000804)
+                    if eq(stage, 1) { // Drones phase
+                        let playerX := sload(3000801)
+                        let droneX := sload(3000803)
+                        let diffX := 0
+                        if gt(playerX, droneX) { diffX := sub(playerX, droneX) }
+                        if iszero(gt(playerX, droneX)) { diffX := sub(droneX, playerX) }
+                        
+                        let hit := lt(diffX, 4)
+                        if hit {
+                            let count := sload(3000800)
+                            count := sub(count, 1)
+                            sstore(3000800, count)
+                            
+                            if count {
+                                // Spawn next drone at a different X
+                                let nextX := and(add(droneX, 11), 31)
+                                if lt(nextX, 5) { nextX := add(nextX, 5) }
+                                sstore(3000803, nextX)
+                                
+                                mstore(resultPtr, 0x44495245435420484954212044726f6e652064657374726f7965642e20000000) // "DIRECT HIT! Drone destroyed. "
+                                let textPtr := add(resultPtr, 29)
+                                mstore8(textPtr, add(48, count))
+                                mstore(add(textPtr, 1), 0x2064726f6e65732072656d61696e65652e000000000000000000000000000000) // " drones remaine."
+                                resultPtr := add(textPtr, 17)
+                            }
+                            if iszero(count) {
+                                sstore(3000804, 2) // Mothership phase
+                                mstore(resultPtr, 0x414c4c2044524f4e45532044455354524f5945442120546865204d4f54484552) // "ALL DRONES DESTROYED! The MOTHER"
+                                mstore(add(resultPtr, 32), 0x53484950206c6f6f6d73206168656164212046697265206e6f77210000000000) // "SHIP looms ahead! Fire now!"
+                                resultPtr := add(resultPtr, 59)
+                            }
+                        }
+                        if iszero(hit) {
+                            mstore(resultPtr, 0x4d697373212044726f6e65206973207374696c6c2061742058203d2030300000) // "Miss! Drone is still at X = 00"
+                            let textPtr := add(resultPtr, 29)
+                            mstore8(textPtr, add(48, div(droneX, 10)))
+                            mstore8(add(textPtr, 1), add(48, mod(droneX, 10)))
+                            resultPtr := add(resultPtr, 31)
+                        }
+                    }
+                    if eq(stage, 2) { // Mothership phase
+                        sstore(3000804, 0) // reset
+                        mstore(resultPtr, 0x4b41424f4f4d2120596f752064657374726f79656420746865204d4f54484552) // "KABOOM! You destroyed the MOTHER"
+                        mstore(add(resultPtr, 32), 0x534849502120566967696c616e7420766963746f72792e000000000000000000) // "SHIP! Vigilant victory."
+                        resultPtr := add(resultPtr, 55)
+                    }
+                    if iszero(stage) {
+                        mstore(resultPtr, 0x4e6f2061637469766520746172676574732e2054797065202773746172742720) // "No active targets. Type 'start' "
+                        mstore(add(resultPtr, 32), 0x746f20626567696e2e0000000000000000000000000000000000000000000000) // "to begin."
+                        resultPtr := add(resultPtr, 41)
+                    }
+                }
                 case 0x6e6f7274 { // "nort" (North)
                     let exits := sload(add(3200000, roomId))
                     let dest := and(shr(24, exits), 0xff)
