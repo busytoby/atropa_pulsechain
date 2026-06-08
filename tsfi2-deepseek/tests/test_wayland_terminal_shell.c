@@ -85,6 +85,11 @@ static int pending_height = 0;
 static bool resize_pending = false;
 static bool g_mercenary_active = false;
 static void update_mercenary_yul_camera(void);
+static bool g_pong_active = false;
+static bool g_pong_loaded = false;
+static bool g_key_up_pressed = false;
+static bool g_key_down_pressed = false;
+static void update_pong_game(void);
 
 // Registry listeners
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
@@ -793,11 +798,11 @@ static void execute_command(const char *cmd) {
     }
     
     char cmd_copy[512];
-    strncpy(cmd_copy, cmd, sizeof(cmd_copy));
-    cmd_copy[sizeof(cmd_copy) - 1] = '\0';
+    snprintf(cmd_copy, sizeof(cmd_copy), "%s", cmd);
     char *first_word = strtok(cmd_copy, " \t");
-    if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0) {
+    if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0 && strcasecmp(first_word, "PONG") != 0) {
         g_mercenary_active = false;
+        g_pong_active = false;
     }
     
     if (first_word && strcasecmp(first_word, "GO") == 0) {
@@ -872,6 +877,27 @@ static void execute_command(const char *cmd) {
         lau_vram_write_string(g_vram, advice, strlen(advice));
         
         g_mercenary_active = true;
+        g_pong_active = false;
+        g_vram->is_dirty = true;
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "PONG") == 0) {
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        const char *advice = 
+            "\r\n"
+            "--- C64 Interactive Pong on ZMM VM Yul ---\r\n"
+            "Control left paddle using W (Up) and S (Down).\r\n"
+            "Keep the ball inside the neon arena!\r\n"
+            "==========================================\r\n"
+            "Running Pong emulator core in real-time...\r\n\r\n";
+        lau_vram_write_string(g_vram, advice, strlen(advice));
+        
+        g_pong_active = true;
+        g_mercenary_active = false;
+        g_pong_loaded = false;
         g_vram->is_dirty = true;
         return;
     }
@@ -1516,6 +1542,14 @@ static const struct wl_pointer_listener pointer_listener = {
 
 static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
     (void)data; (void)keyboard; (void)serial; (void)time;
+    fprintf(stderr, "[KEY-DEBUG] key: %u, state: %u\n", key, state);
+
+    if (key == 17 || key == 103) { // W or UP
+        g_key_up_pressed = (state != 0);
+    } else if (key == 31 || key == 108) { // S or DOWN
+        g_key_down_pressed = (state != 0);
+    }
+
     if (state != 1) return; // Only key press
 
     extern uint32_t tsfi_input_map_to_utf32(uint32_t scancode);
@@ -1828,7 +1862,11 @@ void render_terminal_display(void) {
             }
         }
     }
-    update_mercenary_yul_camera();
+    if (g_mercenary_active) {
+        update_mercenary_yul_camera();
+    } else if (g_pong_active) {
+        update_pong_game();
+    }
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
         GfxPrimitive gp = gfx_primitives[i];
@@ -1966,6 +2004,168 @@ static uint64_t vm_peek(TsfiZmmVmState *vstate, uint64_t addr) {
         res = strtoull(val_str, NULL, 16);
     }
     return res;
+}
+
+static void vm_poke64(TsfiZmmVmState *vstate, uint64_t addr, uint64_t val) {
+    char cmd[512];
+    char addr_hex[65];
+    char val_hex[65];
+    format_uint256_hex(addr_hex, addr);
+    format_uint256_hex(val_hex, val);
+    
+    // selector: poke(uint256,uint256) -> 0x8029e7c0
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0%s%s\"", addr_hex, val_hex);
+    vstate->output_pos = 0;
+    tsfi_zmm_vm_exec(vstate, cmd);
+}
+
+static void init_pong_game(void) {
+    uint8_t pong_program[] = {
+        0xA5, 0x08, 0xD0, 0x0F, 0xA2, 0x27, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA9, 
+        0x01, 0x85, 0x08, 0xAD, 0x00, 0xDC, 0x29, 0x04, 0xD0, 0x0F, 0xAD, 0x00, 
+        0xD0, 0x38, 0xE9, 0x04, 0xC9, 0x28, 0xB0, 0x02, 0xA9, 0x28, 0x8D, 0x00, 
+        0xD0, 0xAD, 0x00, 0xDC, 0x29, 0x08, 0xD0, 0x0F, 0xAD, 0x00, 0xD0, 0x18, 
+        0x69, 0x04, 0xC9, 0xE0, 0x90, 0x02, 0xA9, 0xE0, 0x8D, 0x00, 0xD0, 0xA5, 
+        0x02, 0xC9, 0x03, 0xD0, 0x0C, 0xAD, 0x02, 0xD0, 0x18, 0x69, 0x03, 0x8D, 0x02, 0xD0, 0x4C, 0x56, 0x20, 
+        0xAD, 0x02, 0xD0, 0x38, 0xE9, 0x03, 0x8D, 0x02, 0xD0, 
+        0xA5, 0x03, 0xC9, 0x03, 0xD0, 0x0C, 0xAD, 0x03, 0xD0, 0x18, 0x69, 0x03, 0x8D, 0x03, 0xD0, 0x4C, 0x71, 0x20, 
+        0xAD, 0x03, 0xD0, 0x38, 0xE9, 0x03, 0x8D, 0x03, 0xD0, 
+        0xAD, 0x02, 0xD0, 0xC9, 0x28, 0xB0, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0x03, 0x85, 0x02, 
+        0xAD, 0x02, 0xD0, 0xC9, 0xE0, 0x90, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0xFD, 0x85, 0x02, 
+        0xAD, 0x03, 0xD0, 0xC9, 0x23, 0xB0, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0x03, 0x85, 0x03, 
+        0xAD, 0x03, 0xD0, 0xC9, 0x9B, 0x90, 0x4D, 0xAD, 0x1E, 0xD0, 0x29, 0x03, 0xC9, 0x03, 0xD0, 0x17, 0xA2, 0x80, 0xA0, 0x20, 0x20, 0x1B, 0x21, 0xA9, 0xFD, 0x85, 0x03, 0xE6, 0x04, 
+        0xA2, 0x2C, 0xA0, 0x21, 0x20, 0x14, 0x21, 0x4C, 0xF7, 0x20, 
+        0xAD, 0x03, 0xD0, 0xC9, 0xAF, 0x90, 0x26, 0xA2, 0x10, 0xA0, 0x05, 0x20, 0x1B, 0x21, 0xA9, 0x80, 0x8D, 0x02, 0xD0, 0xA9, 0x3C, 0x8D, 0x03, 0xD0, 0xA9, 0x03, 0x85, 0x03, 
+        0xA2, 0x31, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA5, 0x04, 0xF0, 0x02, 0xC6, 0x04, 
+        0xA5, 0x04, 0x85, 0x03, 0x20, 0x01, 0x21, 0x00, 0x00, 0x00, 
+        0xAD, 0x02, 0xD6, 0xD0, 0x0F, 0xAD, 0x27, 0x21, 0xC9, 0xFF, 0xF0, 0x08, 0x8D, 0x00, 0xD6, 0xEE, 0x07, 0x21, 0x60, 
+        0x8E, 0x07, 0x21, 0x8C, 0x08, 0x21, 0x60, 
+        0x8E, 0x00, 0xD4, 0x8C, 0x01, 0xD4, 0xA9, 0x21, 0x8D, 0x04, 0xD4, 0x60, 
+        0x1B, 0x02, 0x18, 0x27, 0xFF, 
+        0x0E, 0x39, 0x37, 0x1F, 0xFF, 
+        0x0C, 0x0B, 0x1F, 0xFF
+    };
+    int prog_len = sizeof(pong_program);
+
+    for (int i = 0; i < prog_len; i++) {
+        vm_poke(&vm, 8192 + i, pong_program[i]);
+    }
+
+    vm_poke(&vm, 53248, 120);
+    vm_poke(&vm, 53249, 155);
+    vm_poke(&vm, 53250, 120);
+    vm_poke(&vm, 53251, 60);
+    vm_poke(&vm, 53269, 3);
+    
+    vm_poke(&vm, 2, 3);
+    vm_poke(&vm, 3, 3);
+    vm_poke(&vm, 4, 0);
+
+    vm_poke64(&vm, 128, 0);
+    vm_poke64(&vm, 129, 0);
+    vm_poke64(&vm, 130, 0);
+    vm_poke64(&vm, 131, 0xFF);
+    vm_poke64(&vm, 132, 0x20);
+    vm_poke64(&vm, 133, 8192);
+
+    g_pong_loaded = true;
+}
+
+static void update_pong_game(void) {
+    if (!g_pong_active) return;
+    if (!g_pong_loaded) {
+        init_pong_game();
+    }
+
+    static float g_paddle_x = 120.0f;
+    if (g_key_up_pressed) {
+        g_paddle_x -= 0.05f;
+        if (g_paddle_x < 40.0f) g_paddle_x = 40.0f;
+    }
+    if (g_key_down_pressed) {
+        g_paddle_x += 0.05f;
+        if (g_paddle_x > 224.0f) g_paddle_x = 224.0f;
+    }
+    vm_poke(&vm, 53248, (int)g_paddle_x);
+
+    static int speed_divider = 0;
+    bool should_tick = (speed_divider++ % 60 == 0);
+
+    if (should_tick) {
+        // Reset PC to the start of the game loop ($200F / 8207) each tick
+        vm_poke64(&vm, 133, 8207);
+
+        char cmd[512];
+        sprintf(cmd, "YULEXEC \"cpu6502\", \"c45b180800000000000000000000000000000000000000000000000000000000000003e8\"");
+        vm.output_pos = 0;
+        tsfi_zmm_vm_exec(&vm, cmd);
+    }
+
+    int paddle_x = (int)vm_peek(&vm, 53248);
+    int ball_x = (int)vm_peek(&vm, 53250);
+    int ball_y = (int)vm_peek(&vm, 53251);
+    int score = (int)vm_peek(&vm, 4);
+    int pc = (int)vm_peek(&vm, 133);
+
+    // Simulate Sprite-to-Sprite Collision register 53278 ($D01E)
+    // Paddle is at Y=155. Ball checks collision when Y >= 155 ($9B)
+    uint8_t collision_mask = 0;
+    if (ball_y >= 150 && ball_y <= 160 && abs(ball_x - paddle_x) <= 24) {
+        collision_mask = 3; // Sprite 0 and Sprite 1 collision
+    }
+    vm_poke(&vm, 53278, collision_mask);
+
+    static int print_counter = 0;
+    if (print_counter++ % 60 == 0) {
+        fprintf(stderr, "[PONG-TELEMETRY] PC: 0x%04X (dec %d), PaddleX: %d, BallX: %d, BallY: %d, Score: %d, Collide: %d\n", 
+                pc, pc, paddle_x, ball_x, ball_y, score, collision_mask);
+    }
+
+    gfx_primitive_count = 0;
+
+    int center_x = 640;
+    int center_y = 360;
+
+    int pad_x_scaled = center_x + (paddle_x - 132) * 4 - 22;
+    int pad_y_scaled = center_y + (155 - 105) * 4 - 67; // Bottom position
+    int ball_x_scaled = center_x + (ball_x - 132) * 4 - 22;
+    int ball_y_scaled = center_y + (ball_y - 105) * 4 - 67;
+
+    int y_top = center_y + (35 - 105) * 4 - 67;
+    int y_bot = center_y + (175 - 105) * 4 - 67;
+    int x_left = center_x + (40 - 132) * 4 - 22;
+    int x_right = center_x + (224 - 132) * 4 - 22;
+
+    // Draw Closed Left, Top, and Right walls
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_LINE; gp->x1 = x_left; gp->y1 = y_top; gp->x2 = x_right; gp->y2 = y_top; gp->color = 0xFF50FA7B; // Top Wall
+    }
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_LINE; gp->x1 = x_left; gp->y1 = y_top; gp->x2 = x_left; gp->y2 = y_bot; gp->color = 0xFF50FA7B; // Left Wall
+    }
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_LINE; gp->x1 = x_right; gp->y1 = y_top; gp->x2 = x_right; gp->y2 = y_bot; gp->color = 0xFF50FA7B; // Right Wall
+    }
+
+    // Draw Horizontal Paddle
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_LINE; gp->x1 = pad_x_scaled - 35; gp->y1 = pad_y_scaled; gp->x2 = pad_x_scaled + 35; gp->y2 = pad_y_scaled; gp->color = 0xFFFF79C6;
+    }
+
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_CIRCLE; gp->x1 = ball_x_scaled; gp->y1 = ball_y_scaled; gp->r = 10; gp->color = 0xFFF1FA8C;
+    }
+
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_TEXT; gp->x1 = center_x - 50 - 22; gp->y1 = y_top - 30; gp->color = 0xFF8BE9FD;
+        sprintf(gp->text, "SCORE: %d", score);
+    }
 }
 
 static void update_mercenary_yul_camera(void) {
@@ -2164,6 +2364,7 @@ int main() {
                           "  YULINIT, YULEXEC, SWIFTLOAD, REU, CALC, MEMDUMP, SPRITE, RULE, OMNICOMM\r\n\r\n"
                           "zmm-vm> ";
     lau_vram_write_string(g_vram, welcome, strlen(welcome));
+    execute_command("PONG");
 
     int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
@@ -2228,7 +2429,7 @@ int main() {
             }
         }
 
-        bool need_redraw = g_vram->is_dirty || g_mercenary_active;
+        bool need_redraw = g_vram->is_dirty || g_mercenary_active || g_pong_active;
 
         if (resize_pending) {
             resize_pending = false;
