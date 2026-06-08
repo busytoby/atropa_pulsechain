@@ -378,50 +378,67 @@ static void draw_3d_stuffed_animal(uint32_t *buffer, int w_width, int w_height, 
     float cosY = cosf(frame * 0.08f), sinY = sinf(frame * 0.08f);
     float cosX = cosf(frame * 0.05f), sinX = sinf(frame * 0.05f);
     int r_bound = size;
-    for (int dy = -r_bound; dy <= r_bound; dy++) {
-        for (int dx = -r_bound; dx <= r_bound; dx++) {
+    int halo_bound = (int)(size * 1.3f);
+    for (int dy = -halo_bound; dy <= halo_bound; dy++) {
+        for (int dx = -halo_bound; dx <= halo_bound; dx++) {
             int tx = cx + dx;
             int ty = cy + dy;
             if (tx < 12 || tx >= w_width - 22 || ty < 57 || ty >= w_height - 32) continue;
-            float rx = (float)dx / (float)size;
-            float ry = -(float)dy / (float)size;
-            float ro_x = rx, ro_y = ry, ro_z = -1.5f;
-            float rd_x = 0.0f, rd_y = 0.0f, rd_z = 1.0f;
-            float t = 0.0f;
-            int hit = 0;
-            float hx = 0, hy = 0, hz = 0;
-            for (int step = 0; step < 16; step++) {
-                float px = ro_x + rd_x * t;
-                float py = ro_y + rd_y * t;
-                float pz = ro_z + rd_z * t;
-                float rot_x = px * cosY - pz * sinY;
-                float rot_z = px * sinY + pz * cosY;
-                float rot_y = py * cosX - rot_z * sinX;
-                rot_z = py * sinX + rot_z * cosX;
-                float d = eval_sdf(query, rot_x, rot_y, rot_z);
-                if (d < 0.01f) {
-                    hit = 1;
-                    hx = rot_x; hy = rot_y; hz = rot_z;
-                    break;
-                }
-                t += d;
-                if (t > 3.0f) break;
+            
+            float dist_from_center = sqrtf(dx*dx + dy*dy) / (float)size;
+            if (dist_from_center < 1.3f) {
+                uint32_t orig = buffer[ty * w_width + tx];
+                uint8_t r = (orig >> 16) & 0xFF;
+                uint8_t g = (orig >> 8) & 0xFF;
+                uint8_t b = orig & 0xFF;
+                float dim = 0.15f + 0.85f * (dist_from_center / 1.3f);
+                r = (uint8_t)(r * dim);
+                g = (uint8_t)(g * dim);
+                b = (uint8_t)(b * dim);
+                buffer[ty * w_width + tx] = 0xFF000000 | (r << 16) | (g << 8) | b;
             }
-            if (hit) {
-                float eps = 0.01f;
-                float nx = eval_sdf(query, hx + eps, hy, hz) - eval_sdf(query, hx - eps, hy, hz);
-                float ny = eval_sdf(query, hx, hy + eps, hz) - eval_sdf(query, hx, hy - eps, hz);
-                float nz = eval_sdf(query, hx, hy, hz + eps) - eval_sdf(query, hx, hy, hz - eps);
-                float n_len = sqrtf(nx*nx + ny*ny + nz*nz);
-                if (n_len > 0.0f) {
-                    nx /= n_len; ny /= n_len; nz /= n_len;
+            
+            if (abs(dx) <= r_bound && abs(dy) <= r_bound) {
+                float rx = (float)dx / (float)size;
+                float ry = -(float)dy / (float)size;
+                float ro_x = rx, ro_y = ry, ro_z = -1.5f;
+                float rd_x = 0.0f, rd_y = 0.0f, rd_z = 1.0f;
+                float t = 0.0f;
+                int hit = 0;
+                float hx = 0, hy = 0, hz = 0;
+                for (int step = 0; step < 16; step++) {
+                    float px = ro_x + rd_x * t;
+                    float py = ro_y + rd_y * t;
+                    float pz = ro_z + rd_z * t;
+                    float rot_x = px * cosY - pz * sinY;
+                    float rot_z = px * sinY + pz * cosY;
+                    float rot_y = py * cosX - rot_z * sinX;
+                    rot_z = py * sinX + rot_z * cosX;
+                    float d = eval_sdf(query, rot_x, rot_y, rot_z);
+                    if (d < 0.01f) {
+                        hit = 1;
+                        hx = rot_x; hy = rot_y; hz = rot_z;
+                        break;
+                    }
+                    t += d;
+                    if (t > 3.0f) break;
                 }
-                float lx = 0.577f, ly = 0.577f, lz = -0.577f;
-                float dot = nx * lx + ny * ly + nz * lz;
-                float intensity = dot * 0.6f + 0.4f;
-                if (intensity < 0.0f) intensity = 0.0f;
-                if (intensity > 1.0f) intensity = 1.0f;
-                buffer[ty * w_width + tx] = get_sdf_color(query, hx, hy, hz, intensity);
+                if (hit) {
+                    float eps = 0.01f;
+                    float nx = eval_sdf(query, hx + eps, hy, hz) - eval_sdf(query, hx - eps, hy, hz);
+                    float ny = eval_sdf(query, hx, hy + eps, hz) - eval_sdf(query, hx, hy - eps, hz);
+                    float nz = eval_sdf(query, hx, hy, hz + eps) - eval_sdf(query, hx, hy, hz - eps);
+                    float n_len = sqrtf(nx*nx + ny*ny + nz*nz);
+                    if (n_len > 0.0f) {
+                        nx /= n_len; ny /= n_len; nz /= n_len;
+                    }
+                    float lx = 0.577f, ly = 0.577f, lz = -0.577f;
+                    float dot = nx * lx + ny * ly + nz * lz;
+                    float intensity = dot * 0.6f + 0.4f;
+                    if (intensity < 0.0f) intensity = 0.0f;
+                    if (intensity > 1.0f) intensity = 1.0f;
+                    buffer[ty * w_width + tx] = get_sdf_color(query, hx, hy, hz, intensity);
+                }
             }
         }
     }
@@ -1298,6 +1315,24 @@ void render_terminal_display(void) {
                 }
             }
         } else if (gp.type == GFX_TEXT) {
+            int text_len = strlen(gp.text);
+            int box_w = text_len * 9 + 4;
+            int box_h = 16;
+            int start_x = mon_x + gp.x1 - 2;
+            int start_y = mon_y + gp.y1 - 2;
+            for (int dy = 0; dy < box_h; dy++) {
+                for (int dx = 0; dx < box_w; dx++) {
+                    int tx = start_x + dx;
+                    int ty = start_y + dy;
+                    if (tx >= 12 && tx < win_width - 22 && ty >= 57 && ty < win_height - 32) {
+                        uint32_t orig = back_buffer[ty * win_width + tx];
+                        uint8_t r = ((orig >> 16) & 0xFF) * 0.3f;
+                        uint8_t g = ((orig >> 8) & 0xFF) * 0.3f;
+                        uint8_t b = (orig & 0xFF) * 0.3f;
+                        back_buffer[ty * win_width + tx] = 0xFF000000 | (r << 16) | (g << 8) | b;
+                    }
+                }
+            }
             draw_debug_text(&sb, mon_x + gp.x1, mon_y + gp.y1, gp.text, gp.color, true);
         } else if (gp.type == GFX_STUFFED_3D) {
             draw_3d_stuffed_animal(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, gp.r, gp.query, gp.frame);
