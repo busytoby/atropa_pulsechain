@@ -1123,6 +1123,66 @@ object "GraphicsSystem" {
                 return(0x00, 160)
             }
 
+            // ----------------------------------------------------------------
+            // Method 17: resolveVectorFieldAI(entityX, entityY, numNodes, nodes...)
+            // Selector: 0xb1c8c5de
+            // ----------------------------------------------------------------
+            if eq(selector, 0xb1c8c5de) {
+                let entityX := calldataload(4)
+                let entityY := calldataload(36)
+                let numNodes := calldataload(68)
+
+                let netFx := 0
+                let netFy := 0
+
+                for { let i := 0 } lt(i, numNodes) { i := add(i, 1) } {
+                    // Load node packed word from calldata
+                    let nodeWord := calldataload(add(100, mul(i, 32)))
+
+                    let weight := and(nodeWord, 0xff)
+                    let nodeType := and(shr(8, nodeWord), 0x01) // 0 = Attractor, 1 = Repeller
+                    let nodeX := and(shr(9, nodeWord), 0xfffffffffffffff)
+                    let nodeY := and(shr(73, nodeWord), 0xfffffffffffffff)
+
+                    // Manhattan Distance calculation
+                    let dx := 0
+                    if gt(nodeX, entityX) { dx := sub(nodeX, entityX) }
+                    if iszero(gt(nodeX, entityX)) { dx := sub(entityX, nodeX) }
+
+                    let dy := 0
+                    if gt(nodeY, entityY) { dy := sub(nodeY, entityY) }
+                    if iszero(gt(nodeY, entityY)) { dy := sub(entityY, nodeY) }
+
+                    let dist := add(dx, dy)
+                    if iszero(dist) { dist := 1 }
+
+                    // Force magnitude: weight * 100 / distance
+                    let force := div(mul(weight, 100), dist)
+
+                    // Direction multipliers
+                    let dirX := 0
+                    if gt(nodeX, entityX) { dirX := 1 }
+                    if lt(nodeX, entityX) { dirX := sub(0, 1) }
+
+                    let dirY := 0
+                    if gt(nodeY, entityY) { dirY := 1 }
+                    if lt(nodeY, entityY) { dirY := sub(0, 1) }
+
+                    // Invert direction if Repeller
+                    if eq(nodeType, 1) {
+                        dirX := sub(0, dirX)
+                        dirY := sub(0, dirY)
+                    }
+
+                    netFx := add(netFx, mul(force, dirX))
+                    netFy := add(netFy, mul(force, dirY))
+                }
+
+                mstore(0x00, netFx)
+                mstore(0x20, netFy)
+                return(0x00, 64)
+            }
+
             revert(0, 0)
         }
     }

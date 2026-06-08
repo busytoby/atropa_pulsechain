@@ -380,6 +380,28 @@ int main() {
     assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
     printf("PASS: International Soccer head-carry coordination locked successfully!\n");
 
+    // 17. Test resolveVectorFieldAI (Method 17)
+    // Selector: b1c8c5de
+    // entityX = 100 (0x64), entityY = 100 (0x64), numNodes = 2 (0x02)
+    // node1 = 00000000000000000000000000000000000000000000c800000000000000f032
+    // node2 = 00000000000000000000000000000000000000000000a000000000000000c91e
+    // Expected output: netFx = 250 (0xfa), netFy = 150 (0x96)
+    printf("[ZMM] Simulating General Attractor/Repeller Vector Field AI...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"b1c8c5de"
+                  "0000000000000000000000000000000000000000000000000000000000000064" // entityX = 100
+                  "0000000000000000000000000000000000000000000000000000000000000064" // entityY = 100
+                  "0000000000000000000000000000000000000000000000000000000000000002" // numNodes = 2
+                  "00000000000000000000000000000000000000000000c800000000000000f032" // node1 (Attractor)
+                  "00000000000000000000000000000000000000000000a000000000000000c91e\""); // node2 (Repeller)
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    // netFx (1st word) = 250 (0xfa)
+    // netFy (2nd word) = 150 (0x96)
+    assert(strstr(vm.output_buffer, "00000000000000000000000000000000000000000000000000000000000000fa") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000096") != NULL);
+    printf("PASS: General Attractor/Repeller Vector Field AI resolved correctly!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;
