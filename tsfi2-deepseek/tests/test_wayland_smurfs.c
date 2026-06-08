@@ -54,6 +54,185 @@ static inline AB4HPixel make_ab4h_pixel(float r, float g, float b, float a) {
     return p;
 }
 
+typedef struct { float x, y, z; } V3;
+static inline V3 v3(float x, float y, float z) { V3 r = {x, y, z}; return r; }
+static inline V3 v3_add(V3 a, V3 b) { return v3(a.x+b.x, a.y+b.y, a.z+b.z); }
+static inline V3 v3_sub(V3 a, V3 b) { return v3(a.x-b.x, a.y-b.y, a.z-b.z); }
+static inline V3 v3_mul(V3 a, float s) { return v3(a.x*s, a.y*s, a.z*s); }
+static inline float v3_dot(V3 a, V3 b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
+static inline float v3_len(V3 a) { return sqrtf(v3_dot(a, a)); }
+static inline V3 v3_norm(V3 a) { float l = v3_len(a); return l > 0.0f ? v3_mul(a, 1.0f/l) : v3(0,0,0); }
+
+static inline float smin_c(float a, float b, float k) {
+    float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
+    return fminf(a, b) - h * h * k * 0.25f;
+}
+
+static inline float sd_ellipsoid(V3 p, V3 c, V3 r) {
+    V3 v = v3_sub(p, c);
+    return v3_len(v3(v.x/r.x, v.y/r.y, v.z/r.z)) - 1.0f;
+}
+
+static inline float noise_c(V3 x) {
+    return 0.08f * sinf(x.x * 12.0f) * cosf(x.y * 12.0f) * sinf(x.z * 12.0f);
+}
+
+static float map_sickness = 0.0f;
+static int map_anim_state = 0;
+static float map_frame_counter = 0.0f;
+
+static inline float map_teddy(V3 p, int *mat) {
+    float d_torso = sd_ellipsoid(p, v3(0.0f, -0.25f, 0.0f), v3(0.40f, 0.45f, 0.32f));
+    float d_head  = sd_ellipsoid(p, v3(0.0f, 0.32f, 0.05f), v3(0.32f, 0.30f, 0.30f));
+    float d_body = smin_c(d_torso, d_head, 0.12f);
+
+    float d_ear_l = sd_ellipsoid(p, v3(-0.24f, 0.58f, 0.0f), v3(0.11f, 0.11f, 0.05f));
+    float d_ear_r = sd_ellipsoid(p, v3(0.24f, 0.58f, 0.0f), v3(0.11f, 0.11f, 0.05f));
+    d_body = smin_c(d_body, smin_c(d_ear_l, d_ear_r, 0.05f), 0.05f);
+
+    float l_arm_y = 0.0f, r_arm_y = 0.0f;
+    float l_arm_x = -0.48f, r_arm_x = 0.48f;
+    float l_arm_z = 0.1f, r_arm_z = 0.1f;
+    if (map_anim_state == 1) {
+        float arm_angle = sinf(map_frame_counter * 0.4f) * 0.5f;
+        l_arm_y += arm_angle * 0.25f;
+        l_arm_z += arm_angle * 0.25f;
+        r_arm_y -= arm_angle * 0.25f;
+        r_arm_z -= arm_angle * 0.25f;
+    } else if (map_anim_state == 2) {
+        l_arm_y += 0.35f;
+        r_arm_y += 0.35f;
+    } else if (map_anim_state == 4) {
+        float wave = sinf(map_frame_counter * 0.9f) * 0.25f;
+        l_arm_y += wave;
+        r_arm_y -= wave;
+    }
+
+    float d_arm_l = sd_ellipsoid(p, v3(l_arm_x, l_arm_y, l_arm_z), v3(0.14f, 0.22f, 0.14f));
+    float d_arm_r = sd_ellipsoid(p, v3(r_arm_x, r_arm_y, r_arm_z), v3(0.14f, 0.22f, 0.14f));
+    d_body = smin_c(d_body, smin_c(d_arm_l, d_arm_r, 0.08f), 0.08f);
+
+    float l_leg_y = -0.65f, r_leg_y = -0.65f;
+    float l_leg_x = -0.28f, r_leg_x = 0.28f;
+    float l_leg_z = 0.18f, r_leg_z = 0.18f;
+    if (map_anim_state == 1) {
+        float walk_cycle = sinf(map_frame_counter * 0.4f) * 0.25f;
+        l_leg_z += walk_cycle;
+        r_leg_z -= walk_cycle;
+    }
+    float d_leg_l = sd_ellipsoid(p, v3(l_leg_x, l_leg_y, l_leg_z), v3(0.16f, 0.20f, 0.16f));
+    float d_leg_r = sd_ellipsoid(p, v3(r_leg_x, r_leg_y, r_leg_z), v3(0.16f, 0.20f, 0.16f));
+    d_body = smin_c(d_body, smin_c(d_leg_l, d_leg_r, 0.08f), 0.08f);
+
+    float d_snout = sd_ellipsoid(p, v3(0.0f, 0.23f, 0.28f), v3(0.14f, 0.11f, 0.09f));
+    float d_nose = sd_ellipsoid(p, v3(0.0f, 0.27f, 0.36f), v3(0.04f, 0.03f, 0.03f));
+    float d_eye_l = sd_ellipsoid(p, v3(-0.11f, 0.36f, 0.30f), v3(0.03f, 0.03f, 0.03f));
+    float d_eye_r = sd_ellipsoid(p, v3(0.11f, 0.36f, 0.30f), v3(0.03f, 0.03f, 0.03f));
+
+    float fur = noise_c(p);
+    d_body -= fur * 0.03f;
+
+    float d_eyes = fminf(d_eye_l, d_eye_r);
+    float d_cream = d_snout;
+    float d_ear_in_l = sd_ellipsoid(p, v3(-0.24f, 0.58f, 0.03f), v3(0.05f, 0.05f, 0.02f));
+    float d_ear_in_r = sd_ellipsoid(p, v3(0.24f, 0.58f, 0.03f), v3(0.05f, 0.05f, 0.02f));
+    d_cream = fminf(d_cream, fminf(d_ear_in_l, d_ear_in_r));
+
+    float final_d = d_body;
+    *mat = 0;
+    if (d_cream < final_d) { final_d = d_cream; *mat = 1; }
+    if (d_nose < final_d) { final_d = d_nose; *mat = 2; }
+    if (d_eyes < final_d) { final_d = d_eyes; *mat = 3; }
+
+    return final_d;
+}
+
+static inline V3 calc_normal_teddy(V3 p) {
+    const float eps = 0.005f;
+    int dummy;
+    V3 n;
+    n.x = map_teddy(v3(p.x+eps, p.y, p.z), &dummy) - map_teddy(v3(p.x-eps, p.y, p.z), &dummy);
+    n.y = map_teddy(v3(p.x, p.y+eps, p.z), &dummy) - map_teddy(v3(p.x, p.y-eps, p.z), &dummy);
+    n.z = map_teddy(v3(p.x, p.y, p.z+eps), &dummy) - map_teddy(v3(p.x, p.y, p.z-eps), &dummy);
+    return v3_norm(n);
+}
+
+void draw_raymarched_teddy_sprite(AB4HPixel *pixels, int w, int h, int draw_sx, int draw_sy, float scale, int anim_state, float frame_counter, float sickness) {
+    map_anim_state = anim_state;
+    map_frame_counter = frame_counter;
+    map_sickness = sickness;
+
+    int min_x = draw_sx - (int)(24.0f * scale);
+    int max_x = draw_sx + (int)(24.0f * scale);
+    int min_y = draw_sy - (int)(32.0f * scale);
+    int max_y = draw_sy + (int)(4.0f * scale);
+
+    if (min_x < 0) min_x = 0;
+    if (max_x >= w) max_x = w - 1;
+    if (min_y < 0) min_y = 0;
+    if (max_y >= h) max_y = h - 1;
+
+    V3 cam = v3(0.0f, 0.0f, 2.5f);
+
+    for (int cy = min_y; cy <= max_y; cy++) {
+        for (int cx = min_x; cx <= max_x; cx++) {
+            float lx = (float)(cx - draw_sx) / (20.0f * scale);
+            float ly = -(float)(cy - (draw_sy - 14.0f * scale)) / (20.0f * scale);
+
+            V3 ray_dir = v3_norm(v3(lx, ly, -1.5f));
+            float t = 0.0f;
+            int mat = 0;
+            int hit = 0;
+
+            for (int step = 0; step < 40; step++) {
+                V3 p = v3_add(cam, v3_mul(ray_dir, t));
+                float d = map_teddy(p, &mat);
+                if (d < 0.001f) {
+                    hit = 1;
+                    break;
+                }
+                if (t > 4.0f) break;
+                t += d * 0.8f;
+            }
+
+            if (hit) {
+                V3 p = v3_add(cam, v3_mul(ray_dir, t));
+                V3 n = calc_normal_teddy(p);
+                V3 light_dir = v3_norm(v3(1.0f, 1.0f, 1.5f));
+                float diff = fmaxf(0.15f, v3_dot(n, light_dir));
+                
+                V3 view_dir = v3_mul(ray_dir, -1.0f);
+                V3 half_vec = v3_norm(v3_add(light_dir, view_dir));
+                float spec = powf(fmaxf(0.0f, v3_dot(n, half_vec)), 16.0f) * 0.25f;
+
+                float r = 0.0f, g = 0.0f, b = 0.0f;
+                if (mat == 0) {
+                    r = 0.48f; g = 0.32f; b = 0.18f;
+                    if (sickness > 0.0f) {
+                        r = r * (1.0f - sickness) + 0.05f * sickness;
+                        g = g * (1.0f - sickness) + 0.75f * sickness;
+                        b = b * (1.0f - sickness) + 0.1f * sickness;
+                    }
+                } else if (mat == 1) {
+                    r = 0.85f; g = 0.78f; b = 0.65f;
+                } else if (mat == 2) {
+                    r = 0.05f; g = 0.05f; b = 0.05f;
+                } else if (mat == 3) {
+                    r = 1.8f; g = 0.0f; b = 0.0f;
+                    diff = 1.0f;
+                    spec = 0.0f;
+                }
+
+                float final_r = r * diff + spec;
+                float final_g = g * diff + spec;
+                float final_b = b * diff + spec;
+
+                pixels[cy * w + cx] = make_ab4h_pixel(final_r, final_g, final_b, 1.0f);
+            }
+        }
+    }
+}
+
 void draw_rect_ab4h(AB4HPixel *pixels, int w, int h, int x, int y, int rw, int rh, AB4HPixel color) {
     float tr = half_to_float(color.r), tg = half_to_float(color.g), tb = half_to_float(color.b), ta = half_to_float(color.a);
     for (int cy = y; cy < y + rh; cy++) {
@@ -1127,170 +1306,26 @@ int main() {
 
                 draw_rect_ab4h(pixels, W, H, draw_sx - (int)(12 * scale), floor_y - 2, (int)(24 * scale), 4, shadow_black);
 
-        // Body Elements (Stuffed felt brown Teddy Bear body)
-        AB4HPixel teddy_brown = make_ab4h_pixel(0.48f, 0.32f, 0.18f, 1.0f);
-        AB4HPixel teddy_dark = make_ab4h_pixel(0.35f, 0.22f, 0.10f, 1.0f);
-        AB4HPixel snout_cream = make_ab4h_pixel(0.85f, 0.78f, 0.65f, 1.0f);
+        // Raymarch the 3D Teddy Bear sprite dynamically!
+        float sickness_factor = (float)phys_trauma * 0.33f;
+        draw_raymarched_teddy_sprite(pixels, W, H, draw_sx, draw_sy, scale, anim_state, frame_counter, sickness_factor);
+
+        // Render the 2D Knitted Scarf on top of the 3D raymarched body for folklore styling
         AB4HPixel scarf_red = make_ab4h_pixel(0.85f, 0.05f, 0.12f, 1.0f);
-        AB4HPixel stitch_color = make_ab4h_pixel(0.1f, 0.1f, 0.1f, 1.0f);
-        AB4HPixel patch_blue = make_ab4h_pixel(0.1f, 0.4f, 0.7f, 1.0f);
-
-        // Animate body bobbing based on state
         float bob_y = 0.0f;
-        float ear_twitch = 0.0f;
-        float scarf_wave = sinf(frame_counter * 0.25f) * 3.0f * scale;
-
-        if (anim_state == 1) { // WALK
+        if (anim_state == 1) {
             bob_y = fabsf(sinf(frame_counter * 0.4f)) * 3.0f * scale;
-            ear_twitch = sinf(frame_counter * 0.4f) * 2.0f * scale;
-        } else if (anim_state == 2) { // JUMP
+        } else if (anim_state == 2) {
             bob_y = -4.0f * scale;
-            ear_twitch = 3.0f * scale;
-        } else if (anim_state == 3) { // WOUNDED
+        } else if (anim_state == 3) {
             bob_y = sinf(frame_counter * 1.5f) * 1.0f * scale;
-        } else if (anim_state == 4) { // PANICKED
+        } else if (anim_state == 4) {
             bob_y = sinf(frame_counter * 0.9f) * 2.0f * scale;
-            ear_twitch = cosf(frame_counter * 0.9f) * 4.0f * scale;
         }
-
-        // Draw shadow under feet (adjusting shadow size depending on jump height)
-        float shadow_width = (24.0f * scale);
-        if (anim_state == 2) {
-            shadow_width = (14.0f * scale);
-        }
-        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(shadow_width / 2), floor_y - 2, (int)shadow_width, 4, shadow_black);
-
-        // 1. Draw Legs / Feet (Behind Torso)
-        float left_leg_x = draw_sx - (int)(6 * scale);
-        float right_leg_x = draw_sx + (int)(6 * scale);
-        float left_leg_y = draw_sy - (int)(3 * scale) + bob_y;
-        float right_leg_y = draw_sy - (int)(3 * scale) + bob_y;
-
-        if (anim_state == 1) { // WALK: swing feet
-            float walk_cycle = sinf(frame_counter * 0.4f) * 6.0f * scale;
-            left_leg_x += walk_cycle;
-            left_leg_y -= fabsf(walk_cycle) * 0.5f;
-            right_leg_x -= walk_cycle;
-            right_leg_y -= fabsf(walk_cycle) * 0.5f;
-        } else if (anim_state == 2) { // JUMP: legs tucked up
-            left_leg_y -= 3.0f * scale;
-            right_leg_y -= 3.0f * scale;
-        } else if (anim_state == 4) { // PANICKED: kicking legs
-            float kick = sinf(frame_counter * 0.8f) * 4.0f * scale;
-            left_leg_y += kick;
-            right_leg_y -= kick;
-        }
-
-        // Left Foot
-        draw_radial_glow(pixels, W, H, left_leg_x, left_leg_y, (int)(4.5f * scale), teddy_brown);
-        draw_rect_ab4h(pixels, W, H, left_leg_x - (int)(3 * scale), left_leg_y - (int)(2 * scale), (int)(6 * scale), (int)(4 * scale), teddy_brown);
-        // Right Foot
-        draw_radial_glow(pixels, W, H, right_leg_x, right_leg_y, (int)(4.5f * scale), teddy_brown);
-        draw_rect_ab4h(pixels, W, H, right_leg_x - (int)(3 * scale), right_leg_y - (int)(2 * scale), (int)(6 * scale), (int)(4 * scale), teddy_brown);
-
-        // 2. Draw Torso (Body)
-        float torso_y = draw_sy - (int)(10 * scale) + bob_y;
-        draw_radial_glow(pixels, W, H, draw_sx, torso_y, (int)(10.0f * scale), teddy_brown);
-        draw_radial_glow(pixels, W, H, draw_sx, torso_y, (int)(11.0f * scale), make_ab4h_pixel(0.48f, 0.32f, 0.18f, 0.4f)); // Fluff layer
-
-        // Cream belly patch
-        draw_radial_glow(pixels, W, H, draw_sx, torso_y + (int)(1 * scale), (int)(5.5f * scale), snout_cream);
-
-        // Blue patch with stitches on the side of the belly
-        float patch_x = draw_sx - (int)(5 * scale);
-        float patch_y = torso_y + (int)(2 * scale);
-        draw_rect_ab4h(pixels, W, H, patch_x, patch_y, (int)(4 * scale), (int)(4 * scale), patch_blue);
-        draw_line_aa(pixels, W, H, patch_x - 1, patch_y - 1, patch_x + (int)(5 * scale), patch_y - 1, stitch_color, 0.5f);
-        draw_line_aa(pixels, W, H, patch_x - 1, patch_y + (int)(4 * scale), patch_x + (int)(5 * scale), patch_y + (int)(4 * scale), stitch_color, 0.5f);
-
-        // Stitched seams down the belly
-        for (int sy_pos = torso_y - (int)(8 * scale); sy_pos < torso_y + (int)(8 * scale); sy_pos += 4) {
-            draw_line_aa(pixels, W, H, draw_sx - 1, sy_pos, draw_sx + 1, sy_pos, stitch_color, 1.0f);
-        }
-
-        // 3. Draw Arms
-        float left_arm_end_x, left_arm_end_y;
-        float right_arm_end_x, right_arm_end_y;
-        float arm_shoulder_y = torso_y - (int)(2 * scale);
-
-        if (anim_state == 2) { // JUMP: arms raised up
-            left_arm_end_x = draw_sx - (int)(12 * scale);
-            left_arm_end_y = arm_shoulder_y - (int)(10 * scale);
-            right_arm_end_x = draw_sx + (int)(12 * scale);
-            right_arm_end_y = arm_shoulder_y - (int)(10 * scale);
-        } else if (anim_state == 4) { // PANICKED: wave arms frantically
-            float panic_wave = sinf(frame_counter * 0.9f) * (14.0f * scale);
-            left_arm_end_x = draw_sx - (int)(12 * scale);
-            left_arm_end_y = arm_shoulder_y + panic_wave;
-            right_arm_end_x = draw_sx + (int)(12 * scale);
-            right_arm_end_y = arm_shoulder_y - panic_wave;
-        } else if (anim_state == 1) { // WALK: swing arms in opposition
-            float arm_angle = sinf(frame_counter * 0.4f) * 0.8f;
-            left_arm_end_x = draw_sx - cosf(arm_angle) * (12.0f * scale);
-            left_arm_end_y = arm_shoulder_y + sinf(arm_angle) * (12.0f * scale);
-            right_arm_end_x = draw_sx + cosf(arm_angle) * (12.0f * scale);
-            right_arm_end_y = arm_shoulder_y - sinf(arm_angle) * (12.0f * scale);
-        } else if (anim_state == 3) { // WOUNDED: arms hang weak
-            float shiver = sinf(frame_counter * 1.5f) * 1.5f;
-            left_arm_end_x = draw_sx - (int)(4 * scale) + shiver;
-            left_arm_end_y = arm_shoulder_y + (int)(12 * scale);
-            right_arm_end_x = draw_sx + (int)(4 * scale) - shiver;
-            right_arm_end_y = arm_shoulder_y + (int)(12 * scale);
-        } else { // IDLE: hang natural
-            left_arm_end_x = draw_sx - (int)(8 * scale);
-            left_arm_end_y = arm_shoulder_y + (int)(8 * scale);
-            right_arm_end_x = draw_sx + (int)(8 * scale);
-            right_arm_end_y = arm_shoulder_y + (int)(8 * scale);
-        }
-
-        // Draw Left Arm
-        draw_line_aa(pixels, W, H, draw_sx - (int)(5 * scale), arm_shoulder_y, left_arm_end_x, left_arm_end_y, teddy_brown, 2.5f * scale);
-        draw_radial_glow(pixels, W, H, left_arm_end_x, left_arm_end_y, (int)(3.5f * scale), teddy_brown);
-        // Draw Right Arm
-        draw_line_aa(pixels, W, H, draw_sx + (int)(5 * scale), arm_shoulder_y, right_arm_end_x, right_arm_end_y, teddy_brown, 2.5f * scale);
-        draw_radial_glow(pixels, W, H, right_arm_end_x, right_arm_end_y, (int)(3.5f * scale), teddy_brown);
-
-        // 4. Draw Head
         float head_y = draw_sy - (int)(22 * scale) + bob_y;
-        
-        // Round ears with dynamic twitching animation
-        draw_radial_glow(pixels, W, H, draw_sx - (int)(7 * scale), head_y - (int)(6 * scale) - ear_twitch, (int)(5.0f * scale), teddy_brown);
-        draw_radial_glow(pixels, W, H, draw_sx - (int)(7 * scale), head_y - (int)(6 * scale) - ear_twitch, (int)(2.5f * scale), snout_cream); // Inner ear cream
-        draw_radial_glow(pixels, W, H, draw_sx + (int)(7 * scale), head_y - (int)(6 * scale) + ear_twitch, (int)(5.0f * scale), teddy_brown);
-        draw_radial_glow(pixels, W, H, draw_sx + (int)(7 * scale), head_y - (int)(6 * scale) + ear_twitch, (int)(2.5f * scale), snout_cream); // Inner ear cream
-
-        // Head volume
-        draw_radial_glow(pixels, W, H, draw_sx, head_y, (int)(9.0f * scale), teddy_brown);
-        draw_radial_glow(pixels, W, H, draw_sx, head_y, (int)(11.5f * scale), make_ab4h_pixel(0.48f, 0.32f, 0.18f, 0.5f)); // fluff highlight
-        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(5 * scale), head_y - (int)(3 * scale), (int)(10 * scale), (int)(6 * scale), teddy_brown);
-
-        // Stitched seams down the face
-        for (int sy_pos = head_y - (int)(9 * scale); sy_pos < head_y; sy_pos += 4) {
-            draw_line_aa(pixels, W, H, draw_sx - 1, sy_pos, draw_sx + 1, sy_pos, stitch_color, 1.0f);
-        }
-
-        // Snout & Nose
-        draw_radial_glow(pixels, W, H, draw_sx, head_y + (int)(2 * scale), (int)(4.0f * scale), snout_cream);
-        draw_rect_ab4h(pixels, W, H, draw_sx - 2, head_y + (int)(1 * scale), 4, 2, teddy_dark); // nose button
-
-        // Button Eyes (Cross-stitches)
-        if (anim_state == 3) {
-            // Wounded: dash closed eyes
-            draw_line_aa(pixels, W, H, draw_sx - (int)(5 * scale), head_y - (int)(2 * scale), draw_sx - (int)(1 * scale), head_y - (int)(2 * scale), stitch_color, 1.2f * scale);
-            draw_line_aa(pixels, W, H, draw_sx + (int)(1 * scale), head_y - (int)(2 * scale), draw_sx + (int)(5 * scale), head_y - (int)(2 * scale), stitch_color, 1.2f * scale);
-        } else {
-            // Left eye cross stitch
-            draw_line_aa(pixels, W, H, draw_sx - (int)(5 * scale), head_y - (int)(3 * scale), draw_sx - (int)(2 * scale), head_y, stitch_color, 1.2f * scale);
-            draw_line_aa(pixels, W, H, draw_sx - (int)(2 * scale), head_y - (int)(3 * scale), draw_sx - (int)(5 * scale), head_y, stitch_color, 1.2f * scale);
-            // Right eye cross stitch
-            draw_line_aa(pixels, W, H, draw_sx + (int)(2 * scale), head_y - (int)(3 * scale), draw_sx + (int)(5 * scale), head_y, stitch_color, 1.2f * scale);
-            draw_line_aa(pixels, W, H, draw_sx + (int)(5 * scale), head_y - (int)(3 * scale), draw_sx + (int)(2 * scale), head_y, stitch_color, 1.2f * scale);
-        }
-
-        // 5. Red Scarf (Wrapped around neck, dynamically waving)
         float neck_y = head_y + (int)(7 * scale);
+        float scarf_wave = sinf(frame_counter * 0.25f) * 3.0f * scale;
         draw_line_aa(pixels, W, H, draw_sx - (int)(7 * scale), neck_y, draw_sx + (int)(7 * scale), neck_y, scarf_red, 3.5f * scale); // scarf loop
-        // Scarf tail flowing behind
         draw_line_aa(pixels, W, H, draw_sx + (int)(4 * scale), neck_y, draw_sx + (int)(10 * scale) + scarf_wave, neck_y + (int)(8 * scale), scarf_red, 2.5f * scale);
         draw_radial_glow(pixels, W, H, draw_sx + (int)(10 * scale) + scarf_wave, neck_y + (int)(8 * scale), (int)(2.0f * scale), scarf_red);
 
