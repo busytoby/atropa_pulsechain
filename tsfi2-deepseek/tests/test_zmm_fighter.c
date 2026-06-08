@@ -284,6 +284,57 @@ int main() {
     assert(strcmp(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000000") == 0);
     printf("PASS: 1-bit packed sample bit extraction verified successfully!\n");
 
+    // 13. Test resolveRoomTransition (Method 15)
+    // Selector: a9e7c5b6
+    // Inputs:
+    // roomX = 5, roomY = 5
+    // playerX = 2 (triggers left transition)
+    // playerY = 100
+    // keyRing = 0 (no keys)
+    // doorConfig = 0x11 -> Left door is locked (0x01) and requires Green key (color=2 -> 0x10)
+    // Expected: Blocked, newPlayerX = 10, status = 3
+    printf("[ZMM] Simulating Shamus room transition: Left locked door, NO keys...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"a9e7c5b6"
+                  "0000000000000000000000000000000000000000000000000000000000000005" // roomX = 5
+                  "0000000000000000000000000000000000000000000000000000000000000005" // roomY = 5
+                  "0000000000000000000000000000000000000000000000000000000000000002" // playerX = 2
+                  "0000000000000000000000000000000000000000000000000000000000000064" // playerY = 100
+                  "0000000000000000000000000000000000000000000000000000000000000000" // keyRing = 0
+                  "0000000000000000000000000000000000000000000000000000000000000011\""); // doorConfig = 0x11
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    // newRoomX should be 5
+    // newPlayerX should be 10
+    // transitionStatus (6th word / index 320) should be 3
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000005") != NULL);
+    assert(strstr(vm.output_buffer, "000000000000000000000000000000000000000000000000000000000000000a") != NULL); // 10 = 0x0a
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000003") != NULL); // status = 3
+    printf("PASS: Shamus locked door traversal blocked successfully!\n");
+
+    // 14. Test resolveRoomTransition with keyring
+    // keyRing = 2 (Green key, binary 0010, matching required color 2)
+    // Expected: Success, newRoomX = 4, newPlayerX = 310, newKeyRing = 0, status = 2
+    printf("[ZMM] Simulating Shamus room transition: Left locked door WITH key...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"a9e7c5b6"
+                  "0000000000000000000000000000000000000000000000000000000000000005"
+                  "0000000000000000000000000000000000000000000000000000000000000005"
+                  "0000000000000000000000000000000000000000000000000000000000000002"
+                  "0000000000000000000000000000000000000000000000000000000000000064"
+                  "0000000000000000000000000000000000000000000000000000000000000002" // keyRing = 2 (Green key)
+                  "0000000000000000000000000000000000000000000000000000000000000021\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    // newRoomX should be 4
+    // newPlayerX should be 310 (0x0136)
+    // newKeyRing (5th word / index 256) should be 0
+    // transitionStatus (6th word / index 320) should be 2
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000004") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000136") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000002") != NULL); // status = 2
+    printf("PASS: Shamus locked door traversal consumed key and advanced room successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;

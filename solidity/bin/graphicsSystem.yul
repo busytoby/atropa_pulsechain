@@ -918,6 +918,126 @@ object "GraphicsSystem" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // Method 15: resolveRoomTransition(roomX, roomY, playerX, playerY, keyRing, doorConfig)
+            // Selector: 0xa9e7c5b6
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa9e7c5b6) {
+                let roomX := calldataload(4)
+                let roomY := calldataload(36)
+                let playerX := calldataload(68)
+                let playerY := calldataload(100)
+                let keyRing := calldataload(132)
+                let doorConfig := calldataload(164)
+
+                let newRoomX := roomX
+                let newRoomY := roomY
+                let newPlayerX := playerX
+                let newPlayerY := playerY
+                let newKeyRing := keyRing
+                let transitionStatus := 0 // 0 = No transition
+
+                let doorSide := and(doorConfig, 0x0f)
+                let keyRequiredColor := and(shr(4, doorConfig), 0x0f)
+
+                // 1. Left Transition (playerX < 5)
+                if lt(playerX, 5) {
+                    if eq(doorSide, 1) { // Left door is locked
+                        // key mask: 1 << (keyRequiredColor - 1)
+                        let mask := shl(sub(keyRequiredColor, 1), 1)
+                        if and(keyRing, mask) {
+                            newRoomX := sub(roomX, 1)
+                            newPlayerX := 310
+                            newKeyRing := xor(keyRing, mask) // consume key
+                            transitionStatus := 2 // Unlocked transition
+                        }
+                        if iszero(and(keyRing, mask)) {
+                            newPlayerX := 10 // Bounce back
+                            transitionStatus := 3 // Blocked
+                        }
+                    }
+                    if iszero(eq(doorSide, 1)) {
+                        newRoomX := sub(roomX, 1)
+                        newPlayerX := 310
+                        transitionStatus := 1 // Free transition
+                    }
+                }
+
+                // 2. Right Transition (playerX > 315)
+                if gt(playerX, 315) {
+                    if eq(doorSide, 2) { // Right door is locked
+                        let mask := shl(sub(keyRequiredColor, 1), 1)
+                        if and(keyRing, mask) {
+                            newRoomX := add(roomX, 1)
+                            newPlayerX := 10
+                            newKeyRing := xor(keyRing, mask)
+                            transitionStatus := 2
+                        }
+                        if iszero(and(keyRing, mask)) {
+                            newPlayerX := 310
+                            transitionStatus := 3
+                        }
+                    }
+                    if iszero(eq(doorSide, 2)) {
+                        newRoomX := add(roomX, 1)
+                        newPlayerX := 10
+                        transitionStatus := 1
+                    }
+                }
+
+                // 3. Up Transition (playerY > 195)
+                if gt(playerY, 195) {
+                    if eq(doorSide, 3) { // Up door is locked
+                        let mask := shl(sub(keyRequiredColor, 1), 1)
+                        if and(keyRing, mask) {
+                            newRoomY := add(roomY, 1)
+                            newPlayerY := 10
+                            newKeyRing := xor(keyRing, mask)
+                            transitionStatus := 2
+                        }
+                        if iszero(and(keyRing, mask)) {
+                            newPlayerY := 185
+                            transitionStatus := 3
+                        }
+                    }
+                    if iszero(eq(doorSide, 3)) {
+                        newRoomY := add(roomY, 1)
+                        newPlayerY := 10
+                        transitionStatus := 1
+                    }
+                }
+
+                // 4. Down Transition (playerY < 5)
+                if lt(playerY, 5) {
+                    if eq(doorSide, 4) { // Down door is locked
+                        let mask := shl(sub(keyRequiredColor, 1), 1)
+                        if and(keyRing, mask) {
+                            newRoomY := sub(roomY, 1)
+                            newPlayerY := 190
+                            newKeyRing := xor(keyRing, mask)
+                            transitionStatus := 2
+                        }
+                        if iszero(and(keyRing, mask)) {
+                            newPlayerY := 15
+                            transitionStatus := 3
+                        }
+                    }
+                    if iszero(eq(doorSide, 4)) {
+                        newRoomY := sub(roomY, 1)
+                        newPlayerY := 190
+                        transitionStatus := 1
+                    }
+                }
+
+                mstore(0x00, newRoomX)
+                mstore(0x20, newRoomY)
+                mstore(0x40, newPlayerX)
+                mstore(0x60, newPlayerY)
+                mstore(0x80, newKeyRing)
+                mstore(0xa0, transitionStatus)
+                return(0x00, 192)
+            }
+
             revert(0, 0)
         }
     }
