@@ -126,17 +126,53 @@ object "ZMachine" {
                 let roomId := sload(add(4000000, player))
                 if iszero(roomId) { roomId := 1 }
 
+                // Initialize item room placements if not already set up
+                if iszero(sload(999999)) {
+                    sstore(999999, 1)
+                    sstore(add(2000300, 50), 1) // Item 50: Gold Token (starts in Room 1 / lobby)
+                    sstore(add(2000300, 51), 2) // Item 51: Keycard (starts in Room 2)
+                    sstore(add(2000300, 52), 3) // Item 52: Energy Pack (starts in Room 3)
+                }
+
                 let resultPtr := 0x40
                 
                 switch firstWord
                 case 0x74616b65 { // "take"
-                    let tokenAddr := sload(add(2000000, 50))
-                    if tokenAddr {
-                        let rewardSuccess := erc20Transfer(tokenAddr, player, 1000000000000000000)
-                        if rewardSuccess {
-                            mstore(resultPtr, 0x546f6b656e2072657761726420636f6c6c656374656421000000000000000000) // "Token reward collected!"
-                            resultPtr := add(resultPtr, 24)
+                    let taken := 0
+                    if eq(sload(add(2000300, 50)), roomId) {
+                        sstore(add(2000300, 50), 0) // move to inventory (Room 0)
+                        mstore(resultPtr, 0x596f7520746f6f6b2074686520476f6c6420546f6b656e2e0000000000000000) // "You took the Gold Token."
+                        resultPtr := add(resultPtr, 24)
+                        taken := 1
+                        
+                        let tokenAddr := sload(add(2000000, 50))
+                        if tokenAddr {
+                            let rewardSuccess := erc20Transfer(tokenAddr, player, 1000000000000000000)
+                            if rewardSuccess {
+                                mstore(resultPtr, 0x20284552433230207472616e7361637465642129000000000000000000000000) // " (ERC20 transacted!)"
+                                resultPtr := add(resultPtr, 20)
+                            }
                         }
+                    }
+                    if iszero(taken) {
+                        if eq(sload(add(2000300, 51)), roomId) {
+                            sstore(add(2000300, 51), 0)
+                            mstore(resultPtr, 0x596f7520746f6f6b20746865204b6579636172642e0000000000000000000000) // "You took the Keycard."
+                            resultPtr := add(resultPtr, 21)
+                            taken := 1
+                        }
+                    }
+                    if iszero(taken) {
+                        if eq(sload(add(2000300, 52)), roomId) {
+                            sstore(add(2000300, 52), 0)
+                            mstore(resultPtr, 0x596f7520746f6f6b2074686520456e65726779205061636b2e00000000000000) // "You took the Energy Pack."
+                            resultPtr := add(resultPtr, 25)
+                            taken := 1
+                        }
+                    }
+                    if iszero(taken) {
+                        mstore(resultPtr, 0x5468657265206973206e6f7468696e67206865726520746f2074616b652e0000) // "There is nothing here to take."
+                        resultPtr := add(resultPtr, 30)
                     }
                 }
                 case 0x6c6f6f6b { // "look"
@@ -160,6 +196,49 @@ object "ZMachine" {
                             mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
                             resultPtr := add(resultPtr, 25)
                         }
+                    }
+                    
+                    // Display any items in the current room
+                    if eq(sload(add(2000300, 50)), roomId) {
+                        mstore(resultPtr, 0x20596f7520736565206120476f6c6420546f6b656e20686572652e0000000000) // " You see a Gold Token here."
+                        resultPtr := add(resultPtr, 27)
+                    }
+                    if eq(sload(add(2000300, 51)), roomId) {
+                        mstore(resultPtr, 0x20596f75207365652061204b65796361726420686572652e0000000000000000) // " You see a Keycard here."
+                        resultPtr := add(resultPtr, 24)
+                    }
+                    if eq(sload(add(2000300, 52)), roomId) {
+                        mstore(resultPtr, 0x20596f752073656520616e20456e65726779205061636b20686572652e000000) // " You see an Energy Pack here."
+                        resultPtr := add(resultPtr, 28)
+                    }
+                }
+                case 0x696e7665 { // "inve" (Inventory)
+                    mstore(resultPtr, 0x596f7520617265206361727279696e673a000000000000000000000000000000) // "You are carrying:"
+                    let invPtr := add(resultPtr, 17)
+                    let count := 0
+                    
+                    if iszero(sload(add(2000300, 50))) {
+                        mstore(invPtr, 0x0a2d20476f6c6420546f6b656e20284552433230290000000000000000000000) // "\n- Gold Token (ERC20)"
+                        invPtr := add(invPtr, 21)
+                        count := add(count, 1)
+                    }
+                    if iszero(sload(add(2000300, 51))) {
+                        mstore(invPtr, 0x0a2d204b65796361726400000000000000000000000000000000000000000000) // "\n- Keycard"
+                        invPtr := add(invPtr, 10)
+                        count := add(count, 1)
+                    }
+                    if iszero(sload(add(2000300, 52))) {
+                        mstore(invPtr, 0x0a2d20456e65726779205061636b000000000000000000000000000000000000) // "\n- Energy Pack"
+                        invPtr := add(invPtr, 14)
+                        count := add(count, 1)
+                    }
+                    
+                    if iszero(count) {
+                        mstore(resultPtr, 0x596f757220696e76656e746f727920697320656d7074792e0000000000000000) // "Your inventory is empty."
+                        resultPtr := add(resultPtr, 24)
+                    }
+                    if count {
+                        resultPtr := invPtr
                     }
                 }
                 case 0x6e6f7274 { // "nort" (North)
