@@ -334,8 +334,10 @@ void render_terminal_display(void) {
     if (max_rows < 5) max_rows = 5;
     if (max_rows > 35) max_rows = 35;
 
-    int start_y = LAU_VRAM_ROWS - max_rows;
-    if (start_y < 0) start_y = 0;
+    int start_y = 0;
+    if (g_vram->cursor_y >= max_rows) {
+        start_y = g_vram->cursor_y - max_rows + 1;
+    }
 
     for (int y = 0; y < max_rows; y++) {
         int vram_y = start_y + y;
