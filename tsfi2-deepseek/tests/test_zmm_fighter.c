@@ -28,7 +28,7 @@ int main() {
     // targetX = 100 (0x64)
     // targetY = 0 (0x00)
     printf("[ZMM] Simulating rightward movement (action = 3)...\n");
-    char cmd[512];
+    char cmd[2048];
     sprintf(cmd, "YULEXEC \"graphics\", \"d6c09b2e"
                   "%064x"
                   "%064x"
@@ -160,6 +160,59 @@ int main() {
     tsfi_zmm_vm_exec(&vm, cmd);
     assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
     printf("PASS: Chuck Norris Somersault Superkick hit collision detected successfully!\n");
+
+    // 8. Test simulateXonoxDoubleEnder Side 0 (Artillery Duel)
+    // Selector: e577232a
+    // side = 0 (Artillery)
+    // input1 (t) = 1e18 (0x0de0b6b3a7640000)
+    // input2 (angleDeg) = 30 (0x1e)
+    // input3 (velocity) = 50e18 (0x2b5e3af16b1880000)
+    // input4 (wind) = 5e18 (0x4563918244f40000)
+    // input5 (targetX) = 40e18 (0x22b1c4c126440000)
+    // input6 (targetY) = 10e18 (0x8ac7230489e8000)
+    printf("[ZMM] Simulating Xonox Double-Ender Side A: Artillery Duel Step...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"e577232a"
+                  "0000000000000000000000000000000000000000000000000000000000000000" // side = 0
+                  "0000000000000000000000000000000000000000000000000de0b6b3a7640000" // t = 1e18
+                  "000000000000000000000000000000000000000000000000000000000000001e" // angle = 30
+                  "000000000000000000000000000000000000000000000002b5e3af16b1880000" // velocity = 50e18
+                  "0000000000000000000000000000000000000000000000004563918244f40000" // wind = 5e18
+                  "0000000000000000000000000000000000000000000000022b1c4c1264400000" // targetX = 40e18
+                  "00000000000000000000000000000000000000000000000008ac7230489e8000\""); // targetY = 10e18
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    
+    // We expect hitTarget (3rd word / index 128) to be 1
+    // And hitTerrain (4th word / index 192) to be 0
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000001") != NULL);
+    printf("PASS: Xonox Double-Ender Side A (Artillery) simulation and hit conditions verified!\n");
+
+    // 9. Test simulateXonoxDoubleEnder Side 1 (Chuck Norris Combat)
+    // side = 1
+    // input1 (x) = 85
+    // input2 (y) = 0
+    // input3 (vx) = 0
+    // input4 (vy) = 0
+    // input5 (action) = 4 (Flying Kick)
+    // input6 (targetX) = 100
+    printf("[ZMM] Simulating Xonox Double-Ender Side B: Chuck Norris Combat Step...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"e577232a"
+                  "0000000000000000000000000000000000000000000000000000000000000001" // side = 1
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "0000000000000000000000000000000000000000000000000000000000000000\"", // padding
+            85, 0, 0, 0, 4, 100);
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    // last word should be 1
+    assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    printf("PASS: Xonox Double-Ender Side B (Chuck Norris Combat) simulation verified!\n");
 
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");

@@ -602,6 +602,171 @@ object "GraphicsSystem" {
                 return(0x00, 160)
             }
 
+            // ----------------------------------------------------------------
+            // Method 11: simulateXonoxDoubleEnder(uint256 side, uint256 input1, uint256 input2, ...)
+            // Selector: 0xe577232a
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe577232a) {
+                let side := calldataload(4)
+                let input1 := calldataload(36)
+                let input2 := calldataload(68)
+                let input3 := calldataload(100)
+                let input4 := calldataload(132)
+                let input5 := calldataload(164)
+                let input6 := calldataload(196)
+
+                // Side 0: Artillery Duel Ballistic Simulator
+                if eq(side, 0) {
+                    let t := input1
+                    let angleDeg := input2
+                    let velocity := input3
+                    let wind := input4
+                    let targetX := input5
+                    let targetY := input6
+
+                    let scale := 1000000000000000000
+
+                    // ROM Sine/Cosine Helper logic
+                    let cosVal := 1000000000000000000
+                    let sinVal := 0
+
+                    if eq(angleDeg, 15) {
+                        sinVal := 258819045102520762
+                        cosVal := 965925826289068286
+                    }
+                    if eq(angleDeg, 30) {
+                        sinVal := 500000000000000000
+                        cosVal := 866025403784438646
+                    }
+                    if eq(angleDeg, 45) {
+                        sinVal := 707106781186547524
+                        cosVal := 707106781186547524
+                    }
+                    if eq(angleDeg, 60) {
+                        sinVal := 866025403784438646
+                        cosVal := 500000000000000000
+                    }
+                    if eq(angleDeg, 75) {
+                        sinVal := 965925826289068286
+                        cosVal := 258819045102520762
+                    }
+                    if eq(angleDeg, 90) {
+                        sinVal := 1000000000000000000
+                        cosVal := 0
+                    }
+                    if and(gt(angleDeg, 0), lt(angleDeg, 90)) {
+                        if iszero(eq(angleDeg, 15)) {
+                            if iszero(eq(angleDeg, 30)) {
+                                if iszero(eq(angleDeg, 45)) {
+                                    if iszero(eq(angleDeg, 60)) {
+                                        if iszero(eq(angleDeg, 75)) {
+                                            // Fallback Linear
+                                            sinVal := mul(angleDeg, 17453292519943295)
+                                            cosVal := mul(sub(90, angleDeg), 17453292519943295)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // x = (v0 * cos(theta) + wind) * t
+                    let termX := add(div(mul(velocity, cosVal), scale), wind)
+                    let x := div(mul(termX, t), scale)
+
+                    // y = v0 * sin(theta) * t - (0.5 * g * t^2)
+                    let gHalf := 4900000000000000000
+                    let termY1 := div(mul(velocity, sinVal), scale)
+                    let termY1_t := div(mul(termY1, t), scale)
+                    let termY2 := div(mul(gHalf, mul(t, t)), mul(scale, scale))
+                    let y := sub(termY1_t, termY2)
+
+                    let hitTarget := 0
+                    if iszero(lt(x, targetX)) {
+                        if iszero(lt(y, targetY)) {
+                            hitTarget := 1
+                        }
+                    }
+
+                    let hitTerrain := 0
+                    if iszero(gt(y, 0)) {
+                        hitTerrain := 1
+                    }
+
+                    mstore(0x00, x)
+                    mstore(0x20, y)
+                    mstore(0x40, hitTarget)
+                    mstore(0x60, hitTerrain)
+                    mstore(0x80, 0)
+                    return(0x00, 160)
+                }
+
+                // Side 1: Chuck Norris Combat step forwarding
+                if eq(side, 1) {
+                    let x := input1
+                    let y := input2
+                    let vx := input3
+                    let vy := input4
+                    let action := input5
+                    let targetX := input6
+                    let targetY := 0 // default 0 for ground level combat
+
+                    // Process Jump Action
+                    if eq(action, 1) {
+                        if eq(y, 0) {
+                            vy := 15
+                        }
+                    }
+                    if eq(action, 2) { vx := sub(0, 5) }
+                    if eq(action, 3) { vx := 5 }
+                    if eq(action, 0) { vx := 0 }
+
+                    x := add(x, vx)
+                    y := add(y, vy)
+                    vy := sub(vy, 1)
+
+                    if gt(y, 200) {
+                        y := 0
+                        vy := 0
+                    }
+
+                    if gt(x, 320) {
+                        if lt(x, 1000) { x := 320 }
+                        if iszero(lt(x, 1000)) { x := 0 }
+                    }
+
+                    let width := 16
+                    let height := 24
+                    if eq(action, 4) { width := 24 height := 16 }
+                    if eq(action, 5) { width := 20 height := 22 }
+                    if eq(action, 6) { width := 22 height := 14 }
+                    if eq(action, 7) { width := 0 height := 0 }
+                    if eq(action, 8) { width := 32 height := 18 }
+
+                    let xDiff := 0
+                    if gt(x, targetX) { xDiff := sub(x, targetX) }
+                    if iszero(gt(x, targetX)) { xDiff := sub(targetX, x) }
+
+                    let yDiff := 0
+                    if gt(y, targetY) { yDiff := sub(y, targetY) }
+                    if iszero(gt(y, targetY)) { yDiff := sub(targetY, y) }
+
+                    let hit := 0
+                    if and(lt(xDiff, width), lt(yDiff, height)) {
+                        hit := 1
+                    }
+
+                    mstore(0x00, x)
+                    mstore(0x20, y)
+                    mstore(0x40, vx)
+                    mstore(0x60, vy)
+                    mstore(0x80, hit)
+                    return(0x00, 160)
+                }
+
+                revert(0, 0)
+            }
+
             revert(0, 0)
         }
     }
