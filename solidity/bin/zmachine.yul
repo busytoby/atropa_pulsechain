@@ -256,6 +256,80 @@ object "ZMachine" {
                     
                     resultPtr := ptr
                 }
+                case 0x7a617000 { // "zap" (Zap)
+                    sstore(3000500, 1) // active target flag
+                    sstore(3000501, 20) // Cylon target X
+                    sstore(3000502, 15) // Cylon target Y
+                    sstore(3000503, 0) // Crosshair X
+                    sstore(3000504, 0) // Crosshair Y
+                    
+                    mstore(resultPtr, 0x43796c6f6e205261696465722061707065617273206174205b32302c203135) // "Cylon Raider appears at [20, 15"
+                    mstore(add(resultPtr, 31), 0x5d212054797065202761696d205820592720746f2061696d2e00000000000000) // "]! Type 'aim X Y' to aim."
+                    resultPtr := add(resultPtr, 56)
+                }
+                case 0x61696d20 { // "aim " (Aim)
+                    let valX := 0
+                    let valY := 0
+                    let idx := 104
+                    
+                    // Parse first integer (X)
+                    for {} lt(idx, 120) {} {
+                        let char := and(shr(248, calldataload(idx)), 0xff)
+                        if or(lt(char, 48), gt(char, 57)) { 
+                            idx := add(idx, 1)
+                            break 
+                        }
+                        valX := add(mul(valX, 10), sub(char, 48))
+                        idx := add(idx, 1)
+                    }
+                    
+                    // Parse second integer (Y)
+                    for {} lt(idx, 120) {} {
+                        let char := and(shr(248, calldataload(idx)), 0xff)
+                        if or(lt(char, 48), gt(char, 57)) { 
+                            if valY { break }
+                            idx := add(idx, 1)
+                            continue
+                        }
+                        valY := add(mul(valY, 10), sub(char, 48))
+                        idx := add(idx, 1)
+                    }
+                    
+                    sstore(3000503, valX)
+                    sstore(3000504, valY)
+                    
+                    mstore(resultPtr, 0x41696d696e672063726f737368616972206174205b0000000000000000000000) // "Aiming crosshair at ["
+                    resultPtr := add(resultPtr, 21)
+                    mstore(resultPtr, 0x582c20595d2e2054797065202773686f6f742720746f20666972652100000000) // "X, Y]. Type 'shoot' to fire!"
+                    resultPtr := add(resultPtr, 28)
+                }
+                case 0x73686f6f { // "shoo" (Shoot / fire)
+                    let targetX := sload(3000501)
+                    let targetY := sload(3000502)
+                    let playerX := sload(3000503)
+                    let playerY := sload(3000504)
+                    
+                    let diffX := 0
+                    if gt(playerX, targetX) { diffX := sub(playerX, targetX) }
+                    if iszero(gt(playerX, targetX)) { diffX := sub(targetX, playerX) }
+                    
+                    let diffY := 0
+                    if gt(playerY, targetY) { diffY := sub(playerY, targetY) }
+                    if iszero(gt(playerY, targetY)) { diffY := sub(targetY, playerY) }
+                    
+                    // Tolerance check: must be within 3 coordinate units
+                    let hit := and(lt(diffX, 4), lt(diffY, 4))
+                    
+                    if hit {
+                        sstore(3000500, 0) // clear target
+                        mstore(resultPtr, 0x5a4150212043796c6f6e205261696d65722064657374726f7965642100000000) // "ZAP! Cylon Raider destroyed!"
+                        resultPtr := add(resultPtr, 28)
+                    }
+                    if iszero(hit) {
+                        mstore(resultPtr, 0x4d697373212043796c6f6e206973207374696c6c206174205b32302c2031355d) // "Miss! Cylon is still at [20, 15]"
+                        resultPtr := add(resultPtr, 32)
+                    }
+                }
                 case 0x6e6f7274 { // "nort" (North)
                     let exits := sload(add(3200000, roomId))
                     let dest := and(shr(24, exits), 0xff)

@@ -2162,12 +2162,19 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                                 char test_res[128];
                                 if (call_local_evm("net_version", "", test_res, sizeof(test_res))) {
                                     bool is_write_cmd = false;
+                                    if (cmd_len >= 3) {
+                                        if (strncmp(cmd_buf, "zap", 3) == 0) {
+                                            is_write_cmd = true;
+                                        }
+                                    }
                                     if (cmd_len >= 4) {
                                         if (strncmp(cmd_buf, "nort", 4) == 0 ||
                                             strncmp(cmd_buf, "sout", 4) == 0 ||
                                             strncmp(cmd_buf, "east", 4) == 0 ||
                                             strncmp(cmd_buf, "west", 4) == 0 ||
-                                            strncmp(cmd_buf, "take", 4) == 0) {
+                                            strncmp(cmd_buf, "take", 4) == 0 ||
+                                            strncmp(cmd_buf, "aim ", 4) == 0 ||
+                                            strncmp(cmd_buf, "shoo", 4) == 0) {
                                             is_write_cmd = true;
                                         }
                                     }
