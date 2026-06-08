@@ -1283,6 +1283,60 @@ object "GraphicsSystem" {
                 return(outOffset, mul(scheduledCount, 96))
             }
 
+            // ----------------------------------------------------------------
+            // Method 20: resolveWidgetInteraction(widgetType, x, y, width, height, clickX, clickY, param1)
+            // Selector: 0x4f324fc5
+            // ----------------------------------------------------------------
+            if eq(selector, 0x4f324fc5) {
+                let wType := calldataload(4)
+                let wX := calldataload(36)
+                let wY := calldataload(68)
+                let wW := calldataload(100)
+                let wH := calldataload(132)
+                let cX := calldataload(164)
+                let cY := calldataload(196)
+                let p1 := calldataload(228)
+
+                let clicked := 0
+                let r1 := 0
+                let r2 := 0
+
+                // Standard bounding box collision check
+                let insideX := and(iszero(lt(cX, wX)), lt(cX, add(wX, wW)))
+                let insideY := and(iszero(lt(cY, wY)), lt(cY, add(wY, wH)))
+                let inside := and(insideX, insideY)
+
+                switch wType
+                case 0 { // Button
+                    if inside {
+                        clicked := 1
+                    }
+                }
+                case 1 { // Window Titlebar Drag (height is p1)
+                    let titlebarHeight := p1
+                    if iszero(titlebarHeight) { titlebarHeight := 15 }
+                    let insideTitleY := and(iszero(lt(cY, wY)), lt(cY, add(wY, titlebarHeight)))
+                    if and(insideX, insideTitleY) {
+                        clicked := 1
+                        r1 := sub(cX, wX) // deltaX (drag offset)
+                        r2 := sub(cY, wY) // deltaY (drag offset)
+                    }
+                }
+                case 2 { // Dropdown Menu Item (itemHeight is p1)
+                    let itemHeight := p1
+                    if iszero(itemHeight) { itemHeight := 16 }
+                    if inside {
+                        clicked := 1
+                        r1 := div(sub(cY, wY), itemHeight) // Clicked item index
+                    }
+                }
+
+                mstore(0x00, clicked)
+                mstore(0x20, r1)
+                mstore(0x40, r2)
+                return(0x00, 96)
+            }
+
             revert(0, 0)
         }
     }
