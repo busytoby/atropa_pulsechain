@@ -54,8 +54,8 @@ static void vram_put_char(LauVRAM *vram, char c) {
         cell->bg_color = vram->current_bg;
         cell->attributes = vram->current_attr;
         vram->dirty_grid[vram->cursor_y][vram->cursor_x] = true;
-        vram->is_dirty = true;
     }
+    vram->is_dirty = true;
     vram->cursor_x++;
 }
 
@@ -94,6 +94,7 @@ void lau_vram_write_char(LauVRAM *vram, char c) {
             vram->ansi_state = 1;
         } else if (c == '\r') {
             vram->cursor_x = 0;
+            vram->is_dirty = true;
         } else if (c == '\n') {
             vram->cursor_x = 0;
             vram->cursor_y++;
@@ -101,13 +102,17 @@ void lau_vram_write_char(LauVRAM *vram, char c) {
                 vram_scroll_up(vram);
                 vram->cursor_y = LAU_VRAM_ROWS - 1;
             }
+            vram->is_dirty = true;
         } else if (c == '\t') {
             int spaces = 8 - (vram->cursor_x % 8);
             for (int s = 0; s < spaces; s++) {
                 vram_put_char(vram, ' ');
             }
         } else if (c == '\b') {
-            if (vram->cursor_x > 0) vram->cursor_x--;
+            if (vram->cursor_x > 0) {
+                vram->cursor_x--;
+                vram->is_dirty = true;
+            }
         } else if (c >= 32 || c < 0) {
             vram_put_char(vram, c);
         }
