@@ -542,6 +542,240 @@ static void run_visual_verification(const char *query, TSFiClassification *out_c
     fflush(stdout);
 }
 
+// ============================================================================
+// COMPUSERVE GIF87a LZW ENCODER
+// ============================================================================
+
+typedef struct {
+    uint8_t *buf;
+    int buf_size;
+    int bit_offset;
+} BitStream;
+
+static void write_bits(BitStream *bs, int code, int code_size) {
+    for (int i = 0; i < code_size; i++) {
+        int byte_idx = bs->bit_offset / 8;
+        int bit_idx = bs->bit_offset % 8;
+        if (byte_idx >= bs->buf_size) return;
+        if ((code >> i) & 1) {
+            bs->buf[byte_idx] |= (1 << bit_idx);
+        } else {
+            bs->buf[byte_idx] &= ~(1 << bit_idx);
+        }
+        bs->bit_offset++;
+    }
+}
+
+#define LZW_HASH_SIZE 5021
+
+typedef struct {
+    int parent;
+    uint8_t character;
+    int code;
+} LzwNode;
+
+static int lzw_find(LzwNode *table, int parent, uint8_t character) {
+    int key = ((parent << 8) | character) % LZW_HASH_SIZE;
+    while (table[key].code != -1) {
+        if (table[key].parent == parent && table[key].character == character) {
+            return table[key].code;
+        }
+        key = (key + 1) % LZW_HASH_SIZE;
+    }
+    return -1;
+}
+
+static void lzw_insert(LzwNode *table, int parent, uint8_t character, int code) {
+    int key = ((parent << 8) | character) % LZW_HASH_SIZE;
+    while (table[key].code != -1) {
+        key = (key + 1) % LZW_HASH_SIZE;
+    }
+    table[key].parent = parent;
+    table[key].character = character;
+    table[key].code = code;
+}
+
+static void lzw_compress(const uint8_t *pixels, int length, uint8_t *out_buf, int *out_len) {
+    LzwNode *table = malloc(LZW_HASH_SIZE * sizeof(LzwNode));
+    if (!table) return;
+    for (int i = 0; i < LZW_HASH_SIZE; i++) table[i].code = -1;
+    
+    int clear_code = 256;
+    int eoi_code = 257;
+    int next_code = 258;
+    int code_size = 9;
+    
+    BitStream bs;
+    bs.buf = out_buf;
+    bs.buf_size = *out_len;
+    bs.bit_offset = 0;
+    
+    memset(out_buf, 0, *out_len);
+    write_bits(&bs, clear_code, code_size);
+    
+    int current_prefix = -1;
+    for (int i = 0; i < length; i++) {
+        uint8_t c = pixels[i];
+        if (current_prefix == -1) {
+            current_prefix = c;
+        } else {
+            int code = lzw_find(table, current_prefix, c);
+            if (code != -1) {
+                current_prefix = code;
+            } else {
+                write_bits(&bs, current_prefix, code_size);
+                
+                if (next_code < 4096) {
+                    lzw_insert(table, current_prefix, c, next_code);
+                    if (next_code == (1 << code_size)) {
+                        code_size++;
+                    }
+                    next_code++;
+                } else {
+                    write_bits(&bs, clear_code, code_size);
+                    for (int k = 0; k < LZW_HASH_SIZE; k++) table[k].code = -1;
+                    next_code = 258;
+                    code_size = 9;
+                }
+                current_prefix = c;
+            }
+        }
+    }
+    if (current_prefix != -1) {
+        write_bits(&bs, current_prefix, code_size);
+    }
+    write_bits(&bs, eoi_code, code_size);
+    
+    int total_bytes = (bs.bit_offset + 7) / 8;
+    *out_len = total_bytes;
+    
+    free(table);
+}
+
+static void save_gif_screenshot(const char *filepath, uint32_t *pixels, int w, int h) {
+    uint32_t palette[256] = {0};
+    int palette_size = 0;
+    
+    palette[palette_size++] = 0xFF000000;
+    
+    uint8_t *pixels_idx = malloc(w * h);
+    if (!pixels_idx) return;
+    
+    for (int i = 0; i < w * h; i++) {
+        uint32_t c = pixels[i];
+        uint32_t c_rgb = c & 0x00FFFFFF;
+        
+        int idx = -1;
+        for (int p = 0; p < palette_size; p++) {
+            if ((palette[p] & 0x00FFFFFF) == c_rgb) {
+                idx = p;
+                break;
+            }
+        }
+        
+        if (idx == -1) {
+            if (palette_size < 256) {
+                palette[palette_size] = c;
+                idx = palette_size;
+                palette_size++;
+            } else {
+                int r1 = (c >> 16) & 0xFF;
+                int g1 = (c >> 8) & 0xFF;
+                int b1 = c & 0xFF;
+                int min_dist = 0x7FFFFFFF;
+                int closest_idx = 0;
+                for (int p = 0; p < palette_size; p++) {
+                    int r2 = (palette[p] >> 16) & 0xFF;
+                    int g2 = (palette[p] >> 8) & 0xFF;
+                    int b2 = palette[p] & 0xFF;
+                    int dist = (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2);
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                        closest_idx = p;
+                    }
+                }
+                idx = closest_idx;
+            }
+        }
+        pixels_idx[i] = (uint8_t)idx;
+    }
+    
+    FILE *f = fopen(filepath, "wb");
+    if (!f) {
+        free(pixels_idx);
+        return;
+    }
+    
+    fwrite("GIF87a", 1, 6, f);
+    
+    uint16_t width = w;
+    uint16_t height = h;
+    fwrite(&width, 2, 1, f);
+    fwrite(&height, 2, 1, f);
+    
+    uint8_t packed = 0xF7;
+    fwrite(&packed, 1, 1, f);
+    
+    uint8_t zero = 0;
+    fwrite(&zero, 1, 1, f);
+    fwrite(&zero, 1, 1, f);
+    
+    for (int p = 0; p < 256; p++) {
+        uint8_t rgb[3];
+        if (p < palette_size) {
+            rgb[0] = (palette[p] >> 16) & 0xFF;
+            rgb[1] = (palette[p] >> 8) & 0xFF;
+            rgb[2] = palette[p] & 0xFF;
+        } else {
+            rgb[0] = 0;
+            rgb[1] = 0;
+            rgb[2] = 0;
+        }
+        fwrite(rgb, 1, 3, f);
+    }
+    
+    uint8_t img_sep = 0x2C;
+    fwrite(&img_sep, 1, 1, f);
+    
+    uint16_t zero16 = 0;
+    fwrite(&zero16, 2, 1, f);
+    fwrite(&zero16, 2, 1, f);
+    fwrite(&width, 2, 1, f);
+    fwrite(&height, 2, 1, f);
+    
+    uint8_t local_packed = 0x00;
+    fwrite(&local_packed, 1, 1, f);
+    
+    uint8_t min_code_size = 0x08;
+    fwrite(&min_code_size, 1, 1, f);
+    
+    int comp_cap = w * h * 2;
+    uint8_t *comp_buf = malloc(comp_cap);
+    if (comp_buf) {
+        int comp_len = comp_cap;
+        lzw_compress(pixels_idx, w * h, comp_buf, &comp_len);
+        
+        int written = 0;
+        while (written < comp_len) {
+            int chunk = comp_len - written;
+            if (chunk > 255) chunk = 255;
+            uint8_t chunk_len = (uint8_t)chunk;
+            fwrite(&chunk_len, 1, 1, f);
+            fwrite(comp_buf + written, 1, chunk, f);
+            written += chunk;
+        }
+        free(comp_buf);
+    }
+    
+    fwrite(&zero, 1, 1, f);
+    
+    uint8_t trailer = 0x3B;
+    fwrite(&trailer, 1, 1, f);
+    
+    fclose(f);
+    free(pixels_idx);
+}
+
 static void execute_command(const char *cmd) {
     printf("[TELEMETRY] Executed command: %s\n", cmd);
     fflush(stdout);
@@ -809,6 +1043,10 @@ static void execute_command(const char *cmd) {
                 free(jpeg_data);
             }
         }
+        
+        // Save CompuServe LZW GIF87a screenshot to the artifacts directory
+        save_gif_screenshot("/home/mariarahel/.gemini/antigravity-cli/brain/5289e240-c025-43c9-95f2-79673251a341/rag_telemetry.gif", back_buffer, win_width, win_height);
+        printf("[TELEMETRY] CompuServe GIF87a screenshot saved to artifacts successfully.\n");
         
         run_visual_verification(query, &g_last_classification);
         strncpy(g_last_query, query, sizeof(g_last_query) - 1);
