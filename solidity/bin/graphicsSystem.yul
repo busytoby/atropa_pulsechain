@@ -1143,6 +1143,8 @@ object "GraphicsSystem" {
                     let nodeType := and(shr(8, nodeWord), 0x01) // 0 = Attractor, 1 = Repeller
                     let nodeX := and(shr(9, nodeWord), 0xfffffffffffffff)
                     let nodeY := and(shr(73, nodeWord), 0xfffffffffffffff)
+                    let radius := and(shr(137, nodeWord), 0xff)
+                    let decayMode := and(shr(145, nodeWord), 0x01) // 0 = Linear 1/d, 1 = Quadratic 1/d^2
 
                     // Manhattan Distance calculation
                     let dx := 0
@@ -1156,8 +1158,26 @@ object "GraphicsSystem" {
                     let dist := add(dx, dy)
                     if iszero(dist) { dist := 1 }
 
-                    // Force magnitude: weight * 100 / distance
-                    let force := div(mul(weight, 100), dist)
+                    let force := 0
+                    let withinRadius := 1
+                    if gt(radius, 0) {
+                        if gt(dist, radius) {
+                            withinRadius := 0
+                        }
+                    }
+
+                    if withinRadius {
+                        if eq(decayMode, 0) {
+                            // Linear: weight * 100 / distance
+                            force := div(mul(weight, 100), dist)
+                        }
+                        if eq(decayMode, 1) {
+                            // Quadratic: weight * 10000 / (distance^2)
+                            let distSq := mul(dist, dist)
+                            if iszero(distSq) { distSq := 1 }
+                            force := div(mul(weight, 10000), distSq)
+                        }
+                    }
 
                     // Direction multipliers
                     let dirX := 0

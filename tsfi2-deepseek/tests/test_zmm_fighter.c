@@ -402,6 +402,38 @@ int main() {
     assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000096") != NULL);
     printf("PASS: General Attractor/Repeller Vector Field AI resolved correctly!\n");
 
+    // 18. Test resolveVectorFieldAI - Sensory Cutoff
+    // entityX = 100 (0x64), entityY = 100 (0x64), numNodes = 1
+    // node3 = 00000000000000000000000000003c00000000000000c8000000000000012c32 (radius=30, dist=50, out of range)
+    // Expected output: netFx = 0, netFy = 0
+    printf("[ZMM] Simulating Vector Field AI: Sensory Cutoff (Out of range)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"b1c8c5de"
+                  "0000000000000000000000000000000000000000000000000000000000000064"
+                  "0000000000000000000000000000000000000000000000000000000000000064"
+                  "0000000000000000000000000000000000000000000000000000000000000001"
+                  "00000000000000000000000000003c00000000000000c8000000000000012c32\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000000") != NULL);
+    printf("PASS: Vector Field sensory cutoff successfully ignored out-of-range attractor!\n");
+
+    // 19. Test resolveVectorFieldAI - Quadratic Decay
+    // entityX = 100 (0x64), entityY = 100 (0x64), numNodes = 1
+    // node4 = 00000000000000000000000000023c00000000000000c800000000000000dc32 (radius=30, dist=10, decay=1, weight=50)
+    // Expected output: netFx = 50 * 10000 / 100 = 5000 (0x1388), netFy = 0
+    printf("[ZMM] Simulating Vector Field AI: Quadratic Decay Rebound...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"b1c8c5de"
+                  "0000000000000000000000000000000000000000000000000000000000000064"
+                  "0000000000000000000000000000000000000000000000000000000000000064"
+                  "0000000000000000000000000000000000000000000000000000000000000001"
+                  "00000000000000000000000000023c00000000000000c800000000000000dc32\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000001388") != NULL);
+    printf("PASS: Vector Field quadratic decay force calculation verified successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;
