@@ -434,6 +434,54 @@ int main() {
     assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000001388") != NULL);
     printf("PASS: Vector Field quadratic decay force calculation verified successfully!\n");
 
+    // 20. Test scheduleVirtualSprites (Method 19)
+    // Selector: 6d1b8fa2
+    // Parameters:
+    // numSprites = 5
+    // Sprite 1: ID=1, X=100 (0x64), Y=50 (0x32) -> word = 0x3200640001
+    // Sprite 2: ID=2, X=100 (0x64), Y=10 (0x0a) -> word = 0x0a00640002
+    // Sprite 3: ID=3, X=100 (0x64), Y=30 (0x1e) -> word = 0x1e00640003
+    // Sprite 4: ID=4, X=100 (0x64), Y=70 (0x46) -> word = 0x4600640004
+    // Sprite 5: ID=5, X=100 (0x64), Y=90 (0x5a) -> word = 0x5a00640005
+    printf("[ZMM] Simulating VIC-II Sprite Multiplexer Scheduling (5 virtual sprites)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"6d1b8fa2"
+                  "0000000000000000000000000000000000000000000000000000000000000005" // numSprites = 5
+                  "0000000000000000000000000000000000000000000000000000003200640001" // Sprite 1
+                  "0000000000000000000000000000000000000000000000000000000a00640002" // Sprite 2
+                  "0000000000000000000000000000000000000000000000000000001e00640003" // Sprite 3
+                  "0000000000000000000000000000000000000000000000000000004600640004" // Sprite 4
+                  "0000000000000000000000000000000000000000000000000000005a00640005\""); // Sprite 5
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+
+    // We expect 15 words of output matching the sorted scheduling:
+    // Sprite 2 (Y=10) -> Slot 0:
+    // Word 0: ID=2 (0x02), Word 1: Slot=0 (0x00), Word 2: Y=10 (0x0a)
+    // Sprite 3 (Y=30) -> Slot 1:
+    // Word 3: ID=3 (0x03), Word 4: Slot=1 (0x01), Word 5: Y=30 (0x1e)
+    // Sprite 1 (Y=50) -> Slot 0:
+    // Word 6: ID=1 (0x01), Word 7: Slot=0 (0x00), Word 8: Y=50 (0x32)
+    // Sprite 4 (Y=70) -> Slot 1:
+    // Word 9: ID=4 (0x04), Word 10: Slot=1 (0x01), Word 11: Y=70 (0x46)
+    // Sprite 5 (Y=90) -> Slot 0:
+    // Word 12: ID=5 (0x05), Word 13: Slot=0 (0x00), Word 14: Y=90 (0x5a)
+
+    // Let's assert some key parts of the output to verify sorting and assignment logic
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000002" // Sprite 2 ID
+                                    "0000000000000000000000000000000000000000000000000000000000000000" // Sprite 2 Slot 0
+                                    "000000000000000000000000000000000000000000000000000000000000000a") != NULL); // Sprite 2 Y=10
+
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000003" // Sprite 3 ID
+                                    "0000000000000000000000000000000000000000000000000000000000000001" // Sprite 3 Slot 1
+                                    "000000000000000000000000000000000000000000000000000000000000001e") != NULL); // Sprite 3 Y=30
+
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000001" // Sprite 1 ID
+                                    "0000000000000000000000000000000000000000000000000000000000000000" // Sprite 1 Slot 0
+                                    "0000000000000000000000000000000000000000000000000000000000000032") != NULL); // Sprite 1 Y=50
+
+    printf("PASS: VIC-II Sprite Multiplexer Scheduling sorted and allocated physical slots successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;

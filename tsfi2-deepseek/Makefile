@@ -83,6 +83,9 @@ bin/test_genesis_standalone: tests/test_genesis_standard_cell.c $(CORE_OBJS) $(O
 tests/test_ahoy_issue1_resonance: tests/test_ahoy_issue1_resonance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_zmm_fighter: tests/test_zmm_fighter.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wayland_terminal_shell: tests/test_wayland_terminal_shell.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

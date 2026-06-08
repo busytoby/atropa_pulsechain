@@ -1203,6 +1203,86 @@ object "GraphicsSystem" {
                 return(0x00, 64)
             }
 
+            // ----------------------------------------------------------------
+            // Method 19: scheduleVirtualSprites(numVirtualSprites, virtualSprites...)
+            // Selector: 0x6d1b8fa2
+            // ----------------------------------------------------------------
+            if eq(selector, 0x6d1b8fa2) {
+                let numSprites := calldataload(4)
+                if gt(numSprites, 16) { revert(0, 0) }
+
+                // 1. Load sprites into memory for sorting
+                // Memory offsets: 0x00 to 0x1f0 (32 bytes per sprite)
+                for { let i := 0 } lt(i, numSprites) { i := add(i, 1) } {
+                    let word := calldataload(add(36, mul(i, 32)))
+                    mstore(mul(i, 32), word)
+                }
+
+                // 2. Perform Bubble Sort on Y-coordinate (stored at bits 32-47 of each word)
+                for { let i := 0 } lt(i, sub(numSprites, 1)) { i := add(i, 1) } {
+                    for { let j := 0 } lt(j, sub(sub(numSprites, i), 1)) { j := add(j, 1) } {
+                        let spriteA := mload(mul(j, 32))
+                        let spriteB := mload(mul(add(j, 1), 32))
+
+                        let yA := and(shr(32, spriteA), 0xffff)
+                        let yB := and(shr(32, spriteB), 0xffff)
+
+                        if gt(yA, yB) {
+                            // Swap memory slots
+                            mstore(mul(j, 32), spriteB)
+                            mstore(mul(add(j, 1), 32), spriteA)
+                        }
+                    }
+                }
+
+                // 3. Map virtual sprites to 8 physical registers down the Y-axis
+                // physicalYOffset[8] stores the Y scanline where each physical slot becomes free (lastY + 21)
+                // Initialize physical slots to 0
+                let mOffset := 0x200
+                for { let p := 0 } lt(p, 8) { p := add(p, 1) } {
+                    mstore(add(mOffset, mul(p, 32)), 0)
+                }
+
+                // output buffer starts at 0x300. We write the physical register assignments:
+                // (virtualSpriteId, physicalRegisterIndex, rasterTriggerLine)
+                let outOffset := 0x300
+                let scheduledCount := 0
+
+                for { let i := 0 } lt(i, numSprites) { i := add(i, 1) } {
+                    let vSprite := mload(mul(i, 32))
+                    let vId := and(vSprite, 0xffff)
+                    let vX := and(shr(16, vSprite), 0xffff)
+                    let vY := and(shr(32, vSprite), 0xffff)
+
+                    // Find the first free physical register slot
+                    let assignedSlot := 9
+                    for { let p := 0 } lt(p, 8) { p := add(p, 1) } {
+                        let freeY := mload(add(mOffset, mul(p, 32)))
+                        // If physical slot is free at or before the virtual sprite's Y coordinate
+                        if iszero(gt(freeY, vY)) {
+                            assignedSlot := p
+                            p := 8 // break loop
+                        }
+                    }
+
+                    // If a physical register was found (assignedSlot < 8)
+                    if lt(assignedSlot, 8) {
+                        // Update the physical register's free scanline (vY + 21 scanlines height)
+                        mstore(add(mOffset, mul(assignedSlot, 32)), add(vY, 21))
+
+                        // Write assignment details to output
+                        mstore(add(outOffset, mul(scheduledCount, 96)), vId)
+                        mstore(add(add(outOffset, mul(scheduledCount, 96)), 32), assignedSlot)
+                        mstore(add(add(outOffset, mul(scheduledCount, 96)), 64), vY)
+
+                        scheduledCount := add(scheduledCount, 1)
+                    }
+                }
+
+                // Return the scheduled virtual sprite timeline
+                return(outOffset, mul(scheduledCount, 96))
+            }
+
             revert(0, 0)
         }
     }
