@@ -153,34 +153,71 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
         } else if (state == 3) {
             if (c == 'm') {
                 parse_buf[parse_len] = '\0';
-                int cmd = 0;
-                int p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-                int count = sscanf(parse_buf, "%d;%d;%d;%d;%d", &cmd, &p1, &p2, &p3, &p4);
-                if (count >= 1) {
+                char *tokens[16];
+                int tok_count = 0;
+                char *tok = strtok(parse_buf, ";");
+                while (tok && tok_count < 16) {
+                    tokens[tok_count++] = tok;
+                    tok = strtok(NULL, ";");
+                }
+                if (tok_count >= 1) {
+                    int cmd = atoi(tokens[0]);
                     if (cmd == 0) {
                         gfx_primitive_count = 0;
-                    } else if (cmd == 1 && count >= 5) {
+                    } else if (cmd == 1 && tok_count >= 5) {
+                        int x1 = atoi(tokens[1]);
+                        int y1 = atoi(tokens[2]);
+                        int x2 = atoi(tokens[3]);
+                        int y2 = atoi(tokens[4]);
+                        uint32_t color = (tok_count >= 6) ? (uint32_t)strtoul(tokens[5], NULL, 0) : 0xFF50FA7B;
                         if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
                             GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
-                            gp->type = GFX_LINE;
-                            gp->x1 = p1; gp->y1 = p2;
-                            gp->x2 = p3; gp->y2 = p4;
-                            gp->color = 0xFF50FA7B; // Dracula green line
+                            gp->type = GFX_LINE; gp->x1 = x1; gp->y1 = y1; gp->x2 = x2; gp->y2 = y2; gp->color = color;
                         }
-                    } else if (cmd == 2 && count >= 4) {
+                    } else if (cmd == 2 && tok_count >= 4) {
+                        int x = atoi(tokens[1]);
+                        int y = atoi(tokens[2]);
+                        int r = atoi(tokens[3]);
+                        uint32_t color = (tok_count >= 5) ? (uint32_t)strtoul(tokens[4], NULL, 0) : 0xFF8BE9FD;
                         if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
                             GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
-                            gp->type = GFX_CIRCLE;
-                            gp->x1 = p1; gp->y1 = p2;
-                            gp->r = p3;
-                            gp->color = 0xFF8BE9FD; // Dracula cyan circle
+                            gp->type = GFX_CIRCLE; gp->x1 = x; gp->y1 = y; gp->r = r; gp->color = color;
                         }
-                    } else if (cmd == 3 && count >= 4) {
+                    } else if (cmd == 3 && tok_count >= 3) {
+                        int x = atoi(tokens[1]);
+                        int y = atoi(tokens[2]);
+                        uint32_t color = 0xFF50FA7B;
+                        if (tok_count >= 4) {
+                            char *col_str = tokens[3];
+                            if (strlen(col_str) <= 2) {
+                                int idx = atoi(col_str);
+                                color = (idx == 1) ? 0xFFFF5555 : 0xFFF1FA8C;
+                            } else {
+                                color = (uint32_t)strtoul(col_str, NULL, 0);
+                            }
+                        }
                         if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
                             GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
-                            gp->type = GFX_POINT;
-                            gp->x1 = p1; gp->y1 = p2;
-                            gp->color = (p3 == 1) ? 0xFFFF5555 : 0xFFF1FA8C; // red / yellow
+                            gp->type = GFX_POINT; gp->x1 = x; gp->y1 = y; gp->color = color;
+                        }
+                    } else if (cmd == 4 && tok_count >= 4) {
+                        int x = atoi(tokens[1]);
+                        int y = atoi(tokens[2]);
+                        uint32_t color = (uint32_t)strtoul(tokens[3], NULL, 0);
+                        char text_buf[64] = "";
+                        if (tok_count >= 5) {
+                            int tlen = strlen(tokens[4]);
+                            if (tlen > 63) tlen = 63;
+                            memcpy(text_buf, tokens[4], tlen);
+                            text_buf[tlen] = '\0';
+                        }
+                        if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+                            GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+                            gp->type = GFX_TEXT; gp->x1 = x; gp->y1 = y; gp->color = color;
+                            int glen = strlen(text_buf);
+                            if (glen > 31) glen = 31;
+                            memcpy(gp->text, text_buf, glen);
+                            gp->text[glen] = '\0';
                         }
                     }
                 }
