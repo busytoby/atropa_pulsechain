@@ -70,7 +70,11 @@ static inline float smin_c(float a, float b, float k) {
 
 static inline float sd_ellipsoid(V3 p, V3 c, V3 r) {
     V3 v = v3_sub(p, c);
-    return v3_len(v3(v.x/r.x, v.y/r.y, v.z/r.z)) - 1.0f;
+    float d = v3_len(v3(v.x/r.x, v.y/r.y, v.z/r.z)) - 1.0f;
+    float min_r = r.x;
+    if (r.y < min_r) min_r = r.y;
+    if (r.z < min_r) min_r = r.z;
+    return d * min_r;
 }
 
 static inline float noise_c(V3 x) {
@@ -184,7 +188,7 @@ void draw_raymarched_teddy_sprite(AB4HPixel *pixels, int w, int h, int draw_sx, 
             int mat = 0;
             int hit = 0;
 
-            for (int step = 0; step < 40; step++) {
+            for (int step = 0; step < 60; step++) {
                 V3 p = v3_add(cam, v3_mul(ray_dir, t));
                 float d = map_teddy(p, &mat);
                 if (d < 0.001f) {
@@ -192,7 +196,7 @@ void draw_raymarched_teddy_sprite(AB4HPixel *pixels, int w, int h, int draw_sx, 
                     break;
                 }
                 if (t > 4.0f) break;
-                t += d * 0.8f;
+                t += d * 0.4f;
             }
 
             if (hit) {
