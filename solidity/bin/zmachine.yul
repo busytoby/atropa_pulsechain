@@ -217,17 +217,17 @@ object "ZMachine" {
                     let invPtr := add(resultPtr, 17)
                     let count := 0
                     
-                    if iszero(sload(add(2000300, 50))) {
+                    if getInventoryBalance(player, 50) {
                         mstore(invPtr, 0x0a2d20476f6c6420546f6b656e20284552433230290000000000000000000000) // "\n- Gold Token (ERC20)"
                         invPtr := add(invPtr, 21)
                         count := add(count, 1)
                     }
-                    if iszero(sload(add(2000300, 51))) {
+                    if getInventoryBalance(player, 51) {
                         mstore(invPtr, 0x0a2d204b65796361726400000000000000000000000000000000000000000000) // "\n- Keycard"
                         invPtr := add(invPtr, 10)
                         count := add(count, 1)
                     }
-                    if iszero(sload(add(2000300, 52))) {
+                    if getInventoryBalance(player, 52) {
                         mstore(invPtr, 0x0a2d20456e65726779205061636b000000000000000000000000000000000000) // "\n- Energy Pack"
                         invPtr := add(invPtr, 14)
                         count := add(count, 1)
@@ -789,6 +789,18 @@ object "ZMachine" {
             }
 
             // --- ERC-20 Call Wrappers ---
+
+            function getInventoryBalance(player, itemId) -> bal {
+                let tokenAddr := sload(add(2000000, itemId))
+                if tokenAddr {
+                    bal := erc20BalanceOf(tokenAddr, player)
+                }
+                if iszero(bal) {
+                    if iszero(sload(add(2000300, itemId))) {
+                        bal := 1
+                    }
+                }
+            }
 
             function erc20BalanceOf(token, account) -> bal {
                 mstore(0x00, 0x70a0823100000000000000000000000000000000000000000000000000000000)
