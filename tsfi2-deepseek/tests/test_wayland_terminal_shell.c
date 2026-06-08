@@ -1662,6 +1662,59 @@ int main() {
     while (running) {
         wl_display_dispatch_pending(display);
 
+        // Check if Yul CPU has written automated test input character to MMIO slot 54592 ($D540)
+        {
+            extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
+            uint8_t peek_cd[36] = {0};
+            peek_cd[0] = 0x78; peek_cd[1] = 0x61; peek_cd[2] = 0xd2; peek_cd[3] = 0x69; // peek(uint256) -> 0x7861d269
+            uint64_t target_mmio = 54592;
+            for (int k = 0; k < 8; k++) {
+                peek_cd[4 + 31 - k] = (target_mmio >> (k * 8)) & 0xFF;
+            }
+            uint8_t peek_ret[32] = {0};
+            size_t peek_ret_len = 32;
+            if (lau_yul_thunk_execute("cpu6502", peek_cd, 36, peek_ret, &peek_ret_len)) {
+                uint8_t val = peek_ret[31];
+                if (val != 0) {
+                    char ch = (char)val;
+                    if (ch == '\n' || ch == '\r') {
+                        lau_vram_write_string(g_vram, "\r\n", 2);
+                        if (cmd_len > 0) {
+                            cmd_buf[cmd_len] = '\0';
+                            execute_command(cmd_buf);
+                            cmd_len = 0;
+                            cmd_buf[0] = '\0';
+                        }
+                        lau_vram_write_string(g_vram, "zmm-vm> ", 8);
+                    } else if (ch == 127 || ch == '\b') {
+                        if (cmd_len > 0) {
+                            cmd_len--;
+                            cmd_buf[cmd_len] = '\0';
+                            lau_vram_write_char(g_vram, '\b');
+                            lau_vram_write_char(g_vram, ' ');
+                            lau_vram_write_char(g_vram, '\b');
+                        }
+                    } else if (ch >= 32 && ch < 127) {
+                        if (cmd_len < (int)sizeof(cmd_buf) - 2) {
+                            cmd_buf[cmd_len++] = ch;
+                            cmd_buf[cmd_len] = '\0';
+                            lau_vram_write_char(g_vram, ch);
+                        }
+                    }
+                    
+                    // Clear register by poking 0 back
+                    uint8_t poke_cd[4 + 32 + 32] = {0};
+                    poke_cd[0] = 0x80; poke_cd[1] = 0x29; poke_cd[2] = 0xe7; poke_cd[3] = 0xc0; // poke(uint256,uint256)
+                    for (int k = 0; k < 8; k++) {
+                        poke_cd[4 + 31 - k] = (target_mmio >> (k * 8)) & 0xFF;
+                    }
+                    uint8_t poke_ret[32] = {0};
+                    size_t poke_ret_len = 32;
+                    lau_yul_thunk_execute("cpu6502", poke_cd, 4 + 32 + 32, poke_ret, &poke_ret_len);
+                }
+            }
+        }
+
         bool need_redraw = g_vram->is_dirty;
 
         if (resize_pending) {
