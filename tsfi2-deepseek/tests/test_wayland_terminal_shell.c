@@ -39,7 +39,8 @@ typedef enum {
     GFX_LINE,
     GFX_CIRCLE,
     GFX_POINT,
-    GFX_TEXT
+    GFX_TEXT,
+    GFX_STUFFED_3D
 } GfxType;
 
 typedef struct {
@@ -48,6 +49,8 @@ typedef struct {
     int r;
     uint32_t color;
     char text[32];
+    char query[32];
+    int frame;
 } GfxPrimitive;
 
 #define MAX_GFX_PRIMITIVES 1024
@@ -244,12 +247,7 @@ static void add_circle(int x, int y, int r, uint32_t color) {
         gp->type = GFX_CIRCLE; gp->x1 = x; gp->y1 = y; gp->r = r; gp->color = color;
     }
 }
-static void add_point(int x, int y, uint32_t color) {
-    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
-        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
-        gp->type = GFX_POINT; gp->x1 = x; gp->y1 = y; gp->color = color;
-    }
-}
+
 static void add_text(int x, int y, const char *text, uint32_t color) {
     if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
         GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
@@ -258,100 +256,185 @@ static void add_text(int x, int y, const char *text, uint32_t color) {
         gp->text[sizeof(gp->text) - 1] = '\0';
     }
 }
-static void add_crow(int x, int y, uint32_t color) {
-    // Body / Back
-    add_line(x - 20, y + 5, x + 10, y, color);
-    // Head
-    add_circle(x + 15, y - 5, 6, color);
-    // Beak
-    add_line(x + 20, y - 5, x + 28, y - 3, color);
-    add_line(x + 20, y - 2, x + 28, y - 3, color);
-    // Tail
-    add_line(x - 20, y + 5, x - 35, y + 15, color);
-    add_line(x - 20, y + 5, x - 32, y + 20, color);
-    // Wing 1 (Upwards)
-    add_line(x - 5, y + 2, x - 15, y - 25, color);
-    add_line(x - 15, y - 25, x - 30, y - 20, color);
-    // Wing 2 (Downward/Backwards)
-    add_line(x - 5, y + 2, x - 8, y + 18, color);
-    add_line(x - 8, y + 18, x - 18, y + 22, color);
+
+static int g_frame_counter = 0;
+
+static inline float smin(float a, float b, float k) {
+    float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
+    return fminf(a, b) - h * h * k * 0.25f;
 }
-static void add_tree(int x, int y, uint32_t color) {
-    // Trunk
-    add_line(x, y + 20, x, y - 10, color);
-    // Leaves (layers of triangles)
-    add_line(x, y - 10, x - 15, y, color);
-    add_line(x - 15, y, x + 15, y, color);
-    add_line(x + 15, y, x, y - 10, color);
-    
-    add_line(x, y - 20, x - 12, y - 10, color);
-    add_line(x - 12, y - 10, x + 12, y - 10, color);
-    add_line(x + 12, y - 10, x, y - 20, color);
+
+static float sdf_teddy(float x, float y, float z) {
+    float d_body = sqrtf(x*x*1.2f + y*y*0.8f + z*z*1.2f) - 0.35f;
+    float d_head = sqrtf(x*x + (y - 0.35f)*(y - 0.35f) + z*z) - 0.25f;
+    float ex = fabsf(x) - 0.2f, ey = y - 0.55f, ez = z;
+    float d_ear = sqrtf(ex*ex + ey*ey + ez*ez) - 0.08f;
+    float d_snout = sqrtf(x*x + (y - 0.3f)*(y - 0.3f) + (z - 0.2f)*(z - 0.2f)) - 0.1f;
+    float res = smin(d_body, d_head, 0.12f);
+    res = smin(res, d_ear, 0.04f);
+    res = smin(res, d_snout, 0.05f);
+    return res;
 }
-static void add_cat(int x, int y, uint32_t color) {
-    // Body circle
-    add_circle(x, y, 10, color);
-    // Head circle
-    add_circle(x + 12, y - 6, 6, color);
-    // Ears
-    add_line(x + 9, y - 11, x + 11, y - 16, color);
-    add_line(x + 11, y - 16, x + 13, y - 11, color);
-    // Tail
-    add_line(x - 10, y, x - 18, y - 12, color);
+
+static float sdf_crow(float x, float y, float z) {
+    float d_body = sqrtf(x*x*1.5f + y*y + z*z) - 0.3f;
+    float d_head = sqrtf((x - 0.3f)*(x - 0.3f) + (y - 0.2f)*(y - 0.2f) + z*z) - 0.15f;
+    float bx = x - 0.45f, by = y - 0.2f, bz = z;
+    float d_beak = sqrtf(bx*bx*5.0f + by*by*5.0f + bz*bz*5.0f) - 0.1f;
+    float wx = fabsf(x), wy = y - 0.1f, wz = fabsf(z) - 0.25f;
+    float d_wing = sqrtf(wx*wx*2.0f + wy*wy*0.5f + wz*wz*3.0f) - 0.12f;
+    float res = smin(d_body, d_head, 0.08f);
+    res = smin(res, d_wing, 0.05f);
+    res = smin(res, d_beak, 0.03f);
+    return res;
 }
-static void add_fish(int x, int y, uint32_t color) {
-    // Body outline
-    add_line(x - 15, y, x, y - 8, color);
-    add_line(x, y - 8, x + 15, y, color);
-    add_line(x + 15, y, x, y + 8, color);
-    add_line(x, y + 8, x - 15, y, color);
-    // Tail fin
-    add_line(x - 15, y, x - 22, y - 8, color);
-    add_line(x - 22, y - 8, x - 22, y + 8, color);
-    add_line(x - 22, y + 8, x - 15, y, color);
-    // Eye
-    add_point(x + 8, y - 2, color);
+
+static float sdf_cat(float x, float y, float z) {
+    float d_body = sqrtf(x*x*1.3f + y*y + z*z) - 0.3f;
+    float d_head = sqrtf((x - 0.3f)*(x - 0.3f) + (y - 0.2f)*(y - 0.2f) + z*z) - 0.18f;
+    float ex = fabsf(x - 0.35f) - 0.08f, ey = y - 0.38f, ez = z;
+    float d_ear = sqrtf(ex*ex*2.0f + ey*ey*2.0f + ez*ez*2.0f) - 0.05f;
+    float tx = x + 0.35f, ty = y + 0.1f, tz = z;
+    float d_tail = sqrtf(tx*tx + ty*ty + tz*tz) - 0.06f;
+    float res = smin(d_body, d_head, 0.08f);
+    res = smin(res, d_ear, 0.03f);
+    res = smin(res, d_tail, 0.05f);
+    return res;
 }
-static void add_car(int x, int y, uint32_t color) {
-    // Body box
-    add_line(x - 20, y + 5, x + 20, y + 5, color);
-    add_line(x - 20, y + 5, x - 20, y - 5, color);
-    add_line(x + 20, y + 5, x + 20, y - 5, color);
-    add_line(x - 20, y - 5, x - 10, y - 5, color);
-    // Cabin roof
-    add_line(x - 10, y - 5, x - 5, y - 15, color);
-    add_line(x - 5, y - 15, x + 10, y - 15, color);
-    add_line(x + 10, y - 15, x + 15, y - 5, color);
-    add_line(x + 15, y - 5, x + 20, y - 5, color);
-    // Wheels
-    add_circle(x - 10, y + 8, 4, color);
-    add_circle(x + 10, y + 8, 4, color);
+
+static float sdf_fish(float x, float y, float z) {
+    float d_body = sqrtf(x*x*0.5f + y*y*2.0f + z*z*3.0f) - 0.25f;
+    float tx = x + 0.35f, ty = y, tz = z;
+    float d_tail = sqrtf(tx*tx*4.0f + ty*ty*0.2f + tz*tz*4.0f) - 0.15f;
+    return smin(d_body, d_tail, 0.05f);
 }
-static void add_query_icon(const char *query, int x, int y, uint32_t color) {
+
+static float sdf_tree(float x, float y, float z) {
+    float d_trunk = sqrtf(x*x*8.0f + (y + 0.2f)*(y + 0.2f) + z*z*8.0f) - 0.2f;
+    float lx = x, ly = y, lz = z;
+    float d_leaves1 = sqrtf(lx*lx*3.0f + (ly - 0.1f)*(ly - 0.1f) + lz*lz*3.0f) - 0.35f;
+    float d_leaves2 = sqrtf(lx*lx*4.0f + (ly - 0.4f)*(ly - 0.4f) + lz*lz*4.0f) - 0.25f;
+    float res = smin(d_trunk, d_leaves1, 0.05f);
+    res = smin(res, d_leaves2, 0.05f);
+    return res;
+}
+
+static float sdf_car(float x, float y, float z) {
+    float d_body = sqrtf(x*x*0.8f + (y + 0.05f)*(y + 0.05f)*4.0f + z*z*1.2f) - 0.3f;
+    float d_cab = sqrtf(x*x*1.5f + (y - 0.15f)*(y - 0.15f)*2.0f + z*z*2.0f) - 0.2f;
+    return smin(d_body, d_cab, 0.05f);
+}
+
+static float eval_sdf(const char *query, float x, float y, float z) {
     if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
-        add_crow(x, y, color);
+        return sdf_crow(x, y, z);
     } else if (strcasestr(query, "tree") || strcasestr(query, "plant") || strcasestr(query, "forest")) {
-        add_tree(x, y, color);
+        return sdf_tree(x, y, z);
     } else if (strcasestr(query, "cat") || strcasestr(query, "dog") || strcasestr(query, "pet")) {
-        add_cat(x, y, color);
+        return sdf_cat(x, y, z);
     } else if (strcasestr(query, "fish") || strcasestr(query, "ocean") || strcasestr(query, "sea")) {
-        add_fish(x, y, color);
+        return sdf_fish(x, y, z);
     } else if (strcasestr(query, "car") || strcasestr(query, "drive") || strcasestr(query, "vehicle")) {
-        add_car(x, y, color);
+        return sdf_car(x, y, z);
     } else {
-        int len = strlen(query);
-        if (len < 3) len = 3;
-        if (len > 12) len = 12;
-        double r = 16.0;
-        int px[32], py[32];
-        for (int i = 0; i < len; i++) {
-            double angle = i * 2.0 * M_PI / len;
-            px[i] = x + (int)(r * cos(angle));
-            py[i] = y + (int)(r * sin(angle));
+        return sdf_teddy(x, y, z);
+    }
+}
+
+static uint32_t get_sdf_color(const char *query, float x, float y, float z, float intensity) {
+    uint8_t r = 0, g = 0, b = 0;
+    if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
+        float bx = x - 0.45f, by = y - 0.2f, bz = z;
+        if (sqrtf(bx*bx*5.0f + by*by*5.0f + bz*bz*5.0f) - 0.1f < 0.05f) {
+            r = 255; g = 140; b = 0;
+        } else {
+            r = 40; g = 42; b = 54;
         }
-        for (int i = 0; i < len; i++) {
-            add_line(px[i], py[i], px[(i + 1) % len], py[(i + 1) % len], color);
+    } else if (strcasestr(query, "tree") || strcasestr(query, "plant") || strcasestr(query, "forest")) {
+        if (y < -0.1f) {
+            r = 139; g = 69; b = 19;
+        } else {
+            r = 80; g = 250; b = 123;
         }
+    } else if (strcasestr(query, "cat") || strcasestr(query, "dog") || strcasestr(query, "pet")) {
+        r = 255; g = 121; b = 198;
+    } else if (strcasestr(query, "fish") || strcasestr(query, "ocean") || strcasestr(query, "sea")) {
+        r = 139; g = 233; b = 253;
+    } else if (strcasestr(query, "car") || strcasestr(query, "drive") || strcasestr(query, "vehicle")) {
+        r = 255; g = 85; b = 85;
+    } else {
+        r = 180; g = 120; b = 80;
+    }
+    uint32_t cr = (uint32_t)(r * intensity);
+    uint32_t cg = (uint32_t)(g * intensity);
+    uint32_t cb = (uint32_t)(b * intensity);
+    if (cr > 255) cr = 255;
+    if (cg > 255) cg = 255;
+    if (cb > 255) cb = 255;
+    return 0xFF000000 | (cr << 16) | (cg << 8) | cb;
+}
+
+static void draw_3d_stuffed_animal(uint32_t *buffer, int w_width, int w_height, int cx, int cy, int size, const char *query, int frame) {
+    float cosY = cosf(frame * 0.08f), sinY = sinf(frame * 0.08f);
+    float cosX = cosf(frame * 0.05f), sinX = sinf(frame * 0.05f);
+    int r_bound = size;
+    for (int dy = -r_bound; dy <= r_bound; dy++) {
+        for (int dx = -r_bound; dx <= r_bound; dx++) {
+            int tx = cx + dx;
+            int ty = cy + dy;
+            if (tx < 12 || tx >= w_width - 22 || ty < 57 || ty >= w_height - 32) continue;
+            float rx = (float)dx / (float)size;
+            float ry = -(float)dy / (float)size;
+            float ro_x = rx, ro_y = ry, ro_z = -1.5f;
+            float rd_x = 0.0f, rd_y = 0.0f, rd_z = 1.0f;
+            float t = 0.0f;
+            int hit = 0;
+            float hx = 0, hy = 0, hz = 0;
+            for (int step = 0; step < 16; step++) {
+                float px = ro_x + rd_x * t;
+                float py = ro_y + rd_y * t;
+                float pz = ro_z + rd_z * t;
+                float rot_x = px * cosY - pz * sinY;
+                float rot_z = px * sinY + pz * cosY;
+                float rot_y = py * cosX - rot_z * sinX;
+                rot_z = py * sinX + rot_z * cosX;
+                float d = eval_sdf(query, rot_x, rot_y, rot_z);
+                if (d < 0.01f) {
+                    hit = 1;
+                    hx = rot_x; hy = rot_y; hz = rot_z;
+                    break;
+                }
+                t += d;
+                if (t > 3.0f) break;
+            }
+            if (hit) {
+                float eps = 0.01f;
+                float nx = eval_sdf(query, hx + eps, hy, hz) - eval_sdf(query, hx - eps, hy, hz);
+                float ny = eval_sdf(query, hx, hy + eps, hz) - eval_sdf(query, hx, hy - eps, hz);
+                float nz = eval_sdf(query, hx, hy, hz + eps) - eval_sdf(query, hx, hy, hz - eps);
+                float n_len = sqrtf(nx*nx + ny*ny + nz*nz);
+                if (n_len > 0.0f) {
+                    nx /= n_len; ny /= n_len; nz /= n_len;
+                }
+                float lx = 0.577f, ly = 0.577f, lz = -0.577f;
+                float dot = nx * lx + ny * ly + nz * lz;
+                float intensity = dot * 0.6f + 0.4f;
+                if (intensity < 0.0f) intensity = 0.0f;
+                if (intensity > 1.0f) intensity = 1.0f;
+                buffer[ty * w_width + tx] = get_sdf_color(query, hx, hy, hz, intensity);
+            }
+        }
+    }
+}
+
+static void add_query_icon(const char *query, int x, int y, uint32_t color) {
+    (void)color;
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_STUFFED_3D; gp->x1 = x; gp->y1 = y; gp->r = 22;
+        strncpy(gp->query, query, sizeof(gp->query) - 1);
+        gp->query[sizeof(gp->query) - 1] = '\0';
+        gp->frame = g_frame_counter;
     }
 }
 
@@ -1216,8 +1299,11 @@ void render_terminal_display(void) {
             }
         } else if (gp.type == GFX_TEXT) {
             draw_debug_text(&sb, mon_x + gp.x1, mon_y + gp.y1, gp.text, gp.color, true);
+        } else if (gp.type == GFX_STUFFED_3D) {
+            draw_3d_stuffed_animal(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, gp.r, gp.query, gp.frame);
         }
     }
+    g_frame_counter++;
 
 }
 
