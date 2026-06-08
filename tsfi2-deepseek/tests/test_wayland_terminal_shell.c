@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -218,6 +219,7 @@ static void execute_command(const char *cmd) {
         int start_x = 400, start_y = 360;
         int target_x = 250, target_y = 120;
         
+        // 1. Run Shooting Gallery Scatter Plot Simulation
         for (int frame = 1; frame <= 12; frame++) {
             int bullet_x = start_x + (target_x - start_x) * frame / 12;
             int bullet_y = start_y + (target_y - start_y) * frame / 12;
@@ -243,15 +245,115 @@ static void execute_command(const char *cmd) {
         
         char hit_txt[1024];
         sprintf(hit_txt, "\r\n\r\n💥 DIRECT HIT! Similarity Threshold Exceeded at (250, 120)!\r\n"
-                         "🎵 Triggered SID Sound Crash on musicMaker (54272 -> 120, 54273 -> 15)\r\n\r\n"
-                         "Retrieved Context: Solidity Yul CPU contract is initialized at virtual address 0x1\r\n"
-                         "and provides full instruction decoding support for 6502/6509 opcodes.\r\n"
-                         "==================================\r\n");
+                         "🎵 Triggered SID Sound Crash on musicMaker (54272 -> 120, 54273 -> 15)\r\n"
+                         "Transitioning to Force-Directed Relation Graph...\r\n");
         lau_vram_write_string(g_vram, hit_txt, strlen(hit_txt));
         
+        // Explosion flash
         char exp_buf[256];
         sprintf(exp_buf, "\x1b[G2;250;120;25;m\x1b[G1;250;120;235;105;m\x1b[G1;250;120;265;105;m\x1b[G1;250;120;235;135;m\x1b[G1;250;120;265;135;m");
         terminal_write_string(g_vram, exp_buf, strlen(exp_buf));
+        g_vram->is_dirty = true;
+        render_terminal_display();
+        usleep(300000); // Wait 300ms for explosion impact
+        
+        // 2. Run Force-Directed Graph Layout Simulation
+        double rx[4] = {400.0, 250.0, 550.0, 400.0};
+        double ry[4] = {200.0, 120.0, 180.0, 300.0};
+        double vx[4] = {0.0, 0.0, 0.0, 0.0};
+        double vy[4] = {0.0, 0.0, 0.0, 0.0};
+        double rest_len[4] = {0.0, 120.0, 150.0, 130.0};
+        
+        for (int step = 1; step <= 20; step++) {
+            double fx[4] = {0.0};
+            double fy[4] = {0.0};
+            
+            // Electrostatic repulsion between all nodes
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    if (i == j) continue;
+                    double dx = rx[i] - rx[j];
+                    double dy = ry[i] - ry[j];
+                    double dist = sqrt(dx*dx + dy*dy);
+                    if (dist < 1.0) dist = 1.0;
+                    double f = 4000.0 / (dist * dist);
+                    fx[i] += f * (dx / dist);
+                    fy[i] += f * (dy / dist);
+                }
+            }
+            
+            // Springs from Doc nodes (1,2,3) to central Query node (0)
+            for (int i = 1; i < 4; i++) {
+                double dx = rx[i] - rx[0];
+                double dy = ry[i] - ry[0];
+                double dist = sqrt(dx*dx + dy*dy);
+                if (dist < 1.0) dist = 1.0;
+                double delta = dist - rest_len[i];
+                double f = -0.15 * delta;
+                fx[i] += f * (dx / dist);
+                fy[i] += f * (dy / dist);
+                fx[0] -= f * (dx / dist);
+                fy[0] -= f * (dy / dist);
+            }
+            
+            // Central gravity pulling everything towards monitor center (400, 200)
+            for (int i = 0; i < 4; i++) {
+                double dx = 400.0 - rx[i];
+                double dy = 200.0 - ry[i];
+                fx[i] += 0.03 * dx;
+                fy[i] += 0.03 * dy;
+            }
+            
+            // Integrate forces
+            for (int i = 0; i < 4; i++) {
+                vx[i] = (vx[i] + fx[i]) * 0.70; // Damped
+                vy[i] = (vy[i] + fy[i]) * 0.70;
+                rx[i] += vx[i];
+                ry[i] += vy[i];
+            }
+            
+            // Draw primitives
+            char step_gfx[512];
+            sprintf(step_gfx, "\x1b[G0;m"); // Clear
+            terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
+            
+            // Draw spring lines
+            for (int i = 1; i < 4; i++) {
+                sprintf(step_gfx, "\x1b[G1;%d;%d;%d;%d;m", (int)rx[0], (int)ry[0], (int)rx[i], (int)ry[i]);
+                terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
+            }
+            
+            // Draw query central node (Green query hub)
+            sprintf(step_gfx, "\x1b[G2;%d;%d;25;m\x1b[G3;%d;%d;1;m", (int)rx[0], (int)ry[0], (int)rx[0], (int)ry[0]);
+            terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
+            
+            // Draw document nodes (Doc 1, 2, 3)
+            for (int i = 1; i < 4; i++) {
+                sprintf(step_gfx, "\x1b[G2;%d;%d;18;m", (int)rx[i], (int)ry[i]);
+                terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
+            }
+            
+            lau_vram_write_string(g_vram, "+", 1);
+            
+            g_vram->is_dirty = true;
+            render_terminal_display();
+            current_buffer_idx = 1 - current_buffer_idx;
+            memcpy(pixel_datas[current_buffer_idx], back_buffer, win_width * win_height * 4);
+            wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
+            wl_surface_damage(surface, 0, 0, win_width, win_height);
+            wl_surface_commit(surface);
+            wl_display_flush(display);
+            wl_display_dispatch_pending(display);
+            
+            usleep(60000);
+        }
+        
+        char context_txt[1024];
+        sprintf(context_txt, "\r\n\r\nForce Graph Settle Complete. (Relationship graph displayed)\r\n"
+                             "Retrieved Context: Solidity Yul CPU contract is initialized at virtual address 0x1\r\n"
+                             "and provides full instruction decoding support for 6502/6509 opcodes.\r\n"
+                             "==================================\r\n");
+        lau_vram_write_string(g_vram, context_txt, strlen(context_txt));
         
         g_vram->is_dirty = true;
         return;
