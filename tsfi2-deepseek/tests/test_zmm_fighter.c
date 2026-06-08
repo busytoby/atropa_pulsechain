@@ -482,6 +482,23 @@ int main() {
 
     printf("PASS: VIC-II Sprite Multiplexer Scheduling sorted and allocated physical slots successfully!\n");
 
+    // 21. Test loading compiled Solidity contract as a thunk
+    printf("[ZMM] Compiling and Initializing Target.sol...\n");
+    tsfi_zmm_vm_exec(&vm, "YULINIT \"target\", \"../solidity/Target.sol\", 2");
+
+    printf("[ZMM] Simulating Target.sol call (echo function, value=42)...\n");
+    // Selector for echo(address,uint256) is 0f2723ea
+    sprintf(cmd, "YULEXEC \"target\", \"0f2723ea"
+                  "0000000000000000000000000000000000000000000000000000000000000000" // address to = 0
+                  "000000000000000000000000000000000000000000000000000000000000002a\""); // uint256 val = 42
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+
+    // Expected return value is 42 * 2 = 84 (0x54)
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000054") != NULL);
+    printf("PASS: Loading and executing compiled Solidity contract thunk verified successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;
