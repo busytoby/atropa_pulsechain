@@ -26,10 +26,12 @@ static struct xdg_wm_base *xdg_wm_base = NULL;
 static struct wl_seat *seat = NULL;
 static struct wl_keyboard *keyboard = NULL;
 static struct wl_pointer *pointer = NULL;
-static bool selecting = false;
+static bool drag_selecting = false;
 static int select_start_x = -1, select_start_y = -1;
 static int select_end_x = -1, select_end_y = -1;
 static int mouse_px = -1, mouse_py = -1;
+static uint32_t last_click_time = 0;
+static int click_count = 0;
 
 static struct wl_surface *surface = NULL;
 static struct xdg_surface *xdg_surface = NULL;
@@ -252,6 +254,41 @@ static void perform_paste(void) {
     pclose(f);
 }
 
+static bool is_word_char(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.';
+}
+
+static void select_word_at(int cx, int cy) {
+    if (cx < 0 || cx >= 120 || cy < 0 || cy >= 60) return;
+    
+    int start_x = cx;
+    while (start_x > 0 && is_word_char((char)g_vram->grid[cy][start_x - 1].character)) {
+        start_x--;
+    }
+    
+    int end_x = cx;
+    while (end_x < 120 - 1 && is_word_char((char)g_vram->grid[cy][end_x + 1].character)) {
+        end_x++;
+    }
+    
+    select_start_x = start_x;
+    select_start_y = cy;
+    select_end_x = end_x;
+    select_end_y = cy;
+    
+    perform_copy();
+}
+
+static void select_line_at(int cy) {
+    if (cy < 0 || cy >= 60) return;
+    select_start_x = 0;
+    select_start_y = cy;
+    select_end_x = 120 - 1;
+    select_end_y = cy;
+    
+    perform_copy();
+}
+
 static void pointer_handle_enter(void *data, struct wl_pointer *wl_pointer, uint32_t serial, struct wl_surface *wl_surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
     (void)data; (void)wl_pointer; (void)serial; (void)wl_surface; (void)surface_x; (void)surface_y;
 }
@@ -262,7 +299,7 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     (void)data; (void)wl_pointer; (void)time;
     mouse_px = wl_fixed_to_int(surface_x);
     mouse_py = wl_fixed_to_int(surface_y);
-    if (selecting) {
+    if (drag_selecting) {
         int cx, cy;
         get_cell_coords(surface_x, surface_y, &cx, &cy);
         if (cx >= 0 && cy >= 0) {
@@ -273,22 +310,38 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     }
 }
 static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
-    (void)data; (void)wl_pointer; (void)serial; (void)time;
+    (void)data; (void)wl_pointer; (void)serial;
     if (button == 272) {
         if (state == 1) { // Left press
+            uint32_t diff = time - last_click_time;
+            last_click_time = time;
+            if (diff < 300) {
+                click_count++;
+            } else {
+                click_count = 1;
+            }
+            
             int cx, cy;
             get_cell_coords(wl_fixed_from_int(mouse_px), wl_fixed_from_int(mouse_py), &cx, &cy);
             if (cx >= 0 && cy >= 0) {
-                selecting = true;
-                select_start_x = cx;
-                select_start_y = cy;
-                select_end_x = cx;
-                select_end_y = cy;
+                if (click_count == 1) {
+                    drag_selecting = true;
+                    select_start_x = cx;
+                    select_start_y = cy;
+                    select_end_x = cx;
+                    select_end_y = cy;
+                } else if (click_count == 2) {
+                    drag_selecting = false;
+                    select_word_at(cx, cy);
+                } else if (click_count >= 3) {
+                    drag_selecting = false;
+                    select_line_at(cy);
+                }
                 if (g_vram) g_vram->is_dirty = true;
             }
         } else if (state == 0) { // Left release
-            if (selecting) {
-                selecting = false;
+            if (drag_selecting) {
+                drag_selecting = false;
                 perform_copy();
                 if (g_vram) g_vram->is_dirty = true;
             }
@@ -536,7 +589,7 @@ void render_terminal_display(void) {
                 int py = mon_y + (y * char_h);
                 if (px >= 12 && px < win_width - 22 && py >= 57 && py < win_height - 32) {
                     bool in_selection = false;
-                    if (selecting && select_start_x >= 0 && select_start_y >= 0 && select_end_x >= 0 && select_end_y >= 0) {
+                    if (select_start_x >= 0 && select_start_y >= 0 && select_end_x >= 0 && select_end_y >= 0) {
                         int sy = select_start_y, ey = select_end_y;
                         int sx = select_start_x, ex = select_end_x;
                         if (sy > ey || (sy == ey && sx > ex)) {
