@@ -107,6 +107,60 @@ int main() {
     assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
     printf("PASS: Flying Kick hit collision detected successfully!\n");
 
+    // 5. Test Chuck Norris Punch (action = 5)
+    // Chuck at x = 81, Target at x = 100. Distance = 19 < 20 (width), should hit.
+    printf("[ZMM] Simulating Chuck Norris Punch hit detection (Chuck at 81, Target at 100)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"d6c09b2e"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x\"",
+            81, 0, 0, 0, 5, 100, 0);
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    printf("PASS: Chuck Norris Punch hit collision detected successfully!\n");
+
+    // 6. Test Chuck Norris Block (action = 7)
+    // Chuck at x = 95, Target at x = 100. Distance = 5. Block width = 0, should NOT hit.
+    printf("[ZMM] Simulating Chuck Norris Block hit detection (Chuck at 95, Target at 100)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"d6c09b2e"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x\"",
+            95, 0, 0, 0, 7, 100, 0);
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000000") == 0);
+    printf("PASS: Chuck Norris Block successfully negated hit collision!\n");
+
+    // 7. Test Chuck Norris Somersault Superkick (action = 8)
+    // Chuck at x = 70, Target at x = 100. Distance = 30 < 32 (width), should hit.
+    printf("[ZMM] Simulating Somersault Superkick hit detection (Chuck at 70, Target at 100)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"d6c09b2e"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x\"",
+            70, 0, 0, 0, 8, 100, 0);
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    printf("PASS: Chuck Norris Somersault Superkick hit collision detected successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;

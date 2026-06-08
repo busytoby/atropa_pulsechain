@@ -563,6 +563,22 @@ object "GraphicsSystem" {
                     width := 24
                     height := 16
                 }
+                if eq(action, 5) { // Chuck Norris Punch
+                    width := 20
+                    height := 22
+                }
+                if eq(action, 6) { // Chuck Norris Kick
+                    width := 22
+                    height := 14
+                }
+                if eq(action, 7) { // Chuck Norris Block
+                    width := 0
+                    height := 0
+                }
+                if eq(action, 8) { // Chuck Norris Somersault Superkick
+                    width := 32
+                    height := 18
+                }
 
                 let xDiff := 0
                 if gt(x, targetX) { xDiff := sub(x, targetX) }
