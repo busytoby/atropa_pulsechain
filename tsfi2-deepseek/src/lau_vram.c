@@ -100,6 +100,11 @@ void lau_vram_write_char(LauVRAM *vram, char c) {
                 vram_scroll_up(vram);
                 vram->cursor_y = LAU_VRAM_ROWS - 1;
             }
+        } else if (c == '\t') {
+            int spaces = 8 - (vram->cursor_x % 8);
+            for (int s = 0; s < spaces; s++) {
+                vram_put_char(vram, ' ');
+            }
         } else if (c == '\b') {
             if (vram->cursor_x > 0) vram->cursor_x--;
         } else if (c >= 32 || c < 0) {

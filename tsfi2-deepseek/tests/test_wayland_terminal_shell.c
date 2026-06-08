@@ -29,11 +29,12 @@ static struct wl_keyboard *keyboard = NULL;
 static struct wl_surface *surface = NULL;
 static struct xdg_surface *xdg_surface = NULL;
 static struct xdg_toplevel *xdg_toplevel = NULL;
-static struct wl_buffer *wl_buffer_obj = NULL;
+static struct wl_buffer *wl_buffers[2] = {NULL, NULL};
+static int current_buffer_idx = 0;
 
 static int win_width = 1280;
 static int win_height = 720;
-static uint32_t *pixel_data = NULL;
+static uint32_t *pixel_datas[2] = {NULL, NULL};
 static uint32_t *back_buffer = NULL;
 static LauVRAM *g_vram = NULL;
 static TsfiZmmVmState vm;
@@ -89,56 +90,6 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, 
 static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
     (void)data; (void)keyboard; (void)rate; (void)delay;
 }
-static void vram_write_ansi_string(LauVRAM *vram, const char *str, int len) {
-    int state = 0; // 0: normal, 1: esc, 2: bracket
-    char param_buf[32];
-    int param_len = 0;
-    
-    for (int i = 0; i < len; i++) {
-        char c = str[i];
-        if (state == 0) {
-            if (c == '\033' || c == 27) {
-                state = 1;
-            } else {
-                lau_vram_write_char(vram, c);
-            }
-        } else if (state == 1) {
-            if (c == '[') {
-                state = 2;
-                param_len = 0;
-            } else {
-                state = 0;
-                lau_vram_write_char(vram, c);
-            }
-        } else if (state == 2) {
-            if ((c >= '0' && c <= '9') || c == ';' || c == ':') {
-                if (param_len < (int)sizeof(param_buf) - 2) {
-                    param_buf[param_len++] = c;
-                }
-            } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-                param_buf[param_len] = '\0';
-                if (c == 'm') {
-                    char *tok = strtok(param_buf, ";");
-                    while (tok) {
-                        int code = atoi(tok);
-                        if (code == 0) {
-                            vram->current_fg = 7; // white
-                        } else if (code >= 30 && code <= 37) {
-                            vram->current_fg = code - 30;
-                        } else if (code >= 90 && code <= 97) {
-                            vram->current_fg = (code - 90) + 8; // bright
-                        }
-                        tok = strtok(NULL, ";");
-                    }
-                }
-                state = 0;
-            } else {
-                state = 0;
-            }
-        }
-    }
-}
-
 static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
     (void)data; (void)keyboard; (void)serial; (void)time;
     if (state != 1) return; // Only key press
@@ -208,7 +159,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                 char read_buf[4096];
                 ssize_t n;
                 while ((n = read(stdout_pipe[0], read_buf, sizeof(read_buf))) > 0) {
-                    vram_write_ansi_string(g_vram, read_buf, n);
+                    lau_vram_write_string(g_vram, read_buf, n);
                 }
                 close(stdout_pipe[0]);
             } else {
@@ -439,8 +390,6 @@ void render_terminal_display(void) {
         }
     }
 
-    // Atomic-like memcpy to shared memory buffer to prevent tearing and flickering
-    memcpy(pixel_data, back_buffer, win_width * win_height * 4);
 }
 
 int main() {
@@ -491,9 +440,10 @@ int main() {
     wl_surface_commit(surface);
     wl_display_roundtrip(display);
 
-    wl_buffer_obj = create_shm_buffer(win_width, win_height, &pixel_data);
-    if (!wl_buffer_obj) {
-        fprintf(stderr, "ERROR: Failed to create shm buffer.\n");
+    wl_buffers[0] = create_shm_buffer(win_width, win_height, &pixel_datas[0]);
+    wl_buffers[1] = create_shm_buffer(win_width, win_height, &pixel_datas[1]);
+    if (!wl_buffers[0] || !wl_buffers[1]) {
+        fprintf(stderr, "ERROR: Failed to create shm buffers.\n");
         return 1;
     }
     back_buffer = malloc(win_width * win_height * 4);
@@ -519,19 +469,27 @@ int main() {
 
         if (resize_pending) {
             resize_pending = false;
-            if (wl_buffer_obj) wl_buffer_destroy(wl_buffer_obj);
-            if (pixel_data) munmap(pixel_data, win_width * win_height * 4);
+            if (wl_buffers[0]) wl_buffer_destroy(wl_buffers[0]);
+            if (wl_buffers[1]) wl_buffer_destroy(wl_buffers[1]);
+            if (pixel_datas[0]) munmap(pixel_datas[0], win_width * win_height * 4);
+            if (pixel_datas[1]) munmap(pixel_datas[1], win_width * win_height * 4);
             if (back_buffer) free(back_buffer);
             win_width = pending_width;
             win_height = pending_height;
-            wl_buffer_obj = create_shm_buffer(win_width, win_height, &pixel_data);
+            wl_buffers[0] = create_shm_buffer(win_width, win_height, &pixel_datas[0]);
+            wl_buffers[1] = create_shm_buffer(win_width, win_height, &pixel_datas[1]);
             back_buffer = malloc(win_width * win_height * 4);
             printf("[TERMINAL] Resized to %dx%d\n", win_width, win_height);
         }
 
         if (configured) {
             render_terminal_display();
-            wl_surface_attach(surface, wl_buffer_obj, 0, 0);
+            
+            // Swap buffer indices to prevent writing to the buffer currently read by the compositor
+            current_buffer_idx = 1 - current_buffer_idx;
+            memcpy(pixel_datas[current_buffer_idx], back_buffer, win_width * win_height * 4);
+            
+            wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
             wl_surface_damage(surface, 0, 0, win_width, win_height);
             wl_surface_commit(surface);
             
@@ -562,8 +520,10 @@ int main() {
         }
     }
 
-    if (wl_buffer_obj) wl_buffer_destroy(wl_buffer_obj);
-    if (pixel_data) munmap(pixel_data, win_width * win_height * 4);
+    if (wl_buffers[0]) wl_buffer_destroy(wl_buffers[0]);
+    if (wl_buffers[1]) wl_buffer_destroy(wl_buffers[1]);
+    if (pixel_datas[0]) munmap(pixel_datas[0], win_width * win_height * 4);
+    if (pixel_datas[1]) munmap(pixel_datas[1], win_width * win_height * 4);
     if (back_buffer) free(back_buffer);
     if (xdg_toplevel) xdg_toplevel_destroy(xdg_toplevel);
     if (xdg_surface) xdg_surface_destroy(xdg_surface);
