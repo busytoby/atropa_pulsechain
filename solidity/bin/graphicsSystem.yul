@@ -1337,6 +1337,59 @@ object "GraphicsSystem" {
                 return(0x00, 96)
             }
 
+            // ----------------------------------------------------------------
+            // Method 26: simulateAnticDisplayList(displayListAddress, startScanline, lineCount)
+            // Selector: 0x8dfb6c41
+            // ----------------------------------------------------------------
+            if eq(selector, 0x8dfb6c41) {
+                let dlAddr := calldataload(4)
+                let scanline := calldataload(36)
+                let limit := calldataload(68)
+
+                let totalModeBytesFetched := 0
+                let activeMode := 0
+                let pixelAddressOffset := 0
+
+                for { let line := scanline } lt(line, add(scanline, limit)) { line := add(line, 1) } {
+                    let instrOffset := add(dlAddr, totalModeBytesFetched)
+                    let instr := and(sload(instrOffset), 0xff)
+
+                    // Parse instruction flags
+                    let mode := and(instr, 0x0f)
+                    let isLms := and(shr(6, instr), 1)
+                    let isJump := and(shr(7, instr), 1)
+
+                    if isJump {
+                        // Jump instruction: Next two bytes point to new Display List start address
+                        let targetLow := and(sload(add(instrOffset, 1)), 0xff)
+                        let targetHigh := and(sload(add(instrOffset, 2)), 0xff)
+                        dlAddr := or(shl(8, targetHigh), targetLow)
+                        totalModeBytesFetched := 0
+                        instrOffset := dlAddr
+                        instr := and(sload(instrOffset), 0xff)
+                        mode := and(instr, 0x0f)
+                        isLms := and(shr(6, instr), 1)
+                    }
+
+                    if isLms {
+                        // Load Memory Scan: Next 2 bytes are pixel source RAM pointer
+                        let addrLow := and(sload(add(instrOffset, 1)), 0xff)
+                        let addrHigh := and(sload(add(instrOffset, 2)), 0xff)
+                        pixelAddressOffset := or(shl(8, addrHigh), addrLow)
+                        totalModeBytesFetched := add(totalModeBytesFetched, 2)
+                    }
+
+                    // Simulating scanline rendering: Store active mode rendering status
+                    activeMode := mode
+                    totalModeBytesFetched := add(totalModeBytesFetched, 1)
+                }
+
+                mstore(0x00, activeMode) // Mode of the last processed scanline
+                mstore(0x20, pixelAddressOffset) // Pixel memory address resolved
+                mstore(0x40, totalModeBytesFetched) // Total bytes parsed in display list
+                return(0x00, 96)
+            }
+
             revert(0, 0)
         }
     }

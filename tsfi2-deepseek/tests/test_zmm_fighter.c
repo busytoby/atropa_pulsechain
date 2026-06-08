@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "tsfi_zmm_vm.h"
 #include "tsfi_wire_firmware.h"
+#include "lau_yul_thunk.h"
 
 int main() {
     printf("=== TSFi ZMM VM 2D Fighter Physics Solver Test ===\n");
@@ -558,6 +559,34 @@ int main() {
                                     "0000000000000000000000000000000000000000000000000000000000000002"
                                     "0000000000000000000000000000000000000000000000000000000000000000") == 0);
     printf("PASS: resolveWidgetInteraction (Button, Window, Dropdown) tests verified successfully!\n");
+
+    // 23. Test simulateAnticDisplayList (Method 26)
+    // Selector: 8dfb6c41
+    printf("[ZMM] Configuring virtual Display List in storage...\n");
+    // Write Display List instructions to storage starting at key 0x1000
+    lau_yul_thunk_sstore(0x1000, 0x42); // LMS + Mode 2 -> 0x42
+    lau_yul_thunk_sstore(0x1001, 0x50); // Pixel address low = 0x50
+    lau_yul_thunk_sstore(0x1002, 0x20); // Pixel address high = 0x20
+    lau_yul_thunk_sstore(0x1003, 0x82); // Jump + Mode 2 -> 0x82
+    lau_yul_thunk_sstore(0x1004, 0x10); // Jump target low = 0x10
+    lau_yul_thunk_sstore(0x1005, 0x10); // Jump target high = 0x10
+    // Jump target address 0x1010
+    lau_yul_thunk_sstore(0x1010, 0x08); // Mode 8 -> 0x08
+
+    printf("[ZMM] Simulating ANTIC Display List execution (2 scanlines starting at 0x1000)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"8dfb6c41"
+                  "0000000000000000000000000000000000000000000000000000000000001000" // displayListAddress = 0x1000
+                  "0000000000000000000000000000000000000000000000000000000000000000" // startScanline = 0
+                  "0000000000000000000000000000000000000000000000000000000000000002\""); // lineCount = 2
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+
+    // Expected output: activeMode (1st word) = 8 (0x08), pixelAddressOffset (2nd word) = 0x2050 (8272), bytesParsed (3rd word) = 1 (0x01)
+    assert(strcmp(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000008"
+                                    "0000000000000000000000000000000000000000000000000000000000002050"
+                                    "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    printf("PASS: ANTIC Display List LMS parsing, JUMP instruction, and Mode transitions verified successfully!\n");
 
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
