@@ -241,6 +241,21 @@ object "ZMachine" {
                         resultPtr := invPtr
                     }
                 }
+                case 0x7377696e { // "swin" (Swing)
+                    mstore(resultPtr, 0x51756173696d6f646f207377696e6773206f6e2074686520726f70653a0a0000) // "Quasimodo swings on the rope:\n"
+                    let ptr := add(resultPtr, 29)
+                    
+                    mstore(ptr, 0x2020743d30733a205b583d20372c20593d20375d0a0000000000000000000000) // "  t=0s: [X= 7, Y= 7]\n"
+                    ptr := add(ptr, 21)
+                    mstore(ptr, 0x2020743d31733a205b583d20342c20593d20395d0a0000000000000000000000) // "  t=1s: [X= 4, Y= 9]\n"
+                    ptr := add(ptr, 21)
+                    mstore(ptr, 0x2020743d32733a205b583d2d332c20593d20395d0a0000000000000000000000) // "  t=2s: [X=-3, Y= 9]\n"
+                    ptr := add(ptr, 21)
+                    mstore(ptr, 0x2020743d33733a205b583d2d372c20593d20375d000000000000000000000000) // "  t=3s: [X=-7, Y= 7]"
+                    ptr := add(ptr, 20)
+                    
+                    resultPtr := ptr
+                }
                 case 0x6e6f7274 { // "nort" (North)
                     let exits := sload(add(3200000, roomId))
                     let dest := and(shr(24, exits), 0xff)
