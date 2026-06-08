@@ -116,10 +116,51 @@ void lau_vram_write_char(LauVRAM *vram, char c) {
             vram->ansi_state = 2;
             memset(vram->ansi_params, 0, sizeof(vram->ansi_params));
             vram->ansi_param_count = 0;
+        } else if (c == '\x1b') {
+            vram->ansi_state = 3; // CompuServe Vidtex State
         } else {
             // Unhandled Esc sequence
             vram->ansi_state = 0;
         }
+    } else if (vram->ansi_state == 3) {
+        if (c == 'd') {
+            // Clear Screen and Home Cursor
+            for (int y = 0; y < LAU_VRAM_ROWS; y++) {
+                for (int x = 0; x < LAU_VRAM_COLS; x++) {
+                    vram->grid[y][x].character = ' ';
+                    vram->grid[y][x].fg_color = vram->current_fg;
+                    vram->grid[y][x].bg_color = vram->current_bg;
+                    vram->grid[y][x].attributes = 0;
+                    vram->dirty_grid[y][x] = true;
+                }
+            }
+            vram->cursor_x = 0;
+            vram->cursor_y = 0;
+            vram->is_dirty = true;
+            vram->ansi_state = 0;
+        } else if (c == 'I') {
+            // Wait for position coordinates
+            vram->ansi_state = 4;
+        } else {
+            vram->ansi_state = 0;
+        }
+    } else if (vram->ansi_state == 4) {
+        // Col (X) byte. Usually Vidtex offsets coordinates by 32 to avoid control chars, but we accept raw or offset index.
+        int x = (unsigned char)c;
+        if (x >= 32) x -= 32;
+        vram->ansi_params[0] = x;
+        vram->ansi_state = 5;
+    } else if (vram->ansi_state == 5) {
+        // Row (Y) byte.
+        int y = (unsigned char)c;
+        if (y >= 32) y -= 32;
+        vram->cursor_x = vram->ansi_params[0];
+        vram->cursor_y = y;
+        if (vram->cursor_x >= LAU_VRAM_COLS) vram->cursor_x = LAU_VRAM_COLS - 1;
+        if (vram->cursor_y >= LAU_VRAM_ROWS) vram->cursor_y = LAU_VRAM_ROWS - 1;
+        if (vram->cursor_x < 0) vram->cursor_x = 0;
+        if (vram->cursor_y < 0) vram->cursor_y = 0;
+        vram->ansi_state = 0;
     } else if (vram->ansi_state == 2) {
         if (c >= '0' && c <= '9') {
             if (vram->ansi_param_count == 0) vram->ansi_param_count = 1;

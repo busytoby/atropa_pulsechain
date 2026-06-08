@@ -789,6 +789,64 @@ static void execute_command(const char *cmd) {
     cmd_copy[sizeof(cmd_copy) - 1] = '\0';
     char *first_word = strtok(cmd_copy, " \t");
     
+    if (first_word && strcasecmp(first_word, "GO") == 0) {
+        char *target = strtok(NULL, " \t");
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        if (!target || strcasecmp(target, "MENU") == 0) {
+            // Emulate Vidtex clear screen ESC ESC d
+            lau_vram_write_string(g_vram, clear_seq, 3);
+            const char *menu = 
+                "\r\n"
+                "      CompuServe Information Service      \r\n"
+                "==========================================\r\n"
+                "  1 GO VM     - Inspect Yul CPU VM State  \r\n"
+                "  2 GO RAG    - Vector DB RAG Gallery     \r\n"
+                "  3 GO HELP   - Escape Parser Utilities   \r\n"
+                "  4 EXIT      - Close Terminal Emulator   \r\n"
+                "==========================================\r\n"
+                "Enter GO <target> or option number: \r\n";
+            lau_vram_write_string(g_vram, menu, strlen(menu));
+        } else if (strcasecmp(target, "1") == 0 || strcasecmp(target, "VM") == 0) {
+            lau_vram_write_string(g_vram, clear_seq, 3);
+            const char *vm_info =
+                "\r\n"
+                "--- CompuServe CIS: VM Status Room ---\r\n"
+                "Active CPU: Yul cpu6502 core\r\n"
+                "Storage MMIO Test Injection Register: $D540 (54592)\r\n"
+                "To return to menu, type GO MENU\r\n";
+            lau_vram_write_string(g_vram, vm_info, strlen(vm_info));
+        } else if (strcasecmp(target, "2") == 0 || strcasecmp(target, "RAG") == 0) {
+            lau_vram_write_string(g_vram, clear_seq, 3);
+            const char *rag_info =
+                "\r\n"
+                "--- CompuServe CIS: RAG Shooting Gallery ---\r\n"
+                "To run a RAG search simulation, type:\r\n"
+                "  RAG <query>\r\n"
+                "e.g., RAG crow\r\n"
+                "This will save visual snapshots as both JPG and GIF!\r\n"
+                "To return to menu, type GO MENU\r\n";
+            lau_vram_write_string(g_vram, rag_info, strlen(rag_info));
+        } else if (strcasecmp(target, "3") == 0 || strcasecmp(target, "HELP") == 0) {
+            lau_vram_write_string(g_vram, clear_seq, 3);
+            const char *help_info =
+                "\r\n"
+                "--- CompuServe CIS: Escape Parser Utilities ---\r\n"
+                "Our terminal translates standard ANSI/Vidtex sequences:\r\n"
+                "  - ESC ESC d           : Clears screen & cursor home\r\n"
+                "  - ESC ESC I <col> <row>: Positions cursor (offset 32)\r\n"
+                "  - ESC [ <params> m    : Sets ANSI SGR colors\r\n"
+                "To return to menu, type GO MENU\r\n";
+            lau_vram_write_string(g_vram, help_info, strlen(help_info));
+        } else if (strcasecmp(target, "4") == 0) {
+            running = false;
+        } else {
+            char error[256];
+            sprintf(error, "\r\nInvalid GO target: \"%s\". Type GO MENU for options.\r\n", target);
+            lau_vram_write_string(g_vram, error, strlen(error));
+        }
+        return;
+    }
+    
     if (first_word && strcasecmp(first_word, "RAG") == 0) {
         char *query = strtok(NULL, "");
         if (!query) query = "Yul CPU compilation";
