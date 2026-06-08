@@ -767,6 +767,124 @@ object "GraphicsSystem" {
                 revert(0, 0)
             }
 
+            // ----------------------------------------------------------------
+            // Method 12: animateSkeletalJoint(parentX, parentY, parentZ, localOffsetX, localOffsetY, localOffsetZ, angleStart, angleEnd, t)
+            // Selector: 0x8bfb5a7b
+            // ----------------------------------------------------------------
+            if eq(selector, 0x8bfb5a7b) {
+                let parentX := calldataload(4)
+                let parentY := calldataload(36)
+                let parentZ := calldataload(68)
+                let localOffsetX := calldataload(100)
+                let localOffsetY := calldataload(132)
+                let localOffsetZ := calldataload(164)
+                let angleStart := calldataload(196)
+                let angleEnd := calldataload(228)
+                let t := calldataload(260) // 0 to 1000 representing LERP (0.0 to 1.0)
+
+                // 1. Keyframe Angle Interpolation (LERP)
+                let angleDiff := 0
+                let isNegativeAngle := lt(angleEnd, angleStart)
+                if isNegativeAngle {
+                    angleDiff := sub(angleStart, angleEnd)
+                }
+                if iszero(isNegativeAngle) {
+                    angleDiff := sub(angleEnd, angleStart)
+                }
+
+                let angleLerp := div(mul(angleDiff, t), 1000)
+                let angleDeg := angleStart
+                if isNegativeAngle {
+                    angleDeg := sub(angleStart, angleLerp)
+                }
+                if iszero(isNegativeAngle) {
+                    angleDeg := add(angleStart, angleLerp)
+                }
+
+                // Ensure angle is bounded within 0-360
+                angleDeg := mod(angleDeg, 360)
+
+                // 2. Trigonometric Lookup for angleDeg
+                let scale := 1000000000000000000
+                let cosVal := 1000000000000000000
+                let sinVal := 0
+
+                // Map angle to first quadrant (0-90) for high precision lookup
+                let quadrant := div(angleDeg, 90)
+                let quadAngle := mod(angleDeg, 90)
+                
+                if eq(quadAngle, 15) {
+                    sinVal := 258819045102520762
+                    cosVal := 965925826289068286
+                }
+                if eq(quadAngle, 30) {
+                    sinVal := 500000000000000000
+                    cosVal := 866025403784438646
+                }
+                if eq(quadAngle, 45) {
+                    sinVal := 707106781186547524
+                    cosVal := 707106781186547524
+                }
+                if eq(quadAngle, 60) {
+                    sinVal := 866025403784438646
+                    cosVal := 500000000000000000
+                }
+                if eq(quadAngle, 75) {
+                    sinVal := 965925826289068286
+                    cosVal := 258819045102520762
+                }
+                if eq(quadAngle, 90) {
+                    sinVal := 1000000000000000000
+                    cosVal := 0
+                }
+                if and(gt(quadAngle, 0), lt(quadAngle, 90)) {
+                    if iszero(eq(quadAngle, 15)) {
+                        if iszero(eq(quadAngle, 30)) {
+                            if iszero(eq(quadAngle, 45)) {
+                                if iszero(eq(quadAngle, 60)) {
+                                    if iszero(eq(quadAngle, 75)) {
+                                        sinVal := mul(quadAngle, 17453292519943295)
+                                        cosVal := mul(sub(90, quadAngle), 17453292519943295)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Adjust sin/cos sign based on quadrant
+                if eq(quadrant, 1) { // 90 to 180 degrees
+                    let temp := sinVal
+                    sinVal := cosVal
+                    cosVal := sub(0, temp)
+                }
+                if eq(quadrant, 2) { // 180 to 270 degrees
+                    sinVal := sub(0, sinVal)
+                    cosVal := sub(0, cosVal)
+                }
+                if eq(quadrant, 3) { // 270 to 360 degrees
+                    let temp := sinVal
+                    sinVal := sub(0, cosVal)
+                    cosVal := temp
+                }
+
+                // 3. 2D Rotation on XY plane
+                // xRot = (localOffsetX * cosVal - localOffsetY * sinVal) / scale
+                // yRot = (localOffsetX * sinVal + localOffsetY * cosVal) / scale
+                let xRot := div(sub(mul(localOffsetX, cosVal), mul(localOffsetY, sinVal)), scale)
+                let yRot := div(add(mul(localOffsetX, sinVal), mul(localOffsetY, cosVal)), scale)
+
+                // 4. Translate by parent coordinate
+                let childX := add(parentX, xRot)
+                let childY := add(parentY, yRot)
+                let childZ := add(parentZ, localOffsetZ)
+
+                mstore(0x00, childX)
+                mstore(0x20, childY)
+                mstore(0x40, childZ)
+                return(0x00, 96)
+            }
+
             revert(0, 0)
         }
     }

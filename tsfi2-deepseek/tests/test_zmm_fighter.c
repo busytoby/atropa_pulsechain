@@ -214,6 +214,38 @@ int main() {
     assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
     printf("PASS: Xonox Double-Ender Side B (Chuck Norris Combat) simulation verified!\n");
 
+    // 10. Test animateSkeletalJoint (Method 12)
+    // Selector: 8bfb5a7b
+    // parentX = 10, parentY = 20, parentZ = 30
+    // localOffsetX = 5, localOffsetY = 0, localOffsetZ = 10
+    // angleStart = 0, angleEnd = 90, t = 500 (LERP to 45 degrees)
+    // Expected rotated offsets: cos(45)=0.7071, sin(45)=0.7071 -> xRot = 3.5 -> 3, yRot = 3.5 -> 3
+    // Expected children: childX = 10 + 3 = 13, childY = 20 + 3 = 23, childZ = 30 + 10 = 40
+    printf("[ZMM] Simulating Keyframe-Interpolated Skeletal Joint Rotation (LERP to 45 deg)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"8bfb5a7b"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x"
+                  "%064x\"",
+            10, 20, 30, 5, 0, 10, 0, 90, 500);
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    
+    // We expect:
+    // childX (1st word) = 13 (0x0d)
+    // childY (2nd word) = 23 (0x17)
+    // childZ (3rd word) = 40 (0x28)
+    assert(strstr(vm.output_buffer, "000000000000000000000000000000000000000000000000000000000000000d") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000017") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000028") != NULL);
+    printf("PASS: Skeletal joint keyframe interpolation and coordinate translations verified successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;
