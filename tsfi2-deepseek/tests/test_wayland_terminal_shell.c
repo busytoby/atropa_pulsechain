@@ -1992,41 +1992,85 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                 lau_vram_write_string(g_vram, "\r\n", 2);
                 if (cmd_len > 0) {
                     cmd_buf[cmd_len] = '\0';
-                    
-                    // Setup calldata for parseCommand(address player, bytes cmd)
-                    // selector: 0xf1ba03f9
-                    uint8_t calldata[512] = {0};
-                    calldata[0] = 0xf1; calldata[1] = 0xba; calldata[2] = 0x03; calldata[3] = 0xf9;
-                    calldata[35] = 0x01; // player address
-                    calldata[67] = 0x40; // offset
-                    calldata[96] = (cmd_len >> 24) & 0xFF;
-                    calldata[97] = (cmd_len >> 16) & 0xFF;
-                    calldata[98] = (cmd_len >> 8) & 0xFF;
-                    calldata[99] = cmd_len & 0xFF;
-                    memcpy(&calldata[100], cmd_buf, cmd_len);
-                    
-                    size_t string_padded_len = ((cmd_len + 31) / 32) * 32;
-                    size_t calldatasize = 4 + 32 + 32 + 32 + string_padded_len;
-                    
-                    uint8_t retval[4096] = {0};
-                    size_t retval_len = sizeof(retval);
                     extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
-                    if (lau_yul_thunk_execute("zmachine", calldata, calldatasize, retval, &retval_len)) {
-                        if (retval_len >= 64) {
-                            uint32_t str_len = (retval[60] << 24) | (retval[61] << 16) | (retval[62] << 8) | retval[63];
-                            if (str_len > 511) str_len = 511;
-                            char response[512] = {0};
-                            memcpy(response, &retval[64], str_len);
-                            response[str_len] = '\0';
-                            
-                            lau_vram_write_string(g_vram, "  ", 2);
-                            lau_vram_write_string(g_vram, response, strlen(response));
-                            lau_vram_write_string(g_vram, "\r\n", 2);
+                    
+                    if (strncasecmp(cmd_buf, "create ", 7) == 0) {
+                        char *p = cmd_buf + 7;
+                        uint32_t create_roomId = strtoul(p, &p, 10);
+                        while (*p == ' ' || *p == '\t') p++;
+                        unsigned int n = 0, s = 0, e = 0, w = 0;
+                        sscanf(p, "%u,%u,%u,%u", &n, &s, &e, &w);
+                        uint64_t create_exits = ((uint64_t)n << 24) | ((uint64_t)s << 16) | ((uint64_t)e << 8) | w;
+                        
+                        while (*p && *p != ' ' && *p != '\t') p++;
+                        while (*p == ' ' || *p == '\t') p++;
+                        const char *create_desc = p;
+                        size_t create_desc_len = strlen(create_desc);
+                        
+                        uint8_t calldata[1024] = {0};
+                        calldata[0] = 0xd6; calldata[1] = 0xc5; calldata[2] = 0x26; calldata[3] = 0x8c;
+                        calldata[35] = create_roomId & 0xFF;
+                        calldata[34] = (create_roomId >> 8) & 0xFF;
+                        calldata[33] = (create_roomId >> 16) & 0xFF;
+                        calldata[32] = (create_roomId >> 24) & 0xFF;
+                        calldata[67] = 0x60; // offset 96
+                        calldata[99] = create_exits & 0xFF;
+                        calldata[98] = (create_exits >> 8) & 0xFF;
+                        calldata[97] = (create_exits >> 16) & 0xFF;
+                        calldata[96] = (create_exits >> 24) & 0xFF;
+                        calldata[131] = create_desc_len & 0xFF;
+                        calldata[130] = (create_desc_len >> 8) & 0xFF;
+                        calldata[129] = (create_desc_len >> 16) & 0xFF;
+                        calldata[128] = (create_desc_len >> 24) & 0xFF;
+                        memcpy(&calldata[132], create_desc, create_desc_len);
+                        
+                        size_t string_padded_len = ((create_desc_len + 31) / 32) * 32;
+                        size_t calldatasize = 4 + 32 + 32 + 32 + 32 + string_padded_len;
+                        
+                        uint8_t retval[32] = {0};
+                        size_t retval_len = sizeof(retval);
+                        if (lau_yul_thunk_execute("zmachine", calldata, calldatasize, retval, &retval_len)) {
+                            char ok_msg[128];
+                            snprintf(ok_msg, sizeof(ok_msg), "  [Room %u created. Exits N=%u S=%u E=%u W=%u]\r\n", create_roomId, n, s, e, w);
+                            lau_vram_write_string(g_vram, ok_msg, strlen(ok_msg));
                         } else {
-                            lau_vram_write_string(g_vram, "  Error: Invalid VM return length.\r\n", 36);
+                            lau_vram_write_string(g_vram, "  Error: Failed to register room on-chain.\r\n", 44);
                         }
                     } else {
-                        lau_vram_write_string(g_vram, "  Error: Z-Machine Yul execution failed.\r\n", 42);
+                        // Setup calldata for parseCommand(address player, bytes cmd)
+                        // selector: 0xf1ba03f9
+                        uint8_t calldata[512] = {0};
+                        calldata[0] = 0xf1; calldata[1] = 0xba; calldata[2] = 0x03; calldata[3] = 0xf9;
+                        calldata[35] = 0x01; // player address
+                        calldata[67] = 0x40; // offset
+                        calldata[96] = (cmd_len >> 24) & 0xFF;
+                        calldata[97] = (cmd_len >> 16) & 0xFF;
+                        calldata[98] = (cmd_len >> 8) & 0xFF;
+                        calldata[99] = cmd_len & 0xFF;
+                        memcpy(&calldata[100], cmd_buf, cmd_len);
+                        
+                        size_t string_padded_len = ((cmd_len + 31) / 32) * 32;
+                        size_t calldatasize = 4 + 32 + 32 + 32 + string_padded_len;
+                        
+                        uint8_t retval[4096] = {0};
+                        size_t retval_len = sizeof(retval);
+                        if (lau_yul_thunk_execute("zmachine", calldata, calldatasize, retval, &retval_len)) {
+                            if (retval_len >= 64) {
+                                uint32_t str_len = (retval[60] << 24) | (retval[61] << 16) | (retval[62] << 8) | retval[63];
+                                if (str_len > 511) str_len = 511;
+                                char response[512] = {0};
+                                memcpy(response, &retval[64], str_len);
+                                response[str_len] = '\0';
+                                
+                                lau_vram_write_string(g_vram, "  ", 2);
+                                lau_vram_write_string(g_vram, response, strlen(response));
+                                lau_vram_write_string(g_vram, "\r\n", 2);
+                            } else {
+                                lau_vram_write_string(g_vram, "  Error: Invalid VM return length.\r\n", 36);
+                            }
+                        } else {
+                            lau_vram_write_string(g_vram, "  Error: Z-Machine Yul execution failed.\r\n", 42);
+                        }
                     }
                     
                     cmd_len = 0;

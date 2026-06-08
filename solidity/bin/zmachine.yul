@@ -99,11 +99,33 @@ object "ZMachine" {
                 return(0, 32)
             }
 
+            case 0xd6c5268c { // createRoom(uint256,bytes,uint256)
+                let roomId := calldataload(4)
+                let descOffset := calldataload(36)
+                let exits := calldataload(68)
+                let descLen := calldataload(add(4, descOffset))
+                
+                sstore(add(3200000, roomId), exits)
+                sstore(add(3000000, roomId), descLen)
+                
+                let wordCount := div(add(descLen, 31), 32)
+                for { let i := 0 } lt(i, wordCount) { i := add(i, 1) } {
+                    let word := calldataload(add(add(4, descOffset), add(32, mul(i, 32))))
+                    sstore(add(add(3100000, mul(roomId, 100)), i), word)
+                }
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
             case 0xf1ba03f9 {
                 let player := calldataload(4)
                 let cmdLen := calldataload(68)
                 let firstWord := shr(224, calldataload(100))
                 
+                let roomId := sload(add(4000000, player))
+                if iszero(roomId) { roomId := 1 }
+
                 let resultPtr := 0x40
                 
                 switch firstWord
@@ -118,8 +140,135 @@ object "ZMachine" {
                     }
                 }
                 case 0x6c6f6f6b { // "look"
-                    mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
-                    resultPtr := add(resultPtr, 30)
+                    let customLen := sload(add(3000000, roomId))
+                    if customLen {
+                        let wordCount := div(add(customLen, 31), 32)
+                        for { let i := 0 } lt(i, 10) { i := add(i, 1) } { // safety cap 10 words
+                            if lt(mul(i, 32), customLen) {
+                                let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                mstore(add(resultPtr, mul(i, 32)), val)
+                            }
+                        }
+                        resultPtr := add(resultPtr, customLen)
+                    }
+                    if iszero(customLen) {
+                        if eq(roomId, 1) {
+                            mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
+                            resultPtr := add(resultPtr, 30)
+                        }
+                        if iszero(eq(roomId, 1)) {
+                            mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                            resultPtr := add(resultPtr, 25)
+                        }
+                    }
+                }
+                case 0x6e6f7274 { // "nort" (North)
+                    let exits := sload(add(3200000, roomId))
+                    let dest := and(shr(24, exits), 0xff)
+                    if dest {
+                        sstore(add(4000000, player), dest)
+                        roomId := dest
+                        let customLen := sload(add(3000000, roomId))
+                        if customLen {
+                            let wordCount := div(add(customLen, 31), 32)
+                            for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                                if lt(mul(i, 32), customLen) {
+                                    let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                    mstore(add(resultPtr, mul(i, 32)), val)
+                                }
+                            }
+                            resultPtr := add(resultPtr, customLen)
+                        }
+                        if iszero(customLen) {
+                            mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                            resultPtr := add(resultPtr, 25)
+                        }
+                    }
+                    if iszero(dest) {
+                        mstore(resultPtr, 0x596f752063616e6e6f7420676f2074686174207761792e000000000000000000) // "You cannot go that way."
+                        resultPtr := add(resultPtr, 23)
+                    }
+                }
+                case 0x736f7574 { // "sout" (South)
+                    let exits := sload(add(3200000, roomId))
+                    let dest := and(shr(16, exits), 0xff)
+                    if dest {
+                        sstore(add(4000000, player), dest)
+                        roomId := dest
+                        let customLen := sload(add(3000000, roomId))
+                        if customLen {
+                            let wordCount := div(add(customLen, 31), 32)
+                            for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                                if lt(mul(i, 32), customLen) {
+                                    let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                    mstore(add(resultPtr, mul(i, 32)), val)
+                                }
+                            }
+                            resultPtr := add(resultPtr, customLen)
+                        }
+                        if iszero(customLen) {
+                            mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                            resultPtr := add(resultPtr, 25)
+                        }
+                    }
+                    if iszero(dest) {
+                        mstore(resultPtr, 0x596f752063616e6e6f7420676f2074686174207761792e000000000000000000) // "You cannot go that way."
+                        resultPtr := add(resultPtr, 23)
+                    }
+                }
+                case 0x65617374 { // "east" (East)
+                    let exits := sload(add(3200000, roomId))
+                    let dest := and(shr(8, exits), 0xff)
+                    if dest {
+                        sstore(add(4000000, player), dest)
+                        roomId := dest
+                        let customLen := sload(add(3000000, roomId))
+                        if customLen {
+                            let wordCount := div(add(customLen, 31), 32)
+                            for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                                if lt(mul(i, 32), customLen) {
+                                    let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                    mstore(add(resultPtr, mul(i, 32)), val)
+                                }
+                            }
+                            resultPtr := add(resultPtr, customLen)
+                        }
+                        if iszero(customLen) {
+                            mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                            resultPtr := add(resultPtr, 25)
+                        }
+                    }
+                    if iszero(dest) {
+                        mstore(resultPtr, 0x596f752063616e6e6f7420676f2074686174207761792e000000000000000000) // "You cannot go that way."
+                        resultPtr := add(resultPtr, 23)
+                    }
+                }
+                case 0x77657374 { // "west" (West)
+                    let exits := sload(add(3200000, roomId))
+                    let dest := and(exits, 0xff)
+                    if dest {
+                        sstore(add(4000000, player), dest)
+                        roomId := dest
+                        let customLen := sload(add(3000000, roomId))
+                        if customLen {
+                            let wordCount := div(add(customLen, 31), 32)
+                            for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                                if lt(mul(i, 32), customLen) {
+                                    let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                    mstore(add(resultPtr, mul(i, 32)), val)
+                                }
+                            }
+                            resultPtr := add(resultPtr, customLen)
+                        }
+                        if iszero(customLen) {
+                            mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                            resultPtr := add(resultPtr, 25)
+                        }
+                    }
+                    if iszero(dest) {
+                        mstore(resultPtr, 0x596f752063616e6e6f7420676f2074686174207761792e000000000000000000) // "You cannot go that way."
+                        resultPtr := add(resultPtr, 23)
+                    }
                 }
                 case 0x77697a61 { // "wizard"
                     mstore(resultPtr, 0x5a6f726c6f6b207468652057697a6172642067726565747320796f7520776974) // "Zorlok the Wizard greets you wit"
