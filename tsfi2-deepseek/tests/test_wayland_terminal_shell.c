@@ -208,18 +208,59 @@ static void execute_command(const char *cmd) {
         char *query = strtok(NULL, "");
         if (!query) query = "Yul CPU compilation";
         
+        double similarity1 = 0.40;
+        double similarity2 = 0.40;
+        double similarity3 = 0.40;
+        
+        if (strcasestr(query, "crow") || strcasestr(query, "allow") || strcasestr(query, "ballet")) {
+            similarity1 = 0.94;
+            similarity2 = 0.45;
+            similarity3 = 0.32;
+        } else if (strcasestr(query, "calc") || strcasestr(query, "math") || strcasestr(query, "engine")) {
+            similarity1 = 0.38;
+            similarity2 = 0.91;
+            similarity3 = 0.52;
+        } else if (strcasestr(query, "yul") || strcasestr(query, "vm") || strcasestr(query, "state")) {
+            similarity1 = 0.29;
+            similarity2 = 0.48;
+            similarity3 = 0.96;
+        } else {
+            unsigned int h = 0;
+            for (int i = 0; query[i] != '\0'; i++) h = h * 31 + query[i];
+            similarity1 = 0.4 + (h % 20) / 100.0;
+            similarity2 = 0.4 + ((h >> 5) % 20) / 100.0;
+            similarity3 = 0.4 + ((h >> 10) % 20) / 100.0;
+        }
+        
+        int target_x = 250, target_y = 120;
+        int doc_idx = 1;
+        const char *doc_name = "solidity/bin/cpu6502.yul [Solidity CPU ROM]";
+        const char *doc_context = "Solidity Yul CPU contract is initialized at virtual address 0x1\r\nand provides full instruction decoding support for 6502/6509 opcodes.";
+        
+        if (similarity2 > similarity1 && similarity2 > similarity3) {
+            target_x = 550; target_y = 180;
+            doc_idx = 2;
+            doc_name = "benchmarks/docs/TSFI_DECISION_ENGINE.md [Decision Engine]";
+            doc_context = "Decision Engine runs fast-path branching algorithms\r\nand optimizes matrix coprocessor inputs.";
+        } else if (similarity3 > similarity1 && similarity3 > similarity2) {
+            target_x = 400; target_y = 300;
+            doc_idx = 3;
+            doc_name = "src/tsfi_zmm_vm.c [ZMM VM State]";
+            doc_context = "ZMM VM provides sandboxed, high-performance CPU simulation\r\nwith registered memory banks and page translation tables.";
+        }
+        
         char txt[1024];
         sprintf(txt, "\r\n=== RAG Vector Database Search ===\r\n"
                      "Query: \"%s\"\r\n"
                      "Initializing VIDTEX RAG Shooting Gallery Scatter Plot...\r\n"
-                     "Target Duck (Doc 1) at (250, 120) [Solidity CPU ROM]\r\n"
-                     "Target Duck (Doc 2) at (550, 180) [Decision Engine]\r\n"
-                     "Target Duck (Doc 3) at (400, 300) [ZMM VM State]\r\n\r\n"
-                     "Firing Query Projectile from (400, 360)...\r\n", query);
+                     "Target Duck (Doc 1) at (250, 120) [Solidity CPU ROM] Similarity: %.2f\r\n"
+                     "Target Duck (Doc 2) at (550, 180) [Decision Engine] Similarity: %.2f\r\n"
+                     "Target Duck (Doc 3) at (400, 300) [ZMM VM State] Similarity: %.2f\r\n\r\n"
+                     "Firing Query Projectile towards closest cluster (Doc %d)...\r\n", 
+                     query, similarity1, similarity2, similarity3, doc_idx);
         lau_vram_write_string(g_vram, txt, strlen(txt));
         
         int start_x = 400, start_y = 360;
-        int target_x = 250, target_y = 120;
         
         // 1. Run Shooting Gallery Scatter Plot Simulation
         for (int frame = 1; frame <= 12; frame++) {
@@ -246,22 +287,30 @@ static void execute_command(const char *cmd) {
         }
         
         char hit_txt[1024];
-        sprintf(hit_txt, "\r\n\r\n💥 DIRECT HIT! Similarity Threshold Exceeded at (250, 120)!\r\n"
+        sprintf(hit_txt, "\r\n\r\n💥 DIRECT HIT! Similarity Threshold Exceeded at (%d, %d)!\r\n"
                          "🎵 Triggered SID Sound Crash on musicMaker (54272 -> 120, 54273 -> 15)\r\n"
-                         "Transitioning to Force-Directed Relation Graph...\r\n");
+                         "Transitioning to Force-Directed Relation Graph...\r\n", target_x, target_y);
         lau_vram_write_string(g_vram, hit_txt, strlen(hit_txt));
         
         // Explosion flash
         char exp_buf[256];
-        sprintf(exp_buf, "\x1b[G2;250;120;25;m\x1b[G1;250;120;235;105;m\x1b[G1;250;120;265;105;m\x1b[G1;250;120;235;135;m\x1b[G1;250;120;265;135;m");
+        sprintf(exp_buf, "\x1b[G2;%d;%d;25;m\x1b[G1;%d;%d;%d;%d;m\x1b[G1;%d;%d;%d;%d;m\x1b[G1;%d;%d;%d;%d;m\x1b[G1;%d;%d;%d;%d;m", 
+                target_x, target_y, target_x, target_y, target_x - 15, target_y - 15,
+                target_x, target_y, target_x + 15, target_y - 15,
+                target_x, target_y, target_x - 15, target_y + 15,
+                target_x, target_y, target_x + 15, target_y + 15);
         terminal_write_string(g_vram, exp_buf, strlen(exp_buf));
         g_vram->is_dirty = true;
         render_terminal_display();
         usleep(300000); // Wait 300ms for explosion impact
         
         // 2. Run Force-Directed Graph Layout Simulation
-        double rx[4] = {400.0, 250.0, 550.0, 400.0};
-        double ry[4] = {200.0, 120.0, 180.0, 300.0};
+        double rx[4] = {400.0, (double)target_x, 550.0, 400.0};
+        double ry[4] = {200.0, (double)target_y, 180.0, 300.0};
+        // Correct starting overlaps if targeting another node
+        if (doc_idx == 2) { rx[1] = 250.0; ry[1] = 120.0; rx[2] = (double)target_x; ry[2] = (double)target_y; }
+        else if (doc_idx == 3) { rx[1] = 250.0; ry[1] = 120.0; rx[3] = (double)target_x; ry[3] = (double)target_y; }
+        
         double vx[4] = {0.0, 0.0, 0.0, 0.0};
         double vy[4] = {0.0, 0.0, 0.0, 0.0};
         double rest_len[4] = {0.0, 120.0, 150.0, 130.0};
@@ -350,11 +399,11 @@ static void execute_command(const char *cmd) {
             usleep(60000);
         }
         
-        char context_txt[1024];
-        sprintf(context_txt, "\r\n\r\nForce Graph Settle Complete. (Relationship graph displayed)\r\n"
-                             "Retrieved Context: Solidity Yul CPU contract is initialized at virtual address 0x1\r\n"
-                             "and provides full instruction decoding support for 6502/6509 opcodes.\r\n"
-                             "==================================\r\n");
+        char context_txt[2048];
+        sprintf(context_txt, "\r\n\r\nForce Graph Settle Complete.\r\n"
+                             "Matched Document: %s\r\n"
+                             "Retrieved Context:\r\n%s\r\n"
+                             "==================================\r\n", doc_name, doc_context);
         lau_vram_write_string(g_vram, context_txt, strlen(context_txt));
         
         g_vram->is_dirty = true;
