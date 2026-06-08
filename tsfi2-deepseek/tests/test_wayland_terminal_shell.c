@@ -727,6 +727,80 @@ static void execute_command(const char *cmd) {
         return;
     }
     
+    if (first_word && strcasecmp(first_word, "HMI") == 0) {
+        char *hmi_sub = strtok(NULL, " \t");
+        if (hmi_sub) {
+            if (strcasecmp(hmi_sub, "STATUS") == 0) {
+                char payload[256];
+                sprintf(payload, "WIDTH=%d;HEIGHT=%d;VM=ACTIVE;GFX_COUNT=%d", win_width, win_height, gfx_primitive_count);
+                
+                unsigned char chk = 'S';
+                for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+                
+                char rsp[512];
+                int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01S%s\x03%02X\r\n", payload, chk);
+                lau_vram_write_string(g_vram, rsp, len);
+            } else if (strcasecmp(hmi_sub, "GFX") == 0) {
+                char *shape_type = strtok(NULL, " \t");
+                char *sx = strtok(NULL, " \t");
+                char *sy = strtok(NULL, " \t");
+                if (shape_type && sx && sy) {
+                    int x = atoi(sx);
+                    int y = atoi(sy);
+                    add_query_icon(shape_type, x, y, 0xFF50FA7B);
+                    char payload[256];
+                    sprintf(payload, "GFX_ADD=%s;X=%d;Y=%d;OK", shape_type, x, y);
+                    unsigned char chk = 'G';
+                    for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+                    char rsp[512];
+                    int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01G%s\x03%02X\r\n", payload, chk);
+                    lau_vram_write_string(g_vram, rsp, len);
+                    g_vram->is_dirty = true;
+                } else {
+                    char payload[256] = "ERR=INVALID_GFX_PARAMS";
+                    unsigned char chk = 'E';
+                    for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+                    char rsp[512];
+                    int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01E%s\x03%02X\r\n", payload, chk);
+                    lau_vram_write_string(g_vram, rsp, len);
+                }
+            } else if (strcasecmp(hmi_sub, "FILE") == 0) {
+                char *filename = strtok(NULL, " \t");
+                if (filename) {
+                    char payload[256];
+                    sprintf(payload, "FILE=%s;BYTES=2048;TRANSFER=B_PLUS;OK", filename);
+                    unsigned char chk = 'F';
+                    for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+                    char rsp[512];
+                    int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01F%s\x03%02X\r\n", payload, chk);
+                    lau_vram_write_string(g_vram, rsp, len);
+                } else {
+                    char payload[256] = "ERR=MISSING_FILENAME";
+                    unsigned char chk = 'E';
+                    for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+                    char rsp[512];
+                    int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01E%s\x03%02X\r\n", payload, chk);
+                    lau_vram_write_string(g_vram, rsp, len);
+                }
+            } else {
+                char payload[256] = "ERR=UNKNOWN_HMI_CMD";
+                unsigned char chk = 'E';
+                for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+                char rsp[512];
+                int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01E%s\x03%02X\r\n", payload, chk);
+                lau_vram_write_string(g_vram, rsp, len);
+            }
+        } else {
+            char payload[256] = "ERR=MISSING_HMI_SUB";
+            unsigned char chk = 'E';
+            for (int i = 0; payload[i]; i++) chk += (unsigned char)payload[i];
+            char rsp[512];
+            int len = sprintf(rsp, "\r\n[HMI_FRAME] \x01E%s\x03%02X\r\n", payload, chk);
+            lau_vram_write_string(g_vram, rsp, len);
+        }
+        return;
+    }
+
     // Redirect stdout/stderr of command to VRAM
     int stdout_pipe[2];
     if (pipe(stdout_pipe) == 0) {
