@@ -398,6 +398,8 @@ int main() {
     printf("[TERMINAL] Starting Wayland Yul VM Software-Rendered Terminal Emulator...\n");
 
     tsfi_wire_firmware_init();
+    extern void tsfi_input_init(void);
+    tsfi_input_init();
     LauWireFirmware *fw = tsfi_wire_firmware_get();
     if (!fw) {
         fprintf(stderr, "ERROR: Failed to initialize wire firmware.\n");
