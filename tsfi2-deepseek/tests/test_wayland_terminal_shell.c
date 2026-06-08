@@ -15,6 +15,8 @@
 #include "lau_vram.h"
 #include "tsfi_zmm_vm.h"
 #include "tsfi_staging.h"
+#include "tsfi_vision.h"
+#include "tsfi_jpeg_encoder.h"
 
 // StagingBuffer is defined in tsfi_staging.h
 // draw_debug_codepoint/draw_debug_text are defined in tsfi_staging.h
@@ -448,6 +450,47 @@ static void execute_command(const char *cmd) {
         lau_vram_write_string(g_vram, context_txt, strlen(context_txt));
         
         g_vram->is_dirty = true;
+        
+        // Auto-capture Visual Telemetry using tsfi_vision & tsfi_jpeg_encode
+        printf("[TELEMETRY] Initiating visual capture analysis on RAG layout...\n");
+        fflush(stdout);
+        
+        TSFiResonanceAnalysis analysis = {0};
+        analysis.baseline_similarity = (float)similarity1;
+        analysis.target_correlation = (float)similarity2;
+        analysis.symmetry_stability = (float)similarity3;
+        analysis.progression_ratio = 1.0f;
+        
+        // Save tsfi_vision checkpoint
+        tsfi_vision_save_checkpoint("rag_telemetry", &analysis, back_buffer, win_width, win_height);
+        
+        // Save JPEG screenshot to the artifacts directory
+        unsigned char *rgb = malloc(win_width * win_height * 3);
+        if (rgb) {
+            for (int i = 0; i < win_width * win_height; i++) {
+                uint32_t p = back_buffer[i];
+                uint8_t r = (p >> 16) & 0xFF;
+                uint8_t g = (p >> 8) & 0xFF;
+                uint8_t b = p & 0xFF;
+                rgb[i * 3 + 0] = r;
+                rgb[i * 3 + 1] = g;
+                rgb[i * 3 + 2] = b;
+            }
+            unsigned char *jpeg_data = NULL;
+            unsigned long jpeg_size = 0;
+            int status = tsfi_jpeg_encode(&jpeg_data, &jpeg_size, rgb, win_width, win_height, 90);
+            if (status == 0 && jpeg_data) {
+                FILE *fj = fopen("/home/mariarahel/.gemini/antigravity-cli/brain/5289e240-c025-43c9-95f2-79673251a341/rag_telemetry.jpg", "wb");
+                if (fj) {
+                    fwrite(jpeg_data, 1, jpeg_size, fj);
+                    fclose(fj);
+                    printf("[TELEMETRY] Visual snapshot saved to artifacts successfully.\n");
+                }
+                free(jpeg_data);
+            }
+            free(rgb);
+        }
+        fflush(stdout);
         return;
     }
     
