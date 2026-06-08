@@ -25,6 +25,11 @@ static struct wl_shm *shm = NULL;
 static struct xdg_wm_base *xdg_wm_base = NULL;
 static struct wl_seat *seat = NULL;
 static struct wl_keyboard *keyboard = NULL;
+static struct wl_pointer *pointer = NULL;
+static bool selecting = false;
+static int select_start_x = -1, select_start_y = -1;
+static int select_end_x = -1, select_end_y = -1;
+static int mouse_px = -1, mouse_py = -1;
 
 static struct wl_surface *surface = NULL;
 static struct xdg_surface *xdg_surface = NULL;
@@ -90,6 +95,236 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, 
 static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
     (void)data; (void)keyboard; (void)rate; (void)delay;
 }
+static void execute_command(const char *cmd) {
+    if (strcmp(cmd, "exit") == 0) {
+        running = false;
+        return;
+    }
+    
+    // Redirect stdout/stderr of command to VRAM
+    int stdout_pipe[2];
+    if (pipe(stdout_pipe) == 0) {
+        int old_stdout = dup(STDOUT_FILENO);
+        int old_stderr = dup(STDERR_FILENO);
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        dup2(stdout_pipe[1], STDERR_FILENO);
+        close(stdout_pipe[1]);
+
+        char cmd_copy[512];
+        strncpy(cmd_copy, cmd, sizeof(cmd_copy));
+        cmd_copy[sizeof(cmd_copy) - 1] = '\0';
+        char *first_word = strtok(cmd_copy, " \t");
+        bool is_vm_cmd = false;
+        if (first_word) {
+            if (strcasecmp(first_word, "YULINIT") == 0 ||
+                strcasecmp(first_word, "YULEXEC") == 0 ||
+                strcasecmp(first_word, "SWIFTLOAD") == 0 ||
+                strcasecmp(first_word, "REU") == 0 ||
+                strcasecmp(first_word, "CALC") == 0 ||
+                strcasecmp(first_word, "MEMDUMP") == 0 ||
+                strcasecmp(first_word, "SPRITE") == 0 ||
+                strcasecmp(first_word, "OMNICOMM") == 0) {
+                is_vm_cmd = true;
+            }
+        }
+
+        if (is_vm_cmd) {
+            tsfi_zmm_vm_exec(&vm, cmd);
+        } else {
+            int rc = system(cmd);
+            (void)rc;
+        }
+
+        fflush(stdout);
+        fflush(stderr);
+
+        dup2(old_stdout, STDOUT_FILENO);
+        dup2(old_stderr, STDERR_FILENO);
+        close(old_stdout);
+        close(old_stderr);
+
+        int flags = fcntl(stdout_pipe[0], F_GETFL, 0);
+        fcntl(stdout_pipe[0], F_SETFL, flags | O_NONBLOCK);
+        char read_buf[4096];
+        ssize_t n;
+        while ((n = read(stdout_pipe[0], read_buf, sizeof(read_buf))) > 0) {
+            lau_vram_write_string(g_vram, read_buf, n);
+        }
+        close(stdout_pipe[0]);
+    } else {
+        tsfi_zmm_vm_exec(&vm, cmd);
+    }
+}
+
+static void get_cell_coords(wl_fixed_t fx, wl_fixed_t fy, int *out_x, int *out_y) {
+    int px = wl_fixed_to_int(fx);
+    int py = wl_fixed_to_int(fy);
+    int start_y = 0;
+    int max_rows = (win_height - 80) / 18;
+    if (max_rows < 5) max_rows = 5;
+    if (max_rows > 35) max_rows = 35;
+    if (g_vram && g_vram->cursor_y >= max_rows) {
+        start_y = g_vram->cursor_y - max_rows + 1;
+    }
+    
+    int cell_x = (px - 22) / 10;
+    int cell_y = (py - 67) / 18;
+    
+    if (cell_x >= 0 && cell_x < 120 && cell_y >= 0 && cell_y < max_rows) {
+        *out_x = cell_x;
+        *out_y = start_y + cell_y;
+    } else {
+        *out_x = -1;
+        *out_y = -1;
+    }
+}
+
+static void perform_copy(void) {
+    if (select_start_x < 0 || select_start_y < 0 || select_end_x < 0 || select_end_y < 0) return;
+    
+    int sy = select_start_y, ey = select_end_y;
+    int sx = select_start_x, ex = select_end_x;
+    if (sy > ey || (sy == ey && sx > ex)) {
+        sy = select_end_y; ey = select_start_y;
+        sx = select_end_x; ex = select_start_x;
+    }
+    
+    char copy_buf[8192];
+    int len = 0;
+    
+    for (int y = sy; y <= ey; y++) {
+        int x_start = (y == sy) ? sx : 0;
+        int x_end = (y == ey) ? ex : 120 - 1;
+        
+        for (int x = x_start; x <= x_end; x++) {
+            if (x >= 0 && x < 120 && y >= 0 && y < 60) {
+                char c = (char)g_vram->grid[y][x].character;
+                if (len < (int)sizeof(copy_buf) - 5) {
+                    copy_buf[len++] = c;
+                }
+            }
+        }
+        if (y < ey) {
+            copy_buf[len++] = '\n';
+        }
+    }
+    copy_buf[len] = '\0';
+    
+    while (len > 0 && copy_buf[len - 1] == ' ') {
+        copy_buf[--len] = '\0';
+    }
+    
+    if (len > 0) {
+        FILE *f = popen("wl-copy -p 2>/dev/null || wl-copy 2>/dev/null || xclip -i -selection primary 2>/dev/null", "w");
+        if (f) {
+            fwrite(copy_buf, 1, len, f);
+            pclose(f);
+        }
+    }
+}
+
+static void perform_paste(void) {
+    FILE *f = popen("wl-paste -p 2>/dev/null || wl-paste 2>/dev/null", "r");
+    if (!f) return;
+    char buf[1024];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+        for (size_t i = 0; i < n; i++) {
+            char c = buf[i];
+            if (c >= 32 && c < 127) {
+                if (cmd_len < (int)sizeof(cmd_buf) - 2) {
+                    cmd_buf[cmd_len++] = c;
+                    cmd_buf[cmd_len] = '\0';
+                    lau_vram_write_char(g_vram, c);
+                }
+            } else if (c == '\n' || c == '\r') {
+                lau_vram_write_string(g_vram, "\r\n", 2);
+                if (cmd_len > 0) {
+                    cmd_buf[cmd_len] = '\0';
+                    execute_command(cmd_buf);
+                    cmd_len = 0;
+                    cmd_buf[0] = '\0';
+                }
+                lau_vram_write_string(g_vram, "zmm-vm> ", 8);
+            }
+        }
+    }
+    pclose(f);
+}
+
+static void pointer_handle_enter(void *data, struct wl_pointer *wl_pointer, uint32_t serial, struct wl_surface *wl_surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+    (void)data; (void)wl_pointer; (void)serial; (void)wl_surface; (void)surface_x; (void)surface_y;
+}
+static void pointer_handle_leave(void *data, struct wl_pointer *wl_pointer, uint32_t serial, struct wl_surface *wl_surface) {
+    (void)data; (void)wl_pointer; (void)serial; (void)wl_surface;
+}
+static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+    (void)data; (void)wl_pointer; (void)time;
+    mouse_px = wl_fixed_to_int(surface_x);
+    mouse_py = wl_fixed_to_int(surface_y);
+    if (selecting) {
+        int cx, cy;
+        get_cell_coords(surface_x, surface_y, &cx, &cy);
+        if (cx >= 0 && cy >= 0) {
+            select_end_x = cx;
+            select_end_y = cy;
+            if (g_vram) g_vram->is_dirty = true;
+        }
+    }
+}
+static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
+    (void)data; (void)wl_pointer; (void)serial; (void)time;
+    if (button == 272) {
+        if (state == 1) { // Left press
+            int cx, cy;
+            get_cell_coords(wl_fixed_from_int(mouse_px), wl_fixed_from_int(mouse_py), &cx, &cy);
+            if (cx >= 0 && cy >= 0) {
+                selecting = true;
+                select_start_x = cx;
+                select_start_y = cy;
+                select_end_x = cx;
+                select_end_y = cy;
+                if (g_vram) g_vram->is_dirty = true;
+            }
+        } else if (state == 0) { // Left release
+            if (selecting) {
+                selecting = false;
+                perform_copy();
+                if (g_vram) g_vram->is_dirty = true;
+            }
+        }
+    } else if (button == 274 && state == 1) { // Middle click paste
+        perform_paste();
+    }
+}
+static void pointer_handle_axis(void *data, struct wl_pointer *wl_pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
+    (void)data; (void)wl_pointer; (void)time; (void)axis; (void)value;
+}
+static void pointer_handle_frame(void *data, struct wl_pointer *wl_pointer) {
+    (void)data; (void)wl_pointer;
+}
+static void pointer_handle_axis_source(void *data, struct wl_pointer *wl_pointer, uint32_t axis_source) {
+    (void)data; (void)wl_pointer; (void)axis_source;
+}
+static void pointer_handle_axis_stop(void *data, struct wl_pointer *wl_pointer, uint32_t time, uint32_t axis) {
+    (void)data; (void)wl_pointer; (void)time; (void)axis;
+}
+static void pointer_handle_axis_discrete(void *data, struct wl_pointer *wl_pointer, uint32_t axis, int32_t discrete) {
+    (void)data; (void)wl_pointer; (void)axis; (void)discrete;
+}
+
+static const struct wl_pointer_listener pointer_listener = {
+    .enter = pointer_handle_enter,
+    .leave = pointer_handle_leave,
+    .motion = pointer_handle_motion,
+    .button = pointer_handle_button,
+    .axis = pointer_handle_axis,
+    .frame = pointer_handle_frame,
+    .axis_source = pointer_handle_axis_source,
+    .axis_stop = pointer_handle_axis_stop,
+    .axis_discrete = pointer_handle_axis_discrete
+};
+
 static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
     (void)data; (void)keyboard; (void)serial; (void)time;
     if (state != 1) return; // Only key press
@@ -106,65 +341,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         lau_vram_write_string(g_vram, "\r\n", 2);
         if (cmd_len > 0) {
             cmd_buf[cmd_len] = '\0';
-            if (strcmp(cmd_buf, "exit") == 0) {
-                running = false;
-                return;
-            }
-            
-            // Redirect stdout/stderr of command to VRAM
-            int stdout_pipe[2];
-            if (pipe(stdout_pipe) == 0) {
-                int old_stdout = dup(STDOUT_FILENO);
-                int old_stderr = dup(STDERR_FILENO);
-                dup2(stdout_pipe[1], STDOUT_FILENO);
-                dup2(stdout_pipe[1], STDERR_FILENO);
-                close(stdout_pipe[1]);
-
-                // Determine if it is a VM command or Host command
-                char cmd_copy[512];
-                strncpy(cmd_copy, cmd_buf, sizeof(cmd_copy));
-                cmd_copy[sizeof(cmd_copy) - 1] = '\0';
-                char *first_word = strtok(cmd_copy, " \t");
-                bool is_vm_cmd = false;
-                if (first_word) {
-                    if (strcasecmp(first_word, "YULINIT") == 0 ||
-                        strcasecmp(first_word, "YULEXEC") == 0 ||
-                        strcasecmp(first_word, "SWIFTLOAD") == 0 ||
-                        strcasecmp(first_word, "REU") == 0 ||
-                        strcasecmp(first_word, "CALC") == 0 ||
-                        strcasecmp(first_word, "MEMDUMP") == 0 ||
-                        strcasecmp(first_word, "SPRITE") == 0 ||
-                        strcasecmp(first_word, "OMNICOMM") == 0) {
-                        is_vm_cmd = true;
-                    }
-                }
-
-                if (is_vm_cmd) {
-                    tsfi_zmm_vm_exec(&vm, cmd_buf);
-                } else {
-                    int rc = system(cmd_buf);
-                    (void)rc;
-                }
-
-                fflush(stdout);
-                fflush(stderr);
-
-                dup2(old_stdout, STDOUT_FILENO);
-                dup2(old_stderr, STDERR_FILENO);
-                close(old_stdout);
-                close(old_stderr);
-
-                int flags = fcntl(stdout_pipe[0], F_GETFL, 0);
-                fcntl(stdout_pipe[0], F_SETFL, flags | O_NONBLOCK);
-                char read_buf[4096];
-                ssize_t n;
-                while ((n = read(stdout_pipe[0], read_buf, sizeof(read_buf))) > 0) {
-                    lau_vram_write_string(g_vram, read_buf, n);
-                }
-                close(stdout_pipe[0]);
-            } else {
-                tsfi_zmm_vm_exec(&vm, cmd_buf);
-            }
+            execute_command(cmd_buf);
             cmd_len = 0;
             cmd_buf[0] = '\0';
         }
@@ -200,6 +377,10 @@ static void seat_handle_capabilities(void *data, struct wl_seat *seat, uint32_t 
     if ((caps & WL_SEAT_CAPABILITY_KEYBOARD) && !keyboard) {
         keyboard = wl_seat_get_keyboard(seat);
         wl_keyboard_add_listener(keyboard, &keyboard_listener, NULL);
+    }
+    if ((caps & WL_SEAT_CAPABILITY_POINTER) && !pointer) {
+        pointer = wl_seat_get_pointer(seat);
+        wl_pointer_add_listener(pointer, &pointer_listener, NULL);
     }
 }
 static void seat_handle_name(void *data, struct wl_seat *seat, const char *name) {
@@ -354,7 +535,34 @@ void render_terminal_display(void) {
                 int px = mon_x + (x * char_w);
                 int py = mon_y + (y * char_h);
                 if (px >= 12 && px < win_width - 22 && py >= 57 && py < win_height - 32) {
-                    draw_debug_codepoint(&sb, px, py, cell.character, fg);
+                    bool in_selection = false;
+                    if (selecting && select_start_x >= 0 && select_start_y >= 0 && select_end_x >= 0 && select_end_y >= 0) {
+                        int sy = select_start_y, ey = select_end_y;
+                        int sx = select_start_x, ex = select_end_x;
+                        if (sy > ey || (sy == ey && sx > ex)) {
+                            sy = select_end_y; ey = select_start_y;
+                            sx = select_end_x; ex = select_start_x;
+                        }
+                        if (vram_y > sy && vram_y < ey) in_selection = true;
+                        else if (vram_y == sy && vram_y == ey) in_selection = (x >= sx && x <= ex);
+                        else if (vram_y == sy) in_selection = (x >= sx);
+                        else if (vram_y == ey) in_selection = (x <= ex);
+                    }
+                    
+                    if (in_selection) {
+                        for (int dy = 0; dy < char_h; dy++) {
+                            for (int dx = 0; dx < char_w; dx++) {
+                                int ty = py + dy;
+                                int tx = px + dx;
+                                if (tx >= 12 && tx < win_width - 22 && ty >= 57 && ty < win_height - 32) {
+                                    back_buffer[ty * win_width + tx] = 0xFF44475A; // Dracula selection bg
+                                }
+                            }
+                        }
+                        draw_debug_codepoint(&sb, px, py, cell.character, 0xFFF8F8F2);
+                    } else {
+                        draw_debug_codepoint(&sb, px, py, cell.character, fg);
+                    }
                 }
             }
         }
@@ -396,6 +604,7 @@ int main() {
     }
     g_vram = &fw->vram;
     tsfi_zmm_vm_init(&vm);
+    tsfi_zmm_vm_exec(&vm, "YULINIT \"cpu6502\", \"../solidity/bin/cpu6502.yul\", 1");
 
     display = wl_display_connect(NULL);
     if (!display) {
@@ -522,6 +731,7 @@ int main() {
     if (xdg_surface) xdg_surface_destroy(xdg_surface);
     if (surface) wl_surface_destroy(surface);
     if (keyboard) wl_keyboard_destroy(keyboard);
+    if (pointer) wl_pointer_destroy(pointer);
     if (seat) wl_seat_destroy(seat);
     if (xdg_wm_base) xdg_wm_base_destroy(xdg_wm_base);
     if (shm) wl_shm_destroy(shm);
