@@ -221,6 +221,102 @@ static void add_text(int x, int y, const char *text, uint32_t color) {
         gp->text[sizeof(gp->text) - 1] = '\0';
     }
 }
+static void add_crow(int x, int y, uint32_t color) {
+    // Body / Back
+    add_line(x - 20, y + 5, x + 10, y, color);
+    // Head
+    add_circle(x + 15, y - 5, 6, color);
+    // Beak
+    add_line(x + 20, y - 5, x + 28, y - 3, color);
+    add_line(x + 20, y - 2, x + 28, y - 3, color);
+    // Tail
+    add_line(x - 20, y + 5, x - 35, y + 15, color);
+    add_line(x - 20, y + 5, x - 32, y + 20, color);
+    // Wing 1 (Upwards)
+    add_line(x - 5, y + 2, x - 15, y - 25, color);
+    add_line(x - 15, y - 25, x - 30, y - 20, color);
+    // Wing 2 (Downward/Backwards)
+    add_line(x - 5, y + 2, x - 8, y + 18, color);
+    add_line(x - 8, y + 18, x - 18, y + 22, color);
+}
+static void add_tree(int x, int y, uint32_t color) {
+    // Trunk
+    add_line(x, y + 20, x, y - 10, color);
+    // Leaves (layers of triangles)
+    add_line(x, y - 10, x - 15, y, color);
+    add_line(x - 15, y, x + 15, y, color);
+    add_line(x + 15, y, x, y - 10, color);
+    
+    add_line(x, y - 20, x - 12, y - 10, color);
+    add_line(x - 12, y - 10, x + 12, y - 10, color);
+    add_line(x + 12, y - 10, x, y - 20, color);
+}
+static void add_cat(int x, int y, uint32_t color) {
+    // Body circle
+    add_circle(x, y, 10, color);
+    // Head circle
+    add_circle(x + 12, y - 6, 6, color);
+    // Ears
+    add_line(x + 9, y - 11, x + 11, y - 16, color);
+    add_line(x + 11, y - 16, x + 13, y - 11, color);
+    // Tail
+    add_line(x - 10, y, x - 18, y - 12, color);
+}
+static void add_fish(int x, int y, uint32_t color) {
+    // Body outline
+    add_line(x - 15, y, x, y - 8, color);
+    add_line(x, y - 8, x + 15, y, color);
+    add_line(x + 15, y, x, y + 8, color);
+    add_line(x, y + 8, x - 15, y, color);
+    // Tail fin
+    add_line(x - 15, y, x - 22, y - 8, color);
+    add_line(x - 22, y - 8, x - 22, y + 8, color);
+    add_line(x - 22, y + 8, x - 15, y, color);
+    // Eye
+    add_point(x + 8, y - 2, color);
+}
+static void add_car(int x, int y, uint32_t color) {
+    // Body box
+    add_line(x - 20, y + 5, x + 20, y + 5, color);
+    add_line(x - 20, y + 5, x - 20, y - 5, color);
+    add_line(x + 20, y + 5, x + 20, y - 5, color);
+    add_line(x - 20, y - 5, x - 10, y - 5, color);
+    // Cabin roof
+    add_line(x - 10, y - 5, x - 5, y - 15, color);
+    add_line(x - 5, y - 15, x + 10, y - 15, color);
+    add_line(x + 10, y - 15, x + 15, y - 5, color);
+    add_line(x + 15, y - 5, x + 20, y - 5, color);
+    // Wheels
+    add_circle(x - 10, y + 8, 4, color);
+    add_circle(x + 10, y + 8, 4, color);
+}
+static void add_query_icon(const char *query, int x, int y, uint32_t color) {
+    if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
+        add_crow(x, y, color);
+    } else if (strcasestr(query, "tree") || strcasestr(query, "plant") || strcasestr(query, "forest")) {
+        add_tree(x, y, color);
+    } else if (strcasestr(query, "cat") || strcasestr(query, "dog") || strcasestr(query, "pet")) {
+        add_cat(x, y, color);
+    } else if (strcasestr(query, "fish") || strcasestr(query, "ocean") || strcasestr(query, "sea")) {
+        add_fish(x, y, color);
+    } else if (strcasestr(query, "car") || strcasestr(query, "drive") || strcasestr(query, "vehicle")) {
+        add_car(x, y, color);
+    } else {
+        int len = strlen(query);
+        if (len < 3) len = 3;
+        if (len > 12) len = 12;
+        double r = 16.0;
+        int px[32], py[32];
+        for (int i = 0; i < len; i++) {
+            double angle = i * 2.0 * M_PI / len;
+            px[i] = x + (int)(r * cos(angle));
+            py[i] = y + (int)(r * sin(angle));
+        }
+        for (int i = 0; i < len; i++) {
+            add_line(px[i], py[i], px[(i + 1) % len], py[(i + 1) % len], color);
+        }
+    }
+}
 
 static void execute_command(const char *cmd) {
     printf("[TELEMETRY] Executed command: %s\n", cmd);
@@ -312,7 +408,7 @@ static void execute_command(const char *cmd) {
             add_text(400, 325, "VM STATE", (doc_idx == 3) ? 0xFFFFB86C : 0xFFF8F8F2);
             
             // Query projectile (bullet)
-            add_point(bullet_x, bullet_y, 0xFF50FA7B);
+            add_query_icon(query, bullet_x, bullet_y, 0xFF50FA7B);
             
             lau_vram_write_string(g_vram, ".", 1);
             
@@ -412,7 +508,7 @@ static void execute_command(const char *cmd) {
                 add_line((int)rx[0], (int)ry[0], (int)rx[i], (int)ry[i], 0xFFBD93F9);
             }
             // Draw central query node
-            add_circle((int)rx[0], (int)ry[0], 25, 0xFF50FA7B);
+            add_query_icon(query, (int)rx[0], (int)ry[0], 0xFF50FA7B);
             add_text((int)rx[0], (int)ry[0] + 32, "QUERY", 0xFF50FA7B);
             
             // Draw Doc 1 node
