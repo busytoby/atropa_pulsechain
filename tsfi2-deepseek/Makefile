@@ -3,9 +3,9 @@ CXX      = g++
 CFLAGS   = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -Iplugins -Iplugins/vulkan -Iplugins/window_inc -Iplugins/window_src -Iassets/sd_cpp/include -Isrc/firmware \
            -O3 -g -march=native -flax-vector-conversions \
            -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE -pie -Wl,-z,relro,-z,now \
-           -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\"
-CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g -march=native -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
-LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lubsan -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++
+           -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\" -fsanitize=address
+CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g -march=native -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include -fsanitize=address
+LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -fsanitize=address -lubsan -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++ -lasound
 
 OBJ_DIR  = obj
 BIN_DIR  = bin
@@ -87,6 +87,12 @@ tests/test_zmm_fighter: tests/test_zmm_fighter.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_zmm_parallel_cpu: tests/test_zmm_parallel_cpu.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_wayland_hardball: tests/test_wayland_hardball.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_wayland_smurfs: tests/test_wayland_smurfs.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_wayland_terminal_shell: tests/test_wayland_terminal_shell.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)

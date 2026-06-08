@@ -564,7 +564,7 @@ int main() {
     // Selector: 8dfb6c41
     printf("[ZMM] Configuring virtual Display List in storage...\n");
     // Write Display List instructions to storage starting at key 0x1000
-    lau_yul_thunk_sstore(0x1000, 0x42); // LMS + Mode 2 -> 0x42
+    lau_yul_thunk_sstore(0x1000, 0x62); // DLI + LMS + Mode 2 -> 0x62
     lau_yul_thunk_sstore(0x1001, 0x50); // Pixel address low = 0x50
     lau_yul_thunk_sstore(0x1002, 0x20); // Pixel address high = 0x20
     lau_yul_thunk_sstore(0x1003, 0x82); // Jump + Mode 2 -> 0x82
@@ -582,11 +582,30 @@ int main() {
     memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
     tsfi_zmm_vm_exec(&vm, cmd);
 
-    // Expected output: activeMode (1st word) = 8 (0x08), pixelAddressOffset (2nd word) = 0x2050 (8272), bytesParsed (3rd word) = 1 (0x01)
+    // Expected output: activeMode (1st word) = 8 (0x08), pixelAddressOffset (2nd word) = 0x2050 (8272), bytesParsed (3rd word) = 1 (0x01), dliAccumulated (4th word) = 1 (0x01)
+    printf("[DEBUG] vm.output_buffer: %s\n", vm.output_buffer);
     assert(strcmp(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000008"
                                     "0000000000000000000000000000000000000000000000000000000000002050"
+                                    "0000000000000000000000000000000000000000000000000000000000000001"
                                     "0000000000000000000000000000000000000000000000000000000000000001") == 0);
-    printf("PASS: ANTIC Display List LMS parsing, JUMP instruction, and Mode transitions verified successfully!\n");
+    printf("PASS: ANTIC Display List LMS parsing, JUMP instruction, DLI detection, and Mode transitions verified successfully!\n");
+
+    printf("[ZMM] Testing GTIA Color mapping (Method 27)...\n");
+    // Write Atari color value 0x94 (Hue 9, Lum 4) to registry address 53266 (first color slot)
+    lau_yul_thunk_sstore(53266, 0x94);
+    
+    sprintf(cmd, "YULEXEC \"graphics\", \"bc8ad742\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    
+    // Verify first color maps correctly to RGBA.
+    // Hue 9: Light Blue (r=0, g=200, b=200). Lum 4: scale = 4 * 17 = 68.
+    // r = 0, g = 200 * 68 / 255 = 53 (0x35), b = 200 * 68 / 255 = 53 (0x35), Alpha = 0xFF.
+    // RGBA = 0x003535FF -> 3487231
+    // First 32 bytes of output should represent this RGBA.
+    assert(strncmp(vm.output_buffer, "00000000000000000000000000000000000000000000000000000000003535ff", 64) == 0);
+    printf("PASS: GTIA dynamic color translation verified successfully!\n");
 
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");

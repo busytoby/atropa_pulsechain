@@ -114,7 +114,9 @@ static void* cell_mem_genesis_impl(size_t sz, LauHeaderType type, const char *fi
     if (type == LAU_TYPE_WIRED) return lau_memalign_wired_loc(512, sz, file, line);
     return lau_malloc_loc(sz, file, line);
 }
-static void cell_mem_reclaim_impl(void *ptr, size_t size) { (void)size; lau_free(ptr); }
+static void cell_mem_reclaim_impl(void *ptr, size_t size) { 
+    (void)ptr; (void)size; 
+}
 
 static int cell_hardware_poll_impl(int timeout_ms, char *buf, size_t max) {
     struct pollfd pfd = { STDIN_FILENO, POLLIN, 0 };

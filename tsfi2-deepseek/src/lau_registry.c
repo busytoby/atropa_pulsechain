@@ -2,6 +2,7 @@
 #include "lau_telemetry.h"
 #include "tsfi_wire_firmware.h"
 #include "tsfi_io.h"
+#include "lau_memory.h"
 #include <stdatomic.h>
 #include <stddef.h>
 #include <sys/mman.h>
@@ -129,7 +130,7 @@ static void manifold_insert(LauRegistryManifold *m, LauMetadata *md) {
     if (count < LAU_REGISTRY_CAPACITY) {
         LauMetadata *slot = &m->slots[count];
         *slot = *md;
-        slot->next = NULL; slot->prev = NULL; 
+        slot->next = NULL; slot->prev = md; 
         m->search_index[count] = (uintptr_t)md->actual_start;
         atomic_fetch_add(&m->count, 1);
     }
@@ -189,6 +190,7 @@ void tsfi_registry_backfill_manifold(void) {
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();
     if (!fw) return;
     lau_spin_lock(&g_lock);
+    atomic_store(&fw->manifold.count, 0);
     LauMetadata *curr = g_head;
     while (curr) {
         manifold_insert(&fw->manifold, curr);
@@ -198,12 +200,13 @@ void tsfi_registry_backfill_manifold(void) {
     lau_spin_unlock(&g_lock);
 }
 
+__attribute__((no_sanitize("address")))
 void lau_registry_remove(LauMetadata *m) {
     if (!m) return;
     lau_spin_lock(&g_lock);
     LauMetadata *curr = g_head;
     while (curr) {
-        if (curr->actual_start == m->actual_start) break;
+        if (curr == m) break;
         curr = curr->next;
     }
     if (curr) {
@@ -220,16 +223,17 @@ void lau_registry_remove(LauMetadata *m) {
     report_event((uint64_t)m->actual_start, size, 3, flags);
 }
 
+__attribute__((no_sanitize("address")))
 LauMetadata* lau_registry_find(void *payload) {
     if (!payload) return NULL;
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();
     if (fw) {
         LauMetadata *m = tsfi_registry_scan_zmm(&fw->manifold, payload);
-        if (m) return m;
+        if (m) return m->prev;
     }
     if (g_local_manifold) {
         LauMetadata *m = tsfi_registry_scan_zmm(g_local_manifold, payload);
-        if (m) return m;
+        if (m) return m->prev;
     }
     lau_spin_lock(&g_lock);
     LauMetadata *curr = g_head;
@@ -251,7 +255,12 @@ LauMetadata* lau_registry_find_locked(void *payload) {
     if (!payload) return NULL;
     LauMetadata *curr = g_head;
     while (curr) {
-        if (curr->actual_start == payload) return curr;
+        size_t size = curr->alloc_size & 0x007FFFFFFFFFFFFFULL;
+        uintptr_t start = (uintptr_t)curr->actual_start;
+        uintptr_t p = (uintptr_t)payload;
+        if (p >= start && p < start + size) {
+            return curr;
+        }
         curr = curr->next;
     }
     return NULL;
@@ -328,11 +337,21 @@ void lau_registry_teardown(void) {
         void *ptr = g_local_manifold;
         lau_spin_lock(&g_lock);
         LauMetadata *m = lau_registry_find_locked(ptr);
-        if (m) lau_registry_remove_locked(m);
+        void *actual_start = NULL;
+        size_t size = 0;
+        if (m) {
+            actual_start = m->actual_start;
+            size = m->alloc_size & 0x007FFFFFFFFFFFFFULL;
+            lau_registry_remove_locked(m);
+        }
         lau_spin_unlock(&g_lock);
         
         g_local_manifold = NULL;
-        munmap(ptr, sizeof(LauRegistryManifold));
+        if (actual_start && size) {
+            munmap(actual_start, size);
+        } else {
+            munmap(ptr, sizeof(LauRegistryManifold));
+        }
         atomic_fetch_sub(&g_active_allocs, 1);
         atomic_fetch_sub(&g_active_bytes, sizeof(LauRegistryManifold));
     }
@@ -340,3 +359,25 @@ void lau_registry_teardown(void) {
 
 void* lau_registry_get_local_manifold(void) { return g_local_manifold; }
 LauMetadata* lau_registry_get_head(void) { return g_head; }
+
+__attribute__((no_sanitize("address")))
+void lau_registry_clear_proxy(void *proxy) {
+    if (!proxy) return;
+    lau_spin_lock(&g_lock);
+    LauMetadata *curr = g_head;
+    while (curr) {
+        uint8_t fast_type = (uint8_t)(curr->alloc_size >> 56);
+        if (fast_type == LAU_TYPE_WIRED && curr->payload_start) {
+            LauWiredHeader *wh = (LauWiredHeader*)((char*)curr->payload_start - 8192);
+            if (wh->proxy == proxy) {
+                uint8_t old_prot = curr->current_prot;
+                extern uint32_t lau_mprotect_meta(LauMetadata *m, int prot);
+                lau_mprotect_meta(curr, PROT_READ | PROT_WRITE);
+                wh->proxy = NULL;
+                lau_mprotect_meta(curr, old_prot);
+            }
+        }
+        curr = curr->next;
+    }
+    lau_spin_unlock(&g_lock);
+}

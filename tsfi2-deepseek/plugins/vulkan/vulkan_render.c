@@ -381,6 +381,9 @@ void draw_ui_elements(VulkanSystem *s) {
     }
 }
 
+static VkBuffer g_staging_vk_buffer = VK_NULL_HANDLE;
+static VkDeviceMemory g_staging_vk_memory = VK_NULL_HANDLE;
+
 bool init_staging_vk_buffer(VulkanSystem *s, size_t size) {
     if (!s || !s->vk) return false;
     VulkanContext *vk = s->vk;
@@ -399,10 +402,10 @@ bool init_staging_vk_buffer(VulkanSystem *s, size_t size) {
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    if (vk->vkCreateBuffer(vk->device, &bufferInfo, NULL, &s->staging_vk_buffer) != VK_SUCCESS) return false;
+    if (vk->vkCreateBuffer(vk->device, &bufferInfo, NULL, &g_staging_vk_buffer) != VK_SUCCESS) return false;
 
     VkMemoryRequirements memReqs;
-    vk->vkGetBufferMemoryRequirements(vk->device, s->staging_vk_buffer, &memReqs);
+    vk->vkGetBufferMemoryRequirements(vk->device, g_staging_vk_buffer, &memReqs);
 
     VkExportMemoryAllocateInfo exportAllocInfo = {
         .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
@@ -429,14 +432,14 @@ bool init_staging_vk_buffer(VulkanSystem *s, size_t size) {
     }
     if (!found) return false;
 
-    if (vk->vkAllocateMemory(vk->device, &allocInfo, NULL, &s->staging_vk_memory) != VK_SUCCESS) return false;
-    vk->vkBindBufferMemory(vk->device, s->staging_vk_buffer, s->staging_vk_memory, 0);
+    if (vk->vkAllocateMemory(vk->device, &allocInfo, NULL, &g_staging_vk_memory) != VK_SUCCESS) return false;
+    vk->vkBindBufferMemory(vk->device, g_staging_vk_buffer, g_staging_vk_memory, 0);
 
     if (vk->vkGetMemoryFdKHR) {
         VkMemoryGetFdInfoKHR fdInfo = {
             .sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR,
             .pNext = NULL,
-            .memory = s->staging_vk_memory,
+            .memory = g_staging_vk_memory,
             .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT
         };
         
@@ -453,11 +456,97 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
     if (!s || !s->vk || !sb || !target || !cmd) return;
     VulkanContext *vk = s->vk;
 
+    if (!g_staging_vk_buffer) {
+        if (!init_staging_vk_buffer(s, sb->size)) return;
+    }
+
     // 1. Copy CPU data to Staging VkBuffer
     void* mapped;
-    vk->vkMapMemory(vk->device, s->staging_vk_memory, 0, sb->size, 0, &mapped);
-    memcpy(mapped, sb->data, sb->size);
-    vk->vkUnmapMemory(vk->device, s->staging_vk_memory);
+    vk->vkMapMemory(vk->device, g_staging_vk_memory, 0, sb->size, 0, &mapped);
+    
+    if (vk->swapchainFormat != VK_FORMAT_R16G16B16A16_SFLOAT && sb->stride == sb->width * 8) {
+        typedef struct { uint16_t r, g, b, a; } AB4HPixelLocal;
+        AB4HPixelLocal *src = (AB4HPixelLocal*)sb->data;
+        uint32_t *dst = (uint32_t*)mapped;
+        size_t total_pixels = sb->width * sb->height;
+        for (size_t i = 0; i < total_pixels; i++) {
+            // Half-to-float helper inline
+            uint16_t h_r = src[i].r;
+            uint32_t sign = (h_r & 0x8000) << 16;
+            uint32_t exponent = (h_r & 0x7c00) >> 10;
+            uint32_t mantissa = (h_r & 0x03ff) << 13;
+            if (exponent == 0) {
+                if (mantissa != 0) {
+                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                    exponent++; exponent += 127 - 15;
+                }
+            } else if (exponent == 31) exponent = 255;
+            else exponent += 127 - 15;
+            union { uint32_t u; float f; } u_r = { sign | (exponent << 23) | mantissa };
+            float fr = (exponent == 0 && mantissa == 0) ? 0.0f : u_r.f;
+
+            uint16_t h_g = src[i].g;
+            sign = (h_g & 0x8000) << 16;
+            exponent = (h_g & 0x7c00) >> 10;
+            mantissa = (h_g & 0x03ff) << 13;
+            if (exponent == 0) {
+                if (mantissa != 0) {
+                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                    exponent++; exponent += 127 - 15;
+                }
+            } else if (exponent == 31) exponent = 255;
+            else exponent += 127 - 15;
+            union { uint32_t u; float f; } u_g = { sign | (exponent << 23) | mantissa };
+            float fg = (exponent == 0 && mantissa == 0) ? 0.0f : u_g.f;
+
+            uint16_t h_b = src[i].b;
+            sign = (h_b & 0x8000) << 16;
+            exponent = (h_b & 0x7c00) >> 10;
+            mantissa = (h_b & 0x03ff) << 13;
+            if (exponent == 0) {
+                if (mantissa != 0) {
+                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                    exponent++; exponent += 127 - 15;
+                }
+            } else if (exponent == 31) exponent = 255;
+            else exponent += 127 - 15;
+            union { uint32_t u; float f; } u_b = { sign | (exponent << 23) | mantissa };
+            float fb = (exponent == 0 && mantissa == 0) ? 0.0f : u_b.f;
+
+            uint16_t h_a = src[i].a;
+            sign = (h_a & 0x8000) << 16;
+            exponent = (h_a & 0x7c00) >> 10;
+            mantissa = (h_a & 0x03ff) << 13;
+            if (exponent == 0) {
+                if (mantissa != 0) {
+                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                    exponent++; exponent += 127 - 15;
+                }
+            } else if (exponent == 31) exponent = 255;
+            else exponent += 127 - 15;
+            union { uint32_t u; float f; } u_a = { sign | (exponent << 23) | mantissa };
+            float fa = (exponent == 0 && mantissa == 0) ? 0.0f : u_a.f;
+
+            // Clamping to standard range
+            float max_val = 1.0f;
+            float min_val = 0.0f;
+            float cl_r = fr < min_val ? min_val : (fr > max_val ? max_val : fr);
+            float cl_g = fg < min_val ? min_val : (fg > max_val ? max_val : fg);
+            float cl_b = fb < min_val ? min_val : (fb > max_val ? max_val : fb);
+            float cl_a = fa < min_val ? min_val : (fa > max_val ? max_val : fa);
+
+            uint8_t r = (uint8_t)(cl_r * 255.0f);
+            uint8_t g = (uint8_t)(cl_g * 255.0f);
+            uint8_t b = (uint8_t)(cl_b * 255.0f);
+            uint8_t a = (uint8_t)(cl_a * 255.0f);
+
+            // B8G8R8A8 little-endian layout (B, G, R, A)
+            dst[i] = ((uint32_t)a << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+        }
+    } else {
+        memcpy(mapped, sb->data, sb->size);
+    }
+    vk->vkUnmapMemory(vk->device, g_staging_vk_memory);
 
     // 2. Transition image to TRANSFER_DST_OPTIMAL
     VkImageMemoryBarrier barrier = {
@@ -482,7 +571,7 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
         .imageOffset = {0, 0, 0},
         .imageExtent = {(uint32_t)sb->width, (uint32_t)sb->height, 1}
     };
-    vk->vkCmdCopyBufferToImage(cmd, s->staging_vk_buffer, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vk->vkCmdCopyBufferToImage(cmd, g_staging_vk_buffer, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     // 4. Transition to PRESENT_SRC_KHR
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -533,7 +622,7 @@ void draw_frame(VulkanSystem *s) {
     // 1. Transition Image Layout for Dynamic Rendering (COLOR_ATTACHMENT_OPTIMAL)
     VkImageMemoryBarrier2 barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
         .srcAccessMask = 0,
         .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -562,6 +651,7 @@ void draw_frame(VulkanSystem *s) {
 
     VkRenderingInfo renderingInfo = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT,
         .renderArea = { {0, 0}, vk->swapchainImages[imageIndex] ? (VkExtent2D){1280, 720} : (VkExtent2D){0, 0} }, // Target Plane 71 resolution
         .layerCount = 1,
         .colorAttachmentCount = 1,
@@ -625,7 +715,7 @@ void draw_frame(VulkanSystem *s) {
     VkCommandBufferInheritanceRenderingInfoKHR inheritanceRenderingInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
         .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = (VkFormat[]){ VK_FORMAT_B8G8R8A8_SRGB },
+        .pColorAttachmentFormats = (VkFormat[]){ vk->swapchainFormat },
         .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
     };
 
@@ -643,8 +733,15 @@ void draw_frame(VulkanSystem *s) {
     vk->vkBeginCommandBuffer(vk->secondary_command_buffers[vk->currentFrame], &secondaryBeginInfo);
     
     // (Secondary Recording: Apply High-Quality Post-Processing directly to scanout if possible)
-    if (tsfi_bloom_thunk) {
-        tsfi_bloom_thunk((uint32_t*)s->paint_buffer->data, s->paint_buffer->width, s->paint_buffer->height, 0.85f, 0.4f);
+    if (s->is_ab4h) {
+        extern void tsfi_bloom_thunk_ab4h(uint16_t* pixels, int width, int height, float threshold, float intensity);
+        if (tsfi_bloom_thunk_ab4h) {
+            tsfi_bloom_thunk_ab4h((uint16_t*)s->paint_buffer->data, s->paint_buffer->width, s->paint_buffer->height, 0.85f, 0.4f);
+        }
+    } else {
+        if (tsfi_bloom_thunk) {
+            tsfi_bloom_thunk((uint32_t*)s->paint_buffer->data, s->paint_buffer->width, s->paint_buffer->height, 0.85f, 0.4f);
+        }
     }
     
     vk->vkEndCommandBuffer(vk->secondary_command_buffers[vk->currentFrame]);
@@ -661,6 +758,23 @@ void draw_frame(VulkanSystem *s) {
     if (vk->query_pool_perf) {
         vk->vkCmdWriteTimestamp(vk->command_buffers[vk->currentFrame], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk->query_pool_perf, 1);
         
+        VkBufferMemoryBarrier2 rebarBarrier = {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .buffer = vk->rebar_buffer,
+            .offset = vk->rebar_pool_size - 4096,
+            .size = 4096
+        };
+        VkDependencyInfo rebarDep = {
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .bufferMemoryBarrierCount = 1,
+            .pBufferMemoryBarriers = &rebarBarrier
+        };
+        vk->vkCmdPipelineBarrier2(vk->command_buffers[vk->currentFrame], &rebarDep);
+
         // Push Timing Facts (Offset 0 in Query Anchor)
         vk->vkCmdCopyQueryPoolResults(vk->command_buffers[vk->currentFrame], 
                                       vk->query_pool_perf, 0, 2, 
@@ -682,9 +796,8 @@ void draw_frame(VulkanSystem *s) {
     barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     vk->vkCmdPipelineBarrier2(vk->command_buffers[vk->currentFrame], &depInfo);
 
-    // Upload Staging Buffer to Swapchain Image (Optional Fallback)
-    // upload_staging_to_image(s, s->paint_buffer, vk->swapchainImages[imageIndex], vk->command_buffers[vk->currentFrame]);
-    
+    // Upload Staging Buffer to Swapchain Image
+    upload_staging_to_image(s, s->paint_buffer, vk->swapchainImages[imageIndex], vk->command_buffers[vk->currentFrame]);
 
     vk->vkEndCommandBuffer(vk->command_buffers[vk->currentFrame]);
 

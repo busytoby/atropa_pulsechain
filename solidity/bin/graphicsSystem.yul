@@ -1337,7 +1337,6 @@ object "GraphicsSystem" {
                 return(0x00, 96)
             }
 
-            // ----------------------------------------------------------------
             // Method 26: simulateAnticDisplayList(displayListAddress, startScanline, lineCount)
             // Selector: 0x8dfb6c41
             // ----------------------------------------------------------------
@@ -1349,6 +1348,7 @@ object "GraphicsSystem" {
                 let totalModeBytesFetched := 0
                 let activeMode := 0
                 let pixelAddressOffset := 0
+                let dliAccumulated := 0
 
                 for { let line := scanline } lt(line, add(scanline, limit)) { line := add(line, 1) } {
                     let instrOffset := add(dlAddr, totalModeBytesFetched)
@@ -1358,6 +1358,10 @@ object "GraphicsSystem" {
                     let mode := and(instr, 0x0f)
                     let isLms := and(shr(6, instr), 1)
                     let isJump := and(shr(7, instr), 1)
+
+                    if and(shr(5, instr), 1) {
+                        dliAccumulated := 1
+                    }
 
                     if isJump {
                         // Jump instruction: Next two bytes point to new Display List start address
@@ -1387,7 +1391,50 @@ object "GraphicsSystem" {
                 mstore(0x00, activeMode) // Mode of the last processed scanline
                 mstore(0x20, pixelAddressOffset) // Pixel memory address resolved
                 mstore(0x40, totalModeBytesFetched) // Total bytes parsed in display list
-                return(0x00, 96)
+                mstore(0x60, dliAccumulated) // Whether a DLI occurred
+                return(0x00, 128)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 27: getGtiaColors() -> uint256[9]
+            // Selector: 0xbc8ad742
+            // ----------------------------------------------------------------
+            if eq(selector, 0xbc8ad742) {
+                function atariColorToRgba(colorByte) -> rgba {
+                    let hue := shr(4, and(colorByte, 0xF0))
+                    let lum := and(colorByte, 0x0F)
+                    let r := 0
+                    let g := 0
+                    let b := 0
+                    switch hue
+                    case 0 { r := 255 g := 255 b := 255 }
+                    case 1 { r := 255 g := 180 b := 50 }
+                    case 2 { r := 255 g := 120 b := 0 }
+                    case 3 { r := 255 g := 50 b := 0 }
+                    case 4 { r := 255 g := 0 b := 0 }
+                    case 5 { r := 230 g := 0 b := 100 }
+                    case 6 { r := 180 g := 50 b := 255 }
+                    case 7 { r := 100 g := 100 b := 255 }
+                    case 8 { r := 0 g := 150 b := 255 }
+                    case 9 { r := 0 g := 200 b := 200 }
+                    case 10 { r := 0 g := 220 b := 150 }
+                    case 11 { r := 0 g := 230 b := 0 }
+                    case 12 { r := 100 g := 220 b := 0 }
+                    case 13 { r := 180 g := 200 b := 0 }
+                    case 14 { r := 220 g := 180 b := 0 }
+                    case 15 { r := 150 g := 100 b := 50 }
+                    let scale := mul(lum, 17)
+                    r := div(mul(r, scale), 255)
+                    g := div(mul(g, scale), 255)
+                    b := div(mul(b, scale), 255)
+                    rgba := or(or(shl(24, r), shl(16, g)), or(shl(8, b), 0xFF))
+                }
+
+                for { let i := 0 } lt(i, 9) { i := add(i, 1) } {
+                    let colorVal := and(sload(add(53266, i)), 0xFF)
+                    mstore(mul(i, 32), atariColorToRgba(colorVal))
+                }
+                return(0x00, 288)
             }
 
             revert(0, 0)

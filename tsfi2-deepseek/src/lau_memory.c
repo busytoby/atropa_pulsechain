@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <execinfo.h>
 #include <stdatomic.h>
 #include <stdalign.h>
 #include <x86intrin.h>
@@ -580,7 +581,6 @@ uint32_t lau_mprotect_meta(LauMetadata *m, int prot) {
 }
 
 static void lau_free_meta(LauMetadata *meta) {
-    if (!meta || !meta->actual_start || atomic_load_explicit(&g_teardown_in_progress, memory_order_relaxed)) return;
     if (!meta || !meta->actual_start) return;
     
     uint8_t fast_type = (uint8_t)(meta->alloc_size >> 56);
@@ -620,10 +620,16 @@ static void lau_free_meta(LauMetadata *meta) {
 
     if (fast_type == LAU_TYPE_WIRED) {
         if (!payload) return;
-        LauWiredHeader *wh = (LauWiredHeader*)((char*)payload - 8192);
+        volatile LauWiredHeader *wh = (volatile LauWiredHeader*)((char*)payload - 8192);
         if (!in_teardown) {
-            if (wh->meta.alloc_size & (1ULL << 55)) { fprintf(stderr, "CRITICAL: Attempt to free sealed hardware cell at ptr=%p\n", payload); abort(); }
-            uint32_t calc = calculate_checksum_wired(wh);
+            if (wh->meta.alloc_size & (1ULL << 55)) {
+                fprintf(stderr, "CRITICAL: Attempt to free sealed hardware cell at ptr=%p\n", payload);
+                void *array[20];
+                size_t size = backtrace(array, 20);
+                backtrace_symbols_fd(array, size, STDERR_FILENO);
+                abort();
+            }
+            uint32_t calc = calculate_checksum_wired((LauWiredHeader*)wh);
             if (calc != wh->footer.checksum) { 
                 fprintf(stderr, "CRITICAL: Checksum mismatch (WIRED) at %p\n", payload);
                 abort(); 
@@ -638,9 +644,14 @@ static void lau_free_meta(LauMetadata *meta) {
 
         if (wh->proxy) {
             ThunkProxy *p = (ThunkProxy*)wh->proxy;
+            fprintf(stderr, "[DEBUG] lau_free_meta (WIRED): payload=%p, wh=%p, offset=%zu, wh->proxy=%p\n", 
+                    payload, (void*)wh, offsetof(LauWiredHeader, proxy), wh->proxy);
             wh->proxy = NULL;
-            extern void ThunkProxy_destroy_authoritative(ThunkProxy *p);
-            ThunkProxy_destroy_authoritative(p);
+            extern LauMetadata* lau_registry_find(void *ptr);
+            if (lau_registry_find(p) != NULL) {
+                extern void ThunkProxy_destroy_authoritative(ThunkProxy *p);
+                ThunkProxy_destroy_authoritative(p);
+            }
         }
     } else {
         if (!payload) return;
@@ -663,30 +674,29 @@ static void lau_free_meta(LauMetadata *meta) {
     // fprintf(stderr, "[DEBUG] new g_active_allocs: %zu\n", (size_t)atomic_load(&g_active_allocs));
     
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();
+    if (fw && fw->cell_mem_reclaim) {
+        fw->cell_mem_reclaim(actual_block_start, size);
+    }
     if (fast_type == LAU_TYPE_BASIC) {
         free(actual_block_start);
     } else {
-        if (fw && fw->cell_mem_reclaim) {
-            fw->cell_mem_reclaim(actual_block_start, size);
-        } else {
-            bool is_rebar = (fw && (uintptr_t)actual_block_start >= (uintptr_t)fw->rtl.zhong_rebar_ptr && (uintptr_t)actual_block_start < (uintptr_t)fw->rtl.zhong_rebar_ptr + fw->rtl.zhong_rebar_size);
-            if (!is_rebar) {
-                bool quarantined = false;
-                lau_spin_lock(&g_quarantine_lock);
-                for (size_t i = 0; i < QUARANTINE_DEPTH; i++) {
-                    if (!g_quarantine_pool[i].ptr) {
-                        g_quarantine_pool[i].ptr = actual_block_start;
-                        g_quarantine_pool[i].size = size;
-                        quarantined = true;
-                        break;
-                    }
+        bool is_rebar = (fw && (uintptr_t)actual_block_start >= (uintptr_t)fw->rtl.zhong_rebar_ptr && (uintptr_t)actual_block_start < (uintptr_t)fw->rtl.zhong_rebar_ptr + fw->rtl.zhong_rebar_size);
+        if (!is_rebar) {
+            bool quarantined = false;
+            lau_spin_lock(&g_quarantine_lock);
+            for (size_t i = 0; i < QUARANTINE_DEPTH; i++) {
+                if (!g_quarantine_pool[i].ptr) {
+                    g_quarantine_pool[i].ptr = actual_block_start;
+                    g_quarantine_pool[i].size = size;
+                    quarantined = true;
+                    break;
                 }
-                lau_spin_unlock(&g_quarantine_lock);
-                
-                if (!quarantined) {
-                    lau_quarantine_drain();
-                    munmap(actual_block_start, size);
-                }
+            }
+            lau_spin_unlock(&g_quarantine_lock);
+            
+            if (!quarantined) {
+                lau_quarantine_drain();
+                munmap(actual_block_start, size);
             }
         }
     }
@@ -1017,6 +1027,7 @@ void lau_wire_mapped_logic(void *ptr) {
     if (!h->proxy && !g_in_thunk_create) {
         g_in_thunk_create = 1;
         h->proxy = (void*)ThunkProxy_create();
+        fprintf(stderr, "[DEBUG] lau_wire_mapped_logic: ptr=%p, proxy=%p\n", ptr, h->proxy);
         g_in_thunk_create = 0;
     }
     
@@ -1047,7 +1058,7 @@ void lau_free_all_active(void) {
         
         LauMetadata *m = g_head;
         void *payload = m->payload_start;
-        fprintf(stderr, "[REGISTRY] Teardown: freeing %p (payload %p)\n", (void*)m, payload);
+        fprintf(stderr, "[REGISTRY] Teardown: freeing %p (payload %p) allocated at %s\n", (void*)m, payload, m->alloc_file);
         
         // Authoritative Verification: Check if this node is still valid in the manifold
         extern LauMetadata* lau_registry_find_locked(void*);

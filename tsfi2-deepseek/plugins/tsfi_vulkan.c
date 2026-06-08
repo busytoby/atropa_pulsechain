@@ -32,7 +32,7 @@ void master_logic_epoch(int *ver) {
                 if (s->paint_buffer) {
                     staging_clear_avx512(s->paint_buffer, 0xFF000000); 
                 }
-                LauSystemHeader *h = (LauSystemHeader *)((char *)s - 7168);
+                LauSystemHeader *h = (LauSystemHeader *)((char *)s - 8192);
                 h->resonance_as_status = lau_strdup("VK_INIT_HEADLESS");
                 
                 extern VulkanContext* init_vulkan(int);

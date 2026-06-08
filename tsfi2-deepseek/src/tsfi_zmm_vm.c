@@ -158,7 +158,28 @@ void tsfi_zmm_vm_init(TsfiZmmVmState *state) {
 
 void tsfi_zmm_vm_destroy(TsfiZmmVmState *state) {
     if (state->manifest) {
-        if (state->manifest->contiguous_rf) lau_free(state->manifest->contiguous_rf);
+        // Restore write access to manifest and contiguous_rf headers
+        extern uint32_t lau_mprotect(void *ptr, int prot);
+        lau_mprotect(state->manifest, PROT_READ | PROT_WRITE);
+
+        extern LauWiredHeader* get_wired_header_external(void *payload);
+        LauWiredHeader *wh_manifest = get_wired_header_external(state->manifest);
+        if (wh_manifest && wh_manifest->proxy) {
+            extern void ThunkProxy_destroy_authoritative(ThunkProxy *p);
+            ThunkProxy_destroy_authoritative((ThunkProxy*)wh_manifest->proxy);
+            wh_manifest->proxy = NULL;
+        }
+
+        if (state->manifest->contiguous_rf) {
+            lau_mprotect(state->manifest->contiguous_rf, PROT_READ | PROT_WRITE);
+            LauWiredHeader *wh_rf = get_wired_header_external(state->manifest->contiguous_rf);
+            if (wh_rf && wh_rf->proxy) {
+                extern void ThunkProxy_destroy_authoritative(ThunkProxy *p);
+                ThunkProxy_destroy_authoritative((ThunkProxy*)wh_rf->proxy);
+                wh_rf->proxy = NULL;
+            }
+            lau_free(state->manifest->contiguous_rf);
+        }
         lau_free(state->manifest);
         state->manifest = NULL;
     }
@@ -893,8 +914,7 @@ void tsfi_zmm_vm_exec(TsfiZmmVmState *state, const char *code_in) {
                 if (strlen(text) > 0) {
                     if (state->checkpoint_count > 0) {
                         ZmmCpuCheckpoint *cp = &((ZmmCpuCheckpoint*)state->checkpoints)[state->checkpoint_count - 1];
-                        strncpy(cp->memo, text, sizeof(cp->memo) - 1);
-                        cp->memo[sizeof(cp->memo) - 1] = '\0';
+                        strcpy(cp->memo, text);
                         printf("[FLIPTRACK] Memo added to Checkpoint %d: \"%s\"\n", state->checkpoint_count - 1, cp->memo);
                     } else {
                         printf("[FLIPTRACK] ERROR: No checkpoints exist to add memo to.\n");

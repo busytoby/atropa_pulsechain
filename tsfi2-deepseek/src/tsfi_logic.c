@@ -204,8 +204,7 @@ void master_logic_provenance(void *ws_ptr) {
                     break;
                 }
 
-                strncpy(current_address, next_addr, sizeof(current_address) - 1);
-                current_address[sizeof(current_address) - 1] = '\0';
+                strcpy(current_address, next_addr);
                 depth++;
 
                 if (strcasecmp(current_address, "0x0474606332105A1dA6FC8EF7De2470551D389Cb9") == 0) {

@@ -110,20 +110,24 @@ async function loadConfigKeys() {
             const gridDiv = sectionDiv.querySelector(".keys-grid");
 
             keysArray.forEach((key, index) => {
-                const wallet = new ethers.Wallet(key);
-                // Dynamically build walletAddresses list for standard index usage
-                walletAddresses.push(wallet.address);
-                
-                const item = document.createElement("div");
-                item.className = "key-item";
-                item.style.padding = "8px";
-                item.style.background = "rgba(255,255,255,0.02)";
-                item.innerHTML = `
-                    <div class="key-index" style="font-size: 0.8rem;">Key #${index + 1}</div>
-                    <div class="key-address" style="font-size: 0.85rem;">Address: ${wallet.address}</div>
-                    <div class="key-privkey" style="font-size: 0.75rem;">Private: ${key.substring(0, 8)}...${key.substring(key.length - 8)}</div>
-                `;
-                gridDiv.appendChild(item);
+                try {
+                    const wallet = new ethers.Wallet(key);
+                    // Dynamically build walletAddresses list for standard index usage
+                    walletAddresses.push(wallet.address);
+                    
+                    const item = document.createElement("div");
+                    item.className = "key-item";
+                    item.style.padding = "8px";
+                    item.style.background = "rgba(255,255,255,0.02)";
+                    item.innerHTML = `
+                        <div class="key-index" style="font-size: 0.8rem;">Key #${index + 1}</div>
+                        <div class="key-address" style="font-size: 0.85rem;">Address: ${wallet.address}</div>
+                        <div class="key-privkey" style="font-size: 0.75rem;">Private: ${key.substring(0, 8)}...${key.substring(key.length - 8)}</div>
+                    `;
+                    gridDiv.appendChild(item);
+                } catch (walletErr) {
+                    console.warn(`Skipping invalid private key at index ${index}: ${key}`);
+                }
             });
             keysList.appendChild(sectionDiv);
         });
@@ -837,7 +841,8 @@ const cpuABI = [
     "function runSteps(uint256 maxSteps) public returns (uint256)",
     "function poke(uint256 addr, uint256 val) public returns (uint256)",
     "function getScreenRAM() public view returns (bytes)",
-    "function getColorRAM() public view returns (bytes)"
+    "function getColorRAM() public view returns (bytes)",
+    "function pokeBytes(uint256 startAddr, bytes calldata data) public returns (uint256)"
 ];
 const graphicsABI = [
     "function updateSprite(uint8 index, uint16 x, uint8 y) public returns (uint256)",
@@ -945,13 +950,17 @@ async function initDatamostConsole() {
                 0x00              // BRK
             ];
 
-            for (let i = 0; i < invadersProgram.length; i++) {
-                await cpuContract.poke(8192 + i, invadersProgram[i]);
-            }
-            await cpuContract.poke(53248, 120); // Player X
-            await cpuContract.poke(53252, 100); // Alien X
-            await cpuContract.poke(56320, 0xFF); // Joystick inputs
-            await cpuContract.poke(0x02, 0);    // Alien direction = 0
+            // Fetch and increment transaction nonce manually to avoid collisions
+            let nonce = await datamostProvider.getTransactionCount(datamostSigner.address, "pending");
+
+            // Upload 6502 program using pokeBytes in a single transaction
+            const programBytes = ethers.hexlify(new Uint8Array(invadersProgram));
+            await cpuContract.pokeBytes(8192, programBytes, { nonce: nonce++ });
+
+            await cpuContract.poke(53248, 120, { nonce: nonce++ }); // Player X
+            await cpuContract.poke(53252, 100, { nonce: nonce++ }); // Alien X
+            await cpuContract.poke(56320, 0xFF, { nonce: nonce++ }); // Joystick inputs
+            await cpuContract.poke(0x02, 0, { nonce: nonce++ });    // Alien direction = 0
 
             // Pre-fetch Sprite Patterns
             for (let i = 0; i < 8; i++) {

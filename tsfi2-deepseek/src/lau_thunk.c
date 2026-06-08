@@ -31,6 +31,8 @@ ThunkProxy* ThunkProxy_create(void) {
     proxy->thunk_pool = (uint8_t *)lau_memalign_wired(pg, pg);
     g_in_thunk_create = 0;
     
+    fprintf(stderr, "[DEBUG] ThunkProxy_create: proxy=%p, thunk_pool=%p\n", proxy, proxy->thunk_pool);
+    
     if (!proxy->thunk_pool) { lau_free(proxy); return NULL; }
     
     // Link the thunk pool's wired header back to this proxy for correct sealing integration
@@ -323,13 +325,38 @@ void* ThunkProxy_emit_wave_dlclose(ThunkProxy *p, void *hdl, void *td_fn, int st
 
 void ThunkProxy_destroy_authoritative(ThunkProxy *p) {
     if (!p) return;
+    extern LauMetadata* lau_registry_find(void *ptr);
+    if (lau_registry_find(p) == NULL) return;
+    if (p->classify == (int (*)(void*))0xDEADBEEF) return;
+
+    extern void lau_registry_clear_proxy(void *proxy);
+    lau_registry_clear_proxy(p);
+
+    p->classify = (int (*)(void*))0xDEADBEEF;
+
     if (p->thunk_pool) {
-        lau_mprotect(p->thunk_pool, PROT_READ | PROT_WRITE);
+        lau_unseal_object(p->thunk_pool);
         
+        struct YI *yi = NULL;
+        struct Dai *dai = NULL;
+        extern void ThunkProxy_extract_ontological_structuring(ThunkProxy *p, struct YI **yi_out, struct Dai **dai_out);
+        ThunkProxy_extract_ontological_structuring(p, &yi, &dai);
+        if (dai) {
+            extern void freeDAI(struct Dai*);
+            freeDAI(dai);
+        }
+        if (yi) {
+            extern void freeYI(struct YI*);
+            freeYI(yi);
+        }
+
         // Break recursion: clear the proxy link in the pool's header before freeing the pool
         extern LauWiredHeader* get_wired_header_external(void *payload);
-        LauWiredHeader *h = get_wired_header_external(p->thunk_pool);
-        if (h && h->proxy == p) h->proxy = NULL;
+        volatile LauWiredHeader *h = (volatile LauWiredHeader *)get_wired_header_external(p->thunk_pool);
+        fprintf(stderr, "[DEBUG] ThunkProxy_destroy_authoritative: p=%p, pool=%p, h=%p, offset=%zu, h->proxy before=%p\n", 
+                p, p->thunk_pool, (void*)h, offsetof(LauWiredHeader, proxy), h ? h->proxy : NULL);
+        if (h) h->proxy = NULL;
+        fprintf(stderr, "[DEBUG] ThunkProxy_destroy_authoritative: h->proxy after=%p\n", h ? h->proxy : NULL);
 
         void *pool = p->thunk_pool;
         p->thunk_pool = NULL;
@@ -342,15 +369,36 @@ void ThunkProxy_destroy_authoritative(ThunkProxy *p) {
 
 void ThunkProxy_destroy(ThunkProxy *p) {
     if (!p) return;
+    extern LauMetadata* lau_registry_find(void *ptr);
+    if (lau_registry_find(p) == NULL) return;
+    if (p->classify == (int (*)(void*))0xDEADBEEF) return;
+
+    extern void lau_registry_clear_proxy(void *proxy);
+    lau_registry_clear_proxy(p);
+
+    p->classify = (int (*)(void*))0xDEADBEEF;
     
     // 1. Restore write access FIRST to allow breaking ontological links
     if (p->thunk_pool) {
-        lau_mprotect(p->thunk_pool, PROT_READ | PROT_WRITE);
+        lau_unseal_object(p->thunk_pool);
         
+        struct YI *yi = NULL;
+        struct Dai *dai = NULL;
+        extern void ThunkProxy_extract_ontological_structuring(ThunkProxy *p, struct YI **yi_out, struct Dai **dai_out);
+        ThunkProxy_extract_ontological_structuring(p, &yi, &dai);
+        if (dai) {
+            extern void freeDAI(struct Dai*);
+            freeDAI(dai);
+        }
+        if (yi) {
+            extern void freeYI(struct YI*);
+            freeYI(yi);
+        }
+
         // 2. Break ontological links
         extern LauWiredHeader* get_wired_header_external(void *payload);
         LauWiredHeader *h = get_wired_header_external(p->thunk_pool);
-        if (h && h->proxy == p) {
+        if (h) {
             h->proxy = NULL;
         }
         
@@ -363,6 +411,7 @@ void ThunkProxy_destroy(ThunkProxy *p) {
     // 4. Reclaim proxy structure
     lau_free(p);
 }
+
 
 void* ThunkProxy_emit_timeline_guard(ThunkProxy *p, uint64_t *sem_addr, uint64_t target_val) {
     thunk_check_bounds(p, 32);

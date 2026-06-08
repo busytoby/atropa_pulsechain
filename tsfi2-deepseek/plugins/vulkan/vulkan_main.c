@@ -68,6 +68,12 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
         s->compositor = wl_registry_bind(registry, name, &wl_compositor_interface, version < 6 ? version : 6);
     } else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
         s->xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, version < 6 ? version : 6);
+        extern const struct xdg_wm_base_listener xdg_wm_base_listener;
+        xdg_wm_base_add_listener(s->xdg_wm_base, &xdg_wm_base_listener, s);
+    } else if (strcmp(interface, wl_seat_interface.name) == 0) {
+        s->seat = wl_registry_bind(registry, name, &wl_seat_interface, version < 7 ? version : 7);
+        extern const struct wl_seat_listener_v10 seat_listener;
+        wl_seat_add_listener(s->seat, (const struct wl_seat_listener *)&seat_listener, s);
     } else if (strcmp(interface, "wp_drm_lease_device_v1") == 0) {
         static int l_count = 0;
         if (++l_count == 2) {
@@ -85,11 +91,17 @@ VulkanSystem* create_vulkan_system() {
     VulkanSystem *s = (VulkanSystem *)lau_malloc_wired(sizeof(VulkanSystem));
     if (!s) return NULL;
     memset(s, 0, sizeof(VulkanSystem));
+    
+    const char *ab4h_env = getenv("TSFI_AB4H");
+    if (ab4h_env && strcmp(ab4h_env, "1") == 0) {
+        s->is_ab4h = true;
+    }
+    
     s->width = TSFI_WINDOW_WIDTH_DEFAULT;
     s->height = TSFI_WINDOW_HEIGHT_DEFAULT;
     s->paint_buffer = create_staging_buffer(s->width, s->height);
 
-    LauSystemHeader *h = (LauSystemHeader *)((char *)s - 7168);
+    LauSystemHeader *h = (LauSystemHeader *)((char *)s - 8192);
     h->resonance_as_status = lau_strdup("VK_INIT");
 
 
@@ -132,11 +144,16 @@ VulkanSystem* create_vulkan_system() {
         s->surface = wl_compositor_create_surface(s->compositor);
         s->xdg_surface = xdg_wm_base_get_xdg_surface(s->xdg_wm_base, s->surface);
         s->xdg_toplevel = xdg_surface_get_toplevel(s->xdg_surface);
+        extern const struct xdg_surface_listener xdg_surface_listener;
+        extern const struct xdg_toplevel_listener xdg_toplevel_listener;
+        xdg_surface_add_listener(s->xdg_surface, &xdg_surface_listener, s);
+        xdg_toplevel_add_listener(s->xdg_toplevel, &xdg_toplevel_listener, s);
         xdg_toplevel_set_title(s->xdg_toplevel, TSFI_WINDOW_TITLE);
         wl_surface_commit(s->surface);
+        extern const VkAllocationCallbacks tsfi_alloc_callbacks;
         VkWaylandSurfaceCreateInfoKHR createInfo = { .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, .display = s->display, .surface = s->surface };
         PFN_vkCreateWaylandSurfaceKHR createFunc = (PFN_vkCreateWaylandSurfaceKHR)s->vk->vkGetInstanceProcAddr(s->vk->instance, "vkCreateWaylandSurfaceKHR");
-        if (createFunc) createFunc(s->vk->instance, &createInfo, NULL, &s->vk->surface);
+        if (createFunc) createFunc(s->vk->instance, &createInfo, &tsfi_alloc_callbacks, &s->vk->surface);
     }
 
     s->running = true;
@@ -152,6 +169,28 @@ void destroy_vulkan_system(VulkanSystem *s) {
     if (!s) return;
     if (get_vulkan_system() == s) set_vulkan_system(NULL);
     if (s->vk) cleanup_vulkan(s->vk);
-    wl_display_disconnect(s->display);
+    if (s->paint_buffer) destroy_staging_buffer(s->paint_buffer);
+    
+    // Destroy Wayland Proxies
+    if (s->xdg_toplevel) xdg_toplevel_destroy(s->xdg_toplevel);
+    if (s->xdg_surface) xdg_surface_destroy(s->xdg_surface);
+    if (s->xdg_wm_base) xdg_wm_base_destroy(s->xdg_wm_base);
+    if (s->surface) wl_surface_destroy(s->surface);
+    if (s->compositor) wl_compositor_destroy(s->compositor);
+    if (s->active_lease) wp_drm_lease_v1_destroy(s->active_lease);
+    if (s->lease_connector) wp_drm_lease_connector_v1_destroy(s->lease_connector);
+    if (s->lease_device) wp_drm_lease_device_v1_destroy(s->lease_device);
+    if (s->registry) wl_registry_destroy(s->registry);
+    if (s->display) wl_display_disconnect(s->display);
+
+
+    
+    if (s->leased_fd >= 0) {
+        close(s->leased_fd);
+    }
+
+    extern void lau_final_cleanup(WaveSystem *ws, int sfd);
+    lau_final_cleanup((WaveSystem*)s, s->leased_fd);
+
     lau_free(s);
 }

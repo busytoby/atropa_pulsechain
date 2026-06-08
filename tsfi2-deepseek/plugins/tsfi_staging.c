@@ -10,7 +10,12 @@
 
 // --- Allocation ---
 StagingBuffer* create_staging_buffer(size_t width, size_t height) {
-    size_t stride = width * 4; // RGBA
+    bool is_ab4h = false;
+    const char *ab4h_env = getenv("TSFI_AB4H");
+    if (ab4h_env && strcmp(ab4h_env, "1") == 0) {
+        is_ab4h = true;
+    }
+    size_t stride = width * (is_ab4h ? 8 : 4);
     size_t size = stride * height;
     
     size_t aligned_size = (size + 4095) & ~4095;

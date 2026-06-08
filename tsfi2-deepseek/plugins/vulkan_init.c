@@ -32,19 +32,30 @@ void tag_vulkan_object(VulkanContext *vk, uint64_t handle, VkObjectType type, co
 
 static void* VKAPI_CALL tsfi_vulkan_alloc(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope scope) {
     (void)pUserData; (void)scope;
-    // We use lau_memalign to ensure driver memory is optimized for AVX-512 thunks.
-    // Default alignment is 64 if not specified higher by the driver.
-    return lau_memalign_loc(alignment > 64 ? alignment : 64, size, "VULKAN_DRIVER", 0);
+    void *ptr = NULL;
+    if (posix_memalign(&ptr, alignment > 64 ? alignment : 64, size) != 0) return NULL;
+    return ptr;
 }
 
 static void* VKAPI_CALL tsfi_vulkan_realloc(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope scope) {
     (void)pUserData; (void)scope; (void)alignment;
-    return lau_realloc_loc(pOriginal, size, "VULKAN_DRIVER", 0);
+    if (!pOriginal) return tsfi_vulkan_alloc(pUserData, size, alignment, scope);
+    extern LauMetadata* lau_registry_find(void *payload);
+    if (lau_registry_find(pOriginal)) {
+        return lau_realloc_loc(pOriginal, size, "VULKAN_DRIVER", 0);
+    }
+    return realloc(pOriginal, size);
 }
 
 static void VKAPI_CALL tsfi_vulkan_free(void* pUserData, void* pMemory) {
     (void)pUserData;
-    if (pMemory) lau_free(pMemory);
+    if (!pMemory) return;
+    extern LauMetadata* lau_registry_find(void *payload);
+    if (lau_registry_find(pMemory)) {
+        lau_free(pMemory);
+    } else {
+        free(pMemory);
+    }
 }
 
 static void VKAPI_CALL tsfi_vulkan_internal_alloc_notify(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope scope) {
@@ -234,6 +245,7 @@ void cleanup_vulkan(VulkanContext *vk) {
 
         // ReBAR Cleanup
         if (vk->rebar_mapped_ptr && vk->vkUnmapMemory) vk->vkUnmapMemory(vk->device, vk->rebar_memory);
+        if (vk->secret_rebar_buffer && vk->vkDestroyBuffer) vk->vkDestroyBuffer(vk->device, vk->secret_rebar_buffer, &tsfi_alloc_callbacks);
         if (vk->rebar_buffer && vk->vkDestroyBuffer) vk->vkDestroyBuffer(vk->device, vk->rebar_buffer, &tsfi_alloc_callbacks);
         if (vk->rebar_memory && vk->vkFreeMemory) vk->vkFreeMemory(vk->device, vk->rebar_memory, &tsfi_alloc_callbacks);
 
@@ -253,7 +265,7 @@ void cleanup_vulkan(VulkanContext *vk) {
             if (vk->swapchainImageCount > 0 && vk->swapchainImageCount < 16) {
                 for (uint32_t i = 0; i < vk->swapchainImageCount; i++) {
                     if (vk->swapchainImageViews[i] && vk->vkDestroyImageView) {
-                        vk->vkDestroyImageView(vk->device, vk->swapchainImageViews[i], NULL);
+                        vk->vkDestroyImageView(vk->device, vk->swapchainImageViews[i], &tsfi_alloc_callbacks);
                     }
                 }
             }
@@ -262,22 +274,22 @@ void cleanup_vulkan(VulkanContext *vk) {
         if (vk->swapchainImages) {
             vk->swapchainImages = NULL;
         }
-        if (vk->swapchain) vk->vkDestroySwapchainKHR(vk->device, vk->swapchain, NULL);
+        if (vk->swapchain) vk->vkDestroySwapchainKHR(vk->device, vk->swapchain, &tsfi_alloc_callbacks);
         for (int i = 0; i < 3; i++) {
-            if (vk->imageAvailableSemaphores[i]) vk->vkDestroySemaphore(vk->device, vk->imageAvailableSemaphores[i], NULL);
-            if (vk->inFlightFences[i]) vk->vkDestroyFence(vk->device, vk->inFlightFences[i], NULL);
+            if (vk->imageAvailableSemaphores[i]) vk->vkDestroySemaphore(vk->device, vk->imageAvailableSemaphores[i], &tsfi_alloc_callbacks);
+            if (vk->inFlightFences[i]) vk->vkDestroyFence(vk->device, vk->inFlightFences[i], &tsfi_alloc_callbacks);
         }
         for (int i = 0; i < 8; i++) {
-            if (vk->renderFinishedSemaphores[i]) vk->vkDestroySemaphore(vk->device, vk->renderFinishedSemaphores[i], NULL);
+            if (vk->renderFinishedSemaphores[i]) vk->vkDestroySemaphore(vk->device, vk->renderFinishedSemaphores[i], &tsfi_alloc_callbacks);
         }
-        if (vk->timelineSemaphore) vk->vkDestroySemaphore(vk->device, vk->timelineSemaphore, NULL);
-        vk->vkDestroyDevice(vk->device, NULL);
+        if (vk->timelineSemaphore) vk->vkDestroySemaphore(vk->device, vk->timelineSemaphore, &tsfi_alloc_callbacks);
+        vk->vkDestroyDevice(vk->device, &tsfi_alloc_callbacks);
     }
     if (vk->debugMessenger && vk->vkDestroyDebugUtilsMessengerEXT) {
-        vk->vkDestroyDebugUtilsMessengerEXT(vk->instance, vk->debugMessenger, NULL);
+        vk->vkDestroyDebugUtilsMessengerEXT(vk->instance, vk->debugMessenger, &tsfi_alloc_callbacks);
     }
-    if (vk->surface) vk->vkDestroySurfaceKHR(vk->instance, vk->surface, NULL);
-    if (vk->instance) vk->vkDestroyInstance(vk->instance, NULL);
+    if (vk->surface) vk->vkDestroySurfaceKHR(vk->instance, vk->surface, &tsfi_alloc_callbacks);
+    if (vk->instance) vk->vkDestroyInstance(vk->instance, &tsfi_alloc_callbacks);
     if (vk->lib_handle) dlclose(vk->lib_handle);
     lau_free(vk);
 }
@@ -326,7 +338,8 @@ VulkanContext *init_vulkan(int leased_fd) {
         "VK_KHR_surface", 
         "VK_KHR_wayland_surface",
         "VK_KHR_display",
-        "VK_EXT_debug_utils" 
+        "VK_EXT_debug_utils",
+        "VK_EXT_swapchain_colorspace"
     };
     const char *layers[] = { "VK_LAYER_KHRONOS_validation" };
     
@@ -364,7 +377,7 @@ VulkanContext *init_vulkan(int leased_fd) {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = use_validation ? &validationFeatures : NULL,
         .pApplicationInfo = &appInfo,
-        .enabledExtensionCount = 6,
+        .enabledExtensionCount = 7,
         .ppEnabledExtensionNames = extensions,
         .enabledLayerCount = use_validation ? 1 : 0,
         .ppEnabledLayerNames = use_validation ? layers : NULL
@@ -865,17 +878,37 @@ void init_vk_swapchain(VulkanContext *vk, int width, int height) {
     }
     VkSurfaceFormatKHR *formats = (VkSurfaceFormatKHR*)lau_malloc(sizeof(VkSurfaceFormatKHR) * formatCount);
     vk->vkGetPhysicalDeviceSurfaceFormatsKHR(vk->physical_device, vk->surface, &formatCount, formats);
-    lau_free(formats);
-
+ 
     VkSurfaceCapabilitiesKHR caps;
     if (vk->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk->physical_device, vk->surface, &caps) != VK_SUCCESS) {
         printf("[VULKAN] Error: Failed to get surface capabilities.\n");
+        lau_free(formats);
         return;
     }
-
+ 
+    VkFormat swapchainFormat = VK_FORMAT_B8G8R8A8_SRGB;
+    VkColorSpaceKHR swapchainColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    const char *ab4h_env = getenv("TSFI_AB4H");
+    if (ab4h_env && strcmp(ab4h_env, "1") == 0) {
+        bool hdr_supported = false;
+        for (uint32_t i = 0; i < formatCount; i++) {
+            if (formats[i].format == VK_FORMAT_R16G16B16A16_SFLOAT) {
+                swapchainFormat = formats[i].format;
+                swapchainColorSpace = formats[i].colorSpace;
+                hdr_supported = true;
+                break;
+            }
+        }
+        if (!hdr_supported) {
+            printf("[VULKAN] WARNING: requested TSFI_AB4H format (R16G16B16A16_SFLOAT) not supported by surface. Falling back to B8G8R8A8_SRGB.\n");
+        }
+    }
+    vk->swapchainFormat = swapchainFormat;
+    lau_free(formats);
+ 
     VkSwapchainCreateInfoKHR swapInfo = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, .surface = vk->surface, .minImageCount = caps.minImageCount + 1,
-        .imageFormat = VK_FORMAT_B8G8R8A8_SRGB, .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, .imageExtent = caps.currentExtent,
+        .imageFormat = swapchainFormat, .imageColorSpace = swapchainColorSpace, .imageExtent = caps.currentExtent,
         .imageArrayLayers = 1, .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE, .preTransform = caps.currentTransform, .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = VK_PRESENT_MODE_FIFO_KHR, .clipped = VK_TRUE, .oldSwapchain = VK_NULL_HANDLE
@@ -904,7 +937,7 @@ void init_vk_swapchain(VulkanContext *vk, int width, int height) {
     vk->swapchainImageViews = (VkImageView*)lau_malloc(sizeof(VkImageView) * vk->swapchainImageCount);
     memset(vk->swapchainImageViews, 0, sizeof(VkImageView) * vk->swapchainImageCount);
     for (uint32_t i = 0; i < vk->swapchainImageCount; i++) {
-        VkImageViewCreateInfo viewInfo = { .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = vk->swapchainImages[i], .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = VK_FORMAT_B8G8R8A8_SRGB, .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } };
+        VkImageViewCreateInfo viewInfo = { .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = vk->swapchainImages[i], .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = swapchainFormat, .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } };
         vk->vkCreateImageView(vk->device, &viewInfo, &tsfi_alloc_callbacks, &vk->swapchainImageViews[i]);
     }
 }
