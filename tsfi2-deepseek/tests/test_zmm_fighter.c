@@ -335,6 +335,51 @@ int main() {
     assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000002") != NULL); // status = 2
     printf("PASS: Shamus locked door traversal consumed key and advanced room successfully!\n");
 
+    // 15. Test updateBallSoccerState (Method 16) - Ground Bounce
+    // Selector: fa49e91b
+    // bx=50, by=50, bz=2, vz=-5 (which is 0xfffffffffffffffb in 2s complement)
+    // px=100, py=100, headCarry=0
+    // Expected: ground contact triggers, newBz = 0, newVz = 4 (abs(-6) * 0.7 = 4.2 -> 4)
+    printf("[ZMM] Simulating International Soccer ball physics: Ground Rebound...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"fa49e91b"
+                  "0000000000000000000000000000000000000000000000000000000000000032" // bx = 50
+                  "0000000000000000000000000000000000000000000000000000000000000032" // by = 50
+                  "0000000000000000000000000000000000000000000000000000000000000002" // bz = 2
+                  "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb" // vz = -5
+                  "0000000000000000000000000000000000000000000000000000000000000064" // px = 100
+                  "0000000000000000000000000000000000000000000000000000000000000064" // py = 100
+                  "0000000000000000000000000000000000000000000000000000000000000000\""); // carry = 0
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    // newBz (3rd word / index 128) should be 0
+    // newVz (4th word / index 192) should be 4
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000000") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000004") != NULL);
+    printf("PASS: International Soccer ground collision rebound velocity calculated correctly!\n");
+
+    // 16. Test updateBallSoccerState (Method 16) - Head-Carry Lock
+    // bx=103, by=100, bz=25 (height aligned)
+    // px=100, py=100, headCarry=0
+    // Expected: snaps into lock, newBx = px = 100 (0x64), newBy = py = 100 (0x64), newBz = 24 (0x18), newCarry = 1
+    printf("[ZMM] Simulating International Soccer ball physics: Head-Carry Lock Snap...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"fa49e91b"
+                  "0000000000000000000000000000000000000000000000000000000000000067" // bx = 103
+                  "0000000000000000000000000000000000000000000000000000000000000064" // by = 100
+                  "0000000000000000000000000000000000000000000000000000000000000019" // bz = 25
+                  "0000000000000000000000000000000000000000000000000000000000000000" // vz = 0
+                  "0000000000000000000000000000000000000000000000000000000000000064" // px = 100
+                  "0000000000000000000000000000000000000000000000000000000000000064" // py = 100
+                  "0000000000000000000000000000000000000000000000000000000000000000\""); // carry = 0
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    // newBx should be 100 (0x64), newBy = 100 (0x64), newBz = 24 (0x18), newCarry (5th word / index 256) should be 1
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000064") != NULL);
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000018") != NULL);
+    assert(strcmp(&vm.output_buffer[256], "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    printf("PASS: International Soccer head-carry coordination locked successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;

@@ -1038,6 +1038,91 @@ object "GraphicsSystem" {
                 return(0x00, 192)
             }
 
+            // ----------------------------------------------------------------
+            // Method 16: updateBallSoccerState(bx, by, bz, vz, px, py, headCarry)
+            // Selector: 0xfa49e91b
+            // ----------------------------------------------------------------
+            if eq(selector, 0xfa49e91b) {
+                let bx := calldataload(4)
+                let by := calldataload(36)
+                let bz := calldataload(68)
+                let vz := calldataload(100)
+                let px := calldataload(132)
+                let py := calldataload(164)
+                let headCarry := calldataload(196)
+
+                let newBx := bx
+                let newBy := by
+                let newBz := bz
+                let newVz := vz
+                let newCarry := headCarry
+
+                // Constants
+                let gravity := 1
+                let playerHeight := 24 // Head coordinate height
+                let restitution := 70  // 0.7 coefficient scaled by 100
+
+                // 1. Evaluate Head-Carry Snap Logic
+                let xDiff := 0
+                if gt(bx, px) { xDiff := sub(bx, px) }
+                if iszero(gt(bx, px)) { xDiff := sub(px, bx) }
+                
+                let yDiff := 0
+                if gt(by, py) { yDiff := sub(by, py) }
+                if iszero(gt(by, py)) { yDiff := sub(py, by) }
+
+                // If ball is within 8 horizontal pixels and height is near player's head (20-28)
+                let inRange := and(lt(xDiff, 8), lt(yDiff, 8))
+                let heightAligned := and(iszero(lt(bz, 20)), lt(bz, 28))
+
+                if and(inRange, heightAligned) {
+                    newCarry := 1 // Trigger Head-Carry Lock
+                }
+
+                // 2. Apply Physics based on state
+                if newCarry {
+                    // Ball is locked to the player's skull vector
+                    newBx := px
+                    newBy := py
+                    newBz := playerHeight
+                    newVz := 0
+                }
+                
+                if iszero(newCarry) {
+                    // Apply normal gravity vector integration
+                    newBz := add(bz, newVz)
+                    newVz := sub(newVz, gravity)
+
+                    // Bounce check on ground contact (bz <= 0 or wrap-around high numbers)
+                    let signBit := 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+                    let bzIsNeg := gt(newBz, signBit)
+                    let bzIsPos := iszero(bzIsNeg)
+                    if or(bzIsNeg, and(bzIsPos, gt(newBz, 200))) {
+                        newBz := 0
+                        // Reflect vertical speed with dampening: vz' = -0.7 * vz
+                        let absVz := newVz
+                        // Since newVz is already decreased by gravity, let's take absolute value
+                        let vzIsNeg := gt(newVz, signBit)
+                        if vzIsNeg { absVz := sub(0, newVz) }
+                        
+                        newVz := div(mul(absVz, restitution), 100)
+                        
+                        // Cease bouncing if energy is low (vz < 2 signed)
+                        let newVzIsNeg := gt(newVz, signBit)
+                        if or(newVzIsNeg, lt(newVz, 2)) {
+                            newVz := 0
+                        }
+                    }
+                }
+
+                mstore(0x00, newBx)
+                mstore(0x20, newBy)
+                mstore(0x40, newBz)
+                mstore(0x60, newVz)
+                mstore(0x80, newCarry)
+                return(0x00, 160)
+            }
+
             revert(0, 0)
         }
     }
