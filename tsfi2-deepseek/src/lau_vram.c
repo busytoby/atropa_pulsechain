@@ -95,6 +95,7 @@ void lau_vram_write_char(LauVRAM *vram, char c) {
         } else if (c == '\r') {
             vram->cursor_x = 0;
         } else if (c == '\n') {
+            vram->cursor_x = 0;
             vram->cursor_y++;
             if (vram->cursor_y >= LAU_VRAM_ROWS) {
                 vram_scroll_up(vram);

@@ -467,6 +467,8 @@ int main() {
     while (running) {
         wl_display_dispatch_pending(display);
 
+        bool need_redraw = g_vram->is_dirty;
+
         if (resize_pending) {
             resize_pending = false;
             if (wl_buffers[0]) wl_buffer_destroy(wl_buffers[0]);
@@ -480,9 +482,11 @@ int main() {
             wl_buffers[1] = create_shm_buffer(win_width, win_height, &pixel_datas[1]);
             back_buffer = malloc(win_width * win_height * 4);
             printf("[TERMINAL] Resized to %dx%d\n", win_width, win_height);
+            need_redraw = true;
         }
 
-        if (configured) {
+        if (configured && need_redraw) {
+            g_vram->is_dirty = false;
             render_terminal_display();
             
             // Swap buffer indices to prevent writing to the buffer currently read by the compositor
