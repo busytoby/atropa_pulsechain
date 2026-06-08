@@ -106,6 +106,10 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         lau_vram_write_string(g_vram, "\r\n", 2);
         if (cmd_len > 0) {
             cmd_buf[cmd_len] = '\0';
+            if (strcmp(cmd_buf, "exit") == 0) {
+                running = false;
+                return;
+            }
             
             // Redirect stdout/stderr of command to VRAM
             int stdout_pipe[2];
@@ -116,7 +120,32 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                 dup2(stdout_pipe[1], STDERR_FILENO);
                 close(stdout_pipe[1]);
 
-                tsfi_zmm_vm_exec(&vm, cmd_buf);
+                // Determine if it is a VM command or Host command
+                char cmd_copy[512];
+                strncpy(cmd_copy, cmd_buf, sizeof(cmd_copy));
+                cmd_copy[sizeof(cmd_copy) - 1] = '\0';
+                char *first_word = strtok(cmd_copy, " \t");
+                bool is_vm_cmd = false;
+                if (first_word) {
+                    if (strcmp(first_word, "YULINIT") == 0 ||
+                        strcmp(first_word, "YULEXEC") == 0 ||
+                        strcmp(first_word, "SWIFTLOAD") == 0 ||
+                        strcmp(first_word, "REU") == 0 ||
+                        strcmp(first_word, "CALC") == 0 ||
+                        strcmp(first_word, "MEMDUMP") == 0 ||
+                        strcmp(first_word, "SPRITE") == 0 ||
+                        strcmp(first_word, "OMNICOMM") == 0) {
+                        is_vm_cmd = true;
+                    }
+                }
+
+                if (is_vm_cmd) {
+                    tsfi_zmm_vm_exec(&vm, cmd_buf);
+                } else {
+                    int rc = system(cmd_buf);
+                    (void)rc;
+                }
+
                 fflush(stdout);
                 fflush(stderr);
 
@@ -245,7 +274,7 @@ static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out
 }
 
 void render_terminal_display(void) {
-    uint32_t bg_color = 0xFF18181C;
+    uint32_t bg_color = 0xFF0A0B10; // Obsidian dark background
     for (int i = 0; i < win_width * win_height; i++) {
         back_buffer[i] = bg_color;
     }
@@ -259,24 +288,56 @@ void render_terminal_display(void) {
         .data = back_buffer
     };
 
-    draw_debug_text(&sb, 20, 20, "TSFI SOVEREIGN CPU TERMINAL (SOFTWARE RENDERED)", 0xFF00FFFF, true);
+    // Render title status bar area
+    // Cyan status divider line at y=45
+    if (win_height > 50) {
+        for (int x = 0; x < win_width; x++) {
+            back_buffer[45 * win_width + x] = 0xFF8BE9FD; // Pastel Cyan status divider
+        }
+    }
 
+    draw_debug_text(&sb, 20, 15, "TSFI SOVEREIGN CPU TERMINAL", 0xFFBD93F9, true); // Pastel Purple
+    draw_debug_text(&sb, win_width - 280, 15, "[ SYS: AUDITED ] [ VM: RUNNING ]", 0xFF50FA7B, true); // Pastel Green
+
+    // Border around terminal panel
+    if (win_height > 70) {
+        // Left & Right borders
+        for (int y = 55; y < win_height - 12; y++) {
+            for (int dx = 0; dx < 2; dx++) {
+                back_buffer[y * win_width + 10 + dx] = 0xFF6272A4; // Slate gray border
+                back_buffer[y * win_width + (win_width - 12) + dx] = 0xFF6272A4;
+            }
+        }
+        // Top & Bottom borders
+        for (int x = 10; x < win_width - 10; x++) {
+            for (int dy = 0; dy < 2; dy++) {
+                back_buffer[(55 + dy) * win_width + x] = 0xFF6272A4;
+                back_buffer[((win_height - 14) + dy) * win_width + x] = 0xFF6272A4;
+            }
+        }
+    }
+
+    // Dracula premium console palette
     static const uint32_t palette[16] = {
-        0xFF000000, 0xFFCC0000, 0xFF00CC00, 0xFFCCCC00,
-        0xFF0000CC, 0xFFCC00CC, 0xFF00CCCC, 0xFFCCCCCC,
-        0xFF555555, 0xFFFF5555, 0xFF55FF55, 0xFFFFFF55,
-        0xFF5555FF, 0xFFFF55FF, 0xFF55FFFF, 0xFFFFFFFF
+        0xFF000000, 0xFFFF5555, 0xFF50FA7B, 0xFFF1FA8C,
+        0xFFBD93F9, 0xFFFF79C6, 0xFF8BE9FD, 0xFFF8F8F2,
+        0xFF6272A4, 0xFFFF5555, 0xFF50FA7B, 0xFFF1FA8C,
+        0xFFBD93F9, 0xFFFF79C6, 0xFF8BE9FD, 0xFFF8F8F2
     };
 
     int char_w = 10;
     int char_h = 18;
-    int mon_x = 20;
-    int mon_y = 60;
+    int mon_x = 22;
+    int mon_y = 67;
 
-    int start_y = LAU_VRAM_ROWS - 35;
+    int max_rows = (win_height - 80) / char_h;
+    if (max_rows < 5) max_rows = 5;
+    if (max_rows > 35) max_rows = 35;
+
+    int start_y = LAU_VRAM_ROWS - max_rows;
     if (start_y < 0) start_y = 0;
 
-    for (int y = 0; y < 35; y++) {
+    for (int y = 0; y < max_rows; y++) {
         int vram_y = start_y + y;
         if (vram_y >= LAU_VRAM_ROWS) break;
         
@@ -286,28 +347,43 @@ void render_terminal_display(void) {
             LauVRAMCell cell = g_vram->grid[vram_y][x];
             if (cell.character > 32) {
                 uint32_t fg = palette[cell.fg_color & 0xF];
-                if (cell.attributes & 1) fg = palette[(cell.fg_color & 0x7) + 8]; // Bold
+                if (cell.attributes & 1) fg = palette[(cell.fg_color & 0x7) + 8]; // Bold/Bright
                 
                 int px = mon_x + (x * char_w);
                 int py = mon_y + (y * char_h);
-                draw_debug_codepoint(&sb, px, py, cell.character, fg);
+                if (px >= 12 && px < win_width - 22 && py >= 57 && py < win_height - 32) {
+                    draw_debug_codepoint(&sb, px, py, cell.character, fg);
+                }
             }
         }
     }
     
-    // Draw inverted cursor block
+    // Draw inverted green/amber cursor block
     int cy = g_vram->cursor_y - start_y;
     int cx = g_vram->cursor_x;
-    if (cy >= 0 && cy < 35 && cx >= 0 && cx < 120) {
+    if (cy >= 0 && cy < max_rows && cx >= 0 && cx < 120) {
         int px = mon_x + cx * char_w;
         int py = mon_y + cy * char_h;
         for (int dy = 0; dy < char_h - 2; dy++) {
             for (int dx = 0; dx < char_w; dx++) {
                 int ty = py + dy;
                 int tx = px + dx;
-                if (tx >= 0 && tx < win_width && ty >= 0 && ty < win_height) {
-                    back_buffer[ty * win_width + tx] ^= 0xFFFFFFFF;
+                if (tx >= 12 && tx < win_width - 22 && ty >= 57 && ty < win_height - 32) {
+                    back_buffer[ty * win_width + tx] ^= 0xFF00FF00; // Electric green invert tint
                 }
+            }
+        }
+    }
+
+    // Apply CRT horizontal scanlines
+    for (int y = 0; y < win_height; y++) {
+        if (y % 3 == 0) {
+            for (int x = 0; x < win_width; x++) {
+                uint32_t color = back_buffer[y * win_width + x];
+                uint8_t r = ((color >> 16) & 0xFF) * 0.82f;
+                uint8_t g = ((color >> 8) & 0xFF) * 0.82f;
+                uint8_t b = (color & 0xFF) * 0.82f;
+                back_buffer[y * win_width + x] = (0xFF << 24) | (r << 16) | (g << 8) | b;
             }
         }
     }
