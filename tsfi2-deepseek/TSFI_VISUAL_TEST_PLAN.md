@@ -111,6 +111,17 @@ This document outlines display-specific test cases to verify the integration of 
 *   **Visual Outcome (Success):** A fluid, 12fps performance of the Crow transitioning through classical positions without limb detachment or material flickering.
 *   **Visual Outcome (Failure):** Jittery movement (LERP failure), inconsistent plumage textures (Temporal incoherence), or VRAM exhaustion crashes.
 
+## 11. Test Case: "The Telemetry Monitor" (VRAM-to-CPU RAM Mapped Telemetry)
+**Objective:** Verify real-time synchronization between the Wayland Terminal VRAM (screen/telemetry) and the Yul CPU VM memory.
+
+*   **Logic:**
+    1.  Terminal performs actions (e.g., loading screens or running commands), generating telemetry notifications.
+    2.  The emulator's telemetry system maps the active event string directly into the Yul CPU VM memory space starting at address `0xF000` (61440).
+    3.  Verification tools issue a `PEEK` command on address `61440` (count `32`).
+    4.  The python test runner parses the printed memory dump and reconstructs the ASCII string from the CPU state.
+*   **Visual Outcome (Success):** The reconstructed string matches the expected telemetry event (e.g. `'Rendered VM Screen'`, `'Rendered Main Menu'`) instantly with zero latency or state lag.
+*   **Visual Outcome (Failure):** The parser outputs garbled characters, stale telemetry data, or mismatched states.
+
 ## Execution Strategy
 The tests will be implemented as a single interactive binary `tests/test_visual_hierarchy` controlled by the `lau_memory` system directives.
 

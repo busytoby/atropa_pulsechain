@@ -152,7 +152,9 @@ void tsfi_wire_firmware_teardown(void) {
     
     lau_unseal_object(g_tsfi_firmware);
     shm_unlink("/tsfi_firmware_manifold");
-    lau_free(g_tsfi_firmware);
+    size_t fw_size = sizeof(LauWireFirmware);
+    if (fw_size < 65536) fw_size = 65536;
+    munmap(g_tsfi_firmware, fw_size);
     g_tsfi_firmware = NULL;
 }
 
@@ -169,6 +171,7 @@ void tsfi_wire_firmware_init(void) {
     if (fw_size < 65536) fw_size = 65536; 
     
     const char *shm_name = "/tsfi_firmware_manifold";
+    shm_unlink(shm_name);
     int shm_fd = shm_open(shm_name, O_RDWR | O_CREAT, 0666);
     if (shm_fd < 0) {
         perror("shm_open firmware");
