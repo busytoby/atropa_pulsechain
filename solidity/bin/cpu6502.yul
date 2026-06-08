@@ -689,11 +689,25 @@ object "CPU6502Emulator" {
                                 }
                             }
 
-                            // Jump physics
-                            if and(jumpTrigger, iszero(jumping)) {
-                                jumping := 1
-                                pvy := sub(0, 12)
-                                sstore(getUserSlot(55036), 1) // Sound Strobe: 1 (jump)
+                            // Jump physics (Evolved: Double Jump support)
+                            if jumpTrigger {
+                                let canJump := 0
+                                if iszero(jumping) {
+                                    jumping := 1
+                                    canJump := 1
+                                }
+                                // Double Jump logic: slot 55042 holds jump counter
+                                let jumpCount := sload(getUserSlot(55042))
+                                if and(jumping, lt(jumpCount, 2)) {
+                                    jumpCount := add(jumpCount, 1)
+                                    sstore(getUserSlot(55042), jumpCount)
+                                    canJump := 1
+                                }
+                                
+                                if canJump {
+                                    pvy := sub(0, 11) // Slighly lower impulse for double jump control
+                                    sstore(getUserSlot(55036), 1) // Sound Strobe: 1 (jump)
+                                }
                                 sstore(getUserSlot(55026), 0) // Clear trigger
                             }
                             
@@ -704,6 +718,7 @@ object "CPU6502Emulator" {
                                     py := 520
                                     pvy := 0
                                     jumping := 0
+                                    sstore(getUserSlot(55042), 0) // Reset jump count on ground
                                 }
                             }
 

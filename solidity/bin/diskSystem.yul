@@ -23,14 +23,25 @@ object "DiskSystem" {
             // ================================================================
             // FEATURE 1: SWITCH BOUNCE DEBOUNCER (SECURITY LAYER)
             // ================================================================
-            mstore(0x00, caller())
-            mstore(0x20, 0x99)
-            let debounceSlot := keccak256(0x00, 0x40)
-            let lastCallBlock := sload(debounceSlot)
+            let isReadOnly := 0
+            if eq(selector, 0xb5123d47) { isReadOnly := 1 } // getJiffies
+            if eq(selector, 0x228cf1aa) { isReadOnly := 1 } // generateBugRepellentChecksum
+            if eq(selector, 0x5b34032d) { isReadOnly := 1 } // getNoteAddress
+            if eq(selector, 0x9812a4df) { // executeDiskCommand
+                let cmdType := shr(240, calldataload(68))
+                if eq(cmdType, 0x5230) { isReadOnly := 1 } // ASCII "R0"
+            }
 
-            // Revert if call bounced in the same block
-            if eq(lastCallBlock, number()) { revert(0, 0) }
-            sstore(debounceSlot, number())
+            if iszero(isReadOnly) {
+                mstore(0x00, caller())
+                mstore(0x20, 0x99)
+                let debounceSlot := keccak256(0x00, 0x40)
+                let lastCallBlock := sload(debounceSlot)
+
+                // Revert if call bounced in the same block
+                if eq(lastCallBlock, number()) { revert(0, 0) }
+                sstore(debounceSlot, number())
+            }
 
             // Helper to convert 20-byte address to 40 hex ASCII characters in memory
             function writeAddressHex(memPtr, addr) {
@@ -98,6 +109,102 @@ object "DiskSystem" {
                 let elapsedJiffies := mul(number(), 60)
                 mstore(0x00, elapsedJiffies)
                 return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 5: generateBugRepellentChecksum(bytes calldata data) -> uint256
+            // Emulates Michael Kleinert & David Barron's "Bug Repellent" utility checksum generator.
+            // Uses keccak256 hash logic to format a highly collision-resistant 4-character hex checksum [0-9A-F].
+            // Selector: 0x228cf1aa
+            // ----------------------------------------------------------------
+            if eq(selector, 0x228cf1aa) {
+                let dataLength := calldataload(36)
+
+                // Copy calldata payload to memory starting at slot 0x100
+                calldatacopy(0x100, 68, dataLength)
+
+                // Generate Keccak-256 hash of the payload
+                let h := keccak256(0x100, dataLength)
+
+                // Extract two bytes from the hash (16 bits)
+                let b1 := and(h, 0xFF)
+                let b2 := and(shr(8, h), 0xFF)
+
+                // Format b1 and b2 as 4 ASCII hex characters: c1, c2, c3, c4
+                let h1 := shr(4, b1)
+                let h2 := and(b1, 0x0F)
+                let h3 := shr(4, b2)
+                let h4 := and(b2, 0x0F)
+
+                let c1 := add(h1, 48)
+                if gt(h1, 9) { c1 := add(h1, 55) } // Shift to 'A'-'F'
+                
+                let c2 := add(h2, 48)
+                if gt(h2, 9) { c2 := add(h2, 55) }
+
+                let c3 := add(h3, 48)
+                if gt(h3, 9) { c3 := add(h3, 55) }
+
+                let c4 := add(h4, 48)
+                if gt(h4, 9) { c4 := add(h4, 55) }
+
+                // Pack characters into a single 32-bit word: [c1][c2][c3][c4]
+                let packed := or(or(shl(24, c1), shl(16, c2)), or(shl(8, c3), c4))
+
+                mstore(0x00, packed)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 8: pointNote(bytes32 filename, uint256 sector, uint256 byteOffset)
+            // Selector: 0x933010b4
+            // ----------------------------------------------------------------
+            if eq(selector, 0x933010b4) {
+                let filename := calldataload(4)
+                let sector := calldataload(36)
+                let byteOffset := calldataload(68)
+
+                // Validation: byteOffset must be < 125
+                if gt(byteOffset, 124) { revert(0, 0) }
+
+                mstore(0x00, caller())
+                mstore(0x20, filename)
+                let nameKey := keccak256(0x00, 64)
+                
+                mstore(0x00, nameKey)
+                mstore(0x20, 0x1111)
+                sstore(keccak256(0x00, 64), sector)
+
+                mstore(0x00, nameKey)
+                mstore(0x20, 0x2222)
+                sstore(keccak256(0x00, 64), byteOffset)
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 9: getNoteAddress(bytes32 filename) -> (uint256 sector, uint256 byteOffset)
+            // Selector: 0x5b34032d
+            // ----------------------------------------------------------------
+            if eq(selector, 0x5b34032d) {
+                let filename := calldataload(4)
+
+                mstore(0x00, caller())
+                mstore(0x20, filename)
+                let nameKey := keccak256(0x00, 64)
+
+                mstore(0x00, nameKey)
+                mstore(0x20, 0x1111)
+                let sector := sload(keccak256(0x00, 64))
+
+                mstore(0x00, nameKey)
+                mstore(0x20, 0x2222)
+                let byteOffset := sload(keccak256(0x00, 64))
+
+                mstore(0x00, sector)
+                mstore(0x20, byteOffset)
+                return(0x00, 64)
             }
 
             // ----------------------------------------------------------------

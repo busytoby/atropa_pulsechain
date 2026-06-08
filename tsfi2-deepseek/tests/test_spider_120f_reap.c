@@ -7,6 +7,22 @@
 #include "lau_registry.h"
 
 // Mock the Verilog ICPC 120F Spider Trait Tree Evaluator
+int evaluate_spider_diameter(bool valid[4], int depths[4]) {
+    int max1 = 0;
+    int max2 = 0;
+    for (int i = 0; i < 4; i++) {
+        if (valid[i]) {
+            if (depths[i] > max1) {
+                max2 = max1;
+                max1 = depths[i];
+            } else if (depths[i] > max2) {
+                max2 = depths[i];
+            }
+        }
+    }
+    return max1 + max2;
+}
+
 void evaluate_spider_taste(bool valid[4], int depths[4], uint64_t resonance_k, int *out_diameter, bool *out_good_taste) {
     int max1 = 0;
     int max2 = 0;

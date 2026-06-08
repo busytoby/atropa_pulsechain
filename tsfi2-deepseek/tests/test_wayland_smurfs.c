@@ -622,6 +622,15 @@ int main() {
         thunk_poke(55025, moveDir);
 
         // 3. Trigger Physics / Collision updates inside Yul
+        if (game_screen == 2) {
+            int current_vx = (int)thunk_peek(55039);
+            if (current_vx > 127) current_vx -= 256;
+            if (current_vx > 2) {
+                thunk_poke(55039, 2);
+            } else if (current_vx < -2) {
+                thunk_poke(55039, 254); // -2 in 8-bit
+            }
+        }
         thunk_poke(55024, 1);
 
         // 4. Fetch updated game states from Yul EVM Registers
@@ -629,6 +638,15 @@ int main() {
         smurf_y        = (float)thunk_peek(55028);
         smurf_jumping  = (thunk_peek(55030) != 0);
         energy         = (int)thunk_peek(55031);
+        if (game_screen == 2 && energy < prev_energy) {
+            int loss = prev_energy - energy;
+            if (loss > 8) {
+                int adjusted_energy = prev_energy - 8;
+                if (adjusted_energy > 100) adjusted_energy = 100;
+                thunk_poke(55031, adjusted_energy);
+                energy = adjusted_energy;
+            }
+        }
         score          = (int)thunk_peek(55032);
         game_screen    = (int)thunk_peek(55033);
         game_over      = (thunk_peek(55034) != 0);
@@ -856,38 +874,81 @@ int main() {
             draw_line_aa(pixels, W, H, rock_cx - 8, floor_y - 15, rock_cx + 8, floor_y - 15, make_ab4h_pixel(0.6f, 0.6f, 0.65f, 1.0f), 1.5f);
             draw_line_aa(pixels, W, H, rock_cx + 8, floor_y - 15, rock_cx + 15, floor_y, make_ab4h_pixel(0.5f, 0.5f, 0.55f, 1.0f), 1.5f);
         } else if (game_screen == 2) {
-            // Screen 2: Cave System (darker theme with blue/purple ambient shadows)
+            // Screen 2: Gothic Cavern (darker theme with blue/purple ambient shadows and bioluminescence)
             for (int y = 0; y < H; y++) {
                 float t = (float)y / H;
-                float cr = 0.02f * (1.0f - t) + 0.06f * t;
-                float cg = 0.02f * (1.0f - t) + 0.05f * t;
-                float cb = 0.05f * (1.0f - t) + 0.12f * t;
+                float cr = 0.01f * (1.0f - t) + 0.04f * t;
+                float cg = 0.01f * (1.0f - t) + 0.03f * t;
+                float cb = 0.03f * (1.0f - t) + 0.08f * t;
                 draw_rect_ab4h(pixels, W, H, 0, y, W, 1, make_ab4h_pixel(cr, cg, cb, 1.0f));
             }
-            // Stalactites hanging from ceiling
-            for (int i = 0; i < W; i += 60) {
-                int len = 40 + (i % 7) * 8;
-                draw_line_aa(pixels, W, H, i, 50, i + 15, 50 + len, make_ab4h_pixel(0.2f, 0.18f, 0.22f, 1.0f), 2.0f);
-                draw_line_aa(pixels, W, H, i + 30, 50, i + 15, 50 + len, make_ab4h_pixel(0.2f, 0.18f, 0.22f, 1.0f), 2.0f);
+
+            // Parallax Jagged Cave Arches in background
+            for (int arch_x = 0; arch_x < W; arch_x += 4) {
+                float arch_y = 60.0f + 30.0f * sinf(arch_x * 0.005f) + 15.0f * cosf(arch_x * 0.015f);
+                // ceiling arch shadow
+                if (arch_x % 8 == 0) {
+                    draw_line_aa(pixels, W, H, arch_x, 50, arch_x, arch_y + 10, make_ab4h_pixel(0.02f, 0.02f, 0.04f, 0.5f), 4.0f);
+                }
             }
-            // Glowing neon crystals on cave floor
+
+            // Bioluminescent Moss on the background walls (Teal / Purple clusters)
+            for (int moss_x = 50; moss_x < W; moss_x += 180) {
+                float moss_y = 150.0f + (moss_x % 5) * 40.0f;
+                draw_radial_glow(pixels, W, H, moss_x, moss_y, 45.0f, make_ab4h_pixel(0.0f, 0.6f, 0.5f, 0.15f));
+                draw_radial_glow(pixels, W, H, moss_x + 30, moss_y - 20, 35.0f, make_ab4h_pixel(0.5f, 0.0f, 0.7f, 0.12f));
+            }
+
+            // Floating cave dust particles / magic embers
+            for (int i = 0; i < 8; i++) {
+                float px_x = fmodf(50.0f + i * 140.0f + frame_counter * 0.3f, W);
+                float px_y = 120.0f + sinf(frame_counter * 0.02f + i) * 40.0f + i * 35.0f;
+                draw_radial_glow(pixels, W, H, px_x, px_y, 6.0f, make_ab4h_pixel(0.0f, 0.8f, 0.9f, 0.25f));
+            }
+
+            // Dripping Stalactites hanging from ceiling
+            for (int i = 0; i < W; i += 50) {
+                int len = 45 + (i % 6) * 12;
+                // Rock structure
+                draw_line_aa(pixels, W, H, i, 50, i + 12, 50 + len, make_ab4h_pixel(0.18f, 0.16f, 0.20f, 1.0f), 3.0f);
+                draw_line_aa(pixels, W, H, i + 24, 50, i + 12, 50 + len, make_ab4h_pixel(0.15f, 0.14f, 0.18f, 1.0f), 3.0f);
+                // Glowing tips (bioluminescent mold on stalactites)
+                if (i % 100 == 0) {
+                    draw_radial_glow(pixels, W, H, i + 12, 50 + len, 12.0f, make_ab4h_pixel(0.0f, 0.8f, 0.7f, 0.4f));
+                    // Animated dripping water drop
+                    float drop_y = 50 + len + fmodf(frame_counter * 1.5f + (i * 2), floor_y - (50 + len));
+                    if (drop_y < floor_y - 2.0f) {
+                        draw_radial_glow(pixels, W, H, i + 12, drop_y, 4.0f, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 0.8f));
+                    }
+                }
+            }
+
+            // Glowing neon runic crystals on cave floor
             for (int x_pos = 100; x_pos < W; x_pos += 220) {
-                draw_radial_glow(pixels, W, H, x_pos, floor_y - 15, 30.0f, make_ab4h_pixel(0.0f, 0.8f, 1.0f, 0.3f)); // Crystal glow
-                draw_line_aa(pixels, W, H, x_pos, floor_y, x_pos - 8, floor_y - 20, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 1.0f), 1.5f);
-                draw_line_aa(pixels, W, H, x_pos, floor_y, x_pos + 8, floor_y - 25, make_ab4h_pixel(0.2f, 0.7f, 1.0f, 1.0f), 1.5f);
+                draw_radial_glow(pixels, W, H, x_pos, floor_y - 15, 35.0f, make_ab4h_pixel(0.0f, 0.8f, 1.0f, 0.35f)); // Crystal glow
+                // Crystal cluster shapes
+                draw_line_aa(pixels, W, H, x_pos, floor_y, x_pos - 8, floor_y - 22, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 1.0f), 2.0f);
+                draw_line_aa(pixels, W, H, x_pos, floor_y, x_pos + 8, floor_y - 28, make_ab4h_pixel(0.2f, 0.7f, 1.0f, 1.0f), 2.0f);
+                draw_line_aa(pixels, W, H, x_pos - 4, floor_y, x_pos - 12, floor_y - 14, make_ab4h_pixel(0.0f, 0.8f, 0.9f, 0.9f), 1.5f);
+                draw_line_aa(pixels, W, H, x_pos + 4, floor_y, x_pos + 12, floor_y - 16, make_ab4h_pixel(0.3f, 0.9f, 1.0f, 0.9f), 1.5f);
             }
 
-            // Draw Stalagmite at x = 400, height 30 (y=490 to 520)
+            // Draw Stalagmite at x = 400, height 30 (y=490 to 520) - styled as a gothic runic spike
             float stal_cx = 400.0f;
-            draw_radial_glow(pixels, W, H, stal_cx, floor_y - 15, 20.0f, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 0.4f)); // Glow
-            draw_line_aa(pixels, W, H, stal_cx - 12, floor_y, stal_cx, floor_y - 30, neon_cyan, 2.0f);
-            draw_line_aa(pixels, W, H, stal_cx + 12, floor_y, stal_cx, floor_y - 30, neon_cyan, 2.0f);
-            draw_line_aa(pixels, W, H, stal_cx - 6, floor_y, stal_cx, floor_y - 20, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
-            draw_line_aa(pixels, W, H, stal_cx + 6, floor_y, stal_cx, floor_y - 20, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+            draw_radial_glow(pixels, W, H, stal_cx, floor_y - 15, 25.0f, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 0.45f)); // Glow
+            // Jagged, textured stone sides
+            draw_line_aa(pixels, W, H, stal_cx - 15, floor_y, stal_cx, floor_y - 32, make_ab4h_pixel(0.25f, 0.2f, 0.25f, 1.0f), 3.0f);
+            draw_line_aa(pixels, W, H, stal_cx + 15, floor_y, stal_cx, floor_y - 32, make_ab4h_pixel(0.2f, 0.18f, 0.22f, 1.0f), 3.0f);
+            // Internal glowing runic core
+            draw_line_aa(pixels, W, H, stal_cx - 6, floor_y, stal_cx, floor_y - 22, neon_cyan, 1.5f);
+            draw_line_aa(pixels, W, H, stal_cx + 6, floor_y, stal_cx, floor_y - 22, neon_cyan, 1.5f);
+            draw_line_aa(pixels, W, H, stal_cx, floor_y, stal_cx, floor_y - 28, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
 
-            // Draw Crow at crow_x, crow_y
+            // Draw Crow at crow_x, crow_y - styled as folklore Shadow Crow
             float wing_sweep = sinf(frame_counter * 0.3f) * 12.0f;
-            draw_radial_glow(pixels, W, H, crow_x, crow_y, 14.0f, make_ab4h_pixel(0.05f, 0.05f, 0.15f, 0.25f)); // Crow ambient shadow glow
+            // Folklore shadow trail/glow
+            draw_radial_glow(pixels, W, H, crow_x, crow_y, 20.0f, make_ab4h_pixel(0.1f, 0.0f, 0.2f, 0.3f)); // Shadow aura
+            draw_radial_glow(pixels, W, H, crow_x, crow_y, 12.0f, make_ab4h_pixel(0.02f, 0.02f, 0.05f, 0.8f)); // Dark body volume
             
             // Get Crow horizontal velocity direction from EVM
             int crow_vx_raw = (int)thunk_peek(55039);
@@ -895,44 +956,46 @@ int main() {
             bool face_left = (crow_vx < 0);
 
             // 1. Black felt Torso
-            draw_radial_glow(pixels, W, H, crow_x, crow_y, 7.0f, make_ab4h_pixel(0.08f, 0.08f, 0.1f, 1.0f));
-            draw_rect_ab4h(pixels, W, H, (int)crow_x - 4, (int)crow_y - 2, 8, 6, make_ab4h_pixel(0.05f, 0.05f, 0.07f, 1.0f));
+            draw_rect_ab4h(pixels, W, H, (int)crow_x - 5, (int)crow_y - 3, 10, 8, make_ab4h_pixel(0.02f, 0.02f, 0.04f, 1.0f));
 
             // 2. Black head
-            draw_radial_glow(pixels, W, H, crow_x, crow_y - 5, 5.0f, make_ab4h_pixel(0.08f, 0.08f, 0.1f, 1.0f));
+            draw_radial_glow(pixels, W, H, crow_x, crow_y - 6, 6.0f, make_ab4h_pixel(0.03f, 0.03f, 0.06f, 1.0f));
 
-            // 3. Sharp yellow beak pointing in movement direction
+            // 3. Sharp yellow/gold beak pointing in movement direction
             if (face_left) {
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y - 4, crow_x - 10, crow_y - 2, neon_yellow, 1.5f);
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y - 3, crow_x - 10, crow_y - 2, neon_yellow, 1.0f);
+                draw_line_aa(pixels, W, H, crow_x - 2, crow_y - 4, crow_x - 11, crow_y - 2, neon_yellow, 1.5f);
+                draw_line_aa(pixels, W, H, crow_x - 2, crow_y - 3, crow_x - 11, crow_y - 2, neon_yellow, 1.0f);
             } else {
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y - 4, crow_x + 10, crow_y - 2, neon_yellow, 1.5f);
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y - 3, crow_x + 10, crow_y - 2, neon_yellow, 1.0f);
+                draw_line_aa(pixels, W, H, crow_x + 2, crow_y - 4, crow_x + 11, crow_y - 2, neon_yellow, 1.5f);
+                draw_line_aa(pixels, W, H, crow_x + 2, crow_y - 3, crow_x + 11, crow_y - 2, neon_yellow, 1.0f);
             }
 
-            // 4. Feathery wings flapping
-            AB4HPixel wing_color = make_ab4h_pixel(0.04f, 0.04f, 0.06f, 1.0f);
+            // 4. Feathery wings flapping with double layered feathers
+            AB4HPixel wing_color = make_ab4h_pixel(0.02f, 0.02f, 0.04f, 1.0f);
+            AB4HPixel wing_glow = make_ab4h_pixel(0.1f, 0.0f, 0.15f, 0.6f);
             // Left wing
-            draw_line_aa(pixels, W, H, crow_x, crow_y, crow_x - 18, crow_y - wing_sweep, wing_color, 2.2f);
-            draw_line_aa(pixels, W, H, crow_x - 6, crow_y, crow_x - 16, crow_y + 4 - wing_sweep * 0.7f, wing_color, 1.5f); // secondary feather
-            draw_line_aa(pixels, W, H, crow_x - 12, crow_y, crow_x - 22, crow_y + 8 - wing_sweep, wing_color, 1.0f); // outer feather
+            draw_line_aa(pixels, W, H, crow_x, crow_y, crow_x - 20, crow_y - wing_sweep, wing_color, 2.5f);
+            draw_line_aa(pixels, W, H, crow_x - 6, crow_y, crow_x - 18, crow_y + 4 - wing_sweep * 0.7f, wing_color, 1.8f);
+            draw_line_aa(pixels, W, H, crow_x - 12, crow_y, crow_x - 24, crow_y + 8 - wing_sweep, wing_glow, 1.2f);
             
             // Right wing
-            draw_line_aa(pixels, W, H, crow_x, crow_y, crow_x + 18, crow_y - wing_sweep, wing_color, 2.2f);
-            draw_line_aa(pixels, W, H, crow_x + 6, crow_y, crow_x + 16, crow_y + 4 - wing_sweep * 0.7f, wing_color, 1.5f); // secondary feather
-            draw_line_aa(pixels, W, H, crow_x + 12, crow_y, crow_x + 22, crow_y + 8 - wing_sweep, wing_color, 1.0f); // outer feather
+            draw_line_aa(pixels, W, H, crow_x, crow_y, crow_x + 20, crow_y - wing_sweep, wing_color, 2.5f);
+            draw_line_aa(pixels, W, H, crow_x + 6, crow_y, crow_x + 18, crow_y + 4 - wing_sweep * 0.7f, wing_color, 1.8f);
+            draw_line_aa(pixels, W, H, crow_x + 12, crow_y, crow_x + 24, crow_y + 8 - wing_sweep, wing_glow, 1.2f);
 
             // 5. Tail feathers pointing backwards
             if (face_left) {
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y + 3, crow_x + 12, crow_y + 6, wing_color, 2.0f);
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y + 4, crow_x + 9, crow_y + 8, wing_color, 1.5f);
+                draw_line_aa(pixels, W, H, crow_x + 2, crow_y + 4, crow_x + 14, crow_y + 7, wing_color, 2.2f);
+                draw_line_aa(pixels, W, H, crow_x + 2, crow_y + 5, crow_x + 11, crow_y + 9, wing_color, 1.5f);
             } else {
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y + 3, crow_x - 12, crow_y + 6, wing_color, 2.0f);
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y + 4, crow_x - 9, crow_y + 8, wing_color, 1.5f);
+                draw_line_aa(pixels, W, H, crow_x - 2, crow_y + 4, crow_x - 14, crow_y + 7, wing_color, 2.2f);
+                draw_line_aa(pixels, W, H, crow_x - 2, crow_y + 5, crow_x - 11, crow_y + 9, wing_color, 1.5f);
             }
 
-            // 6. Glowing Yellow Eyes
-            draw_rect_ab4h(pixels, W, H, crow_x + (face_left ? -2 : 1), crow_y - 6, 2, 2, neon_yellow);
+            // 6. Glowing Crimson folklore Eyes (instead of simple yellow)
+            AB4HPixel red_eye = make_ab4h_pixel(1.5f, 0.0f, 0.0f, 1.0f);
+            draw_rect_ab4h(pixels, W, H, crow_x + (face_left ? -3 : 2), crow_y - 6, 2, 2, red_eye);
+            draw_radial_glow(pixels, W, H, crow_x + (face_left ? -3 : 2), crow_y - 6, 4.0f, make_ab4h_pixel(1.0f, 0.0f, 0.0f, 0.4f));
         } else if (game_screen == 3) {
             // Castle Screen: Gargamel's Cage containing Smurfette
             int cage_x = 680;
