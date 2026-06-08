@@ -127,14 +127,14 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                 char *first_word = strtok(cmd_copy, " \t");
                 bool is_vm_cmd = false;
                 if (first_word) {
-                    if (strcmp(first_word, "YULINIT") == 0 ||
-                        strcmp(first_word, "YULEXEC") == 0 ||
-                        strcmp(first_word, "SWIFTLOAD") == 0 ||
-                        strcmp(first_word, "REU") == 0 ||
-                        strcmp(first_word, "CALC") == 0 ||
-                        strcmp(first_word, "MEMDUMP") == 0 ||
-                        strcmp(first_word, "SPRITE") == 0 ||
-                        strcmp(first_word, "OMNICOMM") == 0) {
+                    if (strcasecmp(first_word, "YULINIT") == 0 ||
+                        strcasecmp(first_word, "YULEXEC") == 0 ||
+                        strcasecmp(first_word, "SWIFTLOAD") == 0 ||
+                        strcasecmp(first_word, "REU") == 0 ||
+                        strcasecmp(first_word, "CALC") == 0 ||
+                        strcasecmp(first_word, "MEMDUMP") == 0 ||
+                        strcasecmp(first_word, "SPRITE") == 0 ||
+                        strcasecmp(first_word, "OMNICOMM") == 0) {
                         is_vm_cmd = true;
                     }
                 }
@@ -377,18 +377,7 @@ void render_terminal_display(void) {
         }
     }
 
-    // Apply CRT horizontal scanlines
-    for (int y = 0; y < win_height; y++) {
-        if (y % 3 == 0) {
-            for (int x = 0; x < win_width; x++) {
-                uint32_t color = back_buffer[y * win_width + x];
-                uint8_t r = ((color >> 16) & 0xFF) * 0.82f;
-                uint8_t g = ((color >> 8) & 0xFF) * 0.82f;
-                uint8_t b = (color & 0xFF) * 0.82f;
-                back_buffer[y * win_width + x] = (0xFF << 24) | (r << 16) | (g << 8) | b;
-            }
-        }
-    }
+
 
 }
 
