@@ -589,6 +589,30 @@ void render_terminal_display(void) {
 
 }
 
+static void format_uint256_hex(char *dest, uint64_t val) {
+    for (int i = 0; i < 32; i++) {
+        int shift = (31 - i) * 8;
+        uint8_t byteval = 0;
+        if (shift < 64) {
+            byteval = (val >> shift) & 0xFF;
+        }
+        sprintf(&dest[i * 2], "%02x", byteval);
+    }
+}
+
+static void vm_poke(TsfiZmmVmState *vstate, uint64_t addr, uint8_t val) {
+    char cmd[512];
+    char addr_hex[65];
+    char val_hex[65];
+    format_uint256_hex(addr_hex, addr);
+    format_uint256_hex(val_hex, val);
+    
+    // selector: poke(uint256,uint256) -> 0x8029e7c0
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0%s%s\"", addr_hex, val_hex);
+    vstate->output_pos = 0;
+    tsfi_zmm_vm_exec(vstate, cmd);
+}
+
 int main() {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -605,6 +629,35 @@ int main() {
     g_vram = &fw->vram;
     tsfi_zmm_vm_init(&vm);
     tsfi_zmm_vm_exec(&vm, "YULINIT \"cpu6502\", \"../solidity/bin/cpu6502.yul\", 1");
+
+    // Pre-poke a retro space invader sprite demo into address 0x2000
+    extern void vm_poke(TsfiZmmVmState *state, uint64_t addr, uint8_t val);
+    uint8_t demo_sprite[63] = {
+        0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00,
+        0x18, 0x00, 0x18,
+        0x0c, 0x00, 0x30,
+        0x1e, 0x00, 0x78,
+        0x3f, 0x00, 0xfc,
+        0x77, 0x00, 0xee,
+        0x7f, 0xff, 0xfe,
+        0x7f, 0xff, 0xfe,
+        0x5f, 0xff, 0xfa,
+        0x1f, 0xff, 0xf8,
+        0x0f, 0xff, 0xf0,
+        0x07, 0xff, 0xe0,
+        0x03, 0xff, 0xc0,
+        0x01, 0xff, 0x80,
+        0x00, 0xff, 0x00,
+        0x00, 0x7e, 0x00,
+        0x00, 0x3c, 0x00,
+        0x00, 0x18, 0x00,
+        0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00
+    };
+    for (int i = 0; i < 63; i++) {
+        vm_poke(&vm, 0x2000 + i, demo_sprite[i]);
+    }
 
     display = wl_display_connect(NULL);
     if (!display) {
