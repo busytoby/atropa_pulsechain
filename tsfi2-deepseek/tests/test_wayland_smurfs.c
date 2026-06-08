@@ -244,7 +244,7 @@ static float crow_y = 250.0f;
 static float gargamel_x = 500.0f;
 static bool game_over = false;
 static bool game_win = false;
-static char status_message[128] = "WELCOME TO SMURF RESCUE! [SPACE] TO JUMP. [A/D] MOVE.";
+static char status_message[128] = "WELCOME TO TEDDY BEAR RESCUE! [SPACE] TO JUMP. [A/D] MOVE.";
 static int exit_requested = 0;
 static bool key_a_held = false;
 static bool key_d_held = false;
@@ -423,7 +423,7 @@ static void smurfs_key_hook(void *data, uint32_t serial, uint32_t time, uint32_t
     } else if (key == 19) { // R
         if (pressed && (game_over || game_win)) {
             reset_game_yul();
-            strcpy(status_message, "GAME RESTARTED! SAVE SMURFETTE!");
+            strcpy(status_message, "GAME RESTARTED! SAVE BABY BEAR!");
         }
     } else if (key == 20) { // T (Tramiel Autopilot Toggle)
         if (pressed && !game_over && !game_win) {
@@ -512,9 +512,7 @@ int main() {
     AB4HPixel neon_pink = make_ab4h_pixel(1.0f, 0.05f, 0.6f, 1.0f);
     AB4HPixel neon_cyan = make_ab4h_pixel(0.0f, 0.9f, 1.0f, 1.0f);
     AB4HPixel neon_green = make_ab4h_pixel(0.05f, 0.85f, 0.3f, 1.0f);
-    AB4HPixel neon_white = make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f);
     AB4HPixel neon_yellow = make_ab4h_pixel(1.2f, 1.2f, 0.0f, 1.0f);
-    AB4HPixel smurf_blue = make_ab4h_pixel(0.0f, 0.6f, 1.0f, 1.0f);
     AB4HPixel shadow_black = make_ab4h_pixel(0.0f, 0.0f, 0.0f, 0.5f);
     AB4HPixel gargamel_grey = make_ab4h_pixel(0.4f, 0.4f, 0.4f, 1.0f);
 
@@ -785,16 +783,16 @@ int main() {
 
         // Set status message text based on screen state
         if (game_win) {
-            strcpy(status_message, "^B^U[VICTORY]^C ^IYOU RESCUED SMURFETTE! ^C[R] TO PLAY AGAIN.");
+            strcpy(status_message, "^B^U[VICTORY]^C ^IYOU RESCUED BABY BEAR! ^C[R] TO PLAY AGAIN.");
         } else if (game_over) {
-            strcpy(status_message, "^B^U[GAME OVER]^C ^ITHE SMURF COLLAPSED! ^C[R] TO RESTART.");
+            strcpy(status_message, "^B^U[GAME OVER]^C ^ITHE TEDDY BEAR COLLAPSED! ^C[R] TO RESTART.");
         } else {
             if (game_screen == 1) {
                 strcpy(status_message, "^B[FOREST PATH] ^CAVOID THE ^IFENCE^C AND ^IBOULDER^C!");
             } else if (game_screen == 2) {
                 strcpy(status_message, "^B[DARK CAVES] ^CWATCH OUT FOR ^ISTALAGMITES^C AND ^ICROWS^C!");
             } else if (game_screen == 3) {
-                strcpy(status_message, "^B[GARGAMEL'S CASTLE] ^CGARGAMEL IS PATROLLING! ^ISAVE SMURFETTE^C!");
+                strcpy(status_message, "^B[GARGAMEL'S CASTLE] ^CGARGAMEL IS PATROLLING! ^ISAVE BABY BEAR^C!");
             }
         }
 
@@ -958,47 +956,45 @@ int main() {
             draw_line_aa(pixels, W, H, lock_x + 3, lock_y, lock_x + 3, lock_y - 4, make_ab4h_pixel(0.5f, 0.5f, 0.5f, 1.0f), 1.0f);
             draw_line_aa(pixels, W, H, lock_x - 3, lock_y - 4, lock_x + 3, lock_y - 4, make_ab4h_pixel(0.5f, 0.5f, 0.5f, 1.0f), 1.0f);
 
-            // Smurfette inside
-            int sfe_x = cage_x + 35;
-            int sfe_y = cage_y + 50;
-            // Golden rescue glow behind Smurfette
-            draw_radial_glow(pixels, W, H, sfe_x, sfe_y - 8, 20.0f, make_ab4h_pixel(1.0f, 0.9f, 0.0f, 0.35f));
+            // Baby Bear inside cage
+            int baby_x = cage_x + 35;
+            int baby_y = cage_y + 50;
+            // Golden rescue glow behind Baby Bear
+            draw_radial_glow(pixels, W, H, baby_x, baby_y - 8, 20.0f, make_ab4h_pixel(1.0f, 0.9f, 0.0f, 0.35f));
             
-            // 1. Blonde Hair: Flowing locks drawn with multiple curved lines
-            draw_radial_glow(pixels, W, H, sfe_x, sfe_y - 16, 12.0f, neon_yellow); // Back hair volume
-            draw_line_aa(pixels, W, H, sfe_x - 7, sfe_y - 20, sfe_x - 4, sfe_y - 12, neon_yellow, 2.0f); // Left lock
-            draw_line_aa(pixels, W, H, sfe_x + 7, sfe_y - 20, sfe_x + 4, sfe_y - 12, neon_yellow, 2.0f); // Right lock
-            draw_line_aa(pixels, W, H, sfe_x, sfe_y - 22, sfe_x - 6, sfe_y - 15, neon_yellow, 2.5f); // Bangs left
-            draw_line_aa(pixels, W, H, sfe_x, sfe_y - 22, sfe_x + 6, sfe_y - 15, neon_yellow, 2.5f); // Bangs right
-
+            AB4HPixel baby_brown = make_ab4h_pixel(0.42f, 0.28f, 0.16f, 1.0f);
+            AB4HPixel snout_cream = make_ab4h_pixel(0.85f, 0.78f, 0.65f, 1.0f);
+            
+            // 1. Ears
+            draw_radial_glow(pixels, W, H, baby_x - 4, baby_y - 15, 3.0f, baby_brown);
+            draw_radial_glow(pixels, W, H, baby_x + 4, baby_y - 15, 3.0f, baby_brown);
+            
             // 2. Head & face (felt softness)
-            draw_radial_glow(pixels, W, H, sfe_x, sfe_y - 12, 6.0f, smurf_blue); // Round head
-            draw_rect_ab4h(pixels, W, H, sfe_x - 3, sfe_y - 14, 6, 6, smurf_blue);
+            draw_radial_glow(pixels, W, H, baby_x, baby_y - 10, 5.5f, baby_brown);
+            draw_rect_ab4h(pixels, W, H, baby_x - 3, baby_y - 11, 6, 4, baby_brown);
             
+            // Snout and button nose
+            draw_radial_glow(pixels, W, H, baby_x, baby_y - 8, 2.5f, snout_cream);
+            draw_rect_ab4h(pixels, W, H, baby_x - 1, baby_y - 9, 2, 1, make_ab4h_pixel(0.1f, 0.1f, 0.1f, 1.0f));
+
             // Stitched eyes
-            AB4HPixel sfe_stitch = make_ab4h_pixel(0.05f, 0.05f, 0.05f, 1.0f);
-            draw_line_aa(pixels, W, H, sfe_x - 2, sfe_y - 12, sfe_x - 1, sfe_y - 11, sfe_stitch, 0.8f);
-            draw_line_aa(pixels, W, H, sfe_x + 2, sfe_y - 12, sfe_x + 1, sfe_y - 11, sfe_stitch, 0.8f);
+            AB4HPixel baby_stitch = make_ab4h_pixel(0.05f, 0.05f, 0.05f, 1.0f);
+            draw_line_aa(pixels, W, H, baby_x - 2, baby_y - 11, baby_x - 1, baby_y - 10, baby_stitch, 0.8f);
+            draw_line_aa(pixels, W, H, baby_x + 2, baby_y - 11, baby_x + 1, baby_y - 10, baby_stitch, 0.8f);
 
-            // 3. White Hat: classic smurfette curved cap
-            draw_line_aa(pixels, W, H, sfe_x - 6, sfe_y - 20, sfe_x + 6, sfe_y - 20, neon_white, 2.0f); // brim
-            draw_radial_glow(pixels, W, H, sfe_x - 2, sfe_y - 23, 6.0f, neon_white); // crown
-            draw_line_aa(pixels, W, H, sfe_x - 1, sfe_y - 22, sfe_x - 6, sfe_y - 24, neon_white, 3.0f); // floppy tip
+            // 3. Body: rounded teddy torso
+            draw_radial_glow(pixels, W, H, baby_x, baby_y - 2, 7.0f, baby_brown);
+            draw_rect_ab4h(pixels, W, H, baby_x - 4, baby_y - 4, 8, 8, baby_brown);
 
-            // 4. White Dress: triangular dress flare
-            draw_line_aa(pixels, W, H, sfe_x, sfe_y - 4, sfe_x - 8, sfe_y + 4, neon_white, 2.5f); // Left seam
-            draw_line_aa(pixels, W, H, sfe_x, sfe_y - 4, sfe_x + 8, sfe_y + 4, neon_white, 2.5f); // Right seam
-            draw_rect_ab4h(pixels, W, H, sfe_x - 6, sfe_y - 4, 12, 8, neon_white); // Body filler
+            // Red bow tie
+            draw_line_aa(pixels, W, H, baby_x - 4, baby_y - 5, baby_x + 4, baby_y - 5, make_ab4h_pixel(0.9f, 0.05f, 0.1f, 1.0f), 2.0f);
+            draw_radial_glow(pixels, W, H, baby_x, baby_y - 5, 2.0f, make_ab4h_pixel(0.9f, 0.05f, 0.1f, 1.0f));
 
-            // 5. Blue limbs
-            draw_line_aa(pixels, W, H, sfe_x - 4, sfe_y - 6, sfe_x - 10, sfe_y, smurf_blue, 1.5f); // Left arm
-            draw_line_aa(pixels, W, H, sfe_x + 4, sfe_y - 6, sfe_x + 10, sfe_y, smurf_blue, 1.5f); // Right arm
-            draw_line_aa(pixels, W, H, sfe_x - 3, sfe_y + 4, sfe_x - 4, sfe_y + 7, smurf_blue, 2.0f); // Left leg
-            draw_line_aa(pixels, W, H, sfe_x + 3, sfe_y + 4, sfe_x + 4, sfe_y + 7, smurf_blue, 2.0f); // Right leg
-
-            // 6. Detailed Red Shoes
-            draw_rect_ab4h(pixels, W, H, sfe_x - 6, sfe_y + 7, 3, 2, make_ab4h_pixel(1.0f, 0.05f, 0.1f, 1.0f));
-            draw_rect_ab4h(pixels, W, H, sfe_x + 3, sfe_y + 7, 3, 2, make_ab4h_pixel(1.0f, 0.05f, 0.1f, 1.0f));
+            // 4. Limbs
+            draw_line_aa(pixels, W, H, baby_x - 4, baby_y - 2, baby_x - 9, baby_y + 1, baby_brown, 1.5f); // Left arm
+            draw_line_aa(pixels, W, H, baby_x + 4, baby_y - 2, baby_x + 9, baby_y + 1, baby_brown, 1.5f); // Right arm
+            draw_line_aa(pixels, W, H, baby_x - 2, baby_y + 4, baby_x - 3, baby_y + 7, baby_brown, 2.0f); // Left leg
+            draw_line_aa(pixels, W, H, baby_x + 2, baby_y + 4, baby_x + 3, baby_y + 7, baby_brown, 2.0f); // Right leg
 
             // Draw Gargamel
             // Evil purple aura around Gargamel
@@ -1069,10 +1065,26 @@ int main() {
         // Shadow under Smurf
         draw_rect_ab4h(pixels, W, H, draw_sx - (int)(12 * scale), floor_y - 2, (int)(24 * scale), 4, shadow_black);
 
-        // Body Elements (Stuffed felt blue body)
-        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(18 * scale), (int)(14 * scale), make_ab4h_pixel(0.0f, 0.4f, 0.9f, 0.6f)); // felt softness
-        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(24 * scale), (int)(8 * scale), smurf_blue); // Round Head shape
-        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(5 * scale), draw_sy - (int)(25 * scale), (int)(10 * scale), (int)(8 * scale), smurf_blue); // head filler
+        // Body Elements (Stuffed felt brown Teddy Bear body)
+        AB4HPixel teddy_brown = make_ab4h_pixel(0.48f, 0.32f, 0.18f, 1.0f);
+        AB4HPixel snout_cream = make_ab4h_pixel(0.85f, 0.78f, 0.65f, 1.0f);
+        AB4HPixel scarf_red = make_ab4h_pixel(0.85f, 0.05f, 0.12f, 1.0f);
+
+        // Render shadow under feet
+        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(12 * scale), floor_y - 2, (int)(24 * scale), 4, shadow_black);
+
+        // Round brown ears
+        draw_radial_glow(pixels, W, H, draw_sx - (int)(6 * scale), draw_sy - (int)(28 * scale), (int)(4.5f * scale), teddy_brown);
+        draw_radial_glow(pixels, W, H, draw_sx + (int)(6 * scale), draw_sy - (int)(28 * scale), (int)(4.5f * scale), teddy_brown);
+
+        // Felt softness body glow & head shapes
+        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(18 * scale), (int)(14 * scale), make_ab4h_pixel(0.48f, 0.32f, 0.18f, 0.6f));
+        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(22 * scale), (int)(8.5f * scale), teddy_brown); // Head
+        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(5 * scale), draw_sy - (int)(23 * scale), (int)(10 * scale), (int)(6 * scale), teddy_brown); // Head filler
+
+        // Muzzle Snout and stitched nose
+        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(20 * scale), (int)(3.5f * scale), snout_cream);
+        draw_rect_ab4h(pixels, W, H, draw_sx - 1, draw_sy - (int)(21 * scale), 2, 2, make_ab4h_pixel(0.1f, 0.1f, 0.1f, 1.0f));
 
         // Stitched Button Eyes (x cross stitches for eyes)
         AB4HPixel stitch_color = make_ab4h_pixel(0.1f, 0.1f, 0.1f, 1.0f);
@@ -1092,17 +1104,15 @@ int main() {
             draw_line_aa(pixels, W, H, draw_sx - 1, sy_pos, draw_sx + 1, sy_pos, stitch_color, 1.0f);
         }
 
-        // Detailed curved C64 white hat (stuffed plushy hat)
-        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(30 * scale), (int)(9 * scale), neon_white); // Hat crown volume
-        draw_line_aa(pixels, W, H, draw_sx - (int)(9 * scale), draw_sy - (int)(27 * scale), draw_sx + (int)(9 * scale), draw_sy - (int)(27 * scale), neon_white, 2.0f * scale); // brim line
-        draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(30 * scale), draw_sx - (int)(8 * scale), draw_sy - (int)(34 * scale), neon_white, 4.0f * scale); // curve forward tip
-        draw_radial_glow(pixels, W, H, draw_sx - (int)(6 * scale), draw_sy - (int)(34 * scale), (int)(5 * scale), neon_white); // tip fluffiness
+        // Red Knitted Scarf around the neck (replaces white hat)
+        draw_line_aa(pixels, W, H, draw_sx - (int)(6 * scale), draw_sy - (int)(15 * scale), draw_sx + (int)(6 * scale), draw_sy - (int)(15 * scale), scarf_red, 3.0f * scale); // scarf wrap
+        draw_line_aa(pixels, W, H, draw_sx + (int)(3 * scale), draw_sy - (int)(15 * scale), draw_sx + (int)(7 * scale), draw_sy - (int)(7 * scale), scarf_red, 2.0f * scale); // scarf tail
         
-        // White trousers/boots (plushy felt)
-        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(8 * scale), (int)(8 * scale), neon_white); // pants roundness
-        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(6 * scale), draw_sy - (int)(12 * scale), (int)(12 * scale), (int)(10 * scale), neon_white);
-        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(7 * scale), draw_sy - (int)(3 * scale), (int)(5 * scale), (int)(4 * scale), neon_white); // left boot
-        draw_rect_ab4h(pixels, W, H, draw_sx + (int)(2 * scale), draw_sy - (int)(3 * scale), (int)(5 * scale), (int)(4 * scale), neon_white); // right boot
+        // Patched Vest/Belly Patch (replaces white pants)
+        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(8 * scale), (int)(6.0f * scale), snout_cream); // round belly patch
+        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(5 * scale), draw_sy - (int)(12 * scale), (int)(10 * scale), (int)(8 * scale), teddy_brown); // main legs connector
+        draw_rect_ab4h(pixels, W, H, draw_sx - (int)(7 * scale), draw_sy - (int)(3 * scale), (int)(5 * scale), (int)(4 * scale), teddy_brown); // left boot foot
+        draw_rect_ab4h(pixels, W, H, draw_sx + (int)(2 * scale), draw_sy - (int)(3 * scale), (int)(5 * scale), (int)(4 * scale), teddy_brown); // right boot foot
 
         // kr0wZ Sickness: glowing toxic green digital glitch particles and neon green aura
         float krowz_pulse = 0.5f + 0.5f * sinf(frame_counter * 0.2f);
@@ -1121,17 +1131,17 @@ int main() {
         // Animation state pose rendering
         if (anim_state == 2) {
             // JUMP pose: arms raised high
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(12 * scale), draw_sx - (int)(12 * scale), draw_sy - (int)(24 * scale), smurf_blue, 2.0f * scale);
-            draw_radial_glow(pixels, W, H, draw_sx - (int)(12 * scale), draw_sy - (int)(24 * scale), (int)(3 * scale), smurf_blue);
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(12 * scale), draw_sx + (int)(12 * scale), draw_sy - (int)(24 * scale), smurf_blue, 2.0f * scale);
-            draw_radial_glow(pixels, W, H, draw_sx + (int)(12 * scale), draw_sy - (int)(24 * scale), (int)(3 * scale), smurf_blue);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(12 * scale), draw_sx - (int)(12 * scale), draw_sy - (int)(24 * scale), teddy_brown, 2.0f * scale);
+            draw_radial_glow(pixels, W, H, draw_sx - (int)(12 * scale), draw_sy - (int)(24 * scale), (int)(3 * scale), teddy_brown);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(12 * scale), draw_sx + (int)(12 * scale), draw_sy - (int)(24 * scale), teddy_brown, 2.0f * scale);
+            draw_radial_glow(pixels, W, H, draw_sx + (int)(12 * scale), draw_sy - (int)(24 * scale), (int)(3 * scale), teddy_brown);
         } else if (anim_state == 4) {
             // PANICKED pose: shiver and swing arms frantically
             float panic_wave = sinf(frame_counter * 0.9f) * (15.0f * scale);
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx - (int)(12 * scale), draw_sy - (int)(10 * scale) + panic_wave, smurf_blue, 2.0f * scale);
-            draw_radial_glow(pixels, W, H, draw_sx - (int)(12 * scale), draw_sy - (int)(10 * scale) + panic_wave, (int)(3 * scale), smurf_blue);
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + (int)(12 * scale), draw_sy - (int)(10 * scale) - panic_wave, smurf_blue, 2.0f * scale);
-            draw_radial_glow(pixels, W, H, draw_sx + (int)(12 * scale), draw_sy - (int)(10 * scale) - panic_wave, (int)(3 * scale), smurf_blue);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx - (int)(12 * scale), draw_sy - (int)(10 * scale) + panic_wave, teddy_brown, 2.0f * scale);
+            draw_radial_glow(pixels, W, H, draw_sx - (int)(12 * scale), draw_sy - (int)(10 * scale) + panic_wave, (int)(3 * scale), teddy_brown);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + (int)(12 * scale), draw_sy - (int)(10 * scale) - panic_wave, teddy_brown, 2.0f * scale);
+            draw_radial_glow(pixels, W, H, draw_sx + (int)(12 * scale), draw_sy - (int)(10 * scale) - panic_wave, (int)(3 * scale), teddy_brown);
         } else if (anim_state == 1) {
             // WALK pose: arms swinging
             float arm_angle = sinf(frame_counter * 0.4f) * 0.8f;
@@ -1141,17 +1151,17 @@ int main() {
                 arm_angle = sinf(phase) * 0.7f;
                 if (arm_angle < 0.0f) arm_angle *= 0.2f;
             }
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + cosf(arm_angle)*(14.0f * scale), draw_sy - (int)(10 * scale) + sinf(arm_angle)*(14.0f * scale), smurf_blue, 2.0f * scale);
-            draw_radial_glow(pixels, W, H, draw_sx + cosf(arm_angle)*(14.0f * scale), draw_sy - (int)(10 * scale) + sinf(arm_angle)*(14.0f * scale), (int)(3 * scale), smurf_blue);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + cosf(arm_angle)*(14.0f * scale), draw_sy - (int)(10 * scale) + sinf(arm_angle)*(14.0f * scale), teddy_brown, 2.0f * scale);
+            draw_radial_glow(pixels, W, H, draw_sx + cosf(arm_angle)*(14.0f * scale), draw_sy - (int)(10 * scale) + sinf(arm_angle)*(14.0f * scale), (int)(3 * scale), teddy_brown);
         } else if (anim_state == 3) {
             // WOUNDED pose: arms hanging weakly
             float shiver = sinf(frame_counter * 1.5f) * 1.5f;
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx - (int)(4 * scale) + shiver, draw_sy, smurf_blue, 2.0f * scale);
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + (int)(4 * scale) - shiver, draw_sy, smurf_blue, 2.0f * scale);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx - (int)(4 * scale) + shiver, draw_sy, teddy_brown, 2.0f * scale);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + (int)(4 * scale) - shiver, draw_sy, teddy_brown, 2.0f * scale);
         } else {
             // IDLE pose: normal arms down
-            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx - (int)(6 * scale), draw_sy - (int)(2 * scale), smurf_blue, 2.0f * scale);
-            draw_radial_glow(pixels, W, H, draw_sx - (int)(6 * scale), draw_sy - (int)(2 * scale), (int)(3 * scale), smurf_blue);
+            draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx - (int)(6 * scale), draw_sy - (int)(2 * scale), teddy_brown, 2.0f * scale);
+            draw_radial_glow(pixels, W, H, draw_sx - (int)(6 * scale), draw_sy - (int)(2 * scale), (int)(3 * scale), teddy_brown);
         }
 
         // Draw kr0wZ glitch damage burst particles
