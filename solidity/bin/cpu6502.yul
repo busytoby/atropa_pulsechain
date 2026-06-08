@@ -259,6 +259,12 @@ object "CPU6502Emulator" {
                 case 54564 { // Last Popped Value ($D524)
                     val := sload(getUserSlot(54564))
                 }
+                case 54794 { // $D60A (TMS5220 Status register)
+                    val := sload(getUserSlot(54794))
+                }
+                case 54795 { // $D60B (TMS5220 FIFO length)
+                    val := sload(getUserSlot(54795))
+                }
                 case 56321 { // $DC01 (CIA 1 Data Port B - Keyboard row read)
                     let colMask := sload(getUserSlot(56320))
                     let rowMask := 0xFF
@@ -304,6 +310,56 @@ object "CPU6502Emulator" {
                 }
 
                 // --- Doodle Graphics Coprocessor Helpers ---
+                function getSin(angle) -> s {
+                    angle := mod(angle, 16)
+                    switch angle
+                    case 0 { s := 0 }
+                    case 1 { s := 38 }
+                    case 2 { s := 70 }
+                    case 3 { s := 92 }
+                    case 4 { s := 100 }
+                    case 5 { s := 92 }
+                    case 6 { s := 70 }
+                    case 7 { s := 38 }
+                    case 8 { s := 0 }
+                    case 9 { s := sub(0, 38) }
+                    case 10 { s := sub(0, 70) }
+                    case 11 { s := sub(0, 92) }
+                    case 12 { s := sub(0, 100) }
+                    case 13 { s := sub(0, 92) }
+                    case 14 { s := sub(0, 70) }
+                    case 15 { s := sub(0, 38) }
+                }
+
+                function getCos(angle) -> c {
+                    angle := mod(angle, 16)
+                    switch angle
+                    case 0 { c := 100 }
+                    case 1 { c := 92 }
+                    case 2 { c := 70 }
+                    case 3 { c := 38 }
+                    case 4 { c := 0 }
+                    case 5 { c := sub(0, 38) }
+                    case 6 { c := sub(0, 70) }
+                    case 7 { c := sub(0, 92) }
+                    case 8 { c := sub(0, 100) }
+                    case 9 { c := sub(0, 92) }
+                    case 10 { c := sub(0, 70) }
+                    case 11 { c := sub(0, 38) }
+                    case 12 { c := 0 }
+                    case 13 { c := 38 }
+                    case 14 { c := 70 }
+                    case 15 { c := 92 }
+                }
+
+                function getSignedCoord(slot) -> coord {
+                    let raw := and(sload(getUserSlot(slot)), 0xFF)
+                    coord := raw
+                    if gt(raw, 127) {
+                        coord := sub(raw, 256)
+                    }
+                }
+
                 function plotPixel(x, y, color) {
                     if or(gt(x, 319), gt(y, 199)) { leave }
                     let cellX := div(x, 8)
@@ -441,6 +497,479 @@ object "CPU6502Emulator" {
                     sstore(getUserSlot(54786), 1) // Set Busy to 1
                     let cnt := sload(getUserSlot(54787))
                     sstore(getUserSlot(54787), add(cnt, 1))
+                }
+                case 54792 { // $D608 (TMS5220 Command register)
+                    sstore(getUserSlot(54792), val)
+                    let cmdType := and(val, 0xF0)
+                    if eq(cmdType, 0x50) { // Speak External
+                        sstore(getUserSlot(54794), 0xE0) // Status: TS=1, BL=1, BE=1
+                        sstore(getUserSlot(54795), 0)    // Clear FIFO length
+                    }
+                    if eq(cmdType, 0x90) { // Reset
+                        sstore(getUserSlot(54794), 0x00) // Clear Status
+                        sstore(getUserSlot(54795), 0)    // Clear FIFO length
+                    }
+                }
+                case 54793 { // $D609 (TMS5220 Data register / FIFO)
+                    let fifoLen := sload(getUserSlot(54795))
+                    if lt(fifoLen, 16) {
+                        sstore(getUserSlot(add(55936, fifoLen)), val)
+                        fifoLen := add(fifoLen, 1)
+                        sstore(getUserSlot(54795), fifoLen)
+                    }
+                    let status := 0x80 // TS=1
+                    if lt(fifoLen, 4) {
+                        status := or(status, 0x40) // BL=1
+                    }
+                    sstore(getUserSlot(54794), status)
+                }
+                case 54927 { // Cannonball Blitz Physics Trigger ($D68F)
+                    sstore(getUserSlot(54927), val)
+                    if val {
+                        let px := sload(getUserSlot(54912))
+                        let py := sload(getUserSlot(54913))
+                        let pvx := sload(getUserSlot(54914))
+                        let pvy := sload(getUserSlot(54915))
+                        
+                        // Treat velocities as signed
+                        if gt(pvx, 127) { pvx := sub(pvx, 256) }
+                        if gt(pvy, 127) { pvy := sub(pvy, 256) }
+                        
+                        // Apply movement
+                        px := add(px, pvx)
+                        py := add(py, pvy)
+                        
+                        // Keep within boundaries
+                        if gt(px, 39) { px := 39 }
+                        if gt(py, 24) { py := 24 }
+                        
+                        // Simple Gravity: if player is not on scaffold row (8, 16, 24), pull down
+                        let onScaffold := 0
+                        if eq(py, 8) { onScaffold := 1 }
+                        if eq(py, 16) { onScaffold := 1 }
+                        if eq(py, 24) { onScaffold := 1 }
+                        if iszero(onScaffold) {
+                            py := add(py, 1) // Fall down
+                        }
+                        
+                        // Save Player coordinates
+                        sstore(getUserSlot(54912), px)
+                        sstore(getUserSlot(54913), py)
+                        
+                        // Update Rolling Cannonball 1
+                        let ox := sload(getUserSlot(54916))
+                        let oy := sload(getUserSlot(54917))
+                        let active := sload(getUserSlot(54918))
+                        let collided := 0
+                        
+                        if active {
+                            ox := add(ox, 1)
+                            if gt(ox, 39) {
+                                ox := 0
+                            }
+                            sstore(getUserSlot(54916), ox)
+                            
+                            // Check Collision
+                            if and(eq(px, ox), eq(py, oy)) {
+                                collided := 1
+                                sstore(getUserSlot(54928), 1) // Set collision flag
+                                // Reset player position to start (0, 24)
+                                sstore(getUserSlot(54912), 0)
+                                sstore(getUserSlot(54913), 24)
+                            }
+                        }
+                        
+                        // Update score if no collision
+                        if iszero(collided) {
+                            let score := sload(getUserSlot(54925))
+                            sstore(getUserSlot(54925), add(score, 10))
+                        }
+                        
+                        // Charge 1 OTRT Arcade Play Tax
+                        let playTax := 1
+                        if exciseOnChainTax(playTax) {
+                            log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), playTax)
+                        }
+                        
+                        // Emit CannonballStep event log
+                        let currentScore := sload(getUserSlot(54925))
+                        mstore(0x300, currentScore)
+                        mstore(0x320, collided)
+                        log2(0x300, 64, 0xbc8ad72f2ba16a9205578bc41b22e18413b63200ff9dfe8bc9c8be7ce6823908, getContextUser())
+                        
+                        sstore(getUserSlot(54927), 0) // Clear trigger
+                    }
+                }
+                case 54949 { // Hometax Calculation Trigger ($D6A5)
+                    sstore(getUserSlot(54949), val)
+                    if val {
+                        // Read 32-bit gross income from slots 54944-54947
+                        let gross := 0
+                        for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54944, i)))
+                            gross := or(shl(8, gross), and(b, 0xFF))
+                        }
+
+                        // Apply deductions
+                        let dedCategory := sload(getUserSlot(54948))
+                        let ded := 0
+                        if eq(dedCategory, 1) { ded := 1000 } // Single
+                        if eq(dedCategory, 2) { ded := 2000 } // Joint
+                        if eq(dedCategory, 3) { ded := 5000 } // Corporation
+
+                        let net := 0
+                        if gt(gross, ded) {
+                            net := sub(gross, ded)
+                        }
+
+                        // Bracket tax rate
+                        let tax := 0
+                        if net {
+                            let rate := 10 // 10%
+                            if gt(net, 10000) {
+                                rate := 15 // 15%
+                            }
+                            tax := div(mul(net, rate), 100)
+                        }
+
+                        // Store 32-bit tax result across 54950-54953
+                        sstore(getUserSlot(54950), and(shr(24, tax), 0xFF))
+                        sstore(getUserSlot(54951), and(shr(16, tax), 0xFF))
+                        sstore(getUserSlot(54952), and(shr(8, tax), 0xFF))
+                        sstore(getUserSlot(54953), and(tax, 0xFF))
+
+                        sstore(getUserSlot(54949), 0) // Clear trigger
+                    }
+                }
+                case 54954 { // Hometax Payment Release Trigger ($D6AA)
+                    sstore(getUserSlot(54954), val)
+                    if val {
+                        // Read 32-bit tax from 54950-54953
+                        let tax := 0
+                        for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54950, i)))
+                            tax := or(shl(8, tax), and(b, 0xFF))
+                        }
+
+                        if tax {
+                            // Charge tax using exciseOnChainTax
+                            let taxPaidSuccess := exciseOnChainTax(tax)
+                            if taxPaidSuccess {
+                                // Read gross income for logging
+                                let gross := 0
+                                for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                                    let b := sload(getUserSlot(add(54944, i)))
+                                    gross := or(shl(8, gross), and(b, 0xFF))
+                                }
+                                
+                                // Emit HometaxSettled event log
+                                mstore(0x300, gross)
+                                mstore(0x320, tax)
+                                log2(0x300, 64, 0x32e57424af98ac3cd87222f4bb36060bb284d1bdd8f9dfe1b49b71f9ee25e999, getContextUser())
+                                
+                                // Reset Net taxable registers
+                                sstore(getUserSlot(54950), 0)
+                                sstore(getUserSlot(54951), 0)
+                                sstore(getUserSlot(54952), 0)
+                                sstore(getUserSlot(54953), 0)
+                            }
+                        }
+                        sstore(getUserSlot(54954), 0) // Clear strobe
+                    }
+                }
+                case 54979 { // Sierra AGI Command Selector ($D6C3)
+                    sstore(getUserSlot(54979), val)
+                    if val {
+                        // 1. Room Transition Check
+                        if eq(val, 1) {
+                            let x := sload(getUserSlot(54976))
+                            let y := sload(getUserSlot(54977))
+                            let room := sload(getUserSlot(54978))
+                            
+                            let newRoom := room
+                            let changed := 0
+                            
+                            // Exit West
+                            if lt(x, 5) {
+                                newRoom := sub(room, 1)
+                                sstore(getUserSlot(54976), 150) // Warp to East edge
+                                changed := 1
+                            }
+                            // Exit East
+                            if gt(x, 155) {
+                                newRoom := add(room, 1)
+                                sstore(getUserSlot(54976), 10) // Warp to West edge
+                                changed := 1
+                            }
+                            
+                            if changed {
+                                // Excise 1 OTRT Diyat Game Tax on room transition
+                                let playTax := 1
+                                if exciseOnChainTax(playTax) {
+                                    log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), playTax)
+                                }
+                                sstore(getUserSlot(54978), newRoom)
+                                let flags := sload(getUserSlot(54983))
+                                sstore(getUserSlot(54983), or(flags, 4))
+                            }
+                        }
+                        
+                        // 2. Parser / Interaction Check
+                        if eq(val, 2) {
+                            let itemID := sload(getUserSlot(54980))
+                            let room := sload(getUserSlot(54978))
+                            let success := 0
+                            
+                            // Room 1 (Forest Cleave) -> Gold Key (ID: 10) at position X: [70, 90], Y: [90, 110]
+                            if eq(room, 1) {
+                                if eq(itemID, 10) {
+                                    let x := sload(getUserSlot(54976))
+                                    let y := sload(getUserSlot(54977))
+                                    if and(and(gt(x, 69), lt(x, 91)), and(gt(y, 89), lt(y, 111))) {
+                                        let inv := sload(getUserSlot(54981))
+                                        sstore(getUserSlot(54981), or(inv, 1)) // Get Gold Key
+                                        success := 1
+                                    }
+                                }
+                            }
+                            
+                            // Room 2 (Castle Gate) -> Castle Door (ID: 20) at position X: [50, 70], Y: [120, 140]
+                            if eq(room, 2) {
+                                if eq(itemID, 20) {
+                                    let x := sload(getUserSlot(54976))
+                                    let y := sload(getUserSlot(54977))
+                                    if and(and(gt(x, 49), lt(x, 71)), and(gt(y, 119), lt(y, 141))) {
+                                        let inv := sload(getUserSlot(54981))
+                                        if and(inv, 1) { // Requires Gold Key (Bit 0)
+                                            sstore(getUserSlot(54981), or(inv, 2)) // Castle Unlocked
+                                            success := 1
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            let flags := sload(getUserSlot(54983))
+                            if success {
+                                sstore(getUserSlot(54983), or(flags, 2))
+                                
+                                // Emit SierraAgiSettled event log (Topic: 0xe11ca69da21867c2d5885c07342880a18413b63200ff9dfe8bc9c8be7ce68239)
+                                mstore(0x300, room)
+                                mstore(0x320, itemID)
+                                log2(0x300, 64, 0xe11ca69da21867c2d5885c07342880a18413b63200ff9dfe8bc9c8be7ce68239, getContextUser())
+                            }
+                            if iszero(success) {
+                                sstore(getUserSlot(54983), and(flags, not(2)))
+                            }
+                        }
+                        sstore(getUserSlot(54979), 0)
+                    }
+                }
+                case 55000 { // Data-Pac Flat-File Search Strobe ($D6D8)
+                    sstore(getUserSlot(55000), val)
+                    if val {
+                        // 1. Read Record Start Address from 54992-54993
+                        let startAddr := or(shl(8, and(sload(getUserSlot(54992)), 0xFF)), and(sload(getUserSlot(54993)), 0xFF))
+                        
+                        // 2. Read Record Count (54994) and Size (54995)
+                        let recordCount := and(sload(getUserSlot(54994)), 0xFF)
+                        let recordSize := and(sload(getUserSlot(54995)), 0xFF)
+
+                        // 3. Read 4-byte Query Key from 54996-54999
+                        let queryKey := 0
+                        for { let i := 0 } lt(i, 4) { i := add(i, 1) } {
+                            let b := sload(getUserSlot(add(54996, i)))
+                            queryKey := or(shl(8, queryKey), and(b, 0xFF))
+                        }
+
+                        let matchAddr := 0xFFFF // Default: Not Found
+                        let found := 0
+
+                        // 4. Scan records
+                        for { let i := 0 } and(lt(i, recordCount), iszero(found)) { i := add(i, 1) } {
+                            let recAddr := add(startAddr, mul(i, recordSize))
+                            
+                            // Load first 4 bytes of record to construct the key
+                            let recordKey := 0
+                            for { let k := 0 } lt(k, 4) { k := add(k, 1) } {
+                                let b := readMemory(add(recAddr, k))
+                                recordKey := or(shl(8, recordKey), and(b, 0xFF))
+                            }
+
+                            // Compare
+                            if eq(recordKey, queryKey) {
+                                matchAddr := recAddr
+                                found := 1
+                            }
+                        }
+
+                        // 5. Store 16-bit match address in 55001-55002
+                        sstore(getUserSlot(55001), and(shr(8, matchAddr), 0xFF))
+                        sstore(getUserSlot(55002), and(matchAddr, 0xFF))
+
+                        sstore(getUserSlot(55000), 0) // Clear strobe
+                    }
+                }
+                case 54966 { // Wireframe Projection Trigger ($D6B6)
+                    sstore(getUserSlot(54966), val)
+                    if val {
+                        let pitch := sload(getUserSlot(54960))
+                        let yaw := sload(getUserSlot(54961))
+                        let roll := sload(getUserSlot(54962))
+                        let scale := sload(getUserSlot(54963))
+                        let vertexCount := sload(getUserSlot(54964))
+                        let lineCount := sload(getUserSlot(54965))
+
+                        if iszero(scale) { scale := 100 }
+
+                        // 1. Calculate projected 2D coordinates for all vertices and cache in scratch memory
+                        // We store coordinates in scratch memory at 0x500 + i * 8
+                        for { let i := 0 } lt(i, vertexCount) { i := add(i, 1) } {
+                            let x := getSignedCoord(add(55280, mul(i, 3)))
+                            let y := getSignedCoord(add(55281, mul(i, 3)))
+                            let z := getSignedCoord(add(55282, mul(i, 3)))
+
+                            // Rotate Roll (Z axis)
+                            let sinR := getSin(roll)
+                            let cosR := getCos(roll)
+                            let x1 := sdiv(sub(mul(x, cosR), mul(y, sinR)), 100)
+                            let y1 := sdiv(add(mul(x, sinR), mul(y, cosR)), 100)
+
+                            // Rotate Yaw (Y axis)
+                            let sinY := getSin(yaw)
+                            let cosY := getCos(yaw)
+                            let x2 := sdiv(add(mul(x1, cosY), mul(z, sinY)), 100)
+                            let z1 := sdiv(sub(mul(z, cosY), mul(x1, sinY)), 100)
+
+                            // Rotate Pitch (X axis)
+                            let sinP := getSin(pitch)
+                            let cosP := getCos(pitch)
+                            let y2 := sdiv(sub(mul(y1, cosP), mul(z1, sinP)), 100)
+                            let z2 := sdiv(add(mul(y1, sinP), mul(z1, cosP)), 100)
+
+                            // Perspective projection
+                            let zDist := add(z2, 150)
+                            if iszero(gt(zDist, 0)) { zDist := 1 }
+                            let projX := add(160, sdiv(mul(x2, scale), zDist))
+                            let projY := add(100, sdiv(mul(y2, scale), zDist))
+
+                            mstore(add(0x500, mul(i, 64)), projX)
+                            mstore(add(0x520, mul(i, 64)), projY)
+
+                            sstore(getUserSlot(add(55800, mul(i, 2))), projX)
+                            sstore(getUserSlot(add(55801, mul(i, 2))), projY)
+                        }
+
+                        // 2. Clear Doodle Graphics Framebuffer
+                        for { let idx := 0 } lt(idx, 8000) { idx := add(idx, 1) } {
+                            sstore(getUserSlot(add(8192, idx)), 0)
+                        }
+
+                        // 3. Connect vertices with lines
+                        for { let j := 0 } lt(j, lineCount) { j := add(j, 1) } {
+                            let fromIdx := and(sload(getUserSlot(add(55536, mul(j, 2)))), 0xFF)
+                            let toIdx := and(sload(getUserSlot(add(55537, mul(j, 2)))), 0xFF)
+
+                            if and(lt(fromIdx, vertexCount), lt(toIdx, vertexCount)) {
+                                let x0 := mload(add(0x500, mul(fromIdx, 64)))
+                                let y0 := mload(add(0x520, mul(fromIdx, 64)))
+                                let x1 := mload(add(0x500, mul(toIdx, 64)))
+                                let y1 := mload(add(0x520, mul(toIdx, 64)))
+
+                                drawLine(x0, y0, x1, y1, 1)
+                            }
+                        }
+
+                        // 4. Charge 1 OTRT wireframe tax
+                        let tax := 1
+                        if exciseOnChainTax(tax) {
+                            log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), tax)
+                        }
+
+                        // Emit WireframeRendered event log
+                        mstore(0x300, lineCount)
+                        log2(0x300, 32, 0xee6c1cb417ad0a8b94df8c8a14b0368b634882dfba51912bc5527e0291f24d1a, getContextUser())
+
+                        sstore(getUserSlot(54967), 1) // Status: Success
+                        sstore(getUserSlot(54966), 0) // Clear trigger
+                    }
+                }
+                case 55013 { // Homeword Render Trigger ($D6E5)
+                    sstore(getUserSlot(55013), val)
+                    if val {
+                        // 1. Clear Screen RAM (1024 to 2023)
+                        for { let i := 0 } lt(i, 1000) { i := add(i, 1) } {
+                            sstore(getUserSlot(add(1024, i)), 32)
+                        }
+                        
+                        // 2. Draw Page Border
+                        // Top & Bottom Border (rows 2 and 22, columns 10 to 30)
+                        for { let col := 10 } lt(col, 31) { col := add(col, 1) } {
+                            sstore(getUserSlot(add(1024, add(mul(2, 40), col))), 160)
+                            sstore(getUserSlot(add(1024, add(mul(22, 40), col))), 160)
+                        }
+                        // Left & Right Border (rows 3 to 21, columns 10 and 30)
+                        for { let row := 3 } lt(row, 22) { row := add(row, 1) } {
+                            sstore(getUserSlot(add(1024, add(mul(row, 40), 10))), 160)
+                            sstore(getUserSlot(add(1024, add(mul(row, 40), 30))), 160)
+                        }
+
+                        // 3. Format Spooled Text
+                        let left := sload(getUserSlot(55008))
+                        let right := sload(getUserSlot(55009))
+                        let just := sload(getUserSlot(55010))
+                        let spacing := sload(getUserSlot(55011))
+                        let len := sload(getUserSlot(55012))
+                        
+                        if iszero(spacing) { spacing := 1 }
+                        if iszero(right) { right := 70 }
+                        
+                        // Scale margins to 18 columns wide page boundary (columns 11 to 28)
+                        let pageLeft := div(mul(left, 18), 80)
+                        let pageRight := div(mul(right, 18), 80)
+                        if gt(pageLeft, 17) { pageLeft := 0 }
+                        if gt(pageRight, 18) { pageRight := 18 }
+                        if lt(pageRight, add(pageLeft, 2)) { pageRight := add(pageLeft, 2) }
+                        
+                        let lineWidth := sub(pageRight, pageLeft)
+                        let startRow := 3
+                        let currentRow := startRow
+                        let currentCol := 0
+                        
+                        let textIdx := 0
+                        for { } lt(textIdx, len) { } {
+                            if gt(currentRow, 21) { break }
+                            
+                            // Read character from buffer
+                            let char := and(sload(getUserSlot(add(55024, textIdx))), 0xFF)
+                            textIdx := add(textIdx, 1)
+                            
+                            // Convert to PETSCII character line representation
+                            let previewChar := 45 // Hyphen
+                            if eq(char, 32) { previewChar := 32 } // Space remains space
+                            
+                            let colOffset := add(11, pageLeft)
+                            sstore(getUserSlot(add(1024, add(mul(currentRow, 40), add(colOffset, currentCol)))), previewChar)
+                            
+                            currentCol := add(currentCol, 1)
+                            if eq(currentCol, lineWidth) {
+                                currentCol := 0
+                                currentRow := add(currentRow, spacing)
+                            }
+                        }
+
+                        // 4. Charge 2 OTRT Spooling Tax
+                        let tax := 2
+                        if exciseOnChainTax(tax) {
+                            log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), tax)
+                        }
+                        
+                        // Emit HomewordRendered event log
+                        mstore(0x300, len)
+                        log2(0x300, 32, 0x50fdb39d7be5a0438cf1dfba392019ff88d8b634882dfba51912bc5527e0291f, getContextUser())
+                        
+                        sstore(getUserSlot(55014), 1) // Status: Success
+                        sstore(getUserSlot(55013), 0) // Clear strobe
+                    }
                 }
                 case 54624 { // Trigger EVM Contract Call ($D560)
                     sstore(getUserSlot(54624), val)
@@ -1645,37 +2174,10 @@ object "CPU6502Emulator" {
             }
 
             // ----------------------------------------------------------------
-            // Method 1: executeOp(uint8 opcode, uint256 operand)
-            // Selector: 0x2a9cd5d1
-            // ----------------------------------------------------------------
-            if eq(selector, 0x2a9cd5d1) {
-                loadRegisterCache()
-                let opcode := shr(248, calldataload(4))
-                let operand := calldataload(36)
-
-                pop(executeInternal(opcode, operand))
-                saveRegisterCache()
-
-                mstore(0x00, 1)
-                return(0x00, 32)
-            }
-
-            // ----------------------------------------------------------------
             // Method 2: getCPUState() -> (uint256 A, uint256 X, uint256 Y, uint256 SR, uint256 SP, uint256 PC)
-            // Selector: 0xcbe94d1f
+            // Selector: 0xcbe94d1f (actually 0xe0f77c57)
             // ----------------------------------------------------------------
             if eq(selector, 0xe0f77c57) {
-                // Dynamic Diyat Rate-Limiting: penalize multiple reads in the same block
-                let lastReadBlock := sload(getUserSlot(54801))
-                if eq(lastReadBlock, number()) {
-                    let readTax := 2 // penalty of 2 OTRT tax units
-                    if exciseOnChainTax(readTax) {
-                        // Log penalty payment
-                        log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), readTax)
-                    }
-                }
-                sstore(getUserSlot(54801), number())
-
                 loadRegisterCache()
                 mstore(0x00, getReg(0x80))
                 mstore(0x20, getReg(0x81))

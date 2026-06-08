@@ -186,6 +186,8 @@
                             <option value="anteater">🐜 Ant Eater (Romox Cartridge)</option>
                             <option value="princessfrog">🐸 Princess and the Frog (Romox Cartridge)</option>
                             <option value="crush">🦖 Crush, Crumble & Chomp! (Epyx Game)</option>
+                            <option value="spider">🕷️ Apple Cider Spider (Datamost Cartridge)</option>
+                            <option value="ultima">⚔️ Ultima-on-Chain (Tilemap RPG)</option>
                         </select>
                         <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
                         <button class="btn btn-secondary" id="btnToggleDemo" style="min-width: 130px; border-color: var(--neon-magenta); color: var(--text-primary);">Autoplay Demo</button>
@@ -508,41 +510,88 @@
                     </div>
                 </section>
 
-                <!-- Alien Group Voice Box Speech Synthesizer -->
+                <!-- Speech Synthesis Suite -->
                 <section class="card" style="box-shadow: 0 0 20px rgba(0, 242, 254, 0.15); border-color: var(--neon-blue);">
-                    <h2><span class="icon">🗣️</span> The Alien Group Voice Box (Votrax SC-01A)</h2>
-                    <p class="description">Virtual speech processor. Plays robotic speech phonemes and animates a C64 mouth avatar.</p>
-                    <div style="display: flex; gap: 15px; align-items: center;">
+                    <h2><span class="icon">🗣️</span> Speech Synthesis Suite (Votrax / TI / Tymac)</h2>
+                    <p class="description">Simulated speech hardware and volume samplers. Select your sound engine, input text, and listen via Web Audio.</p>
+                    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
                         <!-- Animated face box -->
-                        <div id="voiceBoxFace" style="width: 80px; height: 80px; background: #000; border: 2px solid var(--neon-blue); border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
+                        <div id="voiceBoxFace" style="width: 100px; height: 100px; background: #000; border: 2px solid var(--neon-blue); border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; flex-shrink: 0; box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);">
                             <!-- Eyes -->
-                            <div style="display: flex; gap: 15px; margin-bottom: 10px;">
-                                <div style="width: 8px; height: 8px; background: var(--neon-blue); border-radius: 50%;"></div>
-                                <div style="width: 8px; height: 8px; background: var(--neon-blue); border-radius: 50%;"></div>
+                            <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+                                <div style="width: 10px; height: 10px; background: var(--neon-blue); border-radius: 50%; box-shadow: 0 0 8px var(--neon-blue);"></div>
+                                <div style="width: 10px; height: 10px; background: var(--neon-blue); border-radius: 50%; box-shadow: 0 0 8px var(--neon-blue);"></div>
                             </div>
                             <!-- Mouth -->
-                            <div id="voiceBoxMouth" style="width: 30px; height: 4px; background: var(--neon-blue); transition: height 0.05s ease, border-radius 0.05s ease;"></div>
+                            <div id="voiceBoxMouth" style="width: 40px; height: 6px; background: var(--neon-blue); transition: height 0.05s ease, border-radius 0.05s ease;"></div>
                         </div>
-                        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
-                            <div>
-                                <span class="reg-label">PHONEME:</span>
-                                <span id="voicePhonemeText" class="reg-value" style="color: var(--neon-blue); margin-left: 10px;">PA0 (Pause)</span>
+
+                        <!-- Speech Engine readouts grid -->
+                        <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+                            <!-- Votrax Readout -->
+                            <div id="readoutVotrax" style="border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 6px; padding: 10px; background: rgba(0, 242, 254, 0.05);">
+                                <div style="font-size: 0.8rem; font-weight: bold; color: var(--neon-blue); border-bottom: 1px solid rgba(0, 242, 254, 0.3); padding-bottom: 4px; margin-bottom: 6px; font-family: 'Orbitron', monospace;">VOTRAX SC-01A</div>
+                                <div style="font-size: 0.85rem;"><span class="reg-label">PHONEME:</span> <span id="voicePhonemeText" style="color: var(--neon-blue); font-family: 'Orbitron', monospace; float: right;">PA0</span></div>
+                                <div style="font-size: 0.85rem; margin-top: 4px;"><span class="reg-label">INFLECT:</span> <span id="voiceInflectionText" style="color: var(--neon-blue); font-family: 'Orbitron', monospace; float: right;">0</span></div>
                             </div>
-                            <div>
-                                <span class="reg-label">INFLECTION:</span>
-                                <span id="voiceInflectionText" class="reg-value" style="color: var(--neon-blue); margin-left: 10px;">0</span>
+
+                            <!-- TI TMS5220 Readout -->
+                            <div id="readoutTI" style="border: 1px solid rgba(57, 255, 20, 0.3); border-radius: 6px; padding: 10px; background: rgba(57, 255, 20, 0.05);">
+                                <div style="font-size: 0.8rem; font-weight: bold; color: #39ff14; border-bottom: 1px solid rgba(57, 255, 20, 0.3); padding-bottom: 4px; margin-bottom: 6px; font-family: 'Orbitron', monospace;">TI TMS5220 LPC</div>
+                                <div style="font-size: 0.85rem;"><span class="reg-label">COMMAND:</span> <span id="tiCommandText" style="color: #39ff14; font-family: 'Orbitron', monospace; float: right;">0x00</span></div>
+                                <div style="font-size: 0.85rem; margin-top: 4px;"><span class="reg-label">FIFO LEN:</span> <span id="tiFifoText" style="color: #39ff14; font-family: 'Orbitron', monospace; float: right;">0</span></div>
                             </div>
-                            <div>
-                                <span class="reg-label">STATUS:</span>
-                                <span id="voiceStatusLED" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #39ff14; box-shadow: 0 0 8px #39ff14; margin-left: 10px; vertical-align: middle;"></span>
-                                <span id="voiceStatusText" style="font-size: 0.95rem; font-family: 'Orbitron', monospace; margin-left: 5px; color: #39ff14;">READY</span>
+
+                            <!-- Tymac SID Readout -->
+                            <div id="readoutTymac" style="border: 1px solid rgba(255, 0, 255, 0.3); border-radius: 6px; padding: 10px; background: rgba(255, 0, 255, 0.05);">
+                                <div style="font-size: 0.8rem; font-weight: bold; color: #ff00ff; border-bottom: 1px solid rgba(255, 0, 255, 0.3); padding-bottom: 4px; margin-bottom: 6px; font-family: 'Orbitron', monospace;">TYMAC C64 SID</div>
+                                <div style="font-size: 0.85rem;"><span class="reg-label">REG $D418:</span> <span id="tymacVolumeText" style="color: #ff00ff; font-family: 'Orbitron', monospace; float: right;">0</span></div>
+                                <div style="font-size: 0.85rem; margin-top: 4px;"><span class="reg-label">DAC OUT:</span> <span id="tymacDacText" style="color: #ff00ff; font-family: 'Orbitron', monospace; float: right;">0.0 V</span></div>
+                            </div>
+
+                            <!-- Access RealSound Readout -->
+                            <div id="readoutRealSound" style="border: 1px solid rgba(255, 165, 0, 0.3); border-radius: 6px; padding: 10px; background: rgba(255, 165, 0, 0.05);">
+                                <div style="font-size: 0.8rem; font-weight: bold; color: #ffa500; border-bottom: 1px solid rgba(255, 165, 0, 0.3); padding-bottom: 4px; margin-bottom: 6px; font-family: 'Orbitron', monospace;">ACCESS REALSOUND</div>
+                                <div style="font-size: 0.85rem;"><span class="reg-label">PORT $61:</span> <span id="pitSpeakerText" style="color: #ffa500; font-family: 'Orbitron', monospace; float: right;">0x00</span></div>
+                                <div style="font-size: 0.85rem; margin-top: 4px;"><span class="reg-label">6-BIT DAC:</span> <span id="pitDacText" style="color: #ffa500; font-family: 'Orbitron', monospace; float: right;">0</span></div>
                             </div>
                         </div>
                     </div>
-                    <!-- Type and Speak -->
+
+                    <!-- Status and Controls -->
+                    <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                        <div>
+                            <span class="reg-label">STATUS:</span>
+                            <span id="voiceStatusLED" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #39ff14; box-shadow: 0 0 8px #39ff14; margin-left: 10px; vertical-align: middle;"></span>
+                            <span id="voiceStatusText" style="font-size: 0.95rem; font-family: 'Orbitron', monospace; margin-left: 5px; color: #39ff14;">READY</span>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="reg-label">SPEECH ENGINE:</span>
+                            <select id="selectSpeechEngine" class="input-glow" style="padding: 6px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">
+                                <option value="votrax" selected>Votrax SC-01A (Phoneme Oscillator)</option>
+                                <option value="ti_tms5220">TI TMS5220 (LPC Speech Synth)</option>
+                                <option value="tymac_sid">Tymac SID (4-bit Vol Digitizer)</option>
+                                <option value="access_realsound">Access RealSound (6-bit PC Speaker PWM)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Input text -->
                     <div style="margin-top: 15px; display: flex; gap: 10px;">
                         <input type="text" id="voiceTextInput" placeholder="Type words (e.g. HELLO COMMODORE)" class="input-glow" style="flex-grow: 1; font-family: 'Orbitron', sans-serif;">
                         <button class="btn btn-primary" id="btnVoiceSpeak" style="min-width: 100px; border-color: var(--neon-blue); color: var(--text-primary);">Speak</button>
+                    </div>
+
+                    <!-- Access RealSound On-Chain Soundboard -->
+                    <div style="margin-top: 12px; border-top: 1px solid rgba(255, 165, 0, 0.2); padding-top: 12px;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 6px; font-family: 'Orbitron', monospace;">ACCESS REALSOUND ON-CHAIN SOUNDBOARD:</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn" onclick="playRealSoundOnChainClip(0)" style="font-size: 0.75rem; border-color: #ffa500; color: #ffa500; padding: 4px 8px; font-family: 'Orbitron'; background: rgba(255, 165, 0, 0.05);">🔊 Golf Whoosh (On-Chain)</button>
+                            <button class="btn" onclick="playRealSoundOnChainClip(1)" style="font-size: 0.75rem; border-color: #ffa500; color: #ffa500; padding: 4px 8px; font-family: 'Orbitron'; background: rgba(255, 165, 0, 0.05);">🔊 Golf Tee Hit (On-Chain)</button>
+                            <button class="btn" onclick="playRealSoundOnChainClip(2)" style="font-size: 0.75rem; border-color: #ffa500; color: #ffa500; padding: 4px 8px; font-family: 'Orbitron'; background: rgba(255, 165, 0, 0.05);">🗣️ "Nice shot!" (On-Chain)</button>
+                            <button class="btn" onclick="playRealSoundOnChainClip(3)" style="font-size: 0.75rem; border-color: #ffa500; color: #ffa500; padding: 4px 8px; font-family: 'Orbitron'; background: rgba(255, 165, 0, 0.05);">🗣️ "Ouch!" (On-Chain)</button>
+                            <button class="btn" onclick="playRealSoundOnChainClip(4)" style="font-size: 0.75rem; border-color: #ffa500; color: #ffa500; padding: 4px 8px; font-family: 'Orbitron'; background: rgba(255, 165, 0, 0.05);">🗣️ "Welcome, Tex" (On-Chain)</button>
+                        </div>
                     </div>
                 </section>
 
@@ -582,12 +631,83 @@
                                 <button class="btn btn-primary" id="btnWordcraftSave" style="background: #ba55d3; border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">💾 Save to DFS</button>
                                 <button class="btn btn-primary" id="btnWordcraftLoad" style="background: #4b382a; border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📂 Load from DFS</button>
                             </div>
-                            <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
+<div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
                                 <button class="btn btn-secondary" id="btnWordcraftSaveWorkspace" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">💾 Save to Workspace</button>
                                 <button class="btn btn-secondary" id="btnWordcraftLoadWorkspace" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📂 Load from Workspace</button>
                             </div>
                         </div>
                         <div id="wordcraftStatus" style="font-family: 'Orbitron', monospace; font-size: 0.8rem; color: #ba55d3; text-align: center; margin-top: 5px;"></div>
+                    </div>
+                </section>
+
+                <!-- Access Leader Board Golf (On-Chain Physics Simulator) -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(255, 165, 0, 0.15); border-color: #ffa500;">
+                    <h2><span class="icon">⛳</span> Access Leader Board Golf (On-Chain Physics)</h2>
+                    <p class="description">Calculate golf ball trajectories utilizing the on-chain graphics system physics model with real-time wind and hook/slice spin drift.</p>
+                    
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <!-- Left: Trajectory Canvas -->
+                        <div style="flex-grow: 1; flex-shrink: 0; min-width: 300px; display: flex; flex-direction: column; gap: 8px;">
+                            <canvas id="golfCanvas" width="480" height="240" style="background: linear-gradient(to bottom, #112 0%, #224 60%, #131 90%, #242 100%); border: 2px solid #ffa500; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);"></canvas>
+                            <div id="golfStatusText" style="font-family: 'Orbitron', monospace; font-size: 0.85rem; color: #ffa500; text-align: center;">Ready to Tee Off</div>
+                        </div>
+
+                        <!-- Middle: Interactive Swing Meter -->
+                        <div style="flex-grow: 1; min-width: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px dashed rgba(255, 165, 0, 0.3); border-radius: 6px; padding: 10px; background: rgba(255, 165, 0, 0.02);">
+                            <div style="font-size: 0.8rem; font-weight: bold; color: #ffa500; font-family: 'Orbitron', monospace; text-align: center; border-bottom: 1px solid rgba(255,165,0,0.2); width: 100%; padding-bottom: 4px;">INTERACTIVE SWING</div>
+                            <canvas id="swingMeterCanvas" width="100" height="155" style="background: #000; border: 1px solid #ffa500; border-radius: 4px; box-shadow: inset 0 0 8px rgba(255, 165, 0, 0.4);"></canvas>
+                            <button class="btn btn-secondary" id="btnStartSwing" style="width: 100%; border-color: #ff00ff; color: #ff00ff; font-family: 'Orbitron'; font-size: 0.8rem; padding: 6px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 0, 255, 0.1);">⛳ BEGIN SWING</button>
+                            <div id="swingInstructions" style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; line-height: 1.2;">Click/Space to Start, click to set Power (Top), click to Snap (Bottom line).</div>
+                        </div>
+
+                        <!-- Right: 3D Vector Viewport -->
+                        <div style="flex-grow: 1; flex-shrink: 0; min-width: 300px; display: flex; flex-direction: column; gap: 8px;">
+                            <canvas id="golf3DCanvas" width="480" height="240" style="background: #050508; border: 2px solid #ff00ff; border-radius: 6px; box-shadow: inset 0 0 10px rgba(255, 0, 255, 0.4); cursor: pointer;"></canvas>
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: 'Rajdhani', sans-serif;">
+                                <div style="color: #ff00ff; font-size: 0.85rem; font-family: 'Orbitron'; font-weight: bold;">3D CAM VIEW:</div>
+                                <div style="display: flex; gap: 10px;">
+                                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron';">YAW: <input type="range" id="camYaw" min="-90" max="90" value="15" style="width: 70px; vertical-align: middle;" oninput="drawGolf3D()"></label>
+                                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'Orbitron';">PITCH: <input type="range" id="camPitch" min="5" max="60" value="25" style="width: 70px; vertical-align: middle;" oninput="drawGolf3D()"></label>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; justify-content: space-between; margin-top: 2px;">
+                                <button class="btn" id="btnToggleMercenaryMode" style="border-color: #ff00ff; color: #ff00ff; font-family: 'Orbitron'; font-size: 0.8rem; padding: 4px 8px; font-weight: bold; background: rgba(255, 0, 255, 0.05); flex-grow: 1;">🛸 EXPLORE TARG (3D Mercenary Mode)</button>
+                                <div id="mercenaryCoords" style="font-family: 'Orbitron', monospace; font-size: 0.7rem; color: #ff00ff; display: none; align-self: center; background: rgba(255,0,255,0.05); padding: 4px; border: 1px solid rgba(255,0,255,0.2); border-radius: 4px;">POS: X=0, Y=15, Z=-50</div>
+                            </div>
+                            <div id="mercenaryControls" style="display: none; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 2px;">
+                                <button class="btn btn-secondary" onclick="movePlayer('L_TURN')" style="font-size: 0.65rem; padding: 3px 0; font-family: 'Orbitron';">↺ L Turn</button>
+                                <button class="btn btn-secondary" onclick="movePlayer('FORWARD')" style="font-size: 0.65rem; padding: 3px 0; font-family: 'Orbitron';">▲ Fwd</button>
+                                <button class="btn btn-secondary" onclick="movePlayer('R_TURN')" style="font-size: 0.65rem; padding: 3px 0; font-family: 'Orbitron';">↻ R Turn</button>
+                                <button class="btn btn-secondary" onclick="movePlayer('LEFT')" style="font-size: 0.65rem; padding: 3px 0; font-family: 'Orbitron';">◀ Left</button>
+                                <button class="btn btn-secondary" onclick="movePlayer('BACKWARD')" style="font-size: 0.65rem; padding: 3px 0; font-family: 'Orbitron';">▼ Back</button>
+                                <button class="btn btn-secondary" onclick="movePlayer('RIGHT')" style="font-size: 0.65rem; padding: 3px 0; font-family: 'Orbitron';">▶ Right</button>
+                            </div>
+                        </div>
+
+                        <!-- Far Right: Trajectory Parameters -->
+                        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px; min-width: 200px; font-family: 'Rajdhani', sans-serif;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px;">SWING POWER (0 - 100):</label>
+                                <input type="range" id="golfPower" min="10" max="100" value="80" class="slider-glow" style="width: 100%; cursor: pointer;" oninput="document.getElementById('lblPower').innerText = this.value;">
+                                <span style="font-size: 0.85rem; color: #ffa500; font-family: 'Orbitron'; font-weight: bold;" id="lblPower">80</span>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px;">LAUNCH ANGLE (10° - 85°):</label>
+                                <input type="range" id="golfAngle" min="10" max="85" value="45" class="slider-glow" style="width: 100%; cursor: pointer;" oninput="document.getElementById('lblAngle').innerText = this.value + '°';">
+                                <span style="font-size: 0.85rem; color: #ffa500; font-family: 'Orbitron'; font-weight: bold;" id="lblAngle">45°</span>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px;">WIND SPEED (Cross/Tail, -10 to +10):</label>
+                                <input type="range" id="golfWind" min="-10" max="10" value="2" class="slider-glow" style="width: 100%; cursor: pointer;" oninput="document.getElementById('lblWind').innerText = (this.value >= 0 ? '+' : '') + this.value + ' m/s';">
+                                <span style="font-size: 0.85rem; color: #ffa500; font-family: 'Orbitron'; font-weight: bold;" id="lblWind">+2 m/s</span>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px;">BALL SPIN (Slice/Hook, -5 to +5):</label>
+                                <input type="range" id="golfSpin" min="-5" max="5" value="0" class="slider-glow" style="width: 100%; cursor: pointer;" oninput="document.getElementById('lblSpin').innerText = (this.value > 0 ? 'Slice' : this.value < 0 ? 'Hook' : 'Straight') + ' (' + this.value + ')';">
+                                <span style="font-size: 0.85rem; color: #ffa500; font-family: 'Orbitron'; font-weight: bold;" id="lblSpin">Straight (0)</span>
+                            </div>
+                            <button class="btn btn-primary" id="btnGolfSwing" style="border-color: #ffa500; color: var(--text-primary); font-family: 'Orbitron'; font-weight: bold; padding: 10px; margin-top: 5px; box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);">🏌️ Swing (On-Chain Solve)</button>
+                        </div>
                     </div>
                 </section>
 
@@ -1140,12 +1260,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "function updateSprite(uint8 index, uint16 x, uint8 y) public returns (uint256)",
             "function checkCollisions() public returns (uint256)",
             "function setSpriteRow(uint8 index, uint8 row, uint256 val) public returns (uint256)",
-            "function setSpritePatternFull(uint8 index, uint256[21] rows) public returns (uint256)"
+            "function setSpritePatternFull(uint8 index, uint256[21] rows) public returns (uint256)",
+            "function calculateGolfTrajectory(uint256 power, uint256 angle, int256 wind, int256 spin) public view returns (uint256[], uint256[])",
+            "function getMercenaryGeometry(uint256 objId) public view returns (int256[])"
         ];
         const musicABI = [
             "function getVoice1Frequency() public view returns (uint256)",
             "function poke(uint16 addr, uint8 val) public returns (uint256)",
-            "function getSIDState() public view returns (uint256[25])"
+            "function getSIDState() public view returns (uint256[25])",
+            "function play4BitSample(uint256 sampleVal) public returns (uint256)",
+            "function playRealSoundSample(uint256 sampleVal) public returns (uint256)",
+            "function generateRealSoundClip(uint256 clipId) public view returns (uint256[])"
         ];
         const diskABI = [
             "function getJiffies() public view returns (uint256)",
@@ -1155,7 +1280,10 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         const speechABI = [
             "function getSpeechState() public view returns (uint256, uint256, uint256, uint256)",
             "function writePhoneme(uint256 phoneme, uint256 inflection) public returns (uint256)",
-            "function clearBusy() public returns (uint256)"
+            "function clearBusy() public returns (uint256)",
+            "function getTMS5220State() public view returns (uint256, uint256, uint256)",
+            "function writeTMS5220Command(uint256 command) public returns (uint256)",
+            "function writeTMS5220Data(uint256 data) public returns (uint256)"
         ];
 
         let cpuContract, graphicsContract, musicContract, diskContract, speechContract, oregonTrailTokenContract;
@@ -1243,6 +1371,37 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     { id: 1, x: 150, y: 90 },
                     { id: 2, x: 60, y: 140 },
                     { id: 3, x: 250, y: 130 }
+                ]
+            },
+            spider: {
+                name: "Apple Cider Spider",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x04, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x40, 0x8D, 0x01, 0xD0,
+                    0xA9, 0x08, 0x8D, 0x02, 0xD6,
+                    0xEA, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 140, y: 110 },
+                    { id: 1, x: 70, y: 70 },
+                    { id: 2, x: 190, y: 140 },
+                    { id: 3, x: 30, y: 150 }
+                ]
+            },
+            ultima: {
+                name: "Ultima-on-Chain",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x05, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 80, y: 80 },
+                    { id: 1, x: 140, y: 80 }
                 ]
             }
         };
@@ -1451,6 +1610,12 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
             if (typeof initZmachineCreatorEvents === "function") {
                 initZmachineCreatorEvents();
+            }
+            if (typeof initGolfCanvas === "function") {
+                initGolfCanvas();
+            }
+            if (typeof initGolfEvents === "function") {
+                initGolfEvents();
             }
         }
 
@@ -2581,22 +2746,139 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     }
                 }
 
-                // 4. Fetch speechSynthesizer state
+                // 4. Fetch speech & audio states (Votrax, TI TMS5220, Tymac SID)
+                const selectedEngine = document.getElementById("selectSpeechEngine").value;
                 if (speechContract) {
                     try {
+                        // Votrax state polling
                         const state = await speechContract.getSpeechState();
                         const phonemeCode = Number(state[0]);
                         const inflection = Number(state[1]);
                         const busy = Number(state[2]);
                         const counter = Number(state[3]);
 
-                        if (counter !== lastSpeechCounter) {
+                        const label = phonemeNames[phonemeCode] || "PA0";
+                        document.getElementById("voicePhonemeText").innerText = `${label} (${phonemeCode})`;
+                        document.getElementById("voiceInflectionText").innerText = inflection;
+
+                        if (selectedEngine === "votrax" && counter !== lastSpeechCounter) {
                             lastSpeechCounter = counter;
                             playPhoneme(phonemeCode, inflection);
+                        }
+                        
+                        // TI TMS5220 state polling
+                        const tmsState = await speechContract.getTMS5220State();
+                        const tmsCmd = Number(tmsState[0]);
+                        const tmsStatus = Number(tmsState[1]);
+                        const tmsFifoLen = Number(tmsState[2]);
+                        
+                        document.getElementById("tiCommandText").innerText = "0x" + tmsCmd.toString(16).toUpperCase();
+                        document.getElementById("tiFifoText").innerText = tmsFifoLen;
+                        
+                        if (selectedEngine === "ti_tms5220") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            const isBusy = (tmsStatus & 0x80) !== 0;
+                            if (led && ledText) {
+                                if (isBusy) {
+                                    led.style.background = "#ff007f";
+                                    led.style.boxShadow = "0 0 8px #ff007f";
+                                    ledText.innerText = "BUSY";
+                                    ledText.style.color = "#ff007f";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${6 + (tmsFifoLen * 3)}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
                         }
                     } catch (err) {
                         console.error("Error fetching speech state:", err);
                     }
+                }
+
+                if (musicContract) {
+                    try {
+                        const vol = Number(await musicContract.peek(54296));
+                        document.getElementById("tymacVolumeText").innerText = vol;
+                        const volts = (vol * 5.0 / 15.0).toFixed(2);
+                        document.getElementById("tymacDacText").innerText = `${volts} V`;
+
+                        if (selectedEngine === "tymac_sid") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            if (led && ledText) {
+                                if (vol > 0) {
+                                    led.style.background = "#ff00ff";
+                                    led.style.boxShadow = "0 0 8px #ff00ff";
+                                    ledText.innerText = "DAC ACTIVE";
+                                    ledText.style.color = "#ff00ff";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${4 + vol}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
+                        }
+
+                        // Access RealSound polling (port 97)
+                        const realVal = Number(await musicContract.peek(97));
+                        document.getElementById("pitSpeakerText").innerText = "0x" + realVal.toString(16).toUpperCase();
+                        document.getElementById("pitDacText").innerText = realVal;
+
+                        if (selectedEngine === "access_realsound") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            if (led && ledText) {
+                                if (realVal > 0) {
+                                    led.style.background = "#ffa500";
+                                    led.style.boxShadow = "0 0 8px #ffa500";
+                                    ledText.innerText = "PWM ACTIVE";
+                                    ledText.style.color = "#ffa500";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${4 + Math.floor(realVal / 3)}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
+                        }
+                    } catch (err) {}
                 }
 
                 updateVulkanScreen();
@@ -2645,6 +2927,76 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "U": ["Y1", "OO1"], "V": ["V"], "W": ["OO1"], "X": ["K", "S"],
             "Y": ["AY"], "Z": ["Z"], " ": ["PA0"]
         };
+
+        function playTymacAudioSample(val) {
+            if (!isAudioPlaying || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const volume = val / 15.0;
+            const osc = audioCtx.createOscillator();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(220, now);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(volume * 0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        function playTISpeechFrame(dataVal) {
+            if (!isAudioPlaying || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            const pitchCode = dataVal & 0x0F;
+            const freq = 80 + pitchCode * 12;
+            
+            const formantCode = (dataVal >> 4) & 0x0F;
+            const cutoff = 400 + formantCode * 250;
+            
+            const osc = audioCtx.createOscillator();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(freq, now);
+            
+            const bandpass = audioCtx.createBiquadFilter();
+            bandpass.type = "bandpass";
+            bandpass.frequency.setValueAtTime(cutoff, now);
+            bandpass.Q.setValueAtTime(4, now);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.12, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            
+            osc.connect(bandpass);
+            bandpass.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        function playRealSoundAudioSample(val) {
+            if (!isAudioPlaying || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const volume = val / 63.0;
+            
+            const osc = audioCtx.createOscillator();
+            osc.type = "square";
+            osc.frequency.setValueAtTime(180, now);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(volume * 0.18, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
 
         function playPhoneme(code, inflection) {
             const label = phonemeNames[code] || "PA0";
@@ -2772,50 +3124,147 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         }
 
         async function speakText(text) {
-            if (!speechContract) {
-                alert("Speech Synthesizer contract is not loaded.");
-                return;
-            }
-            text = text.toUpperCase().trim();
-            if (!text) return;
-
-            const words = text.split(/\s+/);
-            const phonemeSequence = [];
+            const selectedEngine = document.getElementById("selectSpeechEngine").value;
             
-            words.forEach(word => {
-                if (wordsPhonemes[word]) {
-                    wordsPhonemes[word].forEach(p => phonemeSequence.push(p));
-                } else {
-                    for (let i = 0; i < word.length; i++) {
-                        const letter = word[i];
-                        const list = letterToPhonemes[letter] || ["PA0"];
-                        list.forEach(p => phonemeSequence.push(p));
-                    }
+            if (selectedEngine === "votrax") {
+                if (!speechContract) {
+                    alert("Speech Synthesizer contract is not loaded.");
+                    return;
                 }
-                phonemeSequence.push("PA1");
-            });
+                text = text.toUpperCase().trim();
+                if (!text) return;
 
-            const btn = document.getElementById("btnVoiceSpeak");
-            if (btn) btn.innerText = "Speaking...";
-
-            try {
-                for (let i = 0; i < phonemeSequence.length; i++) {
-                    const name = phonemeSequence[i];
-                    const code = phonemeToCode[name] !== undefined ? phonemeToCode[name] : 3;
-                    const tx = await speechContract.writePhoneme(code, 1);
-                    await tx.wait();
-
-                    let isBusy = true;
-                    while (isBusy) {
-                        await new Promise(r => setTimeout(r, 60));
-                        const state = await speechContract.getSpeechState();
-                        isBusy = Number(state[2]) === 1;
+                const words = text.split(/\s+/);
+                const phonemeSequence = [];
+                
+                words.forEach(word => {
+                    if (wordsPhonemes[word]) {
+                        wordsPhonemes[word].forEach(p => phonemeSequence.push(p));
+                    } else {
+                        for (let i = 0; i < word.length; i++) {
+                            const letter = word[i];
+                            const list = letterToPhonemes[letter] || ["PA0"];
+                            list.forEach(p => phonemeSequence.push(p));
+                        }
                     }
+                    phonemeSequence.push("PA1");
+                });
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "Speaking...";
+
+                try {
+                    for (let i = 0; i < phonemeSequence.length; i++) {
+                        const name = phonemeSequence[i];
+                        const code = phonemeToCode[name] !== undefined ? phonemeToCode[name] : 3;
+                        const tx = await speechContract.writePhoneme(code, 1);
+                        await tx.wait();
+
+                        let isBusy = true;
+                        while (isBusy) {
+                            await new Promise(r => setTimeout(r, 60));
+                            const state = await speechContract.getSpeechState();
+                            isBusy = Number(state[2]) === 1;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Speech sequence transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
                 }
-            } catch (err) {
-                console.error("Speech sequence transmission failed:", err);
-            } finally {
-                if (btn) btn.innerText = "Speak";
+            } else if (selectedEngine === "ti_tms5220") {
+                if (!speechContract) {
+                    alert("Speech Synthesizer contract is not loaded.");
+                    return;
+                }
+                text = text.toUpperCase().trim();
+                if (!text) return;
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "LPC Synth...";
+
+                try {
+                    const cmdTx = await speechContract.writeTMS5220Command(0x50);
+                    await cmdTx.wait();
+
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const frameByte = ((charCode * (i + 1)) & 0xFF);
+                        
+                        const dataTx = await speechContract.writeTMS5220Data(frameByte);
+                        await dataTx.wait();
+
+                        playTISpeechFrame(frameByte);
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+
+                    const resetTx = await speechContract.writeTMS5220Command(0x90);
+                    await resetTx.wait();
+                } catch (err) {
+                    console.error("TI TMS5220 LPC transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            } else if (selectedEngine === "tymac_sid") {
+                if (!musicContract) {
+                    alert("Music Maker contract is not loaded.");
+                    return;
+                }
+                text = text.toUpperCase().trim();
+                if (!text) return;
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "4-bit DAC...";
+
+                try {
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const sampleVal = (charCode % 16); 
+                        
+                        const tx = await musicContract.play4BitSample(sampleVal);
+                        await tx.wait();
+
+                        playTymacAudioSample(sampleVal);
+                        await new Promise(r => setTimeout(r, 120));
+                    }
+
+                    const txClear = await musicContract.play4BitSample(0);
+                    await txClear.wait();
+                } catch (err) {
+                    console.error("Tymac play4BitSample transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            } else if (selectedEngine === "access_realsound") {
+                if (!musicContract) {
+                    alert("Music Maker contract is not loaded.");
+                    return;
+                }
+                text = text.toUpperCase().trim();
+                if (!text) return;
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "RealSound...";
+
+                try {
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const sampleVal = (charCode % 64);
+                        
+                        const tx = await musicContract.playRealSoundSample(sampleVal);
+                        await tx.wait();
+
+                        playRealSoundAudioSample(sampleVal);
+                        await new Promise(r => setTimeout(r, 120));
+                    }
+
+                    const txClear = await musicContract.playRealSoundSample(0);
+                    await txClear.wait();
+                } catch (err) {
+                    console.error("Access RealSound transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
             }
         }
 
@@ -4341,6 +4790,255 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillText("CRUSH, CRUMBLE & CHOMP!", canvas.width / 2, 12);
         }
 
+        let spiderFrame = 0;
+        function drawAppleCiderSpiderScreen() {
+            spiderFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw wood platforms
+            ctx.fillStyle = "#8b4513"; // Brown
+            ctx.fillRect(40, 60, 120, 6);
+            ctx.fillRect(160, 90, 120, 6);
+            ctx.fillRect(40, 120, 150, 6);
+            ctx.fillRect(100, 150, 180, 6);
+            
+            // Draw spider thread
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(140, 30);
+            ctx.lineTo(140, 150);
+            ctx.stroke();
+            
+            // Draw cider press cylinder
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(220, 30, 40, 20); // Press top
+            let pistonY = 50 + Math.sin(spiderFrame * 0.08) * 15;
+            ctx.fillStyle = "#bdc3c7";
+            ctx.fillRect(235, 50, 10, pistonY - 50); // Piston rod
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(225, pistonY, 30, 8); // Press plate
+            
+            // Red apples at bottom of press
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.arc(233, 85, 3, 0, Math.PI * 2);
+            ctx.arc(247, 85, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dripping yellow drop
+            let dropY = 90 + (spiderFrame % 60) * 1.5;
+            if (dropY < 180) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath();
+                ctx.arc(240, dropY, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw Spider (Sprite 0) walking on thread
+            let spY = 50 + Math.sin(spiderFrame * 0.04) * 35;
+            ctx.fillStyle = "#e67e22";
+            ctx.beginPath();
+            ctx.arc(140, spY, 5, 0, Math.PI * 2); // Body
+            ctx.fill();
+            // Legs
+            ctx.strokeStyle = "#e67e22";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i = 0; i < 4; i++) {
+                let angle = -Math.PI/6 + i * Math.PI/4 + Math.sin(spiderFrame * 0.2 + i) * 0.1;
+                ctx.moveTo(140, spY); ctx.lineTo(140 + Math.cos(angle)*10, spY + Math.sin(angle)*10);
+                ctx.moveTo(140, spY); ctx.lineTo(140 - Math.cos(angle)*10, spY + Math.sin(angle)*10);
+            }
+            ctx.stroke();
+            
+            // Draw Fly (Sprite 1) flying around
+            let flyX = 100 + Math.cos(spiderFrame * 0.05) * 30;
+            let flyY = 70 + Math.sin(spiderFrame * 0.08) * 15;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(flyX - 2, flyY - 2, 4, 4);
+            ctx.fillStyle = "#34495e";
+            ctx.fillRect(flyX - 1, flyY - 1, 2, 2);
+            
+            // Frog at the bottom (Sprite 3)
+            let frogJump = Math.max(0, Math.sin(spiderFrame * 0.05) * 15);
+            let frogY = 135 - frogJump;
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(70, frogY, 12, 10);
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(72, frogY + 2, 8, 6);
+            
+            // Header
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("DATAMOST INC. 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LIVES: 03", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillText("APPLE CIDER SPIDER", canvas.width / 2, 15);
+        }
+
+        let ultimaFrame = 0;
+        function drawUltimaScreen() {
+            ultimaFrame++;
+            // Draw outer border
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw inner map screen
+            const startX = 40;
+            const startY = 30;
+            const mapW = 240;
+            const mapH = 140;
+            const tileW = mapW / 10;
+            const tileH = mapH / 10;
+            
+            // 10x10 classic Ultima map
+            // 0: Grass, 1: Water, 2: Forest, 3: Mountain, 4: Wall, 5: Chest, 6: Town
+            const ultimaMap = [
+                [3, 3, 3, 2, 2, 0, 0, 1, 1, 1],
+                [3, 3, 2, 2, 0, 0, 0, 0, 1, 1],
+                [3, 2, 2, 0, 0, 6, 0, 0, 0, 1],
+                [2, 2, 0, 0, 0, 0, 0, 4, 4, 4],
+                [2, 0, 0, 0, 0, 0, 0, 4, 5, 4],
+                [0, 0, 0, 0, 0, 0, 0, 4, 0, 4],
+                [0, 0, 1, 1, 0, 0, 0, 4, 4, 4],
+                [0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 0, 6, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+            ];
+            
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    const tileType = ultimaMap[r][c];
+                    const tx = startX + c * tileW;
+                    const ty = startY + r * tileH;
+                    
+                    if (tileType === 0) { // Grass
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.strokeStyle = "#27ae60";
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(tx + 4, ty + 8); ctx.lineTo(tx + 6, ty + 4); ctx.lineTo(tx + 8, ty + 8);
+                        ctx.moveTo(tx + 14, ty + 10); ctx.lineTo(tx + 16, ty + 6); ctx.lineTo(tx + 18, ty + 10);
+                        ctx.stroke();
+                    } else if (tileType === 1) { // Water
+                        ctx.fillStyle = "#2980b9";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.strokeStyle = "#3498db";
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        let waveOffset = Math.sin(ultimaFrame * 0.1 + r) * 3;
+                        ctx.moveTo(tx + 2, ty + 5 + waveOffset/2);
+                        ctx.quadraticCurveTo(tx + tileW/2, ty + 2 + waveOffset, tx + tileW - 2, ty + 5 + waveOffset/2);
+                        ctx.stroke();
+                    } else if (tileType === 2) { // Forest
+                        ctx.fillStyle = "#27ae60";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#1e824c";
+                        ctx.beginPath();
+                        ctx.moveTo(tx + tileW/2, ty + 2);
+                        ctx.lineTo(tx + 4, ty + tileH - 2);
+                        ctx.lineTo(tx + tileW - 4, ty + tileH - 2);
+                        ctx.fill();
+                    } else if (tileType === 3) { // Mountain
+                        ctx.fillStyle = "#95a5a6";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#7f8c8d";
+                        ctx.beginPath();
+                        ctx.moveTo(tx + tileW/2, ty + 2);
+                        ctx.lineTo(tx + 2, ty + tileH - 1);
+                        ctx.lineTo(tx + tileW - 2, ty + tileH - 1);
+                        ctx.fill();
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.moveTo(tx + tileW/2, ty + 2);
+                        ctx.lineTo(tx + tileW/2 - 4, ty + 6);
+                        ctx.lineTo(tx + tileW/2 + 4, ty + 6);
+                        ctx.fill();
+                    } else if (tileType === 4) { // Wall
+                        ctx.fillStyle = "#7f8c8d";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.strokeStyle = "#34495e";
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(tx, ty, tileW, tileH);
+                        ctx.beginPath();
+                        ctx.moveTo(tx, ty + tileH/2); ctx.lineTo(tx + tileW, ty + tileH/2);
+                        ctx.moveTo(tx + tileW/2, ty); ctx.lineTo(tx + tileW/2, ty + tileH/2);
+                        ctx.moveTo(tx + tileW/4, ty + tileH/2); ctx.lineTo(tx + tileW/4, ty + tileH);
+                        ctx.moveTo(tx + 3*tileW/4, ty + tileH/2); ctx.lineTo(tx + 3*tileW/4, ty + tileH);
+                        ctx.stroke();
+                    } else if (tileType === 5) { // Chest
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#f39c12";
+                        ctx.fillRect(tx + 4, ty + 4, tileW - 8, tileH - 8);
+                        ctx.fillStyle = "#d35400";
+                        ctx.fillRect(tx + tileW/2 - 2, ty + tileH/2 - 2, 4, 4);
+                    } else if (tileType === 6) { // Castle/Town
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#bdc3c7";
+                        ctx.fillRect(tx + 3, ty + 3, 5, tileH - 6);
+                        ctx.fillRect(tx + tileW - 8, ty + 3, 5, tileH - 6);
+                        ctx.fillRect(tx + 8, ty + 6, tileW - 16, tileH - 9);
+                        ctx.fillStyle = "#e74c3c";
+                        ctx.fillRect(tx + 5, ty + 1, 3, 2);
+                        ctx.fillRect(tx + tileW - 6, ty + 1, 3, 2);
+                    }
+                }
+            }
+            
+            // Draw player character (Avatar) moving on screen
+            let avX = startX + 4 * tileW + tileW/2;
+            let avY = startY + 5 * tileH + tileH/2 + Math.sin(ultimaFrame * 0.05) * 8;
+            ctx.fillStyle = "#e74c3c"; // Red avatar
+            ctx.beginPath();
+            ctx.arc(avX, avY - 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(avX, avY - 2); ctx.lineTo(avX, avY + 4);
+            ctx.moveTo(avX - 4, avY + 1); ctx.lineTo(avX + 4, avY + 1);
+            ctx.moveTo(avX, avY + 4); ctx.lineTo(avX - 3, avY + 8);
+            ctx.moveTo(avX, avY + 4); ctx.lineTo(avX + 3, avY + 8);
+            ctx.stroke();
+            
+            // Animated enemy (Orc)
+            let orcX = startX + 2 * tileW + tileW/2 + Math.cos(ultimaFrame * 0.08) * 12;
+            let orcY = startY + 4 * tileH + tileH/2;
+            ctx.fillStyle = "#9b59b6";
+            ctx.beginPath();
+            ctx.arc(orcX, orcY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Header
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ORIGIN SYSTEMS 1985", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("HP: 150/150", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillText("ULTIMA V", canvas.width / 2, 15);
+            
+            // Combat messages
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "7px monospace";
+            ctx.textAlign = "center";
+            if (ultimaFrame % 200 < 100) {
+                ctx.fillText("AVATAR ATTACKS ORC FOR 12 DAMAGE!", canvas.width / 2, canvas.height - 12);
+            } else {
+                ctx.fillText("ORC MISSES AVATAR!", canvas.width / 2, canvas.height - 12);
+            }
+        }
+
         // Draw C64 Screen layout
         function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
             if (oregonActive) {
@@ -4361,6 +5059,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             if (activeGameName === "Crush, Crumble and Chomp!") {
                 drawCrushCrumbleChompScreen();
+                return;
+            }
+            if (activeGameName === "Apple Cider Spider") {
+                drawAppleCiderSpiderScreen();
+                return;
+            }
+            if (activeGameName === "Ultima-on-Chain") {
+                drawUltimaScreen();
                 return;
             }
 
@@ -5177,6 +5883,756 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     term.innerHTML += `\n[CREATOR-ERROR] Failed to upload custom game: ${err.message}`;
                 }
             });
+        }
+
+        // --- Access Leader Board Golf Event Handlers ---
+        let golfAnimInterval = null;
+
+        function initGolfCanvas() {
+            const canvas = document.getElementById("golfCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            
+            // Sky
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, "#1a2a6c");
+            grad.addColorStop(0.5, "#b21f1f");
+            grad.addColorStop(0.8, "#fdbb2d");
+            grad.addColorStop(0.9, "#31a354");
+            grad.addColorStop(1, "#006837");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Ground hills
+            ctx.fillStyle = "#238b45";
+            ctx.beginPath();
+            ctx.ellipse(350, 240, 200, 50, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = "#005a32";
+            ctx.beginPath();
+            ctx.ellipse(100, 240, 150, 40, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Tee box marker
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(15, 210, 8, 4);
+            
+            // Flag pole at 1000 yards (mapped to x = 370px)
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(370, 215);
+            ctx.lineTo(370, 160);
+            ctx.stroke();
+            
+            // Red Flag
+            ctx.fillStyle = "#ff0000";
+            ctx.beginPath();
+            ctx.moveTo(370, 160);
+            ctx.lineTo(350, 170);
+            ctx.lineTo(370, 180);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        async function runGolfSwing() {
+            if (!graphicsContract) {
+                alert("Graphics System contract is not loaded. Please connect wallet first.");
+                return;
+            }
+            
+            if (golfAnimInterval) {
+                clearInterval(golfAnimInterval);
+            }
+            
+            const power = parseInt(document.getElementById("golfPower").value);
+            const angle = parseInt(document.getElementById("golfAngle").value);
+            const wind = parseInt(document.getElementById("golfWind").value);
+            const spin = parseInt(document.getElementById("golfSpin").value);
+            const statusDiv = document.getElementById("golfStatusText");
+            
+            statusDiv.innerText = "Calculating trajectory on-chain...";
+            
+            try {
+                const [xCoords, yCoords] = await graphicsContract.calculateGolfTrajectory(power, angle, wind, spin);
+                
+                if (xCoords.length === 0) {
+                    statusDiv.innerText = "Error: On-chain trajectory empty.";
+                    return;
+                }
+                
+                // Reconstruct 3D points
+                golf3DCoords = [];
+                for (let i = 0; i < xCoords.length; i++) {
+                    const z = Number(xCoords[i]);
+                    const y = Number(yCoords[i]);
+                    const progress = i / (xCoords.length - 1);
+                    const x = (wind * 2 + spin * 8) * progress;
+                    golf3DCoords.push({ x: x, y: y, z: z });
+                }
+                
+                const canvas = document.getElementById("golfCanvas");
+                const ctx = canvas.getContext("2d");
+                
+                let step = 0;
+                statusDiv.innerText = "Swing! Ball in flight...";
+                
+                golfAnimInterval = setInterval(() => {
+                    initGolfCanvas(); // Redraw background
+                    
+                    // Draw trace line
+                    ctx.strokeStyle = "rgba(255, 165, 0, 0.7)";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(20, 210);
+                    
+                    for (let i = 0; i <= step; i++) {
+                        const cx = 20 + Number(xCoords[i]) * 0.35;
+                        const cy = 210 - Number(yCoords[i]) * 0.12;
+                        ctx.lineTo(cx, cy);
+                    }
+                    ctx.stroke();
+                    
+                    // Draw ball
+                    const bx = 20 + Number(xCoords[step]) * 0.35;
+                    const by = 210 - Number(yCoords[step]) * 0.12;
+                    
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Render 3D Viewport in sync
+                    drawGolf3D(step);
+                    
+                    step++;
+                    if (step >= xCoords.length) {
+                        clearInterval(golfAnimInterval);
+                        golfAnimInterval = null;
+                        
+                        const finalDist = Number(xCoords[xCoords.length - 1]);
+                        const diff = Math.abs(finalDist - 1000);
+                        if (diff <= 100) {
+                            statusDiv.innerText = `BULLSEYE! Landed at ${finalDist} yards, right on the green!`;
+                            statusDiv.style.color = "#39ff14";
+                            playRealSoundOnChainClip(2); // Nice shot!
+                        } else if (finalDist > 1300) {
+                            statusDiv.innerText = `Out of bounds! Landed at ${finalDist} yards in the rough.`;
+                            statusDiv.style.color = "#ff007f";
+                            playRealSoundOnChainClip(3); // Ouch!
+                        } else {
+                            statusDiv.innerText = `Nice drive! Ball stopped at ${finalDist} yards. Pin is 1000.`;
+                            statusDiv.style.color = "#ffa500";
+                        }
+                    }
+                }, 80);
+                
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error calculating trajectory.";
+            }
+        }
+
+        // --- Access Leader Board Golf Interactive Swing Gauge ---
+        let swingState = 'IDLE';
+        let swingPowerVal = 0;
+        let swingSpinVal = 0;
+        let swingIndicator = 0.0;
+        let swingTimer = null;
+        let golf3DCoords = [];
+
+        function drawSwingMeter() {
+            const canvas = document.getElementById("swingMeterCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            // Draw background track
+            ctx.fillStyle = "#111";
+            ctx.fillRect(10, 10, 20, h - 20);
+            
+            // Draw fill with gradient
+            const grad = ctx.createLinearGradient(0, h - 10, 0, 10);
+            grad.addColorStop(0, "#00ff00");
+            grad.addColorStop(0.6, "#ffff00");
+            grad.addColorStop(1, "#ff0000");
+            ctx.fillStyle = grad;
+            ctx.fillRect(10, h - 10 - (h - 20) * swingIndicator, 20, (h - 20) * swingIndicator);
+            
+            // Draw SNAP target line at 10% from bottom (y = h - 10 - (h-20)*0.1)
+            const snapY = h - 10 - (h - 20) * 0.1;
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(5, snapY);
+            ctx.lineTo(35, snapY);
+            ctx.stroke();
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 9px 'Orbitron', monospace";
+            ctx.fillText("SNAP", 40, snapY + 3);
+            
+            // Draw current indicator line
+            const indY = h - 10 - (h - 20) * swingIndicator;
+            ctx.strokeStyle = "#ff00ff";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(5, indY);
+            ctx.lineTo(35, indY);
+            ctx.stroke();
+            
+            // Draw values
+            ctx.fillStyle = "#ffa500";
+            ctx.font = "11px 'Orbitron', monospace";
+            ctx.fillText(`POWER: ${swingPowerVal}`, 40, 25);
+            ctx.fillText(`SPIN: ${swingSpinVal > 0 ? 'Slice' : swingSpinVal < 0 ? 'Hook' : 'Straight'} (${swingSpinVal})`, 40, 45);
+            
+            // Status label
+            ctx.fillStyle = swingState === 'POWER_UP' ? '#ff0000' : swingState === 'SNAP_DOWN' ? '#00ff00' : '#888';
+            ctx.fillText(swingState, 40, 65);
+        }
+
+        function handleSwingTick() {
+            if (swingState === 'POWER_UP') {
+                swingIndicator += 0.04;
+                if (swingIndicator >= 1.0) {
+                    swingIndicator = 1.0;
+                    swingState = 'SNAP_DOWN';
+                }
+            } else if (swingState === 'SNAP_DOWN') {
+                swingIndicator -= 0.06;
+                if (swingIndicator <= 0.0) {
+                    swingIndicator = 0.0;
+                    swingPowerVal = Math.round(swingPowerVal * 0.3);
+                    swingSpinVal = (Math.random() > 0.5 ? 5 : -5);
+                    swingState = 'FINISHED';
+                    clearInterval(swingTimer);
+                    swingTimer = null;
+                    triggerSwingCompleted();
+                }
+            }
+            drawSwingMeter();
+        }
+
+        function triggerSwingCompleted() {
+            document.getElementById("btnStartSwing").innerText = "⛳ BEGIN SWING";
+            document.getElementById("golfPower").value = swingPowerVal;
+            document.getElementById("lblPower").innerText = swingPowerVal;
+            document.getElementById("golfSpin").value = swingSpinVal;
+            document.getElementById("lblSpin").innerText = (swingSpinVal > 0 ? 'Slice' : swingSpinVal < 0 ? 'Hook' : 'Straight') + ' (' + swingSpinVal + ')';
+            
+            playRealSoundOnChainClip(1);
+            runGolfSwing();
+        }
+
+        function startSwingInput() {
+            if (swingState === 'IDLE' || swingState === 'FINISHED') {
+                swingState = 'POWER_UP';
+                swingPowerVal = 0;
+                swingSpinVal = 0;
+                swingIndicator = 0.0;
+                document.getElementById("btnStartSwing").innerText = "🔴 LOCK POWER";
+                playRealSoundOnChainClip(0);
+                
+                if (swingTimer) clearInterval(swingTimer);
+                swingTimer = setInterval(handleSwingTick, 30);
+            } else if (swingState === 'POWER_UP') {
+                swingPowerVal = Math.round(swingIndicator * 100);
+                swingState = 'SNAP_DOWN';
+                document.getElementById("btnStartSwing").innerText = "🟢 SNAP BALL";
+            } else if (swingState === 'SNAP_DOWN') {
+                const diff = swingIndicator - 0.1;
+                swingSpinVal = Math.round(diff * 35);
+                if (swingSpinVal > 5) swingSpinVal = 5;
+                if (swingSpinVal < -5) swingSpinVal = -5;
+                
+                swingState = 'FINISHED';
+                clearInterval(swingTimer);
+                swingTimer = null;
+                triggerSwingCompleted();
+            }
+        }
+
+        async function playRealSoundOnChainClip(clipId) {
+            if (!isAudioPlaying || !audioCtx || !musicContract) return;
+            try {
+                const rawSamples = await musicContract.generateRealSoundClip(clipId);
+                const sampleRate = 4000;
+                const buffer = audioCtx.createBuffer(1, rawSamples.length, sampleRate);
+                const channelData = buffer.getChannelData(0);
+                for (let i = 0; i < rawSamples.length; i++) {
+                    const val = Number(rawSamples[i]);
+                    channelData[i] = (val / 31.5) - 1.0;
+                }
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = "bandpass";
+                filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                filter.Q.setValueAtTime(1.8, audioCtx.currentTime);
+                source.connect(filter);
+                filter.connect(audioCtx.destination);
+                source.start();
+                
+                const startTime = Date.now();
+                const duration = (rawSamples.length / sampleRate) * 1000;
+                const updateInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed >= duration) {
+                        clearInterval(updateInterval);
+                        const speakerText = document.getElementById("pitSpeakerText");
+                        const dacText = document.getElementById("pitDacText");
+                        if (speakerText) speakerText.innerText = "0x00";
+                        if (dacText) dacText.innerText = "0";
+                        return;
+                    }
+                    const idx = Math.floor((elapsed / 1000) * sampleRate);
+                    if (idx < rawSamples.length) {
+                        const sampleVal = Number(rawSamples[idx]);
+                        const speakerText = document.getElementById("pitSpeakerText");
+                        const dacText = document.getElementById("pitDacText");
+                        if (speakerText) speakerText.innerText = "0x" + sampleVal.toString(16).toUpperCase();
+                        if (dacText) dacText.innerText = sampleVal;
+                        
+                        const selectedEngine = document.getElementById("selectSpeechEngine").value;
+                        if (selectedEngine === "access_realsound") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            if (led && ledText) {
+                                led.style.background = "#ffa500";
+                                led.style.boxShadow = "0 0 8px #ffa500";
+                                ledText.innerText = "PWM ACTIVE";
+                                ledText.style.color = "#ffa500";
+                            }
+                            const mouth = document.getElementById("voiceBoxMouth");
+                            if (mouth) {
+                                mouth.style.height = `${4 + Math.floor(sampleVal / 3)}px`;
+                                mouth.style.borderRadius = "50%";
+                            }
+                        }
+                    }
+                }, 30);
+            } catch (err) {
+                console.error("Error playing RealSound clip:", err);
+            }
+        }
+
+        // --- Mercenary style 3D projection viewport ---
+        let isMercenaryMode = false;
+        let playerX = 0;
+        let playerY = 15;
+        let playerZ = -50;
+        let playerYaw = 15;
+        let playerPitch = 5;
+        let mercenaryObjects = {};
+        let objectsLoaded = false;
+
+        async function loadMercenaryGeometries() {
+            if (!graphicsContract || objectsLoaded) return;
+            try {
+                const ids = [1, 2, 3, 4];
+                for (let id of ids) {
+                    const flatData = await graphicsContract.getMercenaryGeometry(id);
+                    if (flatData && flatData.length > 0) {
+                        const V = Number(flatData[0]);
+                        const vertices = [];
+                        for (let i = 0; i < V; i++) {
+                            const x = Number(flatData[1 + i]);
+                            const y = Number(flatData[1 + V + i]);
+                            const z = Number(flatData[1 + 2 * V + i]);
+                            vertices.push([x, y, z]);
+                        }
+                        const L = Number(flatData[1 + 3 * V]);
+                        const lines = [];
+                        const lineStart = 2 + 3 * V;
+                        for (let j = 0; j < L; j++) {
+                            const fromIdx = Number(flatData[lineStart + j * 2]);
+                            const toIdx = Number(flatData[lineStart + j * 2 + 1]);
+                            lines.push([fromIdx, toIdx]);
+                        }
+                        mercenaryObjects[id] = { vertices, lines };
+                    }
+                }
+                objectsLoaded = true;
+                console.log("On-Chain Mercenary Geometries Loaded successfully:", mercenaryObjects);
+            } catch (err) {
+                console.error("Failed to load on-chain Mercenary geometries:", err);
+            }
+        }
+
+        function movePlayer(action) {
+            if (!isMercenaryMode) return;
+            const yawRad = (playerYaw * Math.PI) / 180;
+            const moveStep = 10;
+            const turnStep = 5;
+            
+            if (action === 'FORWARD') {
+                playerX += moveStep * Math.sin(yawRad);
+                playerZ += moveStep * Math.cos(yawRad);
+            }
+            if (action === 'BACKWARD') {
+                playerX -= moveStep * Math.sin(yawRad);
+                playerZ -= moveStep * Math.cos(yawRad);
+            }
+            if (action === 'LEFT') {
+                playerX -= moveStep * Math.cos(yawRad);
+                playerZ += moveStep * Math.sin(yawRad);
+            }
+            if (action === 'RIGHT') {
+                playerX += moveStep * Math.cos(yawRad);
+                playerZ -= moveStep * Math.sin(yawRad);
+            }
+            if (action === 'L_TURN') {
+                playerYaw = (playerYaw - turnStep + 360) % 360;
+                document.getElementById("camYaw").value = playerYaw - 180;
+            }
+            if (action === 'R_TURN') {
+                playerYaw = (playerYaw + turnStep) % 360;
+                document.getElementById("camYaw").value = playerYaw - 180;
+            }
+            if (action === 'UP') {
+                playerY += moveStep;
+            }
+            if (action === 'DOWN') {
+                playerY = Math.max(2, playerY - moveStep);
+            }
+            
+            playNavigationSound();
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+            drawGolf3D();
+        }
+
+        function playNavigationSound() {
+            if (!isAudioPlaying || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(45, now);
+            osc.frequency.exponentialRampToValueAtTime(15, now + 0.08);
+            
+            gain.gain.setValueAtTime(0.06, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        function project3D(x, y, z, yawDeg, pitchDeg, w, h) {
+            let yaw, pitch, camX, camY, camZ;
+            
+            if (isMercenaryMode) {
+                yaw = (playerYaw * Math.PI) / 180;
+                pitch = (playerPitch * Math.PI) / 180;
+                camX = playerX;
+                camY = playerY;
+                camZ = playerZ;
+            } else {
+                yaw = (yawDeg * Math.PI) / 180;
+                pitch = (pitchDeg * Math.PI) / 180;
+                camX = 0;
+                camY = 60;
+                camZ = -200;
+            }
+            
+            let dx = x - camX;
+            let dy = y - camY;
+            let dz = z - camZ;
+            
+            let rx = dx * Math.cos(yaw) - dz * Math.sin(yaw);
+            let rz = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+            
+            let ry = dy * Math.cos(pitch) - rz * Math.sin(pitch);
+            let depth = dy * Math.sin(pitch) + rz * Math.cos(pitch);
+            
+            if (depth <= 10) return null;
+            
+            const scale = 350;
+            const sx = w / 2 + (rx * scale) / depth;
+            const sy = h / 2 - (ry * scale) / depth;
+            
+            return { x: sx, y: sy };
+        }
+
+        function drawGolf3D(activeStep = -1) {
+            const canvas = document.getElementById("golf3DCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.fillStyle = "#050508";
+            ctx.fillRect(0, 0, w, h);
+            
+            if (isMercenaryMode) {
+                ctx.strokeStyle = "rgba(0, 255, 255, 0.12)";
+                ctx.lineWidth = 1;
+                
+                for (let x = -500; x <= 500; x += 100) {
+                    ctx.beginPath();
+                    let first = true;
+                    for (let z = -500; z <= 1000; z += 100) {
+                        let p = project3D(x, 0, z, 0, 0, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                for (let z = -500; z <= 1000; z += 100) {
+                    ctx.beginPath();
+                    let first = true;
+                    for (let x = -500; x <= 500; x += 100) {
+                        let p = project3D(x, 0, z, 0, 0, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                const placements = [
+                    [1, 0, 0, 300, "Central Tower", "#ff00ff"],
+                    [2, -250, 0, 150, "Novagen Hangar", "#00ffff"],
+                    [3, 200, 0, 200, "Cruiser Spacecraft", "#39ff14"],
+                    [4, 150, 0, 400, "Defense Pylon", "#ffa500"]
+                ];
+                
+                for (let placement of placements) {
+                    const [id, wx, wy, wz, name, color] = placement;
+                    const model = mercenaryObjects[id];
+                    if (model) {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        
+                        const projected = [];
+                        for (let v of model.vertices) {
+                            let p = project3D(v[0] + wx, v[1] + wy, v[2] + wz, 0, 0, w, h);
+                            projected.push(p);
+                        }
+                        
+                        for (let line of model.lines) {
+                            const pFrom = projected[line[0]];
+                            const pTo = projected[line[1]];
+                            if (pFrom && pTo) {
+                                ctx.beginPath();
+                                ctx.moveTo(pFrom.x, pFrom.y);
+                                ctx.lineTo(pTo.x, pTo.y);
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        let pLabel = project3D(wx, wy + 10, wz, 0, 0, w, h);
+                        if (pLabel) {
+                            ctx.fillStyle = color;
+                            ctx.font = "8px 'Orbitron', monospace";
+                            ctx.fillText(name, pLabel.x - 30, pLabel.y);
+                            ctx.fillStyle = "rgba(255,255,255,0.4)";
+                            ctx.fillText(`[X:${wx}, Z:${wz}]`, pLabel.x - 25, pLabel.y + 10);
+                        }
+                    }
+                }
+                
+                ctx.strokeStyle = "rgba(255, 0, 255, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(w/2 - 10, h/2); ctx.lineTo(w/2 + 10, h/2);
+                ctx.moveTo(w/2, h/2 - 10); ctx.lineTo(w/2, h/2 + 10);
+                ctx.stroke();
+                
+            } else {
+                const yaw = parseInt(document.getElementById("camYaw").value || 15);
+                const pitch = parseInt(document.getElementById("camPitch").value || 25);
+                
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.25)";
+                ctx.lineWidth = 1;
+                const xLines = [-100, -50, 0, 50, 100];
+                for (let xl of xLines) {
+                    ctx.beginPath();
+                    let first = true;
+                    for (let z = 0; z <= 1200; z += 50) {
+                        let p = project3D(xl, 0, z, yaw, pitch, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                for (let z = 0; z <= 1200; z += 200) {
+                    ctx.beginPath();
+                    let first = true;
+                    for (let xl = -100; xl <= 100; xl += 10) {
+                        let p = project3D(xl, 0, z, yaw, pitch, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                ctx.strokeStyle = "#00ff7f";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const greenRadius = 40;
+                const greenZ = 1000;
+                for (let a = 0; a <= 360; a += 45) {
+                    const rad = (a * Math.PI) / 180;
+                    const gx = greenRadius * Math.cos(rad);
+                    const gz = greenZ + greenRadius * Math.sin(rad);
+                    let p = project3D(gx, 0, gz, yaw, pitch, w, h);
+                    if (p) {
+                        if (a === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+                
+                let pPoleBottom = project3D(0, 0, 1000, yaw, pitch, w, h);
+                let pPoleTop = project3D(0, 70, 1000, yaw, pitch, w, h);
+                if (pPoleBottom && pPoleTop) {
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(pPoleBottom.x, pPoleBottom.y);
+                    ctx.lineTo(pPoleTop.x, pPoleTop.y);
+                    ctx.stroke();
+                    
+                    let pFlagLeft = project3D(-15, 60, 1000, yaw, pitch, w, h);
+                    if (pFlagLeft) {
+                        ctx.fillStyle = "#ff007f";
+                        ctx.beginPath();
+                        ctx.moveTo(pPoleTop.x, pPoleTop.y);
+                        ctx.lineTo(pFlagLeft.x, pFlagLeft.y);
+                        ctx.lineTo(pPoleTop.x + (pPoleBottom.x - pPoleTop.x) * (20/70), pPoleTop.y + (pPoleBottom.y - pPoleTop.y) * (20/70));
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+                
+                if (golf3DCoords.length > 0) {
+                    const limit = activeStep >= 0 ? Math.min(activeStep, golf3DCoords.length - 1) : golf3DCoords.length - 1;
+                    
+                    ctx.strokeStyle = "rgba(255, 0, 255, 0.8)";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    let first = true;
+                    for (let i = 0; i <= limit; i++) {
+                        const pt = golf3DCoords[i];
+                        let p = project3D(pt.x, pt.y, pt.z, yaw, pitch, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                    
+                    const currPt = golf3DCoords[limit];
+                    let pBall = project3D(currPt.x, currPt.y, currPt.z, yaw, pitch, w, h);
+                    let pGround = project3D(currPt.x, 0, currPt.z, yaw, pitch, w, h);
+                    
+                    if (pBall) {
+                        if (pGround) {
+                            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                            ctx.lineWidth = 1;
+                            ctx.setLineDash([3, 3]);
+                            ctx.beginPath();
+                            ctx.moveTo(pBall.x, pBall.y);
+                            ctx.lineTo(pGround.x, pGround.y);
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                        
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.arc(pBall.x, pBall.y, 4, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.strokeStyle = "#000000";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function initGolfEvents() {
+            document.getElementById("btnGolfSwing").addEventListener("click", runGolfSwing);
+            const btnStart = document.getElementById("btnStartSwing");
+            if (btnStart) {
+                btnStart.addEventListener("click", startSwingInput);
+            }
+            
+            // Spacebar support for golf swing
+            window.addEventListener("keydown", (e) => {
+                if (e.code === "Space" && document.activeElement.tagName !== "INPUT") {
+                    const golfCard = document.getElementById("swingMeterCanvas");
+                    if (golfCard && golfCard.getBoundingClientRect().top < window.innerHeight && golfCard.getBoundingClientRect().bottom > 0) {
+                        e.preventDefault();
+                        startSwingInput();
+                    }
+                }
+            });
+
+            document.getElementById("btnToggleMercenaryMode").addEventListener("click", async () => {
+                isMercenaryMode = !isMercenaryMode;
+                const btn = document.getElementById("btnToggleMercenaryMode");
+                const coordsDiv = document.getElementById("mercenaryCoords");
+                const ctrlDiv = document.getElementById("mercenaryControls");
+                
+                if (isMercenaryMode) {
+                    btn.innerText = "⛳ BACK TO GOLF TRAJECTORY";
+                    btn.style.borderColor = "#ffa500";
+                    btn.style.color = "#ffa500";
+                    coordsDiv.style.display = "block";
+                    ctrlDiv.style.display = "grid";
+                    
+                    coordsDiv.innerText = "Loading 3D geometries from chain...";
+                    await loadMercenaryGeometries();
+                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+                    
+                    playRealSoundOnChainClip(4);
+                } else {
+                    btn.innerText = "🛸 EXPLORE TARG (3D Mercenary Mode)";
+                    btn.style.borderColor = "#ff00ff";
+                    btn.style.color = "#ff00ff";
+                    coordsDiv.style.display = "none";
+                    ctrlDiv.style.display = "none";
+                }
+                drawGolf3D();
+            });
+
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement.tagName === "INPUT") return;
+                
+                const key = e.key.toLowerCase();
+                if (key === 'w') { e.preventDefault(); movePlayer('FORWARD'); }
+                if (key === 's') { e.preventDefault(); movePlayer('BACKWARD'); }
+                if (key === 'a') { e.preventDefault(); movePlayer('LEFT'); }
+                if (key === 'd') { e.preventDefault(); movePlayer('RIGHT'); }
+                if (key === 'q') { e.preventDefault(); movePlayer('L_TURN'); }
+                if (key === 'e') { e.preventDefault(); movePlayer('R_TURN'); }
+                if (key === 'r') { e.preventDefault(); movePlayer('UP'); }
+                if (key === 'f') { e.preventDefault(); movePlayer('DOWN'); }
+            });
+
+            drawSwingMeter();
+            drawGolf3D();
         }
 
         window.onload = init;

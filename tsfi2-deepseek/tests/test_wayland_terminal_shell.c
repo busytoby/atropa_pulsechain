@@ -10,13 +10,19 @@
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
 #include <linux/input.h>
+#include <time.h>
 #include "lau_memory.h"
+#include "lau_registry.h"
 #include "tsfi_wire_firmware.h"
 #include "lau_vram.h"
 #include "tsfi_zmm_vm.h"
 #include "tsfi_staging.h"
 #include "tsfi_vision.h"
 #include "tsfi_jpeg_encoder.h"
+
+static bool g_superterm_mode = true;
+static int g_superterm_cols = 132;
+static int g_superterm_scroll_x = 0;
 
 // StagingBuffer is defined in tsfi_staging.h
 // draw_debug_codepoint/draw_debug_text are defined in tsfi_staging.h
@@ -77,6 +83,8 @@ static bool configured = false;
 static int pending_width = 0;
 static int pending_height = 0;
 static bool resize_pending = false;
+static bool g_mercenary_active = false;
+static void update_mercenary_yul_camera(void);
 
 // Registry listeners
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
@@ -788,6 +796,9 @@ static void execute_command(const char *cmd) {
     strncpy(cmd_copy, cmd, sizeof(cmd_copy));
     cmd_copy[sizeof(cmd_copy) - 1] = '\0';
     char *first_word = strtok(cmd_copy, " \t");
+    if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0) {
+        g_mercenary_active = false;
+    }
     
     if (first_word && strcasecmp(first_word, "GO") == 0) {
         char *target = strtok(NULL, " \t");
@@ -844,6 +855,24 @@ static void execute_command(const char *cmd) {
             sprintf(error, "\r\nInvalid GO target: \"%s\". Type GO MENU for options.\r\n", target);
             lau_vram_write_string(g_vram, error, strlen(error));
         }
+        return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "SODARO") == 0 || strcasecmp(first_word, "MERCENARY") == 0)) {
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        const char *advice = 
+            "\r\n"
+            "--- Bob Sodaro's Novagen MERCENARY Map Advisor ---\r\n"
+            "\"Navigating Targ requires mapping the wireframe city.\r\n"
+            " Photocopy the grid map or draw it by hand!\" - RUN Mag\r\n"
+            "==================================================\r\n"
+            "Drawing Yul-emulated wireframe city in real-time...\r\n\r\n";
+        lau_vram_write_string(g_vram, advice, strlen(advice));
+        
+        g_mercenary_active = true;
+        g_vram->is_dirty = true;
         return;
     }
     
@@ -1229,6 +1258,7 @@ static void execute_command(const char *cmd) {
                 strcasecmp(first_word, "CALC") == 0 ||
                 strcasecmp(first_word, "MEMDUMP") == 0 ||
                 strcasecmp(first_word, "SPRITE") == 0 ||
+                strcasecmp(first_word, "RULE") == 0 ||
                 strcasecmp(first_word, "OMNICOMM") == 0) {
                 is_vm_cmd = true;
             }
@@ -1563,9 +1593,6 @@ static void xdg_surface_configure(void *data, struct xdg_surface *xdg_surf, uint
     (void)data;
     xdg_surface_ack_configure(xdg_surf, serial);
     configured = true;
-    if (surface) {
-        wl_surface_commit(surface);
-    }
 }
 static const struct xdg_surface_listener xdg_surface_listener = {
     .configure = xdg_surface_configure
@@ -1717,14 +1744,34 @@ void render_terminal_display(void) {
         start_y = g_vram->cursor_y - max_rows + 1;
     }
 
+    int display_cols = (win_width - 44) / char_w;
+    if (display_cols < 10) display_cols = 10;
+
+    if (g_superterm_mode) {
+        // Auto scroll horizontally to track cursor
+        if (g_vram->cursor_x >= g_superterm_scroll_x + display_cols) {
+            g_superterm_scroll_x = g_vram->cursor_x - display_cols + 1;
+        } else if (g_vram->cursor_x < g_superterm_scroll_x) {
+            g_superterm_scroll_x = g_vram->cursor_x;
+        }
+        int max_scroll = g_superterm_cols - display_cols;
+        if (max_scroll < 0) max_scroll = 0;
+        if (g_superterm_scroll_x > max_scroll) g_superterm_scroll_x = max_scroll;
+        if (g_superterm_scroll_x < 0) g_superterm_scroll_x = 0;
+    } else {
+        g_superterm_scroll_x = 0;
+    }
+
     for (int y = 0; y < max_rows; y++) {
         int vram_y = start_y + y;
         if (vram_y >= LAU_VRAM_ROWS) break;
         
-        for (int x = 0; x < 120; x++) {
-            if (x >= LAU_VRAM_COLS) break;
+        for (int x = 0; x < display_cols; x++) {
+            int vram_x = g_superterm_scroll_x + x;
+            if (vram_x >= LAU_VRAM_COLS) break;
+            if (g_superterm_mode && vram_x >= g_superterm_cols) break;
             
-            LauVRAMCell cell = g_vram->grid[vram_y][x];
+            LauVRAMCell cell = g_vram->grid[vram_y][vram_x];
             if (cell.character > 32) {
                 uint32_t fg = palette[cell.fg_color & 0xF];
                 if (cell.attributes & 1) fg = palette[(cell.fg_color & 0x7) + 8]; // Bold/Bright
@@ -1741,9 +1788,9 @@ void render_terminal_display(void) {
                             sx = select_end_x; ex = select_start_x;
                         }
                         if (vram_y > sy && vram_y < ey) in_selection = true;
-                        else if (vram_y == sy && vram_y == ey) in_selection = (x >= sx && x <= ex);
-                        else if (vram_y == sy) in_selection = (x >= sx);
-                        else if (vram_y == ey) in_selection = (x <= ex);
+                        else if (vram_y == sy && vram_y == ey) in_selection = (vram_x >= sx && vram_x <= ex);
+                        else if (vram_y == sy) in_selection = (vram_x >= sx);
+                        else if (vram_y == ey) in_selection = (vram_x <= ex);
                     }
                     
                     if (in_selection) {
@@ -1767,8 +1814,8 @@ void render_terminal_display(void) {
     
     // Draw inverted green/amber cursor block
     int cy = g_vram->cursor_y - start_y;
-    int cx = g_vram->cursor_x;
-    if (cy >= 0 && cy < max_rows && cx >= 0 && cx < 120) {
+    int cx = g_vram->cursor_x - g_superterm_scroll_x;
+    if (cy >= 0 && cy < max_rows && cx >= 0 && cx < display_cols) {
         int px = mon_x + cx * char_w;
         int py = mon_y + cy * char_h;
         for (int dy = 0; dy < char_h - 2; dy++) {
@@ -1781,6 +1828,7 @@ void render_terminal_display(void) {
             }
         }
     }
+    update_mercenary_yul_camera();
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
         GfxPrimitive gp = gfx_primitives[i];
@@ -1822,6 +1870,55 @@ void render_terminal_display(void) {
             draw_3d_stuffed_animal(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, gp.r, gp.query, gp.frame);
         }
     }
+    // Draw the Telemetry HUD Sidebar
+    LauTelemetryState *t = lau_telemetry_get_state();
+    if (t) {
+        t->render_telemetry.frames_rendered++;
+        static struct timespec last_ts;
+        static bool first = true;
+        struct timespec current_ts;
+        clock_gettime(CLOCK_MONOTONIC, &current_ts);
+        if (!first) {
+            double elapsed = (current_ts.tv_sec - last_ts.tv_sec) * 1000.0 + (current_ts.tv_nsec - last_ts.tv_nsec) / 1000000.0;
+            t->render_telemetry.avg_ms_per_frame = elapsed;
+        }
+        first = false;
+        last_ts = current_ts;
+        
+        if (win_width >= 1280) {
+            int sidebar_x = 1230;
+            // Draw divider line
+            for (int y = 55; y < win_height - 12; y++) {
+                back_buffer[y * win_width + 1222] = 0xFF6272A4; // Slate divider
+            }
+            char buf[128];
+            uint32_t title_color = 0xFF8BE9FD; // Cyan
+            uint32_t val_color = 0xFFF1FA8C;   // Yellow
+            
+            draw_debug_text(&sb, sidebar_x, 70, "SYSTEM HUD", title_color, true);
+            
+            sprintf(buf, "ALLOCS: %lu", (unsigned long)t->total_allocs);
+            draw_debug_text(&sb, sidebar_x, 100, buf, val_color, true);
+            
+            sprintf(buf, "FREES:  %lu", (unsigned long)t->total_frees);
+            draw_debug_text(&sb, sidebar_x, 120, buf, val_color, true);
+            
+            sprintf(buf, "ACTIVE: %lu", (unsigned long)t->active_allocs);
+            draw_debug_text(&sb, sidebar_x, 140, buf, val_color, true);
+            
+            sprintf(buf, "STEPS:  %lu", (unsigned long)t->exec_steps);
+            draw_debug_text(&sb, sidebar_x, 180, buf, val_color, true);
+            
+            draw_debug_text(&sb, sidebar_x, 220, "RENDER HUD", title_color, true);
+            
+            sprintf(buf, "FRAMES: %lu", (unsigned long)t->render_telemetry.frames_rendered);
+            draw_debug_text(&sb, sidebar_x, 250, buf, val_color, true);
+            
+            sprintf(buf, "LATENCY: %.2f ms", t->render_telemetry.avg_ms_per_frame);
+            draw_debug_text(&sb, sidebar_x, 270, buf, val_color, true);
+        }
+    }
+
     g_frame_counter++;
 
 }
@@ -1848,6 +1945,126 @@ static void vm_poke(TsfiZmmVmState *vstate, uint64_t addr, uint8_t val) {
     sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0%s%s\"", addr_hex, val_hex);
     vstate->output_pos = 0;
     tsfi_zmm_vm_exec(vstate, cmd);
+}
+
+static uint64_t vm_peek(TsfiZmmVmState *vstate, uint64_t addr) {
+    char cmd[512];
+    char addr_hex[65];
+    format_uint256_hex(addr_hex, addr);
+    
+    // selector: peek(uint256) -> 0x7861d269
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"7861d269%s\"", addr_hex);
+    vstate->output_pos = 0;
+    tsfi_zmm_vm_exec(vstate, cmd);
+    
+    uint64_t res = 0;
+    size_t len = strlen(vstate->output_buffer);
+    if (len >= 64) {
+        char val_str[17];
+        strncpy(val_str, &vstate->output_buffer[len - 16], 16);
+        val_str[16] = '\0';
+        res = strtoull(val_str, NULL, 16);
+    }
+    return res;
+}
+
+static void update_mercenary_yul_camera(void) {
+    if (!g_mercenary_active) return;
+    
+    static bool map_loaded = false;
+    if (!map_loaded) {
+        int8_t vertices[17][3] = {
+            {-20, -30, -20}, { 20, -30, -20}, { 20,  20, -20}, {-20,  20, -20},
+            {-20, -30,  20}, { 20, -30,  20}, { 20,  20,  20}, {-20,  20,  20},
+            {-80, -45, -80}, { 80, -45, -80}, { 80, -45,  80}, {-80, -45,  80},
+            {  0,  60,   0}, {-15,  35, -15}, { 15,  35, -15}, { 15,  35,  15}, {-15,  35,  15}
+        };
+        uint8_t lines[24][2] = {
+            {0, 1}, {1, 2}, {2, 3}, {3, 0},
+            {4, 5}, {5, 6}, {6, 7}, {7, 4},
+            {0, 4}, {1, 5}, {2, 6}, {3, 7},
+            {8, 9}, {9, 10}, {10, 11}, {11, 8},
+            {13, 14}, {14, 15}, {15, 16}, {16, 13},
+            {12, 13}, {12, 14}, {12, 15}, {12, 16}
+        };
+        
+        for (int i = 0; i < 17; i++) {
+            vm_poke(&vm, 55280 + i * 3, (uint8_t)vertices[i][0]);
+            vm_poke(&vm, 55281 + i * 3, (uint8_t)vertices[i][1]);
+            vm_poke(&vm, 55282 + i * 3, (uint8_t)vertices[i][2]);
+        }
+        
+        for (int j = 0; j < 24; j++) {
+            vm_poke(&vm, 55536 + j * 2, lines[j][0]);
+            vm_poke(&vm, 55537 + j * 2, lines[j][1]);
+        }
+        
+        vm_poke(&vm, 54964, 17);
+        vm_poke(&vm, 54965, 24);
+        map_loaded = true;
+    }
+    
+    int yaw = (g_frame_counter / 6) % 16;
+    
+    vm_poke(&vm, 54960, 1);
+    vm_poke(&vm, 54961, yaw);
+    vm_poke(&vm, 54962, 0);
+    vm_poke(&vm, 54963, 120);
+    
+    vm_poke(&vm, 54966, 1);
+    
+    uint64_t status = vm_peek(&vm, 54967);
+    if (status != 1) return;
+    
+    gfx_primitive_count = 0;
+    
+    int proj_x[17];
+    int proj_y[17];
+    for (int i = 0; i < 17; i++) {
+        proj_x[i] = (int)vm_peek(&vm, 55800 + i * 2);
+        proj_y[i] = (int)vm_peek(&vm, 55801 + i * 2);
+    }
+    
+    int center_x = 640;
+    int center_y = 360;
+    
+    static const uint8_t line_indices[24][2] = {
+        {0, 1}, {1, 2}, {2, 3}, {3, 0},
+        {4, 5}, {5, 6}, {6, 7}, {7, 4},
+        {0, 4}, {1, 5}, {2, 6}, {3, 7},
+        {8, 9}, {9, 10}, {10, 11}, {11, 8},
+        {13, 14}, {14, 15}, {15, 16}, {16, 13},
+        {12, 13}, {12, 14}, {12, 15}, {12, 16}
+    };
+    
+    for (int j = 0; j < 24; j++) {
+        int from = line_indices[j][0];
+        int to = line_indices[j][1];
+        
+        int x1 = center_x + (proj_x[from] - 160) * 3 - 22;
+        int y1 = center_y + (proj_y[from] - 100) * 3 - 67;
+        int x2 = center_x + (proj_x[to] - 160) * 3 - 22;
+        int y2 = center_y + (proj_y[to] - 100) * 3 - 67;
+        
+        if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+            GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+            gp->type = GFX_LINE;
+            gp->x1 = x1; gp->y1 = y1;
+            gp->x2 = x2; gp->y2 = y2;
+            if (j < 12) gp->color = 0xFF8BE9FD;       // Building (Pastel Blue)
+            else if (j < 16) gp->color = 0xFF50FA7B;  // Grid (Pastel Green)
+            else gp->color = 0xFFFF79C6;              // Spaceship (Pastel Pink)
+        }
+    }
+    
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_CIRCLE;
+        gp->x1 = center_x - 22;
+        gp->y1 = center_y - 67;
+        gp->r = 15;
+        gp->color = 0xFFFF5555;
+    }
 }
 
 int main() {
@@ -1944,7 +2161,7 @@ int main() {
     const char *welcome = "=== TSFI YUL CPU TERMINAL EMULATOR ===\r\n"
                           "System 11 Audited. Active CPU: cpu6502\r\n"
                           "Available commands:\r\n"
-                          "  YULINIT, YULEXEC, SWIFTLOAD, REU, CALC, MEMDUMP, SPRITE, OMNICOMM\r\n\r\n"
+                          "  YULINIT, YULEXEC, SWIFTLOAD, REU, CALC, MEMDUMP, SPRITE, RULE, OMNICOMM\r\n\r\n"
                           "zmm-vm> ";
     lau_vram_write_string(g_vram, welcome, strlen(welcome));
 
@@ -2011,7 +2228,7 @@ int main() {
             }
         }
 
-        bool need_redraw = g_vram->is_dirty;
+        bool need_redraw = g_vram->is_dirty || g_mercenary_active;
 
         if (resize_pending) {
             resize_pending = false;

@@ -34,6 +34,18 @@ typedef struct {
     
     // Telemetry Integration
     LauTelemetryState *telem;  // Attached Shared Memory
+    
+    // Session Recording
+    void *record_file; // Cast to FILE* internally to avoid header clutter
+    
+    // Checkpointing / FlipTrack Time-Travel
+    void *checkpoints; // Array of ZmmCpuCheckpoint
+    int checkpoint_count;
+    int checkpoint_capacity;
+    
+    // Microtechnic Solutions REU DMA Telemetry Buffer
+    uint8_t *reu_ram;
+    uint32_t reu_size;
 } TsfiZmmVmState;
 
 void tsfi_zmm_vm_init(TsfiZmmVmState *state);

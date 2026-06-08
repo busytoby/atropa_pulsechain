@@ -121,6 +121,16 @@ object "ZMachine" {
                     mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
                     resultPtr := add(resultPtr, 30)
                 }
+                case 0x77697a61 { // "wizard"
+                    mstore(resultPtr, 0x5a6f726c6f6b207468652057697a6172642067726565747320796f7520776974) // "Zorlok the Wizard greets you wit"
+                    mstore(add(resultPtr, 32), 0x682061207370656c6c206f6620766974616c6974792100000000000000000000) // "h a spell of vitality!"
+                    resultPtr := add(resultPtr, 54)
+                }
+                case 0x7a6f726c { // "zorlok"
+                    mstore(resultPtr, 0x5a6f726c6f6b207468652057697a6172642067726565747320796f7520776974) // "Zorlok the Wizard greets you wit"
+                    mstore(add(resultPtr, 32), 0x682061207370656c6c206f6620766974616c6974792100000000000000000000) // "h a spell of vitality!"
+                    resultPtr := add(resultPtr, 54)
+                }
                 default {
                     mstore(resultPtr, 0x4920646f6e277420756e6465727374616e642e00000000000000000000000000) // "I don't understand."
                     resultPtr := add(resultPtr, 19)
@@ -186,6 +196,96 @@ object "ZMachine" {
                 mstore(0x20, strLen)
                 let totalBytes := add(64, mul(div(add(strLen, 31), 32), 32))
                 return(0, totalBytes)
+            }
+
+            case 0x5d5517bf {
+                // getVectorScene(uint256 roomIndex) -> bytes
+                let roomIndex := calldataload(4)
+                
+                // Return offsets for bytes: offset = 0x20
+                mstore(0x00, 0x20)
+                
+                // We will pack line commands (each line: fromX, fromY, toX, toY, color)
+                // Room 0: Victorian House Exterior
+                if iszero(roomIndex) {
+                    mstore(0x20, 50) // Length: 50 bytes (10 lines * 5 bytes)
+                    
+                    // Line 0: Ground line (0, 150) to (240, 150)
+                    mstore8(0x40, 0)
+                    mstore8(0x41, 150)
+                    mstore8(0x42, 240)
+                    mstore8(0x43, 150)
+                    mstore8(0x44, 1)
+                    
+                    // Line 1: Left Wall (50, 150) to (50, 80)
+                    mstore8(0x45, 50)
+                    mstore8(0x46, 150)
+                    mstore8(0x47, 50)
+                    mstore8(0x48, 80)
+                    mstore8(0x49, 1)
+
+                    // Line 2: Right Wall (190, 150) to (190, 80)
+                    mstore8(0x4a, 190)
+                    mstore8(0x4b, 150)
+                    mstore8(0x4c, 190)
+                    mstore8(0x4d, 80)
+                    mstore8(0x4e, 1)
+
+                    // Line 3: Roof Left (50, 80) to (120, 40)
+                    mstore8(0x4f, 50)
+                    mstore8(0x50, 80)
+                    mstore8(0x51, 120)
+                    mstore8(0x52, 40)
+                    mstore8(0x53, 1)
+
+                    // Line 4: Roof Right (190, 80) to (120, 40)
+                    mstore8(0x54, 190)
+                    mstore8(0x55, 80)
+                    mstore8(0x56, 120)
+                    mstore8(0x57, 40)
+                    mstore8(0x58, 1)
+
+                    // Line 5: Door Left (110, 150) to (110, 110)
+                    mstore8(0x59, 110)
+                    mstore8(0x5a, 150)
+                    mstore8(0x5b, 110)
+                    mstore8(0x5c, 110)
+                    mstore8(0x5d, 1)
+
+                    // Line 6: Door Right (130, 150) to (130, 110)
+                    mstore8(0x5e, 130)
+                    mstore8(0x5f, 150)
+                    mstore8(0x60, 130)
+                    mstore8(0x61, 110)
+                    mstore8(0x62, 1)
+
+                    // Line 7: Door Top (110, 110) to (130, 110)
+                    mstore8(0x63, 110)
+                    mstore8(0x64, 110)
+                    mstore8(0x65, 130)
+                    mstore8(0x66, 110)
+                    mstore8(0x67, 1)
+
+                    // Line 8: Window Left (70, 100) to (90, 100)
+                    mstore8(0x68, 70)
+                    mstore8(0x69, 100)
+                    mstore8(0x6a, 90)
+                    mstore8(0x6b, 100)
+                    mstore8(0x6c, 1)
+
+                    // Line 9: Window Right (150, 100) to (170, 100)
+                    mstore8(0x6d, 150)
+                    mstore8(0x6e, 100)
+                    mstore8(0x6f, 170)
+                    mstore8(0x70, 100)
+                    mstore8(0x71, 1)
+                    
+                    return(0x00, 128)
+                }
+                
+                // Return empty for other rooms
+                mstore(0x20, 0)
+                return(0x00, 64)
             }
 
             default {

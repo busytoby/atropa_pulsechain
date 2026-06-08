@@ -87,6 +87,9 @@ int main() {
     // 1. Initialize Yul system for cpu6502.yul via VM text commands
     printf("[TEST 1] Initializing cpu6502 Yul CPU via ZMM VM...\n");
     tsfi_zmm_vm_exec(&vm, "YULINIT \"cpu6502\", \"../solidity/bin/cpu6502.yul\", 1");
+    
+    // Start session recording
+    tsfi_zmm_vm_exec(&vm, "RECSTART \"session_record.txt\"");
     printf("PASS\n");
 
     // 2. Verify LAX zero-page (0xA7)
@@ -167,6 +170,86 @@ int main() {
     uint64_t PC = vm_peek(&vm, 0x85);
     printf("Final PC: %lu (Expected 8198)\n", PC);
     assert(PC == 8198);
+    printf("PASS\n");
+
+    // 4b. Verify FlipTrack Checkpointing / Replay & Screenshot
+    printf("[TEST 4b] Testing FlipTrack FLIPSAVE, FLIPLOAD, and SCREENSHOT...\n");
+    // Write char 'X' to screen RAM index 1024 (first char of screen)
+    vm_poke(&vm, 1024, 'X');
+    
+    // Trigger ASCII screen capture output
+    tsfi_zmm_vm_exec(&vm, "SCREENSHOT");
+    
+    // Save state 0
+    tsfi_zmm_vm_exec(&vm, "FLIPSAVE");
+    
+    // Mutate the CPU state
+    vm_poke(&vm, 0x85, 9999); // PC = 9999
+    vm_poke(&vm, 0x80, 99);   // A = 99
+    assert(vm_peek(&vm, 0x85) == 9999);
+    assert(vm_peek(&vm, 0x80) == 99);
+    printf("State mutated successfully.\n");
+    
+    // Restore state 0
+    tsfi_zmm_vm_exec(&vm, "FLIPLOAD 0");
+    
+    // Assert restored
+    uint64_t restored_pc = vm_peek(&vm, 0x85);
+    uint64_t restored_a = vm_peek(&vm, 0x80);
+    assert(restored_pc == 8198);
+    assert(restored_a == 0);
+    printf("State restored successfully.\n");
+    printf("PASS\n");
+
+    // Stop recording
+    printf("[TEST 5] Stopping session recording and verifying file...\n");
+    tsfi_zmm_vm_exec(&vm, "RECSTOP");
+    
+    FILE *rec = fopen("session_record.txt", "r");
+    assert(rec != NULL);
+    char buf[256];
+    int lines = 0;
+    while (fgets(buf, sizeof(buf), rec)) {
+        lines++;
+    }
+    fclose(rec);
+    printf("PASS: Session recording file has %d lines.\n", lines);
+    assert(lines > 10);
+    remove("session_record.txt"); // Clean up
+
+    // 6. Test Swiftload, Swiftsave, Memos, Disk/Dir, Calc, and Memdump
+    printf("[TEST 6] Testing Swiftload, Swiftsave, Memos, Disk/Dir, Calc, and Memdump...\n");
+    tsfi_zmm_vm_exec(&vm, "CALC \"$1000 + 256\"");
+    tsfi_zmm_vm_exec(&vm, "CALC \"0x10 | %1010\"");
+    tsfi_zmm_vm_exec(&vm, "MEMDUMP 0x80, 16");
+    tsfi_zmm_vm_exec(&vm, "MEMO \"Baseline Test Checkpoint\"");
+    tsfi_zmm_vm_exec(&vm, "MEMO");
+    tsfi_zmm_vm_exec(&vm, "OMNICOMM");
+    tsfi_zmm_vm_exec(&vm, "OMNICOMM \"LLS\", 0x06");
+    tsfi_zmm_vm_exec(&vm, "OMNICOMM \"LLS\", 0x24");
+    tsfi_zmm_vm_exec(&vm, "DIR");
+    tsfi_zmm_vm_exec(&vm, "DISK \"CATALOG\"");
+    tsfi_zmm_vm_exec(&vm, "SWIFTSAVE \"swift_test.bin\", 0x80, 0x90");
+    vm_poke(&vm, 0x80, 0x55);
+    assert(vm_peek(&vm, 0x80) == 0x55);
+    tsfi_zmm_vm_exec(&vm, "SWIFTLOAD \"swift_test.bin\", 0x80");
+    assert(vm_peek(&vm, 0x80) == 0);
+    remove("swift_test.bin");
+    
+    // Test Sprite visualization (SpryteByter)
+    vm_poke(&vm, 0x2000, 0x55);
+    vm_poke(&vm, 0x2001, 0xAA);
+    vm_poke(&vm, 0x2002, 0x55);
+    tsfi_zmm_vm_exec(&vm, "SPRITE 0x2000");
+    
+    // Test REU DMA
+    tsfi_zmm_vm_exec(&vm, "REU");
+    tsfi_zmm_vm_exec(&vm, "REU \"STASH\", 0x80, 0x1000, 16");
+    vm_poke(&vm, 0x80, 0x77);
+    assert(vm_peek(&vm, 0x80) == 0x77);
+    tsfi_zmm_vm_exec(&vm, "REU \"FETCH\", 0x1000, 0x80, 16");
+    assert(vm_peek(&vm, 0x80) == 0);
+    
     printf("PASS\n");
 
     tsfi_zmm_vm_destroy(&vm);

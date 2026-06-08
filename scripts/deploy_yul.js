@@ -7,12 +7,12 @@ const PROVIDER_URL = "http://127.0.0.1:8545";
 const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 
 const CONTRACTS_TO_DEPLOY = [
-    { name: "musicMaker", path: "../solidity/bin/musicMaker.yul", configKey: "musicMakerAddress" },
+    { name: "musicMaker_v2", path: "../solidity/bin/musicMaker.yul", configKey: "musicMakerAddress" },
     { name: "diskSystem_v5", path: "../solidity/bin/diskSystem.yul", configKey: "diskSystemAddress" },
     { name: "genesis", path: "../solidity/bin/genesis.yul", configKey: "genesisAddress" },
     { name: "acousticOracle", path: "../solidity/bin/acousticOracle.yul", configKey: "acousticOracleAddress" },
     { name: "cpu6502_v18", path: "../solidity/bin/cpu6502.yul", configKey: "cpu6502Address" },
-    { name: "graphicsSystem", path: "../solidity/bin/graphicsSystem.yul", configKey: "graphicsSystemAddress" },
+    { name: "graphicsSystem_v2", path: "../solidity/bin/graphicsSystem.yul", configKey: "graphicsSystemAddress" },
     { name: "speechSynthesizer", path: "../solidity/bin/speechSynthesizer.yul", configKey: "speechSynthesizerAddress" },
     { name: "zmachine", path: "../solidity/bin/zmachine.yul", configKey: "zmachineAddress" },
     { name: "keySystem", path: "../solidity/bin/keySystem.yul", configKey: "keySystemAddress" }
@@ -133,7 +133,7 @@ async function main() {
         const deployTx = await deployer.sendTransaction({
             to: factoryAddress,
             data: createCalldata,
-            gasLimit: 4000000
+            gasLimit: 10000000
         });
         await deployTx.wait();
         console.log(`  Deployed: ${contract.name} successfully at ${predictedAddress}`);

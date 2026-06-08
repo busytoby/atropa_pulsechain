@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const PROVIDER_URL = "http://127.0.0.1:8545";
-const CONFIG_PATH = "../config/user_config.json";
+const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 
 const cpuABI = [
     "function poke(uint256 addr, uint256 val) public returns (uint256)",

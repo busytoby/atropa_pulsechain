@@ -655,12 +655,12 @@ static void lau_free_meta(LauMetadata *meta) {
         }
     }
 
-    fprintf(stderr, "[DEBUG] decrementing g_active_allocs from %zu for %p\n", (size_t)atomic_load(&g_active_allocs), payload);
+    // fprintf(stderr, "[DEBUG] decrementing g_active_allocs from %zu for %p\n", (size_t)atomic_load(&g_active_allocs), payload);
     atomic_fetch_add(&g_free_count, 1);
     atomic_fetch_add(&g_free_bytes, size);
     atomic_fetch_sub(&g_active_allocs, 1);
     atomic_fetch_sub(&g_active_bytes, size);
-    fprintf(stderr, "[DEBUG] new g_active_allocs: %zu\n", (size_t)atomic_load(&g_active_allocs));
+    // fprintf(stderr, "[DEBUG] new g_active_allocs: %zu\n", (size_t)atomic_load(&g_active_allocs));
     
     LauWireFirmware *fw = tsfi_wire_firmware_get_no_init();
     if (fast_type == LAU_TYPE_BASIC) {
@@ -722,7 +722,7 @@ void lau_free(void *ptr) {
         return; 
     }
     
-    fprintf(stderr, "[DEBUG] lau_free proceeding for %p (meta: %p)\n", ptr, (void*)meta);
+    // fprintf(stderr, "[DEBUG] lau_free proceeding for %p (meta: %p)\n", ptr, (void*)meta);
     lau_registry_remove(meta);
     
     lau_free_meta(meta);

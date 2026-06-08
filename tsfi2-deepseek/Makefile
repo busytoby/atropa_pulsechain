@@ -71,7 +71,7 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
 
 .PHONY: all clean
 
-all: tsfi2 bin/test_genesis_standalone tests/test_ahoy_issue1_resonance
+all: tsfi2 bin/test_genesis_standalone tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell
 
 # --- Primary Targets ---
 tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
@@ -81,6 +81,9 @@ bin/test_genesis_standalone: tests/test_genesis_standard_cell.c $(CORE_OBJS) $(O
 	$(CC) $(CFLAGS) -Isrc/firmware -o $@ $^ $(LDFLAGS)
 
 tests/test_ahoy_issue1_resonance: tests/test_ahoy_issue1_resonance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_wayland_terminal_shell: tests/test_wayland_terminal_shell.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # --- Tool Realization ---

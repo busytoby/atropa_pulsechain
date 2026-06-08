@@ -8,7 +8,10 @@ const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 const speechABI = [
     "function getSpeechState() public view returns (uint256, uint256, uint256, uint256)",
     "function writePhoneme(uint256 phoneme, uint256 inflection) public returns (uint256)",
-    "function clearBusy() public returns (uint256)"
+    "function clearBusy() public returns (uint256)",
+    "function getTMS5220State() public view returns (uint256, uint256, uint256)",
+    "function writeTMS5220Command(uint256 command) public returns (uint256)",
+    "function writeTMS5220Data(uint256 data) public returns (uint256)"
 ];
 
 async function main() {
@@ -52,7 +55,45 @@ async function main() {
     } else {
         throw new Error("FAIL: Busy flag was not cleared!");
     }
-    
+
+    console.log("\n--- Initial TMS5220 State ---");
+    let tmsState = await speech.getTMS5220State();
+    console.log(`Command: ${tmsState[0]}, Status: ${tmsState[1]}, FIFO Length: ${tmsState[2]}`);
+
+    console.log("\n--- Sending TMS5220 Speak External Command (0x50) ---");
+    const tmsCmdTx = await speech.writeTMS5220Command(0x50);
+    await tmsCmdTx.wait();
+    tmsState = await speech.getTMS5220State();
+    console.log(`Command: ${tmsState[0]}, Status: ${tmsState[1]}, FIFO Length: ${tmsState[2]}`);
+    if (Number(tmsState[0]) === 0x50 && Number(tmsState[1]) === 0xE0 && Number(tmsState[2]) === 0) {
+        console.log("SUCCESS: TMS5220 Speak External initialized correctly.");
+    } else {
+        throw new Error("FAIL: TMS5220 Speak External initialization failed!");
+    }
+
+    console.log("\n--- Writing TMS5220 LPC Data bytes ---");
+    await (await speech.writeTMS5220Data(0xAA)).wait();
+    await (await speech.writeTMS5220Data(0xBB)).wait();
+    await (await speech.writeTMS5220Data(0xCC)).wait();
+    await (await speech.writeTMS5220Data(0xDD)).wait();
+    tmsState = await speech.getTMS5220State();
+    console.log(`Command: ${tmsState[0]}, Status: ${tmsState[1]}, FIFO Length: ${tmsState[2]}`);
+    if (Number(tmsState[2]) === 4 && (Number(tmsState[1]) & 0x40) === 0) { // BL should be 0 because FIFO >= 4
+        console.log("SUCCESS: TMS5220 FIFO data and status updated correctly.");
+    } else {
+        throw new Error("FAIL: TMS5220 FIFO data and status verification failed!");
+    }
+
+    console.log("\n--- Resetting TMS5220 (0x90) ---");
+    await (await speech.writeTMS5220Command(0x90)).wait();
+    tmsState = await speech.getTMS5220State();
+    console.log(`Command: ${tmsState[0]}, Status: ${tmsState[1]}, FIFO Length: ${tmsState[2]}`);
+    if (Number(tmsState[0]) === 0x90 && Number(tmsState[1]) === 0 && Number(tmsState[2]) === 0) {
+        console.log("SUCCESS: TMS5220 Reset verified successfully!");
+    } else {
+        throw new Error("FAIL: TMS5220 Reset verification failed!");
+    }
+
     console.log("\n=== ALL SPEECH SYNTHESIS TESTS PASSED ===");
 }
 
