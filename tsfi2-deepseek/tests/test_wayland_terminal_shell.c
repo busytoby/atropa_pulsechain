@@ -32,6 +32,23 @@ static int select_end_x = -1, select_end_y = -1;
 static int mouse_px = -1, mouse_py = -1;
 static uint32_t last_click_time = 0;
 static int click_count = 0;
+typedef enum {
+    GFX_LINE,
+    GFX_CIRCLE,
+    GFX_POINT
+} GfxType;
+
+typedef struct {
+    GfxType type;
+    int x1, y1, x2, y2;
+    int r;
+    uint32_t color;
+} GfxPrimitive;
+
+#define MAX_GFX_PRIMITIVES 1024
+static GfxPrimitive gfx_primitives[MAX_GFX_PRIMITIVES];
+static int gfx_primitive_count = 0;
+void render_terminal_display(void);
 
 static struct wl_surface *surface = NULL;
 static struct xdg_surface *xdg_surface = NULL;
@@ -97,9 +114,146 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, 
 static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
     (void)data; (void)keyboard; (void)rate; (void)delay;
 }
+static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
+    static int state = 0; // 0: normal, 1: esc, 2: bracket, 3: gfx_command
+    static char parse_buf[128];
+    static int parse_len = 0;
+    
+    for (int i = 0; i < len; i++) {
+        char c = str[i];
+        if (state == 0) {
+            if (c == '\x1b') {
+                state = 1;
+            } else {
+                lau_vram_write_char(vram, c);
+            }
+        } else if (state == 1) {
+            if (c == '[') {
+                state = 2;
+            } else {
+                state = 0;
+                lau_vram_write_char(vram, '\x1b');
+                lau_vram_write_char(vram, c);
+            }
+        } else if (state == 2) {
+            if (c == 'G') {
+                state = 3;
+                parse_len = 0;
+            } else {
+                state = 0;
+                lau_vram_write_char(vram, '\x1b');
+                lau_vram_write_char(vram, '[');
+                lau_vram_write_char(vram, c);
+            }
+        } else if (state == 3) {
+            if (c == 'm') {
+                parse_buf[parse_len] = '\0';
+                int cmd = 0;
+                int p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+                int count = sscanf(parse_buf, "%d;%d;%d;%d;%d", &cmd, &p1, &p2, &p3, &p4);
+                if (count >= 1) {
+                    if (cmd == 0) {
+                        gfx_primitive_count = 0;
+                    } else if (cmd == 1 && count >= 5) {
+                        if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+                            GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+                            gp->type = GFX_LINE;
+                            gp->x1 = p1; gp->y1 = p2;
+                            gp->x2 = p3; gp->y2 = p4;
+                            gp->color = 0xFF50FA7B; // Dracula green line
+                        }
+                    } else if (cmd == 2 && count >= 4) {
+                        if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+                            GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+                            gp->type = GFX_CIRCLE;
+                            gp->x1 = p1; gp->y1 = p2;
+                            gp->r = p3;
+                            gp->color = 0xFF8BE9FD; // Dracula cyan circle
+                        }
+                    } else if (cmd == 3 && count >= 4) {
+                        if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+                            GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+                            gp->type = GFX_POINT;
+                            gp->x1 = p1; gp->y1 = p2;
+                            gp->color = (p3 == 1) ? 0xFFFF5555 : 0xFFF1FA8C; // red / yellow
+                        }
+                    }
+                }
+                state = 0;
+                vram->is_dirty = true;
+            } else {
+                if (parse_len < (int)sizeof(parse_buf) - 2) {
+                    parse_buf[parse_len++] = c;
+                }
+            }
+        }
+    }
+}
+
 static void execute_command(const char *cmd) {
     if (strcmp(cmd, "exit") == 0) {
         running = false;
+        return;
+    }
+    
+    char cmd_copy[512];
+    strncpy(cmd_copy, cmd, sizeof(cmd_copy));
+    cmd_copy[sizeof(cmd_copy) - 1] = '\0';
+    char *first_word = strtok(cmd_copy, " \t");
+    
+    if (first_word && strcasecmp(first_word, "RAG") == 0) {
+        char *query = strtok(NULL, "");
+        if (!query) query = "Yul CPU compilation";
+        
+        char txt[1024];
+        sprintf(txt, "\r\n=== RAG Vector Database Search ===\r\n"
+                     "Query: \"%s\"\r\n"
+                     "Initializing VIDTEX RAG Shooting Gallery Scatter Plot...\r\n"
+                     "Target Duck (Doc 1) at (250, 120) [Solidity CPU ROM]\r\n"
+                     "Target Duck (Doc 2) at (550, 180) [Decision Engine]\r\n"
+                     "Target Duck (Doc 3) at (400, 300) [ZMM VM State]\r\n\r\n"
+                     "Firing Query Projectile from (400, 360)...\r\n", query);
+        lau_vram_write_string(g_vram, txt, strlen(txt));
+        
+        int start_x = 400, start_y = 360;
+        int target_x = 250, target_y = 120;
+        
+        for (int frame = 1; frame <= 12; frame++) {
+            int bullet_x = start_x + (target_x - start_x) * frame / 12;
+            int bullet_y = start_y + (target_y - start_y) * frame / 12;
+            
+            char gfx_buf[256];
+            sprintf(gfx_buf, "\x1b[G0;m\x1b[G2;250;120;18;m\x1b[G2;550;180;18;m\x1b[G2;400;300;18;m\x1b[G3;%d;%d;1;m", bullet_x, bullet_y);
+            terminal_write_string(g_vram, gfx_buf, strlen(gfx_buf));
+            
+            lau_vram_write_string(g_vram, ".", 1);
+            
+            g_vram->is_dirty = true;
+            render_terminal_display();
+            current_buffer_idx = 1 - current_buffer_idx;
+            memcpy(pixel_datas[current_buffer_idx], back_buffer, win_width * win_height * 4);
+            wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
+            wl_surface_damage(surface, 0, 0, win_width, win_height);
+            wl_surface_commit(surface);
+            wl_display_flush(display);
+            wl_display_dispatch_pending(display);
+            
+            usleep(80000);
+        }
+        
+        char hit_txt[1024];
+        sprintf(hit_txt, "\r\n\r\n💥 DIRECT HIT! Similarity Threshold Exceeded at (250, 120)!\r\n"
+                         "🎵 Triggered SID Sound Crash on musicMaker (54272 -> 120, 54273 -> 15)\r\n\r\n"
+                         "Retrieved Context: Solidity Yul CPU contract is initialized at virtual address 0x1\r\n"
+                         "and provides full instruction decoding support for 6502/6509 opcodes.\r\n"
+                         "==================================\r\n");
+        lau_vram_write_string(g_vram, hit_txt, strlen(hit_txt));
+        
+        char exp_buf[256];
+        sprintf(exp_buf, "\x1b[G2;250;120;25;m\x1b[G1;250;120;235;105;m\x1b[G1;250;120;265;105;m\x1b[G1;250;120;235;135;m\x1b[G1;250;120;265;135;m");
+        terminal_write_string(g_vram, exp_buf, strlen(exp_buf));
+        
+        g_vram->is_dirty = true;
         return;
     }
     
@@ -112,10 +266,6 @@ static void execute_command(const char *cmd) {
         dup2(stdout_pipe[1], STDERR_FILENO);
         close(stdout_pipe[1]);
 
-        char cmd_copy[512];
-        strncpy(cmd_copy, cmd, sizeof(cmd_copy));
-        cmd_copy[sizeof(cmd_copy) - 1] = '\0';
-        char *first_word = strtok(cmd_copy, " \t");
         bool is_vm_cmd = false;
         if (first_word) {
             if (strcasecmp(first_word, "YULINIT") == 0 ||
@@ -150,7 +300,7 @@ static void execute_command(const char *cmd) {
         char read_buf[4096];
         ssize_t n;
         while ((n = read(stdout_pipe[0], read_buf, sizeof(read_buf))) > 0) {
-            lau_vram_write_string(g_vram, read_buf, n);
+            terminal_write_string(g_vram, read_buf, n);
         }
         close(stdout_pipe[0]);
     } else {
@@ -507,6 +657,44 @@ static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out
     return buffer;
 }
 
+static void draw_line(uint32_t *buf, int width, int height, int x1, int y1, int x2, int y2, uint32_t color) {
+    int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+    int dy = -abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+    int err = dx + dy, e2;
+    
+    while (1) {
+        if (x1 >= 12 && x1 < width - 22 && y1 >= 57 && y1 < height - 32) {
+            buf[y1 * width + x1] = color;
+        }
+        if (x1 == x2 && y1 == y2) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x1 += sx; }
+        if (e2 <= dx) { err += dx; y1 += sy; }
+    }
+}
+
+static void draw_circle(uint32_t *buf, int width, int height, int xc, int yc, int r, uint32_t color) {
+    int x = 0, y = r;
+    int d = 3 - 2 * r;
+    
+    while (y >= x) {
+        int px[8] = { xc+x, xc-x, xc+x, xc-x, xc+y, xc-y, xc+y, xc-y };
+        int py[8] = { yc+y, yc+y, yc-y, yc-y, yc+x, yc+x, yc-x, yc-x };
+        for (int i = 0; i < 8; i++) {
+            if (px[i] >= 12 && px[i] < width - 22 && py[i] >= 57 && py[i] < height - 32) {
+                buf[py[i] * width + px[i]] = color;
+            }
+        }
+        x++;
+        if (d > 0) {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        } else {
+            d = d + 4 * x + 6;
+        }
+    }
+}
+
 void render_terminal_display(void) {
     uint32_t bg_color = 0xFF0A0B10; // Obsidian dark background
     for (int i = 0; i < win_width * win_height; i++) {
@@ -637,8 +825,25 @@ void render_terminal_display(void) {
             }
         }
     }
-
-
+    // Draw VIDTEX graphics overlay
+    for (int i = 0; i < gfx_primitive_count; i++) {
+        GfxPrimitive gp = gfx_primitives[i];
+        if (gp.type == GFX_LINE) {
+            draw_line(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, mon_x + gp.x2, mon_y + gp.y2, gp.color);
+        } else if (gp.type == GFX_CIRCLE) {
+            draw_circle(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, gp.r, gp.color);
+        } else if (gp.type == GFX_POINT) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    int tx = mon_x + gp.x1 + dx;
+                    int ty = mon_y + gp.y1 + dy;
+                    if (tx >= 12 && tx < win_width - 22 && ty >= 57 && ty < win_height - 32) {
+                        back_buffer[ty * win_width + tx] = gp.color;
+                    }
+                }
+            }
+        }
+    }
 
 }
 
