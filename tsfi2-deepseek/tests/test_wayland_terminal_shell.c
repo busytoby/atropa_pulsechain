@@ -1652,6 +1652,9 @@ int main() {
                           "zmm-vm> ";
     lau_vram_write_string(g_vram, welcome, strlen(welcome));
 
+    int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+
     int display_fd = wl_display_get_fd(display);
     printf("[TERMINAL] Entering event loop. Window should map on your Hyprland desktop now.\n");
 
@@ -1700,17 +1703,52 @@ int main() {
         }
         wl_display_flush(display);
 
-        struct pollfd fds[1] = {
-            { .fd = display_fd, .events = POLLIN }
+        struct pollfd fds[2] = {
+            { .fd = display_fd, .events = POLLIN },
+            { .fd = STDIN_FILENO, .events = POLLIN }
         };
         
         // Wait up to 16ms for display events (approx 60fps)
-        int ret = poll(fds, 1, 16);
+        int ret = poll(fds, 2, 16);
         if (ret > 0) {
-            if (wl_display_read_events(display) < 0) {
-                break;
+            if (fds[0].revents & POLLIN) {
+                if (wl_display_read_events(display) < 0) {
+                    break;
+                }
+                wl_display_dispatch_pending(display);
+            } else {
+                wl_display_cancel_read(display);
             }
-            wl_display_dispatch_pending(display);
+            
+            if (fds[1].revents & POLLIN) {
+                char ch;
+                while (read(STDIN_FILENO, &ch, 1) > 0) {
+                    if (ch == '\n' || ch == '\r') {
+                        lau_vram_write_string(g_vram, "\r\n", 2);
+                        if (cmd_len > 0) {
+                            cmd_buf[cmd_len] = '\0';
+                            execute_command(cmd_buf);
+                            cmd_len = 0;
+                            cmd_buf[0] = '\0';
+                        }
+                        lau_vram_write_string(g_vram, "zmm-vm> ", 8);
+                    } else if (ch == 127 || ch == '\b') {
+                        if (cmd_len > 0) {
+                            cmd_len--;
+                            cmd_buf[cmd_len] = '\0';
+                            lau_vram_write_char(g_vram, '\b');
+                            lau_vram_write_char(g_vram, ' ');
+                            lau_vram_write_char(g_vram, '\b');
+                        }
+                    } else if (ch >= 32 && ch < 127) {
+                        if (cmd_len < (int)sizeof(cmd_buf) - 2) {
+                            cmd_buf[cmd_len++] = ch;
+                            cmd_buf[cmd_len] = '\0';
+                            lau_vram_write_char(g_vram, ch);
+                        }
+                    }
+                }
+            }
         } else {
             wl_display_cancel_read(display);
         }
