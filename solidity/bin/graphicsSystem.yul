@@ -885,6 +885,39 @@ object "GraphicsSystem" {
                 return(0x00, 96)
             }
 
+            // ----------------------------------------------------------------
+            // Method 13: decodeAudioPWM(uint256 pcmSample, uint256 carrierTime) -> uint256
+            // Selector: 0xf5d914ab
+            // ----------------------------------------------------------------
+            if eq(selector, 0xf5d914ab) {
+                let pcmSample := calldataload(4)
+                let carrierTime := calldataload(36)
+
+                let carrierThreshold := mod(carrierTime, 256)
+                let speakerState := 0
+                if gt(pcmSample, carrierThreshold) {
+                    speakerState := 1
+                }
+
+                mstore(0x00, speakerState)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 14: decodeAudioBit(uint256 packedByte, uint256 sampleIndex) -> uint256
+            // Selector: 0xc3a39e8a
+            // ----------------------------------------------------------------
+            if eq(selector, 0xc3a39e8a) {
+                let packedByte := calldataload(4)
+                let sampleIndex := calldataload(36)
+
+                let shiftAmount := sub(7, and(sampleIndex, 0x07))
+                let bitVal := and(shr(shiftAmount, packedByte), 1)
+
+                mstore(0x00, bitVal)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }

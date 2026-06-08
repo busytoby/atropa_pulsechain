@@ -246,6 +246,44 @@ int main() {
     assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000028") != NULL);
     printf("PASS: Skeletal joint keyframe interpolation and coordinate translations verified successfully!\n");
 
+    // 11. Test decodeAudioPWM (Method 13)
+    // Selector: f5d914ab
+    // pcmSample = 150 (0x96)
+    // carrierTime = 100 (0x64) -> carrierThreshold = 100.
+    // Since 150 > 100, speakerState should be 1
+    printf("[ZMM] Simulating Silas Warner 1-bit PWM audio conversion (pcm=150, time=100)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"f5d914ab"
+                  "0000000000000000000000000000000000000000000000000000000000000096"
+                  "0000000000000000000000000000000000000000000000000000000000000064\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strcmp(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    printf("PASS: 1-bit PWM audio conversion outputted high state (1) successfully!\n");
+
+    // 12. Test decodeAudioBit (Method 14)
+    // Selector: c3a39e8a
+    // packedByte = 0x80 (binary 10000000)
+    // sampleIndex = 0 (1st bit) -> should be 1
+    // sampleIndex = 1 (2nd bit) -> should be 0
+    printf("[ZMM] Simulating 1-bit packed audio sample bit extraction (byte=0x80)...\n");
+    sprintf(cmd, "YULEXEC \"graphics\", \"c3a39e8a"
+                  "0000000000000000000000000000000000000000000000000000000000000080"
+                  "0000000000000000000000000000000000000000000000000000000000000000\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strcmp(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000001") == 0);
+    
+    sprintf(cmd, "YULEXEC \"graphics\", \"c3a39e8a"
+                  "0000000000000000000000000000000000000000000000000000000000000080"
+                  "0000000000000000000000000000000000000000000000000000000000000001\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    assert(strcmp(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000000") == 0);
+    printf("PASS: 1-bit packed sample bit extraction verified successfully!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 2D FIGHTER PHYSICS TESTS PASSED ===\n");
     return 0;
