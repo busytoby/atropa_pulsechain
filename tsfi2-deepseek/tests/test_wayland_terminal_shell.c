@@ -24,6 +24,14 @@ static bool g_superterm_mode = true;
 static int g_superterm_cols = 132;
 static int g_superterm_scroll_x = 0;
 
+typedef enum {
+    MODE_TERMINAL,
+    MODE_WORDCRAFT,
+    MODE_EASYSCRIPT,
+    MODE_DNATYPEWRITER
+} EditorMode;
+static EditorMode g_editor_mode = MODE_TERMINAL;
+
 // StagingBuffer is defined in tsfi_staging.h
 // draw_debug_codepoint/draw_debug_text are defined in tsfi_staging.h
 
@@ -800,9 +808,60 @@ static void execute_command(const char *cmd) {
     char cmd_copy[512];
     snprintf(cmd_copy, sizeof(cmd_copy), "%s", cmd);
     char *first_word = strtok(cmd_copy, " \t");
-    if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0 && strcasecmp(first_word, "PONG") != 0) {
+    if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0 && strcasecmp(first_word, "PONG") != 0 &&
+        strcasecmp(first_word, "WORDCRAFT") != 0 && strcasecmp(first_word, "EASYSCRIPT") != 0 && strcasecmp(first_word, "DNATYPEWRITER") != 0) {
         g_mercenary_active = false;
         g_pong_active = false;
+    }
+    
+    if (first_word && strcasecmp(first_word, "WORDCRAFT") == 0) {
+        g_editor_mode = MODE_WORDCRAFT;
+        g_mercenary_active = false;
+        g_pong_active = false;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        const char *header = 
+            "--------------------------------------------------\r\n"
+            "       WORDCRAFT 80 ULTRA: ON-CHAIN OFFICE        \r\n"
+            "--------------------------------------------------\r\n"
+            "  LINE: 1   COL: 1   SPACE: 32K FREE   REC: 1/1   \r\n"
+            "==================================================\r\n"
+            " [Press ESC to return to Terminal Menu]          \r\n\r\n";
+        lau_vram_write_string(g_vram, header, strlen(header));
+        return;
+    }
+    if (first_word && strcasecmp(first_word, "EASYSCRIPT") == 0) {
+        g_editor_mode = MODE_EASYSCRIPT;
+        g_mercenary_active = false;
+        g_pong_active = false;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        const char *header = 
+            "==================================================\r\n"
+            "        EASYSCRIPT 64 WORD PROCESSOR v1.0         \r\n"
+            "==================================================\r\n"
+            "1....+....2....+....3....+....4....+....5....+....\r\n"
+            "  READY. 40960 BYTES FREE.                        \r\n"
+            "--------------------------------------------------\r\n"
+            " [Press ESC to return to Terminal Menu]          \r\n\r\n";
+        lau_vram_write_string(g_vram, header, strlen(header));
+        return;
+    }
+    if (first_word && strcasecmp(first_word, "DNATYPEWRITER") == 0) {
+        g_editor_mode = MODE_DNATYPEWRITER;
+        g_mercenary_active = false;
+        g_pong_active = false;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        const char *header = 
+            "##################################################\r\n"
+            "       TSFI DNA TYPEWRITER - VECTOR SYLLABLES     \r\n"
+            "##################################################\r\n"
+            "  CODON: ATG   GENE: TSFI-V2   STABILITY: 99.8%   \r\n"
+            "==================================================\r\n"
+            " [Press ESC to return to Terminal Menu]          \r\n\r\n";
+        lau_vram_write_string(g_vram, header, strlen(header));
+        return;
     }
     
     if (first_word && strcasecmp(first_word, "GO") == 0) {
@@ -815,12 +874,14 @@ static void execute_command(const char *cmd) {
                 "\r\n"
                 "      CompuServe Information Service      \r\n"
                 "==========================================\r\n"
-                "  1 GO VM     - Inspect Yul CPU VM State  \r\n"
-                "  2 GO RAG    - Vector DB RAG Gallery     \r\n"
-                "  3 GO HELP   - Escape Parser Utilities   \r\n"
-                "  4 EXIT      - Close Terminal Emulator   \r\n"
+                "  1 GO VM         - Inspect Yul CPU VM State  \r\n"
+                "  2 GO RAG        - Vector DB RAG Gallery     \r\n"
+                "  3 WORDCRAFT     - Wordcraft 80 Ultra Demo   \r\n"
+                "  4 EASYSCRIPT    - EasyScript 64 Demo        \r\n"
+                "  5 DNATYPEWRITER - DNA Vector Typewriter     \r\n"
+                "  6 EXIT          - Close Terminal Emulator   \r\n"
                 "==========================================\r\n"
-                "Enter GO <target> or option number: \r\n";
+                "Enter option name or GO target: \r\n";
             lau_vram_write_string(g_vram, menu, strlen(menu));
         } else if (strcasecmp(target, "1") == 0 || strcasecmp(target, "VM") == 0) {
             lau_vram_write_string(g_vram, clear_seq, 3);
@@ -1556,7 +1617,42 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
     uint32_t utf32 = tsfi_input_map_to_utf32(key);
 
     if (key == KEY_ESC || key == 1) {
+        if (g_editor_mode != MODE_TERMINAL) {
+            g_editor_mode = MODE_TERMINAL;
+            g_mercenary_active = false;
+            g_pong_active = false;
+            execute_command("GO MENU");
+            return;
+        }
         running = false;
+        return;
+    }
+
+    if (g_editor_mode != MODE_TERMINAL) {
+        if (key == KEY_ENTER || key == 28) {
+            lau_vram_write_string(g_vram, "\r\n", 2);
+        } else if (key == KEY_BACKSPACE || key == 14) {
+            lau_vram_write_char(g_vram, '\b');
+            lau_vram_write_char(g_vram, ' ');
+            lau_vram_write_char(g_vram, '\b');
+        } else if (utf32 >= 32 && utf32 < 127) {
+            if (g_editor_mode == MODE_DNATYPEWRITER) {
+                char c = (char)utf32;
+                if (c == 'A' || c == 'a') {
+                    lau_vram_write_string(g_vram, "\x1b[32mA\x1b[0m", 9);
+                } else if (c == 'T' || c == 't') {
+                    lau_vram_write_string(g_vram, "\x1b[31mT\x1b[0m", 9);
+                } else if (c == 'C' || c == 'c') {
+                    lau_vram_write_string(g_vram, "\x1b[34mC\x1b[0m", 9);
+                } else if (c == 'G' || c == 'g') {
+                    lau_vram_write_string(g_vram, "\x1b[33mG\x1b[0m", 9);
+                } else {
+                    lau_vram_write_char(g_vram, c);
+                }
+            } else {
+                lau_vram_write_char(g_vram, (char)utf32);
+            }
+        }
         return;
     }
 
