@@ -23,6 +23,7 @@
 #include "tsfi_k0rn_ops.h"
 #include "tsfi_io.h"
 #include "tsfi_font_vectors.h"
+#include "tsfi_hotloader.h"
 #include "stb_truetype.h"
 #include "window_inc/tsfi_input.h"
 
@@ -612,8 +613,13 @@ int main(int argc, char **argv) {
                         memset(left_buf, 0, 128 * 128 * 4);
                         memset(right_buf, 0, 128 * 128 * 4);
                         // Render both at origin (64, 64) in local buffers
-                        tsfi_font_render_k0rn_pt(prev_wf->dna, left_buf, 128, 128, pt_size, 64.0f, 64.0f, 0xFFFFFFFF);
-                        tsfi_font_render_k0rn_pt(wf->dna, right_buf, 128, 128, pt_size, 64.0f, 64.0f, 0xFFFFFFFF);
+                        void (*rasterizer)(const K0RnStream *, uint32_t *, int, int, float, float, float, uint32_t) =
+                            (void (*)(const K0RnStream *, uint32_t *, int, int, float, float, float, uint32_t))
+                            tsfi_hotload_thunk("thunks/tsfi_k0rn_rasterizer.c", "tsfi_font_render_k0rn_pt");
+                        if (rasterizer) {
+                            rasterizer(prev_wf->dna, left_buf, 128, 128, pt_size, 64.0f, 64.0f, 0xFFFFFFFF);
+                            rasterizer(wf->dna, right_buf, 128, 128, pt_size, 64.0f, 64.0f, 0xFFFFFFFF);
+                        }
                         
                         float target_gap = pt_size * 0.10f; // 10% gap rule
                         float advance = tsfi_vision_calculate_glyph_spacing(left_buf, right_buf, 128, 128, target_gap);
@@ -737,7 +743,12 @@ int main(int argc, char **argv) {
 
                                 if (wf && wf->dna) {
                                     prev_pen_x = pen_x;
-                                    tsfi_font_render_k0rn_pt(wf->dna, px, W, H, pt_size, pen_x, pen_y, 0xFF00FFFF);
+                                    void (*rasterizer)(const K0RnStream *, uint32_t *, int, int, float, float, float, uint32_t) =
+                                        (void (*)(const K0RnStream *, uint32_t *, int, int, float, float, float, uint32_t))
+                                        tsfi_hotload_thunk("thunks/tsfi_k0rn_rasterizer.c", "tsfi_font_render_k0rn_pt");
+                                    if (rasterizer) {
+                                        rasterizer(wf->dna, px, W, H, pt_size, pen_x, pen_y, 0xFF00FFFF);
+                                    }
                 
                                     int advance = 0, lsb = 0;
                                     if (stb.data) {

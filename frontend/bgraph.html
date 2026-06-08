@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B/Graph & What's My Job Console</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        canvas {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 100%;
+            height: 250px;
+            margin-top: 15px;
+        }
+        .question-card {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .option-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .option-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0, 242, 254, 0.05);
+            border: 1px solid var(--neon-blue);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .option-btn.selected {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+        .option-btn:hover {
+            background: rgba(0, 242, 254, 0.2);
+        }
+        .job-result-glow {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--neon-magenta);
+            text-shadow: 0 0 10px var(--neon-magenta);
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation / Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">B/GRAPH</span>
+                <span class="subtitle">Stats & Decision Hub</span>
+            </div>
+            <div class="header-actions">
+                <a href="/index.html" class="btn btn-secondary">Home Dashboard</a>
+                <a href="/datamost.html" class="btn btn-secondary">Datamost Console</a>
+                <div class="network-badge" id="networkBadge">Disconnected</div>
+                <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <main class="grid-layout">
+            <!-- Linear Regression Card -->
+            <section class="card">
+                <h2><span class="icon">📈</span> Linear Regression Plotter</h2>
+                <p class="description">Computes trend slope, intercept, and fit correlation coefficient on-chain.</p>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="regX">X Values (comma-separated):</label>
+                    <input type="text" id="regX" value="1, 2, 3, 4, 5" class="input-glow">
+                </div>
+                <div class="form-group">
+                    <label for="regY">Y Values (comma-separated):</label>
+                    <input type="text" id="regY" value="2, 4, 5, 4, 5" class="input-glow">
+                </div>
+
+                <button class="btn btn-primary" id="btnComputeReg" style="width: 100%;">Compute & Plot Trendline</button>
+
+                <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <div><strong>Slope:</strong> <span id="valSlope">N/A</span></div>
+                    <div><strong>Intercept:</strong> <span id="valIntercept">N/A</span></div>
+                    <div style="grid-column: 1 / -1;"><strong>R-Squared:</strong> <span id="valRSquared">N/A</span></div>
+                </div>
+
+                <canvas id="canvasRegression"></canvas>
+            </section>
+
+            <!-- Bar Chart Card -->
+            <section class="card">
+                <h2><span class="icon">📊</span> Bar Chart Plotter</h2>
+                <p class="description">Plots 320x200 screen coordinate bar chart rectangles computed on-chain.</p>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="barValues">Bar Values (comma-separated):</label>
+                    <input type="text" id="barValues" value="12, 28, 55, 34, 80, 45" class="input-glow">
+                </div>
+
+                <button class="btn btn-primary" id="btnPlotBars" style="width: 100%;">Plot Bar Chart</button>
+
+                <canvas id="canvasBars"></canvas>
+            </section>
+
+            <!-- "What's My Job?" Classifier Card -->
+            <section class="card full-width">
+                <h2><span class="icon">🔍</span> Ahoy! Issue 3: "What's My Job?"</h2>
+                <p class="description">Interactive classification tree guessing your retro occupation on-chain.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-top: 15px;">
+                    <!-- Questionnaire Column -->
+                    <div class="question-card">
+                        <div>
+                            <strong>Question 1:</strong> Do you work with computers?
+                            <div class="option-group">
+                                <button class="option-btn" id="q0_yes">YES</button>
+                                <button class="option-btn" id="q0_no">NO</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <strong id="q1_title">Question 2:</strong> Do you write code?
+                            <div class="option-group">
+                                <button class="option-btn" id="q1_yes">YES</button>
+                                <button class="option-btn" id="q1_no">NO</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <strong id="q2_title">Question 3:</strong> (Medical/Educator dependent question)
+                            <div class="option-group">
+                                <button class="option-btn" id="q2_yes">YES</button>
+                                <button class="option-btn" id="q2_no">NO</button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" id="btnClassifyJob" style="margin-top: 10px;">Classify Occupation</button>
+                    </div>
+
+                    <!-- Guess Display Box -->
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 25px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <span style="font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: var(--neon-blue); letter-spacing: 2px;">ON-CHAIN DECISION TREE GUESS</span>
+                        <div class="job-result-glow" id="jobResultDisplay">AWAITING CLASSIFICATION...</div>
+                        <div id="jobDescription" style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 15px; text-align: center; max-width: 300px;">
+                            Select answers and click Classify.
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const PROVIDER_URL = "http://127.0.0.1:8545";
+        let provider, signer, bGraphAddress;
+        let bGraphContract;
+
+        // Answers state: Q0, Q1, Q2
+        let answers = [0, 0, 0];
+
+        const bgABI = [
+            "function linearRegression(int256[] x, int256[] y) external view returns (int256 slope, int256 intercept, int256 rSquared)",
+            "function plotBarChart(uint256[] values) external view returns (uint256[] coordinates)",
+            "function evaluateJobDecisionTree(uint256[] answers) external view returns (uint256 jobIndex)"
+        ];
+
+        const jobs = {
+            0: { title: "UNEMPLOYED / GENERAL", desc: "No specific occupation fits the criteria." },
+            1: { title: "SOFTWARE ENGINEER", desc: "Crafting beautiful retro assembly and modern smart contracts." },
+            2: { title: "IT SPECIALIST", desc: "Configuring hardware systems, terminals, and network buses." },
+            3: { title: "SURGEON", desc: "Performing delicate operations in sterile operating theaters." },
+            4: { title: "NURSE / PRACTITIONER", desc: "Caring for patients and assisting with medical treatments." },
+            5: { title: "TEACHER / EDUCATOR", desc: "Guiding students and teaching lessons in schools." },
+            6: { title: "ARTIST / CREATOR", desc: "Painting pixels and composing SID waveforms." }
+        };
+
+        // DOM elements
+        const btnConnect = document.getElementById("btnConnect");
+        const networkBadge = document.getElementById("networkBadge");
+
+        async function init() {
+            try {
+                // Connect to local Anvil RPC
+                provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                const signers = await provider.listAccounts();
+                signer = signers[0];
+
+                // Fetch BGraph Address from config API
+                const res = await fetch("/api/config");
+                const config = await res.json();
+                bGraphAddress = config.networks.localhost.bGraphAddress;
+                
+                bGraphContract = new ethers.Contract(bGraphAddress, bgABI, signer);
+
+                networkBadge.innerText = "Connected";
+                networkBadge.classList.add("connected");
+                btnConnect.style.display = "none";
+                console.log("Connected successfully to local EVM.");
+            } catch (err) {
+                console.error("Connection failed:", err);
+                networkBadge.innerText = "Error Connecting";
+            }
+        }
+
+        // Q0 Yes/No Handlers
+        document.getElementById("q0_yes").addEventListener("click", () => {
+            answers[0] = 1;
+            document.getElementById("q0_yes").classList.add("selected");
+            document.getElementById("q0_no").classList.remove("selected");
+            // Update question titles dynamically
+            document.getElementById("q1_title").innerText = "Question 2: Do you write code?";
+            document.getElementById("q2_title").innerText = "Question 3: Not applicable (Computer branch)";
+        });
+        document.getElementById("q0_no").addEventListener("click", () => {
+            answers[0] = 0;
+            document.getElementById("q0_no").classList.add("selected");
+            document.getElementById("q0_yes").classList.remove("selected");
+            document.getElementById("q1_title").innerText = "Question 2: Do you work in medical?";
+        });
+
+        // Q1 Yes/No Handlers
+        document.getElementById("q1_yes").addEventListener("click", () => {
+            answers[1] = 1;
+            document.getElementById("q1_yes").classList.add("selected");
+            document.getElementById("q1_no").classList.remove("selected");
+            if (answers[0] === 0) {
+                document.getElementById("q2_title").innerText = "Question 3: Do you perform surgeries?";
+            }
+        });
+        document.getElementById("q1_no").addEventListener("click", () => {
+            answers[1] = 0;
+            document.getElementById("q1_no").classList.add("selected");
+            document.getElementById("q1_yes").classList.remove("selected");
+            if (answers[0] === 0) {
+                document.getElementById("q2_title").innerText = "Question 3: Do you teach students?";
+            }
+        });
+
+        // Q2 Yes/No Handlers
+        document.getElementById("q2_yes").addEventListener("click", () => {
+            answers[2] = 1;
+            document.getElementById("q2_yes").classList.add("selected");
+            document.getElementById("q2_no").classList.remove("selected");
+        });
+        document.getElementById("q2_no").addEventListener("click", () => {
+            answers[2] = 0;
+            document.getElementById("q2_no").classList.add("selected");
+            document.getElementById("q2_yes").classList.remove("selected");
+        });
+
+        // Classify Action
+        document.getElementById("btnClassifyJob").addEventListener("click", async () => {
+            if (!bGraphContract) return alert("Contract not loaded");
+            try {
+                const jobIdx = await bGraphContract.evaluateJobDecisionTree(answers);
+                const job = jobs[Number(jobIdx)] || { title: "UNKNOWN", desc: "Unknown job index." };
+                document.getElementById("jobResultDisplay").innerText = job.title;
+                document.getElementById("jobDescription").innerText = job.desc;
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        // Linear Regression Action
+        document.getElementById("btnComputeReg").addEventListener("click", async () => {
+            if (!bGraphContract) return alert("Contract not loaded");
+            
+            const xs = document.getElementById("regX").value.split(",").map(n => BigInt(Number(n.trim()) * 1000));
+            const ys = document.getElementById("regY").value.split(",").map(n => BigInt(Number(n.trim()) * 1000));
+
+            try {
+                const reg = await bGraphContract.linearRegression(xs, ys);
+                const slope = Number(reg.slope) / 1000;
+                const intercept = Number(reg.intercept) / 1000;
+                const r2 = Number(reg.rSquared) / 1000;
+
+                document.getElementById("valSlope").innerText = slope.toFixed(3);
+                document.getElementById("valIntercept").innerText = intercept.toFixed(3);
+                document.getElementById("valRSquared").innerText = r2.toFixed(3);
+
+                // Draw to Canvas
+                plotRegression(xs.map(n => Number(n) / 1000), ys.map(n => Number(n) / 1000), slope, intercept);
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        function plotRegression(xs, ys, slope, intercept) {
+            const canvas = document.getElementById("canvasRegression");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Set standard logical size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const padding = 40;
+            const width = canvas.width - padding * 2;
+            const height = canvas.height - padding * 2;
+
+            // Find bounds
+            const minX = Math.min(...xs, 0);
+            const maxX = Math.max(...xs, 6);
+            const minY = Math.min(...ys, 0);
+            const maxY = Math.max(...ys, 6);
+
+            // Scale helpers
+            const getX = x => padding + ((x - minX) / (maxX - minX)) * width;
+            const getY = y => canvas.height - padding - ((y - minY) / (maxY - minY)) * height;
+
+            // Draw axis
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(getX(minX), getY(0));
+            ctx.lineTo(getX(maxX), getY(0));
+            ctx.moveTo(getX(0), getY(minY));
+            ctx.lineTo(getX(0), getY(maxY));
+            ctx.stroke();
+
+            // Draw scatter points
+            ctx.fillStyle = "#ff007f";
+            xs.forEach((x, i) => {
+                ctx.beginPath();
+                ctx.arc(getX(x), getY(ys[i]), 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw regression line
+            const x1 = minX;
+            const y1 = slope * x1 + intercept;
+            const x2 = maxX;
+            const y2 = slope * x2 + intercept;
+
+            ctx.strokeStyle = "#00f2fe";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(getX(x1), getY(y1));
+            ctx.lineTo(getX(x2), getY(y2));
+            ctx.stroke();
+        }
+
+        // Bar Chart Action
+        document.getElementById("btnPlotBars").addEventListener("click", async () => {
+            if (!bGraphContract) return alert("Contract not loaded");
+
+            const values = document.getElementById("barValues").value.split(",").map(n => Number(n.trim()));
+
+            try {
+                const coords = await bGraphContract.plotBarChart(values);
+                drawBarChart(coords);
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        function drawBarChart(coords) {
+            const canvas = document.getElementById("canvasBars");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const scaleX = canvas.width / 320;
+            const scaleY = canvas.height / 200;
+
+            ctx.fillStyle = "rgba(0, 242, 254, 0.3)";
+            ctx.strokeStyle = "#00f2fe";
+            ctx.lineWidth = 1.5;
+
+            const len = coords.length / 4;
+            for (let i = 0; i < len; i++) {
+                const x1 = Number(coords[i * 4]) * scaleX;
+                const y1 = Number(coords[i * 4 + 1]) * scaleY;
+                const x2 = Number(coords[i * 4 + 2]) * scaleX;
+                const y2 = Number(coords[i * 4 + 3]) * scaleY;
+
+                ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

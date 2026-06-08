@@ -26,31 +26,35 @@ object "MusicMaker" {
 
             // ----------------------------------------------------------------
             // METHOD 1: poke(uint16 addr, uint8 val)
-            // Selector: 0x86bb605e
+            // Selector: 0x86bb605e or 0x843056f9
             // ----------------------------------------------------------------
-            if eq(selector, 0x86bb605e) {
-                let addr := shr(240, calldataload(4))
-                let val := shr(248, calldataload(36))
-
+            if or(eq(selector, 0x86bb605e), eq(selector, 0x843056f9)) {
+                let addr := and(calldataload(4), 0xFFFF)
+                if iszero(addr) { addr := shr(240, calldataload(4)) }
+                
+                let val := and(calldataload(36), 0xFF)
+                if iszero(val) { val := shr(248, calldataload(36)) }
+ 
                 // Limit virtual address space to C64 SID region (54272 to 54300) or PC Speaker (97)
                 if and(iszero(eq(addr, 97)), or(lt(addr, 54272), gt(addr, 54300))) { revert(0, 0) }
-
+ 
                 sstore(addr, val)
-
+ 
                 mstore(0x00, 1)
                 return(0x00, 32)
             }
-
+ 
             // ----------------------------------------------------------------
             // METHOD 2: peek(uint16 addr) -> uint8
-            // Selector: 0x98b0a09e
+            // Selector: 0x98b0a09e or 0xcf849374
             // ----------------------------------------------------------------
-            if eq(selector, 0x98b0a09e) {
-                let addr := shr(240, calldataload(4))
-
+            if or(eq(selector, 0x98b0a09e), eq(selector, 0xcf849374)) {
+                let addr := and(calldataload(4), 0xFFFF)
+                if iszero(addr) { addr := shr(240, calldataload(4)) }
+ 
                 // Limit virtual address space to C64 SID region (54272 to 54300) or PC Speaker (97)
                 if and(iszero(eq(addr, 97)), or(lt(addr, 54272), gt(addr, 54300))) { revert(0, 0) }
-
+ 
                 let val := sload(addr)
                 mstore(0x00, val)
                 return(0x00, 32)
@@ -318,6 +322,110 @@ object "MusicMaker" {
                 mstore(0x20, size)
                 let totalSize := add(0x40, mul(size, 32))
                 return(0x00, totalSize)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 9: colortonePlay(uint8 key, uint8 voice)
+            // Selector: 0x24048c55
+            // Translates key index (0-11 C-major scale) to C64 SID frequency and triggers Gate.
+            // ----------------------------------------------------------------
+            if eq(selector, 0x24048c55) {
+                let key := and(calldataload(4), 0xFF)
+                let voice := and(calldataload(36), 0xFF)
+                
+                let note := 60
+                switch key
+                case 0 { note := 60 }
+                case 1 { note := 62 }
+                case 2 { note := 64 }
+                case 3 { note := 65 }
+                case 4 { note := 67 }
+                case 5 { note := 69 }
+                case 6 { note := 71 }
+                case 7 { note := 72 }
+                case 8 { note := 74 }
+                case 9 { note := 76 }
+                case 10 { note := 77 }
+                case 11 { note := 79 }
+                
+                let baseReg := 54272
+                let ctrlReg := 54276
+                if eq(voice, 2) { baseReg := 54279 ctrlReg := 54283 }
+                if eq(voice, 3) { baseReg := 54286 ctrlReg := 54290 }
+                
+                let freq := mul(note, 100)
+                let lo := and(freq, 0xff)
+                let hi := and(shr(8, freq), 0xff)
+                
+                sstore(baseReg, lo)
+                sstore(add(baseReg, 1), hi)
+                sstore(ctrlReg, 17)
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 10: colortoneRelease(uint8 voice)
+            // Selector: 0x4a5da113
+            // Clears Gate bit for SID voice to trigger Release envelope phase.
+            // ----------------------------------------------------------------
+            if eq(selector, 0x4a5da113) {
+                let voice := and(calldataload(4), 0xFF)
+                
+                let ctrlReg := 54276
+                if eq(voice, 2) { ctrlReg := 54283 }
+                if eq(voice, 3) { ctrlReg := 54290 }
+                
+                sstore(ctrlReg, 16)
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 11: playSequence(uint16[] notes, uint8[] voices, uint16[] durations)
+            // Selector: 0x4760a3bc
+            // Simulates sequencing of multiple notes and outputs sequence statistics.
+            // ----------------------------------------------------------------
+            if eq(selector, 0x4760a3bc) {
+                let notesOffset := add(4, calldataload(4))
+                let voicesOffset := add(4, calldataload(36))
+                let durationsOffset := add(4, calldataload(68))
+                
+                let notesLen := calldataload(notesOffset)
+                let voicesLen := calldataload(voicesOffset)
+                let durationsLen := calldataload(durationsOffset)
+                
+                let limit := notesLen
+                if gt(voicesLen, limit) { limit := voicesLen }
+                if gt(durationsLen, limit) { limit := durationsLen }
+                if gt(limit, 32) { limit := 32 }
+                
+                let totalDuration := 0
+                for { let i := 0 } lt(i, limit) { i := add(i, 1) } {
+                    let note := calldataload(add(add(notesOffset, 32), mul(i, 32)))
+                    let voice := calldataload(add(add(voicesOffset, 32), mul(i, 32)))
+                    let duration := calldataload(add(add(durationsOffset, 32), mul(i, 32)))
+                    
+                    let baseReg := 54272
+                    let ctrlReg := 54276
+                    if eq(voice, 2) { baseReg := 54279 ctrlReg := 54283 }
+                    if eq(voice, 3) { baseReg := 54286 ctrlReg := 54290 }
+                    
+                    let freq := mul(note, 100)
+                    let lo := and(freq, 0xff)
+                    let hi := and(shr(8, freq), 0xff)
+                    
+                    sstore(baseReg, lo)
+                    sstore(add(baseReg, 1), hi)
+                    sstore(ctrlReg, 17)
+                    
+                    totalDuration := add(totalDuration, duration)
+                }
+                
+                mstore(0x00, totalDuration)
+                return(0x00, 32)
             }
 
             revert(0, 0)

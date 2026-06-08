@@ -15,7 +15,8 @@ const CONTRACTS_TO_DEPLOY = [
     { name: "graphicsSystem_v2", path: "../solidity/bin/graphicsSystem.yul", configKey: "graphicsSystemAddress" },
     { name: "speechSynthesizer", path: "../solidity/bin/speechSynthesizer.yul", configKey: "speechSynthesizerAddress" },
     { name: "zmachine", path: "../solidity/bin/zmachine.yul", configKey: "zmachineAddress" },
-    { name: "keySystem", path: "../solidity/bin/keySystem.yul", configKey: "keySystemAddress" }
+    { name: "keySystem", path: "../solidity/bin/keySystem.yul", configKey: "keySystemAddress" },
+    { name: "bGraph_v1", path: "../solidity/bin/bGraph.yul", configKey: "bGraphAddress" }
 ];
 
 // Compile Yul contract using solc

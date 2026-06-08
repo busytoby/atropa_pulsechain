@@ -1437,6 +1437,230 @@ object "GraphicsSystem" {
                 return(0x00, 288)
             }
 
+            // ----------------------------------------------------------------
+            // Method 28: getCannonDuelTrajectory(uint256 velocity, uint256 angle, int256 wind)
+            // Emulates turn-based projectile tracking for A.N.A.L.O.G. Issue #2 Cannon Duel.
+            // Selector: 0x4eaea1fe
+            // ----------------------------------------------------------------
+            if eq(selector, 0x4eaea1fe) {
+                let velocity := calldataload(4)
+                let angle := calldataload(36)
+                let wind := calldataload(68)
+
+                // Simulating trajectory path points over 10 steps
+                let xArrOffset := 0x60 // First array starts after two offsets (64 bytes) and size slot (32 bytes)
+                let yArrOffset := 0x1c0 // Second array starts after first array (320 bytes) and its size slot (32 bytes)
+
+                // Model physics constants
+                let g := 10 // gravity
+                
+                // Approximate trig values for angle (45 degrees as baseline placeholder, scaling via angle parameter)
+                let cosVal := 707 // scaled by 1000
+                let sinVal := 707 // scaled by 1000
+
+                if eq(angle, 30) {
+                    cosVal := 866
+                    sinVal := 500
+                }
+                if eq(angle, 60) {
+                    cosVal := 500
+                    sinVal := 866
+                }
+
+                let vx := div(mul(velocity, cosVal), 1000)
+                let vy := div(mul(velocity, sinVal), 1000)
+
+                for { let t := 0 } lt(t, 10) { t := add(t, 1) } {
+                    // x = (vx + wind) * t
+                    let windComponent := mul(wind, t)
+                    let xPos := add(mul(vx, t), windComponent)
+                    if lt(xPos, 0) { xPos := 0 }
+
+                    // y = vy * t - 0.5 * g * t^2
+                    let gravOffset := div(mul(mul(g, t), t), 2)
+                    let yPos := 0
+                    let val := mul(vy, t)
+                    if gt(val, gravOffset) {
+                        yPos := sub(val, gravOffset)
+                    }
+
+                    mstore(add(xArrOffset, mul(t, 32)), xPos)
+                    mstore(add(yArrOffset, mul(t, 32)), yPos)
+                }
+
+                mstore(0x00, 64)  // offset to array 1 (64 bytes)
+                mstore(0x20, 416) // offset to array 2 (64 + 32 + 320 = 416 bytes)
+                mstore(0x40, 10)  // size of array 1
+                mstore(0x1a0, 10) // size of array 2
+                return(0x00, 768)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 29: clipLine(int256 x1, int256 y1, int256 x2, int256 y2, int256 minX, int256 minY, int256 maxX, int256 maxY)
+            // Emulates Tom Hudson's graphics clipping routine using Liang-Barsky parametric clipping.
+            // Selector: 0xea599015
+            // ----------------------------------------------------------------
+            if eq(selector, 0xea599015) {
+                let x1 := calldataload(4)
+                let y1 := calldataload(36)
+                let x2 := calldataload(68)
+                let y2 := calldataload(100)
+                let minX := calldataload(132)
+                let minY := calldataload(164)
+                let maxX := calldataload(196)
+                let maxY := calldataload(228)
+
+                let dx := sub(x2, x1)
+                let dy := sub(y2, y1)
+
+                // Parametric boundary offsets (t0, t1) initialized to [0, 1] (scaled by 1000 for integer division math)
+                let t0 := 0
+                let t1 := 1000
+                let accept := 1
+
+                // 1. Process X boundaries
+                if gt(dx, 0) {
+                    let t_left := sdiv(mul(sub(minX, x1), 1000), dx)
+                    let t_right := sdiv(mul(sub(maxX, x1), 1000), dx)
+                    if gt(t_left, t0) { t0 := t_left }
+                    if lt(t_right, t1) { t1 := t_right }
+                }
+                if lt(dx, 0) {
+                    let t_left := sdiv(mul(sub(minX, x1), 1000), dx)
+                    let t_right := sdiv(mul(sub(maxX, x1), 1000), dx)
+                    if gt(t_right, t0) { t0 := t_right }
+                    if lt(t_left, t1) { t1 := t_left }
+                }
+                if eq(dx, 0) {
+                    if or(lt(x1, minX), gt(x1, maxX)) { accept := 0 }
+                }
+
+                // 2. Process Y boundaries
+                if and(accept, gt(dy, 0)) {
+                    let t_bottom := sdiv(mul(sub(minY, y1), 1000), dy)
+                    let t_top := sdiv(mul(sub(maxY, y1), 1000), dy)
+                    if gt(t_bottom, t0) { t0 := t_bottom }
+                    if lt(t_top, t1) { t1 := t_top }
+                }
+                if and(accept, lt(dy, 0)) {
+                    let t_bottom := sdiv(mul(sub(minY, y1), 1000), dy)
+                    let t_top := sdiv(mul(sub(maxY, y1), 1000), dy)
+                    if gt(t_top, t0) { t0 := t_top }
+                    if lt(t_bottom, t1) { t1 := t_bottom }
+                }
+                if eq(dy, 0) {
+                    if or(lt(y1, minY), gt(y1, maxY)) { accept := 0 }
+                }
+
+                if gt(t0, t1) { accept := 0 }
+
+                let cx1 := x1
+                let cy1 := y1
+                let cx2 := x2
+                let cy2 := y2
+
+                if accept {
+                    if gt(t1, 1000) { t1 := 1000 }
+                    if lt(t0, 0) { t0 := 0 }
+
+                    cx1 := add(x1, sdiv(mul(dx, t0), 1000))
+                    cy1 := add(y1, sdiv(mul(dy, t0), 1000))
+                    cx2 := add(x1, sdiv(mul(dx, t1), 1000))
+                    cy2 := add(y1, sdiv(mul(dy, t1), 1000))
+                }
+
+                mstore(0x00, accept)
+                mstore(0x20, cx1)
+                mstore(0x40, cy1)
+                mstore(0x60, cx2)
+                mstore(0x80, cy2)
+                return(0x00, 160)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 30: decodeKoalaPixel(bytes fileData, uint16 x, uint16 y) -> uint8 color
+            // Decodes a Koala Painter (.koa) format pixel color index (0-15 C64 color).
+            // Selector: 0x29e2d166
+            // ----------------------------------------------------------------
+            if eq(selector, 0x29e2d166) {
+                let dataOffset := add(4, calldataload(4))
+                let x := calldataload(36)
+                let y := calldataload(68)
+                
+                if gt(x, 319) { x := 319 }
+                if gt(y, 199) { y := 199 }
+                
+                let cx := div(x, 8)
+                let cy := div(y, 8)
+                let py := mod(y, 8)
+                let px := mod(x, 8)
+                
+                let cellIndex := add(mul(cy, 40), cx)
+                let bitmapByteOffset := add(add(dataOffset, 34), add(mul(cellIndex, 8), py))
+                let bitmapByte := byte(0, calldataload(bitmapByteOffset))
+                
+                let pxDiv2 := div(px, 2)
+                let shiftVal := sub(6, mul(pxDiv2, 2))
+                let colorSource := and(shr(shiftVal, bitmapByte), 3)
+                
+                let finalColor := 0
+                switch colorSource
+                case 0 {
+                    let bgOffset := add(add(dataOffset, 32), 10002)
+                    finalColor := and(byte(0, calldataload(bgOffset)), 0x0F)
+                }
+                case 1 {
+                    let scrOffset := add(add(dataOffset, 34), add(8000, cellIndex))
+                    let scrByte := byte(0, calldataload(scrOffset))
+                    finalColor := and(shr(4, scrByte), 0x0F)
+                }
+                case 2 {
+                    let scrOffset := add(add(dataOffset, 34), add(8000, cellIndex))
+                    let scrByte := byte(0, calldataload(scrOffset))
+                    finalColor := and(scrByte, 0x0F)
+                }
+                case 3 {
+                    let colOffset := add(add(dataOffset, 34), add(9000, cellIndex))
+                    let colByte := byte(0, calldataload(colOffset))
+                    finalColor := and(colByte, 0x0F)
+                }
+                
+                mstore(0x00, finalColor)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 31: updateKoalaPad(uint8 x, uint8 y, uint8 buttonState)
+            // Selector: 0xa99af2ca
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa99af2ca) {
+                let x := and(calldataload(4), 0xFF)
+                let y := and(calldataload(36), 0xFF)
+                let buttonState := and(calldataload(68), 0xFF)
+                
+                sstore(54297, x)
+                sstore(54298, y)
+                sstore(54299, buttonState)
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 32: getKoalaPadState() -> (uint8, uint8, uint8)
+            // Selector: 0x34b7c40e
+            // ----------------------------------------------------------------
+            if eq(selector, 0x34b7c40e) {
+                let x := sload(54297)
+                let y := sload(54298)
+                let buttonState := sload(54299)
+                
+                mstore(0x00, x)
+                mstore(0x20, y)
+                mstore(0x40, buttonState)
+                return(0x00, 96)
+            }
+
             revert(0, 0)
         }
     }
