@@ -493,7 +493,7 @@ int main() {
     printf("[SMURFS] Vulkan System initialized. s->vk->swapchain = %p, s->vk->surface = %p\n", (void*)s->vk->swapchain, (void*)s->vk->surface);
 
     // 1. Initialize the Yul target contract AFTER Vulkan system is ready
-    if (!lau_yul_thunk_init("cpu6502", "../solidity/bin/cpu6502.yul", 0x1)) {
+    if (!lau_yul_thunk_init("cpu6502", "../solidity/bin/folklore.yul", 0x1)) {
         printf("[SMURFS] Error: Failed to initialize Yul cpu6502 thunk!\n");
         destroy_vulkan_system(s);
         return 1;
