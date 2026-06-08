@@ -36,7 +36,8 @@ static int click_count = 0;
 typedef enum {
     GFX_LINE,
     GFX_CIRCLE,
-    GFX_POINT
+    GFX_POINT,
+    GFX_TEXT
 } GfxType;
 
 typedef struct {
@@ -44,6 +45,7 @@ typedef struct {
     int x1, y1, x2, y2;
     int r;
     uint32_t color;
+    char text[32];
 } GfxPrimitive;
 
 #define MAX_GFX_PRIMITIVES 1024
@@ -191,6 +193,33 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
     }
 }
 
+static void add_line(int x1, int y1, int x2, int y2, uint32_t color) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_LINE; gp->x1 = x1; gp->y1 = y1; gp->x2 = x2; gp->y2 = y2; gp->color = color;
+    }
+}
+static void add_circle(int x, int y, int r, uint32_t color) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_CIRCLE; gp->x1 = x; gp->y1 = y; gp->r = r; gp->color = color;
+    }
+}
+static void add_point(int x, int y, uint32_t color) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_POINT; gp->x1 = x; gp->y1 = y; gp->color = color;
+    }
+}
+static void add_text(int x, int y, const char *text, uint32_t color) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_TEXT; gp->x1 = x; gp->y1 = y; gp->color = color;
+        strncpy(gp->text, text, sizeof(gp->text));
+        gp->text[sizeof(gp->text) - 1] = '\0';
+    }
+}
+
 static void execute_command(const char *cmd) {
     printf("[TELEMETRY] Executed command: %s\n", cmd);
     fflush(stdout);
@@ -267,9 +296,21 @@ static void execute_command(const char *cmd) {
             int bullet_x = start_x + (target_x - start_x) * frame / 12;
             int bullet_y = start_y + (target_y - start_y) * frame / 12;
             
-            char gfx_buf[256];
-            sprintf(gfx_buf, "\x1b[G0;m\x1b[G2;250;120;18;m\x1b[G2;550;180;18;m\x1b[G2;400;300;18;m\x1b[G3;%d;%d;1;m", bullet_x, bullet_y);
-            terminal_write_string(g_vram, gfx_buf, strlen(gfx_buf));
+            gfx_primitive_count = 0;
+            // Target Doc 1 Duck
+            add_circle(250, 120, 18, (doc_idx == 1) ? 0xFFFF5555 : 0xFF6272A4);
+            add_text(250, 145, "CPU ROM", (doc_idx == 1) ? 0xFFFF5555 : 0xFFF8F8F2);
+            
+            // Target Doc 2 Duck
+            add_circle(550, 180, 18, (doc_idx == 2) ? 0xFF8BE9FD : 0xFF6272A4);
+            add_text(550, 205, "DECISION ENG", (doc_idx == 2) ? 0xFF8BE9FD : 0xFFF8F8F2);
+            
+            // Target Doc 3 Duck
+            add_circle(400, 300, 18, (doc_idx == 3) ? 0xFFFFB86C : 0xFF6272A4);
+            add_text(400, 325, "VM STATE", (doc_idx == 3) ? 0xFFFFB86C : 0xFFF8F8F2);
+            
+            // Query projectile (bullet)
+            add_point(bullet_x, bullet_y, 0xFF50FA7B);
             
             lau_vram_write_string(g_vram, ".", 1);
             
@@ -293,13 +334,13 @@ static void execute_command(const char *cmd) {
         lau_vram_write_string(g_vram, hit_txt, strlen(hit_txt));
         
         // Explosion flash
-        char exp_buf[256];
-        sprintf(exp_buf, "\x1b[G2;%d;%d;25;m\x1b[G1;%d;%d;%d;%d;m\x1b[G1;%d;%d;%d;%d;m\x1b[G1;%d;%d;%d;%d;m\x1b[G1;%d;%d;%d;%d;m", 
-                target_x, target_y, target_x, target_y, target_x - 15, target_y - 15,
-                target_x, target_y, target_x + 15, target_y - 15,
-                target_x, target_y, target_x - 15, target_y + 15,
-                target_x, target_y, target_x + 15, target_y + 15);
-        terminal_write_string(g_vram, exp_buf, strlen(exp_buf));
+        gfx_primitive_count = 0;
+        add_circle(target_x, target_y, 25, 0xFFFF79C6);
+        add_line(target_x, target_y, target_x - 20, target_y - 20, 0xFFFF79C6);
+        add_line(target_x, target_y, target_x + 20, target_y - 20, 0xFFFF79C6);
+        add_line(target_x, target_y, target_x - 20, target_y + 20, 0xFFFF79C6);
+        add_line(target_x, target_y, target_x + 20, target_y + 20, 0xFFFF79C6);
+        
         g_vram->is_dirty = true;
         render_terminal_display();
         usleep(300000); // Wait 300ms for explosion impact
@@ -363,26 +404,26 @@ static void execute_command(const char *cmd) {
                 ry[i] += vy[i];
             }
             
-            // Draw primitives
-            char step_gfx[512];
-            sprintf(step_gfx, "\x1b[G0;m"); // Clear
-            terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
-            
+            gfx_primitive_count = 0;
             // Draw spring lines
             for (int i = 1; i < 4; i++) {
-                sprintf(step_gfx, "\x1b[G1;%d;%d;%d;%d;m", (int)rx[0], (int)ry[0], (int)rx[i], (int)ry[i]);
-                terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
+                add_line((int)rx[0], (int)ry[0], (int)rx[i], (int)ry[i], 0xFFBD93F9);
             }
+            // Draw central query node
+            add_circle((int)rx[0], (int)ry[0], 25, 0xFF50FA7B);
+            add_text((int)rx[0], (int)ry[0] + 32, "QUERY", 0xFF50FA7B);
             
-            // Draw query central node (Green query hub)
-            sprintf(step_gfx, "\x1b[G2;%d;%d;25;m\x1b[G3;%d;%d;1;m", (int)rx[0], (int)ry[0], (int)rx[0], (int)ry[0]);
-            terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
+            // Draw Doc 1 node
+            add_circle((int)rx[1], (int)ry[1], 18, (doc_idx == 1) ? 0xFFFF5555 : 0xFF8BE9FD);
+            add_text((int)rx[1], (int)ry[1] + 25, "CPU ROM", (doc_idx == 1) ? 0xFFFF5555 : 0xFFF8F8F2);
             
-            // Draw document nodes (Doc 1, 2, 3)
-            for (int i = 1; i < 4; i++) {
-                sprintf(step_gfx, "\x1b[G2;%d;%d;18;m", (int)rx[i], (int)ry[i]);
-                terminal_write_string(g_vram, step_gfx, strlen(step_gfx));
-            }
+            // Draw Doc 2 node
+            add_circle((int)rx[2], (int)ry[2], 18, (doc_idx == 2) ? 0xFFFF5555 : 0xFF8BE9FD);
+            add_text((int)rx[2], (int)ry[2] + 25, "DECISION ENG", (doc_idx == 2) ? 0xFFFF5555 : 0xFFF8F8F2);
+            
+            // Draw Doc 3 node
+            add_circle((int)rx[3], (int)ry[3], 18, (doc_idx == 3) ? 0xFFFF5555 : 0xFF8BE9FD);
+            add_text((int)rx[3], (int)ry[3] + 25, "VM STATE", (doc_idx == 3) ? 0xFFFF5555 : 0xFFF8F8F2);
             
             lau_vram_write_string(g_vram, "+", 1);
             
@@ -997,6 +1038,8 @@ void render_terminal_display(void) {
                     }
                 }
             }
+        } else if (gp.type == GFX_TEXT) {
+            draw_debug_text(&sb, mon_x + gp.x1, mon_y + gp.y1, gp.text, gp.color, true);
         }
     }
 
