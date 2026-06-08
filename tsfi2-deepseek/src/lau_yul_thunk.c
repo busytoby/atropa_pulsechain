@@ -15,7 +15,7 @@ typedef struct {
 static CachedContract g_cached_contracts[MAX_CACHED_CONTRACTS];
 static int g_cached_contracts_count = 0;
 
-YulEvmContext g_yul_evm_context;
+_Thread_local YulEvmContext g_yul_evm_context;
 
 static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size);
 
