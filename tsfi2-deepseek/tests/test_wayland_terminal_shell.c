@@ -1959,6 +1959,98 @@ static const struct wl_pointer_listener pointer_listener = {
     .axis_discrete = pointer_handle_axis_discrete
 };
 
+static bool call_local_evm(const char *method, const char *tx_params_json, char *out_result, size_t out_max) {
+    char cmd[2048];
+    if (strlen(tx_params_json) > 0) {
+        snprintf(cmd, sizeof(cmd),
+                 "curl -s --connect-timeout 1 -X POST -H \"Content-Type: application/json\" "
+                 "--data '{\"jsonrpc\":\"2.0\",\"method\":\"%s\",\"params\":[%s],\"id\":1}' "
+                 "http://127.0.0.1:8545 2>/dev/null", method, tx_params_json);
+    } else {
+        snprintf(cmd, sizeof(cmd),
+                 "curl -s --connect-timeout 1 -X POST -H \"Content-Type: application/json\" "
+                 "--data '{\"jsonrpc\":\"2.0\",\"method\":\"%s\",\"params\":[],\"id\":1}' "
+                 "http://127.0.0.1:8545 2>/dev/null", method);
+    }
+             
+    FILE *fp = popen(cmd, "r");
+    if (!fp) return false;
+    
+    char response[4096] = {0};
+    size_t bytes_read = fread(response, 1, sizeof(response) - 1, fp);
+    pclose(fp);
+    
+    if (bytes_read == 0) return false;
+    
+    char *result_ptr = strstr(response, "\"result\":\"");
+    if (result_ptr) {
+        result_ptr += 10;
+        char *end = strchr(result_ptr, '"');
+        if (end) {
+            size_t len = end - result_ptr;
+            if (len >= out_max) len = out_max - 1;
+            memcpy(out_result, result_ptr, len);
+            out_result[len] = '\0';
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool run_zmachine_transaction(const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len, bool is_write) {
+    char calldata_hex[2048] = {0};
+    for (size_t i = 0; i < calldatasize; i++) {
+        sprintf(&calldata_hex[i * 2], "%02x", calldata[i]);
+    }
+    
+    char test_res[128];
+    bool evm_online = call_local_evm("net_version", "", test_res, sizeof(test_res));
+    
+    if (evm_online) {
+        char params[3072];
+        char result_hex[8192] = {0};
+        bool success = false;
+        
+        if (is_write) {
+            snprintf(params, sizeof(params),
+                     "{\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\","
+                     "\"to\":\"0x92313f0c5d5d121235B13a2B87B10242801b070e\","
+                     "\"data\":\"0x%s\",\"gas\":\"0x2F4000\"}", calldata_hex);
+            char tx_hash[128] = {0};
+            success = call_local_evm("eth_sendTransaction", params, tx_hash, sizeof(tx_hash));
+            if (success) {
+                if (retval && retval_len) {
+                    memset(retval, 0, *retval_len);
+                    retval[31] = 1;
+                    *retval_len = 32;
+                }
+                return true;
+            }
+        } else {
+            snprintf(params, sizeof(params),
+                     "{\"to\":\"0x92313f0c5d5d121235B13a2B87B10242801b070e\","
+                     "\"data\":\"0x%s\"},\"latest\"", calldata_hex);
+            success = call_local_evm("eth_call", params, result_hex, sizeof(result_hex));
+            if (success && result_hex[0] == '0' && (result_hex[1] == 'x' || result_hex[1] == 'X')) {
+                char *hex_start = result_hex + 2;
+                size_t hex_len = strlen(hex_start);
+                size_t bytes_len = hex_len / 2;
+                if (bytes_len > *retval_len) bytes_len = *retval_len;
+                for (size_t i = 0; i < bytes_len; i++) {
+                    unsigned int val = 0;
+                    sscanf(hex_start + i * 2, "%2x", &val);
+                    retval[i] = (uint8_t)val;
+                }
+                *retval_len = bytes_len;
+                return true;
+            }
+        }
+    }
+    
+    extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
+    return lau_yul_thunk_execute("zmachine", calldata, calldatasize, retval, retval_len);
+}
+
 static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
     (void)data; (void)keyboard; (void)serial; (void)time;
     fprintf(stderr, "[KEY-DEBUG] key: %u, state: %u\n", key, state);
@@ -2029,7 +2121,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                         
                         uint8_t retval[32] = {0};
                         size_t retval_len = sizeof(retval);
-                        if (lau_yul_thunk_execute("zmachine", calldata, calldatasize, retval, &retval_len)) {
+                        if (run_zmachine_transaction(calldata, calldatasize, retval, &retval_len, true)) {
                             char ok_msg[128];
                             snprintf(ok_msg, sizeof(ok_msg), "  [Room %u created. Exits N=%u S=%u E=%u W=%u]\r\n", create_roomId, n, s, e, w);
                             lau_vram_write_string(g_vram, ok_msg, strlen(ok_msg));
@@ -2054,7 +2146,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                         
                         uint8_t retval[4096] = {0};
                         size_t retval_len = sizeof(retval);
-                        if (lau_yul_thunk_execute("zmachine", calldata, calldatasize, retval, &retval_len)) {
+                        if (run_zmachine_transaction(calldata, calldatasize, retval, &retval_len, false)) {
                             if (retval_len >= 64) {
                                 uint32_t str_len = (retval[60] << 24) | (retval[61] << 16) | (retval[62] << 8) | retval[63];
                                 if (str_len > 511) str_len = 511;
@@ -2065,6 +2157,25 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                                 lau_vram_write_string(g_vram, "  ", 2);
                                 lau_vram_write_string(g_vram, response, strlen(response));
                                 lau_vram_write_string(g_vram, "\r\n", 2);
+
+                                // On-chain persistence: if EVM is online and command is state-modifying, transact it
+                                char test_res[128];
+                                if (call_local_evm("net_version", "", test_res, sizeof(test_res))) {
+                                    bool is_write_cmd = false;
+                                    if (cmd_len >= 4) {
+                                        if (strncmp(cmd_buf, "nort", 4) == 0 ||
+                                            strncmp(cmd_buf, "sout", 4) == 0 ||
+                                            strncmp(cmd_buf, "east", 4) == 0 ||
+                                            strncmp(cmd_buf, "west", 4) == 0 ||
+                                            strncmp(cmd_buf, "take", 4) == 0) {
+                                            is_write_cmd = true;
+                                        }
+                                    }
+                                    if (is_write_cmd) {
+                                        size_t dummy_len = 0;
+                                        run_zmachine_transaction(calldata, calldatasize, NULL, &dummy_len, true);
+                                    }
+                                }
                             } else {
                                 lau_vram_write_string(g_vram, "  Error: Invalid VM return length.\r\n", 36);
                             }
