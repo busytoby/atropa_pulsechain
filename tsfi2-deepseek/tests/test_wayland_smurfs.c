@@ -1047,6 +1047,25 @@ int main() {
         if (scale_reg == 1) scale = 1.4f;      // Giant mode
         else if (scale_reg == 2) scale = 0.7f; // Tiny/broken mode
 
+        // Apply Vaesen Micro-Jitter (fear shiver)
+        if (ment_trauma > 0) {
+            draw_sx += (rand() % 3 - 1) * ment_trauma;
+            draw_sy += (rand() % 3 - 1) * ment_trauma;
+        }
+
+        // Apply Asymmetric Head Bobbing / Limp vertical offset when walking
+        if (anim_state == 1) {
+            float bob = sinf(frame_counter * 0.6f);
+            if (phys_trauma > 0 && bob < 0.0f) {
+                draw_sy += (int)(4.0f * scale * phys_trauma); // Deeper dip on injured side
+            } else {
+                draw_sy += (int)(bob * 2.0f * scale); // Normal bob
+            }
+        }
+
+        // Render warm amber lantern glow around the Smurf
+        draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(15 * scale), (int)(110 * scale), make_ab4h_pixel(1.0f, 0.65f, 0.15f, 0.28f));
+
         // Shadow under Smurf
         draw_rect_ab4h(pixels, W, H, draw_sx - (int)(12 * scale), floor_y - 2, (int)(24 * scale), 4, shadow_black);
 
@@ -1116,6 +1135,12 @@ int main() {
         } else if (anim_state == 1) {
             // WALK pose: arms swinging
             float arm_angle = sinf(frame_counter * 0.4f) * 0.8f;
+            if (phys_trauma > 0) {
+                // Asymmetric limb drag limp animation
+                float phase = frame_counter * 0.3f;
+                arm_angle = sinf(phase) * 0.7f;
+                if (arm_angle < 0.0f) arm_angle *= 0.2f;
+            }
             draw_line_aa(pixels, W, H, draw_sx, draw_sy - (int)(10 * scale), draw_sx + cosf(arm_angle)*(14.0f * scale), draw_sy - (int)(10 * scale) + sinf(arm_angle)*(14.0f * scale), smurf_blue, 2.0f * scale);
             draw_radial_glow(pixels, W, H, draw_sx + cosf(arm_angle)*(14.0f * scale), draw_sy - (int)(10 * scale) + sinf(arm_angle)*(14.0f * scale), (int)(3 * scale), smurf_blue);
         } else if (anim_state == 3) {
@@ -1134,6 +1159,54 @@ int main() {
             if (particles[p_idx].active) {
                 AB4HPixel p_color = make_ab4h_pixel(ngr, ngg * 1.2f, ngb, particles[p_idx].alpha);
                 draw_rect_ab4h(pixels, W, H, (int)particles[p_idx].x - 2, (int)particles[p_idx].y - 2, 4, 4, p_color);
+            }
+        }
+
+        // Apply Gothic shadow vignette (visibility depends on proximity to Smurf's lantern or level lights)
+        for (int y = 50; y < H - 40; y += 2) {
+            for (int x = 0; x < W; x += 2) {
+                float dx = (float)x - smurf_x;
+                float dy = (float)y - smurf_y;
+                float dist2 = dx*dx + dy*dy;
+                
+                // Base visibility from player's lantern (radius 180px)
+                float visibility = 1.0f - (dist2 / (180.0f * 180.0f));
+                if (visibility < 0.15f) visibility = 0.15f; // ambient dark visible space
+                if (visibility > 1.0f) visibility = 1.0f;
+                
+                // Boost visibility near glowing crystals (Screen 2) or Magic Mushrooms (Screen 1) or Cage (Screen 3)
+                if (game_screen == 1) {
+                    // Mushrooms at 120 and 400
+                    float d1 = (float)x - 120.0f, d2 = (float)x - 400.0f;
+                    if (d1*d1 < 80.0f*80.0f || d2*d2 < 80.0f*80.0f) visibility = 1.0f;
+                } else if (game_screen == 2) {
+                    // Crystals at 100, 320, 540...
+                    for (int cx_pos = 100; cx_pos < W; cx_pos += 220) {
+                        float c_dx = (float)x - cx_pos;
+                        float c_dy = (float)y - (floor_y - 15.0f);
+                        if (c_dx*c_dx + c_dy*c_dy < 80.0f*80.0f) visibility = 1.0f;
+                    }
+                } else if (game_screen == 3) {
+                    // Cage at 680
+                    float c_dx = (float)x - 680.0f;
+                    if (c_dx*c_dx < 120.0f*120.0f) visibility = 1.0f;
+                }
+                
+                // Apply vignette attenuation to 2x2 block
+                if (visibility < 1.0f) {
+                    for (int dy_o = 0; dy_o < 2; dy_o++) {
+                        for (int dx_o = 0; dx_o < 2; dx_o++) {
+                            int px_idx = (y + dy_o) * W + (x + dx_o);
+                            if (px_idx < W * H) {
+                                AB4HPixel p = pixels[px_idx];
+                                float r = half_to_float(p.r) * visibility;
+                                float g = half_to_float(p.g) * visibility;
+                                float b = half_to_float(p.b) * visibility;
+                                pixels[px_idx] = make_ab4h_pixel(r, g, b, half_to_float(p.a));
+                            }
+                        }
+                    }
+                }
             }
         }
 
