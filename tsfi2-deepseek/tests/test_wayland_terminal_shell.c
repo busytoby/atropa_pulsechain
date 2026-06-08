@@ -192,6 +192,8 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
 }
 
 static void execute_command(const char *cmd) {
+    printf("[TELEMETRY] Executed command: %s\n", cmd);
+    fflush(stdout);
     if (strcmp(cmd, "exit") == 0) {
         running = false;
         return;
@@ -563,6 +565,8 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
 }
 static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
     (void)data; (void)wl_pointer; (void)serial;
+    printf("[TELEMETRY] Pointer Click: button %d, state %d at time %u\n", button, state, time);
+    fflush(stdout);
     if (button == 272) {
         if (state == 1) { // Left press
             uint32_t diff = time - last_click_time;
