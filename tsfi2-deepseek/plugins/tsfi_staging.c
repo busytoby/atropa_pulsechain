@@ -343,7 +343,7 @@ void draw_debug_codepoint(StagingBuffer *sb, int x, int y, uint32_t codepoint, u
     
     uint32_t *px = (uint32_t *)sb->data;
     if (g_font_loaded) {
-        float scale = stbtt_ScaleForPixelHeight(&g_font_info, 14.0f);
+        float scale = stbtt_ScaleForPixelHeight(&g_font_info, 16.0f);
         int ascent, descent, lineGap;
         stbtt_GetFontVMetrics(&g_font_info, &ascent, &descent, &lineGap);
         int baseline = (int)(ascent * scale);
@@ -416,7 +416,7 @@ void draw_debug_text(StagingBuffer *sb, int x, int y, const char *text, uint32_t
     int len = strlen(text);
 
     if (g_font_loaded) {
-        float scale = stbtt_ScaleForPixelHeight(&g_font_info, 14.0f);
+        float scale = stbtt_ScaleForPixelHeight(&g_font_info, 16.0f);
         for (int t_idx = 0; t_idx < len; t_idx++) {
             char c = forward ? text[t_idx] : text[len - 1 - t_idx];
             uint32_t codepoint = (uint32_t)(unsigned char)c;

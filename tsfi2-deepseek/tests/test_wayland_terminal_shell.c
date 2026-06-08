@@ -89,6 +89,55 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, 
 static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
     (void)data; (void)keyboard; (void)rate; (void)delay;
 }
+static void vram_write_ansi_string(LauVRAM *vram, const char *str, int len) {
+    int state = 0; // 0: normal, 1: esc, 2: bracket
+    char param_buf[32];
+    int param_len = 0;
+    
+    for (int i = 0; i < len; i++) {
+        char c = str[i];
+        if (state == 0) {
+            if (c == '\033' || c == 27) {
+                state = 1;
+            } else {
+                lau_vram_write_char(vram, c);
+            }
+        } else if (state == 1) {
+            if (c == '[') {
+                state = 2;
+                param_len = 0;
+            } else {
+                state = 0;
+                lau_vram_write_char(vram, c);
+            }
+        } else if (state == 2) {
+            if ((c >= '0' && c <= '9') || c == ';' || c == ':') {
+                if (param_len < (int)sizeof(param_buf) - 2) {
+                    param_buf[param_len++] = c;
+                }
+            } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                param_buf[param_len] = '\0';
+                if (c == 'm') {
+                    char *tok = strtok(param_buf, ";");
+                    while (tok) {
+                        int code = atoi(tok);
+                        if (code == 0) {
+                            vram->current_fg = 7; // white
+                        } else if (code >= 30 && code <= 37) {
+                            vram->current_fg = code - 30;
+                        } else if (code >= 90 && code <= 97) {
+                            vram->current_fg = (code - 90) + 8; // bright
+                        }
+                        tok = strtok(NULL, ";");
+                    }
+                }
+                state = 0;
+            } else {
+                state = 0;
+            }
+        }
+    }
+}
 
 static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
     (void)data; (void)keyboard; (void)serial; (void)time;
@@ -159,7 +208,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                 char read_buf[4096];
                 ssize_t n;
                 while ((n = read(stdout_pipe[0], read_buf, sizeof(read_buf))) > 0) {
-                    lau_vram_write_string(g_vram, read_buf, n);
+                    vram_write_ansi_string(g_vram, read_buf, n);
                 }
                 close(stdout_pipe[0]);
             } else {
