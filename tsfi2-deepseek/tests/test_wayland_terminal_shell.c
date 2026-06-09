@@ -50,7 +50,8 @@ typedef enum {
     MODE_MAGPIE,
     MODE_ALICE,
     MODE_TOP,
-    MODE_FONTASIA
+    MODE_FONTASIA,
+    MODE_FLANKSPEED
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -239,6 +240,17 @@ static char g_fontasia_status[128];
 static void init_fontasia(void);
 static void redraw_fontasia_screen(void);
 static void handle_fontasia_input(char ch);
+
+// Flankspeed variables
+static uint16_t g_flankspeed_start_addr = 0xC000;
+static char g_flankspeed_buffer[16][8][3]; // 16 rows, 8 columns, 2 hex characters + null
+static int g_flankspeed_cursor_row = 0;
+static int g_flankspeed_cursor_col = 0;
+static int g_flankspeed_char_idx = 0; // 0=first hex char, 1=second hex char
+static char g_flankspeed_status[128];
+static void init_flankspeed(void);
+static void redraw_flankspeed_screen(void);
+static void handle_flankspeed_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2755,6 +2767,130 @@ static void load_checklist(void) {
     fclose(f);
     g_checklist_cursor = 0;
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
+}
+
+static void init_flankspeed(void) {
+    for (int r = 0; r < 16; r++) {
+        for (int c = 0; c < 8; c++) {
+            strcpy(g_flankspeed_buffer[r][c], "00");
+        }
+    }
+    g_flankspeed_cursor_row = 0;
+    g_flankspeed_cursor_col = 0;
+    g_flankspeed_char_idx = 0;
+    snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Flankspeed active. Base: $%04X. Type hex bytes.", g_flankspeed_start_addr);
+}
+
+static void redraw_flankspeed_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        FLANKSPEED (Ahoy! Issue 14 Machine Language Entry System)    \r\n"
+             "====================================================================\r\n"
+             "  ADDR  |  B0  B1  B2  B3  B4  B5  B6  B7  |  LINE CHECKSUM\r\n"
+             "====================================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int r = 0; r < 16; r++) {
+        char line[256];
+        int pos = 0;
+        uint16_t addr = g_flankspeed_start_addr + r * 8;
+        
+        pos += snprintf(line + pos, sizeof(line) - pos, "  $%04X | ", addr);
+        
+        uint32_t checksum = 0;
+        for (int c = 0; c < 8; c++) {
+            uint32_t val = (uint32_t)strtoul(g_flankspeed_buffer[r][c], NULL, 16);
+            checksum += val;
+
+            if (r == g_flankspeed_cursor_row && c == g_flankspeed_cursor_col) {
+                // Highlight cursor position
+                if (g_flankspeed_char_idx == 0) {
+                    pos += snprintf(line + pos, sizeof(line) - pos, "[%c]%c ", g_flankspeed_buffer[r][c][0], g_flankspeed_buffer[r][c][1]);
+                } else {
+                    pos += snprintf(line + pos, sizeof(line) - pos, "%c[%c] ", g_flankspeed_buffer[r][c][0], g_flankspeed_buffer[r][c][1]);
+                }
+            } else {
+                pos += snprintf(line + pos, sizeof(line) - pos, " %s  ", g_flankspeed_buffer[r][c]);
+            }
+        }
+        
+        pos += snprintf(line + pos, sizeof(line) - pos, "|  $%04X\r\n", checksum & 0xFFFF);
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_flankspeed_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [W/A/S/D] Move [0-9, A-F] Write hex [P] Dump BASIC [ESC] Exit\r\n", 75);
+}
+
+static void handle_flankspeed_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    // Navigation
+    if (ch == 'w' || ch == 'W') {
+        if (g_flankspeed_cursor_row > 0) g_flankspeed_cursor_row--;
+        g_flankspeed_char_idx = 0;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_flankspeed_cursor_row < 15) g_flankspeed_cursor_row++;
+        g_flankspeed_char_idx = 0;
+    } else if (ch == 'a' || ch == 'A') {
+        if (g_flankspeed_cursor_col > 0) {
+            g_flankspeed_cursor_col--;
+        } else if (g_flankspeed_cursor_row > 0) {
+            g_flankspeed_cursor_row--;
+            g_flankspeed_cursor_col = 7;
+        }
+        g_flankspeed_char_idx = 0;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_flankspeed_cursor_col < 7) {
+            g_flankspeed_cursor_col++;
+        } else if (g_flankspeed_cursor_row < 15) {
+            g_flankspeed_cursor_row++;
+            g_flankspeed_cursor_col = 0;
+        }
+        g_flankspeed_char_idx = 0;
+    } else if (ch == 'p' || ch == 'P') {
+        snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "BASIC Loader: 10 FOR I = %d TO %d: READ V: POKE I, V: NEXT",
+                 g_flankspeed_start_addr, g_flankspeed_start_addr + 16 * 8 - 1);
+    } else {
+        // Hex character processing
+        char uc = ch;
+        if (uc >= 'a' && uc <= 'z') uc -= 32;
+        if ((uc >= '0' && uc <= '9') || (uc >= 'A' && uc <= 'F')) {
+            int r = g_flankspeed_cursor_row;
+            int c = g_flankspeed_cursor_col;
+            if (g_flankspeed_char_idx == 0) {
+                g_flankspeed_buffer[r][c][0] = uc;
+                g_flankspeed_char_idx = 1;
+            } else {
+                g_flankspeed_buffer[r][c][1] = uc;
+                // Move cursor right
+                if (g_flankspeed_cursor_col < 7) {
+                    g_flankspeed_cursor_col++;
+                } else if (g_flankspeed_cursor_row < 15) {
+                    g_flankspeed_cursor_row++;
+                    g_flankspeed_cursor_col = 0;
+                }
+                g_flankspeed_char_idx = 0;
+            }
+            snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Updated address $%04X byte.", g_flankspeed_start_addr + r * 8 + c);
+        }
+    }
+
+    redraw_flankspeed_screen();
 }
 
 static void init_fontasia(void) {
@@ -5887,6 +6023,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "FLANKSPEED") == 0) {
+         g_editor_mode = MODE_FLANKSPEED;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_flankspeed();
+         redraw_flankspeed_screen();
+         log_telemetry("Started Flankspeed ML editor");
+         return;
+    }
+
     if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
          g_editor_mode = MODE_CHECKLIST;
          g_mercenary_active = false;
@@ -7273,6 +7419,25 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = 'p';
         }
         handle_fontasia_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_FLANKSPEED) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == 25 || key == 112) { // P
+            ch = 'p';
+        }
+        handle_flankspeed_input(ch);
         return;
     }
 
@@ -8796,6 +8961,8 @@ int main() {
                             handle_top_input(ch);
                         } else if (g_editor_mode == MODE_FONTASIA) {
                             handle_fontasia_input(ch);
+                        } else if (g_editor_mode == MODE_FLANKSPEED) {
+                            handle_flankspeed_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -9008,6 +9175,8 @@ int main() {
                             handle_top_input(ch);
                         } else if (g_editor_mode == MODE_FONTASIA) {
                             handle_fontasia_input(ch);
+                        } else if (g_editor_mode == MODE_FLANKSPEED) {
+                            handle_flankspeed_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
