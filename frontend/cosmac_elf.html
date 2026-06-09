@@ -436,6 +436,37 @@
             }
         }
 
+        function scrollDisplay(dir) {
+            const temp = new Uint8Array(2048);
+            if (dir === "up") {
+                for (let y = 0; y < 31; y++) {
+                    for (let x = 0; x < 64; x++) {
+                        temp[y * 64 + x] = cpu.display[(y + 1) * 64 + x];
+                    }
+                }
+            } else if (dir === "down") {
+                for (let y = 1; y < 32; y++) {
+                    for (let x = 0; x < 64; x++) {
+                        temp[y * 64 + x] = cpu.display[(y - 1) * 64 + x];
+                    }
+                }
+            } else if (dir === "left") {
+                for (let y = 0; y < 32; y++) {
+                    for (let x = 0; x < 63; x++) {
+                        temp[y * 64 + x] = cpu.display[y * 64 + x + 1];
+                    }
+                }
+            } else if (dir === "right") {
+                for (let y = 0; y < 32; y++) {
+                    for (let x = 1; x < 64; x++) {
+                        temp[y * 64 + x] = cpu.display[y * 64 + x - 1];
+                    }
+                }
+            }
+            cpu.display.set(temp);
+            renderDisplay();
+        }
+
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
         async function fetchRoom10Dna() {
@@ -1373,6 +1404,22 @@
                             logTrapEvent("🔊 [AUDIO] Playing triumphant C-Major Arena Chord [261Hz, 329Hz, 392Hz, 523Hz]", true);
                             playMorseCharacter(87);
                         }, 3200);
+                        break;
+                    case "scrollup":
+                        scrollDisplay("up");
+                        logTrapEvent("🎥 [SCROLL] Shifted Pixie screen UP by 1 row.", true);
+                        break;
+                    case "scrolldown":
+                        scrollDisplay("down");
+                        logTrapEvent("🎥 [SCROLL] Shifted Pixie screen DOWN by 1 row.", true);
+                        break;
+                    case "scrollleft":
+                        scrollDisplay("left");
+                        logTrapEvent("🎥 [SCROLL] Shifted Pixie screen LEFT by 1 column.", true);
+                        break;
+                    case "scrollright":
+                        scrollDisplay("right");
+                        logTrapEvent("🎥 [SCROLL] Shifted Pixie screen RIGHT by 1 column.", true);
                         break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
