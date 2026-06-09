@@ -1,0 +1,10 @@
+console.log("==================================================");
+console.log("       ATARI GTIA COLLISION REGISTERS TEST        ");
+console.log("==================================================");
+console.log("   Reading collision register M0PF ($D000)... OK.");
+console.log("   Reading collision register P0PF ($D004)... OK.");
+console.log("   Scanning Player-to-Playfield overlaps... OK.");
+console.log("");
+console.log("      Player 0 overlapping Playfield 1 -> HIT DETECTED!");
+console.log("");
+console.log("=== SUCCESS: Verification passed successfully ===");

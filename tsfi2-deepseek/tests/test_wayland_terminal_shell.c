@@ -20,6 +20,7 @@
 #include "tsfi_staging.h"
 #include "tsfi_vision.h"
 #include "tsfi_jpeg_encoder.h"
+#include "tsfi_ottype.h"
 
 static bool g_superterm_mode = true;
 static int g_superterm_cols = 132;
@@ -37,12 +38,19 @@ typedef enum {
     MODE_AIRASSAULT,
     MODE_SLINKYBEAR,
     MODE_SLINKYPANIC,
-    MODE_YULBUILD
+    MODE_YULBUILD,
+    MODE_CREATOR,
+    MODE_ALPINER,
+    MODE_CHECKLIST,
+    MODE_WHATSMYJOB,
+    MODE_PTE,
+    MODE_SPACEPATROL,
+    MODE_CONSTRUCTION_CO
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
 static bool g_aitest_active = false;
-static const char* g_test_statuses[10] = { "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY" };
+static const char* g_test_statuses[24] = { "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY" };
 
 // StagingBuffer is defined in tsfi_staging.h
 // draw_debug_codepoint/draw_debug_text are defined in tsfi_staging.h
@@ -116,6 +124,58 @@ static bool g_pong_loaded = false;
 static bool g_key_up_pressed = false;
 static bool g_key_down_pressed = false;
 static void update_pong_game(void);
+static void update_alpiner_game(void);
+static void redraw_alpiner_screen(void);
+static void handle_alpiner_input(char ch);
+static void init_checklist(void);
+static void redraw_checklist_screen(void);
+static void handle_checklist_input(char ch);
+static void init_job_game(void);
+static void redraw_job_screen(void);
+static void handle_job_input(char ch);
+
+#define PTE_MAX_LINES 128
+#define PTE_LINE_WIDTH 128
+static char g_pte_lines[PTE_MAX_LINES][PTE_LINE_WIDTH];
+static int g_pte_line_count = 0;
+static int g_pte_cursor_x = 0;
+static int g_pte_cursor_y = 0;
+static int g_pte_left_margin = 5;
+static int g_pte_right_margin = 75;
+static int g_pte_edit_margin_mode = 0; // 0=none, 1=left, 2=right
+static char g_pte_status_msg[128];
+static void init_pte(void);
+static void redraw_pte_screen(void);
+static void handle_pte_input(char ch);
+
+static double g_sp_alt = 10000.0;
+static double g_sp_speed = 350.0;
+static double g_sp_pitch = 0.0;
+static double g_sp_yaw = 0.0;
+static int g_sp_throttle = 60;
+static double g_sp_fuel = 95.5;
+static double g_sp_shields = 100.0;
+static double g_sp_target_dist = 5000.0;
+static char g_sp_status[128];
+static void init_spacepatrol(void);
+static void redraw_spacepatrol_screen(void);
+static void handle_spacepatrol_input(char ch);
+static void update_spacepatrol_simulation(void);
+
+// Construction Co Cargo Flight Simulator variables
+static double g_cc_crane_x = 5.0;
+static double g_cc_crane_y = 2.0;
+static double g_cc_velocity_y = 0.0;
+static double g_cc_velocity_x = 0.0;
+static int g_cc_has_cargo = 0;
+static int g_cc_score = 0;
+static double g_cc_fuel = 100.0;
+static int g_cc_grid[10][10] = {{0}}; // 0 = empty, 1 = scaffold, 2 = targeted area
+static char g_cc_status[128];
+static void init_construction_co(void);
+static void redraw_construction_co_screen(void);
+static void handle_construction_co_input(char ch);
+static void update_construction_co_simulation(void);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -160,6 +220,60 @@ static int g_slinky_monster_row = 4;
 static int g_slinky_monster_col = 4;
 static int g_slinky_monster_stuck = 0;
 static int g_slinky_hole[5][5] = {{0}};
+
+static bool g_alpiner_active = false;
+static int g_alpiner_player_x = 22;
+static int g_alpiner_player_y = 12;
+static int g_alpiner_yeti_x = 18;
+static int g_alpiner_yeti_y = 6;
+static int g_alpiner_rock_x = 22;
+static int g_alpiner_rock_y = 4;
+static int g_alpiner_score = 0;
+static int g_alpiner_lives = 3;
+static char g_alpiner_speech[64] = "ALPINER!";
+static int g_alpiner_speech_ticks = 15;
+static int g_alpiner_mountain = 1;
+static uint8_t g_alpiner_tms5220_status = 0x40;
+static uint8_t g_alpiner_tms5220_cmd = 0x50;
+static int g_alpiner_tms5220_fifo = 16;
+
+typedef struct {
+    bool checked;
+    char text[64];
+    char category[32];
+} ChecklistItem;
+
+static bool g_checklist_active = false;
+static ChecklistItem g_checklist_items[30];
+static int g_checklist_count = 0;
+static int g_checklist_cursor = 0;
+static char g_checklist_status_msg[128] = "";
+static int g_checklist_entry_mode = 0; // 0 = nav, 1 = add desc, 2 = add cat, 3 = edit desc, 4 = edit cat
+static char g_checklist_entry_buf[64] = "";
+static int g_checklist_entry_len = 0;
+
+typedef struct {
+    char text[128];
+    int yes_child;
+    int no_child;
+} JobNode;
+
+static bool g_jobs_active = false;
+static JobNode g_job_nodes[50];
+static int g_job_nodes_count = 0;
+static int g_job_current_node = 0;
+static int g_job_prev_node = -1;
+static bool g_job_last_answer_was_yes = false;
+static int g_job_submode = 0; // 0 = traversal, 1 = guess, 2 = learn name, 3 = learn quest, 4 = yesno
+static char g_job_new_name[64] = "";
+static char g_job_new_question[128] = "";
+
+typedef struct {
+    char key;
+    char cmd[64];
+} ChrgetHook;
+static ChrgetHook g_chrget_hooks[16];
+static int g_chrget_hooks_count = 0;
 
 // Registry listeners
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
@@ -1013,33 +1127,50 @@ static void save_gif_screenshot(const char *filepath, uint32_t *pixels, int w, i
 static void render_aitest_dashboard() {
     const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
     lau_vram_write_string(g_vram, clear_seq, 3);
-    char buf[2048];
+    char buf[4096];
     snprintf(buf, sizeof(buf),
-        "\r\n"
-        "====================================================================\r\n"
-        "             TSFI2 UNIFIED AI EXPLORATORY TEST SUITE\r\n"
-        "====================================================================\r\n"
-        "   SYSTEM NAME      | STATUS  | LAST VERIFIED | COVERAGE REGISTERS\r\n"
-        "  ------------------+---------+---------------+---------------------\r\n"
-        "  1. CHOPLIFTER     |  %-5s  |   REAL-TIME   | $02-$08, $0400-$07E7\r\n"
-        "  2. FORTAPOCALYPSE |  %-5s  |   REAL-TIME   | Sprite 0-2, $D015, $D01E\r\n"
-        "  3. HOMEWORD       |  %-5s  |   REAL-TIME   | $D580-$D58F (Wrapping)\r\n"
-        "  4. HOMETAX        |  %-5s  |   REAL-TIME   | $D590-$D5A3 (COMTAX)\r\n"
-        "  5. GTIACOL        |  %-5s  |   REAL-TIME   | GTIA Collisions\r\n"
-        "  6. SEGAVDP        |  %-5s  |   REAL-TIME   | Sega VDP Registers\r\n"
-        "  7. SATURNVDP      |  %-5s  |   REAL-TIME   | Saturn VDP1 VRAM/FB\r\n"
-        "  8. WORDPAC        |  %-5s  |   REAL-TIME   | Word wrapping ($FC/$FD)\r\n"
-        "  9. DATAPAC        |  %-5s  |   REAL-TIME   | Flat-File Indexer\r\n"
-        " 10. PROTECTO       |  %-5s  |   REAL-TIME   | Order desk strobe ($D66C)\r\n"
-        "====================================================================\r\n"
-        "  Commands:\r\n"
-        "    RUN <number>   - Run specific system test (e.g. RUN 1)\r\n"
-        "    RUN ALL        - Run all system tests sequentially\r\n"
-        "    GO MENU        - Return to main CompuServe CIS menu\r\n"
-        "====================================================================\r\n"
-        "Enter AI Test Command: \r\n",
-        g_test_statuses[0], g_test_statuses[1], g_test_statuses[2], g_test_statuses[3], g_test_statuses[4],
-        g_test_statuses[5], g_test_statuses[6], g_test_statuses[7], g_test_statuses[8], g_test_statuses[9]
+         "\r\n"
+         "====================================================================\r\n"
+         "             TSFI2 UNIFIED AI EXPLORATORY TEST SUITE\r\n"
+         "====================================================================\r\n"
+         "   SYSTEM NAME      | STATUS  | LAST VERIFIED | COVERAGE REGISTERS\r\n"
+         "  ------------------+---------+---------------+---------------------\r\n"
+         "  1. CHOPLIFTER     |  %-5s  |   REAL-TIME   | $02-$08, $0400-$07E7\r\n"
+         "  2. FORTAPOCALYPSE |  %-5s  |   REAL-TIME   | Sprite 0-2, $D015, $D01E\r\n"
+         "  3. HOMEWORD       |  %-5s  |   REAL-TIME   | $D580-$D58F (Wrapping)\r\n"
+         "  4. HOMETAX        |  %-5s  |   REAL-TIME   | $D590-$D5A3 (COMTAX)\r\n"
+         "  5. GTIACOL        |  %-5s  |   REAL-TIME   | GTIA Collisions\r\n"
+         "  6. SEGAVDP        |  %-5s  |   REAL-TIME   | Sega VDP Registers\r\n"
+         "  7. SATURNVDP      |  %-5s  |   REAL-TIME   | Saturn VDP1 VRAM/FB\r\n"
+         "  8. WORDPAC        |  %-5s  |   REAL-TIME   | Word wrapping ($FC/$FD)\r\n"
+         "  9. DATAPAC        |  %-5s  |   REAL-TIME   | Flat-File Indexer\r\n"
+         " 10. PROTECTO       |  %-5s  |   REAL-TIME   | Order desk strobe ($D66C)\r\n"
+         " 11. MICROMINDER    |  %-5s  |   REAL-TIME   | On-Chain Yul Memos\r\n"
+         " 12. SALVAGEDIVER   |  %-5s  |   REAL-TIME   | Ocean grid VRAM ($05B0)\r\n"
+         " 13. DOS            |  %-5s  |   REAL-TIME   | Drive command registers\r\n"
+         " 14. SOUNDEXPLORER  |  %-5s  |   REAL-TIME   | Voice frequencies ($D400)\r\n"
+         " 15. CASTLEDARKNESS |  %-5s  |   REAL-TIME   | Adventure vocabulary\r\n"
+         " 16. BASECONVERSIONS|  %-5s  |   REAL-TIME   | Radix converters\r\n"
+         " 17. LAWNJOB        |  %-5s  |   REAL-TIME   | Obstacle detection\r\n"
+         " 18. EMERALDELEPHANT|  %-5s  |   REAL-TIME   | Adventure story vectors\r\n"
+         " 19. VIC40OS        |  %-5s  |   REAL-TIME   | Software 40-column VRAM\r\n"
+         " 20. BAMREADPRINT   |  %-5s  |   REAL-TIME   | Track 18 Sector 0 print\r\n"
+         " 21. TUNNEL         |  %-5s  |   REAL-TIME   | Tunnel scroll buffer\r\n"
+         " 22. PTE            |  %-5s  |   REAL-TIME   | Page margins layout\r\n"
+         " 23. BLOCKEDIT      |  %-5s  |   REAL-TIME   | Sector buffer direct write\r\n"
+         " 24. CHARSET        |  %-5s  |   REAL-TIME   | Font generator mapping\r\n"
+         "====================================================================\r\n"
+         "  Commands:\r\n"
+         "    RUN <number>   - Run specific system test (e.g. RUN 1)\r\n"
+         "    RUN ALL        - Run all system tests sequentially\r\n"
+         "    GO MENU        - Return to main CompuServe CIS menu\r\n"
+         "====================================================================\r\n"
+         "Enter AI Test Command: \r\n",
+         g_test_statuses[0], g_test_statuses[1], g_test_statuses[2], g_test_statuses[3], g_test_statuses[4],
+         g_test_statuses[5], g_test_statuses[6], g_test_statuses[7], g_test_statuses[8], g_test_statuses[9],
+         g_test_statuses[10], g_test_statuses[11], g_test_statuses[12], g_test_statuses[13], g_test_statuses[14],
+         g_test_statuses[15], g_test_statuses[16], g_test_statuses[17], g_test_statuses[18], g_test_statuses[19],
+         g_test_statuses[20], g_test_statuses[21], g_test_statuses[22], g_test_statuses[23]
     );
     lau_vram_write_string(g_vram, buf, strlen(buf));
     log_telemetry("Rendered AITEST Dashboard");
@@ -1344,6 +1475,497 @@ static void handle_yulbuild_input(char ch) {
         g_yulbuild_input[g_yulbuild_input_len++] = ch;
         g_yulbuild_input[g_yulbuild_input_len] = '\0';
         redraw_yulbuild_screen();
+    }
+}
+
+static void execute_command(const char *cmd);
+
+static int g_creator_step = 0;
+static int g_creator_selection = 0;
+static int g_creator_param_index = 0;
+static int g_creator_sound_freq = 440;
+static char g_creator_sound_wave[16] = "Triangle";
+static int g_creator_sprite_x = 150;
+static int g_creator_sprite_y = 120;
+static int g_creator_sprite_color = 1;
+static bool g_creator_compact = false;
+static bool g_creator_editing_value = false;
+static char g_creator_input_buffer[32] = "";
+static int g_creator_input_len = 0;
+
+static int g_creator_concept_v1 = 10;
+static int g_creator_concept_f1 = 225;
+static int g_creator_concept_d1 = 120;
+static int g_creator_concept_v2 = 11;
+static int g_creator_concept_f2 = 240;
+static int g_creator_concept_d2 = 60;
+static int g_creator_concept_v3 = 12;
+static int g_creator_concept_f3 = 195;
+static int g_creator_concept_d3 = 255;
+
+static int g_creator_maze_bg = 0;
+static int g_creator_maze_border = 0;
+static char g_creator_maze_char1[4] = "/";
+static char g_creator_maze_char2[4] = "\\\\";
+
+static int g_creator_raster_line = 120;
+static int g_creator_raster_color = 0;
+
+static int g_creator_joystick_port = 2;
+
+static void redraw_creator_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "=====================================================\r\n"
+        "      THE CREATOR: AHOY! PROGRAM GENERATOR WIZARD    \r\n"
+        "=====================================================\r\n"
+        " [ESC: Exit/Cancel] [U/D: Move] [Enter: Select/Edit] \r\n"
+        "=====================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    if (g_creator_step == 0) {
+        snprintf(buf, sizeof(buf), " SELECT PROGRAM SCHEMA TO GENERATE:\r\n\r\n");
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        const char *modules[7] = {
+            "1. Maze Vector Graphics",
+            "2. SID Synthesizer Audio",
+            "3. VIC-II Sprite Setup",
+            "4. Custom Character RAM Copy",
+            "5. VIC-II Raster Sync Split",
+            "6. CIA 1 Joystick Scanner",
+            "7. Kwitowski-Harris Sound Concept"
+        };
+        for (int i = 0; i < 7; i++) {
+            if (i == g_creator_selection) {
+                lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+            } else {
+                lau_vram_write_string(g_vram, "    ", 4);
+            }
+            snprintf(buf, sizeof(buf), "%-40s", modules[i]);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+            if (i == g_creator_selection) {
+                lau_vram_write_string(g_vram, "\x1b[0m", 4);
+            }
+            lau_vram_write_string(g_vram, "\r\n", 2);
+        }
+    } else if (g_creator_step == 1) {
+        snprintf(buf, sizeof(buf), " CONFIGURE PROPERTIES & PARAMETERS:\r\n\r\n");
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        if (g_creator_selection == 1) {
+            const char *params[4] = {
+                "Target Frequency (Hz):",
+                "Waveform (Triangle/Sawtooth/Pulse/Noise):",
+                "Compaction Mode (Active/Inactive):",
+                "[ GENERATE & STAGE TO RAM ]"
+            };
+            for (int i = 0; i < 4; i++) {
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+                } else {
+                    lau_vram_write_string(g_vram, "    ", 4);
+                }
+                if (i == 0) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_sound_freq);
+                else if (i == 1) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_sound_wave);
+                else if (i == 2) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_compact ? "Active" : "Inactive");
+                else snprintf(buf, sizeof(buf), "%s", params[i]);
+                lau_vram_write_string(g_vram, buf, strlen(buf));
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[0m", 4);
+                }
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        } else if (g_creator_selection == 2) {
+            const char *params[5] = {
+                "Coordinate X:",
+                "Coordinate Y:",
+                "Sprite Color Code (0-15):",
+                "Compaction Mode (Active/Inactive):",
+                "[ GENERATE & STAGE TO RAM ]"
+            };
+            for (int i = 0; i < 5; i++) {
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+                } else {
+                    lau_vram_write_string(g_vram, "    ", 4);
+                }
+                if (i == 0) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_sprite_x);
+                else if (i == 1) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_sprite_y);
+                else if (i == 2) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_sprite_color);
+                else if (i == 3) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_compact ? "Active" : "Inactive");
+                else snprintf(buf, sizeof(buf), "%s", params[i]);
+                lau_vram_write_string(g_vram, buf, strlen(buf));
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[0m", 4);
+                }
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        } else if (g_creator_selection == 6) {
+            const char *params[11] = {
+                "Note 1 Voice (10-13):",
+                "Note 1 Frequency (128-255):",
+                "Note 1 Duration (1-255):",
+                "Note 2 Voice (10-13):",
+                "Note 2 Frequency (128-255):",
+                "Note 2 Duration (1-255):",
+                "Note 3 Voice (10-13):",
+                "Note 3 Frequency (128-255):",
+                "Note 3 Duration (1-255):",
+                "Compaction Mode (Active/Inactive):",
+                "[ GENERATE & STAGE TO RAM ]"
+            };
+            for (int i = 0; i < 11; i++) {
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+                } else {
+                    lau_vram_write_string(g_vram, "    ", 4);
+                }
+                if (i == 0) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_v1);
+                else if (i == 1) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_f1);
+                else if (i == 2) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_d1);
+                else if (i == 3) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_v2);
+                else if (i == 4) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_f2);
+                else if (i == 5) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_d2);
+                else if (i == 6) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_v3);
+                else if (i == 7) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_f3);
+                else if (i == 8) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_concept_d3);
+                else if (i == 9) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_compact ? "Active" : "Inactive");
+                else snprintf(buf, sizeof(buf), "%s", params[i]);
+                lau_vram_write_string(g_vram, buf, strlen(buf));
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[0m", 4);
+                }
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        } else if (g_creator_selection == 0) {
+            const char *params[6] = {
+                "Background Color (0-15):",
+                "Border Color (0-15):",
+                "Maze Character 1:",
+                "Maze Character 2:",
+                "Compaction Mode (Active/Inactive):",
+                "[ GENERATE & STAGE TO RAM ]"
+            };
+            for (int i = 0; i < 6; i++) {
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+                } else {
+                    lau_vram_write_string(g_vram, "    ", 4);
+                }
+                if (i == 0) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_maze_bg);
+                else if (i == 1) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_maze_border);
+                else if (i == 2) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_maze_char1);
+                else if (i == 3) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_maze_char2);
+                else if (i == 4) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_compact ? "Active" : "Inactive");
+                else snprintf(buf, sizeof(buf), "%s", params[i]);
+                lau_vram_write_string(g_vram, buf, strlen(buf));
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[0m", 4);
+                }
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        } else if (g_creator_selection == 4) {
+            const char *params[4] = {
+                "Target Raster Scanline (0-255):",
+                "Split Background Color (0-15):",
+                "Compaction Mode (Active/Inactive):",
+                "[ GENERATE & STAGE TO RAM ]"
+            };
+            for (int i = 0; i < 4; i++) {
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+                } else {
+                    lau_vram_write_string(g_vram, "    ", 4);
+                }
+                if (i == 0) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_raster_line);
+                else if (i == 1) snprintf(buf, sizeof(buf), "%-45s %d", params[i], g_creator_raster_color);
+                else if (i == 2) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_compact ? "Active" : "Inactive");
+                else snprintf(buf, sizeof(buf), "%s", params[i]);
+                lau_vram_write_string(g_vram, buf, strlen(buf));
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[0m", 4);
+                }
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        } else if (g_creator_selection == 5) {
+            const char *params[3] = {
+                "CIA Joystick Port Selection (1/2):",
+                "Compaction Mode (Active/Inactive):",
+                "[ GENERATE & STAGE TO RAM ]"
+            };
+            for (int i = 0; i < 3; i++) {
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => ", 14);
+                } else {
+                    lau_vram_write_string(g_vram, "    ", 4);
+                }
+                if (i == 0) snprintf(buf, sizeof(buf), "%-45s Port %d", params[i], g_creator_joystick_port);
+                else if (i == 1) snprintf(buf, sizeof(buf), "%-45s %s", params[i], g_creator_compact ? "Active" : "Inactive");
+                else snprintf(buf, sizeof(buf), "%s", params[i]);
+                lau_vram_write_string(g_vram, buf, strlen(buf));
+                if (i == g_creator_param_index) {
+                    lau_vram_write_string(g_vram, "\x1b[0m", 4);
+                }
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        } else {
+            snprintf(buf, sizeof(buf), " Ready to generate default template.\r\n\r\n");
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+            if (g_creator_param_index == 0) {
+                lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m => [ GENERATE & STAGE TO RAM ]\x1b[0m\r\n", 40);
+            }
+        }
+        
+        if (g_creator_editing_value) {
+            snprintf(buf, sizeof(buf), "\r\n ENTER NEW VALUE: [ %s_ ] (Press Enter to save, ESC to cancel)\r\n", g_creator_input_buffer);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        }
+    } else if (g_creator_step == 2) {
+        snprintf(buf, sizeof(buf), " GENERATION SUCCESSFUL!\r\n\r\n");
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        snprintf(buf, sizeof(buf), " The generated BASIC program has been tokenized\r\n and staged directly into the virtual memory space.\r\n\r\n");
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, " [Press Enter to return to main menu]\r\n", 38);
+    }
+}
+
+static void handle_creator_input(char ch) {
+    if (g_creator_editing_value) {
+        if (ch == '\n' || ch == '\r') {
+            g_creator_input_buffer[g_creator_input_len] = '\0';
+            if (g_creator_selection == 1) {
+                if (g_creator_param_index == 0) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val > 0) g_creator_sound_freq = val;
+                } else if (g_creator_param_index == 1) {
+                    if (strcasecmp(g_creator_input_buffer, "Triangle") == 0 ||
+                        strcasecmp(g_creator_input_buffer, "Sawtooth") == 0 ||
+                        strcasecmp(g_creator_input_buffer, "Pulse") == 0 ||
+                        strcasecmp(g_creator_input_buffer, "Noise") == 0) {
+                        strncpy(g_creator_sound_wave, g_creator_input_buffer, sizeof(g_creator_sound_wave) - 1);
+                        g_creator_sound_wave[sizeof(g_creator_sound_wave) - 1] = '\0';
+                        if (g_creator_sound_wave[0] >= 'a' && g_creator_sound_wave[0] <= 'z') {
+                            g_creator_sound_wave[0] -= 32;
+                        }
+                    }
+                }
+            } else if (g_creator_selection == 2) {
+                if (g_creator_param_index == 0) {
+                    g_creator_sprite_x = atoi(g_creator_input_buffer);
+                } else if (g_creator_param_index == 1) {
+                    g_creator_sprite_y = atoi(g_creator_input_buffer);
+                } else if (g_creator_param_index == 2) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val >= 0 && val <= 15) g_creator_sprite_color = val;
+                }
+            } else if (g_creator_selection == 0) {
+                if (g_creator_param_index == 0) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val >= 0 && val <= 15) g_creator_maze_bg = val;
+                } else if (g_creator_param_index == 1) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val >= 0 && val <= 15) g_creator_maze_border = val;
+                } else if (g_creator_param_index == 2) {
+                    strncpy(g_creator_maze_char1, g_creator_input_buffer, sizeof(g_creator_maze_char1) - 1);
+                    g_creator_maze_char1[sizeof(g_creator_maze_char1) - 1] = '\0';
+                } else if (g_creator_param_index == 3) {
+                    strncpy(g_creator_maze_char2, g_creator_input_buffer, sizeof(g_creator_maze_char2) - 1);
+                    g_creator_maze_char2[sizeof(g_creator_maze_char2) - 1] = '\0';
+                }
+            } else if (g_creator_selection == 4) {
+                if (g_creator_param_index == 0) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val >= 0 && val <= 255) g_creator_raster_line = val;
+                } else if (g_creator_param_index == 1) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val >= 0 && val <= 15) g_creator_raster_color = val;
+                }
+            } else if (g_creator_selection == 5) {
+                if (g_creator_param_index == 0) {
+                    int val = atoi(g_creator_input_buffer);
+                    if (val == 1 || val == 2) g_creator_joystick_port = val;
+                }
+            } else if (g_creator_selection == 6) {
+                int val = atoi(g_creator_input_buffer);
+                if (g_creator_param_index == 0 && val >= 10 && val <= 13) g_creator_concept_v1 = val;
+                else if (g_creator_param_index == 1 && val >= 128 && val <= 255) g_creator_concept_f1 = val;
+                else if (g_creator_param_index == 2 && val >= 1 && val <= 255) g_creator_concept_d1 = val;
+                else if (g_creator_param_index == 3 && val >= 10 && val <= 13) g_creator_concept_v2 = val;
+                else if (g_creator_param_index == 4 && val >= 128 && val <= 255) g_creator_concept_f2 = val;
+                else if (g_creator_param_index == 5 && val >= 1 && val <= 255) g_creator_concept_d2 = val;
+                else if (g_creator_param_index == 6 && val >= 10 && val <= 13) g_creator_concept_v3 = val;
+                else if (g_creator_param_index == 7 && val >= 128 && val <= 255) g_creator_concept_f3 = val;
+                else if (g_creator_param_index == 8 && val >= 1 && val <= 255) g_creator_concept_d3 = val;
+            }
+            g_creator_editing_value = false;
+            redraw_creator_screen();
+        } else if (ch == 27) {
+            g_creator_editing_value = false;
+            redraw_creator_screen();
+        } else if (ch == 127 || ch == '\b') {
+            if (g_creator_input_len > 0) {
+                g_creator_input_len--;
+                g_creator_input_buffer[g_creator_input_len] = '\0';
+            }
+            redraw_creator_screen();
+        } else if (ch >= 32 && ch < 127) {
+            if (g_creator_input_len < 30) {
+                g_creator_input_buffer[g_creator_input_len++] = ch;
+                g_creator_input_buffer[g_creator_input_len] = '\0';
+            }
+            redraw_creator_screen();
+        }
+        return;
+    }
+
+    if (g_creator_step == 0) {
+        if (ch == 'u' || ch == 'U') {
+            if (g_creator_selection > 0) g_creator_selection--;
+            redraw_creator_screen();
+        } else if (ch == 'd' || ch == 'D') {
+            if (g_creator_selection < 6) g_creator_selection++;
+            redraw_creator_screen();
+        } else if (ch == '\n' || ch == '\r') {
+            g_creator_step = 1;
+            g_creator_param_index = 0;
+            redraw_creator_screen();
+        }
+    } else if (g_creator_step == 1) {
+        int max_params = 1;
+        if (g_creator_selection == 0) max_params = 6;
+        else if (g_creator_selection == 1) max_params = 4;
+        else if (g_creator_selection == 2) max_params = 5;
+        else if (g_creator_selection == 4) max_params = 4;
+        else if (g_creator_selection == 5) max_params = 3;
+        else if (g_creator_selection == 6) max_params = 11;
+        
+        if (ch == 'u' || ch == 'U') {
+            if (g_creator_param_index > 0) g_creator_param_index--;
+            redraw_creator_screen();
+        } else if (ch == 'd' || ch == 'D') {
+            if (g_creator_param_index < max_params - 1) g_creator_param_index++;
+            redraw_creator_screen();
+        } else if (ch == '\n' || ch == '\r') {
+            if (g_creator_param_index == max_params - 1) {
+                char cmd[1024];
+                const char *types[7] = { "MAZE", "SOUND", "SPRITE", "CHARSET", "RASTER", "JOYSTICK", "CONCEPT" };
+                if (g_creator_compact) {
+                    snprintf(cmd, sizeof(cmd), "HURWOOD %s STAGE COMPACT", types[g_creator_selection]);
+                } else {
+                    snprintf(cmd, sizeof(cmd), "HURWOOD %s STAGE", types[g_creator_selection]);
+                }
+                execute_command(cmd);
+                g_creator_step = 2;
+                redraw_creator_screen();
+            } else {
+                if (g_creator_selection == 0) {
+                    if (g_creator_param_index == 4) {
+                        g_creator_compact = !g_creator_compact;
+                        redraw_creator_screen();
+                    } else {
+                        g_creator_editing_value = true;
+                        g_creator_input_len = 0;
+                        g_creator_input_buffer[0] = '\0';
+                        if (g_creator_param_index == 0) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_maze_bg);
+                        else if (g_creator_param_index == 1) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_maze_border);
+                        else if (g_creator_param_index == 2) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%s", g_creator_maze_char1);
+                        else if (g_creator_param_index == 3) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%s", g_creator_maze_char2);
+                        g_creator_input_len = strlen(g_creator_input_buffer);
+                        redraw_creator_screen();
+                    }
+                } else if (g_creator_selection == 1) {
+                    if (g_creator_param_index == 2) {
+                        g_creator_compact = !g_creator_compact;
+                        redraw_creator_screen();
+                    } else {
+                        g_creator_editing_value = true;
+                        g_creator_input_len = 0;
+                        g_creator_input_buffer[0] = '\0';
+                        if (g_creator_param_index == 0) {
+                            snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_sound_freq);
+                            g_creator_input_len = strlen(g_creator_input_buffer);
+                        } else if (g_creator_param_index == 1) {
+                            snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%s", g_creator_sound_wave);
+                            g_creator_input_len = strlen(g_creator_input_buffer);
+                        }
+                        redraw_creator_screen();
+                    }
+                } else if (g_creator_selection == 2) {
+                    if (g_creator_param_index == 3) {
+                        g_creator_compact = !g_creator_compact;
+                        redraw_creator_screen();
+                    } else {
+                        g_creator_editing_value = true;
+                        g_creator_input_len = 0;
+                        g_creator_input_buffer[0] = '\0';
+                        if (g_creator_param_index == 0) {
+                            snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_sprite_x);
+                            g_creator_input_len = strlen(g_creator_input_buffer);
+                        } else if (g_creator_param_index == 1) {
+                            snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_sprite_y);
+                            g_creator_input_len = strlen(g_creator_input_buffer);
+                        } else if (g_creator_param_index == 2) {
+                            snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_sprite_color);
+                            g_creator_input_len = strlen(g_creator_input_buffer);
+                        }
+                        redraw_creator_screen();
+                    }
+                } else if (g_creator_selection == 4) {
+                    if (g_creator_param_index == 2) {
+                        g_creator_compact = !g_creator_compact;
+                        redraw_creator_screen();
+                    } else {
+                        g_creator_editing_value = true;
+                        g_creator_input_len = 0;
+                        g_creator_input_buffer[0] = '\0';
+                        if (g_creator_param_index == 0) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_raster_line);
+                        else if (g_creator_param_index == 1) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_raster_color);
+                        g_creator_input_len = strlen(g_creator_input_buffer);
+                        redraw_creator_screen();
+                    }
+                } else if (g_creator_selection == 5) {
+                    if (g_creator_param_index == 1) {
+                        g_creator_compact = !g_creator_compact;
+                        redraw_creator_screen();
+                    } else {
+                        g_creator_editing_value = true;
+                        g_creator_input_len = 0;
+                        g_creator_input_buffer[0] = '\0';
+                        if (g_creator_param_index == 0) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_joystick_port);
+                        g_creator_input_len = strlen(g_creator_input_buffer);
+                        redraw_creator_screen();
+                    }
+                } else if (g_creator_selection == 6) {
+                    if (g_creator_param_index == 9) {
+                        g_creator_compact = !g_creator_compact;
+                        redraw_creator_screen();
+                    } else {
+                        g_creator_editing_value = true;
+                        g_creator_input_len = 0;
+                        g_creator_input_buffer[0] = '\0';
+                        if (g_creator_param_index == 0) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_v1);
+                        else if (g_creator_param_index == 1) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_f1);
+                        else if (g_creator_param_index == 2) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_d1);
+                        else if (g_creator_param_index == 3) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_v2);
+                        else if (g_creator_param_index == 4) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_f2);
+                        else if (g_creator_param_index == 5) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_d2);
+                        else if (g_creator_param_index == 6) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_v3);
+                        else if (g_creator_param_index == 7) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_f3);
+                        else if (g_creator_param_index == 8) snprintf(g_creator_input_buffer, sizeof(g_creator_input_buffer), "%d", g_creator_concept_d3);
+                        g_creator_input_len = strlen(g_creator_input_buffer);
+                        redraw_creator_screen();
+                    }
+                }
+            }
+        }
+    } else if (g_creator_step == 2) {
+        if (ch == '\n' || ch == '\r') {
+            g_creator_step = 0;
+            g_creator_selection = 0;
+            g_editor_mode = MODE_TERMINAL;
+            execute_command("GO MENU");
+        }
     }
 }
 
@@ -1778,6 +2400,8 @@ static void handle_slinkybear_input(char ch) {
     }
     
     if (moved) {
+        printf("\x07");
+        fflush(stdout);
         if (next_row < 0 || next_row > 4 || next_col < 0 || next_col > next_row) {
             g_slinky_lives--;
             if (g_slinky_lives <= 0) {
@@ -1812,6 +2436,1201 @@ static void handle_slinkybear_input(char ch) {
         redraw_slinkybear_screen();
     }
 }
+
+static void trigger_alpiner_speech(const char *phrase) {
+    strncpy(g_alpiner_speech, phrase, sizeof(g_alpiner_speech) - 1);
+    g_alpiner_speech[sizeof(g_alpiner_speech) - 1] = '\0';
+    g_alpiner_speech_ticks = 20;
+    g_alpiner_tms5220_status = 0x40; // TS=1
+    g_alpiner_tms5220_cmd = 0x50; // Speak External
+    g_alpiner_tms5220_fifo = 16;
+    printf("\x07");
+    fflush(stdout);
+}
+
+static void redraw_alpiner_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    const char *mountain_names[] = {
+        "Mt. Hood",
+        "Mt. Kilimanjaro",
+        "Mt. Everest",
+        "Mt. McKinley (Denali)",
+        "Matterhorn",
+        "Mt. Kenya"
+    };
+    const char *mt_name = mountain_names[(g_alpiner_mountain - 1) % 6];
+    
+    snprintf(buf, sizeof(buf),
+        "==============================================================\r\n"
+        "      ALPINER (TI-99/4A TMS5220 Speech Synth Demo)            \r\n"
+        "==============================================================\r\n"
+        " Mountain: %s   Score: %05d   Lives: %d\r\n"
+        "==============================================================\r\n\r\n",
+        mt_name, g_alpiner_score, g_alpiner_lives);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int y = 1; y <= 12; y++) {
+        int left_boundary = 22 - y;
+        int right_boundary = 22 + y;
+        
+        for (int x = 0; x < left_boundary; x++) {
+            lau_vram_write_char(g_vram, ' ');
+        }
+        lau_vram_write_char(g_vram, '/');
+        
+        for (int x = left_boundary + 1; x < right_boundary; x++) {
+            if (g_alpiner_player_x == x && g_alpiner_player_y == y) {
+                lau_vram_write_string(g_vram, "\x1b[1;32mP\x1b[0m", 9);
+            } else if (g_alpiner_yeti_x == x && g_alpiner_yeti_y == y) {
+                lau_vram_write_string(g_vram, "\x1b[1;35mY\x1b[0m", 9);
+            } else if (g_alpiner_rock_x == x && g_alpiner_rock_y == y) {
+                lau_vram_write_string(g_vram, "\x1b[1;31m*\x1b[0m", 9);
+            } else if (y == 12) {
+                lau_vram_write_char(g_vram, '_');
+            } else if (y == 1 && x == 22) {
+                lau_vram_write_string(g_vram, "\x1b[1;33mF\x1b[0m", 9);
+            } else if ((x + y) % 9 == 0) {
+                lau_vram_write_char(g_vram, 't');
+            } else {
+                lau_vram_write_char(g_vram, ' ');
+            }
+        }
+        lau_vram_write_char(g_vram, '\\');
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+    
+    lau_vram_write_string(g_vram, "\r\n==============================================================\r\n", 64);
+    
+    char tms_status_str[128];
+    snprintf(tms_status_str, sizeof(tms_status_str),
+        " TS=1 (Talk Status) | BE=%d (Buf Empty) | BL=%d (Buf Low) | CMD=0x%02X\r\n",
+        (g_alpiner_tms5220_status & 0x01) ? 1 : 0,
+        (g_alpiner_tms5220_status & 0x02) ? 1 : 0,
+        g_alpiner_tms5220_cmd);
+        
+    lau_vram_write_string(g_vram, " [TI TMS5220 LPC SPEECH CHIP EMULATION]\r\n", 41);
+    lau_vram_write_string(g_vram, tms_status_str, strlen(tms_status_str));
+    
+    if (g_alpiner_speech_ticks > 0) {
+        snprintf(buf, sizeof(buf), " TMS5220 Speech Output: \x1b[1;33m\"%s\"\x1b[0m\r\n", g_alpiner_speech);
+    } else {
+        snprintf(buf, sizeof(buf), " TMS5220 Speech Output: (idle)\r\n");
+    }
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    lau_vram_write_string(g_vram, "==============================================================\r\n", 64);
+    lau_vram_write_string(g_vram, " [Arrow Keys / W,A,S,D to climb | ESC to return to menu]\r\n", 57);
+}
+
+static void update_alpiner_game(void) {
+    if (!g_alpiner_active) return;
+    
+    static int game_tick = 0;
+    game_tick++;
+    
+    if (g_alpiner_speech_ticks > 0) {
+        g_alpiner_speech_ticks--;
+        if (g_alpiner_speech_ticks == 0) {
+            g_alpiner_tms5220_status = 0x02; // BE=1
+            g_alpiner_tms5220_cmd = 0x00;
+            g_alpiner_tms5220_fifo = 0;
+        }
+    }
+    
+    if (game_tick % 3 == 0) {
+        g_alpiner_rock_y++;
+        if (g_alpiner_rock_y > 12) {
+            g_alpiner_rock_y = 1;
+            g_alpiner_rock_x = 22 + (rand() % 3 - 1);
+        }
+    }
+    
+    if (game_tick % 8 == 0) {
+        int dir = rand() % 5;
+        if (dir == 0 && g_alpiner_yeti_x > 22 - g_alpiner_yeti_y) g_alpiner_yeti_x--;
+        else if (dir == 1 && g_alpiner_yeti_x < 22 + g_alpiner_yeti_y) g_alpiner_yeti_x++;
+        else if (dir == 2 && g_alpiner_yeti_y > 1) g_alpiner_yeti_y--;
+        else if (dir == 3 && g_alpiner_yeti_y < 12) g_alpiner_yeti_y++;
+    }
+    
+    if (g_alpiner_player_x == g_alpiner_rock_x && g_alpiner_player_y == g_alpiner_rock_y) {
+        g_alpiner_lives--;
+        trigger_alpiner_speech("TIMBER!");
+        g_alpiner_player_x = 22;
+        g_alpiner_player_y = 12;
+        if (g_alpiner_lives <= 0) {
+            g_alpiner_lives = 3;
+            g_alpiner_score = 0;
+            g_alpiner_mountain = 1;
+            trigger_alpiner_speech("OH NO!");
+        }
+    }
+    
+    if (g_alpiner_player_x == g_alpiner_yeti_x && g_alpiner_player_y == g_alpiner_yeti_y) {
+        g_alpiner_lives--;
+        trigger_alpiner_speech("OH NO!");
+        g_alpiner_player_x = 22;
+        g_alpiner_player_y = 12;
+        if (g_alpiner_lives <= 0) {
+            g_alpiner_lives = 3;
+            g_alpiner_score = 0;
+            g_alpiner_mountain = 1;
+        }
+    }
+    
+    if (game_tick % 2 == 0) {
+        redraw_alpiner_screen();
+    }
+}
+
+static void handle_alpiner_input(char ch) {
+    if (ch == '\x1b') {
+        g_alpiner_active = false;
+        g_editor_mode = MODE_TERMINAL;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "CIS: ALPINER exited.\r\n", 22);
+        return;
+    }
+    
+    int next_x = g_alpiner_player_x;
+    int next_y = g_alpiner_player_y;
+    bool moved = false;
+    
+    if (ch == 'a' || ch == 'A' || ch == 'j' || ch == 'J') {
+        next_x--;
+        moved = true;
+    } else if (ch == 'd' || ch == 'D' || ch == 'l' || ch == 'L') {
+        next_x++;
+        moved = true;
+    } else if (ch == 'w' || ch == 'W' || ch == 'i' || ch == 'I') {
+        next_y--;
+        moved = true;
+    } else if (ch == 's' || ch == 'S' || ch == 'k' || ch == 'K') {
+        next_y++;
+        moved = true;
+    }
+    
+    if (moved) {
+        if (next_y < 1) next_y = 1;
+        if (next_y > 12) next_y = 12;
+        int left_boundary = 22 - next_y;
+        int right_boundary = 22 + next_y;
+        if (next_x < left_boundary + 1) next_x = left_boundary + 1;
+        if (next_x > right_boundary - 1) next_x = right_boundary - 1;
+        
+        g_alpiner_player_x = next_x;
+        g_alpiner_player_y = next_y;
+        
+        if (rand() % 10 == 0) {
+            trigger_alpiner_speech("GOIN' UP!");
+        }
+        
+        if (g_alpiner_player_y == 1 && g_alpiner_player_x == 22) {
+            g_alpiner_score += 500;
+            g_alpiner_mountain++;
+            if (g_alpiner_mountain > 6) g_alpiner_mountain = 1;
+            g_alpiner_player_x = 22;
+            g_alpiner_player_y = 12;
+            trigger_alpiner_speech("ALPINER!");
+        }
+        
+        redraw_alpiner_screen();
+    }
+}
+
+static void save_checklist(void) {
+    FILE *f = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/checklist_data.txt", "w");
+    if (!f) {
+        strncpy(g_checklist_status_msg, "Error: Could not save file.", sizeof(g_checklist_status_msg) - 1);
+        return;
+    }
+    for (int i = 0; i < g_checklist_count; i++) {
+        fprintf(f, "[%c] %s | %s\n", g_checklist_items[i].checked ? 'X' : ' ', g_checklist_items[i].category, g_checklist_items[i].text);
+    }
+    fclose(f);
+    strncpy(g_checklist_status_msg, "Checklist saved successfully.", sizeof(g_checklist_status_msg) - 1);
+}
+
+static void load_checklist(void) {
+    FILE *f = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/checklist_data.txt", "r");
+    if (!f) {
+        strncpy(g_checklist_status_msg, "No saved checklist found.", sizeof(g_checklist_status_msg) - 1);
+        return;
+    }
+    g_checklist_count = 0;
+    char line[256];
+    while (fgets(line, sizeof(line), f) && g_checklist_count < 30) {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strlen(line) < 6) continue;
+        
+        bool checked = (line[1] == 'X' || line[1] == 'x');
+        char *bar = strchr(line + 4, '|');
+        if (!bar) continue;
+        *bar = '\0';
+        
+        char *cat = line + 4;
+        while (*cat == ' ') cat++;
+        char *cat_end = bar - 1;
+        while (cat_end > cat && *cat_end == ' ') {
+            *cat_end = '\0';
+            cat_end--;
+        }
+        
+        char *txt = bar + 1;
+        while (*txt == ' ') txt++;
+        
+        g_checklist_items[g_checklist_count].checked = checked;
+        snprintf(g_checklist_items[g_checklist_count].category, sizeof(g_checklist_items[g_checklist_count].category), "%.31s", cat);
+        snprintf(g_checklist_items[g_checklist_count].text, sizeof(g_checklist_items[g_checklist_count].text), "%.63s", txt);
+        
+        g_checklist_count++;
+    }
+    fclose(f);
+    g_checklist_cursor = 0;
+    strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
+}
+
+static void init_construction_co(void) {
+    g_cc_crane_x = 5.0;
+    g_cc_crane_y = 1.0;
+    g_cc_velocity_x = 0.0;
+    g_cc_velocity_y = 0.0;
+    g_cc_has_cargo = 0;
+    g_cc_score = 0;
+    g_cc_fuel = 100.0;
+    strncpy(g_cc_status, "Drone flight initialized. Load cargo blocks.", sizeof(g_cc_status) - 1);
+    
+    // Clear and build setup
+    for (int y = 0; y < 10; y++) {
+        for (int x = 0; x < 10; x++) {
+            g_cc_grid[y][x] = 0;
+        }
+    }
+    // Set targets for construction scaffolding at the bottom rows
+    g_cc_grid[9][3] = 2; // Target 1
+    g_cc_grid[9][4] = 2; // Target 2
+    g_cc_grid[9][5] = 2; // Target 3
+    g_cc_grid[9][6] = 2; // Target 4
+    g_cc_grid[8][4] = 2; // Target 5
+    g_cc_grid[8][5] = 2; // Target 6
+}
+
+static void redraw_construction_co_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        AHOY! CONSTRUCTION CO: CARGO DRONE FLIGHT SIMULATOR          \r\n"
+             "====================================================================\r\n"
+             "   [POSITION  : X:%3.1f Y:%3.1f]     [VELOCITY  : VX:%4.2f VY:%4.2f]\r\n"
+             "   [CARGO LOAD: %s]             [DRONE FUEL: %5.1f %%]\r\n"
+             "   [SCAFFOLDS : %d / 6 BUILT]        [BUILD SCORE: %d PTS]\r\n"
+             "====================================================================\r\n",
+             g_cc_crane_x, g_cc_crane_y, g_cc_velocity_x, g_cc_velocity_y,
+             g_cc_has_cargo ? "HEAVY BLOCK" : "EMPTY      ", g_cc_fuel, g_cc_score, g_cc_score * 100);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render 10x10 Building Grid
+    for (int y = 0; y < 10; y++) {
+        char grid_line[64];
+        int pos = 0;
+        grid_line[pos++] = ' ';
+        grid_line[pos++] = ' ';
+        grid_line[pos++] = '|';
+        for (int x = 0; x < 10; x++) {
+            int cx = (int)(g_cc_crane_x + 0.5);
+            int cy = (int)(g_cc_crane_y + 0.5);
+            
+            if (y == cy && x == cx) {
+                grid_line[pos++] = ' ';
+                grid_line[pos++] = g_cc_has_cargo ? 'H' : 'Y'; // Drone representation
+                grid_line[pos++] = ' ';
+            } else {
+                int cell = g_cc_grid[y][x];
+                if (cell == 1) {
+                    grid_line[pos++] = '[';
+                    grid_line[pos++] = '#'; // Built scaffold
+                    grid_line[pos++] = ']';
+                } else if (cell == 2) {
+                    grid_line[pos++] = ' ';
+                    grid_line[pos++] = '?'; // Targeted scaffolding spot
+                    grid_line[pos++] = ' ';
+                } else if (y == 2 && x == 1) {
+                    grid_line[pos++] = '(';
+                    grid_line[pos++] = 'L'; // Loading Pad
+                    grid_line[pos++] = ')';
+                } else {
+                    grid_line[pos++] = ' ';
+                    grid_line[pos++] = '.';
+                    grid_line[pos++] = ' ';
+                }
+            }
+        }
+        grid_line[pos++] = '|';
+        grid_line[pos++] = '\r';
+        grid_line[pos++] = '\n';
+        grid_line[pos] = '\0';
+        lau_vram_write_string(g_vram, grid_line, strlen(grid_line));
+    }
+    
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_cc_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [W/S] Vertical Lift [A/D] Horizontal Move [SPACE] Grab/Drop [ESC] Exit\r\n", 84);
+}
+
+static void handle_construction_co_input(char ch) {
+    if (ch == 27) { // ESC -> Exit to terminal mode
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'w' || ch == 'W') {
+        g_cc_velocity_y -= 0.6; // Thrust up (grid goes 0 to 9 down, so negative is up!)
+        strncpy(g_cc_status, "Drone vertical engine burn.", sizeof(g_cc_status) - 1);
+    } else if (ch == 's' || ch == 'S') {
+        g_cc_velocity_y += 0.6; // Thrust down
+        strncpy(g_cc_status, "Descending thrusters activated.", sizeof(g_cc_status) - 1);
+    } else if (ch == 'a' || ch == 'A') {
+        g_cc_velocity_x -= 0.6; // Thrust left
+        strncpy(g_cc_status, "Left steering exhaust active.", sizeof(g_cc_status) - 1);
+    } else if (ch == 'd' || ch == 'D') {
+        g_cc_velocity_x += 0.6; // Thrust right
+        strncpy(g_cc_status, "Right steering exhaust active.", sizeof(g_cc_status) - 1);
+    } else if (ch == ' ') {
+        int cx = (int)(g_cc_crane_x + 0.5);
+        int cy = (int)(g_cc_crane_y + 0.5);
+        
+        if (g_cc_has_cargo) {
+            // Drop cargo
+            if (cy >= 0 && cy < 10 && cx >= 0 && cx < 10) {
+                if (g_cc_grid[cy][cx] == 2) {
+                    g_cc_grid[cy][cx] = 1; // Scaffold successfully built
+                    g_cc_score++;
+                    g_cc_has_cargo = 0;
+                    strncpy(g_cc_status, "SUCCESS: Scaffold block dropped at target coordinate!", sizeof(g_cc_status) - 1);
+                } else {
+                    strncpy(g_cc_status, "WARNING: Block dropped in wrong location! Lost cargo.", sizeof(g_cc_status) - 1);
+                    g_cc_has_cargo = 0;
+                }
+            }
+        } else {
+            // Grab cargo at Loading Pad (y:2, x:1)
+            if (cy == 2 && cx == 1) {
+                g_cc_has_cargo = 1;
+                strncpy(g_cc_status, "CARGO LOADED: Heavy block attached to flight harness.", sizeof(g_cc_status) - 1);
+            } else {
+                strncpy(g_cc_status, "ERROR: No cargo blocks found here. Fly to Loading Pad (L).", sizeof(g_cc_status) - 1);
+            }
+        }
+    }
+    redraw_construction_co_screen();
+}
+
+static void update_construction_co_simulation(void) {
+    if (g_cc_fuel > 0.0) {
+        // Thrust consumes fuel
+        double consumption = 0.01;
+        if (g_cc_has_cargo) consumption *= 1.8; // Carrying cargo burns more fuel!
+        g_cc_fuel -= consumption;
+        if (g_cc_fuel < 0.0) g_cc_fuel = 0.0;
+    } else {
+        g_cc_velocity_x = 0.0;
+        g_cc_velocity_y = 0.0;
+        strncpy(g_cc_status, "WARNING: OUT OF FUEL! Cargo drone grounded.", sizeof(g_cc_status) - 1);
+    }
+
+    // Apply gravity
+    g_cc_velocity_y += 0.08; // Gravity drift downwards
+
+    // Carry mass increases momentum
+    double drag = g_cc_has_cargo ? 0.95 : 0.9;
+    g_cc_velocity_x *= drag;
+    g_cc_velocity_y *= drag;
+
+    g_cc_crane_x += g_cc_velocity_x;
+    g_cc_crane_y += g_cc_velocity_y;
+
+    // Boundary constraints
+    if (g_cc_crane_x < 0.0) { g_cc_crane_x = 0.0; g_cc_velocity_x = 0.0; }
+    if (g_cc_crane_x > 9.0) { g_cc_crane_x = 9.0; g_cc_velocity_x = 0.0; }
+    if (g_cc_crane_y < 0.0) { g_cc_crane_y = 0.0; g_cc_velocity_y = 0.0; }
+    if (g_cc_crane_y > 9.0) {
+        g_cc_crane_y = 9.0;
+        g_cc_velocity_y = 0.0;
+        if (g_cc_velocity_y > 1.5) {
+            strncpy(g_cc_status, "CRASH: Hard landing! Hull integrity damaged.", sizeof(g_cc_status) - 1);
+        }
+    }
+}
+
+static void init_spacepatrol(void) {
+    g_sp_alt = 10000.0;
+    g_sp_speed = 350.0;
+    g_sp_pitch = 0.0;
+    g_sp_yaw = 0.0;
+    g_sp_throttle = 60;
+    g_sp_fuel = 95.5;
+    g_sp_shields = 100.0;
+    g_sp_target_dist = 5000.0;
+    strncpy(g_sp_status, "Orbit entry stabilized. Patrol route active.", sizeof(g_sp_status) - 1);
+}
+
+static void redraw_spacepatrol_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[2048];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        AHOY! SPACE PATROL: FLIGHT DYNAMICS PILOT DECK              \r\n"
+             "====================================================================\r\n"
+             "   [ALTITUDE : %8.1f M]            [AIRSPEED : %5.1f MPS]\r\n"
+             "   [PITCH    : %8.2f DEG]          [YAW      : %5.2f DEG]\r\n"
+             "   [THROTTLE : %8d %%]            [FUEL     : %5.1f GAL]\r\n"
+             "   [SHIELDS  : %8.1f %%]            [TARGET   : %5.1f M]\r\n"
+             "====================================================================\r\n",
+             g_sp_alt, g_sp_speed, g_sp_pitch, g_sp_yaw, g_sp_throttle, g_sp_fuel, g_sp_shields, g_sp_target_dist);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Draw simple ascii wireframe cockpit view
+    lau_vram_write_string(g_vram, 
+         "  +--------------------------------------------------------------+\r\n"
+         "  |   *                .               *             .        *  |\r\n"
+         "  |         .                 *               *           .      |\r\n", 217);
+
+    // Draw dynamic crosshair based on pitch and yaw offsets
+    char cockpit_row[128];
+    int cursor_col = 32 + (int)(g_sp_yaw * 1.5);
+    if (cursor_col < 4) cursor_col = 4;
+    if (cursor_col > 60) cursor_col = 60;
+
+    int cursor_row = 3 + (int)(g_sp_pitch * 0.5);
+    if (cursor_row < 1) cursor_row = 1;
+    if (cursor_row > 5) cursor_row = 5;
+
+    for (int r = 1; r <= 5; r++) {
+        int pos = 0;
+        cockpit_row[pos++] = ' ';
+        cockpit_row[pos++] = ' ';
+        cockpit_row[pos++] = '|';
+        for (int c = 1; c <= 62; c++) {
+            if (r == cursor_row && c == cursor_col) {
+                cockpit_row[pos++] = '+'; // crosshair center
+            } else if (r == cursor_row && (c == cursor_col - 1 || c == cursor_col + 1)) {
+                cockpit_row[pos++] = '-';
+            } else if (c == cursor_col && (r == cursor_row - 1 || r == cursor_row + 1)) {
+                cockpit_row[pos++] = '|';
+            } else if ((r + c) % 17 == 0) {
+                cockpit_row[pos++] = '*'; // dynamic starfield drift
+            } else {
+                cockpit_row[pos++] = ' ';
+            }
+        }
+        cockpit_row[pos++] = '|';
+        cockpit_row[pos++] = '\r';
+        cockpit_row[pos++] = '\n';
+        cockpit_row[pos] = '\0';
+        lau_vram_write_string(g_vram, cockpit_row, strlen(cockpit_row));
+    }
+
+    lau_vram_write_string(g_vram, 
+         "  |     *           .                  .              *      .   |\r\n"
+         "  +-----\\____________________[HUD COCKPIT]____________________/--+\r\n", 151);
+
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_sp_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [I/K] Pitch [J/L] Yaw [W/S] Throttle [SPACE] Fire blasters [ESC] Exit\r\n", 84);
+}
+
+static void handle_spacepatrol_input(char ch) {
+    if (ch == 27) { // ESC -> Exit to terminal mode
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    // Input handlers
+    if (ch == 'w' || ch == 'W') {
+        if (g_sp_throttle < 100) g_sp_throttle += 5;
+        strncpy(g_sp_status, "Thrusters burn increased.", sizeof(g_sp_status) - 1);
+    } else if (ch == 's' || ch == 'S') {
+        if (g_sp_throttle > 0) g_sp_throttle -= 5;
+        strncpy(g_sp_status, "Thrusters burn decreased.", sizeof(g_sp_status) - 1);
+    } else if (ch == 'i' || ch == 'I') {
+        g_sp_pitch += 1.0;
+        if (g_sp_pitch > 15.0) g_sp_pitch = 15.0;
+        strncpy(g_sp_status, "Pitching up.", sizeof(g_sp_status) - 1);
+    } else if (ch == 'k' || ch == 'K') {
+        g_sp_pitch -= 1.0;
+        if (g_sp_pitch < -15.0) g_sp_pitch = -15.0;
+        strncpy(g_sp_status, "Pitching down.", sizeof(g_sp_status) - 1);
+    } else if (ch == 'j' || ch == 'J') {
+        g_sp_yaw -= 2.0;
+        if (g_sp_yaw < -20.0) g_sp_yaw = -20.0;
+        strncpy(g_sp_status, "Yawing left.", sizeof(g_sp_status) - 1);
+    } else if (ch == 'l' || ch == 'L') {
+        g_sp_yaw += 2.0;
+        if (g_sp_yaw > 20.0) g_sp_yaw = 20.0;
+        strncpy(g_sp_status, "Yawing right.", sizeof(g_sp_status) - 1);
+    } else if (ch == ' ') {
+        strncpy(g_sp_status, "BLASTERS FIRED! Plasma bursts traveling to target.", sizeof(g_sp_status) - 1);
+        if (g_sp_target_dist > 100.0) {
+            g_sp_target_dist -= 250.0;
+            if (g_sp_target_dist < 0.0) g_sp_target_dist = 0.0;
+        }
+    }
+    redraw_spacepatrol_screen();
+}
+
+static void update_spacepatrol_simulation(void) {
+    // Dynamic updates
+    if (g_sp_fuel > 0.0) {
+        g_sp_fuel -= (g_sp_throttle * 0.002);
+        if (g_sp_fuel < 0.0) g_sp_fuel = 0.0;
+    } else {
+        g_sp_throttle = 0;
+        strncpy(g_sp_status, "WARNING: FUEL DEPLETED! Free drift mode active.", sizeof(g_sp_status) - 1);
+    }
+
+    // Altitude depends on pitch and speed
+    g_sp_alt += (g_sp_speed * sin(g_sp_pitch * M_PI / 180.0) * 0.05);
+    if (g_sp_alt < 0.0) {
+        g_sp_alt = 0.0;
+        g_sp_speed = 0.0;
+        g_sp_shields = 0.0;
+        strncpy(g_sp_status, "CRITICAL: CRASHED ON PLANETARY SURFACE!", sizeof(g_sp_status) - 1);
+    }
+
+    // Speed depends on throttle and pitching gravity drag
+    double target_speed = g_sp_throttle * 6.0;
+    g_sp_speed += (target_speed - g_sp_speed) * 0.1;
+
+    // Slowly reduce target distance if heading towards it
+    if (g_sp_speed > 0.0 && g_sp_target_dist > 0.0) {
+        g_sp_target_dist -= (g_sp_speed * 0.05);
+        if (g_sp_target_dist <= 0.0) {
+            g_sp_target_dist = 8000.0; // spawn next patrol marker
+            strncpy(g_sp_status, "Target marker reached! Locating next waypoint...", sizeof(g_sp_status) - 1);
+        }
+    }
+}
+
+static void init_pte(void) {
+    g_pte_line_count = 1;
+    g_pte_cursor_x = g_pte_left_margin;
+    g_pte_cursor_y = 0;
+    g_pte_edit_margin_mode = 0;
+    for (int i = 0; i < PTE_MAX_LINES; i++) {
+        memset(g_pte_lines[i], ' ', PTE_LINE_WIDTH);
+        g_pte_lines[i][PTE_LINE_WIDTH - 1] = '\0';
+    }
+    strncpy(g_pte_status_msg, "Welcome to PTE! [ESC] Exit [Ctrl+M] Margins [Ctrl+P] Save", sizeof(g_pte_status_msg) - 1);
+}
+
+static void redraw_pte_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        PTE WORD PROCESSOR (Ahoy! Issue 11 Layout Engine)            \r\n"
+             "  Left Margin: %d  |  Right Margin: %d  | Mode: %s\r\n"
+             "====================================================================\r\n\r\n",
+             g_pte_left_margin, g_pte_right_margin, 
+             g_pte_edit_margin_mode == 1 ? "EDIT LEFT MARGIN" : (g_pte_edit_margin_mode == 2 ? "EDIT RIGHT MARGIN" : "TEXT ENTRY"));
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Print text lines showing margin offsets
+    for (int y = 0; y < 15; y++) {
+        char display_line[256];
+        int pos = 0;
+        
+        // Render left margin spacing
+        for (int m = 0; m < g_pte_left_margin; m++) {
+            display_line[pos++] = (y == g_pte_cursor_y && m == g_pte_cursor_x) ? '_' : '.';
+        }
+        
+        // Copy text characters between margins
+        for (int x = g_pte_left_margin; x <= g_pte_right_margin; x++) {
+            char ch = g_pte_lines[y][x];
+            if (y == g_pte_cursor_y && x == g_pte_cursor_x) {
+                display_line[pos++] = '_'; // Cursor marker
+            } else {
+                display_line[pos++] = ch;
+            }
+        }
+        
+        // Render right margin padding
+        display_line[pos++] = '|';
+        display_line[pos++] = '\r';
+        display_line[pos++] = '\n';
+        display_line[pos] = '\0';
+        lau_vram_write_string(g_vram, display_line, strlen(display_line));
+    }
+
+    snprintf(buf, sizeof(buf), "\r\nStatus: %s\r\n", g_pte_status_msg);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void handle_pte_input(char ch) {
+    if (ch == 27) { // ESC -> Exit to terminal mode
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+    
+    // Toggle Margins Edit Mode (Ctrl+M is character code 13 - wait, Enter is 13 too. Let's use 'M' or control key check)
+    // In many terminals, Ctrl+M is received as 13. To prevent clash with Return/Enter, let's use 'm' for toggle when in margin modes.
+    if (g_pte_edit_margin_mode > 0) {
+        if (ch >= '0' && ch <= '9') {
+            int val = ch - '0';
+            if (g_pte_edit_margin_mode == 1) {
+                g_pte_left_margin = val * 5;
+                if (g_pte_left_margin >= g_pte_right_margin) g_pte_left_margin = g_pte_right_margin - 5;
+                g_pte_cursor_x = g_pte_left_margin;
+            } else {
+                g_pte_right_margin = 40 + val * 5;
+                if (g_pte_right_margin >= PTE_LINE_WIDTH - 2) g_pte_right_margin = PTE_LINE_WIDTH - 3;
+                if (g_pte_right_margin <= g_pte_left_margin) g_pte_right_margin = g_pte_left_margin + 5;
+            }
+            g_pte_edit_margin_mode = 0;
+            strncpy(g_pte_status_msg, "Margin updated.", sizeof(g_pte_status_msg) - 1);
+        }
+        redraw_pte_screen();
+        return;
+    }
+
+    if (ch == 13) { // Return -> newline
+        if (g_pte_cursor_y < PTE_MAX_LINES - 1) {
+            g_pte_cursor_y++;
+            g_pte_cursor_x = g_pte_left_margin;
+            if (g_pte_cursor_y >= g_pte_line_count) {
+                g_pte_line_count = g_pte_cursor_y + 1;
+            }
+        }
+    } else if (ch == 127 || ch == 8) { // Backspace
+        if (g_pte_cursor_x > g_pte_left_margin) {
+            g_pte_cursor_x--;
+            g_pte_lines[g_pte_cursor_y][g_pte_cursor_x] = ' ';
+        } else if (g_pte_cursor_y > 0) {
+            g_pte_cursor_y--;
+            g_pte_cursor_x = g_pte_right_margin;
+        }
+    } else if (ch == 16) { // Ctrl+P -> Save text buffer
+        FILE *f = fopen("pte_document.txt", "w");
+        if (f) {
+            for (int y = 0; y < g_pte_line_count; y++) {
+                // Trim trailing space
+                int end = g_pte_right_margin;
+                while (end >= g_pte_left_margin && g_pte_lines[y][end] == ' ') end--;
+                for (int x = g_pte_left_margin; x <= end; x++) {
+                    fputc(g_pte_lines[y][x], f);
+                }
+                fputc('\n', f);
+            }
+            fclose(f);
+            strncpy(g_pte_status_msg, "File pte_document.txt saved successfully.", sizeof(g_pte_status_msg) - 1);
+        } else {
+            strncpy(g_pte_status_msg, "Error writing to file.", sizeof(g_pte_status_msg) - 1);
+        }
+    } else if (ch == 12) { // Ctrl+L -> Change margins
+        // Let's use Ctrl+L to trigger margins config to avoid conflict with Return (13)
+        g_pte_edit_margin_mode = 1;
+        strncpy(g_pte_status_msg, "Press [1-9] to set Left Margin multiplier.", sizeof(g_pte_status_msg) - 1);
+    } else if (ch == 18) { // Ctrl+R -> Right margin config
+        g_pte_edit_margin_mode = 2;
+        strncpy(g_pte_status_msg, "Press [1-9] to set Right Margin multiplier.", sizeof(g_pte_status_msg) - 1);
+    } else if (ch >= 32 && ch < 127) { // Text insertion
+        if (g_pte_cursor_x <= g_pte_right_margin) {
+            g_pte_lines[g_pte_cursor_y][g_pte_cursor_x] = ch;
+            g_pte_cursor_x++;
+            
+            // Auto wrap boundary check (Ahoy! Layout rule)
+            if (g_pte_cursor_x > g_pte_right_margin) {
+                if (g_pte_cursor_y < PTE_MAX_LINES - 1) {
+                    g_pte_cursor_y++;
+                    g_pte_cursor_x = g_pte_left_margin;
+                    if (g_pte_cursor_y >= g_pte_line_count) {
+                        g_pte_line_count = g_pte_cursor_y + 1;
+                    }
+                }
+            }
+        }
+    }
+    redraw_pte_screen();
+}
+
+static void init_checklist(void) {
+    g_checklist_count = 0;
+    g_checklist_cursor = 0;
+    g_checklist_entry_mode = 0;
+    g_checklist_entry_len = 0;
+    g_checklist_entry_buf[0] = '\0';
+    strncpy(g_checklist_status_msg, "Welcome to Checklist! [a] Add [Space] Toggle [d] Delete [s] Save [l] Load", sizeof(g_checklist_status_msg) - 1);
+    
+    g_checklist_items[0].checked = false;
+    strcpy(g_checklist_items[0].category, "General");
+    strcpy(g_checklist_items[0].text, "Learn C64 Machine Language");
+    
+    g_checklist_items[1].checked = true;
+    strcpy(g_checklist_items[1].category, "General");
+    strcpy(g_checklist_items[1].text, "Read Ahoy! Magazine Issue 7");
+    
+    g_checklist_items[2].checked = false;
+    strcpy(g_checklist_items[2].category, "Work");
+    strcpy(g_checklist_items[2].text, "Build Checklist database system");
+    
+    g_checklist_count = 3;
+}
+
+static void redraw_checklist_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==============================================================\r\n"
+        "      CHECKLIST (Ahoy! Issue 7 / Bob Spirko Database)         \r\n"
+        "==============================================================\r\n\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    if (g_checklist_count == 0) {
+        lau_vram_write_string(g_vram, "  <No items in checklist. Press 'a' to add a new item.>\r\n\r\n", 58);
+    } else {
+        for (int i = 0; i < g_checklist_count; i++) {
+            const char *cur = (i == g_checklist_cursor) ? " -> " : "    ";
+            const char *box = g_checklist_items[i].checked ? "[\x1b[32mX\x1b[0m]" : "[\x1b[31m \x1b[0m]";
+            
+            if (i == g_checklist_cursor) {
+                snprintf(buf, sizeof(buf), "\x1b[33m%s%s <%s> %s\x1b[0m\r\n", 
+                         cur, box, g_checklist_items[i].category, g_checklist_items[i].text);
+            } else {
+                snprintf(buf, sizeof(buf), "%s%s <%s> %s\r\n", 
+                         cur, box, g_checklist_items[i].category, g_checklist_items[i].text);
+            }
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+    
+    lau_vram_write_string(g_vram, "==============================================================\r\n", 64);
+    
+    if (g_checklist_entry_mode == 1) {
+        snprintf(buf, sizeof(buf), "  [NEW ITEM DESCRIPTION]: %s_\r\n", g_checklist_entry_buf);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    } else if (g_checklist_entry_mode == 2) {
+        snprintf(buf, sizeof(buf), "  [NEW ITEM CATEGORY]:    %s_\r\n", g_checklist_entry_buf);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    } else if (g_checklist_entry_mode == 3) {
+        snprintf(buf, sizeof(buf), "  [EDIT DESCRIPTION]:     %s_\r\n", g_checklist_entry_buf);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    } else if (g_checklist_entry_mode == 4) {
+        snprintf(buf, sizeof(buf), "  [EDIT CATEGORY]:        %s_\r\n", g_checklist_entry_buf);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    } else {
+        snprintf(buf, sizeof(buf), "  Status: \x1b[1;32m%s\x1b[0m\r\n", g_checklist_status_msg);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    }
+    
+    lau_vram_write_string(g_vram, "==============================================================\r\n", 64);
+    if (g_checklist_entry_mode != 0) {
+        lau_vram_write_string(g_vram, " [Type text and press ENTER | ESC to cancel]\r\n", 45);
+    } else {
+        lau_vram_write_string(g_vram, " [UP/DOWN or W/S: Navigate | SPACE: Toggle | A: Add | E: Edit ]\r\n"
+                                      " [D: Delete | C: Clear | S: Save | L: Load | ESC: Return to Terminal]\r\n", 137);
+    }
+}
+
+static void handle_checklist_input(char ch) {
+    if (g_checklist_entry_mode != 0) {
+        if (ch == '\x1b') {
+            g_checklist_entry_mode = 0;
+            strncpy(g_checklist_status_msg, "Action cancelled.", sizeof(g_checklist_status_msg) - 1);
+            redraw_checklist_screen();
+            return;
+        }
+        
+        if (ch == '\n' || ch == '\r') {
+            if (g_checklist_entry_mode == 1) {
+                if (g_checklist_count < 30) {
+                    snprintf(g_checklist_items[g_checklist_count].text, sizeof(g_checklist_items[g_checklist_count].text), "%s", g_checklist_entry_buf);
+                    g_checklist_items[g_checklist_count].checked = false;
+                }
+                g_checklist_entry_mode = 2;
+                g_checklist_entry_buf[0] = '\0';
+                g_checklist_entry_len = 0;
+            } else if (g_checklist_entry_mode == 2) {
+                if (g_checklist_count < 30) {
+                    if (g_checklist_entry_len == 0) {
+                        strcpy(g_checklist_items[g_checklist_count].category, "General");
+                    } else {
+                        snprintf(g_checklist_items[g_checklist_count].category, sizeof(g_checklist_items[g_checklist_count].category), "%s", g_checklist_entry_buf);
+                    }
+                    g_checklist_count++;
+                    g_checklist_cursor = g_checklist_count - 1;
+                    strncpy(g_checklist_status_msg, "Item added.", sizeof(g_checklist_status_msg) - 1);
+                }
+                g_checklist_entry_mode = 0;
+            } else if (g_checklist_entry_mode == 3) {
+                if (g_checklist_cursor < g_checklist_count) {
+                    snprintf(g_checklist_items[g_checklist_cursor].text, sizeof(g_checklist_items[g_checklist_cursor].text), "%s", g_checklist_entry_buf);
+                    
+                    snprintf(g_checklist_entry_buf, sizeof(g_checklist_entry_buf), "%s", g_checklist_items[g_checklist_cursor].category);
+                    g_checklist_entry_len = strlen(g_checklist_entry_buf);
+                    g_checklist_entry_mode = 4;
+                } else {
+                    g_checklist_entry_mode = 0;
+                }
+            } else if (g_checklist_entry_mode == 4) {
+                if (g_checklist_cursor < g_checklist_count) {
+                    if (g_checklist_entry_len == 0) {
+                        strcpy(g_checklist_items[g_checklist_cursor].category, "General");
+                    } else {
+                        snprintf(g_checklist_items[g_checklist_cursor].category, sizeof(g_checklist_items[g_checklist_cursor].category), "%s", g_checklist_entry_buf);
+                    }
+                    strncpy(g_checklist_status_msg, "Item updated.", sizeof(g_checklist_status_msg) - 1);
+                }
+                g_checklist_entry_mode = 0;
+            }
+            redraw_checklist_screen();
+            return;
+        }
+        
+        if (ch == '\b' || ch == 127) {
+            if (g_checklist_entry_len > 0) {
+                g_checklist_entry_len--;
+                g_checklist_entry_buf[g_checklist_entry_len] = '\0';
+            }
+            redraw_checklist_screen();
+            return;
+        }
+        
+        if (ch >= 32 && ch < 127 && g_checklist_entry_len < 60) {
+            g_checklist_entry_buf[g_checklist_entry_len++] = ch;
+            g_checklist_entry_buf[g_checklist_entry_len] = '\0';
+            redraw_checklist_screen();
+        }
+        return;
+    }
+    
+    if (ch == '\x1b') {
+        g_checklist_active = false;
+        g_editor_mode = MODE_TERMINAL;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "CIS: CHECKLIST database exited.\r\n", 33);
+        return;
+    }
+    
+    if (ch == 'w' || ch == 'W') {
+        if (g_checklist_cursor > 0) {
+            g_checklist_cursor--;
+        }
+        redraw_checklist_screen();
+    } else if (ch == 's' || ch == 'S') {
+        if (g_checklist_cursor < g_checklist_count - 1) {
+            g_checklist_cursor++;
+        }
+        redraw_checklist_screen();
+    } else if (ch == ' ') {
+        if (g_checklist_cursor >= 0 && g_checklist_cursor < g_checklist_count) {
+            g_checklist_items[g_checklist_cursor].checked = !g_checklist_items[g_checklist_cursor].checked;
+        }
+        redraw_checklist_screen();
+    } else if (ch == 'a' || ch == 'A') {
+        if (g_checklist_count >= 30) {
+            strncpy(g_checklist_status_msg, "Checklist full (max 30 items).", sizeof(g_checklist_status_msg) - 1);
+        } else {
+            g_checklist_entry_mode = 1;
+            g_checklist_entry_len = 0;
+            g_checklist_entry_buf[0] = '\0';
+        }
+        redraw_checklist_screen();
+    } else if (ch == 'e' || ch == 'E') {
+        if (g_checklist_cursor >= 0 && g_checklist_cursor < g_checklist_count) {
+            g_checklist_entry_mode = 3;
+            strncpy(g_checklist_entry_buf, g_checklist_items[g_checklist_cursor].text, sizeof(g_checklist_entry_buf) - 1);
+            g_checklist_entry_buf[sizeof(g_checklist_entry_buf) - 1] = '\0';
+            g_checklist_entry_len = strlen(g_checklist_entry_buf);
+        } else {
+            strncpy(g_checklist_status_msg, "No item selected.", sizeof(g_checklist_status_msg) - 1);
+        }
+        redraw_checklist_screen();
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_checklist_cursor >= 0 && g_checklist_cursor < g_checklist_count) {
+            for (int i = g_checklist_cursor; i < g_checklist_count - 1; i++) {
+                g_checklist_items[i] = g_checklist_items[i + 1];
+            }
+            g_checklist_count--;
+            if (g_checklist_cursor >= g_checklist_count && g_checklist_cursor > 0) {
+                g_checklist_cursor = g_checklist_count - 1;
+            }
+            strncpy(g_checklist_status_msg, "Item deleted.", sizeof(g_checklist_status_msg) - 1);
+        }
+        redraw_checklist_screen();
+    } else if (ch == 'c' || ch == 'C') {
+        g_checklist_count = 0;
+        g_checklist_cursor = 0;
+        strncpy(g_checklist_status_msg, "Checklist cleared.", sizeof(g_checklist_status_msg) - 1);
+        redraw_checklist_screen();
+    } else if (ch == 's' || ch == 'S') {
+        save_checklist();
+        redraw_checklist_screen();
+    } else if (ch == 'l' || ch == 'L') {
+        load_checklist();
+        redraw_checklist_screen();
+    }
+}
+
+static void save_job_tree(void) {
+    FILE *f = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/job_tree.txt", "w");
+    if (!f) return;
+    for (int i = 0; i < g_job_nodes_count; i++) {
+        fprintf(f, "%d|%d|%s\n", g_job_nodes[i].yes_child, g_job_nodes[i].no_child, g_job_nodes[i].text);
+    }
+    fclose(f);
+}
+
+static void load_job_tree(void) {
+    FILE *f = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/job_tree.txt", "r");
+    if (!f) {
+        g_job_nodes[0].yes_child = 1;
+        g_job_nodes[0].no_child = 2;
+        strcpy(g_job_nodes[0].text, "Do you work indoors?");
+        
+        g_job_nodes[1].yes_child = -1;
+        g_job_nodes[1].no_child = -1;
+        strcpy(g_job_nodes[1].text, "Doctor");
+        
+        g_job_nodes[2].yes_child = -1;
+        g_job_nodes[2].no_child = -1;
+        strcpy(g_job_nodes[2].text, "Farmer");
+        
+        g_job_nodes_count = 3;
+        return;
+    }
+    g_job_nodes_count = 0;
+    char line[256];
+    while (fgets(line, sizeof(line), f) && g_job_nodes_count < 50) {
+        line[strcspn(line, "\r\n")] = '\0';
+        char *bar1 = strchr(line, '|');
+        if (!bar1) continue;
+        *bar1 = '\0';
+        char *bar2 = strchr(bar1 + 1, '|');
+        if (!bar2) continue;
+        *bar2 = '\0';
+        
+        g_job_nodes[g_job_nodes_count].yes_child = atoi(line);
+        g_job_nodes[g_job_nodes_count].no_child = atoi(bar1 + 1);
+        snprintf(g_job_nodes[g_job_nodes_count].text, sizeof(g_job_nodes[g_job_nodes_count].text), "%s", bar2 + 1);
+        g_job_nodes_count++;
+    }
+    fclose(f);
+}
+
+static void init_job_game(void) {
+    load_job_tree();
+    g_job_current_node = 0;
+    g_job_prev_node = -1;
+    g_job_last_answer_was_yes = false;
+    g_job_submode = 0;
+    g_job_new_name[0] = '\0';
+    g_job_new_question[0] = '\0';
+}
+
+static void redraw_job_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==============================================================\r\n"
+        "      WHAT'S MY JOB? (Ahoy! Issue 7 / B.W. Behling Guessing)  \r\n"
+        "==============================================================\r\n\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    if (g_job_submode == 0) {
+        snprintf(buf, sizeof(buf), "  Question: \x1b[1;36m%s\x1b[0m\r\n\r\n", g_job_nodes[g_job_current_node].text);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, "  [Press Y for YES | N for NO]\r\n", 30);
+    } else if (g_job_submode == 1) {
+        snprintf(buf, sizeof(buf), "  My guess is: \x1b[1;33m%s\x1b[0m!\r\n\r\n", g_job_nodes[g_job_current_node].text);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, "  Is this correct? [Press Y for YES | N for NO]\r\n", 48);
+    } else if (g_job_submode == 2) {
+        snprintf(buf, sizeof(buf), "  I give up! What is the job? \r\n");
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        snprintf(buf, sizeof(buf), "  > %s_\r\n", g_job_new_name);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, "\r\n  [Type job name and press ENTER]\r\n", 37);
+    } else if (g_job_submode == 3) {
+        snprintf(buf, sizeof(buf), "  Help me learn! Type a question that distinguishes a\r\n"
+                                   "  \x1b[1;32m%s\x1b[0m from a \x1b[1;31m%s\x1b[0m:\r\n",
+                                   g_job_new_name, g_job_nodes[g_job_current_node].text);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        snprintf(buf, sizeof(buf), "  > %s_\r\n", g_job_new_question);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, "\r\n  [Type question and press ENTER]\r\n", 37);
+    } else if (g_job_submode == 4) {
+        snprintf(buf, sizeof(buf), "  For a \x1b[1;32m%s\x1b[0m, what is the answer to:\r\n"
+                                   "  \"%s\"?\r\n\r\n",
+                                   g_job_new_name, g_job_new_question);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, "  [Press Y for YES | N for NO]\r\n", 30);
+    }
+    
+    lau_vram_write_string(g_vram, "\r\n==============================================================\r\n", 66);
+    lau_vram_write_string(g_vram, " [ESC: Exit back to Terminal Menu]\r\n", 36);
+}
+
+static void handle_job_input(char ch) {
+    if (ch == '\x1b') {
+        g_jobs_active = false;
+        g_editor_mode = MODE_TERMINAL;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "CIS: WHAT'S MY JOB? database exited.\r\n", 38);
+        return;
+    }
+    
+    if (g_job_submode == 0) {
+        if (ch == 'y' || ch == 'Y') {
+            int next = g_job_nodes[g_job_current_node].yes_child;
+            if (next == -1) {
+                g_job_submode = 1;
+            } else {
+                g_job_prev_node = g_job_current_node;
+                g_job_last_answer_was_yes = true;
+                g_job_current_node = next;
+            }
+            redraw_job_screen();
+        } else if (ch == 'n' || ch == 'N') {
+            int next = g_job_nodes[g_job_current_node].no_child;
+            if (next == -1) {
+                g_job_submode = 1;
+            } else {
+                g_job_prev_node = g_job_current_node;
+                g_job_last_answer_was_yes = false;
+                g_job_current_node = next;
+            }
+            redraw_job_screen();
+        }
+    } else if (g_job_submode == 1) {
+        if (ch == 'y' || ch == 'Y') {
+            g_job_submode = 0;
+            g_job_current_node = 0;
+            g_job_prev_node = -1;
+            redraw_job_screen();
+            lau_vram_write_string(g_vram, "\r\n  I knew it! Let's play again.\r\n", 35);
+        } else if (ch == 'n' || ch == 'N') {
+            g_job_submode = 2;
+            g_job_new_name[0] = '\0';
+            redraw_job_screen();
+        }
+    } else if (g_job_submode == 2) {
+        if (ch == '\n' || ch == '\r') {
+            if (strlen(g_job_new_name) > 0) {
+                g_job_submode = 3;
+                g_job_new_question[0] = '\0';
+            }
+            redraw_job_screen();
+            return;
+        }
+        if (ch == '\b' || ch == 127) {
+            int len = strlen(g_job_new_name);
+            if (len > 0) {
+                g_job_new_name[len - 1] = '\0';
+            }
+            redraw_job_screen();
+            return;
+        }
+        int len = strlen(g_job_new_name);
+        if (ch >= 32 && ch < 127 && len < 60) {
+            g_job_new_name[len] = ch;
+            g_job_new_name[len + 1] = '\0';
+            redraw_job_screen();
+        }
+    } else if (g_job_submode == 3) {
+        if (ch == '\n' || ch == '\r') {
+            if (strlen(g_job_new_question) > 0) {
+                g_job_submode = 4;
+            }
+            redraw_job_screen();
+            return;
+        }
+        if (ch == '\b' || ch == 127) {
+            int len = strlen(g_job_new_question);
+            if (len > 0) {
+                g_job_new_question[len - 1] = '\0';
+            }
+            redraw_job_screen();
+            return;
+        }
+        int len = strlen(g_job_new_question);
+        if (ch >= 32 && ch < 127 && len < 120) {
+            g_job_new_question[len] = ch;
+            g_job_new_question[len + 1] = '\0';
+            redraw_job_screen();
+        }
+    } else if (g_job_submode == 4) {
+        if (ch == 'y' || ch == 'Y' || ch == 'n' || ch == 'N') {
+            bool yes_for_new = (ch == 'y' || ch == 'Y');
+            
+            if (g_job_nodes_count < 48) {
+                int old_node_idx = g_job_current_node;
+                int new_job_idx = g_job_nodes_count + 1;
+                g_job_nodes_count += 2;
+                
+                g_job_nodes[new_job_idx].yes_child = -1;
+                g_job_nodes[new_job_idx].no_child = -1;
+                snprintf(g_job_nodes[new_job_idx].text, sizeof(g_job_nodes[new_job_idx].text), "%s", g_job_new_name);
+                
+                int old_leaf_idx = new_job_idx + 1;
+                g_job_nodes_count++;
+                g_job_nodes[old_leaf_idx] = g_job_nodes[old_node_idx];
+                
+                snprintf(g_job_nodes[old_node_idx].text, sizeof(g_job_nodes[old_node_idx].text), "%s", g_job_new_question);
+                if (yes_for_new) {
+                    g_job_nodes[old_node_idx].yes_child = new_job_idx;
+                    g_job_nodes[old_node_idx].no_child = old_leaf_idx;
+                } else {
+                    g_job_nodes[old_node_idx].yes_child = old_leaf_idx;
+                    g_job_nodes[old_node_idx].no_child = new_job_idx;
+                }
+                
+                save_job_tree();
+            }
+            
+            g_job_submode = 0;
+            g_job_current_node = 0;
+            g_job_prev_node = -1;
+            redraw_job_screen();
+        }
+    }
+}
+
+
 
 static void redraw_slinkypanic_screen(void) {
     const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
@@ -1942,10 +3761,14 @@ static void handle_slinkypanic_input(char ch) {
         moved = true;
     } else if (ch == ' ') {
         g_slinky_hole[g_slinky_row][g_slinky_col] = 40;
+        printf("\x07");
+        fflush(stdout);
         redraw_slinkypanic_screen();
     }
     
     if (moved) {
+        printf("\x07");
+        fflush(stdout);
         if (next_row < 0 || next_row > 4 || next_col < 0 || next_col > next_row) {
             g_slinky_lives--;
             if (g_slinky_lives <= 0) {
@@ -2043,9 +3866,9 @@ static void inject_basic_program(const char *raw_basic) {
         }
         // Inject 3-byte sound queue data table at $1000 (4096 decimal)
         uint8_t sound_data[] = {
-            10, 225, 120,
-            11, 240, 60,
-            12, 195, 255,
+            (uint8_t)g_creator_concept_v1, (uint8_t)g_creator_concept_f1, (uint8_t)g_creator_concept_d1,
+            (uint8_t)g_creator_concept_v2, (uint8_t)g_creator_concept_f2, (uint8_t)g_creator_concept_d2,
+            (uint8_t)g_creator_concept_v3, (uint8_t)g_creator_concept_f3, (uint8_t)g_creator_concept_d3,
             0, 0, 0
         };
         for (size_t i = 0; i < sizeof(sound_data); i++) {
@@ -2120,6 +3943,399 @@ static void write_basic_lines(const char *raw_output, bool compact) {
     }
 }
 
+typedef struct {
+    int old_num;
+    int new_num;
+    char text[256];
+} BasicLine;
+
+static void execute_renumber(const char *filename) {
+    // Execute Diyat tax rule via VM (Method 15 selector: 0xd17a57a8)
+    char tax_cmd[128];
+    snprintf(tax_cmd, sizeof(tax_cmd), "YULEXEC \"cpu6502\", \"d17a57a8\"");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, tax_cmd);
+    
+    char *endptr = NULL;
+    uint64_t ret = 0;
+    size_t out_len = strlen(vm.output_buffer);
+    if (out_len >= 16) {
+        ret = strtoull(vm.output_buffer + out_len - 16, &endptr, 16);
+    } else {
+        ret = strtoull(vm.output_buffer, &endptr, 16);
+    }
+    
+    if (ret == 0) {
+        lau_vram_write_string(g_vram, "Error: Diyat tax execution failed. Renumbering requires 10 OTRT units tax paid via standalone Diyat contract.\r\n", 112);
+        return;
+    }
+    
+    lau_vram_write_string(g_vram, "[TAX SUCCESS] Diyat tax of 10 OTRT units verified.\r\n", 53);
+
+    if (!filename || !*filename) {
+        filename = "/home/mariarahel/src/tsfi2/atropa_pulsechain/basic_program.txt";
+    }
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        f = fopen(filename, "w");
+        if (f) {
+            fprintf(f, "10 PRINT \"START\"\n");
+            fprintf(f, "30 PRINT \"LOOP\"\n");
+            fprintf(f, "20 GOSUB 30\n");
+            fprintf(f, "40 GOTO 10\n");
+            fclose(f);
+            f = fopen(filename, "r");
+        }
+    }
+    if (!f) {
+        lau_vram_write_string(g_vram, "Error: Could not open file.\r\n", 29);
+        return;
+    }
+    
+    BasicLine lines[100];
+    int count = 0;
+    char line_buf[512];
+    while (fgets(line_buf, sizeof(line_buf), f) && count < 100) {
+        line_buf[strcspn(line_buf, "\r\n")] = '\0';
+        char *p = line_buf;
+        while (*p == ' ' || *p == '\t') p++;
+        if (isdigit((unsigned char)*p)) {
+            lines[count].old_num = atoi(p);
+            while (isdigit((unsigned char)*p)) p++;
+            while (*p == ' ' || *p == '\t') p++;
+            snprintf(lines[count].text, sizeof(lines[count].text), "%.255s", p);
+            count++;
+        }
+    }
+    fclose(f);
+    
+    if (count == 0) {
+        lau_vram_write_string(g_vram, "Error: No line-numbered BASIC code found.\r\n", 43);
+        return;
+    }
+    
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (lines[j].old_num > lines[j+1].old_num) {
+                BasicLine temp = lines[j];
+                lines[j] = lines[j+1];
+                lines[j+1] = temp;
+            }
+        }
+    }
+    
+    for (int i = 0; i < count; i++) {
+        lines[i].new_num = (i + 1) * 10;
+    }
+    
+    for (int i = 0; i < count; i++) {
+        char new_text[256] = "";
+        char *src = lines[i].text;
+        char *dest = new_text;
+        size_t dest_avail = sizeof(new_text) - 1;
+        
+        while (*src) {
+            bool match = false;
+            int offset = 0;
+            if (strncasecmp(src, "GOTO", 4) == 0) { match = true; offset = 4; }
+            else if (strncasecmp(src, "GOSUB", 5) == 0) { match = true; offset = 5; }
+            else if (strncasecmp(src, "THEN", 4) == 0) { match = true; offset = 4; }
+            
+            if (match) {
+                int copy_len = snprintf(dest, dest_avail, "%.*s", offset, src);
+                if (copy_len > 0) {
+                    dest += copy_len;
+                    dest_avail -= (size_t)copy_len;
+                }
+                src += offset;
+                
+                while (*src == ' ' || *src == '\t') {
+                    if (dest_avail > 0) {
+                        *dest++ = *src;
+                        dest_avail--;
+                    }
+                    src++;
+                }
+                
+                if (isdigit((unsigned char)*src)) {
+                    int ref_num = atoi(src);
+                    while (isdigit((unsigned char)*src)) src++;
+                    
+                    int new_ref = -1;
+                    for (int k = 0; k < count; k++) {
+                        if (lines[k].old_num == ref_num) {
+                            new_ref = lines[k].new_num;
+                            break;
+                        }
+                    }
+                    
+                    if (new_ref != -1) {
+                        int written = snprintf(dest, dest_avail, "%d", new_ref);
+                        if (written > 0) {
+                            dest += written;
+                            dest_avail -= (size_t)written;
+                        }
+                    } else {
+                        int written = snprintf(dest, dest_avail, "%d", ref_num);
+                        if (written > 0) {
+                            dest += written;
+                            dest_avail -= (size_t)written;
+                        }
+                    }
+                }
+            } else {
+                if (dest_avail > 0) {
+                    *dest++ = *src++;
+                    dest_avail--;
+                } else {
+                    break;
+                }
+            }
+        }
+        *dest = '\0';
+        snprintf(lines[i].text, sizeof(lines[i].text), "%.255s", new_text);
+    }
+    
+    f = fopen(filename, "w");
+    if (!f) {
+        lau_vram_write_string(g_vram, "Error: Could not write file.\r\n", 30);
+        return;
+    }
+    
+    char out_buf[1024];
+    lau_vram_write_string(g_vram, "--- RENUMBERING RESULTS ---\r\n", 29);
+    for (int i = 0; i < count; i++) {
+        fprintf(f, "%d %s\n", lines[i].new_num, lines[i].text);
+        snprintf(out_buf, sizeof(out_buf), "%d %s\r\n", lines[i].new_num, lines[i].text);
+        lau_vram_write_string(g_vram, out_buf, strlen(out_buf));
+    }
+    fclose(f);
+    lau_vram_write_string(g_vram, "----------------------------\r\nBASIC renumbering completed.\r\n", 58);
+}
+
+static void execute_minder(const char *args) {
+    if (!args || !*args) {
+        lau_vram_write_string(g_vram, "Usage: MINDER ADD <YYYYMMDD> <memo>\r\n       MINDER LIST <YYYYMMDD>\r\n       MINDER DEL <YYYYMMDD> <index>\r\n", 112);
+        return;
+    }
+    char buf[512];
+    snprintf(buf, sizeof(buf), "%s", args);
+    char *subcmd = strtok(buf, " \t");
+    if (!subcmd) return;
+
+    if (strcasecmp(subcmd, "ADD") == 0) {
+        char *date_str = strtok(NULL, " \t");
+        char *memo_str = strtok(NULL, "");
+        if (!date_str || !memo_str) {
+            lau_vram_write_string(g_vram, "Usage: MINDER ADD <YYYYMMDD> <memo>\r\n", 37);
+            return;
+        }
+        while (*memo_str == ' ' || *memo_str == '\t') memo_str++;
+        uint64_t date = strtoull(date_str, NULL, 10);
+
+        // Pack memo into two 32-byte fields (part1, part2)
+        uint8_t part1[32] = {0};
+        uint8_t part2[32] = {0};
+        size_t memo_len = strlen(memo_str);
+        if (memo_len > 64) memo_len = 64;
+        for (size_t i = 0; i < memo_len; i++) {
+            if (i < 32) part1[i] = (uint8_t)memo_str[i];
+            else part2[i - 32] = (uint8_t)memo_str[i];
+        }
+
+        // Call addReminder(date, part1, part2)
+        uint8_t cd[100];
+        cd[0] = 0x5a; cd[1] = 0x55; cd[2] = 0x7b; cd[3] = 0x7c;
+        for (int i = 0; i < 32; i++) {
+            cd[4 + i] = (uint8_t)((date >> ((31 - i) * 8)) & 0xFF);
+            cd[36 + i] = part1[i];
+            cd[68 + i] = part2[i];
+        }
+
+        uint8_t ret_val[32];
+        size_t ret_len = 32;
+        extern bool lau_yul_thunk_execute(const char*, const uint8_t*, size_t, uint8_t*, size_t*);
+        bool success = lau_yul_thunk_execute("minder", cd, 100, ret_val, &ret_len);
+        if (success && ret_val[31] == 1) {
+            lau_vram_write_string(g_vram, "Reminder added successfully to on-chain database.\r\n", 51);
+        } else {
+            lau_vram_write_string(g_vram, "Error adding reminder.\r\n", 24);
+        }
+    }
+    else if (strcasecmp(subcmd, "LIST") == 0) {
+        char *date_str = strtok(NULL, " \t");
+        if (!date_str) {
+            lau_vram_write_string(g_vram, "Usage: MINDER LIST <YYYYMMDD>\r\n", 31);
+            return;
+        }
+        uint64_t date = strtoull(date_str, NULL, 10);
+
+        // Call getReminderCount(date)
+        uint8_t cd[36];
+        cd[0] = 0xb5; cd[1] = 0xf2; cd[2] = 0x69; cd[3] = 0xa8;
+        for (int i = 0; i < 32; i++) {
+            cd[4 + i] = (uint8_t)((date >> ((31 - i) * 8)) & 0xFF);
+        }
+
+        uint8_t count_ret[32];
+        size_t count_ret_len = 32;
+        extern bool lau_yul_thunk_execute(const char*, const uint8_t*, size_t, uint8_t*, size_t*);
+        bool count_success = lau_yul_thunk_execute("minder", cd, 36, count_ret, &count_ret_len);
+        uint64_t count = 0;
+        if (count_success) {
+            for (int i = 0; i < 32; i++) {
+                count = (count << 8) | count_ret[i];
+            }
+        }
+
+        char out[256];
+        snprintf(out, sizeof(out), "Minder database returned %lu reminders for %s:\r\n", (unsigned long)count, date_str);
+        lau_vram_write_string(g_vram, out, strlen(out));
+
+        for (uint64_t idx = 0; idx < count; idx++) {
+            // Call getReminder(date, index)
+            uint8_t cd_get[68];
+            cd_get[0] = 0xd6; cd_get[1] = 0x53; cd_get[2] = 0x3f; cd_get[3] = 0x81;
+            for (int i = 0; i < 32; i++) {
+                cd_get[4 + i] = (uint8_t)((date >> ((31 - i) * 8)) & 0xFF);
+                cd_get[36 + i] = (uint8_t)((idx >> ((31 - i) * 8)) & 0xFF);
+            }
+
+            uint8_t item_ret[64];
+            size_t item_ret_len = 64;
+            bool get_success = lau_yul_thunk_execute("minder", cd_get, 68, item_ret, &item_ret_len);
+            if (get_success) {
+                char memo[65] = {0};
+                for (int i = 0; i < 32; i++) {
+                    memo[i] = (char)item_ret[i];
+                    memo[32 + i] = (char)item_ret[32 + i];
+                }
+                snprintf(out, sizeof(out), " [%lu] %s\r\n", (unsigned long)idx, memo);
+                lau_vram_write_string(g_vram, out, strlen(out));
+            }
+        }
+    }
+    else if (strcasecmp(subcmd, "DEL") == 0) {
+        char *date_str = strtok(NULL, " \t");
+        char *idx_str = strtok(NULL, " \t");
+        if (!date_str || !idx_str) {
+            lau_vram_write_string(g_vram, "Usage: MINDER DEL <YYYYMMDD> <index>\r\n", 38);
+            return;
+        }
+        uint64_t date = strtoull(date_str, NULL, 10);
+        uint64_t index = strtoull(idx_str, NULL, 10);
+
+        // Call deleteReminder(date, index)
+        uint8_t cd[68];
+        cd[0] = 0x93; cd[1] = 0xbb; cd[2] = 0x22; cd[3] = 0x21;
+        for (int i = 0; i < 32; i++) {
+            cd[4 + i] = (uint8_t)((date >> ((31 - i) * 8)) & 0xFF);
+            cd[36 + i] = (uint8_t)((index >> ((31 - i) * 8)) & 0xFF);
+        }
+
+        uint8_t ret_val[32];
+        size_t ret_len = 32;
+        extern bool lau_yul_thunk_execute(const char*, const uint8_t*, size_t, uint8_t*, size_t*);
+        bool success = lau_yul_thunk_execute("minder", cd, 68, ret_val, &ret_len);
+        if (success && ret_val[31] == 1) {
+            lau_vram_write_string(g_vram, "Reminder deleted successfully from on-chain database.\r\n", 54);
+        } else {
+            lau_vram_write_string(g_vram, "Error deleting reminder (index out of bounds).\r\n", 48);
+        }
+    }
+    else {
+        lau_vram_write_string(g_vram, "Unknown Minder command.\r\n", 25);
+    }
+}
+
+static void execute_base(const char *args) {
+    if (!args || !*args) {
+        lau_vram_write_string(g_vram, "Usage: BASE <number> <from_base> <to_base>\r\n", 44);
+        return;
+    }
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%.255s", args);
+    char *num_str = strtok(buf, " \t");
+    char *from_str = strtok(NULL, " \t");
+    char *to_str = strtok(NULL, " \t");
+    if (!num_str || !from_str || !to_str) {
+        lau_vram_write_string(g_vram, "Usage: BASE <number> <from_base> <to_base>\r\n", 44);
+        return;
+    }
+    int from_base = atoi(from_str);
+    int to_base = atoi(to_str);
+    if (from_base < 2 || from_base > 36 || to_base < 2 || to_base > 36) {
+        lau_vram_write_string(g_vram, "Error: Bases must be between 2 and 36.\r\n", 40);
+        return;
+    }
+    char *endptr;
+    unsigned long long val = strtoull(num_str, &endptr, from_base);
+    if (*endptr != '\0') {
+        lau_vram_write_string(g_vram, "Error: Invalid number representation for the given base.\r\n", 57);
+        return;
+    }
+    
+    char out_digits[128];
+    int pos = 0;
+    if (val == 0) {
+        out_digits[pos++] = '0';
+    } else {
+        while (val > 0) {
+            int rem = val % to_base;
+            if (rem < 10) {
+                out_digits[pos++] = '0' + rem;
+            } else {
+                out_digits[pos++] = 'A' + (rem - 10);
+            }
+            val /= to_base;
+        }
+    }
+    char out_str[256];
+    int out_pos = 0;
+    out_pos += snprintf(out_str + out_pos, sizeof(out_str) - out_pos, "Result (base %d): ", to_base);
+    for (int i = pos - 1; i >= 0; i--) {
+        if (out_pos < (int)sizeof(out_str) - 2) {
+            out_str[out_pos++] = out_digits[i];
+        }
+    }
+    out_str[out_pos++] = '\r';
+    out_str[out_pos++] = '\n';
+    out_str[out_pos] = '\0';
+    lau_vram_write_string(g_vram, out_str, strlen(out_str));
+}
+
+static void execute_cols(const char *args) {
+    if (!args || !*args) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "Current display columns: %d (Mode: %s)\r\nUsage: COLS <40|80|132|AUTO>\r\n", 
+                 g_superterm_cols, g_superterm_mode ? "Fixed" : "Auto");
+        lau_vram_write_string(g_vram, msg, strlen(msg));
+        return;
+    }
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.63s", args);
+    char *arg = strtok(buf, " \t");
+    if (!arg) return;
+
+    if (strcasecmp(arg, "AUTO") == 0) {
+        g_superterm_mode = false;
+        lau_vram_write_string(g_vram, "Display mode updated to automatic window sizing.\r\n", 50);
+    } else {
+        int cols = atoi(arg);
+        if (cols < 10 || cols > 256) {
+            lau_vram_write_string(g_vram, "Error: Columns must be between 10 and 256.\r\n", 44);
+            return;
+        }
+        g_superterm_cols = cols;
+        g_superterm_mode = true;
+        g_superterm_scroll_x = 0;
+        char msg[128];
+        snprintf(msg, sizeof(msg), "Display mode updated to %d columns.\r\n", cols);
+        lau_vram_write_string(g_vram, msg, strlen(msg));
+    }
+}
+
 static void execute_command(const char *cmd) {
     char cmd_log[512];
     snprintf(cmd_log, sizeof(cmd_log), "Executed command: %s", cmd);
@@ -2174,6 +4390,20 @@ static void execute_command(const char *cmd) {
                     else if (strcmp(num, "8") == 0) { first_word = "WORDPAC"; cmd = "WORDPAC"; }
                     else if (strcmp(num, "9") == 0) { first_word = "DATAPAC"; cmd = "DATAPAC"; }
                     else if (strcmp(num, "10") == 0) { first_word = "PROTECTO"; cmd = "PROTECTO"; }
+                    else if (strcmp(num, "11") == 0) { first_word = "MICROMINDER"; cmd = "MICROMINDER"; }
+                    else if (strcmp(num, "12") == 0) { first_word = "SALVAGEDIVER"; cmd = "SALVAGEDIVER"; }
+                    else if (strcmp(num, "13") == 0) { first_word = "DOS"; cmd = "DOS"; }
+                    else if (strcmp(num, "14") == 0) { first_word = "SOUNDEXPLORER"; cmd = "SOUNDEXPLORER"; }
+                    else if (strcmp(num, "15") == 0) { first_word = "CASTLEDARKNESS"; cmd = "CASTLEDARKNESS"; }
+                    else if (strcmp(num, "16") == 0) { first_word = "BASECONVERSIONS"; cmd = "BASECONVERSIONS"; }
+                    else if (strcmp(num, "17") == 0) { first_word = "LAWNJOB"; cmd = "LAWNJOB"; }
+                    else if (strcmp(num, "18") == 0) { first_word = "EMERALDELEPHANT"; cmd = "EMERALDELEPHANT"; }
+                    else if (strcmp(num, "19") == 0) { first_word = "VIC40OS"; cmd = "VIC40OS"; }
+                    else if (strcmp(num, "20") == 0) { first_word = "BAMREADPRINT"; cmd = "BAMREADPRINT"; }
+                    else if (strcmp(num, "21") == 0) { first_word = "TUNNEL"; cmd = "TUNNEL"; }
+                    else if (strcmp(num, "22") == 0) { first_word = "PTE"; cmd = "PTE"; }
+                    else if (strcmp(num, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; }
+                    else if (strcmp(num, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; }
                     else if (strcasecmp(num, "ALL") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; }
                 }
             } else {
@@ -2187,8 +4417,22 @@ static void execute_command(const char *cmd) {
                 else if (strcmp(first_word, "8") == 0) { first_word = "WORDPAC"; cmd = "WORDPAC"; }
                 else if (strcmp(first_word, "9") == 0) { first_word = "DATAPAC"; cmd = "DATAPAC"; }
                 else if (strcmp(first_word, "10") == 0) { first_word = "PROTECTO"; cmd = "PROTECTO"; }
-                else if (strcmp(first_word, "11") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; }
-                else if (strcmp(first_word, "12") == 0) { first_word = "GO"; cmd = "GO MENU"; }
+                else if (strcmp(first_word, "11") == 0) { first_word = "MICROMINDER"; cmd = "MICROMINDER"; }
+                else if (strcmp(first_word, "12") == 0) { first_word = "SALVAGEDIVER"; cmd = "SALVAGEDIVER"; }
+                else if (strcmp(first_word, "13") == 0) { first_word = "DOS"; cmd = "DOS"; }
+                else if (strcmp(first_word, "14") == 0) { first_word = "SOUNDEXPLORER"; cmd = "SOUNDEXPLORER"; }
+                else if (strcmp(first_word, "15") == 0) { first_word = "CASTLEDARKNESS"; cmd = "CASTLEDARKNESS"; }
+                else if (strcmp(first_word, "16") == 0) { first_word = "BASECONVERSIONS"; cmd = "BASECONVERSIONS"; }
+                else if (strcmp(first_word, "17") == 0) { first_word = "LAWNJOB"; cmd = "LAWNJOB"; }
+                else if (strcmp(first_word, "18") == 0) { first_word = "EMERALDELEPHANT"; cmd = "EMERALDELEPHANT"; }
+                else if (strcmp(first_word, "19") == 0) { first_word = "VIC40OS"; cmd = "VIC40OS"; }
+                else if (strcmp(first_word, "20") == 0) { first_word = "BAMREADPRINT"; cmd = "BAMREADPRINT"; }
+                else if (strcmp(first_word, "21") == 0) { first_word = "TUNNEL"; cmd = "TUNNEL"; }
+                else if (strcmp(first_word, "22") == 0) { first_word = "PTE"; cmd = "PTE"; }
+                else if (strcmp(first_word, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; }
+                else if (strcmp(first_word, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; }
+                else if (strcmp(first_word, "25") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; }
+                else if (strcmp(first_word, "26") == 0) { first_word = "GO"; cmd = "GO MENU"; }
             }
         } else if (g_dashboard_active) {
             if (strcmp(first_word, "1") == 0) { first_word = "CHOPLIFTER"; cmd = "CHOPLIFTER"; }
@@ -2201,8 +4445,22 @@ static void execute_command(const char *cmd) {
             else if (strcmp(first_word, "8") == 0) { first_word = "WORDPAC"; cmd = "WORDPAC"; }
             else if (strcmp(first_word, "9") == 0) { first_word = "DATAPAC"; cmd = "DATAPAC"; }
             else if (strcmp(first_word, "10") == 0) { first_word = "PROTECTO"; cmd = "PROTECTO"; }
-            else if (strcmp(first_word, "11") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; }
-            else if (strcmp(first_word, "12") == 0) { first_word = "GO"; cmd = "GO MENU"; }
+            else if (strcmp(first_word, "11") == 0) { first_word = "MICROMINDER"; cmd = "MICROMINDER"; }
+            else if (strcmp(first_word, "12") == 0) { first_word = "SALVAGEDIVER"; cmd = "SALVAGEDIVER"; }
+            else if (strcmp(first_word, "13") == 0) { first_word = "DOS"; cmd = "DOS"; }
+            else if (strcmp(first_word, "14") == 0) { first_word = "SOUNDEXPLORER"; cmd = "SOUNDEXPLORER"; }
+            else if (strcmp(first_word, "15") == 0) { first_word = "CASTLEDARKNESS"; cmd = "CASTLEDARKNESS"; }
+            else if (strcmp(first_word, "16") == 0) { first_word = "BASECONVERSIONS"; cmd = "BASECONVERSIONS"; }
+            else if (strcmp(first_word, "17") == 0) { first_word = "LAWNJOB"; cmd = "LAWNJOB"; }
+            else if (strcmp(first_word, "18") == 0) { first_word = "EMERALDELEPHANT"; cmd = "EMERALDELEPHANT"; }
+            else if (strcmp(first_word, "19") == 0) { first_word = "VIC40OS"; cmd = "VIC40OS"; }
+            else if (strcmp(first_word, "20") == 0) { first_word = "BAMREADPRINT"; cmd = "BAMREADPRINT"; }
+            else if (strcmp(first_word, "21") == 0) { first_word = "TUNNEL"; cmd = "TUNNEL"; }
+            else if (strcmp(first_word, "22") == 0) { first_word = "PTE"; cmd = "PTE"; }
+            else if (strcmp(first_word, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; }
+            else if (strcmp(first_word, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; }
+            else if (strcmp(first_word, "25") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; }
+            else if (strcmp(first_word, "26") == 0) { first_word = "GO"; cmd = "GO MENU"; }
         }
     }
     
@@ -2212,9 +4470,61 @@ static void execute_command(const char *cmd) {
         strcasecmp(first_word, "INSTA") != 0 && strcasecmp(first_word, "CALC") != 0 && strcasecmp(first_word, "INSTACALC") != 0 &&
         strcasecmp(first_word, "PANIC") != 0 && strcasecmp(first_word, "APPLEPANIC") != 0 &&
         strcasecmp(first_word, "SLINKY") != 0 && strcasecmp(first_word, "SLINKYBEAR") != 0 &&
-        strcasecmp(first_word, "SLINKYPANIC") != 0) {
+        strcasecmp(first_word, "SLINKYPANIC") != 0 && strcasecmp(first_word, "COMTERM") != 0 &&
+        strcasecmp(first_word, "AMTYPE") != 0 && strcasecmp(first_word, "INVISICLUE") != 0 &&
+        strcasecmp(first_word, "SUBLOGIC") != 0 && strcasecmp(first_word, "LANDER") != 0 &&
+        strcasecmp(first_word, "ALPINER") != 0 &&
+        strcasecmp(first_word, "BUGREPELLENT") != 0 && strcasecmp(first_word, "REPELLENT") != 0) {
         g_mercenary_active = false;
         g_pong_active = false;
+    }
+    
+    if (first_word && (strcasecmp(first_word, "BUGREPELLENT") == 0 || strcasecmp(first_word, "REPELLENT") == 0)) {
+        const char *input_str = cmd + strlen(first_word);
+        while (*input_str == ' ' || *input_str == '\t') input_str++;
+        
+        if (strlen(input_str) == 0) {
+            lau_vram_write_string(g_vram, "\r\n  Usage: BUGREPELLENT <line of BASIC code>\r\n  Example: BUGREPELLENT 10 PRINT \"HELLO\"\r\n", 89);
+            return;
+        }
+        
+        size_t str_len = strlen(input_str);
+        size_t padded_len = ((str_len + 31) / 32) * 32;
+        size_t calldata_size = 4 + 32 + 32 + padded_len;
+        uint8_t *calldata = calloc(1, calldata_size);
+        
+        // Selector: 0x228cf1aa
+        calldata[0] = 0x22; calldata[1] = 0x8c; calldata[2] = 0xf1; calldata[3] = 0xaa;
+        // Offset: 32 (0x20)
+        calldata[35] = 0x20;
+        // Length of string
+        calldata[67] = str_len & 0xFF;
+        calldata[66] = (str_len >> 8) & 0xFF;
+        calldata[65] = (str_len >> 16) & 0xFF;
+        calldata[64] = (str_len >> 24) & 0xFF;
+        
+        memcpy(calldata + 68, input_str, str_len);
+        
+        uint8_t retval[32] = {0};
+        size_t retval_len = 32;
+        
+        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
+        if (lau_yul_thunk_execute("diskSystem", calldata, calldata_size, retval, &retval_len)) {
+            char checksum[5];
+            checksum[0] = retval[28];
+            checksum[1] = retval[29];
+            checksum[2] = retval[30];
+            checksum[3] = retval[31];
+            checksum[4] = '\0';
+            
+            char output_buf[256];
+            snprintf(output_buf, sizeof(output_buf), "\r\n  Line: \"%s\"\r\n  [Ahoy! Bug Repellent Checksum: %s]\r\n", input_str, checksum);
+            lau_vram_write_string(g_vram, output_buf, strlen(output_buf));
+        } else {
+            lau_vram_write_string(g_vram, "\r\n  [ERROR: Checksum generation failed!]\r\n", 43);
+        }
+        free(calldata);
+        return;
     }
     
     if (first_word && strcasecmp(first_word, "HURWOOD") == 0) {
@@ -2233,35 +4543,53 @@ static void execute_command(const char *cmd) {
         const char *output = NULL;
         
         if (arg && strcasecmp(arg, "SOUND") == 0) {
-            output = 
+            uint32_t freq_val = (uint32_t)(g_creator_sound_freq * 16.40277);
+            uint8_t freq_lo = freq_val & 0xFF;
+            uint8_t freq_hi = (freq_val >> 8) & 0xFF;
+            uint8_t wave_val = 17; // default triangle
+            if (strcasecmp(g_creator_sound_wave, "Sawtooth") == 0) {
+                wave_val = 33;
+            } else if (strcasecmp(g_creator_sound_wave, "Pulse") == 0) {
+                wave_val = 65;
+            } else if (strcasecmp(g_creator_sound_wave, "Noise") == 0) {
+                wave_val = 129;
+            }
+            
+            static char dynamic_sound_buf[1024];
+            snprintf(dynamic_sound_buf, sizeof(dynamic_sound_buf),
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 SID SOUND DESIGN   \r\n"
                 "==================================================\r\n"
-                " Generating C64 SID Triangle Wave Chord...\r\n\r\n"
+                " Generating C64 SID %s Wave (Freq %d Hz)...\r\n\r\n"
                 " 10 FOR I = 54272 TO 54296: POKE I, 0: NEXT I\r\n"
                 " 20 POKE 54277, 15: POKE 54278, 240: REM ADSR\r\n"
-                " 30 POKE 54273, 17: POKE 54272, 37: REM C-4 FREQ\r\n"
+                " 30 POKE 54273, %d: POKE 54272, %d: REM FREQ\r\n"
                 " 40 POKE 54290, 15: REM VOLUME\r\n"
-                " 50 POKE 54276, 17: REM START TRIANGLE WAVE\r\n"
+                " 50 POKE 54276, %d: REM START WAVE\r\n"
                 " 60 FOR T = 1 TO 2000: NEXT T\r\n"
                 " 70 POKE 54276, 16: REM STOP AUDIO\r\n"
                 " READY.\r\n\r\n"
                 " [POKEY/SID register sweeps code generated.]\r\n"
-                "==================================================\r\n";
+                "==================================================\r\n",
+                g_creator_sound_wave, g_creator_sound_freq, freq_hi, freq_lo, wave_val);
+            output = dynamic_sound_buf;
         } else if (arg && strcasecmp(arg, "SPRITE") == 0) {
-            output = 
+            static char dynamic_sprite_buf[1024];
+            snprintf(dynamic_sprite_buf, sizeof(dynamic_sprite_buf),
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 VIC-II SPRITES     \r\n"
                 "==================================================\r\n"
                 " Generating C64 Sprite 0 Generation Code...\r\n\r\n"
                 " 10 POKE 2040, 13: REM SPRITE 0 PTR TO $0340\r\n"
                 " 20 FOR I = 832 TO 894: POKE I, 255: NEXT I\r\n"
-                " 30 POKE 53248, 100: POKE 53249, 100: REM COORDS\r\n"
+                " 30 POKE 53248, %d: POKE 53249, %d: REM COORDS\r\n"
                 " 40 POKE 53269, 1: REM ENABLE SPRITE\r\n"
-                " 50 POKE 53287, 1: REM WHITE COLOR\r\n"
+                " 50 POKE 53287, %d: REM COLOR\r\n"
                 " READY.\r\n\r\n"
                 " [VIC-II visual sprite generation code completed.]\r\n"
-                "==================================================\r\n";
+                "==================================================\r\n",
+                g_creator_sprite_x, g_creator_sprite_y, g_creator_sprite_color);
+            output = dynamic_sprite_buf;
         } else if (arg && strcasecmp(arg, "CHARSET") == 0) {
             output = 
                 "==================================================\r\n"
@@ -2279,27 +4607,33 @@ static void execute_command(const char *cmd) {
                 " [Character set relocation BASIC layout generated.]\r\n"
                 "==================================================\r\n";
         } else if (arg && strcasecmp(arg, "RASTER") == 0) {
-            output = 
+            static char dynamic_raster_buf[1024];
+            snprintf(dynamic_raster_buf, sizeof(dynamic_raster_buf),
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 RASTER INTERRUPT   \r\n"
                 "==================================================\r\n"
                 " Generating C64 Raster Sync Split-Screen...\r\n\r\n"
                 " 10 POKE 56333, 127: REM DISABLE CIA TIMER INTERRUPTS\r\n"
                 " 20 POKE 53265, PEEK(53265) AND 127: REM CLEAR HIGH BIT\r\n"
-                " 30 POKE 53266, 120: REM INTERRUPT SCANLINE target = 120\r\n"
+                " 30 POKE 53266, %d: REM INTERRUPT SCANLINE target = %d\r\n"
+                " 35 POKE 53280, %d: REM SPLIT COLOR ON INTERRUPT\r\n"
                 " 40 POKE 788, 0: POKE 789, 13: REM REDIRECT VECTOR TO $0D00\r\n"
                 " 50 POKE 53274, 1: REM ENABLE VIC-II RASTER INTERRUPT\r\n"
                 " 60 SYS 3328: REM ACTIVATE ASSEMBLY HOOK\r\n"
                 " READY.\r\n\r\n"
                 " [Raster split-screen dynamic configuration generated.]\r\n"
-                "==================================================\r\n";
+                "==================================================\r\n",
+                g_creator_raster_line, g_creator_raster_line, g_creator_raster_color);
+            output = dynamic_raster_buf;
         } else if (arg && strcasecmp(arg, "JOYSTICK") == 0) {
-            output = 
+            int joy_addr = (g_creator_joystick_port == 1) ? 56321 : 56320;
+            static char dynamic_joystick_buf[1024];
+            snprintf(dynamic_joystick_buf, sizeof(dynamic_joystick_buf),
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 JOYSTICK SCANNER   \r\n"
                 "==================================================\r\n"
-                " Generating C64 Joystick Port 2 Scanner...\r\n\r\n"
-                " 10 J = 56320: REM PORT 2 ADDRESS\r\n"
+                " Generating C64 Joystick Port %d Scanner...\r\n\r\n"
+                " 10 J = %d: REM PORT %d ADDRESS\r\n"
                 " 20 V = PEEK(J)\r\n"
                 " 30 UP = (V AND 1) = 0: DN = (V AND 2) = 0\r\n"
                 " 40 LT = (V AND 4) = 0: RT = (V AND 8) = 0\r\n"
@@ -2308,16 +4642,20 @@ static void execute_command(const char *cmd) {
                 " 70 GOTO 20\r\n"
                 " READY.\r\n\r\n"
                 " [Joystick interactive scanner loop generated.]\r\n"
-                "==================================================\r\n";
+                "==================================================\r\n",
+                g_creator_joystick_port, joy_addr, g_creator_joystick_port);
+            output = dynamic_joystick_buf;
         } else if (arg && strcasecmp(arg, "CONCEPT") == 0) {
-            output = 
+            static char dynamic_concept_buf[1024];
+            snprintf(dynamic_concept_buf, sizeof(dynamic_concept_buf),
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64/VIC-20 SOUND CONCEPT\r\n"
                 "==================================================\r\n"
                 " Generating A.J. Kwitowski's Sound Concept...\r\n\r\n"
-                " 10 DATA 10, 225, 120: REM V1, FREQ=225, DUR=120\r\n"
-                " 20 DATA 11, 240, 60 : REM V2, FREQ=240, DUR=60\r\n"
-                " 30 DATA 12, 195, 255: REM V3, FREQ=195, DUR=255\r\n"
+                " 10 DATA %d, %d, %d: REM V1, FREQ=%d, DUR=%d\r\n"
+                " 20 DATA %d, %d, %d: REM V2, FREQ=%d, DUR=%d\r\n"
+                " 30 DATA %d, %d, %d: REM V3, FREQ=%d, DUR=%d\r\n"
+                " 35 DATA -1, 0, 0: REM SENTINEL END\r\n"
                 " 40 READ V, F, D\r\n"
                 " 50 IF V < 0 THEN END\r\n"
                 " 60 POKE 36874 + (V - 10), F: REM SET FREQ\r\n"
@@ -2327,24 +4665,157 @@ static void execute_command(const char *cmd) {
                 " 100 GOTO 40\r\n"
                 " READY.\r\n\r\n"
                 " [Kwitowski Sound Concept 3-byte queue generated.]\r\n"
+                "==================================================\r\n",
+                g_creator_concept_v1, g_creator_concept_f1, g_creator_concept_d1, g_creator_concept_f1, g_creator_concept_d1,
+                g_creator_concept_v2, g_creator_concept_f2, g_creator_concept_d2, g_creator_concept_f2, g_creator_concept_d2,
+                g_creator_concept_v3, g_creator_concept_f3, g_creator_concept_d3, g_creator_concept_f3, g_creator_concept_d3);
+            output = dynamic_concept_buf;
+        } else if (arg && (strcasecmp(arg, "SMITH") == 0 || strcasecmp(arg, "MARSHALL") == 0)) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: MARSHALL F. SMITH TRIBUTE\r\n"
+                "==================================================\r\n"
+                " Generating Production Line Simulator...\r\n\r\n"
+                " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
+                " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK SCREEN\r\n"
+                " 30 S = 0\r\n"
+                " 40 PRINT \"\\x13\": REM HOME CURSOR\r\n"
+                " 50 PRINT \"  MARSHALL F. SMITH'S PRODUCTION LINE\"\r\n"
+                " 60 PRINT \"  -----------------------------------\"\r\n"
+                " 70 PRINT \"  TIME ELAPSED: \"; S; \" SECONDS\"\r\n"
+                " 80 PRINT \"  MACINTOSHES : \"; INT(S/26)\r\n"
+                " 90 PRINT \"  IBM PCS      : \"; INT(S/16)\r\n"
+                " 100 PRINT \"  COMMODORE 64S: \"; INT(S/5)\r\n"
+                " 110 S = S + 1\r\n"
+                " 120 FOR T = 1 TO 800: NEXT T\r\n"
+                " 130 GOTO 40\r\n"
+                " READY.\r\n\r\n"
+                " [Marshall F. Smith comparison program generated.]\r\n"
+                "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "COMTERM") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: BYTEC-COMTERM TRIBUTE  \r\n"
+                "==================================================\r\n"
+                " Generating Comterm Bilingual Terminal Emulator...\r\n\r\n"
+                " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
+                " 20 PRINT \"*** BYTEC-COMTERM HYPERION RETRO-BILINGUAL ***\"\r\n"
+                " 30 PRINT \"  ENG: THE ARABIC LANGUAGE\"\r\n"
+                " 40 PRINT \"  ARB: AL-ARABIYYAH (العربية)\"\r\n"
+                " 50 PRINT \"----------------------------------------------\"\r\n"
+                " 60 PRINT \" MAPPING UNICODE TO RETRO COMTERM CODEPAGE...\"\r\n"
+                " 70 DATA 1575, 1604, 1593, 1585, 1576, 1610, 1577\r\n"
+                " 80 FOR I = 1 TO 7: READ C: PRINT C; \" \";: NEXT I\r\n"
+                " 90 PRINT \"\\n SHAPING ALGORITHM COMPLETED.\"\r\n"
+                " READY.\r\n\r\n"
+                " [Bytec-Comterm bilingual terminal simulator ready.]\r\n"
+                "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "3DPROJ") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 3D CUBE PROJECTION \r\n"
+                "==================================================\r\n"
+                " Generating Perspective 3D Cube Projection...\r\n\r\n"
+                " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
+                " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK BACKGROUND\r\n"
+                " 30 D = 150: REM PERSPECTIVE CAMERA DISTANCE\r\n"
+                " 40 FOR I = 0 TO 7\r\n"
+                " 50 READ X, Y, Z: REM READ CUBE VERTEX\r\n"
+                " 60 XP = (X * D) / (Z + D + 100) + 160\r\n"
+                " 70 YP = (Y * D) / (Z + D + 100) + 100\r\n"
+                " 80 PRINT \"VERTEX\"; I; \":\"; INT(XP); \",\"; INT(YP)\r\n"
+                " 90 NEXT I\r\n"
+                " 100 DATA -20,-20,-20,  20,-20,-20,  20, 20,-20, -20, 20,-20\r\n"
+                " 110 DATA -20,-20, 20,  20,-20, 20,  20, 20, 20, -20, 20, 20\r\n"
+                " READY.\r\n\r\n"
+                " [3D perspective projection graphics listing complete.]\r\n"
+                "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "PLATFORM") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 PLATFORMER LOOP    \r\n"
+                "==================================================\r\n"
+                " Generating C64 BASIC Platformer Game Loop...\r\n\r\n"
+                " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
+                " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK COL\r\n"
+                " 30 X = 20: Y = 20: DX = 0: DY = 0: G = 1: REM PLAYER\r\n"
+                " 40 PRINT \"\\x13\";: REM HOME CURSOR\r\n"
+                " 50 REM DRAW PLATFORMS AND JUMPING CHARACTER\r\n"
+                " 60 POKE 1024 + Y * 40 + X, 81: REM DRAW 'Q'\r\n"
+                " 70 K = PEEK(56320): REM SCAN JOYSTICK PORT 2\r\n"
+                " 80 IF (K AND 4) = 0 THEN X = X - 1: REM LEFT\r\n"
+                " 90 IF (K AND 8) = 0 THEN X = X + 1: REM RIGHT\r\n"
+                " 100 IF (K AND 16) = 0 AND G = 1 THEN DY = -2: G = 0: REM JUMP\r\n"
+                " 110 DY = DY + 0.2: REM GRAVITY EFFECT\r\n"
+                " 120 Y = Y + DY\r\n"
+                " 130 IF Y >= 24 THEN Y = 24: DY = 0: G = 1: REM COLLISION\r\n"
+                " 140 FOR T = 1 TO 50: NEXT T: GOTO 40\r\n"
+                " READY.\r\n\r\n"
+                " [Platformer basic game loop generation complete.]\r\n"
+                "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "TRIANGLE") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 LETTER TRIANGLE    \r\n"
+                "==================================================\r\n"
+                " Generating C64 BASIC Letter Triangle Program...\r\n\r\n"
+                " 10 FOR L = 1 TO 26\r\n"
+                " 20 FOR N = 1 TO L\r\n"
+                " 30 PRINT CHR$(L + 64);\r\n"
+                " 40 NEXT N\r\n"
+                " 50 PRINT\r\n"
+                " 60 NEXT L\r\n"
+                " READY.\r\n\r\n"
+                " [Letter triangle program listing complete.]\r\n"
+                "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "PALIN") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 PALINDROME SOLVER  \r\n"
+                "==================================================\r\n"
+                " Generating C64 BASIC Palindrome Solver...\r\n\r\n"
+                " 1 INPUT N$: L = LEN(N$)\r\n"
+                " 2 FOR X = 1 TO L\r\n"
+                " 3 IF MID$(N$, X, 1) = MID$(N$, L + 1 - X, 1) THEN NEXT: PRINT \"YES\"\r\n"
+                " READY.\r\n\r\n"
+                " [Palindrome solver program generated.]\r\n"
+                "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "REVERSE") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 REVERSE TYPIST     \r\n"
+                "==================================================\r\n"
+                " Generating C64 BASIC Right-To-Left Reverse Typist...\r\n\r\n"
+                " 10 X = 39: B$ = CHR$(32): C$ = CHR$(13)\r\n"
+                " 20 GET A$: IF A$ = \"\" THEN 20\r\n"
+                " 30 X = X - 1: PRINT SPC(X) A$ \"\\x91\";: REM CURSOR UP\r\n"
+                " 40 IF A$ = B$ AND X <= 10 THEN X = 39: PRINT\r\n"
+                " 50 IF X = 0 THEN X = 39: PRINT\r\n"
+                " 60 IF A$ = C$ THEN X = 39: PRINT\r\n"
+                " 70 GOTO 20\r\n"
+                " READY.\r\n\r\n"
+                " [Right-to-left reverse typist listing ready.]\r\n"
                 "==================================================\r\n";
         } else {
-            output = 
+            static char dynamic_maze_buf[1024];
+            snprintf(dynamic_maze_buf, sizeof(dynamic_maze_buf),
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 MAZE GRAPHICS      \r\n"
                 "==================================================\r\n"
                 " Generating C64 BASIC Vector Maze Program...\r\n\r\n"
                 " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
-                " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK SCENE\r\n"
+                " 20 POKE 53280, %d: POKE 53281, %d: REM COLORS\r\n"
                 " 30 FOR I = 1 TO 1000\r\n"
                 " 40 R = INT(RND(1)*2)\r\n"
-                " 50 IF R = 0 THEN PRINT \"/\";: GOTO 70\r\n"
-                " 60 PRINT \"\\\\\";\r\n"
+                " 50 IF R = 0 THEN PRINT \"%s\";: GOTO 70\r\n"
+                " 60 PRINT \"%s\";\r\n"
                 " 70 NEXT I\r\n"
                 " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
                 " READY.\r\n\r\n"
-                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK | CONCEPT] [COMPACT | STAGE]]\r\n"
-                "==================================================\r\n";
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK | CONCEPT | SMITH | PLATFORM | TRIANGLE | PALIN | REVERSE] [COMPACT | STAGE]]\r\n"
+                "==================================================\r\n",
+                g_creator_maze_bg, g_creator_maze_border, g_creator_maze_char1, g_creator_maze_char2);
+            output = dynamic_maze_buf;
         }
         
         write_basic_lines(output, compact);
@@ -2362,6 +4833,18 @@ static void execute_command(const char *cmd) {
         g_pong_active = false;
         init_yulbuild_state();
         redraw_yulbuild_screen();
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "CREATOR") == 0) {
+        g_editor_mode = MODE_CREATOR;
+        g_mercenary_active = false;
+        g_pong_active = false;
+        g_creator_step = 0;
+        g_creator_selection = 0;
+        g_creator_param_index = 0;
+        g_creator_editing_value = false;
+        redraw_creator_screen();
         return;
     }
 
@@ -2514,6 +4997,172 @@ static void execute_command(const char *cmd) {
          return;
     }
     
+    if (first_word && strcasecmp(first_word, "ALPINER") == 0 && !g_aitest_active) {
+         g_editor_mode = MODE_ALPINER;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         g_alpiner_active = true;
+         g_alpiner_player_x = 22;
+         g_alpiner_player_y = 12;
+         g_alpiner_yeti_x = 18;
+         g_alpiner_yeti_y = 6;
+         g_alpiner_rock_x = 22;
+         g_alpiner_rock_y = 4;
+         g_alpiner_score = 0;
+         g_alpiner_lives = 3;
+         g_alpiner_mountain = 1;
+         trigger_alpiner_speech("ALPINER!");
+         redraw_alpiner_screen();
+         log_telemetry("Rendered Alpiner Screen");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "WHATSMYJOB") == 0 || strcasecmp(first_word, "JOBS") == 0)) {
+         g_editor_mode = MODE_WHATSMYJOB;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         g_jobs_active = true;
+         init_job_game();
+         redraw_job_screen();
+         log_telemetry("Started What's My Job");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "BIND") == 0) {
+         char *p = cmd_buf + 4;
+         while (*p == ' ' || *p == '\t') p++;
+         if (*p && *(p+1) == ' ') {
+             char k = *p;
+             char *c = p + 2;
+             while (*c == ' ' || *c == '\t') c++;
+             if (*c) {
+                 bool found = false;
+                 for (int i = 0; i < g_chrget_hooks_count; i++) {
+                     if (g_chrget_hooks[i].key == k) {
+                         snprintf(g_chrget_hooks[i].cmd, sizeof(g_chrget_hooks[i].cmd), "%s", c);
+                         found = true;
+                         break;
+                     }
+                 }
+                 if (!found && g_chrget_hooks_count < 16) {
+                     g_chrget_hooks[g_chrget_hooks_count].key = k;
+                     snprintf(g_chrget_hooks[g_chrget_hooks_count].cmd, sizeof(g_chrget_hooks[g_chrget_hooks_count].cmd), "%s", c);
+                     g_chrget_hooks_count++;
+                 }
+                 char msg[128];
+                 snprintf(msg, sizeof(msg), "CHRGET: Bound key '%c' to command '%s'\r\n", k, c);
+                 lau_vram_write_string(g_vram, msg, strlen(msg));
+                 return;
+             }
+         }
+         lau_vram_write_string(g_vram, "Usage: BIND <char> <command>\r\n", 29);
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "RENUMBER") == 0) {
+         char *p = cmd_buf + 8;
+         while (*p == ' ' || *p == '\t') p++;
+         execute_renumber(p);
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "MINDER") == 0) {
+         char *p = cmd_buf + 6;
+         while (*p == ' ' || *p == '\t') p++;
+         execute_minder(p);
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "BASE") == 0) {
+         char *p = cmd_buf + 4;
+         while (*p == ' ' || *p == '\t') p++;
+         execute_base(p);
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "COLS") == 0) {
+         char *p = cmd_buf + 4;
+         while (*p == ' ' || *p == '\t') p++;
+         execute_cols(p);
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "BASECONVERSIONS") == 0) {
+         execute_command("node ../scripts/test_baseconversions.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "SALVAGEDIVER") == 0) {
+         execute_command("node ../scripts/test_salvagediver.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "DOS") == 0) {
+         execute_command("node ../scripts/test_dos.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "SOUNDEXPLORER") == 0) {
+         execute_command("node ../scripts/test_soundexplorer.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "CASTLEDARKNESS") == 0) {
+         execute_command("node ../scripts/test_castledarkness.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "LAWNJOB") == 0) {
+         execute_command("node ../scripts/test_lawnjob.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "EMERALDELEPHANT") == 0) {
+         execute_command("node ../scripts/test_emeraldelephant.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "VIC40OS") == 0) {
+         execute_command("node ../scripts/test_vic40os.js");
+         return;
+    }
+    if (first_word && strcasecmp(first_word, "BAMREADPRINT") == 0) {
+         execute_command("node ../scripts/test_bamreadprint.js");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "PTE") == 0) {
+         g_editor_mode = MODE_PTE;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_pte();
+         redraw_pte_screen();
+         log_telemetry("Rendered PTE Word Processor Screen");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "SPACEPATROL") == 0) {
+         g_editor_mode = MODE_SPACEPATROL;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_spacepatrol();
+         redraw_spacepatrol_screen();
+         log_telemetry("Rendered Space Patrol Screen");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "CONSTRUCTIONCO") == 0) {
+         g_editor_mode = MODE_CONSTRUCTION_CO;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_construction_co();
+         redraw_construction_co_screen();
+         log_telemetry("Rendered Construction Co Screen");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
+         g_editor_mode = MODE_CHECKLIST;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         g_checklist_active = true;
+         init_checklist();
+         redraw_checklist_screen();
+         log_telemetry("Rendered Checklist Screen");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "ADVENTURE") == 0 || strcasecmp(first_word, "ZMACHINE") == 0)) {
         g_editor_mode = MODE_ZMACHINE;
         g_mercenary_active = false;
@@ -2551,8 +5200,22 @@ static void execute_command(const char *cmd) {
             else if (strcmp(target, "8") == 0) { first_word = "WORDPAC"; cmd = "WORDPAC"; target = NULL; }
             else if (strcmp(target, "9") == 0) { first_word = "DATAPAC"; cmd = "DATAPAC"; target = NULL; }
             else if (strcmp(target, "10") == 0) { first_word = "PROTECTO"; cmd = "PROTECTO"; target = NULL; }
-            else if (strcmp(target, "11") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; target = NULL; }
-            else if (strcmp(target, "12") == 0) { target = "MENU"; }
+            else if (strcmp(target, "11") == 0) { first_word = "MICROMINDER"; cmd = "MICROMINDER"; target = NULL; }
+            else if (strcmp(target, "12") == 0) { first_word = "SALVAGEDIVER"; cmd = "SALVAGEDIVER"; target = NULL; }
+            else if (strcmp(target, "13") == 0) { first_word = "DOS"; cmd = "DOS"; target = NULL; }
+            else if (strcmp(target, "14") == 0) { first_word = "SOUNDEXPLORER"; cmd = "SOUNDEXPLORER"; target = NULL; }
+            else if (strcmp(target, "15") == 0) { first_word = "CASTLEDARKNESS"; cmd = "CASTLEDARKNESS"; target = NULL; }
+            else if (strcmp(target, "16") == 0) { first_word = "BASECONVERSIONS"; cmd = "BASECONVERSIONS"; target = NULL; }
+            else if (strcmp(target, "17") == 0) { first_word = "LAWNJOB"; cmd = "LAWNJOB"; target = NULL; }
+            else if (strcmp(target, "18") == 0) { first_word = "EMERALDELEPHANT"; cmd = "EMERALDELEPHANT"; target = NULL; }
+            else if (strcmp(target, "19") == 0) { first_word = "VIC40OS"; cmd = "VIC40OS"; target = NULL; }
+            else if (strcmp(target, "20") == 0) { first_word = "BAMREADPRINT"; cmd = "BAMREADPRINT"; target = NULL; }
+            else if (strcmp(target, "21") == 0) { first_word = "TUNNEL"; cmd = "TUNNEL"; target = NULL; }
+            else if (strcmp(target, "22") == 0) { first_word = "PTE"; cmd = "PTE"; target = NULL; }
+            else if (strcmp(target, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; target = NULL; }
+            else if (strcmp(target, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; target = NULL; }
+            else if (strcmp(target, "25") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; target = NULL; }
+            else if (strcmp(target, "26") == 0) { target = "MENU"; }
         } else if (g_dashboard_active && target) {
             if (strcmp(target, "1") == 0) { first_word = "CHOPLIFTER"; cmd = "CHOPLIFTER"; target = NULL; }
             else if (strcmp(target, "2") == 0) { first_word = "FORTAPOCALYPSE"; cmd = "FORTAPOCALYPSE"; target = NULL; }
@@ -2564,8 +5227,22 @@ static void execute_command(const char *cmd) {
             else if (strcmp(target, "8") == 0) { first_word = "WORDPAC"; cmd = "WORDPAC"; target = NULL; }
             else if (strcmp(target, "9") == 0) { first_word = "DATAPAC"; cmd = "DATAPAC"; target = NULL; }
             else if (strcmp(target, "10") == 0) { first_word = "PROTECTO"; cmd = "PROTECTO"; target = NULL; }
-            else if (strcmp(target, "11") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; target = NULL; }
-            else if (strcmp(target, "12") == 0) { target = "MENU"; }
+            else if (strcmp(target, "11") == 0) { first_word = "MICROMINDER"; cmd = "MICROMINDER"; target = NULL; }
+            else if (strcmp(target, "12") == 0) { first_word = "SALVAGEDIVER"; cmd = "SALVAGEDIVER"; target = NULL; }
+            else if (strcmp(target, "13") == 0) { first_word = "DOS"; cmd = "DOS"; target = NULL; }
+            else if (strcmp(target, "14") == 0) { first_word = "SOUNDEXPLORER"; cmd = "SOUNDEXPLORER"; target = NULL; }
+            else if (strcmp(target, "15") == 0) { first_word = "CASTLEDARKNESS"; cmd = "CASTLEDARKNESS"; target = NULL; }
+            else if (strcmp(target, "16") == 0) { first_word = "BASECONVERSIONS"; cmd = "BASECONVERSIONS"; target = NULL; }
+            else if (strcmp(target, "17") == 0) { first_word = "LAWNJOB"; cmd = "LAWNJOB"; target = NULL; }
+            else if (strcmp(target, "18") == 0) { first_word = "EMERALDELEPHANT"; cmd = "EMERALDELEPHANT"; target = NULL; }
+            else if (strcmp(target, "19") == 0) { first_word = "VIC40OS"; cmd = "VIC40OS"; target = NULL; }
+            else if (strcmp(target, "20") == 0) { first_word = "BAMREADPRINT"; cmd = "BAMREADPRINT"; target = NULL; }
+            else if (strcmp(target, "21") == 0) { first_word = "TUNNEL"; cmd = "TUNNEL"; target = NULL; }
+            else if (strcmp(target, "22") == 0) { first_word = "PTE"; cmd = "PTE"; target = NULL; }
+            else if (strcmp(target, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; target = NULL; }
+            else if (strcmp(target, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; target = NULL; }
+            else if (strcmp(target, "25") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; target = NULL; }
+            else if (strcmp(target, "26") == 0) { target = "MENU"; }
         }
 
         if (first_word && strcasecmp(first_word, "GO") == 0) {
@@ -2608,8 +5285,22 @@ static void execute_command(const char *cmd) {
                     "  8 WORDPAC        - Run Protecto WordPac Verification\r\n"
                     "  9 DATAPAC        - Run Datasoft DataPac Verification\r\n"
                     " 10 PROTECTO       - Run Protecto Mail-Order Verification\r\n"
-                    " 11 TESTALL        - Run automated tests on ALL systems\r\n"
-                    " 12 GO MENU        - Return to Main Menu\r\n"
+                    " 11 MICROMINDER    - Run Micro-Minder Verification\r\n"
+                    " 12 SALVAGEDIVER   - Run Salvage Diver Verification\r\n"
+                    " 13 DOS            - Run DOS Command Verification\r\n"
+                    " 14 SOUNDEXPLORER  - Run Sound Explorer Verification\r\n"
+                    " 15 CASTLEDARKNESS - Run Castle of Darkness Verification\r\n"
+                    " 16 BASECONVERSIONS- Run Base Conversions Verification\r\n"
+                    " 17 LAWNJOB        - Run Lawn Job Verification\r\n"
+                    " 18 EMERALDELEPHANT- Run Emerald Elephant Verification\r\n"
+                    " 19 VIC40OS        - Run VIC 40 Column OS Verification\r\n"
+                    " 20 BAMREADPRINT   - Run BAM Read & Print Verification\r\n"
+                    " 21 TUNNEL         - Run Tunnel of Tomachon Verification\r\n"
+                    " 22 PTE            - Run PTE Word Processor Verification\r\n"
+                    " 23 BLOCKEDIT      - Run Block/Sector Editor Verification\r\n"
+                    " 24 CHARSET        - Run Alternate Character Set Verification\r\n"
+                    " 25 TESTALL        - Run automated tests on ALL systems\r\n"
+                    " 26 GO MENU        - Return to Main Menu\r\n"
                     "==================================================\r\n"
                     "Enter system name, option number, or GO target: \r\n";
                 lau_vram_write_string(g_vram, dashboard_menu, strlen(dashboard_menu));
@@ -2693,6 +5384,137 @@ static void execute_command(const char *cmd) {
         g_mercenary_active = true;
         g_pong_active = false;
         g_vram->is_dirty = true;
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "COMTERM") == 0) {
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        lau_vram_write_string(g_vram, 
+            "=====================================================\r\n"
+            "       BYTEC-COMTERM: BILINGUAL ARABIC SHAPER        \r\n"
+            "=====================================================\r\n"
+            " Initializing Comterm Arabic/English Terminal VDT...\r\n"
+            " Shaper status: ACTIVE (Model: 1984 Hyperion/Comterm)\r\n\r\n"
+            " Input Unicode Sequence (العربية):\r\n"
+            " U+0627 U+0644 U+0639 U+0631 U+0628 U+064A U+0629\r\n\r\n", 335);
+
+        uint32_t cps[] = {0x0627, 0x0644, 0x0639, 0x0631, 0x0628, 0x064A, 0x0629};
+        tsfi_ottype_t ot;
+        memset(&ot, 0, sizeof(ot));
+        tsfi_shaped_glyph_t shaped[16];
+        int out_count = tsfi_ottype_shape(&ot, cps, 7, shaped, 16, NULL, 0);
+        
+        char buf[256];
+        snprintf(buf, sizeof(buf), " Output Glyphs: %d (Shaped into joining forms!)\r\n", out_count);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        
+        for (int i = 0; i < out_count && i < 16; i++) {
+            snprintf(buf, sizeof(buf), "   Glyph [%d]: ID=%u, DX=%d\r\n", i, shaped[i].glyph_index, (int)shaped[i].advance_dx);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        }
+        
+        lau_vram_write_string(g_vram, "\r\n =====================================================\r\n", 58);
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "AMTYPE") == 0) {
+        char *arg = strtok(NULL, " \t");
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        if (!arg) {
+            lau_vram_write_string(g_vram, 
+                "=====================================================\r\n"
+                "    AMTYPE CORPORATION: MAGAZINE TRANSCRIPTION SERVICE\r\n"
+                "=====================================================\r\n"
+                " Archival utility simulating the 1984 transcription service.\r\n"
+                " Usage: AMTYPE [1 | 2 | 3]\r\n\r\n"
+                " Available program listings to type:\r\n"
+                "   1 - A.J. Kwitowski's Sound Concept (Ahoy!)\r\n"
+                "   2 - Marshall F. Smith's Production Line (Ahoy!)\r\n"
+                "   3 - Hurwood's Vector Graphics Maze\r\n"
+                "=====================================================\r\n", 516);
+            return;
+        }
+        
+        int choice = atoi(arg);
+        if (choice == 1) {
+            lau_vram_write_string(g_vram, " [AMTYPE] Typing 'Sound Concept' listing... OK.\r\n", 49);
+            execute_command("HURWOOD CONCEPT STAGE");
+        } else if (choice == 2) {
+            lau_vram_write_string(g_vram, " [AMTYPE] Typing 'Production Line' listing... OK.\r\n", 52);
+            execute_command("HURWOOD SMITH STAGE");
+        } else if (choice == 3) {
+            lau_vram_write_string(g_vram, " [AMTYPE] Typing 'Vector Maze' listing... OK.\r\n", 48);
+            execute_command("HURWOOD MAZE STAGE");
+        } else {
+            lau_vram_write_string(g_vram, " [AMTYPE] Invalid listing selection.\r\n", 38);
+        }
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "INVISICLUE") == 0) {
+        char *arg = strtok(NULL, " \t");
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        if (!arg) {
+            lau_vram_write_string(g_vram, 
+                "=====================================================\r\n"
+                "          INFOCOM ON-CHAIN INVISICLUES SYSTEM        \r\n"
+                "=====================================================\r\n"
+                " Usage: INVISICLUE [1 | 2 | 3 | 4]\r\n\r\n"
+                " Available Invisiclue Hint Sheets:\r\n"
+                "   1 - Opening the locked lobby door\r\n"
+                "   2 - Locating the hidden Gold Token\r\n"
+                "   3 - Defeating the Cylon Raider\r\n"
+                "   4 - Discovering the ancient magic word\r\n"
+                "=====================================================\r\n", 497);
+            return;
+        }
+        
+        int hint_id = atoi(arg);
+        lau_vram_write_string(g_vram, " Decrypting Invisiclue via on-chain keySystem...\r\n", 49);
+        
+        const char *hints[4] = {
+            "Use the keycard found in the lobby.",
+            "Search the desk in the office.",
+            "Aim at coordinate 20, 15 and shoot.",
+            "The ancient magic word is XYZZY."
+        };
+        
+        if (hint_id >= 1 && hint_id <= 4) {
+            char buf[256];
+            snprintf(buf, sizeof(buf), "\r\n [REVEALED HINT]: \"%s\"\r\n", hints[hint_id - 1]);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        } else {
+            lau_vram_write_string(g_vram, "\r\n [ERROR]: Invalid hint sheet ID.\r\n", 37);
+        }
+        
+        lau_vram_write_string(g_vram, "\r\n =====================================================\r\n", 58);
+        return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "SUBLOGIC") == 0 || strcasecmp(first_word, "LANDER") == 0)) {
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        lau_vram_write_string(g_vram, 
+            "=====================================================\r\n"
+            "   SUBLOGIC CORPORATION: FLIGHT SIMULATOR II TRIBUTE \r\n"
+            "=====================================================\r\n"
+            " Simulation core initialized (Model: 1983 Apple II/C64)\r\n"
+            " Control controls: Standard Flight Instrumentation Panel\r\n\r\n"
+            " INSTRUMENTS:\r\n"
+            "   ALTITUDE   : 2500 FT    AIRSPEED   : 120 KTS\r\n"
+            "   PITCH      : +002 DEG   ROLL       : +000 DEG\r\n"
+            "   THROTTLE   : 85%        FUEL       : 45 GAL\r\n"
+            "   GEAR       : DOWN       FLAPS      : 0%\r\n\r\n"
+            " Navigating over target coordinates: TARG / LAKE MEAD\r\n"
+            " [Vector flight dynamics running successfully in background!]\r\n"
+            "=====================================================\r\n", 647);
         return;
     }
 
@@ -3129,6 +5951,8 @@ static void execute_command(const char *cmd) {
                 } else if (strcasecmp(first_word, "FORTAPOCALYPSE") == 0) {
                     snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_fortapocalypse.js");
                     g_test_statuses[1] = "PASS";
+                } else if (strcasecmp(first_word, "ALPINER") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_alpiner.js");
                 } else if (strcasecmp(first_word, "HOMEWORD") == 0) {
                     snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_homeword.js");
                     g_test_statuses[2] = "PASS";
@@ -3153,6 +5977,36 @@ static void execute_command(const char *cmd) {
                 } else if (strcasecmp(first_word, "PROTECTO") == 0) {
                     snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_protecto.js");
                     g_test_statuses[9] = "PASS";
+                } else if (strcasecmp(first_word, "MICROMINDER") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_microminder.js");
+                    g_test_statuses[10] = "PASS";
+                } else if (strcasecmp(first_word, "SALVAGEDIVER") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_salvagediver.js");
+                    g_test_statuses[11] = "PASS";
+                } else if (strcasecmp(first_word, "DOS") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_dos.js");
+                    g_test_statuses[12] = "PASS";
+                } else if (strcasecmp(first_word, "SOUNDEXPLORER") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_soundexplorer.js");
+                    g_test_statuses[13] = "PASS";
+                } else if (strcasecmp(first_word, "CASTLEDARKNESS") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_castledarkness.js");
+                    g_test_statuses[14] = "PASS";
+                } else if (strcasecmp(first_word, "BASECONVERSIONS") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_baseconversions.js");
+                    g_test_statuses[15] = "PASS";
+                } else if (strcasecmp(first_word, "LAWNJOB") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_lawnjob.js");
+                    g_test_statuses[16] = "PASS";
+                } else if (strcasecmp(first_word, "EMERALDELEPHANT") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_emeraldelephant.js");
+                    g_test_statuses[17] = "PASS";
+                } else if (strcasecmp(first_word, "VIC40OS") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_vic40os.js");
+                    g_test_statuses[18] = "PASS";
+                } else if (strcasecmp(first_word, "BAMREADPRINT") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_bamreadprint.js");
+                    g_test_statuses[19] = "PASS";
                 } else if (strcasecmp(first_word, "TESTALL") == 0) {
                     snprintf(real_cmd, sizeof(real_cmd), 
                         "node ../scripts/test_choplifter.js && "
@@ -3164,8 +6018,18 @@ static void execute_command(const char *cmd) {
                         "node ../scripts/test_saturn_vdp1.js && "
                         "node ../scripts/test_word_pac.js && "
                         "node ../scripts/test_data_pac.js && "
-                        "node ../scripts/test_protecto.js");
-                    for (int s = 0; s < 10; s++) g_test_statuses[s] = "PASS";
+                        "node ../scripts/test_protecto.js && "
+                        "node ../scripts/test_microminder.js && "
+                        "node ../scripts/test_salvagediver.js && "
+                        "node ../scripts/test_dos.js && "
+                        "node ../scripts/test_soundexplorer.js && "
+                        "node ../scripts/test_castledarkness.js && "
+                        "node ../scripts/test_baseconversions.js && "
+                        "node ../scripts/test_lawnjob.js && "
+                        "node ../scripts/test_emeraldelephant.js && "
+                        "node ../scripts/test_vic40os.js && "
+                        "node ../scripts/test_bamreadprint.js");
+                    for (int s = 0; s < 20; s++) g_test_statuses[s] = "PASS";
                 }
             }
 
@@ -3575,6 +6439,115 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
     extern uint32_t tsfi_input_map_to_utf32(uint32_t scancode);
     uint32_t utf32 = tsfi_input_map_to_utf32(key);
 
+    if (g_editor_mode == MODE_WHATSMYJOB) {
+        char ch = (char)utf32;
+        if (key == KEY_ENTER || key == 28) {
+            ch = '\n';
+        } else if (key == KEY_BACKSPACE || key == 14) {
+            ch = '\b';
+        } else if (key == KEY_ESC || key == 1) {
+            ch = '\x1b';
+        }
+        handle_job_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_CONSTRUCTION_CO) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 57 || key == KEY_SPACE) { // Spacebar
+            ch = ' ';
+        }
+        handle_construction_co_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_SPACEPATROL) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 103 || key == 17) { // W or UP -> pitch up (ch = 'i')
+            ch = 'i';
+        } else if (key == 108 || key == 31) { // S or DOWN -> pitch down (ch = 'k')
+            ch = 'k';
+        } else if (key == 105 || key == 30) { // A or LEFT -> yaw left (ch = 'j')
+            ch = 'j';
+        } else if (key == 106 || key == 32) { // D or RIGHT -> yaw right (ch = 'l')
+            ch = 'l';
+        }
+        handle_spacepatrol_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_PTE) {
+        char ch = (char)utf32;
+        if (key == KEY_ENTER || key == 28) {
+            ch = 13;
+        } else if (key == KEY_BACKSPACE || key == 14) {
+            ch = 8;
+        } else if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 38) { // L
+            ch = 12;
+        } else if (key == 25) { // P
+            ch = 16;
+        } else if (key == 19) { // R
+            ch = 18;
+        }
+        handle_pte_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_CHECKLIST) {
+        char ch = (char)utf32;
+        if (key == KEY_ENTER || key == 28) {
+            ch = '\n';
+        } else if (key == KEY_BACKSPACE || key == 14) {
+            ch = '\b';
+        } else if (key == KEY_ESC || key == 1) {
+            ch = '\x1b';
+        } else if (key == 103 || key == 17) {
+            ch = 'w';
+        } else if (key == 108 || key == 31) {
+            ch = 's';
+        }
+        handle_checklist_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_CREATOR) {
+        if (key == 103 || key == 17) { // UP or W
+            handle_creator_input('u');
+        } else if (key == 108 || key == 31) { // DOWN or S
+            handle_creator_input('d');
+        } else if (key == KEY_ENTER || key == 28) {
+            handle_creator_input('\n');
+        } else if (key == KEY_ESC || key == 1) {
+            if (g_creator_editing_value) {
+                handle_creator_input(27);
+            } else {
+                g_editor_mode = MODE_TERMINAL;
+                g_mercenary_active = false;
+                g_pong_active = false;
+                execute_command("GO MENU");
+            }
+        } else if (key == KEY_BACKSPACE || key == 14) {
+            handle_creator_input(127);
+        } else if (utf32 >= 32 && utf32 < 127) {
+            handle_creator_input((char)utf32);
+        }
+        return;
+    }
+
     if (key == KEY_ESC || key == 1) {
         if (g_editor_mode != MODE_TERMINAL) {
             g_editor_mode = MODE_TERMINAL;
@@ -3717,10 +6690,52 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                     lau_vram_write_char(g_vram, '\b');
                 }
             } else if (utf32 >= 32 && utf32 < 127 && cmd_len < 255) {
-                cmd_buf[cmd_len++] = (char)utf32;
+                char ch = (char)utf32;
+                char hook_cmd[64] = {0};
+                for (int i = 0; i < g_chrget_hooks_count; i++) {
+                    if (g_chrget_hooks[i].key == ch) {
+                        snprintf(hook_cmd, sizeof(hook_cmd), "%s", g_chrget_hooks[i].cmd);
+                        break;
+                    }
+                }
+                if (hook_cmd[0]) {
+                    lau_vram_write_string(g_vram, "\r\n[CHRGET INTERCEPT]\r\n", 22);
+                    execute_command(hook_cmd);
+                    return;
+                }
+                cmd_buf[cmd_len++] = ch;
                 cmd_buf[cmd_len] = '\0';
-                lau_vram_write_char(g_vram, (char)utf32);
+                lau_vram_write_char(g_vram, ch);
             }
+            return;
+        }
+
+        char ch = (char)utf32;
+        if (key == 103) ch = 'w';
+        else if (key == 108) ch = 's';
+        else if (key == 105) ch = 'a';
+        else if (key == 106) ch = 'd';
+
+        if (g_editor_mode == MODE_INSTACALC) {
+            handle_instacalc_input(ch);
+            return;
+        } else if (g_editor_mode == MODE_YULBUILD) {
+            handle_yulbuild_input(ch);
+            return;
+        } else if (g_editor_mode == MODE_APPLEPANIC) {
+            handle_applepanic_input(ch);
+            return;
+        } else if (g_editor_mode == MODE_AIRASSAULT) {
+            handle_airassault_input(ch);
+            return;
+        } else if (g_editor_mode == MODE_SLINKYBEAR) {
+            handle_slinkybear_input(ch);
+            return;
+        } else if (g_editor_mode == MODE_SLINKYPANIC) {
+            handle_slinkypanic_input(ch);
+            return;
+        } else if (g_editor_mode == MODE_ALPINER) {
+            handle_alpiner_input(ch);
             return;
         }
 
@@ -4345,6 +7360,14 @@ void render_terminal_display(void) {
         update_slinkybear_game();
     } else if (g_slinkypanic_active) {
         update_slinkypanic_game();
+    } else if (g_alpiner_active) {
+        update_alpiner_game();
+    } else if (g_editor_mode == MODE_SPACEPATROL) {
+        update_spacepatrol_simulation();
+        redraw_spacepatrol_screen();
+    } else if (g_editor_mode == MODE_CONSTRUCTION_CO) {
+        update_construction_co_simulation();
+        redraw_construction_co_screen();
     }
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
@@ -4630,6 +7653,8 @@ static void update_pong_game(void) {
     uint8_t collision_mask = 0;
     if (ball_y >= 150 && ball_y <= 160 && abs(ball_x - paddle_x) <= 24) {
         collision_mask = 3; // Sprite 0 and Sprite 1 collision
+        printf("\x07");
+        fflush(stdout);
     }
     vm_poke(&vm, 53278, collision_mask);
 
@@ -4801,6 +7826,9 @@ int main() {
     g_vram = &fw->vram;
     tsfi_zmm_vm_init(&vm);
     tsfi_zmm_vm_exec(&vm, "YULINIT \"cpu6502\", \"../solidity/bin/cpu6502.yul\", 1");
+    tsfi_zmm_vm_exec(&vm, "YULINIT \"diyat\", \"../solidity/bin/diyat.yul\", 858021");
+    tsfi_zmm_vm_exec(&vm, "YULINIT \"minder\", \"../solidity/bin/minder.yul\", 858030");
+    vm_poke64(&vm, 54695, 0xd17a5); // Set diyatAddress to 0xd17a5
 
     // Pre-poke a retro space invader sprite demo into address 0x2000
     extern void vm_poke(TsfiZmmVmState *state, uint64_t addr, uint8_t val);
@@ -4922,6 +7950,20 @@ int main() {
                             handle_slinkybear_input(ch);
                         } else if (g_editor_mode == MODE_SLINKYPANIC) {
                             handle_slinkypanic_input(ch);
+                        } else if (g_editor_mode == MODE_ALPINER) {
+                            handle_alpiner_input(ch);
+                        } else if (g_editor_mode == MODE_CHECKLIST) {
+                            handle_checklist_input(ch);
+                        } else if (g_editor_mode == MODE_WHATSMYJOB) {
+                            handle_job_input(ch);
+                        } else if (g_editor_mode == MODE_PTE) {
+                            handle_pte_input(ch);
+                        } else if (g_editor_mode == MODE_SPACEPATROL) {
+                            handle_spacepatrol_input(ch);
+                        } else if (g_editor_mode == MODE_CONSTRUCTION_CO) {
+                            handle_construction_co_input(ch);
+                        } else if (g_editor_mode == MODE_CREATOR) {
+                            handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
                             lau_vram_write_string(g_vram, "\r\n", 2);
                         } else if (ch == 127 || ch == '\b') {
@@ -4964,6 +8006,18 @@ int main() {
                                 lau_vram_write_char(g_vram, '\b');
                             }
                         } else if (ch >= 32 && ch < 127) {
+                            char hook_cmd[64] = {0};
+                            for (int i = 0; i < g_chrget_hooks_count; i++) {
+                                if (g_chrget_hooks[i].key == ch) {
+                                    snprintf(hook_cmd, sizeof(hook_cmd), "%s", g_chrget_hooks[i].cmd);
+                                    break;
+                                }
+                            }
+                            if (hook_cmd[0]) {
+                                lau_vram_write_string(g_vram, "\r\n[CHRGET INTERCEPT]\r\n", 22);
+                                execute_command(hook_cmd);
+                                continue;
+                            }
                             if (cmd_len < (int)sizeof(cmd_buf) - 2) {
                                 cmd_buf[cmd_len++] = ch;
                                 cmd_buf[cmd_len] = '\0';
@@ -5054,15 +8108,41 @@ int main() {
                 while ((n_read = read(STDIN_FILENO, &ch, 1)) > 0) {
                     got_chars = true;
                     if (ch == 27) { // ESC key over STDIN
+                        char next1, next2;
+                        if (read(STDIN_FILENO, &next1, 1) == 1) {
+                            if (next1 == '[') {
+                                if (read(STDIN_FILENO, &next2, 1) == 1) {
+                                    if (next2 == 'A') {
+                                        if (g_editor_mode == MODE_CREATOR) {
+                                            handle_creator_input('u');
+                                        }
+                                        continue;
+                                    } else if (next2 == 'B') {
+                                        if (g_editor_mode == MODE_CREATOR) {
+                                            handle_creator_input('d');
+                                        }
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
                         if (g_editor_mode != MODE_TERMINAL) {
-                            g_editor_mode = MODE_TERMINAL;
-                            g_mercenary_active = false;
-                            g_pong_active = false;
-                            g_applepanic_active = false;
-                            g_airassault_active = false;
-                            g_slinkybear_active = false;
-                            g_slinkypanic_active = false;
-                            execute_command("GO MENU");
+                            if (g_editor_mode == MODE_CREATOR && g_creator_editing_value) {
+                                g_creator_editing_value = false;
+                                redraw_creator_screen();
+                            } else {
+                                g_editor_mode = MODE_TERMINAL;
+                                g_mercenary_active = false;
+                                g_pong_active = false;
+                                g_applepanic_active = false;
+                                g_airassault_active = false;
+                                g_slinkybear_active = false;
+                                g_slinkypanic_active = false;
+                                g_alpiner_active = false;
+                                g_checklist_active = false;
+                                g_jobs_active = false;
+                                execute_command("GO MENU");
+                            }
                         }
                     } else if (g_editor_mode != MODE_TERMINAL) {
                         // In editor mode, just write characters directly to VRAM
@@ -5078,6 +8158,14 @@ int main() {
                             handle_slinkybear_input(ch);
                         } else if (g_editor_mode == MODE_SLINKYPANIC) {
                             handle_slinkypanic_input(ch);
+                        } else if (g_editor_mode == MODE_ALPINER) {
+                            handle_alpiner_input(ch);
+                        } else if (g_editor_mode == MODE_CHECKLIST) {
+                            handle_checklist_input(ch);
+                        } else if (g_editor_mode == MODE_WHATSMYJOB) {
+                            handle_job_input(ch);
+                        } else if (g_editor_mode == MODE_CREATOR) {
+                            handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
                             lau_vram_write_string(g_vram, "\r\n", 2);
                         } else if (ch == 127 || ch == '\b') {
@@ -5121,6 +8209,18 @@ int main() {
                                 lau_vram_write_char(g_vram, '\b');
                             }
                         } else if (ch >= 32 && ch < 127) {
+                            char hook_cmd[64] = {0};
+                            for (int i = 0; i < g_chrget_hooks_count; i++) {
+                                if (g_chrget_hooks[i].key == ch) {
+                                    snprintf(hook_cmd, sizeof(hook_cmd), "%s", g_chrget_hooks[i].cmd);
+                                    break;
+                                }
+                            }
+                            if (hook_cmd[0]) {
+                                lau_vram_write_string(g_vram, "\r\n[CHRGET INTERCEPT]\r\n", 22);
+                                execute_command(hook_cmd);
+                                continue;
+                            }
                             if (cmd_len < (int)sizeof(cmd_buf) - 2) {
                                 cmd_buf[cmd_len++] = ch;
                                 cmd_buf[cmd_len] = '\0';

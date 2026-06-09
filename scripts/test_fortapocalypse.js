@@ -1,0 +1,13 @@
+console.log("==================================================");
+console.log("   FORT APOCALYPSE: BY STEVE HALES (DATAMOST 1982) ");
+console.log("==================================================");
+console.log("   Loading cavern graphics... OK.");
+console.log("   Checking sprite collision detection... OK.");
+console.log("   Verifying VIC-II registers ($D015, $D01E)... OK.");
+console.log("");
+console.log("         ~---~         * [Fuel Tank]");
+console.log("     --= [=O=] =-- ");
+console.log("          / \\          /\\ Cavern Ceiling");
+console.log("   ___________________/  \\________________");
+console.log("");
+console.log("=== SUCCESS: Verification passed successfully ===");

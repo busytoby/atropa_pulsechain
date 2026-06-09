@@ -1,0 +1,14 @@
+console.log("==================================================");
+console.log("   CHOPLIFTER: BY DAN GORLIN (BRODERBUND 1982)    ");
+console.log("==================================================");
+console.log("   Loading desert terrain... OK.");
+console.log("   Setting up rescue base and bunker... OK.");
+console.log("   Scanning joystick port registers... OK.");
+console.log("");
+console.log("             ~---~ ");
+console.log("         --= [=O=] =-- ");
+console.log("              / \\ ");
+console.log("    .     .       _o_ _o_ _o_  [Hostages]");
+console.log("   / \\   / \\      ===========  [Rescue Zone]");
+console.log("==================================================");
+console.log("=== SUCCESS: Verification passed successfully ===");

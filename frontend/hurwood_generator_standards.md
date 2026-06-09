@@ -136,3 +136,27 @@ When running the `STAGE` operation for the `CONCEPT` schema, a compiled 6502 ass
 *   **Target Sound Queue Address**: `$1000` (4096 decimal).
 *   **Assembly Hook**: The staged BASIC program calls `SYS 3328`, invoking the Sounder binary. It reads the 3-byte cells from `$1000`, configures the voice frequency mappings, decrements loop counters using an internal delay routine, and terminates when a duration value of `0` is reached.
 
+---
+
+## 9. Interactive Creator Wizard (`CREATOR` TUI Mode)
+
+The `CREATOR` command enters a fullscreen interactive text user interface (TUI) wizard permitting real-time property tuning of standard code schemas:
+
+### 9.1 Keyboard Controls
+*   **Up/Down Arrow Keys (`u`/`d` or `U`/`D`)**: Navigate through schemas and parameter rows.
+*   **Enter key**:
+    *   In Schema Selection: Enter configuration screen for the chosen schema.
+    *   In Configuration Selection: Initiate parameter field editing or trigger code generation when selecting `[ GENERATE & STAGE TO RAM ]`.
+    *   In Parameter Edit Mode: Commit the typed value back to the parameter register and exit edit mode.
+*   **ESC key**: Cancel current input edit, or return to the main Terminal Shell menu.
+*   **Backspace/Delete (`\b`/`127`)**: Delete the last character in the active value editing buffer.
+
+### 9.2 Tuneable Parameters
+1.  **SID Audio Schema**:
+    *   `Target Frequency`: Integer value in Hz (dynamically converts to 16-bit SID frequency registers).
+    *   `Waveform`: String option (`Triangle`, `Sawtooth`, `Pulse`, `Noise`).
+2.  **Sprite Setup Schema**:
+    *   `Coordinate X` & `Coordinate Y`: Pixel offsets for Sprite 0.
+    *   `Sprite Color Code`: C64 color registers value range (`0-15`).
+
+

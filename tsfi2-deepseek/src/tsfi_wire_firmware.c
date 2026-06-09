@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "tsfi_wire_firmware.h"
 #include "tsfi_reaction.h"
+#include "tsfi_puppetry.h"
 #include "lau_memory.h"
 #include "lau_registry.h"
 #include "tsfi_wire_pty.h"
@@ -205,6 +206,8 @@ void tsfi_wire_firmware_init(void) {
     
     if (is_creator) {
         memset(fw, 0, fw_size);
+        // Ensure shared memory segment for 3D puppet rigging exists across all tests
+        tsfi_puppetry_shm_create();
     }
 
     // Bind Standard Cells on every attach to ensure correct function addresses with ASLR

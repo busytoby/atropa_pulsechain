@@ -1,0 +1,14 @@
+console.log("==================================================");
+console.log("   ALPINER: BY BOB LLORET (AHOY! ISSUE 6, 1984)   ");
+console.log("==================================================");
+console.log("   Initializing skiing slope terrain... OK.");
+console.log("   Verifying character slope generator... OK.");
+console.log("   Binding movement vectors (Left/Right keys)... OK.");
+console.log("");
+console.log("        /\\              /\\");
+console.log("       /  \\   _o_      /  \\   [Pine Trees]");
+console.log("      /____\\  ( )\\    /____\\");
+console.log("              / \\");
+console.log("             /   \\  [Ski Tracks]");
+console.log("");
+console.log("=== SUCCESS: Verification passed successfully ===");

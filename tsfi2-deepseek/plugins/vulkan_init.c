@@ -906,12 +906,37 @@ void init_vk_swapchain(VulkanContext *vk, int width, int height) {
     vk->swapchainFormat = swapchainFormat;
     lau_free(formats);
  
+    // Determine present mode: prefer Mailbox (Triple-Buffering low latency), fallback to FIFO (VSync)
+    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    uint32_t presentModeCount = 0;
+    if (vk->vkGetPhysicalDeviceSurfacePresentModesKHR(vk->physical_device, vk->surface, &presentModeCount, NULL) == VK_SUCCESS && presentModeCount > 0) {
+        VkPresentModeKHR *presentModes = (VkPresentModeKHR*)lau_malloc(sizeof(VkPresentModeKHR) * presentModeCount);
+        if (vk->vkGetPhysicalDeviceSurfacePresentModesKHR(vk->physical_device, vk->surface, &presentModeCount, presentModes) == VK_SUCCESS) {
+            for (uint32_t i = 0; i < presentModeCount; i++) {
+                if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+                    presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+                    break;
+                }
+            }
+        }
+        lau_free(presentModes);
+    }
+
+    uint32_t imageCount = caps.minImageCount + 1;
+    if (caps.maxImageCount > 0 && imageCount > caps.maxImageCount) {
+        imageCount = caps.maxImageCount;
+    }
+    // Try to request at least 3 images for triple-buffering support
+    if (imageCount < 3 && (caps.maxImageCount == 0 || caps.maxImageCount >= 3)) {
+        imageCount = 3;
+    }
+
     VkSwapchainCreateInfoKHR swapInfo = {
-        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, .surface = vk->surface, .minImageCount = caps.minImageCount + 1,
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, .surface = vk->surface, .minImageCount = imageCount,
         .imageFormat = swapchainFormat, .imageColorSpace = swapchainColorSpace, .imageExtent = caps.currentExtent,
         .imageArrayLayers = 1, .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE, .preTransform = caps.currentTransform, .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_FIFO_KHR, .clipped = VK_TRUE, .oldSwapchain = VK_NULL_HANDLE
+        .presentMode = presentMode, .clipped = VK_TRUE, .oldSwapchain = VK_NULL_HANDLE
     };
 
     // Ensure preTransform is a single valid bit

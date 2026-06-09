@@ -928,10 +928,51 @@
 
             // Draw sky background
             let gradient = ctx.createLinearGradient(0, 0, 0, horizonY);
-            gradient.addColorStop(0, "#010103");
-            gradient.addColorStop(1, "#15162a");
+            gradient.addColorStop(0, "#020108");
+            gradient.addColorStop(0.5, "#20032e");
+            gradient.addColorStop(1, "#3c0944");
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, horizonY);
+
+            // Draw Synthwave Grid Sun
+            let sunR = 75;
+            let sunX = canvas.width / 2 + (curveStrength * 0.1);
+            let sunY = horizonY;
+            let sunGrad = ctx.createLinearGradient(0, sunY - sunR, 0, sunY);
+            sunGrad.addColorStop(0, "#ff007f");
+            sunGrad.addColorStop(0.5, "#ff5500");
+            sunGrad.addColorStop(1, "#ffcc00");
+            ctx.fillStyle = sunGrad;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunR, Math.PI, 0, false);
+            ctx.fill();
+
+            // Sun horizontal blind lines
+            ctx.fillStyle = "#020108";
+            for (let i = sunY - sunR; i < sunY; i += 8) {
+                let w = (i - (sunY - sunR)) / sunR * 3;
+                if (w < 1) w = 1;
+                ctx.fillRect(sunX - sunR - 10, i, sunR * 2 + 20, w);
+            }
+
+            // Draw Background Mountains (Vector style)
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+            ctx.lineWidth = 2;
+            let mountOffset = Math.floor(tickCounter * 0.5 + curveStrength * 0.2) % 400;
+            ctx.beginPath();
+            // Mountain 1
+            ctx.moveTo(0 - mountOffset, horizonY);
+            ctx.lineTo(150 - mountOffset, horizonY - 60);
+            ctx.lineTo(300 - mountOffset, horizonY);
+            // Mountain 2
+            ctx.moveTo(200 - mountOffset, horizonY);
+            ctx.lineTo(400 - mountOffset, horizonY - 100);
+            ctx.lineTo(600 - mountOffset, horizonY);
+            // Mountain 3
+            ctx.moveTo(500 - mountOffset, horizonY);
+            ctx.lineTo(700 - mountOffset, horizonY - 70);
+            ctx.lineTo(900 - mountOffset, horizonY);
+            ctx.stroke();
 
             for(let y = horizonY; y < canvas.height; y++) {
                 let relativeDepth = (y - horizonY) / (canvas.height - horizonY); // 0 to 1
@@ -945,48 +986,181 @@
                 let speedScale = reg.camZ > 0 ? (400 / reg.camZ) : 4;
                 let cycle = Math.floor(tickCounter * 0.2 * speedScale - (10 / relativeDepth)) % 2 === 0;
                 
-                // Shoulder/grass
-                ctx.fillStyle = cycle ? "#1b2c15" : "#111f0d";
+                // Shoulder/grass (neon purple grid or retro grid lines)
+                ctx.fillStyle = cycle ? "#1b072c" : "#0f031c";
                 ctx.fillRect(0, y, canvas.width, 1);
 
                 // Road base
-                ctx.fillStyle = "#1e1e24";
+                ctx.fillStyle = "#161726";
                 ctx.fillRect(roadCenter - roadWidth/2, y, roadWidth, 1);
 
                 // Road side lines (red/white rumble strips)
                 let rumbleWidth = 5 + relativeDepth * 15;
-                ctx.fillStyle = cycle ? "#ff007f" : "#fff";
+                ctx.fillStyle = cycle ? "#ff007f" : "#00f2fe";
                 ctx.fillRect(roadCenter - roadWidth/2 - rumbleWidth, y, rumbleWidth, 1);
                 ctx.fillRect(roadCenter + roadWidth/2, y, rumbleWidth, 1);
 
                 // Center dashed lines
                 if (cycle && relativeDepth > 0.1) {
                     let dashWidth = 2 + relativeDepth * 10;
-                    ctx.fillStyle = "#ffb000";
+                    ctx.fillStyle = "#00f2fe";
                     ctx.fillRect(roadCenter - dashWidth/2, y, dashWidth, 1);
                 }
+            }
+
+            // Draw Roadside Light Poles (neon markers)
+            for (let i = 0; i < 4; i++) {
+                let poleDepth = ((tickCounter * 0.02 + i * 0.25) % 1.0);
+                if (poleDepth < 0.05) continue;
+                let poleY = horizonY + poleDepth * (canvas.height - horizonY);
+                let poleScale = poleDepth * 25;
+                
+                let relativeDepth = (poleY - horizonY) / (canvas.height - horizonY);
+                let roadWidth = 40 + relativeDepth * 400;
+                let curveOffset = curveStrength * relativeDepth * relativeDepth;
+                let roadCenter = (canvas.width / 2) + curveOffset - (playerOffset * relativeDepth) + (tiltOffset * relativeDepth * 3);
+                
+                // Left pole
+                ctx.fillStyle = "#ff007f";
+                ctx.fillRect(roadCenter - roadWidth/2 - 12, poleY - poleScale, 3, poleScale);
+                ctx.fillStyle = "#ffea00";
+                ctx.beginPath();
+                ctx.arc(roadCenter - roadWidth/2 - 10, poleY - poleScale, 4, 0, Math.PI*2);
+                ctx.fill();
+
+                // Right pole
+                ctx.fillStyle = "#ff007f";
+                ctx.fillRect(roadCenter + roadWidth/2 + 9, poleY - poleScale, 3, poleScale);
+                ctx.fillStyle = "#ffea00";
+                ctx.beginPath();
+                ctx.arc(roadCenter + roadWidth/2 + 11, poleY - poleScale, 4, 0, Math.PI*2);
+                ctx.fill();
             }
 
             // Draw scaling sprite (car ahead)
             let zProgress = (tickCounter * 0.005 * (reg.camZ / 100)) % 1.0;
             let enemyDepth = zProgress; // 0 to 1
-            let enemyScale = 10 + enemyDepth * 80;
+            let enemyScale = 15 + enemyDepth * 100;
             let enemyY = horizonY + enemyDepth * (canvas.height - horizonY - 40);
             let enemyX = (canvas.width / 2) + curveStrength * enemyDepth * enemyDepth - playerOffset * enemyDepth + (tiltOffset * enemyDepth * 3);
 
             if (enemyY > horizonY && enemyY < canvas.height) {
-                // Draw enemy car silhouette
-                ctx.fillStyle = varColor("--neon-blue");
-                ctx.fillRect(enemyX - enemyScale/2, enemyY - enemyScale/3, enemyScale, enemyScale/3);
-                ctx.fillStyle = "#fff";
-                ctx.fillRect(enemyX - enemyScale/4, enemyY - enemyScale/4, enemyScale/2, enemyScale/10);
+                // Opponent shadow
+                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                ctx.fillRect(enemyX - enemyScale/2, enemyY + enemyScale/10, enemyScale, enemyScale/12);
+
+                // Body
+                ctx.fillStyle = "#00f2fe"; // Neon cyan
+                ctx.beginPath();
+                ctx.moveTo(enemyX - enemyScale/2, enemyY + enemyScale/10);
+                ctx.lineTo(enemyX - enemyScale/2.2, enemyY - enemyScale/15);
+                ctx.lineTo(enemyX - enemyScale/3.5, enemyY - enemyScale/7);
+                ctx.lineTo(enemyX + enemyScale/3.5, enemyY - enemyScale/7);
+                ctx.lineTo(enemyX + enemyScale/2.2, enemyY - enemyScale/15);
+                ctx.lineTo(enemyX + enemyScale/2, enemyY + enemyScale/10);
+                ctx.fill();
+
+                // Taillights
+                ctx.fillStyle = "#ff0055";
+                ctx.fillRect(enemyX - enemyScale/2.5, enemyY, enemyScale/6, enemyScale/20);
+                ctx.fillRect(enemyX + enemyScale/4.5, enemyY, enemyScale/6, enemyScale/20);
+
+                // Wheels
+                ctx.fillStyle = "#0a0a0f";
+                ctx.fillRect(enemyX - enemyScale/2.1, enemyY + enemyScale/20, enemyScale/10, enemyScale/15);
+                ctx.fillRect(enemyX + enemyScale/2.6, enemyY + enemyScale/20, enemyScale/10, enemyScale/15);
             }
 
-            // Perspective HUD text
-            ctx.fillStyle = varColor("--neon-blue");
-            ctx.font = "15px 'Orbitron', sans-serif";
-            ctx.fillText("SPEED: " + Math.round(100 + reg.camZ / 2) + " MPH", 30, 40);
-            ctx.fillText("DRIFT OFFSET: " + reg.camX, 30, 70);
+            // Draw Player Car (sleek rear view)
+            let carX = canvas.width / 2;
+            let carY = canvas.height - 70;
+            
+            // Road curvature lean effect
+            let lean = (curveStrength * -0.05) + (reg.camX * 0.1);
+            ctx.save();
+            ctx.translate(carX, carY + 30);
+            ctx.rotate(lean * Math.PI / 180);
+            ctx.translate(-carX, -carY - 30);
+
+            // Shadow
+            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+            ctx.fillRect(carX - 70, carY + 40, 140, 15);
+
+            // Car main body (Hot pink retro supercar)
+            ctx.fillStyle = "#ff007f";
+            ctx.beginPath();
+            ctx.moveTo(carX - 65, carY + 40);
+            ctx.lineTo(carX - 60, carY + 10);
+            ctx.lineTo(carX - 45, carY - 2);
+            ctx.lineTo(carX + 45, carY - 2);
+            ctx.lineTo(carX + 60, carY + 10);
+            ctx.lineTo(carX + 65, carY + 40);
+            ctx.fill();
+
+            // Spoiler
+            ctx.fillStyle = "#11021c";
+            ctx.fillRect(carX - 70, carY - 10, 140, 8);
+            ctx.fillRect(carX - 65, carY - 2, 12, 15);
+            ctx.fillRect(carX + 53, carY - 2, 12, 15);
+
+            // Rear windshield
+            ctx.fillStyle = "#0f0d1a";
+            ctx.beginPath();
+            ctx.moveTo(carX - 40, carY);
+            ctx.lineTo(carX - 32, carY + 12);
+            ctx.lineTo(carX + 32, carY + 12);
+            ctx.lineTo(carX + 40, carY);
+            ctx.fill();
+
+            // Tail lights
+            ctx.fillStyle = "#ff003c";
+            ctx.fillRect(carX - 55, carY + 18, 25, 8);
+            ctx.fillRect(carX + 30, carY + 18, 25, 8);
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(carX - 50, carY + 20, 12, 3);
+            ctx.fillRect(carX + 38, carY + 20, 12, 3);
+
+            // License plate
+            ctx.fillStyle = "#ffea00";
+            ctx.fillRect(carX - 15, carY + 24, 30, 12);
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 7px sans-serif";
+            ctx.fillText("TSFI-2", carX - 11, carY + 33);
+            ctx.restore();
+
+            // Perspective HUD / Neon Speedometer
+            let hudX = canvas.width - 90;
+            let hudY = canvas.height - 80;
+            
+            // Speedometer Arc
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.2)";
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(hudX, hudY, 40, Math.PI * 0.8, Math.PI * 2.2);
+            ctx.stroke();
+
+            // Active speed arc
+            let speed = Math.round(100 + reg.camZ / 2);
+            let speedPct = speed / 300;
+            if (speedPct > 1.0) speedPct = 1.0;
+            ctx.strokeStyle = "#ff007f";
+            ctx.beginPath();
+            ctx.arc(hudX, hudY, 40, Math.PI * 0.8, Math.PI * (0.8 + speedPct * 1.4));
+            ctx.stroke();
+
+            // Speed number
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 16px 'Orbitron', sans-serif";
+            ctx.fillText(speed, hudX - 15, hudY + 5);
+            ctx.font = "8px 'Orbitron', sans-serif";
+            ctx.fillStyle = "#ffb000";
+            ctx.fillText("MPH", hudX - 10, hudY + 18);
+
+            // Left panel text info
+            ctx.fillStyle = "#00f2fe";
+            ctx.font = "bold 14px 'Orbitron', sans-serif";
+            ctx.fillText("DRIFT: " + reg.camX, 30, 40);
+            ctx.fillText("TILT: " + reg.pitch, 30, 60);
         }
 
         // Mode 3 Renderer: True 3D Wireframe graphics

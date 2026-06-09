@@ -41,10 +41,11 @@ object "Diyat" {
 
                 // Execute call to token contract
                 let success := call(gas(), tokenAddress, 0, 0x00, 0x64, 0x00, 0x20)
-                let result := 0
+                let result := 1
                 if success {
-                    if mload(0x00) {
-                        result := 1
+                    if iszero(mload(0x00)) {
+                        // If token explicitly returned false/0, set result to 0
+                        result := 0
                     }
                 }
 

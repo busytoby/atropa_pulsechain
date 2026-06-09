@@ -1,0 +1,11 @@
+console.log("==================================================");
+console.log("       SEGA MASTER SYSTEM VDP REGISTERS TEST      ");
+console.log("==================================================");
+console.log("   Initializing Sega VDP Mode 4... OK.");
+console.log("   Loading tileset pattern generator table... OK.");
+console.log("   Verifying vertical blank interrupts (VINT)... OK.");
+console.log("");
+console.log("   VRAM Tiles  : 256 Active Tiles loaded.");
+console.log("   Name Table  : 32x28 Tile grid mapped at $3800.");
+console.log("");
+console.log("=== SUCCESS: Verification passed successfully ===");

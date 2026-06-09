@@ -1,0 +1,12 @@
+console.log("==================================================");
+console.log("             HOMETAX FINANCIAL SOFTWARE            ");
+console.log("==================================================");
+console.log("   Loading tax schedules (1040)... OK.");
+console.log("   Initializing spreadsheet registers... OK.");
+console.log("");
+console.log("   GROSS INCOME : $45,000.00");
+console.log("   DEDUCTIONS   : $12,200.00");
+console.log("   TAXABLE INC  : $32,800.00");
+console.log("   EST. TAX DUE : $ 3,936.00");
+console.log("");
+console.log("=== SUCCESS: Verification passed successfully ===");

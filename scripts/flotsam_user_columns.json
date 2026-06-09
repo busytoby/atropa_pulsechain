@@ -1,0 +1,7 @@
+[
+  {
+    "author": "BOB LLORET, NY",
+    "message": "Is there a SID sound compiler coming?",
+    "reply": "Gating issue detected! On the C64 SID chip, you must write to the frequency registers first, and write the gating bit (bit 0 of control register $D404/$D40B/$D412) last to trigger the ADSR envelope generator."
+  }
+]

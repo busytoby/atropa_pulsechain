@@ -3052,6 +3052,16 @@ object "CPU6502Emulator" {
                 return(0x00, add(0x40, mul(length, 32)))
             }
 
+            // ----------------------------------------------------------------
+            // Method 15: exciseTaxRenumber() -> uint256 success
+            // Selector: 0xd17a57a8
+            // ----------------------------------------------------------------
+            if eq(selector, 0xd17a57a8) {
+                let success := exciseOnChainTax(10)
+                mstore(0x00, success)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }

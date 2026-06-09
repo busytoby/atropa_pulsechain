@@ -384,6 +384,7 @@ void draw_ui_elements(VulkanSystem *s) {
 static VkBuffer g_staging_vk_buffer = VK_NULL_HANDLE;
 static VkDeviceMemory g_staging_vk_memory = VK_NULL_HANDLE;
 static size_t g_staging_vk_buffer_allocated_size = 0;
+static void* g_staging_vk_persistent_map = NULL;
 
 bool init_staging_vk_buffer(VulkanSystem *s, size_t size) {
     if (!s || !s->vk) return false;
@@ -436,6 +437,12 @@ bool init_staging_vk_buffer(VulkanSystem *s, size_t size) {
     if (vk->vkAllocateMemory(vk->device, &allocInfo, NULL, &g_staging_vk_memory) != VK_SUCCESS) return false;
     vk->vkBindBufferMemory(vk->device, g_staging_vk_buffer, g_staging_vk_memory, 0);
 
+    // Persistently map the coherent memory to save call overhead on render iterations (Zero-copy)
+    if (vk->vkMapMemory(vk->device, g_staging_vk_memory, 0, size, 0, &g_staging_vk_persistent_map) != VK_SUCCESS) {
+        g_staging_vk_persistent_map = NULL;
+        return false;
+    }
+
     if (vk->vkGetMemoryFdKHR) {
         VkMemoryGetFdInfoKHR fdInfo = {
             .sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR,
@@ -473,9 +480,9 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
         g_staging_vk_buffer_allocated_size = dest_size;
     }
 
-    // 1. Copy CPU data to Staging VkBuffer
-    void* mapped;
-    vk->vkMapMemory(vk->device, g_staging_vk_memory, 0, dest_size, 0, &mapped);
+    // 1. Copy CPU data to Staging VkBuffer via persistent mapping (Zero-copy)
+    void* mapped = g_staging_vk_persistent_map;
+    if (!mapped) return;
     
     if (vk->swapchainFormat == VK_FORMAT_R16G16B16A16_SFLOAT) {
         typedef struct { uint16_t r, g, b, a; } AB4HPixelLocal;
@@ -585,7 +592,6 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
     } else {
         memcpy(mapped, sb->data, sb->size);
     }
-    vk->vkUnmapMemory(vk->device, g_staging_vk_memory);
 
     // 2. Transition image to TRANSFER_DST_OPTIMAL
     VkImageMemoryBarrier barrier = {
