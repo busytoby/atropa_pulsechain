@@ -1871,6 +1871,23 @@ static void execute_command(const char *cmd) {
                 " [VIC-II visual sprite generation code completed.]\r\n"
                 "==================================================\r\n";
             lau_vram_write_string(g_vram, output, strlen(output));
+        } else if (arg && strcasecmp(arg, "CHARSET") == 0) {
+            const char *output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 CUSTOM CHARACTER   \r\n"
+                "==================================================\r\n"
+                " Redefining C64 Character ROM to RAM ($3000)...\r\n\r\n"
+                " 10 POKE 52, 48: POKE 56, 48: CLR: REM RESERVE RAM\r\n"
+                " 20 POKE 56334, PEEK(56334) AND 254: REM NO INT\r\n"
+                " 30 POKE 1, PEEK(1) AND 251: REM SW CHAR ROM IN\r\n"
+                " 40 FOR I = 0 TO 2047: POKE 12288+I, PEEK(53248+I): NEXT I\r\n"
+                " 50 POKE 1, PEEK(1) OR 4: REM SW CHAR ROM OUT\r\n"
+                " 60 POKE 56334, PEEK(56334) OR 1: REM INT ON\r\n"
+                " 70 POKE 53272, (PEEK(53272) AND 240) OR 12\r\n"
+                " READY.\r\n\r\n"
+                " [Character set relocation BASIC layout generated.]\r\n"
+                "==================================================\r\n";
+            lau_vram_write_string(g_vram, output, strlen(output));
         } else {
             const char *output = 
                 "==================================================\r\n"
@@ -1886,7 +1903,7 @@ static void execute_command(const char *cmd) {
                 " 70 NEXT I\r\n"
                 " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
                 " READY.\r\n\r\n"
-                " [Usage: HURWOOD [MAZE | SOUND | SPRITE]]\r\n"
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET]]\r\n"
                 "==================================================\r\n";
             lau_vram_write_string(g_vram, output, strlen(output));
         }
