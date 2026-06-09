@@ -60,7 +60,11 @@ typedef enum {
     MODE_DISINTEGRATOR,
     MODE_FIDGITS,
     MODE_MOXEY,
-    MODE_DRUM
+    MODE_DRUM,
+    MODE_JEWEL,
+    MODE_SANTA,
+    MODE_CLOAK,
+    MODE_GYPSY
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -291,9 +295,13 @@ static const char *g_booter_entries[] = {
     "DISINTEGRATOR (ML Particle Grid Shooter)",
     "FIDGITS (Alphabet Sorting Game)",
     "MOXEY'S PORCH (Text Adventure Game)",
-    "RHYTHMIC BITS (Step Sequencer Drum Machine)"
+    "RHYTHMIC BITS (Step Sequencer Drum Machine)",
+    "JEWEL QUEST (Arcade Logic Match Game)",
+    "SANTA'S BUSY DAY (Festive chimney delivery)",
+    "CLOAK (Espionage Text Adventure)",
+    "GYPSY STARSHIP (Space Trading Simulation)"
 };
-static int g_booter_count = 12;
+static int g_booter_count = 16;
 static int g_booter_cursor = 0;
 static char g_booter_status[128];
 static void init_booter(void);
@@ -366,6 +374,48 @@ static void init_drum(void);
 static void redraw_drum_screen(void);
 static void handle_drum_input(char ch);
 static void update_drum_seq(uint32_t current_time);
+
+// Jewel Quest variables
+static char g_jewel_grid[6][6];
+static int g_jewel_cx = 0, g_jewel_cy = 0;
+static int g_jewel_score = 0;
+static char g_jewel_status[128];
+static void init_jewel(void);
+static void redraw_jewel_screen(void);
+static void handle_jewel_input(char ch);
+
+// Santa's Busy Day variables
+static int g_santa_x = 0;
+static int g_santa_dir = 1;
+static int g_present_y = -1;
+static int g_present_x = -1;
+static int g_chimney_x[3];
+static int g_santa_score = 0;
+static char g_santa_status[128];
+static void init_santa(void);
+static void redraw_santa_screen(void);
+static void handle_santa_input(char ch);
+static void update_santa(uint32_t current_time);
+static uint32_t g_santa_last_tick = 0;
+
+// Cloak variables
+static int g_cloak_room = 0; // 0=Entrance, 1=Vault, 2=Security
+static bool g_cloak_has_film = false;
+static bool g_cloak_alarm = false;
+static char g_cloak_status[128];
+static void init_cloak(void);
+static void redraw_cloak_screen(void);
+static void handle_cloak_input(char ch);
+
+// Gypsy Starship variables
+static int g_gypsy_fuel = 100;
+static int g_gypsy_credits = 500;
+static int g_gypsy_cargo = 0;
+static int g_gypsy_sector = 1;
+static char g_gypsy_status[128];
+static void init_gypsy(void);
+static void redraw_gypsy_screen(void);
+static void handle_gypsy_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -3356,6 +3406,359 @@ static void update_drum_seq(uint32_t current_time) {
     }
 }
 
+static void init_jewel(void) {
+    g_jewel_cx = 0; g_jewel_cy = 0;
+    g_jewel_score = 0;
+    // Populate grid
+    const char gems[] = "ABCDE";
+    for (int r = 0; r < 6; r++) {
+        for (int c = 0; c < 6; c++) {
+            g_jewel_grid[r][c] = gems[rand() % 5];
+        }
+    }
+    snprintf(g_jewel_status, sizeof(g_jewel_status), "Swap gems to align 3. [W/A/S/D] Move, [SPACE] Swap right.");
+}
+
+static void redraw_jewel_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================\r\n"
+             "  JEWEL QUEST (Ahoy! Issue 24)      \r\n"
+             "====================================\r\n"
+             " Score: %d\r\n"
+             "------------------------------------\r\n", g_jewel_score);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int r = 0; r < 6; r++) {
+        char line[128];
+        int pos = 0;
+        pos += snprintf(line + pos, sizeof(line) - pos, "   | ");
+        for (int c = 0; c < 6; c++) {
+            if (r == g_jewel_cy && c == g_jewel_cx) {
+                pos += snprintf(line + pos, sizeof(line) - pos, "[%c] ", g_jewel_grid[r][c]);
+            } else {
+                pos += snprintf(line + pos, sizeof(line) - pos, " %c  ", g_jewel_grid[r][c]);
+            }
+        }
+        pos += snprintf(line + pos, sizeof(line) - pos, "|\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+    lau_vram_write_string(g_vram, "====================================\r\n", 38);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_jewel_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [W/A/S/D] Move, [SPACE] Swap Right, [ESC] Exit\r\n", 58);
+}
+
+static void handle_jewel_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'w' || ch == 'W') {
+        if (g_jewel_cy > 0) g_jewel_cy--;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_jewel_cy < 5) g_jewel_cy++;
+    } else if (ch == 'a' || ch == 'A') {
+        if (g_jewel_cx > 0) g_jewel_cx--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_jewel_cx < 5) g_jewel_cx++;
+    } else if (ch == ' ') {
+        if (g_jewel_cx < 5) {
+            char tmp = g_jewel_grid[g_jewel_cy][g_jewel_cx];
+            g_jewel_grid[g_jewel_cy][g_jewel_cx] = g_jewel_grid[g_jewel_cy][g_jewel_cx + 1];
+            g_jewel_grid[g_jewel_cy][g_jewel_cx + 1] = tmp;
+            
+            // Basic check for 3 in a row
+            bool matched = false;
+            for (int r = 0; r < 6; r++) {
+                for (int c = 0; c < 4; c++) {
+                    if (g_jewel_grid[r][c] == g_jewel_grid[r][c+1] && g_jewel_grid[r][c] == g_jewel_grid[r][c+2]) {
+                        g_jewel_score += 100;
+                        const char gems[] = "ABCDE";
+                        g_jewel_grid[r][c] = gems[rand() % 5];
+                        g_jewel_grid[r][c+1] = gems[rand() % 5];
+                        g_jewel_grid[r][c+2] = gems[rand() % 5];
+                        matched = true;
+                    }
+                }
+            }
+            if (matched) {
+                snprintf(g_jewel_status, sizeof(g_jewel_status), "MATCH! +100 Points!");
+            } else {
+                snprintf(g_jewel_status, sizeof(g_jewel_status), "Swapped gems.");
+            }
+        }
+    }
+    redraw_jewel_screen();
+}
+
+static void init_santa(void) {
+    g_santa_x = 0;
+    g_santa_dir = 1;
+    g_present_y = -1;
+    g_present_x = -1;
+    g_santa_score = 0;
+    g_chimney_x[0] = 5;
+    g_chimney_x[1] = 15;
+    g_chimney_x[2] = 25;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    g_santa_last_tick = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+    snprintf(g_santa_status, sizeof(g_santa_status), "Drop presents on chimneys! [SPACE] Drop present.");
+}
+
+static void redraw_santa_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "   SANTA'S BUSY DAY (Ahoy! Issue 24 Holiday Game)   \r\n"
+             "====================================================\r\n"
+             " Score: %d\r\n"
+             "----------------------------------------------------\r\n", g_santa_score);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Sky row with Santa
+    char sky[64];
+    memset(sky, ' ', 40);
+    sky[40] = '\0';
+    if (g_santa_x >= 0 && g_santa_x < 40) {
+        sky[g_santa_x] = 'S'; // Santa
+    }
+    lau_vram_write_string(g_vram, " ", 1);
+    lau_vram_write_string(g_vram, sky, strlen(sky));
+    lau_vram_write_string(g_vram, "\r\n", 2);
+
+    // Drop area rows
+    for (int y = 0; y < 8; y++) {
+        char row[64];
+        memset(row, ' ', 40);
+        row[40] = '\0';
+        if (g_present_y == y && g_present_x >= 0 && g_present_x < 40) {
+            row[g_present_x] = '*'; // Present
+        }
+        lau_vram_write_string(g_vram, " ", 1);
+        lau_vram_write_string(g_vram, row, strlen(row));
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+
+    // Houses and chimneys row
+    char ground[64];
+    memset(ground, '_', 40);
+    ground[40] = '\0';
+    for (int i = 0; i < 3; i++) {
+        ground[g_chimney_x[i]] = 'H'; // Chimney
+    }
+    lau_vram_write_string(g_vram, " ", 1);
+    lau_vram_write_string(g_vram, ground, strlen(ground));
+    lau_vram_write_string(g_vram, "\r\n", 2);
+
+    lau_vram_write_string(g_vram, "====================================================\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_santa_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [SPACE] Drop Present, [ESC] Exit\r\n", 45);
+}
+
+static void handle_santa_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == ' ') {
+        if (g_present_y < 0) {
+            g_present_x = g_santa_x;
+            g_present_y = 0;
+            snprintf(g_santa_status, sizeof(g_santa_status), "Present dropped!");
+        }
+    }
+    redraw_santa_screen();
+}
+
+static void update_santa(uint32_t current_time) {
+    if (current_time - g_santa_last_tick >= 100) {
+        g_santa_last_tick = current_time;
+        // Move Santa
+        g_santa_x += g_santa_dir;
+        if (g_santa_x >= 35) {
+            g_santa_dir = -1;
+        } else if (g_santa_x <= 0) {
+            g_santa_dir = 1;
+        }
+
+        // Drop present
+        if (g_present_y >= 0) {
+            g_present_y++;
+            if (g_present_y >= 8) {
+                // Check chimney landing
+                bool hit = false;
+                for (int i = 0; i < 3; i++) {
+                    if (g_present_x == g_chimney_x[i] || g_present_x == g_chimney_x[i] - 1 || g_present_x == g_chimney_x[i] + 1) {
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit) {
+                    g_santa_score += 150;
+                    snprintf(g_santa_status, sizeof(g_santa_status), "DIRECT HIT! +150 Points!");
+                } else {
+                    snprintf(g_santa_status, sizeof(g_santa_status), "Missed the chimney!");
+                }
+                g_present_y = -1;
+                g_present_x = -1;
+            }
+        }
+        redraw_santa_screen();
+    }
+}
+
+static void init_cloak(void) {
+    g_cloak_room = 0;
+    g_cloak_has_film = false;
+    g_cloak_alarm = false;
+    snprintf(g_cloak_status, sizeof(g_cloak_status), "You are inside the embassy. Avoid the guards. Find the microfilm.");
+}
+
+static void redraw_cloak_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "==================================================\r\n"
+             "        CLOAK: Stealth Adventure (Ahoy! Issue 24) \r\n"
+             "==================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    if (g_cloak_room == 0) {
+        lau_vram_write_string(g_vram, " Room: EMBASSY ENTRANCE HALL\r\n Description: A quiet lobby with guards checking doors to the north.\r\n", 101);
+    } else if (g_cloak_room == 1) {
+        lau_vram_write_string(g_vram, " Room: SECURE ARCHIVE VAULT\r\n Description: Rows of safe deposit boxes. The microfilm drawer is here.\r\n", 104);
+    } else if (g_cloak_room == 2) {
+        lau_vram_write_string(g_vram, " Room: SECURITY CONTROL CENTRE\r\n Description: Server racks blinking with warning indicators.\r\n", 94);
+    }
+
+    lau_vram_write_string(g_vram, "--------------------------------------------------\r\n", 52);
+    snprintf(buf, sizeof(buf), " Microfilm: %s | Alarm: %s\r\n", g_cloak_has_film ? "HELD" : "NONE", g_cloak_alarm ? "ACTIVE!" : "QUIET");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_cloak_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Actions: [N/S/E/W] Move, [T] Take Film, [C] Cut Power, [ESC] Exit\r\n", 67);
+}
+
+static void handle_cloak_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'n' || ch == 'N') {
+        if (g_cloak_room == 0) {
+            g_cloak_room = 1;
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Moved to Vault Room.");
+        } else {
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Cannot go North here.");
+        }
+    } else if (ch == 's' || ch == 'S') {
+        if (g_cloak_room == 1) {
+            g_cloak_room = 0;
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Moved to Entrance.");
+        } else {
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Cannot go South here.");
+        }
+    } else if (ch == 'e' || ch == 'E') {
+        if (g_cloak_room == 0) {
+            g_cloak_room = 2;
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Moved to Security Room.");
+        } else {
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Cannot go East here.");
+        }
+    } else if (ch == 'w' || ch == 'W') {
+        if (g_cloak_room == 2) {
+            g_cloak_room = 0;
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Moved to Entrance.");
+        } else {
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Cannot go West here.");
+        }
+    } else if (ch == 't' || ch == 'T') {
+        if (g_cloak_room == 1) {
+            g_cloak_has_film = true;
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "MICROFILM SECURED! Escape to Entrance now.");
+        } else {
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "No film here.");
+        }
+    } else if (ch == 'c' || ch == 'C') {
+        if (g_cloak_room == 2) {
+            g_cloak_alarm = false;
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Cut control power. Security offline.");
+        } else {
+            snprintf(g_cloak_status, sizeof(g_cloak_status), "Cannot cut power from here.");
+        }
+    }
+    redraw_cloak_screen();
+}
+
+static void init_gypsy(void) {
+    g_gypsy_fuel = 100;
+    g_gypsy_credits = 500;
+    g_gypsy_cargo = 0;
+    g_gypsy_sector = 1;
+    snprintf(g_gypsy_status, sizeof(g_gypsy_status), "Awaiting commands at Sector Starport.");
+}
+
+static void redraw_gypsy_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "   GYPSY STARSHIP: Space Trader (Ahoy! Issue 24)    \r\n"
+             "====================================================\r\n"
+             " Sector: %d | Fuel: %d/100 | Credits: %d | Cargo: %d\r\n"
+             "----------------------------------------------------\r\n",
+             g_gypsy_sector, g_gypsy_fuel, g_gypsy_credits, g_gypsy_cargo);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    lau_vram_write_string(g_vram, " Local Market Prices:\r\n  - Ore Minerals: $50\r\n  - Deuterium Gas: $150\r\n", 76);
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_gypsy_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [B] Buy Mineral, [S] Sell Cargo, [H] Hyperjump, [ESC] Exit\r\n", 70);
+}
+
+static void handle_gypsy_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'b' || ch == 'B') {
+        if (g_gypsy_credits >= 50) {
+            g_gypsy_credits -= 50;
+            g_gypsy_cargo++;
+            snprintf(g_gypsy_status, sizeof(g_gypsy_status), "Bought 1 mineral unit.");
+        } else {
+            snprintf(g_gypsy_status, sizeof(g_gypsy_status), "Insufficient credits!");
+        }
+    } else if (ch == 's' || ch == 'S') {
+        if (g_gypsy_cargo > 0) {
+            g_gypsy_cargo--;
+            g_gypsy_credits += 75; // Profit
+            snprintf(g_gypsy_status, sizeof(g_gypsy_status), "Sold 1 cargo unit at local premium.");
+        } else {
+            snprintf(g_gypsy_status, sizeof(g_gypsy_status), "No cargo to sell!");
+        }
+    } else if (ch == 'h' || ch == 'H') {
+        if (g_gypsy_fuel >= 20) {
+            g_gypsy_fuel -= 20;
+            g_gypsy_sector = (g_gypsy_sector % 5) + 1;
+            snprintf(g_gypsy_status, sizeof(g_gypsy_status), "Jumped sectors! Fuel consumed.");
+        } else {
+            snprintf(g_gypsy_status, sizeof(g_gypsy_status), "Low fuel! Refuel ship.");
+        }
+    }
+    redraw_gypsy_screen();
+}
+
 static void init_moxey(void) {
     g_moxey_room = 0;
     g_moxey_has_key = false;
@@ -3688,6 +4091,10 @@ static void handle_booter_input(char ch) {
             case 9: execute_command("FIDGITS"); break;
             case 10: execute_command("MOXEY"); break;
             case 11: execute_command("DRUM"); break;
+            case 12: execute_command("JEWEL"); break;
+            case 13: execute_command("SANTA"); break;
+            case 14: execute_command("CLOAK"); break;
+            case 15: execute_command("GYPSY"); break;
         }
         return;
     }
@@ -7178,6 +7585,46 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && (strcasecmp(first_word, "JEWEL") == 0 || strcasecmp(first_word, "JEWELQUEST") == 0)) {
+         g_editor_mode = MODE_JEWEL;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_jewel();
+         redraw_jewel_screen();
+         log_telemetry("Started Jewel Quest game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "SANTA") == 0 || strcasecmp(first_word, "SANTASBUSYDAY") == 0)) {
+         g_editor_mode = MODE_SANTA;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_santa();
+         redraw_santa_screen();
+         log_telemetry("Started Santa's Busy Day game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "CLOAK") == 0)) {
+         g_editor_mode = MODE_CLOAK;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_cloak();
+         redraw_cloak_screen();
+         log_telemetry("Started Cloak game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "GYPSY") == 0 || strcasecmp(first_word, "GYPSYSTARSHIP") == 0)) {
+         g_editor_mode = MODE_GYPSY;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_gypsy();
+         redraw_gypsy_screen();
+         log_telemetry("Started Gypsy Starship game");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -8488,6 +8935,10 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                                 case 9: execute_command("FIDGITS"); break;
                                 case 10: execute_command("MOXEY"); break;
                                 case 11: execute_command("DRUM"); break;
+                                case 12: execute_command("JEWEL"); break;
+                                case 13: execute_command("SANTA"); break;
+                                case 14: execute_command("CLOAK"); break;
+                                case 15: execute_command("GYPSY"); break;
                             }
                         } else {
                             g_booter_cursor = idx;
@@ -8929,6 +9380,46 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = ' ';
         }
         handle_drum_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_JEWEL) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_jewel_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_SANTA) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_santa_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_CLOAK) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_cloak_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_GYPSY) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_gypsy_input(ch);
         return;
     }
 
@@ -9878,6 +10369,11 @@ void render_terminal_display(void) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
         uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
         update_drum_seq(current_ms);
+    } else if (g_editor_mode == MODE_SANTA) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_santa(current_ms);
     }
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
@@ -10498,6 +10994,14 @@ int main() {
                             handle_moxey_input(ch);
                         } else if (g_editor_mode == MODE_DRUM) {
                             handle_drum_input(ch);
+                        } else if (g_editor_mode == MODE_JEWEL) {
+                            handle_jewel_input(ch);
+                        } else if (g_editor_mode == MODE_SANTA) {
+                            handle_santa_input(ch);
+                        } else if (g_editor_mode == MODE_CLOAK) {
+                            handle_cloak_input(ch);
+                        } else if (g_editor_mode == MODE_GYPSY) {
+                            handle_gypsy_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -10575,7 +11079,10 @@ int main() {
             }
         }
 
-        bool need_redraw = g_vram->is_dirty || g_mercenary_active || g_pong_active || g_editor_mode == MODE_DRUM;
+        bool need_redraw = g_vram->is_dirty || g_mercenary_active || g_pong_active || 
+                           g_editor_mode == MODE_DRUM || g_editor_mode == MODE_JEWEL || 
+                           g_editor_mode == MODE_SANTA || g_editor_mode == MODE_CLOAK || 
+                           g_editor_mode == MODE_GYPSY;
 
         if (g_vram->is_dirty) {
             sync_vram_to_cpu();
@@ -10726,6 +11233,14 @@ int main() {
                             handle_moxey_input(ch);
                         } else if (g_editor_mode == MODE_DRUM) {
                             handle_drum_input(ch);
+                        } else if (g_editor_mode == MODE_JEWEL) {
+                            handle_jewel_input(ch);
+                        } else if (g_editor_mode == MODE_SANTA) {
+                            handle_santa_input(ch);
+                        } else if (g_editor_mode == MODE_CLOAK) {
+                            handle_cloak_input(ch);
+                        } else if (g_editor_mode == MODE_GYPSY) {
+                            handle_gypsy_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
