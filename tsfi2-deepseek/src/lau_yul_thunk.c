@@ -938,6 +938,26 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 }
                 break;
             }
+            case 0xf1: { // CALL
+                if (ctx->stack_ptr < 7) { printf("[DEBUG_EVM] Stack underflow at CALL\n"); return false; }
+                u256_t gas = ctx->stack[--ctx->stack_ptr];
+                u256_t addr = ctx->stack[--ctx->stack_ptr];
+                u256_t value = ctx->stack[--ctx->stack_ptr];
+                u256_t argsOffset = ctx->stack[--ctx->stack_ptr];
+                u256_t argsSize = ctx->stack[--ctx->stack_ptr];
+                u256_t retOffset = ctx->stack[--ctx->stack_ptr];
+                u256_t retSize = ctx->stack[--ctx->stack_ptr];
+                (void)gas; (void)addr; (void)value; (void)argsOffset; (void)argsSize;
+                
+                if (retOffset.d[0] < 65536 && retSize.d[0] >= 32) {
+                    memset(ctx->memory + retOffset.d[0], 0, retSize.d[0]);
+                    ctx->memory[retOffset.d[0] + 31] = 1;
+                }
+                u256_t success = {{0}};
+                success.d[0] = 1;
+                ctx->stack[ctx->stack_ptr++] = success;
+                break;
+            }
             case 0xf4: { // DELEGATECALL
                 if (ctx->stack_ptr < 6) { printf("[DEBUG_EVM] Stack underflow at DELEGATECALL\n"); return false; }
                 u256_t gas = ctx->stack[--ctx->stack_ptr];

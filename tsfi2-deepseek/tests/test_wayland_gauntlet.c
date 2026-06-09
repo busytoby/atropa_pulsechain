@@ -310,6 +310,7 @@ static uint64_t thunk_peek(uint64_t addr) {
 }
 
 static void init_gauntlet_yul() {
+    thunk_poke(54695, 0xd17a5);  // diyatAddress mock
     thunk_poke(55050, 1);    // gauntletActive
     thunk_poke(55051, 120);  // playerX
     thunk_poke(55052, 120);  // playerY
@@ -326,7 +327,7 @@ static void gauntlet_key_hook(void *data, uint32_t serial, uint32_t time, uint32
     bool pressed = (state != 0);
     
     if (key == 1) { // ESC
-        exit_requested = 1;
+        printf("[GAUNTLET] ESC pressed (ignoring to allow AI playout)\n");
     } else if (key == 30) { // A
         key_a_held = pressed;
     } else if (key == 32) { // D
@@ -544,10 +545,22 @@ int main() {
         draw_radial_glow(pixels, W, H, px, py, 20.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
 
         // Format and render HUD details
+        static int victory_exit_timer = -1;
         if (gx <= 0.0f && sx <= 0.0f) {
             sprintf(status_message, "^B^U[VICTORY]^C ^IAll threats neutralized! Alchemical gold harvested! SCORE: %lu^C", score);
+            if (victory_exit_timer == -1) {
+                printf("[VICTORY] AI pilot successfully destroyed all threats and won the game! Final Score: %lu\n", score);
+                victory_exit_timer = 60; // Wait 60 frames (1s) to show screen before exiting
+            }
         } else {
             sprintf(status_message, "^B[WARRIOR] Health: %lu | Keys: %lu | Score: %lu^C", health, keys, score);
+        }
+        
+        if (victory_exit_timer > 0) {
+            victory_exit_timer--;
+            if (victory_exit_timer == 0) {
+                exit_requested = 1;
+            }
         }
         draw_rect_ab4h(pixels, W, H, 0, H - 50, W, 50, make_ab4h_pixel(0.02f, 0.01f, 0.05f, 1.0f));
         draw_line_aa(pixels, W, H, 0.0f, (float)(H - 50), (float)W, (float)(H - 50), hud_pink, 2.0f);
