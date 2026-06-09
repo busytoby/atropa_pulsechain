@@ -75,36 +75,20 @@ object "CPU6502Emulator" {
                 slot := keccak256(0x00, 64)
             }
 
-            // Helper to query and excise tax via on-chain ERC20 first, fallback to slot 848 thereafter.
+            // Helper to query and excise tax via standalone on-chain Diyat contract (never subordinate)
             function exciseOnChainTax(taxAmount) -> taxPaidSuccess {
                 taxPaidSuccess := 0
-                // Target token address: dynamically reconstructed from $D590 - $D5A3 (54672 to 54691)
-                let tokenAddress := 0
-                for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
-                    let b := sload(getUserSlot(add(54672, i)))
-                    tokenAddress := or(shl(8, tokenAddress), and(b, 0xFF))
-                }
+                // Standalone Diyat contract address: retrieved from slot 54695
+                let diyatAddress := sload(getUserSlot(54695))
 
-                // If tokenAddress is valid (not 0), try on-chain ERC20 logic first
-                if tokenAddress {
-                    // Let's format call to transferFrom(from, to, amount)
-                    // selector: 0x23b872dd
-                    // from: getContextUser()
-                    // to: 0x1111111111111111111111111111111111111111 (Treasury Address)
-                    // amount: taxAmount * 10**18 (standard token mapping)
-                    let treasury := 0x1111111111111111111111111111111111111111
-                    let weiAmount := mul(taxAmount, 1000000000000000000)
-
-                    // Store call arguments in scratch memory: 0x340 onwards (preserving register caches at 0x80-0x120)
-                    mstore(0x340, shl(224, 0x23b872dd))
+                if diyatAddress {
+                    // Call exciseTax(address,uint256) -> 0x904a4bc3
+                    mstore(0x340, shl(224, 0x904a4bc3))
                     mstore(0x344, getContextUser())
-                    mstore(0x364, treasury)
-                    mstore(0x384, weiAmount)
+                    mstore(0x364, taxAmount)
 
-                    // Call transferFrom(getContextUser(), treasury, weiAmount)
-                    let callSuccess := call(gas(), tokenAddress, 0, 0x340, 100, 0x3A4, 32)
+                    let callSuccess := call(gas(), diyatAddress, 0, 0x340, 68, 0x3A4, 32)
                     if callSuccess {
-                        // Check if transferFrom returned true
                         if mload(0x3A4) {
                             taxPaidSuccess := 1
                         }
