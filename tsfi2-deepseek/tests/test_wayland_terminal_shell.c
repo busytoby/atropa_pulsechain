@@ -64,7 +64,14 @@ typedef enum {
     MODE_JEWEL,
     MODE_SANTA,
     MODE_CLOAK,
-    MODE_GYPSY
+    MODE_GYPSY,
+    MODE_MARTIAN,
+    MODE_HAUNTED,
+    MODE_INFRARAID,
+    MODE_STREAMER,
+    MODE_KNOCKOUT,
+    MODE_ALARM,
+    MODE_MEMCHECK
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -416,6 +423,81 @@ static char g_gypsy_status[128];
 static void init_gypsy(void);
 static void redraw_gypsy_screen(void);
 static void handle_gypsy_input(char ch);
+
+// Martian Monsters variables & functions
+static int g_martian_ship_x = 20;
+static int g_martian_monster_x = 10;
+static int g_martian_monster_y = 2;
+static int g_martian_score = 0;
+static int g_martian_lives = 3;
+static char g_martian_status[128];
+static void init_martian(void);
+static void redraw_martian_screen(void);
+static void handle_martian_input(char ch);
+static void update_martian(uint32_t ms);
+
+// Haunted Castle variables & functions
+static int g_haunted_x = 1;
+static int g_haunted_y = 1;
+static int g_haunted_gold = 0;
+static int g_haunted_ghost_x = 8;
+static int g_haunted_ghost_y = 8;
+static char g_haunted_status[128];
+static void init_haunted(void);
+static void redraw_haunted_screen(void);
+static void handle_haunted_input(char ch);
+
+// Infraraid variables & functions
+static int g_infraraid_angle = 90;
+static int g_infraraid_sweep = 0;
+static int g_infraraid_targets = 5;
+static char g_infraraid_status[128];
+static void init_infraraid(void);
+static void redraw_infraraid_screen(void);
+static void handle_infraraid_input(char ch);
+
+// Streamer Font variables & functions
+static uint8_t g_streamer_char[8] = { 0x3C, 0x66, 0x66, 0x7E, 0x66, 0x66, 0x66, 0x00 }; // Capital 'A'
+static int g_streamer_cursor_x = 0;
+static int g_streamer_cursor_y = 0;
+static char g_streamer_status[128];
+static void init_streamer(void);
+static void redraw_streamer_screen(void);
+static void handle_streamer_input(char ch);
+
+// Knockout variables & functions
+static int g_knockout_paddle_x = 16;
+static int g_knockout_ball_x = 10;
+static int g_knockout_ball_y = 10;
+static int g_knockout_ball_dx = 1;
+static int g_knockout_ball_dy = -1;
+static int g_knockout_score = 0;
+static uint8_t g_knockout_blocks[4][20];
+static void init_knockout(void);
+static void redraw_knockout_screen(void);
+static void handle_knockout_input(char ch);
+static void update_knockout(uint32_t ms);
+
+// Alarm Clock variables & functions
+static int g_alarm_h = 12;
+static int g_alarm_m = 0;
+static int g_alarm_s = 0;
+static int g_alarm_set_h = 12;
+static int g_alarm_set_m = 5;
+static bool g_alarm_triggered = false;
+static char g_alarm_status[128];
+static void init_alarm(void);
+static void redraw_alarm_screen(void);
+static void handle_alarm_input(char ch);
+
+// Memory Check variables & functions
+static uint32_t g_memcheck_addr = 0;
+static int g_memcheck_errors = 0;
+static char g_memcheck_status[128];
+static void init_memcheck(void);
+static void redraw_memcheck_screen(void);
+static void handle_memcheck_input(char ch);
+static void update_memcheck(uint32_t ms);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -3757,6 +3839,567 @@ static void handle_gypsy_input(char ch) {
         }
     }
     redraw_gypsy_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: Martian Monsters
+// ----------------------------------------------------
+static void init_martian(void) {
+    g_martian_ship_x = 20;
+    g_martian_monster_x = 10;
+    g_martian_monster_y = 2;
+    g_martian_score = 0;
+    g_martian_lives = 3;
+    snprintf(g_martian_status, sizeof(g_martian_status), "Defend Earth from descending Martians!");
+}
+
+static void redraw_martian_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[2048];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    MARTIAN MONSTERS: Space Defender (Ahoy! Issue 25)\r\n"
+             "====================================================\r\n"
+             " Lives: %d | Score: %d\r\n"
+             "----------------------------------------------------\r\n",
+             g_martian_lives, g_martian_score);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render 10 lines of space
+    for (int y = 0; y < 10; y++) {
+        char line[64];
+        memset(line, ' ', 50);
+        line[0] = '|';
+        line[49] = '|';
+        line[50] = '\r';
+        line[51] = '\n';
+        line[52] = '\0';
+
+        if (y == g_martian_monster_y) {
+            line[g_martian_monster_x] = 'M';
+        }
+        if (y == 8) {
+            line[g_martian_ship_x] = 'A';
+            line[g_martian_ship_x - 1] = '/';
+            line[g_martian_ship_x + 1] = '\\';
+        }
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_martian_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [A] Move Left, [D] Move Right, [SPACE] Fire, [ESC] Exit\r\n", 67);
+}
+
+static void handle_martian_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (g_martian_lives <= 0) {
+        if (ch == ' ' || ch == '\r') {
+            init_martian();
+        }
+        return;
+    }
+    if (ch == 'a' || ch == 'A') {
+        if (g_martian_ship_x > 2) g_martian_ship_x--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_martian_ship_x < 47) g_martian_ship_x++;
+    } else if (ch == ' ') {
+        // Laser fire! Check x alignment
+        if (abs(g_martian_ship_x - g_martian_monster_x) <= 1) {
+            g_martian_score += 100;
+            g_martian_monster_y = 1;
+            g_martian_monster_x = (rand() % 40) + 5;
+            snprintf(g_martian_status, sizeof(g_martian_status), "Direct Hit! Monster destroyed.");
+        } else {
+            snprintf(g_martian_status, sizeof(g_martian_status), "Missed! Target is off-center.");
+        }
+    }
+    redraw_martian_screen();
+}
+
+static void update_martian(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 400) return;
+    last_tick = ms;
+
+    if (g_martian_lives <= 0) return;
+
+    g_martian_monster_y++;
+    if (g_martian_monster_y >= 8) {
+        // Hit!
+        g_martian_lives--;
+        g_martian_monster_y = 1;
+        g_martian_monster_x = (rand() % 40) + 5;
+        if (g_martian_lives <= 0) {
+            snprintf(g_martian_status, sizeof(g_martian_status), "GAME OVER. Press SPACE to Restart.");
+        } else {
+            snprintf(g_martian_status, sizeof(g_martian_status), "Ship hit! Lives remaining: %d", g_martian_lives);
+        }
+    }
+    redraw_martian_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: The Haunted Castle
+// ----------------------------------------------------
+static void init_haunted(void) {
+    g_haunted_x = 1;
+    g_haunted_y = 1;
+    g_haunted_gold = 0;
+    g_haunted_ghost_x = 7;
+    g_haunted_ghost_y = 6;
+    snprintf(g_haunted_status, sizeof(g_haunted_status), "Escape with the castle treasures!");
+}
+
+static void redraw_haunted_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[2048];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    THE HAUNTED CASTLE: Gothic Labyrinth (Issue 25)  \r\n"
+             "====================================================\r\n"
+             " Gold Collected: %d GP\r\n"
+             "----------------------------------------------------\r\n",
+             g_haunted_gold);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // 8x8 Labyrinth
+    const char* maze[8] = {
+        "########",
+        "#..#...#",
+        "#.##.#.#",
+        "#....#.#",
+        "###.##.#",
+        "#...#..#",
+        "#.#.G..#",
+        "########"
+    };
+
+    for (int y = 0; y < 8; y++) {
+        char line[64];
+        snprintf(line, sizeof(line), "  ");
+        for (int x = 0; x < 8; x++) {
+            char cell = maze[y][x];
+            if (x == g_haunted_x && y == g_haunted_y) {
+                cell = '@'; // Player
+            } else if (x == g_haunted_ghost_x && y == g_haunted_ghost_y) {
+                cell = 'G'; // Ghost
+            } else if (x == 5 && y == 1 && g_haunted_gold == 0) {
+                cell = '$'; // Gold Chest
+            }
+            char block[4];
+            snprintf(block, sizeof(block), "%c ", cell);
+            strcat(line, block);
+        }
+        strcat(line, "\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_haunted_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [W/A/S/D] Move Hero, [ESC] Exit Labyrinth\r\n", 54);
+}
+
+static void handle_haunted_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+
+    int next_x = g_haunted_x;
+    int next_y = g_haunted_y;
+
+    if (ch == 'w' || ch == 'W') next_y--;
+    else if (ch == 's' || ch == 'S') next_y++;
+    else if (ch == 'a' || ch == 'A') next_x--;
+    else if (ch == 'd' || ch == 'D') next_x++;
+
+    const char* maze[8] = {
+        "########",
+        "#..#...#",
+        "#.##.#.#",
+        "#....#.#",
+        "###.##.#",
+        "#...#..#",
+        "#.#.G..#",
+        "########"
+    };
+
+    if (next_x >= 0 && next_x < 8 && next_y >= 0 && next_y < 8) {
+        if (maze[next_y][next_x] != '#') {
+            g_haunted_x = next_x;
+            g_haunted_y = next_y;
+        }
+    }
+
+    // Check Chest
+    if (g_haunted_x == 5 && g_haunted_y == 1 && g_haunted_gold == 0) {
+        g_haunted_gold += 250;
+        snprintf(g_haunted_status, sizeof(g_haunted_status), "Opened Gold Chest! Earned +250 GP.");
+    }
+
+    // Check Ghost contact
+    if (g_haunted_x == g_haunted_ghost_x && g_haunted_y == g_haunted_ghost_y) {
+        g_haunted_gold = 0;
+        snprintf(g_haunted_status, sizeof(g_haunted_status), "Spooked by the Ghost! Dropped all gold!");
+    }
+
+    redraw_haunted_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: Infraraid
+// ----------------------------------------------------
+static void init_infraraid(void) {
+    g_infraraid_angle = 90;
+    g_infraraid_sweep = 0;
+    g_infraraid_targets = 5;
+    snprintf(g_infraraid_status, sizeof(g_infraraid_status), "Calibrating radar sweeping grid...");
+}
+
+static void redraw_infraraid_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    INFRARAID: Defensive Radar Shield (Issue 25)    \r\n"
+             "====================================================\r\n"
+             " Defense Angle: %d Deg | Active Targets: %d\r\n"
+             "----------------------------------------------------\r\n",
+             g_infraraid_angle, g_infraraid_targets);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Radar screen simulation
+    lau_vram_write_string(g_vram, "   \\                 |                 /\r\n", 44);
+    lau_vram_write_string(g_vram, "    \\                |                /\r\n", 42);
+    lau_vram_write_string(g_vram, "     \\   *           |               /\r\n", 40);
+    lau_vram_write_string(g_vram, "      \\              |              /\r\n", 38);
+    lau_vram_write_string(g_vram, "       \\_____________|_____________/\r\n", 38);
+
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_infraraid_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [A] Sweep Left, [D] Sweep Right, [SPACE] Intercept, [ESC] Exit\r\n", 75);
+}
+
+static void handle_infraraid_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'a' || ch == 'A') {
+        g_infraraid_angle = (g_infraraid_angle + 350) % 360;
+        snprintf(g_infraraid_status, sizeof(g_infraraid_status), "Sweeping grid left...");
+    } else if (ch == 'd' || ch == 'D') {
+        g_infraraid_angle = (g_infraraid_angle + 10) % 360;
+        snprintf(g_infraraid_status, sizeof(g_infraraid_status), "Sweeping grid right...");
+    } else if (ch == ' ') {
+        if (g_infraraid_targets > 0) {
+            g_infraraid_targets--;
+            snprintf(g_infraraid_status, sizeof(g_infraraid_status), "Laser Intercept Fired! Target neutralized.");
+        } else {
+            snprintf(g_infraraid_status, sizeof(g_infraraid_status), "Grid secure. No active threats.");
+        }
+    }
+    redraw_infraraid_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: Streamer Font
+// ----------------------------------------------------
+static void init_streamer(void) {
+    g_streamer_cursor_x = 0;
+    g_streamer_cursor_y = 0;
+    snprintf(g_streamer_status, sizeof(g_streamer_status), "Use W/A/S/D to select pixel, SPACE to toggle.");
+}
+
+static void redraw_streamer_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    STREAMER FONT: Custom Character Editor (Issue 25)\r\n"
+             "====================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Draw 8x8 grid representation
+    for (int y = 0; y < 8; y++) {
+        char line[128];
+        snprintf(line, sizeof(line), "  Row %d:  [ ", y);
+        for (int x = 0; x < 8; x++) {
+            bool pixel = (g_streamer_char[y] & (1 << (7 - x))) != 0;
+            char cell_char = pixel ? 'X' : '.';
+            if (x == g_streamer_cursor_x && y == g_streamer_cursor_y) {
+                char item[8];
+                snprintf(item, sizeof(item), "<%c>", cell_char);
+                strcat(line, item);
+            } else {
+                char item[8];
+                snprintf(item, sizeof(item), " %c ", cell_char);
+                strcat(line, item);
+            }
+        }
+        strcat(line, " ]\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_streamer_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [W/A/S/D] Move, [SPACE] Toggle, [S] Save Font, [ESC] Exit\r\n", 70);
+}
+
+static void handle_streamer_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'w' || ch == 'W') {
+        if (g_streamer_cursor_y > 0) g_streamer_cursor_y--;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_streamer_cursor_y < 7) g_streamer_cursor_y++;
+    } else if (ch == 'a' || ch == 'A') {
+        if (g_streamer_cursor_x > 0) g_streamer_cursor_x--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_streamer_cursor_x < 7) g_streamer_cursor_x++;
+    } else if (ch == ' ') {
+        // Toggle bit
+        g_streamer_char[g_streamer_cursor_y] ^= (1 << (7 - g_streamer_cursor_x));
+        snprintf(g_streamer_status, sizeof(g_streamer_status), "Toggled pixel at (%d, %d).", g_streamer_cursor_x, g_streamer_cursor_y);
+    }
+    redraw_streamer_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: Knockout!
+// ----------------------------------------------------
+static void init_knockout(void) {
+    g_knockout_paddle_x = 16;
+    g_knockout_ball_x = 10;
+    g_knockout_ball_y = 6;
+    g_knockout_ball_dx = 1;
+    g_knockout_ball_dy = 1;
+    g_knockout_score = 0;
+    // Fill bricks
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 20; x++) {
+            g_knockout_blocks[y][x] = 1;
+        }
+    }
+}
+
+static void redraw_knockout_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[2048];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    KNOCKOUT!: Brick Breaker Simulation (Issue 25)  \r\n"
+             "====================================================\r\n"
+             " Score: %d\r\n"
+             "----------------------------------------------------\r\n",
+             g_knockout_score);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render bricks and ball
+    for (int y = 0; y < 10; y++) {
+        char line[64];
+        memset(line, ' ', 40);
+        line[0] = '|';
+        line[39] = '|';
+        line[40] = '\r';
+        line[41] = '\n';
+        line[42] = '\0';
+
+        if (y < 3) {
+            for (int x = 1; x < 39; x++) {
+                int bx = (x - 1) / 2;
+                if (g_knockout_blocks[y][bx]) {
+                    line[x] = '=';
+                }
+            }
+        }
+
+        if (y == g_knockout_ball_y) {
+            line[g_knockout_ball_x] = 'O';
+        }
+
+        if (y == 9) {
+            // Paddle
+            for (int p = 0; p < 6; p++) {
+                if (g_knockout_paddle_x + p < 39) {
+                    line[g_knockout_paddle_x + p] = '_';
+                }
+            }
+        }
+
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    lau_vram_write_string(g_vram, " Controls: [A] Paddle Left, [D] Paddle Right, [ESC] Exit\r\n", 57);
+}
+
+static void handle_knockout_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'a' || ch == 'A') {
+        if (g_knockout_paddle_x > 1) g_knockout_paddle_x -= 2;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_knockout_paddle_x < 32) g_knockout_paddle_x += 2;
+    }
+    redraw_knockout_screen();
+}
+
+static void update_knockout(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 300) return;
+    last_tick = ms;
+
+    g_knockout_ball_x += g_knockout_ball_dx;
+    g_knockout_ball_y += g_knockout_ball_dy;
+
+    // Bounce walls
+    if (g_knockout_ball_x <= 1 || g_knockout_ball_x >= 38) {
+        g_knockout_ball_dx = -g_knockout_ball_dx;
+    }
+    if (g_knockout_ball_y <= 0) {
+        g_knockout_ball_dy = -g_knockout_ball_dy;
+    }
+
+    // Bounce bricks
+    if (g_knockout_ball_y < 3) {
+        int bx = (g_knockout_ball_x - 1) / 2;
+        if (g_knockout_blocks[g_knockout_ball_y][bx]) {
+            g_knockout_blocks[g_knockout_ball_y][bx] = 0;
+            g_knockout_ball_dy = -g_knockout_ball_dy;
+            g_knockout_score += 50;
+        }
+    }
+
+    // Paddle collision
+    if (g_knockout_ball_y == 8) {
+        if (g_knockout_ball_x >= g_knockout_paddle_x && g_knockout_ball_x <= g_knockout_paddle_x + 6) {
+            g_knockout_ball_dy = -g_knockout_ball_dy;
+        }
+    }
+
+    // Fall out
+    if (g_knockout_ball_y >= 10) {
+        g_knockout_ball_x = 10;
+        g_knockout_ball_y = 4;
+        g_knockout_ball_dy = 1;
+    }
+
+    redraw_knockout_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: Alarm Clock
+// ----------------------------------------------------
+static void init_alarm(void) {
+    g_alarm_h = 12;
+    g_alarm_m = 0;
+    g_alarm_s = 0;
+    g_alarm_set_h = 12;
+    g_alarm_set_m = 2;
+    g_alarm_triggered = false;
+    snprintf(g_alarm_status, sizeof(g_alarm_status), "Alarm Clock configured.");
+}
+
+static void redraw_alarm_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    ALARM CLOCK: CIA Timer Simulator (Issue 25)     \r\n"
+             "====================================================\r\n"
+             " Simulated Time: %02d:%02d:%02d\r\n"
+             " Alarm Set for:  %02d:%02d\r\n"
+             "----------------------------------------------------\r\n"
+             " Alarm Triggered: %s\r\n"
+             "====================================================\r\n",
+             g_alarm_h, g_alarm_m, g_alarm_s,
+             g_alarm_set_h, g_alarm_set_m,
+             g_alarm_triggered ? "RINGING! *BEEP* *BEEP*" : "STANDBY");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [H] Adjust Alarm Hr, [M] Adjust Alarm Min, [ESC] Exit\r\n", 65);
+}
+
+static void handle_alarm_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 'h' || ch == 'H') {
+        g_alarm_set_h = (g_alarm_set_h % 24) + 1;
+    } else if (ch == 'm' || ch == 'M') {
+        g_alarm_set_m = (g_alarm_set_m + 5) % 60;
+    }
+    redraw_alarm_screen();
+}
+
+// ----------------------------------------------------
+// Issue 25: Memory Check
+// ----------------------------------------------------
+static void init_memcheck(void) {
+    g_memcheck_addr = 0x0800;
+    g_memcheck_errors = 0;
+    snprintf(g_memcheck_status, sizeof(g_memcheck_status), "Scanning system RAM block by block...");
+}
+
+static void redraw_memcheck_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    MEMORY CHECK: System RAM Diagnostic (Issue 25)  \r\n"
+             "====================================================\r\n"
+             " Current Address Scan: $%04X / $FFFF\r\n"
+             " Integrity Failures:   %d bad bytes\r\n"
+             "----------------------------------------------------\r\n"
+             " Scanner Status: %s\r\n"
+             "====================================================\r\n",
+             g_memcheck_addr, g_memcheck_errors, g_memcheck_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [ESC] Abort Diagnostics Scanner\r\n", 44);
+}
+
+static void handle_memcheck_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+}
+
+static void update_memcheck(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 100) return;
+    last_tick = ms;
+
+    if (g_memcheck_addr < 0xFFFF) {
+        g_memcheck_addr += 256;
+        if (rand() % 500 == 0) {
+            g_memcheck_errors++;
+            snprintf(g_memcheck_status, sizeof(g_memcheck_status), "ALERT: Bad cell parity detected at $%04X!", g_memcheck_addr);
+        }
+    } else {
+        snprintf(g_memcheck_status, sizeof(g_memcheck_status), "Scan Complete. RAM fully verified.");
+    }
+    redraw_memcheck_screen();
 }
 
 static void init_moxey(void) {
@@ -7625,6 +8268,76 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && (strcasecmp(first_word, "MARTIAN") == 0 || strcasecmp(first_word, "MARTIANMONSTERS") == 0)) {
+         g_editor_mode = MODE_MARTIAN;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_martian();
+         redraw_martian_screen();
+         log_telemetry("Started Martian Monsters game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "HAUNTED") == 0 || strcasecmp(first_word, "HAUNTEDCASTLE") == 0)) {
+         g_editor_mode = MODE_HAUNTED;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_haunted();
+         redraw_haunted_screen();
+         log_telemetry("Started Haunted Castle game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "INFRARAID") == 0)) {
+         g_editor_mode = MODE_INFRARAID;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_infraraid();
+         redraw_infraraid_screen();
+         log_telemetry("Started Infraraid simulation");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "STREAMER") == 0 || strcasecmp(first_word, "STREAMERFONT") == 0)) {
+         g_editor_mode = MODE_STREAMER;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_streamer();
+         redraw_streamer_screen();
+         log_telemetry("Started Streamer Font editor");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "KNOCKOUT") == 0)) {
+         g_editor_mode = MODE_KNOCKOUT;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_knockout();
+         redraw_knockout_screen();
+         log_telemetry("Started Knockout game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "ALARM") == 0 || strcasecmp(first_word, "ALARMCLOCK") == 0)) {
+         g_editor_mode = MODE_ALARM;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_alarm();
+         redraw_alarm_screen();
+         log_telemetry("Started Alarm Clock utility");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "MEMCHECK") == 0 || strcasecmp(first_word, "MEMORYCHECK") == 0)) {
+         g_editor_mode = MODE_MEMCHECK;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_memcheck();
+         redraw_memcheck_screen();
+         log_telemetry("Started Memory Check utility");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -9426,6 +10139,75 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         return;
     }
 
+    if (g_editor_mode == MODE_MARTIAN) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_martian_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_HAUNTED) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_haunted_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_INFRARAID) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_infraraid_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_STREAMER) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_streamer_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_KNOCKOUT) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_knockout_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_ALARM) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_alarm_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_MEMCHECK) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_memcheck_input(ch);
+        return;
+    }
+
     if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         char ch = (char)utf32;
         if (key == KEY_ESC || key == 1) {
@@ -10377,6 +11159,42 @@ void render_terminal_display(void) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
         uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
         update_santa(current_ms);
+    } else if (g_editor_mode == MODE_MARTIAN) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_martian(current_ms);
+    } else if (g_editor_mode == MODE_KNOCKOUT) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_knockout(current_ms);
+    } else if (g_editor_mode == MODE_MEMCHECK) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_memcheck(current_ms);
+    } else if (g_editor_mode == MODE_ALARM) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        static uint32_t last_time_sec = 0;
+        if (current_ms - last_time_sec >= 1000) {
+            last_time_sec = current_ms;
+            g_alarm_s++;
+            if (g_alarm_s >= 60) {
+                g_alarm_s = 0;
+                g_alarm_m++;
+                if (g_alarm_m >= 60) {
+                    g_alarm_m = 0;
+                    g_alarm_h = (g_alarm_h % 24) + 1;
+                }
+            }
+            if (g_alarm_h == g_alarm_set_h && g_alarm_m == g_alarm_set_m) {
+                g_alarm_triggered = true;
+            }
+            redraw_alarm_screen();
+        }
     }
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
@@ -11005,6 +11823,20 @@ int main() {
                             handle_cloak_input(ch);
                         } else if (g_editor_mode == MODE_GYPSY) {
                             handle_gypsy_input(ch);
+                        } else if (g_editor_mode == MODE_MARTIAN) {
+                            handle_martian_input(ch);
+                        } else if (g_editor_mode == MODE_HAUNTED) {
+                            handle_haunted_input(ch);
+                        } else if (g_editor_mode == MODE_INFRARAID) {
+                            handle_infraraid_input(ch);
+                        } else if (g_editor_mode == MODE_STREAMER) {
+                            handle_streamer_input(ch);
+                        } else if (g_editor_mode == MODE_KNOCKOUT) {
+                            handle_knockout_input(ch);
+                        } else if (g_editor_mode == MODE_ALARM) {
+                            handle_alarm_input(ch);
+                        } else if (g_editor_mode == MODE_MEMCHECK) {
+                            handle_memcheck_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -11085,7 +11917,10 @@ int main() {
         bool need_redraw = g_vram->is_dirty || g_mercenary_active || g_pong_active || 
                            g_editor_mode == MODE_DRUM || g_editor_mode == MODE_JEWEL || 
                            g_editor_mode == MODE_SANTA || g_editor_mode == MODE_CLOAK || 
-                           g_editor_mode == MODE_GYPSY;
+                           g_editor_mode == MODE_GYPSY || g_editor_mode == MODE_MARTIAN || 
+                           g_editor_mode == MODE_HAUNTED || g_editor_mode == MODE_INFRARAID || 
+                           g_editor_mode == MODE_STREAMER || g_editor_mode == MODE_KNOCKOUT || 
+                           g_editor_mode == MODE_ALARM || g_editor_mode == MODE_MEMCHECK;
 
         if (g_vram->is_dirty) {
             sync_vram_to_cpu();
@@ -11244,6 +12079,20 @@ int main() {
                             handle_cloak_input(ch);
                         } else if (g_editor_mode == MODE_GYPSY) {
                             handle_gypsy_input(ch);
+                        } else if (g_editor_mode == MODE_MARTIAN) {
+                            handle_martian_input(ch);
+                        } else if (g_editor_mode == MODE_HAUNTED) {
+                            handle_haunted_input(ch);
+                        } else if (g_editor_mode == MODE_INFRARAID) {
+                            handle_infraraid_input(ch);
+                        } else if (g_editor_mode == MODE_STREAMER) {
+                            handle_streamer_input(ch);
+                        } else if (g_editor_mode == MODE_KNOCKOUT) {
+                            handle_knockout_input(ch);
+                        } else if (g_editor_mode == MODE_ALARM) {
+                            handle_alarm_input(ch);
+                        } else if (g_editor_mode == MODE_MEMCHECK) {
+                            handle_memcheck_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
