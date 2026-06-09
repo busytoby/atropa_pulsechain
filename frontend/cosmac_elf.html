@@ -1478,6 +1478,42 @@
                             }
                             return; // Stop processing further tokens on this line
                         }
+                    case "carlson":
+                        {
+                            logTrapEvent("==================================================", true);
+                            logTrapEvent("📖 HISTORICAL DISCOVERY: EDWARD H. CARLSON CHRGET HOOK", true);
+                            logTrapEvent("From MICRO: The 6502 Journal - Issue 25 (June 1980)", true);
+                            logTrapEvent("--------------------------------------------------", true);
+                            logTrapEvent("Carlson's code overrides the zero-page character fetcher", true);
+                            logTrapEvent("CHRGET at $00E2-$00FA to intercept OSI BASIC commands.", true);
+                            logTrapEvent("Here is the 6502 assembly routine to intercept basic", true);
+                            logTrapEvent("streams and inject custom keywords (e.g. '@' for PRINT AT):", true);
+                            logTrapEvent(" ", true);
+                            logTrapEvent("  $0200: E6 7A     INC $7A        ; Increment text pointer low byte", true);
+                            logTrapEvent("  $0202: D0 02     BNE +2         ; Skip high byte increment if no roll", true);
+                            logTrapEvent("  $0204: E6 7B     INC $7B        ; Increment text pointer high byte", true);
+                            logTrapEvent("  $0206: B1 7A     LDA ($7A),Y    ; Load character from text pointer", true);
+                            logTrapEvent("  $0208: C9 40     CMP #$40       ; Compare character with '@' prefix", true);
+                            logTrapEvent("  $020A: D0 05     BNE +5         ; If not '@', branch to standard exit", true);
+                            logTrapEvent("  $020C: 20 50 02  JSR $0250      ; Call custom handler for '@'", true);
+                            logTrapEvent("  $020F: C9 3A     CMP #$3A       ; Normal parser compare check", true);
+                            logTrapEvent("  $0211: 60        RTS            ; Return", true);
+                            logTrapEvent(" ", true);
+                            logTrapEvent("📡 Loading code bytes into virtual system RAM at $0200...", true);
+                            
+                            const carlsonBytes = [
+                                0xE6, 0x7A, 0xD0, 0x02, 0xE6, 0x7B, 0xB1, 0x7A,
+                                0xC9, 0x40, 0xD0, 0x05, 0x20, 0x50, 0x02, 0xC9,
+                                0x3A, 0x60
+                            ];
+                            for (let j = 0; j < carlsonBytes.length; j++) {
+                                cpu.memory[0x200 + j] = carlsonBytes[j];
+                            }
+                            
+                            logTrapEvent("✅ Code assembled successfully at $0200.", true);
+                            logTrapEvent("==================================================", true);
+                        }
+                        break;
                     case "edit":
                         if (forthStack.length >= 1) {
                             const lineNum = forthStack.pop();
