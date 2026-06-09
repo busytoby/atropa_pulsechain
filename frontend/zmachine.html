@@ -529,6 +529,40 @@ Connect your wallet to retrieve the active story ROM.</div>
             await executeCommand("look");
         }
 
+        let audioCtx = null;
+
+        function playAlchemicalChord(freq, chordType) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+            
+            // 0 = Major (1, 1.25, 1.5, 2.0), 1 = Minor (1, 1.2, 1.5, 2.0), 2 = Diminished (1, 1.2, 1.414, 2.0)
+            let ratios = [1.0, 1.25, 1.5, 2.0];
+            if (chordType === 1) ratios = [1.0, 1.2, 1.5, 2.0];
+            if (chordType === 2) ratios = [1.0, 1.2, 1.414, 2.0];
+
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0, now);
+            masterGain.gain.linearRampToValueAtTime(0.35, now + 0.15); // soft attack
+            masterGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8); // decay
+            masterGain.connect(audioCtx.destination);
+
+            ratios.forEach((ratio, index) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = index % 2 === 0 ? "sine" : "triangle";
+                osc.frequency.setValueAtTime(freq * ratio, now);
+                osc.detune.setValueAtTime((index - 1.5) * 5, now); // chorus spread
+                osc.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + 2.0);
+            });
+        }
+
         async function getPlayerRoomId() {
             try {
                 const localProvider = new ethers.JsonRpcProvider(PROVIDER_URL);
@@ -628,6 +662,21 @@ Connect your wallet to retrieve the active story ROM.</div>
                 const cmdBytes = ethers.toUtf8Bytes(cmdText);
                 const result = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
                 let text = ethers.toUtf8String(result);
+
+                if (text.includes("[SONIC_SIGNATURE:")) {
+                    const match = text.match(/\[SONIC_SIGNATURE:(\d+),(\d+)\]/);
+                    if (match) {
+                        const freq = parseInt(match[1]);
+                        const chordType = parseInt(match[2]);
+                        playAlchemicalChord(freq, chordType);
+                        
+                        let chordName = "Major";
+                        if (chordType === 1) chordName = "Minor";
+                        if (chordType === 2) chordName = "Diminished";
+                        
+                        text = text.replace(/\[SONIC_SIGNATURE:\d+,\d+\]/, `🎵 Resonance detected: Fundamental frequency at ${freq}Hz playing a ${chordName} chord.`);
+                    }
+                }
 
                 // Enrich "look" details dynamically from live PulseChain token if in a ZMM room
                 if (action === "look" && roomId >= 10 && roomId <= 19 && tokenAddress) {

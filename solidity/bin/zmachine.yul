@@ -282,6 +282,63 @@ object "ZMachine" {
                         resultPtr := add(resultPtr, 2)
                     }
                 }
+                case 0x6861726d { // "harm" (harmonic)
+                    let matchesHarmonic := 0
+                    if eq(cmdLen, 8) {
+                        let nextWord := shr(224, calldataload(104))
+                        if eq(nextWord, 0x6f6e6963) { // "onic"
+                            matchesHarmonic := 1
+                        }
+                    }
+                    if matchesHarmonic {
+                        let dna0 := sload(add(3100000, add(mul(roomId, 100), 0)))
+                        let dna1 := sload(add(3100000, add(mul(roomId, 100), 1)))
+                        let sum := 0
+                        sum := add(sum, and(dna0, 0xff))
+                        sum := add(sum, and(shr(8, dna0), 0xff))
+                        sum := add(sum, and(shr(16, dna0), 0xff))
+                        sum := add(sum, and(shr(24, dna0), 0xff))
+                        sum := add(sum, and(dna1, 0xff))
+                        sum := add(sum, and(shr(8, dna1), 0xff))
+                        sum := add(sum, and(shr(16, dna1), 0xff))
+                        sum := add(sum, and(shr(24, dna1), 0xff))
+                        
+                        let noteIdx := mod(sum, 12)
+                        let chordType := mod(and(shr(32, dna0), 0xff), 3)
+                        
+                        let freq := 130
+                        if eq(noteIdx, 0) { freq := 130 }
+                        if eq(noteIdx, 1) { freq := 138 }
+                        if eq(noteIdx, 2) { freq := 146 }
+                        if eq(noteIdx, 3) { freq := 155 }
+                        if eq(noteIdx, 4) { freq := 164 }
+                        if eq(noteIdx, 5) { freq := 174 }
+                        if eq(noteIdx, 6) { freq := 185 }
+                        if eq(noteIdx, 7) { freq := 196 }
+                        if eq(noteIdx, 8) { freq := 207 }
+                        if eq(noteIdx, 9) { freq := 220 }
+                        if eq(noteIdx, 10) { freq := 233 }
+                        if eq(noteIdx, 11) { freq := 246 }
+
+                        mstore(resultPtr, 0x2a20414c4348454d4943414c204841524d4f4e494320414e414c59534953202a) // "* ALCHEMICAL HARMONIC ANALYSIS *\n"
+                        resultPtr := add(resultPtr, 32)
+                        
+                        mstore(resultPtr, 0x5b534f4e49435f5349474e41545552453a000000000000000000000000000000) // "[SONIC_SIGNATURE:"
+                        resultPtr := add(resultPtr, 17)
+                        
+                        resultPtr := writeDec16(freq, resultPtr)
+                        mstore8(resultPtr, 44) // ','
+                        resultPtr := add(resultPtr, 1)
+                        resultPtr := writeDec16(chordType, resultPtr)
+                        
+                        mstore(resultPtr, 0x5d0a000000000000000000000000000000000000000000000000000000000000) // "]\n"
+                        resultPtr := add(resultPtr, 2)
+                    }
+                    if iszero(matchesHarmonic) {
+                        mstore(resultPtr, 0x496e76616c6964206861726d6f6e696320636f6d6d616e642e0a000000000000) // "Invalid harmonic command.\n"
+                        resultPtr := add(resultPtr, 26)
+                    }
+                }
                 case 0x74616b65 { // "take"
                     let taken := 0
                     if eq(sload(add(2000300, 50)), roomId) {
