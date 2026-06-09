@@ -15,12 +15,12 @@
     <style>
         .dna-grid {
             display: grid;
-            grid-template-columns: 1fr 1.5fr;
+            grid-template-columns: 1.2fr 1.5fr;
             gap: 25px;
             margin-top: 20px;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1000px) {
             .dna-grid {
                 grid-template-columns: 1fr;
             }
@@ -62,7 +62,7 @@
             letter-spacing: 1px;
         }
 
-        .dna-select, .dna-input {
+        .dna-select, .dna-input, .dna-textarea {
             background: rgba(6, 8, 20, 0.9);
             border: 1px solid rgba(0, 242, 254, 0.3);
             border-radius: 6px;
@@ -74,7 +74,15 @@
             transition: all 0.3s ease;
         }
 
-        .dna-select:focus, .dna-input:focus {
+        .dna-textarea {
+            font-family: 'Lora', serif;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            height: 80px;
+            resize: none;
+        }
+
+        .dna-select:focus, .dna-input:focus, .dna-textarea:focus {
             border-color: var(--neon-blue);
             box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
         }
@@ -83,14 +91,14 @@
             background: #000;
             border: 1px solid var(--neon-magenta);
             border-radius: 6px;
-            padding: 15px;
+            padding: 12px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--neon-magenta);
             overflow-x: auto;
             white-space: pre-wrap;
             word-break: break-all;
-            margin-top: 15px;
+            margin-top: 10px;
             box-shadow: inset 0 0 8px rgba(255, 0, 127, 0.2);
         }
 
@@ -105,7 +113,7 @@
             border-radius: 8px;
             background: #040612;
             width: 100%;
-            height: 400px;
+            height: 320px;
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
             cursor: crosshair;
         }
@@ -162,7 +170,7 @@
         <header>
             <div class="logo">
                 <span class="pulse-glow">ATROPA DNA ARENA</span>
-                <div class="subtitle">Procedural Yul Display Hardware Sandbox</div>
+                <div class="subtitle">Functional Story Genotype & Crossover Sandbox</div>
             </div>
             <div class="header-actions">
                 <div class="nav-links">
@@ -178,84 +186,88 @@
         <!-- Main Workspace -->
         <div class="dna-grid">
             <!-- Left Panel: Breeder Controls -->
-            <div class="vector-arena-container" style="gap: 20px;">
+            <div class="vector-arena-container" style="gap: 15px;">
                 <div class="dna-card">
-                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 15px; color: var(--neon-blue);">🧬 DNA Breed Configuration</h3>
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 12px; color: var(--neon-blue); font-size: 1.1rem;">🧬 Parent Story Genotypes</h3>
                     
-                    <div class="dna-input-group">
-                        <label>Parent A (Yul Room Storage)</label>
-                        <select class="dna-select" id="parentA">
-                            <option value="10">Room 10 - Void</option>
-                            <option value="11" selected>Room 11 - Qing</option>
-                            <option value="12">Room 12 - Qi</option>
-                            <option value="13">Room 13 - Mai</option>
-                            <option value="14">Room 14 - Xia</option>
-                            <option value="15">Room 15 - Xie</option>
-                            <option value="16">Room 16 - Chan</option>
-                            <option value="17">Room 17 - Sei</option>
-                            <option value="18">Room 18 - Choa</option>
-                            <option value="19">Room 19 - Cheon</option>
-                        </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="dna-input-group">
+                            <label>Parent A (Room)</label>
+                            <select class="dna-select" id="parentA">
+                                <option value="10" selected>10 - Void</option>
+                                <option value="11">11 - Qing</option>
+                                <option value="12">12 - Qi</option>
+                                <option value="13">13 - Mai</option>
+                                <option value="14">14 - Xia</option>
+                                <option value="15">15 - Xie</option>
+                                <option value="16">16 - Chan</option>
+                                <option value="17">17 - Sei</option>
+                                <option value="18">18 - Choa</option>
+                                <option value="19">19 - Cheon</option>
+                            </select>
+                            <textarea class="dna-textarea" id="textA" readonly></textarea>
+                        </div>
+
+                        <div class="dna-input-group">
+                            <label>Parent B (Room)</label>
+                            <select class="dna-select" id="parentB">
+                                <option value="10">10 - Void</option>
+                                <option value="11" selected>11 - Qing</option>
+                                <option value="12">12 - Qi</option>
+                                <option value="13">13 - Mai</option>
+                                <option value="14">14 - Xia</option>
+                                <option value="15">15 - Xie</option>
+                                <option value="16">16 - Chan</option>
+                                <option value="17">17 - Sei</option>
+                                <option value="18">18 - Choa</option>
+                                <option value="19">19 - Cheon</option>
+                            </select>
+                            <textarea class="dna-textarea" id="textB" readonly></textarea>
+                        </div>
                     </div>
 
-                    <div class="dna-input-group">
-                        <label>Parent B (Yul Room Storage)</label>
-                        <select class="dna-select" id="parentB">
-                            <option value="10">Room 10 - Void</option>
-                            <option value="11">Room 11 - Qing</option>
-                            <option value="12" selected>Room 12 - Qi</option>
-                            <option value="13">Room 13 - Mai</option>
-                            <option value="14">Room 14 - Xia</option>
-                            <option value="15">Room 15 - Xie</option>
-                            <option value="16">Room 16 - Chan</option>
-                            <option value="17">Room 17 - Sei</option>
-                            <option value="18">Room 18 - Choa</option>
-                            <option value="19">Room 19 - Cheon</option>
-                        </select>
-                    </div>
-
-                    <div class="dna-input-group">
+                    <div class="dna-input-group" style="margin-top: 10px; margin-bottom: 5px;">
                         <label>Crossover Mutation Seed</label>
-                        <input type="number" class="dna-input" id="crossoverSeed" value="4815162342">
+                        <input type="number" class="dna-input" id="crossoverSeed" value="738291">
                     </div>
 
-                    <button class="btn btn-primary" id="btnBreed" style="width: 100%; margin-top: 10px;">🧬 Synthesize & Crossover</button>
+                    <button class="btn btn-primary" id="btnBreed" style="width: 100%; margin-top: 10px;">🧬 Synthesize & Breed Story</button>
                 </div>
 
                 <div class="dna-card">
-                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-magenta);">🖥️ Active DNA Assembly (Hex)</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Direct memory dump from the Yul VM target segment:</p>
-                    <div class="dna-hex-display" id="hexDisplay">0x0000000000000000000000000000000000000000000000000000000000000000</div>
-                    <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 15px; border-color: var(--neon-magenta); color: var(--neon-magenta);">💾 Write DNA to Room 20 (Arena Child)</button>
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 8px; color: var(--neon-magenta); font-size: 1.1rem;">🖥️ Child Phenotype Story Output</h3>
+                    <textarea class="dna-textarea" id="childStoryOutput" style="height: 100px; font-weight: bold; border-color: var(--neon-magenta); width: 100%; box-sizing: border-box;" readonly></textarea>
+                    <div class="dna-hex-display" id="hexDisplay" style="font-size: 0.8rem;">0x00...</div>
+                    <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 10px; border-color: var(--neon-magenta); color: var(--neon-magenta); font-size: 1rem; padding: 8px 15px;">💾 Save & Deploy to Room 20 (Arena Exit)</button>
                 </div>
             </div>
 
             <!-- Right Panel: Visualizing Vector Arena -->
             <div class="vector-arena-container">
                 <div class="dna-card" style="padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="font-family: 'Orbitron', sans-serif; margin: 0; color: var(--neon-blue);">🌌 Procedural Vector Arena</h3>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: monospace;">EVM-DRIVEN GEOMETRY</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-family: 'Orbitron', sans-serif; margin: 0; color: var(--neon-blue); font-size: 1.1rem;">🌌 Procedural Physics Arena</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: monospace;">CYAN VS MAGENTA DUST</span>
                     </div>
 
-                    <canvas class="vector-canvas" id="arenaCanvas" width="600" height="400"></canvas>
+                    <canvas class="vector-canvas" id="arenaCanvas" width="600" height="320"></canvas>
 
-                    <div class="stats-hud" style="margin-top: 15px;">
+                    <div class="stats-hud" style="margin-top: 10px;">
                         <div class="hud-item">
-                            <div class="hud-label">Primary Color</div>
-                            <div class="hud-val" id="hudColor">#00f2fe</div>
+                            <div class="hud-label">Dominance</div>
+                            <div class="hud-val" id="hudColor" style="font-size: 1rem;">Neutral</div>
                         </div>
                         <div class="hud-item">
-                            <div class="hud-label">Vector Grid</div>
-                            <div class="hud-val" id="hudGrid">24x16</div>
+                            <div class="hud-label">Grid Spacing</div>
+                            <div class="hud-val" id="hudGrid">20x13</div>
                         </div>
                         <div class="hud-item">
-                            <div class="hud-label">Velocity</div>
-                            <div class="hud-val" id="hudSpeed">1.2x</div>
+                            <div class="hud-label">Attractor Speed</div>
+                            <div class="hud-val" id="hudSpeed">1.0x</div>
                         </div>
                         <div class="hud-item">
-                            <div class="hud-label">Oscillations</div>
-                            <div class="hud-val" id="hudOsc">45 Hz</div>
+                            <div class="hud-label">Frequency</div>
+                            <div class="hud-val" id="hudOsc">35 Hz</div>
                         </div>
                     </div>
                 </div>
@@ -265,7 +277,6 @@
 
     <!-- Core Breeder & Visualizer Logic -->
     <script>
-        // Default addresses
         const zmAddress = "0xf4e55515952BdAb2aeB4010f777E802D61eB384f";
         const rpcProviderUrl = "http://127.0.0.1:8545";
 
@@ -273,16 +284,19 @@
         let signer;
         let zmContract;
 
-        // DNA Structure mapping
+        let parentADna = new Uint8Array(32);
+        let parentBDna = new Uint8Array(32);
         let currentDna = new Uint8Array(32);
-        for(let i=0; i<32; i++) {
-            currentDna[i] = Math.floor(Math.random() * 256);
-        }
+        
+        let parentAText = "Void Room Description.";
+        let parentBText = "Qing Room Description.";
+        let childText = "";
 
-        // Particle configuration for vector arena
         let particles = [];
-        let mouseX = 300, mouseY = 200;
+        let sparks = [];
+        let mouseX = 300, mouseY = 160;
         let isMouseDown = false;
+        let battleOver = false;
 
         async function initWeb3() {
             try {
@@ -300,83 +314,100 @@
 
                 const abi = [
                     "function bindRoomDna(uint256 roomId, bytes calldata dna) public returns (uint256)",
-                    "function getRoomDna(uint256 roomId) public view returns (bytes memory)",
-                    "function crossoverRoomDna(uint256 parentA, uint256 parentB, uint256 child, uint256 seed) public returns (uint256)"
+                    "function getRoomDna(uint256 roomId) public view returns (bytes memory)"
                 ];
                 
                 zmContract = new ethers.Contract(zmAddress, abi, signer);
                 console.log("Connected to Z-Machine at:", zmAddress);
+                
+                // Load default parent texts
+                await loadParentTexts();
             } catch (err) {
                 console.error("Web3 initialization failed:", err);
             }
         }
 
-        // Generate synthetic parents DNA if storage is empty
-        function generateParentDna(seed) {
-            const arr = new Uint8Array(32);
-            let state = seed;
-            for(let i=0; i<32; i++) {
-                state = (state * 1664525 + 1013904223) % 4294967296;
-                arr[i] = state % 256;
+        async function getRoomDescriptionText(roomId) {
+            if (!zmContract) return `Placeholder Room Description for Room ${roomId}.`;
+            try {
+                const hex = await zmContract.getRoomDna(roomId);
+                if (hex && hex !== "0x") {
+                    return ethers.toUtf8String(hex).replace(/\0/g, '').trim();
+                }
+            } catch (e) {
+                console.error("Error reading room data:", e);
             }
-            return arr;
+            return `Placeholder Room Description for Room ${roomId}.`;
         }
 
-        function triggerCrossoverLocal(dnaA, dnaB, seed) {
+        async function loadParentTexts() {
+            const idA = document.getElementById("parentA").value;
+            const idB = document.getElementById("parentB").value;
+
+            parentAText = await getRoomDescriptionText(idA);
+            parentBText = await getRoomDescriptionText(idB);
+
+            document.getElementById("textA").value = parentAText;
+            document.getElementById("textB").value = parentBText;
+
+            // Generate representative DNAs from texts
+            parentADna = ethers.toUtf8Bytes(parentAText.padEnd(32, '\0')).slice(0, 32);
+            parentBDna = ethers.toUtf8Bytes(parentBText.padEnd(32, '\0')).slice(0, 32);
+        }
+
+        document.getElementById("parentA").addEventListener("change", loadParentTexts);
+        document.getElementById("parentB").addEventListener("change", loadParentTexts);
+
+        function triggerCrossoverLocal(dnaA, dnaB, seed, bias = 0.5) {
             const child = new Uint8Array(32);
             let state = seed;
             for(let i=0; i<32; i++) {
                 state = (state * 1664525 + 1013904223) % 4294967296;
-                // Use state as bitwise selector mask
-                child[i] = (state % 2 === 0) ? dnaA[i] : dnaB[i];
-                // Mutation chance (approx ~1.5%)
-                if (((state >> 8) % 100) < 2) {
-                    child[i] = (child[i] + 47) % 256;
-                }
+                const roll = (state % 100) / 100;
+                child[i] = (roll < bias) ? dnaA[i] : dnaB[i];
             }
             return child;
+        }
+
+        // Functional word-based crossover representing the dynamic narrative phenotype
+        function breedNarrative(bias = 0.5) {
+            const wordsA = parentAText.split(" ");
+            const wordsB = parentBText.split(" ");
+            const childWords = [];
+
+            const maxLen = Math.max(wordsA.length, wordsB.length);
+            let state = parseInt(document.getElementById("crossoverSeed").value) || 12345;
+
+            for(let i=0; i<maxLen; i++) {
+                state = (state * 1664525 + 1013904223) % 4294967296;
+                const roll = (state % 100) / 100;
+
+                const wordA = wordsA[i % wordsA.length] || "";
+                const wordB = wordsB[i % wordsB.length] || "";
+
+                if (roll < bias) {
+                    if (wordA) childWords.push(wordA);
+                } else {
+                    if (wordB) childWords.push(wordB);
+                }
+            }
+            return childWords.join(" ").substring(0, 250); // limit description size
         }
 
         function bytesToHex(bytes) {
             return "0x" + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function hexToBytes(hex) {
-            hex = hex.replace(/^0x/, '');
-            const bytes = new Uint8Array(hex.length / 2);
-            for (let i = 0; i < hex.length; i += 2) {
-                bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-            }
-            return bytes;
-        }
-
         // Setup Breeder Buttons
         document.getElementById("btnBreed").addEventListener("click", async () => {
-            const parentAId = parseInt(document.getElementById("parentA").value);
-            const parentBId = parseInt(document.getElementById("parentB").value);
-            const seed = parseInt(document.getElementById("crossoverSeed").value);
+            await loadParentTexts();
+            const seed = parseInt(document.getElementById("crossoverSeed").value) || 999;
 
-            let dnaA, dnaB;
-            try {
-                // Attempt fetching from Yul contract on-chain
-                if (zmContract) {
-                    const hexA = await zmContract.getRoomDna(parentAId);
-                    const hexB = await zmContract.getRoomDna(parentBId);
-                    
-                    dnaA = (hexA && hexA !== "0x") ? hexToBytes(hexA) : generateParentDna(parentAId * seed);
-                    dnaB = (hexB && hexB !== "0x") ? hexToBytes(hexB) : generateParentDna(parentBId * seed);
-                } else {
-                    dnaA = generateParentDna(parentAId * seed);
-                    dnaB = generateParentDna(parentBId * seed);
-                }
-            } catch (e) {
-                console.log("Falling back to local generation...");
-                dnaA = generateParentDna(parentAId * seed);
-                dnaB = generateParentDna(parentBId * seed);
-            }
+            currentDna = triggerCrossoverLocal(parentADna, parentBDna, seed, 0.5);
+            childText = breedNarrative(0.5);
 
-            currentDna = triggerCrossoverLocal(dnaA, dnaB, seed);
-            document.getElementById("hexDisplay").innerText = bytesToHex(currentDna);
+            document.getElementById("childStoryOutput").value = childText;
+            document.getElementById("hexDisplay").innerText = bytesToHex(ethers.toUtf8Bytes(childText));
             updateHUD(currentDna);
             initParticles();
         });
@@ -387,44 +418,31 @@
                 return;
             }
             try {
-                const hexData = bytesToHex(currentDna);
+                const finalBytes = ethers.toUtf8Bytes(childText);
+                const hexData = bytesToHex(finalBytes);
+                
+                document.getElementById("hexDisplay").innerText = "PENDING ON-CHAIN TRANSACTION...";
                 const tx = await zmContract.bindRoomDna(20, hexData);
-                document.getElementById("hexDisplay").innerText = "PENDING TRANSACTION...";
                 await tx.wait();
-                document.getElementById("hexDisplay").innerText = `SUCCESS! Room 20 DNA bound to: \n${hexData}`;
+                document.getElementById("hexDisplay").innerText = `SUCCESS! Room 20 DNA bound to:\n${childText}`;
             } catch (err) {
                 console.error("Write error:", err);
                 alert("Failed to write to contract: " + err.message);
             }
         });
 
-        document.getElementById("btnConnect").addEventListener("click", initWeb3);
-
-        // Parent DNA cache
-        let parentADna = new Uint8Array(32);
-        let parentBDna = new Uint8Array(32);
-        let sparks = [];
-
         // HUD Updater
         function updateHUD(dna) {
-            // Byte 0-2 for HSL primary color
             const hue = Math.floor((dna[0] / 255) * 360);
-            const sat = 70 + Math.floor((dna[1] / 255) * 30);
-            const light = 45 + Math.floor((dna[2] / 255) * 15);
-            const primaryColor = `hsl(${hue}, ${sat}%, ${light}%)`;
-            
-            document.getElementById("hudColor").innerText = primaryColor;
-            document.getElementById("hudColor").style.color = primaryColor;
+            document.getElementById("hudColor").innerText = `hsl(${hue}, 80%, 50%)`;
+            document.getElementById("hudColor").style.color = `hsl(${hue}, 80%, 50%)`;
 
-            // Byte 4 determines grid sizing (12 to 32)
             const gridSize = 12 + Math.floor((dna[4] / 255) * 20);
             document.getElementById("hudGrid").innerText = `${gridSize}x${Math.floor(gridSize * 0.66)}`;
 
-            // Byte 8 determines particle base speed
             const speed = (0.5 + (dna[8] / 255) * 2.5).toFixed(1);
             document.getElementById("hudSpeed").innerText = `${speed}x`;
 
-            // Byte 12 determines wave frequency
             const osc = 10 + Math.floor((dna[12] / 255) * 80);
             document.getElementById("hudOsc").innerText = `${osc} Hz`;
         }
@@ -436,90 +454,60 @@
         function initParticles() {
             particles = [];
             sparks = [];
+            battleOver = false;
 
-            // Team A (Cyan) from Parent A
-            const countA = 40 + Math.floor((parentADna[16] / 255) * 40);
+            // Cyan Team (A)
+            const countA = 40 + Math.floor((parentADna[16] % 30));
             for(let i=0; i<countA; i++) {
                 particles.push({
-                    x: Math.random() * (canvas.width * 0.4), // Left side
+                    x: Math.random() * (canvas.width * 0.35),
                     y: Math.random() * canvas.height,
-                    vx: 2 + Math.random() * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    size: 2 + (parentADna[20] / 255) * 5,
-                    speed: 0.5 + (parentADna[8] / 255) * 2,
+                    vx: 1.5 + Math.random() * 2,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    size: 2.5 + (parentADna[20] % 4),
+                    speed: 0.8 + (parentADna[8] % 5) * 0.3,
                     team: 'A',
-                    hue: 180, // Cyan
-                    strength: parentADna[24]
+                    hue: 180,
+                    strength: 1 + (parentADna[24] % 5)
                 });
             }
 
-            // Team B (Magenta) from Parent B
-            const countB = 40 + Math.floor((parentBDna[16] / 255) * 40);
+            // Magenta Team (B)
+            const countB = 40 + Math.floor((parentBDna[16] % 30));
             for(let i=0; i<countB; i++) {
                 particles.push({
-                    x: canvas.width - Math.random() * (canvas.width * 0.4), // Right side
+                    x: canvas.width - Math.random() * (canvas.width * 0.35),
                     y: Math.random() * canvas.height,
-                    vx: -(2 + Math.random() * 2),
-                    vy: (Math.random() - 0.5) * 2,
-                    size: 2 + (parentBDna[20] / 255) * 5,
-                    speed: 0.5 + (parentBDna[8] / 255) * 2,
+                    vx: -(1.5 + Math.random() * 2),
+                    vy: (Math.random() - 0.5) * 1.5,
+                    size: 2.5 + (parentBDna[20] % 4),
+                    speed: 0.8 + (parentBDna[8] % 5) * 0.3,
                     team: 'B',
-                    hue: 320, // Magenta
-                    strength: parentBDna[24]
+                    hue: 320,
+                    strength: 1 + (parentBDna[24] % 5)
                 });
             }
         }
 
         function createSparks(x, y, team) {
             const color = team === 'A' ? "#00f2fe" : "#ff007f";
-            for(let i=0; i<10; i++) {
+            for(let i=0; i<8; i++) {
                 sparks.push({
                     x: x,
                     y: y,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 6,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
                     alpha: 1.0,
                     color: color,
-                    decay: 0.03 + Math.random() * 0.03
+                    decay: 0.04 + Math.random() * 0.04
                 });
             }
         }
-
-        // Setup Breeder Buttons
-        document.getElementById("btnBreed").addEventListener("click", async () => {
-            const parentAId = parseInt(document.getElementById("parentA").value);
-            const parentBId = parseInt(document.getElementById("parentB").value);
-            const seed = parseInt(document.getElementById("crossoverSeed").value);
-
-            try {
-                if (zmContract) {
-                    const hexA = await zmContract.getRoomDna(parentAId);
-                    const hexB = await zmContract.getRoomDna(parentBId);
-                    
-                    parentADna = (hexA && hexA !== "0x") ? hexToBytes(hexA) : generateParentDna(parentAId * seed);
-                    parentBDna = (hexB && hexB !== "0x") ? hexToBytes(hexB) : generateParentDna(parentBId * seed);
-                } else {
-                    parentADna = generateParentDna(parentAId * seed);
-                    parentBDna = generateParentDna(parentBId * seed);
-                }
-            } catch (e) {
-                parentADna = generateParentDna(parentAId * seed);
-                parentBDna = generateParentDna(parentBId * seed);
-            }
-
-            currentDna = triggerCrossoverLocal(parentADna, parentBDna, seed);
-            document.getElementById("hexDisplay").innerText = bytesToHex(currentDna);
-            updateHUD(currentDna);
-            initParticles();
-        });
-
-        let battleOver = false;
 
         function animate() {
             ctx.fillStyle = "rgba(4, 6, 18, 0.2)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Fetch current DNA parameters
             const hueBase = Math.floor((currentDna[0] / 255) * 360);
             const density = 12 + Math.floor((currentDna[4] / 255) * 20);
             const oscFreq = 10 + Math.floor((currentDna[12] / 255) * 80);
@@ -545,7 +533,7 @@
                 ctx.stroke();
             }
 
-            // Draw attractor pointer
+            // Attractor ring
             ctx.shadowBlur = 15;
             ctx.shadowColor = isMouseDown ? "#ffd700" : `hsl(${hueBase}, 90%, 50%)`;
             ctx.strokeStyle = isMouseDown ? "#ffd700" : `hsl(${hueBase}, 90%, 50%)`;
@@ -555,7 +543,6 @@
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Track teams
             let teamACount = 0;
             let teamBCount = 0;
 
@@ -565,51 +552,46 @@
                 if (p.team === 'A') teamACount++;
                 else teamBCount++;
 
-                // Basic attraction physics
                 const dx = mouseX - p.x;
                 const dy = mouseY - p.y;
                 const dist = Math.sqrt(dx*dx + dy*dy) || 1;
 
-                let force = 0.08;
-                if (isMouseDown) force = 0.25; // Pull stronger on click
+                let force = 0.06;
+                if (isMouseDown) force = 0.22;
 
-                p.vx += (dx / dist) * force + (Math.sin(p.y * 0.05 + time) * 0.15);
-                p.vy += (dy / dist) * force + (Math.cos(p.x * 0.05 + time) * 0.15);
+                p.vx += (dx / dist) * force + (Math.sin(p.y * 0.05 + time) * 0.12);
+                p.vy += (dy / dist) * force + (Math.cos(p.x * 0.05 + time) * 0.12);
 
-                // Speed limit
                 p.vx *= 0.96;
                 p.vy *= 0.96;
 
                 p.x += p.vx * p.speed;
                 p.y += p.vy * p.speed;
 
-                // Wall bounce
                 if (p.x < 0 || p.x > canvas.width) p.vx = -p.vx;
                 if (p.y < 0 || p.y > canvas.height) p.vy = -p.vy;
 
-                // Collision detection with opposing team
+                // Collide
                 for(let j = i - 1; j >= 0; j--) {
                     const other = particles[j];
                     if (other.team !== p.team) {
                         const cdx = other.x - p.x;
                         const cdy = other.y - p.y;
                         const cdist = Math.sqrt(cdx*cdx + cdy*cdy);
-                        const radiusSum = p.size + other.size;
 
-                        if (cdist < radiusSum + 2) {
-                            // Battle calculation: speed * size * strength
+                        if (cdist < (p.size + other.size + 1)) {
                             const powerP = p.speed * p.size * p.strength;
                             const powerOther = other.speed * other.size * other.strength;
 
                             if (powerP > powerOther) {
                                 createSparks(other.x, other.y, other.team);
                                 particles.splice(j, 1);
-                                p.size += 0.5; // Gain mass
-                                p.hue = (p.hue + other.hue) / 2; // Absorb trait
+                                p.size += 0.4;
+                                p.hue = (p.hue + other.hue) / 2;
                             } else {
                                 createSparks(p.x, p.y, p.team);
                                 particles.splice(i, 1);
-                                other.size += 0.5;
+                                other.size += 0.4;
                                 other.hue = (other.hue + p.hue) / 2;
                                 break;
                             }
@@ -619,15 +601,12 @@
 
                 // Render particle
                 ctx.fillStyle = `hsla(${p.hue}, 95%, 60%, 0.85)`;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = `hsla(${p.hue}, 95%, 60%, 0.5)`;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
                 ctx.fill();
-                ctx.shadowBlur = 0;
             }
 
-            // Update & Render sparks
+            // Sparks
             for(let k = sparks.length - 1; k >= 0; k--) {
                 const s = sparks[k];
                 s.x += s.vx;
@@ -645,37 +624,39 @@
             }
             ctx.globalAlpha = 1.0;
 
-            // Render live battle scoreboard
+            // Scoreboard & Live Word Blending Ratio
+            const total = teamACount + teamBCount || 1;
+            const biasA = teamACount / total;
+            
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 14px 'Orbitron', sans-serif";
+            ctx.font = "bold 13px 'Orbitron', sans-serif";
             ctx.textAlign = "left";
-            ctx.fillText(`TEAM A (CYAN): ${teamACount}`, 15, 25);
+            ctx.fillText(`Parent A (Cyan) Influence: ${Math.round(biasA * 100)}%`, 15, 25);
             ctx.textAlign = "right";
-            ctx.fillText(`TEAM B (MAGENTA): ${teamBCount}`, canvas.width - 15, 25);
+            ctx.fillText(`Parent B (Magenta) Influence: ${Math.round((1 - biasA) * 100)}%`, canvas.width - 15, 25);
 
-            // Handle end-of-battle outcome
+            // Update live phenotypic description stream dynamically during battle!
+            if (!battleOver && particles.length > 0) {
+                childText = breedNarrative(biasA);
+                document.getElementById("childStoryOutput").value = childText;
+                document.getElementById("hexDisplay").innerText = bytesToHex(ethers.toUtf8Bytes(childText));
+            }
+
+            // End battle
             if ((teamACount === 0 || teamBCount === 0) && particles.length > 0 && !battleOver) {
                 battleOver = true;
                 const winner = teamACount > 0 ? 'TEAM A' : 'TEAM B';
+                const finalBias = winner === 'TEAM A' ? 0.85 : 0.15;
                 
-                // Formulate blended DNA biased towards the winner
-                const winnerDna = teamACount > 0 ? parentADna : parentBDna;
-                const loserDna = teamACount > 0 ? parentBDna : parentADna;
+                childText = breedNarrative(finalBias);
+                currentDna = triggerCrossoverLocal(parentADna, parentBDna, 999, finalBias);
                 
-                for(let idx = 0; idx < 32; idx++) {
-                    currentDna[idx] = Math.floor(winnerDna[idx] * 0.7 + loserDna[idx] * 0.3);
-                }
-
-                document.getElementById("hexDisplay").innerText = "BATTLE RESOLVED!\n" + bytesToHex(currentDna);
+                document.getElementById("childStoryOutput").value = "🔥 SURVIVOR NARRATIVE RESOLVED:\n" + childText;
+                document.getElementById("hexDisplay").innerText = bytesToHex(ethers.toUtf8Bytes(childText));
                 updateHUD(currentDna);
-                
-                // Visual flash
-                ctx.fillStyle = winner === 'TEAM A' ? "rgba(0, 242, 254, 0.4)" : "rgba(255, 0, 127, 0.4)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
 
-            if (particles.length === 0) {
-                battleOver = false;
+                ctx.fillStyle = winner === 'TEAM A' ? "rgba(0, 242, 254, 0.45)" : "rgba(255, 0, 127, 0.45)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
             requestAnimationFrame(animate);
@@ -691,7 +672,6 @@
         canvas.addEventListener("mousedown", () => isMouseDown = true);
         canvas.addEventListener("mouseup", () => isMouseDown = false);
 
-        // Start
         initWeb3().then(() => {
             document.getElementById("btnBreed").click();
             animate();
