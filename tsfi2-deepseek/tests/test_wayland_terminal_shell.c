@@ -1835,25 +1835,61 @@ static void execute_command(const char *cmd) {
     }
     
     if (first_word && strcasecmp(first_word, "HURWOOD") == 0) {
+        char *arg = strtok(NULL, " \t");
         const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
         lau_vram_write_string(g_vram, clear_seq, 3);
-        const char *output = 
-            "==================================================\r\n"
-            "   HURWOOD CODE GENERATOR v1.0 (AHOY! ISSUE 6)    \r\n"
-            "==================================================\r\n"
-            " Generating C64 BASIC Vector Maze Program...\r\n\r\n"
-            " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
-            " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK SCENE\r\n"
-            " 30 FOR I = 1 TO 1000\r\n"
-            " 40 R = INT(RND(1)*2)\r\n"
-            " 50 IF R = 0 THEN PRINT \"/\";: GOTO 70\r\n"
-            " 60 PRINT \"\\\\\";\r\n"
-            " 70 NEXT I\r\n"
-            " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
-            " READY.\r\n\r\n"
-            " [Hurwood automated layout generator finished.]\r\n"
-            "==================================================\r\n";
-        lau_vram_write_string(g_vram, output, strlen(output));
+        
+        if (arg && strcasecmp(arg, "SOUND") == 0) {
+            const char *output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 SID SOUND DESIGN   \r\n"
+                "==================================================\r\n"
+                " Generating C64 SID Triangle Wave Chord...\r\n\r\n"
+                " 10 FOR I = 54272 TO 54296: POKE I, 0: NEXT I\r\n"
+                " 20 POKE 54277, 15: POKE 54278, 240: REM ADSR\r\n"
+                " 30 POKE 54273, 17: POKE 54272, 37: REM C-4 FREQ\r\n"
+                " 40 POKE 54290, 15: REM VOLUME\r\n"
+                " 50 POKE 54276, 17: REM START TRIANGLE WAVE\r\n"
+                " 60 FOR T = 1 TO 2000: NEXT T\r\n"
+                " 70 POKE 54276, 16: REM STOP AUDIO\r\n"
+                " READY.\r\n\r\n"
+                " [POKEY/SID register sweeps code generated.]\r\n"
+                "==================================================\r\n";
+            lau_vram_write_string(g_vram, output, strlen(output));
+        } else if (arg && strcasecmp(arg, "SPRITE") == 0) {
+            const char *output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 VIC-II SPRITES     \r\n"
+                "==================================================\r\n"
+                " Generating C64 Sprite 0 Generation Code...\r\n\r\n"
+                " 10 POKE 2040, 13: REM SPRITE 0 PTR TO $0340\r\n"
+                " 20 FOR I = 832 TO 894: POKE I, 255: NEXT I\r\n"
+                " 30 POKE 53248, 100: POKE 53249, 100: REM COORDS\r\n"
+                " 40 POKE 53269, 1: REM ENABLE SPRITE\r\n"
+                " 50 POKE 53287, 1: REM WHITE COLOR\r\n"
+                " READY.\r\n\r\n"
+                " [VIC-II visual sprite generation code completed.]\r\n"
+                "==================================================\r\n";
+            lau_vram_write_string(g_vram, output, strlen(output));
+        } else {
+            const char *output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 MAZE GRAPHICS      \r\n"
+                "==================================================\r\n"
+                " Generating C64 BASIC Vector Maze Program...\r\n\r\n"
+                " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
+                " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK SCENE\r\n"
+                " 30 FOR I = 1 TO 1000\r\n"
+                " 40 R = INT(RND(1)*2)\r\n"
+                " 50 IF R = 0 THEN PRINT \"/\";: GOTO 70\r\n"
+                " 60 PRINT \"\\\\\";\r\n"
+                " 70 NEXT I\r\n"
+                " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
+                " READY.\r\n\r\n"
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE]]\r\n"
+                "==================================================\r\n";
+            lau_vram_write_string(g_vram, output, strlen(output));
+        }
         log_telemetry("Rendered Hurwood Code Generator Screen");
         return;
     }
