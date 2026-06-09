@@ -355,8 +355,9 @@ Connect your wallet to retrieve the active story ROM.</div>
                 const topic0 = ethers.id(logEventSignature);
                 const latestBlock = await pulseProvider.getBlockNumber();
                 const filter = {
+                    address: "0xc3e53f4d16ae77db1c982e75a937b9f60fe63690",
                     topics: [topic0],
-                    fromBlock: latestBlock - 20000,
+                    fromBlock: latestBlock - 500000,
                     toBlock: latestBlock
                 };
                 const logs = await pulseProvider.getLogs(filter);
@@ -712,8 +713,9 @@ Connect your wallet to retrieve the active story ROM.</div>
                                 const topic0 = ethers.id(logEventSignature);
                                 const latestBlock = await pulseProvider.getBlockNumber();
                                 const filter = {
+                                    address: tokenAddress,
                                     topics: [topic0],
-                                    fromBlock: latestBlock - 20000,
+                                    fromBlock: latestBlock - 500000,
                                     toBlock: latestBlock
                                 };
                                 const logs = await pulseProvider.getLogs(filter);
