@@ -211,6 +211,8 @@
                         <option value="breeder">🧬 Sigil Weaver (Atropa DNA Recombinant)</option>
                         <option value="ibm">🖥️ Historical Monogram (RCA 1977)</option>
                         <option value="maze">🌀 Labyrinth Generator (Procedural Maze)</option>
+                        <option value="sieve">🧮 Sieve of Eratosthenes (Prime Modulo Grid)</option>
+                        <option value="life">👾 Cellular Automaton (Chaotic Gas Particles)</option>
                     </select>
 
                     <p style="font-size: 0.9rem; color: #ebdcb9; line-height: 1.4; margin-bottom: 0;">
@@ -589,10 +591,22 @@
             0x12, 0x10, 0x72, 0x01, 0x12, 0x0C, 0x80, 0x80, 0x80, 0x80
         ]);
 
+        const sieveRom = new Uint8Array([
+            0x00, 0xE0, 0xA2, 0x22, 0x60, 0x00, 0x61, 0x00, 0x82, 0x00, 0x82, 0x13, 0xC3, 0x07, 0x33, 0x03,
+            0xD0, 0x11, 0x70, 0x02, 0x30, 0x40, 0x12, 0x08, 0x60, 0x00, 0x71, 0x01, 0x31, 0x20, 0x12, 0x08,
+            0x12, 0x00, 0x80, 0x00, 0x00, 0x00
+        ]);
+
+        const lifeRom = new Uint8Array([
+            0x00, 0xE0, 0xA2, 0x0C, 0xC0, 0x3F, 0xC1, 0x1F, 0xD0, 0x11, 0x12, 0x02, 0x80, 0x00, 0x00, 0x00
+        ]);
+
         const roms = {
             breeder: breederRom,
             ibm: ibmRom,
-            maze: mazeRom
+            maze: mazeRom,
+            sieve: sieveRom,
+            life: lifeRom
         };
 
         let isRunning = false;

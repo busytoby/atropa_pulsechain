@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alchemical Console Test Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Alice&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0b0908;
+            color: #ebdcb9;
+            font-family: 'Lora', serif;
+            margin: 0;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 {
+            font-family: 'Alice', serif;
+            color: #d4af37;
+            margin-bottom: 5px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #14110f;
+            border: 1px solid #3c2f1f;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+        }
+        .test-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #282015;
+            padding: 12px 0;
+            text-align: left;
+        }
+        .test-name {
+            font-weight: 600;
+        }
+        .status-badge {
+            font-family: monospace;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #1e3a1e;
+            color: #4ef04e;
+            border: 1px solid #2e5a2e;
+        }
+        .pending {
+            background: #3a2e1e;
+            color: #f0a44e;
+            border: 1px solid #5a462e;
+        }
+        .fail {
+            background: #3a1e1e;
+            color: #f04e4e;
+            border: 1px solid #5a2e2e;
+        }
+        iframe {
+            display: none;
+            width: 1px;
+            height: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Alchemical Verification Suite</h1>
+        <p style="color: #a49373; font-style: italic; margin-bottom: 30px;">Automated Client-Side Integration Runner</p>
+
+        <div id="testContainer">
+            <div class="test-row">
+                <span class="test-name">1. Emulator Core Initial State Reset</span>
+                <span class="status-badge pending" id="test1">PENDING</span>
+            </div>
+            <div class="test-row">
+                <span class="test-name">2. Forth Postfix Math (5 5 *)</span>
+                <span class="status-badge pending" id="test2">PENDING</span>
+            </div>
+            <div class="test-row">
+                <span class="test-name">3. Forth Register Write (12 v2 !)</span>
+                <span class="status-badge pending" id="test3">PENDING</span>
+            </div>
+            <div class="test-row">
+                <span class="test-name">4. ROM Loader Load & Go Hook</span>
+                <span class="status-badge pending" id="test4">PENDING</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden iframe targeting cosmac_elf.html for sandbox test access -->
+    <iframe src="cosmac_elf.html" id="testFrame"></iframe>
+
+    <script>
+        const frame = document.getElementById("testFrame");
+
+        frame.onload = () => {
+            setTimeout(() => {
+                const win = frame.contentWindow;
+                if (!win || !win.cpu) {
+                    console.error("COSMAC VIP context not found.");
+                    return;
+                }
+
+                // Test 1: Initial State Check
+                const test1 = document.getElementById("test1");
+                if (win.cpu.pc === 0x200 && win.forthStack.length === 0) {
+                    test1.innerText = "PASS";
+                    test1.className = "status-badge pass";
+                } else {
+                    test1.innerText = "FAIL";
+                    test1.className = "status-badge fail";
+                }
+
+                // Test 2: Forth Postfix Math
+                const test2 = document.getElementById("test2");
+                try {
+                    win.executeForthLine("5 5 *");
+                    if (win.forthStack[0] === 25) {
+                        test2.innerText = "PASS";
+                        test2.className = "status-badge pass";
+                    } else {
+                        test2.innerText = "FAIL";
+                        test2.className = "status-badge fail";
+                    }
+                } catch(e) {
+                    test2.innerText = "FAIL";
+                    test2.className = "status-badge fail";
+                }
+
+                // Test 3: Forth Register Write
+                const test3 = document.getElementById("test3");
+                try {
+                    win.executeForthLine("12 v2 !");
+                    if (win.cpu.v[2] === 12) {
+                        test3.innerText = "PASS";
+                        test3.className = "status-badge pass";
+                    } else {
+                        test3.innerText = "FAIL";
+                        test3.className = "status-badge fail";
+                    }
+                } catch(e) {
+                    test3.innerText = "FAIL";
+                    test3.className = "status-badge fail";
+                }
+
+                // Test 4: ROM Loader Load & Go Hook
+                const test4 = document.getElementById("test4");
+                try {
+                    win.document.getElementById("romSelector").value = "maze";
+                    win.document.getElementById("romSelector").dispatchEvent(new Event("change"));
+                    
+                    if (win.isRunning === true && win.cpu.pc === 0x200) {
+                        test4.innerText = "PASS";
+                        test4.className = "status-badge pass";
+                    } else {
+                        test4.innerText = "FAIL";
+                        test4.className = "status-badge fail";
+                    }
+                } catch(e) {
+                    test4.innerText = "FAIL";
+                    test4.className = "status-badge fail";
+                }
+
+            }, 800);
+        };
+    </script>
+</body>
+</html>
