@@ -60,6 +60,70 @@ object "ZMachine" {
                 return(0, totalBytes)
             }
 
+            case 0xb23e800d { // bindRoomDna(uint256 roomId, bytes calldata dna)
+                let roomId := calldataload(4)
+                let dnaOffset := calldataload(36)
+                let dnaLen := calldataload(add(4, dnaOffset))
+                sstore(add(3000000, roomId), dnaLen)
+                
+                let wordsCount := div(add(dnaLen, 31), 32)
+                let calldataPtr := add(36, dnaOffset)
+                for { let i := 0 } lt(i, wordsCount) { i := add(i, 1) } {
+                    let word := calldataload(add(calldataPtr, mul(i, 32)))
+                    sstore(add(3100000, add(mul(roomId, 100), i)), word)
+                }
+                mstore(0, 1)
+                return(0, 32)
+            }
+
+            case 0x2e0bc27a { // getRoomDna(uint256 roomId) -> (bytes memory)
+                let roomId := calldataload(4)
+                let dnaLen := sload(add(3000000, roomId))
+                mstore(0, 32) // offset to bytes array
+                mstore(32, dnaLen)
+                
+                let wordsCount := div(add(dnaLen, 31), 32)
+                let destPtr := 64
+                for { let i := 0 } lt(i, wordsCount) { i := add(i, 1) } {
+                    let word := sload(add(3100000, add(mul(roomId, 100), i)))
+                    mstore(add(destPtr, mul(i, 32)), word)
+                }
+                let totalReturnSize := add(64, mul(wordsCount, 32))
+                return(0, totalReturnSize)
+            }
+
+            case 0xd4115e5b { // crossoverRoomDna(uint256 parentA, uint256 parentB, uint256 child, uint256 seed)
+                let parentA := calldataload(4)
+                let parentB := calldataload(36)
+                let child := calldataload(68)
+                let seed := calldataload(100)
+                
+                let lenA := sload(add(3000000, parentA))
+                let lenB := sload(add(3000000, parentB))
+                let childLen := lenA
+                if lt(lenB, childLen) { childLen := lenB } // Use the minimum length
+                
+                sstore(add(3000000, child), childLen)
+                let wordsCount := div(add(childLen, 31), 32)
+                
+                let state := seed
+                for { let i := 0 } lt(i, wordsCount) { i := add(i, 1) } {
+                    // Simple LCG step to generate a pseudo-random mask
+                    state := add(mul(state, 1664525), 1013904223)
+                    mstore(0, state)
+                    let mask := keccak256(0, 32)
+                    
+                    let wordA := sload(add(3100000, add(mul(parentA, 100), i)))
+                    let wordB := sload(add(3100000, add(mul(parentB, 100), i)))
+                    
+                    // Combine bytes using mask
+                    let combined := or(and(wordA, mask), and(wordB, not(mask)))
+                    sstore(add(3100000, add(mul(child, 100), i)), combined)
+                }
+                mstore(0, 1)
+                return(0, 32)
+            }
+
             case 0xffb51b58 {
                 let objId := calldataload(4)
                 let propId := calldataload(36)
@@ -145,6 +209,18 @@ object "ZMachine" {
                 let resultPtr := 0x40
                 
                 switch firstWord
+                case 0x54494d00 { // "TIM"
+                    mstore(resultPtr, 0x2a2054494d204d4f4e49544f5220414354495645202a0a50433a203078313030)
+                    mstore(add(resultPtr, 32), 0x302053523a2030783330202053503a20307846440a413a20307830302020583a)
+                    mstore(add(resultPtr, 64), 0x307830302020593a20307830300a000000000000000000000000000000000000)
+                    resultPtr := add(resultPtr, 78)
+                }
+                case 0x54494d20 { // "TIM "
+                    mstore(resultPtr, 0x2a2054494d204d4f4e49544f5220414354495645202a0a50433a203078313030)
+                    mstore(add(resultPtr, 32), 0x302053523a2030783330202053503a20307846440a413a20307830302020583a)
+                    mstore(add(resultPtr, 64), 0x307830302020593a20307830300a000000000000000000000000000000000000)
+                    resultPtr := add(resultPtr, 78)
+                }
                 case 0x74616b65 { // "take"
                     let taken := 0
                     if eq(sload(add(2000300, 50)), roomId) {
