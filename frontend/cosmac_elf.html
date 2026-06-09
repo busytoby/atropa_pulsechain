@@ -1081,6 +1081,30 @@
                             logTrapEvent("[FORTH ERROR] chord requires 4 frequencies on the stack", true);
                         }
                         break;
+                    case "rtc@":
+                        forthStack.push(Date.now() & 0xFFFFFFFF);
+                        logTrapEvent("[FORTH rtc@] Pushed current system timestamp to stack.", true);
+                        break;
+                    case "timer":
+                        if (forthStack.length >= 2) {
+                            const actionId = forthStack.pop();
+                            const delayMs = forthStack.pop();
+                            logTrapEvent(`⏰ [TIMER] Scheduled Action ID ${actionId} to fire in ${delayMs}ms.`, true);
+                            setTimeout(() => {
+                                logTrapEvent(`⏰ [TIMER] Fired Action ID ${actionId}`, true);
+                                if (actionId === 1) playBeep();
+                                if (actionId === 2) playBoop();
+                                if (actionId === 3) playZonk();
+                                if (actionId === 4) {
+                                    cpu.tick();
+                                    updateMonitor();
+                                    renderDisplay();
+                                }
+                            }, delayMs);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] timer requires [delayMs] [actionId] on stack", true);
+                        }
+                        break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
                 }
