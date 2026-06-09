@@ -468,6 +468,7 @@
         }
 
         let alchemicalScore = 0;
+        let breakpointAddress = null;
 
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
@@ -640,6 +641,15 @@
             }
 
             tick() {
+                if (breakpointAddress !== null && this.pc === breakpointAddress) {
+                    logTrapEvent(`🛑 [DEBUGGER] Stop-on-Address breakpoint hit at 0x${this.pc.toString(16).toUpperCase().padStart(4, '0')}! Halting CPU.`, true);
+                    breakpointAddress = null;
+                    isRunning = false;
+                    playBeep();
+                    updateMonitor();
+                    renderDisplay();
+                    return;
+                }
                 if (this.pc < 0x200 || this.pc >= 4096) {
                     this.triggerRecovery(0x02, this.pc);
                     return;
@@ -1502,6 +1512,19 @@
                         } else {
                             logTrapEvent("[FORTH ERROR] score- requires [points] on stack", true);
                         }
+                        break;
+                    case "breakpoint":
+                        if (forthStack.length >= 1) {
+                            const addr = forthStack.pop();
+                            breakpointAddress = addr;
+                            logTrapEvent(`🛑 [DEBUGGER] Armed Stop-on-Address breakpoint for 0x${addr.toString(16).toUpperCase().padStart(4, '0')}`, true);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] breakpoint requires [addr] on stack", true);
+                        }
+                        break;
+                    case "breakpoint-clear":
+                        breakpointAddress = null;
+                        logTrapEvent("🛑 [DEBUGGER] Breakpoint disarmed.", true);
                         break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
