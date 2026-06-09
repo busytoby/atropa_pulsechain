@@ -288,7 +288,7 @@ Type 'LOOK' to begin.</div>
 
     <!-- Core Breeder & Visualizer Logic -->
     <script>
-        const zmAddress = "0xf4e55515952BdAb2aeB4010f777E802D61eB384f";
+        let zmAddress = "0x9bE634797af98cB560DB23260b5f7C6e98AcCAcf";
         const rpcProviderUrl = "http://127.0.0.1:8545";
 
         let provider;
@@ -311,6 +311,16 @@ Type 'LOOK' to begin.</div>
 
         async function initWeb3() {
             try {
+                try {
+                    const res = await fetch("/api/config");
+                    const config = await res.json();
+                    if (config && config.networks && config.networks.localhost && config.networks.localhost.zmachineAddress) {
+                        zmAddress = config.networks.localhost.zmachineAddress;
+                    }
+                } catch (e) {
+                    console.log("Could not fetch dynamic config, using default address.");
+                }
+
                 if (window.ethereum) {
                     provider = new ethers.BrowserProvider(window.ethereum);
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
