@@ -1571,11 +1571,25 @@
                                 let valid = /^[0-9a-fA-F]*$/.test(cleanHex);
                                 if (valid && cleanHex.length % 2 === 0) {
                                     let sum = 0;
+                                    let bytes = [];
                                     for (let j = 0; j < cleanHex.length; j += 2) {
-                                        sum = (sum + parseInt(cleanHex.slice(j, j + 2), 16)) % 256;
+                                        const byteVal = parseInt(cleanHex.slice(j, j + 2), 16);
+                                        bytes.push(byteVal);
+                                        sum = (sum + byteVal) % 256;
                                     }
-                                    logTrapEvent(`Loaded ${cleanHex.length / 2} bytes.`, true);
+                                    logTrapEvent(`Loaded ${bytes.length} bytes.`, true);
                                     logTrapEvent(`Flankspeed Checksum: $${sum.toString(16).toUpperCase()}`, true);
+                                    
+                                    if (forthStack.length >= 1) {
+                                        const targetAddr = forthStack.pop();
+                                        for (let j = 0; j < bytes.length; j++) {
+                                            cpu.memory[(targetAddr + j) % 65536] = bytes[j];
+                                        }
+                                        logTrapEvent(`📡 Flankspeed: Wrote ${bytes.length} bytes into RAM starting at $${targetAddr.toString(16).toUpperCase()}`, true);
+                                    } else {
+                                        logTrapEvent("💡 TIP: Push a memory address onto the stack first to load bytes directly.", true);
+                                        logTrapEvent("   Example: 768 flankspeed A9 01 8D 20 D0 60", true);
+                                    }
                                 } else {
                                     logTrapEvent("[ERROR] Invalid hex string or odd byte length.", true);
                                 }
