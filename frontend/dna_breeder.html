@@ -381,9 +381,41 @@ Type 'LOOK' to begin.</div>
                 
                 miniTerminal.innerText += decodedText + "\n";
                 miniTerminal.scrollTop = miniTerminal.scrollHeight;
+
+                if (decodedText.includes("[PLAY:")) {
+                    const match = decodedText.match(/\[PLAY:(\d+),(\d+),(\d+),(\d+)\]/);
+                    if (match) {
+                        const freqs = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseInt(match[4])];
+                        playDacFrequencies(freqs);
+                    }
+                }
             } catch (err) {
                 console.error(err);
                 miniTerminal.innerText += `[Error executing command: ${err.message}]\n`;
+            }
+        }
+
+        function playDacFrequencies(freqs) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const actx = new AudioContext();
+                let time = 0;
+                freqs.forEach(f => {
+                    const osc = actx.createOscillator();
+                    const gain = actx.createGain();
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(f, actx.currentTime + time);
+                    gain.gain.setValueAtTime(0.1, actx.currentTime + time);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + time + 0.28);
+                    osc.connect(gain);
+                    gain.connect(actx.destination);
+                    osc.start(actx.currentTime + time);
+                    osc.stop(actx.currentTime + time + 0.3);
+                    time += 0.32;
+                });
+            } catch (e) {
+                console.error("Audio error:", e);
             }
         }
 

@@ -221,6 +221,31 @@ object "ZMachine" {
                     mstore(add(resultPtr, 64), 0x307830302020593a20307830300a000000000000000000000000000000000000)
                     resultPtr := add(resultPtr, 78)
                 }
+                case 0x706c6179 { // "play"
+                    let dna0 := sload(add(3100000, add(mul(roomId, 100), 0)))
+                    let f1 := add(150, mul(and(dna0, 0xff), 3))
+                    let f2 := add(150, mul(and(shr(8, dna0), 0xff), 3))
+                    let f3 := add(150, mul(and(shr(16, dna0), 0xff), 3))
+                    let f4 := add(150, mul(and(shr(24, dna0), 0xff), 3))
+
+                    mstore(resultPtr, 0x2a204b494d2d31204441432053594e5448202a0a506c6179696e6720444e4120) // "* KIM-1 DAC SYNTH *\nPlaying DNA "
+                    resultPtr := add(resultPtr, 29)
+
+                    mstore(resultPtr, 0x5b504c41593a0000000000000000000000000000000000000000000000000000) // "[PLAY:"
+                    resultPtr := add(resultPtr, 6)
+                    resultPtr := writeDec16(f1, resultPtr)
+                    mstore8(resultPtr, 44) // ','
+                    resultPtr := add(resultPtr, 1)
+                    resultPtr := writeDec16(f2, resultPtr)
+                    mstore8(resultPtr, 44) // ','
+                    resultPtr := add(resultPtr, 1)
+                    resultPtr := writeDec16(f3, resultPtr)
+                    mstore8(resultPtr, 44) // ','
+                    resultPtr := add(resultPtr, 1)
+                    resultPtr := writeDec16(f4, resultPtr)
+                    mstore(resultPtr, 0x5d0a000000000000000000000000000000000000000000000000000000000000) // "]\n"
+                    resultPtr := add(resultPtr, 2)
+                }
                 case 0x74616b65 { // "take"
                     let taken := 0
                     if eq(sload(add(2000300, 50)), roomId) {
@@ -2211,6 +2236,21 @@ object "ZMachine" {
                 if gt(val, 9) {
                     c := add(val, 87) // 'a' - 10
                 }
+            }
+
+            function writeDec16(val, destPtr) -> endPtr {
+                endPtr := destPtr
+                let d3 := div(val, 100)
+                let rem := mod(val, 100)
+                let d2 := div(rem, 10)
+                let d1 := mod(rem, 10)
+                
+                mstore8(endPtr, add(d3, 48))
+                endPtr := add(endPtr, 1)
+                mstore8(endPtr, add(d2, 48))
+                endPtr := add(endPtr, 1)
+                mstore8(endPtr, add(d1, 48))
+                endPtr := add(endPtr, 1)
             }
 
             function findSpace(startOffset, cmdLen) -> spacePos {
