@@ -238,7 +238,7 @@
                     <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 8px; color: var(--neon-magenta); font-size: 1.1rem;">🖥️ Child Phenotype Story Output</h3>
                     <textarea class="dna-textarea" id="childStoryOutput" style="height: 100px; font-weight: bold; border-color: var(--neon-magenta); width: 100%; box-sizing: border-box;" readonly></textarea>
                     <div class="dna-hex-display" id="hexDisplay" style="font-size: 0.8rem;">0x00...</div>
-                    <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 10px; border-color: var(--neon-magenta); color: var(--neon-magenta); font-size: 1rem; padding: 8px 15px;">💾 Save & Deploy to Room 20 (Arena Exit)</button>
+                    <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 10px; border-color: var(--neon-magenta); color: var(--neon-magenta); font-size: 1rem; padding: 8px 15px;">💾 Save & Deploy to Room 10 (The Void)</button>
                 </div>
             </div>
 
@@ -480,9 +480,9 @@ Type 'LOOK' to begin.</div>
                 const hexData = bytesToHex(finalBytes);
                 
                 document.getElementById("hexDisplay").innerText = "PENDING ON-CHAIN TRANSACTION...";
-                const tx = await zmContract.bindRoomDna(20, hexData);
+                const tx = await zmContract.bindRoomDna(10, hexData);
                 await tx.wait();
-                document.getElementById("hexDisplay").innerText = `SUCCESS! Room 20 DNA bound to:\n${childText}`;
+                document.getElementById("hexDisplay").innerText = `SUCCESS! Room 10 (Void) DNA bound to:\n${childText}`;
             } catch (err) {
                 console.error("Write error:", err);
                 alert("Failed to write to contract: " + err.message);
