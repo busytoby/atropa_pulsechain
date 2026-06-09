@@ -1988,6 +1988,36 @@ static void handle_slinkypanic_input(char ch) {
     }
 }
 
+static void write_basic_lines(const char *raw_output, bool compact) {
+    if (!compact) {
+        lau_vram_write_string(g_vram, raw_output, strlen(raw_output));
+        return;
+    }
+    const char *header = "--- COMPACTED BASIC OUTPUT ---\r\n";
+    lau_vram_write_string(g_vram, header, strlen(header));
+    bool in_quotes = false;
+    bool in_rem = false;
+    for (size_t i = 0; raw_output[i] != '\0'; i++) {
+        char c = raw_output[i];
+        if (!in_quotes && !in_rem && i + 3 < strlen(raw_output) && strncasecmp(&raw_output[i], "REM", 3) == 0) {
+            in_rem = true;
+        }
+        if (c == '\n' || c == '\r') {
+            in_quotes = false;
+            in_rem = false;
+            lau_vram_write_char(g_vram, c);
+            continue;
+        }
+        if (c == '"') {
+            in_quotes = !in_quotes;
+        }
+        if (c == ' ' && !in_quotes && !in_rem) {
+            continue;
+        }
+        lau_vram_write_char(g_vram, c);
+    }
+}
+
 static void execute_command(const char *cmd) {
     char cmd_log[512];
     snprintf(cmd_log, sizeof(cmd_log), "Executed command: %s", cmd);
@@ -2087,6 +2117,11 @@ static void execute_command(const char *cmd) {
     
     if (first_word && strcasecmp(first_word, "HURWOOD") == 0) {
         char *arg = strtok(NULL, " \t");
+        char *arg2 = strtok(NULL, " \t");
+        bool compact = false;
+        if (arg2 && strcasecmp(arg2, "COMPACT") == 0) {
+            compact = true;
+        }
         const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
         lau_vram_write_string(g_vram, clear_seq, 3);
         
@@ -2106,7 +2141,7 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [POKEY/SID register sweeps code generated.]\r\n"
                 "==================================================\r\n";
-            lau_vram_write_string(g_vram, output, strlen(output));
+            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "SPRITE") == 0) {
             const char *output = 
                 "==================================================\r\n"
@@ -2121,7 +2156,7 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [VIC-II visual sprite generation code completed.]\r\n"
                 "==================================================\r\n";
-            lau_vram_write_string(g_vram, output, strlen(output));
+            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "CHARSET") == 0) {
             const char *output = 
                 "==================================================\r\n"
@@ -2138,7 +2173,7 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Character set relocation BASIC layout generated.]\r\n"
                 "==================================================\r\n";
-            lau_vram_write_string(g_vram, output, strlen(output));
+            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "RASTER") == 0) {
             const char *output = 
                 "==================================================\r\n"
@@ -2154,7 +2189,7 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Raster split-screen dynamic configuration generated.]\r\n"
                 "==================================================\r\n";
-            lau_vram_write_string(g_vram, output, strlen(output));
+            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "JOYSTICK") == 0) {
             const char *output = 
                 "==================================================\r\n"
@@ -2171,7 +2206,7 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Joystick interactive scanner loop generated.]\r\n"
                 "==================================================\r\n";
-            lau_vram_write_string(g_vram, output, strlen(output));
+            write_basic_lines(output, compact);
         } else {
             const char *output = 
                 "==================================================\r\n"
@@ -2187,9 +2222,9 @@ static void execute_command(const char *cmd) {
                 " 70 NEXT I\r\n"
                 " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
                 " READY.\r\n\r\n"
-                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK]]\r\n"
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK] [COMPACT]]\r\n"
                 "==================================================\r\n";
-            lau_vram_write_string(g_vram, output, strlen(output));
+            write_basic_lines(output, compact);
         }
         log_telemetry("Rendered Hurwood Code Generator Screen");
         return;
