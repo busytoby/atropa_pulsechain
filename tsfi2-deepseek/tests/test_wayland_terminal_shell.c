@@ -76,7 +76,8 @@ typedef enum {
     MODE_HEADTOHEAD,
     MODE_CRABFIGHT,
     MODE_TREASURE,
-    MODE_CHARDUMP
+    MODE_CHARDUMP,
+    MODE_TERM128
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -556,6 +557,15 @@ static void init_chardump(void);
 static void redraw_chardump_screen(void);
 static void handle_chardump_input(char ch);
 static void update_chardump(uint32_t ms);
+
+// Term 128 variables & functions
+static int g_term128_state = 0; // 0=dialing, 1=connected
+static uint32_t g_term128_connect_time = 0;
+static char g_term128_buffer[1024];
+static void init_term128(void);
+static void redraw_term128_screen(void);
+static void handle_term128_input(char ch);
+static void update_term128(uint32_t ms);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -4814,6 +4824,72 @@ static void update_chardump(uint32_t ms) {
     redraw_chardump_screen();
 }
 
+// ----------------------------------------------------
+// Term 128 Simulation
+// ----------------------------------------------------
+static void init_term128(void) {
+    g_term128_state = 0;
+    g_term128_connect_time = 0;
+    strcpy(g_term128_buffer, "ATDT 555-4679\r\nDIALING...\r\n");
+}
+
+static void redraw_term128_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char header[512];
+    snprintf(header, sizeof(header),
+             "================================================================================\r\n"
+             "    AHOY! TERM 128: MOS 8563 80-Column Telecommunications Simulator (Issue 27)   \r\n"
+             "================================================================================\r\n"
+             " Status: %s | Press [ESC] to hang up & exit\r\n"
+             "--------------------------------------------------------------------------------\r\n",
+             g_term128_state == 0 ? "DIALING BBS..." : "CONNECTED [2400 BAUD]");
+    lau_vram_write_string(g_vram, header, strlen(header));
+
+    // Print buffer
+    lau_vram_write_string(g_vram, g_term128_buffer, strlen(g_term128_buffer));
+}
+
+static void handle_term128_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (g_term128_state == 1) {
+        // Echo input characters
+        size_t len = strlen(g_term128_buffer);
+        if (len < sizeof(g_term128_buffer) - 2) {
+            g_term128_buffer[len] = ch;
+            g_term128_buffer[len + 1] = '\0';
+        }
+        redraw_term128_screen();
+    }
+}
+
+static void update_term128(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 1000) return;
+    last_tick = ms;
+
+    if (g_term128_state == 0) {
+        g_term128_connect_time++;
+        if (g_term128_connect_time == 2) {
+            strcat(g_term128_buffer, "CONNECT 2400\r\n");
+            redraw_term128_screen();
+        } else if (g_term128_connect_time >= 4) {
+            g_term128_state = 1;
+            strcat(g_term128_buffer,
+                   "\r\n"
+                   "****************************************\r\n"
+                   "*        WELCOME TO ATROPA BBS         *\r\n"
+                   "*   The premier 80-column C128 node    *\r\n"
+                   "****************************************\r\n"
+                   "READY FOR INPUT:\r\n> ");
+            redraw_term128_screen();
+        }
+    }
+}
+
 static void init_moxey(void) {
     g_moxey_room = 0;
     g_moxey_has_key = false;
@@ -8800,6 +8876,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && (strcasecmp(first_word, "TERM128") == 0 || strcasecmp(first_word, "TERM") == 0)) {
+         g_editor_mode = MODE_TERM128;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_term128();
+         redraw_term128_screen();
+         log_telemetry("Started Term 128 simulator");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -10719,6 +10805,15 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         return;
     }
 
+    if (g_editor_mode == MODE_TERM128) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_term128_input(ch);
+        return;
+    }
+
     if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         char ch = (char)utf32;
         if (key == KEY_ESC || key == 1) {
@@ -11695,6 +11790,11 @@ void render_terminal_display(void) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
         uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
         update_chardump(current_ms);
+    } else if (g_editor_mode == MODE_TERM128) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_term128(current_ms);
     } else if (g_editor_mode == MODE_ALARM) {
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -12454,7 +12554,7 @@ int main() {
                            g_editor_mode == MODE_ALARM || g_editor_mode == MODE_MEMCHECK ||
                            g_editor_mode == MODE_ARENA || g_editor_mode == MODE_HEADTOHEAD ||
                            g_editor_mode == MODE_CRABFIGHT || g_editor_mode == MODE_TREASURE ||
-                           g_editor_mode == MODE_CHARDUMP;
+                           g_editor_mode == MODE_CHARDUMP || g_editor_mode == MODE_TERM128;
 
         if (g_vram->is_dirty) {
             sync_vram_to_cpu();
@@ -12637,6 +12737,8 @@ int main() {
                             handle_treasure_input(ch);
                         } else if (g_editor_mode == MODE_CHARDUMP) {
                             handle_chardump_input(ch);
+                        } else if (g_editor_mode == MODE_TERM128) {
+                            handle_term128_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
