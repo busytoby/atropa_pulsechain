@@ -389,6 +389,53 @@
             }, seconds * 1000);
         }
 
+        const morseMap = {
+            65: ".-", 66: "-...", 67: "-.-.", 68: "-..", 69: ".", 70: "..-.", 71: "--.", 72: "....",
+            73: "..", 74: ".---", 75: "-.-", 76: ".-..", 77: "--", 78: "-.", 79: "---", 80: ".--.",
+            81: "--.-", 82: ".-.", 83: "...", 84: "-", 85: "..-", 86: "...-", 87: ".--", 88: "-..-",
+            89: "-.--", 90: "--.."
+        };
+
+        const runeMap = {
+            65: ["ᚨ", "ANSUZ"], 66: ["ᛒ", "BERKANAN"], 67: ["ᚲ", "KAUNAN"], 68: ["ᛞ", "DAGAZ"],
+            69: ["ᛖ", "EHWAZ"], 70: ["ᚠ", "FEHU"], 71: ["ᚷ", "GEBO"], 72: ["ᚺ", "HAGALAZ"],
+            73: ["ᛁ", "ISAZ"], 74: ["ᛃ", "JERA"], 75: ["ᚲ", "KAUNAN"], 76: ["ᛚ", "LAGUZ"],
+            77: ["ᛗ", "MANNAZ"], 78: ["ᚾ", "NAUDIZ"], 79: ["ᛟ", "OTHALA"], 80: ["ᛈ", "PEORTH"],
+            81: ["ᚲ", "KAUNAN"], 82: ["ᚱ", "RAIDO"], 83: ["ᛋ", "SOWILO"], 84: ["ᛏ", "TIWAZ"],
+            85: ["ᚢ", "URUZ"], 86: ["ᚢ", "URUZ"], 87: ["ᚹ", "WUNJO"], 88: ["ᚷ", "GEBO"],
+            89: ["ᛃ", "JERA"], 90: ["ᛉ", "ALGIZ"]
+        };
+
+        function playMorseCharacter(asciiCode) {
+            const code = morseMap[asciiCode];
+            const runeInfo = runeMap[asciiCode] || ["ᛘ", "UNKNOWN"];
+            if (!code) {
+                logTrapEvent(`📻 [MORSE] No Morse representation for ASCII ${asciiCode}`, true);
+                return;
+            }
+            logTrapEvent(`📻 [MORSE] Transmitting ${runeInfo[0]} [${runeInfo[1]}] ('${String.fromCharCode(asciiCode)}') -> Morse: ${code}`, true);
+            let currentOffset = 0;
+            const ctx = getAudioContext();
+            const now = ctx.currentTime;
+            for (let i = 0; i < code.length; i++) {
+                const symbol = code[i];
+                const duration = symbol === "." ? 0.08 : 0.24;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(800, now + currentOffset);
+                gain.gain.setValueAtTime(0, now + currentOffset);
+                gain.gain.linearRampToValueAtTime(0.04, now + currentOffset + 0.01);
+                gain.gain.setValueAtTime(0.04, now + currentOffset + duration - 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + currentOffset + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + currentOffset);
+                osc.stop(now + currentOffset + duration);
+                currentOffset += duration + 0.08;
+            }
+        }
+
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
         async function fetchRoom10Dna() {
@@ -1279,6 +1326,14 @@
                             startAlchemicalPurification(seconds);
                         } else {
                             logTrapEvent("[FORTH ERROR] purify requires [seconds] on stack", true);
+                        }
+                        break;
+                    case "morse":
+                        if (forthStack.length >= 1) {
+                            const asciiCode = forthStack.pop();
+                            playMorseCharacter(asciiCode);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] morse requires [asciiCode] on stack", true);
                         }
                         break;
                     default:
