@@ -240,6 +240,16 @@
                         <button class="key-btn" data-key="F">F</button>
                     </div>
                 </div>
+
+                <!-- Forth Console -->
+                <div class="dna-card" style="border-radius: 8px; margin-top: 5px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 8px; color: #ebdcb9; font-size: 1.15rem;">🏺 Alchemical Forth Console</h3>
+                    <div id="forthStack" style="font-family: monospace; font-size: 0.82rem; color: #a49373; margin-bottom: 8px; text-align: left; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px;">Stack: [ empty ]</div>
+                    <div style="display: flex;">
+                        <input type="text" id="forthInput" placeholder="5 6 * v0 ! v0 @ dup ." style="flex-grow: 1; background: #141210; border: 1px solid #5a4a31; color: #ebdcb9; font-family: monospace; padding: 6px; border-radius: 4px; outline: none; font-size: 0.85rem;">
+                        <button class="btn btn-primary" id="btnForthExec" style="padding: 6px 12px; font-size: 0.9rem; margin-left: 8px;">Run</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -700,6 +710,154 @@
 
         document.getElementById("romSelector").addEventListener("change", () => {
             loadSelected();
+        });
+
+        // Forth Interpreter State
+        let forthStack = [];
+
+        function updateForthStackUI() {
+            const stackEl = document.getElementById("forthStack");
+            if (stackEl) {
+                if (forthStack.length === 0) {
+                    stackEl.innerText = "Stack: [ empty ]";
+                } else {
+                    stackEl.innerText = "Stack: [ " + forthStack.join(", ") + " ]";
+                }
+            }
+        }
+
+        function executeForthLine(line) {
+            const tokens = line.trim().split(/\s+/);
+            if (tokens.length === 1 && tokens[0] === "") return;
+            
+            for (let token of tokens) {
+                token = token.toLowerCase();
+                if (!isNaN(token)) {
+                    forthStack.push(parseInt(token, 10));
+                    continue;
+                }
+                
+                switch (token) {
+                    case "+":
+                        if (forthStack.length >= 2) {
+                            const b = forthStack.pop();
+                            const a = forthStack.pop();
+                            forthStack.push(a + b);
+                        }
+                        break;
+                    case "-":
+                        if (forthStack.length >= 2) {
+                            const b = forthStack.pop();
+                            const a = forthStack.pop();
+                            forthStack.push(a - b);
+                        }
+                        break;
+                    case "*":
+                        if (forthStack.length >= 2) {
+                            const b = forthStack.pop();
+                            const a = forthStack.pop();
+                            forthStack.push(a * b);
+                        }
+                        break;
+                    case "/":
+                        if (forthStack.length >= 2) {
+                            const b = forthStack.pop();
+                            const a = forthStack.pop();
+                            forthStack.push(Math.floor(a / b));
+                        }
+                        break;
+                    case "dup":
+                        if (forthStack.length >= 1) {
+                            forthStack.push(forthStack[forthStack.length - 1]);
+                        }
+                        break;
+                    case "drop":
+                        if (forthStack.length >= 1) {
+                            forthStack.pop();
+                        }
+                        break;
+                    case "swap":
+                        if (forthStack.length >= 2) {
+                            const b = forthStack.pop();
+                            const a = forthStack.pop();
+                            forthStack.push(b);
+                            forthStack.push(a);
+                        }
+                        break;
+                    case "clear":
+                        forthStack = [];
+                        break;
+                    case ".":
+                        if (forthStack.length >= 1) {
+                            const val = forthStack.pop();
+                            logTrapEvent(`[FORTH .] Output: ${val}`, true);
+                        }
+                        break;
+                    case "!":
+                        if (forthStack.length >= 2) {
+                            const regIdx = forthStack.pop();
+                            const val = forthStack.pop();
+                            if (regIdx >= 0 && regIdx < 16) {
+                                cpu.v[regIdx] = val & 0xFF;
+                                logTrapEvent(`[FORTH !] Set V${regIdx.toString(16).toUpperCase()} = 0x${cpu.v[regIdx].toString(16).toUpperCase()}`, true);
+                                updateMonitor();
+                            }
+                        }
+                        break;
+                    case "@":
+                        if (forthStack.length >= 1) {
+                            const regIdx = forthStack.pop();
+                            if (regIdx >= 0 && regIdx < 16) {
+                                forthStack.push(cpu.v[regIdx]);
+                            }
+                        }
+                        break;
+                    case "v0": forthStack.push(0); break;
+                    case "v1": forthStack.push(1); break;
+                    case "v2": forthStack.push(2); break;
+                    case "v3": forthStack.push(3); break;
+                    case "v4": forthStack.push(4); break;
+                    case "v5": forthStack.push(5); break;
+                    case "v6": forthStack.push(6); break;
+                    case "v7": forthStack.push(7); break;
+                    case "v8": forthStack.push(8); break;
+                    case "v9": forthStack.push(9); break;
+                    case "va": forthStack.push(10); break;
+                    case "vb": forthStack.push(11); break;
+                    case "vc": forthStack.push(12); break;
+                    case "vd": forthStack.push(13); break;
+                    case "ve": forthStack.push(14); break;
+                    case "vf": forthStack.push(15); break;
+                    case "inject":
+                        if (forthStack.length >= 2) {
+                            const bytes = [...forthStack];
+                            forthStack = [];
+                            cpu.reset();
+                            for (let i = 0; i < bytes.length; i++) {
+                                cpu.memory[0x200 + i] = bytes[i] & 0xFF;
+                            }
+                            logTrapEvent(`[FORTH INJECT] Compiled and injected ${bytes.length} bytes into VM. Resetting PC to 0x200.`, true);
+                            updateMonitor();
+                            renderDisplay();
+                        }
+                        break;
+                    default:
+                        logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
+                }
+            }
+            updateForthStackUI();
+        }
+
+        document.getElementById("btnForthExec").addEventListener("click", () => {
+            const inputEl = document.getElementById("forthInput");
+            executeForthLine(inputEl.value);
+            inputEl.value = "";
+        });
+
+        document.getElementById("forthInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                document.getElementById("btnForthExec").click();
+            }
         });
 
         fetchRoom10Dna();
