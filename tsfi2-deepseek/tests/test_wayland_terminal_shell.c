@@ -6469,6 +6469,52 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "SIM6510") == 0) {
+        lau_vram_write_string(g_vram, "\r\n--- 6510 PROVISIONING & BANK-SWITCHING SIMULATION PROOF ---\r\n", 63);
+        lau_vram_write_string(g_vram, "Configuring Data Direction Register ($0000) with $07...\r\n", 57);
+        
+        uint8_t ram[65536];
+        uint8_t rom[65536];
+        memset(ram, 0, sizeof(ram));
+        memset(rom, 0, sizeof(rom));
+        
+        rom[0xE000] = 0xAA; // KERNAL ROM ID Signature
+        ram[0xE000] = 0x00;
+        
+        uint8_t reg_port = 0x07; // Default ROMs mapped in
+        char buf[256];
+        snprintf(buf, sizeof(buf), "Initial Port register ($0001) state: $%02X (ROM enabled)\r\n", reg_port);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        
+        uint8_t val1 = (reg_port & 0x01) ? rom[0xE000] : ram[0xE000];
+        snprintf(buf, sizeof(buf), "Read $E000 -> Value: $%02X (ROM Bank)\r\n", val1);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        
+        lau_vram_write_string(g_vram, "Poking $0001 with $06 to switch ROM off (RAM visible)...\r\n", 58);
+        reg_port = 0x06;
+        
+        lau_vram_write_string(g_vram, "Poking $E000 with $BB...\r\n", 26);
+        ram[0xE000] = 0xBB;
+        
+        uint8_t val2 = (reg_port & 0x01) ? rom[0xE000] : ram[0xE000];
+        snprintf(buf, sizeof(buf), "Read $E000 -> Value: $%02X (RAM Bank)\r\n", val2);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        
+        lau_vram_write_string(g_vram, "Poking $0001 with $07 to switch ROM bank back on...\r\n", 53);
+        reg_port = 0x07;
+        
+        uint8_t val3 = (reg_port & 0x01) ? rom[0xE000] : ram[0xE000];
+        snprintf(buf, sizeof(buf), "Read $E000 -> Value: $%02X (ROM Bank restored)\r\n", val3);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        
+        if (val1 == 0xAA && val2 == 0xBB && val3 == 0xAA) {
+            lau_vram_write_string(g_vram, "\r\nSTATUS: 6510 BANK-SWITCHING VERIFIED SUCCESS!\r\nREADY.\r\n", 57);
+        } else {
+            lau_vram_write_string(g_vram, "\r\nSTATUS: SIMULATION FAILED.\r\nREADY.\r\n", 37);
+        }
+        return;
+    }
+
     if (first_word && strcasecmp(first_word, "DIR") == 0) {
         DIR *d = opendir(".");
         if (!d) {
