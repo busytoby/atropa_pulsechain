@@ -49,7 +49,8 @@ typedef enum {
     MODE_STUDIO64,
     MODE_MAGPIE,
     MODE_ALICE,
-    MODE_TOP
+    MODE_TOP,
+    MODE_FONTASIA
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -229,6 +230,15 @@ static void init_top(void);
 static void redraw_top_screen(void);
 static void handle_top_input(char ch);
 static void update_top_simulation(void);
+
+// Fontasia variables
+static int g_fontasia_grid[8][8] = {{0}}; // 0=off, 1=on
+static int g_fontasia_cursor_x = 0;
+static int g_fontasia_cursor_y = 0;
+static char g_fontasia_status[128];
+static void init_fontasia(void);
+static void redraw_fontasia_screen(void);
+static void handle_fontasia_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2745,6 +2755,107 @@ static void load_checklist(void) {
     fclose(f);
     g_checklist_cursor = 0;
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
+}
+
+static void init_fontasia(void) {
+    memset(g_fontasia_grid, 0, sizeof(g_fontasia_grid));
+    g_fontasia_cursor_x = 0;
+    g_fontasia_cursor_y = 0;
+    snprintf(g_fontasia_status, sizeof(g_fontasia_status), "Fontasia character designer initialized.");
+}
+
+static void redraw_fontasia_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        FONTASIA (Ahoy! Issue 14 Custom C64 Font Generator)         \r\n"
+             "====================================================================\r\n"
+             "  [GRID : 8 x 8 PIXELS]                     [PREVIEW / DATA VALUES]\r\n"
+             "====================================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render 8 rows of grid and data
+    uint8_t row_bytes[8] = {0};
+    for (int y = 0; y < 8; y++) {
+        char line[256];
+        int pos = 0;
+        
+        // Grid display
+        pos += snprintf(line + pos, sizeof(line) - pos, "   Row %d: |", y + 1);
+        for (int x = 0; x < 8; x++) {
+            char pixel = g_fontasia_grid[y][x] ? '#' : '.';
+            if (x == g_fontasia_cursor_x && y == g_fontasia_cursor_y) {
+                pos += snprintf(line + pos, sizeof(line) - pos, "[%c]", pixel);
+            } else {
+                pos += snprintf(line + pos, sizeof(line) - pos, " %c ", pixel);
+            }
+            // Accumulate row bits
+            if (g_fontasia_grid[y][x]) {
+                row_bytes[y] |= (1 << (7 - x));
+            }
+        }
+        
+        // Magnified preview and decimal byte printout
+        pos += snprintf(line + pos, sizeof(line) - pos, "|  -->  Byte: %3d (Hex: $%02X)  [",
+                        row_bytes[y], row_bytes[y]);
+        
+        for (int x = 0; x < 8; x++) {
+            pos += snprintf(line + pos, sizeof(line) - pos, "%s", g_fontasia_grid[y][x] ? "[]" : "  ");
+        }
+        pos += snprintf(line + pos, sizeof(line) - pos, "]\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_fontasia_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [W/A/S/D] Move [SPACE] Toggle [C] Clear [P] Export [ESC] Exit\r\n", 75);
+}
+
+static void handle_fontasia_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'w' || ch == 'W') {
+        if (g_fontasia_cursor_y > 0) g_fontasia_cursor_y--;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_fontasia_cursor_y < 7) g_fontasia_cursor_y++;
+    } else if (ch == 'a' || ch == 'A') {
+        if (g_fontasia_cursor_x > 0) g_fontasia_cursor_x--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_fontasia_cursor_x < 7) g_fontasia_cursor_x++;
+    } else if (ch == ' ') {
+        g_fontasia_grid[g_fontasia_cursor_y][g_fontasia_cursor_x] = 1 - g_fontasia_grid[g_fontasia_cursor_y][g_fontasia_cursor_x];
+        snprintf(g_fontasia_status, sizeof(g_fontasia_status), "Toggled pixel at (%d, %d).", g_fontasia_cursor_x + 1, g_fontasia_cursor_y + 1);
+    } else if (ch == 'c' || ch == 'C') {
+        memset(g_fontasia_grid, 0, sizeof(g_fontasia_grid));
+        snprintf(g_fontasia_status, sizeof(g_fontasia_status), "Cleared character grid.");
+    } else if (ch == 'p' || ch == 'P') {
+        uint8_t row_bytes[8] = {0};
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                if (g_fontasia_grid[y][x]) {
+                    row_bytes[y] |= (1 << (7 - x));
+                }
+            }
+        }
+        snprintf(g_fontasia_status, sizeof(g_fontasia_status),
+                 "BASIC DATA: DATA %d,%d,%d,%d,%d,%d,%d,%d",
+                 row_bytes[0], row_bytes[1], row_bytes[2], row_bytes[3],
+                 row_bytes[4], row_bytes[5], row_bytes[6], row_bytes[7]);
+    }
+
+    redraw_fontasia_screen();
 }
 
 static void init_alice(void) {
@@ -5766,6 +5877,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "FONTASIA") == 0) {
+         g_editor_mode = MODE_FONTASIA;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_fontasia();
+         redraw_fontasia_screen();
+         log_telemetry("Started Fontasia Character Editor");
+         return;
+    }
+
     if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
          g_editor_mode = MODE_CHECKLIST;
          g_mercenary_active = false;
@@ -7129,6 +7250,29 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = 'w';
         }
         handle_top_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_FONTASIA) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == 57 || key == KEY_SPACE) { // Spacebar
+            ch = ' ';
+        } else if (key == 46 || key == 122) { // C
+            ch = 'c';
+        } else if (key == 25 || key == 112) { // P
+            ch = 'p';
+        }
+        handle_fontasia_input(ch);
         return;
     }
 
@@ -8650,6 +8794,8 @@ int main() {
                             handle_alice_input(ch);
                         } else if (g_editor_mode == MODE_TOP) {
                             handle_top_input(ch);
+                        } else if (g_editor_mode == MODE_FONTASIA) {
+                            handle_fontasia_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -8860,6 +9006,8 @@ int main() {
                             handle_alice_input(ch);
                         } else if (g_editor_mode == MODE_TOP) {
                             handle_top_input(ch);
+                        } else if (g_editor_mode == MODE_FONTASIA) {
+                            handle_fontasia_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
