@@ -1,0 +1,15 @@
+console.log("\x1b[36m*** AHOY! MAGAZINE - FLOTSAM & JETSAM COLUMN ***\x1b[0m");
+console.log("=================================================");
+console.log("\x1b[33m[LETTER FROM READER: ARTHUR DENT, DULUTH, MN]\x1b[0m");
+console.log("\"Dear Editor,");
+console.log("I recently typed in Mike Schneider's Bug Repellent listing from Issue 2,");
+console.log("but when I ran it, my C64 locked up! I suspect the SID voice registers");
+console.log("are resonance-leaking. Please advise.\"");
+console.log("");
+console.log("\x1b[32m[REPLY FROM TECHNICAL EDITOR MIKE SCHNEIDER]\x1b[0m");
+console.log("\"Dear Arthur,");
+console.log("Ah, the classic voice leak! We checked the listing and found that you must");
+console.log("ensure the gating bit is poked ONLY after setting the high/low frequency bounds.");
+console.log("Also, we suggest verifying your typed program through our new TSFi2 Helmholtz");
+console.log("proof verification command line utility: 'YULEXEC cpu6502'. Keep coding!\"");
+console.log("=================================================");

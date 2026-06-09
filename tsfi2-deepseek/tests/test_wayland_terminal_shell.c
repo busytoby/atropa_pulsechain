@@ -1632,7 +1632,9 @@ static void execute_command(const char *cmd) {
             snprintf(real_cmd, sizeof(real_cmd), "%s", cmd);
 
             if (first_word) {
-                if (strcasecmp(first_word, "CHOPLIFTER") == 0) {
+                if (strcasecmp(first_word, "FLOTSAM") == 0) {
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_flotsam.js");
+                } else if (strcasecmp(first_word, "CHOPLIFTER") == 0) {
                     snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_choplifter.js");
                     g_test_statuses[0] = "PASS";
                 } else if (strcasecmp(first_word, "FORTAPOCALYPSE") == 0) {
@@ -3079,7 +3081,7 @@ int main() {
     const char *welcome = "=== TSFI YUL CPU TERMINAL EMULATOR ===\r\n"
                           "System 11 Audited. Active CPU: cpu6502\r\n"
                           "Available commands:\r\n"
-                          "  YULINIT, YULEXEC, SWIFTLOAD, REU, CALC, MEMDUMP, SPRITE, RULE, OMNICOMM\r\n\r\n"
+                          "  YULINIT, YULEXEC, SWIFTLOAD, REU, CALC, MEMDUMP, SPRITE, RULE, OMNICOMM, FLOTSAM\r\n\r\n"
                           "zmm-vm> ";
     lau_vram_write_string(g_vram, welcome, strlen(welcome));
     execute_command("GO MENU");
