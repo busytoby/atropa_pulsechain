@@ -320,6 +320,8 @@ static void init_gauntlet_yul() {
     thunk_poke(55056, 240);  // ghostY
     thunk_poke(55057, 440);  // spawnerX
     thunk_poke(55058, 360);  // spawnerY
+    thunk_poke(55061, 0);    // spawnTimer
+    thunk_poke(55062, 1);    // generation (linage counter)
 }
 
 static void gauntlet_key_hook(void *data, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
@@ -628,6 +630,7 @@ int main() {
         uint64_t health = thunk_peek(55053);
         uint64_t score = thunk_peek(55032);
         uint64_t keys = thunk_peek(55054);
+        (void)keys;
 
         // Draw Spawner (pulsing brick generator)
         if (sx > 0.0f && sy > 0.0f) {
@@ -641,12 +644,22 @@ int main() {
             draw_sprite_16x16(pixels, W, H, gx, gy, sprite_ghost, 2.0f * scale_x, 2.0f * scale_y);
         }
 
+        // Draw Genealogy Lineage Line (William C. Brauch Family Tree connection)
+        if (gx > 0.0f && gy > 0.0f && sx > 0.0f && sy > 0.0f) {
+            for (float t = 0.0f; t <= 1.0f; t += 0.06f) {
+                float lx = sx + (gx - sx) * t;
+                float ly = sy + (gy - sy) * t;
+                draw_rect_ab4h(pixels, W, H, (int)lx, (int)ly, 3, 3, make_ab4h_pixel(1.2f, 0.9f, 0.0f, 0.5f));
+            }
+        }
+
         // Draw Player (warrior holding axe)
         draw_sprite_16x16(pixels, W, H, px, py, sprite_warrior, 2.2f * scale_x, 2.2f * scale_y);
         draw_radial_glow(pixels, W, H, px, py, 20.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
 
         // Format and render HUD details
         static int victory_exit_timer = -1;
+        uint64_t generation = thunk_peek(55062);
         if (gx <= 0.0f && sx <= 0.0f) {
             sprintf(status_message, "^B^U[VICTORY]^C ^IAll threats neutralized! Alchemical gold harvested! SCORE: %lu^C", score);
             if (victory_exit_timer == -1) {
@@ -654,7 +667,7 @@ int main() {
                 victory_exit_timer = 60; // Wait 60 frames (1s) to show screen before exiting
             }
         } else {
-            sprintf(status_message, "^B[WARRIOR] Health: %lu | Keys: %lu | Score: %lu^C", health, keys, score);
+            sprintf(status_message, "^B[WARRIOR] Health: %lu | Score: %lu | Ghost Gen: %lu^C", health, score, generation);
         }
         
         if (victory_exit_timer > 0) {

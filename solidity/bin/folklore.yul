@@ -256,7 +256,23 @@ object "FolkloreCPU" {
                         if lt(gpx, 710) { gpx := add(gpx, 4) }
                     }
 
-                    // 3. Spawner Spawn Logic (ghost moves toward player)
+                    // 3. Spawner Spawn Logic (ghost moves toward player, or spawns if dead)
+                    let spawnedThisTick := 0
+                    if and(and(iszero(ggx), iszero(ggy)), and(gt(gsx, 0), gt(gsy, 0))) {
+                        let spawnTimer := sload(getUserSlot(55061))
+                        spawnTimer := add(spawnTimer, 1)
+                        if gt(spawnTimer, 150) {
+                            ggx := gsx
+                            ggy := gsy
+                            spawnTimer := 0
+                            spawnedThisTick := 1
+                            // Increment lineage generation counter
+                            let gen := sload(getUserSlot(55062))
+                            sstore(getUserSlot(55062), add(gen, 1))
+                        }
+                        sstore(getUserSlot(55061), spawnTimer)
+                    }
+
                     if and(gt(ggx, 0), gt(ggy, 0)) {
                         let dx := sub(gpx, ggx)
                         let dy := sub(gpy, ggy)
