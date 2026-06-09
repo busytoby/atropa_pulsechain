@@ -8,16 +8,22 @@ This document details the transition from early 3D wireframe pipelines to hybrid
 
 ## 1. The Tri-Model AOT Compilation Pipeline
 
-To achieve low-latency real-time rendering, neural models are decoupled from the active frame loop and moved to the offline compilation stage:
+To achieve low-latency real-time rendering, heavy neural models are decoupled from the active frame loop and moved to the offline compilation stage:
 
 ```
-[Phase 1: Stable Diffusion] -> Generates Photorealistic Target Reference
+[Phase 1: Stable Diffusion]              -> Generates Photorealistic Target Reference
           |
-[Phase 2: Moondream2 VLM]   -> Audits reference, extracts normalized bounding boxes
+[Phase 1.1: Orthographic Multi-View]     -> Synthesizes aligned front/side/top blueprints
           |
-[Phase 3: DeepSeek-Coder]   -> Computes Phase 0 Offset Matrix & outputs C-struct math
+[Phase 2: Moondream2 VLM]                -> Audits blueprints, extracts normalized bounds
           |
-[Phase 4: Run-time Engine]  -> Renders wireframe geometry & applies Soft Diffusion noise
+[Phase 2.5: Kinematic Rigging & Hulls]   -> Binds skeletons, sets Euler limits & collision hulls
+          |
+[Phase 3: DeepSeek-Coder]                -> Computes Phase 0 Offset Matrix & outputs C-struct/Yul math
+          |
+[Phase 4: Run-time Engine]               -> Renders wireframe geometry & applies Soft Diffusion noise
+          |
+[Phase 7: RAG Self-Improvement Loop]     -> Compiles runtime telemetry back to RAG (/lore)
 ```
 
 ### 1.1 Phase 0: The Primary Offset Matrix
@@ -26,10 +32,12 @@ To prevent anatomical drift during bipedal animation, all coordinates are locked
 2. **Offset Calculations:** Cranial and limb nodes are calculated strictly as relative offsets (e.g., $X_{\text{head}} = X_0 + \text{offset}_x$, $Y_{\text{head}} = Y_0 + \text{offset}_y$).
 3. **Result:** Limbs and body features move as a single unified coordinate mass, guaranteeing structural integrity.
 
-### 1.2 Bounding Box Discovery via VLM
+### 1.2 Bounding Box Discovery via VLM (Phase 2 & 2.5)
 When the VLM collapses color analysis into normalized spatial bounding boxes (e.g., body bounds `[Y_min, X_min, Y_max, X_max]`), the system treats these coordinates as rigid boundaries to calculate the proportions of the wireframe model:
 * **snout coordinates:** Positioned directly below eye boundaries.
 * **ear offsets:** Derived from the top 10% bounds of the body frame.
+* **Rigging Alignment (Phase 2.5):** These boundaries are mapped to joints (with explicit Euler rotation limits) and wrapped in collision primitives (spheres/cylinders) before compiling.
+
 
 ---
 
