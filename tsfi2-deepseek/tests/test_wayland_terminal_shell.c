@@ -152,6 +152,7 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
     static int state = 0; // 0: normal, 1: esc, 2: bracket, 3: gfx_command
     static char parse_buf[128];
     static int parse_len = 0;
+    static int vidtex_x = 0;
     
     for (int i = 0; i < len; i++) {
         char c = str[i];
@@ -164,6 +165,8 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
         } else if (state == 1) {
             if (c == '[') {
                 state = 2;
+            } else if (c == '\x1b') {
+                state = 4; // CompuServe Vidtex ESC ESC State
             } else {
                 state = 0;
                 lau_vram_write_char(vram, '\x1b');
@@ -257,6 +260,33 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
                     parse_buf[parse_len++] = c;
                 }
             }
+        } else if (state == 4) {
+            if (c == 'd') {
+                lau_vram_write_char(vram, '\x1b');
+                lau_vram_write_char(vram, '\x1b');
+                lau_vram_write_char(vram, 'd'); // clear screen sequence
+                state = 0;
+            } else if (c == 'c') {
+                fprintf(stderr, "[COMPUSERVE] Received capability query (ESC ESC c). Responding with Vidtex ID.\n");
+                lau_vram_write_string(vram, "\r\n[CIS VIDTEX TERMINAL IDENTIFIED: HMI v2.0]\r\n", 44);
+                state = 0;
+            } else if (c == 'I') {
+                state = 5;
+            } else {
+                state = 0;
+            }
+        } else if (state == 5) {
+            int x = (unsigned char)c;
+            if (x >= 32) x -= 32;
+            vidtex_x = x;
+            state = 6;
+        } else if (state == 6) {
+            int y = (unsigned char)c;
+            if (y >= 32) y -= 32;
+            vram->cursor_x = vidtex_x;
+            vram->cursor_y = y;
+            vram->is_dirty = true;
+            state = 0;
         }
     }
 }
@@ -1481,8 +1511,12 @@ static void execute_command(const char *cmd) {
             unsigned char *jpeg_data = NULL;
             unsigned long jpeg_size = 0;
             int status = tsfi_jpeg_encode(&jpeg_data, &jpeg_size, rgb, win_width, win_height, 90);
+            const char *conv_id = getenv("TSFI_CONVERSATION_ID");
+            if (!conv_id) conv_id = "d40269bc-efcf-4529-8437-83e04f19b8b8";
+            char jpeg_path[512];
+            snprintf(jpeg_path, sizeof(jpeg_path), "/home/mariarahel/.gemini/antigravity-cli/brain/%s/rag_telemetry.jpg", conv_id);
             if (status == 0 && jpeg_data) {
-                FILE *fj = fopen("/home/mariarahel/.gemini/antigravity-cli/brain/5289e240-c025-43c9-95f2-79673251a341/rag_telemetry.jpg", "wb");
+                FILE *fj = fopen(jpeg_path, "wb");
                 if (fj) {
                     fwrite(jpeg_data, 1, jpeg_size, fj);
                     fclose(fj);
@@ -1493,7 +1527,11 @@ static void execute_command(const char *cmd) {
         }
         
         // Save CompuServe LZW GIF87a screenshot to the artifacts directory
-        save_gif_screenshot("/home/mariarahel/.gemini/antigravity-cli/brain/5289e240-c025-43c9-95f2-79673251a341/rag_telemetry.gif", back_buffer, win_width, win_height);
+        const char *conv_id = getenv("TSFI_CONVERSATION_ID");
+        if (!conv_id) conv_id = "d40269bc-efcf-4529-8437-83e04f19b8b8";
+        char gif_path[512];
+        snprintf(gif_path, sizeof(gif_path), "/home/mariarahel/.gemini/antigravity-cli/brain/%s/rag_telemetry.gif", conv_id);
+        save_gif_screenshot(gif_path, back_buffer, win_width, win_height);
         printf("[TELEMETRY] CompuServe GIF87a screenshot saved to artifacts successfully.\n");
         
         run_visual_verification(query, &g_last_classification);
@@ -2433,10 +2471,80 @@ static void sync_vram_to_cpu(void) {
     lau_yul_thunk_execute("cpu6502", calldata, 9700, retval, &retval_len);
 }
 
+#include "tsfi_vae_firmware.h"
+
+// VAE presentation state
+static LauVaeFirmware_State g_vae_present_state;
+static float *g_vae_density_cache = NULL;
+static int g_vae_density_w = 0;
+static int g_vae_density_h = 0;
+
+static void update_vae_presentation_field(int w, int h) {
+    if (!g_vae_density_cache || g_vae_density_w != w || g_vae_density_h != h) {
+        if (g_vae_density_cache) free(g_vae_density_cache);
+        g_vae_density_cache = (float*)malloc(w * h * sizeof(float));
+        g_vae_density_w = w;
+        g_vae_density_h = h;
+    }
+    
+    // Construct local NandTrapState using basic parameters to mock local fiber activation
+    static NandTrapState nt;
+    static bool nt_initialized = false;
+    if (!nt_initialized) {
+        memset(&nt, 0, sizeof(NandTrapState));
+        nt.magic = NAND_TRAP_MAGIC;
+        nt.version = NAND_TRAP_VERSION;
+        // Seed 1024 fibers with default weights
+        for (int i = 0; i < GRANS; i++) {
+            nt.fibers[i].x = sinf((float)i * 0.05f) * 0.5f;
+            nt.fibers[i].y = cosf((float)i * 0.05f) * 0.5f;
+            nt.fibers[i].weight = 1.0f;
+        }
+        nt_initialized = true;
+    }
+
+    // Dynamic LTI Causal Discovery step to morph the VAE latent configuration smoothly (wilderness simulation)
+    static NandTrapState next_nt;
+    tsfi_nand_trap_causal_discovery(&nt, &next_nt, 0.005f);
+    
+    // Check for extreme expansion and keep fiber bounds normalized
+    for (int i = 0; i < GRANS; i++) {
+        if (next_nt.fibers[i].x > 2.0f || next_nt.fibers[i].x < -2.0f) next_nt.fibers[i].x = sinf((float)i * 0.05f) * 0.5f;
+        if (next_nt.fibers[i].y > 2.0f || next_nt.fibers[i].y < -2.0f) next_nt.fibers[i].y = cosf((float)i * 0.05f) * 0.5f;
+        if (next_nt.fibers[i].weight > 3.0f || next_nt.fibers[i].weight < 0.1f) next_nt.fibers[i].weight = 1.0f;
+    }
+    nt = next_nt;
+    
+    // Boot VAE directly off our dynamic NAND state representation
+    tsfi_vae_firmware_boot(&g_vae_present_state, &nt);
+    // Decode the 1024 NAND fibers to our screen-sized density field
+    tsfi_vae_decode_to_field(&g_vae_present_state, g_vae_density_cache, w, h);
+}
+
 void render_terminal_display(void) {
-    uint32_t bg_color = 0xFF0A0B10; // Obsidian dark background
-    for (int i = 0; i < win_width * win_height; i++) {
-        back_buffer[i] = bg_color;
+    // 1. Update the VAE density field off current active NAND state
+    update_vae_presentation_field(win_width, win_height);
+
+    // 2. Render VAE Wilderness Background (Modulated by density cache)
+    for (int y = 0; y < win_height; y++) {
+        for (int x = 0; x < win_width; x++) {
+            int idx = y * win_width + x;
+            float density = g_vae_density_cache[idx];
+            
+            // Map SDF density values to forest moss greens and deep wild shadows
+            if (density < 8.0f) {
+                // High density region: Lush organic wilderness green
+                float intensity = 1.0f - (density / 8.0f);
+                if (intensity < 0.0f) intensity = 0.0f;
+                uint8_t g = (uint8_t)(35.0f + intensity * 65.0f); // 35..100
+                uint8_t r = (uint8_t)(15.0f + intensity * 25.0f); // 15..40
+                uint8_t b = (uint8_t)(20.0f + intensity * 30.0f); // 20..50
+                back_buffer[idx] = 0xFF000000 | (r << 16) | (g << 8) | b;
+            } else {
+                // Background: Obsidian dark void
+                back_buffer[idx] = 0xFF0A0B10;
+            }
+        }
     }
 
     StagingBuffer sb = {
@@ -2457,6 +2565,7 @@ void render_terminal_display(void) {
     } TerminalDisplayInstruction;
 
     // Static display list and smooth scroll state
+    // Static display list and smooth scroll state
     static float s_smooth_scroll_y = 0.0f;
     static int s_last_target_y = 0;
     
@@ -2474,32 +2583,68 @@ void render_terminal_display(void) {
         target_start_y = g_vram->cursor_y - max_rows + 1;
     }
 
-    // Initialize/update smooth scroll
-    if (s_last_target_y != target_start_y) {
-        // Instant update if we jumped significantly, otherwise interpolate
-        if (abs(target_start_y - s_last_target_y) > 10) {
+    // Query Folklore MMIO register space for overridden scrolling values:
+    // FOLKLORE_LMS_ADDR (MMIO addr: 54624 -> $D560): Direct row index base (64-bit/uint256)
+    // FOLKLORE_VSCROL   (MMIO addr: 54632 -> $D568): Fractional vertical scroll offset (32-bit fixed-point, 16.16 scaled by 65536)
+    uint64_t folklore_lms_val = 0;
+    uint64_t folklore_vscrol_val = 0;
+    
+    {
+        extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
+        uint8_t peek_cd[36] = {0};
+        peek_cd[0] = 0x78; peek_cd[1] = 0x61; peek_cd[2] = 0xd2; peek_cd[3] = 0x69; // peek(uint256)
+        
+        // Peek LMS
+        uint64_t mmio_lms = 54624;
+        for (int k = 0; k < 8; k++) peek_cd[4 + 31 - k] = (mmio_lms >> (k * 8)) & 0xFF;
+        uint8_t ret_lms[32] = {0};
+        size_t ret_lms_len = 32;
+        if (lau_yul_thunk_execute("cpu6502", peek_cd, 36, ret_lms, &ret_lms_len)) {
+            for (int k = 0; k < 8; k++) folklore_lms_val = (folklore_lms_val << 8) | ret_lms[24 + k];
+        }
+
+        // Peek VSCROL
+        uint64_t mmio_vscrol = 54632;
+        for (int k = 0; k < 8; k++) peek_cd[4 + 31 - k] = (mmio_vscrol >> (k * 8)) & 0xFF;
+        uint8_t ret_vscrol[32] = {0};
+        size_t ret_vscrol_len = 32;
+        if (lau_yul_thunk_execute("cpu6502", peek_cd, 36, ret_vscrol, &ret_vscrol_len)) {
+            for (int k = 0; k < 8; k++) folklore_vscrol_val = (folklore_vscrol_val << 8) | ret_vscrol[24 + k];
+        }
+    }
+
+    int lms_row_base = 0;
+    int fine_vscrol = 0;
+
+    if (folklore_lms_val != 0 || folklore_vscrol_val != 0) {
+        // If MMIO registers have custom values, use them directly as hardware registers
+        lms_row_base = (int)folklore_lms_val;
+        // folklore_vscrol_val is 16.16 fixed point representation of fine scroll offset
+        fine_vscrol = (int)(folklore_vscrol_val / 65536);
+        if (fine_vscrol < 0) fine_vscrol = 0;
+        if (fine_vscrol >= char_h) fine_vscrol = char_h - 1;
+    } else {
+        // Fallback to smooth interpolation loop
+        if (s_last_target_y != target_start_y) {
+            if (abs(target_start_y - s_last_target_y) > 10) {
+                s_smooth_scroll_y = (float)target_start_y;
+            }
+            s_last_target_y = target_start_y;
+        }
+        float diff = (float)target_start_y - s_smooth_scroll_y;
+        if (fabsf(diff) > 0.001f) {
+            s_smooth_scroll_y += diff * 0.25f;
+        } else {
             s_smooth_scroll_y = (float)target_start_y;
         }
-        s_last_target_y = target_start_y;
-    }
-    // Interpolate towards the target row coordinate smoothly
-    float diff = (float)target_start_y - s_smooth_scroll_y;
-    if (fabsf(diff) > 0.001f) {
-        s_smooth_scroll_y += diff * 0.25f; // Lerp step
-    } else {
-        s_smooth_scroll_y = (float)target_start_y;
-    }
 
-    // LMS row pointer (integer base) and VSCROL fine pixel scroll offset
-    int lms_row_base = (int)floorf(s_smooth_scroll_y);
-    int fine_vscrol = (int)roundf((s_smooth_scroll_y - (float)lms_row_base) * (float)char_h);
-    if (fine_vscrol < 0) fine_vscrol = 0;
-    if (fine_vscrol >= char_h) fine_vscrol = char_h - 1;
+        lms_row_base = (int)floorf(s_smooth_scroll_y);
+        fine_vscrol = (int)roundf((s_smooth_scroll_y - (float)lms_row_base) * (float)char_h);
+        if (fine_vscrol < 0) fine_vscrol = 0;
+        if (fine_vscrol >= char_h) fine_vscrol = char_h - 1;
+    }
 
     // Display List Instructions definitions
-    // Band 1: Mode 2 Header (y = 0..45, status bar)
-    // Band 2: Mode 4 Console (y = 46..win_height - 32)
-    // Band 3: Mode 8 Diagnostics/Game overlay (y = win_height - 31..win_height)
     int console_clip_y0 = 55;
     int console_clip_y1 = win_height - 32;
 

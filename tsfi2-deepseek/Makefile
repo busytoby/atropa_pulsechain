@@ -71,7 +71,7 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
 
 .PHONY: all clean
 
-all: tsfi2 tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator
+all: tsfi2 tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator tests/test_compuserve
 
 # --- Primary Targets ---
 tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
@@ -120,6 +120,9 @@ tests/test_choplifter: tests/test_choplifter.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_in
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_cannonball: tests/test_cannonball.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_compuserve: tests/test_compuserve.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_wayland_sprite_editor: tests/test_wayland_sprite_editor.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
