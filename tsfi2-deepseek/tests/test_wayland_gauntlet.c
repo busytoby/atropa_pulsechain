@@ -272,7 +272,6 @@ static void* play_sound_thread(void *arg) {
     }
     snd_pcm_drain(pcm_handle);
     snd_pcm_close(pcm_handle);
-    free(buf);
     free(sd);
     return NULL;
 }
