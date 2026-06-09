@@ -71,7 +71,12 @@ typedef enum {
     MODE_STREAMER,
     MODE_KNOCKOUT,
     MODE_ALARM,
-    MODE_MEMCHECK
+    MODE_MEMCHECK,
+    MODE_ARENA,
+    MODE_HEADTOHEAD,
+    MODE_CRABFIGHT,
+    MODE_TREASURE,
+    MODE_CHARDUMP
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -498,6 +503,59 @@ static void init_memcheck(void);
 static void redraw_memcheck_screen(void);
 static void handle_memcheck_input(char ch);
 static void update_memcheck(uint32_t ms);
+
+// Arena variables & functions
+static int g_arena_x = 2;
+static int g_arena_y = 2;
+static int g_arena_enemy_x = 8;
+static int g_arena_enemy_y = 6;
+static int g_arena_score = 0;
+static char g_arena_status[128];
+static void init_arena(void);
+static void redraw_arena_screen(void);
+static void handle_arena_input(char ch);
+static void update_arena(uint32_t ms);
+
+// Head to Head variables & functions
+static int g_h2h_p1_x = 0;
+static int g_h2h_p1_y = 0;
+static int g_h2h_p2_x = 9;
+static int g_h2h_p2_y = 9;
+static uint8_t g_h2h_grid[10][10];
+static int g_h2h_p1_score = 0;
+static int g_h2h_p2_score = 0;
+static char g_h2h_status[128];
+static void init_headtohead(void);
+static void redraw_headtohead_screen(void);
+static void handle_headtohead_input(char ch);
+
+// Crabfight variables & functions
+static int g_crab_x = 10;
+static int g_crab_opp_x = 30;
+static int g_crab_hp = 100;
+static int g_crab_opp_hp = 100;
+static char g_crab_status[128];
+static void init_crabfight(void);
+static void redraw_crabfight_screen(void);
+static void handle_crabfight_input(char ch);
+
+// Treasure Wheel variables & functions
+static char g_wheel_phrase[32] = "AHOY MAGAZINE";
+static char g_wheel_guessed[32] = "____ ________";
+static int g_wheel_score = 0;
+static int g_wheel_spin_val = 100;
+static char g_wheel_status[128];
+static void init_treasure(void);
+static void redraw_treasure_screen(void);
+static void handle_treasure_input(char ch);
+
+// Character Dump variables & functions
+static uint16_t g_chardump_offset = 0;
+static char g_chardump_status[128];
+static void init_chardump(void);
+static void redraw_chardump_screen(void);
+static void handle_chardump_input(char ch);
+static void update_chardump(uint32_t ms);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -4400,6 +4458,360 @@ static void update_memcheck(uint32_t ms) {
         snprintf(g_memcheck_status, sizeof(g_memcheck_status), "Scan Complete. RAM fully verified.");
     }
     redraw_memcheck_screen();
+}
+
+// ----------------------------------------------------
+// Issue 26: Arena
+// ----------------------------------------------------
+static void init_arena(void) {
+    g_arena_x = 2;
+    g_arena_y = 2;
+    g_arena_enemy_x = 8;
+    g_arena_enemy_y = 6;
+    g_arena_score = 0;
+    snprintf(g_arena_status, sizeof(g_arena_status), "Survival Arena! Evade the hunter.");
+}
+
+static void redraw_arena_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[2048];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    ARENA: Tactical Grid Combat (Ahoy! Issue 26)   \r\n"
+             "====================================================\r\n"
+             " Score: %d | Status: %s\r\n"
+             "----------------------------------------------------\r\n",
+             g_arena_score, g_arena_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int y = 0; y < 8; y++) {
+        char line[64] = "  ";
+        for (int x = 0; x < 10; x++) {
+            char cell = '.';
+            if (x == g_arena_x && y == g_arena_y) cell = '@';
+            else if (x == g_arena_enemy_x && y == g_arena_enemy_y) cell = 'E';
+            else if ((x == 4 && y == 3) || (x == 5 && y == 4)) cell = '#'; // obstacle
+
+            char cell_str[4];
+            snprintf(cell_str, sizeof(cell_str), "%c ", cell);
+            strcat(line, cell_str);
+        }
+        strcat(line, "\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    lau_vram_write_string(g_vram, " Controls: [W/A/S/D] Move, [SPACE] Attack, [ESC] Exit\r\n", 54);
+}
+
+static void handle_arena_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    int next_x = g_arena_x;
+    int next_y = g_arena_y;
+    if (ch == 'w' || ch == 'W') next_y--;
+    else if (ch == 's' || ch == 'S') next_y++;
+    else if (ch == 'a' || ch == 'A') next_x--;
+    else if (ch == 'd' || ch == 'D') next_x++;
+    else if (ch == ' ') {
+        if (abs(g_arena_x - g_arena_enemy_x) <= 1 && abs(g_arena_y - g_arena_enemy_y) <= 1) {
+            g_arena_score += 100;
+            g_arena_enemy_x = rand() % 10;
+            g_arena_enemy_y = rand() % 8;
+            snprintf(g_arena_status, sizeof(g_arena_status), "Hit! Enemy sent packing.");
+        } else {
+            snprintf(g_arena_status, sizeof(g_arena_status), "Missed strike.");
+        }
+    }
+
+    if (next_x >= 0 && next_x < 10 && next_y >= 0 && next_y < 8) {
+        if (!((next_x == 4 && next_y == 3) || (next_x == 5 && next_y == 4))) {
+            g_arena_x = next_x;
+            g_arena_y = next_y;
+        }
+    }
+    redraw_arena_screen();
+}
+
+static void update_arena(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 600) return;
+    last_tick = ms;
+
+    // Enemy chase logic
+    if (g_arena_enemy_x < g_arena_x) g_arena_enemy_x++;
+    else if (g_arena_enemy_x > g_arena_x) g_arena_enemy_x--;
+
+    if (g_arena_enemy_y < g_arena_y) g_arena_enemy_y++;
+    else if (g_arena_enemy_y > g_arena_y) g_arena_enemy_y--;
+
+    if (g_arena_x == g_arena_enemy_x && g_arena_y == g_arena_enemy_y) {
+        g_arena_score = (g_arena_score > 50) ? (g_arena_score - 50) : 0;
+        snprintf(g_arena_status, sizeof(g_arena_status), "Caught by Hunter! Score reduced.");
+    }
+    redraw_arena_screen();
+}
+
+// ----------------------------------------------------
+// Issue 26: Head to Head
+// ----------------------------------------------------
+static void init_headtohead(void) {
+    g_h2h_p1_x = 0;
+    g_h2h_p1_y = 0;
+    g_h2h_p2_x = 9;
+    g_h2h_p2_y = 9;
+    g_h2h_p1_score = 0;
+    g_h2h_p2_score = 0;
+    memset(g_h2h_grid, 0, sizeof(g_h2h_grid));
+    g_h2h_grid[0][0] = 1;
+    g_h2h_grid[9][9] = 2;
+    snprintf(g_h2h_status, sizeof(g_h2h_status), "Claim territory by occupying cells!");
+}
+
+static void redraw_headtohead_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    HEAD TO HEAD: Grid Alignment Game (Issue 26)    \r\n"
+             "====================================================\r\n"
+             " Player 1 (Blue): %d | Player 2 (Red): %d\r\n"
+             "----------------------------------------------------\r\n",
+             g_h2h_p1_score, g_h2h_p2_score);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int y = 0; y < 10; y++) {
+        char line[128] = "  ";
+        for (int x = 0; x < 10; x++) {
+            char cell = '.';
+            if (x == g_h2h_p1_x && y == g_h2h_p1_y) cell = '1';
+            else if (x == g_h2h_p2_x && y == g_h2h_p2_y) cell = '2';
+            else if (g_h2h_grid[y][x] == 1) cell = 'o';
+            else if (g_h2h_grid[y][x] == 2) cell = 'x';
+
+            char cell_str[8];
+            snprintf(cell_str, sizeof(cell_str), "%c ", cell);
+            strcat(line, cell_str);
+        }
+        strcat(line, "\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    lau_vram_write_string(g_vram, " Controls: [W/A/S/D] Player 1, [I/J/K/L] Player 2, [ESC] Exit\r\n", 62);
+}
+
+static void handle_headtohead_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+
+    // P1 movement (WASD)
+    if (ch == 'w' || ch == 'W') { if (g_h2h_p1_y > 0) g_h2h_p1_y--; }
+    else if (ch == 's' || ch == 'S') { if (g_h2h_p1_y < 9) g_h2h_p1_y++; }
+    else if (ch == 'a' || ch == 'A') { if (g_h2h_p1_x > 0) g_h2h_p1_x--; }
+    else if (ch == 'd' || ch == 'D') { if (g_h2h_p1_x < 9) g_h2h_p1_x++; }
+
+    // P2 movement (IJKL)
+    if (ch == 'i' || ch == 'I') { if (g_h2h_p2_y > 0) g_h2h_p2_y--; }
+    else if (ch == 'k' || ch == 'K') { if (g_h2h_p2_y < 9) g_h2h_p2_y++; }
+    else if (ch == 'j' || ch == 'J') { if (g_h2h_p2_x > 0) g_h2h_p2_x--; }
+    else if (ch == 'l' || ch == 'L') { if (g_h2h_p2_x < 9) g_h2h_p2_x++; }
+
+    // Claim cells
+    if (g_h2h_grid[g_h2h_p1_y][g_h2h_p1_x] == 0) {
+        g_h2h_grid[g_h2h_p1_y][g_h2h_p1_x] = 1;
+        g_h2h_p1_score++;
+    }
+    if (g_h2h_grid[g_h2h_p2_y][g_h2h_p2_x] == 0) {
+        g_h2h_grid[g_h2h_p2_y][g_h2h_p2_x] = 2;
+        g_h2h_p2_score++;
+    }
+
+    redraw_headtohead_screen();
+}
+
+// ----------------------------------------------------
+// Issue 26: Crabfight
+// ----------------------------------------------------
+static void init_crabfight(void) {
+    g_crab_x = 10;
+    g_crab_opp_x = 30;
+    g_crab_hp = 100;
+    g_crab_opp_hp = 100;
+    snprintf(g_crab_status, sizeof(g_crab_status), "Shoreline Dueling! Move close and PINCH.");
+}
+
+static void redraw_crabfight_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    CRABFIGHT: Crustacean Shoreline Duel (Issue 26) \r\n"
+             "====================================================\r\n"
+             " Player HP: %d/100 | Opponent HP: %d/100\r\n"
+             "----------------------------------------------------\r\n",
+             g_crab_hp, g_crab_opp_hp);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render beach line
+    char beach[64];
+    memset(beach, '~', 40);
+    beach[40] = '\0';
+
+    if (g_crab_x >= 0 && g_crab_x < 40) beach[g_crab_x] = 'C';
+    if (g_crab_opp_x >= 0 && g_crab_opp_x < 40) beach[g_crab_opp_x] = 'O';
+
+    snprintf(buf, sizeof(buf), " [Sea]  %s  [Dunes]\r\n", beach);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_crab_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [A] Left, [D] Right, [SPACE] Pinch Attack, [ESC] Exit\r\n", 66);
+}
+
+static void handle_crabfight_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+
+    if (ch == 'a' || ch == 'A') {
+        if (g_crab_x > 1) g_crab_x--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_crab_x < g_crab_opp_x - 1) g_crab_x++;
+    } else if (ch == ' ') {
+        // Pinch!
+        if (g_crab_opp_x - g_crab_x <= 2) {
+            g_crab_opp_hp -= 15;
+            if (g_crab_opp_hp <= 0) {
+                g_crab_opp_hp = 0;
+                snprintf(g_crab_status, sizeof(g_crab_status), "VICTORY! Opponent crab retreated.");
+            } else {
+                snprintf(g_crab_status, sizeof(g_crab_status), "Snip! Opponent takes damage.");
+            }
+        } else {
+            snprintf(g_crab_status, sizeof(g_crab_status), "Too far away to pinch!");
+        }
+    }
+    redraw_crabfight_screen();
+}
+
+// ----------------------------------------------------
+// Issue 26: Treasure Wheel
+// ----------------------------------------------------
+static void init_treasure(void) {
+    g_wheel_score = 0;
+    g_wheel_spin_val = 150;
+    strcpy(g_wheel_guessed, "____ ________");
+    snprintf(g_wheel_status, sizeof(g_wheel_status), "Spin the wheel and solve the retro puzzle!");
+}
+
+static void redraw_treasure_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    TREASURE WHEEL: Puzzle Word Game (Issue 26)     \r\n"
+             "====================================================\r\n"
+             " Balance: $%d | Current Wheel Value: $%d\r\n"
+             "----------------------------------------------------\r\n"
+             " Puzzle:  %s\r\n"
+             "----------------------------------------------------\r\n",
+             g_wheel_score, g_wheel_spin_val, g_wheel_guessed);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_wheel_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [S] Spin Wheel, [A-Z] Guess Letter, [ESC] Exit\r\n", 58);
+}
+
+static void handle_treasure_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == 's' || ch == 'S') {
+        g_wheel_spin_val = ((rand() % 5) + 1) * 100;
+        snprintf(g_wheel_status, sizeof(g_wheel_status), "Spun wheel to $%d! Guess a letter.", g_wheel_spin_val);
+    } else if (ch >= 'a' && ch <= 'z') {
+        ch -= 32; // upper case
+    }
+    if (ch >= 'A' && ch <= 'Z') {
+        bool correct = false;
+        for (size_t i = 0; i < strlen(g_wheel_phrase); i++) {
+            if (g_wheel_phrase[i] == ch && g_wheel_guessed[i] == '_') {
+                g_wheel_guessed[i] = ch;
+                g_wheel_score += g_wheel_spin_val;
+                correct = true;
+            }
+        }
+        if (correct) {
+            snprintf(g_wheel_status, sizeof(g_wheel_status), "Correct guess! Balance updated.");
+        } else {
+            snprintf(g_wheel_status, sizeof(g_wheel_status), "Letter '%c' is not in the phrase.", ch);
+        }
+    }
+    redraw_treasure_screen();
+}
+
+// ----------------------------------------------------
+// Issue 26: Character Dump
+// ----------------------------------------------------
+static void init_chardump(void) {
+    g_chardump_offset = 0xD000;
+    snprintf(g_chardump_status, sizeof(g_chardump_status), "Press ESC to return. Dump address block starting at $D000.");
+}
+
+static void redraw_chardump_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "====================================================\r\n"
+             "    CHARACTER DUMP: System RAM Hex Scan (Issue 26)   \r\n"
+             "====================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int row = 0; row < 8; row++) {
+        uint16_t addr = g_chardump_offset + row * 8;
+        char hex[128];
+        snprintf(hex, sizeof(hex), "  $%04X:  %02X %02X %02X %02X %02X %02X %02X %02X  |  ",
+                 addr, rand() % 256, rand() % 256, rand() % 256, rand() % 256,
+                 rand() % 256, rand() % 256, rand() % 256, rand() % 256);
+        lau_vram_write_string(g_vram, hex, strlen(hex));
+
+        char chars[16];
+        snprintf(chars, sizeof(chars), "........\r\n");
+        lau_vram_write_string(g_vram, chars, strlen(chars));
+    }
+    lau_vram_write_string(g_vram, "----------------------------------------------------\r\n", 54);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_chardump_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void handle_chardump_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+}
+
+static void update_chardump(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 800) return;
+    last_tick = ms;
+
+    g_chardump_offset += 64;
+    if (g_chardump_offset > 0xE800) {
+        g_chardump_offset = 0xD000;
+    }
+    redraw_chardump_screen();
 }
 
 static void init_moxey(void) {
@@ -8338,6 +8750,56 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && (strcasecmp(first_word, "ARENA") == 0)) {
+         g_editor_mode = MODE_ARENA;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_arena();
+         redraw_arena_screen();
+         log_telemetry("Started Arena game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "HEADTOHEAD") == 0 || strcasecmp(first_word, "H2H") == 0)) {
+         g_editor_mode = MODE_HEADTOHEAD;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_headtohead();
+         redraw_headtohead_screen();
+         log_telemetry("Started Head to Head game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "CRABFIGHT") == 0)) {
+         g_editor_mode = MODE_CRABFIGHT;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_crabfight();
+         redraw_crabfight_screen();
+         log_telemetry("Started Crabfight game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "TREASURE") == 0 || strcasecmp(first_word, "TREASUREWHEEL") == 0)) {
+         g_editor_mode = MODE_TREASURE;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_treasure();
+         redraw_treasure_screen();
+         log_telemetry("Started Treasure Wheel game");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "CHARDUMP") == 0 || strcasecmp(first_word, "CHARACTERDUMP") == 0)) {
+         g_editor_mode = MODE_CHARDUMP;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_chardump();
+         redraw_chardump_screen();
+         log_telemetry("Started Character Dump utility");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -10208,6 +10670,55 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         return;
     }
 
+    if (g_editor_mode == MODE_ARENA) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_arena_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_HEADTOHEAD) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_headtohead_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_CRABFIGHT) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) {
+            ch = ' ';
+        }
+        handle_crabfight_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_TREASURE) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_treasure_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_CHARDUMP) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_chardump_input(ch);
+        return;
+    }
+
     if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         char ch = (char)utf32;
         if (key == KEY_ESC || key == 1) {
@@ -11174,6 +11685,16 @@ void render_terminal_display(void) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
         uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
         update_memcheck(current_ms);
+    } else if (g_editor_mode == MODE_ARENA) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_arena(current_ms);
+    } else if (g_editor_mode == MODE_CHARDUMP) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_chardump(current_ms);
     } else if (g_editor_mode == MODE_ALARM) {
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -11837,6 +12358,16 @@ int main() {
                             handle_alarm_input(ch);
                         } else if (g_editor_mode == MODE_MEMCHECK) {
                             handle_memcheck_input(ch);
+                        } else if (g_editor_mode == MODE_ARENA) {
+                            handle_arena_input(ch);
+                        } else if (g_editor_mode == MODE_HEADTOHEAD) {
+                            handle_headtohead_input(ch);
+                        } else if (g_editor_mode == MODE_CRABFIGHT) {
+                            handle_crabfight_input(ch);
+                        } else if (g_editor_mode == MODE_TREASURE) {
+                            handle_treasure_input(ch);
+                        } else if (g_editor_mode == MODE_CHARDUMP) {
+                            handle_chardump_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -11920,7 +12451,10 @@ int main() {
                            g_editor_mode == MODE_GYPSY || g_editor_mode == MODE_MARTIAN || 
                            g_editor_mode == MODE_HAUNTED || g_editor_mode == MODE_INFRARAID || 
                            g_editor_mode == MODE_STREAMER || g_editor_mode == MODE_KNOCKOUT || 
-                           g_editor_mode == MODE_ALARM || g_editor_mode == MODE_MEMCHECK;
+                           g_editor_mode == MODE_ALARM || g_editor_mode == MODE_MEMCHECK ||
+                           g_editor_mode == MODE_ARENA || g_editor_mode == MODE_HEADTOHEAD ||
+                           g_editor_mode == MODE_CRABFIGHT || g_editor_mode == MODE_TREASURE ||
+                           g_editor_mode == MODE_CHARDUMP;
 
         if (g_vram->is_dirty) {
             sync_vram_to_cpu();
@@ -12093,6 +12627,16 @@ int main() {
                             handle_alarm_input(ch);
                         } else if (g_editor_mode == MODE_MEMCHECK) {
                             handle_memcheck_input(ch);
+                        } else if (g_editor_mode == MODE_ARENA) {
+                            handle_arena_input(ch);
+                        } else if (g_editor_mode == MODE_HEADTOHEAD) {
+                            handle_headtohead_input(ch);
+                        } else if (g_editor_mode == MODE_CRABFIGHT) {
+                            handle_crabfight_input(ch);
+                        } else if (g_editor_mode == MODE_TREASURE) {
+                            handle_treasure_input(ch);
+                        } else if (g_editor_mode == MODE_CHARDUMP) {
+                            handle_chardump_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
