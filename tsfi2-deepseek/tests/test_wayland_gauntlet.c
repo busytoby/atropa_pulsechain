@@ -311,6 +311,7 @@ static uint64_t thunk_peek(uint64_t addr) {
 
 static void init_gauntlet_yul() {
     thunk_poke(54695, 0xd17a5);  // diyatAddress mock
+    thunk_poke(54696, 0xd17a6);  // pmgAddress target
     thunk_poke(55050, 1);    // gauntletActive
     thunk_poke(55051, 120);  // playerX
     thunk_poke(55052, 120);  // playerY
@@ -329,7 +330,8 @@ static void gauntlet_key_hook(void *data, uint32_t serial, uint32_t time, uint32
     bool pressed = (state != 0);
     
     if (key == 1) { // ESC
-        printf("[GAUNTLET] ESC pressed (ignoring to allow AI playout)\n");
+        printf("[GAUNTLET] ESC pressed. Exiting game...\n");
+        exit_requested = 1;
     } else if (key == 30) { // A
         key_a_held = pressed;
     } else if (key == 32) { // D
@@ -500,7 +502,29 @@ int main() {
 
     // Compile and initialize Yul CPU target inside ZMM VM
     printf("[ZMM] Compiler loading folklore.yul...\n");
-    tsfi_zmm_vm_exec(&vm, "YULINIT \"cpu6502\", \"../solidity/bin/folklore.yul\", 1");
+    const char *yul_path = "../solidity/bin/folklore.yul";
+    FILE *f_check = fopen(yul_path, "r");
+    if (f_check) {
+        fclose(f_check);
+    } else {
+        yul_path = "solidity/bin/folklore.yul";
+    }
+    char init_cmd[256];
+    snprintf(init_cmd, sizeof(init_cmd), "YULINIT \"cpu6502\", \"%s\", 1", yul_path);
+    tsfi_zmm_vm_exec(&vm, init_cmd);
+
+    // Compile and initialize PMG System inside ZMM VM
+    printf("[ZMM] Compiler loading pmgSystem.yul...\n");
+    const char *pmg_yul_path = "../solidity/bin/pmgSystem.yul";
+    FILE *pmg_check = fopen(pmg_yul_path, "r");
+    if (pmg_check) {
+        fclose(pmg_check);
+    } else {
+        pmg_yul_path = "solidity/bin/pmgSystem.yul";
+    }
+    char pmg_init_cmd[256];
+    snprintf(pmg_init_cmd, sizeof(pmg_init_cmd), "YULINIT \"PmgSystem\", \"%s\", 858022", pmg_yul_path);
+    tsfi_zmm_vm_exec(&vm, pmg_init_cmd);
 
     VulkanSystem *s = create_vulkan_system();
     if (!s) {
@@ -585,17 +609,28 @@ int main() {
                 int64_t dx = (int64_t)tx - (int64_t)raw_px;
                 int64_t dy = (int64_t)ty - (int64_t)raw_py;
                 
-                // Move along the axis with the largest distance
-                if (labs(dx) > labs(dy)) {
-                    if (dx > 0) moveDir = 4; // Right
-                    else moveDir = 3;        // Left
-                } else {
+                // Align Y-axis first to prevent zig-zagging and shoot from a distance
+                if (labs(dy) >= 20) {
                     if (dy > 0) moveDir = 2; // Down
                     else moveDir = 1;        // Up
+                } else {
+                    if (dx > 0) moveDir = 4; // Right
+                    else moveDir = 3;        // Left
                 }
                 
-                // Shoot if lined up or close
-                if (labs(dx) < 80 || labs(dy) < 80) {
+                // Shoot only if aligned with target (within collision tolerance of 20 pixels) and facing it
+                bool aligned_x = (labs(dx) < 20);
+                bool aligned_y = (labs(dy) < 20);
+                bool facing_target = false;
+                if (aligned_x) {
+                    if (dy > 0 && moveDir == 2) facing_target = true;
+                    if (dy < 0 && moveDir == 1) facing_target = true;
+                }
+                if (aligned_y) {
+                    if (dx > 0 && moveDir == 4) facing_target = true;
+                    if (dx < 0 && moveDir == 3) facing_target = true;
+                }
+                if (facing_target) {
                     fire = (frame_counter % 6 == 0); // Limit rate of fire
                 }
             } else {
@@ -627,6 +662,34 @@ int main() {
         float gy = (float)thunk_peek(55056) * scale_y;
         float sx = (float)thunk_peek(55057) * scale_x;
         float sy = (float)thunk_peek(55058) * scale_y;
+        float proj_x = (float)thunk_peek(55070) * scale_x;
+        float proj_y = (float)thunk_peek(55071) * scale_y;
+        uint64_t proj_active = thunk_peek(55074);
+
+        // Update projectile trail history for maximum visibility
+        #define PROJ_TRAIL_MAX 10
+        static float trail_x[PROJ_TRAIL_MAX] = {0};
+        static float trail_y[PROJ_TRAIL_MAX] = {0};
+        static bool trail_active[PROJ_TRAIL_MAX] = {false};
+
+        if (proj_active && proj_x > 0.0f && proj_y > 0.0f) {
+            for (int i = PROJ_TRAIL_MAX - 1; i > 0; i--) {
+                trail_x[i] = trail_x[i - 1];
+                trail_y[i] = trail_y[i - 1];
+                trail_active[i] = trail_active[i - 1];
+            }
+            trail_x[0] = proj_x;
+            trail_y[0] = proj_y;
+            trail_active[0] = true;
+        } else {
+            for (int i = PROJ_TRAIL_MAX - 1; i > 0; i--) {
+                trail_x[i] = trail_x[i - 1];
+                trail_y[i] = trail_y[i - 1];
+                trail_active[i] = trail_active[i - 1];
+            }
+            trail_active[0] = false;
+        }
+
         uint64_t health = thunk_peek(55053);
         uint64_t score = thunk_peek(55032);
         uint64_t keys = thunk_peek(55054);
@@ -653,6 +716,29 @@ int main() {
             }
         }
 
+        // Draw Projectile Trail
+        for (int i = 0; i < PROJ_TRAIL_MAX; i++) {
+            if (trail_active[i] && trail_x[i] > 0.0f && trail_y[i] > 0.0f) {
+                float ratio = (float)i / (float)PROJ_TRAIL_MAX;
+                float alpha = 1.0f - ratio;
+                float radius = 18.0f * (1.0f - ratio);
+                if (radius < 4.0f) radius = 4.0f;
+                draw_radial_glow(pixels, W, H, trail_x[i], trail_y[i], radius, make_ab4h_pixel(1.5f, 1.2f, 0.0f, alpha * 0.4f));
+                draw_rect_ab4h(pixels, W, H, (int)trail_x[i] - 3, (int)trail_y[i] - 3, 6, 6, make_ab4h_pixel(1.5f, 1.2f, 0.0f, alpha));
+            }
+        }
+
+        // Draw Projectile (Atari PMG Missile 0)
+        if (proj_active && proj_x > 0.0f && proj_y > 0.0f) {
+            draw_rect_ab4h(pixels, W, H, (int)proj_x - 5, (int)proj_y - 5, 10, 10, make_ab4h_pixel(2.0f, 1.8f, 0.2f, 1.0f));
+            draw_radial_glow(pixels, W, H, proj_x, proj_y, 25.0f, make_ab4h_pixel(2.0f, 1.5f, 0.0f, 0.6f));
+            static int last_active_frame = -1;
+            if (frame_counter != last_active_frame) {
+                printf("[CLIENT] Render Projectile (Atari PMG Missile 0) at x=%.1f, y=%.1f\n", proj_x, proj_y);
+                last_active_frame = frame_counter;
+            }
+        }
+
         // Draw Player (warrior holding axe)
         draw_sprite_16x16(pixels, W, H, px, py, sprite_warrior, 2.2f * scale_x, 2.2f * scale_y);
         draw_radial_glow(pixels, W, H, px, py, 20.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
@@ -664,7 +750,7 @@ int main() {
             sprintf(status_message, "^B^U[VICTORY]^C ^IAll threats neutralized! Alchemical gold harvested! SCORE: %lu^C", score);
             if (victory_exit_timer == -1) {
                 printf("[VICTORY] AI pilot successfully destroyed all threats and won the game! Final Score: %lu\n", score);
-                victory_exit_timer = 60; // Wait 60 frames (1s) to show screen before exiting
+                victory_exit_timer = 300; // Wait 300 frames (5s) to show screen before exiting
             }
         } else {
             sprintf(status_message, "^B[WARRIOR] Health: %lu | Score: %lu | Ghost Gen: %lu^C", health, score, generation);
@@ -699,11 +785,5 @@ int main() {
     }
 
     printf("[GAUNTLET] Tearing down resources...\n");
-    if (ai_fs) {
-        tsfi_font_ai_destroy(ai_fs);
-        tsfi_font_destroy(ai_fs);
-    }
-    destroy_vulkan_system(s);
-    tsfi_zmm_vm_destroy(&vm);
-    return 0;
+    _exit(0);
 }

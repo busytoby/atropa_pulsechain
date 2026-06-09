@@ -1,4 +1,4 @@
-object "FolkloreCPU" {
+object "cpu6502" {
     // ========================================================================
     // DEPLOYMENT CODE (INITCODE)
     // ========================================================================
@@ -48,6 +48,31 @@ object "FolkloreCPU" {
                         if mload(0x3A4) {
                             taxPaidSuccess := 1
                         }
+                    }
+                }
+            }
+
+            // Helper to update GTIA PMG registers
+            function updatePmgState(pmgAddr, isMissile, index, hpos, size, color) {
+                if pmgAddr {
+                    mstore(0x340, shl(224, 0xaeed2db8))
+                    mstore(0x344, isMissile)
+                    mstore(0x364, index)
+                    mstore(0x384, hpos)
+                    mstore(0x3A4, size)
+                    mstore(0x3C4, color)
+                    let success := delegatecall(gas(), pmgAddr, 0x340, 164, 0x00, 0)
+                }
+            }
+
+            // Helper to check GTIA hardware collisions
+            function checkPmgCollisions(pmgAddr) -> mask {
+                mask := 0
+                if pmgAddr {
+                    mstore(0x340, shl(224, 0xb966a078))
+                    let success := delegatecall(gas(), pmgAddr, 0x340, 4, 0x3E4, 32)
+                    if success {
+                        mask := mload(0x3E4)
                     }
                 }
             }
@@ -228,108 +253,166 @@ object "FolkloreCPU" {
                     let gpx := sload(getUserSlot(55051))
                     let gpy := sload(getUserSlot(55052))
                     let ghealth := sload(getUserSlot(55053))
-                    let gkeys := sload(getUserSlot(55054))
                     let ggx := sload(getUserSlot(55055))
                     let ggy := sload(getUserSlot(55056))
                     let gsx := sload(getUserSlot(55057))
                     let gsy := sload(getUserSlot(55058))
-                    let gdir := sload(getUserSlot(55059))
-                    let gfire := sload(getUserSlot(55060))
 
-                    // 1. Drains health slowly
-                    if gt(ghealth, 0) {
-                        ghealth := sub(ghealth, 1)
-                    }
-
-                    // 2. Warrior Movement Physics
-                    switch gdir
-                    case 1 { // Up
-                        if gt(gpy, 10) { gpy := sub(gpy, 4) }
-                    }
-                    case 2 { // Down
-                        if lt(gpy, 470) { gpy := add(gpy, 4) }
-                    }
-                    case 3 { // Left
-                        if gt(gpx, 10) { gpx := sub(gpx, 4) }
-                    }
-                    case 4 { // Right
-                        if lt(gpx, 710) { gpx := add(gpx, 4) }
-                    }
-
-                    // 3. Spawner Spawn Logic (ghost moves toward player, or spawns if dead)
-                    let spawnedThisTick := 0
-                    if and(and(iszero(ggx), iszero(ggy)), and(gt(gsx, 0), gt(gsy, 0))) {
-                        let spawnTimer := sload(getUserSlot(55061))
-                        spawnTimer := add(spawnTimer, 1)
-                        if gt(spawnTimer, 150) {
-                            ggx := gsx
-                            ggy := gsy
-                            spawnTimer := 0
-                            spawnedThisTick := 1
-                            // Increment lineage generation counter
-                            let gen := sload(getUserSlot(55062))
-                            sstore(getUserSlot(55062), add(gen, 1))
+                    // 1 & 2. Slow health drain and Movement Physics
+                    {
+                        if gt(ghealth, 0) {
+                            ghealth := sub(ghealth, 1)
                         }
-                        sstore(getUserSlot(55061), spawnTimer)
-                    }
 
-                    if and(gt(ggx, 0), gt(ggy, 0)) {
-                        let dx := sub(gpx, ggx)
-                        let dy := sub(gpy, ggy)
-                        
-                        // Simple 6502-style approximation step toward player
-                        if gt(dx, 0) { ggx := add(ggx, 1) }
-                        if lt(dx, 0) { ggx := sub(ggx, 1) }
-                        if gt(dy, 0) { ggy := add(ggy, 1) }
-                        if lt(dy, 0) { ggy := sub(ggy, 1) }
-
-                        // Contact damage to player
-                        let dist_sq := add(mul(dx, dx), mul(dy, dy))
-                        if lt(dist_sq, 400) {
-                            if gt(ghealth, 100) { ghealth := sub(ghealth, 100) }
-                            ggx := 0 // Despawn ghost
-                            ggy := 0
+                        let gdir := sload(getUserSlot(55059))
+                        switch gdir
+                        case 1 { // Up
+                            if gt(gpy, 10) { gpy := sub(gpy, 4) }
+                        }
+                        case 2 { // Down
+                            if lt(gpy, 470) { gpy := add(gpy, 4) }
+                        }
+                        case 3 { // Left
+                            if gt(gpx, 10) { gpx := sub(gpx, 4) }
+                        }
+                        case 4 { // Right
+                            if lt(gpx, 710) { gpx := add(gpx, 4) }
                         }
                     }
 
-                    // 4. Firing Axes: If triggered, check collision with Spawner/Ghost and trigger Diyat Tax
-                    if gfire {
-                        // Check spawner hit (approx radius check)
-                        let dx := sub(gpx, gsx)
-                        let dy := sub(gpy, gsy)
-                        let dist_sq := add(mul(dx, dx), mul(dy, dy))
-                        if lt(dist_sq, 900) { // Spawner hit!
-                            // Excise 1 unit Diyat Gas Tax for spawner collapse
-                            if exciseOnChainTax(1) {
-                                gsx := 0
-                                gsy := 0
-                                score := add(score, 500)
+                    // Update Player 0 PMG state: isMissile = 0, index = 0, hpos = gpx/3, size = 0, color = 0x1E (Blue)
+                    updatePmgState(sload(getUserSlot(54696)), 0, 0, div(gpx, 3), 0, 0x1E)
+
+                    // 3. Spawner Spawn Logic & Ghost Movement
+                    {
+                        if and(and(iszero(ggx), iszero(ggy)), and(gt(gsx, 0), gt(gsy, 0))) {
+                            let spawnTimer := sload(getUserSlot(55061))
+                            spawnTimer := add(spawnTimer, 1)
+                            if gt(spawnTimer, 150) {
+                                ggx := gsx
+                                ggy := gsy
+                                spawnTimer := 0
+                                let gen := sload(getUserSlot(55062))
+                                sstore(getUserSlot(55062), add(gen, 1))
+                            }
+                            sstore(getUserSlot(55061), spawnTimer)
+                        }
+
+                        if and(gt(ggx, 0), gt(ggy, 0)) {
+                            let dx := sub(gpx, ggx)
+                            let dy := sub(gpy, ggy)
+                            if gt(dx, 0) { ggx := add(ggx, 1) }
+                            if lt(dx, 0) { ggx := sub(ggx, 1) }
+                            if gt(dy, 0) { ggy := add(ggy, 1) }
+                            if lt(dy, 0) { ggy := sub(ggy, 1) }
+
+                            let dist_sq := add(mul(dx, dx), mul(dy, dy))
+                            if lt(dist_sq, 400) {
+                                if gt(ghealth, 100) { ghealth := sub(ghealth, 100) }
+                                ggx := 0
+                                ggy := 0
                             }
                         }
-                        
-                        // Check ghost hit
-                        if and(gt(ggx, 0), gt(ggy, 0)) {
-                            let gdx := sub(gpx, ggx)
-                            let gdy := sub(gpy, ggy)
-                            let gdist_sq := add(mul(gdx, gdx), mul(gdy, gdy))
-                            if lt(gdist_sq, 900) { // Ghost hit!
-                                // Excise 1 unit Diyat Gas Tax for ghost banishment
-                                if exciseOnChainTax(1) {
-                                    ggx := 0
-                                    ggy := 0
-                                    score := add(score, 100)
+                    }
+
+                    // 4. Projectile Physics & Firing (Self-contained scope)
+                    {
+                        let projActive := sload(getUserSlot(55074))
+                        let projX := sload(getUserSlot(55070))
+                        let projY := sload(getUserSlot(55071))
+                        let projVX := sload(getUserSlot(55072))
+                        if gt(projVX, 127) { projVX := sub(projVX, 256) }
+                        let projVY := sload(getUserSlot(55073))
+                        if gt(projVY, 127) { projVY := sub(projVY, 256) }
+
+                        let gfire := sload(getUserSlot(55060))
+                        if gfire {
+                            if iszero(projActive) {
+                                projActive := 1
+                                projX := gpx
+                                projY := gpy
+                                projVX := 8
+                                projVY := 0
+
+                                let gdir := sload(getUserSlot(55059))
+                                if eq(gdir, 1) { // Up
+                                    projVX := 0
+                                    projVY := sub(0, 8)
+                                }
+                                if eq(gdir, 2) { // Down
+                                    projVX := 0
+                                    projVY := 8
+                                }
+                                if eq(gdir, 3) { // Left
+                                    projVX := sub(0, 8)
+                                    projVY := 0
+                                }
+                                if eq(gdir, 4) { // Right
+                                    projVX := 8
+                                    projVY := 0
                                 }
                             }
+                            sstore(getUserSlot(55060), 0)
                         }
-                        
-                        sstore(getUserSlot(55060), 0) // reset trigger
+
+                        if projActive {
+                            projX := add(projX, projVX)
+                            projY := add(projY, projVY)
+
+                            if or(or(gt(projX, 800), lt(projX, 0)), or(gt(projY, 500), lt(projY, 0))) {
+                                projActive := 0
+                            }
+
+                            if and(gt(gsx, 0), gt(gsy, 0)) {
+                                let dx := sub(projX, gsx)
+                                let dy := sub(projY, gsy)
+                                let dist_sq := add(mul(dx, dx), mul(dy, dy))
+                                if lt(dist_sq, 900) {
+                                    if exciseOnChainTax(1) {
+                                        gsx := 0
+                                        gsy := 0
+                                        score := add(score, 500)
+                                        projActive := 0
+                                    }
+                                }
+                            }
+
+                            if and(gt(ggx, 0), gt(ggy, 0)) {
+                                let gdx := sub(projX, ggx)
+                                let gdy := sub(projY, ggy)
+                                let gdist_sq := add(mul(gdx, gdx), mul(gdy, gdy))
+                                if lt(gdist_sq, 900) {
+                                    if exciseOnChainTax(1) {
+                                        ggx := 0
+                                        ggy := 0
+                                        score := add(score, 100)
+                                        projActive := 0
+                                    }
+                                }
+                            }
+
+                            // Update Missile 0 register
+                            updatePmgState(sload(getUserSlot(54696)), 1, 0, div(projX, 3), 0, 0x3A)
+                        }
+                        if iszero(projActive) {
+                            updatePmgState(sload(getUserSlot(54696)), 1, 0, 0, 0, 0)
+                        }
+
+                        // Check simulated GTIA hardware collisions
+                        let collisionMask := checkPmgCollisions(sload(getUserSlot(54696)))
+                        sstore(getUserSlot(55075), collisionMask)
+
+                        sstore(getUserSlot(55070), projX)
+                        sstore(getUserSlot(55071), projY)
+                        sstore(getUserSlot(55072), and(projVX, 0xFF))
+                        sstore(getUserSlot(55073), and(projVY, 0xFF))
+                        sstore(getUserSlot(55074), projActive)
                     }
 
-                    // Write Gauntlet state back
+                    // Save state back
                     sstore(getUserSlot(55051), gpx)
                     sstore(getUserSlot(55052), gpy)
                     sstore(getUserSlot(55053), ghealth)
-                    sstore(getUserSlot(55054), gkeys)
                     sstore(getUserSlot(55055), ggx)
                     sstore(getUserSlot(55056), ggy)
                     sstore(getUserSlot(55057), gsx)
