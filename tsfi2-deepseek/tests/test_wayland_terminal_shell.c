@@ -59,7 +59,8 @@ typedef enum {
     MODE_TOWERS,
     MODE_DISINTEGRATOR,
     MODE_FIDGITS,
-    MODE_MOXEY
+    MODE_MOXEY,
+    MODE_DRUM
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -285,9 +286,10 @@ static const char *g_booter_entries[] = {
     "TOWERS (Towers of Hanoi Puzzle)",
     "DISINTEGRATOR (ML Particle Grid Shooter)",
     "FIDGITS (Alphabet Sorting Game)",
-    "MOXEY'S PORCH (Text Adventure Game)"
+    "MOXEY'S PORCH (Text Adventure Game)",
+    "RHYTHMIC BITS (Step Sequencer Drum Machine)"
 };
-static int g_booter_count = 11;
+static int g_booter_count = 12;
 static int g_booter_cursor = 0;
 static char g_booter_status[128];
 static void init_booter(void);
@@ -347,6 +349,19 @@ static char g_moxey_status[128];
 static void init_moxey(void);
 static void redraw_moxey_screen(void);
 static void handle_moxey_input(char ch);
+
+// Rhythmic Bits variables
+static bool g_drum_grid[4][8]; // 4 tracks, 8 steps
+static int g_drum_cursor_track = 0;
+static int g_drum_cursor_step = 0;
+static int g_drum_play_step = -1;
+static bool g_drum_playing = false;
+static uint32_t g_drum_last_tick = 0;
+static char g_drum_status[128];
+static void init_drum(void);
+static void redraw_drum_screen(void);
+static void handle_drum_input(char ch);
+static void update_drum_seq(uint32_t current_time);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -3205,6 +3220,138 @@ static void handle_fidgits_input(char ch) {
     redraw_fidgits_screen();
 }
 
+static void init_drum(void) {
+    memset(g_drum_grid, 0, sizeof(g_drum_grid));
+    // Pre-populate some classic patterns (e.g. Kick on 0 and 4, Snare on 2 and 6, Hi-hat on all even steps)
+    g_drum_grid[0][0] = true;
+    g_drum_grid[0][4] = true;
+    g_drum_grid[1][2] = true;
+    g_drum_grid[1][6] = true;
+    g_drum_grid[2][0] = true;
+    g_drum_grid[2][2] = true;
+    g_drum_grid[2][4] = true;
+    g_drum_grid[2][6] = true;
+
+    g_drum_cursor_track = 0;
+    g_drum_cursor_step = 0;
+    g_drum_play_step = -1;
+    g_drum_playing = false;
+    g_drum_last_tick = 0;
+    snprintf(g_drum_status, sizeof(g_drum_status), "Rhythmic Bits Loaded. [P] Play/Pause, [SPACE] Toggle Step, [ESC] Exit.");
+}
+
+static void redraw_drum_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "============================================================\r\n"
+             "          RHYTHMIC BITS (Ahoy! Issue 23 Drum Sequencer)     \r\n"
+             "============================================================\r\n"
+             " INSTRUMENT |  0   1   2   3   4   5   6   7   | VISUALIZER\r\n"
+             "============================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    const char* track_names[4] = { "KICK  (K)  ", "SNARE (S)  ", "H-HAT (H)  ", "TOM   (T)  " };
+
+    for (int t = 0; t < 4; t++) {
+        char line[256];
+        int pos = 0;
+        pos += snprintf(line + pos, sizeof(line) - pos, " %s |", track_names[t]);
+
+        for (int s = 0; s < 8; s++) {
+            bool current_play_pos = (g_drum_playing && g_drum_play_step == s);
+            bool has_cursor = (g_drum_cursor_track == t && g_drum_cursor_step == s);
+
+            char left_bracket = ' ';
+            char right_bracket = ' ';
+
+            if (current_play_pos) {
+                left_bracket = '|';
+                right_bracket = '|';
+            } else if (has_cursor) {
+                left_bracket = '[';
+                right_bracket = ']';
+            }
+
+            char fill = g_drum_grid[t][s] ? 'X' : '.';
+            pos += snprintf(line + pos, sizeof(line) - pos, "%c%c%c ", left_bracket, fill, right_bracket);
+        }
+
+        // Render mini sound visualizer column
+        bool active_this_step = (g_drum_playing && g_drum_play_step >= 0 && g_drum_grid[t][g_drum_play_step]);
+        if (active_this_step) {
+            if (t == 0) pos += snprintf(line + pos, sizeof(line) - pos, "|  *BOOM*  ");
+            else if (t == 1) pos += snprintf(line + pos, sizeof(line) - pos, "|  *CRACK* ");
+            else if (t == 2) pos += snprintf(line + pos, sizeof(line) - pos, "|  *TICK*  ");
+            else if (t == 3) pos += snprintf(line + pos, sizeof(line) - pos, "|  *THUD*  ");
+        } else {
+            pos += snprintf(line + pos, sizeof(line) - pos, "|          ");
+        }
+
+        pos += snprintf(line + pos, sizeof(line) - pos, "\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "============================================================\r\n", 62);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_drum_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, " Controls: [W/A/S/D] Navigate, [SPACE] Toggle Step, [C] Clear\r\n", 63);
+    lau_vram_write_string(g_vram, "           [P] Play/Pause, [ESC] Exit\r\n", 39);
+}
+
+static void handle_drum_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_drum_playing = false;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'w' || ch == 'W') {
+        if (g_drum_cursor_track > 0) g_drum_cursor_track--;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_drum_cursor_track < 3) g_drum_cursor_track++;
+    } else if (ch == 'a' || ch == 'A') {
+        if (g_drum_cursor_step > 0) g_drum_cursor_step--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_drum_cursor_step < 7) g_drum_cursor_step++;
+    } else if (ch == ' ') {
+        g_drum_grid[g_drum_cursor_track][g_drum_cursor_step] = !g_drum_grid[g_drum_cursor_track][g_drum_cursor_step];
+    } else if (ch == 'c' || ch == 'C') {
+        memset(g_drum_grid, 0, sizeof(g_drum_grid));
+        snprintf(g_drum_status, sizeof(g_drum_status), "Cleared all sequence steps.");
+    } else if (ch == 'p' || ch == 'P') {
+        g_drum_playing = !g_drum_playing;
+        if (g_drum_playing) {
+            g_drum_play_step = 0;
+            struct timespec ts;
+            clock_gettime(CLOCK_MONOTONIC, &ts);
+            g_drum_last_tick = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+            snprintf(g_drum_status, sizeof(g_drum_status), "Sequencer playing... [P] to pause.");
+        } else {
+            g_drum_play_step = -1;
+            snprintf(g_drum_status, sizeof(g_drum_status), "Sequencer paused.");
+        }
+    }
+
+    redraw_drum_screen();
+}
+
+static void update_drum_seq(uint32_t current_time) {
+    if (!g_drum_playing) return;
+    if (current_time - g_drum_last_tick >= 180) { // 180 ms per step
+        g_drum_last_tick = current_time;
+        g_drum_play_step = (g_drum_play_step + 1) % 8;
+        redraw_drum_screen();
+    }
+}
+
 static void init_moxey(void) {
     g_moxey_room = 0;
     g_moxey_has_key = false;
@@ -3536,6 +3683,7 @@ static void handle_booter_input(char ch) {
             case 8: execute_command("DISINTEGRATOR"); break;
             case 9: execute_command("FIDGITS"); break;
             case 10: execute_command("MOXEY"); break;
+            case 11: execute_command("DRUM"); break;
         }
         return;
     }
@@ -6909,6 +7057,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && (strcasecmp(first_word, "DRUM") == 0 || strcasecmp(first_word, "RHYTHMIC") == 0)) {
+         g_editor_mode = MODE_DRUM;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_drum();
+         redraw_drum_screen();
+         log_telemetry("Started Rhythmic Bits drum sequencer");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -8218,6 +8376,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                                 case 8: execute_command("DISINTEGRATOR"); break;
                                 case 9: execute_command("FIDGITS"); break;
                                 case 10: execute_command("MOXEY"); break;
+                                case 11: execute_command("DRUM"); break;
                             }
                         } else {
                             g_booter_cursor = idx;
@@ -8648,6 +8807,17 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = 27;
         }
         handle_moxey_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_DRUM) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57) { // Space
+            ch = ' ';
+        }
+        handle_drum_input(ch);
         return;
     }
 
@@ -9592,6 +9762,11 @@ void render_terminal_display(void) {
     } else if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         update_construction_co_simulation();
         redraw_construction_co_screen();
+    } else if (g_editor_mode == MODE_DRUM) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_drum_seq(current_ms);
     }
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
@@ -10210,6 +10385,8 @@ int main() {
                             handle_fidgits_input(ch);
                         } else if (g_editor_mode == MODE_MOXEY) {
                             handle_moxey_input(ch);
+                        } else if (g_editor_mode == MODE_DRUM) {
+                            handle_drum_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -10287,7 +10464,7 @@ int main() {
             }
         }
 
-        bool need_redraw = g_vram->is_dirty || g_mercenary_active || g_pong_active;
+        bool need_redraw = g_vram->is_dirty || g_mercenary_active || g_pong_active || g_editor_mode == MODE_DRUM;
 
         if (g_vram->is_dirty) {
             sync_vram_to_cpu();
@@ -10436,6 +10613,8 @@ int main() {
                             handle_fidgits_input(ch);
                         } else if (g_editor_mode == MODE_MOXEY) {
                             handle_moxey_input(ch);
+                        } else if (g_editor_mode == MODE_DRUM) {
+                            handle_drum_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
