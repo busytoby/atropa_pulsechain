@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -195,6 +196,161 @@ void draw_string_ab4h(AB4HPixel *pixels, int w, int h, const char *str, int x, i
     }
 }
 
+static int g_frame_counter = 0;
+
+static inline float smin(float a, float b, float k) {
+    float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
+    return fminf(a, b) - h * h * k * 0.25f;
+}
+
+static float sdf_teddy(float x, float y, float z) {
+    float d_body = sqrtf(x*x*1.2f + y*y*0.8f + z*z*1.2f) - 0.35f;
+    float d_head = sqrtf(x*x + (y - 0.35f)*(y - 0.35f) + z*z) - 0.25f;
+    float ex = fabsf(x) - 0.2f, ey = y - 0.55f, ez = z;
+    float d_ear = sqrtf(ex*ex + ey*ey + ez*ez) - 0.08f;
+    float d_snout = sqrtf(x*x + (y - 0.3f)*(y - 0.3f) + (z - 0.2f)*(z - 0.2f)) - 0.1f;
+    
+    float ax = fabsf(x) - 0.35f, ay = y - 0.1f, az = z;
+    float d_arm = sqrtf(ax*ax*1.5f + ay*ay*1.5f + az*az) - 0.1f;
+    
+    float lx = fabsf(x) - 0.22f, ly = y + 0.35f, lz = z - 0.1f;
+    float d_leg = sqrtf(lx*lx + ly*ly + lz*lz) - 0.12f;
+    
+    float res = smin(d_body, d_head, 0.12f);
+    res = smin(res, d_ear, 0.04f);
+    res = smin(res, d_snout, 0.05f);
+    res = smin(res, d_arm, 0.05f);
+    res = smin(res, d_leg, 0.05f);
+    return res;
+}
+
+static float sdf_crow(float x, float y, float z) {
+    float d_body = sqrtf(x*x*1.5f + y*y + z*z) - 0.3f;
+    float d_head = sqrtf((x - 0.3f)*(x - 0.3f) + (y - 0.2f)*(y - 0.2f) + z*z) - 0.15f;
+    float bx = x - 0.45f, by = y - 0.2f, bz = z;
+    float d_beak = sqrtf(bx*bx*5.0f + by*by*5.0f + bz*bz*5.0f) - 0.1f;
+    float wx = fabsf(x), wy = y - 0.1f, wz = fabsf(z) - 0.25f;
+    float d_wing = sqrtf(wx*wx*2.0f + wy*wy*0.5f + wz*wz*3.0f) - 0.12f;
+    float res = smin(d_body, d_head, 0.08f);
+    res = smin(res, d_wing, 0.05f);
+    res = smin(res, d_beak, 0.03f);
+    return res;
+}
+
+static float eval_sdf(const char *query, float x, float y, float z) {
+    if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
+        return sdf_crow(x, y, z);
+    }
+    return sdf_teddy(x, y, z);
+}
+
+static uint32_t get_sdf_color(const char *query, float x, float y, float z, float intensity) {
+    uint8_t r = 0, g = 0, b = 0;
+    if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
+        float bx = x - 0.45f, by = y - 0.2f, bz = z;
+        float eyex = x - 0.32f, eyey = y - 0.23f, eyez = fabsf(z) - 0.12f;
+        if (sqrtf(eyex*eyex + eyey*eyey + eyez*eyez) < 0.03f) {
+            r = 248; g = 248; b = 242; // White eye
+        } else if (sqrtf(eyex*eyex + eyey*eyey + (eyez-0.01f)*(eyez-0.01f)) < 0.015f) {
+            r = 0; g = 0; b = 0; // Black pupil
+        } else if (sqrtf(bx*bx*5.0f + by*by*5.0f + bz*bz*5.0f) - 0.1f < 0.05f) {
+            r = 255; g = 184; b = 108; // Orange beak
+        } else {
+            r = 40; g = 42; b = 54; // Dark gray body
+        }
+    } else {
+        // Teddy Bear
+        float eyex = fabsf(x) - 0.08f;
+        float eyey = y - 0.4f;
+        float eyez = z - 0.22f;
+        float nosex = x, nosey = y - 0.32f, nosez = z - 0.29f;
+        if (sqrtf(eyex*eyex + eyey*eyey + eyez*eyez) < 0.04f) {
+            r = 10; g = 10; b = 10;
+        } else if (sqrtf(nosex*nosex + nosey*nosey + nosez*nosez) < 0.03f) {
+            r = 0; g = 0; b = 0;
+        } else {
+            r = 180; g = 120; b = 80; // Brown body
+        }
+    }
+    uint32_t cr = (uint32_t)(r * intensity);
+    uint32_t cg = (uint32_t)(g * intensity);
+    uint32_t cb = (uint32_t)(b * intensity);
+    if (cr > 255) cr = 255;
+    if (cg > 255) cg = 255;
+    if (cb > 255) cb = 255;
+    return 0xFF000000 | (cr << 16) | (cg << 8) | cb;
+}
+
+static void draw_3d_stuffed_animal(uint32_t *buffer, int w_width, int w_height, int cx, int cy, int size, const char *query, int frame) {
+    float cosY = cosf(frame * 0.08f), sinY = sinf(frame * 0.08f);
+    float cosX = cosf(frame * 0.05f), sinX = sinf(frame * 0.05f);
+    int r_bound = size;
+    int halo_bound = (int)(size * 1.3f);
+    for (int dy = -halo_bound; dy <= halo_bound; dy++) {
+        for (int dx = -halo_bound; dx <= halo_bound; dx++) {
+            int tx = cx + dx;
+            int ty = cy + dy;
+            if (tx < 0 || tx >= w_width || ty < 0 || ty >= w_height) continue;
+            
+            float dist_from_center = sqrtf(dx*dx + dy*dy) / (float)size;
+            if (dist_from_center < 1.3f) {
+                uint32_t orig = buffer[ty * w_width + tx];
+                uint8_t r = (orig >> 16) & 0xFF;
+                uint8_t g = (orig >> 8) & 0xFF;
+                uint8_t b = orig & 0xFF;
+                float dim = 0.15f + 0.85f * (dist_from_center / 1.3f);
+                r = (uint8_t)(r * dim);
+                g = (uint8_t)(g * dim);
+                b = (uint8_t)(b * dim);
+                buffer[ty * w_width + tx] = 0xFF000000 | (r << 16) | (g << 8) | b;
+            }
+            
+            if (abs(dx) <= r_bound && abs(dy) <= r_bound) {
+                float rx = (float)dx / (float)size;
+                float ry = -(float)dy / (float)size;
+                float ro_x = rx, ro_y = ry, ro_z = -1.5f;
+                float rd_x = 0.0f, rd_y = 0.0f, rd_z = 1.0f;
+                float t = 0.0f;
+                int hit = 0;
+                float hx = 0, hy = 0, hz = 0;
+                for (int step = 0; step < 32; step++) {
+                    float px = ro_x + rd_x * t;
+                    float py = ro_y + rd_y * t;
+                    float pz = ro_z + rd_z * t;
+                    float rot_x = px * cosY - pz * sinY;
+                    float rot_z = px * sinY + pz * cosY;
+                    float rot_y = py * cosX - rot_z * sinX;
+                    rot_z = py * sinX + rot_z * cosX;
+                    float d = eval_sdf(query, rot_x, rot_y, rot_z);
+                    if (d < 0.01f) {
+                        hit = 1;
+                        hx = rot_x; hy = rot_y; hz = rot_z;
+                        break;
+                    }
+                    t += d;
+                    if (t > 3.0f) break;
+                }
+                if (hit) {
+                    float eps = 0.01f;
+                    float nx = eval_sdf(query, hx + eps, hy, hz) - eval_sdf(query, hx - eps, hy, hz);
+                    float ny = eval_sdf(query, hx, hy + eps, hz) - eval_sdf(query, hx, hy - eps, hz);
+                    float nz = eval_sdf(query, hx, hy, hz + eps) - eval_sdf(query, hx, hy, hz - eps);
+                    float n_len = sqrtf(nx*nx + ny*ny + nz*nz);
+                    if (n_len > 0.0f) {
+                        nx /= n_len; ny /= n_len; nz /= n_len;
+                    }
+                    float lx = 0.577f, ly = 0.577f, lz = -0.577f;
+                    float dot = nx * lx + ny * ly + nz * lz;
+                    float intensity = dot * 0.6f + 0.4f;
+                    if (intensity < 0.0f) intensity = 0.0f;
+                    if (intensity > 1.0f) intensity = 1.0f;
+                    buffer[ty * w_width + tx] = get_sdf_color(query, hx, hy, hz, intensity);
+                }
+            }
+        }
+    }
+}
+
 void draw_radial_glow(AB4HPixel *pixels, int w, int h, float cx, float cy, float radius, AB4HPixel color) {
     int min_x = fmaxf(0.0f, cx - radius), max_x = fminf(w - 1, cx + radius);
     int min_y = fmaxf(0.0f, cy - radius), max_y = fminf(h - 1, cy + radius);
@@ -386,43 +542,7 @@ void deepseek_evolve_impl(void *ctx, float intensity) {
         }
     }
 }
-static const char *sprite_warrior[16] = {
-    "..HHHHHH........",
-    ".HHHHHHHH.......",
-    "HHHDHHDHHH..H...",
-    "HWWWWWWWWH..HH..",
-    ".WDWWWWDW...HH..",
-    "..WWWWWW..HHHHHH",
-    "..BBBBBB...HH...",
-    ".BBBBBBBB..HH...",
-    ".BBBBBBBB.......",
-    "..BBBBBB........",
-    "..BBBBBB........",
-    "..HHHHHH........",
-    "..H....H........",
-    ".DD....DD.......",
-    ".DD....DD.......",
-    "................"
-};
-
-static const char *sprite_ghost[16] = {
-    ".....GGGGGG.....",
-    "...GGGGGGGGGG...",
-    "..GGGGGGGGGGGG..",
-    ".GGGGGGGGGGGGGG.",
-    "GGwDGGGGGGwDGGGG",
-    "GDDGGGGGGDDGGGGG",
-    "GGGGGGGGGGGGGGGG",
-    "GGGGGGGGGGGGGGGG",
-    "GGGGGGGGGGGGGGGG",
-    "GGGGGGGGGGGGGGGG",
-    "GGGGGGGGGGGGGGGG",
-    "GGGGGGGGGGGGGGGG",
-    ".GGGGGGGGGGGGGG.",
-    ".G.G.GGGG.G.G...",
-    "G...G..G...G....",
-    "................"
-};
+// (Removed unused sprite_warrior/sprite_ghost layouts to comply with -Werror compilation rules)
 
 static const char *sprite_spawner[16] = {
     "OOOOOOOOOOOOOOOO",
@@ -544,14 +664,9 @@ int main() {
 
     // Curated Neon Palette
     AB4HPixel bg_cyber_black = make_ab4h_pixel(0.01f, 0.0f, 0.02f, 1.0f);
-    AB4HPixel warrior_blue = make_ab4h_pixel(0.0f, 0.8f, 1.2f, 1.0f);
-    AB4HPixel ghost_green = make_ab4h_pixel(0.05f, 0.9f, 0.3f, 1.0f);
-    AB4HPixel spawner_red = make_ab4h_pixel(1.2f, 0.1f, 0.2f, 1.0f);
-    (void)warrior_blue; (void)ghost_green; (void)spawner_red;
     AB4HPixel hud_pink = make_ab4h_pixel(1.0f, 0.05f, 0.6f, 1.0f);
     AB4HPixel gold_yellow = make_ab4h_pixel(1.2f, 1.1f, 0.0f, 1.0f);
-
-    int frame_counter = 0;
+    g_frame_counter = 0;
 
     while (s->running && !exit_requested) {
         wl_display_roundtrip(s->display);
@@ -564,8 +679,60 @@ int main() {
         int W = s->paint_buffer->width;
         int H = s->paint_buffer->height;
 
-        // Clear view
-        draw_rect_ab4h(pixels, W, H, 0, 0, W, H, bg_cyber_black);
+        // VAE presentation state & dynamic LTI step
+        #include "tsfi_vae_firmware.h"
+        static LauVaeFirmware_State g_gauntlet_vae;
+        static float *g_gauntlet_density = NULL;
+        static int g_gauntlet_density_w = 0;
+        static int g_gauntlet_density_h = 0;
+        static NandTrapState nt_g;
+        static bool nt_g_init = false;
+
+        if (!g_gauntlet_density || g_gauntlet_density_w != W || g_gauntlet_density_h != H) {
+            if (g_gauntlet_density) free(g_gauntlet_density);
+            g_gauntlet_density = (float*)malloc(W * H * sizeof(float));
+            g_gauntlet_density_w = W;
+            g_gauntlet_density_h = H;
+        }
+
+        if (!nt_g_init) {
+            memset(&nt_g, 0, sizeof(NandTrapState));
+            nt_g.magic = NAND_TRAP_MAGIC;
+            nt_g.version = NAND_TRAP_VERSION;
+            for (int i = 0; i < GRANS; i++) {
+                nt_g.fibers[i].x = sinf((float)i * 0.05f) * 0.5f;
+                nt_g.fibers[i].y = cosf((float)i * 0.05f) * 0.5f;
+                nt_g.fibers[i].weight = 1.0f;
+            }
+            nt_g_init = true;
+        }
+
+        // Apply LTI Causal Discovery step to morph background
+        NandTrapState next_nt_g;
+        tsfi_nand_trap_causal_discovery(&nt_g, &next_nt_g, 0.005f);
+        nt_g = next_nt_g;
+
+        tsfi_vae_firmware_boot(&g_gauntlet_vae, &nt_g);
+        tsfi_vae_decode_to_field(&g_gauntlet_vae, g_gauntlet_density, W, H);
+
+        // Render VAE Wilderness Background (Modulated by density cache) in AB4H pixels format
+        for (int y = 0; y < H; y++) {
+            for (int x = 0; x < W; x++) {
+                int idx = y * W + x;
+                float density = g_gauntlet_density[idx];
+                if (density < 8.0f) {
+                    float intensity = 1.0f - (density / 8.0f);
+                    if (intensity < 0.0f) intensity = 0.0f;
+                    // Moss forest greens & deep wild shadows
+                    float r = 0.05f + intensity * 0.10f;
+                    float g = 0.15f + intensity * 0.25f;
+                    float b = 0.08f + intensity * 0.12f;
+                    pixels[idx] = make_ab4h_pixel(r, g, b, 1.0f);
+                } else {
+                    pixels[idx] = bg_cyber_black;
+                }
+            }
+        }
 
         // Scale factors
         float scale_x = (float)W / 720.0f;
@@ -631,7 +798,7 @@ int main() {
                     if (dx < 0 && moveDir == 3) facing_target = true;
                 }
                 if (facing_target) {
-                    fire = (frame_counter % 6 == 0); // Limit rate of fire
+                    fire = (g_frame_counter % 6 == 0); // Limit rate of fire
                 }
             } else {
                 // No threat remains -> Victory screen!
@@ -697,14 +864,14 @@ int main() {
 
         // Draw Spawner (pulsing brick generator)
         if (sx > 0.0f && sy > 0.0f) {
-            float spawner_pulse = 2.4f + 0.2f * sinf(frame_counter * 0.1f);
-            draw_sprite_16x16(pixels, W, H, sx, sy, sprite_spawner, spawner_pulse * scale_x, spawner_pulse * scale_y);
+            float spawner_pulse = 2.4f + 0.2f * sinf(g_frame_counter * 0.1f);
+            draw_sprite_16x16(pixels, W, H, sx, sy, sprite_spawner, spawner_pulse * scale_x * 2.5f, spawner_pulse * scale_y * 2.5f);
             draw_radial_glow(pixels, W, H, sx, sy, 35.0f, make_ab4h_pixel(1.0f, 0.1f, 0.0f, 0.3f));
         }
 
-        // Draw Ghost (classic arcade ghost sprite)
+        // Draw Ghost as 3D Crow Puppet
         if (gx > 0.0f && gy > 0.0f) {
-            draw_sprite_16x16(pixels, W, H, gx, gy, sprite_ghost, 2.0f * scale_x, 2.0f * scale_y);
+            draw_3d_stuffed_animal((uint32_t*)pixels, W, H, (int)gx, (int)gy, 32, "crow", g_frame_counter);
         }
 
         // Draw Genealogy Lineage Line (William C. Brauch Family Tree connection)
@@ -733,15 +900,17 @@ int main() {
             draw_rect_ab4h(pixels, W, H, (int)proj_x - 5, (int)proj_y - 5, 10, 10, make_ab4h_pixel(2.0f, 1.8f, 0.2f, 1.0f));
             draw_radial_glow(pixels, W, H, proj_x, proj_y, 25.0f, make_ab4h_pixel(2.0f, 1.5f, 0.0f, 0.6f));
             static int last_active_frame = -1;
-            if (frame_counter != last_active_frame) {
+            if (g_frame_counter != last_active_frame) {
                 printf("[CLIENT] Render Projectile (Atari PMG Missile 0) at x=%.1f, y=%.1f\n", proj_x, proj_y);
-                last_active_frame = frame_counter;
+                last_active_frame = g_frame_counter;
             }
         }
 
-        // Draw Player (warrior holding axe)
-        draw_sprite_16x16(pixels, W, H, px, py, sprite_warrior, 2.2f * scale_x, 2.2f * scale_y);
-        draw_radial_glow(pixels, W, H, px, py, 20.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
+        // Draw Player as 3D Teddy Bear Puppet
+        if (px > 0.0f && py > 0.0f) {
+            draw_3d_stuffed_animal((uint32_t*)pixels, W, H, (int)px, (int)py, 36, "teddy", g_frame_counter);
+            draw_radial_glow(pixels, W, H, px, py, 22.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
+        }
 
         // Format and render HUD details
         static int victory_exit_timer = -1;
@@ -772,15 +941,15 @@ int main() {
                 .pixels = pixels,
                 .width = W,
                 .height = H,
-                .frame_counter = frame_counter
+                .frame_counter = g_frame_counter
             };
             tsfi_font_ai_bind_evolve(ai_fs, deepseek_evolve_impl, &dec);
-            float current_intensity = 0.5f + 0.5f * sinf(frame_counter * 0.08f);
+            float current_intensity = 0.5f + 0.5f * sinf(g_frame_counter * 0.08f);
             tsfi_font_ai_invoke_evolve(ai_fs, current_intensity);
         }
 
         draw_frame(s);
-        frame_counter++;
+        g_frame_counter++;
         tsfi_raw_usleep(16000); // Checked timer speed limit ~60fps
     }
 
