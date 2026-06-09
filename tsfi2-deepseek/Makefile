@@ -71,7 +71,7 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
 
 .PHONY: all clean
 
-all: tsfi2 bin/test_genesis_standalone tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_hex_rpg tests/test_wayland_lunar_lander tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features
+all: tsfi2 bin/test_genesis_standalone tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_hex_rpg tests/test_wayland_lunar_lander tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_epyx_opcodes
 
 # --- Primary Targets ---
 tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
@@ -99,6 +99,12 @@ tests/test_zmm_parallel_cpu: tests/test_zmm_parallel_cpu.c $(CORE_OBJS) $(OBJ_DI
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_yars_revenge_features: tests/test_yars_revenge_features.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_zmm_cpu6502: tests/test_zmm_cpu6502.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_epyx_opcodes: tests/test_epyx_opcodes.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_wayland_hardball: tests/test_wayland_hardball.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
