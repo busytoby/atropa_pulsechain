@@ -17,6 +17,7 @@ The Cannonball Blitz engine registers reside at `$D680`–`$D691` (54912–54929
 | `$D684`–`$D685` | `54916`–`54917` | Read / Write | **Cannonball 1 X/Y**: First obstacle coordinate. |
 | `$D686` | `54918` | Read / Write | **Cannonball 1 Active**: Boolean flag enabling/disabling the obstacle. |
 | `$D68D` | `54925` | Read-Only | **Game Score**: Current level score accumulator. |
+| `$D68E` | `54926` | Read / Write | **Jump Air-Time Counter**: Air-time frames remaining for current jump. |
 | `$D68F` | `54927` | Write-Only | **Physics Step Strobe**: Writing `1` executes a single frame step (updates movements and checks collisions). |
 | `$D690` | `54928` | Read-Only | **Collision Register**: Set to `1` if player collides with a cannonball. |
 | `$D691` | `54929` | Write-Only | **Player Action**: Writing `1` triggers a jump, `2` climbs ladder. |

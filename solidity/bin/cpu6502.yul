@@ -437,6 +437,75 @@ object "CPU6502Emulator" {
                     }
                 }
 
+                function checkOnScaffold(py) -> onScaffold {
+                    onScaffold := 0
+                    if eq(py, 8) { onScaffold := 1 }
+                    if eq(py, 16) { onScaffold := 1 }
+                    if eq(py, 24) { onScaffold := 1 }
+                }
+
+                function applyAirTime(py, jumpTimerSlot, actionSlot, onScaffold, pvy) -> new_py {
+                    let jumpTimer := sload(getUserSlot(jumpTimerSlot))
+                    let action := sload(getUserSlot(actionSlot))
+                    if and(eq(action, 1), onScaffold) {
+                        jumpTimer := 4
+                        sstore(getUserSlot(actionSlot), 0)
+                    }
+
+                    new_py := py
+                    if gt(jumpTimer, 0) {
+                        if gt(new_py, 1) { new_py := sub(new_py, 2) }
+                        if iszero(gt(new_py, 1)) { new_py := 0 }
+                        jumpTimer := sub(jumpTimer, 1)
+                        sstore(getUserSlot(jumpTimerSlot), jumpTimer)
+                    }
+                    if iszero(gt(jumpTimer, 0)) {
+                        new_py := add(new_py, pvy)
+                        let postMoveOnScaffold := checkOnScaffold(new_py)
+                        if iszero(postMoveOnScaffold) {
+                            new_py := add(new_py, 1) // Fall down
+                        }
+                    }
+                }
+
+                function checkStrikeCollision(strikeType, dist, targetStance) -> hit, dmg {
+                    hit := 0
+                    dmg := 0
+                    
+                    // If target is in running stance (0), they are fully vulnerable
+                    if iszero(targetStance) {
+                        if eq(strikeType, 1) { // Punch
+                            if or(lt(dist, 15), eq(dist, 15)) {
+                                hit := 1
+                                dmg := 100
+                            }
+                        }
+                        if eq(strikeType, 2) { // Kick
+                            if or(lt(dist, 25), eq(dist, 25)) {
+                                hit := 1
+                                dmg := 100
+                            }
+                        }
+                        leave
+                    }
+                    
+                    // Otherwise, stance affects dodging:
+                    // Low stance (2) ducks under Punches (1)
+                    // High stance (3) jumps over Kicks (2)
+                    if eq(strikeType, 1) { // Punch (High/Short strike)
+                        if and(or(lt(dist, 15), eq(dist, 15)), iszero(eq(targetStance, 2))) {
+                            hit := 1
+                            dmg := 10
+                        }
+                    }
+                    if eq(strikeType, 2) { // Kick (Low/Long strike)
+                        if and(or(lt(dist, 25), eq(dist, 25)), iszero(eq(targetStance, 3))) {
+                            hit := 1
+                            dmg := 15
+                        }
+                    }
+                }
+
                 switch addr
                 case 54560 { // Ring Buffer Push ($D520)
                     let head := sload(getUserSlot(54565))
@@ -515,6 +584,151 @@ object "CPU6502Emulator" {
                     }
                     sstore(getUserSlot(54794), status)
                 }
+                case 55018 { // Lode Runner Player X Tile Position ($D6EA)
+                    sstore(getUserSlot(55018), and(val, 0xFF))
+                }
+                case 55019 { // Lode Runner Player Y Tile Position ($D6EB)
+                    sstore(getUserSlot(55019), and(val, 0xFF))
+                }
+                case 55020 { // Lode Runner Action Trigger ($D6EC)
+                    sstore(getUserSlot(55020), val)
+                    if val {
+                        let px := sload(getUserSlot(55018))
+                        let py := sload(getUserSlot(55019))
+                        if eq(val, 1) { // Dig Left
+                            if and(gt(px, 0), lt(py, 24)) {
+                                let tx := sub(px, 1)
+                                let ty := add(py, 1)
+                                let t_addr := add(1024, add(mul(ty, 40), tx))
+                                let tile := sload(getUserSlot(t_addr))
+                                if eq(tile, 1) { // Brick Wall (diggable)
+                                    sstore(getUserSlot(t_addr), 6) // Replace with dug hole
+                                }
+                            }
+                        }
+                        if eq(val, 2) { // Dig Right
+                            if and(lt(px, 39), lt(py, 24)) {
+                                let tx := add(px, 1)
+                                let ty := add(py, 1)
+                                let t_addr := add(1024, add(mul(ty, 40), tx))
+                                let tile := sload(getUserSlot(t_addr))
+                                if eq(tile, 1) { // Brick Wall
+                                    sstore(getUserSlot(t_addr), 6) // Dug hole
+                                }
+                            }
+                        }
+                        if eq(val, 3) { // Collect Gold
+                            if and(lt(px, 40), lt(py, 25)) {
+                                let t_addr := add(1024, add(mul(py, 40), px))
+                                let tile := sload(getUserSlot(t_addr))
+                                if eq(tile, 5) { // Gold Bar
+                                    sstore(getUserSlot(t_addr), 0) // Clear tile
+                                    let score := sload(getUserSlot(55021)) // Score register $D6ED
+                                    sstore(getUserSlot(55021), add(score, 1))
+                                }
+                            }
+                        }
+                        sstore(getUserSlot(55020), 0) // Clear action trigger
+                    }
+                }
+                case 55040 { // Karateka Player Stance ($D700)
+                    sstore(getUserSlot(55040), val)
+                }
+                case 55041 { // Karateka Player Strike ($D701)
+                    sstore(getUserSlot(55041), val)
+                }
+                case 55042 { // Karateka Enemy Stance ($D702)
+                    sstore(getUserSlot(55042), val)
+                }
+                case 55043 { // Karateka Distance ($D703)
+                    sstore(getUserSlot(55043), val)
+                }
+                case 55044 { // Karateka Player Health ($D704)
+                    sstore(getUserSlot(55044), val)
+                }
+                case 55045 { // Karateka Enemy Health ($D705)
+                    sstore(getUserSlot(55045), val)
+                }
+                case 55046 { // Karateka Combat Tick Trigger ($D706)
+                    sstore(getUserSlot(55046), val)
+                    if val {
+                        let p_stance := sload(getUserSlot(55040))
+                        let p_strike := sload(getUserSlot(55041))
+                        let e_stance := sload(getUserSlot(55042))
+                        let dist := sload(getUserSlot(55043))
+                        let p_health := sload(getUserSlot(55044))
+                        let e_health := sload(getUserSlot(55045))
+                        
+                        if iszero(p_health) { p_health := 100 }
+                        if iszero(e_health) { e_health := 100 }
+                        
+                        if p_strike {
+                            let hit, dmg := checkStrikeCollision(p_strike, dist, e_stance)
+                            if hit {
+                                if gt(dmg, e_health) {
+                                    e_health := 0
+                                }
+                                if iszero(gt(dmg, e_health)) {
+                                    e_health := sub(e_health, dmg)
+                                }
+                                sstore(getUserSlot(55045), e_health)
+                            }
+                        }
+                        
+                        sstore(getUserSlot(55041), 0) // Clear strike to Idle
+                        sstore(getUserSlot(55046), 0) // Clear trigger
+                    }
+                }
+                case 55056 { // Choplifter Player Heli X Coordinate ($D710)
+                    sstore(getUserSlot(55056), val)
+                }
+                case 55057 { // Choplifter Player Heli Y Coordinate ($D711)
+                    sstore(getUserSlot(55057), val)
+                }
+                case 55058 { // Choplifter Helicopter State Flags ($D712)
+                    sstore(getUserSlot(55058), val)
+                }
+                case 55059 { // Choplifter Fuel Level ($D713)
+                    sstore(getUserSlot(55059), val)
+                }
+                case 55060 { // Choplifter Hostages On Board ($D714)
+                    sstore(getUserSlot(55060), val)
+                }
+                case 55061 { // Choplifter Hostages Rescued ($D715)
+                    sstore(getUserSlot(55061), val)
+                }
+                case 55062 { // Choplifter Physics Tick Trigger ($D716)
+                    sstore(getUserSlot(55062), val)
+                    if val {
+                        let px := sload(getUserSlot(55056))
+                        let py := sload(getUserSlot(55057))
+                        let flags := sload(getUserSlot(55058))
+                        let fuel := sload(getUserSlot(55059))
+                        
+                        if gt(fuel, 0) {
+                            fuel := sub(fuel, 1) // Apply fuel tax
+                            sstore(getUserSlot(55059), fuel)
+                            
+                            let dir := and(flags, 1) // 0 = Left, 1 = Right
+                            let speed := and(shr(1, flags), 3) // Speed: 0-3
+                            
+                            if eq(dir, 1) { // Move Right
+                                px := add(px, speed)
+                                if gt(px, 319) { px := 319 }
+                            }
+                            if iszero(dir) { // Move Left
+                                if gt(px, speed) {
+                                    px := sub(px, speed)
+                                }
+                                if iszero(gt(px, speed)) {
+                                    px := 0
+                                }
+                            }
+                            sstore(getUserSlot(55056), px)
+                        }
+                        sstore(getUserSlot(55062), 0) // Clear trigger
+                    }
+                }
                 case 54927 { // Cannonball Blitz Physics Trigger ($D68F)
                     sstore(getUserSlot(54927), val)
                     if val {
@@ -529,20 +743,13 @@ object "CPU6502Emulator" {
                         
                         // Apply movement
                         px := add(px, pvx)
-                        py := add(py, pvy)
+                        
+                        let onScaffold := checkOnScaffold(py)
+                        py := applyAirTime(py, 54926, 54929, onScaffold, pvy)
                         
                         // Keep within boundaries
                         if gt(px, 39) { px := 39 }
                         if gt(py, 24) { py := 24 }
-                        
-                        // Simple Gravity: if player is not on scaffold row (8, 16, 24), pull down
-                        let onScaffold := 0
-                        if eq(py, 8) { onScaffold := 1 }
-                        if eq(py, 16) { onScaffold := 1 }
-                        if eq(py, 24) { onScaffold := 1 }
-                        if iszero(onScaffold) {
-                            py := add(py, 1) // Fall down
-                        }
                         
                         // Save Player coordinates
                         sstore(getUserSlot(54912), px)
@@ -563,6 +770,25 @@ object "CPU6502Emulator" {
                             
                             // Check Collision
                             if and(eq(px, ox), eq(py, oy)) {
+                                collided := 1
+                                sstore(getUserSlot(54928), 1) // Set collision flag
+                                // Reset player position to start (0, 24)
+                                sstore(getUserSlot(54912), 0)
+                                sstore(getUserSlot(54913), 24)
+                            }
+                        }
+                        
+                        // Update Rolling Cannonball 2 (Right-to-Left, Speed 2)
+                        let ox2 := sload(getUserSlot(54919))
+                        let oy2 := sload(getUserSlot(54920))
+                        let active2 := sload(getUserSlot(54921))
+                        if active2 {
+                            if gt(ox2, 1) { ox2 := sub(ox2, 2) }
+                            if iszero(gt(ox2, 1)) { ox2 := 39 }
+                            sstore(getUserSlot(54919), ox2)
+                            
+                            // Check Collision
+                            if and(eq(px, ox2), eq(py, oy2)) {
                                 collided := 1
                                 sstore(getUserSlot(54928), 1) // Set collision flag
                                 // Reset player position to start (0, 24)
