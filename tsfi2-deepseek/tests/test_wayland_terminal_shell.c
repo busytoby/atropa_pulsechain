@@ -45,7 +45,9 @@ typedef enum {
     MODE_WHATSMYJOB,
     MODE_PTE,
     MODE_SPACEPATROL,
-    MODE_CONSTRUCTION_CO
+    MODE_CONSTRUCTION_CO,
+    MODE_STUDIO64,
+    MODE_MAGPIE
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -176,6 +178,30 @@ static void init_construction_co(void);
 static void redraw_construction_co_screen(void);
 static void handle_construction_co_input(char ch);
 static void update_construction_co_simulation(void);
+
+// Studio 64 Music Word Processor variables
+static int g_s64_cursor_step = 0; // 0 to 7
+static int g_s64_cursor_pitch = 4; // 0 to 7 (C4 to C5)
+static int g_s64_sequence[8] = {-1, -1, -1, -1, -1, -1, -1, -1}; // -1 = rest, 0-7 = note
+static char g_s64_status[256];
+static void init_studio64(void);
+static void redraw_studio64_screen(void);
+static void handle_studio64_input(char ch);
+
+// Magpie Database Manager variables
+typedef struct {
+    char name[32];
+    char dept[32];
+    double salary;
+} MagpieRecord;
+static MagpieRecord g_magpie_db[10];
+static int g_magpie_count = 0;
+static char g_magpie_status[128];
+static char g_magpie_query[32] = "";
+static int g_magpie_graph_mode = 0; // 0 = list table, 1 = horizontal bar chart
+static void init_magpie(void);
+static void redraw_magpie_screen(void);
+static void handle_magpie_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2694,6 +2720,266 @@ static void load_checklist(void) {
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
 }
 
+static void init_magpie(void) {
+    g_magpie_count = 0;
+    g_magpie_graph_mode = 0;
+    g_magpie_query[0] = '\0';
+    
+    // Seed initial records
+    strncpy(g_magpie_db[0].name, "Alice", 31);
+    strncpy(g_magpie_db[0].dept, "Engineering", 31);
+    g_magpie_db[0].salary = 8500.0;
+    
+    strncpy(g_magpie_db[1].name, "Bob", 31);
+    strncpy(g_magpie_db[1].dept, "Sales", 31);
+    g_magpie_db[1].salary = 6200.0;
+    
+    strncpy(g_magpie_db[2].name, "Charlie", 31);
+    strncpy(g_magpie_db[2].dept, "Marketing", 31);
+    g_magpie_db[2].salary = 5400.0;
+    
+    strncpy(g_magpie_db[3].name, "Dave", 31);
+    strncpy(g_magpie_db[3].dept, "Engineering", 31);
+    g_magpie_db[3].salary = 7900.0;
+    
+    g_magpie_count = 4;
+    snprintf(g_magpie_status, sizeof(g_magpie_status), "Magpie database initialized with %d records.", g_magpie_count);
+}
+
+static void redraw_magpie_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        AUDIOGENIC: MICRO MAGPIE CARTRIDGE DATABASE MANAGER         \r\n"
+             "====================================================================\r\n"
+             "  [RECORDS : %d / 10]              [FILTER QUERY : %s]\r\n"
+             "  [VIEW MODE : %s]           [SYS DEVICE : C64 DRIVE #8]\r\n"
+             "====================================================================\r\n",
+             g_magpie_count,
+             g_magpie_query[0] ? g_magpie_query : "ALL RECORDS",
+             g_magpie_graph_mode ? "GRAPH (BAR CHART)" : "TABLE RECORD LIST");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    if (g_magpie_graph_mode == 0) {
+        // Table list mode
+        lau_vram_write_string(g_vram, "   ID | EMPLOYEE NAME     | DEPARTMENT       | MONTHLY SALARY  \r\n", 65);
+        lau_vram_write_string(g_vram, "   ---|-------------------|------------------|-----------------\r\n", 65);
+        for (int i = 0; i < g_magpie_count; i++) {
+            // Apply query filter if set
+            if (g_magpie_query[0] != '\0') {
+                if (strcasecmp(g_magpie_db[i].dept, g_magpie_query) != 0 &&
+                    strcasecmp(g_magpie_db[i].name, g_magpie_query) != 0) {
+                    continue;
+                }
+            }
+            snprintf(buf, sizeof(buf), "   %2d | %-17.31s | %-16.31s | $%.2f\r\n",
+                     i + 1, g_magpie_db[i].name, g_magpie_db[i].dept, g_magpie_db[i].salary);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        }
+    } else {
+        // Horizontal bar chart salary mode
+        lau_vram_write_string(g_vram, "   EMPLOYEE NAME     | SALARY BAR CHART (1 block = $1000)\r\n", 58);
+        lau_vram_write_string(g_vram, "   ------------------|---------------------------------------------\r\n", 67);
+        for (int i = 0; i < g_magpie_count; i++) {
+            char bar[32] = "";
+            int blocks = (int)(g_magpie_db[i].salary / 1000.0);
+            if (blocks > 30) blocks = 30;
+            for (int b = 0; b < blocks; b++) {
+                bar[b] = '#';
+            }
+            bar[blocks] = '\0';
+            snprintf(buf, sizeof(buf), "   %-17.31s | %-30.31s ($%.2f)\r\n",
+                     g_magpie_db[i].name, bar, g_magpie_db[i].salary);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        }
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_magpie_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [A] Add Record [D] Delete Last [S] Search Dept [G] Graph [ESC] Exit\r\n", 81);
+}
+
+static void handle_magpie_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'a' || ch == 'A') {
+        if (g_magpie_count < 10) {
+            static const char *names[4] = { "Eve", "Frank", "Grace", "Heidi" };
+            static const char *depts[2] = { "Engineering", "Marketing" };
+            int idx = g_magpie_count;
+            snprintf(g_magpie_db[idx].name, 32, "%s", names[idx % 4]);
+            snprintf(g_magpie_db[idx].dept, 32, "%s", depts[idx % 2]);
+            g_magpie_db[idx].salary = 4000.0 + (idx * 500.0);
+            g_magpie_count++;
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Added employee %s to %s.", g_magpie_db[idx].name, g_magpie_db[idx].dept);
+        } else {
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Database full! Maximum 10 records allowed.");
+        }
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_magpie_count > 0) {
+            g_magpie_count--;
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Deleted last database record.");
+        } else {
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Database is already empty.");
+        }
+    } else if (ch == 's' || ch == 'S') {
+        // Toggle/Cycle query search filter: All -> Engineering -> Sales -> All
+        if (g_magpie_query[0] == '\0') {
+            strncpy(g_magpie_query, "Engineering", sizeof(g_magpie_query) - 1);
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Filter query: 'Engineering'.");
+        } else if (strcmp(g_magpie_query, "Engineering") == 0) {
+            strncpy(g_magpie_query, "Sales", sizeof(g_magpie_query) - 1);
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Filter query: 'Sales'.");
+        } else {
+            g_magpie_query[0] = '\0';
+            snprintf(g_magpie_status, sizeof(g_magpie_status), "Search filter cleared.");
+        }
+    } else if (ch == 'g' || ch == 'G') {
+        g_magpie_graph_mode = 1 - g_magpie_graph_mode;
+        snprintf(g_magpie_status, sizeof(g_magpie_status), "Switched view mode.");
+    }
+    redraw_magpie_screen();
+}
+
+static void init_studio64(void) {
+    g_s64_cursor_step = 0;
+    g_s64_cursor_pitch = 4;
+    for (int i = 0; i < 8; i++) {
+        g_s64_sequence[i] = -1;
+    }
+    strncpy(g_s64_status, "Ready to compose. Use keyboard to enter notes.", sizeof(g_s64_status) - 1);
+}
+
+static void redraw_studio64_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        ENTECH SOFTWARE: STUDIO 64 MUSIC WORD PROCESSOR              \r\n"
+             "====================================================================\r\n"
+             "  [STEP : %d / 8]                 [PITCH : %s]\r\n"
+             "  [COMPOSITION WORKSPACE: C64 SID MONOPHONIC ENVELOPE GENERATION]\r\n"
+             "====================================================================\r\n",
+             g_s64_cursor_step + 1,
+             g_s64_cursor_pitch == 0 ? "C4" :
+             g_s64_cursor_pitch == 1 ? "D4" :
+             g_s64_cursor_pitch == 2 ? "E4" :
+             g_s64_cursor_pitch == 3 ? "F4" :
+             g_s64_cursor_pitch == 4 ? "G4" :
+             g_s64_cursor_pitch == 5 ? "A4" :
+             g_s64_cursor_pitch == 6 ? "B4" : "C5");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    const char *pitches[8] = { "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5" };
+
+    // Render staff from top (C5) to bottom (C4)
+    for (int p = 7; p >= 0; p--) {
+        char line_buf[128];
+        int pos = 0;
+        pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "  %s |", pitches[p]);
+        for (int s = 0; s < 8; s++) {
+            int is_cursor = (g_s64_cursor_step == s && g_s64_cursor_pitch == p);
+            int is_note = (g_s64_sequence[s] == p);
+
+            if (is_cursor && is_note) {
+                line_buf[pos++] = '[';
+                line_buf[pos++] = 'X';
+                line_buf[pos++] = ']';
+            } else if (is_cursor) {
+                line_buf[pos++] = '[';
+                line_buf[pos++] = '_';
+                line_buf[pos++] = ']';
+            } else if (is_note) {
+                line_buf[pos++] = ' ';
+                line_buf[pos++] = 'O';
+                line_buf[pos++] = ' ';
+            } else {
+                line_buf[pos++] = ' ';
+                line_buf[pos++] = '-';
+                line_buf[pos++] = ' ';
+            }
+            line_buf[pos++] = '|';
+        }
+        line_buf[pos++] = '\r';
+        line_buf[pos++] = '\n';
+        line_buf[pos] = '\0';
+        lau_vram_write_string(g_vram, line_buf, strlen(line_buf));
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_s64_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [W/S] Change Pitch [A/D] Change Step [SPACE] Toggle note [P] Play [ESC] Exit\r\n", 90);
+}
+
+static void handle_studio64_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'a' || ch == 'A') {
+        if (g_s64_cursor_step > 0) g_s64_cursor_step--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_s64_cursor_step < 7) g_s64_cursor_step++;
+    } else if (ch == 'w' || ch == 'W') {
+        if (g_s64_cursor_pitch < 7) g_s64_cursor_pitch++;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_s64_cursor_pitch > 0) g_s64_cursor_pitch--;
+    } else if (ch == ' ') {
+        if (g_s64_sequence[g_s64_cursor_step] == g_s64_cursor_pitch) {
+            g_s64_sequence[g_s64_cursor_step] = -1; // Clear note
+            strncpy(g_s64_status, "Note cleared at step.", sizeof(g_s64_status) - 1);
+        } else {
+            g_s64_sequence[g_s64_cursor_step] = g_s64_cursor_pitch; // Set note
+            strncpy(g_s64_status, "Note placed on staff.", sizeof(g_s64_status) - 1);
+        }
+    } else if (ch == 'p' || ch == 'P') {
+        // Build playback status string listing register values
+        char play_buf[256] = "PLAYBACK SID: ";
+        int pos = strlen(play_buf);
+        int notes_played = 0;
+        for (int i = 0; i < 8; i++) {
+            if (g_s64_sequence[i] != -1) {
+                int freq = 261 + (g_s64_sequence[i] * 30); // Approximate C4 to C5 Hz
+                uint32_t val = (uint32_t)(freq * 16.40277);
+                uint8_t hi = (val >> 8) & 0xFF;
+                uint8_t lo = val & 0xFF;
+                pos += snprintf(play_buf + pos, sizeof(play_buf) - pos, "S%d(F:%d/H:%02X,L:%02X) ", i + 1, freq, hi, lo);
+                notes_played++;
+            }
+        }
+        if (notes_played == 0) {
+            snprintf(g_s64_status, sizeof(g_s64_status), "Nothing to play! Sequence is empty.");
+        } else {
+            snprintf(g_s64_status, sizeof(g_s64_status), "%s", play_buf);
+            // Fire short system sound effect beep
+            printf("\x07");
+            fflush(stdout);
+        }
+    }
+    redraw_studio64_screen();
+}
+
 static void init_construction_co(void) {
     g_cc_crane_x = 5.0;
     g_cc_crane_y = 1.0;
@@ -5152,6 +5438,26 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "STUDIO64") == 0) {
+         g_editor_mode = MODE_STUDIO64;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_studio64();
+         redraw_studio64_screen();
+         log_telemetry("Rendered Studio 64 Screen");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "MAGPIE") == 0) {
+         g_editor_mode = MODE_MAGPIE;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_magpie();
+         redraw_magpie_screen();
+         log_telemetry("Rendered Magpie Database Screen");
+         return;
+    }
+
     if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
          g_editor_mode = MODE_CHECKLIST;
          g_mercenary_active = false;
@@ -6449,6 +6755,44 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = '\x1b';
         }
         handle_job_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_STUDIO64) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 57 || key == KEY_SPACE) { // Spacebar
+            ch = ' ';
+        } else if (key == 25 || key == 112) { // P
+            ch = 'p';
+        }
+        handle_studio64_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_MAGPIE) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == 34 || key == 110) { // G
+            ch = 'g';
+        }
+        handle_magpie_input(ch);
         return;
     }
 
@@ -7962,6 +8306,10 @@ int main() {
                             handle_spacepatrol_input(ch);
                         } else if (g_editor_mode == MODE_CONSTRUCTION_CO) {
                             handle_construction_co_input(ch);
+                        } else if (g_editor_mode == MODE_STUDIO64) {
+                            handle_studio64_input(ch);
+                        } else if (g_editor_mode == MODE_MAGPIE) {
+                            handle_magpie_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -8164,6 +8512,10 @@ int main() {
                             handle_checklist_input(ch);
                         } else if (g_editor_mode == MODE_WHATSMYJOB) {
                             handle_job_input(ch);
+                        } else if (g_editor_mode == MODE_STUDIO64) {
+                            handle_studio64_input(ch);
+                        } else if (g_editor_mode == MODE_MAGPIE) {
+                            handle_magpie_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
