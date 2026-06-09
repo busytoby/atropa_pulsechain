@@ -1206,6 +1206,7 @@
 
         // Forth Interpreter State
         let forthStack = [];
+        let editorLines = {};
 
         function updateForthStackUI() {
             const stackEl = document.getElementById("forthStack");
@@ -1222,7 +1223,8 @@
             const tokens = line.trim().split(/\s+/);
             if (tokens.length === 1 && tokens[0] === "") return;
             
-            for (let token of tokens) {
+            for (let i = 0; i < tokens.length; i++) {
+                let token = tokens[i];
                 token = token.toLowerCase();
                 if (!isNaN(token)) {
                     forthStack.push(parseInt(token, 10));
@@ -1435,6 +1437,96 @@
                     case "lowercase":
                         forceUppercase = false;
                         logTrapEvent("📟 Terminal set to Mixed Case/Lowercase mode.", true);
+                        break;
+                    case "edit":
+                        if (forthStack.length >= 1) {
+                            const lineNum = forthStack.pop();
+                            const idx = line.toLowerCase().indexOf("edit");
+                            const textContent = line.slice(idx + 4).trim();
+                            editorLines[lineNum] = textContent;
+                            logTrapEvent(`📝 [EDITOR] Line ${lineNum} set to: "${textContent}"`, true);
+                            return; // Stop processing further tokens
+                        } else {
+                            logTrapEvent("[FORTH ERROR] edit requires [lineNum] on stack", true);
+                        }
+                        break;
+                    case "list":
+                        logTrapEvent("📝 [EDITOR] Program Listing:", true);
+                        let count = 0;
+                        for (let num in editorLines) {
+                            logTrapEvent(`  ${num}: ${editorLines[num]}`, true);
+                            count++;
+                        }
+                        if (count === 0) {
+                            logTrapEvent("  (empty editor buffer)", true);
+                        }
+                        break;
+                    case "new":
+                        editorLines = {};
+                        logTrapEvent("📝 [EDITOR] Cleared editor buffer.", true);
+                        break;
+                    case "assemble":
+                        if (forthStack.length >= 1) {
+                            const startAddr = forthStack.pop();
+                            let addr = startAddr;
+                            logTrapEvent(`🛠️ [ASSEMBLER] Assembling to address 0x${addr.toString(16).toUpperCase()}...`, true);
+                            for (let num in editorLines) {
+                                const instr = editorLines[num].trim().toLowerCase();
+                                if (!instr) continue;
+                                let byte1 = 0;
+                                let byte2 = 0;
+                                if (instr.startsWith("ld")) {
+                                    const parts = instr.substring(2).trim().split(/[\s,]+/);
+                                    const reg = parseInt(parts[0].replace("v", ""), 16);
+                                    const val = parseInt(parts[1], 10);
+                                    byte1 = 0x60 | (reg & 0x0F);
+                                    byte2 = val & 0xFF;
+                                } else if (instr.startsWith("add")) {
+                                    const parts = instr.substring(3).trim().split(/[\s,]+/);
+                                    const reg = parseInt(parts[0].replace("v", ""), 16);
+                                    const val = parseInt(parts[1], 10);
+                                    byte1 = 0x70 | (reg & 0x0F);
+                                    byte2 = val & 0xFF;
+                                } else if (instr.startsWith("jp")) {
+                                    const parts = instr.substring(2).trim().split(/[\s,]+/);
+                                    const target = parseInt(parts[0], 10);
+                                    byte1 = 0x10 | ((target >> 8) & 0x0F);
+                                    byte2 = target & 0xFF;
+                                } else {
+                                    if (instr.length === 4 && !isNaN(parseInt(instr, 16))) {
+                                        const code = parseInt(instr, 16);
+                                        byte1 = (code >> 8) & 0xFF;
+                                        byte2 = code & 0xFF;
+                                    } else {
+                                        logTrapEvent(`⚠️ [ASSEMBLER] Warning: skipped unknown instruction: "${editorLines[num]}"`, true);
+                                        continue;
+                                    }
+                                }
+                                cpu.memory[addr] = byte1;
+                                cpu.memory[addr + 1] = byte2;
+                                logTrapEvent(`  0x${addr.toString(16).toUpperCase()}: ${byte1.toString(16).padStart(2,'0').toUpperCase()}${byte2.toString(16).padStart(2,'0').toUpperCase()} <- "${editorLines[num]}"`, true);
+                                addr += 2;
+                            }
+                            logTrapEvent(`✓ [ASSEMBLER] Assembly completed. Write range: 0x${startAddr.toString(16).toUpperCase()} to 0x${(addr - 1).toString(16).toUpperCase()}`, true);
+                            updateMonitor();
+                        } else {
+                            logTrapEvent("[FORTH ERROR] assemble requires [startAddr] on stack", true);
+                        }
+                        break;
+                    case "visible":
+                    case "mtu":
+                        logTrapEvent("📟 [MTU VISIBLE MEMORY DUMP]", true);
+                        for (let y = 0; y < 32; y += 4) {
+                            let lineStr = "";
+                            for (let x = 0; x < 64; x++) {
+                                let active = false;
+                                for (let sy = 0; sy < 4; sy++) {
+                                    if (cpu.display[(y + sy) * 64 + x]) active = true;
+                                }
+                                lineStr += active ? "█" : "░";
+                            }
+                            logTrapEvent(lineStr, true);
+                        }
                         break;
                     case "purify":
                         if (forthStack.length >= 1) {
