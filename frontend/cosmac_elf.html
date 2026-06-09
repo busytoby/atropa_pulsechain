@@ -370,6 +370,25 @@
             renderDisplay();
         }
 
+        function startAlchemicalPurification(seconds) {
+            logTrapEvent(`🏋️ [CALISTHENICS] Starting ${seconds}-second Alchemical Calisthenics & Purification routine!`, true);
+            for (let i = 0; i < seconds; i++) {
+                setTimeout(() => {
+                    const bezel = document.querySelector(".retro-bezel");
+                    if (bezel) {
+                        bezel.style.borderColor = i % 2 === 0 ? "#ff007f" : "#d4af37";
+                        setTimeout(() => bezel.style.borderColor = "", 400);
+                    }
+                    playFourPartHarmony(220 + i * 50, 330 + i * 50, 440 + i * 50, 550 + i * 50);
+                    logTrapEvent(`🏋️ [CALISTHENICS] Rep ${i+1}/${seconds}: Core refined. Synthesizing chord frequency ${220 + i*50}Hz.`, true);
+                }, i * 1000);
+            }
+            setTimeout(() => {
+                playBeep();
+                logTrapEvent(`🏆 [CALISTHENICS] Routine complete! You have achieved alchemical refinement state.`, true);
+            }, seconds * 1000);
+        }
+
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
         async function fetchRoom10Dna() {
@@ -1252,6 +1271,14 @@
                             drawShapeFile(srcAddr, numCommands);
                         } else {
                             logTrapEvent("[FORTH ERROR] drawshape requires [srcAddr] [numCommands] on stack", true);
+                        }
+                        break;
+                    case "purify":
+                        if (forthStack.length >= 1) {
+                            const seconds = forthStack.pop();
+                            startAlchemicalPurification(seconds);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] purify requires [seconds] on stack", true);
                         }
                         break;
                     default:
