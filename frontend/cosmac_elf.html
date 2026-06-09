@@ -406,6 +406,45 @@
                     setTimeout(() => bezel.style.borderColor = "", 500);
                 }
 
+                // Run Self-Healing Debugger Auto-Audit
+                this.runSelfHealingAuditor(errorCode, faultPc);
+            }
+
+            runSelfHealingAuditor(errorCode, faultPc) {
+                logTrapEvent(`🤖 [AUTO-DEBUG] Analyzing fault 0x0${errorCode} at PC 0x${faultPc.toString(16).toUpperCase()}...`, true);
+                
+                if (errorCode === 0x03) { // Invalid Instruction
+                    const badOpcode = (this.memory[faultPc] << 8) | this.memory[faultPc + 1];
+                    logTrapEvent(`🤖 [AUTO-DEBUG] Patching invalid instruction 0x${badOpcode.toString(16).toUpperCase()} to safe NOP (0x00E0)...`, true);
+                    
+                    // Replace bad opcode with safe NOP (Clear screen 0x00E0)
+                    this.memory[faultPc] = 0x00;
+                    this.memory[faultPc + 1] = 0xE0;
+                    
+                    // Clear the error state
+                    this.memory[0x0002] = 0;
+                    
+                    // Resume execution exactly where the failure was patched
+                    this.pc = faultPc;
+                    logTrapEvent("🤖 [AUTO-DEBUG] Hot-patch applied. Resuming program execution.", true);
+                    return;
+                }
+                
+                if (errorCode === 0x02) { // Out-of-Bounds PC
+                    logTrapEvent(`🤖 [AUTO-DEBUG] Relocating PC from invalid range 0x${faultPc.toString(16).toUpperCase()} back to default ROM start (0x0200)...`, true);
+                    this.memory[0x0002] = 0;
+                    this.pc = 0x0200;
+                    return;
+                }
+                
+                if (errorCode === 0x01) { // Stack Overflow
+                    logTrapEvent("🤖 [AUTO-DEBUG] Resetting VM Call Stack pointer to prevent overflow crash...", true);
+                    this.sp = 0;
+                    this.memory[0x0002] = 0;
+                    this.pc = 0x0200;
+                    return;
+                }
+
                 logTrapEvent("→ Redirecting execution to warm restart vector 0x03D0...", true);
                 this.pc = 0x03D0;
             }
