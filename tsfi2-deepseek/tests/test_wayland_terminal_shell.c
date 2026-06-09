@@ -2024,6 +2024,35 @@ static int tokenize_line(const char *line_text, uint8_t *dest) {
 }
 
 static void inject_basic_program(const char *raw_basic) {
+    if (strstr(raw_basic, "Kwitowski's Sound Concept") != NULL) {
+        // Inject 6502 Sounder machine binary at $0D00 (3328 decimal)
+        uint8_t sounder_bin[] = {
+            0xA9, 0x00, 0x85, 0xFB, 0xA9, 0x10, 0x85, 0xFC, 
+            0xA0, 0x02, 0xB1, 0xFB, 0xF0, 0x32, 0x85, 0xFD, 
+            0x88, 0xB1, 0xFB, 0xAA, 0x88, 0xB1, 0xFB, 0x38, 
+            0xE9, 0x0A, 0xA8, 0x8A, 0x99, 0x0A, 0x90, 0xA9, 
+            0x0F, 0x8D, 0x0E, 0x90, 0x20, 0x46, 0x0D, 0xC6, 
+            0xFD, 0xD0, 0xF9, 0xA9, 0x00, 0x99, 0x0A, 0x90, 
+            0xA5, 0xFB, 0x18, 0x69, 0x03, 0x85, 0xFB, 0x90, 
+            0xCF, 0xE6, 0xFC, 0x4C, 0x08, 0x0D, 0xA9, 0x00, 
+            0x8D, 0x0E, 0x90, 0x60, 0xA2, 0xFF, 0xCA, 0xD0, 
+            0xFD, 0x60
+        };
+        for (size_t i = 0; i < sizeof(sounder_bin); i++) {
+            vm_poke64(&vm, 3328 + i, sounder_bin[i]);
+        }
+        // Inject 3-byte sound queue data table at $1000 (4096 decimal)
+        uint8_t sound_data[] = {
+            10, 225, 120,
+            11, 240, 60,
+            12, 195, 255,
+            0, 0, 0
+        };
+        for (size_t i = 0; i < sizeof(sound_data); i++) {
+            vm_poke64(&vm, 4096 + i, sound_data[i]);
+        }
+    }
+    
     uint64_t addr = 2049;
     char *copy = strdup(raw_basic);
     char *line = strtok(copy, "\n\r");
@@ -2280,6 +2309,25 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Joystick interactive scanner loop generated.]\r\n"
                 "==================================================\r\n";
+        } else if (arg && strcasecmp(arg, "CONCEPT") == 0) {
+            output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64/VIC-20 SOUND CONCEPT\r\n"
+                "==================================================\r\n"
+                " Generating A.J. Kwitowski's Sound Concept...\r\n\r\n"
+                " 10 DATA 10, 225, 120: REM V1, FREQ=225, DUR=120\r\n"
+                " 20 DATA 11, 240, 60 : REM V2, FREQ=240, DUR=60\r\n"
+                " 30 DATA 12, 195, 255: REM V3, FREQ=195, DUR=255\r\n"
+                " 40 READ V, F, D\r\n"
+                " 50 IF V < 0 THEN END\r\n"
+                " 60 POKE 36874 + (V - 10), F: REM SET FREQ\r\n"
+                " 70 POKE 36878, 15: REM SET MASTER VOLUME\r\n"
+                " 80 FOR T = 1 TO D * 10: NEXT T\r\n"
+                " 90 POKE 36874 + (V - 10), 0: REM STOP VOICE\r\n"
+                " 100 GOTO 40\r\n"
+                " READY.\r\n\r\n"
+                " [Kwitowski Sound Concept 3-byte queue generated.]\r\n"
+                "==================================================\r\n";
         } else {
             output = 
                 "==================================================\r\n"
@@ -2295,7 +2343,7 @@ static void execute_command(const char *cmd) {
                 " 70 NEXT I\r\n"
                 " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
                 " READY.\r\n\r\n"
-                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK] [COMPACT | STAGE]]\r\n"
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK | CONCEPT] [COMPACT | STAGE]]\r\n"
                 "==================================================\r\n";
         }
         
