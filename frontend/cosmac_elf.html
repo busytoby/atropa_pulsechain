@@ -281,7 +281,11 @@
 
     <script>
         let lastTrapLogTime = 0;
+        let forceUppercase = false;
         function logTrapEvent(msg, force = false) {
+            if (forceUppercase && typeof msg === "string") {
+                msg = msg.toUpperCase();
+            }
             const now = Date.now();
             if (force || (now - lastTrapLogTime > 250)) {
                 const trapBox = document.getElementById("trapLogs");
@@ -1423,6 +1427,14 @@
                         } else {
                             logTrapEvent("[FORTH ERROR] drawline requires [x1] [y1] [x2] [y2] on stack", true);
                         }
+                        break;
+                    case "uppercase":
+                        forceUppercase = true;
+                        logTrapEvent("📟 Terminal set to UPPERCASE ONLY mode.", true);
+                        break;
+                    case "lowercase":
+                        forceUppercase = false;
+                        logTrapEvent("📟 Terminal set to Mixed Case/Lowercase mode.", true);
                         break;
                     case "purify":
                         if (forthStack.length >= 1) {
