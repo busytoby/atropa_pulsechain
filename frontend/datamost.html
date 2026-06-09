@@ -767,6 +767,7 @@
                     <p class="description">Early 1980s retro telecomputing. Dial into the GameMaster House to navigate rooms and play on-chain multiplayer games.</p>
                     
                     <div style="background: #000; border: 2px solid #39ff14; border-radius: 4px; padding: 15px; font-family: 'Courier New', Courier, monospace; color: #39ff14; box-shadow: inset 0 0 10px rgba(57,255,20,0.3); min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <canvas id="vulkanPongCanvas" width="480" height="200" style="display: none; border: 1px solid #00f2fe; background: #060814; border-radius: 4px; width: 100%; height: 200px; box-shadow: 0 0 15px rgba(0, 242, 254, 0.3); margin-bottom: 10px;"></canvas>
                         <div id="gamemasterTerminalOutput" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.4; max-height: 250px; overflow-y: auto; word-break: break-all;">GAMEMASTER TERMINAL SYSTEM (300 BAUD)
 DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         <div style="display: flex; border-top: 1px solid #39ff14; padding-top: 10px; margin-top: 10px; align-items: center;">
@@ -3544,6 +3545,139 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             return lines.join("\n");
         }
 
+        let pongParticles = [];
+        let pongCollisionTriggered = false;
+        let pongCollisionTimer = 0;
+        let pongCollisionStage = "";
+        let pongAnimFrameId = null;
+        let displayBallX = 12;
+        let displayBallY = 5;
+        let displayLeftPaddleY = 4;
+        let displayRightPaddleY = 4;
+
+        function createPongExplosion(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                pongParticles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1.5,
+                    alpha: 1.0,
+                    decay: Math.random() * 0.04 + 0.02,
+                    color: color
+                });
+            }
+        }
+
+        function runPongAnimation() {
+            if (!pongActive) return;
+
+            const canvas = document.getElementById("vulkanPongCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+
+            // Interpolate position towards physics state for smooth motion
+            displayBallX += (ballX - displayBallX) * 0.25;
+            displayBallY += (ballY - displayBallY) * 0.25;
+            displayLeftPaddleY += (leftPaddleY - displayLeftPaddleY) * 0.25;
+            displayRightPaddleY += (rightPaddleY - displayRightPaddleY) * 0.25;
+
+            // Clear background with deep dark blue
+            ctx.fillStyle = "#060814";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Vulkan grid background
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.06)";
+            ctx.lineWidth = 1;
+            const gridSpacing = 20;
+            for (let x = 0; x < canvas.width; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw glowing Vulkan-like layout/lines
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.15)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+            // Calculate scaling factors
+            const scaleX = canvas.width / pongBoardWidth;
+            const scaleY = canvas.height / pongBoardHeight;
+
+            // Draw Left Paddle (Cyan)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00f2fe";
+            ctx.fillStyle = "#00f2fe";
+            const paddleW = 8;
+            const paddleH = scaleY * 3;
+            ctx.fillRect(10, (displayLeftPaddleY - 1) * scaleY, paddleW, paddleH);
+
+            // Draw Right Paddle (Magenta)
+            ctx.shadowColor = "#ff007f";
+            ctx.fillStyle = "#ff007f";
+            ctx.fillRect(canvas.width - 10 - paddleW, (displayRightPaddleY - 1) * scaleY, paddleW, paddleH);
+
+            // Draw Ball (Glowing Orange/Gold)
+            ctx.shadowColor = "#ffd700";
+            ctx.fillStyle = "#ffd700";
+            ctx.beginPath();
+            ctx.arc(displayBallX * scaleX, displayBallY * scaleY, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Update and draw particles
+            ctx.shadowBlur = 0;
+            for (let i = pongParticles.length - 1; i >= 0; i--) {
+                const p = pongParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) {
+                    pongParticles.splice(i, 1);
+                    continue;
+                }
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Draw score
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00f2fe";
+            ctx.fillStyle = "#f0f4f8";
+            ctx.font = "bold 16px 'Orbitron', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`User A: ${scoreLeft}  |  User B: ${scoreRight}`, canvas.width / 2, 25);
+
+            // Render active Vulkan Pipeline Stage on collision
+            if (pongCollisionTriggered && pongCollisionTimer > 0) {
+                pongCollisionTimer--;
+                ctx.shadowColor = "#ff007f";
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "italic bold 12px monospace";
+                ctx.fillText(`Pipeline Stage: ${pongCollisionStage}`, canvas.width / 2, canvas.height - 15);
+            } else {
+                ctx.shadowColor = "rgba(0, 242, 254, 0.4)";
+                ctx.fillStyle = "rgba(0, 242, 254, 0.4)";
+                ctx.font = "10px monospace";
+                ctx.fillText("VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT", canvas.width / 2, canvas.height - 15);
+            }
+            ctx.shadowBlur = 0;
+
+            pongAnimFrameId = requestAnimationFrame(runPongAnimation);
+        }
+
         function tickPong() {
             if (!pongActive) return;
 
@@ -3564,29 +3698,54 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             if (ballY <= 0) {
                 ballY = 0;
                 ballVy = -ballVy;
+                pongCollisionTriggered = true;
+                pongCollisionTimer = 45;
+                pongCollisionStage = "VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT";
+                createPongExplosion(ballX * (480 / pongBoardWidth), 5, "#ff007f");
             } else if (ballY >= pongBoardHeight - 1) {
                 ballY = pongBoardHeight - 1;
                 ballVy = -ballVy;
+                pongCollisionTriggered = true;
+                pongCollisionTimer = 45;
+                pongCollisionStage = "VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT";
+                createPongExplosion(ballX * (480 / pongBoardWidth), 195, "#ff007f");
             }
 
             if (ballX <= 0) {
                 if (Math.abs(ballY - leftPaddleY) <= 1) {
                     ballX = 1;
                     ballVx = -ballVx;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_VERTEX_INPUT_BIT";
+                    createPongExplosion(15, ballY * (200 / pongBoardHeight), "#00f2fe");
                 } else {
                     scoreRight++;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT";
+                    createPongExplosion(ballX * (480 / pongBoardWidth), ballY * (200 / pongBoardHeight), "#ffd700");
                     resetBall();
                 }
             } else if (ballX >= pongBoardWidth - 1) {
                 if (Math.abs(ballY - rightPaddleY) <= 1) {
                     ballX = pongBoardWidth - 2;
                     ballVx = -ballVx;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT";
+                    createPongExplosion(480 - 15, ballY * (200 / pongBoardHeight), "#ff007f");
                 } else {
                     scoreLeft++;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT";
+                    createPongExplosion(ballX * (480 / pongBoardWidth), ballY * (200 / pongBoardHeight), "#ffd700");
                     resetBall();
                 }
             }
 
+            // Fallback text output (hidden but kept up to date)
             const out = document.getElementById("gamemasterTerminalOutput");
             let text = out.innerText;
             let lines = text.split("\n");
@@ -3869,6 +4028,9 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         if (cmd === "EXIT" || cmd === "QUIT") {
                             pongActive = false;
                             if (pongTimer) clearInterval(pongTimer);
+                            if (pongAnimFrameId) cancelAnimationFrame(pongAnimFrameId);
+                            document.getElementById("vulkanPongCanvas").style.display = "none";
+                            document.getElementById("gamemasterTerminalOutput").style.display = "block";
                             writeToTerminal("PONG EXITED. RETURNED TO PARLOR.");
                             return;
                         }
@@ -3926,9 +4088,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         resetBall();
                         if (pongTimer) clearInterval(pongTimer);
                         pongTimer = setInterval(tickPong, 250);
+
+                        // Show canvas & hide text output
+                        document.getElementById("gamemasterTerminalOutput").style.display = "none";
+                        const canvas = document.getElementById("vulkanPongCanvas");
+                        canvas.style.display = "block";
+
+                        // Reset Display State
+                        displayBallX = ballX;
+                        displayBallY = ballY;
+                        displayLeftPaddleY = leftPaddleY;
+                        displayRightPaddleY = rightPaddleY;
+                        pongParticles = [];
+
+                        // Start animation loop
+                        if (pongAnimFrameId) cancelAnimationFrame(pongAnimFrameId);
+                        runPongAnimation();
+
                         writeToTerminal("\nPONG INITIALIZED -- AI VS AI ACTIVE (IDLE DEMO).");
                         writeToTerminal("OPTIONS:\n  'MODE PVAI'  - PLAYER VS AI (W/S to move)\n  'MODE PVP'   - PLAYER VS PLAYER (W/S vs I/K)\n  'MODE AIVAI' - AI VS AI SCREEN\n  'EXIT'       - EXIT TO PARLOR");
-                        writeToTerminal(renderPongBoard());
                         return;
                     }
 
