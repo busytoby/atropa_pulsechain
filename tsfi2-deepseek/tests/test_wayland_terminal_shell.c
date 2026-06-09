@@ -252,6 +252,18 @@ static void init_flankspeed(void);
 static void redraw_flankspeed_screen(void);
 static void handle_flankspeed_input(char ch);
 
+// Programmable Functions variables
+static char g_fkey_macros[8][32] = {
+    "LIST\n",
+    "RUN\n",
+    "LOAD\n",
+    "SAVE\n",
+    "DIR\n",
+    "NEW\n",
+    "OLD\n",
+    "HELP\n"
+};
+
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
     { 20.0,  30.0, 50.0,  0.0, 0.0 },
@@ -5880,6 +5892,48 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "NEW") == 0) {
+        FILE *src = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/basic_program.txt", "r");
+        if (src) {
+            FILE *bak = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/basic_program_bak.txt", "w");
+            if (bak) {
+                char ch;
+                while ((ch = fgetc(src)) != EOF) {
+                    fputc(ch, bak);
+                }
+                fclose(bak);
+            }
+            fclose(src);
+        }
+        FILE *empty = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/basic_program.txt", "w");
+        if (empty) {
+            fclose(empty);
+        }
+        lau_vram_write_string(g_vram, "\r\nREADY.\r\n", 10);
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "OLD") == 0) {
+        FILE *bak = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/basic_program_bak.txt", "r");
+        if (bak) {
+            FILE *dest = fopen("/home/mariarahel/src/tsfi2/atropa_pulsechain/basic_program.txt", "w");
+            if (dest) {
+                char ch;
+                while ((ch = fgetc(bak)) != EOF) {
+                    fputc(ch, dest);
+                }
+                fclose(dest);
+                lau_vram_write_string(g_vram, "\r\nBASIC program restored successfully.\r\nREADY.\r\n", 49);
+            } else {
+                lau_vram_write_string(g_vram, "\r\nError: Could not write file.\r\nREADY.\r\n", 40);
+            }
+            fclose(bak);
+        } else {
+            lau_vram_write_string(g_vram, "\r\nError: No deleted BASIC program backup found to restore.\r\nREADY.\r\n", 68);
+        }
+        return;
+    }
+
     if (first_word && strcasecmp(first_word, "RENUMBER") == 0) {
          char *p = cmd_buf + 8;
          while (*p == ' ' || *p == '\t') p++;
@@ -7750,6 +7804,31 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
                 }
             } else {
                 lau_vram_write_char(g_vram, (char)utf32);
+            }
+        }
+        return;
+    }
+
+    if (g_editor_mode == MODE_TERMINAL && key >= 59 && key <= 66) {
+        int idx = key - 59;
+        const char *macro = g_fkey_macros[idx];
+        for (int i = 0; macro[i] != '\0'; i++) {
+            char ch = macro[i];
+            if (ch == '\n' || ch == '\r') {
+                lau_vram_write_string(g_vram, "\r\n", 2);
+                if (cmd_len > 0) {
+                    cmd_buf[cmd_len] = '\0';
+                    execute_command(cmd_buf);
+                    cmd_len = 0;
+                    cmd_buf[0] = '\0';
+                }
+                lau_vram_write_string(g_vram, "zmm-vm> ", 8);
+            } else {
+                if (cmd_len < (int)sizeof(cmd_buf) - 2) {
+                    cmd_buf[cmd_len++] = ch;
+                    cmd_buf[cmd_len] = '\0';
+                    lau_vram_write_char(g_vram, ch);
+                }
             }
         }
         return;
