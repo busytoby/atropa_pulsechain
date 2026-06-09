@@ -16,7 +16,9 @@ const CONTRACTS_TO_DEPLOY = [
     { name: "speechSynthesizer", path: "../solidity/bin/speechSynthesizer.yul", configKey: "speechSynthesizerAddress" },
     { name: "zmachine", path: "../solidity/bin/zmachine.yul", configKey: "zmachineAddress" },
     { name: "keySystem", path: "../solidity/bin/keySystem.yul", configKey: "keySystemAddress" },
-    { name: "bGraph_v1", path: "../solidity/bin/bGraph.yul", configKey: "bGraphAddress" }
+    { name: "bGraph_v1", path: "../solidity/bin/bGraph.yul", configKey: "bGraphAddress" },
+    { name: "folklore", path: "../solidity/bin/folklore.yul", configKey: "folkloreAddress" },
+    { name: "diyat", path: "../solidity/bin/diyat.yul", configKey: "diyatAddress" }
 ];
 
 // Compile Yul contract using solc
@@ -91,6 +93,11 @@ async function main() {
 
     for (const contract of CONTRACTS_TO_DEPLOY) {
         console.log(`\nProcessing: ${contract.name}...`);
+        const absoluteYulPath = path.resolve(__dirname, contract.path);
+        if (!fs.existsSync(absoluteYulPath)) {
+            console.log(`  File ${contract.path} does not exist. Skipping deployment and preserving existing config.`);
+            continue;
+        }
         const bytecode = compileYul(contract.path);
         const bytecodeHash = ethers.keccak256(bytecode);
 
@@ -141,6 +148,37 @@ async function main() {
 
         // Save address in config
         config.networks.localhost[contract.configKey] = predictedAddress;
+    }
+
+    // Deploy Batcher
+    console.log("\nCompiling and deploying Batcher...");
+    const batcherArtifactPath = path.join(__dirname, "../solidity/Batcher.json");
+    if (fs.existsSync(batcherArtifactPath)) {
+        const batcherArtifact = JSON.parse(fs.readFileSync(batcherArtifactPath, "utf8"));
+        const batcherBytecode = "0x" + batcherArtifact.contracts["solidity/Batcher.sol:Batcher"].bin;
+        
+        let batcherAddress = config.networks.localhost.batcherAddress;
+        let batcherExists = false;
+        if (batcherAddress) {
+            try {
+                const code = await provider.getCode(batcherAddress);
+                if (code !== "0x") {
+                    batcherExists = true;
+                    console.log(`Batcher already deployed at: ${batcherAddress}`);
+                }
+            } catch (e) {}
+        }
+        if (!batcherExists) {
+            const batcherTx = await deployer.sendTransaction({
+                data: batcherBytecode
+            });
+            const receipt = await batcherTx.wait();
+            batcherAddress = receipt.contractAddress;
+            console.log(`Batcher deployed at: ${batcherAddress}`);
+        }
+        config.networks.localhost.batcherAddress = batcherAddress;
+    } else {
+        console.warn("solidity/Batcher.json not found! Skipping batcher deployment.");
     }
 
     // Write updated config back to file
