@@ -8020,6 +8020,57 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
             int cx, cy;
             get_cell_coords(wl_fixed_from_int(mouse_px), wl_fixed_from_int(mouse_py), &cx, &cy);
             if (cx >= 0 && cy >= 0) {
+                if (g_editor_mode == MODE_BOOTER) {
+                    if (cy >= 5 && cy < 5 + g_booter_count) {
+                        int idx = cy - 5;
+                        if (g_booter_cursor == idx) {
+                            g_editor_mode = MODE_TERMINAL;
+                            const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+                            lau_vram_write_string(g_vram, clear_seq, 3);
+                            switch (idx) {
+                                case 0: execute_command("ALICE"); break;
+                                case 1: execute_command("TOP"); break;
+                                case 2: execute_command("FONTASIA"); break;
+                                case 3: execute_command("FLANKSPEED"); break;
+                                case 4: execute_command("CHECKLIST"); break;
+                                case 5: execute_command("YULBUILD"); break;
+                                case 6: execute_command("HOPAROUND"); break;
+                                case 7: execute_command("TOWERS"); break;
+                                case 8: execute_command("DISINTEGRATOR"); break;
+                                case 9: execute_command("FIDGITS"); break;
+                            }
+                        } else {
+                            g_booter_cursor = idx;
+                            redraw_booter_screen();
+                        }
+                        return;
+                    }
+                } else if (g_editor_mode == MODE_TOWERS) {
+                    if (cx >= 8 && cx <= 20) {
+                        handle_towers_input('a');
+                    } else if (cx >= 22 && cx <= 34) {
+                        handle_towers_input('b');
+                    } else if (cx >= 36 && cx <= 48) {
+                        handle_towers_input('c');
+                    }
+                    return;
+                } else if (g_editor_mode == MODE_FIDGITS) {
+                    if (cy >= 4 && cy <= 6) {
+                        if (cx >= 9 && cx <= 12) {
+                            g_fidgits_cursor = 0; handle_fidgits_input(' ');
+                        } else if (cx >= 15 && cx <= 18) {
+                            g_fidgits_cursor = 1; handle_fidgits_input(' ');
+                        } else if (cx >= 21 && cx <= 24) {
+                            g_fidgits_cursor = 2; handle_fidgits_input(' ');
+                        } else if (cx >= 27 && cx <= 30) {
+                            g_fidgits_cursor = 3; handle_fidgits_input(' ');
+                        } else if (cx >= 33 && cx <= 36) {
+                            g_fidgits_cursor = 4; handle_fidgits_input(' ');
+                        }
+                    }
+                    return;
+                }
+
                 if (click_count == 1) {
                     drag_selecting = true;
                     select_start_x = cx;
