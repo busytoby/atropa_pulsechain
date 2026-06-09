@@ -467,6 +467,8 @@
             renderDisplay();
         }
 
+        let alchemicalScore = 0;
+
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
         async function fetchRoom10Dna() {
@@ -1446,6 +1448,59 @@
                             }
                         } else {
                             logTrapEvent("[FORTH ERROR] zmcmd requires [command_id] on stack", true);
+                        }
+                        break;
+                    case "w@":
+                        if (forthStack.length >= 1) {
+                            const addr = forthStack.pop();
+                            if (addr >= 0 && addr < cpu.memory.length - 1) {
+                                const val = (cpu.memory[addr] << 8) | cpu.memory[addr + 1];
+                                forthStack.push(val);
+                                logTrapEvent(`💾 [PSEUDO-16] w@ at 0x${addr.toString(16).toUpperCase()}: Read 16-bit word ${val} (0x${val.toString(16).toUpperCase()})`, true);
+                            } else {
+                                forthStack.push(0);
+                                logTrapEvent("[PSEUDO-16 ERROR] Address out of bounds", true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] w@ requires [addr] on stack", true);
+                        }
+                        break;
+                    case "w!":
+                        if (forthStack.length >= 2) {
+                            const addr = forthStack.pop();
+                            const val = forthStack.pop();
+                            if (addr >= 0 && addr < cpu.memory.length - 1) {
+                                cpu.memory[addr] = (val >> 8) & 0xFF;
+                                cpu.memory[addr + 1] = val & 0xFF;
+                                logTrapEvent(`💾 [PSEUDO-16] w! at 0x${addr.toString(16).toUpperCase()}: Stored 16-bit word ${val} (0x${val.toString(16).toUpperCase()})`, true);
+                            } else {
+                                logTrapEvent("[PSEUDO-16 ERROR] Address out of bounds", true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] w! requires [val] [addr] on stack", true);
+                        }
+                        break;
+                    case "score":
+                        logTrapEvent(`🏆 [SCOREKEEPER] Current Score: ${alchemicalScore} Points`, true);
+                        break;
+                    case "score+":
+                        if (forthStack.length >= 1) {
+                            const pts = forthStack.pop();
+                            alchemicalScore += pts;
+                            logTrapEvent(`🏆 [SCOREKEEPER] Added ${pts} Points. New Score: ${alchemicalScore}`, true);
+                            playFourPartHarmony(440, 554, 659, 880);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] score+ requires [points] on stack", true);
+                        }
+                        break;
+                    case "score-":
+                        if (forthStack.length >= 1) {
+                            const pts = forthStack.pop();
+                            alchemicalScore = Math.max(0, alchemicalScore - pts);
+                            logTrapEvent(`🏆 [SCOREKEEPER] Subtracted ${pts} Points. New Score: ${alchemicalScore}`, true);
+                            playFourPartHarmony(220, 261, 329, 392);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] score- requires [points] on stack", true);
                         }
                         break;
                     default:
