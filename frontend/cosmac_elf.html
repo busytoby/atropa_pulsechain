@@ -211,6 +211,7 @@
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0200)">0x0200-3CF</div><div style="color: #ebdcb9;">Manuscript ROM Space</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x03D0)">0x03D0-3FF</div><div style="color: #ebdcb9;">Warm Restart Recovery Vector</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0980)">0x0980-9DF</div><div style="color: #ebdcb9;">Sigil of the Butterfly RLE</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0A00)">0x0A00-0AF</div><div style="color: #ebdcb9;">Vector Triangle Shape File</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0EA0)">0x0EA0-FFF</div><div style="color: #ebdcb9;">Pixie Display Buffer</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x8000)">0x8000-80FF</div><div style="color: #ebdcb9;">Z-Machine DNA Buffer</div>
                     </div>
@@ -304,6 +305,71 @@
             logTrapEvent(`🔍 Memory Map Inspect: Address 0x${addr.toString(16).toUpperCase()} contains value ${hexVal}`, true);
         };
 
+        function drawLine(x0, y0, x1, y1) {
+            x0 = Math.round(x0);
+            y0 = Math.round(y0);
+            x1 = Math.round(x1);
+            y1 = Math.round(y1);
+            const dx = Math.abs(x1 - x0);
+            const dy = Math.abs(y1 - y0);
+            const sx = (x0 < x1) ? 1 : -1;
+            const sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+            while (true) {
+                if (x0 >= 0 && x0 < 64 && y0 >= 0 && y0 < 32) {
+                    cpu.display[y0 * 64 + x0] = 1;
+                }
+                if (x0 === x1 && y0 === y1) break;
+                const e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x0 += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        }
+
+        function drawShapeFile(srcAddr, numCommands) {
+            let src = srcAddr;
+            let cursorX = 32;
+            let cursorY = 16;
+            logTrapEvent(`✏️ [SHAPEFILE] Start vector render from 0x${srcAddr.toString(16).toUpperCase()} (${numCommands} instructions)...`, true);
+            for (let i = 0; i < numCommands; i++) {
+                const cmd = cpu.memory[src++];
+                if (cmd === 0) { // Move relative
+                    const dxRaw = cpu.memory[src++];
+                    const dyRaw = cpu.memory[src++];
+                    const dx = dxRaw >= 128 ? dxRaw - 256 : dxRaw;
+                    const dy = dyRaw >= 128 ? dyRaw - 256 : dyRaw;
+                    cursorX = Math.max(0, Math.min(63, cursorX + dx));
+                    cursorY = Math.max(0, Math.min(31, cursorY + dy));
+                } else if (cmd === 1) { // Draw relative
+                    const dxRaw = cpu.memory[src++];
+                    const dyRaw = cpu.memory[src++];
+                    const dx = dxRaw >= 128 ? dxRaw - 256 : dxRaw;
+                    const dy = dyRaw >= 128 ? dyRaw - 256 : dyRaw;
+                    const nextX = Math.max(0, Math.min(63, cursorX + dx));
+                    const nextY = Math.max(0, Math.min(31, cursorY + dy));
+                    drawLine(cursorX, cursorY, nextX, nextY);
+                    cursorX = nextX;
+                    cursorY = nextY;
+                } else if (cmd === 2) { // Plot
+                    if (cursorX >= 0 && cursorX < 64 && cursorY >= 0 && cursorY < 32) {
+                        cpu.display[cursorY * 64 + cursorX] = 1;
+                    }
+                } else if (cmd === 3) { // Set absolute
+                    const absX = cpu.memory[src++];
+                    const absY = cpu.memory[src++];
+                    cursorX = Math.max(0, Math.min(63, absX));
+                    cursorY = Math.max(0, Math.min(31, absY));
+                }
+            }
+            renderDisplay();
+        }
+
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
         async function fetchRoom10Dna() {
@@ -391,6 +457,17 @@
                 ];
                 for (let i = 0; i < sigil.length; i++) {
                     this.memory[0x0900 + i] = sigil[i];
+                }
+
+                // Pre-populate Vector Shape File at 0x0A00 (Triangle)
+                const vectorShape = [
+                    3, 32, 4,
+                    1, 16, 22,
+                    1, 224, 0,
+                    1, 16, 234
+                ];
+                for (let i = 0; i < vectorShape.length; i++) {
+                    this.memory[0x0A00 + i] = vectorShape[i];
                 }
             }
 
@@ -1166,6 +1243,15 @@
                             renderDisplay();
                         } else {
                             logTrapEvent("[FORTH ERROR] decompress requires [srcAddr] [length] on stack", true);
+                        }
+                        break;
+                    case "drawshape":
+                        if (forthStack.length >= 2) {
+                            const numCommands = forthStack.pop();
+                            const srcAddr = forthStack.pop();
+                            drawShapeFile(srcAddr, numCommands);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] drawshape requires [srcAddr] [numCommands] on stack", true);
                         }
                         break;
                     default:
