@@ -192,6 +192,13 @@
                         <div>VD: 0x00</div>
                         <div>VE: 0x00</div>
                         <div>VF: 0x00</div>
+                </div>
+
+                <!-- Sequence Matcher Card -->
+                <div class="dna-card" style="border-radius: 8px; margin-top: 5px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 8px; color: #d4af37; font-size: 1.15rem;">🔍 AI System Trap & Sequence Matcher</h3>
+                    <div id="trapLogs" style="height: 120px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; background: #0c0b0a; border: 1px solid rgba(212, 175, 55, 0.15); padding: 8px; color: #ffaa00; line-height: 1.4; border-radius: 4px; text-align: left;">
+                        [SYSTEM] Interceptor initialized. Listening for instruction matching...
                     </div>
                 </div>
             </div>
@@ -238,6 +245,20 @@
     </div>
 
     <script>
+        let lastTrapLogTime = 0;
+        function logTrapEvent(msg, force = false) {
+            const now = Date.now();
+            if (force || (now - lastTrapLogTime > 250)) {
+                const trapBox = document.getElementById("trapLogs");
+                if (trapBox) {
+                    const time = new Date().toLocaleTimeString();
+                    trapBox.innerHTML += `<br>[${time}] ${msg}`;
+                    trapBox.scrollTop = trapBox.scrollHeight;
+                }
+                lastTrapLogTime = now;
+            }
+        }
+
         // CHIP-8 Emulation Core
         class Chip8 {
             constructor() {
@@ -297,6 +318,26 @@
 
             tick() {
                 const opcode = (this.memory[this.pc] << 8) | this.memory[this.pc + 1];
+                
+                if (opcode === 0x00E0) {
+                    logTrapEvent("MATCH: CLS (Clear Screen) sequence.");
+                } else if ((opcode & 0xF000) === 0x1000) {
+                    logTrapEvent(`MATCH: JP 0x${(opcode & 0x0FFF).toString(16).toUpperCase()} (Unconditional Jump).`);
+                } else if ((opcode & 0xF000) === 0xD000) {
+                    logTrapEvent(`MATCH: DRW (Draw Sprite) at V${((opcode & 0x0F00) >> 8).toString(16).toUpperCase()}, V${((opcode & 0x00F0) >> 4).toString(16).toUpperCase()}.`);
+                } else if (opcode === 0x00FD) {
+                    logTrapEvent("⚠️ [AI TRAP 0x00FD] Matched! Intercepting execution. Reading live Z-Machine registry data...", true);
+                    
+                    const dnaSeed = [0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28];
+                    for (let reg = 0; reg < 8; reg++) {
+                        this.v[reg] = dnaSeed[reg];
+                    }
+                    logTrapEvent("→ Registers V0-V7 loaded with alchemical sequence. Resuming CPU.", true);
+                    playBeep();
+                    this.pc += 2;
+                    return;
+                }
+
                 this.pc += 2;
                 
                 const x = (opcode & 0x0F00) >> 8;
@@ -503,10 +544,10 @@
         ]);
 
         const breederRom = new Uint8Array([
-            0x00, 0xE0, 0x60, 0x00, 0x61, 0x10, 0x62, 0x00, 0xA2, 0x14, 0x00, 0xE0, 0x60, 0x00, 0x83, 0x00,
-            0x64, 0x0A, 0x83, 0x42, 0x83, 0x22, 0x65, 0x07, 0x85, 0x32, 0x66, 0x0F, 0x85, 0x22, 0x85, 0x14,
-            0xD0, 0x51, 0x67, 0x20, 0x87, 0x55, 0x77, 0x10, 0xD0, 0x71, 0x70, 0x02, 0x30, 0x40, 0x12, 0x0E,
-            0x72, 0x01, 0x12, 0x0A, 0x80, 0x80, 0x80, 0x80
+            0x00, 0xFD, 0x00, 0xE0, 0x60, 0x00, 0x61, 0x10, 0x62, 0x00, 0xA2, 0x16, 0x00, 0xE0, 0x60, 0x00,
+            0x83, 0x00, 0x64, 0x0A, 0x83, 0x42, 0x83, 0x22, 0x65, 0x07, 0x85, 0x32, 0x66, 0x0F, 0x85, 0x22,
+            0x85, 0x14, 0xD0, 0x51, 0x67, 0x20, 0x87, 0x55, 0x77, 0x10, 0xD0, 0x71, 0x70, 0x02, 0x30, 0x40,
+            0x12, 0x10, 0x72, 0x01, 0x12, 0x0C, 0x80, 0x80, 0x80, 0x80
         ]);
 
         const roms = {
