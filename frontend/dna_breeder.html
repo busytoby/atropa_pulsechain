@@ -400,6 +400,11 @@
 
         document.getElementById("btnConnect").addEventListener("click", initWeb3);
 
+        // Parent DNA cache
+        let parentADna = new Uint8Array(32);
+        let parentBDna = new Uint8Array(32);
+        let sparks = [];
+
         // HUD Updater
         function updateHUD(dna) {
             // Byte 0-2 for HSL primary color
@@ -430,35 +435,100 @@
 
         function initParticles() {
             particles = [];
-            const particleCount = 60 + Math.floor((currentDna[16] / 255) * 100);
-            for(let i=0; i<particleCount; i++) {
+            sparks = [];
+
+            // Team A (Cyan) from Parent A
+            const countA = 40 + Math.floor((parentADna[16] / 255) * 40);
+            for(let i=0; i<countA; i++) {
                 particles.push({
-                    x: Math.random() * canvas.width,
+                    x: Math.random() * (canvas.width * 0.4), // Left side
                     y: Math.random() * canvas.height,
-                    vx: 0,
-                    vy: 0,
-                    size: 1.5 + Math.random() * 2.5,
-                    life: Math.random()
+                    vx: 2 + Math.random() * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: 2 + (parentADna[20] / 255) * 5,
+                    speed: 0.5 + (parentADna[8] / 255) * 2,
+                    team: 'A',
+                    hue: 180, // Cyan
+                    strength: parentADna[24]
+                });
+            }
+
+            // Team B (Magenta) from Parent B
+            const countB = 40 + Math.floor((parentBDna[16] / 255) * 40);
+            for(let i=0; i<countB; i++) {
+                particles.push({
+                    x: canvas.width - Math.random() * (canvas.width * 0.4), // Right side
+                    y: Math.random() * canvas.height,
+                    vx: -(2 + Math.random() * 2),
+                    vy: (Math.random() - 0.5) * 2,
+                    size: 2 + (parentBDna[20] / 255) * 5,
+                    speed: 0.5 + (parentBDna[8] / 255) * 2,
+                    team: 'B',
+                    hue: 320, // Magenta
+                    strength: parentBDna[24]
                 });
             }
         }
 
+        function createSparks(x, y, team) {
+            const color = team === 'A' ? "#00f2fe" : "#ff007f";
+            for(let i=0; i<10; i++) {
+                sparks.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    alpha: 1.0,
+                    color: color,
+                    decay: 0.03 + Math.random() * 0.03
+                });
+            }
+        }
+
+        // Setup Breeder Buttons
+        document.getElementById("btnBreed").addEventListener("click", async () => {
+            const parentAId = parseInt(document.getElementById("parentA").value);
+            const parentBId = parseInt(document.getElementById("parentB").value);
+            const seed = parseInt(document.getElementById("crossoverSeed").value);
+
+            try {
+                if (zmContract) {
+                    const hexA = await zmContract.getRoomDna(parentAId);
+                    const hexB = await zmContract.getRoomDna(parentBId);
+                    
+                    parentADna = (hexA && hexA !== "0x") ? hexToBytes(hexA) : generateParentDna(parentAId * seed);
+                    parentBDna = (hexB && hexB !== "0x") ? hexToBytes(hexB) : generateParentDna(parentBId * seed);
+                } else {
+                    parentADna = generateParentDna(parentAId * seed);
+                    parentBDna = generateParentDna(parentBId * seed);
+                }
+            } catch (e) {
+                parentADna = generateParentDna(parentAId * seed);
+                parentBDna = generateParentDna(parentBId * seed);
+            }
+
+            currentDna = triggerCrossoverLocal(parentADna, parentBDna, seed);
+            document.getElementById("hexDisplay").innerText = bytesToHex(currentDna);
+            updateHUD(currentDna);
+            initParticles();
+        });
+
+        let battleOver = false;
+
         function animate() {
-            ctx.fillStyle = "rgba(4, 6, 18, 0.15)";
+            ctx.fillStyle = "rgba(4, 6, 18, 0.2)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Fetch current DNA configuration parameters
-            const hue = Math.floor((currentDna[0] / 255) * 360);
-            const baseSpeed = 0.5 + (currentDna[8] / 255) * 2.5;
+            // Fetch current DNA parameters
+            const hueBase = Math.floor((currentDna[0] / 255) * 360);
             const density = 12 + Math.floor((currentDna[4] / 255) * 20);
             const oscFreq = 10 + Math.floor((currentDna[12] / 255) * 80);
 
-            // Draw procedural background grid using DNA parameters
-            ctx.strokeStyle = `hsla(${hue}, 80%, 50%, 0.04)`;
+            // Draw grid
+            ctx.strokeStyle = `hsla(${hueBase}, 80%, 50%, 0.04)`;
             ctx.lineWidth = 1;
             const spacingX = canvas.width / density;
             const spacingY = canvas.height / (density * 0.66);
-            
             const time = Date.now() * 0.001;
             const waveOffset = Math.sin(time * (oscFreq / 10)) * 10;
 
@@ -475,47 +545,137 @@
                 ctx.stroke();
             }
 
-            // Draw glowing core target representation
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = `hsl(${hue}, 90%, 50%)`;
-            ctx.strokeStyle = `hsl(${hue}, 90%, 50%)`;
+            // Draw attractor pointer
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = isMouseDown ? "#ffd700" : `hsl(${hueBase}, 90%, 50%)`;
+            ctx.strokeStyle = isMouseDown ? "#ffd700" : `hsl(${hueBase}, 90%, 50%)`;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(mouseX, mouseY, 30 + Math.sin(time * 5) * 5, 0, Math.PI * 2);
+            ctx.arc(mouseX, mouseY, 25 + Math.sin(time * 5) * 5, 0, Math.PI * 2);
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Draw and update particles reacting to vector field
-            for(let i=0; i<particles.length; i++) {
-                const p = particles[i];
+            // Track teams
+            let teamACount = 0;
+            let teamBCount = 0;
 
-                // Calculate vector pointing from particle to mouse/target
+            // Update particles
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                if (p.team === 'A') teamACount++;
+                else teamBCount++;
+
+                // Basic attraction physics
                 const dx = mouseX - p.x;
                 const dy = mouseY - p.y;
                 const dist = Math.sqrt(dx*dx + dy*dy) || 1;
 
-                // Flow vector calculation modulated by DNA velocity bounds
-                const force = Math.min(1.5, 300 / dist);
-                p.vx += (dx / dist) * force * 0.15 + (Math.sin(p.y * 0.02 + time) * 0.2);
-                p.vy += (dy / dist) * force * 0.15 + (Math.cos(p.x * 0.02 + time) * 0.2);
+                let force = 0.08;
+                if (isMouseDown) force = 0.25; // Pull stronger on click
 
-                // Apply drag and DNA speed scaling
-                p.vx *= 0.94;
-                p.vy *= 0.94;
+                p.vx += (dx / dist) * force + (Math.sin(p.y * 0.05 + time) * 0.15);
+                p.vy += (dy / dist) * force + (Math.cos(p.x * 0.05 + time) * 0.15);
 
-                p.x += p.vx * baseSpeed;
-                p.y += p.vy * baseSpeed;
+                // Speed limit
+                p.vx *= 0.96;
+                p.vy *= 0.96;
 
-                // Screen wraps
-                if (p.x < 0) p.x = canvas.width;
-                if (p.x > canvas.width) p.x = 0;
-                if (p.y < 0) p.y = canvas.height;
-                if (p.y > canvas.height) p.y = 0;
+                p.x += p.vx * p.speed;
+                p.y += p.vy * p.speed;
 
-                ctx.fillStyle = `hsla(${(hue + p.life*40)%360}, 95%, 60%, ${0.3 + p.life * 0.7})`;
+                // Wall bounce
+                if (p.x < 0 || p.x > canvas.width) p.vx = -p.vx;
+                if (p.y < 0 || p.y > canvas.height) p.vy = -p.vy;
+
+                // Collision detection with opposing team
+                for(let j = i - 1; j >= 0; j--) {
+                    const other = particles[j];
+                    if (other.team !== p.team) {
+                        const cdx = other.x - p.x;
+                        const cdy = other.y - p.y;
+                        const cdist = Math.sqrt(cdx*cdx + cdy*cdy);
+                        const radiusSum = p.size + other.size;
+
+                        if (cdist < radiusSum + 2) {
+                            // Battle calculation: speed * size * strength
+                            const powerP = p.speed * p.size * p.strength;
+                            const powerOther = other.speed * other.size * other.strength;
+
+                            if (powerP > powerOther) {
+                                createSparks(other.x, other.y, other.team);
+                                particles.splice(j, 1);
+                                p.size += 0.5; // Gain mass
+                                p.hue = (p.hue + other.hue) / 2; // Absorb trait
+                            } else {
+                                createSparks(p.x, p.y, p.team);
+                                particles.splice(i, 1);
+                                other.size += 0.5;
+                                other.hue = (other.hue + p.hue) / 2;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Render particle
+                ctx.fillStyle = `hsla(${p.hue}, 95%, 60%, 0.85)`;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = `hsla(${p.hue}, 95%, 60%, 0.5)`;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
                 ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Update & Render sparks
+            for(let k = sparks.length - 1; k >= 0; k--) {
+                const s = sparks[k];
+                s.x += s.vx;
+                s.y += s.vy;
+                s.alpha -= s.decay;
+                if (s.alpha <= 0) {
+                    sparks.splice(k, 1);
+                    continue;
+                }
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = s.alpha;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 2, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Render live battle scoreboard
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px 'Orbitron', sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(`TEAM A (CYAN): ${teamACount}`, 15, 25);
+            ctx.textAlign = "right";
+            ctx.fillText(`TEAM B (MAGENTA): ${teamBCount}`, canvas.width - 15, 25);
+
+            // Handle end-of-battle outcome
+            if ((teamACount === 0 || teamBCount === 0) && particles.length > 0 && !battleOver) {
+                battleOver = true;
+                const winner = teamACount > 0 ? 'TEAM A' : 'TEAM B';
+                
+                // Formulate blended DNA biased towards the winner
+                const winnerDna = teamACount > 0 ? parentADna : parentBDna;
+                const loserDna = teamACount > 0 ? parentBDna : parentADna;
+                
+                for(let idx = 0; idx < 32; idx++) {
+                    currentDna[idx] = Math.floor(winnerDna[idx] * 0.7 + loserDna[idx] * 0.3);
+                }
+
+                document.getElementById("hexDisplay").innerText = "BATTLE RESOLVED!\n" + bytesToHex(currentDna);
+                updateHUD(currentDna);
+                
+                // Visual flash
+                ctx.fillStyle = winner === 'TEAM A' ? "rgba(0, 242, 254, 0.4)" : "rgba(255, 0, 127, 0.4)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            if (particles.length === 0) {
+                battleOver = false;
             }
 
             requestAnimationFrame(animate);
