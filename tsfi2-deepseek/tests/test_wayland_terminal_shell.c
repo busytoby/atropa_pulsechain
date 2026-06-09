@@ -1834,6 +1834,30 @@ static void execute_command(const char *cmd) {
         g_pong_active = false;
     }
     
+    if (first_word && strcasecmp(first_word, "HURWOOD") == 0) {
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        const char *output = 
+            "==================================================\r\n"
+            "   HURWOOD CODE GENERATOR v1.0 (AHOY! ISSUE 6)    \r\n"
+            "==================================================\r\n"
+            " Generating C64 BASIC Vector Maze Program...\r\n\r\n"
+            " 10 PRINT \"\\x93\": REM CLEAR SCREEN\r\n"
+            " 20 POKE 53280, 0: POKE 53281, 0: REM BLACK SCENE\r\n"
+            " 30 FOR I = 1 TO 1000\r\n"
+            " 40 R = INT(RND(1)*2)\r\n"
+            " 50 IF R = 0 THEN PRINT \"/\";: GOTO 70\r\n"
+            " 60 PRINT \"\\\\\";\r\n"
+            " 70 NEXT I\r\n"
+            " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
+            " READY.\r\n\r\n"
+            " [Hurwood automated layout generator finished.]\r\n"
+            "==================================================\r\n";
+        lau_vram_write_string(g_vram, output, strlen(output));
+        log_telemetry("Rendered Hurwood Code Generator Screen");
+        return;
+    }
+
     if (first_word && strcasecmp(first_word, "WORDCRAFT") == 0) {
         g_editor_mode = MODE_WORDCRAFT;
         g_mercenary_active = false;
