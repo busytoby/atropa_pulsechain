@@ -55,6 +55,7 @@ typedef enum {
     MODE_BOOTER
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
+static bool g_faster64_active = false;
 static bool g_dashboard_active = false;
 static bool g_aitest_active = false;
 static const char* g_test_statuses[24] = { "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY", "READY" };
@@ -6179,6 +6180,16 @@ static void execute_command(const char *cmd) {
          init_booter();
          redraw_booter_screen();
          log_telemetry("Started Booter Disk Menu Auto-Loader");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
+         g_faster64_active = !g_faster64_active;
+         if (g_faster64_active) {
+             lau_vram_write_string(g_vram, "\r\nFaster 64! system accelerator is now ENABLED.\r\nREADY.\r\n", 56);
+         } else {
+             lau_vram_write_string(g_vram, "\r\nFaster 64! system accelerator is now DISABLED.\r\nREADY.\r\n", 57);
+         }
          return;
     }
 
