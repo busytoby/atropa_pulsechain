@@ -56,7 +56,9 @@ typedef enum {
     MODE_FLANKSPEED,
     MODE_BOOTER,
     MODE_HOPAROUND,
-    MODE_TOWERS
+    MODE_TOWERS,
+    MODE_DISINTEGRATOR,
+    MODE_FIDGITS
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -279,9 +281,11 @@ static const char *g_booter_entries[] = {
     "CHECKLIST (To-Do Management Widget)",
     "YULBUILD (Yul compiler and assembly tool)",
     "HOPAROUND (Board Strategy Game)",
-    "TOWERS (Towers of Hanoi Puzzle)"
+    "TOWERS (Towers of Hanoi Puzzle)",
+    "DISINTEGRATOR (ML Particle Grid Shooter)",
+    "FIDGITS (Alphabet Sorting Game)"
 };
-static int g_booter_count = 8;
+static int g_booter_count = 10;
 static int g_booter_cursor = 0;
 static char g_booter_status[128];
 static void init_booter(void);
@@ -308,6 +312,28 @@ static char g_towers_status[128];
 static void init_towers(void);
 static void redraw_towers_screen(void);
 static void handle_towers_input(char ch);
+
+// Disintegrator variables
+static int g_disint_px = 4;
+static int g_disint_py = 4;
+static int g_disint_tx = 0;
+static int g_disint_ty = 0;
+static int g_disint_score = 0;
+static int g_disint_lives = 3;
+static char g_disint_status[128];
+static void init_disintegrator(void);
+static void redraw_disintegrator_screen(void);
+static void handle_disintegrator_input(char ch);
+
+// Fidgits variables
+static char g_fidgits_arr[5];
+static int g_fidgits_cursor = 0;
+static int g_fidgits_selected = -1;
+static int g_fidgits_moves = 0;
+static char g_fidgits_status[128];
+static void init_fidgits(void);
+static void redraw_fidgits_screen(void);
+static void handle_fidgits_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2943,6 +2969,229 @@ static void handle_towers_input(char ch) {
     redraw_towers_screen();
 }
 
+static void init_disintegrator(void) {
+    g_disint_px = 4;
+    g_disint_py = 4;
+    g_disint_tx = 0;
+    g_disint_ty = (rand() % 9);
+    g_disint_score = 0;
+    g_disint_lives = 3;
+    snprintf(g_disint_status, sizeof(g_disint_status), "DISINTEGRATORS ON. Arrow Keys = Move, W/A/S/D = Fire blast.");
+}
+
+static void redraw_disintegrator_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "============================================================\r\n"
+             "                 DISINTEGRATOR (Ahoy! Issue 20)             \r\n"
+             "============================================================\r\n"
+             "  Score: %d     |     Lives: %d\r\n"
+             "============================================================\r\n\r\n",
+             g_disint_score, g_disint_lives);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render 9x9 grid
+    for (int y = 0; y < 9; y++) {
+        char row_str[128] = "       ";
+        for (int x = 0; x < 9; x++) {
+            if (x == g_disint_px && y == g_disint_py) {
+                strcat(row_str, "▲ "); // Player
+            } else if (x == g_disint_tx && y == g_disint_ty) {
+                strcat(row_str, "👾 "); // Target/Enemy
+            } else {
+                strcat(row_str, ". ");
+            }
+        }
+        strcat(row_str, "\r\n");
+        lau_vram_write_string(g_vram, row_str, strlen(row_str));
+    }
+
+    lau_vram_write_string(g_vram, "\r\n============================================================\r\n", 64);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_disint_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: Arrows = Move, [W/A/S/D] = Shoot Blast, [ESC] Exit\r\n", 64);
+}
+
+static void handle_disintegrator_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (g_disint_lives <= 0) {
+        snprintf(g_disint_status, sizeof(g_disint_status), "GAME OVER! Press [ESC] to exit.");
+        redraw_disintegrator_screen();
+        return;
+    }
+
+    // Move player using arrow controls mapped to custom chars (or W/A/S/D to shoot)
+    // We will support simple char moves: W/A/S/D for firing, I/J/K/L for moving or handle arrow keys mapping
+    // Let's check ch: 'i' = up, 'k' = down, 'j' = left, 'l' = right
+    if (ch == 'i' || ch == 'I') {
+        if (g_disint_py > 0) g_disint_py--;
+    } else if (ch == 'k' || ch == 'K') {
+        if (g_disint_py < 8) g_disint_py++;
+    } else if (ch == 'j' || ch == 'J') {
+        if (g_disint_px > 0) g_disint_px--;
+    } else if (ch == 'l' || ch == 'L') {
+        if (g_disint_px < 8) g_disint_px++;
+    }
+
+    // Shooting blasts: 'w' = up, 's' = down, 'a' = left, 'd' = right
+    bool shot = false;
+    if (ch == 'w' || ch == 'W') {
+        shot = true;
+        if (g_disint_tx == g_disint_px && g_disint_ty < g_disint_py) {
+            g_disint_score += 10;
+            snprintf(g_disint_status, sizeof(g_disint_status), "BOOM! Target vaporized!");
+            g_disint_tx = (rand() % 9);
+            g_disint_ty = (rand() % 2) ? 0 : 8;
+        }
+    } else if (ch == 's' || ch == 'S') {
+        shot = true;
+        if (g_disint_tx == g_disint_px && g_disint_ty > g_disint_py) {
+            g_disint_score += 10;
+            snprintf(g_disint_status, sizeof(g_disint_status), "BOOM! Target vaporized!");
+            g_disint_tx = (rand() % 9);
+            g_disint_ty = (rand() % 2) ? 0 : 8;
+        }
+    } else if (ch == 'a' || ch == 'A') {
+        shot = true;
+        if (g_disint_ty == g_disint_py && g_disint_tx < g_disint_px) {
+            g_disint_score += 10;
+            snprintf(g_disint_status, sizeof(g_disint_status), "BOOM! Target vaporized!");
+            g_disint_tx = (rand() % 2) ? 0 : 8;
+            g_disint_ty = (rand() % 9);
+        }
+    } else if (ch == 'd' || ch == 'D') {
+        shot = true;
+        if (g_disint_ty == g_disint_py && g_disint_tx > g_disint_px) {
+            g_disint_score += 10;
+            snprintf(g_disint_status, sizeof(g_disint_status), "BOOM! Target vaporized!");
+            g_disint_tx = (rand() % 2) ? 0 : 8;
+            g_disint_ty = (rand() % 9);
+        }
+    }
+
+    if (shot && strcmp(g_disint_status, "BOOM! Target vaporized!") != 0) {
+        snprintf(g_disint_status, sizeof(g_disint_status), "Missed! Target is at (%d, %d).", g_disint_tx, g_disint_ty);
+    }
+
+    // Move enemy closer to player
+    if (rand() % 2) {
+        if (g_disint_tx < g_disint_px) g_disint_tx++;
+        else if (g_disint_tx > g_disint_px) g_disint_tx--;
+        if (g_disint_ty < g_disint_py) g_disint_ty++;
+        else if (g_disint_ty > g_disint_py) g_disint_ty--;
+    }
+
+    // Collision check
+    if (g_disint_tx == g_disint_px && g_disint_ty == g_disint_py) {
+        g_disint_lives--;
+        if (g_disint_lives <= 0) {
+            snprintf(g_disint_status, sizeof(g_disint_status), "CRASH! Game Over.");
+        } else {
+            snprintf(g_disint_status, sizeof(g_disint_status), "CRASH! Particle collision! Lost a life.");
+            g_disint_tx = 0;
+            g_disint_ty = (rand() % 9);
+        }
+    }
+
+    redraw_disintegrator_screen();
+}
+
+static void init_fidgits(void) {
+    g_fidgits_arr[0] = 'C';
+    g_fidgits_arr[1] = 'A';
+    g_fidgits_arr[2] = 'E';
+    g_fidgits_arr[3] = 'B';
+    g_fidgits_arr[4] = 'D';
+    g_fidgits_cursor = 0;
+    g_fidgits_selected = -1;
+    g_fidgits_moves = 0;
+    snprintf(g_fidgits_status, sizeof(g_fidgits_status), "Sort the Fidgits alphabetically. SPACE=Select/Swap.");
+}
+
+static void redraw_fidgits_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "============================================================\r\n"
+             "                    FIDGITS (Ahoy! Issue 20)                \r\n"
+             "============================================================\r\n"
+             "  Moves: %d\r\n"
+             "============================================================\r\n\r\n",
+             g_fidgits_moves);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render the 5 Fidgits blocks
+    lau_vram_write_string(g_vram, "         ", 9);
+    for (int i = 0; i < 5; i++) {
+        char block[32];
+        if (i == g_fidgits_cursor) {
+            snprintf(block, sizeof(block), (i == g_fidgits_selected) ? "[*%c*] " : "[ %c ] ", g_fidgits_arr[i]);
+        } else {
+            snprintf(block, sizeof(block), (i == g_fidgits_selected) ? "*%c*  " : " %c   ", g_fidgits_arr[i]);
+        }
+        lau_vram_write_string(g_vram, block, strlen(block));
+    }
+    lau_vram_write_string(g_vram, "\r\n\r\n============================================================\r\n", 66);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_fidgits_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [A] Left, [D] Right, [SPACE] Select/Swap, [ESC] Exit\r\n", 66);
+}
+
+static void handle_fidgits_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'a' || ch == 'A') {
+        if (g_fidgits_cursor > 0) g_fidgits_cursor--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_fidgits_cursor < 4) g_fidgits_cursor++;
+    } else if (ch == ' ') {
+        if (g_fidgits_selected == -1) {
+            g_fidgits_selected = g_fidgits_cursor;
+            snprintf(g_fidgits_status, sizeof(g_fidgits_status), "Selected Fidgit %c. Move cursor and press SPACE to swap.", g_fidgits_arr[g_fidgits_selected]);
+        } else {
+            int src = g_fidgits_selected;
+            int tgt = g_fidgits_cursor;
+            if (src != tgt) {
+                char temp = g_fidgits_arr[src];
+                g_fidgits_arr[src] = g_fidgits_arr[tgt];
+                g_fidgits_arr[tgt] = temp;
+                g_fidgits_moves++;
+                snprintf(g_fidgits_status, sizeof(g_fidgits_status), "Swapped Fidgit %c with %c.", g_fidgits_arr[tgt], g_fidgits_arr[src]);
+            }
+            g_fidgits_selected = -1;
+
+            // Check win condition
+            if (g_fidgits_arr[0] == 'A' && g_fidgits_arr[1] == 'B' && g_fidgits_arr[2] == 'C' && g_fidgits_arr[3] == 'D' && g_fidgits_arr[4] == 'E') {
+                snprintf(g_fidgits_status, sizeof(g_fidgits_status), "SUCCESS! Sorted all Fidgits in %d moves!", g_fidgits_moves);
+            }
+        }
+    }
+
+    redraw_fidgits_screen();
+}
+
 static void init_hoparound(void) {
     g_hoparound_x = 4;
     g_hoparound_y = 4;
@@ -3116,6 +3365,8 @@ static void handle_booter_input(char ch) {
             case 5: execute_command("YULBUILD"); break;
             case 6: execute_command("HOPAROUND"); break;
             case 7: execute_command("TOWERS"); break;
+            case 8: execute_command("DISINTEGRATOR"); break;
+            case 9: execute_command("FIDGITS"); break;
         }
         return;
     }
@@ -6459,6 +6710,26 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "DISINTEGRATOR") == 0) {
+         g_editor_mode = MODE_DISINTEGRATOR;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_disintegrator();
+         redraw_disintegrator_screen();
+         log_telemetry("Started Disintegrator game");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "FIDGITS") == 0) {
+         g_editor_mode = MODE_FIDGITS;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_fidgits();
+         redraw_fidgits_screen();
+         log_telemetry("Started Fidgits game");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -8078,6 +8349,46 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         return;
     }
 
+    if (g_editor_mode == MODE_DISINTEGRATOR) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 103) { // UP Arrow -> Move Up
+            ch = 'i';
+        } else if (key == 108) { // DOWN Arrow -> Move Down
+            ch = 'k';
+        } else if (key == 105) { // LEFT Arrow -> Move Left
+            ch = 'j';
+        } else if (key == 106) { // RIGHT Arrow -> Move Right
+            ch = 'l';
+        } else if (key == 17) { // W
+            ch = 'w';
+        } else if (key == 31) { // S
+            ch = 's';
+        } else if (key == 30) { // A
+            ch = 'a';
+        } else if (key == 32) { // D
+            ch = 'd';
+        }
+        handle_disintegrator_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_FIDGITS) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 57) { // SPACE
+            ch = ' ';
+        }
+        handle_fidgits_input(ch);
+        return;
+    }
+
     if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         char ch = (char)utf32;
         if (key == KEY_ESC || key == 1) {
@@ -9631,6 +9942,10 @@ int main() {
                             handle_hoparound_input(ch);
                         } else if (g_editor_mode == MODE_TOWERS) {
                             handle_towers_input(ch);
+                        } else if (g_editor_mode == MODE_DISINTEGRATOR) {
+                            handle_disintegrator_input(ch);
+                        } else if (g_editor_mode == MODE_FIDGITS) {
+                            handle_fidgits_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -9851,6 +10166,10 @@ int main() {
                             handle_hoparound_input(ch);
                         } else if (g_editor_mode == MODE_TOWERS) {
                             handle_towers_input(ch);
+                        } else if (g_editor_mode == MODE_DISINTEGRATOR) {
+                            handle_disintegrator_input(ch);
+                        } else if (g_editor_mode == MODE_FIDGITS) {
+                            handle_fidgits_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
