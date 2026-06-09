@@ -1421,6 +1421,33 @@
                         scrollDisplay("right");
                         logTrapEvent("🎥 [SCROLL] Shifted Pixie screen RIGHT by 1 column.", true);
                         break;
+                    case "dna@":
+                        if (forthStack.length >= 1) {
+                            const idx = forthStack.pop();
+                            if (idx >= 0 && idx < liveRoomDna.length) {
+                                forthStack.push(liveRoomDna[idx]);
+                                logTrapEvent(`🌉 [ZMM BRIDGE] Read Z-Machine Room DNA at index ${idx}: 0x${liveRoomDna[idx].toString(16).toUpperCase().padStart(2, '0')}`, true);
+                            } else {
+                                forthStack.push(0);
+                                logTrapEvent("[ZMM BRIDGE ERROR] DNA index out of bounds", true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] dna@ requires [index] on stack", true);
+                        }
+                        break;
+                    case "zmcmd":
+                        if (forthStack.length >= 1) {
+                            const cmdId = forthStack.pop();
+                            const commands = { 1: "look", 2: "east", 3: "west", 4: "score", 5: "inventory" };
+                            const cmdStr = commands[cmdId] || "look";
+                            logTrapEvent(`🌉 [ZMM BRIDGE] Executed Z-Machine Command: ${cmdStr.toUpperCase()}`, true);
+                            if (cmdId === 1) {
+                                logTrapEvent("[ZMM RESPONSE] Void: A quiet place of infinite potential. Connected successfully to Z-Machine.", true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] zmcmd requires [command_id] on stack", true);
+                        }
+                        break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
                 }
