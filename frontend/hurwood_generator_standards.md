@@ -103,5 +103,36 @@ To maximize virtual memory efficiency and emulation execution speed, the `COMPAC
 2. **Keyword packing**: Consolidates statements so syntax parsers interpret commands without boundary padding (e.g., `FOR I = 1 TO 1000` is packed into `FORI=1TO1000`).
 3. **Execution**: Append `COMPACT` as the second argument to any command to activate compaction (e.g., `HURWOOD SOUND COMPACT`).
 
+---
 
+## 8. Kwitowski-Harris Sound Concept Schema (`CONCEPT` Schema)
+
+The Kwitowski-Harris Sound Concept utilizes a structured **three-byte memory block** to define independent sound sequences mapped to standard VIC-20 sound registers (as documented by Neal Harris):
+
+### 8.1 3-Byte Sound Data Structure
+Each sound unit is declared in a sequential row of 3 bytes:
+
+| Byte Offset | Parameter | Value Range | Description |
+| :--- | :--- | :--- | :--- |
+| `Byte 0` | Voice Index | `10–13` | Voice 1 (10), Voice 2 (11), Voice 3 (12), Voice 4/Noise (13) |
+| `Byte 1` | Pitch / Frequency | `128–255` | Frequency value loaded into target voice register |
+| `Byte 2` | Duration / Gate | `0–255` | Playback duration tick count |
+
+### 8.2 VIC-20 Sound Hardware Mappings
+The playback driver redirects sound offsets to the VIC-20 audio registry block:
+
+| Memory Address (decimal) | Register Function | Register Offset Range |
+| :--- | :--- | :--- |
+| `36874` | Voice 1 (Bass/Alto) | Offset 0 (Voice Index 10) |
+| `36875` | Voice 2 (Tenor) | Offset 1 (Voice Index 11) |
+| `36876` | Voice 3 (Soprano) | Offset 2 (Voice Index 12) |
+| `36877` | Voice 4 (Noise) | Offset 3 (Voice Index 13) |
+| `36878` | Master Volume Control | Low 4 bits (`0–15`) control global volume |
+
+### 8.3 Sounder Machine Code Playback
+When running the `STAGE` operation for the `CONCEPT` schema, a compiled 6502 assembly playback engine is staged in memory:
+
+*   **Playback Code Address**: `$0D00` (3328 decimal).
+*   **Target Sound Queue Address**: `$1000` (4096 decimal).
+*   **Assembly Hook**: The staged BASIC program calls `SYS 3328`, invoking the Sounder binary. It reads the 3-byte cells from `$1000`, configures the voice frequency mappings, decrements loop counters using an internal delay routine, and terminates when a duration value of `0` is reached.
 
