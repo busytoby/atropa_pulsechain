@@ -193,6 +193,14 @@
                             <option value="crush">🦖 Crush, Crumble & Chomp! (Epyx Game)</option>
                             <option value="spider">🕷️ Apple Cider Spider (Datamost Cartridge)</option>
                             <option value="ultima">⚔️ Ultima-on-Chain (Tilemap RPG)</option>
+                            <option value="miner2049er">⛏️ Miner 2049er (Micro Fun Cartridge)</option>
+                            <option value="dinoeggs">🦖 Dino Eggs (Micro Fun Cartridge)</option>
+                            <option value="bluemax">✈️ Blue Max (Synapse Cartridge)</option>
+                            <option value="impossiblemission">🕵️ Impossible Mission (Epyx Cartridge)</option>
+                            <option value="namethatstar">⭐ Name That Star (Ahoy! Issue #4)</option>
+                            <option value="thrust">🚀 Thrust (Firebird 1986)</option>
+                            <option value="lastninja">🥷 The Last Ninja (System 3 1987)</option>
+                            <option value="sentinel">👁️ Sentinel (Firebird 1986)</option>
                         </select>
                         <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
                         <button class="btn btn-secondary" id="btnToggleDemo" style="min-width: 130px; border-color: var(--neon-magenta); color: var(--text-primary);">Autoplay Demo</button>
@@ -577,6 +585,14 @@
                                 <option value="ti_tms5220">TI TMS5220 (LPC Speech Synth)</option>
                                 <option value="tymac_sid">Tymac SID (4-bit Vol Digitizer)</option>
                                 <option value="access_realsound">Access RealSound (6-bit PC Speaker PWM)</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="reg-label">DIALECT/LANG:</span>
+                            <select id="selectDialect" class="input-glow" style="padding: 6px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">
+                                <option value="mandarin_pinyin" selected>Chinese (Mandarin Pinyin)</option>
+                                <option value="cantonese_jyutping">Chinese (Cantonese Jyutping)</option>
+                                <option value="korean_romanized">Korean (Revised Romanization)</option>
                             </select>
                         </div>
                     </div>
@@ -1293,6 +1309,11 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         ];
 
         let cpuContract, graphicsContract, musicContract, diskContract, speechContract, oregonTrailTokenContract;
+        let batcherContract;
+        let datamostNonce;
+        const batcherABI = [
+            "function batchCall(address[] calldata targets, bytes[] calldata datas) external"
+        ];
         const erc20ABI = [
             "function balanceOf(address account) external view returns (uint256)",
             "function symbol() external view returns (string)",
@@ -1409,6 +1430,141 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     { id: 0, x: 80, y: 80 },
                     { id: 1, x: 140, y: 80 }
                 ]
+            },
+            miner2049er: {
+                name: "Miner 2049er",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x06, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x90, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 144, y: 120 }, // Bounty Bob
+                    { id: 1, x: 60, y: 90 },   // elevator
+                    { id: 2, x: 200, y: 140 },  // mutant snap
+                    { id: 3, x: 100, y: 80 }   // hazard
+                ]
+            },
+            dinoeggs: {
+                name: "Dino Eggs",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x07, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x40, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 50, y: 150 },  // Tim
+                    { id: 1, x: 140, y: 110 }, // Dino
+                    { id: 2, x: 90, y: 130 },  // Egg
+                    { id: 3, x: 210, y: 70 }   // Pterodactyl
+                ]
+            },
+            bluemax: {
+                name: "Blue Max",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x08, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x90, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 140, y: 100 }, // Biplane
+                    { id: 1, x: 140, y: 135 }, // Shadow
+                    { id: 2, x: 220, y: 130 }  // Hangar
+                ]
+            },
+            impossiblemission: {
+                name: "Impossible Mission",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x09, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x00, 0xD0, // Agent X
+                    0xA9, 0xA0, 0x8D, 0x01, 0xD0, // Agent Y
+                    0x60
+                ],
+                        namethatstar: {
+                name: "Name That Star",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0A, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Cursor X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Cursor Y
+                    // Bob Lloret's Ahoy! REM headers and string bytes encoded:
+                    // REM **** "NAME THAT STAR" V2.0. ****
+                    // REM ** DESIGNED BY: BOB LLORET. **
+                    0x20, 0x4E, 0x41, 0x4D, 0x45, 0x20, 0x54, 0x48, 0x41, 0x54, 0x20, 0x53, 0x54, 0x41, 0x52, 0x00,
+                    0x20, 0x42, 0x4F, 0x42, 0x20, 0x4C, 0x4C, 0x4F, 0x52, 0x45, 0x54, 0x00,
+                    // Sheldon Leemon's Raster Interrupt split-screen routine (from COMPUTE! Mixing Graphics Modes):
+                    0x78,                         // SEI (Disable Interrupts)
+                    0xA9, 0x7F, 0x8D, 0x0D, 0xDC, // LDA #$7F, STA $DC0D (Turn off CIA 1 interrupts)
+                    0xAD, 0x0D, 0xDC,             // LDA $DC0D (Acknowledge any pending CIA 1 interrupts)
+                    0xA9, 0x01, 0x8D, 0x1A, 0xD0, // LDA #$01, STA $D01A (Enable raster interrupts)
+                    0xA9, 0x32, 0x8D, 0x12, 0xD0, // LDA #$32, STA $D012 (Split screen at raster line $32)
+                    0xAD, 0x11, 0xD0, 0x29, 0x7F, 0x8D, 0x11, 0xD0, // Clear 8th bit of raster compare line in $D011
+                    0xA9, 0x2A, 0x8D, 0x14, 0x03, // LDA #<IrqRoutine, STA $0314 (Low byte)
+                    0xA9, 0x21, 0x8D, 0x15, 0x03, // LDA #>IrqRoutine, STA $0315 (High byte)
+                    0x58,                         // CLI (Re-enable Interrupts)
+                    // Signature payload: "SHELDON LEEMON"
+                    0x53, 0x48, 0x45, 0x4C, 0x44, 0x4F, 0x4E, 0x20, 0x4C, 0x45, 0x45, 0x4D, 0x4F, 0x4E, 0x00,
+                    // Terry Silveria signature metadata bytes:
+                    // "TERRY SILVERIA"
+                    0x54, 0x45, 0x52, 0x52, 0x59, 0x20, 0x53, 0x49, 0x4C, 0x56, 0x45, 0x52, 0x49, 0x41, 0x00,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 100 }, // Cursor Reticle
+                    { id: 1, x: 160, y: 100 }  // Secondary pointer
+                ]
+            },
+            thrust: {
+                name: "Thrust",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x0B, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Ship X
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0, // Ship Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 140, y: 110 }, // Ship
+                    { id: 1, x: 140, y: 135 }, // Pod
+                    { id: 2, x: 200, y: 140 }  // Gun Turret
+                ]
+            },
+            lastninja: {
+                name: "The Last Ninja",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x0C, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0, // Ninja X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Ninja Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Armakuni
+                    { id: 1, x: 170, y: 110 }, // Shogun Guard
+                    { id: 2, x: 220, y: 130 }, // Item
+                    { id: 3, x: 90, y: 90 }    // Hazard/Fire
+                ]
+            },
+            sentinel: {
+                name: "Sentinel",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0D, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Target X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Target Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 100 }, // Viewfinder
+                    { id: 1, x: 160, y: 70 }   // Sentinel Tower
+                ]
             }
         };
 
@@ -1488,6 +1644,13 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             // Update UI status/label if exists
             const activeGameText = document.getElementById("activeGameText");
             if (activeGameText) activeGameText.innerText = game.name;
+
+            // Trigger iconic speech if Impossible Mission is loaded
+            if (gameId === "impossiblemission") {
+                setTimeout(() => {
+                    speakText("ANOTHER VISITOR. STAY A WHILE... STAY FOREVER!").catch(err => console.error("Speech failed:", err));
+                }, 1000);
+            }
         }
 
         function wrapDiskContract(contract, activeSigner) {
@@ -1564,9 +1727,26 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer);
                 graphicsContract = new ethers.Contract(localhost.graphicsSystemAddress, graphicsABI, signer);
                 musicContract = new ethers.Contract(localhost.musicMakerAddress, musicABI, signer);
+                if (localhost.batcherAddress) {
+                    batcherContract = new ethers.Contract(localhost.batcherAddress, batcherABI, signer);
+                    console.log("Batcher contract loaded.");
+                }
                 diskContract = wrapDiskContract(new ethers.Contract(localhost.diskSystemAddress, diskABI, signer), signer);
                 setupDiskEventListener(diskContract);
                 speechContract = new ethers.Contract(localhost.speechSynthesizerAddress, speechABI, signer);
+                if (localhost.folkloreAddress) {
+                    const folkloreABI = [
+                        "function calculateVisibility(uint256 ox, uint256 oy, uint256 tx, uint256 ty) public view returns (uint256 visible)",
+                        "function checkLineOfSight(uint256 ox, uint256 oy, uint256 tx, uint256 ty) public view returns (uint256 blocked)",
+                        "function mutateHeight(uint256 x, uint256 y, uint256 height) public returns (uint256)",
+                        "function teleportObserver(uint256 ox, uint256 oy) public returns (uint256)",
+                        "function checkWinCondition(uint256 ox, uint256 oy) public view returns (uint256 win)",
+                        "function registerHighScore(uint256 score) public returns (uint256)",
+                        "function getHighScore(address player) public view returns (uint256 score)"
+                    ];
+                    folkloreContract = new ethers.Contract(localhost.folkloreAddress, folkloreABI, signer);
+                    console.log("FolkloreCPU contract loaded.");
+                }
                 if (localhost.oregonTrailToken) {
                     oregonTrailTokenContract = new ethers.Contract(localhost.oregonTrailToken, erc20ABI, signer);
                 }
@@ -1596,6 +1776,11 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
 
             // Start simulation update loops
+            try {
+                datamostNonce = await provider.getTransactionCount(signer.address, "pending");
+            } catch (e) {
+                datamostNonce = 0;
+            }
             startSimulationLoops();
             
             // Initialize Oregon Trail Dashboard event listeners
@@ -1637,9 +1822,26 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     cpuContract = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, browserSigner);
                     graphicsContract = new ethers.Contract(config.networks.localhost.graphicsSystemAddress, graphicsABI, browserSigner);
                     musicContract = new ethers.Contract(config.networks.localhost.musicMakerAddress, musicABI, browserSigner);
+                    if (config.networks.localhost.batcherAddress) {
+                        batcherContract = new ethers.Contract(config.networks.localhost.batcherAddress, batcherABI, browserSigner);
+                        console.log("Batcher contract loaded with browser wallet.");
+                    }
                     diskContract = wrapDiskContract(new ethers.Contract(config.networks.localhost.diskSystemAddress, diskABI, browserSigner), browserSigner);
                     setupDiskEventListener(diskContract);
                     speechContract = new ethers.Contract(config.networks.localhost.speechSynthesizerAddress, speechABI, browserSigner);
+                    if (config.networks.localhost.folkloreAddress) {
+                        const folkloreABI = [
+                            "function calculateVisibility(uint256 ox, uint256 oy, uint256 tx, uint256 ty) public view returns (uint256 visible)",
+                            "function checkLineOfSight(uint256 ox, uint256 oy, uint256 tx, uint256 ty) public view returns (uint256 blocked)",
+                            "function mutateHeight(uint256 x, uint256 y, uint256 height) public returns (uint256)",
+                            "function teleportObserver(uint256 ox, uint256 oy) public returns (uint256)",
+                            "function checkWinCondition(uint256 ox, uint256 oy) public view returns (uint256 win)",
+                            "function registerHighScore(uint256 score) public returns (uint256)",
+                            "function getHighScore(address player) public view returns (uint256 score)"
+                        ];
+                        folkloreContract = new ethers.Contract(config.networks.localhost.folkloreAddress, folkloreABI, browserSigner);
+                        console.log("FolkloreCPU loaded with browser wallet.");
+                    }
                     if (config.networks.localhost.oregonTrailToken) {
                         oregonTrailTokenContract = new ethers.Contract(config.networks.localhost.oregonTrailToken, erc20ABI, browserSigner);
                     }
@@ -2463,10 +2665,33 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 playSynthTone(180, 150);
                 pokeSIDFreq(1800, 0x21);
                 moved = true;
+                interactiveKeys.left = true;
             } else if (e.key === "ArrowRight" || e.key === "d") {
                 joystick = joystick & ~0x08; 
                 playSynthTone(180, 150);
                 pokeSIDFreq(1800, 0x21);
+                moved = true;
+                interactiveKeys.right = true;
+            } else if (e.key === "ArrowUp" || e.key === "w") {
+                joystick = joystick & ~0x01;
+                playSynthTone(220, 150);
+                moved = true;
+                interactiveKeys.up = true;
+            } else if (e.key === "ArrowDown" || e.key === "s") {
+                joystick = joystick & ~0x02;
+                playSynthTone(150, 150);
+                moved = true;
+                interactiveKeys.down = true;
+            } else if (e.key === "Enter") {
+                interactiveKeys.enter = true;
+                playSynthTone(320, 100);
+                moved = true;
+            } else if (e.key.toLowerCase() === "c") {
+                interactiveKeys.c = true;
+                moved = true;
+            } else if (e.key === "Tab") {
+                e.preventDefault();
+                interactiveKeys.tab = true;
                 moved = true;
             } else if (e.key === " " || e.key === "Spacebar") {
                 e.preventDefault();
@@ -2474,6 +2699,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 playLaserSweep();
                 pokeSIDFreq(6000, 0x11);
                 moved = true;
+                interactiveKeys.fire = true;
             }
 
             if (moved) {
@@ -2497,7 +2723,25 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 } catch (err) {}
             }
 
-            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "ArrowRight" || e.key === "d" || e.key === " " || e.key === "Spacebar") {
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                interactiveKeys.left = false;
+            } else if (e.key === "ArrowRight" || e.key === "d") {
+                interactiveKeys.right = false;
+            } else if (e.key === "ArrowUp" || e.key === "w") {
+                interactiveKeys.up = false;
+            } else if (e.key === "ArrowDown" || e.key === "s") {
+                interactiveKeys.down = false;
+            } else if (e.key === "Enter") {
+                interactiveKeys.enter = false;
+            } else if (e.key.toLowerCase() === "c") {
+                interactiveKeys.c = false;
+            } else if (e.key === "Tab") {
+                interactiveKeys.tab = false;
+            } else if (e.key === " " || e.key === "Spacebar") {
+                interactiveKeys.fire = false;
+            }
+
+            if (["ArrowLeft", "a", "ArrowRight", "d", "ArrowUp", "w", "ArrowDown", "s", " ", "Spacebar"].includes(e.key)) {
                 try {
                     cpuContract.poke(56320, 0xFF);
                 } catch (err) {}
@@ -2564,6 +2808,19 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         // Drawing & Sound Loop
         const canvas = document.getElementById("c64Screen");
         const ctx = canvas.getContext("2d");
+
+        // Architectural improvement: Interlace rendering buffers for C64 soft-interlacing modes
+        let interlaceBuffer = null;
+        let isEvenFrame = true;
+
+        // Interactive control variables for playable games
+        const interactiveKeys = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            fire: false
+        };
 
         async function startSimulationLoops() {
             setInterval(async () => {
@@ -2657,15 +2914,24 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 // 3. Process 6502 Space Invaders physics tick & sync coordinates
                 if (graphicsContract && cpuContract) {
                     try {
-                        // 3a. Poke current collision mask to CPU system if it changed since last poke
-                        if (currentCollisionMask !== lastPokedCollisionMask) {
-                            await cpuContract.poke(53278, currentCollisionMask);
+                        // 3a & 3b. Batch poke current collision mask & runSteps in a single non-blocking transaction
+                        if (batcherContract) {
+                            const targets = [cpuContract.target, cpuContract.target];
+                            const datas = [
+                                cpuContract.interface.encodeFunctionData("poke", [53278, currentCollisionMask]),
+                                cpuContract.interface.encodeFunctionData("runSteps", [120])
+                            ];
                             lastPokedCollisionMask = currentCollisionMask;
+                            batcherContract.batchCall(targets, datas, { nonce: datamostNonce++ }).catch(e => {
+                                console.warn("Batch simulation tick failed:", e.message);
+                            });
+                        } else {
+                            if (currentCollisionMask !== lastPokedCollisionMask) {
+                                cpuContract.poke(53278, currentCollisionMask, { nonce: datamostNonce++ }).catch(() => {});
+                                lastPokedCollisionMask = currentCollisionMask;
+                            }
+                            cpuContract.runSteps(120, { nonce: datamostNonce++ }).catch(() => {});
                         }
-
-                        // 3b. Execute 120 steps on-chain
-                        const tx = await cpuContract.runSteps(120);
-                        await tx.wait();
 
                         // 3c. Peek updated sprite coordinates
                         const spr0_x = Number(await cpuContract.peek(0xd000));
@@ -2684,17 +2950,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
                         // 3d. Update on-chain graphics system coordinates asynchronously if they shifted
                         if (s0_x !== last_s0_x || s0_y !== last_s0_y) {
-                            graphicsContract.updateSprite(0, s0_x, s0_y).catch(() => {});
+                            graphicsContract.updateSprite(0, s0_x, s0_y, { nonce: datamostNonce++ }).catch(() => {});
                             last_s0_x = s0_x;
                             last_s0_y = s0_y;
                         }
                         if (s1_x !== last_s1_x || s1_y !== last_s1_y) {
-                            graphicsContract.updateSprite(1, s1_x, s1_y).catch(() => {});
+                            graphicsContract.updateSprite(1, s1_x, s1_y, { nonce: datamostNonce++ }).catch(() => {});
                             last_s1_x = s1_x;
                             last_s1_y = s1_y;
                         }
                         if (s2_x !== last_s2_x || s2_y !== last_s2_y) {
-                            graphicsContract.updateSprite(2, s2_x, s2_y).catch(() => {});
+                            graphicsContract.updateSprite(2, s2_x, s2_y, { nonce: datamostNonce++ }).catch(() => {});
                             last_s2_x = s2_x;
                             last_s2_y = s2_y;
                         }
@@ -2738,6 +3004,36 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         }
 
                         drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, isCollision, borderHex, bgHex, screenRam, colorRam);
+
+                        // Architectural improvement: Apply soft-interlace blending filter (blends current and previous frame buffers)
+                        try {
+                            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            if (!interlaceBuffer || interlaceBuffer.width !== imgData.width || interlaceBuffer.height !== imgData.height) {
+                                interlaceBuffer = ctx.createImageData(canvas.width, canvas.height);
+                                interlaceBuffer.data.set(imgData.data);
+                            }
+                            
+                            const src = imgData.data;
+                            const prev = interlaceBuffer.data;
+                            
+                            // Iterate lines: alternate scanlines or blend buffers to simulate phosphor persistence / interlacing
+                            for (let idx = 0; idx < src.length; idx += 4) {
+                                const row = Math.floor((idx / 4) / canvas.width);
+                                const isTargetRow = (row % 2 === 0) === isEvenFrame;
+                                
+                                if (!isTargetRow) {
+                                    // Blend 50/50 with the previous frame's row to simulate phosphor delay
+                                    src[idx]     = Math.round((src[idx]     + prev[idx])     / 2); // R
+                                    src[idx + 1] = Math.round((src[idx + 1] + prev[idx + 1]) / 2); // G
+                                    src[idx + 2] = Math.round((src[idx + 2] + prev[idx + 2]) / 2); // B
+                                }
+                            }
+                            ctx.putImageData(imgData, 0, 0);
+                            interlaceBuffer.data.set(src); // Save current as reference for next frame
+                            isEvenFrame = !isEvenFrame;
+                        } catch (interlaceErr) {
+                            console.warn("Soft-interlace filter failed:", interlaceErr.message);
+                        }
 
                         if (isDemoModeActive) {
                             ctx.fillStyle = "rgba(255, 0, 127, 0.9)";
@@ -2917,7 +3213,12 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "RETRO": ["R", "EH1", "T", "R", "O"],
             "SOUND": ["S", "AW1", "UN", "D"],
             "ON": ["O", "N"],
-            "CHAIN": ["CH", "AY", "N"]
+            "CHAIN": ["CH", "AY", "N"],
+            "ANOTHER": ["UH3", "N", "UH2", "THR", "ER"],
+            "VISITOR": ["V", "I2", "Z", "I1", "T", "ER"],
+            "STAY": ["S", "T", "AY"],
+            "WHILE": ["OO1", "AH1", "Y", "L"],
+            "FOREVER": ["F", "ER", "EH1", "V", "ER"]
         };
 
         const phonemeToCode = {};
@@ -2933,6 +3234,102 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             "U": ["Y1", "OO1"], "V": ["V"], "W": ["OO1"], "X": ["K", "S"],
             "Y": ["AY"], "Z": ["Z"], " ": ["PA0"]
         };
+
+        // Dialect-specific G2P Rule Sets mapping
+        const dialectRules = {
+            "mandarin_pinyin": [
+                { pat: "ZHONG", ph: ["J", "OO1", "NG"] },
+                { pat: "SHEN", ph: ["SH", "UH1", "N"] },
+                { pat: "WEN", ph: ["OO1", "UH1", "N"] },
+                { pat: "HAO", ph: ["H", "AW1"] },
+                { pat: "HAN", ph: ["H", "A2", "N"] },
+                { pat: "ZH", ph: ["J"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "SH", ph: ["SH"] },
+                { pat: "SHI", ph: ["SH", "UR"] },
+                { pat: "CHI", ph: ["CH", "UR"] },
+                { pat: "ZHI", ph: ["J", "UR"] },
+                { pat: "YI", ph: ["E1", "E2"] },
+                { pat: "X", ph: ["SH"] },
+                { pat: "Q", ph: ["CH"] },
+                { pat: "J", ph: ["J"] },
+                { pat: "G", ph: ["G"] },
+                { pat: "K", ph: ["K"] },
+                { pat: "H", ph: ["H"] },
+                { pat: "I", ph: ["E1", "E2"] },
+                { pat: "U", ph: ["OO1", "OO"] },
+                { pat: "A", ph: ["AH1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "E", ph: ["UH2"] }
+            ],
+            "cantonese_jyutping": [
+                { pat: "GW", ph: ["G", "OO1"] },
+                { pat: "KW", ph: ["K", "OO1"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "Z", ph: ["J"] },
+                { pat: "C", ph: ["CH"] },
+                { pat: "AA", ph: ["AH1", "AH2"] },
+                { pat: "OE", ph: ["UH1"] },
+                { pat: "EO", ph: ["UH1"] },
+                { pat: "Y", ph: ["Y1"] },
+                { pat: "J", ph: ["Y1"] },
+                { pat: "I", ph: ["E1"] },
+                { pat: "U", ph: ["OO1"] },
+                { pat: "A", ph: ["AH1"] }
+            ],
+            "korean_romanized": [
+                { pat: "YEONG", ph: ["Y1", "UH1", "NG"] },
+                { pat: "AN", ph: ["AH1", "N"] },
+                { pat: "NYEONG", ph: ["N", "Y1", "UH1", "NG"] },
+                { pat: "HA", ph: ["H", "AH1"] },
+                { pat: "SEO", ph: ["SH", "UH1"] },
+                { pat: "YO", ph: ["Y1", "O"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "JJ", ph: ["J"] },
+                { pat: "GG", ph: ["G"] },
+                { pat: "DD", ph: ["D"] },
+                { pat: "AE", ph: ["EH1"] },
+                { pat: "EO", ph: ["UH1"] },
+                { pat: "EU", ph: ["UH3"] },
+                { pat: "UI", ph: ["UH3", "E1"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "Y", ph: ["Y1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "U", ph: ["OO1"] },
+                { pat: "I", ph: ["E1"] }
+            ]
+        };
+
+        // Grapheme-to-Phoneme translation rule engine with Dialect mapping
+        function translateWordToPhonemes(word, dialect = "mandarin_pinyin") {
+            // Clean diacritics and normalize input
+            word = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            word = word.replace(/[^A-Z]/g, "");
+            if (!word) return [];
+            if (wordsPhonemes[word]) return wordsPhonemes[word];
+
+            let phonemes = [];
+            let i = 0;
+            const rules = dialectRules[dialect] || dialectRules["mandarin_pinyin"];
+
+            while (i < word.length) {
+                let match = false;
+                for (let r of rules) {
+                    if (word.startsWith(r.pat, i)) {
+                        phonemes.push(...r.ph);
+                        i += r.pat.length;
+                        match = true;
+                        break;
+                    }
+                }
+                if (!match) {
+                    const char = word[i];
+                    phonemes.push(...(letterToPhonemes[char] || ["PA0"]));
+                    i++;
+                }
+            }
+            return phonemes;
+        }
 
         function playTymacAudioSample(val) {
             if (!isAudioPlaying || !audioCtx) return;
@@ -3131,28 +3528,22 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
         async function speakText(text) {
             const selectedEngine = document.getElementById("selectSpeechEngine").value;
+            const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
             
             if (selectedEngine === "votrax") {
                 if (!speechContract) {
                     alert("Speech Synthesizer contract is not loaded.");
                     return;
                 }
-                text = text.toUpperCase().trim();
+                text = text.trim();
                 if (!text) return;
 
                 const words = text.split(/\s+/);
                 const phonemeSequence = [];
                 
                 words.forEach(word => {
-                    if (wordsPhonemes[word]) {
-                        wordsPhonemes[word].forEach(p => phonemeSequence.push(p));
-                    } else {
-                        for (let i = 0; i < word.length; i++) {
-                            const letter = word[i];
-                            const list = letterToPhonemes[letter] || ["PA0"];
-                            list.forEach(p => phonemeSequence.push(p));
-                        }
-                    }
+                    const parsedPhonemes = translateWordToPhonemes(word, dialect);
+                    parsedPhonemes.forEach(p => phonemeSequence.push(p));
                     phonemeSequence.push("PA1");
                 });
 
@@ -5222,6 +5613,876 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        let blueMaxFrame = 0;
+        function drawBlueMaxScreen() {
+            blueMaxFrame++;
+            // Draw background / Sky
+            ctx.fillStyle = "#87ceeb"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ground at the bottom half with diagonal scrolling pattern
+            ctx.fillStyle = "#27ae60"; 
+            ctx.fillRect(0, 60, canvas.width, canvas.height - 60);
+            
+            // Draw diagonal River scrolling
+            ctx.fillStyle = "#2980b9"; 
+            ctx.beginPath();
+            let riverScroll = (blueMaxFrame * 1.5) % 100;
+            ctx.moveTo(0 - riverScroll, 60);
+            ctx.lineTo(80 - riverScroll, canvas.height);
+            ctx.lineTo(130 - riverScroll, canvas.height);
+            ctx.lineTo(50 - riverScroll, 60);
+            ctx.fill();
+            
+            // Draw runway
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(100 - (blueMaxFrame % 300), 120, 80, 20);
+            
+            // Draw diagonal isometric grid lines
+            ctx.strokeStyle = "rgba(255,255,255,0.08)";
+            ctx.lineWidth = 1;
+            for (let i = -10; i < 20; i++) {
+                ctx.beginPath();
+                let xOffset = i * 30 - (blueMaxFrame * 0.8) % 30;
+                ctx.moveTo(xOffset, 60);
+                ctx.lineTo(xOffset + 100, canvas.height);
+                ctx.stroke();
+            }
+
+            let altitude = 35 + Math.sin(blueMaxFrame * 0.05) * 15;
+            
+            let targetX = 220 - (blueMaxFrame % 250);
+            let targetY = 130;
+            ctx.fillStyle = "#c0392b";
+            ctx.fillRect(targetX, targetY, 24, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(targetX + 6, targetY + 4, 12, 12); 
+            
+            let shadowX = 140;
+            let shadowY = 110 + Math.cos(blueMaxFrame * 0.02) * 10;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; 
+            ctx.beginPath();
+            ctx.ellipse(shadowX, shadowY, 12, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            let planeX = shadowX;
+            let planeY = shadowY - altitude;
+            
+            ctx.fillStyle = "#d35400"; 
+            ctx.fillRect(planeX - 12, planeY - 3, 24, 6);
+            ctx.fillStyle = "#f39c12"; 
+            ctx.fillRect(planeX - 6, planeY - 12, 12, 24);
+            ctx.fillStyle = "#2c3e50";
+            ctx.beginPath();
+            ctx.arc(planeX, planeY - 1, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            let propAngle = blueMaxFrame * 0.5;
+            ctx.moveTo(planeX + 12, planeY - Math.sin(propAngle)*6);
+            ctx.lineTo(planeX + 12, planeY + Math.sin(propAngle)*6);
+            ctx.stroke();
+
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("SYNAPSE SOFTWARE 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("ALTITUDE: " + Math.round(altitude / 5), canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("FUEL: " + Math.max(0, 100 - Math.floor(blueMaxFrame * 0.05)) + "% | BOMBS: 4", canvas.width / 2, 15);
+            
+            if (altitude < 20) {
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("CRITICAL ALTITUDE: DANGER OF COLLISION!", canvas.width / 2, canvas.height - 10);
+            } else if (Math.abs(planeX - targetX) < 30) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("TARGET ACQUIRED: ALIGN ALTITUDE TO BOMB!", canvas.width / 2, canvas.height - 10);
+            } else {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "7px monospace";
+                ctx.fillText("PRESS FIRE/SPACEBAR TO DROP BOMB", canvas.width / 2, canvas.height - 10);
+            }
+        }
+
+        let impMissionFrame = 0;
+        function drawImpossibleMissionScreen() {
+            impMissionFrame++;
+            // Black background
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Platforms/Floors (horizontal yellow/white bars typical of Epyx layout)
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(20, 55, 280, 5);  // Top platform
+            ctx.fillRect(20, 105, 280, 5); // Middle platform
+            ctx.fillRect(20, 155, 280, 5); // Bottom platform
+
+            // Vertical Elevator shafts (grey rails/beams)
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(80, 20, 8, 150);
+            ctx.fillRect(240, 20, 8, 150);
+
+            // Elevators/Lifts (glowing cyan platforms that crawl up and down)
+            let lift1Y = 55 + Math.round((Math.sin(impMissionFrame * 0.03) + 1) * 45);
+            let lift2Y = 155 - Math.round((Math.cos(impMissionFrame * 0.035) + 1) * 45);
+            ctx.fillStyle = "#00ffff";
+            ctx.fillRect(74, lift1Y, 20, 4);
+            ctx.fillRect(234, lift2Y, 20, 4);
+
+            // Console desks (orange searching stations)
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(40, 93, 14, 12);
+            ctx.fillRect(180, 143, 14, 12);
+            // Glowing console screens
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(43, 95, 8, 5);
+            ctx.fillRect(183, 145, 8, 5);
+
+            // Security robots (patrolling left and right)
+            let robotX = 110 + Math.round((Math.sin(impMissionFrame * 0.04) + 1) * 50); // Patrol range: 110 to 210
+            let robotY = 105 - 12;
+            // Draw Robot Body
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(robotX - 6, robotY, 12, 8);
+            // Draw glowing blue radar eye
+            ctx.fillStyle = "#3498db";
+            ctx.fillRect(robotX + (Math.sin(impMissionFrame * 0.08) > 0 ? 2 : -4), robotY + 2, 3, 2);
+            // Draw sparks/electricity under robot
+            if (impMissionFrame % 4 < 2) {
+                ctx.strokeStyle = "#f1c40f";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(robotX - 4, robotY + 8);
+                ctx.lineTo(robotX - 2, robotY + 11);
+                ctx.lineTo(robotX + 2, robotY + 8);
+                ctx.lineTo(robotX + 4, robotY + 11);
+                ctx.stroke();
+            }
+
+            // Running/Somersaulting Agent (Sprite 0)
+            let agentX = 140 + Math.sin(impMissionFrame * 0.01) * 70;
+            let agentY = 155 - 16;
+            let isSomersault = (impMissionFrame % 120 > 90); // Flip periodically
+
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            if (isSomersault) {
+                // Draw rounded tumbling agent
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(agentX, agentY + 6, 6, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Running stick figure pose
+                ctx.beginPath();
+                // Head
+                ctx.arc(agentX, agentY + 2, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+                // Torso
+                ctx.moveTo(agentX, agentY + 4.5); ctx.lineTo(agentX, agentY + 10);
+                // Arms (swinging)
+                let armSwing = Math.sin(impMissionFrame * 0.25) * 5;
+                ctx.moveTo(agentX, agentY + 5.5); ctx.lineTo(agentX - 4, agentY + 7 + armSwing);
+                ctx.moveTo(agentX, agentY + 5.5); ctx.lineTo(agentX + 4, agentY + 7 - armSwing);
+                // Legs (running cycle)
+                let legStretch = Math.sin(impMissionFrame * 0.25) * 6;
+                ctx.moveTo(agentX, agentY + 10); ctx.lineTo(agentX - legStretch, agentY + 16);
+                ctx.moveTo(agentX, agentY + 10); ctx.lineTo(agentX + legStretch, agentY + 16);
+                ctx.stroke();
+            }
+
+            // HUD / Top Bar info
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("EPYX SOFTWARE 1984", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("TIME: 05:42", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("AGENT ELVIN'S LAB", canvas.width / 2, 15);
+
+            if (isSomersault) {
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("SOMERSAULT INTERRUPT TRIGGERED!", canvas.width / 2, canvas.height - 10);
+            } else {
+                ctx.fillStyle = "#9b59b6";
+                ctx.font = "7px monospace";
+                ctx.fillText("SEARCH CONSOLE DESKS TO REASSEMBLE PUZZLE", canvas.width / 2, canvas.height - 10);
+            }
+        }
+
+        let starFrame = 0;
+        let lastSpokenStarIdx = -1;
+        const constellations = [
+            { name: "URSA MAJOR", pinyin: "DA-XIONG-ZUO", stars: [{x: 80, y: 50}, {x: 100, y: 55}, {x: 110, y: 70}, {x: 130, y: 75}, {x: 140, y: 90}, {x: 125, y: 95}, {x: 115, y: 80}] },
+            { name: "ORION", pinyin: "LIE-HU-ZUO", stars: [{x: 180, y: 60}, {x: 210, y: 60}, {x: 195, y: 90}, {x: 185, y: 110}, {x: 205, y: 110}, {x: 175, y: 140}, {x: 215, y: 140}] },
+            { name: "CASSIOPEIA", pinyin: "XIAN-HOU-ZUO", stars: [{x: 50, y: 110}, {x: 70, y: 120}, {x: 60, y: 135}, {x: 80, y: 140}, {x: 90, y: 125}] }
+        ];
+
+        function drawNameThatStarScreen() {
+            starFrame++;
+            // Deep space background
+            ctx.fillStyle = "#0c102b";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines (star map style)
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.1)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 30) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            for (let j = 0; j < canvas.height; j += 30) {
+                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+            }
+
+            // Draw Constellations
+            const activeIndex = Math.floor(starFrame / 150) % constellations.length;
+            const activeConst = constellations[activeIndex];
+
+            // Trigger Speech dynamically when switching constellations
+            if (activeIndex !== lastSpokenStarIdx) {
+                lastSpokenStarIdx = activeIndex;
+                speakText(activeConst.pinyin).catch(() => {});
+            }
+
+            constellations.forEach((constell, idx) => {
+                const isActive = (idx === activeIndex);
+                ctx.strokeStyle = isActive ? "rgba(0, 242, 254, 0.7)" : "rgba(255, 255, 255, 0.15)";
+                ctx.lineWidth = isActive ? 1.5 : 1;
+
+                // Draw lines between stars
+                ctx.beginPath();
+                constell.stars.forEach((star, sIdx) => {
+                    if (sIdx === 0) ctx.moveTo(star.x, star.y);
+                    else ctx.lineTo(star.x, star.y);
+                });
+                if (constell.name === "ORION") ctx.closePath(); // Close Orion boundary
+                ctx.stroke();
+
+                // Draw Stars
+                constell.stars.forEach(star => {
+                    ctx.fillStyle = isActive ? "#ffffff" : "#bdc3c7";
+
+                    // Glow rings
+                    if (isActive) {
+                        ctx.strokeStyle = "rgba(0, 242, 254, 0.3)";
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, size * 2.5, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                });
+            });
+
+            // Interactive Cursor pointer - controlled by arrow keys/joysticks
+            if (!window.starCursorX) {
+                window.starCursorX = 160;
+                window.starCursorY = 100;
+            }
+            if (interactiveKeys.left) window.starCursorX = Math.max(20, window.starCursorX - 2.5);
+            if (interactiveKeys.right) window.starCursorX = Math.min(canvas.width - 20, window.starCursorX + 2.5);
+            if (interactiveKeys.up) window.starCursorY = Math.max(30, window.starCursorY - 2.5);
+            if (interactiveKeys.down) window.starCursorY = Math.min(canvas.height - 30, window.starCursorY + 2.5);
+
+            let curX = window.starCursorX;
+            let curY = window.starCursorY;
+            ctx.strokeStyle = "#ff007f";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(curX, curY, 8, 0, Math.PI * 2);
+            ctx.moveTo(curX - 12, curY); ctx.lineTo(curX + 12, curY);
+            ctx.moveTo(curX, curY - 12); ctx.lineTo(curX, curY + 12);
+            ctx.stroke();
+
+            // HUD overlay
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("MICRO FUN 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("SCORE: " + (activeIndex * 100 + 150), canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("NAME THAT STAR!", canvas.width / 2, 15);
+
+            // Subtitle
+            ctx.fillStyle = "#ffa500";
+            ctx.font = "bold 8px monospace";
+            ctx.fillText("IDENTIFIED: " + activeConst.name + " (" + activeConst.pinyin + ")", canvas.width / 2, canvas.height - 12);
+        }
+
+        let thrustFrame = 0;
+        function drawThrustScreen() {
+            thrustFrame++;
+            // Draw background space
+            ctx.fillStyle = "#020210";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw vector rocky landscape (typical cave floor/ceiling of Thrust)
+            ctx.strokeStyle = "#00ffff";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, 160);
+            ctx.lineTo(60, 160);
+            ctx.lineTo(90, 110);
+            ctx.lineTo(120, 150);
+            ctx.lineTo(160, 130);
+            ctx.lineTo(190, 160);
+            ctx.lineTo(240, 120);
+            ctx.lineTo(280, 160);
+            ctx.lineTo(canvas.width, 160);
+            ctx.stroke();
+
+            // Draw reactor/shield bubble (under ship/pod)
+            let reactorX = 160;
+            let reactorY = 130;
+            ctx.strokeStyle = "rgba(255, 0, 255, 0.4)";
+            ctx.beginPath();
+            ctx.arc(reactorX, reactorY, 12 + Math.sin(thrustFrame * 0.2) * 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw gun turret
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(reactorX - 4, reactorY - 2, 8, 4);
+            ctx.strokeStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.moveTo(reactorX, reactorY);
+            let gunAngle = -Math.PI / 4 + Math.sin(thrustFrame * 0.05) * 0.5;
+            ctx.lineTo(reactorX + Math.cos(gunAngle) * 12, reactorY + Math.sin(gunAngle) * 12);
+            ctx.stroke();
+
+            // Interactive Ship movement
+            if (!window.thrustShipX) {
+                window.thrustShipX = 130;
+                window.thrustShipY = 70;
+            }
+            if (interactiveKeys.left) window.thrustShipX = Math.max(15, window.thrustShipX - 3);
+            if (interactiveKeys.right) window.thrustShipX = Math.min(canvas.width - 15, window.thrustShipX + 3);
+            if (interactiveKeys.up) window.thrustShipY = Math.max(30, window.thrustShipY - 2);
+            if (interactiveKeys.down) window.thrustShipY = Math.min(130, window.thrustShipY + 2);
+
+            let shipX = window.thrustShipX;
+            let shipY = window.thrustShipY;
+            ctx.strokeStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(shipX, shipY - 8);
+            ctx.lineTo(shipX - 5, shipY + 5);
+            ctx.lineTo(shipX + 5, shipY + 5);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw flame thrust
+            if (interactiveKeys.up && thrustFrame % 4 < 2) {
+                ctx.strokeStyle = "#f39c12";
+                ctx.beginPath();
+                ctx.moveTo(shipX - 3, shipY + 5);
+                ctx.lineTo(shipX, shipY + 12);
+                ctx.lineTo(shipX + 3, shipY + 5);
+                ctx.stroke();
+            }
+
+            // Draw gravity pod/kiron sphere
+            let podX = shipX + Math.sin(thrustFrame * 0.05) * 15;
+            let podY = shipY + 25 + Math.cos(thrustFrame * 0.03) * 5;
+            ctx.strokeStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(podX, podY, 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw vector tether elastic cord (ship to pod link)
+            ctx.strokeStyle = "#95a5a6";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(shipX, shipY + 5);
+            ctx.lineTo(podX, podY - 4);
+            ctx.stroke();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("FIREBIRD 1986", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("FUEL: " + Math.max(0, 1000 - thrustFrame) + "L", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THRUST", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillText("TENSION: " + Math.round(Math.abs(shipX - podX) * 2) + "%", canvas.width / 2, canvas.height - 12);
+        }
+
+        let ninjaFrame = 0;
+        function drawLastNinjaScreen() {
+            ninjaFrame++;
+            // Draw background (forest greens/browns)
+            ctx.fillStyle = "#1e3d1e";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw isometric screen boundaries / rock paths
+            ctx.strokeStyle = "#8e44ad";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            // Draw isometric path diamond
+            ctx.moveTo(160, 40);
+            ctx.lineTo(280, 110);
+            ctx.lineTo(160, 180);
+            ctx.lineTo(40, 110);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw decorative trees
+            ctx.fillStyle = "#27ae60";
+            ctx.beginPath();
+            ctx.arc(45, 60, 15, 0, Math.PI * 2);
+            ctx.arc(275, 60, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Isometric bridge rails across a river
+            ctx.fillStyle = "#34495e";
+            ctx.fillRect(110, 100, 100, 20); // river
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(150, 90, 20, 40);  // wooden bridge
+
+            // Interactive Ninja Movement
+            if (!window.ninjaX) {
+                window.ninjaX = 140;
+                window.ninjaY = 120;
+            }
+            if (interactiveKeys.left) window.ninjaX = Math.max(50, window.ninjaX - 2.5);
+            if (interactiveKeys.right) window.ninjaX = Math.min(270, window.ninjaX + 2.5);
+            if (interactiveKeys.up) window.ninjaY = Math.max(50, window.ninjaY - 1.5);
+            if (interactiveKeys.down) window.ninjaY = Math.min(170, window.ninjaY + 1.5);
+
+            let avX = window.ninjaX;
+            let avY = window.ninjaY;
+
+            // Draw Ninja Body (black garb)
+            ctx.fillStyle = "#0e0e0e";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            // Red headband
+            ctx.fillStyle = "#ff007f";
+            ctx.fillRect(avX - 5, avY - 15, 10, 3);
+
+            // Draw Shogun Guard (Sprite 1) holding staff
+            let guardX = 180;
+            let guardY = 110;
+            ctx.fillStyle = "#c0392b"; // Red armor
+            ctx.fillRect(guardX - 4, guardY - 12, 8, 16);
+            ctx.fillStyle = "#f39c12"; // Helmet
+            ctx.fillRect(guardX - 5, guardY - 15, 10, 3);
+            ctx.strokeStyle = "#7f8c8d"; // Spear/Staff
+            ctx.beginPath();
+            ctx.moveTo(guardX + 4, guardY - 20);
+            ctx.lineTo(guardX + 4, guardY + 8);
+            ctx.stroke();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("SYSTEM 3 1987", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LIVES: 3 | SWORD", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THE LAST NINJA - THE WASTELANDS", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("ENERGY: [||||||||||]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let sentinelFrame = 0;
+        function drawSentinelScreen() {
+            sentinelFrame++;
+            // Sunset sky gradient
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, "#2c3e50");
+            skyGrad.addColorStop(0.5, "#fd79a8");
+            skyGrad.addColorStop(1, "#ffeaa7");
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Procedural 3D wireframe terrain cells
+            ctx.strokeStyle = "#27ae60";
+            ctx.lineWidth = 1;
+            
+            // Draw grid squares projecting forward
+            let horizonY = 80;
+            for (let i = 0; i <= 10; i++) {
+                let xOffset = 30 * (i - 5);
+                ctx.beginPath();
+                ctx.moveTo(160 + xOffset, canvas.height);
+                ctx.lineTo(160 + xOffset * 0.2, horizonY);
+                ctx.stroke();
+            }
+
+            // Horizontal grid perspective lines
+            for (let j = 0; j < 8; j++) {
+                let hY = horizonY + (j * j * 1.5);
+                ctx.beginPath();
+                ctx.moveTo(0, hY);
+                ctx.lineTo(canvas.width, hY);
+                ctx.stroke();
+            }
+
+            // Draw Sentinel Pedestal Tower at the horizon
+            let sentinelX = 160 + Math.sin(sentinelFrame * 0.01) * 30;
+            let sentinelY = horizonY - 15;
+            ctx.fillStyle = "#2d3436";
+            ctx.fillRect(sentinelX - 6, sentinelY, 12, 15); // Tower
+            // Sentinel Eye sphere
+            ctx.fillStyle = "#00ffff";
+            ctx.beginPath();
+            ctx.arc(sentinelX, sentinelY - 3, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sentinel eye seeking target quadrants dynamically: cycles looking at quadrants (I, II, III, IV) every 300 frames
+            let quadrantIndex = Math.floor(sentinelFrame / 300) % 4;
+            let targetAngle = 0;
+            if (quadrantIndex === 0) targetAngle = Math.PI * 0.25; // Target Front-Right
+            if (quadrantIndex === 1) targetAngle = Math.PI * 0.75; // Target Rear-Right
+            if (quadrantIndex === 2) targetAngle = Math.PI * 1.25; // Target Rear-Left
+            if (quadrantIndex === 3) targetAngle = Math.PI * 1.75; // Target Front-Left
+            
+            // Smoothly pan scanner laser toward target quadrant angle
+            if (typeof window.sentinelScanAngle === "undefined") {
+                window.sentinelScanAngle = 0.0;
+            }
+            let angleDiff = targetAngle - window.sentinelScanAngle;
+            // Handle wrap-around diff
+            angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+            window.sentinelScanAngle += angleDiff * 0.03; // Smooth step interpolation
+
+            let sweepAngle = window.sentinelScanAngle;
+            ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(sentinelX, sentinelY - 3);
+            let laserEndX = sentinelX + Math.sin(sweepAngle) * 120;
+            let laserEndY = horizonY + 50 + Math.cos(sweepAngle) * 30;
+            ctx.lineTo(laserEndX, laserEndY);
+            ctx.stroke();
+
+            // Track dynamic energy locally
+            if (typeof window.sentinelEnergy === "undefined") {
+                window.sentinelEnergy = 100.0;
+            }
+
+            // Calculate if the sentinel sweeping laser overlaps the player's observer grid cell
+            const ox = window.sentinelObserverX || 3;
+            const oy = window.sentinelObserverY || 7;
+            const playerGridX = 20 + ox * (280 / 8) + (280 / 16);
+            const playerGridY = 40 + oy * (120 / 8) + (120 / 16);
+            const distanceToLaser = Math.abs((laserEndY - sentinelY) * playerGridX - (laserEndX - sentinelX) * playerGridY + laserEndX * sentinelY - laserEndY * sentinelX) / Math.sqrt(Math.pow(laserEndY - sentinelY, 2) + Math.pow(laserEndX - sentinelX, 2));
+
+            // If laser sweeps close to player and line of sight is clear, trigger alarm drainage
+            let alarmActive = false;
+            if (distanceToLaser < 15 && !window.losBlocked) {
+                alarmActive = true;
+                // Energy drain bypassed by user request
+                if (sentinelFrame % 10 === 0) {
+                    playSynthTone(440, 50); // Alarm high beep
+                    pokeSIDFreq(8800, 0x11);
+                }
+            }
+
+            // Interactive Viewfinder Aiming
+            if (!window.viewX) {
+                window.viewX = 160;
+                window.viewY = 100;
+            }
+            if (interactiveKeys.left) window.viewX = Math.max(10, window.viewX - 3);
+            if (interactiveKeys.right) window.viewX = Math.min(canvas.width - 10, window.viewX + 3);
+            if (interactiveKeys.up) window.viewY = Math.max(30, window.viewY - 3);
+            if (interactiveKeys.down) window.viewY = Math.min(canvas.height - 30, window.viewY + 3);
+
+
+
+            // Compute targeted grid cell index in Sentinel checkerboard (8x8 mapping)
+            let cellX = Math.floor((window.viewX - 20) / (280 / 8));
+            let cellY = Math.floor((window.viewY - 40) / (120 / 8));
+            cellX = Math.max(0, Math.min(7, cellX));
+            cellY = Math.max(0, Math.min(7, cellY));
+
+            // Call FolkloreCPU contract line of sight raycaster asynchronously to update target visibility state
+            if (!window.lastLosCheckTime) window.lastLosCheckTime = 0;
+            if (!window.losBlocked) window.losBlocked = false;
+
+            if (typeof folkloreContract !== "undefined" && folkloreContract && Date.now() - window.lastLosCheckTime > 250) {
+                window.lastLosCheckTime = Date.now();
+                // Player looking at viewfinder targets from their current dynamic observer coordinate
+                const ox = window.sentinelObserverX || 3;
+                const oy = window.sentinelObserverY || 7;
+                folkloreContract.checkLineOfSight(ox, oy, cellX, cellY).then(blocked => {
+                    window.losBlocked = Number(blocked) === 1;
+                }).catch(() => {});
+            }
+
+            // Initialize heights and load trees/boulders resources from dynamic map level configs
+            if (!window.sentinelLevel) {
+                window.sentinelLevel = 1; // Default to Level 1
+            }
+
+            if (!window.sentinelHeights) {
+                window.sentinelHeights = Array(64).fill(0);
+                window.sentinelHeights[28] = 4; // Pedestal Tower
+                
+                if (window.sentinelLevel === 1) {
+                    // Valley Profile: scattered low trees
+                    window.sentinelHeights[10] = 1;
+                    window.sentinelHeights[12] = 2;
+                    window.sentinelHeights[18] = 1;
+                    window.sentinelHeights[45] = 2;
+                    window.sentinelHeights[52] = 1;
+                } else if (window.sentinelLevel === 2) {
+                    // Mountain Profile: high rocks blocking views
+                    window.sentinelHeights[5] = 3;
+                    window.sentinelHeights[14] = 3;
+                    window.sentinelHeights[22] = 2;
+                    window.sentinelHeights[38] = 2;
+                    window.sentinelHeights[42] = 3;
+                } else if (window.sentinelLevel === 3) {
+                    // Spire Profile: single giant pillars
+                    window.sentinelHeights[15] = 5;
+                    window.sentinelHeights[24] = 4;
+                    window.sentinelHeights[48] = 5;
+                }
+            }
+
+            // Spacebar/Fire key builds a block on empty tiles, or harvests resources on occupied tiles (absorbing energy)
+            if (interactiveKeys.fire && !window.lastFirePressed && !window.losBlocked) {
+                window.lastFirePressed = true;
+                const idx = cellY * 8 + cellX;
+                const currentH = window.sentinelHeights[idx] || 0;
+                
+                let newHeight = currentH;
+                if (currentH > 0 && idx !== 28) {
+                    // Harvest Resource: Reduce height to 0 and absorb energy
+                    newHeight = 0;
+                    window.sentinelHeights[idx] = 0;
+                    const energyGained = currentH * 15;
+                    window.sentinelEnergy = Math.min(100, (window.sentinelEnergy || 100) + energyGained);
+                    console.log(`Harvested grid tile (${cellX}, ${cellY}) gaining ${energyGained} energy units.`);
+                    playSynthTone(600, 150); // High pitch collection sound
+                } else if (currentH === 0) {
+                    // Build Block: Increment height and consume energy
+                    newHeight = 1;
+                    window.sentinelHeights[idx] = 1;
+                    window.sentinelEnergy = Math.max(0, (window.sentinelEnergy || 100) - 10);
+                    console.log(`Built block at grid tile (${cellX}, ${cellY}) consuming 10 energy units.`);
+                    playSynthTone(200, 150); // Low build sound
+                }
+                
+                if (typeof folkloreContract !== "undefined" && folkloreContract) {
+                    folkloreContract.mutateHeight(cellX, cellY, newHeight, { nonce: datamostNonce++ })
+                        .then(() => console.log(`On-chain block height mutated at (${cellX}, ${cellY}) to ${newHeight}`))
+                        .catch(err => console.warn("Mutation transaction failed:", err.message));
+                }
+            }
+            // Teleportation target logic: Press Enter to teleport camera/consciousness or place a clone
+            if (!window.sentinelObserverX) {
+                window.sentinelObserverX = 3;
+                window.sentinelObserverY = 7;
+            }
+            if (!window.sentinelClones) {
+                window.sentinelClones = []; // Array of static cooperative clone positions
+            }
+
+            // Press 'C' key to place a static clone body on target tile (costs 20 energy)
+            if (interactiveKeys.c && !window.lastCPressed && !window.losBlocked) {
+                window.lastCPressed = true;
+                const idx = cellY * 8 + cellX;
+                if ((window.sentinelEnergy || 100) >= 20 && !window.sentinelClones.some(c => c.x === cellX && c.y === cellY)) {
+                    window.sentinelEnergy -= 20;
+                    window.sentinelClones.push({ x: cellX, y: cellY });
+                    playSynthTone(500, 200); // Clone spawn sound
+                    console.log(`Placed clone shell at grid coordinates (${cellX}, ${cellY})`);
+                }
+            }
+            if (!interactiveKeys.c) {
+                window.lastCPressed = false;
+            }
+
+            // Press 'Tab' or shift active viewport coordinates between placed clone coordinates
+            if (interactiveKeys.tab && !window.lastTabPressed && window.sentinelClones.length > 0) {
+                window.lastTabPressed = true;
+                // Add current position to clone pool so we can cycle back
+                const currentPos = { x: window.sentinelObserverX, y: window.sentinelObserverY };
+                const nextClone = window.sentinelClones.shift();
+                window.sentinelClones.push(currentPos);
+                
+                window.sentinelObserverX = nextClone.x;
+                window.sentinelObserverY = nextClone.y;
+                playSynthTone(700, 100); // Cycle camera view sound
+                console.log(`Viewport observer cycled to clone at (${window.sentinelObserverX}, ${window.sentinelObserverY})`);
+            }
+            if (!interactiveKeys.tab) {
+                window.lastTabPressed = false;
+            }
+
+            if (interactiveKeys.enter && !window.lastEnterPressed && !window.losBlocked) {
+                window.lastEnterPressed = true;
+                window.sentinelObserverX = cellX;
+                window.sentinelObserverY = cellY;
+                
+                if (typeof folkloreContract !== "undefined" && folkloreContract) {
+                    folkloreContract.teleportObserver(cellX, cellY, { nonce: datamostNonce++ })
+                        .then(() => {
+                            console.log(`On-chain observer teleported to grid coordinates (${cellX}, ${cellY})`);
+                            // Check win condition on-chain
+                            folkloreContract.checkWinCondition(cellX, cellY).then(win => {
+                                if (Number(win) === 1) {
+                                    window.sentinelWon = true;
+                                    playSynthTone(880, 500); // Victory fanfare tone
+                                }
+                            }).catch(() => {});
+                        })
+                        .catch(err => console.warn("Teleportation transaction failed:", err.message));
+                }
+            }
+            if (!interactiveKeys.enter) {
+                window.lastEnterPressed = false;
+            }
+
+            // Viewfinder crosshair overlay - turns red if clear, grey if blocked by height map obstacles
+            ctx.strokeStyle = window.losBlocked ? "#7f8c8d" : "#e74c3c";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(window.viewX, window.viewY, 16, 0, Math.PI * 2);
+            ctx.moveTo(window.viewX - 24, window.viewY); ctx.lineTo(window.viewX + 24, window.viewY);
+            ctx.moveTo(window.viewX, window.viewY - 24); ctx.lineTo(window.viewX, window.viewY + 24);
+            ctx.stroke();
+
+            // Render elevated grid columns with dynamic 3D perspective depth scaling based on observer distance
+            for (let y = 0; y < 8; y++) {
+                for (let x = 0; x < 8; x++) {
+                    const h = window.sentinelHeights[y * 8 + x] || 0;
+                    if (h > 0) {
+                        const ox = window.sentinelObserverX || 3;
+                        const oy = window.sentinelObserverY || 7;
+                        
+                        // Calculate grid distance from player
+                        const dx = x - ox;
+                        const dy = y - oy;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+                        
+                        // Inverse scale factor (closer objects are larger, farther objects are smaller)
+                        const scale = Math.max(0.3, 3 / (dist + 1));
+                        
+                        // Project grid tile coordinates
+                        const gridW = 280 / 8;
+                        const gridH = 120 / 8;
+                        const px = 20 + x * gridW + gridW / 2;
+                        const py = 40 + y * gridH + gridH / 2;
+                        
+                        // Draw block height columns scaled by perspective factor
+                        const blockWidth = 20 * scale;
+                        const blockHeight = (h * 6) * scale;
+                        
+                        ctx.fillStyle = "#1abc9c";
+                        ctx.strokeStyle = "#16a085";
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.rect(px - blockWidth / 2, py - blockHeight, blockWidth, blockHeight);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Draw clone shells overlay on top of columns if matching coordinates
+                        const isClone = window.sentinelClones && window.sentinelClones.some(c => c.x === x && c.y === y);
+                        if (isClone) {
+                            ctx.fillStyle = "#00ffff";
+                            ctx.beginPath();
+                            ctx.arc(px, py - blockHeight - 4, 3 * scale, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+                                    // Render Victory Overlay Screen if won
+            // Render Victory Overlay Screen if won
+            if (window.sentinelWon) {
+                // Register high score on-chain if not done yet
+                if (!window.scoreSubmitted && typeof folkloreContract !== "undefined" && folkloreContract) {
+                    window.scoreSubmitted = true;
+                    const finalScoreVal = Math.round((window.sentinelEnergy || 100) * 100);
+                    folkloreContract.registerHighScore(finalScoreVal, { nonce: datamostNonce++ })
+                        .then(() => {
+                            console.log(`On-chain high score registered: ${finalScoreVal}`);
+                            // Fetch high score to display
+                            if (window.ethereum && window.ethereum.selectedAddress) {
+                                folkloreContract.getHighScore(window.ethereum.selectedAddress).then(score => {
+                                    window.onChainHighScore = (Number(score) / 100).toFixed(2);
+                                }).catch(() => {});
+                            }
+                        }).catch(() => { window.scoreSubmitted = false; });
+                }
+
+                ctx.fillStyle = "rgba(46, 204, 113, 0.9)";
+                ctx.fillRect(15, 15, canvas.width - 30, canvas.height - 30);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("MISSION COMPLETE", canvas.width / 2, canvas.height / 2 - 15);
+                
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("YOU HAVE CONQUERED THE SENTINEL PEDESTAL!", canvas.width / 2, canvas.height / 2 + 5);
+                ctx.fillText("FINAL ENERGY CORE VALUE: " + (window.sentinelEnergy || 100.0).toFixed(1), canvas.width / 2, canvas.height / 2 + 18);
+                
+                const highDisplay = window.onChainHighScore ? window.onChainHighScore : (window.sentinelEnergy || 100.0).toFixed(1);
+                ctx.fillText("ON-CHAIN RECORD SCORE: " + highDisplay, canvas.width / 2, canvas.height / 2 + 30);
+                ctx.fillText("PRESS ANY DIRECTION KEY TO ADVANCE TO NEXT LEVEL", canvas.width / 2, canvas.height / 2 + 45);
+                
+                if (interactiveKeys.up || interactiveKeys.down || interactiveKeys.left || interactiveKeys.right) {
+                    // Advance level index
+                    window.sentinelLevel = (window.sentinelLevel % 3) + 1;
+                    
+                    // Reset game state for next map
+                    window.sentinelWon = false;
+                    window.scoreSubmitted = false;
+                    window.sentinelEnergy = 100.0;
+                    window.sentinelObserverX = 3;
+                    window.sentinelObserverY = 7;
+                    window.sentinelHeights = null; // Reinitialize in next tick
+                }
+                return;
+            }
+
+            // HUD
+            ctx.fillStyle = alarmActive ? "#e74c3c" : "#2d3436";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("FIREBIRD 1986", 10, 15);
+            ctx.textAlign = "right";
+            const ox = window.sentinelObserverX || 3;
+            const oy = window.sentinelObserverY || 7;
+            const energyVal = (window.sentinelEnergy || 100.0).toFixed(1);
+            ctx.fillText("OBSERVER: (" + ox + ", " + oy + ") | ENERGY: " + energyVal, canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = alarmActive ? "#e74c3c" : "#2d3436";
+            ctx.fillText(alarmActive ? "⚠️ DRAIN WARNING ⚠️" : "THE SENTINEL", canvas.width / 2, 15);
+
+            if (alarmActive) {
+                ctx.fillStyle = "#e74c3c";
+                ctx.fillText("WARNING: SENTINEL GAZE DETECTED! ENERGY DEPRECATING!", canvas.width / 2, canvas.height - 12);
+            } else if (window.losBlocked) {
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillText("WARNING: TARGET TILE OUT OF SIGHT (INTERCEPTING ALTITUDE BLOCK)", canvas.width / 2, canvas.height - 12);
+            } else {
+                ctx.fillStyle = "#e74c3c";
+                const numClones = window.sentinelClones ? window.sentinelClones.length : 0;
+                ctx.fillText("SPACE: BUILD/HARVEST | ENTER: TELEPORT | C: CLONE | TAB: CYCLE VIEW (" + numClones + " active)", canvas.width / 2, canvas.height - 12);
+            }
+        }
+
         // Draw C64 Screen layout
         function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
             if (oregonActive) {
@@ -5231,6 +6492,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             const activeGameText = document.getElementById("activeGameText");
             const activeGameName = activeGameText ? activeGameText.innerText : "";
+            
+            if (activeGameName === "Blue Max") {
+                drawBlueMaxScreen();
+                return;
+            }
             
             if (activeGameName === "Ant Eater") {
                 drawAntEaterScreen();
@@ -5250,6 +6516,26 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             if (activeGameName === "Ultima-on-Chain") {
                 drawUltimaScreen();
+                return;
+            }
+            if (activeGameName === "Impossible Mission") {
+                drawImpossibleMissionScreen();
+                return;
+            }
+            if (activeGameName === "Name That Star") {
+                drawNameThatStarScreen();
+                return;
+            }
+            if (activeGameName === "Thrust") {
+                drawThrustScreen();
+                return;
+            }
+            if (activeGameName === "The Last Ninja") {
+                drawLastNinjaScreen();
+                return;
+            }
+            if (activeGameName === "Sentinel") {
+                drawSentinelScreen();
                 return;
             }
 

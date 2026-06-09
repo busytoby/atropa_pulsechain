@@ -740,6 +740,11 @@ let datamostConfig = {};
 let audioCtx;
 let isAudioPlaying = false;
 let voices = [];
+let batcherContract;
+let datamostNonce;
+const batcherABI = [
+    "function batchCall(address[] calldata targets, bytes[] calldata datas) external"
+];
 
 class SIDVoice {
     constructor(audioCtx, destination) {
@@ -878,6 +883,10 @@ async function initDatamostConsole() {
             cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, datamostSigner);
             graphicsContract = new ethers.Contract(localhost.graphicsSystemAddress, graphicsABI, datamostSigner);
             musicContract = new ethers.Contract(localhost.musicMakerAddress, musicABI, datamostSigner);
+            if (localhost.batcherAddress) {
+                batcherContract = new ethers.Contract(localhost.batcherAddress, batcherABI, datamostSigner);
+                log("Batcher contract loaded.", "success");
+            }
             log("DATAMOST system drivers successfully loaded.", "success");
 
             // Upload 6502 program to memory
@@ -961,6 +970,8 @@ async function initDatamostConsole() {
             await cpuContract.poke(53252, 100, { nonce: nonce++ }); // Alien X
             await cpuContract.poke(56320, 0xFF, { nonce: nonce++ }); // Joystick inputs
             await cpuContract.poke(0x02, 0, { nonce: nonce++ });    // Alien direction = 0
+            
+            datamostNonce = nonce;
 
             // Pre-fetch Sprite Patterns
             for (let i = 0; i < 8; i++) {
@@ -1233,9 +1244,20 @@ function startDatamostSimulationLoops() {
                 const collisionMask = Number(await graphicsContract.checkCollisions.staticCall());
                 const isCollision = (collisionMask & 6) === 6;
 
-                await cpuContract.poke(53278, collisionMask);
-                const tx = await cpuContract.runSteps(120);
-                await tx.wait();
+                if (batcherContract) {
+                    const targets = [cpuContract.target, cpuContract.target];
+                    const datas = [
+                        cpuContract.interface.encodeFunctionData("poke", [53278, collisionMask]),
+                        cpuContract.interface.encodeFunctionData("runSteps", [120])
+                    ];
+                    // Asynchronous non-blocking transaction broadcast
+                    batcherContract.batchCall(targets, datas, { nonce: datamostNonce++ }).catch(e => {
+                        console.warn("Batch simulation tick failed:", e.message);
+                    });
+                } else {
+                    cpuContract.poke(53278, collisionMask, { nonce: datamostNonce++ }).catch(() => {});
+                    cpuContract.runSteps(120, { nonce: datamostNonce++ }).catch(() => {});
+                }
 
                 const spr0_x = Number(await datamostProvider.getStorage(cpuContract.target, "0xd000"));
                 const spr0_y = Number(await datamostProvider.getStorage(cpuContract.target, "0xd001"));
@@ -1251,9 +1273,9 @@ function startDatamostSimulationLoops() {
                 s2_x = spr2_x;
                 s2_y = spr2_y;
 
-                await graphicsContract.updateSprite(0, s0_x, s0_y);
-                await graphicsContract.updateSprite(1, s1_x, s1_y);
-                await graphicsContract.updateSprite(2, s2_x, s2_y);
+                graphicsContract.updateSprite(0, s0_x, s0_y, { nonce: datamostNonce++ }).catch(() => {});
+                graphicsContract.updateSprite(1, s1_x, s1_y, { nonce: datamostNonce++ }).catch(() => {});
+                graphicsContract.updateSprite(2, s2_x, s2_y, { nonce: datamostNonce++ }).catch(() => {});
 
                 // Fetch border and background color registers (53280 and 53281)
                 const borderVal = Number(await datamostProvider.getStorage(cpuContract.target, "0xd020")) & 0xF;

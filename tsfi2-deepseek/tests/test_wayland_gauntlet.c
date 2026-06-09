@@ -228,7 +228,7 @@ static bool key_d_held = false;
 static bool key_w_held = false;
 static bool key_s_held = false;
 static bool key_space_held = false;
-static bool ai_mode = false;
+static bool ai_mode = true;
 
 struct SoundData {
     char type[32];
@@ -449,13 +449,62 @@ int main() {
 
         // Gather Inputs
         int moveDir = 0;
-        if (key_w_held) moveDir = 1;
-        else if (key_s_held) moveDir = 2;
-        else if (key_a_held) moveDir = 3;
-        else if (key_d_held) moveDir = 4;
+        bool fire = false;
+        
+        if (ai_mode) {
+            uint64_t raw_px = thunk_peek(55051);
+            uint64_t raw_py = thunk_peek(55052);
+            uint64_t raw_gx = thunk_peek(55055);
+            uint64_t raw_gy = thunk_peek(55056);
+            uint64_t raw_sx = thunk_peek(55057);
+            uint64_t raw_sy = thunk_peek(55058);
+
+            uint64_t tx = 0, ty = 0;
+            bool target_found = false;
+            
+            // Prioritize destroying the spawner first, then target the ghost
+            if (raw_sx > 0 && raw_sy > 0) {
+                tx = raw_sx;
+                ty = raw_sy;
+                target_found = true;
+            } else if (raw_gx > 0 && raw_gy > 0) {
+                tx = raw_gx;
+                ty = raw_gy;
+                target_found = true;
+            }
+            
+            if (target_found) {
+                int64_t dx = (int64_t)tx - (int64_t)raw_px;
+                int64_t dy = (int64_t)ty - (int64_t)raw_py;
+                
+                // Move along the axis with the largest distance
+                if (labs(dx) > labs(dy)) {
+                    if (dx > 0) moveDir = 4; // Right
+                    else moveDir = 3;        // Left
+                } else {
+                    if (dy > 0) moveDir = 2; // Down
+                    else moveDir = 1;        // Up
+                }
+                
+                // Shoot if lined up or close
+                if (labs(dx) < 80 || labs(dy) < 80) {
+                    fire = (frame_counter % 6 == 0); // Limit rate of fire
+                }
+            } else {
+                // No threat remains -> Victory screen!
+                moveDir = 0;
+                fire = false;
+            }
+        } else {
+            if (key_w_held) moveDir = 1;
+            else if (key_s_held) moveDir = 2;
+            else if (key_a_held) moveDir = 3;
+            else if (key_d_held) moveDir = 4;
+            if (key_space_held) fire = true;
+        }
 
         thunk_poke(55059, moveDir);
-        if (key_space_held) {
+        if (fire) {
             thunk_poke(55060, 1);
             play_synth_sound("shoot");
         }
@@ -496,7 +545,11 @@ int main() {
         draw_radial_glow(pixels, W, H, px, py, 20.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
 
         // Format and render HUD details
-        sprintf(status_message, "^B[WARRIOR] Health: %lu | Keys: %lu | Score: %lu^C", health, keys, score);
+        if (gx <= 0.0f && sx <= 0.0f) {
+            sprintf(status_message, "^B^U[VICTORY]^C ^IAll threats neutralized! Alchemical gold harvested! SCORE: %lu^C", score);
+        } else {
+            sprintf(status_message, "^B[WARRIOR] Health: %lu | Keys: %lu | Score: %lu^C", health, keys, score);
+        }
         draw_rect_ab4h(pixels, W, H, 0, H - 50, W, 50, make_ab4h_pixel(0.02f, 0.01f, 0.05f, 1.0f));
         draw_line_aa(pixels, W, H, 0.0f, (float)(H - 50), (float)W, (float)(H - 50), hud_pink, 2.0f);
         draw_string_ab4h(pixels, W, H, status_message, 20, H - 32, gold_yellow);

@@ -205,8 +205,7 @@ bool init_swapchain(VulkanSystem *s) {
 void recreate_swapchain(VulkanSystem *s) {
     if (!s || !s->vk || !s->vk->device) return;
     s->vk->vkDeviceWaitIdle(s->vk->device);
-    printf("[VULKAN] Recreating Swapchain...\n");
-    // TODO: cleanup old and re-init
+    printf("[VULKAN] Recreating Swapchain to %dx%d...\n", s->width, s->height);
     init_vk_swapchain(s->vk, s->width, s->height);
 }
 
@@ -384,6 +383,7 @@ void draw_ui_elements(VulkanSystem *s) {
 
 static VkBuffer g_staging_vk_buffer = VK_NULL_HANDLE;
 static VkDeviceMemory g_staging_vk_memory = VK_NULL_HANDLE;
+static size_t g_staging_vk_buffer_allocated_size = 0;
 
 bool init_staging_vk_buffer(VulkanSystem *s, size_t size) {
     if (!s || !s->vk) return false;
@@ -457,92 +457,130 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
     if (!s || !s->vk || !sb || !target || !cmd) return;
     VulkanContext *vk = s->vk;
 
-    if (!g_staging_vk_buffer) {
-        if (!init_staging_vk_buffer(s, sb->size)) return;
+    size_t bytes_per_pixel = (vk->swapchainFormat == VK_FORMAT_R16G16B16A16_SFLOAT) ? 8 : 4;
+    size_t dest_size = s->width * s->height * bytes_per_pixel;
+
+    if (!g_staging_vk_buffer || g_staging_vk_buffer_allocated_size != dest_size) {
+        if (g_staging_vk_buffer != VK_NULL_HANDLE) {
+            vk->vkDestroyBuffer(vk->device, g_staging_vk_buffer, NULL);
+            g_staging_vk_buffer = VK_NULL_HANDLE;
+        }
+        if (g_staging_vk_memory != VK_NULL_HANDLE) {
+            vk->vkFreeMemory(vk->device, g_staging_vk_memory, NULL);
+            g_staging_vk_memory = VK_NULL_HANDLE;
+        }
+        if (!init_staging_vk_buffer(s, dest_size)) return;
+        g_staging_vk_buffer_allocated_size = dest_size;
     }
 
     // 1. Copy CPU data to Staging VkBuffer
     void* mapped;
-    vk->vkMapMemory(vk->device, g_staging_vk_memory, 0, sb->size, 0, &mapped);
+    vk->vkMapMemory(vk->device, g_staging_vk_memory, 0, dest_size, 0, &mapped);
     
-    if (vk->swapchainFormat != VK_FORMAT_R16G16B16A16_SFLOAT && sb->stride == sb->width * 8) {
+    if (vk->swapchainFormat == VK_FORMAT_R16G16B16A16_SFLOAT) {
+        typedef struct { uint16_t r, g, b, a; } AB4HPixelLocal;
+        AB4HPixelLocal *src = (AB4HPixelLocal*)sb->data;
+        AB4HPixelLocal *dst = (AB4HPixelLocal*)mapped;
+        int dest_w = s->width;
+        int dest_h = s->height;
+        for (int y = 0; y < dest_h; y++) {
+            int src_y = (y * (int)sb->height) / dest_h;
+            if (src_y >= (int)sb->height) src_y = (int)sb->height - 1;
+            for (int x = 0; x < dest_w; x++) {
+                int src_x = (x * (int)sb->width) / dest_w;
+                if (src_x >= (int)sb->width) src_x = (int)sb->width - 1;
+                dst[y * dest_w + x] = src[src_y * sb->width + src_x];
+            }
+        }
+    } else if (sb->stride == sb->width * 8) {
         typedef struct { uint16_t r, g, b, a; } AB4HPixelLocal;
         AB4HPixelLocal *src = (AB4HPixelLocal*)sb->data;
         uint32_t *dst = (uint32_t*)mapped;
-        size_t total_pixels = sb->width * sb->height;
-        for (size_t i = 0; i < total_pixels; i++) {
-            // Half-to-float helper inline
-            uint16_t h_r = src[i].r;
-            uint32_t sign = (h_r & 0x8000) << 16;
-            uint32_t exponent = (h_r & 0x7c00) >> 10;
-            uint32_t mantissa = (h_r & 0x03ff) << 13;
-            if (exponent == 0) {
-                if (mantissa != 0) {
-                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
-                    exponent++; exponent += 127 - 15;
-                }
-            } else if (exponent == 31) exponent = 255;
-            else exponent += 127 - 15;
-            union { uint32_t u; float f; } u_r = { sign | (exponent << 23) | mantissa };
-            float fr = (exponent == 0 && mantissa == 0) ? 0.0f : u_r.f;
+        
+        int dest_w = s->width;
+        int dest_h = s->height;
+        for (int y = 0; y < dest_h; y++) {
+            int src_y = (y * (int)sb->height) / dest_h;
+            if (src_y >= (int)sb->height) src_y = (int)sb->height - 1;
+            for (int x = 0; x < dest_w; x++) {
+                int src_x = (x * (int)sb->width) / dest_w;
+                if (src_x >= (int)sb->width) src_x = (int)sb->width - 1;
+                
+                size_t src_idx = src_y * sb->width + src_x;
+                
+                // Half-to-float helper inline
+                uint16_t h_r = src[src_idx].r;
+                uint32_t sign = (h_r & 0x8000) << 16;
+                uint32_t exponent = (h_r & 0x7c00) >> 10;
+                uint32_t mantissa = (h_r & 0x03ff) << 13;
+                if (exponent == 0) {
+                    if (mantissa != 0) {
+                        while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                        exponent++; exponent += 127 - 15;
+                    }
+                } else if (exponent == 31) exponent = 255;
+                else exponent += 127 - 15;
+                union { uint32_t u; float f; } u_r = { sign | (exponent << 23) | mantissa };
+                float fr = (exponent == 0 && mantissa == 0) ? 0.0f : u_r.f;
 
-            uint16_t h_g = src[i].g;
-            sign = (h_g & 0x8000) << 16;
-            exponent = (h_g & 0x7c00) >> 10;
-            mantissa = (h_g & 0x03ff) << 13;
-            if (exponent == 0) {
-                if (mantissa != 0) {
-                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
-                    exponent++; exponent += 127 - 15;
-                }
-            } else if (exponent == 31) exponent = 255;
-            else exponent += 127 - 15;
-            union { uint32_t u; float f; } u_g = { sign | (exponent << 23) | mantissa };
-            float fg = (exponent == 0 && mantissa == 0) ? 0.0f : u_g.f;
+                uint16_t h_g = src[src_idx].g;
+                sign = (h_g & 0x8000) << 16;
+                exponent = (h_g & 0x7c00) >> 10;
+                mantissa = (h_g & 0x03ff) << 13;
+                if (exponent == 0) {
+                    if (mantissa != 0) {
+                        while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                        exponent++; exponent += 127 - 15;
+                    }
+                } else if (exponent == 31) exponent = 255;
+                else exponent += 127 - 15;
+                union { uint32_t u; float f; } u_g = { sign | (exponent << 23) | mantissa };
+                float fg = (exponent == 0 && mantissa == 0) ? 0.0f : u_g.f;
 
-            uint16_t h_b = src[i].b;
-            sign = (h_b & 0x8000) << 16;
-            exponent = (h_b & 0x7c00) >> 10;
-            mantissa = (h_b & 0x03ff) << 13;
-            if (exponent == 0) {
-                if (mantissa != 0) {
-                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
-                    exponent++; exponent += 127 - 15;
-                }
-            } else if (exponent == 31) exponent = 255;
-            else exponent += 127 - 15;
-            union { uint32_t u; float f; } u_b = { sign | (exponent << 23) | mantissa };
-            float fb = (exponent == 0 && mantissa == 0) ? 0.0f : u_b.f;
+                uint16_t h_b = src[src_idx].b;
+                sign = (h_b & 0x8000) << 16;
+                exponent = (h_b & 0x7c00) >> 10;
+                mantissa = (h_b & 0x03ff) << 13;
+                if (exponent == 0) {
+                    if (mantissa != 0) {
+                        while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                        exponent++; exponent += 127 - 15;
+                    }
+                } else if (exponent == 31) exponent = 255;
+                else exponent += 127 - 15;
+                union { uint32_t u; float f; } u_b = { sign | (exponent << 23) | mantissa };
+                float fb = (exponent == 0 && mantissa == 0) ? 0.0f : u_b.f;
 
-            uint16_t h_a = src[i].a;
-            sign = (h_a & 0x8000) << 16;
-            exponent = (h_a & 0x7c00) >> 10;
-            mantissa = (h_a & 0x03ff) << 13;
-            if (exponent == 0) {
-                if (mantissa != 0) {
-                    while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
-                    exponent++; exponent += 127 - 15;
-                }
-            } else if (exponent == 31) exponent = 255;
-            else exponent += 127 - 15;
-            union { uint32_t u; float f; } u_a = { sign | (exponent << 23) | mantissa };
-            float fa = (exponent == 0 && mantissa == 0) ? 0.0f : u_a.f;
+                uint16_t h_a = src[src_idx].a;
+                sign = (h_a & 0x8000) << 16;
+                exponent = (h_a & 0x7c00) >> 10;
+                mantissa = (h_a & 0x03ff) << 13;
+                if (exponent == 0) {
+                    if (mantissa != 0) {
+                        while (!(mantissa & 0x00800000)) { mantissa <<= 1; exponent--; }
+                        exponent++; exponent += 127 - 15;
+                    }
+                } else if (exponent == 31) exponent = 255;
+                else exponent += 127 - 15;
+                union { uint32_t u; float f; } u_a = { sign | (exponent << 23) | mantissa };
+                float fa = (exponent == 0 && mantissa == 0) ? 0.0f : u_a.f;
 
-            // Clamping to standard range
-            float max_val = 1.0f;
-            float min_val = 0.0f;
-            float cl_r = fr < min_val ? min_val : (fr > max_val ? max_val : fr);
-            float cl_g = fg < min_val ? min_val : (fg > max_val ? max_val : fg);
-            float cl_b = fb < min_val ? min_val : (fb > max_val ? max_val : fb);
-            float cl_a = fa < min_val ? min_val : (fa > max_val ? max_val : fa);
+                // Clamping to standard range
+                float max_val = 1.0f;
+                float min_val = 0.0f;
+                float cl_r = fr < min_val ? min_val : (fr > max_val ? max_val : fr);
+                float cl_g = fg < min_val ? min_val : (fg > max_val ? max_val : fg);
+                float cl_b = fb < min_val ? min_val : (fb > max_val ? max_val : fb);
+                float cl_a = fa < min_val ? min_val : (fa > max_val ? max_val : fa);
 
-            uint8_t r = (uint8_t)(cl_r * 255.0f);
-            uint8_t g = (uint8_t)(cl_g * 255.0f);
-            uint8_t b = (uint8_t)(cl_b * 255.0f);
-            uint8_t a = (uint8_t)(cl_a * 255.0f);
+                uint8_t r = (uint8_t)(cl_r * 255.0f);
+                uint8_t g = (uint8_t)(cl_g * 255.0f);
+                uint8_t b = (uint8_t)(cl_b * 255.0f);
+                uint8_t a = (uint8_t)(cl_a * 255.0f);
 
-            // B8G8R8A8 little-endian layout (B, G, R, A)
-            dst[i] = ((uint32_t)a << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+                // B8G8R8A8 little-endian layout (B, G, R, A)
+                dst[y * dest_w + x] = ((uint32_t)a << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+            }
         }
     } else {
         memcpy(mapped, sb->data, sb->size);
@@ -570,7 +608,7 @@ void upload_staging_to_image(VulkanSystem *s, StagingBuffer *sb, VkImage target,
         .bufferImageHeight = 0,
         .imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
         .imageOffset = {0, 0, 0},
-        .imageExtent = {(uint32_t)sb->width, (uint32_t)sb->height, 1}
+        .imageExtent = {(uint32_t)s->width, (uint32_t)s->height, 1}
     };
     vk->vkCmdCopyBufferToImage(cmd, g_staging_vk_buffer, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
@@ -653,7 +691,7 @@ void draw_frame(VulkanSystem *s) {
     VkRenderingInfo renderingInfo = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT,
-        .renderArea = { {0, 0}, vk->swapchainImages[imageIndex] ? (VkExtent2D){1280, 720} : (VkExtent2D){0, 0} }, // Target Plane 71 resolution
+        .renderArea = { {0, 0}, vk->swapchainImages[imageIndex] ? (VkExtent2D){(uint32_t)s->width, (uint32_t)s->height} : (VkExtent2D){0, 0} }, // Target swapchain resolution
         .layerCount = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments = &colorAttachment

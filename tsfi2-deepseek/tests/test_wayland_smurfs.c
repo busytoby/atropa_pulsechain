@@ -6,6 +6,8 @@
 #include <signal.h>
 #include <alsa/asoundlib.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include "vulkan/vulkan_main.h"
 #include "vulkan/vulkan_render.h"
 #include "tsfi_raw.h"
@@ -15,6 +17,12 @@
 #include "tsfi_font_ai.h"
 
 // Font helper removed to render all glyphs via DeepSeek system font loading
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#pragma GCC diagnostic pop
 
 // AB4H Pixel Layout
 typedef struct {
@@ -63,179 +71,6 @@ static inline float v3_dot(V3 a, V3 b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 static inline float v3_len(V3 a) { return sqrtf(v3_dot(a, a)); }
 static inline V3 v3_norm(V3 a) { float l = v3_len(a); return l > 0.0f ? v3_mul(a, 1.0f/l) : v3(0,0,0); }
 
-static inline float smin_c(float a, float b, float k) {
-    float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
-    return fminf(a, b) - h * h * k * 0.25f;
-}
-
-static inline float sd_ellipsoid(V3 p, V3 c, V3 r) {
-    V3 v = v3_sub(p, c);
-    float d = v3_len(v3(v.x/r.x, v.y/r.y, v.z/r.z)) - 1.0f;
-    float min_r = r.x;
-    if (r.y < min_r) min_r = r.y;
-    if (r.z < min_r) min_r = r.z;
-    return d * min_r;
-}
-
-static inline float noise_c(V3 x) {
-    return 0.08f * sinf(x.x * 12.0f) * cosf(x.y * 12.0f) * sinf(x.z * 12.0f);
-}
-
-static float map_sickness = 0.0f;
-static int map_anim_state = 0;
-static float map_frame_counter = 0.0f;
-
-static inline float map_teddy(V3 p, int *mat) {
-    float d_torso = sd_ellipsoid(p, v3(0.0f, -0.25f, 0.0f), v3(0.40f, 0.45f, 0.32f));
-    float d_head  = sd_ellipsoid(p, v3(0.0f, 0.32f, 0.05f), v3(0.32f, 0.30f, 0.30f));
-    float d_body = smin_c(d_torso, d_head, 0.12f);
-
-    float d_ear_l = sd_ellipsoid(p, v3(-0.24f, 0.58f, 0.0f), v3(0.11f, 0.11f, 0.05f));
-    float d_ear_r = sd_ellipsoid(p, v3(0.24f, 0.58f, 0.0f), v3(0.11f, 0.11f, 0.05f));
-    d_body = smin_c(d_body, smin_c(d_ear_l, d_ear_r, 0.05f), 0.05f);
-
-    float l_arm_y = 0.0f, r_arm_y = 0.0f;
-    float l_arm_x = -0.48f, r_arm_x = 0.48f;
-    float l_arm_z = 0.1f, r_arm_z = 0.1f;
-    if (map_anim_state == 1) {
-        float arm_angle = sinf(map_frame_counter * 0.4f) * 0.5f;
-        l_arm_y += arm_angle * 0.25f;
-        l_arm_z += arm_angle * 0.25f;
-        r_arm_y -= arm_angle * 0.25f;
-        r_arm_z -= arm_angle * 0.25f;
-    } else if (map_anim_state == 2) {
-        l_arm_y += 0.35f;
-        r_arm_y += 0.35f;
-    } else if (map_anim_state == 4) {
-        float wave = sinf(map_frame_counter * 0.9f) * 0.25f;
-        l_arm_y += wave;
-        r_arm_y -= wave;
-    }
-
-    float d_arm_l = sd_ellipsoid(p, v3(l_arm_x, l_arm_y, l_arm_z), v3(0.14f, 0.22f, 0.14f));
-    float d_arm_r = sd_ellipsoid(p, v3(r_arm_x, r_arm_y, r_arm_z), v3(0.14f, 0.22f, 0.14f));
-    d_body = smin_c(d_body, smin_c(d_arm_l, d_arm_r, 0.08f), 0.08f);
-
-    float l_leg_y = -0.65f, r_leg_y = -0.65f;
-    float l_leg_x = -0.28f, r_leg_x = 0.28f;
-    float l_leg_z = 0.18f, r_leg_z = 0.18f;
-    if (map_anim_state == 1) {
-        float walk_cycle = sinf(map_frame_counter * 0.4f) * 0.25f;
-        l_leg_z += walk_cycle;
-        r_leg_z -= walk_cycle;
-    }
-    float d_leg_l = sd_ellipsoid(p, v3(l_leg_x, l_leg_y, l_leg_z), v3(0.16f, 0.20f, 0.16f));
-    float d_leg_r = sd_ellipsoid(p, v3(r_leg_x, r_leg_y, r_leg_z), v3(0.16f, 0.20f, 0.16f));
-    d_body = smin_c(d_body, smin_c(d_leg_l, d_leg_r, 0.08f), 0.08f);
-
-    float d_snout = sd_ellipsoid(p, v3(0.0f, 0.23f, 0.28f), v3(0.14f, 0.11f, 0.09f));
-    float d_nose = sd_ellipsoid(p, v3(0.0f, 0.27f, 0.36f), v3(0.04f, 0.03f, 0.03f));
-    float d_eye_l = sd_ellipsoid(p, v3(-0.11f, 0.36f, 0.30f), v3(0.03f, 0.03f, 0.03f));
-    float d_eye_r = sd_ellipsoid(p, v3(0.11f, 0.36f, 0.30f), v3(0.03f, 0.03f, 0.03f));
-
-    float fur = noise_c(p);
-    d_body -= fur * 0.03f;
-
-    float d_eyes = fminf(d_eye_l, d_eye_r);
-    float d_cream = d_snout;
-    float d_ear_in_l = sd_ellipsoid(p, v3(-0.24f, 0.58f, 0.03f), v3(0.05f, 0.05f, 0.02f));
-    float d_ear_in_r = sd_ellipsoid(p, v3(0.24f, 0.58f, 0.03f), v3(0.05f, 0.05f, 0.02f));
-    d_cream = fminf(d_cream, fminf(d_ear_in_l, d_ear_in_r));
-
-    float final_d = d_body;
-    *mat = 0;
-    if (d_cream < final_d) { final_d = d_cream; *mat = 1; }
-    if (d_nose < final_d) { final_d = d_nose; *mat = 2; }
-    if (d_eyes < final_d) { final_d = d_eyes; *mat = 3; }
-
-    return final_d;
-}
-
-static inline V3 calc_normal_teddy(V3 p) {
-    const float eps = 0.005f;
-    int dummy;
-    V3 n;
-    n.x = map_teddy(v3(p.x+eps, p.y, p.z), &dummy) - map_teddy(v3(p.x-eps, p.y, p.z), &dummy);
-    n.y = map_teddy(v3(p.x, p.y+eps, p.z), &dummy) - map_teddy(v3(p.x, p.y-eps, p.z), &dummy);
-    n.z = map_teddy(v3(p.x, p.y, p.z+eps), &dummy) - map_teddy(v3(p.x, p.y, p.z-eps), &dummy);
-    return v3_norm(n);
-}
-
-void draw_raymarched_teddy_sprite(AB4HPixel *pixels, int w, int h, int draw_sx, int draw_sy, float scale, int anim_state, float frame_counter, float sickness) {
-    map_anim_state = anim_state;
-    map_frame_counter = frame_counter;
-    map_sickness = sickness;
-
-    int min_x = draw_sx - (int)(24.0f * scale);
-    int max_x = draw_sx + (int)(24.0f * scale);
-    int min_y = draw_sy - (int)(32.0f * scale);
-    int max_y = draw_sy + (int)(4.0f * scale);
-
-    if (min_x < 0) min_x = 0;
-    if (max_x >= w) max_x = w - 1;
-    if (min_y < 0) min_y = 0;
-    if (max_y >= h) max_y = h - 1;
-
-    V3 cam = v3(0.0f, 0.0f, 2.5f);
-
-    for (int cy = min_y; cy <= max_y; cy++) {
-        for (int cx = min_x; cx <= max_x; cx++) {
-            float lx = (float)(cx - draw_sx) / (20.0f * scale);
-            float ly = -(float)(cy - (draw_sy - 14.0f * scale)) / (20.0f * scale);
-
-            V3 ray_dir = v3_norm(v3(lx, ly, -1.5f));
-            float t = 0.0f;
-            int mat = 0;
-            int hit = 0;
-
-            for (int step = 0; step < 60; step++) {
-                V3 p = v3_add(cam, v3_mul(ray_dir, t));
-                float d = map_teddy(p, &mat);
-                if (d < 0.001f) {
-                    hit = 1;
-                    break;
-                }
-                if (t > 4.0f) break;
-                t += d * 0.4f;
-            }
-
-            if (hit) {
-                V3 p = v3_add(cam, v3_mul(ray_dir, t));
-                V3 n = calc_normal_teddy(p);
-                V3 light_dir = v3_norm(v3(1.0f, 1.0f, 1.5f));
-                float diff = fmaxf(0.15f, v3_dot(n, light_dir));
-                
-                V3 view_dir = v3_mul(ray_dir, -1.0f);
-                V3 half_vec = v3_norm(v3_add(light_dir, view_dir));
-                float spec = powf(fmaxf(0.0f, v3_dot(n, half_vec)), 16.0f) * 0.25f;
-
-                float r = 0.0f, g = 0.0f, b = 0.0f;
-                if (mat == 0) {
-                    r = 0.48f; g = 0.32f; b = 0.18f;
-                    if (sickness > 0.0f) {
-                        r = r * (1.0f - sickness) + 0.05f * sickness;
-                        g = g * (1.0f - sickness) + 0.75f * sickness;
-                        b = b * (1.0f - sickness) + 0.1f * sickness;
-                    }
-                } else if (mat == 1) {
-                    r = 0.85f; g = 0.78f; b = 0.65f;
-                } else if (mat == 2) {
-                    r = 0.05f; g = 0.05f; b = 0.05f;
-                } else if (mat == 3) {
-                    r = 1.8f; g = 0.0f; b = 0.0f;
-                    diff = 1.0f;
-                    spec = 0.0f;
-                }
-
-                float final_r = r * diff + spec;
-                float final_g = g * diff + spec;
-                float final_b = b * diff + spec;
-
-                pixels[cy * w + cx] = make_ab4h_pixel(final_r, final_g, final_b, 1.0f);
-            }
-        }
-    }
-}
 
 void draw_rect_ab4h(AB4HPixel *pixels, int w, int h, int x, int y, int rw, int rh, AB4HPixel color) {
     float tr = half_to_float(color.r), tg = half_to_float(color.g), tb = half_to_float(color.b), ta = half_to_float(color.a);
@@ -446,6 +281,75 @@ static float shake_dx = 0.0f;
 static float shake_dy = 0.0f;
 static int prev_energy = 100;
 
+static uint64_t thunk_peek(uint64_t addr);
+
+// virtual C64 VIC-II Registers (inspired by Sally Greenwood Larsen's Sprite Graphics for C64)
+static uint8_t vic_sprite_x[8];       // $D000 - Sprite X Coordinates
+static uint8_t vic_sprite_y[8];       // $D001 - Sprite Y Coordinates
+static uint8_t vic_sprite_msb = 0;    // $D010 - Sprite X MSB (9th bit)
+static uint8_t vic_sprite_enable = 0; // $D015 - Sprite Enable Register
+static uint8_t vic_sprite_y_expand = 0; // $D017 - Sprite Y Expansion
+static uint8_t vic_sprite_priority = 0; // $D01B - Sprite priority (0 = Sprite in front, 1 = Background in front)
+static uint8_t vic_sprite_multicolor = 0; // $D01C - Multicolor Mode Register
+static uint8_t vic_sprite_x_expand = 0; // $D01D - Sprite X Expansion
+static uint8_t vic_sprite_collision = 0; // $D01E - Sprite-to-Sprite Collision Strobe
+static uint8_t vic_sprite_pointer[8];  // Addresses 2040-2047: Sprite Data Pointers (pointing to 64-byte chunks)
+
+static void sync_c64_vic_registers(int frame_counter) {
+    // Sprite 0: Teddy Bear (Player)
+    int sx = (int)smurf_x;
+    int sy = (int)smurf_y;
+    vic_sprite_x[0] = sx & 0xFF;
+    if (sx > 255) vic_sprite_msb |= (1 << 0);
+    else vic_sprite_msb &= ~(1 << 0);
+    vic_sprite_y[0] = sy & 0xFF;
+
+    // Sprite 1: Crow
+    int cx = (int)crow_x;
+    int cy = (int)crow_y;
+    vic_sprite_x[1] = cx & 0xFF;
+    if (cx > 255) vic_sprite_msb |= (1 << 1);
+    else vic_sprite_msb &= ~(1 << 1);
+    vic_sprite_y[1] = cy & 0xFF;
+
+    // Sprite 2: Gargamel
+    int gx = (int)gargamel_x;
+    int gy = 500;
+    vic_sprite_x[2] = gx & 0xFF;
+    if (gx > 255) vic_sprite_msb |= (1 << 2);
+    else vic_sprite_msb &= ~(1 << 2);
+    vic_sprite_y[2] = gy & 0xFF;
+
+    // Enable/collision mirroring
+    vic_sprite_enable = 0x07; // Sprites 0, 1, 2 enabled
+    vic_sprite_collision = (thunk_peek(55046) != 0) ? 0x01 : 0x00;
+
+    // Multicolor register mapping: our procedural wireframe sprites utilize multiple colors
+    vic_sprite_multicolor = 0x07; // Sprites 0, 1, 2 set to C64 multicolor mode
+
+    // Priority register: player is behind obstacles like fences/stalagmites, mimicking background priority
+    vic_sprite_priority = 0x01; // Sprite 0 (player) has background priority active
+
+    // Mirror sprite pointers based on active animation frames to model page-flipping
+    int anim_state = (int)thunk_peek(55047);
+    int frame_idx = (frame_counter / 6) % 4; // approximate ticks per frame
+    
+    // Assign C64 memory offsets (multiplied by 64 bytes to locate data)
+    vic_sprite_pointer[0] = 32 + anim_state * 4 + frame_idx; // Player frames start at block 32
+    vic_sprite_pointer[1] = 64 + frame_idx;                  // Crow frames start at block 64
+    vic_sprite_pointer[2] = 80 + frame_idx;                  // Gargamel frames start at block 80
+
+    // Scaling registers mirroring C64 Sprite Expansion registers ($D017/$D01D)
+    int scale_reg = (int)thunk_peek(55045);
+    if (scale_reg == 1) {
+        vic_sprite_x_expand = 0x07; // Expanded width
+        vic_sprite_y_expand = 0x07; // Expanded height
+    } else {
+        vic_sprite_x_expand = 0;
+        vic_sprite_y_expand = 0;
+    }
+}
+
 struct SoundData {
     char type[32];
 };
@@ -571,9 +475,9 @@ static void reset_game_yul() {
     thunk_poke(55036, 0);   // soundStrobe
     thunk_poke(55037, 400); // crow_x
     thunk_poke(55038, 250); // crow_y
-    thunk_poke(55039, -4);  // crow_vx
+    thunk_poke(55039, 252);  // crow_vx (-4 in 8-bit)
     thunk_poke(55040, 500); // gargamel_x
-    thunk_poke(55041, -3);  // gargamel_vx
+    thunk_poke(55041, 253);  // gargamel_vx (-3 in 8-bit)
     thunk_poke(55043, 0);   // physical trauma (0 = Normal, 1 = Exhausted, 2 = Battered, 3 = Broken)
     thunk_poke(55044, 0);   // mental trauma (0 = Normal, 1 = Shaken, 2 = Terrified, 3 = Panicked)
     thunk_poke(55045, 0);   // sprite scaling (0 = Normal, 1 = Giant, 2 = Tiny)
@@ -621,6 +525,221 @@ static void smurfs_key_hook(void *data, uint32_t serial, uint32_t time, uint32_t
         }
     }
 }
+
+
+static AB4HPixel *g_forest_bg = NULL;
+static AB4HPixel *g_cavern_bg = NULL;
+static AB4HPixel *g_castle_bg = NULL;
+static AB4HPixel *g_sprite_sheet = NULL;
+static int g_sprite_sheet_w = 0;
+static int g_sprite_sheet_h = 0;
+
+static void draw_sprite_blitted(AB4HPixel *dest, int dest_w, int dest_h, 
+                               int draw_x, int draw_y, float scale,
+                               int src_x, int src_y, int src_w, int src_h,
+                               bool flip_h);
+
+// Sprite frame structure
+typedef struct {
+    int x, y, w, h;
+} SpriteFrame;
+
+// Sprite animation structure
+typedef struct {
+    SpriteFrame frames[8];
+    int frame_count;
+    int ticks_per_frame;
+    bool loops;
+} SpriteAnimation;
+
+// Entity sprite animations grouping
+typedef enum {
+    ANIM_IDLE = 0,
+    ANIM_WALK = 1,
+    ANIM_JUMP = 2,
+    ANIM_WOUNDED = 3,
+    ANIM_PANIC = 4,
+    ANIM_STATE_MAX
+} AnimState;
+
+typedef struct {
+    SpriteAnimation animations[ANIM_STATE_MAX];
+} EntitySpriteSet;
+
+static EntitySpriteSet g_smurf_sprites;
+static EntitySpriteSet g_crow_sprites;
+static EntitySpriteSet g_gargamel_sprites;
+
+static void init_sprite_system() {
+    // 1. Smurf Sprite Animations
+    // IDLE
+    g_smurf_sprites.animations[ANIM_IDLE] = (SpriteAnimation){
+        .frames = {{.x = 0 + 10, .y = 360 + 10, .w = 90, .h = 90}},
+        .frame_count = 1,
+        .ticks_per_frame = 1,
+        .loops = true
+    };
+    // WALK
+    g_smurf_sprites.animations[ANIM_WALK] = (SpriteAnimation){
+        .frames = {
+            {.x = 0 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90},
+            {.x = 1 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90},
+            {.x = 2 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90},
+            {.x = 3 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90}
+        },
+        .frame_count = 4,
+        .ticks_per_frame = 5,
+        .loops = true
+    };
+    // JUMP
+    g_smurf_sprites.animations[ANIM_JUMP] = (SpriteAnimation){
+        .frames = {{.x = 5 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90}},
+        .frame_count = 1,
+        .ticks_per_frame = 1,
+        .loops = true
+    };
+    // WOUNDED
+    g_smurf_sprites.animations[ANIM_WOUNDED] = (SpriteAnimation){
+        .frames = {{.x = 7 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90}},
+        .frame_count = 1,
+        .ticks_per_frame = 1,
+        .loops = true
+    };
+    // PANIC
+    g_smurf_sprites.animations[ANIM_PANIC] = (SpriteAnimation){
+        .frames = {{.x = 4 * 110 + 10, .y = 360 + 10, .w = 90, .h = 90}},
+        .frame_count = 1,
+        .ticks_per_frame = 1,
+        .loops = true
+    };
+
+    // 2. Crow Sprite Animations
+    // FLY/WALK
+    g_crow_sprites.animations[ANIM_WALK] = (SpriteAnimation){
+        .frames = {
+            {.x = 0 * 110 + 10, .y = 50 + 10, .w = 90, .h = 90},
+            {.x = 1 * 110 + 10, .y = 50 + 10, .w = 90, .h = 90},
+            {.x = 2 * 110 + 10, .y = 50 + 10, .w = 90, .h = 90},
+            {.x = 0 * 110 + 10, .y = 160 + 10, .w = 90, .h = 90}
+        },
+        .frame_count = 4,
+        .ticks_per_frame = 6,
+        .loops = true
+    };
+    g_crow_sprites.animations[ANIM_IDLE] = g_crow_sprites.animations[ANIM_WALK];
+
+    // 3. Gargamel Sprite Animations
+    // WALK
+    g_gargamel_sprites.animations[ANIM_WALK] = (SpriteAnimation){
+        .frames = {
+            {.x = 0 * 110 + 10, .y = 670 + 10, .w = 90, .h = 90},
+            {.x = 1 * 110 + 10, .y = 670 + 10, .w = 90, .h = 90},
+            {.x = 2 * 110 + 10, .y = 670 + 10, .w = 90, .h = 90},
+            {.x = 3 * 110 + 10, .y = 670 + 10, .w = 90, .h = 90}
+        },
+        .frame_count = 4,
+        .ticks_per_frame = 8,
+        .loops = true
+    };
+    g_gargamel_sprites.animations[ANIM_IDLE] = g_gargamel_sprites.animations[ANIM_WALK];
+}
+
+static void draw_sprite_frame(AB4HPixel *dest, int dest_w, int dest_h,
+                             int draw_x, int draw_y, float scale,
+                             EntitySpriteSet *set, AnimState state, int frame_counter,
+                             bool flip_h) {
+    if (state >= ANIM_STATE_MAX) state = ANIM_IDLE;
+    SpriteAnimation *anim = &set->animations[state];
+    if (anim->frame_count == 0) return;
+    
+    int frame_idx = (frame_counter / anim->ticks_per_frame) % anim->frame_count;
+    SpriteFrame *frame = &anim->frames[frame_idx];
+    
+    draw_sprite_blitted(dest, dest_w, dest_h, draw_x, draw_y, scale,
+                        frame->x, frame->y, frame->w, frame->h, flip_h);
+}
+
+static AB4HPixel *load_png_ab4h(const char *filename, int *out_w, int *out_h) {
+    int w, h, channels;
+    uint8_t *img_data = stbi_load(filename, &w, &h, &channels, 4);
+    if (!img_data) {
+        printf("[ERROR] Failed to load image: %s\n", filename);
+        return NULL;
+    }
+    AB4HPixel *pixels = malloc(w * h * sizeof(AB4HPixel));
+    for (int i = 0; i < w * h; i++) {
+        float r = img_data[i * 4 + 0] / 255.0f;
+        float g = img_data[i * 4 + 1] / 255.0f;
+        float b = img_data[i * 4 + 2] / 255.0f;
+        float a = img_data[i * 4 + 3] / 255.0f;
+        pixels[i] = make_ab4h_pixel(r, g, b, a);
+    }
+    stbi_image_free(img_data);
+    if (out_w) *out_w = w;
+    if (out_h) *out_h = h;
+    printf("[LOADER] Loaded texture %s (%dx%d)\n", filename, w, h);
+    return pixels;
+}
+
+static void draw_texture_bg(AB4HPixel *dest, int dest_w, int dest_h, AB4HPixel *src) {
+    if (!src) return;
+    float scroll_pct = smurf_x / 800.0f;
+    if (scroll_pct < 0.0f) scroll_pct = 0.0f;
+    if (scroll_pct > 1.0f) scroll_pct = 1.0f;
+    float scroll_x = scroll_pct * 224.0f;
+
+    for (int y = 50; y < dest_h - 40; y++) {
+        int src_y = (y * 1024) / dest_h;
+        if (src_y < 0) src_y = 0;
+        if (src_y >= 1024) src_y = 1023;
+        for (int x = 0; x < dest_w; x++) {
+            float logical_x = (x * 800.0f) / dest_w;
+            int src_x = (int)(scroll_x + logical_x);
+            if (src_x < 0) src_x = 0;
+            if (src_x >= 1024) src_x = 1023;
+            dest[y * dest_w + x] = src[src_y * 1024 + src_x];
+        }
+    }
+}
+
+static void draw_sprite_blitted(AB4HPixel *dest, int dest_w, int dest_h, 
+                               int draw_x, int draw_y, float scale,
+                               int src_x, int src_y, int src_w, int src_h,
+                               bool flip_h) {
+    if (!g_sprite_sheet) return;
+    int sw = (int)(src_w * scale);
+    int sh = (int)(src_h * scale);
+    int min_dx = draw_x - sw / 2;
+    int min_dy = draw_y - sh;
+
+    for (int y = 0; y < sh; y++) {
+        int dy = min_dy + y;
+        if (dy < 50 || dy >= dest_h - 40) continue;
+        for (int x = 0; x < sw; x++) {
+            int dx = min_dx + x;
+            if (dx < 0 || dx >= dest_w) continue;
+
+            int sx_offset = flip_h ? (sw - 1 - x) : x;
+            int sx = src_x + (int)(sx_offset / scale);
+            int sy = src_y + (int)(y / scale);
+
+            if (sx >= 0 && sx < g_sprite_sheet_w && sy >= 0 && sy < g_sprite_sheet_h) {
+                AB4HPixel sp = g_sprite_sheet[sy * g_sprite_sheet_w + sx];
+                float sa = half_to_float(sp.a);
+                if (sa > 0.05f) {
+                    AB4HPixel dp = dest[dy * dest_w + dx];
+                    float dr = half_to_float(dp.r), dg = half_to_float(dp.g), db = half_to_float(dp.b), da = half_to_float(dp.a);
+                    float sr = half_to_float(sp.r), sg = half_to_float(sp.g), sb = half_to_float(sp.b);
+                    float nr = dr * (1.0f - sa) + sr * sa;
+                    float ng = dg * (1.0f - sa) + sg * sa;
+                    float nb = db * (1.0f - sa) + sb * sa;
+                    dest[dy * dest_w + dx] = make_ab4h_pixel(nr, ng, nb, da);
+                }
+            }
+        }
+    }
+}
+
 
 typedef struct {
     AB4HPixel *pixels;
@@ -690,6 +809,12 @@ int main() {
         tsfi_font_ai_init(ai_fs);
     }
 
+    g_forest_bg = load_png_ab4h("assets/forest_bg.png", NULL, NULL);
+    g_cavern_bg = load_png_ab4h("assets/cavern_bg.png", NULL, NULL);
+    g_castle_bg = load_png_ab4h("assets/castle_bg.png", NULL, NULL);
+    g_sprite_sheet = load_png_ab4h("assets/vaesen_sprite_sheet.png", &g_sprite_sheet_w, &g_sprite_sheet_h);
+
+
     // Premium Palette
     AB4HPixel bg_cyber_navy = make_ab4h_pixel(0.02f, 0.02f, 0.08f, 1.0f);
     AB4HPixel neon_pink = make_ab4h_pixel(1.0f, 0.05f, 0.6f, 1.0f);
@@ -697,10 +822,24 @@ int main() {
     AB4HPixel neon_green = make_ab4h_pixel(0.05f, 0.85f, 0.3f, 1.0f);
     AB4HPixel neon_yellow = make_ab4h_pixel(1.2f, 1.2f, 0.0f, 1.0f);
     AB4HPixel shadow_black = make_ab4h_pixel(0.0f, 0.0f, 0.0f, 0.5f);
-    AB4HPixel gargamel_grey = make_ab4h_pixel(0.4f, 0.4f, 0.4f, 1.0f);
+
 
     int frame_counter = 0;
     float floor_y = 520.0f;
+
+    int obs_fd = open("/dev/shm/tsfi_wayland_fb", O_CREAT | O_RDWR, 0666);
+    uint32_t *obs_px = NULL;
+    if (obs_fd >= 0) {
+        if (ftruncate(obs_fd, 800 * 600 * 4) == 0) {
+            obs_px = mmap(NULL, 800 * 600 * 4, PROT_READ|PROT_WRITE, MAP_SHARED, obs_fd, 0);
+            if (obs_px == MAP_FAILED) {
+                obs_px = NULL;
+            }
+        }
+    }
+
+    reset_game_yul();
+    init_sprite_system();
 
     while (s->running && !exit_requested) {
         wl_display_roundtrip(s->display);
@@ -741,24 +880,35 @@ int main() {
             if (game_screen == 1) {
                 float fence_x = 360.0f;
                 float rock_x = 600.0f;
-                if (smurf_x > fence_x - 80.0f && smurf_x < fence_x - 10.0f) {
+                if (smurf_x > fence_x - 40.0f && smurf_x < fence_x - 15.0f) {
                     should_jump = true;
                 }
-                if (smurf_x > rock_x - 80.0f && smurf_x < rock_x - 10.0f) {
+                if (smurf_x > rock_x - 40.0f && smurf_x < rock_x - 15.0f) {
                     should_jump = true;
                 }
             } else if (game_screen == 2) {
                 float stal_x = 400.0f;
-                if (smurf_x > stal_x - 80.0f && smurf_x < stal_x - 10.0f) {
+                if (smurf_x > stal_x - 40.0f && smurf_x < stal_x - 15.0f) {
                     should_jump = true;
                 }
-                if (fabsf(crow_x - smurf_x) < 90.0f && crow_y > floor_y - 90.0f) {
+                if (fabsf(crow_x - smurf_x) < 70.0f && crow_y > floor_y - 90.0f) {
                     should_jump = true;
                 }
             } else if (game_screen == 3) {
-                // If Gargamel is close, jump over him
-                if (fabsf(gargamel_x - smurf_x) < 100.0f) {
-                    should_jump = true;
+                int gargamel_vx_raw = (int)thunk_peek(55041);
+                int gargamel_vx = (gargamel_vx_raw > 127) ? (gargamel_vx_raw - 256) : gargamel_vx_raw;
+
+                if (smurf_x > 350.0f) {
+                    if (fabsf(gargamel_x - smurf_x) < 80.0f) {
+                        should_jump = true;
+                    }
+                    moveDir = 2; // Walk right
+                } else {
+                    if (gargamel_vx < 0 && smurf_x >= 200.0f) {
+                        moveDir = 0; // Wait
+                    } else {
+                        moveDir = 2; // Walk right
+                    }
                 }
             }
             
@@ -770,36 +920,40 @@ int main() {
             if (should_jump && !smurf_jumping) {
                 thunk_poke(55026, 1); // Trigger Jump in Yul
             }
-            moveDir = 2; // Walk right
+            if (ai_mode && game_screen != 3) {
+                moveDir = 2;
+            }
         } else {
             if (key_a_held) moveDir = 1;
             else if (key_d_held) moveDir = 2;
         }
 
-        // Apply Vaesen Mental condition effects on movement inputs
-        if (ment_trauma == 2) { // Terrified: reversed controls
-            if (moveDir == 1) moveDir = 2;
-            else if (moveDir == 2) moveDir = 1;
-        } else if (ment_trauma == 3) { // Panicked: freeze periodically
-            if (frame_counter % 20 < 8) {
-                moveDir = 0;
+        if (!ai_mode) {
+            // Apply Vaesen Mental condition effects on movement inputs
+            if (ment_trauma == 2) { // Terrified: reversed controls
+                if (moveDir == 1) moveDir = 2;
+                else if (moveDir == 2) moveDir = 1;
+            } else if (ment_trauma == 3) { // Panicked: freeze periodically
+                if (frame_counter % 20 < 8) {
+                    moveDir = 0;
+                }
             }
-        }
 
-        // Apply Vaesen Physical condition effects on movement inputs (speed penalty)
-        if (phys_trauma == 1) { // Exhausted: 33% slower (skip move every 3rd frame)
-            if (frame_counter % 3 == 0) {
-                moveDir = 0;
+            // Apply Vaesen Physical condition effects on movement inputs (speed penalty)
+            if (phys_trauma == 1) { // Exhausted: 33% slower (skip move every 3rd frame)
+                if (frame_counter % 3 == 0) {
+                    moveDir = 0;
+                }
+            } else if (phys_trauma == 2) { // Battered: 50% slower (skip move every 2nd frame)
+                if (frame_counter % 2 == 0) {
+                    moveDir = 0;
+                }
+            } else if (phys_trauma == 3) { // Broken: 75% slower (only move every 4th frame)
+                if (frame_counter % 4 != 0) {
+                    moveDir = 0;
+                }
+                thunk_poke(55026, 0); // Override and clear jump trigger
             }
-        } else if (phys_trauma == 2) { // Battered: 50% slower (skip move every 2nd frame)
-            if (frame_counter % 2 == 0) {
-                moveDir = 0;
-            }
-        } else if (phys_trauma == 3) { // Broken: 75% slower (only move every 4th frame)
-            if (frame_counter % 4 != 0) {
-                moveDir = 0;
-            }
-            thunk_poke(55026, 0); // Override and clear jump trigger
         }
 
         thunk_poke(55025, moveDir);
@@ -835,9 +989,28 @@ int main() {
         game_over      = (thunk_peek(55034) != 0);
         game_win       = (thunk_peek(55035) != 0);
 
+        static bool last_game_win = false;
+        static bool last_game_over = false;
+        if (game_win != last_game_win) {
+            printf("[GAME STATE] Win status changed to: %d\n", game_win);
+            fflush(stdout);
+            last_game_win = game_win;
+        }
+        if (game_over != last_game_over) {
+            printf("[GAME STATE] Game Over status changed to: %d\n", game_over);
+            fflush(stdout);
+            last_game_over = game_over;
+        }
+        if (frame_counter % 30 == 0) {
+            printf("[GAME PROGRESS] Screen: %d, X: %.1f, Y: %.1f, Energy: %d\n", game_screen, smurf_x, smurf_y, energy);
+            fflush(stdout);
+        }
+
         crow_x         = (float)thunk_peek(55037);
         crow_y         = (float)thunk_peek(55038);
         gargamel_x     = (float)thunk_peek(55040);
+
+        sync_c64_vic_registers(frame_counter);
 
         // Proximity-based Fear/Mental Trauma calculation
         int target_fear = 0;
@@ -929,7 +1102,9 @@ int main() {
         }
 
         // Damage impact tracking: Trigger screen shake and kr0wZ particle burst
-        if (energy < prev_energy && !game_over) {
+        if (energy < prev_energy) {
+            printf("[GAME STATE] [DAMAGE] Took damage! Energy: %d -> %d, player_x: %.1f, player_y: %.1f, gargamel_x: %.1f, screen: %d\n", prev_energy, energy, smurf_x, smurf_y, gargamel_x, game_screen);
+            fflush(stdout);
             screen_shake_timer = 15; // shake for 15 frames
             
             // Increment Physical Trauma on damage
@@ -999,47 +1174,7 @@ int main() {
 
         // Draw screen backgrounds depending on current level screen
         if (game_screen == 1) {
-            // Screen 1: Forest Gradient with scrolling stars/dust
-            for (int y = 0; y < H; y++) {
-                float t = (float)y / H;
-                float gr = 0.01f * (1.0f - t) + 0.02f * t;
-                float gg = 0.10f * (1.0f - t) + 0.22f * t;
-                float gb = 0.04f * (1.0f - t) + 0.06f * t;
-                draw_rect_ab4h(pixels, W, H, 0, y, W, 1, make_ab4h_pixel(gr, gg, gb, 1.0f));
-            }
-
-            // Parallax scrolling clouds in the upper sky
-            for (int i = 0; i < 3; i++) {
-                float cloud_x = fmodf(50.0f + i * 300.0f - frame_counter * (0.2f + i * 0.1f), W + 200.0f) - 100.0f;
-                draw_radial_glow(pixels, W, H, cloud_x, 80.0f + i * 15.0f, 60.0f, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 0.08f));
-            }
-
-            // Distant rolling mountain silhouette (rendered as overlapping hills)
-            for (int hill_x = 0; hill_x < W; hill_x += 16) {
-                float hill_y1 = floor_y - 100.0f + sinf(hill_x * 0.006f) * 40.0f + cosf(hill_x * 0.012f) * 10.0f;
-                draw_line_aa(pixels, W, H, hill_x, floor_y, hill_x, hill_y1, make_ab4h_pixel(0.01f, 0.08f, 0.04f, 1.0f), 8.0f);
-            }
-
-            // Draw forest trees
-            draw_radial_glow(pixels, W, H, W * 0.3f, floor_y - 120, 110.0f, make_ab4h_pixel(0.0f, 0.4f, 0.15f, 0.35f));
-            draw_rect_ab4h(pixels, W, H, W * 0.3f - 8, floor_y - 120, 16, 120, make_ab4h_pixel(0.18f, 0.08f, 0.0f, 1.0f));
-            draw_radial_glow(pixels, W, H, W * 0.7f, floor_y - 140, 130.0f, make_ab4h_pixel(0.0f, 0.4f, 0.15f, 0.35f));
-            draw_rect_ab4h(pixels, W, H, W * 0.7f - 12, floor_y - 150, 24, 150, make_ab4h_pixel(0.18f, 0.08f, 0.0f, 1.0f));
-
-            // Glowing Magic Mushrooms on the floor path
-            for (int mush_x = 120; mush_x < W; mush_x += 280) {
-                draw_radial_glow(pixels, W, H, mush_x, floor_y - 10, 25.0f, make_ab4h_pixel(1.0f, 0.3f, 0.0f, 0.35f)); // neon orange mushroom glow
-                draw_rect_ab4h(pixels, W, H, mush_x - 3, floor_y - 12, 6, 12, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f)); // stem
-                draw_radial_glow(pixels, W, H, mush_x, floor_y - 12, 10.0f, make_ab4h_pixel(1.0f, 0.2f, 0.0f, 1.0f)); // cap
-            }
-
-            // Animated falling glowing forest leaves/wind particles
-            for (int i = 0; i < 5; i++) {
-                float leaf_x = fmodf(100.0f + i * 180.0f - frame_counter * (1.2f + i * 0.3f), W);
-                if (leaf_x < 0) leaf_x += W;
-                float leaf_y = 100.0f + sinf(frame_counter * 0.05f + i) * 30.0f + i * 40.0f;
-                draw_radial_glow(pixels, W, H, leaf_x, leaf_y, 8.0f, make_ab4h_pixel(0.1f, 0.8f, 0.2f, 0.3f));
-            }
+            draw_texture_bg(pixels, W, H, g_forest_bg);
 
             // Draw Fence at x = 360, height 25 (y=495 to 520)
             float fence_cx = 360.0f;
@@ -1057,64 +1192,7 @@ int main() {
             draw_line_aa(pixels, W, H, rock_cx - 8, floor_y - 15, rock_cx + 8, floor_y - 15, make_ab4h_pixel(0.6f, 0.6f, 0.65f, 1.0f), 1.5f);
             draw_line_aa(pixels, W, H, rock_cx + 8, floor_y - 15, rock_cx + 15, floor_y, make_ab4h_pixel(0.5f, 0.5f, 0.55f, 1.0f), 1.5f);
         } else if (game_screen == 2) {
-            // Screen 2: Gothic Cavern (darker theme with blue/purple ambient shadows and bioluminescence)
-            for (int y = 0; y < H; y++) {
-                float t = (float)y / H;
-                float cr = 0.01f * (1.0f - t) + 0.04f * t;
-                float cg = 0.01f * (1.0f - t) + 0.03f * t;
-                float cb = 0.03f * (1.0f - t) + 0.08f * t;
-                draw_rect_ab4h(pixels, W, H, 0, y, W, 1, make_ab4h_pixel(cr, cg, cb, 1.0f));
-            }
-
-            // Parallax Jagged Cave Arches in background
-            for (int arch_x = 0; arch_x < W; arch_x += 4) {
-                float arch_y = 60.0f + 30.0f * sinf(arch_x * 0.005f) + 15.0f * cosf(arch_x * 0.015f);
-                // ceiling arch shadow
-                if (arch_x % 8 == 0) {
-                    draw_line_aa(pixels, W, H, arch_x, 50, arch_x, arch_y + 10, make_ab4h_pixel(0.02f, 0.02f, 0.04f, 0.5f), 4.0f);
-                }
-            }
-
-            // Bioluminescent Moss on the background walls (Teal / Purple clusters)
-            for (int moss_x = 50; moss_x < W; moss_x += 180) {
-                float moss_y = 150.0f + (moss_x % 5) * 40.0f;
-                draw_radial_glow(pixels, W, H, moss_x, moss_y, 45.0f, make_ab4h_pixel(0.0f, 0.6f, 0.5f, 0.15f));
-                draw_radial_glow(pixels, W, H, moss_x + 30, moss_y - 20, 35.0f, make_ab4h_pixel(0.5f, 0.0f, 0.7f, 0.12f));
-            }
-
-            // Floating cave dust particles / magic embers
-            for (int i = 0; i < 8; i++) {
-                float px_x = fmodf(50.0f + i * 140.0f + frame_counter * 0.3f, W);
-                float px_y = 120.0f + sinf(frame_counter * 0.02f + i) * 40.0f + i * 35.0f;
-                draw_radial_glow(pixels, W, H, px_x, px_y, 6.0f, make_ab4h_pixel(0.0f, 0.8f, 0.9f, 0.25f));
-            }
-
-            // Dripping Stalactites hanging from ceiling
-            for (int i = 0; i < W; i += 50) {
-                int len = 45 + (i % 6) * 12;
-                // Rock structure
-                draw_line_aa(pixels, W, H, i, 50, i + 12, 50 + len, make_ab4h_pixel(0.18f, 0.16f, 0.20f, 1.0f), 3.0f);
-                draw_line_aa(pixels, W, H, i + 24, 50, i + 12, 50 + len, make_ab4h_pixel(0.15f, 0.14f, 0.18f, 1.0f), 3.0f);
-                // Glowing tips (bioluminescent mold on stalactites)
-                if (i % 100 == 0) {
-                    draw_radial_glow(pixels, W, H, i + 12, 50 + len, 12.0f, make_ab4h_pixel(0.0f, 0.8f, 0.7f, 0.4f));
-                    // Animated dripping water drop
-                    float drop_y = 50 + len + fmodf(frame_counter * 1.5f + (i * 2), floor_y - (50 + len));
-                    if (drop_y < floor_y - 2.0f) {
-                        draw_radial_glow(pixels, W, H, i + 12, drop_y, 4.0f, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 0.8f));
-                    }
-                }
-            }
-
-            // Glowing neon runic crystals on cave floor
-            for (int x_pos = 100; x_pos < W; x_pos += 220) {
-                draw_radial_glow(pixels, W, H, x_pos, floor_y - 15, 35.0f, make_ab4h_pixel(0.0f, 0.8f, 1.0f, 0.35f)); // Crystal glow
-                // Crystal cluster shapes
-                draw_line_aa(pixels, W, H, x_pos, floor_y, x_pos - 8, floor_y - 22, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 1.0f), 2.0f);
-                draw_line_aa(pixels, W, H, x_pos, floor_y, x_pos + 8, floor_y - 28, make_ab4h_pixel(0.2f, 0.7f, 1.0f, 1.0f), 2.0f);
-                draw_line_aa(pixels, W, H, x_pos - 4, floor_y, x_pos - 12, floor_y - 14, make_ab4h_pixel(0.0f, 0.8f, 0.9f, 0.9f), 1.5f);
-                draw_line_aa(pixels, W, H, x_pos + 4, floor_y, x_pos + 12, floor_y - 16, make_ab4h_pixel(0.3f, 0.9f, 1.0f, 0.9f), 1.5f);
-            }
+            draw_texture_bg(pixels, W, H, g_cavern_bg);
 
             // Draw Stalagmite at x = 400, height 30 (y=490 to 520) - styled as a gothic runic spike
             float stal_cx = 400.0f;
@@ -1127,59 +1205,14 @@ int main() {
             draw_line_aa(pixels, W, H, stal_cx + 6, floor_y, stal_cx, floor_y - 22, neon_cyan, 1.5f);
             draw_line_aa(pixels, W, H, stal_cx, floor_y, stal_cx, floor_y - 28, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
 
-            // Draw Crow at crow_x, crow_y - styled as folklore Shadow Crow
-            float wing_sweep = sinf(frame_counter * 0.3f) * 12.0f;
-            // Folklore shadow trail/glow
-            draw_radial_glow(pixels, W, H, crow_x, crow_y, 20.0f, make_ab4h_pixel(0.1f, 0.0f, 0.2f, 0.3f)); // Shadow aura
-            draw_radial_glow(pixels, W, H, crow_x, crow_y, 12.0f, make_ab4h_pixel(0.02f, 0.02f, 0.05f, 0.8f)); // Dark body volume
-            
-            // Get Crow horizontal velocity direction from EVM
+            // Draw Crow (Stable Diffusion Sprite)
             int crow_vx_raw = (int)thunk_peek(55039);
             int crow_vx = (crow_vx_raw > 127) ? (crow_vx_raw - 256) : crow_vx_raw;
             bool face_left = (crow_vx < 0);
-
-            // 1. Black felt Torso
-            draw_rect_ab4h(pixels, W, H, (int)crow_x - 5, (int)crow_y - 3, 10, 8, make_ab4h_pixel(0.02f, 0.02f, 0.04f, 1.0f));
-
-            // 2. Black head
-            draw_radial_glow(pixels, W, H, crow_x, crow_y - 6, 6.0f, make_ab4h_pixel(0.03f, 0.03f, 0.06f, 1.0f));
-
-            // 3. Sharp yellow/gold beak pointing in movement direction
-            if (face_left) {
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y - 4, crow_x - 11, crow_y - 2, neon_yellow, 1.5f);
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y - 3, crow_x - 11, crow_y - 2, neon_yellow, 1.0f);
-            } else {
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y - 4, crow_x + 11, crow_y - 2, neon_yellow, 1.5f);
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y - 3, crow_x + 11, crow_y - 2, neon_yellow, 1.0f);
-            }
-
-            // 4. Feathery wings flapping with double layered feathers
-            AB4HPixel wing_color = make_ab4h_pixel(0.02f, 0.02f, 0.04f, 1.0f);
-            AB4HPixel wing_glow = make_ab4h_pixel(0.1f, 0.0f, 0.15f, 0.6f);
-            // Left wing
-            draw_line_aa(pixels, W, H, crow_x, crow_y, crow_x - 20, crow_y - wing_sweep, wing_color, 2.5f);
-            draw_line_aa(pixels, W, H, crow_x - 6, crow_y, crow_x - 18, crow_y + 4 - wing_sweep * 0.7f, wing_color, 1.8f);
-            draw_line_aa(pixels, W, H, crow_x - 12, crow_y, crow_x - 24, crow_y + 8 - wing_sweep, wing_glow, 1.2f);
-            
-            // Right wing
-            draw_line_aa(pixels, W, H, crow_x, crow_y, crow_x + 20, crow_y - wing_sweep, wing_color, 2.5f);
-            draw_line_aa(pixels, W, H, crow_x + 6, crow_y, crow_x + 18, crow_y + 4 - wing_sweep * 0.7f, wing_color, 1.8f);
-            draw_line_aa(pixels, W, H, crow_x + 12, crow_y, crow_x + 24, crow_y + 8 - wing_sweep, wing_glow, 1.2f);
-
-            // 5. Tail feathers pointing backwards
-            if (face_left) {
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y + 4, crow_x + 14, crow_y + 7, wing_color, 2.2f);
-                draw_line_aa(pixels, W, H, crow_x + 2, crow_y + 5, crow_x + 11, crow_y + 9, wing_color, 1.5f);
-            } else {
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y + 4, crow_x - 14, crow_y + 7, wing_color, 2.2f);
-                draw_line_aa(pixels, W, H, crow_x - 2, crow_y + 5, crow_x - 11, crow_y + 9, wing_color, 1.5f);
-            }
-
-            // 6. Glowing Crimson folklore Eyes (instead of simple yellow)
-            AB4HPixel red_eye = make_ab4h_pixel(1.5f, 0.0f, 0.0f, 1.0f);
-            draw_rect_ab4h(pixels, W, H, crow_x + (face_left ? -3 : 2), crow_y - 6, 2, 2, red_eye);
-            draw_radial_glow(pixels, W, H, crow_x + (face_left ? -3 : 2), crow_y - 6, 4.0f, make_ab4h_pixel(1.0f, 0.0f, 0.0f, 0.4f));
+            draw_sprite_frame(pixels, W, H, (int)crow_x, (int)crow_y + 10, 0.45f, &g_crow_sprites, ANIM_WALK, frame_counter, face_left);
         } else if (game_screen == 3) {
+            draw_texture_bg(pixels, W, H, g_castle_bg);
+
             // Castle Screen: Gargamel's Cage containing Smurfette
             int cage_x = 680;
             int cage_y = floor_y - 80;
@@ -1242,40 +1275,9 @@ int main() {
             draw_line_aa(pixels, W, H, baby_x - 2, baby_y + 4, baby_x - 3, baby_y + 7, baby_brown, 2.0f); // Left leg
             draw_line_aa(pixels, W, H, baby_x + 2, baby_y + 4, baby_x + 3, baby_y + 7, baby_brown, 2.0f); // Right leg
 
-            // Draw Gargamel
-            // Evil purple aura around Gargamel
-            draw_radial_glow(pixels, W, H, gargamel_x, floor_y - 20, 25.0f, make_ab4h_pixel(0.3f, 0.0f, 0.6f, 0.25f));
-            
-            // 1. Dark Robe/Cloak body with patches
-            draw_rect_ab4h(pixels, W, H, gargamel_x - 12, floor_y - 36, 24, 36, shadow_black); // Dark undercloak
-            draw_line_aa(pixels, W, H, gargamel_x - 12, floor_y, gargamel_x, floor_y - 36, gargamel_grey, 2.0f); // Left fold
-            draw_line_aa(pixels, W, H, gargamel_x + 12, floor_y, gargamel_x, floor_y - 36, gargamel_grey, 2.0f); // Right fold
-            draw_rect_ab4h(pixels, W, H, (int)gargamel_x - 7, (int)floor_y - 14, 4, 4, make_ab4h_pixel(0.7f, 0.1f, 0.1f, 1.0f)); // Red patch on cloak
-
-            // 2. Bald Head & fringe black hair
-            AB4HPixel skin_color = make_ab4h_pixel(0.85f, 0.70f, 0.60f, 1.0f);
-            draw_radial_glow(pixels, W, H, gargamel_x, floor_y - 43, 6.0f, skin_color); // Bald pate
-            draw_rect_ab4h(pixels, W, H, gargamel_x - 4, floor_y - 45, 8, 6, skin_color);
-            draw_line_aa(pixels, W, H, gargamel_x - 6, floor_y - 42, gargamel_x - 6, floor_y - 37, shadow_black, 2.0f); // Left hair fringe
-            draw_line_aa(pixels, W, H, gargamel_x + 6, floor_y - 42, gargamel_x + 6, floor_y - 37, shadow_black, 2.0f); // Right hair fringe
-
-            // 3. Prominent Evil Nose & Face details
-            draw_radial_glow(pixels, W, H, gargamel_x - 4, floor_y - 41, 4.0f, make_ab4h_pixel(0.9f, 0.1f, 0.1f, 0.8f)); // Bulbous nose
-            draw_line_aa(pixels, W, H, gargamel_x, floor_y - 43, gargamel_x - 6, floor_y - 41, skin_color, 1.5f); // Nose ridge
-            
-            // Evil glowing yellow eyes with tiny red pupils
-            draw_rect_ab4h(pixels, W, H, gargamel_x - 3, floor_y - 45, 2, 2, neon_yellow);
-            draw_rect_ab4h(pixels, W, H, gargamel_x + 1, floor_y - 45, 2, 2, neon_yellow);
-            draw_rect_ab4h(pixels, W, H, gargamel_x - 2, floor_y - 44, 1, 1, make_ab4h_pixel(1.0f, 0.0f, 0.0f, 1.0f)); // left pupil
-            draw_rect_ab4h(pixels, W, H, gargamel_x + 2, floor_y - 44, 1, 1, make_ab4h_pixel(1.0f, 0.0f, 0.0f, 1.0f)); // right pupil
-
-            // 4. Evil hands clutching forward
-            draw_line_aa(pixels, W, H, gargamel_x - 8, floor_y - 30, gargamel_x - 16, floor_y - 28, skin_color, 1.5f); // Left arm clutching
-            draw_line_aa(pixels, W, H, gargamel_x + 8, floor_y - 30, gargamel_x + 16, floor_y - 28, skin_color, 1.5f); // Right arm clutching
-
-            // 5. Worn out boots
-            draw_rect_ab4h(pixels, W, H, gargamel_x - 10, floor_y - 2, 6, 2, make_ab4h_pixel(0.2f, 0.15f, 0.1f, 1.0f));
-            draw_rect_ab4h(pixels, W, H, gargamel_x + 4, floor_y - 2, 6, 2, make_ab4h_pixel(0.2f, 0.15f, 0.1f, 1.0f));
+            // Draw Gargamel (Stable Diffusion Alchemist Sprite)
+            bool gargamel_face_left = (thunk_peek(55041) > 127);
+            draw_sprite_frame(pixels, W, H, (int)gargamel_x, (int)floor_y, 0.65f, &g_gargamel_sprites, ANIM_WALK, frame_counter, gargamel_face_left);
         }
 
         // Draw Player (The Stuffed Smurf with kr0wZ sickness)
@@ -1308,30 +1310,13 @@ int main() {
         // Render warm amber lantern glow around the Smurf
         draw_radial_glow(pixels, W, H, draw_sx, draw_sy - (int)(15 * scale), (int)(110 * scale), make_ab4h_pixel(1.0f, 0.65f, 0.15f, 0.28f));
 
-                draw_rect_ab4h(pixels, W, H, draw_sx - (int)(12 * scale), floor_y - 2, (int)(24 * scale), 4, shadow_black);
+        // Blit the Player (Stable Diffusion Small Blue Forest Troll)
+        static bool last_face_left = false;
+        if (key_a_held) last_face_left = true;
+        if (key_d_held) last_face_left = false;
 
-        // Raymarch the 3D Teddy Bear sprite dynamically!
-        float sickness_factor = (float)phys_trauma * 0.33f;
-        draw_raymarched_teddy_sprite(pixels, W, H, draw_sx, draw_sy, scale, anim_state, frame_counter, sickness_factor);
+        draw_sprite_frame(pixels, W, H, draw_sx, draw_sy + 5, scale * 0.7f, &g_smurf_sprites, anim_state, frame_counter, last_face_left);
 
-        // Render the 2D Knitted Scarf on top of the 3D raymarched body for folklore styling
-        AB4HPixel scarf_red = make_ab4h_pixel(0.85f, 0.05f, 0.12f, 1.0f);
-        float bob_y = 0.0f;
-        if (anim_state == 1) {
-            bob_y = fabsf(sinf(frame_counter * 0.4f)) * 3.0f * scale;
-        } else if (anim_state == 2) {
-            bob_y = -4.0f * scale;
-        } else if (anim_state == 3) {
-            bob_y = sinf(frame_counter * 1.5f) * 1.0f * scale;
-        } else if (anim_state == 4) {
-            bob_y = sinf(frame_counter * 0.9f) * 2.0f * scale;
-        }
-        float head_y = draw_sy - (int)(22 * scale) + bob_y;
-        float neck_y = head_y + (int)(7 * scale);
-        float scarf_wave = sinf(frame_counter * 0.25f) * 3.0f * scale;
-        draw_line_aa(pixels, W, H, draw_sx - (int)(7 * scale), neck_y, draw_sx + (int)(7 * scale), neck_y, scarf_red, 3.5f * scale); // scarf loop
-        draw_line_aa(pixels, W, H, draw_sx + (int)(4 * scale), neck_y, draw_sx + (int)(10 * scale) + scarf_wave, neck_y + (int)(8 * scale), scarf_red, 2.5f * scale);
-        draw_radial_glow(pixels, W, H, draw_sx + (int)(10 * scale) + scarf_wave, neck_y + (int)(8 * scale), (int)(2.0f * scale), scarf_red);
 
         // Draw kr0wZ glitch damage burst particles
         float ngr = half_to_float(neon_green.r);
@@ -1419,6 +1404,33 @@ int main() {
         snprintf(hud_right, sizeof(hud_right), "TRAUMA: %s  |  FEAR: %s", phys_str, ment_str);
         draw_string_ab4h(pixels, W, H, hud_right, W - 480, 15, neon_yellow);
 
+        // 5.5. Draw Game State Overlay (Victory or Game Over Banner)
+        if (game_win) {
+            // Draw a semi-transparent dark overlay in the center of the screen
+            draw_rect_ab4h(pixels, W, H, W / 2 - 200, H / 2 - 60, 400, 100, shadow_black);
+            // Draw border
+            draw_line_aa(pixels, W, H, (float)(W / 2 - 200), (float)(H / 2 - 60), (float)(W / 2 + 200), (float)(H / 2 - 60), neon_green, 2.0f);
+            draw_line_aa(pixels, W, H, (float)(W / 2 - 200), (float)(H / 2 + 40), (float)(W / 2 + 200), (float)(H / 2 + 40), neon_green, 2.0f);
+            draw_line_aa(pixels, W, H, (float)(W / 2 - 200), (float)(H / 2 - 60), (float)(W / 2 - 200), (float)(H / 2 + 40), neon_green, 2.0f);
+            draw_line_aa(pixels, W, H, (float)(W / 2 + 200), (float)(H / 2 - 60), (float)(W / 2 + 200), (float)(H / 2 + 40), neon_green, 2.0f);
+            
+            draw_string_ab4h(pixels, W, H, "^B^U*** VICTORY! ***", W / 2 - 110, H / 2 - 40, neon_yellow);
+            draw_string_ab4h(pixels, W, H, "BABY BEAR RESCUED!", W / 2 - 100, H / 2 - 10, neon_cyan);
+            draw_string_ab4h(pixels, W, H, "PRESS [R] TO PLAY AGAIN", W / 2 - 130, H / 2 + 15, neon_green);
+        } else if (game_over) {
+            // Draw a semi-transparent dark overlay
+            draw_rect_ab4h(pixels, W, H, W / 2 - 200, H / 2 - 60, 400, 100, shadow_black);
+            // Draw border
+            draw_line_aa(pixels, W, H, (float)(W / 2 - 200), (float)(H / 2 - 60), (float)(W / 2 + 200), (float)(H / 2 - 60), neon_pink, 2.0f);
+            draw_line_aa(pixels, W, H, (float)(W / 2 - 200), (float)(H / 2 + 40), (float)(W / 2 + 200), (float)(H / 2 + 40), neon_pink, 2.0f);
+            draw_line_aa(pixels, W, H, (float)(W / 2 - 200), (float)(H / 2 - 60), (float)(W / 2 - 200), (float)(H / 2 + 40), neon_pink, 2.0f);
+            draw_line_aa(pixels, W, H, (float)(W / 2 + 200), (float)(H / 2 - 60), (float)(W / 2 + 200), (float)(H / 2 + 40), neon_pink, 2.0f);
+            
+            draw_string_ab4h(pixels, W, H, "^B^U*** GAME OVER ***", W / 2 - 110, H / 2 - 40, neon_pink);
+            draw_string_ab4h(pixels, W, H, "THE TEDDY BEAR COLLAPSED", W / 2 - 130, H / 2 - 10, neon_yellow);
+            draw_string_ab4h(pixels, W, H, "PRESS [R] TO RESTART", W / 2 - 110, H / 2 + 15, neon_cyan);
+        }
+
         // --- DeepSeek Post-Processing & Spatial Upscale Upgrade Layer ---
         if (ai_fs) {
             DeepSeekEvolveContext dec = {
@@ -1463,6 +1475,33 @@ int main() {
                             pixels[ny * W + nx] = make_ab4h_pixel(nr, ng, nb, na);
                         }
                     }
+                }
+            }
+        }
+
+        if (obs_px && pixels) {
+            for (int y = 0; y < 600; y++) {
+                int src_y = (y * H) / 600;
+                if (src_y < 0) src_y = 0;
+                if (src_y >= H) src_y = H - 1;
+                for (int x = 0; x < 800; x++) {
+                    int src_x = (x * W) / 800;
+                    if (src_x < 0) src_x = 0;
+                    if (src_x >= W) src_x = W - 1;
+                    AB4HPixel p = pixels[src_y * W + src_x];
+                    float r = half_to_float(p.r);
+                    float g = half_to_float(p.g);
+                    float b = half_to_float(p.b);
+                    if (r < 0.0f) { r = 0.0f; }
+                    if (r > 1.0f) { r = 1.0f; }
+                    if (g < 0.0f) { g = 0.0f; }
+                    if (g > 1.0f) { g = 1.0f; }
+                    if (b < 0.0f) { b = 0.0f; }
+                    if (b > 1.0f) { b = 1.0f; }
+                    uint32_t ur = (uint32_t)(r * 255.0f);
+                    uint32_t ug = (uint32_t)(g * 255.0f);
+                    uint32_t ub = (uint32_t)(b * 255.0f);
+                    obs_px[y * 800 + x] = 0xFF000000 | (ur << 16) | (ug << 8) | ub;
                 }
             }
         }

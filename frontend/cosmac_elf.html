@@ -282,9 +282,14 @@
     <script>
         let lastTrapLogTime = 0;
         let forceUppercase = false;
+        let isCapturing = false;
+        let captureLog = [];
         function logTrapEvent(msg, force = false) {
             if (forceUppercase && typeof msg === "string") {
                 msg = msg.toUpperCase();
+            }
+            if (isCapturing) {
+                captureLog.push(msg);
             }
             const now = Date.now();
             if (force || (now - lastTrapLogTime > 250)) {
@@ -2042,6 +2047,51 @@
                         } else {
                             logTrapEvent("[FORTH ERROR] dispatch requires [param] [func_id] on stack", true);
                         }
+                        break;
+                    case "h14-dump":
+                        if (forthStack.length >= 2) {
+                            const size = forthStack.pop();
+                            const addr = forthStack.pop();
+                            logTrapEvent(`🖨️ [HEATH H14] DUMPING ${size} BYTES FROM 0x${addr.toString(16).toUpperCase()}:`, true);
+                            for (let i = 0; i < size; i += 8) {
+                                let lineHex = "";
+                                let lineAscii = "";
+                                for (let j = 0; j < 8; j++) {
+                                    if (i + j < size) {
+                                        const b = cpu.memory[(addr + i + j) & 0xFFFF];
+                                        lineHex += b.toString(16).toUpperCase().padStart(2, '0') + " ";
+                                        lineAscii += (b >= 32 && b <= 126) ? String.fromCharCode(b) : ".";
+                                    } else {
+                                        lineHex += "   ";
+                                    }
+                                }
+                                logTrapEvent(`  0x${(addr + i).toString(16).toUpperCase().padStart(4, '0')}: ${lineHex} | ${lineAscii}`, true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] h14-dump requires [addr] [size] on stack", true);
+                        }
+                        break;
+                    case "capture-on":
+                        isCapturing = true;
+                        logTrapEvent("📥 [DATA CAPTURE] Session capture logging ENABLED.", true);
+                        break;
+                    case "capture-off":
+                        isCapturing = false;
+                        logTrapEvent("📥 [DATA CAPTURE] Session capture logging DISABLED.", true);
+                        break;
+                    case "capture-show":
+                        logTrapEvent(`📥 [DATA CAPTURE] Captured Session Log (${captureLog.length} entries):`, true);
+                        if (captureLog.length === 0) {
+                            logTrapEvent("   (Capture buffer is empty)", true);
+                        } else {
+                            captureLog.forEach((entry, idx) => {
+                                logTrapEvent(`  [#${idx.toString().padStart(3, '0')}] ${entry}`, true);
+                            });
+                        }
+                        break;
+                    case "capture-clear":
+                        captureLog = [];
+                        logTrapEvent("📥 [DATA CAPTURE] Session capture buffer cleared.", true);
                         break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
