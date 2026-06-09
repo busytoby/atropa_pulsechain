@@ -11,8 +11,8 @@ const defaultColumns = [
         reply: "Ah, the classic voice leak! We checked the listing and found that you must ensure the gating bit is poked ONLY after setting the high/low frequency bounds. Also, we suggest verifying your typed program through our new TSFi2 Helmholtz proof verification command line utility: 'YULEXEC cpu6502'. Keep coding!"
     },
     {
-        author: "HANSON KAPPELMAN, NEW YORK, NY",
-        message: "I am looking for a Commodore 64 program for genealogy to construct a family tree. Does Ahoy! plan to publish one?",
+        author: "HANSON KAPPELMAN, PITTSBURGH, PA",
+        message: "I am looking for a Commodore 64 program for genealogy to construct a family tree. Does Ahoy! plan to publish one? (Ahoy! Issue 5, May 1984)",
         reply: "While we haven't published a dedicated family tree builder yet, we've updated our virtual board-game framework (Yul CPU) to track ghost lineage trees dynamically using memory slot 55062. Dotted vector lineage lines now link each spawned entity to its ancestor generator on Layer 2!"
     }
 ];
