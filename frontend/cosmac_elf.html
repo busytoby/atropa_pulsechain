@@ -210,6 +210,7 @@
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0003)">0x0003-4</div><div style="color: #ebdcb9;">Guru Meditation Fault PC</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0200)">0x0200-3CF</div><div style="color: #ebdcb9;">Manuscript ROM Space</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x03D0)">0x03D0-3FF</div><div style="color: #ebdcb9;">Warm Restart Recovery Vector</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0980)">0x0980-9DF</div><div style="color: #ebdcb9;">Sigil of the Butterfly RLE</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0EA0)">0x0EA0-FFF</div><div style="color: #ebdcb9;">Pixie Display Buffer</div>
                         <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x8000)">0x8000-80FF</div><div style="color: #ebdcb9;">Z-Machine DNA Buffer</div>
                     </div>
@@ -226,6 +227,7 @@
                         <option value="maze">🌀 Labyrinth Generator (Procedural Maze)</option>
                         <option value="sieve">🧮 Sieve of Eratosthenes (Prime Modulo Grid)</option>
                         <option value="life">👾 Cellular Automaton (Chaotic Gas Particles)</option>
+                        <option value="butterfly">🦋 Sigil of the Butterfly (RLE Compressed)</option>
                     </select>
 
                     <p style="font-size: 0.9rem; color: #ebdcb9; line-height: 1.4; margin-bottom: 0;">
@@ -744,9 +746,39 @@
         }
 
         function loadSelected() {
-            cpu.loadRom(getSelectedRom());
-            updateMonitor();
-            renderDisplay();
+            const selector = document.getElementById("romSelector");
+            if (selector.value === "butterfly") {
+                cpu.reset();
+                const butterflySigil = [
+                    255, 0, 1, 0,
+                    20, 0, 4, 1, 16, 0, 4, 1, 20, 0,
+                    18, 0, 8, 1, 12, 0, 8, 1, 18, 0,
+                    16, 0, 12, 1, 8, 0, 12, 1, 16, 0,
+                    14, 0, 16, 1, 4, 0, 16, 1, 14, 0,
+                    12, 0, 40, 1, 12, 0,
+                    14, 0, 36, 1, 14, 0,
+                    16, 0, 32, 1, 16, 0,
+                    18, 0, 28, 1, 18, 0,
+                    20, 0, 24, 1, 20, 0,
+                    22, 0, 20, 1, 22, 0,
+                    24, 0, 16, 1, 24, 0,
+                    26, 0, 12, 1, 26, 0,
+                    28, 0, 8, 1, 28, 0,
+                    30, 0, 4, 1, 30, 0,
+                    255, 0, 255, 0, 255, 0, 131, 0
+                ];
+                for (let i = 0; i < butterflySigil.length; i++) {
+                    cpu.memory[0x0980 + i] = butterflySigil[i];
+                }
+                logTrapEvent("🦋 [BUTTERFLY] Loaded Sigil of the Butterfly RLE data at address 0x0980 (2432).", true);
+                logTrapEvent("💡 Run it in the Forth Console by typing: 2432 90 decompress", true);
+                updateMonitor();
+                renderDisplay();
+            } else {
+                cpu.loadRom(getSelectedRom());
+                updateMonitor();
+                renderDisplay();
+            }
         }
 
         function step() {
