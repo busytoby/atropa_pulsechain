@@ -710,6 +710,9 @@
 
         document.getElementById("romSelector").addEventListener("change", () => {
             loadSelected();
+            if (!isRunning) {
+                document.getElementById("btnRun").click();
+            }
         });
 
         // Forth Interpreter State
