@@ -41,10 +41,10 @@ uint8_t peek(uint16_t addr) {
     return c64_ram[addr];
 }
 
-// 3-Voice Polyphonic Sequence (Triads)
-static const uint16_t melody_v1[4] = {0x1128, 0x159B, 0x1A40, 0x2250}; // Bass root
-static const uint16_t melody_v2[4] = {0x159B, 0x1A40, 0x2250, 0x2B78}; // Thirds
-static const uint16_t melody_v3[4] = {0x1A40, 0x2250, 0x2B78, 0x35E0}; // Fifths/Octaves
+// 3-Voice Polyphonic Sequence (8-step triad progression: Am - Am - F - F - C - C - G - G)
+static const uint16_t melody_v1[8] = {0x0E14, 0x0E14, 0x0B2C, 0x0B2C, 0x085F, 0x085F, 0x0C8B, 0x0C8B}; // Bass root
+static const uint16_t melody_v2[8] = {0x10BE, 0x10BE, 0x0E14, 0x0E14, 0x0A8C, 0x0A8C, 0x0FCE, 0x0FCE}; // Thirds
+static const uint16_t melody_v3[8] = {0x1518, 0x1518, 0x10BE, 0x10BE, 0x0C8B, 0x0C8B, 0x12CB, 0x12CB}; // Fifths
 static int melody_step = 0;
 
 void trigger_interrupt_music_maker() {
@@ -68,7 +68,7 @@ void trigger_interrupt_music_maker() {
     poke(SID_V3_FREQ_HI, (f3 >> 8) & 0xFF);
     poke(SID_V3_CTRL, 0x41); // Gate on (Pulse)
     
-    melody_step = (melody_step + 1) % 4;
+    melody_step = (melody_step + 1) % 8;
 }
 
 int main() {
@@ -100,8 +100,8 @@ int main() {
     uint32_t epoch = 1;
 
     // 3. Play the polyphonic chords through simulated C64 interrupts & compute acoustic proof roots
-    printf("[AHOY!] Playing 3-voice polyphony and generating resonance proofs...\n");
-    for (int i = 0; i < 4; i++) {
+    printf("[AHOY!] Playing 8-step polyphony and generating resonance proofs...\n");
+    for (int i = 0; i < 8; i++) {
         trigger_interrupt_music_maker();
         
         // Retrieve voice frequencies from virtual registers
