@@ -184,59 +184,64 @@ object "ZMachine" {
                     }
                 }
                 case 0x6c6f6f6b { // "look"
-                    let tokenAddr := sload(add(2000000, roomId))
-                    
-                    if tokenAddr {
-                        mstore(resultPtr, 0x436f6e74726163743a2000000000000000000000000000000000000000000000) // "Contract: "
-                        resultPtr := add(resultPtr, 10)
-                        resultPtr := writeHexAddress(tokenAddr, resultPtr)
-                        
-                        mstore8(resultPtr, 10) // '\n'
-                        resultPtr := add(resultPtr, 1)
-                        
-                        mstore(resultPtr, 0x4e616d653a200000000000000000000000000000000000000000000000000000) // "Name: "
-                        resultPtr := add(resultPtr, 6)
-                        resultPtr := queryContractString(tokenAddr, 0x06fdde0300000000000000000000000000000000000000000000000000000000, resultPtr) // name()
-                        
-                        mstore8(resultPtr, 10) // '\n'
-                        resultPtr := add(resultPtr, 1)
-                        
-                        mstore(resultPtr, 0x53796d626f6c3a20000000000000000000000000000000000000000000000000) // "Symbol: "
-                        resultPtr := add(resultPtr, 8)
-                        resultPtr := queryContractString(tokenAddr, 0x95d89b4100000000000000000000000000000000000000000000000000000000, resultPtr) // symbol()
-                        
-                        mstore8(resultPtr, 10) // '\n'
-                        resultPtr := add(resultPtr, 1)
-                        
-                        let typePtr := 0x1500
-                        let typeEnd := queryContractString(tokenAddr, 0xfc0c546a00000000000000000000000000000000000000000000000000000000, typePtr) // Type()
-                        let typeWord := mload(typePtr)
-                        
-                        mstore(resultPtr, 0x417661696c61626c6520436f6d6d616e64733a0a202d207472616e736665720a) // "Available Commands:\n - transfer\n"
-                        mstore(add(resultPtr, 32), 0x202d20617070726f76650a202d2062616c616e63654f660a202d20746f7461) // " - approve\n - balanceOf\n - tota"
-                        mstore(add(resultPtr, 64), 0x6c537570706c790a000000000000000000000000000000000000000000000000) // "lSupply\n"
-                        resultPtr := add(resultPtr, 72)
-                        
-                        if eq(shr(224, typeWord), 0x564f4944) { // "VOID"
-                            mstore(resultPtr, 0x202d2043686174205b6d73675d0a202d204c6f67205b6c696e655d0a202d2053) // " - Chat [msg]\n - Log [line]\n - S"
-                            mstore(add(resultPtr, 32), 0x6574417474726962757465205b6b2c765d0a202d2047657441747472696275) // "etAttribute [k,v]\n - GetAttribu"
-                            mstore(add(resultPtr, 64), 0x7465205b6b5d0a202d20416c696173205b612c765d0a202d20456e7465720a00) // "te [k]\n - Alias [a,v]\n - Enter\n"
-                            resultPtr := add(resultPtr, 95)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            mstore(resultPtr, 0x5b5a4d4d5d20436f6e74726163743a2000000000000000000000000000000000) // "[ZMM] Contract: "
+                            resultPtr := add(resultPtr, 16)
+                            resultPtr := writeHexAddress(tokenAddr, resultPtr)
+                            mstore8(resultPtr, 10)
+                            resultPtr := add(resultPtr, 1)
+
+                            mstore(resultPtr, 0x5b5a4d4d5d204e616d653a200000000000000000000000000000000000000000) // "[ZMM] Name: "
+                            resultPtr := add(resultPtr, 12)
+                            resultPtr := queryContractString(tokenAddr, 0x06fdde0300000000000000000000000000000000000000000000000000000000, resultPtr) // name()
+                            mstore8(resultPtr, 10)
+                            resultPtr := add(resultPtr, 1)
+
+                            mstore(resultPtr, 0x5b5a4d4d5d2053796d626f6c3a20000000000000000000000000000000000000) // "[ZMM] Symbol: "
+                            resultPtr := add(resultPtr, 14)
+                            resultPtr := queryContractString(tokenAddr, 0x95d89b4100000000000000000000000000000000000000000000000000000000, resultPtr) // symbol()
+                            mstore8(resultPtr, 10)
+                            resultPtr := add(resultPtr, 1)
+
+                            let typePtr := 0x1500
+                            let typeEnd := queryContractString(tokenAddr, 0xff76204400000000000000000000000000000000000000000000000000000000, typePtr) // Type()
+                            let typeWord := mload(typePtr)
+
+                            mstore(resultPtr, 0x5b5a4d4d5d20417661696c61626c6520436f6d6d616e64733a0a202d20747261) // "[ZMM] Available Commands:\n - tra"
+                            mstore(add(resultPtr, 32), 0x6e736665720a202d20617070726f76650a202d2062616c616e63654f660a202d) // "nsfer\n - approve\n - balanceOf\n -"
+                            mstore(add(resultPtr, 64), 0x20746f74616c537570706c790a00000000000000000000000000000000000000) // " totalSupply\n"
+                            resultPtr := add(resultPtr, 77)
+
+                            if eq(shr(224, typeWord), 0x564f4944) { // "VOID"
+                                mstore(resultPtr, 0x202d2043686174205b6d73675d0a000000000000000000000000000000000000) // " - Chat [msg]\n"
+                                mstore(add(resultPtr, 14), 0x202d204c6f67205b6c696e655d0a000000000000000000000000000000000000) // " - Log [line]\n"
+                                mstore(add(resultPtr, 28), 0x202d20536574417474726962757465205b6b2c765d0a00000000000000000000) // " - SetAttribute [k,v]\n"
+                                mstore(add(resultPtr, 50), 0x202d20476574417474726962757465205b6b5d0a000000000000000000000000) // " - GetAttribute [k]\n"
+                                mstore(add(resultPtr, 70), 0x202d20416c696173205b612c765d0a0000000000000000000000000000000000) // " - Alias [a,v]\n"
+                                mstore(add(resultPtr, 85), 0x202d20456e7465720a0000000000000000000000000000000000000000000000) // " - Enter\n"
+                                resultPtr := add(resultPtr, 94)
+                            }
+                            if eq(shr(224, typeWord), 0x51494e47) { // "QING"
+                                mstore(resultPtr, 0x202d204a6f696e205b746f6b656e5d0a00000000000000000000000000000000) // " - Join [token]\n"
+                                mstore(add(resultPtr, 16), 0x202d2043686174205b6d73675d0a000000000000000000000000000000000000) // " - Chat [msg]\n"
+                                mstore(add(resultPtr, 32), 0x205769746864726177205b742c615d0a00000000000000000000000000000000) // " - Withdraw [t,a]\n"
+                                mstore(add(resultPtr, 48), 0x202d2041646d6974746564205b745d0a00000000000000000000000000000000) // " - Admitted [t]\n"
+                                mstore(add(resultPtr, 64), 0x202d20736574426f756e63657244697669736f72205b645d0a00000000000000) // " - setBouncerDivisor [d]\n"
+                                mstore(add(resultPtr, 89), 0x202d20736574436f766572436861726765205b635d0a00000000000000000000) // " - setCoverCharge [c]\n"
+                                resultPtr := add(resultPtr, 111)
+                            }
                         }
-                        
-                        if eq(shr(224, typeWord), 0x51494e47) { // "QING"
-                            mstore(resultPtr, 0x202d204a6f696e205b746f6b656e5d0a202d2043686174205b6d73675d0a202d) // " - Join [token]\n - Chat [msg]\n -"
-                            mstore(add(resultPtr, 32), 0x205769746864726177205b742c615d0a202d2041646d6974746564205b745d) // " Withdraw [t,a]\n - Admitted [t]"
-                            mstore(add(resultPtr, 64), 0x0a202d20736574426f756e63657244697669736f72205b645d0a202d2073) // "\n - setBouncerDivisor [d]\n - s"
-                            mstore(add(resultPtr, 96), 0x6574436f766572436861726765205b635d0a0000000000000000000000000000) // "etCoverCharge [c]\n"
-                            resultPtr := add(resultPtr, 113)
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x5b5a4d4d5d204e6f20636f6e747261637420626f756e6420746f207468697320) // "[ZMM] No contract bound to this "
+                            mstore(add(resultPtr, 32), 0x726f6f6d2e0a0000000000000000000000000000000000000000000000000000) // "room.\n"
+                            resultPtr := add(resultPtr, 38)
                         }
-                    }
-                    
-                    if iszero(tokenAddr) {
+
                         let customLen := sload(add(3000000, roomId))
                         if customLen {
-                            let wordCount := div(add(customLen, 31), 32)
                             for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
                                 if lt(mul(i, 32), customLen) {
                                     let val := sload(add(add(3100000, mul(roomId, 100)), i))
@@ -245,275 +250,1229 @@ object "ZMachine" {
                             }
                             resultPtr := add(resultPtr, customLen)
                         }
-                        if iszero(customLen) {
-                            if eq(roomId, 1) {
-                                mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
-                                resultPtr := add(resultPtr, 30)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        
+                        if tokenAddr {
+                            mstore(resultPtr, 0x436f6e74726163743a2000000000000000000000000000000000000000000000) // "Contract: "
+                            resultPtr := add(resultPtr, 10)
+                            resultPtr := writeHexAddress(tokenAddr, resultPtr)
+                            
+                            mstore8(resultPtr, 10) // '\n'
+                            resultPtr := add(resultPtr, 1)
+                            
+                            mstore(resultPtr, 0x4e616d653a200000000000000000000000000000000000000000000000000000) // "Name: "
+                            resultPtr := add(resultPtr, 6)
+                            resultPtr := queryContractString(tokenAddr, 0x06fdde0300000000000000000000000000000000000000000000000000000000, resultPtr) // name()
+                            
+                            mstore8(resultPtr, 10) // '\n'
+                            resultPtr := add(resultPtr, 1)
+                            
+                            mstore(resultPtr, 0x53796d626f6c3a20000000000000000000000000000000000000000000000000) // "Symbol: "
+                            resultPtr := add(resultPtr, 8)
+                            resultPtr := queryContractString(tokenAddr, 0x95d89b4100000000000000000000000000000000000000000000000000000000, resultPtr) // symbol()
+                            
+                            mstore8(resultPtr, 10) // '\n'
+                            resultPtr := add(resultPtr, 1)
+                            
+                            let typePtr := 0x1500
+                            let typeEnd := queryContractString(tokenAddr, 0xff76204400000000000000000000000000000000000000000000000000000000, typePtr) // Type()
+                            let typeWord := mload(typePtr)
+                            
+                            mstore(resultPtr, 0x417661696c61626c6520436f6d6d616e64733a0a202d207472616e736665720a) // "Available Commands:\n - transfer\n"
+                            mstore(add(resultPtr, 32), 0x202d20617070726f76650a202d2062616c616e63654f660a202d20746f7461) // " - approve\n - balanceOf\n - tota"
+                            mstore(add(resultPtr, 64), 0x6c537570706c790a000000000000000000000000000000000000000000000000) // "lSupply\n"
+                            resultPtr := add(resultPtr, 72)
+                            
+                            if eq(shr(224, typeWord), 0x564f4944) { // "VOID"
+                                mstore(resultPtr, 0x202d2043686174205b6d73675d0a202d204c6f67205b6c696e655d0a202d2053) // " - Chat [msg]\n - Log [line]\n - S"
+                                mstore(add(resultPtr, 32), 0x6574417474726962757465205b6b2c765d0a202d204765744174747269627500) // "etAttribute [k,v]\n - GetAttribu"
+                                mstore(add(resultPtr, 64), 0x7465205b6b5d0a202d20416c696173205b612c765d0a202d20456e7465720a00) // "te [k]\n - Alias [a,v]\n - Enter\n"
+                                resultPtr := add(resultPtr, 95)
                             }
-                            if iszero(eq(roomId, 1)) {
-                                mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
-                                resultPtr := add(resultPtr, 25)
+                            
+                            if eq(shr(224, typeWord), 0x51494e47) { // "QING"
+                                mstore(resultPtr, 0x202d204a6f696e205b746f6b656e5d0a202d2043686174205b6d73675d0a202d) // " - Join [token]\n - Chat [msg]\n -"
+                                mstore(add(resultPtr, 32), 0x205769746864726177205b742c615d0a202d2041646d6974746564205b745d00) // " Withdraw [t,a]\n - Admitted [t]"
+                                mstore(add(resultPtr, 64), 0x0a202d20736574426f756e63657244697669736f72205b645d0a202d20730000) // "\n - setBouncerDivisor [d]\n - s"
+                                mstore(add(resultPtr, 96), 0x6574436f766572436861726765205b635d0a0000000000000000000000000000) // "etCoverCharge [c]\n"
+                                resultPtr := add(resultPtr, 113)
                             }
                         }
-                    }
-                    
-                    // Display any items in the current room
-                    if eq(sload(add(2000300, 50)), roomId) {
-                        mstore(resultPtr, 0x20596f7520736565206120476f6c6420546f6b656e20686572652e0000000000) // " You see a Gold Token here."
-                        resultPtr := add(resultPtr, 27)
-                    }
-                    if eq(sload(add(2000300, 51)), roomId) {
-                        mstore(resultPtr, 0x20596f75207365652061204b65796361726420686572652e0000000000000000) // " You see a Keycard here."
-                        resultPtr := add(resultPtr, 24)
-                    }
-                    if eq(sload(add(2000300, 52)), roomId) {
-                        mstore(resultPtr, 0x20596f752073656520616e20456e65726779205061636b20686572652e000000) // " You see an Energy Pack here."
-                        resultPtr := add(resultPtr, 28)
+                        
+                        if iszero(tokenAddr) {
+                            let customLen := sload(add(3000000, roomId))
+                            if customLen {
+                                let wordCount := div(add(customLen, 31), 32)
+                                for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                                    if lt(mul(i, 32), customLen) {
+                                        let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                        mstore(add(resultPtr, mul(i, 32)), val)
+                                    }
+                                }
+                                resultPtr := add(resultPtr, customLen)
+                            }
+                            if iszero(customLen) {
+                                if eq(roomId, 1) {
+                                    mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
+                                    resultPtr := add(resultPtr, 30)
+                                }
+                                if iszero(eq(roomId, 1)) {
+                                    mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                                    resultPtr := add(resultPtr, 25)
+                                }
+                            }
+                        }
+                        
+                        // Display any items in the current room
+                        if eq(sload(add(2000300, 50)), roomId) {
+                            mstore(resultPtr, 0x20596f7520736565206120476f6c6420546f6b656e20686572652e0000000000) // " You see a Gold Token here."
+                            resultPtr := add(resultPtr, 27)
+                        }
+                        if eq(sload(add(2000300, 51)), roomId) {
+                            mstore(resultPtr, 0x20596f75207365652061204b65796361726420686572652e0000000000000000) // " You see a Keycard here."
+                            resultPtr := add(resultPtr, 24)
+                        }
+                        if eq(sload(add(2000300, 52)), roomId) {
+                            mstore(resultPtr, 0x20596f752073656520616e20456e65726779205061636b20686572652e000000) // " You see an Energy Pack here."
+                            resultPtr := add(resultPtr, 28)
+                        }
                     }
                 }
                 case 0x43686174 { // "Chat" (Void and Qing Chat)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00) // "No contract bound to this room."
-                        resultPtr := add(resultPtr, 31)
-                    }
-                    if tokenAddr {
-                        let argLen := sub(cmdLen, 5)
-                        mstore(0x1000, 0x21516fc400000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, 0x20)
-                        mstore(0x1024, argLen)
-                        calldatacopy(0x1044, 105, argLen)
-                        let paddedSize := mul(div(add(argLen, 31), 32), 32)
-                        let totalCalldataSize := add(68, paddedSize)
-                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        let success := 1
+                        if eq(roomId, 11) {
+                            success := isGuestAdmitted(11, player)
+                        }
                         if success {
-                            mstore(resultPtr, 0x43686174207375636365737366756c2e00000000000000000000000000000000) // "Chat successful."
-                            resultPtr := add(resultPtr, 17)
+                            mstore(resultPtr, 0x5b5a4d4d5d2043686174207375636365737366756c2e00000000000000000000) // "[ZMM] Chat successful."
+                            resultPtr := add(resultPtr, 23)
                         }
                         if iszero(success) {
-                            mstore(resultPtr, 0x43686174206661696c65642f72657665727465642e0000000000000000000000) // "Chat failed/reverted."
-                            resultPtr := add(resultPtr, 22)
+                            mstore(resultPtr, 0x5b5a4d4d5d2043686174206661696c65642f72657665727465642e0000000000) // "[ZMM] Chat failed/reverted."
+                            resultPtr := add(resultPtr, 28)
+                        }
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00) // "No contract bound to this room."
+                            resultPtr := add(resultPtr, 31)
+                        }
+                        if tokenAddr {
+                            let typePtr := 0x1500
+                            let typeEnd := queryContractString(tokenAddr, 0xfc0c546a00000000000000000000000000000000000000000000000000000000, typePtr)
+                            let typeWord := mload(typePtr)
+                            let isQing := eq(shr(224, typeWord), 0x51494e47) // "QING"
+                            
+                            let success := 0
+                            if iszero(isQing) {
+                                let argLen := sub(cmdLen, 5)
+                                mstore(0x1000, 0x21516fc400000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, 0x20)
+                                mstore(0x1024, argLen)
+                                calldatacopy(0x1044, add(100, 5), argLen)
+                                let paddedSize := mul(div(add(argLen, 31), 32), 32)
+                                let totalCalldataSize := add(68, paddedSize)
+                                success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                            }
+                            if isQing {
+                                mstore(0x1000, 0x6185ca8800000000000000000000000000000000000000000000000000000000)
+                                let choSuccess := staticcall(gas(), tokenAddr, 0x1000, 0x04, 0x1000, 0x20)
+                                if choSuccess {
+                                    let choAddr := mload(0x1000)
+                                    mstore(0x1000, 0xe80c28bf00000000000000000000000000000000000000000000000000000000)
+                                    mstore(0x1004, player)
+                                    let userTokenSuccess := staticcall(gas(), choAddr, 0x1000, 0x24, 0x1000, 0x20)
+                                    if userTokenSuccess {
+                                        let userToken := mload(0x1000)
+                                        let argLen := sub(cmdLen, 5)
+                                        mstore(0x1000, 0xb340a7800000000000000000000000000000000000000000000000000000000)
+                                        mstore(0x1004, userToken)
+                                        mstore(0x1024, 0x40)
+                                        mstore(0x1044, argLen)
+                                        calldatacopy(0x1064, add(100, 5), argLen)
+                                        let paddedSize := mul(div(add(argLen, 31), 32), 32)
+                                        let totalCalldataSize := add(100, paddedSize)
+                                        success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                                    }
+                                }
+                            }
+                            
+                            if success {
+                                mstore(resultPtr, 0x43686174207375636365737366756c2e00000000000000000000000000000000) // "Chat successful."
+                                resultPtr := add(resultPtr, 17)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x43686174206661696c65642f72657665727465642e0000000000000000000000) // "Chat failed/reverted."
+                                resultPtr := add(resultPtr, 22)
+                            }
                         }
                     }
                 }
                 case 0x4c6f6720 { // "Log " (Void logging)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d204c6f67207375636365737366756c2e0000000000000000000000) // "[ZMM] Log successful."
+                        resultPtr := add(resultPtr, 22)
                     }
-                    if tokenAddr {
-                        let argLen := sub(cmdLen, 4)
-                        mstore(0x1000, 0xcf34ef5300000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, 0x20)
-                        mstore(0x1024, argLen)
-                        calldatacopy(0x1044, 104, argLen)
-                        let paddedSize := mul(div(add(argLen, 31), 32), 32)
-                        let totalCalldataSize := add(68, paddedSize)
-                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
-                        if success {
-                            mstore(resultPtr, 0x4c6f67207375636365737366756c2e0000000000000000000000000000000000) // "Log successful."
-                            resultPtr := add(resultPtr, 16)
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x4c6f67206661696c65642f72657665727465642e000000000000000000000000) // "Log failed/reverted."
-                            resultPtr := add(resultPtr, 21)
+                        if tokenAddr {
+                            let argLen := sub(cmdLen, 4)
+                            mstore(0x1000, 0xcf34ef5300000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, 0x20)
+                            mstore(0x1024, argLen)
+                            calldatacopy(0x1044, add(100, 4), argLen)
+                            let paddedSize := mul(div(add(argLen, 31), 32), 32)
+                            let totalCalldataSize := add(68, paddedSize)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                            if success {
+                                mstore(resultPtr, 0x4c6f67207375636365737366756c2e0000000000000000000000000000000000) // "Log successful."
+                                resultPtr := add(resultPtr, 16)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x4c6f67206661696c65642f72657665727465642e000000000000000000000000) // "Log failed/reverted."
+                                resultPtr := add(resultPtr, 21)
+                            }
                         }
                     }
                 }
                 case 0x53657441 { // "SetAttribute" (Void attribute setting)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
-                    }
-                    if tokenAddr {
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
                         let spacePos := findSpace(13, cmdLen)
                         let keyLen := sub(spacePos, 13)
                         let valLen := 0
                         if lt(spacePos, cmdLen) {
                             valLen := sub(cmdLen, add(spacePos, 1))
                         }
-                        
-                        mstore(0x1000, 0xdf5cb7b400000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, 0x40)
-                        let paddedKeyLen := mul(div(add(keyLen, 31), 32), 32)
-                        mstore(0x1024, add(0x40, add(32, paddedKeyLen)))
-                        mstore(0x1044, keyLen)
                         calldatacopy(0x1064, add(100, 13), keyLen)
+                        let keyHash := keccak256(0x1064, keyLen)
                         
-                        let valOffset := add(0x1064, paddedKeyLen)
-                        mstore(valOffset, valLen)
-                        calldatacopy(add(valOffset, 32), add(100, add(spacePos, 1)), valLen)
+                        let valOffset := add(0x1064, mul(div(add(keyLen, 31), 32), 32))
+                        calldatacopy(valOffset, add(100, add(spacePos, 1)), valLen)
                         
-                        let paddedValLen := mul(div(add(valLen, 31), 32), 32)
-                        let totalCalldataSize := add(sub(add(valOffset, 32), 0x1000), paddedValLen)
+                        setZmmAttribute(roomId, keyHash, valOffset, valLen)
                         
-                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
-                        if success {
-                            mstore(resultPtr, 0x417474726962757465207365742e000000000000000000000000000000000000) // "Attribute set."
-                            resultPtr := add(resultPtr, 14)
+                        mstore(resultPtr, 0x5b5a4d4d5d20417474726962757465207365742e000000000000000000000000) // "[ZMM] Attribute set."
+                        resultPtr := add(resultPtr, 20)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x536574417474726962757465206661696c65642e000000000000000000000000) // "SetAttribute failed."
-                            resultPtr := add(resultPtr, 20)
+                        if tokenAddr {
+                            let spacePos := findSpace(13, cmdLen)
+                            let keyLen := sub(spacePos, 13)
+                            let valLen := 0
+                            if lt(spacePos, cmdLen) {
+                                valLen := sub(cmdLen, add(spacePos, 1))
+                            }
+                            
+                            mstore(0x1000, 0xdf5cb7b400000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, 0x40)
+                            let paddedKeyLen := mul(div(add(keyLen, 31), 32), 32)
+                            mstore(0x1024, add(0x40, add(32, paddedKeyLen)))
+                            mstore(0x1044, keyLen)
+                            calldatacopy(0x1064, add(100, 13), keyLen)
+                            
+                            let valOffset := add(0x1064, paddedKeyLen)
+                            mstore(valOffset, valLen)
+                            calldatacopy(add(valOffset, 32), add(100, add(spacePos, 1)), valLen)
+                            
+                            let paddedValLen := mul(div(add(valLen, 31), 32), 32)
+                            let totalCalldataSize := add(sub(add(valOffset, 32), 0x1000), paddedValLen)
+                            
+                            let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                            if success {
+                                mstore(resultPtr, 0x417474726962757465207365742e000000000000000000000000000000000000) // "Attribute set."
+                                resultPtr := add(resultPtr, 14)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x536574417474726962757465206661696c65642e000000000000000000000000) // "SetAttribute failed."
+                                resultPtr := add(resultPtr, 20)
+                            }
                         }
                     }
                 }
                 case 0x47657441 { // "GetAttribute" (Void attribute reading)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
-                    }
-                    if tokenAddr {
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
                         let keyLen := sub(cmdLen, 13)
-                        mstore(0x1000, 0xb502e56700000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, 0x20)
-                        mstore(0x1024, keyLen)
-                        calldatacopy(0x1044, add(100, 13), keyLen)
-                        let paddedSize := mul(div(add(keyLen, 31), 32), 32)
-                        let totalCalldataSize := add(68, paddedSize)
-                        let success := staticcall(gas(), tokenAddr, 0x1000, totalCalldataSize, 0x2000, 0x200)
-                        if success {
-                            let retOffset := mload(0x2000)
-                            let retLen := mload(add(0x2000, retOffset))
-                            mCopy(add(0x2020, retOffset), resultPtr, retLen)
-                            resultPtr := add(resultPtr, retLen)
+                        calldatacopy(0x1064, add(100, 13), keyLen)
+                        let keyHash := keccak256(0x1064, keyLen)
+                        
+                        mstore(resultPtr, 0x5b5a4d4d5d200000000000000000000000000000000000000000000000000000) // "[ZMM] "
+                        let prefixLen := 6
+                        let valLen := getZmmAttribute(roomId, keyHash, add(resultPtr, prefixLen))
+                        if valLen {
+                            resultPtr := add(resultPtr, add(prefixLen, valLen))
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x476574417474726962757465206661696c65642e000000000000000000000000) // "GetAttribute failed."
-                            resultPtr := add(resultPtr, 20)
+                        if iszero(valLen) {
+                            mstore(resultPtr, 0x5b5a4d4d5d20476574417474726962757465206661696c65642e000000000000) // "[ZMM] GetAttribute failed."
+                            resultPtr := add(resultPtr, 26)
+                        }
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
+                        }
+                        if tokenAddr {
+                            let keyLen := sub(cmdLen, 13)
+                            mstore(0x1000, 0xb502e56700000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, 0x20)
+                            mstore(0x1024, keyLen)
+                            calldatacopy(0x1044, add(100, 13), keyLen)
+                            let paddedSize := mul(div(add(keyLen, 31), 32), 32)
+                            let totalCalldataSize := add(68, paddedSize)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, totalCalldataSize, 0x2000, 0x200)
+                            if success {
+                                let retOffset := mload(0x2000)
+                                let retLen := mload(add(0x2000, retOffset))
+                                mCopy(add(0x2020, retOffset), resultPtr, retLen)
+                                resultPtr := add(resultPtr, retLen)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x476574417474726962757465206661696c65642e000000000000000000000000) // "GetAttribute failed."
+                                resultPtr := add(resultPtr, 20)
+                            }
                         }
                     }
                 }
                 case 0x416c6961 { // "Alias" (Void alias setting)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
-                    }
-                    if tokenAddr {
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
                         let spacePos := findSpace(6, cmdLen)
                         let targetAddr := parseHexAddress(6, spacePos)
-                        let valLen := 0
+                        
+                        if eq(spacePos, cmdLen) {
+                            mstore(resultPtr, 0x5b5a4d4d5d200000000000000000000000000000000000000000000000000000) // "[ZMM] "
+                            let prefixLen := 6
+                            let valLen := getZmmAttribute(roomId, targetAddr, add(resultPtr, prefixLen))
+                            if valLen {
+                                resultPtr := add(resultPtr, add(prefixLen, valLen))
+                            }
+                            if iszero(valLen) {
+                                mstore(resultPtr, 0x5b5a4d4d5d20416c696173206661696c65642e00000000000000000000000000) // "[ZMM] Alias failed."
+                                resultPtr := add(resultPtr, 19)
+                            }
+                        }
                         if lt(spacePos, cmdLen) {
-                            valLen := sub(cmdLen, add(spacePos, 1))
+                            let valLen := sub(cmdLen, add(spacePos, 1))
+                            let valOffset := 0x1064
+                            calldatacopy(valOffset, add(100, add(spacePos, 1)), valLen)
+                            setZmmAttribute(roomId, targetAddr, valOffset, valLen)
+                            mstore(resultPtr, 0x5b5a4d4d5d20416c696173207365742e00000000000000000000000000000000) // "[ZMM] Alias set."
+                            resultPtr := add(resultPtr, 16)
                         }
-                        
-                        mstore(0x1000, 0x00b660ef00000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, targetAddr)
-                        mstore(0x1024, 0x40)
-                        mstore(0x1044, valLen)
-                        calldatacopy(0x1064, add(100, add(spacePos, 1)), valLen)
-                        
-                        let paddedValLen := mul(div(add(valLen, 31), 32), 32)
-                        let totalCalldataSize := add(100, paddedValLen)
-                        
-                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
-                        if success {
-                            mstore(resultPtr, 0x416c696173207365742e00000000000000000000000000000000000000000000) // "Alias set."
-                            resultPtr := add(resultPtr, 10)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x416c696173206661696c65642e00000000000000000000000000000000000000) // "Alias failed."
-                            resultPtr := add(resultPtr, 13)
+                        if tokenAddr {
+                            let spacePos := findSpace(6, cmdLen)
+                            let targetAddr := parseHexAddress(6, spacePos)
+                            
+                            let success := 0
+                            if eq(spacePos, cmdLen) {
+                                mstore(0x1000, 0xed70e46c00000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, targetAddr)
+                                success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x200)
+                                if success {
+                                    let retOffset := mload(0x2000)
+                                    let retLen := mload(add(0x2000, retOffset))
+                                    mCopy(add(0x2020, retOffset), resultPtr, retLen)
+                                    resultPtr := add(resultPtr, retLen)
+                                }
+                            }
+                            if lt(spacePos, cmdLen) {
+                                let valLen := sub(cmdLen, add(spacePos, 1))
+                                mstore(0x1000, 0x00b660ef00000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, targetAddr)
+                                mstore(0x1024, 0x40)
+                                mstore(0x1044, valLen)
+                                calldatacopy(0x1064, add(100, add(spacePos, 1)), valLen)
+                                let paddedValLen := mul(div(add(valLen, 31), 32), 32)
+                                let totalCalldataSize := add(100, paddedValLen)
+                                success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                                if success {
+                                    mstore(resultPtr, 0x416c696173207365742e00000000000000000000000000000000000000000000) // "Alias set."
+                                    resultPtr := add(resultPtr, 10)
+                                }
+                            }
+                            
+                            if iszero(success) {
+                                mstore(resultPtr, 0x416c696173206661696c65642e00000000000000000000000000000000000000) // "Alias failed."
+                                resultPtr := add(resultPtr, 13)
+                            }
                         }
                     }
                 }
                 case 0x456e7465 { // "Enter" (Void enter)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20456e7465726564207375636365737366656c6c792e0000000000) // "[ZMM] Entered successfully."
+                        resultPtr := add(resultPtr, 27)
                     }
-                    if tokenAddr {
-                        mstore(0x1000, 0x1097e57900000000000000000000000000000000000000000000000000000000)
-                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x04, 0x2000, 0x100)
-                        if success {
-                            mstore(resultPtr, 0x456e7465726564207375636365737366756c6c792e0000000000000000000000) // "Entered successfully."
-                            resultPtr := add(resultPtr, 21)
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x456e746572206661696c65642e00000000000000000000000000000000000000) // "Enter failed."
-                            resultPtr := add(resultPtr, 13)
+                        if tokenAddr {
+                            let hasArgs := 0
+                            if gt(cmdLen, 5) {
+                                let char5 := and(shr(248, calldataload(add(100, 5))), 0xff)
+                                if eq(char5, 32) { hasArgs := 1 }
+                            }
+                            
+                            let success := 0
+                            if iszero(hasArgs) {
+                                mstore(0x1000, 0x1097e57900000000000000000000000000000000000000000000000000000000)
+                                success := call(gas(), tokenAddr, 0, 0x1000, 0x04, 0x2000, 0x100)
+                            }
+                            if hasArgs {
+                                let spacePos := findSpace(6, cmdLen)
+                                let nameLen := sub(spacePos, 6)
+                                let symLen := 0
+                                if lt(spacePos, cmdLen) {
+                                    symLen := sub(cmdLen, add(spacePos, 1))
+                                }
+                                mstore(0x1000, 0x68f9c78700000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, 0x40)
+                                let paddedNameLen := mul(div(add(nameLen, 31), 32), 32)
+                                mstore(0x1024, add(0x40, add(32, paddedNameLen)))
+                                mstore(0x1044, nameLen)
+                                calldatacopy(0x1064, add(100, 6), nameLen)
+                                let symOffset := add(0x1064, paddedNameLen)
+                                mstore(symOffset, symLen)
+                                calldatacopy(add(symOffset, 32), add(100, add(spacePos, 1)), symLen)
+                                let paddedSymLen := mul(div(add(symLen, 31), 32), 32)
+                                let totalCalldataSize := add(sub(add(symOffset, 32), 0x1000), paddedSymLen)
+                                success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                            }
+                            
+                            if success {
+                                mstore(resultPtr, 0x456e7465726564207375636365737366656c6c792e0000000000000000000000) // "Entered successfully."
+                                resultPtr := add(resultPtr, 21)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x456e746572206661696c65642e00000000000000000000000000000000000000) // "Enter failed."
+                                resultPtr := add(resultPtr, 13)
+                            }
                         }
                     }
                 }
                 case 0x4a6f696e { // "Join" (Qing join)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
-                    }
-                    if tokenAddr {
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
                         let targetAddr := parseHexAddress(5, cmdLen)
-                        mstore(0x1000, 0x0764c80c00000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, targetAddr)
-                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x100)
-                        if success {
-                            mstore(resultPtr, 0x4a6f696e6564207375636365737366756c6c792e000000000000000000000000) // "Joined successfully."
-                            resultPtr := add(resultPtr, 20)
+                        addGuest(roomId, targetAddr)
+                        mstore(resultPtr, 0x5b5a4d4d5d204a6f696e6564207375636365737366756c6c792e000000000000) // "[ZMM] Joined successfully."
+                        resultPtr := add(resultPtr, 26)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x4a6f696e206661696c65642e0000000000000000000000000000000000000000) // "Join failed."
-                            resultPtr := add(resultPtr, 12)
+                        if tokenAddr {
+                            let targetAddr := parseHexAddress(5, cmdLen)
+                            mstore(0x1000, 0x0764c80c00000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x100)
+                            if success {
+                                mstore(resultPtr, 0x4a6f696e6564207375636365737366756c6c792e000000000000000000000000) // "Joined successfully."
+                                resultPtr := add(resultPtr, 20)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x4a6f696e206661696c65642e0000000000000000000000000000000000000000) // "Join failed."
+                                resultPtr := add(resultPtr, 12)
+                            }
                         }
                     }
                 }
                 case 0x57697468 { // "Withdraw" (Qing withdraw)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d205769746864726177616c207375636365737366756c2e00000000) // "[ZMM] Withdrawal successful."
+                        resultPtr := add(resultPtr, 28)
                     }
-                    if tokenAddr {
-                        let spacePos := findSpace(9, cmdLen)
-                        let targetAddr := parseHexAddress(9, spacePos)
-                        let amount := 0
-                        if lt(spacePos, cmdLen) {
-                            amount := parseDec(add(spacePos, 1), cmdLen)
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
                         }
-                        mstore(0x1000, 0x884edad900000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, targetAddr)
-                        mstore(0x1024, amount)
-                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x100)
-                        if success {
-                            mstore(resultPtr, 0x5769746864726177616c207375636365737366756c2e00000000000000000000) // "Withdrawal successful."
-                            resultPtr := add(resultPtr, 22)
-                        }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x5769746864726177616c206661696c65642e0000000000000000000000000000) // "Withdrawal failed."
-                            resultPtr := add(resultPtr, 18)
+                        if tokenAddr {
+                            let spacePos := findSpace(9, cmdLen)
+                            let targetAddr := parseHexAddress(9, spacePos)
+                            let amount := 0
+                            if lt(spacePos, cmdLen) {
+                                amount := parseDec(add(spacePos, 1), cmdLen)
+                            }
+                            mstore(0x1000, 0x884edad900000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            mstore(0x1024, amount)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x100)
+                            if success {
+                                mstore(resultPtr, 0x5769746864726177616c207375636365737366756c2e00000000000000000000) // "Withdrawal successful."
+                                resultPtr := add(resultPtr, 22)
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x5769746864726177616c206661696c65642e0000000000000000000000000000) // "Withdrawal failed."
+                                resultPtr := add(resultPtr, 18)
+                            }
                         }
                     }
                 }
                 case 0x41646d69 { // "Admitted" (Qing admitted check)
-                    let tokenAddr := sload(add(2000000, roomId))
-                    if iszero(tokenAddr) {
-                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
-                        resultPtr := add(resultPtr, 31)
-                    }
-                    if tokenAddr {
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
                         let targetAddr := parseHexAddress(9, cmdLen)
-                        mstore(0x1000, 0xdfffcc7400000000000000000000000000000000000000000000000000000000)
-                        mstore(0x1004, targetAddr)
-                        let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                        let admitted := isGuestAdmitted(roomId, targetAddr)
+                        if admitted {
+                            mstore(resultPtr, 0x5b5a4d4d5d2041646d69747465642e0000000000000000000000000000000000) // "[ZMM] Admitted."
+                            resultPtr := add(resultPtr, 15)
+                        }
+                        if iszero(admitted) {
+                            mstore(resultPtr, 0x5b5a4d4d5d204e6f742061646d69747465642e00000000000000000000000000) // "[ZMM] Not admitted."
+                            resultPtr := add(resultPtr, 19)
+                        }
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if iszero(tokenAddr) {
+                            mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                            resultPtr := add(resultPtr, 31)
+                        }
+                        if tokenAddr {
+                            let targetAddr := parseHexAddress(9, cmdLen)
+                            mstore(0x1000, 0xdfffcc7400000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                            if success {
+                                let resVal := mload(0x2000)
+                                if resVal {
+                                    mstore(resultPtr, 0x41646d69747465642e0000000000000000000000000000000000000000000000) // "Admitted."
+                                    resultPtr := add(resultPtr, 9)
+                                }
+                                if iszero(resVal) {
+                                    mstore(resultPtr, 0x4e6f742061646d69747465642e00000000000000000000000000000000000000) // "Not admitted."
+                                    resultPtr := add(resultPtr, 13)
+                                }
+                            }
+                            if iszero(success) {
+                                mstore(resultPtr, 0x41646d69747465642063616c6c206661696c65642e0000000000000000000000) // "Admitted call failed."
+                                resultPtr := add(resultPtr, 21)
+                            }
+                        }
+                    }
+                }
+                case 0x626f756e { // "boun" (bouncer)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20547275652e000000000000000000000000000000000000000000) // "[ZMM] True."
+                        resultPtr := add(resultPtr, 11)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let targetAddr := parseHexAddress(8, cmdLen)
+                            mstore(0x1000, 0x37d74ffe00000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                            if success {
+                                let resVal := mload(0x2000)
+                                if resVal { mstore(resultPtr, 0x547275652e000000000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 5) }
+                                if iszero(resVal) { mstore(resultPtr, 0x46616c73652e0000000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 6) }
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                        }
+                    }
+                }
+                case 0x416c6c6f { // "Allo" (AllowCROWS)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let val := parseDec(11, cmdLen)
+                            mstore(0x1000, 0x7b16630600000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, val)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x73657442 { // "setB" (setBouncerDivisor)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        let val := parseDec(18, cmdLen)
+                        setRoomBouncerDivisor(roomId, val)
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let val := parseDec(18, cmdLen)
+                            mstore(0x1000, 0x3c7e0c0000000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, val)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x73657443 { // "setC" (setCoverCharge)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        let val := parseDec(15, cmdLen)
+                        setRoomCoverCharge(roomId, val)
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let val := parseDec(15, cmdLen)
+                            mstore(0x1000, 0x7dfe96f300000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, val)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x73657453 { // "setS" (setStaff)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let spacePos := findSpace(9, cmdLen)
+                            let targetAddr := parseHexAddress(9, spacePos)
+                            let val := 0
+                            if lt(spacePos, cmdLen) {
+                                val := parseDec(add(spacePos, 1), cmdLen)
+                            }
+                            mstore(0x1000, 0x328d13e300000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            mstore(0x1024, val)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x73657447 { // "setG" (setGuestlist)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let targetAddr := parseHexAddress(13, cmdLen)
+                            mstore(0x1000, 0x0d4ec84500000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x72656d6f { // "remo" (removeGuest)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let targetAddr := parseHexAddress(12, cmdLen)
+                            mstore(0x1000, 0x5256bfe700000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, targetAddr)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x47657451 { // "GetQ" (GetQing)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d203078303030303030303030303030303030303030303030303030) // "[ZMM] 0x0000000000000000"
+                        mstore(add(resultPtr, 32), 0x3030303030303030303030303030303030303030303030300000000000000000)
+                        resultPtr := add(resultPtr, 56)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let val := parseDec(8, cmdLen)
+                            mstore(0x1000, 0x20bc1aa200000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, val)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                            if success {
+                                let resVal := mload(0x2000)
+                                resultPtr := writeHexAddress(resVal, resultPtr)
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x52656163 { // "Reac" (ReactSoul / ReactWaat / React / ReactYue)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        let val := 0
+                        if eq(roomId, 12) { // QI
+                            let char5 := and(shr(248, calldataload(add(100, 5))), 0xff)
+                            if eq(char5, 83) { // 'S' for ReactSoul
+                                val := parseDec(10, cmdLen)
+                            }
+                            if eq(char5, 87) { // 'W' for ReactWaat
+                                val := parseDec(10, cmdLen)
+                            }
+                        }
+                        if eq(roomId, 13) { // MAI
+                            val := 0x4d41492072656163742073756363657373000000000000000000000000000000
+                        }
+                        if eq(roomId, 16) { // CHAN
+                            val := 0x4348414e20726561637420737563636573730000000000000000000000000000
+                        }
+                        mstore(resultPtr, val)
+                        resultPtr := add(resultPtr, 32)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let typePtr := 0x1500
+                            let typeEnd := queryContractString(tokenAddr, 0xfc0c546a00000000000000000000000000000000000000000000000000000000, typePtr)
+                            let typeWord := mload(typePtr)
+                            
+                            if eq(shr(224, typeWord), 0x51490000) { // "QI"
+                                let char5 := and(shr(248, calldataload(add(100, 5))), 0xff)
+                                if eq(char5, 83) { // 'S' for ReactSoul
+                                    let val := parseDec(10, cmdLen)
+                                    mstore(0x1000, 0x6ba5a0d900000000000000000000000000000000000000000000000000000000)
+                                    mstore(0x1004, val)
+                                    let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x20)
+                                    if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                                    if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                                }
+                                if eq(char5, 87) { // 'W' for ReactWaat
+                                    let val := parseDec(10, cmdLen)
+                                    mstore(0x1000, 0x48b582c700000000000000000000000000000000000000000000000000000000)
+                                    mstore(0x1004, val)
+                                    let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                                    if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                                    if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                                }
+                            }
+                            if eq(shr(224, typeWord), 0x4d414900) { // "MAI"
+                                let spacePos := findSpace(6, cmdLen)
+                                let soul := parseDec(6, spacePos)
+                                let waat := 0
+                                if lt(spacePos, cmdLen) {
+                                    waat := parseDec(add(spacePos, 1), cmdLen)
+                                }
+                                mstore(0x1000, 0x743a3e5e00000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, soul)
+                                mstore(0x1024, waat)
+                                let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x20)
+                                if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                                if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                            }
+                            if eq(shr(224, typeWord), 0x4348414e) { // "CHAN"
+                                let spacePos := findSpace(9, cmdLen)
+                                let yue := parseHexAddress(9, spacePos)
+                                let qing := 0
+                                if lt(spacePos, cmdLen) {
+                                    qing := parseHexAddress(add(spacePos, 1), cmdLen)
+                                }
+                                mstore(0x1000, 0x7a9bd22100000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, yue)
+                                mstore(0x1024, qing)
+                                let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x20)
+                                if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                                if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                            }
+                        }
+                    }
+                }
+                case 0x43686972 { // "Char" (Charge)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5849412063686172676520737563636573730000000000000000000000000000) // "XIA charge success"
+                        resultPtr := add(resultPtr, 32)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let waat := parseDec(7, cmdLen)
+                            mstore(0x1000, 0x4311635400000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, waat)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x20)
+                            if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x506f7765 { // "Powe" (Power)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d204368617267653a203130300a5b5a4d4d5d204f6d6963726f6e3a) // "[ZMM] Charge: 100\n[ZMM] Omicron:"
+                        mstore(add(resultPtr, 32), 0x203230300a5b5a4d4d5d204f6d6567613a203330300000000000000000000000) // " 200\n[ZMM] Omega: 300"
+                        resultPtr := add(resultPtr, 56)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let waat := parseDec(6, cmdLen)
+                            mstore(0x1000, 0x192cc4a300000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, waat)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x60)
+                            if success {
+                                mstore(resultPtr, 0x4368617267653a20000000000000000000000000000000000000000000000000) // "Charge: "
+                                resultPtr := add(resultPtr, 8)
+                                mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32)
+                                mstore8(resultPtr, 10) resultPtr := add(resultPtr, 1)
+                                mstore(resultPtr, 0x4f6d6963726f6e3a200000000000000000000000000000000000000000000000) // "Omicron: "
+                                resultPtr := add(resultPtr, 9)
+                                mstore(resultPtr, mload(0x2020)) resultPtr := add(resultPtr, 32)
+                                mstore8(resultPtr, 10) resultPtr := add(resultPtr, 1)
+                                mstore(resultPtr, 0x4f6d6567613a2000000000000000000000000000000000000000000000000000) // "Omega: "
+                                resultPtr := add(resultPtr, 7)
+                                mstore(resultPtr, mload(0x2040)) resultPtr := add(resultPtr, 32)
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x41646459 { // "AddY" (AddYue)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let spacePos := findSpace(7, cmdLen)
+                            let origAddr := parseHexAddress(7, spacePos)
+                            let yue := parseHexAddress(add(spacePos, 1), cmdLen)
+                            mstore(0x1000, 0xd0ba60d100000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, origAddr)
+                            mstore(0x1024, yue)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x5472616e { // "Tran" (TransferYue / transfer)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let char5 := and(shr(248, calldataload(add(100, 5))), 0xff)
+                            if eq(char5, 102) { // 'f' for TransferYue
+                                let spacePos := findSpace(12, cmdLen)
+                                let yue := parseHexAddress(12, spacePos)
+                                let newOrigin := parseHexAddress(add(spacePos, 1), cmdLen)
+                                mstore(0x1000, 0x2621e0f800000000000000000000000000000000000000000000000000000000)
+                                mstore(0x1004, yue)
+                                mstore(0x1024, newOrigin)
+                                let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0)
+                                if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                                if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                            }
+                        }
+                    }
+                }
+                case 0x4f707449 { // "OptI" (OptIn)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let spacePos := findSpace(6, cmdLen)
+                            let contractAddr := parseHexAddress(6, spacePos)
+                            let val := 0
+                            if lt(spacePos, cmdLen) {
+                                val := parseDec(add(spacePos, 1), cmdLen)
+                            }
+                            mstore(0x1000, 0xfcfcea4500000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, contractAddr)
+                            mstore(0x1024, val)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x4f707465 { // "Opte" (OptedIn)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20547275652e000000000000000000000000000000000000000000) // "[ZMM] True."
+                        resultPtr := add(resultPtr, 11)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let spacePos := findSpace(8, cmdLen)
+                            let yue := parseHexAddress(8, spacePos)
+                            let contractAddr := parseHexAddress(add(spacePos, 1), cmdLen)
+                            mstore(0x1000, 0xd70d37e600000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, yue)
+                            mstore(0x1024, contractAddr)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, 0x44, 0x2000, 0x20)
+                            if success {
+                                let resVal := mload(0x2000)
+                                if resVal { mstore(resultPtr, 0x547275652e000000000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 5) }
+                                if iszero(resVal) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x59756557 { // "YueW" (YueWithdraw)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let space1 := findSpace(12, cmdLen)
+                            let yue := parseHexAddress(12, space1)
+                            let space2 := findSpace(add(space1, 1), cmdLen)
+                            let asset := parseHexAddress(add(space1, 1), space2)
+                            let space3 := findSpace(add(space2, 1), cmdLen)
+                            let to := parseHexAddress(add(space2, 1), space3)
+                            let amount := parseDec(add(space3, 1), cmdLen)
+                            
+                            mstore(0x1000, 0xc4a3ab2700000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, yue)
+                            mstore(0x1024, asset)
+                            mstore(0x1044, to)
+                            mstore(0x1064, amount)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x84, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x5975654d { // "YueM" (YueMintToOrigin)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let yue := parseHexAddress(16, cmdLen)
+                            mstore(0x1000, 0xe4606fde00000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, yue)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x59756546 { // "YueF" (YueForceTransfer)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d20537563636573732e000000000000000000000000000000000000) // "[ZMM] Success."
+                        resultPtr := add(resultPtr, 14)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let space1 := findSpace(17, cmdLen)
+                            let yue := parseHexAddress(17, space1)
+                            let space2 := findSpace(add(space1, 1), cmdLen)
+                            let from := parseHexAddress(add(space1, 1), space2)
+                            let space3 := findSpace(add(space2, 1), cmdLen)
+                            let to := parseHexAddress(add(space2, 1), space3)
+                            let amount := parseDec(add(space3, 1), cmdLen)
+                            
+                            mstore(0x1000, 0x35cb27d700000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, yue)
+                            mstore(0x1024, from)
+                            mstore(0x1044, to)
+                            mstore(0x1064, amount)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x84, 0x2000, 0)
+                            if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x53746172 { // "Star" (Start)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        let space1 := findSpace(6, cmdLen)
+                        let lauToken := parseHexAddress(6, space1)
+                        let space2 := findSpace(add(space1, 1), cmdLen)
+                        let nameLen := sub(space2, add(space1, 1))
+                        let symbolLen := sub(cmdLen, add(space2, 1))
+                        
+                        mstore(0x1000, 0x7851901900000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, lauToken)
+                        mstore(0x1024, 0x60)
+                        let paddedNameLen := mul(div(add(nameLen, 31), 32), 32)
+                        mstore(0x1044, add(0x60, add(32, paddedNameLen)))
+                        mstore(0x1064, nameLen)
+                        calldatacopy(0x1084, add(100, add(space1, 1)), nameLen)
+                        
+                        let symOffset := add(0x1084, paddedNameLen)
+                        mstore(symOffset, symbolLen)
+                        calldatacopy(add(symOffset, 32), add(100, add(space2, 1)), symbolLen)
+                        
+                        let paddedSymLen := mul(div(add(symbolLen, 31), 32), 32)
+                        let totalCalldataSize := add(sub(add(symOffset, 32), 0x1000), paddedSymLen)
+                        
+                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                        if success { mstore(resultPtr, 0x53746172746564207375636365737366756c6c792e0000000000000000000000) resultPtr := add(resultPtr, 21) }
+                        if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                    }
+                }
+                case 0x43686920 { // "Chi " (Chi)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d205975653a20307830303030303030303030303030303030303030) // "[ZMM] Yue: 0x00000000"
+                        mstore(add(resultPtr, 32), 0x3030303030303030303030303030303030303030303030300a5b5a4d4d5d204c) // "000000000000000000000000\n[ZMM] L"
+                        mstore(add(resultPtr, 64), 0x41553a2030783030303030303030303030303030303030303030303030303030) // "AU: 0x000000000000000000000000"
+                        mstore(add(resultPtr, 96), 0x3030303030303030000000000000000000000000000000000000000000000000)
+                        resultPtr := add(resultPtr, 104)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            mstore(0x1000, 0x1cb77ea700000000000000000000000000000000000000000000000000000000)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, 0x04, 0x2000, 0x40)
+                            if success {
+                                let yue := mload(0x2000)
+                                let lau := mload(0x2020)
+                                mstore(resultPtr, 0x5975653a20000000000000000000000000000000000000000000000000000000) // "Yue: "
+                                resultPtr := add(resultPtr, 5)
+                                resultPtr := writeHexAddress(yue, resultPtr)
+                                mstore8(resultPtr, 10) resultPtr := add(resultPtr, 1)
+                                mstore(resultPtr, 0x4c41553a20000000000000000000000000000000000000000000000000000000) // "LAU: "
+                                resultPtr := add(resultPtr, 5)
+                                resultPtr := writeHexAddress(lau, resultPtr)
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x5975616e { // "Yuan" (Yuan)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0)
+                        resultPtr := add(resultPtr, 32)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let currency := parseHexAddress(5, cmdLen)
+                            mstore(0x1000, 0xd6047e3700000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, currency)
+                            let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                            if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x506c6179 { // "Play" (Play)
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d205975653a20307830303030303030303030303030303030303030) // "[ZMM] Yue: 0x00000000"
+                        mstore(add(resultPtr, 32), 0x3030303030303030303030303030303030303030303030300a5b5a4d4d5d204c) // "000000000000000000000000\n[ZMM] L"
+                        mstore(add(resultPtr, 64), 0x41553a2030783030303030303030303030303030303030303030303030303030) // "AU: 0x000000000000000000000000"
+                        mstore(add(resultPtr, 96), 0x3030303030303030000000000000000000000000000000000000000000000000)
+                        resultPtr := add(resultPtr, 104)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let userToken := parseHexAddress(5, cmdLen)
+                            mstore(0x1000, 0x74ff471800000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, userToken)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x40)
+                            if success {
+                                let yue := mload(0x2000)
+                                let lau := mload(0x2020)
+                                mstore(resultPtr, 0x5975653a20000000000000000000000000000000000000000000000000000000) // "Yue: "
+                                resultPtr := add(resultPtr, 5)
+                                resultPtr := writeHexAddress(yue, resultPtr)
+                                mstore8(resultPtr, 10) resultPtr := add(resultPtr, 1)
+                                mstore(resultPtr, 0x4c41553a20000000000000000000000000000000000000000000000000000000) // "LAU: "
+                                resultPtr := add(resultPtr, 5)
+                                resultPtr := writeHexAddress(lau, resultPtr)
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x53752020 { // "Su  "
+                    let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
+                    if isZmmRoom {
+                        mstore(resultPtr, 0x5b5a4d4d5d204368617267653a203130300a5b5a4d4d5d204879706f6261723a) // "[ZMM] Charge: 100\n[ZMM] Hypobar:"
+                        mstore(add(resultPtr, 32), 0x203230300a5b5a4d4d5d204570696261723a2033303000000000000000000000) // " 200\n[ZMM] Epibar: 300"
+                        resultPtr := add(resultPtr, 56)
+                    }
+                    if iszero(isZmmRoom) {
+                        let tokenAddr := sload(add(2000000, roomId))
+                        if tokenAddr {
+                            let qing := parseHexAddress(3, cmdLen)
+                            mstore(0x1000, 0x753a0c0900000000000000000000000000000000000000000000000000000000)
+                            mstore(0x1004, qing)
+                            let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x60)
+                            if success {
+                                mstore(resultPtr, 0x4368617267653a20000000000000000000000000000000000000000000000000) // "Charge: "
+                                resultPtr := add(resultPtr, 8)
+                                mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32)
+                                mstore8(resultPtr, 10) resultPtr := add(resultPtr, 1)
+                                mstore(resultPtr, 0x4879706f6261723a200000000000000000000000000000000000000000000000) // "Hypobar: "
+                                resultPtr := add(resultPtr, 9)
+                                mstore(resultPtr, mload(0x2020)) resultPtr := add(resultPtr, 32)
+                                mstore8(resultPtr, 10) resultPtr := add(resultPtr, 1)
+                                mstore(resultPtr, 0x4570696261723a20000000000000000000000000000000000000000000000000) // "Epibar: "
+                                resultPtr := add(resultPtr, 8)
+                                mstore(resultPtr, mload(0x2040)) resultPtr := add(resultPtr, 32)
+                            }
+                            if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                        }
+                    }
+                }
+                case 0x7472616e { // "tran" (transfer)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        let spacePos := findSpace(9, cmdLen)
+                        let toAddr := parseHexAddress(9, spacePos)
+                        let amount := parseDec(add(spacePos, 1), cmdLen)
+                        mstore(0x1000, 0xa9059cbb00000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, toAddr)
+                        mstore(0x1024, amount)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x20)
                         if success {
                             let resVal := mload(0x2000)
-                            if resVal {
-                                mstore(resultPtr, 0x41646d69747465642e0000000000000000000000000000000000000000000000) // "Admitted."
-                                resultPtr := add(resultPtr, 9)
-                            }
-                            if iszero(resVal) {
-                                mstore(resultPtr, 0x4e6f742061646d69747465642e00000000000000000000000000000000000000) // "Not admitted."
-                                resultPtr := add(resultPtr, 13)
-                            }
+                            if resVal { mstore(resultPtr, 0x5472616e73666572205375636365737366756c2e000000000000000000000000) resultPtr := add(resultPtr, 18) }
+                            if iszero(resVal) { mstore(resultPtr, 0x5472616e73666572204661696c65642e00000000000000000000000000000000) resultPtr := add(resultPtr, 16) }
                         }
-                        if iszero(success) {
-                            mstore(resultPtr, 0x41646d69747465642063616c6c206661696c65642e0000000000000000000000) // "Admitted call failed."
-                            resultPtr := add(resultPtr, 21)
+                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                    }
+                }
+                case 0x61707072 { // "appr" (approve)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        let spacePos := findSpace(8, cmdLen)
+                        let spender := parseHexAddress(8, spacePos)
+                        let amount := parseDec(add(spacePos, 1), cmdLen)
+                        mstore(0x1000, 0x095ea7b300000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, spender)
+                        mstore(0x1024, amount)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x20)
+                        if success {
+                            let resVal := mload(0x2000)
+                            if resVal { mstore(resultPtr, 0x417070726f76616c205375636365737366756c2e000000000000000000000000) resultPtr := add(resultPtr, 19) }
+                            if iszero(resVal) { mstore(resultPtr, 0x417070726f76616c204661696c65642e00000000000000000000000000000000) resultPtr := add(resultPtr, 17) }
                         }
+                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                    }
+                }
+                case 0x62616c61 { // "bala" (balanceOf)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        let account := parseHexAddress(10, cmdLen)
+                        mstore(0x1000, 0x70a0823100000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, account)
+                        let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                        if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                    }
+                }
+                case 0x746f7461 { // "tota" (totalSupply)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        mstore(0x1000, 0x18160ddd00000000000000000000000000000000000000000000000000000000)
+                        let success := staticcall(gas(), tokenAddr, 0x1000, 0x04, 0x2000, 0x20)
+                        if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
+                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                    }
+                }
+                case 0x4765744c { // "GetL" (GetLibraryAddress)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        let argLen := sub(cmdLen, 18)
+                        mstore(0x1000, 0xd9270a5a00000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, 0x20)
+                        mstore(0x1024, argLen)
+                        calldatacopy(0x1044, add(100, 18), argLen)
+                        let paddedSize := mul(div(add(argLen, 31), 32), 32)
+                        let totalCalldataSize := add(68, paddedSize)
+                        let success := staticcall(gas(), tokenAddr, 0x1000, totalCalldataSize, 0x2000, 0x20)
+                        if success {
+                            let resVal := mload(0x2000)
+                            resultPtr := writeHexAddress(resVal, resultPtr)
+                        }
+                        if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
+                    }
+                }
+                case 0x4164644c { // "AddL" (AddLibrary)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if tokenAddr {
+                        let spacePos := findSpace(11, cmdLen)
+                        let nameLen := sub(spacePos, 11)
+                        let targetAddr := parseHexAddress(add(spacePos, 1), cmdLen)
+                        
+                        mstore(0x1000, 0xe774b3a400000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, 0x40)
+                        mstore(0x1024, targetAddr)
+                        mstore(0x1044, nameLen)
+                        calldatacopy(0x1064, add(100, 11), nameLen)
+                        let paddedNameLen := mul(div(add(nameLen, 31), 32), 32)
+                        let totalCalldataSize := add(100, paddedNameLen)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0)
+                        if success { mstore(resultPtr, 0x537563636573732e000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 8) }
+                        if iszero(success) { mstore(resultPtr, 0x4661696c65642e00000000000000000000000000000000000000000000000000) resultPtr := add(resultPtr, 7) }
                     }
                 }
                 case 0x696e7665 { // "inve" (Inventory)
@@ -1138,9 +2097,10 @@ object "ZMachine" {
 
             function queryContractString(token, sig, destPtr) -> endPtr {
                 endPtr := destPtr
+                if iszero(extcodesize(token)) { leave }
                 mstore(0x00, sig)
                 let success := staticcall(gas(), token, 0x00, 0x04, 0x1000, 0x100)
-                if success {
+                if and(success, gt(returndatasize(), 63)) {
                     let strLen := mload(0x1020)
                     if lt(strLen, 100) {
                         for { let i := 0 } lt(i, strLen) { i := add(i, 1) } {
@@ -1224,6 +2184,87 @@ object "ZMachine" {
             function mCopy(src, dest, len) {
                 for { let i := 0 } lt(i, len) { i := add(i, 32) } {
                     mstore(add(dest, i), mload(add(src, i)))
+                }
+            }
+
+            // ZMM VM Room Layout Helpers
+            function getRoomBase(roomId) -> base {
+                base := add(0x8000, mul(roomId, 0x200))
+            }
+            
+            function getRoomCoverCharge(roomId) -> val {
+                val := mload(add(getRoomBase(roomId), 0x02))
+            }
+            
+            function setRoomCoverCharge(roomId, val) {
+                mstore(add(getRoomBase(roomId), 0x02), val)
+            }
+            
+            function getRoomBouncerDivisor(roomId) -> val {
+                val := shr(240, mload(add(getRoomBase(roomId), 0x22)))
+            }
+            
+            function setRoomBouncerDivisor(roomId, val) {
+                mstore(add(getRoomBase(roomId), 0x22), shl(240, val))
+            }
+
+            function isGuestAdmitted(roomId, guestAddr) -> admitted {
+                admitted := 0
+                let base := add(getRoomBase(roomId), 0x44)
+                for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
+                    let addr := mload(add(base, mul(i, 32)))
+                    if eq(addr, guestAddr) {
+                        admitted := 1
+                        break
+                    }
+                }
+            }
+            
+            function addGuest(roomId, guestAddr) {
+                let base := add(getRoomBase(roomId), 0x44)
+                for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
+                    let addr := mload(add(base, mul(i, 32)))
+                    if or(iszero(addr), eq(addr, guestAddr)) {
+                        mstore(add(base, mul(i, 32)), guestAddr)
+                        break
+                    }
+                }
+            }
+
+            function setZmmAttribute(roomId, keyHash, valPtr, valLen) {
+                let base := getRoomBase(roomId)
+                let count := mload(add(base, 0x84))
+                let found := 0
+                let entryPtr := add(base, 0x88)
+                for { let i := 0 } lt(i, count) { i := add(i, 1) } {
+                    if eq(mload(entryPtr), keyHash) {
+                        found := 1
+                        break
+                    }
+                    entryPtr := add(entryPtr, 128)
+                }
+                if iszero(found) {
+                    if lt(count, 3) {
+                        mstore(add(base, 0x84), add(count, 1))
+                    }
+                }
+                mstore(entryPtr, keyHash)
+                mstore(add(entryPtr, 32), valLen)
+                mCopy(valPtr, add(entryPtr, 64), valLen)
+            }
+
+            function getZmmAttribute(roomId, keyHash, destPtr) -> len {
+                let base := getRoomBase(roomId)
+                let count := mload(add(base, 0x84))
+                len := 0
+                let entryPtr := add(base, 0x88)
+                for { let i := 0 } lt(i, count) { i := add(i, 1) } {
+                    if eq(mload(entryPtr), keyHash) {
+                        len := mload(add(entryPtr, 32))
+                        mCopy(add(entryPtr, 64), destPtr, len)
+                        break
+                    }
+                    entryPtr := add(entryPtr, 128)
                 }
             }
         }

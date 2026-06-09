@@ -268,6 +268,15 @@ Connect your wallet to retrieve the active story ROM.</div>
                         <div><strong>Key System:</strong> <span id="metaKS" style="font-family: monospace;">N/A</span></div>
                     </div>
                 </section>
+
+                <!-- Live Void Chats -->
+                <section class="card" style="border-color: var(--vaesen-gold-dim);">
+                    <h2><span class="icon">💬</span> Void Live Chat Feed</h2>
+                    <p class="description">Live events and user chat messages streaming from the PulseChain Void.</p>
+                    <div id="voidChatFeed" style="max-height: 250px; overflow-y: auto; background: var(--vaesen-ink); padding: 12px; border: 1px solid var(--vaesen-gold-dim); border-radius: 4px; font-family: var(--font-serif); font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 15px rgba(0,0,0,0.95);">
+                        Loading live Void chat feed...
+                    </div>
+                </section>
             </div>
         </main>
     </div>
@@ -278,15 +287,88 @@ Connect your wallet to retrieve the active story ROM.</div>
         let zmContract;
 
         const zmABI = [
-            "function parseCommand(address player, bytes calldata cmd) external returns (bytes memory)",
             "function parseCommand(address player, bytes calldata cmd) external view returns (bytes memory)",
             "function decryptInvisiclue(address keySystem, address player, uint256 index) external view returns (string memory)"
         ];
 
+        const PULSECHAIN_RPC = "https://rpc.pulsechain.com";
+        const pulseProvider = new ethers.JsonRpcProvider(PULSECHAIN_RPC);
+        const tokenABI = [
+            "function name() external view returns (string)",
+            "function symbol() external view returns (string)",
+            "function Type() external view returns (string)",
+            "function balanceOf(address) external view returns (uint256)",
+            "function totalSupply() external view returns (uint256)"
+        ];
+
+        let displayedLogKeys = new Set();
+        async function fetchVoidChats() {
+            const feedDiv = document.getElementById("voidChatFeed");
+            try {
+                const logEventSignature = "LogEvent(uint64,uint64,string)";
+                const topic0 = ethers.id(logEventSignature);
+                const latestBlock = await pulseProvider.getBlockNumber();
+                const filter = {
+                    topics: [topic0],
+                    fromBlock: latestBlock - 20000,
+                    toBlock: latestBlock
+                };
+                const logs = await pulseProvider.getLogs(filter);
+                if (logs.length === 0) {
+                    if (feedDiv.innerText.includes("Loading")) {
+                        feedDiv.innerHTML = "<div style='color: var(--vaesen-muted); text-align: center; font-style: italic;'>No recent messages found in Void.</div>";
+                    }
+                    return;
+                }
+                
+                if (feedDiv.innerText.includes("Loading") || feedDiv.innerText.includes("No recent messages")) {
+                    feedDiv.innerHTML = "";
+                }
+
+                const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+                let hasNew = false;
+                
+                for (const log of logs) {
+                    const logKey = `${log.transactionHash}_${log.index}`;
+                    if (displayedLogKeys.has(logKey)) continue;
+                    displayedLogKeys.add(logKey);
+                    hasNew = true;
+
+                    try {
+                        const decoded = abiCoder.decode(["uint64", "uint64", "string"], log.data);
+                        const soul = decoded[0].toString();
+                        const message = decoded[2];
+
+                        const itemDiv = document.createElement("div");
+                        itemDiv.style.borderBottom = "1px dashed rgba(197, 160, 89, 0.15)";
+                        itemDiv.style.paddingBottom = "5px";
+                        itemDiv.innerHTML = `<span style="color: var(--vaesen-gold); font-size: 0.8rem;">[Block ${log.blockNumber}]</span> <strong style="color: var(--vaesen-cream); font-size: 0.85rem;">Soul ${soul.substring(0, 6)}...</strong>: <span style="word-break: break-word; color: #fff;">${message}</span>`;
+                        feedDiv.appendChild(itemDiv);
+                    } catch (decErr) {
+                        console.error("Error decoding log:", decErr);
+                    }
+                }
+
+                if (hasNew) {
+                    feedDiv.scrollTop = feedDiv.scrollHeight;
+                }
+            } catch (err) {
+                console.error("Error fetching chats:", err);
+                if (feedDiv.innerText.includes("Loading")) {
+                    feedDiv.innerHTML = "<div style='color: #ef4444; text-align: center;'>Error loading chats feed.</div>";
+                }
+            }
+        }
+
         async function init() {
             try {
+                // Start loading Void chats
+                fetchVoidChats();
+                setInterval(fetchVoidChats, 15000);
+
                 const res = await fetch("/api/config");
                 const config = await res.json();
+
 
                 zmAddress = config.networks.localhost.zmachineAddress;
                 ksAddress = config.networks.localhost.keySystemAddress;
@@ -326,6 +408,43 @@ Connect your wallet to retrieve the active story ROM.</div>
             try {
                 if (window.ethereum) {
                     provider = new ethers.BrowserProvider(window.ethereum);
+                    
+                    // Request switching network if not on chain 31337
+                    let network = await provider.getNetwork();
+                    if (network.chainId !== 31337n) {
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: '0x7a69' }],
+                            });
+                            // Re-instantiate provider after switch
+                            provider = new ethers.BrowserProvider(window.ethereum);
+                        } catch (switchError) {
+                            if (switchError.code === 4902) {
+                                try {
+                                    await window.ethereum.request({
+                                        method: 'wallet_addEthereumChain',
+                                        params: [{
+                                            chainId: '0x7a69',
+                                            chainName: 'Localhost (Anvil)',
+                                            nativeCurrency: {
+                                                name: 'Ether',
+                                                symbol: 'ETH',
+                                                decimals: 18
+                                            },
+                                            rpcUrls: [PROVIDER_URL]
+                                        }],
+                                    });
+                                    provider = new ethers.BrowserProvider(window.ethereum);
+                                } catch (addError) {
+                                    console.error("Failed to add network:", addError);
+                                }
+                            } else {
+                                console.error("Failed to switch network:", switchError);
+                            }
+                        }
+                    }
+
                     const signerInstance = await provider.getSigner();
                     signer = signerInstance;
                     document.getElementById("btnConnect").innerText = signer.address.substring(0, 6) + "..." + signer.address.substring(38);
@@ -344,24 +463,186 @@ Connect your wallet to retrieve the active story ROM.</div>
                 document.getElementById("termScreen").innerText = "[Error: Z-Machine contract address missing from config.]";
                 return;
             }
-            zmContract = new ethers.Contract(zmAddress, zmABI, signer);
+            
+            // Always read from local Anvil node
+            const localProvider = new ethers.JsonRpcProvider(PROVIDER_URL);
+            zmContract = new ethers.Contract(zmAddress, zmABI, localProvider);
             document.getElementById("termInput").disabled = false;
-            document.getElementById("termScreen").innerText = "[Connected successfully to Z-Machine contract.]\n\nRetrieving starting environment...\n";
+            
+            try {
+                const network = await localProvider.getNetwork();
+                document.getElementById("termScreen").innerText = `[Connected successfully to local Z-Machine engine (Chain ID ${network.chainId}).]\n\nRetrieving starting environment...\n`;
+            } catch (netErr) {
+                document.getElementById("termScreen").innerText = "[Connected successfully to local Z-Machine engine.]\n\nRetrieving starting environment...\n";
+            }
             
             // Auto-trigger look command to display the starting room (Room 10: Void) and its commands
             await executeCommand("look");
         }
 
+        async function getPlayerRoomId() {
+            try {
+                const localProvider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                const userAddress = signer ? await signer.getAddress() : ethers.ZeroAddress;
+                const slot = ethers.toBeHex(4000000n + BigInt(userAddress), 32);
+                const val = await localProvider.getStorageAt(zmAddress, slot);
+                return Number(ethers.toQuantity(val)) || 10;
+            } catch (e) {
+                return 10;
+            }
+        }
+
+        async function getRoomTokenAddress(roomId) {
+            try {
+                const localProvider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                const slot = ethers.toBeHex(2000000n + BigInt(roomId), 32);
+                const val = await localProvider.getStorageAt(zmAddress, slot);
+                const addr = ethers.getAddress(ethers.zeroPadValue(val, 20));
+                return addr === ethers.ZeroAddress ? null : addr;
+            } catch (e) {
+                return null;
+            }
+        }
+
         async function executeCommand(cmdText) {
             if (!zmContract) return;
             const termScreen = document.getElementById("termScreen");
+            const cmd = cmdText.trim();
+            const parts = cmd.split(/\s+/);
+            const action = parts[0].toLowerCase();
+
             try {
+                const roomId = await getPlayerRoomId();
+                const tokenAddress = await getRoomTokenAddress(roomId);
+
+                // Intercept standard token queries or on-chain chat/log triggers to PulseChain Mainnet
+                if (tokenAddress && (action === "balanceof" || action === "totalsupply" || ((action === "chat" || action === "log") && roomId === 10))) {
+                    if (action === "balanceof" || action === "totalsupply") {
+                        const tokenContract = new ethers.Contract(tokenAddress, tokenABI, pulseProvider);
+                        if (action === "balanceof") {
+                            const account = parts[1] || await signer.getAddress();
+                            const bal = await tokenContract.balanceOf(account);
+                            termScreen.innerText += `\n[PulseChain] Balance: ${ethers.formatEther(bal)} (on-chain token)\n\n# _`;
+                        } else if (action === "totalsupply") {
+                            const supply = await tokenContract.totalSupply();
+                            termScreen.innerText += `\n[PulseChain] Total Supply: ${ethers.formatEther(supply)} (on-chain token)\n\n# _`;
+                        }
+                    } else if (action === "chat" || action === "log") {
+                        if (provider instanceof ethers.BrowserProvider) {
+                            const network = await provider.getNetwork();
+                            if (network.chainId !== 369n) {
+                                termScreen.innerText += `\n[Error: Please switch your wallet to PulseChain Mainnet (Chain ID 369) to send chat messages on-chain.]\n\n# _`;
+                                termScreen.scrollTop = termScreen.scrollHeight;
+                                return;
+                            }
+                            
+                            const msgText = cmdText.substring(action.length).trim();
+                            if (!msgText) {
+                                termScreen.innerText += `\n[Error: Message content cannot be empty.]\n\n# _`;
+                                termScreen.scrollTop = termScreen.scrollHeight;
+                                return;
+                            }
+                            
+                            termScreen.innerText += `\n[PulseChain] Sending transaction to on-chain Void contract...`;
+                            termScreen.scrollTop = termScreen.scrollHeight;
+                            
+                            const voidContract = new ethers.Contract(tokenAddress, [
+                                "function Chat(string) external",
+                                "function Log(string) external"
+                            ], signer);
+                            
+                            let tx;
+                            if (action === "chat") {
+                                tx = await voidContract.Chat(msgText);
+                            } else {
+                                tx = await voidContract.Log(msgText);
+                            }
+                            
+                            termScreen.innerText += `\n[PulseChain] Tx Sent: ${tx.hash}\nWaiting for confirmation...`;
+                            termScreen.scrollTop = termScreen.scrollHeight;
+                            await tx.wait();
+                            termScreen.innerText += `\n[PulseChain] Transaction confirmed! Message posted.\n\n# _`;
+                            termScreen.scrollTop = termScreen.scrollHeight;
+                            
+                            // Refresh live feed
+                            fetchVoidChats();
+                        } else {
+                            termScreen.innerText += `\n[Error: Wallet connection required to send messages to the on-chain Void contract.]\n\n# _`;
+                            termScreen.scrollTop = termScreen.scrollHeight;
+                        }
+                    }
+                    termScreen.scrollTop = termScreen.scrollHeight;
+                    return;
+                }
+
+                // Default: query local ZMM VM / Z-Machine
                 const cmdBytes = ethers.toUtf8Bytes(cmdText);
                 const result = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
-                const text = ethers.toUtf8String(result);
+                let text = ethers.toUtf8String(result);
+
+                // Enrich "look" details dynamically from live PulseChain token if in a ZMM room
+                if (action === "look" && roomId >= 10 && roomId <= 19 && tokenAddress) {
+                    try {
+                        const tokenContract = new ethers.Contract(tokenAddress, tokenABI, pulseProvider);
+                        const [name, symbol, typeStr] = await Promise.all([
+                            tokenContract.name().catch(() => "N/A"),
+                            tokenContract.symbol().catch(() => "N/A"),
+                            tokenContract.Type().catch(() => "N/A")
+                        ]);
+
+                        let availableCmds = "\n[ZMM] Available Commands:\n - transfer\n - approve\n - balanceOf\n - totalSupply\n";
+                        if (typeStr === "VOID") {
+                            availableCmds += " - Chat [msg]\n - Log [line]\n - SetAttribute [k,v]\n - GetAttribute [k]\n - Alias [a,v]\n - Enter\n";
+                        } else if (typeStr === "QING") {
+                            availableCmds += " - Join [token]\n - Chat [msg]\n - Withdraw [t,a]\n - Admitted [t]\n - setBouncerDivisor [d]\n - setCoverCharge [c]\n";
+                        }
+
+                        const lines = text.split("\n");
+                        const cleanLines = lines.filter(line => 
+                            !line.includes("[ZMM] Contract:") && 
+                            !line.includes("[ZMM] Name:") && 
+                            !line.includes("[ZMM] Symbol:") && 
+                            !line.includes("[ZMM] Available Commands:") &&
+                            !line.trim().startsWith("- ")
+                        );
+                        
+                        text = `[ZMM] Contract: ${tokenAddress} (PulseChain Mainnet)\n[ZMM] Name: ${name}\n[ZMM] Symbol: ${symbol}${availableCmds}${cleanLines.join("\n")}`;
+
+                        if (roomId === 10) {
+                            try {
+                                const logEventSignature = "LogEvent(uint64,uint64,string)";
+                                const topic0 = ethers.id(logEventSignature);
+                                const latestBlock = await pulseProvider.getBlockNumber();
+                                const filter = {
+                                    topics: [topic0],
+                                    fromBlock: latestBlock - 20000,
+                                    toBlock: latestBlock
+                                };
+                                const logs = await pulseProvider.getLogs(filter);
+                                if (logs.length > 0) {
+                                    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+                                    let chatLines = "\n\n--- Recent Void Chat Logs ---";
+                                    const recentLogs = logs.slice(-5); // Get last 5 logs
+                                    for (const log of recentLogs) {
+                                        const decoded = abiCoder.decode(["uint64", "uint64", "string"], log.data);
+                                        const soul = decoded[0].toString();
+                                        const message = decoded[2];
+                                        chatLines += `\n[Soul ${soul.substring(0, 6)}...] ${message}`;
+                                    }
+                                    text += chatLines;
+                                }
+                            } catch (chatErr) {
+                                console.error("Failed to append recent chats:", chatErr);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("PulseChain lookup failed:", err);
+                    }
+                }
+
                 termScreen.innerText += `\n${text}\n\n# _`;
             } catch (err) {
-                termScreen.innerText += `\n[Error calling parseCommand: ${err.message}]\n# _`;
+                termScreen.innerText += `\n[Error calling parseCommand: ${err.message}]\n\n# _`;
             }
             termScreen.scrollTop = termScreen.scrollHeight;
         }
