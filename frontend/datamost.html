@@ -927,6 +927,73 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                             <div id="totlLog" style="background: #000; border: 1px solid #ffaa00; border-radius: 4px; padding: 10px; font-family: 'Courier New', Courier, monospace; color: #ffaa00; font-size: 0.85rem; height: 100px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: inset 0 0 5px rgba(255,170,0,0.2);">[TOTL SYSTEM] Word processor & database systems ready.</div>
                         </div>
                     </div>
+                <!-- Ahoy! Issue 19 Dashboard Utilities -->
+                <section class="card" style="box-shadow: 0 0 20px rgba(0, 255, 255, 0.15); border-color: var(--neon-blue); margin-bottom: 25px;">
+                    <h2><span class="icon">📰</span> Ahoy! Issue 19 Utilities</h2>
+                    <p class="description">Interactive ports of the primary features from Ahoy! Magazine (July 1985).</p>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary active" id="btnTabScript" style="flex: 1; border-color: var(--neon-blue); color: var(--text-primary);">✍️ Script Analysis</button>
+                        <button class="btn btn-secondary" id="btnTabAppend" style="flex: 1; border-color: var(--neon-magenta); color: var(--text-primary);">🔗 Auto-Append</button>
+                        <button class="btn btn-secondary" id="btnTabPixels" style="flex: 1; border-color: #39ff14; color: var(--text-primary);">⚡ Speeding Pixels</button>
+                    </div>
+
+                    <!-- Script Analysis Panel -->
+                    <div id="panelScript" class="tab-panel">
+                        <h4 style="color: var(--neon-blue); margin-bottom: 8px;">Handwriting Specimen Parameters</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div>
+                                <label class="reg-label">Slant:</label>
+                                <select id="scriptSlant" class="input-glow" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--border-color); font-family: 'Orbitron'; border-radius: 4px;">
+                                    <option value="forward">Forward Slant (Expressive/Friendly)</option>
+                                    <option value="vertical">Vertical Slant (Logical/Independent)</option>
+                                    <option value="backward">Backward Slant (Reserved/Introspective)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="reg-label">Letter Size:</label>
+                                <select id="scriptSize" class="input-glow" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--border-color); font-family: 'Orbitron'; border-radius: 4px;">
+                                    <option value="large">Large Letters (Outgoing/People-oriented)</option>
+                                    <option value="medium">Medium Letters (Adaptable/Focused)</option>
+                                    <option value="small">Small Letters (Intense/Detail-oriented)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="btnRunScriptAnalysis" style="width: 100%; border-color: var(--neon-blue); color: #fff;">Analyze Handwriting</button>
+                        <div id="scriptResult" style="margin-top: 12px; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--neon-blue); border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: #00ffff; display: none;"></div>
+                    </div>
+
+                    <!-- Auto-Append Panel -->
+                    <div id="panelAppend" class="tab-panel" style="display: none;">
+                        <h4 style="color: var(--neon-magenta); margin-bottom: 8px;">BASIC Program Merger</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <div>
+                                <label class="reg-label">Program A:</label>
+                                <textarea id="appendProgA" style="width: 95%; height: 80px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--border-color); font-family: monospace; border-radius: 4px; padding: 5px;">10 PRINT "HELLO FROM A"
+20 GOTO 10</textarea>
+                            </div>
+                            <div>
+                                <label class="reg-label">Program B:</label>
+                                <textarea id="appendProgB" style="width: 95%; height: 80px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--border-color); font-family: monospace; border-radius: 4px; padding: 5px;">30 PRINT "HELLO FROM B"
+40 END</textarea>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="btnRunAppend" style="width: 100%; border-color: var(--neon-magenta); color: #fff;">Execute Auto-Append</button>
+                        <div id="appendResult" style="margin-top: 12px; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--neon-magenta); border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: #ff00ff; display: none;"></div>
+                    </div>
+
+                    <!-- Speeding Pixels Panel -->
+                    <div id="panelPixels" class="tab-panel" style="display: none;">
+                        <h4 style="color: #39ff14; margin-bottom: 8px;">Hi-Res Graphics Loop Benchmark</h4>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button class="btn btn-secondary" id="btnDrawBasic" style="flex: 1; border-color: #ffaa00; color: #fff;">Draw BASIC Loop (~800ms)</button>
+                            <button class="btn btn-primary" id="btnDrawAssembly" style="flex: 1; border-color: #39ff14; color: #fff;">Draw Assembly Loop (~15ms)</button>
+                        </div>
+                        <div style="position: relative; width: 100%; height: 120px; background: #000; border: 1px solid #39ff14; border-radius: 4px; overflow: hidden;">
+                            <canvas id="pixelCanvas" width="320" height="120" style="width: 100%; height: 100%; image-rendering: pixelated;"></canvas>
+                        </div>
+                        <div id="pixelStatus" style="margin-top: 8px; font-size: 0.8rem; color: #39ff14; font-family: 'Orbitron';">Canvas Ready. Select rendering mode.</div>
+                    </div>
                 </section>
 
                 <!-- Infocom Z-Machine Console -->
@@ -8112,6 +8179,136 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             drawSwingMeter();
             drawGolf3D();
+            
+            if (typeof initAhoy19Events === "function") {
+                initAhoy19Events();
+            }
+        }
+
+        function initAhoy19Events() {
+            const tabScript = document.getElementById("btnTabScript");
+            const tabAppend = document.getElementById("btnTabAppend");
+            const tabPixels = document.getElementById("btnTabPixels");
+            
+            const panelScript = document.getElementById("panelScript");
+            const panelAppend = document.getElementById("panelAppend");
+            const panelPixels = document.getElementById("panelPixels");
+            
+            function showPanel(panelShow, tabActive) {
+                [panelScript, panelAppend, panelPixels].forEach(p => p.style.display = "none");
+                [tabScript, tabAppend, tabPixels].forEach(t => t.classList.remove("active"));
+                panelShow.style.display = "block";
+                tabActive.classList.add("active");
+            }
+            
+            tabScript.addEventListener("click", () => showPanel(panelScript, tabScript));
+            tabAppend.addEventListener("click", () => showPanel(panelAppend, tabAppend));
+            tabPixels.addEventListener("click", () => {
+                showPanel(panelPixels, tabPixels);
+                initPixelsCanvas();
+            });
+            
+            document.getElementById("btnRunScriptAnalysis").addEventListener("click", () => {
+                const slant = document.getElementById("scriptSlant").value;
+                const size = document.getElementById("scriptSize").value;
+                const outDiv = document.getElementById("scriptResult");
+                outDiv.style.display = "block";
+                
+                let analysis = "=== HANDWRITING CHARACTER PROFILE ===\r\n";
+                analysis += `Slant slant: ${slant.toUpperCase()}\r\n`;
+                analysis += `Letter size: ${size.toUpperCase()}\r\n\r\n`;
+                analysis += "PSYCHOLOGICAL TRAITS:\r\n";
+                
+                if (slant === "forward") {
+                    analysis += "- Highly expressive emotional responses.\r\n- Enjoys social activities and values relationships.\r\n";
+                } else if (slant === "vertical") {
+                    analysis += "- Governed by logic and reason over emotion.\r\n- Independent thinker with high self-reliance.\r\n";
+                } else {
+                    analysis += "- Introspective, reserved, and private.\r\n- Thinks before reacting; values deep inner worlds.\r\n";
+                }
+                
+                if (size === "large") {
+                    analysis += "- Outgoing, seeks appreciation and recognition.\r\n- Energetic presence in social settings.\r\n";
+                } else if (size === "medium") {
+                    analysis += "- Well-balanced adaptability to different environments.\r\n- Focuses on practical day-to-day tasks.\r\n";
+                } else {
+                    analysis += "- Intense focus and concentration abilities.\r\n- Extremely detail-oriented and meticulous.\r\n";
+                }
+                
+                analysis += "\r\nREADY.";
+                outDiv.innerText = analysis;
+            });
+            
+            document.getElementById("btnRunAppend").addEventListener("click", () => {
+                const progA = document.getElementById("appendProgA").value;
+                const progB = document.getElementById("appendProgB").value;
+                const outDiv = document.getElementById("appendResult");
+                outDiv.style.display = "block";
+                
+                let combined = "=== AUTO-APPEND SYSTEM INITIALIZED ===\r\n";
+                combined += "Reading pointers: Start=$0801, End=$08A4\r\n";
+                combined += "Adjusting zero-page address links...\r\n";
+                combined += "Appended output:\r\n\r\n";
+                
+                const linesA = progA.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const linesB = progB.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                
+                linesA.forEach(l => { combined += l + "\r\n"; });
+                linesB.forEach(l => { combined += l + "\r\n"; });
+                
+                combined += "\r\nNew end of BASIC pointer updated: $08EE\r\nREADY.";
+                outDiv.innerText = combined;
+            });
+            
+            const canvas = document.getElementById("pixelCanvas");
+            const ctx = canvas.getContext("2d");
+            
+            function initPixelsCanvas() {
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = "#39ff14";
+                ctx.lineWidth = 1;
+            }
+            
+            document.getElementById("btnDrawBasic").addEventListener("click", () => {
+                initPixelsCanvas();
+                const status = document.getElementById("pixelStatus");
+                status.innerText = "BASIC drawing active...";
+                
+                let start = performance.now();
+                let x = 0;
+                
+                function drawStep() {
+                    if (x < canvas.width) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(canvas.width - x, canvas.height);
+                        ctx.stroke();
+                        x += 8;
+                        setTimeout(drawStep, 30);
+                    } else {
+                        let duration = Math.round(performance.now() - start + 750);
+                        status.innerText = `BASIC Draw completed in ${duration}ms! (Inefficient instruction loops)`;
+                    }
+                }
+                drawStep();
+            });
+            
+            document.getElementById("btnDrawAssembly").addEventListener("click", () => {
+                initPixelsCanvas();
+                const status = document.getElementById("pixelStatus");
+                status.innerText = "Assembly drawing active...";
+                
+                let start = performance.now();
+                for (let x = 0; x < canvas.width; x += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(canvas.width - x, canvas.height);
+                    ctx.stroke();
+                }
+                let duration = Math.round(performance.now() - start + 8);
+                status.innerText = `Assembly Draw completed in ${duration}ms! (Ultra-fast direct screen write)`;
+            });
         }
 
         window.onload = init;
