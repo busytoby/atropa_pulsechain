@@ -1336,6 +1336,19 @@
                             logTrapEvent("[FORTH ERROR] morse requires [asciiCode] on stack", true);
                         }
                         break;
+                    case "temp@":
+                        {
+                            let base = 25.0;
+                            for (let r = 0; r < 16; r++) {
+                                if (cpu.v[r] !== 0) base += 0.1;
+                            }
+                            base += (cpu.pc % 10) * 0.1;
+                            base += (Math.random() - 0.5) * 0.4;
+                            const tempInt = Math.round(base);
+                            forthStack.push(tempInt);
+                            logTrapEvent(`🌡️ [THERMOMETER] Crucible Temperature: ${base.toFixed(2)}°C (Pushed ${tempInt} to stack)`, true);
+                        }
+                        break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
                 }
