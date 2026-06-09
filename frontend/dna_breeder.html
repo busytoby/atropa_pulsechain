@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atropa -- Dynamic DNA Breeder & Vector Arena</title>
+    
+    <!-- Typography & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Ethers.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+
+    <style>
+        .dna-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .dna-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .dna-card {
+            background: rgba(13, 17, 38, 0.65);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dna-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-magenta));
+        }
+
+        .dna-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .dna-input-group label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .dna-select, .dna-input {
+            background: rgba(6, 8, 20, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.05rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .dna-select:focus, .dna-input:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .dna-hex-display {
+            background: #000;
+            border: 1px solid var(--neon-magenta);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            color: var(--neon-magenta);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 15px;
+            box-shadow: inset 0 0 8px rgba(255, 0, 127, 0.2);
+        }
+
+        .vector-arena-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .vector-canvas {
+            border: 2px solid var(--neon-blue);
+            border-radius: 8px;
+            background: #040612;
+            width: 100%;
+            height: 400px;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+            cursor: crosshair;
+        }
+
+        .stats-hud {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .hud-item {
+            background: rgba(6, 8, 20, 0.8);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .hud-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .hud-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">ATROPA DNA ARENA</span>
+                <div class="subtitle">Procedural Yul Display Hardware Sandbox</div>
+            </div>
+            <div class="header-actions">
+                <div class="nav-links">
+                    <a href="index.html">🏠 Home</a>
+                    <a href="zmachine.html">🕹️ Interactive Fiction</a>
+                    <a href="datamost.html">📺 GameMaster Parlor</a>
+                </div>
+                <div class="network-badge" id="netBadge">Local Network</div>
+                <button class="btn btn-connect" id="btnConnect">Link Web3</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="dna-grid">
+            <!-- Left Panel: Breeder Controls -->
+            <div class="vector-arena-container" style="gap: 20px;">
+                <div class="dna-card">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 15px; color: var(--neon-blue);">🧬 DNA Breed Configuration</h3>
+                    
+                    <div class="dna-input-group">
+                        <label>Parent A (Yul Room Storage)</label>
+                        <select class="dna-select" id="parentA">
+                            <option value="10">Room 10 - Void</option>
+                            <option value="11" selected>Room 11 - Qing</option>
+                            <option value="12">Room 12 - Qi</option>
+                            <option value="13">Room 13 - Mai</option>
+                            <option value="14">Room 14 - Xia</option>
+                            <option value="15">Room 15 - Xie</option>
+                            <option value="16">Room 16 - Chan</option>
+                            <option value="17">Room 17 - Sei</option>
+                            <option value="18">Room 18 - Choa</option>
+                            <option value="19">Room 19 - Cheon</option>
+                        </select>
+                    </div>
+
+                    <div class="dna-input-group">
+                        <label>Parent B (Yul Room Storage)</label>
+                        <select class="dna-select" id="parentB">
+                            <option value="10">Room 10 - Void</option>
+                            <option value="11">Room 11 - Qing</option>
+                            <option value="12" selected>Room 12 - Qi</option>
+                            <option value="13">Room 13 - Mai</option>
+                            <option value="14">Room 14 - Xia</option>
+                            <option value="15">Room 15 - Xie</option>
+                            <option value="16">Room 16 - Chan</option>
+                            <option value="17">Room 17 - Sei</option>
+                            <option value="18">Room 18 - Choa</option>
+                            <option value="19">Room 19 - Cheon</option>
+                        </select>
+                    </div>
+
+                    <div class="dna-input-group">
+                        <label>Crossover Mutation Seed</label>
+                        <input type="number" class="dna-input" id="crossoverSeed" value="4815162342">
+                    </div>
+
+                    <button class="btn btn-primary" id="btnBreed" style="width: 100%; margin-top: 10px;">🧬 Synthesize & Crossover</button>
+                </div>
+
+                <div class="dna-card">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-magenta);">🖥️ Active DNA Assembly (Hex)</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Direct memory dump from the Yul VM target segment:</p>
+                    <div class="dna-hex-display" id="hexDisplay">0x0000000000000000000000000000000000000000000000000000000000000000</div>
+                    <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 15px; border-color: var(--neon-magenta); color: var(--neon-magenta);">💾 Write DNA to Room 20 (Arena Child)</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualizing Vector Arena -->
+            <div class="vector-arena-container">
+                <div class="dna-card" style="padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="font-family: 'Orbitron', sans-serif; margin: 0; color: var(--neon-blue);">🌌 Procedural Vector Arena</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-family: monospace;">EVM-DRIVEN GEOMETRY</span>
+                    </div>
+
+                    <canvas class="vector-canvas" id="arenaCanvas" width="600" height="400"></canvas>
+
+                    <div class="stats-hud" style="margin-top: 15px;">
+                        <div class="hud-item">
+                            <div class="hud-label">Primary Color</div>
+                            <div class="hud-val" id="hudColor">#00f2fe</div>
+                        </div>
+                        <div class="hud-item">
+                            <div class="hud-label">Vector Grid</div>
+                            <div class="hud-val" id="hudGrid">24x16</div>
+                        </div>
+                        <div class="hud-item">
+                            <div class="hud-label">Velocity</div>
+                            <div class="hud-val" id="hudSpeed">1.2x</div>
+                        </div>
+                        <div class="hud-item">
+                            <div class="hud-label">Oscillations</div>
+                            <div class="hud-val" id="hudOsc">45 Hz</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Breeder & Visualizer Logic -->
+    <script>
+        // Default addresses
+        const zmAddress = "0xf4e55515952BdAb2aeB4010f777E802D61eB384f";
+        const rpcProviderUrl = "http://127.0.0.1:8545";
+
+        let provider;
+        let signer;
+        let zmContract;
+
+        // DNA Structure mapping
+        let currentDna = new Uint8Array(32);
+        for(let i=0; i<32; i++) {
+            currentDna[i] = Math.floor(Math.random() * 256);
+        }
+
+        // Particle configuration for vector arena
+        let particles = [];
+        let mouseX = 300, mouseY = 200;
+        let isMouseDown = false;
+
+        async function initWeb3() {
+            try {
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    signer = await provider.getSigner();
+                    document.getElementById("netBadge").innerText = "Web3 Connected";
+                    document.getElementById("netBadge").classList.add("connected");
+                } else {
+                    provider = new ethers.JsonRpcProvider(rpcProviderUrl);
+                    signer = await provider.getSigner(0);
+                    document.getElementById("netBadge").innerText = "Local Provider (Anvil)";
+                }
+
+                const abi = [
+                    "function bindRoomDna(uint256 roomId, bytes calldata dna) public returns (uint256)",
+                    "function getRoomDna(uint256 roomId) public view returns (bytes memory)",
+                    "function crossoverRoomDna(uint256 parentA, uint256 parentB, uint256 child, uint256 seed) public returns (uint256)"
+                ];
+                
+                zmContract = new ethers.Contract(zmAddress, abi, signer);
+                console.log("Connected to Z-Machine at:", zmAddress);
+            } catch (err) {
+                console.error("Web3 initialization failed:", err);
+            }
+        }
+
+        // Generate synthetic parents DNA if storage is empty
+        function generateParentDna(seed) {
+            const arr = new Uint8Array(32);
+            let state = seed;
+            for(let i=0; i<32; i++) {
+                state = (state * 1664525 + 1013904223) % 4294967296;
+                arr[i] = state % 256;
+            }
+            return arr;
+        }
+
+        function triggerCrossoverLocal(dnaA, dnaB, seed) {
+            const child = new Uint8Array(32);
+            let state = seed;
+            for(let i=0; i<32; i++) {
+                state = (state * 1664525 + 1013904223) % 4294967296;
+                // Use state as bitwise selector mask
+                child[i] = (state % 2 === 0) ? dnaA[i] : dnaB[i];
+                // Mutation chance (approx ~1.5%)
+                if (((state >> 8) % 100) < 2) {
+                    child[i] = (child[i] + 47) % 256;
+                }
+            }
+            return child;
+        }
+
+        function bytesToHex(bytes) {
+            return "0x" + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function hexToBytes(hex) {
+            hex = hex.replace(/^0x/, '');
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+            }
+            return bytes;
+        }
+
+        // Setup Breeder Buttons
+        document.getElementById("btnBreed").addEventListener("click", async () => {
+            const parentAId = parseInt(document.getElementById("parentA").value);
+            const parentBId = parseInt(document.getElementById("parentB").value);
+            const seed = parseInt(document.getElementById("crossoverSeed").value);
+
+            let dnaA, dnaB;
+            try {
+                // Attempt fetching from Yul contract on-chain
+                if (zmContract) {
+                    const hexA = await zmContract.getRoomDna(parentAId);
+                    const hexB = await zmContract.getRoomDna(parentBId);
+                    
+                    dnaA = (hexA && hexA !== "0x") ? hexToBytes(hexA) : generateParentDna(parentAId * seed);
+                    dnaB = (hexB && hexB !== "0x") ? hexToBytes(hexB) : generateParentDna(parentBId * seed);
+                } else {
+                    dnaA = generateParentDna(parentAId * seed);
+                    dnaB = generateParentDna(parentBId * seed);
+                }
+            } catch (e) {
+                console.log("Falling back to local generation...");
+                dnaA = generateParentDna(parentAId * seed);
+                dnaB = generateParentDna(parentBId * seed);
+            }
+
+            currentDna = triggerCrossoverLocal(dnaA, dnaB, seed);
+            document.getElementById("hexDisplay").innerText = bytesToHex(currentDna);
+            updateHUD(currentDna);
+            initParticles();
+        });
+
+        document.getElementById("btnWriteOnChain").addEventListener("click", async () => {
+            if (!zmContract) {
+                alert("Blockchain connection unavailable. Set up Anvil first!");
+                return;
+            }
+            try {
+                const hexData = bytesToHex(currentDna);
+                const tx = await zmContract.bindRoomDna(20, hexData);
+                document.getElementById("hexDisplay").innerText = "PENDING TRANSACTION...";
+                await tx.wait();
+                document.getElementById("hexDisplay").innerText = `SUCCESS! Room 20 DNA bound to: \n${hexData}`;
+            } catch (err) {
+                console.error("Write error:", err);
+                alert("Failed to write to contract: " + err.message);
+            }
+        });
+
+        document.getElementById("btnConnect").addEventListener("click", initWeb3);
+
+        // HUD Updater
+        function updateHUD(dna) {
+            // Byte 0-2 for HSL primary color
+            const hue = Math.floor((dna[0] / 255) * 360);
+            const sat = 70 + Math.floor((dna[1] / 255) * 30);
+            const light = 45 + Math.floor((dna[2] / 255) * 15);
+            const primaryColor = `hsl(${hue}, ${sat}%, ${light}%)`;
+            
+            document.getElementById("hudColor").innerText = primaryColor;
+            document.getElementById("hudColor").style.color = primaryColor;
+
+            // Byte 4 determines grid sizing (12 to 32)
+            const gridSize = 12 + Math.floor((dna[4] / 255) * 20);
+            document.getElementById("hudGrid").innerText = `${gridSize}x${Math.floor(gridSize * 0.66)}`;
+
+            // Byte 8 determines particle base speed
+            const speed = (0.5 + (dna[8] / 255) * 2.5).toFixed(1);
+            document.getElementById("hudSpeed").innerText = `${speed}x`;
+
+            // Byte 12 determines wave frequency
+            const osc = 10 + Math.floor((dna[12] / 255) * 80);
+            document.getElementById("hudOsc").innerText = `${osc} Hz`;
+        }
+
+        // Particle simulation on Canvas
+        const canvas = document.getElementById("arenaCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function initParticles() {
+            particles = [];
+            const particleCount = 60 + Math.floor((currentDna[16] / 255) * 100);
+            for(let i=0; i<particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: 0,
+                    vy: 0,
+                    size: 1.5 + Math.random() * 2.5,
+                    life: Math.random()
+                });
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = "rgba(4, 6, 18, 0.15)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Fetch current DNA configuration parameters
+            const hue = Math.floor((currentDna[0] / 255) * 360);
+            const baseSpeed = 0.5 + (currentDna[8] / 255) * 2.5;
+            const density = 12 + Math.floor((currentDna[4] / 255) * 20);
+            const oscFreq = 10 + Math.floor((currentDna[12] / 255) * 80);
+
+            // Draw procedural background grid using DNA parameters
+            ctx.strokeStyle = `hsla(${hue}, 80%, 50%, 0.04)`;
+            ctx.lineWidth = 1;
+            const spacingX = canvas.width / density;
+            const spacingY = canvas.height / (density * 0.66);
+            
+            const time = Date.now() * 0.001;
+            const waveOffset = Math.sin(time * (oscFreq / 10)) * 10;
+
+            for(let x = 0; x < canvas.width; x += spacingX) {
+                ctx.beginPath();
+                ctx.moveTo(x + waveOffset, 0);
+                ctx.lineTo(x - waveOffset, canvas.height);
+                ctx.stroke();
+            }
+            for(let y = 0; y < canvas.height; y += spacingY) {
+                ctx.beginPath();
+                ctx.moveTo(0, y + waveOffset);
+                ctx.lineTo(canvas.width, y - waveOffset);
+                ctx.stroke();
+            }
+
+            // Draw glowing core target representation
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = `hsl(${hue}, 90%, 50%)`;
+            ctx.strokeStyle = `hsl(${hue}, 90%, 50%)`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 30 + Math.sin(time * 5) * 5, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Draw and update particles reacting to vector field
+            for(let i=0; i<particles.length; i++) {
+                const p = particles[i];
+
+                // Calculate vector pointing from particle to mouse/target
+                const dx = mouseX - p.x;
+                const dy = mouseY - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+
+                // Flow vector calculation modulated by DNA velocity bounds
+                const force = Math.min(1.5, 300 / dist);
+                p.vx += (dx / dist) * force * 0.15 + (Math.sin(p.y * 0.02 + time) * 0.2);
+                p.vy += (dy / dist) * force * 0.15 + (Math.cos(p.x * 0.02 + time) * 0.2);
+
+                // Apply drag and DNA speed scaling
+                p.vx *= 0.94;
+                p.vy *= 0.94;
+
+                p.x += p.vx * baseSpeed;
+                p.y += p.vy * baseSpeed;
+
+                // Screen wraps
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.fillStyle = `hsla(${(hue + p.life*40)%360}, 95%, 60%, ${0.3 + p.life * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Handle interactions
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener("mousedown", () => isMouseDown = true);
+        canvas.addEventListener("mouseup", () => isMouseDown = false);
+
+        // Start
+        initWeb3().then(() => {
+            document.getElementById("btnBreed").click();
+            animate();
+        });
+    </script>
+</body>
+</html>
