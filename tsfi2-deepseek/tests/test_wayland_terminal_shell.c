@@ -52,7 +52,8 @@ typedef enum {
     MODE_TOP,
     MODE_FONTASIA,
     MODE_FLANKSPEED,
-    MODE_BOOTER
+    MODE_BOOTER,
+    MODE_HOPAROUND
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -273,14 +274,26 @@ static const char *g_booter_entries[] = {
     "FONTASIA (Custom Sprite Editor)",
     "FLANKSPEED (Hex Assembler Entry)",
     "CHECKLIST (To-Do Management Widget)",
-    "YULBUILD (Yul compiler and assembly tool)"
+    "YULBUILD (Yul compiler and assembly tool)",
+    "HOPAROUND (Board Strategy Game)"
 };
-static int g_booter_count = 6;
+static int g_booter_count = 7;
 static int g_booter_cursor = 0;
 static char g_booter_status[128];
 static void init_booter(void);
 static void redraw_booter_screen(void);
 static void handle_booter_input(char ch);
+
+// Hop Around variables
+static int g_hoparound_grid[8][8];
+static int g_hoparound_x = 4;
+static int g_hoparound_y = 4;
+static int g_hoparound_score = 0;
+static int g_hoparound_moves = 0;
+static char g_hoparound_status[128];
+static void init_hoparound(void);
+static void redraw_hoparound_screen(void);
+static void handle_hoparound_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2799,6 +2812,116 @@ static void load_checklist(void) {
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
 }
 
+static void init_hoparound(void) {
+    g_hoparound_x = 4;
+    g_hoparound_y = 4;
+    g_hoparound_score = 0;
+    g_hoparound_moves = 0;
+    for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            g_hoparound_grid[r][c] = 0;
+        }
+    }
+    g_hoparound_grid[4][4] = 1; // Starting cell is visited
+    snprintf(g_hoparound_status, sizeof(g_hoparound_status), "Chirp! Lead the Craw bird to gather all seeds.");
+}
+
+static void redraw_hoparound_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "============================================================\r\n"
+             "                 HOP AROUND (Ahoy! Issue 16)                \r\n"
+             "============================================================\r\n"
+             "  Moves: %d   |   Score: %d / 630\r\n"
+             "============================================================\r\n\r\n",
+             g_hoparound_moves, g_hoparound_score);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int r = 0; r < 8; r++) {
+        lau_vram_write_string(g_vram, "       ", 7);
+        for (int c = 0; c < 8; c++) {
+            if (r == g_hoparound_y && c == g_hoparound_x) {
+                // The main character is a Craw bird
+                lau_vram_write_string(g_vram, ">v<", 3);
+            } else if (g_hoparound_grid[r][c] == 1) {
+                lau_vram_write_string(g_vram, " . ", 3);
+            } else {
+                lau_vram_write_string(g_vram, "[o]", 3);
+            }
+        }
+        lau_vram_write_string(g_vram, "\r\n\r\n", 4);
+    }
+
+    lau_vram_write_string(g_vram, "============================================================\r\n", 62);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_hoparound_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [W/A/S/D] Hop around the board [ESC] Exit\r\n", 55);
+}
+
+static void handle_hoparound_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    int target_x = g_hoparound_x;
+    int target_y = g_hoparound_y;
+    bool moved = false;
+
+    if (ch == 'w' || ch == 'W') {
+        target_y--;
+        moved = true;
+    } else if (ch == 's' || ch == 'S') {
+        target_y++;
+        moved = true;
+    } else if (ch == 'a' || ch == 'A') {
+        target_x--;
+        moved = true;
+    } else if (ch == 'd' || ch == 'D') {
+        target_x++;
+        moved = true;
+    }
+
+    if (moved) {
+        if (target_x >= 0 && target_x < 8 && target_y >= 0 && target_y < 8) {
+            g_hoparound_x = target_x;
+            g_hoparound_y = target_y;
+            g_hoparound_moves++;
+
+            if (g_hoparound_grid[target_y][target_x] == 0) {
+                g_hoparound_grid[target_y][target_x] = 1;
+                g_hoparound_score += 10;
+                snprintf(g_hoparound_status, sizeof(g_hoparound_status), "Chirp! Craw gathered a seed (+10 pts).");
+            } else {
+                snprintf(g_hoparound_status, sizeof(g_hoparound_status), "Hop! Already visited this spot.");
+            }
+
+            // Check if all spots are visited
+            bool win = true;
+            for (int r = 0; r < 8; r++) {
+                for (int c = 0; c < 8; c++) {
+                    if (g_hoparound_grid[r][c] == 0) win = false;
+                }
+            }
+            if (win) {
+                snprintf(g_hoparound_status, sizeof(g_hoparound_status), "CONGRATULATIONS! Craw gathered all seeds!");
+            }
+        } else {
+            snprintf(g_hoparound_status, sizeof(g_hoparound_status), "Ouch! Hit the fence!");
+        }
+    }
+
+    redraw_hoparound_screen();
+}
+
 static void init_booter(void) {
     g_booter_cursor = 0;
     snprintf(g_booter_status, sizeof(g_booter_status), "Use W/S to navigate. Press ENTER to boot program.");
@@ -2860,6 +2983,7 @@ static void handle_booter_input(char ch) {
             case 3: execute_command("FLANKSPEED"); break;
             case 4: execute_command("CHECKLIST"); break;
             case 5: execute_command("YULBUILD"); break;
+            case 6: execute_command("HOPAROUND"); break;
         }
         return;
     }
@@ -6183,6 +6307,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "HOPAROUND") == 0) {
+         g_editor_mode = MODE_HOPAROUND;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_hoparound();
+         redraw_hoparound_screen();
+         log_telemetry("Started Hop Around game");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -7613,6 +7747,23 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = '\n';
         }
         handle_booter_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_HOPAROUND) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        }
+        handle_hoparound_input(ch);
         return;
     }
 
@@ -9165,6 +9316,8 @@ int main() {
                             handle_flankspeed_input(ch);
                         } else if (g_editor_mode == MODE_BOOTER) {
                             handle_booter_input(ch);
+                        } else if (g_editor_mode == MODE_HOPAROUND) {
+                            handle_hoparound_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -9381,6 +9534,8 @@ int main() {
                             handle_flankspeed_input(ch);
                         } else if (g_editor_mode == MODE_BOOTER) {
                             handle_booter_input(ch);
+                        } else if (g_editor_mode == MODE_HOPAROUND) {
+                            handle_hoparound_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
