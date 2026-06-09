@@ -1566,9 +1566,23 @@
                             const addr = forthStack.pop();
                             const size = forthStack.pop();
                             if (addr >= 0 && addr + size <= cpu.memory.length) {
-                                const bytes = Array.from(cpu.memory.slice(addr, addr + size));
-                                localStorage.setItem(`cosmac_tape_${filename}`, JSON.stringify(bytes));
-                                logTrapEvent(`💾 [TOS] Saved virtual cassette "${filename}" (${size} bytes) from RAM 0x${addr.toString(16).toUpperCase()}`, true);
+                                let pct = 0;
+                                logTrapEvent(`📼 [TOS] Writing cassette "${filename}"... [░░░░░░░░░░] 0%`, true);
+                                const interval = setInterval(() => {
+                                    pct += 25;
+                                    if (pct <= 100) {
+                                        const filled = "█".repeat(pct / 10);
+                                        const empty = "░".repeat(10 - pct / 10);
+                                        logTrapEvent(`📼 [TOS] Writing cassette "${filename}"... [${filled}${empty}] ${pct}%`, true);
+                                    }
+                                    if (pct >= 100) {
+                                        clearInterval(interval);
+                                        const bytes = Array.from(cpu.memory.slice(addr, addr + size));
+                                        localStorage.setItem(`cosmac_tape_${filename}`, JSON.stringify(bytes));
+                                        logTrapEvent(`💾 [TOS] Saved virtual cassette "${filename}" (${size} bytes) from RAM 0x${addr.toString(16).toUpperCase()}`, true);
+                                        playFourPartHarmony(300, 400, 500, 600);
+                                    }
+                                }, 250);
                             } else {
                                 logTrapEvent("[TOS ERROR] Invalid address range", true);
                             }
@@ -1586,16 +1600,30 @@
                             const addr = forthStack.pop();
                             const item = localStorage.getItem(`cosmac_tape_${filename}`);
                             if (item) {
-                                const bytes = JSON.parse(item);
-                                if (addr + bytes.length <= cpu.memory.length) {
-                                    for (let j = 0; j < bytes.length; j++) {
-                                        cpu.memory[addr + j] = bytes[j];
+                                let pct = 0;
+                                logTrapEvent(`📼 [TOS] Reading cassette "${filename}"... [░░░░░░░░░░] 0%`, true);
+                                const interval = setInterval(() => {
+                                    pct += 25;
+                                    if (pct <= 100) {
+                                        const filled = "█".repeat(pct / 10);
+                                        const empty = "░".repeat(10 - pct / 10);
+                                        logTrapEvent(`📼 [TOS] Reading cassette "${filename}"... [${filled}${empty}] ${pct}%`, true);
                                     }
-                                    logTrapEvent(`💾 [TOS] Loaded virtual cassette "${filename}" (${bytes.length} bytes) to RAM 0x${addr.toString(16).toUpperCase()}`, true);
-                                    updateMonitor();
-                                } else {
-                                    logTrapEvent("[TOS ERROR] File exceeds memory bounds", true);
-                                }
+                                    if (pct >= 100) {
+                                        clearInterval(interval);
+                                        const bytes = JSON.parse(item);
+                                        if (addr + bytes.length <= cpu.memory.length) {
+                                            for (let j = 0; j < bytes.length; j++) {
+                                                cpu.memory[addr + j] = bytes[j];
+                                            }
+                                            logTrapEvent(`💾 [TOS] Loaded virtual cassette "${filename}" (${bytes.length} bytes) to RAM 0x${addr.toString(16).toUpperCase()}`, true);
+                                            updateMonitor();
+                                            playFourPartHarmony(440, 554, 659, 880);
+                                        } else {
+                                            logTrapEvent("[TOS ERROR] File exceeds memory bounds", true);
+                                        }
+                                    }
+                                }, 250);
                             } else {
                                 logTrapEvent(`[TOS ERROR] Cassette file "${filename}" not found`, true);
                             }
