@@ -49,3 +49,46 @@ The sprite generator configures the VIC-II registers starting at `$D000` (53248)
 | `53249` | Sprite 0 Y Coordinate | `0–255` | `100` |
 | `53269` | Sprite Enable Register | `0–255` | `1` (Enables Sprite 0) |
 | `53287` | Sprite 0 Color Register | `0–15` | `1` (Standard White highlight) |
+
+---
+
+## 4. Custom Character Redefinition Map (`CHARSET` Schema)
+
+The custom character generator copies character glyph matrices from ROM (at `$D000`) to RAM (at `$3000`), switching interrupt and bank selections:
+
+| Memory Address (decimal) | Hardware Function | Value Range | Standard Assignment |
+| :--- | :--- | :--- | :--- |
+| `1` | 6510 Processor Port (RAM/ROM Banking) | `0–255` | Clear bit 2 to bank in Char ROM, Set bit 2 to restore RAM |
+| `52` / `56` | BASIC RAM Limit Pointer | `0–255` | Set to `48` to restrict BASIC memory below `$3000` (12288) |
+| `12288`–`14335` | Custom Character RAM | `0–255` | Destination area for 256 custom character glyphs |
+| `53248`–`55295` | Character Generator ROM | `0–255` | Source area for ROM glyph patterns |
+| `53272` | VIC-II Memory Control Register | `0–255` | Or-in `12` to point VIC-II custom set to `$3000` |
+| `56334` | CIA 1 Control Register A (Interrupt Control) | `0–255` | Disable timer interrupts during copy, re-enable after |
+
+---
+
+## 5. Raster Split-Screen Interrupt Map (`RASTER` Schema)
+
+The raster interrupt generator configures split-screen interrupts at a specific scanline:
+
+| Memory Address (decimal) | Hardware Function | Value Range | Standard Assignment |
+| :--- | :--- | :--- | :--- |
+| `788`–`789` | CPU Interrupt Vector | `16-bit address` | Redirects to `$0D00` (3328) for the custom interrupt handler |
+| `53265` | VIC-II Control Register 1 | `0–255` | Clear bit 7 to set raster interrupt target scanline < 256 |
+| `53266` | VIC-II Raster Compare Register | `0–255` | Set to `120` (target scanline for background/border change) |
+| `53274` | VIC-II Interrupt Enable Register | `0–255` | Set bit 0 (1) to enable raster interrupts |
+| `53273` | VIC-II Interrupt Status Register | `0–255` | Write bit 0 (1) inside ISR to acknowledge and clear interrupt |
+| `56333` | CIA 1 Interrupt Control Register | `0–255` | Set to `127` ($7F) to disable timer interrupts and prioritize raster |
+
+---
+
+## 6. Joystick Port Scanning Map (`JOYSTICK` Schema)
+
+The joystick scanner reads direct pin states from the CIA 1 complex:
+
+| Memory Address (decimal) | Hardware Function | Value Range | Standard Assignment |
+| :--- | :--- | :--- | :--- |
+| `56320` | CIA 1 Data Port A (Joystick 2) | `0–255` | Bit 0 (Up), Bit 1 (Down), Bit 2 (Left), Bit 3 (Right), Bit 4 (Fire) [Active Low: 0 = Pressed] |
+| `56321` | CIA 1 Data Port B (Joystick 1) | `0–255` | Direct line states for Joystick 1 |
+
+

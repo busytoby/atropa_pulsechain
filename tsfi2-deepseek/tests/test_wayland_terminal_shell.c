@@ -1888,6 +1888,39 @@ static void execute_command(const char *cmd) {
                 " [Character set relocation BASIC layout generated.]\r\n"
                 "==================================================\r\n";
             lau_vram_write_string(g_vram, output, strlen(output));
+        } else if (arg && strcasecmp(arg, "RASTER") == 0) {
+            const char *output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 RASTER INTERRUPT   \r\n"
+                "==================================================\r\n"
+                " Generating C64 Raster Sync Split-Screen...\r\n\r\n"
+                " 10 POKE 56333, 127: REM DISABLE CIA TIMER INTERRUPTS\r\n"
+                " 20 POKE 53265, PEEK(53265) AND 127: REM CLEAR HIGH BIT\r\n"
+                " 30 POKE 53266, 120: REM INTERRUPT SCANLINE target = 120\r\n"
+                " 40 POKE 788, 0: POKE 789, 13: REM REDIRECT VECTOR TO $0D00\r\n"
+                " 50 POKE 53274, 1: REM ENABLE VIC-II RASTER INTERRUPT\r\n"
+                " 60 SYS 3328: REM ACTIVATE ASSEMBLY HOOK\r\n"
+                " READY.\r\n\r\n"
+                " [Raster split-screen dynamic configuration generated.]\r\n"
+                "==================================================\r\n";
+            lau_vram_write_string(g_vram, output, strlen(output));
+        } else if (arg && strcasecmp(arg, "JOYSTICK") == 0) {
+            const char *output = 
+                "==================================================\r\n"
+                "   HURWOOD CODE GENERATOR: C64 JOYSTICK SCANNER   \r\n"
+                "==================================================\r\n"
+                " Generating C64 Joystick Port 2 Scanner...\r\n\r\n"
+                " 10 J = 56320: REM PORT 2 ADDRESS\r\n"
+                " 20 V = PEEK(J)\r\n"
+                " 30 UP = (V AND 1) = 0: DN = (V AND 2) = 0\r\n"
+                " 40 LT = (V AND 4) = 0: RT = (V AND 8) = 0\r\n"
+                " 50 FR = (V AND 16) = 0: REM FIRE BUTTON\r\n"
+                " 60 PRINT \"UP:\"UP\" DN:\"DN\" LT:\"LT\" RT:\"RT\" FIRE:\"FR\r\n"
+                " 70 GOTO 20\r\n"
+                " READY.\r\n\r\n"
+                " [Joystick interactive scanner loop generated.]\r\n"
+                "==================================================\r\n";
+            lau_vram_write_string(g_vram, output, strlen(output));
         } else {
             const char *output = 
                 "==================================================\r\n"
@@ -1903,7 +1936,7 @@ static void execute_command(const char *cmd) {
                 " 70 NEXT I\r\n"
                 " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
                 " READY.\r\n\r\n"
-                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET]]\r\n"
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK]]\r\n"
                 "==================================================\r\n";
             lau_vram_write_string(g_vram, output, strlen(output));
         }
