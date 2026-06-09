@@ -238,6 +238,7 @@
             <button class="btn" onclick="makeMove('LEFT')">◀ Left</button>
             <button class="btn" onclick="makeMove('RIGHT')">Right ▶</button>
             <button class="btn btn-sword" onclick="makeMove('SWORD')">⚔ SWORD</button>
+            <button class="btn" id="btnAiToggle" onclick="toggleAiMode()" style="border-color: var(--success); color: var(--success);">AI Autoplay</button>
         </div>
 
         <div class="status-panel" id="statusMessage">
@@ -298,11 +299,36 @@
             document.getElementById("livesVal").innerText = "❤".repeat(lives) || "GAME OVER";
         }
 
+        let aiMode = false;
+
+        function toggleAiMode() {
+            aiMode = !aiMode;
+            const btn = document.getElementById("btnAiToggle");
+            if (aiMode) {
+                btn.style.background = "linear-gradient(135deg, #004d40 0%, #00251a 100%)";
+                btn.innerText = "AI Mode: On";
+                if (!gameActive) startGame();
+            } else {
+                btn.style.background = "";
+                btn.innerText = "AI Autoplay";
+            }
+        }
+
         function triggerPrompt(action) {
             promptActive = true;
             expectedAction = action;
             document.getElementById("promptBox").style.display = "block";
             playSound(600, 'triangle', 0.25);
+
+            // AI Autoplay Mode hook
+            if (aiMode) {
+                const reactionDelay = 400 + Math.random() * 400; // Human-like delay 400-800ms
+                setTimeout(() => {
+                    if (promptActive && expectedAction === action) {
+                        makeMove(action);
+                    }
+                }, reactionDelay);
+            }
 
             // Give the player 1.5 seconds to react
             promptTimer = setTimeout(() => {
