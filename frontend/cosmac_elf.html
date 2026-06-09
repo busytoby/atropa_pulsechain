@@ -469,6 +469,7 @@
 
         let alchemicalScore = 0;
         let breakpointAddress = null;
+        let isTracing = false;
 
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
@@ -836,6 +837,13 @@
                                 break;
                         }
                         break;
+                }
+                if (isTracing) {
+                    let regStr = "";
+                    for (let r = 0; r < 8; r++) {
+                        regStr += `V${r}:${this.v[r].toString(16).toUpperCase().padStart(2, '0')} `;
+                    }
+                    logTrapEvent(`🔍 [VISA-KIM] PC:0x${this.pc.toString(16).toUpperCase().padStart(4, '0')} | ${regStr}| I:0x${this.i.toString(16).toUpperCase().padStart(4, '0')}`, true);
                 }
             }
         }
@@ -1525,6 +1533,14 @@
                     case "breakpoint-clear":
                         breakpointAddress = null;
                         logTrapEvent("🛑 [DEBUGGER] Breakpoint disarmed.", true);
+                        break;
+                    case "trace-on":
+                        isTracing = true;
+                        logTrapEvent("🔍 [VISA-KIM] Stepping Trace mode ENABLED.", true);
+                        break;
+                    case "trace-off":
+                        isTracing = false;
+                        logTrapEvent("🔍 [VISA-KIM] Stepping Trace mode DISABLED.", true);
                         break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
