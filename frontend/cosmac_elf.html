@@ -534,8 +534,36 @@
                     }
                     logTrapEvent("📡 Connected to Z-Machine. Live Room 10 DNA loaded.", true);
                 }
+        }
+
+        async function executeZMachineCommand(cmdText) {
+            try {
+                let zmAddress = "0xEd8D7d3A98CB4ea6C91a80dcd2220719c264531f";
+                try {
+                    const res = await fetch("/api/config");
+                    const config = await res.json();
+                    if (config && config.networks && config.networks.localhost && config.networks.localhost.zmachineAddress) {
+                        zmAddress = config.networks.localhost.zmachineAddress;
+                    }
+                } catch(e) {}
+                
+                const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                const abi = ["function parseCommand(address player, bytes calldata cmd) external view returns (bytes memory)"];
+                const zm = new ethers.Contract(zmAddress, abi, provider);
+                
+                const cmdBytes = ethers.toUtf8Bytes(cmdText);
+                const result = await zm.parseCommand.staticCall("0x0000000000000000000000000000000000000000", cmdBytes);
+                const text = ethers.toUtf8String(result);
+                
+                const lines = text.split("\n");
+                logTrapEvent("🔮 [Z-MACHINE RESPONSE]:", true);
+                for (let line of lines) {
+                    if (line.trim()) {
+                        logTrapEvent(`  ${line}`, true);
+                    }
+                }
             } catch (err) {
-                console.log("Could not fetch live room DNA, using fallback seed.");
+                logTrapEvent(`[Z-MACHINE ERROR] Failed to query Z-Machine contract: ${err.message}`, true);
             }
         }
 
@@ -1438,6 +1466,18 @@
                         forceUppercase = false;
                         logTrapEvent("📟 Terminal set to Mixed Case/Lowercase mode.", true);
                         break;
+                    case "z":
+                    case "z-play":
+                        {
+                            const idx = line.toLowerCase().indexOf(token);
+                            const zCommand = line.slice(idx + token.length).trim();
+                            if (zCommand) {
+                                executeZMachineCommand(zCommand);
+                            } else {
+                                logTrapEvent("[FORTH ERROR] z / z-play requires [command string] after it", true);
+                            }
+                            return; // Stop processing further tokens on this line
+                        }
                     case "edit":
                         if (forthStack.length >= 1) {
                             const lineNum = forthStack.pop();
