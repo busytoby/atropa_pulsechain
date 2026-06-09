@@ -534,25 +534,27 @@ object "ZMachine" {
                                     resultPtr := add(resultPtr, 36)
                                 }
                                 if eq(roomId, 1) {
-                                    mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
-                                    resultPtr := add(resultPtr, 30)
+                                    mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0a5b) // "You are standing in the lobby.\n["
+                                    mstore(add(resultPtr, 32), 0x534f4e49435f5349474e41545552453a3232302c315d00000000000000000000) // "SONIC_SIGNATURE:220,1]"
+                                    resultPtr := add(resultPtr, 54)
                                 }
                                 if eq(roomId, 2) {
-                                    mstore(resultPtr, 0x596f752061726520696e20746865204c6976696e6720526f6f6d2e0000000000) // "You are in the Living Room."
-                                    resultPtr := add(resultPtr, 27)
+                                    mstore(resultPtr, 0x596f752061726520696e20746865204c6976696e6720526f6f6d2e0a5b534f4e) // "You are in the Living Room.\n[SON"
+                                    mstore(add(resultPtr, 32), 0x49435f5349474e41545552453a3333302c305d00000000000000000000000000) // "IC_SIGNATURE:330,0]"
+                                    resultPtr := add(resultPtr, 51)
                                 }
                                 if eq(roomId, 3) {
                                     if sload(3000805) {
                                         mstore(resultPtr, 0x596f752061726520696e2074686520556e7265616c20506f7274616c20566175) // "You are in the Unreal Portal Vau"
                                         mstore(add(resultPtr, 32), 0x6c742e2054686520706f7274616c20676c6f7773206272696768746c79204e6f) // "lt. The portal glows brightly No"
-                                        mstore(add(resultPtr, 64), 0x7274682e0a000000000000000000000000000000000000000000000000000000) // "rth.\n"
-                                        resultPtr := add(resultPtr, 70)
+                                        mstore(add(resultPtr, 64), 0x7274682e0a5b534f4e49435f5349474e41545552453a3434302c305d00000000) // "rth.\n[SONIC_SIGNATURE:440,0]"
+                                        resultPtr := add(resultPtr, 92)
                                     }
                                     if iszero(sload(3000805)) {
                                         mstore(resultPtr, 0x596f752061726520696e2074686520556e7265616c20506f7274616c20566175) // "You are in the Unreal Portal Vau"
                                         mstore(add(resultPtr, 32), 0x6c742e2041206c6f636b656420706f7274616c20617263682069732068657265) // "lt. A locked portal arch is here"
-                                        mstore(add(resultPtr, 64), 0x2e0a000000000000000000000000000000000000000000000000000000000000) // ".\n"
-                                        resultPtr := add(resultPtr, 66)
+                                        mstore(add(resultPtr, 64), 0x2e0a5b534f4e49435f5349474e41545552453a3134372c325d00000000000000) // ".\n[SONIC_SIGNATURE:147,2]"
+                                        resultPtr := add(resultPtr, 90)
                                     }
                                 }
                                 if eq(roomId, 4) {
