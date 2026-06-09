@@ -1406,6 +1406,24 @@
                             logTrapEvent("[FORTH ERROR] drawshape requires [srcAddr] [numCommands] on stack", true);
                         }
                         break;
+                    case "cls":
+                        cpu.display.fill(0);
+                        renderDisplay();
+                        logTrapEvent("🎨 [GRAPHICS] Pixie screen cleared.", true);
+                        break;
+                    case "drawline":
+                        if (forthStack.length >= 4) {
+                            const y2 = forthStack.pop();
+                            const x2 = forthStack.pop();
+                            const y1 = forthStack.pop();
+                            const x1 = forthStack.pop();
+                            drawLine(x1, y1, x2, y2);
+                            renderDisplay();
+                            logTrapEvent(`🎨 [GRAPHICS] Drew line from (${x1}, ${y1}) to (${x2}, ${y2})`, true);
+                        } else {
+                            logTrapEvent("[FORTH ERROR] drawline requires [x1] [y1] [x2] [y2] on stack", true);
+                        }
+                        break;
                     case "purify":
                         if (forthStack.length >= 1) {
                             const seconds = forthStack.pop();
