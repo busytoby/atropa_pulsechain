@@ -290,6 +290,13 @@ Type 'LOOK' to begin.</div>
                         <button class="btn btn-primary" id="btnMiniSend" style="font-size: 0.9rem; padding: 6px 15px;">Send</button>
                     </div>
                 </div>
+
+                <!-- KIM-1 Data Logging Terminal -->
+                <div class="dna-card" style="margin-top: 15px;">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 8px; color: var(--neon-magenta); font-size: 1.1rem;">📟 KIM-1 Data Logging Module</h3>
+                    <div id="dataLogTerminal" style="background: #050505; border: 1px solid var(--neon-magenta); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.82rem; color: #ff007f; height: 110px; overflow-y: auto; white-space: pre-wrap; line-height: 1.3; box-shadow: inset 0 0 10px rgba(255,0,127,0.15); border-color: rgba(255,0,127,0.5);">[SYS 0000] LOGGING MODULE INITIALIZED. STATUS: OK.
+[SYS 0002] MONITORING ATTRACTORS IN REAL-TIME.</div>
+                </div>
             </div>
         </div>
     </div>
@@ -316,6 +323,61 @@ Type 'LOOK' to begin.</div>
         let mouseX = 300, mouseY = 160;
         let isMouseDown = false;
         let battleOver = false;
+
+        let lastLogTime = 0;
+        function playKimBeeperClick() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const actx = new AudioContext();
+                const osc = actx.createOscillator();
+                const gain = actx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(1400, actx.currentTime);
+                gain.gain.setValueAtTime(0.012, actx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.008);
+                osc.connect(gain);
+                gain.connect(actx.destination);
+                osc.start();
+                osc.stop(actx.currentTime + 0.01);
+            } catch (e) {}
+        }
+        const playBeeper = playKimBeeperClick;
+
+        function logDataEvent(msg) {
+            const logBox = document.getElementById("dataLogTerminal");
+            if (!logBox) return;
+            const timeHex = "0x" + Math.floor(performance.now()).toString(16).padStart(4, '0');
+            logBox.innerText += `\n[LOG ${timeHex}] ${msg}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function handleCollisionLog(winner, loser, x, y) {
+            const now = performance.now();
+            if (now - lastLogTime > 150) {
+                logDataEvent(`COLLISION: ${winner} eliminated ${loser} at (${Math.round(x)},${Math.round(y)})`);
+                playKimBeeperClick();
+                lastLogTime = now;
+            }
+        }
+
+        function bindBeeperClicks() {
+            document.querySelectorAll(".btn, .dna-select, #miniInput").forEach(el => {
+                el.addEventListener("mouseenter", () => {
+                    playKimBeeperClick();
+                });
+                el.addEventListener("click", () => {
+                    playKimBeeperClick();
+                });
+            });
+            
+            const miniInputEl = document.getElementById("miniInput");
+            if (miniInputEl) {
+                miniInputEl.addEventListener("input", () => {
+                    playKimBeeperClick();
+                });
+            }
+        }
 
         async function initWeb3() {
             try {
@@ -383,10 +445,11 @@ Type 'LOOK' to begin.</div>
                 miniTerminal.scrollTop = miniTerminal.scrollHeight;
 
                 if (decodedText.includes("[PLAY:")) {
-                    const match = decodedText.match(/\[PLAY:(\d+),(\d+),(\d+),(\d+)\]/);
+                    const match = decodedText.match(/\[PLAY:(\d+),(\d+),(\d+),(\d+),(\d+)\]/);
                     if (match) {
                         const freqs = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseInt(match[4])];
-                        playDacFrequencies(freqs);
+                        const timbre = parseInt(match[5]);
+                        playDacFrequencies(freqs, timbre);
                     }
                 }
             } catch (err) {
@@ -395,63 +458,119 @@ Type 'LOOK' to begin.</div>
             }
         }
 
-        function playDacFrequencies(freqs) {
+        function playDacFrequencies(freqs, timbre = 0) {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!AudioContext) return;
                 const actx = new AudioContext();
                 let stepTime = 0;
                 
+                // 0: chime, 1: strings, 2: brass, 3: organ
+                let attack = 0.01;
+                let decay = 0.28;
+                let sustain = 0.0001; 
+                let release = 0.05;
+                let peakVol = 1.0;
+                
+                let oscType1 = "triangle";
+                let oscType2 = "square";
+                let oscType3 = "sawtooth";
+                
+                if (timbre === 1) { // strings
+                    attack = 0.15;
+                    decay = 0.35;
+                    sustain = 0.6;
+                    release = 0.25;
+                    oscType1 = "triangle";
+                    oscType2 = "sawtooth";
+                } else if (timbre === 2) { // brass
+                    attack = 0.04;
+                    decay = 0.15;
+                    sustain = 0.4;
+                    release = 0.08;
+                    oscType1 = "sawtooth";
+                    oscType2 = "square";
+                } else if (timbre === 3) { // organ
+                    attack = 0.005;
+                    decay = 0.4;
+                    sustain = 0.95;
+                    release = 0.01;
+                    oscType1 = "square";
+                    oscType2 = "triangle";
+                }
+                
                 freqs.forEach((f, idx) => {
                     const time = actx.currentTime + stepTime;
+                    const noteDur = 0.35;
                     
-                    // Voice 1: Lead Melody (Triangle wave, high register)
+                    // Voice 1 (Melody)
                     const osc1 = actx.createOscillator();
                     const gain1 = actx.createGain();
-                    osc1.type = "triangle";
+                    osc1.type = oscType1;
                     osc1.frequency.setValueAtTime(f, time);
-                    gain1.gain.setValueAtTime(0.08, time);
-                    gain1.gain.exponentialRampToValueAtTime(0.0001, time + 0.28);
+                    
+                    gain1.gain.setValueAtTime(0, time);
+                    gain1.gain.linearRampToValueAtTime(0.08 * peakVol, time + attack);
+                    if (sustain > 0.01) {
+                        gain1.gain.setValueAtTime(0.08 * peakVol, time + attack);
+                        gain1.gain.exponentialRampToValueAtTime(0.08 * peakVol * sustain, time + attack + decay);
+                        gain1.gain.setValueAtTime(0.08 * peakVol * sustain, time + noteDur - release);
+                        gain1.gain.exponentialRampToValueAtTime(0.0001, time + noteDur);
+                    } else {
+                        gain1.gain.exponentialRampToValueAtTime(0.0001, time + noteDur);
+                    }
+                    
                     osc1.connect(gain1);
                     gain1.connect(actx.destination);
                     osc1.start(time);
-                    osc1.stop(time + 0.3);
+                    osc1.stop(time + noteDur);
                     
-                    // Voice 2: Chiptune Square Harmony (Square wave, mid register, minor third/perfect fifth)
+                    // Voice 2 (Harmony)
                     const osc2 = actx.createOscillator();
                     const gain2 = actx.createGain();
-                    osc2.type = "square";
+                    osc2.type = oscType2;
                     const fHarm = (f / 2) * 1.5; 
                     osc2.frequency.setValueAtTime(fHarm, time);
-                    gain2.gain.setValueAtTime(0.04, time);
-                    gain2.gain.exponentialRampToValueAtTime(0.0001, time + 0.24);
+                    
+                    gain2.gain.setValueAtTime(0, time);
+                    gain2.gain.linearRampToValueAtTime(0.04 * peakVol, time + attack);
+                    if (sustain > 0.01) {
+                        gain2.gain.setValueAtTime(0.04 * peakVol, time + attack);
+                        gain2.gain.exponentialRampToValueAtTime(0.04 * peakVol * sustain, time + attack + decay);
+                        gain2.gain.setValueAtTime(0.04 * peakVol * sustain, time + noteDur - release);
+                        gain2.gain.exponentialRampToValueAtTime(0.0001, time + noteDur);
+                    } else {
+                        gain2.gain.exponentialRampToValueAtTime(0.0001, time + noteDur);
+                    }
+                    
                     osc2.connect(gain2);
                     gain2.connect(actx.destination);
                     osc2.start(time);
-                    osc2.stop(time + 0.26);
+                    osc2.stop(time + noteDur);
 
-                    // Voice 3: SID Analog Bass (Sawtooth wave with Low-Pass filter, low register)
+                    // Voice 3 (Bass Line)
                     const osc3 = actx.createOscillator();
                     const gain3 = actx.createGain();
                     const filter = actx.createBiquadFilter();
                     
-                    osc3.type = "sawtooth";
-                    osc3.frequency.setValueAtTime(f / 4, time); // 2 octaves down
+                    osc3.type = oscType3;
+                    osc3.frequency.setValueAtTime(f / 4, time);
                     
                     filter.type = "lowpass";
-                    filter.frequency.setValueAtTime(320, time); // warm, thick bass cutoff
+                    filter.frequency.setValueAtTime(timbre === 1 ? 400 : 320, time);
                     
-                    gain3.gain.setValueAtTime(0.12, time);
-                    gain3.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
+                    gain3.gain.setValueAtTime(0, time);
+                    gain3.gain.linearRampToValueAtTime(0.12 * peakVol, time + attack * 0.5);
+                    gain3.gain.exponentialRampToValueAtTime(0.0001, time + noteDur);
                     
                     osc3.connect(filter);
                     filter.connect(gain3);
                     gain3.connect(actx.destination);
                     
                     osc3.start(time);
-                    osc3.stop(time + 0.32);
+                    osc3.stop(time + noteDur);
                     
-                    stepTime += 0.35;
+                    stepTime += noteDur + 0.05;
                 });
             } catch (e) {
                 console.error("Audio error:", e);
@@ -796,11 +915,15 @@ Type 'LOOK' to begin.</div>
 
                             if (powerP > powerOther) {
                                 createSparks(other.x, other.y, other.team);
+                                handleCollisionLog(p.team === 'A' ? 'CYAN' : 'MAGENTA', other.team === 'A' ? 'CYAN' : 'MAGENTA', other.x, other.y);
+                                playBeeper();
                                 particles.splice(j, 1);
                                 p.size += 0.4;
                                 p.hue = (p.hue + other.hue) / 2;
                             } else {
                                 createSparks(p.x, p.y, p.team);
+                                handleCollisionLog(other.team === 'A' ? 'CYAN' : 'MAGENTA', p.team === 'A' ? 'CYAN' : 'MAGENTA', p.x, p.y);
+                                playBeeper();
                                 particles.splice(i, 1);
                                 other.size += 0.4;
                                 other.hue = (other.hue + p.hue) / 2;
@@ -884,6 +1007,7 @@ Type 'LOOK' to begin.</div>
         canvas.addEventListener("mouseup", () => isMouseDown = false);
 
         initWeb3().then(() => {
+            bindBeeperClicks();
             document.getElementById("btnBreed").click();
             animate();
         });
