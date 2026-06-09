@@ -1537,6 +1537,55 @@
                             logTrapEvent("==================================================", true);
                         }
                         break;
+                    case "bugrepellent":
+                        {
+                            const idx = line.toLowerCase().indexOf("bugrepellent");
+                            const arg = line.slice(idx + 12).trim();
+                            logTrapEvent("==================================================", true);
+                            logTrapEvent("👾 AHOY! BUG REPELLENT (C-64 BASIC CHECKSUMMER)", true);
+                            logTrapEvent("--------------------------------------------------", true);
+                            if (arg) {
+                                let sum = 0;
+                                for (let j = 0; j < arg.length; j++) {
+                                    sum = (sum + arg.charCodeAt(j) * (j + 1)) % 256;
+                                }
+                                const code = String.fromCharCode(65 + (sum % 26)) + String.fromCharCode(65 + (Math.floor(sum / 26) % 26));
+                                logTrapEvent(`Line: "${arg}"`, true);
+                                logTrapEvent(`Calculated Checksum Code: [ ${code} ]`, true);
+                            } else {
+                                logTrapEvent("Usage: bugrepellent [line of BASIC code]", true);
+                                logTrapEvent("Example: bugrepellent 10 PRINT \"PULSECHAIN\"", true);
+                            }
+                            logTrapEvent("==================================================", true);
+                            return;
+                        }
+                    case "flankspeed":
+                        {
+                            const idx = line.toLowerCase().indexOf("flankspeed");
+                            const arg = line.slice(idx + 10).trim();
+                            logTrapEvent("==================================================", true);
+                            logTrapEvent("⚡ AHOY! FLANKSPEED (C-64 MACHINE LANGUAGE LOADER)", true);
+                            logTrapEvent("--------------------------------------------------", true);
+                            if (arg) {
+                                const cleanHex = arg.replace(/\s+/g, "");
+                                let valid = /^[0-9a-fA-F]*$/.test(cleanHex);
+                                if (valid && cleanHex.length % 2 === 0) {
+                                    let sum = 0;
+                                    for (let j = 0; j < cleanHex.length; j += 2) {
+                                        sum = (sum + parseInt(cleanHex.slice(j, j + 2), 16)) % 256;
+                                    }
+                                    logTrapEvent(`Loaded ${cleanHex.length / 2} bytes.`, true);
+                                    logTrapEvent(`Flankspeed Checksum: $${sum.toString(16).toUpperCase()}`, true);
+                                } else {
+                                    logTrapEvent("[ERROR] Invalid hex string or odd byte length.", true);
+                                }
+                            } else {
+                                logTrapEvent("Usage: flankspeed [hex byte stream]", true);
+                                logTrapEvent("Example: flankspeed A9 01 8D 20 D0 60", true);
+                            }
+                            logTrapEvent("==================================================", true);
+                            return;
+                        }
                     case "defhook":
                         {
                             const idx = line.toLowerCase().indexOf("defhook");
