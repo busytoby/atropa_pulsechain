@@ -26,7 +26,11 @@ void tsfi_vae_boot_fleet(LauVaeFirmware_State *state) {
 
     // Default to Atropa/999 for the Teddy Bear Channel
     state->active_vessel = *v1;
-    printf("[VAE-FIRMWARE] Fleet Registry Active. Anchor set to %s.\n", v1->name);
+    static bool logged = false;
+    if (!logged) {
+        printf("[VAE-FIRMWARE] Fleet Registry Active. Anchor set to %s.\n", v1->name);
+        logged = true;
+    }
 }
 
 void tsfi_vessel_anchor_inject(NandTrapState *target, uint32_t resonance) {

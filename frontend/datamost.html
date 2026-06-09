@@ -199,7 +199,9 @@
                             <option value="impossiblemission">🕵️ Impossible Mission (Epyx Cartridge)</option>
                             <option value="namethatstar">⭐ Name That Star (Ahoy! Issue #4)</option>
                             <option value="thrust">🚀 Thrust (Firebird 1986)</option>
-                            <option value="lastninja">🥷 The Last Ninja (System 3 1987)</option>
+                            <option value="lastninja">🥷 The Last Ninja (Ahoy! Issue 33 / Blakemore)</option>
+                            <option value="lastninjasystem3">🥷 The Last Ninja (System 3 1987)</option>
+                            <option value="vaultofterror">🏰 Vault of Terror (Ahoy! Issue 34 / Blakemore)</option>
                             <option value="sentinel">👁️ Sentinel (Firebird 1986)</option>
                         </select>
                         <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
@@ -1613,10 +1615,41 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     0x60
                 ],
                 sprites: [
+                    { id: 0, x: 120, y: 120 }, // Ninja
+                    { id: 1, x: 170, y: 110 }, // Enemy
+                    { id: 2, x: 220, y: 130 }, // Item
+                    { id: 3, x: 90, y: 90 }    // Hazard/Fire
+                ]
+            },
+            lastninjasystem3: {
+                name: "The Last Ninja (System 3)",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x0C, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0, // Armakuni X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Armakuni Y
+                    0x60
+                ],
+                sprites: [
                     { id: 0, x: 120, y: 120 }, // Armakuni
                     { id: 1, x: 170, y: 110 }, // Shogun Guard
                     { id: 2, x: 220, y: 130 }, // Item
                     { id: 3, x: 90, y: 90 }    // Hazard/Fire
+                ]
+            },
+            vaultofterror: {
+                name: "Vault of Terror",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Adventurer X
+                    0xA9, 0x90, 0x8D, 0x01, 0xD0, // Adventurer Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 130, y: 130 }, // Adventurer
+                    { id: 1, x: 180, y: 120 }, // Skeleton Guard
+                    { id: 2, x: 200, y: 80 }   // Treasure Chest
                 ]
             },
             sentinel: {
@@ -6155,15 +6188,178 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillStyle = "#39ff14";
             ctx.font = "bold 8px monospace";
             ctx.textAlign = "left";
-            ctx.fillText("SYSTEM 3 1987", 10, 15);
+            ctx.fillText("AHOY! ISSUE 33", 10, 15);
             ctx.textAlign = "right";
             ctx.fillText("LIVES: 3 | SWORD", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THE LAST NINJA (C. BLAKEMORE 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("ENERGY: [||||||||||]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let ninjaSystem3Frame = 0;
+        function drawSystem3NinjaScreen() {
+            ninjaSystem3Frame++;
+            // Draw background (dark garden green)
+            ctx.fillStyle = "#162e1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw isometric garden water/river
+            ctx.fillStyle = "#1f3a52";
+            ctx.beginPath();
+            ctx.moveTo(80, 180);
+            ctx.lineTo(240, 100);
+            ctx.lineTo(270, 115);
+            ctx.lineTo(110, 180);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw wooden isometric bridge crossing the river
+            ctx.fillStyle = "#8a5229";
+            ctx.beginPath();
+            ctx.moveTo(150, 145);
+            ctx.lineTo(190, 125);
+            ctx.lineTo(210, 135);
+            ctx.lineTo(170, 155);
+            ctx.closePath();
+            ctx.fill();
+
+            // Bridge railings (isometric lines)
+            ctx.strokeStyle = "#a87042";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(150, 145);
+            ctx.lineTo(190, 125);
+            ctx.moveTo(170, 155);
+            ctx.lineTo(210, 135);
+            ctx.stroke();
+
+            // Draw beautiful Temple Torii Gate (Japanese theme)
+            ctx.fillStyle = "#b81d24"; // Red pillars
+            ctx.fillRect(50, 40, 6, 40);
+            ctx.fillRect(90, 40, 6, 40);
+            ctx.fillRect(40, 36, 62, 6); // Top lintel
+
+            // Interactive Ninja Movement
+            if (!window.ninjaSystem3X) {
+                window.ninjaSystem3X = 140;
+                window.ninjaSystem3Y = 120;
+            }
+            if (interactiveKeys.left) window.ninjaSystem3X = Math.max(50, window.ninjaSystem3X - 2.5);
+            if (interactiveKeys.right) window.ninjaSystem3X = Math.min(270, window.ninjaSystem3X + 2.5);
+            if (interactiveKeys.up) window.ninjaSystem3Y = Math.max(50, window.ninjaSystem3Y - 1.5);
+            if (interactiveKeys.down) window.ninjaSystem3Y = Math.min(170, window.ninjaSystem3Y + 1.5);
+
+            let avX = window.ninjaSystem3X;
+            let avY = window.ninjaSystem3Y;
+
+            // Draw Armakuni (black garb with katana on back)
+            ctx.fillStyle = "#111111"; // Black clothes
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#ff007f"; // Red headwrap accent
+            ctx.fillRect(avX - 5, avY - 15, 10, 3);
+            
+            // Katana
+            ctx.strokeStyle = "#d1d5db";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(avX - 6, avY - 10);
+            ctx.lineTo(avX + 6, avY + 2);
+            ctx.stroke();
+
+            // Draw Shogun Guard (Red armor holding naginata staff)
+            let guardX = 220;
+            let guardY = 100;
+            ctx.fillStyle = "#c0392b"; // Red samurai armor
+            ctx.fillRect(guardX - 4, guardY - 12, 8, 16);
+            ctx.fillStyle = "#f39c12"; // Golden helmet/kabuto
+            ctx.fillRect(guardX - 5, guardY - 15, 10, 3);
+            
+            ctx.strokeStyle = "#95a5a6"; // Staff spear
+            ctx.beginPath();
+            ctx.moveTo(guardX + 4, guardY - 22);
+            ctx.lineTo(guardX + 4, guardY + 10);
+            ctx.stroke();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("SYSTEM 3 1987", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LIVES: 3 | KATANA", canvas.width - 10, 15);
             ctx.textAlign = "center";
             ctx.fillStyle = "#ffffff";
             ctx.fillText("THE LAST NINJA - THE WASTELANDS", canvas.width / 2, 15);
 
             ctx.fillStyle = "#ff007f";
             ctx.fillText("ENERGY: [||||||||||]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let vaultFrame = 0;
+        function drawVaultOfTerrorScreen() {
+            vaultFrame++;
+            // Draw background (dark dungeon grey/blue)
+            ctx.fillStyle = "#1c2321";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stone block walls
+            ctx.fillStyle = "#3e4a47";
+            ctx.fillRect(40, 30, 240, 15);
+            ctx.fillStyle = "#2e3835";
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(40 + i * 40, 30, 2, 15);
+            }
+
+            // Interactive Adventurer Movement
+            if (!window.vaultX) {
+                window.vaultX = 120;
+                window.vaultY = 100;
+            }
+            if (interactiveKeys.left) window.vaultX = Math.max(50, window.vaultX - 2.5);
+            if (interactiveKeys.right) window.vaultX = Math.min(270, window.vaultX + 2.5);
+            if (interactiveKeys.up) window.vaultY = Math.max(50, window.vaultY - 1.5);
+            if (interactiveKeys.down) window.vaultY = Math.min(170, window.vaultY + 1.5);
+
+            let avX = window.vaultX;
+            let avY = window.vaultY;
+
+            // Draw Adventurer (blue tunic, yellow hair)
+            ctx.fillStyle = "#2980b9";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(avX - 3, avY - 15, 6, 4);
+
+            // Draw Skeleton Guard (white bones, red glowing eyes)
+            let skX = 190;
+            let skY = 110;
+            ctx.fillStyle = "#ecf0f1";
+            ctx.fillRect(skX - 3, skY - 12, 6, 16);
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(skX - 2, skY - 10, 1, 1);
+            ctx.fillRect(skX, skY - 10, 1, 1);
+
+            // Draw Treasure Chest
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(220, 80, 12, 10);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(225, 84, 2, 3); // lock
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 34", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("KEYS: 1 | SCORE: 550", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("VAULT OF TERROR (C. BLAKEMORE 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillText("HEALTH: [||||||||||]", canvas.width / 2, canvas.height - 12);
         }
 
         let sentinelFrame = 0;
@@ -6599,6 +6795,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             if (activeGameName === "The Last Ninja") {
                 drawLastNinjaScreen();
+                return;
+            }
+            if (activeGameName === "The Last Ninja (System 3)") {
+                drawSystem3NinjaScreen();
+                return;
+            }
+            if (activeGameName === "Vault of Terror") {
+                drawVaultOfTerrorScreen();
                 return;
             }
             if (activeGameName === "Sentinel") {

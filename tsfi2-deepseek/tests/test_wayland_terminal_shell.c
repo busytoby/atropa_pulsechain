@@ -77,7 +77,12 @@ typedef enum {
     MODE_CRABFIGHT,
     MODE_TREASURE,
     MODE_CHARDUMP,
-    MODE_TERM128
+    MODE_TERM128,
+    MODE_ALCHEMIST,
+    MODE_SKIFOLLY,
+    MODE_DARTS,
+    MODE_MAKEWAVE,
+    MODE_PLOTWAVE
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -567,6 +572,57 @@ static void redraw_term128_screen(void);
 static void handle_term128_input(char ch);
 static void update_term128(uint32_t ms);
 
+// Alchemist's Apprentice variables & functions
+static char g_alchemist_log[512];
+static char g_alchemist_input[64];
+static int g_alchemist_input_len = 0;
+static bool g_alchemist_has_flask = false;
+static bool g_alchemist_has_powder = false;
+static bool g_alchemist_potion_mixed = false;
+static void init_alchemist(void);
+static void redraw_alchemist_screen(void);
+static void handle_alchemist_input(char ch);
+
+// Ski Folly variables & functions
+static int g_skifolly_player_x = 40;
+static int g_skifolly_score = 0;
+static int g_skifolly_gate_x = 40;
+static int g_skifolly_gate_w = 12;
+static int g_skifolly_row_counter = 0;
+static bool g_skifolly_crashed = false;
+static void init_skifolly(void);
+static void redraw_skifolly_screen(void);
+static void handle_skifolly_input(char ch);
+static void update_skifolly(uint32_t ms);
+
+// English Darts variables & functions
+static int g_darts_aim_x = 40;
+static int g_darts_aim_y = 12;
+static int g_darts_score = 0;
+static int g_darts_throws = 3;
+static int g_darts_state = 0; // 0=aiming x, 1=aiming y, 2=thrown
+static int g_darts_aim_dir = 1;
+static void init_darts(void);
+static void redraw_darts_screen(void);
+static void handle_darts_input(char ch);
+static void update_darts(uint32_t ms);
+
+// MAKEWAVE & PLOTWAVE variables & functions
+static int g_makewave_type = 0; // 0: Sine, 1: Square, 2: Triangle, 3: Sawtooth, 4: Noise
+static float g_makewave_frequency = 4.0f; // low freq for visual plotting
+static float g_makewave_amplitude = 1.0f;
+static float g_makewave_duty = 0.5f;
+static float g_makewave_table[256];
+static char g_makewave_status[128];
+static void init_makewave(void);
+static void redraw_makewave_screen(void);
+static void handle_makewave_input(char ch);
+static void init_plotwave(void);
+static void redraw_plotwave_screen(void);
+static void handle_plotwave_input(char ch);
+static void update_plotwave(uint32_t ms);
+
+
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
     { 20.0,  30.0, 50.0,  0.0, 0.0 },
@@ -582,6 +638,7 @@ static int g_calc_input_len = 0;
 static bool g_applepanic_active = false;
 static int g_panic_player_x = 2;
 static int g_panic_player_y = 3;
+static int g_panic_player_facing = 1;
 static int g_panic_monster_x = 25;
 static int g_panic_monster_y = 3;
 static int g_panic_monster_stuck_ticks = 0;
@@ -2558,8 +2615,25 @@ static void update_applepanic_game(void) {
                 g_panic_dig_ticks[g_panic_monster_y][g_panic_monster_x] = 0;
             }
         } else {
-            if (g_panic_monster_x < g_panic_player_x) g_panic_monster_x++;
-            else if (g_panic_monster_x > g_panic_player_x) g_panic_monster_x--;
+            bool climbed = false;
+            if (g_panic_monster_y == 1 && g_panic_monster_x == 12 && g_panic_player_y < 1) {
+                g_panic_monster_y = 0; climbed = true;
+            } else if (g_panic_monster_y == 0 && g_panic_monster_x == 12 && g_panic_player_y > 0) {
+                g_panic_monster_y = 1; climbed = true;
+            } else if (g_panic_monster_y == 2 && g_panic_monster_x == 28 && g_panic_player_y < 2) {
+                g_panic_monster_y = 1; climbed = true;
+            } else if (g_panic_monster_y == 1 && g_panic_monster_x == 28 && g_panic_player_y > 1) {
+                g_panic_monster_y = 2; climbed = true;
+            } else if (g_panic_monster_y == 3 && g_panic_monster_x == 18 && g_panic_player_y < 3) {
+                g_panic_monster_y = 2; climbed = true;
+            } else if (g_panic_monster_y == 2 && g_panic_monster_x == 18 && g_panic_player_y > 2) {
+                g_panic_monster_y = 3; climbed = true;
+            }
+
+            if (!climbed) {
+                if (g_panic_monster_x < g_panic_player_x) g_panic_monster_x++;
+                else if (g_panic_monster_x > g_panic_player_x) g_panic_monster_x--;
+            }
             
             if (g_panic_dig_ticks[g_panic_monster_y][g_panic_monster_x] > 0) {
                 g_panic_monster_stuck_ticks = 30;
@@ -2583,9 +2657,11 @@ static void update_applepanic_game(void) {
 
 static void handle_applepanic_input(char ch) {
     if (ch == 'a' || ch == 'A') {
+        g_panic_player_facing = -1;
         if (g_panic_player_x > 0) g_panic_player_x--;
         redraw_applepanic_screen();
     } else if (ch == 'd' || ch == 'D') {
+        g_panic_player_facing = 1;
         if (g_panic_player_x < 39) g_panic_player_x++;
         redraw_applepanic_screen();
     } else if (ch == 'w' || ch == 'W') {
@@ -2599,8 +2675,8 @@ static void handle_applepanic_input(char ch) {
         else if (g_panic_player_y == 2 && g_panic_player_x == 18) g_panic_player_y = 3;
         redraw_applepanic_screen();
     } else if (ch == ' ') {
-        int target_x = g_panic_player_x + 1;
-        if (target_x < 40) {
+        int target_x = g_panic_player_x + g_panic_player_facing;
+        if (target_x >= 0 && target_x < 40) {
             g_panic_dig_ticks[g_panic_player_y][target_x] = 50;
             if (g_panic_monster_y == g_panic_player_y && g_panic_monster_x == target_x && g_panic_monster_stuck_ticks > 0) {
                 g_panic_score += 100;
@@ -2663,7 +2739,17 @@ static void update_airassault_game(void) {
     if (!g_airassault_active) return;
     
     static int air_tick = 0;
+    static int last_shield_reward = 0;
     air_tick++;
+    
+    // Shield reward logic
+    if (g_air_score - last_shield_reward >= 1000) {
+        if (g_air_shields < 3) {
+            g_air_shields++;
+        }
+        last_shield_reward = (g_air_score / 1000) * 1000;
+    }
+    
     if (air_tick % 5 == 0) {
         if (g_air_missile_y >= 0) {
             g_air_missile_y--;
@@ -2679,7 +2765,11 @@ static void update_airassault_game(void) {
             }
         }
         
-        if (air_tick % 25 == 0) {
+        // Speed up invaders as score increases (speed_modulo decreases)
+        int speed_modulo = 25 - (g_air_score / 1000) * 2;
+        if (speed_modulo < 8) speed_modulo = 8;
+        
+        if (air_tick % speed_modulo == 0) {
             for (int i = 0; i < 5; i++) {
                 g_air_invaders_y[i]++;
                 if (g_air_invaders_y[i] >= 7) {
@@ -2687,6 +2777,7 @@ static void update_airassault_game(void) {
                     if (g_air_shields <= 0) {
                         g_air_shields = 3;
                         g_air_score = 0;
+                        last_shield_reward = 0;
                     }
                     g_air_invaders_y[i] = 0;
                     g_air_invaders_x[i] = rand() % 48 + 1;
@@ -3141,7 +3232,7 @@ static void redraw_towers_screen(void) {
     lau_vram_write_string(g_vram, "============================================================\r\n", 62);
     snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_towers_status);
     lau_vram_write_string(g_vram, buf, strlen(buf));
-    lau_vram_write_string(g_vram, "  Controls: Press [A/B/C] to select Pegs [ESC] Exit\r\n", 53);
+    lau_vram_write_string(g_vram, "  Controls: Press [A/B/C] to select Pegs, [R] Reset, [ESC] Exit\r\n", 64);
 }
 
 static void handle_towers_input(char ch) {
@@ -3152,6 +3243,11 @@ static void handle_towers_input(char ch) {
         const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
         lau_vram_write_string(g_vram, clear_seq, 3);
         lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+    if (ch == 'r' || ch == 'R') {
+        init_towers();
+        redraw_towers_screen();
         return;
     }
 
@@ -4887,6 +4983,454 @@ static void update_term128(uint32_t ms) {
                    "READY FOR INPUT:\r\n> ");
             redraw_term128_screen();
         }
+    }
+}
+// ----------------------------------------------------
+// Alchemist's Apprentice Simulation
+// ----------------------------------------------------
+static void init_alchemist(void) {
+    g_alchemist_has_flask = false;
+    g_alchemist_has_powder = false;
+    g_alchemist_potion_mixed = false;
+    g_alchemist_input_len = 0;
+    g_alchemist_input[0] = '\0';
+    strcpy(g_alchemist_log, "You stand in the Alchemist's dusty lab. There is a crystal FLASK and a pouch of blue POWDER.\r\n");
+}
+
+static void redraw_alchemist_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    char header[512];
+    snprintf(header, sizeof(header),
+             "================================================================================\r\n"
+             "                 AHOY! ALCHEMIST'S APPRENTICE (Issue 29 Simulator)              \r\n"
+             "================================================================================\r\n"
+             " Commands: LOOK, TAKE FLASK, TAKE POWDER, MIX, DRINK, ESC to exit\r\n"
+             "--------------------------------------------------------------------------------\r\n\r\n");
+    lau_vram_write_string(g_vram, header, strlen(header));
+    lau_vram_write_string(g_vram, g_alchemist_log, strlen(g_alchemist_log));
+    char prompt[128];
+    snprintf(prompt, sizeof(prompt), "\r\n> %s", g_alchemist_input);
+    lau_vram_write_string(g_vram, prompt, strlen(prompt));
+}
+
+static void handle_alchemist_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == '\n' || ch == '\r') {
+        g_alchemist_input[g_alchemist_input_len] = '\0';
+        char cmd[64];
+        strcpy(cmd, g_alchemist_input);
+        g_alchemist_input_len = 0;
+        g_alchemist_input[0] = '\0';
+
+        // Verb-Noun Parsing
+        if (strcasecmp(cmd, "look") == 0) {
+            strcpy(g_alchemist_log, "The room smells of sulfur. You see a FLASK and blue POWDER. A warm mortar sits on the table.\r\n");
+        } else if (strcasecmp(cmd, "take flask") == 0) {
+            g_alchemist_has_flask = true;
+            strcpy(g_alchemist_log, "You pick up the fragile crystal flask.\r\n");
+        } else if (strcasecmp(cmd, "take powder") == 0) {
+            g_alchemist_has_powder = true;
+            strcpy(g_alchemist_log, "You carefully pack the blue powder in your pouch.\r\n");
+        } else if (strcasecmp(cmd, "mix") == 0) {
+            if (g_alchemist_has_flask && g_alchemist_has_powder) {
+                g_alchemist_potion_mixed = true;
+                strcpy(g_alchemist_log, "You combine the powder inside the flask. The mixture glows emerald green!\r\n");
+            } else {
+                strcpy(g_alchemist_log, "You need the flask and powder first!\r\n");
+            }
+        } else if (strcasecmp(cmd, "drink") == 0) {
+            if (g_alchemist_potion_mixed) {
+                strcpy(g_alchemist_log, "A rush of cosmic energy flows through you! YOU HAVE COMPLETED THE APPRENTICESHIP!\r\n");
+            } else {
+                strcpy(g_alchemist_log, "Drink what? You haven't mixed anything.\r\n");
+            }
+        } else {
+            strcpy(g_alchemist_log, "I don't understand that command.\r\n");
+        }
+        redraw_alchemist_screen();
+        return;
+    }
+
+    if (ch == 127 || ch == '\b') {
+        if (g_alchemist_input_len > 0) {
+            g_alchemist_input_len--;
+            g_alchemist_input[g_alchemist_input_len] = '\0';
+        }
+    } else if (g_alchemist_input_len < 60 && ch >= 32) {
+        g_alchemist_input[g_alchemist_input_len++] = ch;
+        g_alchemist_input[g_alchemist_input_len] = '\0';
+    }
+    redraw_alchemist_screen();
+}
+
+// ----------------------------------------------------
+// Ski Folly Simulation
+// ----------------------------------------------------
+static void init_skifolly(void) {
+    g_skifolly_player_x = 40;
+    g_skifolly_score = 0;
+    g_skifolly_gate_x = 35;
+    g_skifolly_gate_w = 14;
+    g_skifolly_row_counter = 0;
+    g_skifolly_crashed = false;
+}
+
+static void redraw_skifolly_screen(void) {
+    // We write game lines row by row
+    char line[128];
+    memset(line, ' ', 80);
+    line[80] = '\r';
+    line[81] = '\n';
+    line[82] = '\0';
+
+    // Put gates
+    for (int i = 0; i < 80; i++) {
+        if (i < g_skifolly_gate_x || i > g_skifolly_gate_x + g_skifolly_gate_w) {
+            if (i % 8 == 0) line[i] = '^'; // trees
+        }
+    }
+    // Player
+    line[g_skifolly_player_x] = g_skifolly_crashed ? '*' : 'Y';
+
+    char status[128];
+    snprintf(status, sizeof(status), "SKI FOLLY | SCORE: %d | Status: %s | (A/D to move, ESC to exit)\r\n", 
+             g_skifolly_score, g_skifolly_crashed ? "CRASHED! Press SPACE to restart" : "Slalom descent");
+    
+    lau_vram_write_string(g_vram, status, strlen(status));
+    lau_vram_write_string(g_vram, line, strlen(line));
+}
+
+static void handle_skifolly_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (g_skifolly_crashed) {
+        if (ch == ' ') {
+            init_skifolly();
+            redraw_skifolly_screen();
+        }
+        return;
+    }
+    if (ch == 'a' || ch == 'A') {
+        if (g_skifolly_player_x > 2) g_skifolly_player_x--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_skifolly_player_x < 77) g_skifolly_player_x++;
+    }
+    redraw_skifolly_screen();
+}
+
+static void update_skifolly(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 150) return;
+    last_tick = ms;
+
+    if (g_skifolly_crashed) return;
+
+    // Shift gate left or right randomly
+    int shift = (rand() % 3) - 1;
+    g_skifolly_gate_x += shift;
+    if (g_skifolly_gate_x < 10) g_skifolly_gate_x = 10;
+    if (g_skifolly_gate_x > 60) g_skifolly_gate_x = 60;
+
+    // Check collision
+    if (g_skifolly_player_x < g_skifolly_gate_x || g_skifolly_player_x > g_skifolly_gate_x + g_skifolly_gate_w) {
+        g_skifolly_crashed = true;
+    } else {
+        g_skifolly_score += 10;
+    }
+    redraw_skifolly_screen();
+}
+
+// ----------------------------------------------------
+// English Darts Simulation
+// ----------------------------------------------------
+static void init_darts(void) {
+    g_darts_aim_x = 40;
+    g_darts_aim_y = 12;
+    g_darts_score = 0;
+    g_darts_throws = 3;
+    g_darts_state = 0;
+    g_darts_aim_dir = 1;
+}
+
+static void redraw_darts_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char hud[512];
+    snprintf(hud, sizeof(hud), 
+             "================================================================================\r\n"
+             "        AHOY! ENGLISH DARTS | THROWS LEFT: %d | SCORE: %d\r\n"
+             "================================================================================\r\n"
+             " Status: %s | Press [SPACE] to lock aim, [ESC] to exit\r\n"
+             "--------------------------------------------------------------------------------\r\n",
+             g_darts_throws, g_darts_score,
+             g_darts_state == 0 ? "AIMING HORIZONTAL (X)" : (g_darts_state == 1 ? "AIMING VERTICAL (Y)" : "THROWN!"));
+    lau_vram_write_string(g_vram, hud, strlen(hud));
+
+    // Render simple ASCII dartboard
+    for (int y = 0; y < 15; y++) {
+        char line[128];
+        memset(line, ' ', 80);
+        line[80] = '\r';
+        line[81] = '\n';
+        line[82] = '\0';
+        
+        for (int x = 0; x < 80; x++) {
+            // Draw Target Rings
+            float dx = (x - 40) * 0.5f;
+            float dy = (y - 7) * 1.0f;
+            float dist = sqrtf(dx*dx + dy*dy);
+            if (dist < 1.5f) line[x] = 'X';      // Bullseye
+            else if (dist < 4.0f) line[x] = 'O'; // Inner Ring
+            else if (dist < 8.0f) line[x] = '#'; // Outer Ring
+            
+            // Draw crosshairs
+            if (g_darts_state == 0 && x == g_darts_aim_x) {
+                line[x] = '|';
+            } else if (g_darts_state == 1 && y == g_darts_aim_y) {
+                line[x] = '-';
+            }
+        }
+        
+        // Show current throw pointer
+        if (y == g_darts_aim_y && g_darts_state == 2) {
+            line[g_darts_aim_x] = '*';
+        }
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+}
+
+static void handle_darts_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        return;
+    }
+    if (ch == ' ') {
+        if (g_darts_state == 0) {
+            g_darts_state = 1;
+        } else if (g_darts_state == 1) {
+            g_darts_state = 2;
+            // Calculate throw result
+            float dx = (g_darts_aim_x - 40) * 0.5f;
+            float dy = (g_darts_aim_y - 7) * 1.0f;
+            float dist = sqrtf(dx*dx + dy*dy);
+            
+            if (dist < 1.5f) {
+                g_darts_score += 50; // Bullseye!
+            } else if (dist < 4.0f) {
+                g_darts_score += 25;
+            } else if (dist < 8.0f) {
+                g_darts_score += 10;
+            }
+            g_darts_throws--;
+        } else if (g_darts_state == 2) {
+            if (g_darts_throws <= 0) {
+                init_darts();
+            } else {
+                g_darts_state = 0;
+            }
+        }
+        redraw_darts_screen();
+    }
+}
+
+static void update_darts(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 50) return;
+    last_tick = ms;
+
+    if (g_darts_state == 0) {
+        g_darts_aim_x += g_darts_aim_dir * 2;
+        if (g_darts_aim_x < 20 || g_darts_aim_x > 60) {
+            g_darts_aim_dir = -g_darts_aim_dir;
+        }
+        redraw_darts_screen();
+    } else if (g_darts_state == 1) {
+        g_darts_aim_y += g_darts_aim_dir;
+        if (g_darts_aim_y < 2 || g_darts_aim_y > 12) {
+            g_darts_aim_dir = -g_darts_aim_dir;
+        }
+        redraw_darts_screen();
+    }
+}
+
+// ----------------------------------------------------
+// MAKEWAVE & PLOTWAVE Simulators
+// ----------------------------------------------------
+static int g_plotwave_offset = 0;
+static bool g_plotwave_paused = false;
+
+static void generate_active_wave(void) {
+    float pi_val = 3.14159265f;
+    for (int i = 0; i < 256; i++) {
+        float t = (float)i / 256.0f;
+        float phase = t * g_makewave_frequency;
+        float val = 0.0f;
+        switch (g_makewave_type) {
+            case 0: // Sine
+                val = sinf(2.0f * pi_val * phase);
+                break;
+            case 1: // Square
+                val = ((phase - floorf(phase)) < g_makewave_duty) ? 1.0f : -1.0f;
+                break;
+            case 2: // Triangle
+                val = 2.0f * fabsf(2.0f * (phase - floorf(phase + 0.5f))) - 1.0f;
+                break;
+            case 3: // Sawtooth
+                val = 2.0f * (phase - floorf(phase)) - 1.0f;
+                break;
+            case 4: // Noise
+                val = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+                break;
+        }
+        g_makewave_table[i] = val * g_makewave_amplitude;
+    }
+}
+
+static void init_makewave(void) {
+    g_makewave_type = 0;
+    g_makewave_frequency = 4.0f;
+    g_makewave_amplitude = 0.8f;
+    g_makewave_duty = 0.5f;
+    snprintf(g_makewave_status, sizeof(g_makewave_status), "Press [G] to generate, [ESC] to exit.");
+    generate_active_wave();
+}
+
+static void redraw_makewave_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char hud[1024];
+    snprintf(hud, sizeof(hud),
+             "================================================================================\r\n"
+             "        AHOY! MAKEWAVE | WAVEFORM GENERATOR UTILITY\r\n"
+             "================================================================================\r\n"
+             " [1] Waveform: %s\r\n"
+             " [2/3] Frequency: %.1f Hz\r\n"
+             " [4/5] Amplitude: %.2f\r\n"
+             " [G] Generate Waveform Table\r\n"
+             " [ESC] Exit\r\n"
+             "--------------------------------------------------------------------------------\r\n"
+             " Status: %s\r\n"
+             "================================================================================\r\n",
+             g_makewave_type == 0 ? "SINE" : (g_makewave_type == 1 ? "SQUARE" : (g_makewave_type == 2 ? "TRIANGLE" : (g_makewave_type == 3 ? "SAWTOOTH" : "NOISE"))),
+             g_makewave_frequency, g_makewave_amplitude, g_makewave_status);
+    lau_vram_write_string(g_vram, hud, strlen(hud));
+
+    // Show a mini horizontal preview of the wave data
+    char preview[128];
+    strcpy(preview, "Preview: ");
+    for (int i = 0; i < 40; i++) {
+        int idx = (i * 256) / 40;
+        float val = g_makewave_table[idx];
+        if (val > 0.5f) strcat(preview, "^");
+        else if (val < -0.5f) strcat(preview, "_");
+        else strcat(preview, "-");
+    }
+    strcat(preview, "\r\nREADY.\r\n");
+    lau_vram_write_string(g_vram, preview, strlen(preview));
+}
+
+static void handle_makewave_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        lau_vram_write_string(g_vram, "\r\nExited MAKEWAVE.\r\nREADY.\r\n", 28);
+        return;
+    }
+    if (ch == '1') {
+        g_makewave_type = (g_makewave_type + 1) % 5;
+        snprintf(g_makewave_status, sizeof(g_makewave_status), "Selected %s waveform.", 
+                 g_makewave_type == 0 ? "SINE" : (g_makewave_type == 1 ? "SQUARE" : (g_makewave_type == 2 ? "TRIANGLE" : (g_makewave_type == 3 ? "SAWTOOTH" : "NOISE"))));
+    } else if (ch == '2') {
+        g_makewave_frequency -= 0.5f;
+        if (g_makewave_frequency < 0.5f) g_makewave_frequency = 0.5f;
+    } else if (ch == '3') {
+        g_makewave_frequency += 0.5f;
+        if (g_makewave_frequency > 20.0f) g_makewave_frequency = 20.0f;
+    } else if (ch == '4') {
+        g_makewave_amplitude -= 0.1f;
+        if (g_makewave_amplitude < 0.1f) g_makewave_amplitude = 0.1f;
+    } else if (ch == '5') {
+        g_makewave_amplitude += 0.1f;
+        if (g_makewave_amplitude > 1.0f) g_makewave_amplitude = 1.0f;
+    } else if (ch == 'g' || ch == 'G') {
+        generate_active_wave();
+        snprintf(g_makewave_status, sizeof(g_makewave_status), "Waveform table successfully written to RAM!");
+    }
+    redraw_makewave_screen();
+}
+
+static void init_plotwave(void) {
+    g_plotwave_offset = 0;
+    g_plotwave_paused = false;
+}
+
+static void redraw_plotwave_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char hud[512];
+    snprintf(hud, sizeof(hud),
+             "================================================================================\r\n"
+             "        AHOY! PLOTWAVE | REAL-TIME OSCILLOSCOPE ANIMATOR\r\n"
+             "================================================================================\r\n"
+             " [SPACE] Pause/Play | [ESC] Exit\r\n"
+             "--------------------------------------------------------------------------------\r\n");
+    lau_vram_write_string(g_vram, hud, strlen(hud));
+
+    // Render 15 lines of oscilloscope
+    for (int r = 0; r < 15; r++) {
+        char line[82];
+        memset(line, ' ', 80);
+        line[80] = '\r';
+        line[81] = '\n';
+        
+        // Target amplitude for this row
+        float row_amp = 1.0f - (2.0f * (float)r / 14.0f);
+
+        for (int c = 0; c < 80; c++) {
+            int table_idx = (c + g_plotwave_offset) % 256;
+            float val = g_makewave_table[table_idx];
+            // If the value is close to this row's target amplitude, draw a pixel
+            if (fabsf(val - row_amp) < 0.08f) {
+                line[c] = '*';
+            }
+            // Draw axis line in center
+            if (r == 7 && line[c] == ' ') {
+                line[c] = '-';
+            }
+        }
+        lau_vram_write_string(g_vram, line, 82);
+    }
+    lau_vram_write_string(g_vram, "================================================================================\r\n", 82);
+}
+
+static void handle_plotwave_input(char ch) {
+    if (ch == 27) {
+        g_editor_mode = MODE_TERMINAL;
+        lau_vram_write_string(g_vram, "\r\nExited PLOTWAVE.\r\nREADY.\r\n", 28);
+        return;
+    }
+    if (ch == ' ') {
+        g_plotwave_paused = !g_plotwave_paused;
+    }
+    redraw_plotwave_screen();
+}
+
+static void update_plotwave(uint32_t ms) {
+    static uint32_t last_tick = 0;
+    if (ms - last_tick < 60) return;
+    last_tick = ms;
+
+    if (!g_plotwave_paused) {
+        g_plotwave_offset = (g_plotwave_offset + 2) % 256;
+        redraw_plotwave_screen();
     }
 }
 
@@ -6989,17 +7533,16 @@ static void handle_job_input(char ch) {
         if (ch == 'y' || ch == 'Y' || ch == 'n' || ch == 'N') {
             bool yes_for_new = (ch == 'y' || ch == 'Y');
             
-            if (g_job_nodes_count < 48) {
+            if (g_job_nodes_count < 46) {
                 int old_node_idx = g_job_current_node;
-                int new_job_idx = g_job_nodes_count + 1;
+                int new_job_idx = g_job_nodes_count;
+                int old_leaf_idx = g_job_nodes_count + 1;
                 g_job_nodes_count += 2;
                 
                 g_job_nodes[new_job_idx].yes_child = -1;
                 g_job_nodes[new_job_idx].no_child = -1;
                 snprintf(g_job_nodes[new_job_idx].text, sizeof(g_job_nodes[new_job_idx].text), "%s", g_job_new_name);
                 
-                int old_leaf_idx = new_job_idx + 1;
-                g_job_nodes_count++;
                 g_job_nodes[old_leaf_idx] = g_job_nodes[old_node_idx];
                 
                 snprintf(g_job_nodes[old_node_idx].text, sizeof(g_job_nodes[old_node_idx].text), "%s", g_job_new_question);
@@ -8883,6 +9426,56 @@ static void execute_command(const char *cmd) {
          init_term128();
          redraw_term128_screen();
          log_telemetry("Started Term 128 simulator");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "ALCHEMIST") == 0 || strcasecmp(first_word, "APPRENTICE") == 0)) {
+         g_editor_mode = MODE_ALCHEMIST;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_alchemist();
+         redraw_alchemist_screen();
+         log_telemetry("Started Alchemist's Apprentice");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "SKIFOLLY") == 0 || strcasecmp(first_word, "SKI") == 0)) {
+         g_editor_mode = MODE_SKIFOLLY;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_skifolly();
+         redraw_skifolly_screen();
+         log_telemetry("Started Ski Folly");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "DARTS") == 0 || strcasecmp(first_word, "DART") == 0)) {
+         g_editor_mode = MODE_DARTS;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_darts();
+         redraw_darts_screen();
+         log_telemetry("Started English Darts");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "MAKEWAVE") == 0) {
+         g_editor_mode = MODE_MAKEWAVE;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_makewave();
+         redraw_makewave_screen();
+         log_telemetry("Started MAKEWAVE audio table tool");
+         return;
+    }
+
+    if (first_word && strcasecmp(first_word, "PLOTWAVE") == 0) {
+         g_editor_mode = MODE_PLOTWAVE;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_plotwave();
+         redraw_plotwave_screen();
+         log_telemetry("Started PLOTWAVE oscilloscope utility");
          return;
     }
 
@@ -10814,6 +11407,55 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         return;
     }
 
+    if (g_editor_mode == MODE_ALCHEMIST) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_alchemist_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_SKIFOLLY) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_skifolly_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_DARTS) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_darts_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_MAKEWAVE) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57 || key == KEY_SPACE) {
+            ch = ' ';
+        }
+        handle_makewave_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_PLOTWAVE) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 57 || key == KEY_SPACE) {
+            ch = ' ';
+        }
+        handle_plotwave_input(ch);
+        return;
+    }
+
     if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         char ch = (char)utf32;
         if (key == KEY_ESC || key == 1) {
@@ -11795,6 +12437,21 @@ void render_terminal_display(void) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
         uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
         update_term128(current_ms);
+    } else if (g_editor_mode == MODE_SKIFOLLY) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_skifolly(current_ms);
+    } else if (g_editor_mode == MODE_DARTS) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_darts(current_ms);
+    } else if (g_editor_mode == MODE_PLOTWAVE) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        uint32_t current_ms = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+        update_plotwave(current_ms);
     } else if (g_editor_mode == MODE_ALARM) {
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -12554,7 +13211,10 @@ int main() {
                            g_editor_mode == MODE_ALARM || g_editor_mode == MODE_MEMCHECK ||
                            g_editor_mode == MODE_ARENA || g_editor_mode == MODE_HEADTOHEAD ||
                            g_editor_mode == MODE_CRABFIGHT || g_editor_mode == MODE_TREASURE ||
-                           g_editor_mode == MODE_CHARDUMP || g_editor_mode == MODE_TERM128;
+                           g_editor_mode == MODE_CHARDUMP || g_editor_mode == MODE_TERM128 ||
+                           g_editor_mode == MODE_ALCHEMIST || g_editor_mode == MODE_SKIFOLLY || 
+                           g_editor_mode == MODE_DARTS || g_editor_mode == MODE_MAKEWAVE || 
+                           g_editor_mode == MODE_PLOTWAVE;
 
         if (g_vram->is_dirty) {
             sync_vram_to_cpu();
@@ -12739,6 +13399,16 @@ int main() {
                             handle_chardump_input(ch);
                         } else if (g_editor_mode == MODE_TERM128) {
                             handle_term128_input(ch);
+                        } else if (g_editor_mode == MODE_ALCHEMIST) {
+                            handle_alchemist_input(ch);
+                        } else if (g_editor_mode == MODE_SKIFOLLY) {
+                            handle_skifolly_input(ch);
+                        } else if (g_editor_mode == MODE_DARTS) {
+                            handle_darts_input(ch);
+                        } else if (g_editor_mode == MODE_MAKEWAVE) {
+                            handle_makewave_input(ch);
+                        } else if (g_editor_mode == MODE_PLOTWAVE) {
+                            handle_plotwave_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
