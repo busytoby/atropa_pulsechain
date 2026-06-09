@@ -7852,7 +7852,8 @@ static void execute_command(const char *cmd) {
             else if (strcmp(target, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; target = NULL; }
             else if (strcmp(target, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; target = NULL; }
             else if (strcmp(target, "25") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; target = NULL; }
-            else if (strcmp(target, "26") == 0) { target = "MENU"; }
+            else if (strcmp(target, "26") == 0) { first_word = "GYPSY"; cmd = "GYPSY"; target = NULL; }
+            else if (strcmp(target, "27") == 0) { target = "MENU"; }
         } else if (g_dashboard_active && target) {
             if (strcmp(target, "1") == 0) { first_word = "CHOPLIFTER"; cmd = "CHOPLIFTER"; target = NULL; }
             else if (strcmp(target, "2") == 0) { first_word = "FORTAPOCALYPSE"; cmd = "FORTAPOCALYPSE"; target = NULL; }
@@ -7879,7 +7880,8 @@ static void execute_command(const char *cmd) {
             else if (strcmp(target, "23") == 0) { first_word = "BLOCKEDIT"; cmd = "BLOCKEDIT"; target = NULL; }
             else if (strcmp(target, "24") == 0) { first_word = "CHARSET"; cmd = "CHARSET"; target = NULL; }
             else if (strcmp(target, "25") == 0) { first_word = "TESTALL"; cmd = "TESTALL"; target = NULL; }
-            else if (strcmp(target, "26") == 0) { target = "MENU"; }
+            else if (strcmp(target, "26") == 0) { first_word = "GYPSY"; cmd = "GYPSY"; target = NULL; }
+            else if (strcmp(target, "27") == 0) { target = "MENU"; }
         }
 
         if (first_word && strcasecmp(first_word, "GO") == 0) {
@@ -7937,7 +7939,8 @@ static void execute_command(const char *cmd) {
                     " 23 BLOCKEDIT      - Run Block/Sector Editor Verification\r\n"
                     " 24 CHARSET        - Run Alternate Character Set Verification\r\n"
                     " 25 TESTALL        - Run automated tests on ALL systems\r\n"
-                    " 26 GO MENU        - Return to Main Menu\r\n"
+                    " 26 GYPSY          - Run Gypsy Starship Space Simulation\r\n"
+                    " 27 GO MENU        - Return to Main Menu\r\n"
                     "==================================================\r\n"
                     "Enter system name, option number, or GO target: \r\n";
                 lau_vram_write_string(g_vram, dashboard_menu, strlen(dashboard_menu));
