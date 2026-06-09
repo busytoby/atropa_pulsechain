@@ -198,6 +198,52 @@
             font-style: italic;
             font-size: 0.95rem;
         }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--vaesen-ink);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--vaesen-gold-dim);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--vaesen-gold);
+        }
+
+        /* Live Chat Feed Styling */
+        .chat-item {
+            background: rgba(28, 24, 21, 0.45);
+            border-left: 3px solid var(--vaesen-gold);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .chat-item:hover {
+            background: rgba(197, 160, 89, 0.08);
+            border-left-color: var(--vaesen-cream);
+        }
+        .chat-block-num {
+            color: var(--vaesen-gold);
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 2px;
+            font-family: var(--font-header);
+        }
+        .chat-soul {
+            color: var(--vaesen-cream);
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .chat-text {
+            color: #fff;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body>
@@ -340,9 +386,12 @@ Connect your wallet to retrieve the active story ROM.</div>
                         const message = decoded[2];
 
                         const itemDiv = document.createElement("div");
-                        itemDiv.style.borderBottom = "1px dashed rgba(197, 160, 89, 0.15)";
-                        itemDiv.style.paddingBottom = "5px";
-                        itemDiv.innerHTML = `<span style="color: var(--vaesen-gold); font-size: 0.8rem;">[Block ${log.blockNumber}]</span> <strong style="color: var(--vaesen-cream); font-size: 0.85rem;">Soul ${soul.substring(0, 6)}...</strong>: <span style="word-break: break-word; color: #fff;">${message}</span>`;
+                        itemDiv.className = "chat-item";
+                        itemDiv.innerHTML = `
+                            <span class="chat-block-num">[Block ${log.blockNumber}]</span>
+                            <strong class="chat-soul">Soul ${soul.substring(0, 6)}...</strong>: 
+                            <span class="chat-text">${message}</span>
+                        `;
                         feedDiv.appendChild(itemDiv);
                     } catch (decErr) {
                         console.error("Error decoding log:", decErr);
