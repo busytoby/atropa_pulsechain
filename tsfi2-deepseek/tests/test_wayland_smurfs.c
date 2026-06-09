@@ -954,6 +954,12 @@ int main() {
                 }
                 thunk_poke(55026, 0); // Override and clear jump trigger
             }
+
+            if (ment_trauma == 4) { // Melancholic: 33% slower (despair sluggishness)
+                if (frame_counter % 3 == 0) {
+                    moveDir = 0;
+                }
+            }
         }
 
         thunk_poke(55025, moveDir);
@@ -1047,6 +1053,10 @@ int main() {
             }
         } else {
             fear_cooldown_ticks = 0;
+        }
+        if (energy < 30) {
+            cur_fear = 4;
+            thunk_poke(55044, cur_fear);
         }
         // Expose updated fear value to renderer
         ment_trauma = cur_fear;
@@ -1317,6 +1327,10 @@ int main() {
 
         draw_sprite_frame(pixels, W, H, draw_sx, draw_sy + 5, scale * 0.7f, &g_smurf_sprites, anim_state, frame_counter, last_face_left);
 
+        if (ment_trauma == 4 && (frame_counter % 120 < 40)) {
+            draw_string_ab4h(pixels, W, H, "*Sigh*", draw_sx - 20, draw_sy - (int)(40 * scale), make_ab4h_pixel(0.7f, 0.7f, 0.9f, 0.8f));
+        }
+
 
         // Draw kr0wZ glitch damage burst particles
         float ngr = half_to_float(neon_green.r);
@@ -1400,6 +1414,7 @@ int main() {
         if (ment_trauma == 1) ment_str = "^UShaken^C";
         else if (ment_trauma == 2) ment_str = "^UTerrified^C";
         else if (ment_trauma == 3) ment_str = "^UPanicked^C";
+        else if (ment_trauma == 4) ment_str = "^UMelancholic^C";
         
         snprintf(hud_right, sizeof(hud_right), "TRAUMA: %s  |  FEAR: %s", phys_str, ment_str);
         draw_string_ab4h(pixels, W, H, hud_right, W - 480, 15, neon_yellow);
