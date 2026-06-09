@@ -47,7 +47,9 @@ typedef enum {
     MODE_SPACEPATROL,
     MODE_CONSTRUCTION_CO,
     MODE_STUDIO64,
-    MODE_MAGPIE
+    MODE_MAGPIE,
+    MODE_ALICE,
+    MODE_TOP
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -202,6 +204,31 @@ static int g_magpie_graph_mode = 0; // 0 = list table, 1 = horizontal bar chart
 static void init_magpie(void);
 static void redraw_magpie_screen(void);
 static void handle_magpie_input(char ch);
+
+// Alice in Adventureland variables
+static int g_alice_room = 0; // 0=Forest, 1=Rabbit Hole, 2=Wonderland Hall
+static int g_alice_has_key = 0;
+static int g_alice_door_unlocked = 0;
+static char g_alice_status[256];
+static char g_alice_input_buf[64];
+static int g_alice_input_len = 0;
+static void init_alice(void);
+static void redraw_alice_screen(void);
+static void handle_alice_input(char ch);
+
+// To the Top variables
+static int g_top_player_x = 10;
+static int g_top_player_y = 9; // Bottom row
+static int g_top_height = 0;
+static int g_top_lives = 3;
+static int g_top_score = 0;
+static int g_top_rock_x = 5;
+static int g_top_rock_y = 2;
+static char g_top_status[128];
+static void init_top(void);
+static void redraw_top_screen(void);
+static void handle_top_input(char ch);
+static void update_top_simulation(void);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2718,6 +2745,267 @@ static void load_checklist(void) {
     fclose(f);
     g_checklist_cursor = 0;
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
+}
+
+static void init_alice(void) {
+    g_alice_room = 0;
+    g_alice_has_key = 0;
+    g_alice_door_unlocked = 0;
+    g_alice_input_len = 0;
+    g_alice_input_buf[0] = '\0';
+    snprintf(g_alice_status, sizeof(g_alice_status), "Welcome to Alice in Adventureland! Type HELP for commands.");
+}
+
+static void redraw_alice_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "      ALICE IN ADVENTURELAND (Ahoy! Issue 13 Text Adventure)        \r\n"
+             "====================================================================\r\n"
+             " [ROOM : %s]           [INVENTORY : %s]\r\n"
+             "====================================================================\r\n",
+             g_alice_room == 0 ? "DEEP FOREST" : (g_alice_room == 1 ? "RABBIT HOLE" : "WONDERLAND HALL"),
+             g_alice_has_key ? "GOLDEN KEY" : "EMPTY");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    if (g_alice_room == 0) {
+        lau_vram_write_string(g_vram, " You are standing in a dense, magical forest. Tall ancient trees stretch\r\n", 76);
+        lau_vram_write_string(g_vram, " high above. A narrow path leads NORTH deeper into the woods.\r\n\r\n", 65);
+    } else if (g_alice_room == 1) {
+        lau_vram_write_string(g_vram, " You are next to a giant oak tree. Below the roots lies a dark, gaping\r\n", 73);
+        lau_vram_write_string(g_vram, " RABBIT HOLE. A path leads SOUTH back to the forest. You can GO DOWN.\r\n\r\n", 73);
+    } else if (g_alice_room == 2) {
+        lau_vram_write_string(g_vram, " You stand in a grand hallway of Wonderland. In front of you is a huge\r\n", 73);
+        if (g_alice_door_unlocked) {
+            lau_vram_write_string(g_vram, " GOLDEN DOOR (which is now UNLOCKED). A ladder goes UP to the surface.\r\n\r\n", 74);
+        } else {
+            lau_vram_write_string(g_vram, " locked GOLDEN DOOR. A ladder goes UP to the surface.\r\n", 55);
+            if (!g_alice_has_key) {
+                lau_vram_write_string(g_vram, " A tiny golden KEY lies on a small glass table in the corner.\r\n\r\n", 64);
+            } else {
+                lau_vram_write_string(g_vram, "\r\n", 2);
+            }
+        }
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), " Status: %s\r\n", g_alice_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    snprintf(buf, sizeof(buf), " Command > %s_\r\n", g_alice_input_buf);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void handle_alice_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == '\n' || ch == '\r') {
+        g_alice_input_buf[g_alice_input_len] = '\0';
+        char cmd[64];
+        // Clean trailing spaces / uppercase conversion
+        int cp = 0;
+        for (int i = 0; i < g_alice_input_len; i++) {
+            char c = g_alice_input_buf[i];
+            if (c >= 'a' && c <= 'z') c -= 32;
+            if (cp < 63) cmd[cp++] = c;
+        }
+        cmd[cp] = '\0';
+
+        // Command routing
+        if (strcmp(cmd, "HELP") == 0) {
+            snprintf(g_alice_status, sizeof(g_alice_status), "Commands: LOOK, GO NORTH, GO SOUTH, GO DOWN, GO UP, TAKE KEY, UNLOCK DOOR.");
+        } else if (strcmp(cmd, "LOOK") == 0) {
+            snprintf(g_alice_status, sizeof(g_alice_status), "You look around carefully.");
+        } else if (strcmp(cmd, "GO NORTH") == 0 || strcmp(cmd, "NORTH") == 0) {
+            if (g_alice_room == 0) {
+                g_alice_room = 1;
+                snprintf(g_alice_status, sizeof(g_alice_status), "You walked North to the Rabbit Hole tree.");
+            } else {
+                snprintf(g_alice_status, sizeof(g_alice_status), "You cannot go North from here.");
+            }
+        } else if (strcmp(cmd, "GO SOUTH") == 0 || strcmp(cmd, "SOUTH") == 0) {
+            if (g_alice_room == 1) {
+                g_alice_room = 0;
+                snprintf(g_alice_status, sizeof(g_alice_status), "You walked South back to the forest.");
+            } else {
+                snprintf(g_alice_status, sizeof(g_alice_status), "You cannot go South from here.");
+            }
+        } else if (strcmp(cmd, "GO DOWN") == 0 || strcmp(cmd, "DOWN") == 0) {
+            if (g_alice_room == 1) {
+                g_alice_room = 2;
+                snprintf(g_alice_status, sizeof(g_alice_status), "You fell down the Rabbit Hole into Wonderland Hall!");
+            } else {
+                snprintf(g_alice_status, sizeof(g_alice_status), "There is nothing to go down here.");
+            }
+        } else if (strcmp(cmd, "GO UP") == 0 || strcmp(cmd, "UP") == 0) {
+            if (g_alice_room == 2) {
+                g_alice_room = 1;
+                snprintf(g_alice_status, sizeof(g_alice_status), "You climbed the ladder to the surface.");
+            } else {
+                snprintf(g_alice_status, sizeof(g_alice_status), "You cannot go Up from here.");
+            }
+        } else if (strcmp(cmd, "TAKE KEY") == 0 || strcmp(cmd, "GET KEY") == 0) {
+            if (g_alice_room == 2 && !g_alice_has_key) {
+                g_alice_has_key = 1;
+                snprintf(g_alice_status, sizeof(g_alice_status), "You picked up the tiny Golden Key.");
+            } else {
+                snprintf(g_alice_status, sizeof(g_alice_status), "There is no key to take here.");
+            }
+        } else if (strcmp(cmd, "UNLOCK DOOR") == 0 || strcmp(cmd, "UNLOCK") == 0) {
+            if (g_alice_room == 2) {
+                if (g_alice_has_key) {
+                    g_alice_door_unlocked = 1;
+                    snprintf(g_alice_status, sizeof(g_alice_status), "YOU DID IT! The Golden Door clicks open. You escape! [ESC] to Exit.");
+                } else {
+                    snprintf(g_alice_status, sizeof(g_alice_status), "The door is locked solid. You need a key.");
+                }
+            } else {
+                snprintf(g_alice_status, sizeof(g_alice_status), "There is no door to unlock here.");
+            }
+        } else {
+            snprintf(g_alice_status, sizeof(g_alice_status), "Unknown command '%s'. Type HELP.", cmd);
+        }
+
+        g_alice_input_len = 0;
+        g_alice_input_buf[0] = '\0';
+    } else if (ch == '\b' || ch == 127) {
+        if (g_alice_input_len > 0) {
+            g_alice_input_len--;
+            g_alice_input_buf[g_alice_input_len] = '\0';
+        }
+    } else if (ch >= 32 && ch < 127) {
+        if (g_alice_input_len < 63) {
+            g_alice_input_buf[g_alice_input_len++] = ch;
+            g_alice_input_buf[g_alice_input_len] = '\0';
+        }
+    }
+
+    redraw_alice_screen();
+}
+
+static void init_top(void) {
+    g_top_player_x = 15;
+    g_top_player_y = 9;
+    g_top_height = 0;
+    g_top_lives = 3;
+    g_top_score = 0;
+    g_top_rock_x = 20;
+    g_top_rock_y = 1;
+    snprintf(g_top_status, sizeof(g_top_status), "Climb to the top! Use A/D to move, W to jump/climb.");
+}
+
+static void update_top_simulation(void) {
+    // Move rock leftwards or downwards
+    g_top_rock_x--;
+    if (g_top_rock_x <= 0) {
+        g_top_rock_x = 29;
+        g_top_rock_y = 1 + (rand() % 8);
+    }
+
+    // Check collisions
+    if (g_top_player_x == g_top_rock_x && g_top_player_y == g_top_rock_y) {
+        g_top_lives--;
+        g_top_rock_x = 29;
+        if (g_top_lives <= 0) {
+            snprintf(g_top_status, sizeof(g_top_status), "GAME OVER! Final Score: %d. Press ESC to exit.", g_top_score);
+        } else {
+            snprintf(g_top_status, sizeof(g_top_status), "Ouch! Hit by a rock. Lives left: %d", g_top_lives);
+        }
+    }
+}
+
+static void redraw_top_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "            TO THE TOP (Ahoy! Issue 13 Climbing Game)              \r\n"
+             "====================================================================\r\n"
+             "  [SCORE : %d]            [HEIGHT : %d m]          [LIVES : %d]\r\n"
+             "====================================================================\r\n",
+             g_top_score, g_top_height, g_top_lives);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render Tower (10 lines x 30 characters wide)
+    // Row 1 to 9 represent climbing rows
+    for (int y = 0; y < 10; y++) {
+        char line[128];
+        int pos = 0;
+        pos += snprintf(line + pos, sizeof(line) - pos, "      |");
+        for (int x = 0; x < 30; x++) {
+            char ch = ' ';
+            // Platforms every odd row
+            if (y % 2 == 1) {
+                ch = '=';
+            }
+            // Ladders at specific columns
+            if (x == 15 || x == 5 || x == 25) {
+                ch = '|';
+            }
+            // Draw player
+            if (x == g_top_player_x && y == g_top_player_y) {
+                ch = '*'; // Player character
+            }
+            // Draw rock
+            if (x == g_top_rock_x && y == g_top_rock_y) {
+                ch = 'o'; // Rolling rock
+            }
+            line[pos++] = ch;
+        }
+        pos += snprintf(line + pos, sizeof(line) - pos, "|\r\n");
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_top_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void handle_top_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (g_top_lives <= 0) return;
+
+    if (ch == 'a' || ch == 'A') {
+        if (g_top_player_x > 0) g_top_player_x--;
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_top_player_x < 29) g_top_player_x++;
+    } else if (ch == 'w' || ch == 'W') {
+        // Jump/Climb platform
+        if (g_top_player_y > 0) {
+            g_top_player_y--;
+            g_top_height += 10;
+            g_top_score += 50;
+            if (g_top_player_y == 0) { // Reached the top!
+                g_top_player_y = 9; // Reset to bottom for next stage
+                g_top_score += 500;
+                snprintf(g_top_status, sizeof(g_top_status), "STAGE COMPLETED! Level Reset.");
+            }
+        }
+    }
+
+    update_top_simulation();
+    redraw_top_screen();
 }
 
 static void init_magpie(void) {
@@ -5458,6 +5746,26 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "ALICE") == 0) {
+         g_editor_mode = MODE_ALICE;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_alice();
+         redraw_alice_screen();
+         log_telemetry("Started Alice in Adventureland");
+         return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "TOP") == 0 || strcasecmp(first_word, "TOTHETOP") == 0)) {
+         g_editor_mode = MODE_TOP;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_top();
+         redraw_top_screen();
+         log_telemetry("Started To the Top");
+         return;
+    }
+
     if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
          g_editor_mode = MODE_CHECKLIST;
          g_mercenary_active = false;
@@ -6793,6 +7101,34 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = 'g';
         }
         handle_magpie_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_ALICE) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == KEY_ENTER || key == 28 || key == 36 || key == 104) {
+            ch = '\n';
+        } else if (key == KEY_BACKSPACE || key == 14 || key == 22) {
+            ch = '\b';
+        }
+        handle_alice_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_TOP) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 32 || key == 106) { // D
+            ch = 'd';
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        }
+        handle_top_input(ch);
         return;
     }
 
@@ -8310,6 +8646,10 @@ int main() {
                             handle_studio64_input(ch);
                         } else if (g_editor_mode == MODE_MAGPIE) {
                             handle_magpie_input(ch);
+                        } else if (g_editor_mode == MODE_ALICE) {
+                            handle_alice_input(ch);
+                        } else if (g_editor_mode == MODE_TOP) {
+                            handle_top_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -8516,6 +8856,10 @@ int main() {
                             handle_studio64_input(ch);
                         } else if (g_editor_mode == MODE_MAGPIE) {
                             handle_magpie_input(ch);
+                        } else if (g_editor_mode == MODE_ALICE) {
+                            handle_alice_input(ch);
+                        } else if (g_editor_mode == MODE_TOP) {
+                            handle_top_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
