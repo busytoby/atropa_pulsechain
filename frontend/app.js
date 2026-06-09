@@ -1437,6 +1437,120 @@ function drawC64Sprite(index, x, y, color, hasCollision) {
     }
 }
 
+// On-Chain Yul Console Terminal Handler
+async function runYulConsoleCommand() {
+    const consoleLogsEl = document.getElementById("yulConsoleLogs");
+    const mode = document.getElementById("yulConsoleMode").value;
+    const inputStr = document.getElementById("yulConsoleInput").value;
+
+    // Check if ethers provider is initialized
+    let currentProvider = provider;
+    if (!currentProvider) {
+        try {
+            currentProvider = new ethers.BrowserProvider(window.ethereum);
+        } catch (e) {
+            currentProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+        }
+    }
+
+    try {
+        consoleLogsEl.innerText += `\n# executing ${mode} command: "${inputStr}"...`;
+        
+        let currentSigner;
+        try {
+            currentSigner = await currentProvider.getSigner();
+        } catch (e) {
+            const accounts = await currentProvider.listAccounts();
+            currentSigner = accounts[0];
+        }
+
+        if (mode === "dc") {
+            const dcBytecode = config.dc;
+            if (!dcBytecode) throw new Error("dc.yul bytecode not loaded in registry");
+
+            // Deploy mock instance of dc
+            const factory = new ethers.ContractFactory([], dcBytecode, currentSigner);
+            const dcContract = await factory.deploy();
+            await dcContract.waitForDeployment();
+            const dcAddress = await dcContract.getAddress();
+
+            // Encode data for execute_dc(bytes) -> selector: 0x5b3f2ea0
+            const inputBytes = ethers.toUtf8Bytes(inputStr);
+            const encodedArgs = ethers.AbiCoder.defaultAbiCoder().encode(["bytes"], [inputBytes]);
+            
+            // Slice off the offset from encode parameter padding to fit selector call
+            const callData = ethers.concat([
+                "0x5b3f2ea0",
+                encodedArgs
+            ]);
+
+            const result = await currentProvider.call({
+                to: dcAddress,
+                data: callData
+            });
+
+            const decoded = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], result);
+            consoleLogsEl.innerText += `\n[Result]: ${decoded[0].toString()}\n# _`;
+        } else if (mode === "sh") {
+            // Deploy utils & shell
+            const utilsBytecode = config.unix1_utils;
+            const shBytecode = config.sh;
+            if (!utilsBytecode || !shBytecode) throw new Error("Yul bytecodes not loaded in registry");
+
+            const utilsFactory = new ethers.ContractFactory([], utilsBytecode, currentSigner);
+            const utilsContract = await utilsFactory.deploy();
+            await utilsContract.waitForDeployment();
+            const utilsAddress = await utilsContract.getAddress();
+
+            const shFactory = new ethers.ContractFactory([], shBytecode, currentSigner);
+            const shContract = await shFactory.deploy();
+            await shContract.waitForDeployment();
+            const shAddress = await shContract.getAddress();
+
+            // First write a mock file for testing shell commands
+            const writeSelector = "0xb8b6a3ef";
+            const nameHash = ethers.zeroPadValue(ethers.toUtf8Bytes("patents.txt"), 32);
+            const word0 = ethers.zeroPadValue(ethers.toUtf8Bytes("Unix 1 Patent Data"), 32);
+            const word1 = ethers.zeroPadValue(ethers.toUtf8Bytes("Bell Labs 1971"), 32);
+            const writeData = ethers.concat([
+                writeSelector,
+                ethers.AbiCoder.defaultAbiCoder().encode(["bytes32", "bytes32", "bytes32"], [nameHash, word0, word1])
+            ]);
+            const writeTx = await currentSigner.sendTransaction({
+                to: utilsAddress,
+                data: writeData
+            });
+            await writeTx.wait();
+
+            // Call run_command(utilsAddress, inputStr) -> selector 0x3a4f6cf4
+            const cmdBytes = ethers.toUtf8Bytes(inputStr);
+            const callData = ethers.concat([
+                "0x3a4f6cf4",
+                ethers.AbiCoder.defaultAbiCoder().encode(["address", "bytes"], [utilsAddress, cmdBytes])
+            ]);
+
+            const result = await currentProvider.call({
+                to: shAddress,
+                data: callData
+            });
+
+            consoleLogsEl.innerText += `\n[Result Hex]: ${result}\n# _`;
+        }
+        consoleLogsEl.scrollTop = consoleLogsEl.scrollHeight;
+    } catch (err) {
+        consoleLogsEl.innerText += `\n[Error]: ${err.message}\n# _`;
+        consoleLogsEl.scrollTop = consoleLogsEl.scrollHeight;
+    }
+}
+
+// Add event listener
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        const btn = document.getElementById("btnRunYulConsole");
+        if (btn) btn.addEventListener("click", runYulConsoleCommand);
+    }, 1000);
+});
+
 // Initialize on Load
 loadConfigKeys();
 initDatamostConsole();

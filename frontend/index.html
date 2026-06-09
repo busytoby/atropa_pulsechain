@@ -307,6 +307,35 @@
             </div>
         </section>
 
+        <!-- Unix v1 Yul On-Chain Console Terminal -->
+        <section class="card" style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px; border-color: #32ff6a; box-shadow: 0 0 15px rgba(50, 255, 106, 0.15);">
+            <h2><span class="icon">🖥️</span> Unix v1 Yul On-Chain Terminal</h2>
+            <p class="description">Execute Shell commands or compute postfix expressions on-chain using Yul-compiled smart contracts.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px;">
+                    <h3>Submit On-Chain Call</h3>
+                    <div class="form-group">
+                        <label for="yulConsoleMode">Target Console Utility:</label>
+                        <select id="yulConsoleMode" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                            <option value="dc">Desk Calculator (dc.yul)</option>
+                            <option value="sh">Thompson Shell (sh.yul)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="yulConsoleInput">Command String / Expression:</label>
+                        <input type="text" id="yulConsoleInput" value="15 3 + 2 *" placeholder="e.g. '15 3 + 2 *' or 'ls'" class="input-glow">
+                    </div>
+                    <button class="btn btn-primary" id="btnRunYulConsole" style="background: linear-gradient(135deg, #32ff6a 0%, #00aa3a 100%); color: #000; border: none; font-weight: 900; text-shadow: 0 0 5px rgba(0,0,0,0.3);">Execute Command</button>
+                </div>
+                <div style="display: flex; flex-direction: column; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px;">
+                    <h3>TTY Console Output</h3>
+                    <div id="yulConsoleLogs" style="flex-grow: 1; min-height: 150px; background: #050406; border: 1px solid #32ff6a; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.9rem; color: #32ff6a; white-space: pre-wrap; overflow-y: auto;">atropa_unix1 login: root
+welcome to unix 1 (yul edition)
+# _</div>
+                </div>
+            </div>
+        </section>
+
         <!-- Console / Logger Terminal -->
         <footer>
             <div class="terminal-header">
