@@ -3,12 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCA COSMAC VIP - CHIP-8 Fantasy Console</title>
+    <title>COSMAC VIP - Alchemical Sigil Projector</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Alice&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
+        body {
+            background-color: #0c0b0a;
+            color: #ebdcb9;
+            font-family: 'Lora', serif;
+        }
+
+        header .logo .pulse-glow {
+            font-family: 'Alice', serif;
+            color: #d4af37;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+
         .cosmac-grid {
             display: grid;
             grid-template-columns: 3fr 2fr;
@@ -20,57 +33,62 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(0, 0, 0, 0.85);
-            border: 2px solid var(--neon-blue);
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.2);
-            border-radius: 12px;
+            background: rgba(20, 18, 16, 0.95);
+            border: 2px solid #8c6d31;
+            box-shadow: 0 0 25px rgba(140, 109, 49, 0.15);
+            border-radius: 8px;
             padding: 20px;
         }
 
         #cosmacCanvas {
-            background-color: #050b14;
-            border: 10px solid #2a2d32;
-            border-radius: 6px;
+            background-color: #0d0c0a;
+            border: 10px solid #5a4a31; /* Aged Brass Bezel */
+            border-radius: 4px;
             image-rendering: pixelated;
             width: 100%;
-            max-width: 576px; /* 64 * 9 */
+            max-width: 576px;
             aspect-ratio: 2 / 1;
-            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.15);
+            box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.1);
         }
 
         .keypad-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            max-width: 240px;
+            gap: 12px;
+            max-width: 260px;
             margin: 15px auto;
         }
 
         .key-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
+            background: #1f1b16;
+            border: 2px solid #5a4a31; /* Brass rivet style */
+            color: #d4af37;
+            font-family: 'Alice', serif;
+            font-size: 1.25rem;
             font-weight: bold;
-            padding: 12px;
-            border-radius: 6px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* Circular typewriter style keys */
             cursor: pointer;
             transition: all 0.2s ease;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 2px rgba(255,255,255,0.1);
+            margin: auto;
         }
 
         .key-btn:hover {
-            background: var(--neon-blue);
-            color: #000;
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            background: #d4af37;
+            color: #1a1510;
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
             transform: translateY(-2px);
         }
 
         .key-btn.active {
-            background: var(--neon-magenta);
+            background: #b87333; /* Copper color on press */
             color: #fff;
-            box-shadow: 0 0 10px rgba(255, 0, 127, 0.6);
+            box-shadow: 0 0 12px rgba(184, 115, 51, 0.7);
         }
 
         .cpu-mon-grid {
@@ -79,39 +97,57 @@
             gap: 8px;
             font-family: monospace;
             font-size: 0.85rem;
-            color: #00ff66;
-            background: rgba(0,0,0,0.6);
+            color: #d4af37;
+            background: rgba(13, 12, 10, 0.8);
             padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(0,255,102,0.2);
+            border-radius: 6px;
+            border: 1px solid rgba(212, 175, 55, 0.15);
             margin-top: 15px;
         }
 
         .rom-select {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1rem;
+            background: #141210;
+            border: 1px solid #5a4a31;
+            color: #ebdcb9;
+            font-family: 'Alice', serif;
+            font-size: 1.05rem;
             padding: 8px 12px;
             border-radius: 6px;
             width: 100%;
             margin-bottom: 15px;
+            outline: none;
+        }
+
+        .dna-card {
+            background: rgba(20, 18, 16, 0.9);
+            border: 1px solid #5a4a31;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .btn-primary {
+            background: #8c6d31;
+            border-color: #5a4a31;
+            color: #f4ebd0;
+            font-family: 'Alice', serif;
+        }
+        .btn-primary:hover {
+            background: #d4af37;
+            color: #000;
         }
     </style>
 </head>
 <body>
-    <div class="glass-bg-container">
+    <div class="glass-bg-container" style="background: rgba(18, 16, 14, 0.95); border-color: #5a4a31;">
         <!-- Header -->
-        <header>
+        <header style="border-bottom: 1px solid rgba(140, 109, 49, 0.25);">
             <div class="logo">
-                <span class="pulse-glow">RCA COSMAC VIP</span>
-                <div class="subtitle">CDP1802 CHIP-8 Interpreter Console</div>
+                <span class="pulse-glow">COSMAC VIP</span>
+                <div class="subtitle" style="font-family: 'Lora', serif; color: #a49373;">Alchemical Sigil Projector (RCA 1802)</div>
             </div>
             <div class="header-actions">
-                <a href="index.html" class="btn btn-secondary">🏠 Home</a>
-                <a href="zmachine.html" class="btn btn-secondary">🕹️ Z-Machine</a>
-                <a href="dna_breeder.html" class="btn btn-secondary">🧬 Breeder Arena</a>
+                <a href="index.html" class="btn btn-secondary" style="border-color: #5a4a31; color: #ebdcb9;">🏠 Home</a>
+                <a href="zmachine.html" class="btn btn-secondary" style="border-color: #5a4a31; color: #ebdcb9;">🕹️ Z-Machine</a>
+                <a href="dna_breeder.html" class="btn btn-secondary" style="border-color: #5a4a31; color: #ebdcb9;">🧬 Breeder Arena</a>
             </div>
         </header>
 
@@ -120,21 +156,21 @@
             <div class="vector-arena-container" style="gap: 15px;">
                 <div class="screen-card">
                     <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="font-family: 'Orbitron', sans-serif; color: var(--neon-blue); font-size: 0.95rem;">📺 64x32 CDP1861 PIXIE GRAPHICS</span>
-                        <span style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary);" id="fpsDisplay">60 Hz / 500 IPS</span>
+                        <span style="font-family: 'Alice', serif; color: #d4af37; font-size: 1.05rem;">🔮 Phantasmagoric Pixie Projection</span>
+                        <span style="font-family: monospace; font-size: 0.85rem; color: #a49373;" id="fpsDisplay">60 Hz / 500 IPS</span>
                     </div>
                     <canvas id="cosmacCanvas" width="64" height="32"></canvas>
                     
                     <div style="display: flex; gap: 15px; width: 100%; margin-top: 15px;">
-                        <button class="btn btn-primary" id="btnRun" style="flex: 1;">▶️ Run VM</button>
-                        <button class="btn btn-secondary" id="btnStep" style="flex: 1; border-color: var(--neon-magenta); color: var(--neon-magenta);">⏯️ Single Step</button>
-                        <button class="btn btn-secondary" id="btnReset" style="flex: 1;">🔄 Reset</button>
+                        <button class="btn btn-primary" id="btnRun" style="flex: 1;">▶️ Project Sigil</button>
+                        <button class="btn btn-secondary" id="btnStep" style="flex: 1; border-color: #b87333; color: #b87333;">⏯️ Single Step</button>
+                        <button class="btn btn-secondary" id="btnReset" style="flex: 1; border-color: #5a4a31; color: #ebdcb9;">🔄 Reset Frame</button>
                     </div>
                 </div>
 
                 <!-- CPU Registers Monitor -->
-                <div class="dna-card">
-                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue); font-size: 1.1rem;">📟 CDP1802 Register State</h3>
+                <div class="dna-card" style="border-radius: 8px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 10px; color: #d4af37; font-size: 1.15rem;">📟 Attractor Registers (CDP1802)</h3>
                     <div class="cpu-mon-grid" id="regMonitor">
                         <div>PC: 0x200</div>
                         <div>I: 0x000</div>
@@ -162,22 +198,22 @@
 
             <!-- Right Panel: ROM Loader & Hex Keypad -->
             <div class="vector-arena-container" style="gap: 15px;">
-                <div class="dna-card">
-                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue); font-size: 1.1rem;">💿 Select COSMAC VIP Software</h3>
+                <div class="dna-card" style="border-radius: 8px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 10px; color: #d4af37; font-size: 1.15rem;">💿 Alchemical Manuscripts</h3>
                     <select class="rom-select" id="romSelector">
-                        <option value="breeder">🧬 Atropa DNA Breeder (Procedural Helix)</option>
-                        <option value="ibm">🖥️ IBM Logo (RCA 1977 Demonstration)</option>
-                        <option value="maze">🌀 Maze Generator (10 PRINT Variant)</option>
+                        <option value="breeder">🧬 Sigil Weaver (Atropa DNA Recombinant)</option>
+                        <option value="ibm">🖥️ Historical Monogram (RCA 1977)</option>
+                        <option value="maze">🌀 Labyrinth Generator (Procedural Maze)</option>
                     </select>
 
-                    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0;">
-                        Choose a program. The <strong>Atropa DNA Breeder ROM</strong> maps the active Z-Machine DNA parameters straight into the CHIP-8 register tables to procedurally generate live double-helix graphics!
+                    <p style="font-size: 0.9rem; color: #ebdcb9; line-height: 1.4; margin-bottom: 0;">
+                        The <strong>Sigil Weaver</strong> maps the active room's memory matrix dynamically into the registers to draw the double-helix geometry of Atropa.
                     </p>
                 </div>
 
                 <!-- Hex Keypad -->
-                <div class="dna-card" style="text-align: center;">
-                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-magenta); font-size: 1.1rem;">⌨️ 16-Key Hex Keypad</h3>
+                <div class="dna-card" style="text-align: center; border-radius: 8px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 10px; color: #b87333; font-size: 1.15rem;">⌨️ Ivory Register Stems</h3>
                     <div class="keypad-grid">
                         <button class="key-btn" data-key="1">1</button>
                         <button class="key-btn" data-key="2">2</button>
@@ -195,9 +231,6 @@
                         <button class="key-btn" data-key="0">0</button>
                         <button class="key-btn" data-key="B">B</button>
                         <button class="key-btn" data-key="F">F</button>
-                    </div>
-                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 10px;">
-                        Map: 1-2-3-4 -> Q-W-E-R, A-S-D-F -> A-S-D-F, Z-X-C-V -> Z-X-C-V keys
                     </div>
                 </div>
             </div>
@@ -345,7 +378,6 @@
                         this.v[x] = Math.floor(Math.random() * 256) & kk;
                         break;
                     case 0xD000:
-                        // Draw Sprite
                         const vx = this.v[x] % 64;
                         const vy = this.v[y] % 32;
                         const height = opcode & 0x000F;
@@ -361,7 +393,7 @@
                                     const index = py * 64 + px;
                                     
                                     if (this.display[index] === 1) {
-                                        this.v[0xF] = 1; // Collision
+                                        this.v[0xF] = 1;
                                     }
                                     this.display[index] ^= 1;
                                 }
@@ -379,7 +411,6 @@
                         switch(kk) {
                             case 0x07: this.v[x] = this.delayTimer; break;
                             case 0x0A:
-                                // Wait for Key Press
                                 let pressed = false;
                                 for(let k=0; k<16; k++) {
                                     if (this.keys[k] === 1) {
@@ -388,7 +419,7 @@
                                         break;
                                     }
                                 }
-                                if (!pressed) this.pc -= 2; // block PC advancement
+                                if (!pressed) this.pc -= 2;
                                 break;
                             case 0x15: this.delayTimer = this.v[x]; break;
                             case 0x18: this.soundTimer = this.v[x]; break;
@@ -418,7 +449,6 @@
         const canvas = document.getElementById("cosmacCanvas");
         const ctx = canvas.getContext("2d");
 
-        // UI & Keyboards
         const keymap = {
             '1': 0x1, '2': 0x2, '3': 0x3, '4': 0xC,
             'q': 0x4, 'w': 0x5, 'e': 0x6, 'r': 0xD,
@@ -444,7 +474,6 @@
             }
         });
 
-        // Keypad buttons click support
         document.querySelectorAll(".key-btn").forEach(btn => {
             const k = parseInt(btn.dataset.key, 16);
             btn.addEventListener("mousedown", () => {
@@ -457,7 +486,6 @@
             });
         });
 
-        // Procedural ROMs
         const ibmRom = new Uint8Array([
             0x00, 0xE0, 0xA2, 0x2A, 0x60, 0x0C, 0x61, 0x08, 0xD0, 0x1F, 0x70, 0x09, 0xA2, 0x39, 0xD0, 0x1F,
             0xA2, 0x48, 0x70, 0x08, 0xD0, 0x1F, 0x70, 0x04, 0xA2, 0x57, 0xD0, 0x1F, 0x70, 0x08, 0xA2, 0x66,
@@ -474,43 +502,11 @@
             0x20, 0x40, 0x80, 0x00, 0x10, 0x20, 0x40, 0x80, 0x40, 0x20, 0x10, 0x00
         ]);
 
-        // Custom Atropa DNA Breeder CHIP-8 ROM that renders visual double helix based on configuration
         const breederRom = new Uint8Array([
-            0x00, 0xE0,             // CLS
-            0x60, 0x00,             // V0 = 0 (X coordinate)
-            0x61, 0x10,             // V1 = 16 (Y baseline)
-            0x62, 0x00,             // V2 = Frame counter (Phase)
-            0xA2, 0x14,             // I = 0x214 (Points to sprite)
-            // Loop Start (0x20A)
-            0x00, 0xE0,             // CLS
-            0x60, 0x00,             // V0 = 0
-            // Draw loop (0x20E)
-            0x83, 0x00,             // V3 = V0 (X index)
-            0x64, 0x0A,             // V4 = 10 (Multiplier)
-            0x83, 0x42,             // V3 &= V4
-            0x83, 0x22,             // V3 += V2 (Phase shift)
-            0x65, 0x07,             // V5 = 7 (Amplitude)
-            0x85, 0x32,             // V5 *= V3 (Pseudo-sin)
-            0x66, 0x0F,             // V6 = 15 (Mask)
-            0x85, 0x22,             // V5 &= V6
-            0x85, 0x14,             // V5 += V1 (offset by baseline)
-            
-            // Draw first strand node
-            0xD0, 0x51,             // DRW V0, V5, 1
-            
-            // Mirror second strand
-            0x67, 0x20,             // V7 = 32
-            0x87, 0x55,             // V7 -= V5 (subtract node position)
-            0x77, 0x10,             // V7 += 16
-            0xD0, 0x71,             // DRW V0, V7, 1
-            
-            0x70, 0x02,             // V0 += 2
-            0x30, 0x40,             // SE V0, 64 (end of screen)
-            0x12, 0x0E,             // JP 0x20E (draw loop)
-            
-            0x72, 0x01,             // V2 += 1 (animate phase)
-            0x12, 0x0A,             // JP 0x20A (next frame)
-            0x80, 0x80, 0x80, 0x80  // Node sprite data
+            0x00, 0xE0, 0x60, 0x00, 0x61, 0x10, 0x62, 0x00, 0xA2, 0x14, 0x00, 0xE0, 0x60, 0x00, 0x83, 0x00,
+            0x64, 0x0A, 0x83, 0x42, 0x83, 0x22, 0x65, 0x07, 0x85, 0x32, 0x66, 0x0F, 0x85, 0x22, 0x85, 0x14,
+            0xD0, 0x51, 0x67, 0x20, 0x87, 0x55, 0x77, 0x10, 0xD0, 0x71, 0x70, 0x02, 0x30, 0x40, 0x12, 0x0E,
+            0x72, 0x01, 0x12, 0x0A, 0x80, 0x80, 0x80, 0x80
         ]);
 
         const roms = {
@@ -552,41 +548,36 @@
                 }
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = "square";
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
-                osc.stop(audioCtx.currentTime + 0.05);
+                osc.stop(audioCtx.currentTime + 0.08);
             } catch (e) {}
         }
 
         function runLoop() {
             if (!isRunning) return;
-            
-            // Execute multiple instructions per frame for standard chiptune speed
             for(let i=0; i<8; i++) {
                 cpu.tick();
             }
-            
             if (cpu.delayTimer > 0) cpu.delayTimer--;
             if (cpu.soundTimer > 0) {
                 cpu.soundTimer--;
                 playBeep();
             }
-            
             updateMonitor();
             renderDisplay();
             animationFrameId = requestAnimationFrame(runLoop);
         }
 
         function renderDisplay() {
-            ctx.fillStyle = "#050b14";
+            ctx.fillStyle = "#0d0c0a";
             ctx.fillRect(0, 0, 64, 32);
-            
-            ctx.fillStyle = "#00f2fe"; // Neon Blue pixels
+            ctx.fillStyle = "#d4af37"; // Glowing Amber Gold
             for(let y=0; y<32; y++) {
                 for(let x=0; x<64; x++) {
                     if (cpu.display[y * 64 + x] === 1) {
@@ -610,17 +601,16 @@
             grid.innerHTML = html;
         }
 
-        // Setup UI binds
         document.getElementById("btnRun").addEventListener("click", () => {
             const btn = document.getElementById("btnRun");
             if (isRunning) {
                 isRunning = false;
                 cancelAnimationFrame(animationFrameId);
-                btn.innerText = "▶️ Run VM";
+                btn.innerText = "▶️ Project Sigil";
                 btn.classList.remove("active");
             } else {
                 isRunning = true;
-                btn.innerText = "⏸️ Pause VM";
+                btn.innerText = "⏸️ Halt Sigil";
                 btn.classList.add("active");
                 runLoop();
             }
@@ -628,7 +618,7 @@
 
         document.getElementById("btnStep").addEventListener("click", () => {
             isRunning = false;
-            document.getElementById("btnRun").innerText = "▶️ Run VM";
+            document.getElementById("btnRun").innerText = "▶️ Project Sigil";
             document.getElementById("btnRun").classList.remove("active");
             cancelAnimationFrame(animationFrameId);
             step();
@@ -642,7 +632,6 @@
             loadSelected();
         });
 
-        // Initialize
         loadSelected();
     </script>
 </body>
