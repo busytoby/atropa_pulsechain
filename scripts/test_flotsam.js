@@ -14,6 +14,11 @@ const defaultColumns = [
         author: "HANSON KAPPELMAN, PITTSBURGH, PA",
         message: "I am looking for a Commodore 64 program for genealogy to construct a family tree. Does Ahoy! plan to publish one? (Ahoy! Issue 5, May 1984)",
         reply: "While we haven't published a dedicated family tree builder yet, we've updated our virtual board-game framework (Yul CPU) to track ghost lineage trees dynamically using memory slot 55062. Dotted vector lineage lines now link each spawned entity to its ancestor generator on Layer 2!"
+    },
+    {
+        author: "JOCELYN SUE WOODS, NEW YORK, NY",
+        message: "The New York City VIC 20/C-64 User Group (NYCUG) has grown to fifty members. We are active on our local BBS ('VTUG') and are building a public domain software library. We invite other user groups to share their info!",
+        reply: "Fantastic work, Jocelyn! To support local user group libraries and remote BBS state replication, we've integrated peer-to-peer state handshake channels in the virtual machine. Now, user groups can sync L2 game states directly over simulated VTUG phone lines!"
     }
 ];
 
