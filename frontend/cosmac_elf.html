@@ -1556,6 +1556,69 @@
                             logTrapEvent("[FORTH ERROR] score- requires [points] on stack", true);
                         }
                         break;
+                    case "tape-save":
+                        if (forthStack.length >= 2) {
+                            const filename = tokens[++i];
+                            if (!filename) {
+                                logTrapEvent("[TOS ERROR] tape-save requires filename (e.g. tape-save myfile)", true);
+                                break;
+                            }
+                            const addr = forthStack.pop();
+                            const size = forthStack.pop();
+                            if (addr >= 0 && addr + size <= cpu.memory.length) {
+                                const bytes = Array.from(cpu.memory.slice(addr, addr + size));
+                                localStorage.setItem(`cosmac_tape_${filename}`, JSON.stringify(bytes));
+                                logTrapEvent(`💾 [TOS] Saved virtual cassette "${filename}" (${size} bytes) from RAM 0x${addr.toString(16).toUpperCase()}`, true);
+                            } else {
+                                logTrapEvent("[TOS ERROR] Invalid address range", true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] tape-save requires [size] [addr] and a filename parameter", true);
+                        }
+                        break;
+                    case "tape-load":
+                        if (forthStack.length >= 1) {
+                            const filename = tokens[++i];
+                            if (!filename) {
+                                logTrapEvent("[TOS ERROR] tape-load requires filename (e.g. tape-load myfile)", true);
+                                break;
+                            }
+                            const addr = forthStack.pop();
+                            const item = localStorage.getItem(`cosmac_tape_${filename}`);
+                            if (item) {
+                                const bytes = JSON.parse(item);
+                                if (addr + bytes.length <= cpu.memory.length) {
+                                    for (let j = 0; j < bytes.length; j++) {
+                                        cpu.memory[addr + j] = bytes[j];
+                                    }
+                                    logTrapEvent(`💾 [TOS] Loaded virtual cassette "${filename}" (${bytes.length} bytes) to RAM 0x${addr.toString(16).toUpperCase()}`, true);
+                                    updateMonitor();
+                                } else {
+                                    logTrapEvent("[TOS ERROR] File exceeds memory bounds", true);
+                                }
+                            } else {
+                                logTrapEvent(`[TOS ERROR] Cassette file "${filename}" not found`, true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] tape-load requires [addr] and a filename parameter", true);
+                        }
+                        break;
+                    case "tape-catalog":
+                        logTrapEvent("💾 [TOS] Virtual Cassette Tape Directory Catalog:", true);
+                        let found = false;
+                        for (let k = 0; k < localStorage.length; k++) {
+                            const key = localStorage.key(k);
+                            if (key && key.startsWith("cosmac_tape_")) {
+                                const filename = key.replace("cosmac_tape_", "");
+                                const bytes = JSON.parse(localStorage.getItem(key));
+                                logTrapEvent(`  Record: ${filename.padEnd(16)} | Size: ${bytes.length} Bytes`, true);
+                                found = true;
+                            }
+                        }
+                        if (!found) {
+                            logTrapEvent("   (No virtual cassette tapes found in local storage)", true);
+                        }
+                        break;
                     case "breakpoint":
                         if (forthStack.length >= 1) {
                             const addr = forthStack.pop();
