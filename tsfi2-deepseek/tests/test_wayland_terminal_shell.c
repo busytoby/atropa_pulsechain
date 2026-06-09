@@ -51,7 +51,8 @@ typedef enum {
     MODE_ALICE,
     MODE_TOP,
     MODE_FONTASIA,
-    MODE_FLANKSPEED
+    MODE_FLANKSPEED,
+    MODE_BOOTER
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -263,6 +264,22 @@ static char g_fkey_macros[8][32] = {
     "OLD\n",
     "HELP\n"
 };
+
+// Booter variables
+static const char *g_booter_entries[] = {
+    "ALICE (Adventure Game)",
+    "TOP (Arcade Platformer)",
+    "FONTASIA (Custom Sprite Editor)",
+    "FLANKSPEED (Hex Assembler Entry)",
+    "CHECKLIST (To-Do Management Widget)",
+    "YULBUILD (Yul compiler and assembly tool)"
+};
+static int g_booter_count = 6;
+static int g_booter_cursor = 0;
+static char g_booter_status[128];
+static void init_booter(void);
+static void redraw_booter_screen(void);
+static void handle_booter_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2779,6 +2796,74 @@ static void load_checklist(void) {
     fclose(f);
     g_checklist_cursor = 0;
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
+}
+
+static void init_booter(void) {
+    g_booter_cursor = 0;
+    snprintf(g_booter_status, sizeof(g_booter_status), "Use W/S to navigate. Press ENTER to boot program.");
+}
+
+static void redraw_booter_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "====================================================================\r\n"
+             "        BOOTER v1.0 (Ahoy! Issue 16 C64 Disk Menu Auto-Loader)      \r\n"
+             "====================================================================\r\n"
+             "  Please choose a program / utility to load and run:\r\n"
+             "====================================================================\r\n\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    for (int i = 0; i < g_booter_count; i++) {
+        char line[128];
+        if (i == g_booter_cursor) {
+            snprintf(line, sizeof(line), "   -->  [ %s ]  <--\r\n\r\n", g_booter_entries[i]);
+        } else {
+            snprintf(line, sizeof(line), "        ( %s )\r\n\r\n", g_booter_entries[i]);
+        }
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_booter_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: [W/S] Move Up/Down [ENTER] Boot Program [ESC] Shell\r\n", 65);
+}
+
+static void handle_booter_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (ch == 'w' || ch == 'W') {
+        if (g_booter_cursor > 0) g_booter_cursor--;
+    } else if (ch == 's' || ch == 'S') {
+        if (g_booter_cursor < g_booter_count - 1) g_booter_cursor++;
+    } else if (ch == '\n' || ch == '\r') {
+        g_editor_mode = MODE_TERMINAL;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        
+        switch (g_booter_cursor) {
+            case 0: execute_command("ALICE"); break;
+            case 1: execute_command("TOP"); break;
+            case 2: execute_command("FONTASIA"); break;
+            case 3: execute_command("FLANKSPEED"); break;
+            case 4: execute_command("CHECKLIST"); break;
+            case 5: execute_command("YULBUILD"); break;
+        }
+        return;
+    }
+
+    redraw_booter_screen();
 }
 
 static void init_flankspeed(void) {
@@ -6087,6 +6172,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "BOOTER") == 0) {
+         g_editor_mode = MODE_BOOTER;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_booter();
+         redraw_booter_screen();
+         log_telemetry("Started Booter Disk Menu Auto-Loader");
+         return;
+    }
+
     if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
          g_editor_mode = MODE_CHECKLIST;
          g_mercenary_active = false;
@@ -7492,6 +7587,21 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = 'p';
         }
         handle_flankspeed_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_BOOTER) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 17 || key == 103) { // W
+            ch = 'w';
+        } else if (key == 31 || key == 108) { // S
+            ch = 's';
+        } else if (key == KEY_ENTER || key == 28) {
+            ch = '\n';
+        }
+        handle_booter_input(ch);
         return;
     }
 
@@ -9042,6 +9152,8 @@ int main() {
                             handle_fontasia_input(ch);
                         } else if (g_editor_mode == MODE_FLANKSPEED) {
                             handle_flankspeed_input(ch);
+                        } else if (g_editor_mode == MODE_BOOTER) {
+                            handle_booter_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -9256,6 +9368,8 @@ int main() {
                             handle_fontasia_input(ch);
                         } else if (g_editor_mode == MODE_FLANKSPEED) {
                             handle_flankspeed_input(ch);
+                        } else if (g_editor_mode == MODE_BOOTER) {
+                            handle_booter_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
