@@ -201,6 +201,19 @@
                         [SYSTEM] Interceptor initialized. Listening for instruction matching...
                     </div>
                 </div>
+
+                <!-- What's Where Memory Map Explorer -->
+                <div class="dna-card" style="border-radius: 8px; margin-top: 5px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 8px; color: #d4af37; font-size: 1.15rem;">🗺️ What's Where in RAM</h3>
+                    <div style="display: grid; grid-template-columns: 1.5fr 3fr; gap: 6px; font-size: 0.8rem; font-family: monospace; max-height: 120px; overflow-y: auto; text-align: left; padding: 6px; background: rgba(0,0,0,0.4); border-radius: 4px; border: 1px solid rgba(212, 175, 55, 0.15);">
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0002)">0x0002</div><div style="color: #ebdcb9;">Guru Meditation Fault Code</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0003)">0x0003-4</div><div style="color: #ebdcb9;">Guru Meditation Fault PC</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0200)">0x0200-3CF</div><div style="color: #ebdcb9;">Manuscript ROM Space</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x03D0)">0x03D0-3FF</div><div style="color: #ebdcb9;">Warm Restart Recovery Vector</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x0EA0)">0x0EA0-FFF</div><div style="color: #ebdcb9;">Pixie Display Buffer</div>
+                        <div style="cursor: pointer; color: #ffaa00;" onclick="inspectAddress(0x8000)">0x8000-80FF</div><div style="color: #ebdcb9;">Z-Machine DNA Buffer</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Panel: ROM Loader & Hex Keypad -->
@@ -252,6 +265,13 @@
                         <button class="btn btn-primary" id="btnForthExec" style="padding: 6px 12px; font-size: 0.9rem; margin-left: 8px;">Run</button>
                     </div>
                 </div>
+
+                <!-- Aux Serial Port & Clipboard -->
+                <div class="dna-card" style="border-radius: 8px; margin-top: 5px;">
+                    <h3 style="font-family: 'Alice', serif; margin-bottom: 8px; color: #d4af37; font-size: 1.15rem;">🔌 Aux Serial Port & Clipboard</h3>
+                    <textarea id="auxSerialOut" readonly style="width: 95%; height: 90px; background: #0c0b0a; border: 1px solid rgba(212, 175, 55, 0.15); color: #87f587; font-family: monospace; font-size: 0.8rem; padding: 6px; resize: none; border-radius: 4px; outline: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.95);"></textarea>
+                    <button class="btn btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('auxSerialOut').value); logTrapEvent('[SYSTEM] AUX log copied to clipboard.', true);" style="width: 100%; margin-top: 6px; padding: 4px; font-size: 0.8rem; border-color: #5a4a31; color: #ebdcb9;">📋 Copy AUX Log</button>
+                </div>
             </div>
         </div>
     </div>
@@ -262,14 +282,25 @@
             const now = Date.now();
             if (force || (now - lastTrapLogTime > 250)) {
                 const trapBox = document.getElementById("trapLogs");
+                const time = new Date().toLocaleTimeString();
                 if (trapBox) {
-                    const time = new Date().toLocaleTimeString();
                     trapBox.innerHTML += `<br>[${time}] ${msg}`;
                     trapBox.scrollTop = trapBox.scrollHeight;
+                }
+                const auxBox = document.getElementById("auxSerialOut");
+                if (auxBox) {
+                    auxBox.value += `[${time}] ${msg}\n`;
+                    auxBox.scrollTop = auxBox.scrollHeight;
                 }
                 lastTrapLogTime = now;
             }
         }
+
+        window.inspectAddress = function(addr) {
+            let val = cpu.memory[addr];
+            let hexVal = '0x' + val.toString(16).toUpperCase().padStart(2, '0');
+            logTrapEvent(`🔍 Memory Map Inspect: Address 0x${addr.toString(16).toUpperCase()} contains value ${hexVal}`, true);
+        };
 
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
