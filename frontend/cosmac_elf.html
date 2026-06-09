@@ -357,8 +357,52 @@
                 }
             }
 
+            triggerRecovery(errorCode, faultPc) {
+                this.memory[0x0002] = errorCode;
+                this.memory[0x0003] = (faultPc >> 8) & 0xFF;
+                this.memory[0x0004] = faultPc & 0xFF;
+
+                let errorName = "Unknown Fault";
+                if (errorCode === 0x01) errorName = "Stack Overflow";
+                if (errorCode === 0x02) errorName = "Memory Out-of-Bounds";
+                if (errorCode === 0x03) errorName = "Invalid Instruction Opcode";
+
+                logTrapEvent(`🚨 [GURU MEDITATION] Fault 0x0${errorCode} (${errorName}) at PC 0x${faultPc.toString(16).toUpperCase()}`, true);
+                
+                const bezel = document.querySelector(".retro-bezel");
+                if (bezel) {
+                    bezel.style.borderColor = "#ff4d4d";
+                    setTimeout(() => bezel.style.borderColor = "", 500);
+                }
+
+                logTrapEvent("→ Redirecting execution to warm restart vector 0x03D0...", true);
+                this.pc = 0x03D0;
+            }
+
             tick() {
+                if (this.pc < 0x200 || this.pc >= 4096) {
+                    this.triggerRecovery(0x02, this.pc);
+                    return;
+                }
+                if (this.sp >= 16) {
+                    this.triggerRecovery(0x01, this.pc);
+                    return;
+                }
+
                 const opcode = (this.memory[this.pc] << 8) | this.memory[this.pc + 1];
+                
+                let valid = true;
+                const opType = opcode & 0xF000;
+                const lastByte = opcode & 0x00FF;
+                if (opType === 0x0000 && opcode !== 0x00E0 && opcode !== 0x00EE && opcode !== 0x00FD) valid = false;
+                if (opType === 0x8000 && (opcode & 0x000F) > 0xE) valid = false;
+                if (opType === 0xE000 && lastByte !== 0x9E && lastByte !== 0xA1) valid = false;
+                if (opType === 0xF000 && ![0x07, 0x0A, 0x15, 0x18, 0x1E, 0x29, 0x33, 0x55, 0x65].includes(lastByte)) valid = false;
+
+                if (!valid) {
+                    this.triggerRecovery(0x03, this.pc);
+                    return;
+                }
                 
                 if (opcode === 0x00E0) {
                     logTrapEvent("MATCH: CLS (Clear Screen) sequence.");
