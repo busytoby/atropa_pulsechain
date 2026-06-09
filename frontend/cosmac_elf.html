@@ -259,6 +259,35 @@
             }
         }
 
+        let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
+
+        async function fetchRoom10Dna() {
+            try {
+                let zmAddress = "0xEd8D7d3A98CB4ea6C91a80dcd2220719c264531f";
+                try {
+                    const res = await fetch("/api/config");
+                    const config = await res.json();
+                    if (config && config.networks && config.networks.localhost && config.networks.localhost.zmachineAddress) {
+                        zmAddress = config.networks.localhost.zmachineAddress;
+                    }
+                } catch(e) {}
+                
+                const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                const abi = ["function getRoomDna(uint256 roomId) public view returns (bytes memory)"];
+                const zm = new ethers.Contract(zmAddress, abi, provider);
+                const rawDna = await zm.getRoomDna(10);
+                if (rawDna && rawDna.length >= 10) {
+                    const bytes = ethers.getBytes(rawDna);
+                    for(let i=0; i<Math.min(bytes.length, 8); i++) {
+                        liveRoomDna[i] = bytes[i];
+                    }
+                    logTrapEvent("📡 Connected to Z-Machine. Live Room 10 DNA loaded.", true);
+                }
+            } catch (err) {
+                console.log("Could not fetch live room DNA, using fallback seed.");
+            }
+        }
+
         // CHIP-8 Emulation Core
         class Chip8 {
             constructor() {
@@ -328,11 +357,10 @@
                 } else if (opcode === 0x00FD) {
                     logTrapEvent("⚠️ [AI TRAP 0x00FD] Matched! Intercepting execution. Reading live Z-Machine registry data...", true);
                     
-                    const dnaSeed = [0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28];
                     for (let reg = 0; reg < 8; reg++) {
-                        this.v[reg] = dnaSeed[reg];
+                        this.v[reg] = liveRoomDna[reg];
                     }
-                    logTrapEvent("→ Registers V0-V7 loaded with alchemical sequence. Resuming CPU.", true);
+                    logTrapEvent(`→ Registers V0-V7 loaded with live DNA: [${Array.from(liveRoomDna).map(b => '0x' + b.toString(16).toUpperCase()).join(', ')}]. Resuming CPU.`, true);
                     playBeep();
                     this.pc += 2;
                     return;
@@ -674,6 +702,7 @@
             loadSelected();
         });
 
+        fetchRoom10Dna();
         loadSelected();
     </script>
 </body>
