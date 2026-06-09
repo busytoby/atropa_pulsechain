@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <poll.h>
+#include <dirent.h>
+#include <sys/stat.h>
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
 #include <linux/input.h>
@@ -6325,6 +6327,114 @@ static void execute_command(const char *cmd) {
              lau_vram_write_string(g_vram, "\r\nFaster 64! system accelerator is now DISABLED.\r\nREADY.\r\n", 57);
          }
          return;
+    }
+
+    if (first_word && strcasecmp(first_word, "DIR") == 0) {
+        DIR *d = opendir(".");
+        if (!d) {
+            lau_vram_write_string(g_vram, "\r\nError: Could not open directory.\r\nREADY.\r\n", 44);
+            return;
+        }
+        
+        lau_vram_write_string(g_vram, "\r\n0 \"WORKSPACE\" 2A\r\n", 21);
+        struct dirent *dir;
+        char file_list[128][64];
+        long file_sizes[128];
+        int f_count = 0;
+        
+        while ((dir = readdir(d)) != NULL) {
+            if (dir->d_name[0] == '.') continue; // Skip dotfiles
+            struct stat st;
+            if (stat(dir->d_name, &st) == 0) {
+                if (S_ISREG(st.st_mode)) {
+                    snprintf(file_list[f_count], sizeof(file_list[f_count]), "%.63s", dir->d_name);
+                    file_sizes[f_count] = st.st_size;
+                    f_count++;
+                    if (f_count >= 128) break;
+                }
+            }
+        }
+        closedir(d);
+        
+        // Print files in two columns
+        for (int i = 0; i < f_count; i += 2) {
+            char line[128];
+            char col1[64] = "";
+            char col2[64] = "";
+            
+            // Format first column: e.g. '12 "MYFILE" PRG' (using blocks of 254 bytes)
+            long blocks1 = (file_sizes[i] + 253) / 254;
+            snprintf(col1, sizeof(col1), "%-4ld \"%-16.16s\" PRG", blocks1, file_list[i]);
+            
+            if (i + 1 < f_count) {
+                long blocks2 = (file_sizes[i+1] + 253) / 254;
+                snprintf(col2, sizeof(col2), "%-4ld \"%-16.16s\" PRG", blocks2, file_list[i+1]);
+            }
+            
+            snprintf(line, sizeof(line), "%-32s    %s\r\n", col1, col2);
+            lau_vram_write_string(g_vram, line, strlen(line));
+        }
+        
+        lau_vram_write_string(g_vram, "READY.\r\n", 8);
+        return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "COPY") == 0)) {
+        char *src = strtok(NULL, " \t");
+        char *dst = strtok(NULL, " \t");
+        if (!src || !dst) {
+            lau_vram_write_string(g_vram, "\r\nUsage: COPY <source> <destination>\r\nREADY.\r\n", 46);
+            return;
+        }
+        FILE *sf = fopen(src, "rb");
+        if (!sf) {
+            lau_vram_write_string(g_vram, "\r\nError: Source file not found.\r\nREADY.\r\n", 40);
+            return;
+        }
+        FILE *df = fopen(dst, "wb");
+        if (!df) {
+            fclose(sf);
+            lau_vram_write_string(g_vram, "\r\nError: Could not open destination.\r\nREADY.\r\n", 46);
+            return;
+        }
+        char copy_buf[1024];
+        size_t bytes;
+        while ((bytes = fread(copy_buf, 1, sizeof(copy_buf), sf)) > 0) {
+            fwrite(copy_buf, 1, bytes, df);
+        }
+        fclose(sf);
+        fclose(df);
+        lau_vram_write_string(g_vram, "\r\nFile copied successfully.\r\nREADY.\r\n", 37);
+        return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "RENAME") == 0 || strcasecmp(first_word, "REN") == 0)) {
+        char *oldname = strtok(NULL, " \t");
+        char *newname = strtok(NULL, " \t");
+        if (!oldname || !newname) {
+            lau_vram_write_string(g_vram, "\r\nUsage: RENAME <oldname> <newname>\r\nREADY.\r\n", 45);
+            return;
+        }
+        if (rename(oldname, newname) == 0) {
+            lau_vram_write_string(g_vram, "\r\nFile renamed successfully.\r\nREADY.\r\n", 38);
+        } else {
+            lau_vram_write_string(g_vram, "\r\nError: Rename failed.\r\nREADY.\r\n", 33);
+        }
+        return;
+    }
+
+    if (first_word && (strcasecmp(first_word, "DELETE") == 0 || strcasecmp(first_word, "DEL") == 0)) {
+        char *filename = strtok(NULL, " \t");
+        if (!filename) {
+            lau_vram_write_string(g_vram, "\r\nUsage: DELETE <filename>\r\nREADY.\r\n", 37);
+            return;
+        }
+        if (unlink(filename) == 0) {
+            lau_vram_write_string(g_vram, "\r\nFile deleted successfully.\r\nREADY.\r\n", 38);
+        } else {
+            lau_vram_write_string(g_vram, "\r\nError: Delete failed.\r\nREADY.\r\n", 33);
+        }
+        return;
     }
 
     if (first_word && strcasecmp(first_word, "CHECKLIST") == 0) {
