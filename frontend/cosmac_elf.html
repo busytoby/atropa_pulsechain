@@ -471,6 +471,41 @@
         let breakpointAddress = null;
         let isTracing = false;
 
+        const userFunctionTable = {
+            1: {
+                name: "FLASH_BEZEL",
+                run: (param) => {
+                    startAlchemicalPurification(param || 1);
+                    logTrapEvent(`⚡ [DISPATCH] Invoked FLASH_BEZEL with parameter: ${param}`, true);
+                }
+            },
+            2: {
+                name: "SCROLL_SCREEN",
+                run: (param) => {
+                    const dirs = ["up", "down", "left", "right"];
+                    const dir = dirs[param % 4] || "up";
+                    scrollDisplay(dir);
+                    logTrapEvent(`⚡ [DISPATCH] Invoked SCROLL_SCREEN direction: ${dir.toUpperCase()}`, true);
+                }
+            },
+            3: {
+                name: "PLAY_HARMONY",
+                run: (param) => {
+                    const baseFreq = param || 440;
+                    playFourPartHarmony(baseFreq, baseFreq * 1.25, baseFreq * 1.5, baseFreq * 2);
+                    logTrapEvent(`⚡ [DISPATCH] Invoked PLAY_HARMONY base frequency: ${baseFreq}Hz`, true);
+                }
+            },
+            4: {
+                name: "ADD_SCORE",
+                run: (param) => {
+                    alchemicalScore += (param || 10);
+                    logTrapEvent(`⚡ [DISPATCH] Invoked ADD_SCORE. Added ${param || 10} points. New Score: ${alchemicalScore}`, true);
+                    playFourPartHarmony(440, 554, 659, 880);
+                }
+            }
+        };
+
         let liveRoomDna = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x0a, 0x14, 0x1e, 0x28]);
 
         async function fetchRoom10Dna() {
@@ -1541,6 +1576,19 @@
                     case "trace-off":
                         isTracing = false;
                         logTrapEvent("🔍 [VISA-KIM] Stepping Trace mode DISABLED.", true);
+                        break;
+                    case "dispatch":
+                        if (forthStack.length >= 2) {
+                            const funcId = forthStack.pop();
+                            const param = forthStack.pop();
+                            if (userFunctionTable[funcId]) {
+                                userFunctionTable[funcId].run(param);
+                            } else {
+                                logTrapEvent(`[DISPATCH ERROR] Function ID ${funcId} not registered in dispatcher table`, true);
+                            }
+                        } else {
+                            logTrapEvent("[FORTH ERROR] dispatch requires [param] [func_id] on stack", true);
+                        }
                         break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
