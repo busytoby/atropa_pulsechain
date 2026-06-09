@@ -222,29 +222,65 @@ object "ZMachine" {
                     resultPtr := add(resultPtr, 78)
                 }
                 case 0x706c6179 { // "play"
-                    let dna0 := sload(add(3100000, add(mul(roomId, 100), 0)))
-                    let f1 := add(150, mul(and(dna0, 0xff), 3))
-                    let f2 := add(150, mul(and(shr(8, dna0), 0xff), 3))
-                    let f3 := add(150, mul(and(shr(16, dna0), 0xff), 3))
-                    let f4 := add(150, mul(and(shr(24, dna0), 0xff), 3))
+                    let argWord := calldataload(105) // string starting at char index 5
+                    let timbre := 0 // 0 = chime (default), 1 = strings, 2 = brass, 3 = organ
+                    if eq(shr(200, argWord), 0x737472696e6773) { timbre := 1 } // "strings"
+                    if eq(shr(216, argWord), 0x6272617373) { timbre := 2 } // "brass"
+                    if eq(shr(216, argWord), 0x6f7267616e) { timbre := 3 } // "organ"
 
-                    mstore(resultPtr, 0x2a204b494d2d31204441432053594e5448202a0a506c6179696e6720444e4120) // "* KIM-1 DAC SYNTH *\nPlaying DNA "
-                    resultPtr := add(resultPtr, 29)
+                    let isCustom := 0
+                    if and(eq(timbre, 0), gt(cmdLen, 5)) {
+                        if iszero(eq(shr(216, argWord), 0x6368696d65)) { // not "chime"
+                            isCustom := 1
+                        }
+                    }
 
-                    mstore(resultPtr, 0x5b504c41593a0000000000000000000000000000000000000000000000000000) // "[PLAY:"
-                    resultPtr := add(resultPtr, 6)
-                    resultPtr := writeDec16(f1, resultPtr)
-                    mstore8(resultPtr, 44) // ','
-                    resultPtr := add(resultPtr, 1)
-                    resultPtr := writeDec16(f2, resultPtr)
-                    mstore8(resultPtr, 44) // ','
-                    resultPtr := add(resultPtr, 1)
-                    resultPtr := writeDec16(f3, resultPtr)
-                    mstore8(resultPtr, 44) // ','
-                    resultPtr := add(resultPtr, 1)
-                    resultPtr := writeDec16(f4, resultPtr)
-                    mstore(resultPtr, 0x5d0a000000000000000000000000000000000000000000000000000000000000) // "]\n"
-                    resultPtr := add(resultPtr, 2)
+                    if isCustom {
+                        let argLen := sub(cmdLen, 5)
+                        mstore(resultPtr, 0x2a204150504c41594552204d5553494320494e545f4c495354454e4552202a0a) // "* APPLAYER MUSIC INT_LISTENER *\n"
+                        resultPtr := add(resultPtr, 32)
+                        
+                        mstore(resultPtr, 0x5b504c41595f4e4f5445533a0000000000000000000000000000000000000000) // "[PLAY_NOTES:"
+                        resultPtr := add(resultPtr, 12)
+                        
+                        for { let i := 0 } lt(i, argLen) { i := add(i, 1) } {
+                            let char := and(shr(248, calldataload(add(105, i))), 0xff)
+                            mstore8(resultPtr, char)
+                            resultPtr := add(resultPtr, 1)
+                        }
+                        
+                        mstore(resultPtr, 0x5d0a000000000000000000000000000000000000000000000000000000000000) // "]\n"
+                        resultPtr := add(resultPtr, 2)
+                    }
+                    if iszero(isCustom) {
+                        let dna0 := sload(add(3100000, add(mul(roomId, 100), 0)))
+                        let f1 := add(150, mul(and(dna0, 0xff), 3))
+                        let f2 := add(150, mul(and(shr(8, dna0), 0xff), 3))
+                        let f3 := add(150, mul(and(shr(16, dna0), 0xff), 3))
+                        let f4 := add(150, mul(and(shr(24, dna0), 0xff), 3))
+
+                        mstore(resultPtr, 0x2a204b494d2d31204441432053594e5448202a0a506c6179696e6720444e4120) // "* KIM-1 DAC SYNTH *\nPlaying DNA "
+                        resultPtr := add(resultPtr, 29)
+
+                        mstore(resultPtr, 0x5b504c41593a0000000000000000000000000000000000000000000000000000) // "[PLAY:"
+                        resultPtr := add(resultPtr, 6)
+                        resultPtr := writeDec16(f1, resultPtr)
+                        mstore8(resultPtr, 44) // ','
+                        resultPtr := add(resultPtr, 1)
+                        resultPtr := writeDec16(f2, resultPtr)
+                        mstore8(resultPtr, 44) // ','
+                        resultPtr := add(resultPtr, 1)
+                        resultPtr := writeDec16(f3, resultPtr)
+                        mstore8(resultPtr, 44) // ','
+                        resultPtr := add(resultPtr, 1)
+                        resultPtr := writeDec16(f4, resultPtr)
+                        mstore8(resultPtr, 44) // ','
+                        resultPtr := add(resultPtr, 1)
+                        mstore8(resultPtr, add(timbre, 48)) // '0' + timbre
+                        resultPtr := add(resultPtr, 1)
+                        mstore(resultPtr, 0x5d0a000000000000000000000000000000000000000000000000000000000000) // "]\n"
+                        resultPtr := add(resultPtr, 2)
+                    }
                 }
                 case 0x74616b65 { // "take"
                     let taken := 0
