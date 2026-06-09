@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1988,6 +1989,78 @@ static void handle_slinkypanic_input(char ch) {
     }
 }
 
+static int tokenize_line(const char *line_text, uint8_t *dest) {
+    int len = 0;
+    bool in_quotes = false;
+    for (int i = 0; line_text[i] != '\0'; i++) {
+        char c = line_text[i];
+        if (c == '"') {
+            in_quotes = !in_quotes;
+            dest[len++] = c;
+            continue;
+        }
+        if (in_quotes) {
+            dest[len++] = c;
+            continue;
+        }
+        if (strncasecmp(&line_text[i], "POKE", 4) == 0) { dest[len++] = 0x97; i += 3; continue; }
+        if (strncasecmp(&line_text[i], "PRINT", 5) == 0) { dest[len++] = 0x99; i += 4; continue; }
+        if (strncasecmp(&line_text[i], "FOR", 3) == 0) { dest[len++] = 0x81; i += 2; continue; }
+        if (strncasecmp(&line_text[i], "TO", 2) == 0) { dest[len++] = 0xA4; i += 1; continue; }
+        if (strncasecmp(&line_text[i], "NEXT", 4) == 0) { dest[len++] = 0x82; i += 3; continue; }
+        if (strncasecmp(&line_text[i], "GOTO", 4) == 0) { dest[len++] = 0x89; i += 3; continue; }
+        if (strncasecmp(&line_text[i], "IF", 2) == 0) { dest[len++] = 0x8B; i += 1; continue; }
+        if (strncasecmp(&line_text[i], "THEN", 4) == 0) { dest[len++] = 0xA7; i += 3; continue; }
+        if (strncasecmp(&line_text[i], "REM", 3) == 0) { dest[len++] = 0x8F; i += 2; continue; }
+        if (strncasecmp(&line_text[i], "SYS", 3) == 0) { dest[len++] = 0x9E; i += 2; continue; }
+        if (strncasecmp(&line_text[i], "PEEK", 4) == 0) { dest[len++] = 0xC2; i += 3; continue; }
+        if (strncasecmp(&line_text[i], "AND", 3) == 0) { dest[len++] = 0xAF; i += 2; continue; }
+        if (strncasecmp(&line_text[i], "OR", 2) == 0) { dest[len++] = 0xB0; i += 1; continue; }
+        if (strncasecmp(&line_text[i], "CLR", 3) == 0) { dest[len++] = 0x9C; i += 2; continue; }
+        dest[len++] = c;
+    }
+    dest[len++] = 0x00;
+    return len;
+}
+
+static void inject_basic_program(const char *raw_basic) {
+    uint64_t addr = 2049;
+    char *copy = strdup(raw_basic);
+    char *line = strtok(copy, "\n\r");
+    while (line != NULL) {
+        char *line_ptr = line;
+        while (*line_ptr == ' ') line_ptr++;
+        if (isdigit((unsigned char)*line_ptr)) {
+            char *end_num;
+            unsigned int line_num = strtoul(line_ptr, &end_num, 10);
+            uint8_t tokenized[256];
+            int token_len = tokenize_line(end_num, tokenized);
+            uint64_t next_line_link = addr + 4 + token_len;
+            vm_poke64(&vm, addr, next_line_link & 0xFF);
+            vm_poke64(&vm, addr + 1, (next_line_link >> 8) & 0xFF);
+            vm_poke64(&vm, addr + 2, line_num & 0xFF);
+            vm_poke64(&vm, addr + 3, (line_num >> 8) & 0xFF);
+            for (int b = 0; b < token_len; b++) {
+                vm_poke64(&vm, addr + 4 + b, tokenized[b]);
+            }
+            addr = next_line_link;
+        }
+        line = strtok(NULL, "\n\r");
+    }
+    vm_poke64(&vm, addr, 0x00);
+    vm_poke64(&vm, addr + 1, 0x00);
+    uint64_t end_of_prog = addr + 2;
+    vm_poke64(&vm, 43, 0x01);
+    vm_poke64(&vm, 44, 0x08);
+    vm_poke64(&vm, 45, end_of_prog & 0xFF);
+    vm_poke64(&vm, 46, (end_of_prog >> 8) & 0xFF);
+    vm_poke64(&vm, 47, end_of_prog & 0xFF);
+    vm_poke64(&vm, 48, (end_of_prog >> 8) & 0xFF);
+    vm_poke64(&vm, 49, end_of_prog & 0xFF);
+    vm_poke64(&vm, 50, (end_of_prog >> 8) & 0xFF);
+    free(copy);
+}
+
 static void write_basic_lines(const char *raw_output, bool compact) {
     if (!compact) {
         lau_vram_write_string(g_vram, raw_output, strlen(raw_output));
@@ -2119,14 +2192,19 @@ static void execute_command(const char *cmd) {
         char *arg = strtok(NULL, " \t");
         char *arg2 = strtok(NULL, " \t");
         bool compact = false;
+        bool stage = false;
         if (arg2 && strcasecmp(arg2, "COMPACT") == 0) {
             compact = true;
+        } else if (arg2 && strcasecmp(arg2, "STAGE") == 0) {
+            stage = true;
         }
         const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
         lau_vram_write_string(g_vram, clear_seq, 3);
         
+        const char *output = NULL;
+        
         if (arg && strcasecmp(arg, "SOUND") == 0) {
-            const char *output = 
+            output = 
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 SID SOUND DESIGN   \r\n"
                 "==================================================\r\n"
@@ -2141,9 +2219,8 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [POKEY/SID register sweeps code generated.]\r\n"
                 "==================================================\r\n";
-            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "SPRITE") == 0) {
-            const char *output = 
+            output = 
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 VIC-II SPRITES     \r\n"
                 "==================================================\r\n"
@@ -2156,9 +2233,8 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [VIC-II visual sprite generation code completed.]\r\n"
                 "==================================================\r\n";
-            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "CHARSET") == 0) {
-            const char *output = 
+            output = 
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 CUSTOM CHARACTER   \r\n"
                 "==================================================\r\n"
@@ -2173,9 +2249,8 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Character set relocation BASIC layout generated.]\r\n"
                 "==================================================\r\n";
-            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "RASTER") == 0) {
-            const char *output = 
+            output = 
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 RASTER INTERRUPT   \r\n"
                 "==================================================\r\n"
@@ -2189,9 +2264,8 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Raster split-screen dynamic configuration generated.]\r\n"
                 "==================================================\r\n";
-            write_basic_lines(output, compact);
         } else if (arg && strcasecmp(arg, "JOYSTICK") == 0) {
-            const char *output = 
+            output = 
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 JOYSTICK SCANNER   \r\n"
                 "==================================================\r\n"
@@ -2206,9 +2280,8 @@ static void execute_command(const char *cmd) {
                 " READY.\r\n\r\n"
                 " [Joystick interactive scanner loop generated.]\r\n"
                 "==================================================\r\n";
-            write_basic_lines(output, compact);
         } else {
-            const char *output = 
+            output = 
                 "==================================================\r\n"
                 "   HURWOOD CODE GENERATOR: C64 MAZE GRAPHICS      \r\n"
                 "==================================================\r\n"
@@ -2222,9 +2295,14 @@ static void execute_command(const char *cmd) {
                 " 70 NEXT I\r\n"
                 " 80 PRINT \"\\nGENERATION COMPLETE.\"\r\n"
                 " READY.\r\n\r\n"
-                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK] [COMPACT]]\r\n"
+                " [Usage: HURWOOD [MAZE | SOUND | SPRITE | CHARSET | RASTER | JOYSTICK] [COMPACT | STAGE]]\r\n"
                 "==================================================\r\n";
-            write_basic_lines(output, compact);
+        }
+        
+        write_basic_lines(output, compact);
+        if (stage && output) {
+            inject_basic_program(output);
+            lau_vram_write_string(g_vram, "\r\n  [SUCCESS: Program tokenized & staged directly in virtual RAM!]\r\n", 67);
         }
         log_telemetry("Rendered Hurwood Code Generator Screen");
         return;
