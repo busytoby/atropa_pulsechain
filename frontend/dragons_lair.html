@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon's Lair - Retro Interactive Simulator</title>
+    <meta name="description" content="An interactive cinematic laserdisc simulation of the 1983 arcade classic Dragon's Lair. Help Dirk the Daring rescue Princess Daphne!">
+    <style>
+        :root {
+            --primary: #ffaa00;
+            --primary-glow: rgba(255, 170, 0, 0.4);
+            --danger: #ff3c3c;
+            --success: #00e676;
+            --background: #0d0b0f;
+            --panel-bg: rgba(26, 21, 32, 0.75);
+            --border: rgba(255, 170, 0, 0.2);
+            --text: #eae6f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1b1226 0%, var(--background) 100%);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 15px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #b2a8c0;
+            margin-bottom: 25px;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .cabinet {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel-bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(170, 0, 255, 0.15);
+            backdrop-filter: blur(12px);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .screen-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border: 4px solid #1f1728;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 170, 0, 0.1);
+        }
+
+        .screen-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: filter 0.3s ease, transform 0.5s ease;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            font-family: monospace;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        .lives {
+            color: var(--danger);
+        }
+
+        .score {
+            color: var(--primary);
+        }
+
+        .prompt-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--primary);
+            border-radius: 30px;
+            padding: 8px 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            animation: pulse 1.5s infinite;
+            pointer-events: none;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+            100% { opacity: 0.6; }
+        }
+
+        .action-container {
+            width: 100%;
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2b1f3d 0%, #171122 100%);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-sword {
+            background: linear-gradient(135deg, #ffaa00 0%, #d87000 100%);
+            color: #000;
+            border: none;
+            font-size: 1.1rem;
+            padding: 12px 32px;
+        }
+
+        .btn-sword:hover {
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
+        }
+
+        .status-panel {
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            text-align: center;
+            color: #a59cb4;
+        }
+
+        .danger-flash {
+            animation: flash 0.1s ease-in-out 3;
+        }
+
+        @keyframes flash {
+            0% { background-color: rgba(255, 0, 0, 0.4); }
+            100% { background-color: transparent; }
+        }
+
+        .nav-link {
+            margin-top: 25px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: opacity 0.2s;
+        }
+
+        .nav-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Dragon's Lair</h1>
+    <div class="subtitle">An interactive laserdisc tribute. Guide Dirk the Daring by executing the correct action cue (Move or Sword) at the exact moment.</div>
+
+    <div class="cabinet" id="arcadeCabinet">
+        <div class="screen-container" id="screenContainer">
+            <img src="dragons_lair_title.png" alt="Dragon's Lair Title Screen" class="screen-img" id="gameScreen">
+            <div class="hud-overlay">
+                <div class="score">SCORE: <span id="scoreVal">00000</span></div>
+                <div class="lives">LIVES: <span id="livesVal">❤❤❤</span></div>
+            </div>
+            <div class="prompt-overlay" id="promptBox">ACT NOW!</div>
+        </div>
+
+        <div class="action-container">
+            <button class="btn" onclick="makeMove('LEFT')">◀ Left</button>
+            <button class="btn" onclick="makeMove('RIGHT')">Right ▶</button>
+            <button class="btn btn-sword" onclick="makeMove('SWORD')">⚔ SWORD</button>
+        </div>
+
+        <div class="status-panel" id="statusMessage">
+            Insert Coin / Press any action button to start the game!
+        </div>
+    </div>
+
+    <a href="index.html" class="nav-link">← Return to Main Dashboard</a>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+        let promptActive = false;
+        let promptTimer = null;
+        let expectedAction = "";
+        let currentStage = 0;
+
+        function playSound(freq, type, duration) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                // Sweep logic
+                if (type === 'sawtooth') {
+                    osc.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + duration);
+                } else if (type === 'triangle') {
+                    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, audioCtx.currentTime + duration);
+                }
+
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {
+                console.log("Audio not allowed yet:", e);
+            }
+        }
+
+        function triggerFlash() {
+            const cabinet = document.getElementById("screenContainer");
+            cabinet.classList.add("danger-flash");
+            setTimeout(() => {
+                cabinet.classList.remove("danger-flash");
+            }, 300);
+        }
+
+        function updateHUD() {
+            document.getElementById("scoreVal").innerText = String(score).padStart(5, '0');
+            document.getElementById("livesVal").innerText = "❤".repeat(lives) || "GAME OVER";
+        }
+
+        function triggerPrompt(action) {
+            promptActive = true;
+            expectedAction = action;
+            document.getElementById("promptBox").style.display = "block";
+            playSound(600, 'triangle', 0.25);
+
+            // Give the player 1.5 seconds to react
+            promptTimer = setTimeout(() => {
+                if (promptActive) {
+                    failAction("Too slow! Dirk fell into a bottomless pit.");
+                }
+            }, 1800);
+        }
+
+        function makeMove(action) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            if (!gameActive) {
+                startGame();
+                return;
+            }
+
+            if (!promptActive) {
+                failAction("Wrong timing! Dirk made an unprompted action.");
+                return;
+            }
+
+            if (action === expectedAction) {
+                successAction();
+            } else {
+                failAction(`Wrong move! Dirk swung his sword when he should have moved.`);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            lives = 3;
+            gameActive = true;
+            currentStage = 1;
+            updateHUD();
+            nextStage();
+        }
+
+        function nextStage() {
+            promptActive = false;
+            document.getElementById("promptBox").style.display = "none";
+            
+            if (currentStage === 1) {
+                document.getElementById("gameScreen").src = "dragons_lair_action.png";
+                document.getElementById("statusMessage").innerText = "Stage 1: Crumbling hall! Giant burning stones are falling. Find the escape route!";
+                setTimeout(() => {
+                    triggerPrompt("RIGHT");
+                }, 2000);
+            } else if (currentStage === 2) {
+                document.getElementById("gameScreen").src = "dragons_lair_title.png";
+                document.getElementById("statusMessage").innerText = "Stage 2: Dirk enters the dragon's cavern! The beast attacks. Quick, draw your sword!";
+                setTimeout(() => {
+                    triggerPrompt("SWORD");
+                }, 2500);
+            } else {
+                winGame();
+            }
+        }
+
+        function successAction() {
+            promptActive = false;
+            clearTimeout(promptTimer);
+            document.getElementById("promptBox").style.display = "none";
+            
+            score += 1500;
+            updateHUD();
+            playSound(880, 'sine', 0.45);
+            
+            document.getElementById("statusMessage").innerText = "Success! Dirk avoided the hazard.";
+            currentStage += 1;
+            
+            setTimeout(nextStage, 1500);
+        }
+
+        function failAction(msg) {
+            promptActive = false;
+            clearTimeout(promptTimer);
+            document.getElementById("promptBox").style.display = "none";
+            
+            lives -= 1;
+            updateHUD();
+            triggerFlash();
+            playSound(150, 'sawtooth', 0.6);
+            
+            document.getElementById("statusMessage").innerText = msg;
+            
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                setTimeout(nextStage, 2000);
+            }
+        }
+
+        function winGame() {
+            gameActive = false;
+            playSound(1200, 'sine', 0.8);
+            document.getElementById("statusMessage").innerText = "Victory! Dirk has defeated Singe the Dragon and rescued Princess Daphne!";
+            document.getElementById("gameScreen").src = "dragons_lair_title.png";
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById("statusMessage").innerText = "Game Over. Press any action to insert coin and try again.";
+            document.getElementById("gameScreen").src = "dragons_lair_title.png";
+        }
+    </script>
+</body>
+</html>
