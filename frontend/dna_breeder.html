@@ -232,6 +232,7 @@
                     </div>
 
                     <button class="btn btn-primary" id="btnBreed" style="width: 100%; margin-top: 10px;">🧬 Synthesize & Breed Story</button>
+                    <button class="btn btn-secondary" id="btnLifeToggle" style="width: 100%; margin-top: 10px; border-color: #ffd700; color: #ffd700;">👾 Conway's LIFE Mode (Issue 5)</button>
                 </div>
 
                 <div class="dna-card">
@@ -324,6 +325,12 @@ Type 'LOOK' to begin.</div>
         let isMouseDown = false;
         let battleOver = false;
 
+        let isLifeMode = false;
+        let lifeGrid = [];
+        const gridCols = 60;
+        const gridRows = 32;
+        let lastLifeTickTime = 0;
+
         let lastLogTime = 0;
         function playKimBeeperClick() {
             try {
@@ -362,7 +369,7 @@ Type 'LOOK' to begin.</div>
         }
 
         function bindBeeperClicks() {
-            document.querySelectorAll(".btn, .dna-select, #miniInput").forEach(el => {
+            document.querySelectorAll(".btn, .dna-select, #miniInput, #btnLifeToggle").forEach(el => {
                 el.addEventListener("mouseenter", () => {
                     playKimBeeperClick();
                 });
@@ -375,6 +382,34 @@ Type 'LOOK' to begin.</div>
             if (miniInputEl) {
                 miniInputEl.addEventListener("input", () => {
                     playKimBeeperClick();
+                });
+            }
+
+            const lifeBtn = document.getElementById("btnLifeToggle");
+            if (lifeBtn) {
+                lifeBtn.addEventListener("click", () => {
+                    isLifeMode = !isLifeMode;
+                    if (isLifeMode) {
+                        lifeGrid = Array(gridRows).fill().map(() => Array(gridCols).fill(0));
+                        particles.forEach(p => {
+                            const col = Math.floor((p.x / canvas.width) * gridCols);
+                            const row = Math.floor((p.y / canvas.height) * gridRows);
+                            if (col >= 0 && col < gridCols && row >= 0 && row < gridRows) {
+                                lifeGrid[row][col] = 1;
+                            }
+                        });
+                        logDataEvent("CONWAY'S GAME OF LIFE ACTIVE. SEEDING GRID.");
+                        lifeBtn.innerText = "👾 Conway's LIFE Mode: ACTIVE";
+                        lifeBtn.style.background = "#ffd700";
+                        lifeBtn.style.color = "#000";
+                    } else {
+                        logDataEvent("LIFE MODE PAUSED. RETURNING TO PHYSICS DUST.");
+                        lifeBtn.innerText = "👾 Conway's LIFE Mode (Issue 5)";
+                        lifeBtn.style.background = "";
+                        lifeBtn.style.color = "#ffd700";
+                        battleOver = false;
+                        document.getElementById("btnBreed").click(); // Re-seed particles
+                    }
                 });
             }
         }
@@ -426,6 +461,33 @@ Type 'LOOK' to begin.</div>
         const miniTerminal = document.getElementById("miniTerminal");
         const miniInput = document.getElementById("miniInput");
 
+        function noteToFreq(noteStr) {
+            const notes = {
+                "c": 261.63, "c#": 277.18, "db": 277.18,
+                "d": 293.66, "d#": 311.13, "eb": 311.13,
+                "e": 329.63,
+                "f": 349.23, "f#": 369.99, "gb": 369.99,
+                "g": 392.00, "g#": 415.30, "ab": 415.30,
+                "a": 440.00, "a#": 466.16, "bb": 466.16,
+                "b": 493.88
+            };
+            const match = noteStr.toLowerCase().trim().match(/^([a-g]#?|db|eb|gb|ab|bb)?(\d)?$/);
+            if (!match) return 0;
+            const name = match[1];
+            const octave = match[2] ? parseInt(match[2]) : 4;
+            const base = notes[name];
+            if (!base) return 0;
+            return base * Math.pow(2, octave - 4);
+        }
+
+        function playCustomNoteSequence(notesStr) {
+            const parts = notesStr.split(/\s+/).filter(x => x.length > 0);
+            const freqs = parts.map(p => noteToFreq(p)).filter(f => f > 0);
+            if (freqs.length > 0) {
+                playDacFrequencies(freqs, 0);
+            }
+        }
+
         async function sendMiniCommand(cmdText) {
             if (!zmContract) {
                 miniTerminal.innerText += "\n[Error: Z-Machine contract not connected]";
@@ -450,6 +512,12 @@ Type 'LOOK' to begin.</div>
                         const freqs = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseInt(match[4])];
                         const timbre = parseInt(match[5]);
                         playDacFrequencies(freqs, timbre);
+                    }
+                }
+                if (decodedText.includes("[PLAY_NOTES:")) {
+                    const match = decodedText.match(/\[PLAY_NOTES:([^\]]+)\]/);
+                    if (match) {
+                        playCustomNoteSequence(match[1]);
                     }
                 }
             } catch (err) {
@@ -746,6 +814,11 @@ Type 'LOOK' to begin.</div>
                 svg += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${colorA}" stroke-width="1.2" opacity="${0.45 - i * 0.12}" stroke-dasharray="${(dna[16+i] % 8) + 2}" filter="url(#glow)"/>`;
             }
 
+            const spin = (Date.now() * 0.03) % 360;
+            const pulse = 1.0 + Math.sin(Date.now() * 0.005) * 0.15;
+
+            svg += `<g transform="rotate(${spin} 50 50)">`;
+            
             // Draw symmetry lines/polygons
             let points = [];
             for (let a = 0; a < sym; a++) {
@@ -761,16 +834,17 @@ Type 'LOOK' to begin.</div>
 
             // Draw outer polygon outline
             svg += `<polygon points="${points.join(" ")}" fill="none" stroke="${colorB}" stroke-width="1.2" filter="url(#glow)"/>`;
+            svg += `</g>`;
 
             // Draw core emblem shape
             if (coreType === 0) {
-                svg += `<circle cx="50" cy="50" r="8" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
+                svg += `<circle cx="50" cy="50" r="${8 * pulse}" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
             } else if (coreType === 1) {
-                svg += `<rect x="43" y="43" width="14" height="14" transform="rotate(45 50 50)" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
+                svg += `<rect x="${50 - 7 * pulse}" y="${50 - 7 * pulse}" width="${14 * pulse}" height="${14 * pulse}" transform="rotate(45 50 50)" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
             } else if (coreType === 2) {
-                svg += `<path d="M48,40 H52 V48 H60 V52 H52 V60 H48 V52 H40 V48 H48 Z" fill="${colorB}" opacity="0.85" filter="url(#glow)"/>`;
+                svg += `<path d="M48,40 H52 V48 H60 V52 H52 V60 H48 V52 H40 V48 H48 Z" transform="scale(${pulse}) translate(${50/pulse - 50} ${50/pulse - 50})" fill="${colorB}" opacity="0.85" filter="url(#glow)"/>`;
             } else {
-                svg += `<polygon points="50,40 58,55 42,55" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
+                svg += `<polygon points="50,${50 - 10 * pulse} ${50 + 8 * pulse},${50 + 5 * pulse} ${50 - 8 * pulse},${50 + 5 * pulse}" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
             }
 
             svg += `</svg>`;
@@ -835,6 +909,98 @@ Type 'LOOK' to begin.</div>
         }
 
         function animate() {
+            if (isLifeMode) {
+                const now = Date.now();
+                if (now - lastLifeTickTime > 180) {
+                    const nextGrid = lifeGrid.map(arr => [...arr]);
+                    let liveCount = 0;
+                    let births = 0;
+                    let deaths = 0;
+                    
+                    for (let r = 0; r < gridRows; r++) {
+                        for (let c = 0; c < gridCols; c++) {
+                            let neighbors = 0;
+                            for (let i = -1; i <= 1; i++) {
+                                for (let j = -1; j <= 1; j++) {
+                                    if (i === 0 && j === 0) continue;
+                                    const nr = r + i;
+                                    const nc = c + j;
+                                    if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols) {
+                                        neighbors += lifeGrid[nr][nc];
+                                    }
+                                }
+                            }
+                            
+                            if (lifeGrid[r][c] === 1) {
+                                if (neighbors < 2 || neighbors > 3) {
+                                    nextGrid[r][c] = 0;
+                                    deaths++;
+                                } else {
+                                    liveCount++;
+                                }
+                            } else {
+                                if (neighbors === 3) {
+                                    nextGrid[r][c] = 1;
+                                    births++;
+                                    liveCount++;
+                                }
+                            }
+                        }
+                    }
+                    if (births === 0 && deaths === 0 && liveCount < 10) {
+                        const startR = Math.floor(Math.random() * (gridRows - 4));
+                        const startC = Math.floor(Math.random() * (gridCols - 4));
+                        lifeGrid[startR][startC + 1] = 1;
+                        lifeGrid[startR + 1][startC + 2] = 1;
+                        lifeGrid[startR + 2][startC] = 1;
+                        lifeGrid[startR + 2][startC + 1] = 1;
+                        lifeGrid[startR + 2][startC + 2] = 1;
+                        logDataEvent("🌌 COSMIC STASIS DETECTED. INJECTING GLIDER ATTRACTOR.");
+                    }
+                    
+                    lifeGrid = nextGrid;
+                    lastLifeTickTime = now;
+                    
+                    playKimBeeperClick();
+                    logDataEvent(`LIFE TICK: ${liveCount} cells alive, ${births} born, ${deaths} died.`);
+                    
+                    for (let i = 0; i < 32; i++) {
+                        let byteVal = 0;
+                        for (let bit = 0; bit < 8; bit++) {
+                            const idx = (i * 8 + bit) % (gridRows * gridCols);
+                            const r = Math.floor(idx / gridCols);
+                            const c = idx % gridCols;
+                            byteVal |= (lifeGrid[r][c] << bit);
+                        }
+                        currentDna[i] = (byteVal ^ (liveCount * (i + 1))) & 0xFF;
+                    }
+                    
+                    updateHUD(currentDna);
+                    const childStoryText = breedNarrative(liveCount / (gridRows * gridCols || 1) * 3);
+                    document.getElementById("childStoryOutput").value = "👾 LIFE EVOLUTION RUNNING...\n" + childStoryText;
+                    document.getElementById("hexDisplay").innerText = bytesToHex(ethers.toUtf8Bytes(childStoryText));
+                }
+                
+                generateEmblem(currentDna);
+                
+                ctx.fillStyle = "rgba(4, 6, 18, 0.25)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const cellWidth = canvas.width / gridCols;
+                const cellHeight = canvas.height / gridRows;
+                ctx.fillStyle = "rgba(255, 215, 0, 0.75)";
+                for (let r = 0; r < gridRows; r++) {
+                    for (let c = 0; c < gridCols; c++) {
+                        if (lifeGrid[r][c] === 1) {
+                            ctx.fillRect(c * cellWidth, r * cellHeight, cellWidth - 1, cellHeight - 1);
+                        }
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+                return;
+            }
+
             ctx.fillStyle = "rgba(4, 6, 18, 0.2)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -993,7 +1159,20 @@ Type 'LOOK' to begin.</div>
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
+            generateEmblem(currentDna);
             requestAnimationFrame(animate);
+        }
+
+        function paintLifeCell(x, y) {
+            if (!isLifeMode) return;
+            const col = Math.floor((x / canvas.width) * gridCols);
+            const row = Math.floor((y / canvas.height) * gridRows);
+            if (col >= 0 && col < gridCols && row >= 0 && row < gridRows) {
+                lifeGrid[row][col] = 1;
+                // Add tiny surrounding cluster to make drawing feel interactive/grows nicely
+                if (row + 1 < gridRows) lifeGrid[row+1][col] = 1;
+                if (col + 1 < gridCols) lifeGrid[row][col+1] = 1;
+            }
         }
 
         // Handle interactions
@@ -1001,9 +1180,20 @@ Type 'LOOK' to begin.</div>
             const rect = canvas.getBoundingClientRect();
             mouseX = e.clientX - rect.left;
             mouseY = e.clientY - rect.top;
+            if (isMouseDown && isLifeMode) {
+                paintLifeCell(mouseX, mouseY);
+            }
         });
 
-        canvas.addEventListener("mousedown", () => isMouseDown = true);
+        canvas.addEventListener("mousedown", (e) => {
+            isMouseDown = true;
+            if (isLifeMode) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                paintLifeCell(x, y);
+            }
+        });
         canvas.addEventListener("mouseup", () => isMouseDown = false);
 
         initWeb3().then(() => {
