@@ -258,9 +258,13 @@ static int g_flankspeed_cursor_row = 0;
 static int g_flankspeed_cursor_col = 0;
 static int g_flankspeed_char_idx = 0; // 0=first hex char, 1=second hex char
 static char g_flankspeed_status[128];
+static bool g_flankspeed_assembling = false;
+static char g_flankspeed_asm_buf[64] = {0};
+static int g_flankspeed_asm_len = 0;
 static void init_flankspeed(void);
 static void redraw_flankspeed_screen(void);
 static void handle_flankspeed_input(char ch);
+static void flankspeed_assemble(const char *instr);
 
 // Programmable Functions variables
 static char g_fkey_macros[8][32] = {
@@ -3700,6 +3704,9 @@ static void init_flankspeed(void) {
     g_flankspeed_cursor_row = 0;
     g_flankspeed_cursor_col = 0;
     g_flankspeed_char_idx = 0;
+    g_flankspeed_assembling = false;
+    g_flankspeed_asm_buf[0] = '\0';
+    g_flankspeed_asm_len = 0;
     snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Flankspeed active. Base: $%04X. Type hex bytes.", g_flankspeed_start_addr);
 }
 
@@ -3740,17 +3747,116 @@ static void redraw_flankspeed_screen(void) {
             }
         }
         
-        pos += snprintf(line + pos, sizeof(line) - pos, "|  $%04X\r\n", checksum & 0xFFFF);
+        pos += snprintf(line + pos, sizeof(line) - pos, "|  $00%02X\r\n", checksum & 0xFF);
         lau_vram_write_string(g_vram, line, strlen(line));
     }
 
     lau_vram_write_string(g_vram, "====================================================================\r\n", 70);
     snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_flankspeed_status);
     lau_vram_write_string(g_vram, buf, strlen(buf));
-    lau_vram_write_string(g_vram, "  Controls: [W/A/S/D] Move [0-9, A-F] Write hex [P] Dump BASIC [ESC] Exit\r\n", 75);
+
+    if (g_flankspeed_assembling) {
+        snprintf(buf, sizeof(buf), "  Assemble 6502 instruction: %s_\r\n", g_flankspeed_asm_buf);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        lau_vram_write_string(g_vram, "  Controls: Type instruction (e.g. LDA #$01) [ENTER] Compile [ESC] Cancel\r\n", 74);
+    } else {
+        lau_vram_write_string(g_vram, "  Controls: [W/A/S/D] Move [0-9, A-F] Write hex [:] Solve/Assemble [ESC] Exit\r\n", 79);
+    }
+}
+
+static void flankspeed_assemble(const char *instr) {
+    uint8_t bytes[16];
+    int len = 0;
+    
+    char cmd[32] = {0};
+    char arg[32] = {0};
+    int n = sscanf(instr, "%31s %31s", cmd, arg);
+    if (n <= 0) return;
+    
+    if (strcasecmp(cmd, "NOP") == 0) {
+        bytes[0] = 0xEA; len = 1;
+    } else if (strcasecmp(cmd, "RTS") == 0) {
+        bytes[0] = 0x60; len = 1;
+    } else if (strcasecmp(cmd, "LDA") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xA9; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "LDX") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xA2; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "LDY") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xA0; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "STA") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x8D; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "STX") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x8E; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "STY") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x8C; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "INC") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0xEE; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "DEC") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0xCE; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "JMP") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x4C; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    }
+
+    if (len > 0) {
+        for (int i = 0; i < len; i++) {
+            snprintf(g_flankspeed_buffer[g_flankspeed_cursor_row][g_flankspeed_cursor_col], 3, "%02X", bytes[i]);
+            g_flankspeed_cursor_col++;
+            if (g_flankspeed_cursor_col >= 8) {
+                g_flankspeed_cursor_col = 0;
+                g_flankspeed_cursor_row++;
+                if (g_flankspeed_cursor_row >= 16) {
+                    g_flankspeed_cursor_row = 15;
+                    g_flankspeed_cursor_col = 7;
+                }
+            }
+        }
+        snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Assembled: %s", instr);
+    } else {
+        snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Unknown instruction format.");
+    }
 }
 
 static void handle_flankspeed_input(char ch) {
+    if (g_flankspeed_assembling) {
+        if (ch == 27) { // ESC
+            g_flankspeed_assembling = false;
+            snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Assembly mode cancelled.");
+        } else if (ch == '\n' || ch == '\r') {
+            flankspeed_assemble(g_flankspeed_asm_buf);
+            g_flankspeed_assembling = false;
+        } else if (ch == 127 || ch == '\b') {
+            if (g_flankspeed_asm_len > 0) {
+                g_flankspeed_asm_len--;
+                g_flankspeed_asm_buf[g_flankspeed_asm_len] = '\0';
+            }
+        } else if (ch >= 32 && ch < 127) {
+            if (g_flankspeed_asm_len < 63) {
+                g_flankspeed_asm_buf[g_flankspeed_asm_len++] = ch;
+                g_flankspeed_asm_buf[g_flankspeed_asm_len] = '\0';
+            }
+        }
+        redraw_flankspeed_screen();
+        return;
+    }
+
     if (ch == 27) { // ESC -> Exit
         g_editor_mode = MODE_TERMINAL;
         g_vram->cursor_x = 0;
@@ -3787,6 +3893,11 @@ static void handle_flankspeed_input(char ch) {
     } else if (ch == 'p' || ch == 'P') {
         snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "BASIC Loader: 10 FOR I = %d TO %d: READ V: POKE I, V: NEXT",
                  g_flankspeed_start_addr, g_flankspeed_start_addr + 16 * 8 - 1);
+    } else if (ch == ':') {
+        g_flankspeed_assembling = true;
+        g_flankspeed_asm_buf[0] = '\0';
+        g_flankspeed_asm_len = 0;
+        snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Entering Assembly Solve Mode.");
     } else {
         // Hex character processing
         char uc = ch;
