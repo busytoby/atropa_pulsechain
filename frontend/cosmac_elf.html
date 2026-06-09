@@ -1600,6 +1600,70 @@
                             logTrapEvent("==================================================", true);
                             return;
                         }
+                    case "golla+":
+                        {
+                            if (forthStack.length >= 3) {
+                                const N = forthStack.pop();
+                                const addrB = forthStack.pop();
+                                const addrA = forthStack.pop();
+                                logTrapEvent("==================================================", true);
+                                logTrapEvent("🧮 [GOLLA Engine] Executing Nth Precision Addition", true);
+                                logTrapEvent(`  Operand A Address: $${addrA.toString(16).toUpperCase()}`, true);
+                                logTrapEvent(`  Operand B Address: $${addrB.toString(16).toUpperCase()}`, true);
+                                logTrapEvent(`  Precision (Bytes): ${N}`, true);
+                                logTrapEvent("--------------------------------------------------", true);
+                                
+                                let carry = 0;
+                                let zero = true;
+                                for (let j = 0; j < N; j++) {
+                                    const byteA = cpu.memory[(addrA + j) % 65536];
+                                    const byteB = cpu.memory[(addrB + j) % 65536];
+                                    const sum = byteA + byteB + carry;
+                                    cpu.memory[(addrA + j) % 65536] = sum & 0xFF;
+                                    carry = sum > 0xFF ? 1 : 0;
+                                    if ((sum & 0xFF) !== 0) zero = false;
+                                }
+                                
+                                logTrapEvent(`✓ Complete. Carry Flag: ${carry}, Zero Flag: ${zero ? 1 : 0}`, true);
+                                logTrapEvent("==================================================", true);
+                                forthStack.push(carry);
+                            } else {
+                                logTrapEvent("[FORTH ERROR] golla+ requires [addrA] [addrB] [N] on stack", true);
+                            }
+                            break;
+                        }
+                    case "golla-":
+                        {
+                            if (forthStack.length >= 3) {
+                                const N = forthStack.pop();
+                                const addrB = forthStack.pop();
+                                const addrA = forthStack.pop();
+                                logTrapEvent("==================================================", true);
+                                logTrapEvent("🧮 [GOLLA Engine] Executing Nth Precision Subtraction", true);
+                                logTrapEvent(`  Operand A Address: $${addrA.toString(16).toUpperCase()}`, true);
+                                logTrapEvent(`  Operand B Address: $${addrB.toString(16).toUpperCase()}`, true);
+                                logTrapEvent(`  Precision (Bytes): ${N}`, true);
+                                logTrapEvent("--------------------------------------------------", true);
+                                
+                                let borrow = 0;
+                                let zero = true;
+                                for (let j = 0; j < N; j++) {
+                                    const byteA = cpu.memory[(addrA + j) % 65536];
+                                    const byteB = cpu.memory[(addrB + j) % 65536];
+                                    const diff = byteA - byteB - borrow;
+                                    cpu.memory[(addrA + j) % 65536] = (diff + 256) & 0xFF;
+                                    borrow = diff < 0 ? 1 : 0;
+                                    if (((diff + 256) & 0xFF) !== 0) zero = false;
+                                }
+                                
+                                logTrapEvent(`✓ Complete. Borrow Flag: ${borrow}, Zero Flag: ${zero ? 1 : 0}`, true);
+                                logTrapEvent("==================================================", true);
+                                forthStack.push(borrow);
+                            } else {
+                                logTrapEvent("[FORTH ERROR] golla- requires [addrA] [addrB] [N] on stack", true);
+                            }
+                            break;
+                        }
                     case "defhook":
                         {
                             const idx = line.toLowerCase().indexOf("defhook");
