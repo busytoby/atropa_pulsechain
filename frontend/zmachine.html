@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Machine Interactive Text Story Console</title>
+    <meta name="description" content="An on-chain Z-machine text adventure story engine. Play interactive fiction games and decrypt Invisiclues directly on PulseChain!">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        .story-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .terminal-screen {
+            background-color: #030205;
+            border: 3px solid #ffaa00;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: inset 0 0 20px rgba(255, 170, 0, 0.25), 0 10px 30px rgba(0,0,0,0.8);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            color: #ffaa00;
+            min-height: 350px;
+            max-height: 450px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .terminal-input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .terminal-prompt {
+            color: #ffaa00;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .terminal-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: #ffaa00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.05rem;
+            outline: none;
+        }
+
+        .invisiclue-card {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .hint-text {
+            background: rgba(0,0,0,0.4);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            color: var(--text-primary);
+            font-family: monospace;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation / Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">Z-MACHINE</span>
+                <span class="subtitle">On-Chain Story Engine</span>
+            </div>
+            <div class="header-actions">
+                <a href="/index.html" class="btn btn-secondary">Dashboard</a>
+                <a href="/datamost.html" class="btn btn-secondary">Datamost Console</a>
+                <a href="/protecto.html" class="btn btn-secondary" style="border-color: var(--neon-magenta); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-magenta);">Protecto Console</a>
+                <a href="/bgraph.html" class="btn btn-secondary" style="border-color: var(--neon-blue); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-blue);">B/Graph Console</a>
+                <a href="/dragons_lair.html" class="btn btn-secondary" style="border-color: #ffaa00; color: #e2e8f0; text-shadow: 0 0 5px #ffaa00;">Dragon's Lair</a>
+                <a href="/star_castle.html" class="btn btn-secondary" style="border-color: #00f2fe; color: #e2e8f0; text-shadow: 0 0 5px #00f2fe;">Star Castle</a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="story-layout">
+            <!-- Left Side: Terminal Display -->
+            <section class="card" style="display: flex; flex-direction: column; border-color: #ffaa00;">
+                <h2><span class="icon">📖</span> Interactive Fiction Terminal</h2>
+                <p class="description">Command Parser linked to on-chain text adventure logic.</p>
+                
+                <div class="terminal-screen" id="termScreen">Z-Machine Story Engine initialized.
+Connect your wallet to retrieve the active story ROM.</div>
+
+                <div class="terminal-input-row">
+                    <span class="terminal-prompt">&gt;</span>
+                    <input type="text" id="termInput" class="terminal-input" placeholder="Type command (e.g. 'look', 'take gold', 'go north') and press enter..." disabled>
+                </div>
+            </section>
+
+            <!-- Right Side: Invisiclues & Story Upload -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Invisiclues (Hint System) -->
+                <section class="card invisiclue-card">
+                    <h2><span class="icon">💡</span> On-Chain Invisiclues</h2>
+                    <p class="description">Decrypt secret game hints using your Keycard ERC20 approvals.</p>
+                    
+                    <div class="form-group">
+                        <label for="hintIndex">Select Clue/Hint ID:</label>
+                        <select id="hintIndex" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                            <option value="1">Clue 1: How to bypass the locked Lobby door?</option>
+                            <option value="2">Clue 2: Where is the energy cell stored?</option>
+                            <option value="3">Clue 3: How to activate the control platform?</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" id="btnDecryptHint" style="width: 100%;">Decrypt Hint (Costs 1 Keycard)</button>
+                    
+                    <div class="hint-text" id="hintDisplay">
+                        Hint content will appear here after on-chain decryption.
+                    </div>
+                </section>
+
+                <!-- Status Console -->
+                <section class="card">
+                    <h2><span class="icon">⚙️</span> Engine Registry</h2>
+                    <p class="description">Connected on-chain contract metadata.</p>
+                    
+                    <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 0.9rem;">
+                        <div><strong>Z-Machine:</strong> <span id="metaZM" style="font-family: monospace;">N/A</span></div>
+                        <div><strong>Key System:</strong> <span id="metaKS" style="font-family: monospace;">N/A</span></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const PROVIDER_URL = "http://127.0.0.1:8545";
+        let provider, signer, zmAddress, ksAddress;
+        let zmContract;
+
+        const zmABI = [
+            "function parseCommand(address player, bytes calldata cmd) external returns (bytes memory)",
+            "function parseCommand(address player, bytes calldata cmd) external view returns (bytes memory)",
+            "function decryptInvisiclue(address keySystem, address player, uint256 index) external view returns (string memory)"
+        ];
+
+        async function init() {
+            try {
+                provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                const signers = await provider.listAccounts();
+                signer = signers[0];
+
+                const res = await fetch("/api/config");
+                const config = await res.json();
+
+                zmAddress = config.networks.localhost.zmachineAddress;
+                ksAddress = config.networks.localhost.keySystemAddress;
+
+                if (zmAddress) {
+                    zmContract = new ethers.Contract(zmAddress, zmABI, signer);
+                    document.getElementById("metaZM").innerText = zmAddress;
+                    document.getElementById("metaKS").innerText = ksAddress || "Not configured";
+
+                    document.getElementById("termInput").disabled = false;
+                    document.getElementById("termScreen").innerText += "\n[Connected successfully to local Z-Machine contract.]\n\nWelcome to Z-Force! You are standing in the lobby of a research station. Exits are north and east.\n# _";
+                } else {
+                    document.getElementById("termScreen").innerText += "\n[Error: Z-Machine contract not found in local registry config.]";
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById("termScreen").innerText += "\n[Error connecting to local RPC provider.]";
+            }
+        }
+
+        // Input submit handler
+        document.getElementById("termInput").addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                const input = e.target.value.trim();
+                if (!input) return;
+                
+                e.target.value = "";
+                const termScreen = document.getElementById("termScreen");
+                termScreen.innerText += `\n> ${input}`;
+                termScreen.scrollTop = termScreen.scrollHeight;
+
+                if (!zmContract) return;
+
+                try {
+                    const cmdBytes = ethers.toUtf8Bytes(input);
+                    // Use staticCall to simulate the text output instantly without transaction gas costs
+                    const result = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
+                    const text = ethers.toUtf8String(result);
+                    termScreen.innerText += `\n${text}\n# _`;
+                } catch (err) {
+                    termScreen.innerText += `\n[Error calling parseCommand: ${err.message}]\n# _`;
+                }
+                termScreen.scrollTop = termScreen.scrollHeight;
+            }
+        });
+
+        // Decrypt Clue Button Handler
+        document.getElementById("btnDecryptHint").addEventListener("click", async () => {
+            if (!zmContract) return alert("Contract not loaded");
+            const idx = document.getElementById("hintIndex").value;
+            const hintDisplay = document.getElementById("hintDisplay");
+            hintDisplay.innerText = "Decrypting...";
+
+            try {
+                const hint = await zmContract.decryptInvisiclue(ksAddress, signer.address, idx);
+                hintDisplay.innerText = hint;
+            } catch (err) {
+                console.error(err);
+                hintDisplay.innerText = `Error: ${err.message}`;
+            }
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
