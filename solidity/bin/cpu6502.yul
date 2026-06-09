@@ -52,10 +52,11 @@ object "CPU6502Emulator" {
                 // Check if shared screen mode is enabled at register $D50D (54541)
                 let sharedMode := and(sload(getUserSlotPrivate(54541)), 0xFF)
                 if sharedMode {
-                    // Shared ranges: Screen RAM (1024-2047), VIC registers (53248-53311), Color RAM (55296-56295)
-                    if or(and(iszero(lt(addr, 1024)), lt(addr, 2048)),
-                          or(and(iszero(lt(addr, 53248)), lt(addr, 53312)),
-                             and(iszero(lt(addr, 55296)), lt(addr, 56296)))) {
+                    // Shared ranges: Screen RAM (1024-2047), VIC registers (53248-53311), Color RAM (55296-56295), VIC-I registers (36864-36879)
+                    if or(or(and(iszero(lt(addr, 1024)), lt(addr, 2048)),
+                             or(and(iszero(lt(addr, 53248)), lt(addr, 53312)),
+                                and(iszero(lt(addr, 55296)), lt(addr, 56296)))),
+                          and(iszero(lt(addr, 36864)), lt(addr, 36880))) {
                         user := 0x5555555555555555555555555555555555555555
                     }
                 }
