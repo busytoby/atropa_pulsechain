@@ -8,32 +8,139 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
+        :root {
+            --vaesen-dark: #12100e;
+            --vaesen-sepia: #1c1815;
+            --vaesen-parchment: #25201b;
+            --vaesen-gold: #c5a059;
+            --vaesen-gold-dim: #8c7241;
+            --vaesen-cream: #e6dfd3;
+            --vaesen-ink: #0d0c0a;
+            --vaesen-muted: #a39785;
+            --font-serif: "EB Garamond", serif;
+            --font-header: "Cinzel", serif;
+            --font-term: "IM Fell English", serif;
+        }
+
+        body {
+            background-color: var(--vaesen-dark) !important;
+            color: var(--vaesen-cream) !important;
+            font-family: var(--font-serif) !important;
+            font-size: 1.15rem;
+            line-height: 1.6;
+        }
+
+        /* Glass / Card styling overrides for Vaesen */
+        .glass-bg-container {
+            background: linear-gradient(135deg, rgba(28,24,21,0.95), rgba(18,16,14,0.98)) !important;
+            border: 1px solid rgba(197,160,89,0.15) !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9) !important;
+        }
+
+        header {
+            border-bottom: 1px solid rgba(197, 160, 89, 0.25) !important;
+            padding-bottom: 20px;
+        }
+
+        .logo .pulse-glow {
+            font-family: var(--font-header) !important;
+            color: var(--vaesen-gold) !important;
+            text-shadow: 0 0 10px rgba(197, 160, 89, 0.3) !important;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .logo .subtitle {
+            font-family: var(--font-serif) !important;
+            color: var(--vaesen-muted) !important;
+            font-style: italic;
+        }
+
+        .card {
+            background: var(--vaesen-parchment) !important;
+            border: 1px solid var(--vaesen-gold-dim) !important;
+            border-radius: 4px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6) !important;
+            padding: 24px !important;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 3px; left: 3px; right: 3px; bottom: 3px;
+            border: 1px dashed rgba(197,160,89,0.15);
+            pointer-events: none;
+        }
+
+        h2 {
+            font-family: var(--font-header) !important;
+            color: var(--vaesen-gold) !important;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            font-family: var(--font-header) !important;
+            font-size: 0.9rem !important;
+            letter-spacing: 1px;
+            border-radius: 2px !important;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: transparent !important;
+            border: 1px solid var(--vaesen-gold-dim) !important;
+            color: var(--vaesen-cream) !important;
+        }
+
+        .btn-secondary:hover {
+            background: var(--vaesen-gold) !important;
+            color: var(--vaesen-ink) !important;
+            border-color: var(--vaesen-gold) !important;
+        }
+
+        .btn-primary {
+            background: var(--vaesen-gold) !important;
+            border: 1px solid var(--vaesen-gold) !important;
+            color: var(--vaesen-ink) !important;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: transparent !important;
+            color: var(--vaesen-gold) !important;
+            box-shadow: 0 0 10px rgba(197, 160, 89, 0.4);
+        }
+
         .story-layout {
             display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 25px;
-            margin-top: 20px;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
         }
 
         .terminal-screen {
-            background-color: #030205;
-            border: 3px solid #ffaa00;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: inset 0 0 20px rgba(255, 170, 0, 0.25), 0 10px 30px rgba(0,0,0,0.8);
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
-            color: #ffaa00;
-            min-height: 350px;
-            max-height: 450px;
+            background-color: var(--vaesen-ink) !important;
+            border: 2px solid var(--vaesen-gold) !important;
+            border-radius: 4px;
+            padding: 25px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.95), 0 5px 15px rgba(0,0,0,0.5);
+            font-family: var(--font-term) !important;
+            font-size: 1.25rem !important;
+            line-height: 1.5;
+            color: var(--vaesen-cream) !important;
+            min-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
             white-space: pre-wrap;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .terminal-input-row {
@@ -41,26 +148,26 @@
             align-items: center;
             gap: 10px;
             margin-top: 15px;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 12px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--vaesen-gold-dim);
+            border-radius: 4px;
+            padding: 10px 15px;
         }
 
         .terminal-prompt {
-            color: #ffaa00;
+            color: var(--vaesen-gold);
             font-weight: bold;
-            font-family: monospace;
-            font-size: 1.1rem;
+            font-family: var(--font-term);
+            font-size: 1.3rem;
         }
 
         .terminal-input {
             flex-grow: 1;
             background: transparent;
             border: none;
-            color: #ffaa00;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.05rem;
+            color: var(--vaesen-cream);
+            font-family: var(--font-term);
+            font-size: 1.2rem;
             outline: none;
         }
 
@@ -71,17 +178,25 @@
         }
 
         .hint-text {
-            background: rgba(0,0,0,0.4);
-            border: 1px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            color: var(--text-primary);
-            font-family: monospace;
-            min-height: 80px;
+            background: rgba(13,12,10,0.6);
+            border: 1px dashed var(--vaesen-gold-dim);
+            border-radius: 4px;
+            padding: 20px;
+            color: var(--vaesen-cream);
+            font-family: var(--font-serif);
+            font-size: 1.1rem;
+            font-style: italic;
+            min-height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
+        }
+
+        .description {
+            color: var(--vaesen-muted) !important;
+            font-style: italic;
+            font-size: 0.95rem;
         }
     </style>
 </head>
@@ -100,6 +215,7 @@
                 <a href="/bgraph.html" class="btn btn-secondary" style="border-color: var(--neon-blue); color: var(--text-primary); text-shadow: 0 0 5px var(--neon-blue);">B/Graph Console</a>
                 <a href="/dragons_lair.html" class="btn btn-secondary" style="border-color: #ffaa00; color: #e2e8f0; text-shadow: 0 0 5px #ffaa00;">Dragon's Lair</a>
                 <a href="/star_castle.html" class="btn btn-secondary" style="border-color: #00f2fe; color: #e2e8f0; text-shadow: 0 0 5px #00f2fe;">Star Castle</a>
+                <button class="btn btn-primary" id="btnConnect" style="background: var(--neon-cyan); border-color: var(--neon-cyan); color: #000; font-weight: bold; text-shadow: none;">Connect Wallet</button>
             </div>
         </header>
 
@@ -169,10 +285,6 @@ Connect your wallet to retrieve the active story ROM.</div>
 
         async function init() {
             try {
-                provider = new ethers.JsonRpcProvider(PROVIDER_URL);
-                const signers = await provider.listAccounts();
-                signer = signers[0];
-
                 const res = await fetch("/api/config");
                 const config = await res.json();
 
@@ -180,20 +292,84 @@ Connect your wallet to retrieve the active story ROM.</div>
                 ksAddress = config.networks.localhost.keySystemAddress;
 
                 if (zmAddress) {
-                    zmContract = new ethers.Contract(zmAddress, zmABI, signer);
                     document.getElementById("metaZM").innerText = zmAddress;
                     document.getElementById("metaKS").innerText = ksAddress || "Not configured";
+                }
 
-                    document.getElementById("termInput").disabled = false;
-                    document.getElementById("termScreen").innerText += "\n[Connected successfully to local Z-Machine contract.]\n\nWelcome to Z-Force! You are standing in the lobby of a research station. Exits are north and east.\n# _";
+                // If window.ethereum is available, configure connection listeners
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    const accounts = await provider.listAccounts();
+                    if (accounts.length > 0) {
+                        await connectWallet();
+                    } else {
+                        document.getElementById("termScreen").innerText = "Z-Machine Story Engine initialized.\n\nClick the 'Connect Wallet' button in the top right to start playing.";
+                    }
                 } else {
-                    document.getElementById("termScreen").innerText += "\n[Error: Z-Machine contract not found in local registry config.]";
+                    // Fallback to local JsonRpcProvider
+                    provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                    const signers = await provider.listAccounts();
+                    signer = signers[0];
+                    if (signer) {
+                        await setupContract();
+                    } else {
+                        document.getElementById("termScreen").innerText = "[Error: No accounts found on RPC provider.]";
+                    }
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById("termScreen").innerText += "\n[Error connecting to local RPC provider.]";
+                document.getElementById("termScreen").innerText = "[Error connecting to local RPC provider.]";
             }
         }
+
+        async function connectWallet() {
+            try {
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    const signerInstance = await provider.getSigner();
+                    signer = signerInstance;
+                    document.getElementById("btnConnect").innerText = signer.address.substring(0, 6) + "..." + signer.address.substring(38);
+                    await setupContract();
+                } else {
+                    alert("No Web3 wallet found. Falling back to local node signer.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Wallet connection failed: " + err.message);
+            }
+        }
+
+        async function setupContract() {
+            if (!zmAddress) {
+                document.getElementById("termScreen").innerText = "[Error: Z-Machine contract address missing from config.]";
+                return;
+            }
+            zmContract = new ethers.Contract(zmAddress, zmABI, signer);
+            document.getElementById("termInput").disabled = false;
+            document.getElementById("termScreen").innerText = "[Connected successfully to Z-Machine contract.]\n\nRetrieving starting environment...\n";
+            
+            // Auto-trigger look command to display the starting room (Room 10: Void) and its commands
+            await executeCommand("look");
+        }
+
+        async function executeCommand(cmdText) {
+            if (!zmContract) return;
+            const termScreen = document.getElementById("termScreen");
+            try {
+                const cmdBytes = ethers.toUtf8Bytes(cmdText);
+                const result = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
+                const text = ethers.toUtf8String(result);
+                termScreen.innerText += `\n${text}\n\n# _`;
+            } catch (err) {
+                termScreen.innerText += `\n[Error calling parseCommand: ${err.message}]\n# _`;
+            }
+            termScreen.scrollTop = termScreen.scrollHeight;
+        }
+
+        // Connect Button Listener
+        document.getElementById("btnConnect").addEventListener("click", async () => {
+            await connectWallet();
+        });
 
         // Input submit handler
         document.getElementById("termInput").addEventListener("keydown", async (e) => {
@@ -206,18 +382,7 @@ Connect your wallet to retrieve the active story ROM.</div>
                 termScreen.innerText += `\n> ${input}`;
                 termScreen.scrollTop = termScreen.scrollHeight;
 
-                if (!zmContract) return;
-
-                try {
-                    const cmdBytes = ethers.toUtf8Bytes(input);
-                    // Use staticCall to simulate the text output instantly without transaction gas costs
-                    const result = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
-                    const text = ethers.toUtf8String(result);
-                    termScreen.innerText += `\n${text}\n# _`;
-                } catch (err) {
-                    termScreen.innerText += `\n[Error calling parseCommand: ${err.message}]\n# _`;
-                }
-                termScreen.scrollTop = termScreen.scrollHeight;
+                await executeCommand(input);
             }
         });
 

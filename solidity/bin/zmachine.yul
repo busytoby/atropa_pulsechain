@@ -132,7 +132,7 @@ object "ZMachine" {
                 let firstWord := shr(224, calldataload(100))
                 
                 let roomId := sload(add(4000000, player))
-                if iszero(roomId) { roomId := 1 }
+                if iszero(roomId) { roomId := 10 }
 
                 // Initialize item room placements if not already set up
                 if iszero(sload(999999)) {
@@ -269,6 +269,251 @@ object "ZMachine" {
                     if eq(sload(add(2000300, 52)), roomId) {
                         mstore(resultPtr, 0x20596f752073656520616e20456e65726779205061636b20686572652e000000) // " You see an Energy Pack here."
                         resultPtr := add(resultPtr, 28)
+                    }
+                }
+                case 0x43686174 { // "Chat" (Void and Qing Chat)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00) // "No contract bound to this room."
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let argLen := sub(cmdLen, 5)
+                        mstore(0x1000, 0x21516fc400000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, 0x20)
+                        mstore(0x1024, argLen)
+                        calldatacopy(0x1044, 105, argLen)
+                        let paddedSize := mul(div(add(argLen, 31), 32), 32)
+                        let totalCalldataSize := add(68, paddedSize)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x43686174207375636365737366756c2e00000000000000000000000000000000) // "Chat successful."
+                            resultPtr := add(resultPtr, 17)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x43686174206661696c65642f72657665727465642e0000000000000000000000) // "Chat failed/reverted."
+                            resultPtr := add(resultPtr, 22)
+                        }
+                    }
+                }
+                case 0x4c6f6720 { // "Log " (Void logging)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let argLen := sub(cmdLen, 4)
+                        mstore(0x1000, 0xcf34ef5300000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, 0x20)
+                        mstore(0x1024, argLen)
+                        calldatacopy(0x1044, 104, argLen)
+                        let paddedSize := mul(div(add(argLen, 31), 32), 32)
+                        let totalCalldataSize := add(68, paddedSize)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x4c6f67207375636365737366756c2e0000000000000000000000000000000000) // "Log successful."
+                            resultPtr := add(resultPtr, 16)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x4c6f67206661696c65642f72657665727465642e000000000000000000000000) // "Log failed/reverted."
+                            resultPtr := add(resultPtr, 21)
+                        }
+                    }
+                }
+                case 0x53657441 { // "SetAttribute" (Void attribute setting)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let spacePos := findSpace(13, cmdLen)
+                        let keyLen := sub(spacePos, 13)
+                        let valLen := 0
+                        if lt(spacePos, cmdLen) {
+                            valLen := sub(cmdLen, add(spacePos, 1))
+                        }
+                        
+                        mstore(0x1000, 0xdf5cb7b400000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, 0x40)
+                        let paddedKeyLen := mul(div(add(keyLen, 31), 32), 32)
+                        mstore(0x1024, add(0x40, add(32, paddedKeyLen)))
+                        mstore(0x1044, keyLen)
+                        calldatacopy(0x1064, add(100, 13), keyLen)
+                        
+                        let valOffset := add(0x1064, paddedKeyLen)
+                        mstore(valOffset, valLen)
+                        calldatacopy(add(valOffset, 32), add(100, add(spacePos, 1)), valLen)
+                        
+                        let paddedValLen := mul(div(add(valLen, 31), 32), 32)
+                        let totalCalldataSize := add(sub(add(valOffset, 32), 0x1000), paddedValLen)
+                        
+                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x417474726962757465207365742e000000000000000000000000000000000000) // "Attribute set."
+                            resultPtr := add(resultPtr, 14)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x536574417474726962757465206661696c65642e000000000000000000000000) // "SetAttribute failed."
+                            resultPtr := add(resultPtr, 20)
+                        }
+                    }
+                }
+                case 0x47657441 { // "GetAttribute" (Void attribute reading)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let keyLen := sub(cmdLen, 13)
+                        mstore(0x1000, 0xb502e56700000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, 0x20)
+                        mstore(0x1024, keyLen)
+                        calldatacopy(0x1044, add(100, 13), keyLen)
+                        let paddedSize := mul(div(add(keyLen, 31), 32), 32)
+                        let totalCalldataSize := add(68, paddedSize)
+                        let success := staticcall(gas(), tokenAddr, 0x1000, totalCalldataSize, 0x2000, 0x200)
+                        if success {
+                            let retOffset := mload(0x2000)
+                            let retLen := mload(add(0x2000, retOffset))
+                            mCopy(add(0x2020, retOffset), resultPtr, retLen)
+                            resultPtr := add(resultPtr, retLen)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x476574417474726962757465206661696c65642e000000000000000000000000) // "GetAttribute failed."
+                            resultPtr := add(resultPtr, 20)
+                        }
+                    }
+                }
+                case 0x416c6961 { // "Alias" (Void alias setting)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let spacePos := findSpace(6, cmdLen)
+                        let targetAddr := parseHexAddress(6, spacePos)
+                        let valLen := 0
+                        if lt(spacePos, cmdLen) {
+                            valLen := sub(cmdLen, add(spacePos, 1))
+                        }
+                        
+                        mstore(0x1000, 0x00b660ef00000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, targetAddr)
+                        mstore(0x1024, 0x40)
+                        mstore(0x1044, valLen)
+                        calldatacopy(0x1064, add(100, add(spacePos, 1)), valLen)
+                        
+                        let paddedValLen := mul(div(add(valLen, 31), 32), 32)
+                        let totalCalldataSize := add(100, paddedValLen)
+                        
+                        let success := call(gas(), tokenAddr, 0, 0x1000, totalCalldataSize, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x416c696173207365742e00000000000000000000000000000000000000000000) // "Alias set."
+                            resultPtr := add(resultPtr, 10)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x416c696173206661696c65642e00000000000000000000000000000000000000) // "Alias failed."
+                            resultPtr := add(resultPtr, 13)
+                        }
+                    }
+                }
+                case 0x456e7465 { // "Enter" (Void enter)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        mstore(0x1000, 0x1097e57900000000000000000000000000000000000000000000000000000000)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x04, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x456e7465726564207375636365737366756c6c792e0000000000000000000000) // "Entered successfully."
+                            resultPtr := add(resultPtr, 21)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x456e746572206661696c65642e00000000000000000000000000000000000000) // "Enter failed."
+                            resultPtr := add(resultPtr, 13)
+                        }
+                    }
+                }
+                case 0x4a6f696e { // "Join" (Qing join)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let targetAddr := parseHexAddress(5, cmdLen)
+                        mstore(0x1000, 0x0764c80c00000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, targetAddr)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x24, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x4a6f696e6564207375636365737366756c6c792e000000000000000000000000) // "Joined successfully."
+                            resultPtr := add(resultPtr, 20)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x4a6f696e206661696c65642e0000000000000000000000000000000000000000) // "Join failed."
+                            resultPtr := add(resultPtr, 12)
+                        }
+                    }
+                }
+                case 0x57697468 { // "Withdraw" (Qing withdraw)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let spacePos := findSpace(9, cmdLen)
+                        let targetAddr := parseHexAddress(9, spacePos)
+                        let amount := 0
+                        if lt(spacePos, cmdLen) {
+                            amount := parseDec(add(spacePos, 1), cmdLen)
+                        }
+                        mstore(0x1000, 0x884edad900000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, targetAddr)
+                        mstore(0x1024, amount)
+                        let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x100)
+                        if success {
+                            mstore(resultPtr, 0x5769746864726177616c207375636365737366756c2e00000000000000000000) // "Withdrawal successful."
+                            resultPtr := add(resultPtr, 22)
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x5769746864726177616c206661696c65642e0000000000000000000000000000) // "Withdrawal failed."
+                            resultPtr := add(resultPtr, 18)
+                        }
+                    }
+                }
+                case 0x41646d69 { // "Admitted" (Qing admitted check)
+                    let tokenAddr := sload(add(2000000, roomId))
+                    if iszero(tokenAddr) {
+                        mstore(resultPtr, 0x4e6f20636f6e747261637420626f756e6420746f207468697320726f6f6d2e00)
+                        resultPtr := add(resultPtr, 31)
+                    }
+                    if tokenAddr {
+                        let targetAddr := parseHexAddress(9, cmdLen)
+                        mstore(0x1000, 0xdfffcc7400000000000000000000000000000000000000000000000000000000)
+                        mstore(0x1004, targetAddr)
+                        let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
+                        if success {
+                            let resVal := mload(0x2000)
+                            if resVal {
+                                mstore(resultPtr, 0x41646d69747465642e0000000000000000000000000000000000000000000000) // "Admitted."
+                                resultPtr := add(resultPtr, 9)
+                            }
+                            if iszero(resVal) {
+                                mstore(resultPtr, 0x4e6f742061646d69747465642e00000000000000000000000000000000000000) // "Not admitted."
+                                resultPtr := add(resultPtr, 13)
+                            }
+                        }
+                        if iszero(success) {
+                            mstore(resultPtr, 0x41646d69747465642063616c6c206661696c65642e0000000000000000000000) // "Admitted call failed."
+                            resultPtr := add(resultPtr, 21)
+                        }
                     }
                 }
                 case 0x696e7665 { // "inve" (Inventory)
@@ -929,6 +1174,56 @@ object "ZMachine" {
                 c := add(val, 48)
                 if gt(val, 9) {
                     c := add(val, 87) // 'a' - 10
+                }
+            }
+
+            function findSpace(startOffset, cmdLen) -> spacePos {
+                spacePos := cmdLen
+                for { let i := startOffset } lt(i, cmdLen) { i := add(i, 1) } {
+                    let char := and(shr(248, calldataload(add(100, i))), 0xff)
+                    if eq(char, 32) {
+                        spacePos := i
+                        break
+                    }
+                }
+            }
+
+            function parseHexAddress(startIdx, cmdLen) -> addr {
+                addr := 0
+                let idx := startIdx
+                let c1 := and(shr(248, calldataload(add(100, idx))), 0xff)
+                let c2 := and(shr(248, calldataload(add(100, add(idx, 1)))), 0xff)
+                if and(eq(c1, 48), eq(c2, 120)) {
+                    idx := add(idx, 2)
+                }
+                for {} lt(idx, cmdLen) {} {
+                    let char := and(shr(248, calldataload(add(100, idx))), 0xff)
+                    let val := 0
+                    if and(gt(char, 47), lt(char, 58)) { val := sub(char, 48) }
+                    if and(gt(char, 96), lt(char, 103)) { val := add(sub(char, 97), 10) }
+                    if and(gt(char, 64), lt(char, 71)) { val := add(sub(char, 65), 10) }
+                    if iszero(or(and(gt(char, 47), lt(char, 58)), or(and(gt(char, 96), lt(char, 103)), and(gt(char, 64), lt(char, 71))))) {
+                        break
+                    }
+                    addr := add(mul(addr, 16), val)
+                    idx := add(idx, 1)
+                }
+            }
+
+            function parseDec(startIdx, cmdLen) -> val {
+                val := 0
+                let idx := startIdx
+                for {} lt(idx, cmdLen) {} {
+                    let char := and(shr(248, calldataload(add(100, idx))), 0xff)
+                    if or(lt(char, 48), gt(char, 57)) { break }
+                    val := add(mul(val, 10), sub(char, 48))
+                    idx := add(idx, 1)
+                }
+            }
+
+            function mCopy(src, dest, len) {
+                for { let i := 0 } lt(i, len) { i := add(i, 32) } {
+                    mstore(add(dest, i), mload(add(src, i)))
                 }
             }
         }
