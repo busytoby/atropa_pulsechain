@@ -382,6 +382,111 @@ void deepseek_evolve_impl(void *ctx, float intensity) {
         }
     }
 }
+static const char *sprite_warrior[16] = {
+    "..HHHHHH........",
+    ".HHHHHHHH.......",
+    "HHHDHHDHHH..H...",
+    "HWWWWWWWWH..HH..",
+    ".WDWWWWDW...HH..",
+    "..WWWWWW..HHHHHH",
+    "..BBBBBB...HH...",
+    ".BBBBBBBB..HH...",
+    ".BBBBBBBB.......",
+    "..BBBBBB........",
+    "..BBBBBB........",
+    "..HHHHHH........",
+    "..H....H........",
+    ".DD....DD.......",
+    ".DD....DD.......",
+    "................"
+};
+
+static const char *sprite_ghost[16] = {
+    ".....GGGGGG.....",
+    "...GGGGGGGGGG...",
+    "..GGGGGGGGGGGG..",
+    ".GGGGGGGGGGGGGG.",
+    "GGwDGGGGGGwDGGGG",
+    "GDDGGGGGGDDGGGGG",
+    "GGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGG",
+    ".GGGGGGGGGGGGGG.",
+    ".G.G.GGGG.G.G...",
+    "G...G..G...G....",
+    "................"
+};
+
+static const char *sprite_spawner[16] = {
+    "OOOOOOOOOOOOOOOO",
+    "ODDDDDDDDDDDDDDO",
+    "ODwwDwwDDwwDwwDO",
+    "ODwDwwDwwDwwDwDO",
+    "ODDDDDDDDDDDDDDO",
+    "ODwwwwwwwwwwwwDO",
+    "ODwDDwDwDwDDwDDO",
+    "ODwDwwDwDwwDwDDO",
+    "ODwDwwDwDwwDwDDO",
+    "ODwDDwDwDwDDwDDO",
+    "ODwwwwwwwwwwwwDO",
+    "ODDDDDDDDDDDDDDO",
+    "ODwDwwDwwDwwDwDO",
+    "ODwwDwwDDwwDwwDO",
+    "ODDDDDDDDDDDDDDO",
+    "OOOOOOOOOOOOOOOO"
+};
+
+void draw_sprite_16x16(AB4HPixel *pixels, int w, int h, float cx, float cy, const char *sprite[16], float scale_x, float scale_y) {
+    AB4HPixel skin = make_ab4h_pixel(0.9f, 0.7f, 0.5f, 1.0f);
+    AB4HPixel warrior_blue = make_ab4h_pixel(0.0f, 0.6f, 1.0f, 1.0f);
+    AB4HPixel ghost_green = make_ab4h_pixel(0.2f, 0.9f, 0.3f, 1.0f);
+    AB4HPixel spawner_red = make_ab4h_pixel(1.0f, 0.2f, 0.2f, 1.0f);
+    AB4HPixel gold_yellow = make_ab4h_pixel(1.0f, 0.8f, 0.0f, 1.0f);
+    AB4HPixel dark_gray = make_ab4h_pixel(0.15f, 0.15f, 0.15f, 1.0f);
+    AB4HPixel steel = make_ab4h_pixel(0.7f, 0.7f, 0.7f, 1.0f);
+    AB4HPixel orange = make_ab4h_pixel(0.8f, 0.4f, 0.1f, 1.0f);
+    AB4HPixel white = make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f);
+
+    int sprite_w = 16;
+    int sprite_h = 16;
+    int half_w = (int)((sprite_w * scale_x) / 2);
+    int half_h = (int)((sprite_h * scale_y) / 2);
+
+    int start_x = (int)cx - half_w;
+    int start_y = (int)cy - half_h;
+
+    for (int sy = 0; sy < sprite_h; sy++) {
+        for (int sx = 0; sx < sprite_w; sx++) {
+            char c = sprite[sy][sx];
+            if (c == '.') continue;
+
+            AB4HPixel color = dark_gray;
+            switch(c) {
+                case 'W': color = skin; break;
+                case 'B': color = warrior_blue; break;
+                case 'G': color = ghost_green; break;
+                case 'R': color = spawner_red; break;
+                case 'Y': color = gold_yellow; break;
+                case 'D': color = dark_gray; break;
+                case 'H': color = steel; break;
+                case 'O': color = orange; break;
+                case 'w': color = white; break;
+            }
+
+            int cell_start_x = start_x + (int)(sx * scale_x);
+            int cell_start_y = start_y + (int)(sy * scale_y);
+            int cell_w = (int)scale_x;
+            if (cell_w < 1) cell_w = 1;
+            int cell_h = (int)scale_y;
+            if (cell_h < 1) cell_h = 1;
+
+            draw_rect_ab4h(pixels, w, h, cell_start_x, cell_start_y, cell_w, cell_h, color);
+        }
+    }
+}
 
 int main() {
     printf("[GAUNTLET] Launching ZMM VM Vulkan-Wayland Gauntlet Module...\n");
@@ -416,6 +521,7 @@ int main() {
     AB4HPixel warrior_blue = make_ab4h_pixel(0.0f, 0.8f, 1.2f, 1.0f);
     AB4HPixel ghost_green = make_ab4h_pixel(0.05f, 0.9f, 0.3f, 1.0f);
     AB4HPixel spawner_red = make_ab4h_pixel(1.2f, 0.1f, 0.2f, 1.0f);
+    (void)warrior_blue; (void)ghost_green; (void)spawner_red;
     AB4HPixel hud_pink = make_ab4h_pixel(1.0f, 0.05f, 0.6f, 1.0f);
     AB4HPixel gold_yellow = make_ab4h_pixel(1.2f, 1.1f, 0.0f, 1.0f);
 
@@ -523,25 +629,20 @@ int main() {
         uint64_t score = thunk_peek(55032);
         uint64_t keys = thunk_peek(55054);
 
-        // Draw Spawner (pulsing block)
+        // Draw Spawner (pulsing brick generator)
         if (sx > 0.0f && sy > 0.0f) {
-            float spawner_pulse = 16.0f + 4.0f * sinf(frame_counter * 0.1f);
-            draw_rect_ab4h(pixels, W, H, (int)(sx - spawner_pulse), (int)(sy - spawner_pulse), (int)(spawner_pulse*2), (int)(spawner_pulse*2), spawner_red);
+            float spawner_pulse = 2.4f + 0.2f * sinf(frame_counter * 0.1f);
+            draw_sprite_16x16(pixels, W, H, sx, sy, sprite_spawner, spawner_pulse * scale_x, spawner_pulse * scale_y);
             draw_radial_glow(pixels, W, H, sx, sy, 35.0f, make_ab4h_pixel(1.0f, 0.1f, 0.0f, 0.3f));
         }
 
-        // Draw Ghost (triangle outline)
+        // Draw Ghost (classic arcade ghost sprite)
         if (gx > 0.0f && gy > 0.0f) {
-            draw_line_aa(pixels, W, H, gx, gy - 12 * scale_y, gx + 10 * scale_x, gy + 10 * scale_y, ghost_green, 2.0f);
-            draw_line_aa(pixels, W, H, gx + 10 * scale_x, gy + 10 * scale_y, gx - 10 * scale_x, gy + 10 * scale_y, ghost_green, 2.0f);
-            draw_line_aa(pixels, W, H, gx - 10 * scale_x, gy + 10 * scale_y, gx, gy - 12 * scale_y, ghost_green, 2.0f);
+            draw_sprite_16x16(pixels, W, H, gx, gy, sprite_ghost, 2.0f * scale_x, 2.0f * scale_y);
         }
 
-        // Draw Player diamond
-        draw_line_aa(pixels, W, H, px, py - 14 * scale_y, px + 14 * scale_x, py, warrior_blue, 2.5f);
-        draw_line_aa(pixels, W, H, px + 14 * scale_x, py, px, py + 14 * scale_y, warrior_blue, 2.5f);
-        draw_line_aa(pixels, W, H, px, py + 14 * scale_y, px - 14 * scale_x, py, warrior_blue, 2.5f);
-        draw_line_aa(pixels, W, H, px - 14 * scale_x, py, px, py - 14 * scale_y, warrior_blue, 2.5f);
+        // Draw Player (warrior holding axe)
+        draw_sprite_16x16(pixels, W, H, px, py, sprite_warrior, 2.2f * scale_x, 2.2f * scale_y);
         draw_radial_glow(pixels, W, H, px, py, 20.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
 
         // Format and render HUD details
