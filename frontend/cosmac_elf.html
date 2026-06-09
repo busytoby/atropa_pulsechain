@@ -1349,6 +1349,31 @@
                             logTrapEvent(`🌡️ [THERMOMETER] Crucible Temperature: ${base.toFixed(2)}°C (Pushed ${tempInt} to stack)`, true);
                         }
                         break;
+                    case "arena-end":
+                        logTrapEvent("⚔️ [ARENA] Executing tournament end sequence...", true);
+                        cpu.display.fill(0);
+                        startAlchemicalPurification(3);
+                        setTimeout(() => {
+                            drawShapeFile(0x0A00, 4);
+                        }, 3000);
+                        setTimeout(() => {
+                            let src = 0x0980;
+                            let dest = 0;
+                            const end = src + 90;
+                            while (src < end && dest < 2048) {
+                                const count = cpu.memory[src++];
+                                const val = cpu.memory[src++];
+                                for (let i = 0; i < count && dest < 2048; i++) {
+                                    cpu.display[dest++] = val ? 1 : 0;
+                                }
+                            }
+                            logTrapEvent("🎨 [DECOMPRESS] Inflated Sigil of the Butterfly overlapping boundary.", true);
+                            renderDisplay();
+                            playFourPartHarmony(261, 329, 392, 523);
+                            logTrapEvent("🔊 [AUDIO] Playing triumphant C-Major Arena Chord [261Hz, 329Hz, 392Hz, 523Hz]", true);
+                            playMorseCharacter(87);
+                        }, 3200);
+                        break;
                     default:
                         logTrapEvent(`[FORTH ERROR] Unknown word: ${token}`, true);
                 }
