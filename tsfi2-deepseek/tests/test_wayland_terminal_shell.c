@@ -1633,7 +1633,9 @@ static void execute_command(const char *cmd) {
 
             if (first_word) {
                 if (strcasecmp(first_word, "FLOTSAM") == 0) {
-                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_flotsam.js");
+                    const char *args = cmd + strlen(first_word);
+                    while (*args == ' ' || *args == '\t') args++;
+                    snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_flotsam.js %s", args);
                 } else if (strcasecmp(first_word, "CHOPLIFTER") == 0) {
                     snprintf(real_cmd, sizeof(real_cmd), "node ../scripts/test_choplifter.js");
                     g_test_statuses[0] = "PASS";
