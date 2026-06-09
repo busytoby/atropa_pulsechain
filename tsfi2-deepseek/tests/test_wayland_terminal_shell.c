@@ -58,7 +58,8 @@ typedef enum {
     MODE_HOPAROUND,
     MODE_TOWERS,
     MODE_DISINTEGRATOR,
-    MODE_FIDGITS
+    MODE_FIDGITS,
+    MODE_MOXEY
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -283,9 +284,10 @@ static const char *g_booter_entries[] = {
     "HOPAROUND (Board Strategy Game)",
     "TOWERS (Towers of Hanoi Puzzle)",
     "DISINTEGRATOR (ML Particle Grid Shooter)",
-    "FIDGITS (Alphabet Sorting Game)"
+    "FIDGITS (Alphabet Sorting Game)",
+    "MOXEY'S PORCH (Text Adventure Game)"
 };
-static int g_booter_count = 10;
+static int g_booter_count = 11;
 static int g_booter_cursor = 0;
 static char g_booter_status[128];
 static void init_booter(void);
@@ -334,6 +336,17 @@ static char g_fidgits_status[128];
 static void init_fidgits(void);
 static void redraw_fidgits_screen(void);
 static void handle_fidgits_input(char ch);
+
+// Moxey's Porch variables
+static int g_moxey_room = 0; // 0=Porch, 1=Living Room, 2=Kitchen, 3=Basement
+static bool g_moxey_has_key = false;
+static bool g_moxey_has_lantern = false;
+static bool g_moxey_lantern_lit = false;
+static bool g_moxey_chest_unlocked = false;
+static char g_moxey_status[128];
+static void init_moxey(void);
+static void redraw_moxey_screen(void);
+static void handle_moxey_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -3192,6 +3205,161 @@ static void handle_fidgits_input(char ch) {
     redraw_fidgits_screen();
 }
 
+static void init_moxey(void) {
+    g_moxey_room = 0;
+    g_moxey_has_key = false;
+    g_moxey_has_lantern = false;
+    g_moxey_lantern_lit = false;
+    g_moxey_chest_unlocked = false;
+    snprintf(g_moxey_status, sizeof(g_moxey_status), "Welcome to Moxey's Porch! Type N/S/E/W to navigate, T to Take.");
+}
+
+static void redraw_moxey_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "============================================================\r\n"
+             "                MOXEY'S PORCH (Ahoy! Issue 21)              \r\n"
+             "============================================================\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Room Description
+    if (g_moxey_room == 0) {
+        lau_vram_write_string(g_vram, 
+             "Location: FRONT PORCH\r\n\r\n"
+             "You stand on Moxey's ancient wooden porch. The wind whistles\r\n"
+             "through the trees. A locked front door lies north.\r\n", 165);
+        if (!g_moxey_has_key) {
+            lau_vram_write_string(g_vram, "There is a brass [KEY] resting on the window sill.\r\n", 52);
+        }
+    } else if (g_moxey_room == 1) {
+        lau_vram_write_string(g_vram,
+             "Location: LIVING ROOM\r\n\r\n"
+             "Inside the house, dust lies thick on the furniture.\r\n"
+             "The exit lies south. A doorway to the kitchen lies north.\r\n", 163);
+        if (!g_moxey_has_lantern) {
+            lau_vram_write_string(g_vram, "An unlit [LANTERN] sits on the fireplace mantel.\r\n", 49);
+        }
+    } else if (g_moxey_room == 2) {
+        lau_vram_write_string(g_vram,
+             "Location: KITCHEN\r\n\r\n"
+             "Old copper pots hang on the walls. A dark doorway leads\r\n"
+             "south to the living room. Stairs lead DOWN to the basement.\r\n", 168);
+    } else if (g_moxey_room == 3) {
+        if (!g_moxey_lantern_lit) {
+            lau_vram_write_string(g_vram,
+                 "Location: BASEMENT\r\n\r\n"
+                 "It is pitch black! You feel a freezing chill. Without a light\r\n"
+                 "source, you cannot see anything and must go UP.\r\n", 161);
+        } else {
+            lau_vram_write_string(g_vram,
+                 "Location: BASEMENT (ILLUMINATED)\r\n\r\n"
+                 "Your lantern illuminates the damp stone basement. On a wooden\r\n"
+                 "crate sits Moxey's mysterious heavy [CHEST]. Stairs lead UP.\r\n", 182);
+        }
+    }
+
+    // Inventory status
+    lau_vram_write_string(g_vram, "\r\n============================================================\r\n", 64);
+    snprintf(buf, sizeof(buf), "Inventory: [ %s ] [ %s ]\r\n",
+             g_moxey_has_key ? "Key" : "Empty",
+             g_moxey_has_lantern ? (g_moxey_lantern_lit ? "Lit Lantern" : "Lantern") : "Empty");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    snprintf(buf, sizeof(buf), "Status: %s\r\n", g_moxey_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    lau_vram_write_string(g_vram, "============================================================\r\n", 62);
+    lau_vram_write_string(g_vram, "Controls: [N/S] Go North/South, [U/D] Go Up/Down\r\n", 50);
+    lau_vram_write_string(g_vram, "          [T] Take, [L] Light Lantern, [O] Open Chest, [ESC] Exit\r\n", 66);
+}
+
+static void handle_moxey_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    if (g_moxey_chest_unlocked) {
+        snprintf(g_moxey_status, sizeof(g_moxey_status), "You've won! Press [ESC] to exit.");
+        redraw_moxey_screen();
+        return;
+    }
+
+    if (ch == 'n' || ch == 'N') {
+        if (g_moxey_room == 0) {
+            if (g_moxey_has_key) {
+                g_moxey_room = 1;
+                snprintf(g_moxey_status, sizeof(g_moxey_status), "You unlock the door and enter the Living Room.");
+            } else {
+                snprintf(g_moxey_status, sizeof(g_moxey_status), "The door is locked! You need a Key to open it.");
+            }
+        } else if (g_moxey_room == 1) {
+            g_moxey_room = 2;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You walk into the Kitchen.");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You cannot go North from here.");
+        }
+    } else if (ch == 's' || ch == 'S') {
+        if (g_moxey_room == 1) {
+            g_moxey_room = 0;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You step back onto the Front Porch.");
+        } else if (g_moxey_room == 2) {
+            g_moxey_room = 1;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You step back into the Living Room.");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You cannot go South from here.");
+        }
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_moxey_room == 2) {
+            g_moxey_room = 3;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You walk down the dark cellar stairs.");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "There are no stairs leading down here.");
+        }
+    } else if (ch == 'u' || ch == 'U') {
+        if (g_moxey_room == 3) {
+            g_moxey_room = 2;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You walk up the stairs back to the Kitchen.");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "There are no stairs leading up here.");
+        }
+    } else if (ch == 't' || ch == 'T') {
+        if (g_moxey_room == 0 && !g_moxey_has_key) {
+            g_moxey_has_key = true;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You picked up the brass Key!");
+        } else if (g_moxey_room == 1 && !g_moxey_has_lantern) {
+            g_moxey_has_lantern = true;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You picked up the iron Lantern!");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "Nothing to take here.");
+        }
+    } else if (ch == 'l' || ch == 'L') {
+        if (g_moxey_has_lantern) {
+            g_moxey_lantern_lit = true;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You light the Lantern. It shines brightly.");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You don't have a Lantern to light!");
+        }
+    } else if (ch == 'o' || ch == 'O') {
+        if (g_moxey_room == 3 && g_moxey_lantern_lit) {
+            g_moxey_chest_unlocked = true;
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You open Moxey's chest and discover his gold! YOU WIN!");
+        } else {
+            snprintf(g_moxey_status, sizeof(g_moxey_status), "You don't see any chest to open!");
+        }
+    }
+
+    redraw_moxey_screen();
+}
+
 static void init_hoparound(void) {
     g_hoparound_x = 4;
     g_hoparound_y = 4;
@@ -3367,6 +3535,7 @@ static void handle_booter_input(char ch) {
             case 7: execute_command("TOWERS"); break;
             case 8: execute_command("DISINTEGRATOR"); break;
             case 9: execute_command("FIDGITS"); break;
+            case 10: execute_command("MOXEY"); break;
         }
         return;
     }
@@ -6730,6 +6899,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && (strcasecmp(first_word, "MOXEY") == 0 || strcasecmp(first_word, "MOXEYSPORCH") == 0)) {
+         g_editor_mode = MODE_MOXEY;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_moxey();
+         redraw_moxey_screen();
+         log_telemetry("Started Moxey's Porch game");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -8038,6 +8217,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                                 case 7: execute_command("TOWERS"); break;
                                 case 8: execute_command("DISINTEGRATOR"); break;
                                 case 9: execute_command("FIDGITS"); break;
+                                case 10: execute_command("MOXEY"); break;
                             }
                         } else {
                             g_booter_cursor = idx;
@@ -8066,6 +8246,28 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                             g_fidgits_cursor = 3; handle_fidgits_input(' ');
                         } else if (cx >= 33 && cx <= 36) {
                             g_fidgits_cursor = 4; handle_fidgits_input(' ');
+                        }
+                    }
+                    return;
+                } else if (g_editor_mode == MODE_DISINTEGRATOR) {
+                    int grid_x = cx - 7;
+                    int grid_y = cy - 5;
+                    if (grid_x >= 0 && grid_x < 9 && grid_y >= 0 && grid_y < 9) {
+                        int dx = grid_x - g_disint_px;
+                        int dy = grid_y - g_disint_py;
+                        if (abs(dx) <= 1 && abs(dy) <= 1 && (dx != 0 || dy != 0)) {
+                            if (dy < 0) handle_disintegrator_input('i');
+                            else if (dy > 0) handle_disintegrator_input('k');
+                            else if (dx < 0) handle_disintegrator_input('j');
+                            else if (dx > 0) handle_disintegrator_input('l');
+                        } else {
+                            if (abs(dx) > abs(dy)) {
+                                if (dx > 0) handle_disintegrator_input('d');
+                                else handle_disintegrator_input('a');
+                            } else {
+                                if (dy > 0) handle_disintegrator_input('s');
+                                else handle_disintegrator_input('w');
+                            }
                         }
                     }
                     return;
@@ -8437,6 +8639,15 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
             ch = ' ';
         }
         handle_fidgits_input(ch);
+        return;
+    }
+
+    if (g_editor_mode == MODE_MOXEY) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        }
+        handle_moxey_input(ch);
         return;
     }
 
@@ -9997,6 +10208,8 @@ int main() {
                             handle_disintegrator_input(ch);
                         } else if (g_editor_mode == MODE_FIDGITS) {
                             handle_fidgits_input(ch);
+                        } else if (g_editor_mode == MODE_MOXEY) {
+                            handle_moxey_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -10221,6 +10434,8 @@ int main() {
                             handle_disintegrator_input(ch);
                         } else if (g_editor_mode == MODE_FIDGITS) {
                             handle_fidgits_input(ch);
+                        } else if (g_editor_mode == MODE_MOXEY) {
+                            handle_moxey_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
