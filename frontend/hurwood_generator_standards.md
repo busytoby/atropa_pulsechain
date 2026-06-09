@@ -91,4 +91,17 @@ The joystick scanner reads direct pin states from the CIA 1 complex:
 | `56320` | CIA 1 Data Port A (Joystick 2) | `0–255` | Bit 0 (Up), Bit 1 (Down), Bit 2 (Left), Bit 3 (Right), Bit 4 (Fire) [Active Low: 0 = Pressed] |
 | `56321` | CIA 1 Data Port B (Joystick 1) | `0–255` | Direct line states for Joystick 1 |
 
+---
+
+## 7. Code Compaction Rules (`COMPACT` Mode)
+
+To maximize virtual memory efficiency and emulation execution speed, the `COMPACT` modifier automatically strips non-essential characters from BASIC listings:
+
+1. **Whitespace Elimination**: Removes all space characters (`$20`) except:
+   - When located inside quoted string literals (e.g. `PRINT "CLR"`).
+   - When located inside `REM` (comments) to preserve readability of annotations.
+2. **Keyword packing**: Consolidates statements so syntax parsers interpret commands without boundary padding (e.g., `FOR I = 1 TO 1000` is packed into `FORI=1TO1000`).
+3. **Execution**: Append `COMPACT` as the second argument to any command to activate compaction (e.g., `HURWOOD SOUND COMPACT`).
+
+
 
