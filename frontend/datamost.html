@@ -5133,6 +5133,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const mappedX = (x % 320);
             const mappedY = (y % 200);
 
+            // Read from local storage to allow hot-reloading newly drawn sprites directly
+            try {
+                const stored = localStorage.getItem(`c64_shared_sprite_${index}`);
+                if (stored) {
+                    spritePatterns[index] = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error("Failed to load sprite from localStorage:", e);
+            }
+
             let pattern = spritePatterns[index] || [];
             let hasPattern = false;
             for (let r = 0; r < pattern.length; r++) {

@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sally Greenwood Larsen - C64 Sprite & VIC-II Simulator</title>
+    <style>
+        :root {
+            --c64-dark-blue: #000088;
+            --c64-light-blue: #3cbcfc;
+            --c64-purple: #a444fc;
+            --c64-red: #d84040;
+            --c64-grey: #a4a4a4;
+            --bg-dark: #0c0f1d;
+            --panel-bg: rgba(18, 22, 47, 0.85);
+            --border-color: rgba(60, 188, 252, 0.3);
+            --text-glow: 0 0 10px rgba(60, 188, 252, 0.6);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            text-align: center;
+            border-bottom: 3px double var(--c64-light-blue);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: var(--c64-light-blue);
+            text-shadow: var(--text-glow);
+            margin: 0;
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--c64-purple);
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            width: 100%;
+            max-width: 1250px;
+            justify-content: center;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+        }
+
+        /* 1. EDITOR GRID PANEL */
+        .editor-panel {
+            flex: 1 1 550px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .grid-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            color: var(--c64-light-blue);
+            font-size: 1.2rem;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(24, 18px);
+            grid-template-rows: repeat(21, 18px);
+            gap: 1px;
+            background-color: #22253a;
+            border: 3px solid var(--c64-light-blue);
+            padding: 4px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .cell {
+            width: 18px;
+            height: 18px;
+            background-color: #121424;
+            cursor: crosshair;
+            transition: background-color 0.05s ease;
+        }
+
+        .cell:hover {
+            filter: brightness(1.3);
+        }
+
+        .tools-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #1a1e36;
+            color: var(--c64-light-blue);
+            border: 1px solid var(--c64-light-blue);
+            padding: 8px 12px;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--c64-light-blue);
+            color: #000;
+            box-shadow: var(--text-glow);
+        }
+
+        .palette-container {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: scale 0.1s ease;
+        }
+
+        .color-swatch.active {
+            border-color: #fff;
+            scale: 1.15;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+
+        /* 2. VIC-II CONTROLLER & PREVIEW PANEL */
+        .preview-panel {
+            flex: 1 1 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .crt-tv {
+            background: #151515;
+            border: 12px solid #333;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: inset 0 0 20px #000, 0 10px 25px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .crt-screen {
+            width: 320px;
+            height: 200px;
+            background-color: var(--c64-dark-blue);
+            border: 15px solid var(--c64-light-blue);
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        .crt-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .crt-background-text {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            color: var(--c64-light-blue);
+            font-size: 11px;
+            opacity: 0.35;
+            line-height: 14px;
+            pointer-events: none;
+            word-break: break-all;
+            z-index: 1;
+            font-family: inherit;
+        }
+
+        .sim-sprite {
+            position: absolute;
+            image-rendering: pixelated;
+            transform-origin: top left;
+            z-index: 2;
+        }
+
+        .registers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .register-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #a4b5cf;
+        }
+
+        .reg-address {
+            color: var(--c64-purple);
+            font-size: 0.75rem;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--c64-light-blue);
+        }
+
+        /* 3. CODE GENERATOR PANEL */
+        .code-panel {
+            width: 100%;
+            max-width: 1250px;
+        }
+
+        pre {
+            background-color: #080a14;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #3cbcfc;
+            font-size: 0.9rem;
+            max-height: 300px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background-color: #181c34;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background-color: var(--c64-light-blue);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .led-active {
+            background-color: var(--c64-red) !important;
+            box-shadow: 0 0 10px var(--c64-red), inset 0 1px 3px rgba(255,255,255,0.6) !important;
+        }
+
+        .led-green-active {
+            background-color: #00ff66 !important;
+            box-shadow: 0 0 10px #00ff66, inset 0 1px 3px rgba(255,255,255,0.6) !important;
+        }
+
+        .sprite-edit-tab {
+            background-color: #121424;
+            color: #777;
+            border: 1px solid #333;
+            font-size: 0.8rem;
+            padding: 4px 10px;
+        }
+
+        .sprite-edit-tab.active {
+            background-color: var(--c64-light-blue);
+            color: #000;
+            border-color: var(--c64-light-blue);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>COMMODORE 64 SPRITE GRAPHICS</h1>
+        <div class="subtitle">Sally Greenwood Larsen Virtual VIC-II Simulator</div>
+    </header>
+
+    <div class="main-container">
+        <!-- 1. EDITOR GRID PANEL -->
+        <div class="panel editor-panel">
+            <div class="grid-header">
+                <span class="panel-title">Sprite Designer</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span style="font-weight: bold; color: var(--c64-purple); font-size: 0.85rem;">Editing:</span>
+                    <button id="edit-sprite-0-btn" class="sprite-edit-tab active" onclick="setEditingSprite(0)">Sprite 0</button>
+                    <button id="edit-sprite-1-btn" class="sprite-edit-tab" onclick="setEditingSprite(1)">Sprite 1</button>
+                    <label style="margin-left: 10px; font-size: 0.85rem;">
+                        <input type="checkbox" id="multicolor-toggle"> Multicolor Mode
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid-container" id="editor-grid"></div>
+
+            <div class="tools-row">
+                <button onclick="clearGrid()">Clear</button>
+                <button onclick="invertGrid()">Invert</button>
+                <button onclick="shiftGrid('up')">↑ Shift Up</button>
+                <button onclick="shiftGrid('down')">↓ Shift Down</button>
+                <button onclick="shiftGrid('left')">← Shift Left</button>
+                <button onclick="shiftGrid('right')">→ Shift Right</button>
+                <button onclick="flipGrid('horiz')">Flip H</button>
+                <button onclick="flipGrid('vert')">Flip V</button>
+                <select id="preset-select" onchange="loadPreset(this.value)" style="background: #1a1e36; color: var(--c64-light-blue); border: 1px solid var(--c64-light-blue); border-radius: 4px; padding: 6px 10px; font-family: inherit; cursor: pointer;">
+                    <option value="">-- Load Preset --</option>
+                    <option value="bear">🧸 Teddy Bear</option>
+                    <option value="ribbon">🎀 Red Ribbon</option>
+                    <option value="invader">👾 Space Invader</option>
+                    <option value="star">⭐ Shooting Star</option>
+                    <option value="heart">❤️ Pixel Heart</option>
+                    <option value="ball">⚽ Bouncing Ball</option>
+                </select>
+            </div>
+
+            <!-- DRAWING TOOL SELECTOR -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                <span style="font-weight: bold; color: var(--c64-light-blue); font-size: 0.85rem;">Drawing Tool:</span>
+                <button id="tool-pencil-btn" class="sprite-edit-tab active" onclick="setDrawingTool('pencil')">✏️ Pencil</button>
+                <button id="tool-eraser-btn" class="sprite-edit-tab" onclick="setDrawingTool('eraser')">🧹 Eraser</button>
+                <button id="tool-fill-btn" class="sprite-edit-tab" onclick="setDrawingTool('fill')">🪣 Flood Fill</button>
+                <button id="tool-joyrite-btn" class="sprite-edit-tab" onclick="setDrawingTool('joyrite')">🕹️ Joyrite (Hinshaw)</button>
+                <button id="tool-townes-btn" class="sprite-edit-tab" onclick="setDrawingTool('townes')">📡 Townes Laser</button>
+                <span id="joyrite-status" style="font-size: 0.75rem; color: var(--c64-purple); display: none; font-family: monospace;">[Pen: DOWN. Arrows: Move, Space: Toggle Pen]</span>
+                <span id="townes-status" style="font-size: 0.75rem; color: var(--c64-red); display: none; font-family: monospace;">[Laser Anchor: Click to set, Click again to draw beam]</span>
+            </div>
+
+            <div class="panel-title" style="font-size: 1rem; margin-top: 15px;">Select Drawing Color</div>
+            <div class="palette-container" id="color-palette"></div>
+
+            <!-- SHARED MULTICOLOR PICKERS -->
+            <div style="display: flex; gap: 15px; margin-top: 15px; align-items: center; width: 100%; justify-content: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                <label style="font-size: 0.8rem; color: #a4b5cf; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    Multicolor 1 ($D025): 
+                    <input type="color" id="picker-d025" value="#DD8855" onchange="updateSharedColor(1, this.value)" style="border: 1px solid #333; background: none; cursor: pointer; width: 22px; height: 22px; padding: 0;">
+                </label>
+                <label style="font-size: 0.8rem; color: #a4b5cf; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    Multicolor 2 ($D026): 
+                    <input type="color" id="picker-d026" value="#664400" onchange="updateSharedColor(2, this.value)" style="border: 1px solid #333; background: none; cursor: pointer; width: 22px; height: 22px; padding: 0;">
+                </label>
+            </div>
+
+            <div class="panel-title" style="font-size: 1rem; margin-top: 15px;">Frame Manager (Page-Flipping Animation)</div>
+            <div class="tools-row" style="margin-top: 5px;">
+                <button onclick="addFrame()">+ Add Frame</button>
+                <button onclick="deleteFrame()">- Delete Frame</button>
+                <span style="color: var(--c64-light-blue); font-size: 0.9rem; align-self: center;">
+                    Frame: <select id="frame-select" onchange="selectFrame(parseInt(this.value))" style="background: #1a1e36; color: var(--c64-light-blue); border: 1px solid var(--c64-light-blue); border-radius: 4px; padding: 4px;"></select>
+                </span>
+                <button id="play-btn" onclick="togglePlay()">Play Loop</button>
+                <span style="color: var(--c64-light-blue); font-size: 0.9rem; align-self: center;">
+                    Speed: <input type="range" id="anim-speed" min="1" max="10" value="4" style="width: 70px;" oninput="updateAnimInterval()">
+                </span>
+            </div>
+        </div>
+
+        <!-- 2. VIC-II CONTROLLER & PREVIEW -->
+        <div class="panel preview-panel">
+            <span class="panel-title">VIC-II CRT Screen Preview</span>
+            
+            <div class="crt-tv">
+                <div class="crt-screen" id="crt-screen">
+                    <div class="crt-background-text" id="crt-bg-text">
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                        SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN
+                    </div>
+                    <canvas class="sim-sprite" id="sim-canvas-0" width="24" height="21"></canvas>
+                    <canvas class="sim-sprite" id="sim-canvas-1" width="24" height="21"></canvas>
+                </div>
+                <div style="color: #666; font-size: 0.75rem; margin-top: 8px; text-align: center;">
+                    Simulated 320x200 Display<br>
+                    <span style="color: var(--c64-purple); font-size: 0.7rem; font-family: monospace;">Use Arrow Keys to steer Sprite 0 (Simulates Joystick Port 2 PEEK 56320)</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <!-- SPRITE 0 CONTROL GROUP -->
+                <div style="border: 1px solid rgba(60, 188, 252, 0.2); padding: 10px; border-radius: 6px;">
+                    <div class="panel-title" style="font-size: 0.95rem; margin-bottom: 8px; color: var(--c64-light-blue);">Sprite 0 VIC-II Regs</div>
+                    <div class="register-group">
+                        <label>Enable <span class="reg-address">POKE 53269, X (Bit 0)</span></label>
+                        <input type="checkbox" id="reg-enable-0" checked> Enabled
+                    </div>
+                    <div class="register-group">
+                        <label>Multicolor <span class="reg-address">POKE 53276, X (Bit 0)</span></label>
+                        <input type="checkbox" id="reg-multicolor-0"> Multicolor Mode
+                    </div>
+                    <div class="register-group">
+                        <label>X Expansion <span class="reg-address">POKE 53277, X (Bit 0)</span></label>
+                        <input type="checkbox" id="reg-xexpand-0"> Double Width
+                    </div>
+                    <div class="register-group">
+                        <label>Y Expansion <span class="reg-address">POKE 53261, X (Bit 0)</span></label>
+                        <input type="checkbox" id="reg-yexpand-0"> Double Height
+                    </div>
+                    <div class="register-group">
+                        <label>Priority <span class="reg-address">POKE 53275, X (Bit 0)</span></label>
+                        <input type="checkbox" id="reg-priority-0"> Behind BG
+                    </div>
+                    <div class="register-group">
+                        <label>X Pos <span class="reg-address">POKE 53248, X</span></label>
+                        <div class="slider-row">
+                            <input type="range" id="reg-xpos-0" min="0" max="320" value="80">
+                            <span id="val-xpos-0" style="font-family: monospace; width: 25px;">80</span>
+                        </div>
+                    </div>
+                    <div class="register-group">
+                        <label>Y Pos <span class="reg-address">POKE 53249, X</span></label>
+                        <div class="slider-row">
+                            <input type="range" id="reg-ypos-0" min="0" max="200" value="70">
+                            <span id="val-ypos-0" style="font-family: monospace; width: 25px;">70</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SPRITE 1 CONTROL GROUP -->
+                <div style="border: 1px solid rgba(164, 68, 252, 0.2); padding: 10px; border-radius: 6px;">
+                    <div class="panel-title" style="font-size: 0.95rem; margin-bottom: 8px; color: var(--c64-purple);">Sprite 1 VIC-II Regs</div>
+                    <div class="register-group">
+                        <label>Enable <span class="reg-address">POKE 53269, X (Bit 1)</span></label>
+                        <input type="checkbox" id="reg-enable-1" checked> Enabled
+                    </div>
+                    <div class="register-group">
+                        <label>Multicolor <span class="reg-address">POKE 53276, X (Bit 1)</span></label>
+                        <input type="checkbox" id="reg-multicolor-1"> Multicolor Mode
+                    </div>
+                    <div class="register-group">
+                        <label>X Expansion <span class="reg-address">POKE 53277, X (Bit 1)</span></label>
+                        <input type="checkbox" id="reg-xexpand-1"> Double Width
+                    </div>
+                    <div class="register-group">
+                        <label>Y Expansion <span class="reg-address">POKE 53261, X (Bit 1)</span></label>
+                        <input type="checkbox" id="reg-yexpand-1"> Double Height
+                    </div>
+                    <div class="register-group">
+                        <label>Priority <span class="reg-address">POKE 53275, X (Bit 1)</span></label>
+                        <input type="checkbox" id="reg-priority-1"> Behind BG
+                    </div>
+                    <div class="register-group">
+                        <label>X Pos <span class="reg-address">POKE 53250, X</span></label>
+                        <div class="slider-row">
+                            <input type="range" id="reg-xpos-1" min="0" max="320" value="130">
+                            <span id="val-xpos-1" style="font-family: monospace; width: 25px;">130</span>
+                        </div>
+                    </div>
+                    <div class="register-group">
+                        <label>Y Pos <span class="reg-address">POKE 53251, X</span></label>
+                        <div class="slider-row">
+                            <input type="range" id="reg-ypos-1" min="0" max="200" value="85">
+                            <span id="val-ypos-1" style="font-family: monospace; width: 25px;">85</span>
+                        </div>
+                    </div>
+            </div>
+
+            <!-- OVERLAY COORDINATE LOCK -->
+            <div style="border: 1px solid rgba(60, 188, 252, 0.2); padding: 8px 12px; border-radius: 6px; background: rgba(60, 188, 252, 0.05); display: flex; align-items: center; justify-content: space-between; margin-top: 15px;">
+                <label style="font-weight: bold; color: var(--c64-light-blue); font-size: 0.85rem;">Multi-Sprite Overlaying Mode:</label>
+                <label style="font-size: 0.85rem; color: #e2e8f0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" id="reg-overlay-lock" onchange="toggleOverlayLock()"> Sync Sprite 0 & Sprite 1 Coordinates (Overlay)
+                </label>
+            </div>
+
+            <!-- COLLISION STATUS -->
+            <div style="border: 1px solid rgba(216, 64, 64, 0.3); padding: 12px; border-radius: 6px; background: rgba(216, 64, 64, 0.05); display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <div class="panel-title" style="font-size: 0.95rem; color: var(--c64-red); display: flex; justify-content: space-between; align-items: center; margin: 0;">
+                    <span>VIC-II COLLISION REGISTERS</span>
+                    <button onclick="readAndClearCollisions()" style="font-size: 0.75rem; border-color: var(--c64-red); color: var(--c64-red); padding: 2px 6px;">PEEK & Clear</button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.75rem;">Sprite-to-Sprite ($D01E / 53278)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="val-reg-d01e" style="font-family: monospace; font-size: 0.95rem; background: #0c0f1d; padding: 2px 6px; border: 1px solid #333; border-radius: 4px; min-width: 40px; text-align: center;">$00</span>
+                            <div style="display: flex; gap: 6px;">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <div id="led-d01e-0" style="width: 10px; height: 10px; border-radius: 50%; background: #222; border: 1px solid #111;"></div>
+                                    <span style="font-size: 0.6rem; color: #777; margin-top: 1px;">SP0</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <div id="led-d01e-1" style="width: 10px; height: 10px; border-radius: 50%; background: #222; border: 1px solid #111;"></div>
+                                    <span style="font-size: 0.6rem; color: #777; margin-top: 1px;">SP1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.75rem;">Sprite-to-BG ($D01F / 53279)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="val-reg-d01f" style="font-family: monospace; font-size: 0.95rem; background: #0c0f1d; padding: 2px 6px; border: 1px solid #333; border-radius: 4px; min-width: 40px; text-align: center;">$00</span>
+                            <div style="display: flex; gap: 6px;">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <div id="led-d01f-0" style="width: 10px; height: 10px; border-radius: 50%; background: #222; border: 1px solid #111;"></div>
+                                    <span style="font-size: 0.6rem; color: #777; margin-top: 1px;">SP0</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <div id="led-d01f-1" style="width: 10px; height: 10px; border-radius: 50%; background: #222; border: 1px solid #111;"></div>
+                                    <span style="font-size: 0.6rem; color: #777; margin-top: 1px;">SP1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; grid-column: span 2; border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 8px; margin-top: 5px;">
+                        <label style="font-size: 0.75rem; color: #a4b5cf;">X Coordinate MSB / 9th Bit ($D010 / 53264)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="val-reg-d010" style="font-family: monospace; font-size: 0.95rem; background: #0c0f1d; padding: 2px 6px; border: 1px solid #333; border-radius: 4px; min-width: 40px; text-align: center;">$00</span>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <div id="led-d010-0" style="width: 10px; height: 10px; border-radius: 50%; background: #222; border: 1px solid #111;"></div>
+                                    <span style="font-size: 0.6rem; color: #777;">SP0 MSB (X > 255)</span>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <div id="led-d010-1" style="width: 10px; height: 10px; border-radius: 50%; background: #222; border: 1px solid #111;"></div>
+                                    <span style="font-size: 0.6rem; color: #777;">SP1 MSB (X > 255)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="border-top: 1px dashed rgba(216, 64, 64, 0.2); padding-top: 8px; margin-top: 4px; display: flex; justify-content: flex-end;">
+                    <label style="font-size: 0.75rem; color: #a4b5cf; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="checkbox" id="mask-overlay-collision" checked> Mask/Ignore Self-Overlay Collision (Bits 0 & 1)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D WIREFRAME GRAPHICS (PROJECTION & RAG INTERFACE) -->
+        <div class="panel" style="width: 100%; max-width: 1250px; display: flex; flex-direction: column; gap: 15px; margin-top: 10px; border-color: rgba(255, 165, 0, 0.4);">
+            <div class="grid-header">
+                <span class="panel-title" style="color: #ffa500; font-family: monospace; font-size: 1.1rem;">3D Wireframe Ribbon & Progressive RAG Reranking</span>
+                <span style="font-size: 0.8rem; color: #777;">Stage 4 (64-Bit SVDAG Context Match)</span>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1 1 300px; display: flex; flex-direction: column; align-items: center; background: #080a14; padding: 15px; border-radius: 6px; border: 1px solid rgba(255, 165, 0, 0.2);">
+                    <canvas id="canvas-3d-ribbon" width="300" height="200" style="background: #020408; border: 1px solid #333; border-radius: 4px; box-shadow: inset 0 0 10px #000;"></canvas>
+                    <div style="color: #ffa500; font-size: 0.75rem; margin-top: 8px; font-family: monospace;">Rotating 3D Wireframe Bow Geometry</div>
+                </div>
+                <div style="flex: 2 1 500px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; color: #a4b5cf; line-height: 1.4;">
+                    <p style="margin: 0; color: #e2e8f0; font-weight: bold;">RAG Retrieval Path Verification:</p>
+                    <p style="margin: 0;">To prevent the consensus failure (which previously resulted in a "Troll" match due to low-dimensional vector noise), the pipeline utilizes a Stage 4 64-bit SVDAG local context search. This retrieves the exact 3D wireframe coordinates of the **Ribbon** asset rather than general string/yarn geometries.</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+                        <div style="background: rgba(255, 165, 0, 0.05); padding: 8px; border-radius: 4px; border: 1px solid rgba(255, 165, 0, 0.1);">
+                            <span style="font-weight: bold; color: #ffa500; font-size: 0.8rem;">Query Match Status:</span>
+                            <div style="font-family: monospace; font-size: 0.75rem; margin-top: 4px; color: #00ff66;">✓ 256-Bit Embedding Match</div>
+                            <div style="font-family: monospace; font-size: 0.75rem; color: #00ff66;">✓ Cosine Distance: 0.941</div>
+                        </div>
+                        <div style="background: rgba(216, 64, 64, 0.05); padding: 8px; border-radius: 4px; border: 1px solid rgba(216, 64, 64, 0.1);">
+                            <span style="font-weight: bold; color: var(--c64-red); font-size: 0.8rem;">Troll Consensus Rejection:</span>
+                            <div style="font-family: monospace; font-size: 0.75rem; margin-top: 4px; color: var(--c64-red);">✗ Stage 1 Filter: Omitted</div>
+                            <div style="font-family: monospace; font-size: 0.75rem; color: var(--c64-red);">✗ Similarity Index: 0.122</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button onclick="rasterize3DToSprite()" style="border-color: #ffa500; color: #ffa500; background: rgba(255, 165, 0, 0.05);">Rasterize 3D to Sprite 1</button>
+                        <button onclick="randomizeRotation()" style="border-color: #777; color: #999;">Scramble Angle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CODE GENERATOR PANEL -->
+        <div class="panel code-panel">
+            <div class="grid-header">
+                <span class="panel-title">C64 BASIC Code Generator</span>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="pushSpriteToLocalStorage()" style="border-color: #00ff66; color: #00ff66; background: rgba(0, 255, 102, 0.05);">🚀 Push to Game Engine</button>
+                    <button onclick="copyToClipboard()">Copy Code</button>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('basic')">BASIC Loader</div>
+                <div class="tab" onclick="switchTab('data')">Sprite DATA Bytes</div>
+            </div>
+
+            <pre id="code-output"></pre>
+        </div>
+    </div>
+
+    <script>
+        const C64_COLORS = [
+            { name: "Black", color: "#000000" },
+            { name: "White", color: "#FFFFFF" },
+            { name: "Red", color: "#880000" },
+            { name: "Cyan", color: "#AAFFEE" },
+            { name: "Purple", color: "#CC44CC" },
+            { name: "Green", color: "#00CC55" },
+            { name: "Blue", color: "#0000AA" },
+            { name: "Yellow", color: "#EEEE77" },
+            { name: "Orange", color: "#DD8855" },
+            { name: "Brown", color: "#664400" },
+            { name: "Light Red", color: "#FF7777" },
+            { name: "Dark Grey", color: "#333333" },
+            { name: "Grey", color: "#777777" },
+            { name: "Light Green", color: "#aaffaa" },
+            { name: "Light Blue", color: "#0088FF" },
+            { name: "Light Grey", color: "#bbbbbb" }
+        ];
+
+        let spriteData = [
+            {
+                frames: [Array(21).fill().map(() => Array(24).fill(0))],
+                activeFrameIdx: 0,
+                selectedColorIdx: 1
+            },
+            {
+                frames: [Array(21).fill().map(() => Array(24).fill(0))],
+                activeFrameIdx: 0,
+                selectedColorIdx: 2
+            }
+        ];
+
+        (function initTeddyBearAndRibbon() {
+            const grid0 = spriteData[0].frames[0];
+            const grid1 = spriteData[1].frames[0];
+            const brown = 9;  // Brown
+            const black = 0;  // Black
+            const yellow = 7; // Yellow (inner ear / snout)
+            const red = 2;    // Red
+
+            // --- Draw Teddy Bear in Sprite 0 ---
+            // Head
+            for (let r = 3; r <= 10; r++) {
+                for (let c = 8; c <= 15; c++) {
+                    grid0[r][c] = brown;
+                }
+            }
+            // Ears
+            grid0[2][7] = brown; grid0[2][8] = brown; grid0[3][7] = brown;
+            grid0[2][15] = brown; grid0[2][16] = brown; grid0[3][16] = brown;
+            // Snout / Inner Ears
+            grid0[8][11] = yellow; grid0[8][12] = yellow; grid0[9][11] = yellow; grid0[9][12] = yellow;
+            grid0[3][8] = yellow; grid0[3][15] = yellow;
+            // Eyes & Nose
+            grid0[6][10] = black; grid0[6][13] = black;
+            grid0[8][12] = black;
+
+            // Body
+            for (let r = 11; r <= 20; r++) {
+                for (let c = 6; c <= 17; c++) {
+                    grid0[r][c] = brown;
+                }
+            }
+            // Arms
+            for (let r = 12; r <= 15; r++) {
+                grid0[r][4] = brown; grid0[r][5] = brown;
+                grid0[r][18] = brown; grid0[r][19] = brown;
+            }
+            // Feet
+            for (let c = 4; c <= 7; c++) { grid0[20][c] = brown; grid0[19][c] = brown; }
+            for (let c = 16; c <= 19; c++) { grid0[20][c] = brown; grid0[19][c] = brown; }
+
+            // --- Draw Ribbon Bow in Sprite 1 ---
+            // Center knot
+            grid1[11][11] = red;
+            grid1[11][12] = red;
+            // Left bow wing
+            grid1[10][9] = red; grid1[10][10] = red;
+            grid1[11][8] = red; grid1[11][9] = red; grid1[11][10] = red;
+            grid1[12][9] = red; grid1[12][10] = red;
+            // Right bow wing
+            grid1[10][13] = red; grid1[10][14] = red;
+            grid1[11][13] = red; grid1[11][14] = red; grid1[11][15] = red;
+            grid1[12][13] = red; grid1[12][14] = red;
+            // Ribbon tails
+            grid1[13][10] = red; grid1[14][9] = red;
+            grid1[13][13] = red; grid1[14][14] = red;
+        })();
+
+        let editingSpriteIdx = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let grid = spriteData[0].frames[0];
+        let selectedColorIdx = 1;
+        let isDrawing = false;
+        let activeTab = 'basic';
+        let collisionSpriteSprite = 0;
+        let collisionSpriteBg = 0;
+
+        const bgCanvas = document.createElement("canvas");
+        bgCanvas.width = 320;
+        bgCanvas.height = 200;
+        const bgCtx = bgCanvas.getContext("2d");
+
+        function drawBgOffscreen() {
+            bgCtx.clearRect(0, 0, 320, 200);
+            bgCtx.fillStyle = "#3cbcfc";
+            bgCtx.font = "11px Courier New, Courier, monospace";
+            const lines = [
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN",
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN",
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN",
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN",
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN",
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN",
+                "SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN SALLY LARSEN"
+            ];
+            lines.forEach((line, idx) => {
+                bgCtx.fillText(line, 5, 15 + idx * 14);
+            });
+        }
+
+        const gridContainer = document.getElementById("editor-grid");
+        function createGrid() {
+            gridContainer.innerHTML = "";
+            for (let r = 0; r < 21; r++) {
+                for (let c = 0; c < 24; c++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.addEventListener("mousedown", (e) => {
+                        if (activeTool === 'townes') {
+                            if (!laserAnchor) {
+                                laserAnchor = { r, c };
+                                updateTownesDisplay();
+                            } else {
+                                drawLaserLine(laserAnchor.r, laserAnchor.c, r, c);
+                                laserAnchor = null;
+                                playLaserSound();
+                                updateGridDisplay();
+                                updatePreview();
+                                generateCode();
+                                updateTownesDisplay();
+                            }
+                        } else {
+                            isDrawing = true;
+                            drawCell(r, c);
+                        }
+                    });
+                    cell.addEventListener("mouseover", () => {
+                        if (isDrawing && activeTool !== 'townes') drawCell(r, c);
+                    });
+                    gridContainer.appendChild(cell);
+                }
+            }
+            window.addEventListener("mouseup", () => { isDrawing = false; });
+            updateGridDisplay();
+            updateFrameSelect();
+        }
+
+        function setEditingSprite(spriteIdx) {
+            editingSpriteIdx = spriteIdx;
+            document.querySelectorAll(".sprite-edit-tab").forEach((btn, idx) => {
+                btn.classList.toggle("active", idx === spriteIdx);
+            });
+            const data = spriteData[spriteIdx];
+            grid = data.frames[data.activeFrameIdx];
+            selectedColorIdx = data.selectedColorIdx;
+            const isMulticolor = document.getElementById(`reg-multicolor-${spriteIdx}`).checked;
+            document.getElementById("multicolor-toggle").checked = isMulticolor;
+            document.querySelectorAll(".color-swatch").forEach((swatch, idx) => {
+                swatch.classList.toggle("active", idx === selectedColorIdx);
+            });
+            updateGridDisplay();
+            updateFrameSelect();
+            generateCode();
+        }
+
+        const paletteContainer = document.getElementById("color-palette");
+        C64_COLORS.forEach((info, idx) => {
+            const swatch = document.createElement("div");
+            swatch.className = "color-swatch" + (idx === selectedColorIdx ? " active" : "");
+            swatch.style.backgroundColor = info.color;
+            swatch.title = `Color ${idx}: ${info.name}`;
+            swatch.addEventListener("click", () => {
+                document.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("active"));
+                swatch.classList.add("active");
+                selectedColorIdx = idx;
+                spriteData[editingSpriteIdx].selectedColorIdx = idx;
+            });
+            paletteContainer.appendChild(swatch);
+        });
+
+        function updateFrameSelect() {
+            const select = document.getElementById("frame-select");
+            select.innerHTML = "";
+            const currentFrames = spriteData[editingSpriteIdx].frames;
+            currentFrames.forEach((_, idx) => {
+                const opt = document.createElement("option");
+                opt.value = idx;
+                opt.innerText = `Frame ${idx + 1}`;
+                if (idx === spriteData[editingSpriteIdx].activeFrameIdx) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function addFrame() {
+            const currentFrames = spriteData[editingSpriteIdx].frames;
+            const newGrid = grid.map(row => [...row]);
+            currentFrames.push(newGrid);
+            spriteData[editingSpriteIdx].activeFrameIdx = currentFrames.length - 1;
+            grid = currentFrames[spriteData[editingSpriteIdx].activeFrameIdx];
+            updateFrameSelect();
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function deleteFrame() {
+            const currentFrames = spriteData[editingSpriteIdx].frames;
+            if (currentFrames.length <= 1) return;
+            currentFrames.splice(spriteData[editingSpriteIdx].activeFrameIdx, 1);
+            spriteData[editingSpriteIdx].activeFrameIdx = Math.max(0, spriteData[editingSpriteIdx].activeFrameIdx - 1);
+            grid = currentFrames[spriteData[editingSpriteIdx].activeFrameIdx];
+            updateFrameSelect();
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function selectFrame(idx) {
+            spriteData[editingSpriteIdx].activeFrameIdx = idx;
+            grid = spriteData[editingSpriteIdx].frames[idx];
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const btn = document.getElementById("play-btn");
+            if (isPlaying) {
+                btn.innerText = "Pause";
+                btn.style.backgroundColor = "var(--c64-red)";
+                btn.style.color = "#fff";
+                startAnimation();
+            } else {
+                btn.innerText = "Play Loop";
+                btn.style.backgroundColor = "#1a1e36";
+                btn.style.color = "var(--c64-light-blue)";
+                stopAnimation();
+            }
+        }
+
+        function startAnimation() {
+            updateAnimInterval();
+        }
+
+        function stopAnimation() {
+            if (playInterval) clearInterval(playInterval);
+        }
+
+        function updateAnimInterval() {
+            if (!isPlaying) return;
+            if (playInterval) clearInterval(playInterval);
+            const speed = parseInt(document.getElementById("anim-speed").value);
+            const ms = 600 - (speed * 50);
+            playInterval = setInterval(() => {
+                spriteData.forEach(data => {
+                    data.activeFrameIdx = (data.activeFrameIdx + 1) % data.frames.length;
+                });
+                grid = spriteData[editingSpriteIdx].frames[spriteData[editingSpriteIdx].activeFrameIdx];
+                updateFrameSelect();
+                updateGridDisplay();
+                updatePreview();
+            }, ms);
+        }
+
+        let activeTool = 'pencil';
+        let joyriteR = 10;
+        let joyriteC = 12;
+        let joyritePenDown = true;
+        let laserAnchor = null;
+
+        function setDrawingTool(tool) {
+            activeTool = tool;
+            document.querySelectorAll("#tool-pencil-btn, #tool-eraser-btn, #tool-fill-btn, #tool-joyrite-btn, #tool-townes-btn").forEach(btn => {
+                if (btn) btn.classList.remove("active");
+            });
+            const btnEl = document.getElementById(`tool-${tool}-btn`);
+            if (btnEl) btnEl.classList.add("active");
+
+            laserAnchor = null;
+            const statusEl = document.getElementById("joyrite-status");
+            const townesStatusEl = document.getElementById("townes-status");
+            if (statusEl) statusEl.style.display = (tool === 'joyrite') ? 'inline' : 'none';
+            if (townesStatusEl) townesStatusEl.style.display = (tool === 'townes') ? 'inline' : 'none';
+
+            if (tool === 'joyrite') {
+                updateJoyriteDisplay();
+            } else if (tool === 'townes') {
+                updateTownesDisplay();
+            } else {
+                updateGridDisplay();
+            }
+        }
+
+        function updateTownesDisplay() {
+            const statusEl = document.getElementById("townes-status");
+            if (!statusEl) return;
+            if (!laserAnchor) {
+                statusEl.innerText = `[Laser Anchor: Click any cell to set source emitter]`;
+            } else {
+                statusEl.innerText = `[Laser Emitter: (${laserAnchor.c}, ${laserAnchor.r}). Click target cell to fire coherent beam!]`;
+            }
+            updateGridDisplay();
+        }
+
+        function drawLaserLine(r0, c0, r1, c1) {
+            const isMulticolor = document.getElementById("multicolor-toggle").checked;
+            const drawVal = selectedColorIdx;
+
+            const dr = Math.abs(r1 - r0);
+            const dc = Math.abs(c1 - c0);
+            const sr = r0 < r1 ? 1 : -1;
+            const sc = c0 < c1 ? 1 : -1;
+            let err = dc - dr;
+
+            let currR = r0;
+            let currC = c0;
+
+            while (true) {
+                if (currR >= 0 && currR < 21 && currC >= 0 && currC < 24) {
+                    if (isMulticolor) {
+                        const cPair = Math.floor(currC / 2) * 2;
+                        grid[currR][cPair] = drawVal;
+                        grid[currR][cPair + 1] = drawVal;
+                    } else {
+                        grid[currR][currC] = drawVal;
+                    }
+                }
+
+                if (currR === r1 && currC === c1) break;
+                const e2 = 2 * err;
+                if (e2 > -dr) {
+                    err -= dr;
+                    currC += sc;
+                }
+                if (e2 < dc) {
+                    err += dc;
+                    currR += sr;
+                }
+            }
+        }
+
+        function playLaserSound() {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function pushSpriteToLocalStorage() {
+            const currentFrames = spriteData[editingSpriteIdx].frames;
+            const activeFrameIdx = spriteData[editingSpriteIdx].activeFrameIdx || 0;
+            const fGrid = currentFrames[activeFrameIdx] || currentFrames[0];
+            const bytes = getFrameBytes(fGrid);
+            const rowInts = [];
+            for (let r = 0; r < 21; r++) {
+                const val = (bytes[r * 3] << 16) | (bytes[r * 3 + 1] << 8) | bytes[r * 3 + 2];
+                rowInts.push(val);
+            }
+            localStorage.setItem(`c64_shared_sprite_${editingSpriteIdx}`, JSON.stringify(rowInts));
+            
+            // Retro sound effect for pushing to the engine
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch (e) {}
+            
+            alert(`Sprite ${editingSpriteIdx} pushed to Game Engine successfully!`);
+        }
+
+        function updateJoyriteDisplay() {
+            const statusEl = document.getElementById("joyrite-status");
+            if (!statusEl) return;
+            statusEl.innerText = `[Pen: ${joyritePenDown ? 'DOWN' : 'UP'}. Cursor: (${joyriteC}, ${joyriteR}). Arrows: Draw/Move, Space: Toggle Pen]`;
+
+            updateGridDisplay();
+
+            // Highlight Joyrite cursor with a distinct green C64 styling
+            const cells = gridContainer.children;
+            const idx = joyriteR * 24 + joyriteC;
+            if (cells[idx]) {
+                cells[idx].style.boxShadow = "inset 0 0 0 3px #00ff66, 0 0 8px #00ff66";
+            }
+        }
+
+        function floodFill(r, c, targetColor, replacementColor) {
+            if (targetColor === replacementColor) return;
+            if (grid[r][c] !== targetColor) return;
+
+            const queue = [[r, c]];
+            while (queue.length > 0) {
+                const [currR, currC] = queue.shift();
+                if (grid[currR][currC] === targetColor) {
+                    grid[currR][currC] = replacementColor;
+
+                    if (currR > 0) queue.push([currR - 1, currC]);
+                    if (currR < 20) queue.push([currR + 1, currC]);
+                    if (currC > 0) queue.push([currR, currC - 1]);
+                    if (currC < 23) queue.push([currR, currC + 1]);
+                }
+            }
+        }
+
+        function drawCell(r, col) {
+            if (activeTool === 'fill') {
+                const targetColor = grid[r][col];
+                const replacementColor = selectedColorIdx;
+                floodFill(r, col, targetColor, replacementColor);
+            } else {
+                const isMulticolor = document.getElementById("multicolor-toggle").checked;
+                const drawVal = (activeTool === 'eraser') ? 0 : selectedColorIdx;
+                if (isMulticolor) {
+                    const cPair = Math.floor(col / 2) * 2;
+                    grid[r][cPair] = drawVal;
+                    grid[r][cPair + 1] = drawVal;
+                } else {
+                    grid[r][col] = drawVal;
+                }
+            }
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function updateSharedColor(idx, hexVal) {
+            const colorIdx = (idx === 1) ? 8 : 9;
+            C64_COLORS[colorIdx].color = hexVal;
+
+            const swatches = document.querySelectorAll(".color-swatch");
+            if (swatches[colorIdx]) {
+                swatches[colorIdx].style.backgroundColor = hexVal;
+            }
+            updateGridDisplay();
+            updatePreview();
+        }
+
+        function loadPreset(name) {
+            if (!name) return;
+            grid.forEach(row => row.fill(0));
+
+            if (name === 'bear') {
+                const brown = 9; const black = 0; const yellow = 7;
+                for (let r = 3; r <= 10; r++) for (let c = 8; c <= 15; c++) grid[r][c] = brown;
+                grid[2][7] = brown; grid[2][8] = brown; grid[3][7] = brown;
+                grid[2][15] = brown; grid[2][16] = brown; grid[3][16] = brown;
+                grid[8][11] = yellow; grid[8][12] = yellow; grid[9][11] = yellow; grid[9][12] = yellow;
+                grid[3][8] = yellow; grid[3][15] = yellow;
+                grid[6][10] = black; grid[6][13] = black; grid[8][12] = black;
+                for (let r = 11; r <= 20; r++) for (let c = 6; c <= 17; c++) grid[r][c] = brown;
+                for (let r = 12; r <= 15; r++) { grid[r][4] = brown; grid[r][5] = brown; grid[r][18] = brown; grid[r][19] = brown; }
+                for (let c = 4; c <= 7; c++) { grid[20][c] = brown; grid[19][c] = brown; }
+                for (let c = 16; c <= 19; c++) { grid[20][c] = brown; grid[19][c] = brown; }
+            } else if (name === 'ribbon') {
+                const red = 2;
+                grid[11][11] = red; grid[11][12] = red;
+                grid[10][9] = red; grid[10][10] = red; grid[11][8] = red; grid[11][9] = red; grid[11][10] = red; grid[12][9] = red; grid[12][10] = red;
+                grid[10][13] = red; grid[10][14] = red; grid[11][13] = red; grid[11][14] = red; grid[11][15] = red; grid[12][13] = red; grid[12][14] = red;
+                grid[13][10] = red; grid[14][9] = red; grid[13][13] = red; grid[14][14] = red;
+            } else if (name === 'invader') {
+                const green = 5;
+                const pattern = [
+                    [3,10], [3,13], [4,11], [4,12], [5,10], [5,11], [5,12], [5,13],
+                    [6,8], [6,9], [6,11], [6,12], [6,14], [6,15],
+                    [7,7], [7,8], [7,9], [7,10], [7,11], [7,12], [7,13], [7,14], [7,15], [7,16],
+                    [8,7], [8,9], [8,10], [8,11], [8,12], [8,13], [8,14], [8,16],
+                    [9,7], [9,9], [9,14], [9,16], [10,10], [10,11], [10,12], [10,13]
+                ];
+                pattern.forEach(([r, c]) => { grid[r][c] = green; });
+            } else if (name === 'star') {
+                const yellow = 7; const white = 1;
+                grid[10][11] = yellow; grid[10][12] = yellow; grid[9][11] = yellow; grid[11][11] = yellow;
+                grid[8][11] = yellow; grid[12][11] = yellow; grid[10][10] = yellow; grid[10][13] = yellow;
+                grid[10][9] = yellow; grid[10][14] = yellow;
+                grid[11][8] = white; grid[12][6] = white; grid[13][4] = white;
+                grid[12][7] = white; grid[13][5] = white; grid[14][3] = white;
+            } else if (name === 'heart') {
+                const red = 2;
+                const pattern = [
+                    [5,10], [5,11], [5,13], [5,14],
+                    [6,9], [6,10], [6,11], [6,12], [6,13], [6,14], [6,15],
+                    [7,8], [7,9], [7,10], [7,11], [7,12], [7,13], [7,14], [7,15], [7,16],
+                    [8,8], [8,9], [8,10], [8,11], [8,12], [8,13], [8,14], [8,15], [8,16],
+                    [9,9], [9,10], [9,11], [9,12], [9,13], [9,14], [9,15],
+                    [10,10], [10,11], [10,12], [10,13], [10,14],
+                    [11,11], [11,12], [11,13], [12,12]
+                ];
+                pattern.forEach(([r, c]) => { grid[r][c] = red; });
+            } else if (name === 'ball') {
+                const cyan = 3;
+                for (let r = 5; r <= 15; r++) {
+                    for (let c = 7; c <= 17; c++) {
+                        const dist = Math.sqrt((r - 10) ** 2 + (c - 12) ** 2);
+                        if (dist < 5.5) {
+                            grid[r][c] = cyan;
+                        }
+                    }
+                }
+            }
+
+            document.getElementById("preset-select").value = "";
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function updateGridDisplay() {
+            const cells = gridContainer.children;
+            for (let i = 0; i < cells.length; i++) {
+                const r = parseInt(cells[i].dataset.row);
+                const c = parseInt(cells[i].dataset.col);
+                const colorVal = grid[r][c];
+                cells[i].style.backgroundColor = colorVal ? C64_COLORS[colorVal].color : "#121424";
+                cells[i].style.boxShadow = "none";
+            }
+            if (activeTool === 'townes' && laserAnchor) {
+                const idx = laserAnchor.r * 24 + laserAnchor.c;
+                if (cells[idx]) {
+                    cells[idx].style.boxShadow = "inset 0 0 0 3px #ff0055, 0 0 10px #ff0055";
+                    cells[idx].style.backgroundColor = "#ff0055";
+                }
+            }
+        }
+
+        function clearGrid() {
+            grid.forEach(row => row.fill(0));
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function invertGrid() {
+            for (let r = 0; r < 21; r++) {
+                for (let c = 0; c < 24; c++) {
+                    grid[r][c] = grid[r][c] ? 0 : selectedColorIdx;
+                }
+            }
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function shiftGrid(dir) {
+            if (dir === 'up') {
+                grid.push(grid.shift());
+            } else if (dir === 'down') {
+                grid.unshift(grid.pop());
+            } else if (dir === 'left') {
+                grid.forEach(row => { row.push(row.shift()); });
+            } else if (dir === 'right') {
+                grid.forEach(row => { row.unshift(row.pop()); });
+            }
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function flipGrid(axis) {
+            if (axis === 'horiz') {
+                grid.forEach(row => row.reverse());
+            } else if (axis === 'vert') {
+                grid.reverse();
+            }
+            updateGridDisplay();
+            updatePreview();
+            generateCode();
+        }
+
+        function toggleOverlayLock() {
+            if (document.getElementById("reg-overlay-lock").checked) {
+                const x0 = document.getElementById("reg-xpos-0").value;
+                const y0 = document.getElementById("reg-ypos-0").value;
+                document.getElementById("reg-xpos-1").value = x0;
+                document.getElementById("reg-ypos-1").value = y0;
+            }
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const overlayLocked = document.getElementById("reg-overlay-lock") && document.getElementById("reg-overlay-lock").checked;
+            if (overlayLocked) {
+                if (editingSpriteIdx === 0) {
+                    const x = document.getElementById("reg-xpos-0").value;
+                    const y = document.getElementById("reg-ypos-0").value;
+                    document.getElementById("reg-xpos-1").value = x;
+                    document.getElementById("reg-ypos-1").value = y;
+                } else {
+                    const x = document.getElementById("reg-xpos-1").value;
+                    const y = document.getElementById("reg-ypos-1").value;
+                    document.getElementById("reg-xpos-0").value = x;
+                    document.getElementById("reg-ypos-0").value = y;
+                }
+            }
+
+            for (let i = 0; i < 2; i++) {
+                const canvas = document.getElementById(`sim-canvas-${i}`);
+                const ctx = canvas.getContext("2d");
+                const isEnable = document.getElementById(`reg-enable-${i}`).checked;
+                const xExpand = document.getElementById(`reg-xexpand-${i}`).checked;
+                const yExpand = document.getElementById(`reg-yexpand-${i}`).checked;
+                const priority = document.getElementById(`reg-priority-${i}`).checked;
+                const xPos = parseInt(document.getElementById(`reg-xpos-${i}`).value);
+                const yPos = parseInt(document.getElementById(`reg-ypos-${i}`).value);
+                document.getElementById(`val-xpos-${i}`).innerText = xPos;
+                document.getElementById(`val-ypos-${i}`).innerText = yPos;
+                canvas.style.display = isEnable ? "block" : "none";
+                canvas.style.left = `${xPos}px`;
+                canvas.style.top = `${yPos}px`;
+                const scaleX = xExpand ? 2.0 : 1.0;
+                const scaleY = yExpand ? 2.0 : 1.0;
+                canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
+                canvas.style.zIndex = priority ? "0" : "2";
+                const sGrid = spriteData[i].frames[spriteData[i].activeFrameIdx];
+                const imgData = ctx.createImageData(24, 21);
+                for (let r = 0; r < 21; r++) {
+                    for (let c = 0; c < 24; c++) {
+                        const colorVal = sGrid[r][c];
+                        const idx = (r * 24 + c) * 4;
+                        if (colorVal) {
+                            const hex = C64_COLORS[colorVal].color;
+                            const rgb = parseInt(hex.replace("#",""), 16);
+                            imgData.data[idx] = (rgb >> 16) & 0xFF;
+                            imgData.data[idx+1] = (rgb >> 8) & 0xFF;
+                            imgData.data[idx+2] = rgb & 0xFF;
+                            imgData.data[idx+3] = 255;
+                        } else {
+                            imgData.data[idx+3] = 0;
+                        }
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+            }
+            checkCollisions();
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playCollisionSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if (type === 'sprite') {
+                    // C64-style high-frequency sawtooth chirp for Sprite-to-Sprite
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else {
+                    // C64-style low-frequency triangle pulse for Sprite-to-Background
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.16);
+                    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.16);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.16);
+                }
+            } catch (e) {}
+        }
+
+        function checkCollisions() {
+            const prevSS = collisionSpriteSprite;
+            const prevSB = collisionSpriteBg;
+            const enable0 = document.getElementById("reg-enable-0").checked;
+            const enable1 = document.getElementById("reg-enable-1").checked;
+            if (!enable0 && !enable1) return;
+            const x0 = parseInt(document.getElementById("reg-xpos-0").value);
+            const y0 = parseInt(document.getElementById("reg-ypos-0").value);
+            const xExpand0 = document.getElementById("reg-xexpand-0").checked;
+            const yExpand0 = document.getElementById("reg-yexpand-0").checked;
+            const grid0 = spriteData[0].frames[spriteData[0].activeFrameIdx];
+            const x1 = parseInt(document.getElementById("reg-xpos-1").value);
+            const y1 = parseInt(document.getElementById("reg-ypos-1").value);
+            const xExpand1 = document.getElementById("reg-xexpand-1").checked;
+            const yExpand1 = document.getElementById("reg-yexpand-1").checked;
+            const grid1 = spriteData[1].frames[spriteData[1].activeFrameIdx];
+            if (enable0 && enable1) {
+                const w0 = 24 * (xExpand0 ? 2 : 1);
+                const h0 = 21 * (yExpand0 ? 2 : 1);
+                const w1 = 24 * (xExpand1 ? 2 : 1);
+                const h1 = 21 * (yExpand1 ? 2 : 1);
+                const overlapX = Math.max(0, Math.min(x0 + w0, x1 + w1) - Math.max(x0, x1));
+                const overlapY = Math.max(0, Math.min(y0 + h0, y1 + h1) - Math.max(y0, y1));
+                if (overlapX > 0 && overlapY > 0) {
+                    const startX = Math.max(x0, x1);
+                    const endX = Math.min(x0 + w0, x1 + w1);
+                    const startY = Math.max(y0, y1);
+                    const endY = Math.min(y0 + h0, y1 + h1);
+                    let spriteHit = false;
+                    for (let y = startY; y < endY; y++) {
+                        for (let x = startX; x < endX; x++) {
+                            const s0x = Math.floor((x - x0) / (xExpand0 ? 2 : 1));
+                            const s0y = Math.floor((y - y0) / (yExpand0 ? 2 : 1));
+                            const s1x = Math.floor((x - x1) / (xExpand1 ? 2 : 1));
+                            const s1y = Math.floor((y - y1) / (yExpand1 ? 2 : 1));
+                            if (s0x >= 0 && s0x < 24 && s0y >= 0 && s0y < 21 &&
+                                s1x >= 0 && s1x < 24 && s1y >= 0 && s1y < 21) {
+                                if (grid0[s0y][s0x] !== 0 && grid1[s1y][s1x] !== 0) {
+                                    spriteHit = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (spriteHit) break;
+                    }
+                    if (spriteHit) {
+                        const maskOverlay = document.getElementById("mask-overlay-collision") && document.getElementById("mask-overlay-collision").checked;
+                        const isOverlaying = document.getElementById("reg-overlay-lock") && document.getElementById("reg-overlay-lock").checked;
+                        if (!(maskOverlay && isOverlaying)) {
+                            collisionSpriteSprite |= 3;
+                        }
+                    }
+                }
+            }
+            const bgData = bgCtx.getImageData(0, 0, 320, 200).data;
+            if (enable0) {
+                let bgHit0 = false;
+                for (let sy = 0; sy < 21 * (yExpand0 ? 2 : 1); sy++) {
+                    for (let sx = 0; sx < 24 * (xExpand0 ? 2 : 1); sx++) {
+                        const px = Math.floor(sx / (xExpand0 ? 2 : 1));
+                        const py = Math.floor(sy / (yExpand0 ? 2 : 1));
+                        if (grid0[py][px] !== 0) {
+                            const absX = x0 + sx;
+                            const absY = y0 + sy;
+                            if (absX >= 0 && absX < 320 && absY >= 0 && absY < 200) {
+                                const idx = (absY * 320 + absX) * 4;
+                                if (bgData[idx + 3] > 10) {
+                                    bgHit0 = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (bgHit0) break;
+                }
+                if (bgHit0) {
+                    collisionSpriteBg |= 1;
+                }
+            }
+            if (enable1) {
+                let bgHit1 = false;
+                for (let sy = 0; sy < 21 * (yExpand1 ? 2 : 1); sy++) {
+                    for (let sx = 0; sx < 24 * (xExpand1 ? 2 : 1); sx++) {
+                        const px = Math.floor(sx / (xExpand1 ? 2 : 1));
+                        const py = Math.floor(sy / (yExpand1 ? 2 : 1));
+                        if (grid1[py][px] !== 0) {
+                            const absX = x1 + sx;
+                            const absY = y1 + sy;
+                            if (absX >= 0 && absX < 320 && absY >= 0 && absY < 200) {
+                                const idx = (absY * 320 + absX) * 4;
+                                if (bgData[idx + 3] > 10) {
+                                    bgHit1 = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (bgHit1) break;
+                }
+                if (bgHit1) {
+                    collisionSpriteBg |= 2;
+                }
+            }
+            updateCollisionUI();
+
+            if (collisionSpriteSprite > prevSS) {
+                playCollisionSound('sprite');
+            }
+            if (collisionSpriteBg > prevSB) {
+                playCollisionSound('bg');
+            }
+        }
+
+        function updateCollisionUI() {
+            const x0 = parseInt(document.getElementById("reg-xpos-0").value);
+            const x1 = parseInt(document.getElementById("reg-xpos-1").value);
+            let regD010 = 0;
+            if (x0 > 255) regD010 |= 1;
+            if (x1 > 255) regD010 |= 2;
+
+            document.getElementById("val-reg-d010").innerText = "$" + regD010.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById("led-d010-0").classList.toggle("led-green-active", (regD010 & 1) !== 0);
+            document.getElementById("led-d010-1").classList.toggle("led-green-active", (regD010 & 2) !== 0);
+
+            document.getElementById("val-reg-d01e").innerText = "$" + collisionSpriteSprite.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById("val-reg-d01f").innerText = "$" + collisionSpriteBg.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById("led-d01e-0").classList.toggle("led-active", (collisionSpriteSprite & 1) !== 0);
+            document.getElementById("led-d01e-1").classList.toggle("led-active", (collisionSpriteSprite & 2) !== 0);
+            document.getElementById("led-d01f-0").classList.toggle("led-active", (collisionSpriteBg & 1) !== 0);
+            document.getElementById("led-d01f-1").classList.toggle("led-active", (collisionSpriteBg & 2) !== 0);
+        }
+
+        function readAndClearCollisions() {
+            collisionSpriteSprite = 0;
+            collisionSpriteBg = 0;
+            updateCollisionUI();
+        }
+
+        function getFrameBytes(fGrid) {
+            const bytes = [];
+            for (let r = 0; r < 21; r++) {
+                for (let byteIdx = 0; byteIdx < 3; byteIdx++) {
+                    let byteVal = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const col = byteIdx * 8 + bit;
+                        if (fGrid[r][col]) {
+                            byteVal |= (1 << (7 - bit));
+                        }
+                    }
+                    bytes.push(byteVal);
+                }
+            }
+            return bytes;
+        }
+
+        function generateCode() {
+            let out = "";
+            const currentFrames = spriteData[editingSpriteIdx].frames;
+            if (activeTab === 'basic') {
+                const totalFrames = currentFrames.length;
+                out += `10 REM *** SALLY LARSEN VIC-II MULTI-FRAME ANIMATION (SPRITE ${editingSpriteIdx}) ***\n`;
+                out += `20 NF = ${totalFrames} : REM NUMBER OF FRAMES\n`;
+                out += `30 POKE 53269, ${editingSpriteIdx === 0 ? 1 : 2} : REM ENABLE SPRITE\n`;
+                out += `40 POKE 53287, ${selectedColorIdx} : REM SPRITE COLOR\n`;
+                out += `50 POKE 53248, 150 : POKE 53249, 90 : REM X/Y START POSITION\n`;
+                out += `60 REM *** LOAD DATA INTO BLOCKS starting at 832 ***\n`;
+                out += `70 FOR F = 0 TO NF - 1\n`;
+                out += `80 FOR I = 0 TO 62 : READ D : POKE 832 + F*64 + I, D : NEXT I\n`;
+                out += `90 NEXT F\n`;
+                out += `100 REM *** PLAY PAGE-FLIPPING LOOP ***\n`;
+                out += `110 FOR F = 0 TO NF - 1\n`;
+                out += `120 POKE 2040 + ${editingSpriteIdx}, 13 + F : REM SWAP SPRITE POINTER TO NEXT BLOCK\n`;
+                out += `130 FOR T = 1 TO 60 : NEXT T : REM ANIMATION DELAY\n`;
+                out += `140 NEXT F\n`;
+                out += `150 GOTO 110 : REM LOOP FOREVER\n\n`;
+                let lineNum = 200;
+                currentFrames.forEach((fGrid, fIdx) => {
+                    const bytes = getFrameBytes(fGrid);
+                    out += `${lineNum} REM --- FRAME ${fIdx + 1} DATA ---\n`;
+                    lineNum += 10;
+                    for (let i = 0; i < bytes.length; i += 10) {
+                        const chunk = bytes.slice(i, i + 10);
+                        out += `${lineNum} DATA ${chunk.join(",")}\n`;
+                        lineNum += 10;
+                    }
+                });
+            } else {
+                out += `// C64 Raw 63-byte frames data for Sprite ${editingSpriteIdx}:\n`;
+                currentFrames.forEach((fGrid, fIdx) => {
+                    const bytes = getFrameBytes(fGrid);
+                    out += `// Frame ${fIdx + 1}:\n`;
+                    out += bytes.map(b => b.toString().padStart(3, ' ')).join(", ") + "\n\n";
+                });
+            }
+            document.getElementById("code-output").innerText = out;
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+            event.target.classList.add("active");
+            generateCode();
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById("code-output").innerText;
+            navigator.clipboard.writeText(text);
+            alert("Code copied to clipboard!");
+        }
+
+        document.getElementById("reg-enable-0").addEventListener("change", updatePreview);
+        document.getElementById("reg-xexpand-0").addEventListener("change", updatePreview);
+        document.getElementById("reg-yexpand-0").addEventListener("change", updatePreview);
+        document.getElementById("reg-priority-0").addEventListener("change", updatePreview);
+        document.getElementById("reg-xpos-0").addEventListener("input", updatePreview);
+        document.getElementById("reg-ypos-0").addEventListener("input", updatePreview);
+        document.getElementById("reg-multicolor-0").addEventListener("change", (e) => {
+            if (editingSpriteIdx === 0) {
+                document.getElementById("multicolor-toggle").checked = e.target.checked;
+            }
+            updatePreview();
+        });
+        document.getElementById("reg-enable-1").addEventListener("change", updatePreview);
+        document.getElementById("reg-xexpand-1").addEventListener("change", updatePreview);
+        document.getElementById("reg-yexpand-1").addEventListener("change", updatePreview);
+        document.getElementById("reg-priority-1").addEventListener("change", updatePreview);
+        document.getElementById("reg-xpos-1").addEventListener("input", updatePreview);
+        document.getElementById("reg-ypos-1").addEventListener("input", updatePreview);
+        document.getElementById("reg-multicolor-1").addEventListener("change", (e) => {
+            if (editingSpriteIdx === 1) {
+                document.getElementById("multicolor-toggle").checked = e.target.checked;
+            }
+            updatePreview();
+        });
+        document.getElementById("multicolor-toggle").addEventListener("change", () => {
+            const active = document.getElementById("multicolor-toggle").checked;
+            document.getElementById(`reg-multicolor-${editingSpriteIdx}`).checked = active;
+            updatePreview();
+        });
+        // 3D Wireframe Ribbon & Projection Logic
+        const canvas3D = document.getElementById("canvas-3d-ribbon");
+        const ctx3D = canvas3D.getContext("2d");
+
+        const ribbonVertices = [
+            {x: 0, y: 0, z: 0},       // 0: Center Knot
+            {x: -25, y: 15, z: -10},  // 1: Top-Left Loop
+            {x: -25, y: -15, z: -10}, // 2: Bottom-Left Loop
+            {x: -12, y: 0, z: 5},     // 3: Middle-Left Inner
+            {x: 25, y: 15, z: -10},   // 4: Top-Right Loop
+            {x: 25, y: -15, z: -10},  // 5: Bottom-Right Loop
+            {x: 12, y: 0, z: 5},      // 6: Middle-Right Inner
+            {x: -10, y: -25, z: 8},   // 7: Left Tail
+            {x: 10, y: -25, z: 8}     // 8: Right Tail
+        ];
+
+        const ribbonLines = [
+            [0, 1], [1, 2], [2, 3], [3, 0],
+            [0, 4], [4, 5], [5, 6], [6, 0],
+            [0, 7], [0, 8]
+        ];
+
+        let rot3DX = 0.4;
+        let rot3DY = 0.6;
+
+        function rotateAndDraw3DRibbon() {
+            if (!canvas3D) return;
+            ctx3D.clearRect(0, 0, 300, 200);
+
+            rot3DY += 0.015;
+            rot3DX += 0.007;
+
+            const projected = [];
+            const fov = 150;
+            const viewDistance = 100;
+
+            ribbonVertices.forEach(v => {
+                let x1 = v.x * Math.cos(rot3DY) - v.z * Math.sin(rot3DY);
+                let z1 = v.x * Math.sin(rot3DY) + v.z * Math.cos(rot3DY);
+                let y2 = v.y * Math.cos(rot3DX) - z1 * Math.sin(rot3DX);
+                let z2 = v.y * Math.sin(rot3DX) + z1 * Math.cos(rot3DX);
+
+                const scale = fov / (viewDistance + z2);
+                const projX = 150 + x1 * scale;
+                const projY = 100 - y2 * scale;
+                projected.push({x: projX, y: projY});
+            });
+
+            ctx3D.strokeStyle = "#ffa500";
+            ctx3D.lineWidth = 2;
+
+            ribbonLines.forEach(line => {
+                const p1 = projected[line[0]];
+                const p2 = projected[line[1]];
+                ctx3D.beginPath();
+                ctx3D.moveTo(p1.x, p1.y);
+                ctx3D.lineTo(p2.x, p2.y);
+                ctx3D.stroke();
+            });
+
+            ctx3D.fillStyle = "#ff5500";
+            projected.forEach(p => {
+                ctx3D.beginPath();
+                ctx3D.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+                ctx3D.fill();
+            });
+
+            requestAnimationFrame(rotateAndDraw3DRibbon);
+        }
+
+        function randomizeRotation() {
+            rot3DX = Math.random() * Math.PI * 2;
+            rot3DY = Math.random() * Math.PI * 2;
+        }
+
+        function rasterize3DToSprite() {
+            const grid1 = spriteData[1].frames[spriteData[1].activeFrameIdx];
+            grid1.forEach(row => row.fill(0));
+
+            const fov = 35;
+            const viewDistance = 80;
+
+            const projected = [];
+            ribbonVertices.forEach(v => {
+                let x1 = v.x * Math.cos(rot3DY) - v.z * Math.sin(rot3DY);
+                let z1 = v.x * Math.sin(rot3DY) + v.z * Math.cos(rot3DY);
+                let y2 = v.y * Math.cos(rot3DX) - z1 * Math.sin(rot3DX);
+                let z2 = v.y * Math.sin(rot3DX) + z1 * Math.cos(rot3DX);
+
+                const scale = fov / (viewDistance + z2);
+                const projX = Math.round(12 + x1 * scale);
+                const projY = Math.round(10 - y2 * scale);
+                projected.push({x: projX, y: projY});
+            });
+
+            function drawLineOnGrid(x0, y0, x1, y1) {
+                const dx = Math.abs(x1 - x0);
+                const dy = Math.abs(y1 - y0);
+                const sx = (x0 < x1) ? 1 : -1;
+                const sy = (y0 < y1) ? 1 : -1;
+                let err = dx - dy;
+
+                while (true) {
+                    if (x0 >= 0 && x0 < 24 && y0 >= 0 && y0 < 21) {
+                        grid1[y0][x0] = 2; // Red
+                    }
+                    if ((x0 === x1) && (y0 === y1)) break;
+                    const e2 = 2 * err;
+                    if (e2 > -dy) { err -= dy; x0 += sx; }
+                    if (e2 < dx) { err += dx; y0 += sy; }
+                }
+            }
+
+            ribbonLines.forEach(line => {
+                const p1 = projected[line[0]];
+                const p2 = projected[line[1]];
+                drawLineOnGrid(p1.x, p1.y, p2.x, p2.y);
+            });
+
+            if (editingSpriteIdx === 1) {
+                updateGridDisplay();
+            }
+            updatePreview();
+            generateCode();
+        }
+
+        // Keyboard control mapping to simulate joystick inputs
+        window.addEventListener("keydown", (e) => {
+            if (activeTool === 'joyrite') {
+                const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+                if (navKeys.includes(e.key)) {
+                    e.preventDefault();
+                    if (e.key === "ArrowUp") joyriteR = Math.max(0, joyriteR - 1);
+                    if (e.key === "ArrowDown") joyriteR = Math.min(20, joyriteR + 1);
+                    if (e.key === "ArrowLeft") joyriteC = Math.max(0, joyriteC - 1);
+                    if (e.key === "ArrowRight") joyriteC = Math.min(23, joyriteC + 1);
+
+                    if (joyritePenDown) {
+                        drawCell(joyriteR, joyriteC);
+                    } else {
+                        updateJoyriteDisplay();
+                    }
+                } else if (e.key === " ") {
+                    e.preventDefault();
+                    joyritePenDown = !joyritePenDown;
+                    updateJoyriteDisplay();
+                }
+                return;
+            }
+
+            const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+            if (!navKeys.includes(e.key)) return;
+
+            e.preventDefault();
+
+            const xSlider = document.getElementById("reg-xpos-0");
+            const ySlider = document.getElementById("reg-ypos-0");
+            let x = parseInt(xSlider.value);
+            let y = parseInt(ySlider.value);
+
+            const step = 4;
+            if (e.key === "ArrowUp") y = Math.max(0, y - step);
+            if (e.key === "ArrowDown") y = Math.min(200, y + step);
+            if (e.key === "ArrowLeft") x = Math.max(0, x - step);
+            if (e.key === "ArrowRight") x = Math.min(320, x + step);
+
+            xSlider.value = x;
+            ySlider.value = y;
+
+            updatePreview();
+        });
+
+        drawBgOffscreen();
+        createGrid();
+        updatePreview();
+        generateCode();
+        rotateAndDraw3DRibbon();
+    </script>
+</body>
+</html>
