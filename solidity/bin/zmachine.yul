@@ -99,7 +99,7 @@ object "ZMachine" {
                 return(0, 32)
             }
 
-            case 0xd6c5268c { // createRoom(uint256,bytes,uint256)
+            case 0xb4c9ac9b { // createRoom(uint256,bytes,uint256)
                 let roomId := calldataload(4)
                 let descOffset := calldataload(36)
                 let exits := calldataload(68)
@@ -114,6 +114,14 @@ object "ZMachine" {
                     sstore(add(add(3100000, mul(roomId, 100)), i), word)
                 }
                 
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            case 0x51150e21 { // bindTokenAddress(uint256,address)
+                let objId := calldataload(4)
+                let tokenAddress := calldataload(36)
+                sstore(add(2000000, objId), tokenAddress)
                 mstore(0x00, 1)
                 return(0x00, 32)
             }
@@ -176,25 +184,76 @@ object "ZMachine" {
                     }
                 }
                 case 0x6c6f6f6b { // "look"
-                    let customLen := sload(add(3000000, roomId))
-                    if customLen {
-                        let wordCount := div(add(customLen, 31), 32)
-                        for { let i := 0 } lt(i, 10) { i := add(i, 1) } { // safety cap 10 words
-                            if lt(mul(i, 32), customLen) {
-                                let val := sload(add(add(3100000, mul(roomId, 100)), i))
-                                mstore(add(resultPtr, mul(i, 32)), val)
-                            }
+                    let tokenAddr := sload(add(2000000, roomId))
+                    
+                    if tokenAddr {
+                        mstore(resultPtr, 0x436f6e74726163743a2000000000000000000000000000000000000000000000) // "Contract: "
+                        resultPtr := add(resultPtr, 10)
+                        resultPtr := writeHexAddress(tokenAddr, resultPtr)
+                        
+                        mstore8(resultPtr, 10) // '\n'
+                        resultPtr := add(resultPtr, 1)
+                        
+                        mstore(resultPtr, 0x4e616d653a200000000000000000000000000000000000000000000000000000) // "Name: "
+                        resultPtr := add(resultPtr, 6)
+                        resultPtr := queryContractString(tokenAddr, 0x06fdde0300000000000000000000000000000000000000000000000000000000, resultPtr) // name()
+                        
+                        mstore8(resultPtr, 10) // '\n'
+                        resultPtr := add(resultPtr, 1)
+                        
+                        mstore(resultPtr, 0x53796d626f6c3a20000000000000000000000000000000000000000000000000) // "Symbol: "
+                        resultPtr := add(resultPtr, 8)
+                        resultPtr := queryContractString(tokenAddr, 0x95d89b4100000000000000000000000000000000000000000000000000000000, resultPtr) // symbol()
+                        
+                        mstore8(resultPtr, 10) // '\n'
+                        resultPtr := add(resultPtr, 1)
+                        
+                        let typePtr := 0x1500
+                        let typeEnd := queryContractString(tokenAddr, 0xfc0c546a00000000000000000000000000000000000000000000000000000000, typePtr) // Type()
+                        let typeWord := mload(typePtr)
+                        
+                        mstore(resultPtr, 0x417661696c61626c6520436f6d6d616e64733a0a202d207472616e736665720a) // "Available Commands:\n - transfer\n"
+                        mstore(add(resultPtr, 32), 0x202d20617070726f76650a202d2062616c616e63654f660a202d20746f7461) // " - approve\n - balanceOf\n - tota"
+                        mstore(add(resultPtr, 64), 0x6c537570706c790a000000000000000000000000000000000000000000000000) // "lSupply\n"
+                        resultPtr := add(resultPtr, 72)
+                        
+                        if eq(shr(224, typeWord), 0x564f4944) { // "VOID"
+                            mstore(resultPtr, 0x202d2043686174205b6d73675d0a202d204c6f67205b6c696e655d0a202d2053) // " - Chat [msg]\n - Log [line]\n - S"
+                            mstore(add(resultPtr, 32), 0x6574417474726962757465205b6b2c765d0a202d2047657441747472696275) // "etAttribute [k,v]\n - GetAttribu"
+                            mstore(add(resultPtr, 64), 0x7465205b6b5d0a202d20416c696173205b612c765d0a202d20456e7465720a00) // "te [k]\n - Alias [a,v]\n - Enter\n"
+                            resultPtr := add(resultPtr, 95)
                         }
-                        resultPtr := add(resultPtr, customLen)
+                        
+                        if eq(shr(224, typeWord), 0x51494e47) { // "QING"
+                            mstore(resultPtr, 0x202d204a6f696e205b746f6b656e5d0a202d2043686174205b6d73675d0a202d) // " - Join [token]\n - Chat [msg]\n -"
+                            mstore(add(resultPtr, 32), 0x205769746864726177205b742c615d0a202d2041646d6974746564205b745d) // " Withdraw [t,a]\n - Admitted [t]"
+                            mstore(add(resultPtr, 64), 0x0a202d20736574426f756e63657244697669736f72205b645d0a202d2073) // "\n - setBouncerDivisor [d]\n - s"
+                            mstore(add(resultPtr, 96), 0x6574436f766572436861726765205b635d0a0000000000000000000000000000) // "etCoverCharge [c]\n"
+                            resultPtr := add(resultPtr, 113)
+                        }
                     }
-                    if iszero(customLen) {
-                        if eq(roomId, 1) {
-                            mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
-                            resultPtr := add(resultPtr, 30)
+                    
+                    if iszero(tokenAddr) {
+                        let customLen := sload(add(3000000, roomId))
+                        if customLen {
+                            let wordCount := div(add(customLen, 31), 32)
+                            for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                                if lt(mul(i, 32), customLen) {
+                                    let val := sload(add(add(3100000, mul(roomId, 100)), i))
+                                    mstore(add(resultPtr, mul(i, 32)), val)
+                                }
+                            }
+                            resultPtr := add(resultPtr, customLen)
                         }
-                        if iszero(eq(roomId, 1)) {
-                            mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
-                            resultPtr := add(resultPtr, 25)
+                        if iszero(customLen) {
+                            if eq(roomId, 1) {
+                                mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
+                                resultPtr := add(resultPtr, 30)
+                            }
+                            if iszero(eq(roomId, 1)) {
+                                mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
+                                resultPtr := add(resultPtr, 25)
+                            }
                         }
                     }
                     
@@ -829,6 +888,47 @@ object "ZMachine" {
                 success := call(gas(), token, 0, 0x00, 0x64, 0x00, 0x20)
                 if success {
                     success := mload(0x00)
+                }
+            }
+
+            function queryContractString(token, sig, destPtr) -> endPtr {
+                endPtr := destPtr
+                mstore(0x00, sig)
+                let success := staticcall(gas(), token, 0x00, 0x04, 0x1000, 0x100)
+                if success {
+                    let strLen := mload(0x1020)
+                    if lt(strLen, 100) {
+                        for { let i := 0 } lt(i, strLen) { i := add(i, 1) } {
+                            let char := byte(0, mload(add(0x1040, i)))
+                            mstore8(endPtr, char)
+                            endPtr := add(endPtr, 1)
+                        }
+                    }
+                }
+            }
+
+            // Shifts MSB to LSB and prints each hex digit
+            function writeHexAddress(addr, destPtr) -> endPtr {
+                endPtr := destPtr
+                mstore8(endPtr, 48) // '0'
+                endPtr := add(endPtr, 1)
+                mstore8(endPtr, 120) // 'x'
+                endPtr := add(endPtr, 1)
+                for { let i := 0 } lt(i, 20) { i := add(i, 1) } {
+                    let val := and(shr(sub(152, mul(i, 8)), addr), 0xff)
+                    let h1 := shr(4, val)
+                    let h2 := and(val, 0x0f)
+                    mstore8(endPtr, hexChar(h1))
+                    endPtr := add(endPtr, 1)
+                    mstore8(endPtr, hexChar(h2))
+                    endPtr := add(endPtr, 1)
+                }
+            }
+
+            function hexChar(val) -> c {
+                c := add(val, 48)
+                if gt(val, 9) {
+                    c := add(val, 87) // 'a' - 10
                 }
             }
         }
