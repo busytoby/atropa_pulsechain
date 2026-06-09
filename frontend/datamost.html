@@ -202,11 +202,23 @@
                             <option value="lastninja">🥷 The Last Ninja (Ahoy! Issue 33 / Blakemore)</option>
                             <option value="lastninjasystem3">🥷 The Last Ninja (System 3 1987)</option>
                             <option value="vaultofterror">🏰 Vault of Terror (Ahoy! Issue 34 / Blakemore)</option>
+                            <option value="mousehouse">🐭 Mouse in the House (Ahoy! Issue 36 / Hilty)</option>
+                            <option value="lazysource">📝 Lazy Source Code (Ahoy! Issue 36 / Bennett)</option>
+                            <option value="theartist">🎨 The Artist (Ahoy! Issue 36 / DeBoer)</option>
+                            <option value="jailbreak">🔓 Jail Break (Ahoy! Issue 38)</option>
+                            <option value="turtlerescue">🐢 Turtle Rescue (Ahoy! Issue 38)</option>
+                            <option value="adventurer">🗺️ The Adventurer (Ahoy! Issue 38)</option>
+                            <option value="flashywindows">🪟 Flashy Windows (Ahoy! Issue 38)</option>
+                            <option value="duel">⚔️ Duel (Ahoy! Issue 40 / Blakemore)</option>
+                            <option value="infoflow">📋 Infoflow (Ahoy! Issue 40 / Blakemore)</option>
                             <option value="sentinel">👁️ Sentinel (Firebird 1986)</option>
+                            <option value="hardball">⚾ Hardball! (Accolade 1985)</option>
                         </select>
                         <button class="btn btn-primary" id="btnLoadGame" style="min-width: 100px;">Load ROM</button>
                         <button class="btn btn-secondary" id="btnToggleDemo" style="min-width: 130px; border-color: var(--neon-magenta); color: var(--text-primary);">Autoplay Demo</button>
                         <button class="btn btn-secondary" id="btnToggleShared" style="min-width: 160px; border-color: var(--neon-blue); color: var(--text-primary);">Join Shared Screen</button>
+                        <button class="btn btn-secondary" id="btnSaveSnapshot" style="min-width: 130px; border-color: #00ffcc; color: var(--text-primary);">💾 Save State</button>
+                        <button class="btn btn-secondary" id="btnLoadSnapshot" style="min-width: 130px; border-color: #ffcc00; color: var(--text-primary);">📂 Load State</button>
                     </div>
                 </section>
 
@@ -214,6 +226,24 @@
                 <section class="card" style="box-shadow: 0 0 20px rgba(255, 0, 127, 0.15); border-color: var(--neon-magenta);">
                     <h2><span class="icon">🎹</span> Interrupt Music Maker / Editor (Ahoy! Page 21)</h2>
                     <p class="description">Pete Lobi's 3-Voice background music driver. Plays polyphonic SID frequencies modulated via virtual interrupts.</p>
+                    <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--neon-magenta); border-radius: 8px; margin-bottom: 15px; padding: 5px; position: relative;">
+                        <canvas id="oscCanvas" width="560" height="80" style="width: 100%; height: 80px; display: block; background: #050510; border-radius: 4px;"></canvas>
+                        <span style="position: absolute; top: 10px; left: 10px; font-size: 0.65rem; color: #ff007f; text-transform: uppercase; font-family: monospace; font-weight: bold; letter-spacing: 1px;">Telemetry Osc-Audio Monitor</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 6px 12px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                        <span style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: bold; font-family: 'Orbitron', sans-serif;">LFO MODULATOR</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 0.65rem; color: var(--text-secondary);">State:</label>
+                            <select id="lfoToggle" class="input-glow" style="padding: 2px; font-size: 0.65rem; background: #000; color: #fff; width: 60px;">
+                                <option value="off" selected>Off</option>
+                                <option value="on">On</option>
+                            </select>
+                            <label style="font-size: 0.65rem; color: var(--text-secondary); margin-left: 5px;">Rate:</label>
+                            <input type="range" id="lfoRate" min="1" max="10" value="4" style="width: 80px; accent-color: var(--neon-magenta);">
+                            <label style="font-size: 0.65rem; color: var(--text-secondary); margin-left: 5px;">Depth:</label>
+                            <input type="range" id="lfoDepth" min="0.1" max="1.0" step="0.1" value="0.5" style="width: 80px; accent-color: var(--neon-blue);">
+                        </div>
+                    </div>
                     
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
                         <!-- Voice 1 -->
@@ -233,6 +263,34 @@
                             <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 3 (Arp)</span>
                             <div id="v3FreqText" style="font-size: 1.2rem; font-weight: bold; color: #00ffcc; font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
                             <div id="v3NoteText" style="font-size: 0.8rem; color: #ffcc00; font-family: monospace;">---</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Live SID Register State Inspector -->
+                    <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                        <span style="font-size: 0.7rem; color: #ffcc00; text-transform: uppercase; font-weight: bold; font-family: 'Orbitron', sans-serif; display: block; margin-bottom: 8px;">📟 Live SID Register State Inspector</span>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-family: monospace; font-size: 0.65rem;">
+                            <div style="background: rgba(255,0,127,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(255,0,127,0.1);">
+                                <span style="color: var(--neon-magenta); font-weight: bold;">VOICE 1 REGISTERS:</span>
+                                <div style="margin-top: 4px;">FREQ LO/HI: <span id="regV1Freq" style="color:#fff;">$00 / $00</span></div>
+                                <div>CTRL BYTE: <span id="regV1Ctrl" style="color:#fff;">$00</span></div>
+                                <div>ATK/DCY: <span id="regV1AD" style="color:#fff;">$00</span></div>
+                                <div>SUS/REL: <span id="regV1SR" style="color:#fff;">$00</span></div>
+                            </div>
+                            <div style="background: rgba(0,242,254,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0,242,254,0.1);">
+                                <span style="color: var(--neon-blue); font-weight: bold;">VOICE 2 REGISTERS:</span>
+                                <div style="margin-top: 4px;">FREQ LO/HI: <span id="regV2Freq" style="color:#fff;">$00 / $00</span></div>
+                                <div>CTRL BYTE: <span id="regV2Ctrl" style="color:#fff;">$00</span></div>
+                                <div>ATK/DCY: <span id="regV2AD" style="color:#fff;">$00</span></div>
+                                <div>SUS/REL: <span id="regV2SR" style="color:#fff;">$00</span></div>
+                            </div>
+                            <div style="background: rgba(0,255,204,0.05); padding: 6px; border-radius: 4px; border: 1px solid rgba(0,255,204,0.1);">
+                                <span style="color: #00ffcc; font-weight: bold;">VOICE 3 REGISTERS:</span>
+                                <div style="margin-top: 4px;">FREQ LO/HI: <span id="regV3Freq" style="color:#fff;">$00 / $00</span></div>
+                                <div>CTRL BYTE: <span id="regV3Ctrl" style="color:#fff;">$00</span></div>
+                                <div>ATK/DCY: <span id="regV3AD" style="color:#fff;">$00</span></div>
+                                <div>SUS/REL: <span id="regV3SR" style="color:#fff;">$00</span></div>
+                            </div>
                         </div>
                     </div>
 
@@ -432,6 +490,15 @@
                                 <label style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">TEMPO:</label>
                                 <input type="range" id="seqTempo" min="150" max="800" value="300" style="width: 100%;">
                             </div>
+                            <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+                                <label style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">PRESET:</label>
+                                <select id="selectSeqPreset" class="input-glow" style="padding: 2px; font-size: 0.7rem; background: #000; color: #fff; width: 100%;">
+                                    <option value="default" selected>Scale Run</option>
+                                    <option value="bassline">Synth Bass</option>
+                                    <option value="arpeggio">Arp Chords</option>
+                                    <option value="rests">Alternating Rests</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -451,6 +518,12 @@
                             <button class="btn btn-secondary btn-small note-btn" data-freq="7217" style="padding: 6px 0;">A</button>
                             <button class="btn btn-secondary btn-small note-btn" data-freq="8100" style="padding: 6px 0;">B</button>
                         </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px;">
+                            <button class="btn btn-secondary btn-small" id="btnFXLaser" style="border-color: #ff5555; color: #ff5555; padding: 4px 0;"><span class="icon">💥</span> Laser Zap</button>
+                            <button class="btn btn-secondary btn-small" id="btnFXExplode" style="border-color: #ffaa00; color: #ffaa00; padding: 4px 0;"><span class="icon">🔥</span> Explosion</button>
+                            <button class="btn btn-secondary btn-small" id="btnFXCoin" style="border-color: #ffff00; color: #ffff00; padding: 4px 0;"><span class="icon">🪙</span> Coin Collect</button>
+                        </div>
+                    </div>
                     </div>
                 </section>
 
@@ -1652,6 +1725,100 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     { id: 2, x: 200, y: 80 }   // Treasure Chest
                 ]
             },
+            mousehouse: {
+                name: "Mouse in the House",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0E, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Mouse X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Mouse Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Mouse
+                    { id: 1, x: 180, y: 100 }  // Cat
+                ]
+            },
+            lazysource: {
+                name: "Lazy Source Code",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x00, 0xD0, // Cursor X
+                    0xA9, 0x50, 0x8D, 0x01, 0xD0, // Cursor Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 80, y: 80 } // Editor Cursor
+                ]
+            },
+            theartist: {
+                name: "The Artist",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0xA0, 0x8D, 0x00, 0xD0, // Brush X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Brush Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 120 } // Brush Cursor
+                ]
+            },
+            jailbreak: {
+                name: "Jail Break",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x03, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Prisoner X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Prisoner Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Prisoner
+                    { id: 1, x: 180, y: 120 }  // Guard
+                ]
+            },
+            turtlerescue: {
+                name: "Turtle Rescue",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x03, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x00, 0xD0, // Turtle X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Turtle Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 96, y: 128 },  // Turtle
+                    { id: 1, x: 160, y: 128 }  // Predator
+                ]
+            },
+            adventurer: {
+                name: "The Adventurer",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Hero X
+                    0xA9, 0x90, 0x8D, 0x01, 0xD0, // Hero Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 128, y: 144 } // Hero Character
+                ]
+            },
+            flashywindows: {
+                name: "Flashy Windows",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0, // Window X
+                    0xA9, 0x70, 0x8D, 0x01, 0xD0, // Window Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 112, y: 112 } // Overlay Cursor
+                ]
+            },
             sentinel: {
                 name: "Sentinel",
                 spriteEnableMask: 3,
@@ -1664,6 +1831,48 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 sprites: [
                     { id: 0, x: 160, y: 100 }, // Viewfinder
                     { id: 1, x: 160, y: 70 }   // Sentinel Tower
+                ]
+            },
+            duel: {
+                name: "Duel",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0E, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x00, 0xD0, // Duelist 1 X
+                    0xA9, 0xB0, 0x8D, 0x02, 0xD0, // Duelist 2 X
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 80, y: 120 },
+                    { id: 1, x: 240, y: 120 }
+                ]
+            },
+            infoflow: {
+                name: "Infoflow",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x00, 0xD0, // Cursor X
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0, // Cursor Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 96, y: 96 }
+                ]
+            },
+            hardball: {
+                name: "Hardball!",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x10, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Pitcher X
+                    0xA9, 0x78, 0x8D, 0x01, 0xD0, // Pitcher Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 120 }, // Pitcher
+                    { id: 1, x: 160, y: 155 }, // Batter
+                    { id: 2, x: 160, y: 120 }  // Ball
                 ]
             }
         };
@@ -2200,13 +2409,104 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 stepSequencerTick();
             }
         });
-
+        // Global keydown listeners for active sprite navigation (WASD/Arrow Keys)
+        window.addEventListener("keydown", (e) => {
+            const step = 8;
+            let moved = false;
+            let dx = 0, dy = 0;
+            switch(e.key.toLowerCase()) {
+                case "w":
+                case "arrowup":
+                    dy = -step; moved = true; break;
+                case "s":
+                case "arrowdown":
+                    dy = step; moved = true; break;
+                case "a":
+                case "arrowleft":
+                    dx = -step; moved = true; break;
+                case "d":
+                case "arrowright":
+                    dx = step; moved = true; break;
+            }
+            if (moved) {
+                // Apply delta adjustments to all interactive screen components
+                if (window.vaultX !== undefined) { window.vaultX += dx; window.vaultY += dy; }
+                if (window.mouseHouseX !== undefined) { window.mouseHouseX += dx; window.mouseHouseY += dy; }
+                if (window.brushX !== undefined) { window.brushX += dx; window.brushY += dy; }
+                if (window.jailX !== undefined) { window.jailX += dx; window.jailY += dy; }
+                if (window.turtleX !== undefined) { window.turtleX += dx; window.turtleY += dy; }
+                if (window.advX !== undefined) { window.advX += dx; window.advY += dy; }
+                
+                // Prevent screen scrolling when interacting
+                if (["space", "arrowup", "arrowdown", "arrowleft", "arrowright"].indexOf(e.key.toLowerCase()) > -1) {
+                    e.preventDefault();
+                }
+            }
+        });
         document.getElementById("seqTempo").addEventListener("change", () => {
             if (seqInterval) {
                 clearInterval(seqInterval);
                 const tempo = parseInt(document.getElementById("seqTempo").value);
                 seqInterval = setInterval(stepSequencerTick, tempo);
             }
+        });
+
+        document.getElementById("selectSeqPreset").addEventListener("change", () => {
+            const preset = document.getElementById("selectSeqPreset").value;
+            const steps = document.querySelectorAll(".seq-step");
+            
+            // Define preset scales (frequencies mappings)
+            const sheets = {
+                default: [4291, 5406, 6429, 8583, 6429, 5406, 4291, 0],
+                bassline: [4291, 4291, 5728, 5728, 4816, 4816, 4291, 4291],
+                arpeggio: [4291, 5406, 6429, 8583, 8583, 6429, 5406, 4291],
+                rests: [4291, 0, 5406, 0, 6429, 0, 8583, 0]
+            };
+            
+            const activeSheet = sheets[preset] || sheets.default;
+            steps.forEach((el, index) => {
+                const select = el.querySelector(".seq-note");
+                if (select && index < activeSheet.length) {
+                    select.value = activeSheet[index].toString();
+                }
+            });
+        // FX Quick preset trigger logic
+        document.getElementById("btnFXLaser").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // High slide to low laser sweep
+                for (let f = 12000; f > 2000; f -= 1000) {
+                    await pokeSIDFreq(f, 33); // Sawtooth
+                    await new Promise(r => setTimeout(r, 15));
+                }
+                await pokeSIDFreq(0, 32);
+            } catch(e){}
+        });
+
+        document.getElementById("btnFXExplode").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // Noise envelope explosion sequence
+                await pokeSIDFreq(1000, 129); // Noise Gate On
+                for (let vol = 15; vol > 0; vol--) {
+                    await musicContract.poke(54296, 0x00 | vol); // decrease volume envelope register
+                    await new Promise(r => setTimeout(r, 25));
+                }
+                await pokeSIDFreq(0, 128);
+                await musicContract.poke(54296, 15); // reset base volume
+            } catch(e){}
+        });
+
+        document.getElementById("btnFXCoin").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // Classic arpeggiated coin chime
+                await pokeSIDFreq(6429, 17); // Note 1
+                await new Promise(r => setTimeout(r, 80));
+                await pokeSIDFreq(8583, 17); // Note 2
+                await new Promise(r => setTimeout(r, 150));
+                await pokeSIDFreq(0, 16);
+            } catch(e){}
         });
 
         // 6502 Opcode execution transaction
@@ -2238,6 +2538,49 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 console.error("Failed to load cartridge:", err);
             } finally {
                 document.getElementById("btnLoadGame").innerText = "Load ROM";
+            }
+        });
+
+        // Save VM State Snapshot ("Stow Away")
+        document.getElementById("btnSaveSnapshot").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const gameId = document.getElementById("selectGame").value;
+            try {
+                // Serialize VM active sprites and coordinates
+                const stateData = {
+                    gameId: gameId,
+                    spriteX: window.vaultX || window.mouseHouseX || window.brushX || window.jailX || window.turtleX || window.advX || window.brushX || 120,
+                    spriteY: window.vaultY || window.mouseHouseY || window.brushY || window.jailY || window.turtleY || window.advY || window.brushY || 100,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem("datamost_vm_state", JSON.stringify(stateData));
+                alert(`💾 state snapshot saved successfully at ${new Date(stateData.timestamp).toLocaleTimeString()}`);
+            } catch (err) {
+                console.error("Failed to save state snapshot:", err);
+            }
+        });
+
+        // Load VM State Snapshot ("Unsnap")
+        document.getElementById("btnLoadSnapshot").addEventListener("click", async () => {
+            try {
+                const saved = localStorage.getItem("datamost_vm_state");
+                if (!saved) {
+                    alert("No saved state snapshot found!");
+                    return;
+                }
+                const stateData = JSON.parse(saved);
+                document.getElementById("selectGame").value = stateData.gameId;
+                
+                // Trigger ROM reload target
+                await loadGame(stateData.gameId);
+                
+                // Restore interactive coordinate state registers
+                window.vaultX = window.mouseHouseX = window.brushX = window.jailX = window.turtleX = window.advX = stateData.spriteX;
+                window.vaultY = window.mouseHouseY = window.brushY = window.jailY = window.turtleY = window.advY = stateData.spriteY;
+                
+                alert(`📂 state snapshot loaded successfully (Saved: ${new Date(stateData.timestamp).toLocaleTimeString()})`);
+            } catch (err) {
+                console.error("Failed to load state snapshot:", err);
             }
         });
 
@@ -3000,6 +3343,77 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         document.getElementById("v1NoteText").innerText = freqToNote(v1Hz);
                         document.getElementById("v2NoteText").innerText = freqToNote(v2Hz);
                         document.getElementById("v3NoteText").innerText = freqToNote(v3Hz);
+
+                        // Draw real-time oscilloscope waveform on canvas
+                        const oscCanvas = document.getElementById("oscCanvas");
+                        if (oscCanvas) {
+                            const oCtx = oscCanvas.getContext("2d");
+                            oCtx.fillStyle = "#050510";
+                            oCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
+                            
+                            // Render synthesized trace line based on active frequencies
+                            oCtx.beginPath();
+                            oCtx.lineWidth = 2;
+                            oCtx.strokeStyle = "#ff007f";
+                            oCtx.shadowColor = "#ff007f";
+                            oCtx.shadowBlur = 8;
+                            
+                            const samples = oscCanvas.width;
+                            const h = oscCanvas.height;
+                            const baseFreq = v1Hz || v2Hz || v3Hz || 100;
+                            
+                            for (let x = 0; x < samples; x++) {
+                                let y = h / 2;
+                                if (v1Hz || v2Hz || v3Hz) {
+                                    // Combine active voice waves
+                                    let val = 0;
+                                    if (v1Hz > 0) val += Math.sin((x * v1Hz * Math.PI) / 8000);
+                                    if (v2Hz > 0) val += Math.sin((x * v2Hz * Math.PI) / 8000);
+                                    if (v3Hz > 0) val += 0.5 * (Math.random() - 0.5); // noise/arp
+                                    y += val * (h / 3);
+                                } else {
+                                    // Flat line with subtle hum
+                                    y += Math.sin(x * 0.1) * 2;
+                                }
+                                if (x === 0) oCtx.moveTo(x, y);
+                                else oCtx.lineTo(x, y);
+                            }
+                            oCtx.stroke();
+                            oCtx.shadowBlur = 0;
+
+                            // Render LFO (low-frequency oscillator) secondary modulation wave overlay
+                            const lfoToggle = document.getElementById("lfoToggle");
+                            if (lfoToggle && lfoToggle.value === "on") {
+                                const lfoRate = parseFloat(document.getElementById("lfoRate").value) || 4;
+                                const lfoDepth = parseFloat(document.getElementById("lfoDepth").value) || 0.5;
+                                oCtx.beginPath();
+                                oCtx.lineWidth = 1;
+                                oCtx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+                                for (let x = 0; x < samples; x++) {
+                                    const lfoY = (h / 2) + Math.sin((x * lfoRate * Math.PI) / 100) * (h / 4) * lfoDepth;
+                                    if (x === 0) oCtx.moveTo(x, lfoY);
+                                    else oCtx.lineTo(x, lfoY);
+                                }
+                                oCtx.stroke();
+                            }
+                        }
+
+                        // Update Live SID registers state elements in DOM
+                        const toHex = (val) => "$" + (val || 0).toString(16).toUpperCase().padStart(2, "0");
+                        document.getElementById("regV1Freq").innerText = `${toHex(v1_freq & 0xFF)} / ${toHex((v1_freq >> 8) & 0xFF)}`;
+                        document.getElementById("regV1Ctrl").innerText = toHex(v1_ctrl);
+                        document.getElementById("regV1AD").innerText = toHex(v1_ad);
+                        document.getElementById("regV1SR").innerText = toHex(v1_sr);
+
+                        document.getElementById("regV2Freq").innerText = `${toHex(v2_freq & 0xFF)} / ${toHex((v2_freq >> 8) & 0xFF)}`;
+                        document.getElementById("regV2Ctrl").innerText = toHex(v2_ctrl);
+                        document.getElementById("regV2AD").innerText = toHex(v2_ad);
+                        document.getElementById("regV2SR").innerText = toHex(v2_sr);
+
+                        document.getElementById("regV3Freq").innerText = `${toHex(v3_freq & 0xFF)} / ${toHex((v3_freq >> 8) & 0xFF)}`;
+                        document.getElementById("regV3Ctrl").innerText = toHex(v3_ctrl);
+                        document.getElementById("regV3AD").innerText = toHex(v3_ad);
+                        document.getElementById("regV3SR").innerText = toHex(v3_sr);
 
                         if (isAudioPlaying && voices.length === 3) {
                             voices[0].update(v1_freq, v1_ctrl, v1_ad, v1_sr);
@@ -6362,6 +6776,375 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             ctx.fillText("HEALTH: [||||||||||]", canvas.width / 2, canvas.height - 12);
         }
 
+        let mouseFrame = 0;
+        function drawMouseHouseScreen() {
+            mouseFrame++;
+            // Draw background (cozy room, wood floor)
+            ctx.fillStyle = "#8e5a36";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw baseboards
+            ctx.fillStyle = "#2c1e14";
+            ctx.fillRect(0, 30, canvas.width, 10);
+
+            // Interactive Mouse Movement
+            if (!window.mouseHouseX) {
+                window.mouseHouseX = 100;
+                window.mouseHouseY = 120;
+            }
+            if (interactiveKeys.left) window.mouseHouseX = Math.max(50, window.mouseHouseX - 3.0);
+            if (interactiveKeys.right) window.mouseHouseX = Math.min(270, window.mouseHouseX + 3.0);
+            if (interactiveKeys.up) window.mouseHouseY = Math.max(50, window.mouseHouseY - 2.0);
+            if (interactiveKeys.down) window.mouseHouseY = Math.min(170, window.mouseHouseY + 2.0);
+
+            let avX = window.mouseHouseX;
+            let avY = window.mouseHouseY;
+
+            // Draw Mouse (Grey body, pink ears)
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(avX - 4, avY - 4, 8, 8);
+            ctx.fillStyle = "#ffc0cb";
+            ctx.fillRect(avX - 3, avY - 6, 2, 2);
+            ctx.fillRect(avX + 1, avY - 6, 2, 2);
+
+            // Draw Cat (Orange body, tail)
+            let catX = 180 + Math.sin(mouseFrame * 0.05) * 40;
+            let catY = 110 + Math.cos(mouseFrame * 0.05) * 20;
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(catX - 6, catY - 6, 12, 12);
+            ctx.fillRect(catX - 4, catY - 10, 2, 4); // ears
+            ctx.fillRect(catX + 2, catY - 10, 2, 4);
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 36", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("CHEESE: 4 | ESCAPED", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("MOUSE IN THE HOUSE (J. HILTY 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("CAT ALARM: DANGER!", canvas.width / 2, canvas.height - 12);
+        }
+
+        let lazyFrame = 0;
+        function drawLazySourceScreen() {
+            lazyFrame++;
+            // Draw background (blue editor screen)
+            ctx.fillStyle = "#0000a8";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw edit lines
+            ctx.fillStyle = "#a8a8a8";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("10  .A 05        ; LDA #$05 (LAZY OPTIMIZED)", 20, 50);
+            ctx.fillText("20  .S A0 0F     ; STA $0FA0 (BORDER SHADOW)", 20, 65);
+            ctx.fillText("30  .J 00 C0     ; JSR $C000 (SYNC SHADOWS)", 20, 80);
+            ctx.fillText("40  .B           ; BRK", 20, 95);
+
+            // Interactive Cursor Movement
+            if (!window.lazyCursorX) {
+                window.lazyCursorX = 15;
+                window.lazyCursorY = 46;
+            }
+            if (interactiveKeys.left) window.lazyCursorX = Math.max(10, window.lazyCursorX - 2.0);
+            if (interactiveKeys.right) window.lazyCursorX = Math.min(270, window.lazyCursorX + 2.0);
+            if (interactiveKeys.up) window.lazyCursorY = Math.max(40, window.lazyCursorY - 1.5);
+            if (interactiveKeys.down) window.lazyCursorY = Math.min(160, window.lazyCursorY + 1.5);
+
+            // Draw cursor (flashing cyan block)
+            if (Math.floor(lazyFrame / 15) % 2 === 0) {
+                ctx.fillStyle = "#00ffff";
+                ctx.fillRect(window.lazyCursorX, window.lazyCursorY, 6, 8);
+            }
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 36", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LINE: 10 | COLUMN: 2", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("LAZY SOURCE CODE (M. BENNETT 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("PRESS [RETURN] TO COMPILE SHORTHAND", canvas.width / 2, canvas.height - 12);
+        }
+
+        let artistFrame = 0;
+        let brushColor = "#ff007f";
+        function drawTheArtistScreen() {
+            artistFrame++;
+            // Draw background (art canvas)
+            if (!window.artistCanvasCreated) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                window.artistCanvasCreated = true;
+            }
+
+            // Interactive Brush Movement
+            if (!window.brushX) {
+                window.brushX = 140;
+                window.brushY = 100;
+            }
+            if (interactiveKeys.left) window.brushX = Math.max(10, window.brushX - 3.0);
+            if (interactiveKeys.right) window.brushX = Math.min(310, window.brushX + 3.0);
+            if (interactiveKeys.up) window.brushY = Math.max(30, window.brushY - 2.5);
+            if (interactiveKeys.down) window.brushY = Math.min(180, window.brushY + 2.5);
+
+            // Draw brush path (simulated drawing)
+            ctx.fillStyle = brushColor;
+            ctx.beginPath();
+            ctx.arc(window.brushX, window.brushY, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw HUD overlays on top of canvas
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 36", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("BRUSH SIZE: 3px", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#000000";
+            ctx.fillText("THE ARTIST (D. DEBOER 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#888888";
+            ctx.fillText("USE JOYSTICK OR KEYS TO DRAW ON SCREEN", canvas.width / 2, canvas.height - 12);
+        }
+
+        let jailbreakFrame = 0;
+        function drawJailBreakScreen() {
+            jailbreakFrame++;
+            // Draw background (dark dungeon cells, iron bars)
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw iron cell bars (vertical grey lines)
+            ctx.strokeStyle = "#7f8c8d";
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(80 + i * 25, 30);
+                ctx.lineTo(80 + i * 25, 170);
+                ctx.stroke();
+            }
+
+            // Interactive Prisoner Movement
+            if (!window.jailX) {
+                window.jailX = 100;
+                window.jailY = 100;
+            }
+            if (interactiveKeys.left) window.jailX = Math.max(50, window.jailX - 2.5);
+            if (interactiveKeys.right) window.jailX = Math.min(270, window.jailX + 2.5);
+            if (interactiveKeys.up) window.jailY = Math.max(50, window.jailY - 1.5);
+            if (interactiveKeys.down) window.jailY = Math.min(170, window.jailY + 1.5);
+
+            let avX = window.jailX;
+            let avY = window.jailY;
+
+            // Draw Prisoner (striped shirt, black pants)
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(avX - 4, avY - 12, 8, 2);
+            ctx.fillRect(avX - 4, avY - 8, 8, 2);
+            ctx.fillRect(avX - 4, avY - 4, 8, 2);
+            ctx.fillRect(avX - 4, avY, 8, 4); // pants
+
+            // Draw Guard (Blue uniform, gold badge)
+            let gX = 180 + Math.sin(jailbreakFrame * 0.04) * 45;
+            let gY = 120;
+            ctx.fillStyle = "#2980b9";
+            ctx.fillRect(gX - 5, gY - 12, 10, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(gX - 1, gY - 8, 2, 2); // badge
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(gX - 5, gY - 15, 10, 3); // cap
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LOCKS OPENED: 2/5", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("JAIL BREAK (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("SECURE PERIMETER ACTIVE", canvas.width / 2, canvas.height - 12);
+        }
+
+        let turtleFrame = 0;
+        function drawTurtleRescueScreen() {
+            turtleFrame++;
+            // Draw background (blue ocean water)
+            ctx.fillStyle = "#2980b9";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw coral reefs (procedural green shapes)
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(30, 130, 40, 40);
+            ctx.fillRect(250, 120, 50, 50);
+
+            // Interactive Turtle Movement
+            if (!window.turtleX) {
+                window.turtleX = 100;
+                window.turtleY = 100;
+            }
+            if (interactiveKeys.left) window.turtleX = Math.max(40, window.turtleX - 2.5);
+            if (interactiveKeys.right) window.turtleX = Math.min(280, window.turtleX + 2.5);
+            if (interactiveKeys.up) window.turtleY = Math.max(50, window.turtleY - 2.0);
+            if (interactiveKeys.down) window.turtleY = Math.min(170, window.turtleY + 2.0);
+
+            let avX = window.turtleX;
+            let avY = window.turtleY;
+
+            // Draw Turtle (green shell, yellow flippers)
+            ctx.fillStyle = "#f1c40f"; // limbs
+            ctx.fillRect(avX - 6, avY - 8, 4, 3);
+            ctx.fillRect(avX + 2, avY - 8, 4, 3);
+            ctx.fillRect(avX - 6, avY + 5, 4, 3);
+            ctx.fillRect(avX + 2, avY + 5, 4, 3);
+            ctx.fillStyle = "#27ae60"; // shell
+            ctx.fillRect(avX - 4, avY - 6, 8, 12);
+
+            // Draw Shark/Predator (grey fin swimming back & forth)
+            let sX = 160 + Math.sin(turtleFrame * 0.03) * 60;
+            let sY = 80 + Math.cos(turtleFrame * 0.03) * 20;
+            ctx.fillStyle = "#7f8c8d";
+            ctx.beginPath();
+            ctx.moveTo(sX - 8, sY);
+            ctx.lineTo(sX, sY - 12);
+            ctx.lineTo(sX + 8, sY);
+            ctx.closePath();
+            ctx.fill();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("RESCUED: 3 | SHARKS: 2", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("TURTLE RESCUE (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#00ffff";
+            ctx.fillText("SWIM TO THE REEF CORAL FOR SAFETY", canvas.width / 2, canvas.height - 12);
+        }
+
+        let advFrame = 0;
+        function drawAdventurerScreen() {
+            advFrame++;
+            // Draw background (forest trail/pathway)
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw brown dirt path winding through forest
+            ctx.fillStyle = "#d35400";
+            ctx.beginPath();
+            ctx.moveTo(100, 180);
+            ctx.lineTo(130, 30);
+            ctx.lineTo(170, 30);
+            ctx.lineTo(140, 180);
+            ctx.closePath();
+            ctx.fill();
+
+            // Interactive Hero Movement
+            if (!window.advX) {
+                window.advX = 120;
+                window.advY = 120;
+            }
+            if (interactiveKeys.left) window.advX = Math.max(30, window.advX - 2.5);
+            if (interactiveKeys.right) window.advX = Math.min(290, window.advX + 2.5);
+            if (interactiveKeys.up) window.advY = Math.max(40, window.advY - 2.0);
+            if (interactiveKeys.down) window.advY = Math.min(170, window.advY + 2.0);
+
+            let avX = window.advX;
+            let avY = window.advY;
+
+            // Draw Hero (purple tunic, yellow hair, shield)
+            ctx.fillStyle = "#9b59b6";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(avX - 3, avY - 15, 6, 4); // hair
+            ctx.fillStyle = "#bdc3c7";
+            ctx.fillRect(avX + 4, avY - 8, 2, 6); // shield
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("HP: 100/100 | GOLD: 45", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THE ADVENTURER (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("YOU ARE STANDING ON A WINDING FOREST DIRT PATH", canvas.width / 2, canvas.height - 12);
+        }
+
+        let flashyFrame = 0;
+        function drawFlashyWindowsScreen() {
+            flashyFrame++;
+            // Draw background (80-column styled dark slate terminal)
+            ctx.fillStyle = "#1e272c";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw 80-column green cell grid text layout
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 6px monospace";
+            ctx.textAlign = "left";
+            for (let i = 0; i < 8; i++) {
+                ctx.fillText(`$C00${i*8} | E9 00 2C A2 00 8E 20 D0 60 4C D0 C0`, 20, 45 + i * 12);
+            }
+
+            // Draw interactive window overlay block (simulating flashy overlay windows)
+            let winX = 110 + Math.sin(flashyFrame * 0.04) * 20;
+            let winY = 60 + Math.cos(flashyFrame * 0.04) * 10;
+            ctx.fillStyle = "#2c3e50";
+            ctx.strokeStyle = "#e74c3c";
+            ctx.lineWidth = 2;
+            ctx.fillRect(winX, winY, 120, 60);
+            ctx.strokeRect(winX, winY, 120, 60);
+
+            // Draw text inside the flashy window
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 7px monospace";
+            ctx.fillText("  C128 VDC OVERLAY WINDOW", winX + 5, winY + 18);
+            ctx.fillStyle = "#00ffff";
+            ctx.fillText("  REGISTER 28: WIDTH=80", winX + 5, winY + 32);
+            ctx.fillText("  REGISTER 24: SCROLL=OFF", winX + 5, winY + 44);
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("VDC: 8563 (80-COLUMNS)", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("FLASHY WINDOWS (AHOY! 1987)", canvas.width / 2, 15);
+
+            // Flashing border status LED
+            let flashCol = Math.floor(flashyFrame / 10) % 2 === 0 ? "#ff007f" : "#00f2fe";
+            ctx.fillStyle = flashCol;
+            ctx.fillText("VDC MONITOR ACTIVE [VRAM SYNC: OK]", canvas.width / 2, canvas.height - 12);
+        }
+
         let sentinelFrame = 0;
         function drawSentinelScreen() {
             sentinelFrame++;
@@ -6746,6 +7529,427 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        let duelFrame = 0;
+        function drawDuelScreen() {
+            duelFrame++;
+            // Draw sci-fi space arena sky
+            ctx.fillStyle = "#0c051a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid perspective lines on ground
+            ctx.strokeStyle = "#8a2be2";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(40 + i * 30, canvas.height);
+                ctx.lineTo(80 + i * 20, 100);
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.moveTo(0, 100); ctx.lineTo(canvas.width, 100);
+            ctx.moveTo(0, 130); ctx.lineTo(canvas.width, 130);
+            ctx.stroke();
+
+            // Interactive Duelist 1 movement
+            if (!window.duelP1X) {
+                window.duelP1X = 80;
+                window.duelP2X = 240;
+            }
+            if (interactiveKeys.left) window.duelP1X = Math.max(30, window.duelP1X - 3);
+            if (interactiveKeys.right) window.duelP1X = Math.min(140, window.duelP1X + 3);
+
+            // NPC automated movements (P2)
+            window.duelP2X += Math.sin(duelFrame * 0.05) * 2;
+
+            // Render Player Duelist (Cyan neon)
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillRect(window.duelP1X - 6, 120, 12, 24);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(window.duelP1X - 2, 114, 4, 6); // head
+            // Laser saber
+            ctx.strokeStyle = "#39ff14";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(window.duelP1X + 4, 126);
+            ctx.lineTo(window.duelP1X + 16, 114);
+            ctx.stroke();
+
+            // Render Enemy Duelist (Magenta neon)
+            ctx.fillStyle = "#ff007f";
+            ctx.fillRect(window.duelP2X - 6, 120, 12, 24);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(window.duelP2X - 2, 114, 4, 6); // head
+            // Laser saber
+            ctx.strokeStyle = "#ff007f";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(window.duelP2X - 4, 126);
+            ctx.lineTo(window.duelP2X - 16, 114);
+            ctx.stroke();
+
+            // Laser beam animation if close
+            if (Math.abs(window.duelP1X - window.duelP2X) < 60 && duelFrame % 4 === 0) {
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(window.duelP1X + 16, 114);
+                ctx.lineTo(window.duelP2X - 16, 114);
+                ctx.stroke();
+                playSynthTone(600, 30);
+            }
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 40", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("DUEL ENERGY: 95%", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("DUEL (C. BLAKEMORE 1987)", canvas.width / 2, 15);
+        }
+
+        let infoFrame = 0;
+        const databaseEntries = [
+            { id: "001", file: "SYS_INIT.OBJ", sec: "HIGH" },
+            { id: "002", file: "MAIN_LOOP.BAS", sec: "LOW" },
+            { id: "003", file: "SID_VOICES.PRG", sec: "HIGH" },
+            { id: "004", file: "SPR_ASSEM.DAT", sec: "MID" },
+            { id: "005", file: "ECM_VICII.YUL", sec: "CRIT" }
+        ];
+        function drawInfoflowScreen() {
+            infoFrame++;
+            // Draw database terminal screen (retro amber CRT monitor)
+            ctx.fillStyle = "#1c0c00";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Terminal grids
+            ctx.strokeStyle = "rgba(255, 165, 0, 0.15)";
+            ctx.lineWidth = 0.5;
+            for (let y = 30; y < canvas.height; y += 12) {
+                ctx.beginPath();
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw database table headers
+            ctx.fillStyle = "#ffaa00";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ENTRY ID  | FILENAME      | SECURITY", 20, 35);
+            ctx.fillText("-------------------------------------", 20, 43);
+
+            // Draw table items
+            ctx.fillStyle = "#ff8800";
+            for (let i = 0; i < databaseEntries.length; i++) {
+                const ent = databaseEntries[i];
+                ctx.fillText(`${ent.id}       | ${ent.file.padEnd(14, " ")} | ${ent.sec}`, 20, 55 + i * 15);
+            }
+
+            // Interactive Selector Cursor
+            if (!window.infoCursorIdx) {
+                window.infoCursorIdx = 0;
+            }
+            if (interactiveKeys.up && infoFrame % 10 === 0) {
+                window.infoCursorIdx = Math.max(0, window.infoCursorIdx - 1);
+                playSynthTone(800, 20);
+            }
+            if (interactiveKeys.down && infoFrame % 10 === 0) {
+                window.infoCursorIdx = Math.min(databaseEntries.length - 1, window.infoCursorIdx + 1);
+                playSynthTone(800, 20);
+            }
+
+            // Highlight bar
+            ctx.strokeStyle = "#ffaa00";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(15, 48 + window.infoCursorIdx * 15, canvas.width - 30, 12);
+
+            // HUD
+            ctx.fillStyle = "#ffaa00";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 40", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("ACTIVE FILE: " + databaseEntries[window.infoCursorIdx].file, canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("INFOFLOW DATABASE (C. BLAKEMORE 1987)", canvas.width / 2, 15);
+        }
+
+        let hbFrame = 0;
+        let hbState = "pitching"; // "pitching", "flight", "fielding"
+        let hbPitchType = "Fastball";
+        let hbSelectedAim = "Center";
+        let hbBallX = 160;
+        let hbBallY = 110;
+        let hbBallZ = 0.5; // Scale depth
+        let hbSpeedX = 0;
+        let hbSpeedY = 0;
+        let hbOuts = 0;
+        let hbStrikes = 0;
+        let hbBalls = 0;
+        let hbRuns = 0;
+        let hbStatusMsg = "SELECT PITCH: [LEFT: FB, UP: CB, RIGHT: SL, DOWN: CH]";
+
+        function drawHardballScreen() {
+            hbFrame++;
+
+            // Draw field grass & stadium walls
+            ctx.fillStyle = "#1e7a1e";
+            // Draw field grass & stadium walls (C64 Green #00a800 / Dark Green)
+            ctx.fillStyle = "#00a800";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Outfield boundary fence (C64 Grey #707070)
+            ctx.fillStyle = "#707070";
+            ctx.fillRect(0, 25, canvas.width, 10);
+            ctx.fillStyle = "#c0c0c0"; // Light grey bar
+            ctx.fillRect(0, 23, canvas.width, 2);
+
+            // Infield dirt mound & homeplate lines (C64 Light Brown/Orange #905000)
+            ctx.fillStyle = "#905000";
+            ctx.beginPath();
+            ctx.ellipse(160, 110, 30, 15, 0, 0, 2 * Math.PI); // Pitcher's mound
+            ctx.ellipse(160, 175, 45, 12, 0, 0, 2 * Math.PI); // Batter's box dirt
+            ctx.fill();
+
+            // Home plate (white diamond)
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(160, 170);
+            ctx.lineTo(166, 174);
+            ctx.lineTo(160, 178);
+            ctx.lineTo(154, 174);
+            ctx.closePath();
+            ctx.fill();
+
+            // Render stadium spectators scoreboard backdrop
+            ctx.fillStyle = "#222222";
+            ctx.fillRect(60, 0, 200, 23);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(60, 0, 200, 23);
+            
+            // Scoreboard values
+            ctx.fillStyle = "#00ff00";
+            ctx.font = "7px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(`ATROPA: ${hbRuns}  |  VISITORS: 0  |  OUTS: ${hbOuts}`, 160, 8);
+            ctx.fillText(`B: ${hbBalls}   S: ${hbStrikes}   PITCH: ${hbPitchType} (${hbSelectedAim})`, 160, 18);
+
+            // Behind-the-pitcher perspective simulation
+            if (hbState === "pitching") {
+                // Pitcher sprite (C64 White jersey, Peach face)
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(156, 95, 8, 16); // body
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(158, 89, 4, 6); // head
+
+                // Batter sprite (C64 Blue jersey, Peach face)
+                ctx.fillStyle = "#4040d0";
+                ctx.fillRect(140, 150, 10, 22); // body
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(143, 144, 4, 6); // head
+                // bat line (resting angle)
+                ctx.strokeStyle = "#c28e5a";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(140, 152);
+                ctx.lineTo(130, 138);
+                ctx.stroke();
+
+                // Select Pitch Type using arrow/direction keys
+                if (interactiveKeys.left) { hbPitchType = "Fastball"; hbStatusMsg = "FASTBALL SELECT. PRESS SPACE TO THROW!"; }
+                if (interactiveKeys.up) { hbPitchType = "Curveball"; hbStatusMsg = "CURVEBALL SELECT. PRESS SPACE TO THROW!"; }
+                if (interactiveKeys.right) { hbPitchType = "Slider"; hbStatusMsg = "SLIDER SELECT. PRESS SPACE TO THROW!"; }
+                if (interactiveKeys.down) { hbPitchType = "Change-Up"; hbStatusMsg = "CHANGE-UP SELECT. PRESS SPACE TO THROW!"; }
+
+                // Reset ball position
+                hbBallX = 160;
+                hbBallY = 105;
+                hbBallZ = 0.4;
+
+                // Listen for trigger (space key / enter) to pitch the ball
+                if (interactiveKeys.space || interactiveKeys.enter) {
+                    hbState = "flight";
+                    hbStatusMsg = "BALL IN FLIGHT! TIME YOUR SWING!";
+                    playSynthTone(523, 100); // Pitch sound
+                }
+            } else if (hbState === "flight") {
+                // Animate ball moving towards plate (increasing size & depth scale)
+                const pitchSpeed = hbPitchType === "Fastball" ? 4 : hbPitchType === "Change-Up" ? 2 : 3;
+                hbBallY += pitchSpeed;
+                hbBallZ += 0.03;
+                
+                // Add curve offsets
+                if (hbPitchType === "Curveball") {
+                    hbBallX += Math.sin(hbFrame * 0.2) * 1.5;
+                } else if (hbPitchType === "Slider") {
+                    hbBallX += 0.8;
+                }
+
+                // Render Pitcher (Follow-through stance)
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(154, 98, 12, 13);
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(158, 92, 4, 6);
+
+                // Render Batter (Ready stance)
+                ctx.fillStyle = "#4040d0";
+                ctx.fillRect(140, 150, 10, 22);
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(143, 144, 4, 6);
+
+                // Bat swing logic if user presses space or arrow key
+                let swung = false;
+                if (interactiveKeys.space || interactiveKeys.enter || interactiveKeys.right) {
+                    swung = true;
+                    // Draw active swinging bat
+                    ctx.strokeStyle = "#c28e5a";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(148, 158);
+                    ctx.lineTo(168, 160);
+                    ctx.stroke();
+                } else {
+                    ctx.strokeStyle = "#c28e5a";
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(140, 152);
+                    ctx.lineTo(130, 138);
+                    ctx.stroke();
+                }
+
+                // Render Ball shadow & Ball circle
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.beginPath();
+                ctx.arc(hbBallX, hbBallY + 5, 2 * hbBallZ, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(hbBallX, hbBallY, 3 * hbBallZ, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Check plate crossings or swings
+                if (hbBallY >= 165) {
+                    if (swung) {
+                        // Check if ball alignment matches timing window
+                        if (Math.abs(hbBallX - 160) < 12 && hbBallY < 180) {
+                            // Contact hit! Transit to fielding view
+                            hbState = "fielding";
+                            hbStatusMsg = "CRACK! IT'S A DEEP FLY BALL TO THE OUTFIELD!";
+                            playSynthTone(880, 150); // Bat hit sound
+                            
+                            // Initialize fly ball velocities
+                            hbBallX = 160;
+                            hbBallY = 170;
+                            hbSpeedX = (Math.random() - 0.5) * 6;
+                            hbSpeedY = -3 - Math.random() * 4;
+                        } else {
+                            // Swing and miss!
+                            hbStrikes++;
+                            hbState = "pitching";
+                            hbStatusMsg = "STRIKE! SWUNG ON AND MISSED!";
+                            playSynthTone(220, 200);
+                        }
+                    } else {
+                        // Called ball or strike check
+                        if (hbBallX >= 152 && hbBallX <= 168) {
+                            hbStrikes++;
+                            hbStatusMsg = "STRIKE CALLED!";
+                            playSynthTone(220, 200);
+                        } else {
+                            hbBalls++;
+                            hbStatusMsg = "BALL OUTSIDE!";
+                            playSynthTone(350, 150);
+                        }
+                        hbState = "pitching";
+                    }
+
+                    // Scoreboard checks
+                    if (hbStrikes >= 3) {
+                        hbOuts++;
+                        hbStrikes = 0;
+                        hbBalls = 0;
+                        hbStatusMsg = "OUT! BATTER STRUCK OUT!";
+                        if (hbOuts >= 3) {
+                            hbOuts = 0;
+                            hbRuns = 0;
+                            hbStatusMsg = "THREE OUTS. INNING CHANGEOVER.";
+                        }
+                    }
+                    if (hbBalls >= 4) {
+                        hbRuns++;
+                        hbStrikes = 0;
+                        hbBalls = 0;
+                        hbStatusMsg = "WALK! ATROPA RUN SCORES!";
+                    }
+                }
+            } else if (hbState === "fielding") {
+                // Update fly ball positions
+                hbBallX += hbSpeedX;
+                hbBallY += hbSpeedY;
+                
+                // Add gravity fall effect
+                hbSpeedY += 0.12;
+
+                // Outfield background boundary clamp
+                if (hbBallY < 35) {
+                    hbSpeedY = -hbSpeedY * 0.4; // Bounce off wall fence
+                    hbBallY = 35;
+                }
+
+                // Render outfielders (C64 Red jerseys #e04040)
+                ctx.fillStyle = "#e04040";
+                ctx.fillRect(80, 80, 8, 12);
+                ctx.fillRect(160, 60, 8, 12);
+                ctx.fillRect(240, 80, 8, 12);
+
+                // Render running base-runners (C64 Light Blue #70a0ff)
+                let runnerProgress = (hbFrame % 120) / 120;
+                let rx = 160 + Math.sin(runnerProgress * Math.PI * 2) * 50;
+                let ry = 120 + Math.cos(runnerProgress * Math.PI * 2) * 25;
+                ctx.fillStyle = "#70a0ff";
+                ctx.beginPath();
+                ctx.arc(rx, ry, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw ball
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(hbBallX, hbBallY, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Check landing catch or run score
+                if (hbBallY >= canvas.height - 10) {
+                    // Decide if caught or hit
+                    if (Math.random() > 0.4) {
+                        hbRuns++;
+                        hbStatusMsg = "SAFE! HITS THE WALL! RUN SCORE REGISTERED!";
+                        playSynthTone(700, 200);
+                    } else {
+                        hbOuts++;
+                        hbStatusMsg = "CAUGHT! OUTFIELDER MAKES THE FLY CATCH!";
+                        playSynthTone(300, 300);
+                    }
+                    
+                    hbState = "pitching";
+                    hbStrikes = 0;
+                    hbBalls = 0;
+                }
+            }
+
+            // Controls Instruction Footer Bar
+            ctx.fillStyle = "#333333";
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 7px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(hbStatusMsg, canvas.width / 2, canvas.height - 8);
+        }
+
         // Draw C64 Screen layout
         function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
             if (oregonActive) {
@@ -6805,8 +8009,48 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 drawVaultOfTerrorScreen();
                 return;
             }
+            if (activeGameName === "Mouse in the House") {
+                drawMouseHouseScreen();
+                return;
+            }
+            if (activeGameName === "Lazy Source Code") {
+                drawLazySourceScreen();
+                return;
+            }
+            if (activeGameName === "The Artist") {
+                drawTheArtistScreen();
+                return;
+            }
+            if (activeGameName === "Jail Break") {
+                drawJailBreakScreen();
+                return;
+            }
+            if (activeGameName === "Turtle Rescue") {
+                drawTurtleRescueScreen();
+                return;
+            }
+            if (activeGameName === "The Adventurer") {
+                drawAdventurerScreen();
+                return;
+            }
+            if (activeGameName === "Flashy Windows") {
+                drawFlashyWindowsScreen();
+                return;
+            }
             if (activeGameName === "Sentinel") {
                 drawSentinelScreen();
+                return;
+            }
+            if (activeGameName === "Duel") {
+                drawDuelScreen();
+                return;
+            }
+            if (activeGameName === "Infoflow") {
+                drawInfoflowScreen();
+                return;
+            }
+            if (activeGameName === "Hardball!") {
+                drawHardballScreen();
                 return;
             }
 
@@ -7156,6 +8400,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 // Keep brush legend visible only in multi-color mode
                 brushContainer.style.display = (sprEditMode === "multi") ? "flex" : "none";
 
+                let isDrawing = false;
+                gridContainer.addEventListener("mousedown", () => { isDrawing = true; });
+                window.addEventListener("mouseup", () => { isDrawing = false; });
+
                 sprGridState = [];
                 for (let r = 0; r < 21; r++) {
                     const row = [];
@@ -7166,7 +8414,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         cell.dataset.row = r;
                         cell.dataset.col = c;
                         
-                        cell.addEventListener("click", () => {
+                        function paintCell() {
                             let val = row[c];
                             if (sprEditMode === "single") {
                                 val = (val === 0) ? 2 : 0; // Toggle on/off (mapping to 2 / Main color)
@@ -7181,6 +8429,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             else if (val === 1) cell.classList.add("color-01");
                             else if (val === 2) cell.classList.add("color-10");
                             else if (val === 3) cell.classList.add("color-11");
+                        }
+
+                        cell.addEventListener("mousedown", (e) => {
+                            e.preventDefault();
+                            paintCell();
+                        });
+                        cell.addEventListener("mouseenter", () => {
+                            if (isDrawing) {
+                                paintCell();
+                            }
                         });
                         gridContainer.appendChild(cell);
                     }

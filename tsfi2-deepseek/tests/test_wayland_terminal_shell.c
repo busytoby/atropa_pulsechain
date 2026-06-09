@@ -286,7 +286,15 @@ static int g_flankspeed_asm_len = 0;
 static void init_flankspeed(void);
 static void redraw_flankspeed_screen(void);
 static void handle_flankspeed_input(char ch);
-static void flankspeed_assemble(const char *instr);
+static bool flankspeed_assemble(const char *instr);
+
+// Dynamic Assembly Symbol Dictionary
+typedef struct {
+    char name[32];
+    char value[32];
+} FlankspeedSymbol;
+static FlankspeedSymbol g_flankspeed_symbols[128];
+static int g_flankspeed_symbol_count = 0;
 
 // Programmable Functions variables
 static char g_fkey_macros[8][32] = {
@@ -5846,19 +5854,53 @@ static void redraw_flankspeed_screen(void) {
     }
 }
 
-static void flankspeed_assemble(const char *instr) {
+static bool flankspeed_assemble(const char *instr) {
     uint8_t bytes[16];
     int len = 0;
     
     char cmd[32] = {0};
     char arg[32] = {0};
     int n = sscanf(instr, "%31s %31s", cmd, arg);
-    if (n <= 0) return;
+    if (n <= 0) return false;
+    
+    // Integrated Symbol lookup helper aliases
+    if (strcasecmp(arg, "START") == 0) {
+        strcpy(arg, "$0300");
+    } else if (strcasecmp(arg, "LOOP") == 0) {
+        strcpy(arg, "$0308");
+    } else if (strcasecmp(arg, "DATA") == 0) {
+        strcpy(arg, "$0320");
+    } else {
+        // Dynamic Symbol Dictionary check
+        for (int i = 0; i < g_flankspeed_symbol_count; i++) {
+            if (strcasecmp(arg, g_flankspeed_symbols[i].name) == 0) {
+                strncpy(arg, g_flankspeed_symbols[i].value, sizeof(arg) - 1);
+                arg[sizeof(arg) - 1] = '\0';
+                break;
+            }
+        }
+    }
     
     if (strcasecmp(cmd, "NOP") == 0) {
         bytes[0] = 0xEA; len = 1;
     } else if (strcasecmp(cmd, "RTS") == 0) {
         bytes[0] = 0x60; len = 1;
+    } else if (strcasecmp(cmd, "CLC") == 0) {
+        bytes[0] = 0x18; len = 1;
+    } else if (strcasecmp(cmd, "SEC") == 0) {
+        bytes[0] = 0x38; len = 1;
+    } else if (strcasecmp(cmd, "TAX") == 0) {
+        bytes[0] = 0xAA; len = 1;
+    } else if (strcasecmp(cmd, "TAY") == 0) {
+        bytes[0] = 0xA8; len = 1;
+    } else if (strcasecmp(cmd, "TXA") == 0) {
+        bytes[0] = 0x8A; len = 1;
+    } else if (strcasecmp(cmd, "TYA") == 0) {
+        bytes[0] = 0x98; len = 1;
+    } else if (strcasecmp(cmd, "PHA") == 0) {
+        bytes[0] = 0x48; len = 1;
+    } else if (strcasecmp(cmd, "PLA") == 0) {
+        bytes[0] = 0x68; len = 1;
     } else if (strcasecmp(cmd, "LDA") == 0 && arg[0] == '#' && arg[1] == '$') {
         unsigned int val = 0;
         sscanf(arg + 2, "%x", &val);
@@ -5871,6 +5913,26 @@ static void flankspeed_assemble(const char *instr) {
         unsigned int val = 0;
         sscanf(arg + 2, "%x", &val);
         bytes[0] = 0xA0; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "ADC") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0x69; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "SBC") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xE9; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "CMP") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xC9; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "CPX") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xE0; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "CPY") == 0 && arg[0] == '#' && arg[1] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 2, "%x", &val);
+        bytes[0] = 0xC0; bytes[1] = val & 0xFF; len = 2;
     } else if (strcasecmp(cmd, "STA") == 0 && arg[0] == '$') {
         unsigned int val = 0;
         sscanf(arg + 1, "%x", &val);
@@ -5895,6 +5957,26 @@ static void flankspeed_assemble(const char *instr) {
         unsigned int val = 0;
         sscanf(arg + 1, "%x", &val);
         bytes[0] = 0x4C; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "JSR") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x20; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; len = 3;
+    } else if (strcasecmp(cmd, "BNE") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0xD0; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "BEQ") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0xF0; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "BPL") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x10; bytes[1] = val & 0xFF; len = 2;
+    } else if (strcasecmp(cmd, "BMI") == 0 && arg[0] == '$') {
+        unsigned int val = 0;
+        sscanf(arg + 1, "%x", &val);
+        bytes[0] = 0x30; bytes[1] = val & 0xFF; len = 2;
     }
 
     if (len > 0) {
@@ -5911,8 +5993,12 @@ static void flankspeed_assemble(const char *instr) {
             }
         }
         snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Assembled: %s", instr);
+        redraw_flankspeed_screen();
+        return true;
     } else {
         snprintf(g_flankspeed_status, sizeof(g_flankspeed_status), "Unknown instruction format.");
+        redraw_flankspeed_screen();
+        return false;
     }
 }
 
@@ -7963,6 +8049,59 @@ static void execute_renumber(const char *filename) {
     for (int i = 0; i < count; i++) {
         lines[i].new_num = (i + 1) * 10;
     }
+
+    // Linting/Error Pass: Identify invalid/dangling reference targets (GOTO/GOSUB/THEN)
+    char lint_msg[256];
+    for (int i = 0; i < count; i++) {
+        // Syntax Checks (quotes and parentheses)
+        int quote_count = 0;
+        int paren_depth = 0;
+        char *s_ptr = lines[i].text;
+        while (*s_ptr) {
+            if (*s_ptr == '"') quote_count++;
+            if (*s_ptr == '(') paren_depth++;
+            if (*s_ptr == ')') paren_depth--;
+            s_ptr++;
+        }
+        if (quote_count % 2 != 0) {
+            snprintf(lint_msg, sizeof(lint_msg), "⚠️ [LINT WARNING] Line %d has unmatched double quotes (\").\r\n", lines[i].old_num);
+            lau_vram_write_string(g_vram, lint_msg, strlen(lint_msg));
+        }
+        if (paren_depth != 0) {
+            snprintf(lint_msg, sizeof(lint_msg), "⚠️ [LINT WARNING] Line %d has unbalanced parentheses (depth=%d).\r\n", lines[i].old_num, paren_depth);
+            lau_vram_write_string(g_vram, lint_msg, strlen(lint_msg));
+        }
+
+        char *ptr = lines[i].text;
+        while (*ptr) {
+            bool is_ref = false;
+            int offset = 0;
+            if (strncasecmp(ptr, "GOTO", 4) == 0) { is_ref = true; offset = 4; }
+            else if (strncasecmp(ptr, "GOSUB", 5) == 0) { is_ref = true; offset = 5; }
+            else if (strncasecmp(ptr, "THEN", 4) == 0) { is_ref = true; offset = 4; }
+            
+            if (is_ref) {
+                ptr += offset;
+                while (*ptr == ' ' || *ptr == '\t') ptr++;
+                if (isdigit((unsigned char)*ptr)) {
+                    int ref_num = atoi(ptr);
+                    bool target_found = false;
+                    for (int k = 0; k < count; k++) {
+                        if (lines[k].old_num == ref_num) {
+                            target_found = true;
+                            break;
+                        }
+                    }
+                    if (!target_found) {
+                        snprintf(lint_msg, sizeof(lint_msg), "⚠️ [LINT WARNING] Line %d references invalid destination line: %d\r\n", lines[i].old_num, ref_num);
+                        lau_vram_write_string(g_vram, lint_msg, strlen(lint_msg));
+                    }
+                }
+            } else {
+                ptr++;
+            }
+        }
+    }
     
     for (int i = 0; i < count; i++) {
         char new_text[256] = "";
@@ -8038,14 +8177,114 @@ static void execute_renumber(const char *filename) {
         return;
     }
     
+    // Check if filename or args specify compression
+    bool compress = false;
+    if (strstr(filename, "COMPRESS") || strstr(filename, "compress")) {
+        compress = true;
+    }
+    
     char out_buf[1024];
     lau_vram_write_string(g_vram, "--- RENUMBERING RESULTS ---\r\n", 29);
     for (int i = 0; i < count; i++) {
-        fprintf(f, "%d %s\n", lines[i].new_num, lines[i].text);
-        snprintf(out_buf, sizeof(out_buf), "%d %s\r\n", lines[i].new_num, lines[i].text);
+        char processed_text[256] = "";
+        if (compress) {
+            // Minification/Compression: Strip REM comments and redundant whitespaces
+            char *src = lines[i].text;
+            char *dest = processed_text;
+            size_t avail = sizeof(processed_text) - 1;
+            
+            // Skip REM lines entirely if they match
+            if (strncasecmp(src, "REM", 3) == 0) {
+                // Keep minimal line or skip body text
+                strcpy(processed_text, "REM");
+            } else {
+                bool in_quotes = false;
+                while (*src && avail > 0) {
+                    if (*src == '"') {
+                        in_quotes = !in_quotes;
+                    }
+                    // Strip non-quoted spaces
+                    if (!in_quotes && (*src == ' ' || *src == '\t')) {
+                        src++;
+                        continue;
+                    }
+                    *dest++ = *src++;
+                    avail--;
+                }
+                *dest = '\0';
+            }
+        } else {
+            strncpy(processed_text, lines[i].text, sizeof(processed_text) - 1);
+        }
+        
+        // Multi-statement line concatenation logic for compressor:
+        // If the next line has text, compress is true, and the total length is under 80 chars, merge them using a colon.
+        if (compress && i < count - 1) {
+            char next_processed[256] = "";
+            char *nsrc = lines[i+1].text;
+            char *ndest = next_processed;
+            size_t navail = sizeof(next_processed) - 1;
+            if (strncasecmp(nsrc, "REM", 3) != 0) {
+                bool in_q = false;
+                while (*nsrc && navail > 0) {
+                    if (*nsrc == '"') in_q = !in_q;
+                    if (!in_q && (*nsrc == ' ' || *nsrc == '\t')) {
+                        nsrc++;
+                        continue;
+                    }
+                    *ndest++ = *nsrc++;
+                    navail--;
+                }
+                *ndest = '\0';
+                
+                // If combined length is under 80, concatenate and skip the next line from writing independently
+                if (strlen(processed_text) + strlen(next_processed) + 2 < 80) {
+                    strcat(processed_text, ":");
+                    strcat(processed_text, next_processed);
+                    // Update the next line to have empty text so it's skipped or bypassed
+                    lines[i+1].text[0] = '\0';
+                }
+            }
+        }
+        
+        // Skip writing lines that have been concatenated/emptied
+        if (processed_text[0] == '\0') {
+            continue;
+        }
+        
+        fprintf(f, "%d %s\n", lines[i].new_num, processed_text);
+        snprintf(out_buf, sizeof(out_buf), "%d %s\r\n", lines[i].new_num, processed_text);
         lau_vram_write_string(g_vram, out_buf, strlen(out_buf));
     }
     fclose(f);
+    
+    // Diagnostic Performance/Optimization metrics calculation
+    if (compress) {
+        int original_char_count = 0;
+        int compressed_char_count = 0;
+        int original_line_count = count;
+        int compressed_line_count = 0;
+        for (int i = 0; i < count; i++) {
+            original_char_count += strlen(lines[i].text);
+            if (lines[i].text[0] != '\0') {
+                compressed_line_count++;
+                // Add estimated space for line numbers
+                compressed_char_count += strlen(lines[i].text) + 6;
+            }
+        }
+        char metrics[256];
+        snprintf(metrics, sizeof(metrics),
+                 "\r\n--- COMPRESSION DIAGNOSTIC PROFILE ---\r\n"
+                 " Original Lines: %d   | Compressed Lines: %d\r\n"
+                 " Original Size: %d B  | Compressed Size: %d B\r\n"
+                 " Size Savings: %.1f%%  | Saved Footprint: %d Bytes\r\n",
+                 original_line_count, compressed_line_count,
+                 original_char_count, compressed_char_count,
+                 original_char_count > 0 ? (1.0f - (float)compressed_char_count / original_char_count) * 100.0f : 0.0f,
+                 original_char_count - compressed_char_count);
+        lau_vram_write_string(g_vram, metrics, strlen(metrics));
+    }
+    
     lau_vram_write_string(g_vram, "----------------------------\r\nBASIC renumbering completed.\r\n", 58);
 }
 
@@ -9033,6 +9272,62 @@ static void execute_command(const char *cmd) {
         } else {
             lau_vram_write_string(g_vram, "\r\nError: No deleted BASIC program backup found to restore.\r\nREADY.\r\n", 68);
         }
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "ASM_FILE") == 0) {
+        char *path = cmd_buf + 8;
+        while (*path == ' ' || *path == '\t') path++;
+        if (strlen(path) == 0) {
+            lau_vram_write_string(g_vram, "Usage: ASM_FILE <path_to_assembly_script>\r\n", 43);
+            return;
+        }
+        FILE *af = fopen(path, "r");
+        if (!af) {
+            lau_vram_write_string(g_vram, "Error: Could not open assembly script file.\r\n", 45);
+            return;
+        }
+        char line[128];
+        int l_count = 0;
+        while (fgets(line, sizeof(line), af)) {
+            // Prune trailing newlines
+            size_t len = strlen(line);
+            while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) {
+                line[len-1] = '\0';
+                len--;
+            }
+            // Skip comments or empty lines
+            if (line[0] == ';' || line[0] == '\0') continue;
+            
+            // Check for symbol definition directive (e.g. .define KEY $E000)
+            if (line[0] == '.') {
+                char dir_name[32] = {0};
+                char sym_name[32] = {0};
+                char sym_val[32] = {0};
+                if (sscanf(line, "%31s %31s %31s", dir_name, sym_name, sym_val) == 3) {
+                    if (strcasecmp(dir_name, ".define") == 0 && g_flankspeed_symbol_count < 128) {
+                        snprintf(g_flankspeed_symbols[g_flankspeed_symbol_count].name, sizeof(g_flankspeed_symbols[g_flankspeed_symbol_count].name), "%s", sym_name);
+                        snprintf(g_flankspeed_symbols[g_flankspeed_symbol_count].value, sizeof(g_flankspeed_symbols[g_flankspeed_symbol_count].value), "%s", sym_val);
+                        g_flankspeed_symbol_count++;
+                    }
+                }
+                continue;
+            }
+            
+            int line_num = l_count + 1;
+            if (!flankspeed_assemble(line)) {
+                char err_msg[128];
+                snprintf(err_msg, sizeof(err_msg), "❌ ASM_FILE Error: Invalid instruction syntax on line %d: '%s'\r\n", line_num, line);
+                lau_vram_write_string(g_vram, err_msg, strlen(err_msg));
+                fclose(af);
+                return;
+            }
+            l_count++;
+        }
+        fclose(af);
+        char ret_msg[128];
+        snprintf(ret_msg, sizeof(ret_msg), "ASM_FILE: Successfully assembled %d instructions to RAM (Active dynamic symbols: %d).\r\n", l_count, g_flankspeed_symbol_count);
+        lau_vram_write_string(g_vram, ret_msg, strlen(ret_msg));
         return;
     }
 
