@@ -240,6 +240,14 @@
                     <div class="dna-hex-display" id="hexDisplay" style="font-size: 0.8rem;">0x00...</div>
                     <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 10px; border-color: var(--neon-magenta); color: var(--neon-magenta); font-size: 1rem; padding: 8px 15px;">💾 Save & Deploy to Room 10 (The Void)</button>
                 </div>
+
+                <!-- DNA Emblem Sigil Card -->
+                <div class="dna-card" style="margin-top: 15px; text-align: center;">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue); font-size: 1.1rem;">🛡️ Room DNA Sigil</h3>
+                    <div id="emblemContainer" style="display: inline-block; width: 140px; height: 140px; background: rgba(0,0,0,0.5); border-radius: 50%; border: 1px solid var(--border-color); padding: 10px; box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.2);">
+                        <!-- SVG dynamically generated here -->
+                    </div>
+                </div>
             </div>
 
             <!-- Right Panel: Visualizing Vector Arena -->
@@ -513,6 +521,70 @@ Type 'LOOK' to begin.</div>
 
             const osc = 10 + Math.floor((dna[12] / 255) * 80);
             document.getElementById("hudOsc").innerText = `${osc} Hz`;
+
+            generateEmblem(dna);
+        }
+
+        function generateEmblem(dna) {
+            const huePrimary = Math.floor((dna[0] / 255) * 360);
+            const hueSecondary = Math.floor((dna[4] / 255) * 360);
+            
+            const colorA = `hsl(${huePrimary}, 90%, 50%)`;
+            const colorB = `hsl(${hueSecondary}, 90%, 50%)`;
+            
+            const sym = 3 + (dna[8] % 6); // 3 to 8 axes of symmetry
+            const ringCount = 1 + (dna[10] % 3);
+            const innerRadius = 12 + (dna[12] % 12);
+            const outerRadius = 32 + (dna[14] % 16);
+            const coreType = dna[24] % 4; // 0: Circle, 1: Square, 2: Cross, 3: Triangle
+
+            let svg = `<svg width="120" height="120" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
+            svg += `<defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2.5" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="${colorA}" />
+                    <stop offset="100%" stop-color="${colorB}" />
+                </linearGradient>
+            </defs>`;
+
+            // Draw background rings
+            for (let i = 0; i < ringCount; i++) {
+                const r = outerRadius - (i * 7);
+                svg += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${colorA}" stroke-width="1.2" opacity="${0.45 - i * 0.12}" stroke-dasharray="${(dna[16+i] % 8) + 2}" filter="url(#glow)"/>`;
+            }
+
+            // Draw symmetry lines/polygons
+            let points = [];
+            for (let a = 0; a < sym; a++) {
+                const angle = (a * 2 * Math.PI) / sym - Math.PI / 2;
+                const x1 = 50 + innerRadius * Math.cos(angle);
+                const y1 = 50 + innerRadius * Math.sin(angle);
+                const x2 = 50 + outerRadius * Math.cos(angle);
+                const y2 = 50 + outerRadius * Math.sin(angle);
+                
+                svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="url(#grad)" stroke-width="1.5" filter="url(#glow)"/>`;
+                points.push(`${x2},${y2}`);
+            }
+
+            // Draw outer polygon outline
+            svg += `<polygon points="${points.join(" ")}" fill="none" stroke="${colorB}" stroke-width="1.2" filter="url(#glow)"/>`;
+
+            // Draw core emblem shape
+            if (coreType === 0) {
+                svg += `<circle cx="50" cy="50" r="8" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
+            } else if (coreType === 1) {
+                svg += `<rect x="43" y="43" width="14" height="14" transform="rotate(45 50 50)" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
+            } else if (coreType === 2) {
+                svg += `<path d="M48,40 H52 V48 H60 V52 H52 V60 H48 V52 H40 V48 H48 Z" fill="${colorB}" opacity="0.85" filter="url(#glow)"/>`;
+            } else {
+                svg += `<polygon points="50,40 58,55 42,55" fill="${colorA}" opacity="0.85" filter="url(#glow)"/>`;
+            }
+
+            svg += `</svg>`;
+            document.getElementById("emblemContainer").innerHTML = svg;
         }
 
         // Particle simulation on Canvas
