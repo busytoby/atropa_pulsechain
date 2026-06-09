@@ -400,19 +400,58 @@ Type 'LOOK' to begin.</div>
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!AudioContext) return;
                 const actx = new AudioContext();
-                let time = 0;
-                freqs.forEach(f => {
-                    const osc = actx.createOscillator();
-                    const gain = actx.createGain();
-                    osc.type = "triangle";
-                    osc.frequency.setValueAtTime(f, actx.currentTime + time);
-                    gain.gain.setValueAtTime(0.1, actx.currentTime + time);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + time + 0.28);
-                    osc.connect(gain);
-                    gain.connect(actx.destination);
-                    osc.start(actx.currentTime + time);
-                    osc.stop(actx.currentTime + time + 0.3);
-                    time += 0.32;
+                let stepTime = 0;
+                
+                freqs.forEach((f, idx) => {
+                    const time = actx.currentTime + stepTime;
+                    
+                    // Voice 1: Lead Melody (Triangle wave, high register)
+                    const osc1 = actx.createOscillator();
+                    const gain1 = actx.createGain();
+                    osc1.type = "triangle";
+                    osc1.frequency.setValueAtTime(f, time);
+                    gain1.gain.setValueAtTime(0.08, time);
+                    gain1.gain.exponentialRampToValueAtTime(0.0001, time + 0.28);
+                    osc1.connect(gain1);
+                    gain1.connect(actx.destination);
+                    osc1.start(time);
+                    osc1.stop(time + 0.3);
+                    
+                    // Voice 2: Chiptune Square Harmony (Square wave, mid register, minor third/perfect fifth)
+                    const osc2 = actx.createOscillator();
+                    const gain2 = actx.createGain();
+                    osc2.type = "square";
+                    const fHarm = (f / 2) * 1.5; 
+                    osc2.frequency.setValueAtTime(fHarm, time);
+                    gain2.gain.setValueAtTime(0.04, time);
+                    gain2.gain.exponentialRampToValueAtTime(0.0001, time + 0.24);
+                    osc2.connect(gain2);
+                    gain2.connect(actx.destination);
+                    osc2.start(time);
+                    osc2.stop(time + 0.26);
+
+                    // Voice 3: SID Analog Bass (Sawtooth wave with Low-Pass filter, low register)
+                    const osc3 = actx.createOscillator();
+                    const gain3 = actx.createGain();
+                    const filter = actx.createBiquadFilter();
+                    
+                    osc3.type = "sawtooth";
+                    osc3.frequency.setValueAtTime(f / 4, time); // 2 octaves down
+                    
+                    filter.type = "lowpass";
+                    filter.frequency.setValueAtTime(320, time); // warm, thick bass cutoff
+                    
+                    gain3.gain.setValueAtTime(0.12, time);
+                    gain3.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
+                    
+                    osc3.connect(filter);
+                    filter.connect(gain3);
+                    gain3.connect(actx.destination);
+                    
+                    osc3.start(time);
+                    osc3.stop(time + 0.32);
+                    
+                    stepTime += 0.35;
                 });
             } catch (e) {
                 console.error("Audio error:", e);
