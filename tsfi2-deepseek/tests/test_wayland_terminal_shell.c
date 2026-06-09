@@ -55,7 +55,8 @@ typedef enum {
     MODE_FONTASIA,
     MODE_FLANKSPEED,
     MODE_BOOTER,
-    MODE_HOPAROUND
+    MODE_HOPAROUND,
+    MODE_TOWERS
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_faster64_active = false;
@@ -277,9 +278,10 @@ static const char *g_booter_entries[] = {
     "FLANKSPEED (Hex Assembler Entry)",
     "CHECKLIST (To-Do Management Widget)",
     "YULBUILD (Yul compiler and assembly tool)",
-    "HOPAROUND (Board Strategy Game)"
+    "HOPAROUND (Board Strategy Game)",
+    "TOWERS (Towers of Hanoi Puzzle)"
 };
-static int g_booter_count = 7;
+static int g_booter_count = 8;
 static int g_booter_cursor = 0;
 static char g_booter_status[128];
 static void init_booter(void);
@@ -296,6 +298,16 @@ static char g_hoparound_status[128];
 static void init_hoparound(void);
 static void redraw_hoparound_screen(void);
 static void handle_hoparound_input(char ch);
+
+// Towers of Hanoi variables
+static int g_towers_pegs[3][5];
+static int g_towers_counts[3];
+static int g_towers_moves = 0;
+static int g_towers_src = -1; // -1 means none
+static char g_towers_status[128];
+static void init_towers(void);
+static void redraw_towers_screen(void);
+static void handle_towers_input(char ch);
 
 static double g_calc_cells[5][5] = {
     { 100.0, 50.0, 150.0, 0.0, 0.0 },
@@ -2814,6 +2826,123 @@ static void load_checklist(void) {
     strncpy(g_checklist_status_msg, "Checklist loaded successfully.", sizeof(g_checklist_status_msg) - 1);
 }
 
+static void init_towers(void) {
+    g_towers_counts[0] = 5;
+    g_towers_counts[1] = 0;
+    g_towers_counts[2] = 0;
+    
+    // Bottom disk is 5, top is 1
+    g_towers_pegs[0][0] = 5;
+    g_towers_pegs[0][1] = 4;
+    g_towers_pegs[0][2] = 3;
+    g_towers_pegs[0][3] = 2;
+    g_towers_pegs[0][4] = 1;
+    
+    g_towers_moves = 0;
+    g_towers_src = -1;
+    snprintf(g_towers_status, sizeof(g_towers_status), "Select source peg: press [A/B/C].");
+}
+
+static void redraw_towers_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "============================================================\r\n"
+             "                 TOWERS OF HANOI (Ahoy! Issue 18)           \r\n"
+             "============================================================\r\n"
+             "  Moves: %d   |   Selected Source: %s\r\n"
+             "============================================================\r\n\r\n",
+             g_towers_moves, (g_towers_src == 0) ? "Peg A" : (g_towers_src == 1) ? "Peg B" : (g_towers_src == 2) ? "Peg C" : "None");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+
+    // Render the pegs and disks from top to bottom (row 4 to 0)
+    for (int h = 4; h >= 0; h--) {
+        char line[128] = "";
+        char peg_strs[3][32];
+        for (int p = 0; p < 3; p++) {
+            if (h < g_towers_counts[p]) {
+                int disk_size = g_towers_pegs[p][h];
+                int padding = 5 - disk_size;
+                char disk_draw[32] = "";
+                for (int i = 0; i < padding; i++) strcat(disk_draw, " ");
+                for (int i = 0; i < disk_size * 2 - 1; i++) strcat(disk_draw, "*");
+                for (int i = 0; i < padding; i++) strcat(disk_draw, " ");
+                snprintf(peg_strs[p], sizeof(peg_strs[p]), "%-11s", disk_draw);
+            } else {
+                snprintf(peg_strs[p], sizeof(peg_strs[p]), "     |     ");
+            }
+        }
+        snprintf(line, sizeof(line), "         %s       %s       %s\r\n", peg_strs[0], peg_strs[1], peg_strs[2]);
+        lau_vram_write_string(g_vram, line, strlen(line));
+    }
+
+    lau_vram_write_string(g_vram, "     ====================================================\r\n", 58);
+    lau_vram_write_string(g_vram, "            [ Peg A ]           [ Peg B ]           [ Peg C ]\r\n\r\n", 71);
+    lau_vram_write_string(g_vram, "============================================================\r\n", 62);
+    snprintf(buf, sizeof(buf), "  Status: %s\r\n", g_towers_status);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    lau_vram_write_string(g_vram, "  Controls: Press [A/B/C] to select Pegs [ESC] Exit\r\n", 53);
+}
+
+static void handle_towers_input(char ch) {
+    if (ch == 27) { // ESC -> Exit
+        g_editor_mode = MODE_TERMINAL;
+        g_vram->cursor_x = 0;
+        g_vram->cursor_y = 0;
+        const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+        lau_vram_write_string(g_vram, clear_seq, 3);
+        lau_vram_write_string(g_vram, "Returned to terminal shell.\r\n", 29);
+        return;
+    }
+
+    int peg_idx = -1;
+    if (ch == 'a' || ch == 'A') peg_idx = 0;
+    else if (ch == 'b' || ch == 'B') peg_idx = 1;
+    else if (ch == 'c' || ch == 'C') peg_idx = 2;
+
+    if (peg_idx != -1) {
+        if (g_towers_src == -1) {
+            if (g_towers_counts[peg_idx] > 0) {
+                g_towers_src = peg_idx;
+                snprintf(g_towers_status, sizeof(g_towers_status), "Source selected: Peg %c. Select target peg: [A/B/C].", 'A' + peg_idx);
+            } else {
+                snprintf(g_towers_status, sizeof(g_towers_status), "Peg %c is empty! Select another source peg.", 'A' + peg_idx);
+            }
+        } else {
+            int src = g_towers_src;
+            if (peg_idx == src) {
+                g_towers_src = -1;
+                snprintf(g_towers_status, sizeof(g_towers_status), "Selection cancelled. Select source peg: [A/B/C].");
+            } else {
+                int src_count = g_towers_counts[src];
+                int tgt_count = g_towers_counts[peg_idx];
+                int src_top = g_towers_pegs[src][src_count - 1];
+                int tgt_top = (tgt_count == 0) ? 99 : g_towers_pegs[peg_idx][tgt_count - 1];
+
+                if (src_top < tgt_top) {
+                    g_towers_pegs[peg_idx][tgt_count] = src_top;
+                    g_towers_counts[peg_idx]++;
+                    g_towers_counts[src]--;
+                    g_towers_moves++;
+                    g_towers_src = -1;
+
+                    if (g_towers_counts[2] == 5) {
+                        snprintf(g_towers_status, sizeof(g_towers_status), "CONGRATULATIONS! Solved in %d moves!", g_towers_moves);
+                    } else {
+                        snprintf(g_towers_status, sizeof(g_towers_status), "Moved disk %d to Peg %c. Select source peg: [A/B/C].", src_top, 'A' + peg_idx);
+                    }
+                } else {
+                    snprintf(g_towers_status, sizeof(g_towers_status), "Illegal move! Cannot place disk %d on %d. Select target peg.", src_top, tgt_top);
+                }
+            }
+        }
+    }
+
+    redraw_towers_screen();
+}
+
 static void init_hoparound(void) {
     g_hoparound_x = 4;
     g_hoparound_y = 4;
@@ -2986,6 +3115,7 @@ static void handle_booter_input(char ch) {
             case 4: execute_command("CHECKLIST"); break;
             case 5: execute_command("YULBUILD"); break;
             case 6: execute_command("HOPAROUND"); break;
+            case 7: execute_command("TOWERS"); break;
         }
         return;
     }
@@ -6319,6 +6449,16 @@ static void execute_command(const char *cmd) {
          return;
     }
 
+    if (first_word && strcasecmp(first_word, "TOWERS") == 0) {
+         g_editor_mode = MODE_TOWERS;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         init_towers();
+         redraw_towers_screen();
+         log_telemetry("Started Towers of Hanoi game");
+         return;
+    }
+
     if (first_word && (strcasecmp(first_word, "FASTER64") == 0 || strcasecmp(first_word, "FAST64") == 0)) {
          g_faster64_active = !g_faster64_active;
          if (g_faster64_active) {
@@ -7877,6 +8017,21 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32
         return;
     }
 
+    if (g_editor_mode == MODE_TOWERS) {
+        char ch = (char)utf32;
+        if (key == KEY_ESC || key == 1) {
+            ch = 27;
+        } else if (key == 30 || key == 105) { // A
+            ch = 'a';
+        } else if (key == 48 || key == 119) { // B
+            ch = 'b';
+        } else if (key == 46 || key == 110) { // C
+            ch = 'c';
+        }
+        handle_towers_input(ch);
+        return;
+    }
+
     if (g_editor_mode == MODE_CONSTRUCTION_CO) {
         char ch = (char)utf32;
         if (key == KEY_ESC || key == 1) {
@@ -9428,6 +9583,8 @@ int main() {
                             handle_booter_input(ch);
                         } else if (g_editor_mode == MODE_HOPAROUND) {
                             handle_hoparound_input(ch);
+                        } else if (g_editor_mode == MODE_TOWERS) {
+                            handle_towers_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
@@ -9646,6 +9803,8 @@ int main() {
                             handle_booter_input(ch);
                         } else if (g_editor_mode == MODE_HOPAROUND) {
                             handle_hoparound_input(ch);
+                        } else if (g_editor_mode == MODE_TOWERS) {
+                            handle_towers_input(ch);
                         } else if (g_editor_mode == MODE_CREATOR) {
                             handle_creator_input(ch);
                         } else if (ch == '\n' || ch == '\r') {
