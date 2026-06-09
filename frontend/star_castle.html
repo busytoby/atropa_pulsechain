@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Castle - Vector Graphics Arcade Simulator</title>
+    <meta name="description" content="An interactive vector graphics tribute to the 1980 arcade classic Star Castle. Experience retro XY vector CRT rendering, glowing lines, and synth audio!">
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --primary-glow: rgba(0, 242, 254, 0.4);
+            --ring-outer: #ff007f;
+            --ring-mid: #ffaa00;
+            --ring-inner: #00e676;
+            --background: #060408;
+            --panel-bg: rgba(18, 14, 24, 0.85);
+            --border: rgba(0, 242, 254, 0.2);
+            --text: #e2dcf0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #130a1c 0%, var(--background) 100%);
+            color: var(--text);
+            font-family: 'Orbitron', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            color: #8f82a5;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .cabinet {
+            background: var(--panel-bg);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 0 35px rgba(0, 242, 254, 0.1), 0 15px 40px rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #000;
+            border: 3px solid #140f1a;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.95);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-info {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            text-align: center;
+            color: #a097b0;
+            line-height: 1.4;
+        }
+
+        .controls-info strong {
+            color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            background: linear-gradient(135deg, #1d1429 0%, #0d0914 100%);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+            transform: translateY(-1px);
+        }
+
+        .nav-link {
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .nav-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Star Castle</h1>
+    <div class="subtitle">XY Vector-CRT Monitor Emulation (Cinematronics 1980)</div>
+
+    <div class="cabinet">
+        <div class="canvas-container">
+            <canvas id="vectorCanvas"></canvas>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" id="btnStart" onclick="startGame()">Start Game</button>
+            <button class="btn" onclick="resetGame()">Reset</button>
+        </div>
+
+        <div class="controls-info">
+            <strong>[A / D]</strong> Rotate Ship &nbsp;|&nbsp; 
+            <strong>[W]</strong> Thrust &nbsp;|&nbsp; 
+            <strong>[SPACE / J]</strong> Fire Laser
+            <br>
+            Destroy the rotating energy shields to strike the central castle core!
+        </div>
+    </div>
+
+    <a href="index.html" class="nav-link">← Back to Main Console</a>
+
+    <script>
+        const canvas = document.getElementById("vectorCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Set logical sizes
+        const size = 600;
+        canvas.width = size;
+        canvas.height = size;
+
+        // Audio Setup
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playLaserSound() {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        function playExplodeSound(freq) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(freq || 150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch(e) {}
+        }
+
+        // Game Entities
+        let gameActive = false;
+        let score = 0;
+        let lives = 3;
+
+        const ship = {
+            x: size / 2,
+            y: size - 80,
+            vx: 0,
+            vy: 0,
+            angle: -Math.PI / 2,
+            rotSpeed: 0.08,
+            speed: 0.15,
+            friction: 0.98,
+            radius: 12
+        };
+
+        const bullets = [];
+        const castleBullets = [];
+
+        // Rings configurations (3 concentric rings with segment gaps)
+        const rings = [
+            { radius: 60, speed: 0.006, color: "#00e676", segments: [1, 1, 0, 1, 1, 0, 1, 0] },
+            { radius: 90, speed: -0.004, color: "#ffaa00", segments: [1, 0, 1, 1, 1, 0, 1, 1] },
+            { radius: 120, speed: 0.002, color: "#ff007f", segments: [1, 1, 1, 0, 1, 1, 0, 1] }
+        ];
+        
+        let ringAngle = 0;
+        let castleAngle = 0;
+        let castleFireTimer = 0;
+
+        // Keys state
+        const keys = {};
+        window.addEventListener("keydown", e => {
+            keys[e.code] = true;
+            if (e.code === "Space") e.preventDefault();
+        });
+        window.addEventListener("keyup", e => {
+            keys[e.code] = false;
+        });
+
+        function fireLaser() {
+            if (bullets.length >= 4) return;
+            playLaserSound();
+            const bx = ship.x + Math.cos(ship.angle) * ship.radius;
+            const by = ship.y + Math.sin(ship.angle) * ship.radius;
+            bullets.push({
+                x: bx,
+                y: by,
+                vx: Math.cos(ship.angle) * 5,
+                vy: Math.sin(ship.angle) * 5,
+                life: 60
+            });
+        }
+
+        function drawVectorLine(x1, y1, x2, y2, color, glowWidth = 6) {
+            ctx.shadowBlur = glowWidth;
+            ctx.shadowColor = color;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+        }
+
+        function drawShip() {
+            const cos = Math.cos(ship.angle);
+            const sin = Math.sin(ship.angle);
+
+            const x0 = ship.x + cos * ship.radius;
+            const y0 = ship.y + sin * ship.radius;
+
+            const x1 = ship.x + Math.cos(ship.angle + 2.5) * ship.radius;
+            const y1 = ship.y + Math.sin(ship.angle + 2.5) * ship.radius;
+
+            const x2 = ship.x + Math.cos(ship.angle - 2.5) * ship.radius;
+            const y2 = ship.y + Math.sin(ship.angle - 2.5) * ship.radius;
+
+            drawVectorLine(x0, y0, x1, y1, "#00f2fe");
+            drawVectorLine(x1, y1, ship.x - cos * (ship.radius/3), ship.y - sin * (ship.radius/3), "#00f2fe");
+            drawVectorLine(ship.x - cos * (ship.radius/3), ship.y - sin * (ship.radius/3), x2, y2, "#00f2fe");
+            drawVectorLine(x2, y2, x0, y0, "#00f2fe");
+        }
+
+        function drawCastle() {
+            const cx = size / 2;
+            const cy = size / 2;
+            
+            // Draw central target core (shielded castle)
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#ff0055";
+            ctx.shadowColor = "#ff0055";
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Core center indicator
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "#ff0055";
+            ctx.fill();
+
+            // Reset shadows
+            ctx.shadowBlur = 0;
+
+            // Draw shield rings with segments
+            rings.forEach((ring, rIdx) => {
+                const totalSegments = ring.segments.length;
+                const segAngle = (Math.PI * 2) / totalSegments;
+                const currentRot = ringAngle * ring.speed * 100;
+                
+                for (let i = 0; i < totalSegments; i++) {
+                    if (ring.segments[i] === 0) continue; // broken segment
+
+                    const startA = i * segAngle + currentRot;
+                    const endA = startA + segAngle - 0.15; // Small spacer gap
+                    
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = ring.color;
+                    ctx.strokeStyle = ring.color;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, ring.radius, startA, endA);
+                    ctx.stroke();
+                }
+            });
+            ctx.shadowBlur = 0;
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Handle Input
+            if (keys["KeyA"] || keys["ArrowLeft"]) ship.angle -= ship.rotSpeed;
+            if (keys["KeyD"] || keys["ArrowRight"]) ship.angle += ship.rotSpeed;
+            if (keys["KeyW"] || keys["ArrowUp"]) {
+                ship.vx += Math.cos(ship.angle) * ship.speed;
+                ship.vy += Math.sin(ship.angle) * ship.speed;
+            }
+            if (keys["Space"] || keys["KeyJ"]) {
+                fireLaser();
+                keys["Space"] = false; // Prevents continuous firing on single press
+                keys["KeyJ"] = false;
+            }
+
+            // Ship Movement and friction
+            ship.vx *= ship.friction;
+            ship.vy *= ship.friction;
+            ship.x += ship.vx;
+            ship.y += ship.vy;
+
+            // Screen Wrap
+            if (ship.x < 0) ship.x = size;
+            if (ship.x > size) ship.x = 0;
+            if (ship.y < 0) ship.y = size;
+            if (ship.y > size) ship.y = 0;
+
+            // Rotate castle rings
+            ringAngle += 0.05;
+
+            // Update Bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                b.life--;
+
+                // Collision with shield rings
+                let hitRing = false;
+                const distToCenter = Math.hypot(b.x - size/2, b.y - size/2);
+                
+                rings.forEach((ring) => {
+                    if (Math.abs(distToCenter - ring.radius) < 6) {
+                        // Compute which segment was hit
+                        let angle = Math.atan2(b.y - size/2, b.x - size/2);
+                        if (angle < 0) angle += Math.PI * 2;
+                        
+                        const currentRot = (ringAngle * ring.speed * 100) % (Math.PI * 2);
+                        let relAngle = angle - currentRot;
+                        if (relAngle < 0) relAngle += Math.PI * 2;
+                        
+                        const totalSegments = ring.segments.length;
+                        const segIdx = Math.floor((relAngle / (Math.PI * 2)) * totalSegments) % totalSegments;
+
+                        if (ring.segments[segIdx] === 1) {
+                            ring.segments[segIdx] = 0; // Destroy segment!
+                            hitRing = true;
+                            playExplodeSound(300);
+                            score += 100;
+                        }
+                    }
+                });
+
+                // Check core collision
+                if (!hitRing && distToCenter < 20) {
+                    playExplodeSound(600);
+                    score += 5000;
+                    resetCastle();
+                    hitRing = true;
+                }
+
+                if (b.life <= 0 || hitRing || b.x < 0 || b.x > size || b.y < 0 || b.y > size) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Central Castle firing logic
+            castleFireTimer++;
+            if (castleFireTimer > 120) {
+                castleFireTimer = 0;
+                // Fire bullet towards player ship
+                const angle = Math.atan2(ship.y - size/2, ship.x - size/2);
+                castleBullets.push({
+                    x: size/2,
+                    y: size/2,
+                    vx: Math.cos(angle) * 2.5,
+                    vy: Math.sin(angle) * 2.5,
+                    life: 180
+                });
+            }
+
+            // Update Castle Bullets
+            for (let i = castleBullets.length - 1; i >= 0; i--) {
+                const cb = castleBullets[i];
+                cb.x += cb.vx;
+                cb.y += cb.vy;
+                cb.life--;
+
+                // Collision with player ship
+                const distToShip = Math.hypot(cb.x - ship.x, cb.y - ship.y);
+                if (distToShip < ship.radius) {
+                    playExplodeSound(100);
+                    lives--;
+                    resetShip();
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                    castleBullets.splice(i, 1);
+                    continue;
+                }
+
+                if (cb.life <= 0) {
+                    castleBullets.splice(i, 1);
+                }
+            }
+        }
+
+        function resetShip() {
+            ship.x = size / 2;
+            ship.y = size - 80;
+            ship.vx = 0;
+            ship.vy = 0;
+            ship.angle = -Math.PI / 2;
+        }
+
+        function resetCastle() {
+            // Re-arm shield rings
+            rings.forEach(ring => {
+                ring.segments = ring.segments.map(() => 1);
+            });
+        }
+
+        function draw() {
+            // Space black background
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw game elements
+            drawCastle();
+            drawShip();
+
+            // Draw player bullets (green glow)
+            bullets.forEach(b => {
+                drawVectorLine(b.x, b.y, b.x - b.vx * 1.5, b.y - b.vy * 1.5, "#00ffaa", 4);
+            });
+
+            // Draw enemy castle bullets (pulsing red/orange glow)
+            castleBullets.forEach(cb => {
+                drawVectorLine(cb.x, cb.y, cb.x - cb.vx * 1.5, cb.y - cb.vy * 1.5, "#ff0055", 6);
+            });
+
+            // HUD Score & Lives top text (vector styled)
+            ctx.font = "14px Orbitron";
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillText(`SCORE: ${String(score).padStart(5, '0')}`, 20, 30);
+            ctx.fillText(`SHIPS: ${lives}`, size - 100, 30);
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function startGame() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            score = 0;
+            lives = 3;
+            gameActive = true;
+            resetShip();
+            resetCastle();
+            document.getElementById("btnStart").innerText = "Resume Game";
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            gameActive = false;
+            resetShip();
+            resetCastle();
+            document.getElementById("btnStart").innerText = "Start Game";
+        }
+
+        function gameOver() {
+            gameActive = false;
+            alert(`GAME OVER! Final Score: ${score}`);
+            resetGame();
+        }
+
+        // Start render loop immediately
+        loop();
+    </script>
+</body>
+</html>
