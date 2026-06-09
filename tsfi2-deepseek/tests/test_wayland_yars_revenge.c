@@ -114,6 +114,30 @@ void draw_line_aa(AB4HPixel *pixels, int w, int h, float x0, float y0, float x1,
     }
 }
 
+void draw_radial_glow(AB4HPixel *pixels, int w, int h, float cx, float cy, float radius, AB4HPixel color) {
+    int min_x = fmaxf(0.0f, cx - radius), max_x = fminf(w - 1, cx + radius);
+    int min_y = fmaxf(0.0f, cy - radius), max_y = fminf(h - 1, cy + radius);
+    float tr = half_to_float(color.r), tg = half_to_float(color.g), tb = half_to_float(color.b), ta = half_to_float(color.a);
+    for (int y = min_y; y <= max_y; y++) {
+        for (int x = min_x; x <= max_x; x++) {
+            float dx = (float)x + 0.5f - cx, dy = (float)y + 0.5f - cy;
+            float dist = sqrtf(dx * dx + dy * dy);
+            if (dist < radius) {
+                float intensity = (1.0f - (dist / radius));
+                intensity = intensity * intensity;
+                AB4HPixel curr = pixels[y * w + x];
+                float cr = half_to_float(curr.r), cg = half_to_float(curr.g), cb = half_to_float(curr.b), ca = half_to_float(curr.a);
+                float final_a = ta * intensity;
+                float nr = cr + tr * final_a;
+                float ng = cg + tg * final_a;
+                float nb = cb + tb * final_a;
+                float na = fminf(1.0f, ca + final_a);
+                pixels[y * w + x] = make_ab4h_pixel(nr, ng, nb, na);
+            }
+        }
+    }
+}
+
 void draw_char_ab4h(AB4HPixel *pixels, int w, int h, char c, int x, int y, AB4HPixel color) {
     uint32_t temp_buf[32 * 32] = {0};
     StagingBuffer temp_sb = {
@@ -466,67 +490,97 @@ int main() {
         float nz_x = neutral_zone_x * scale_x;
         draw_rect_ab4h(pixels, W, H, (int)(nz_x - 50.0f * scale_x), 0, (int)(100.0f * scale_x), H - 40, neutral_tint);
 
-        // 4. Draw Shield Blocks
-        // 5 columns at X: 600, 610, 620, 630, 640
+        // 4. Draw Shield Blocks (Enlarged with structured borders)
+        // 5 columns at X: 600, 614, 628, 642, 656
         // 32 rows at Y: 110 to 430
         for (int col = 0; col < 5; col++) {
             uint64_t col_mask = shield_data[col];
-            int block_x = (int)((600.0f + col * 10.0f) * scale_x);
+            int block_x = (int)((600.0f + col * 14.0f) * scale_x);
             for (int row = 0; row < 32; row++) {
                 if (col_mask & (1U << row)) {
                     int block_y = (int)((110.0f + row * 10.0f) * scale_y);
-                    draw_rect_ab4h(pixels, W, H, block_x, block_y, (int)(8.0f * scale_x), (int)(8.0f * scale_y), block_color);
+                    // Draw dark outline
+                    draw_rect_ab4h(pixels, W, H, block_x, block_y, (int)(12.0f * scale_x), (int)(9.0f * scale_y), make_ab4h_pixel(0.05f, 0.0f, 0.05f, 1.0f));
+                    // Draw neon core
+                    draw_rect_ab4h(pixels, W, H, block_x + 2, block_y + 1, (int)(8.0f * scale_x), (int)(7.0f * scale_y), block_color);
                 }
             }
         }
 
-        // 5. Draw Yar (Insect/Fly sprite representation)
+        // 5. Draw Yar (Enlarged and highly detailed Insect/Fly)
         float yx = yar_x * scale_x;
         float yy = yar_y * scale_y;
         if (game_status != 2) {
-            // Draw Wings
-            float wing_offset = 8.0f * sinf(frame_counter * 0.5f);
-            draw_line_aa(pixels, W, H, yx - 12, yy - wing_offset, yx, yy, neon_cyan, 2.0f);
-            draw_line_aa(pixels, W, H, yx - 12, yy + wing_offset, yx, yy, neon_cyan, 2.0f);
+            // Wing Flutter Physics: Draw multiple webbed wing veins
+            float wing_base_offset = 16.0f * sinf(frame_counter * 0.6f);
+            float wing_mid_offset = 10.0f * sinf(frame_counter * 0.6f + 0.3f);
             
-            // Draw Body
-            draw_rect_ab4h(pixels, W, H, (int)yx - 6, (int)yy - 8, 12, 16, neon_green);
+            // Outer Wings (Cyan)
+            draw_line_aa(pixels, W, H, yx - 24, yy - wing_base_offset, yx, yy - 5, neon_cyan, 2.5f);
+            draw_line_aa(pixels, W, H, yx - 24, yy + wing_base_offset, yx, yy + 5, neon_cyan, 2.5f);
             
-            // Draw Head & Antennae
-            draw_line_aa(pixels, W, H, yx, yy - 8, yx + 6, yy - 12, neon_pink, 1.5f);
-            draw_line_aa(pixels, W, H, yx, yy - 8, yx + 6, yy - 4, neon_pink, 1.5f);
+            // Inner Wings (Cyan-White)
+            draw_line_aa(pixels, W, H, yx - 18, yy - wing_mid_offset, yx, yy - 3, make_ab4h_pixel(0.5f, 1.0f, 1.0f, 0.7f), 2.0f);
+            draw_line_aa(pixels, W, H, yx - 18, yy + wing_mid_offset, yx, yy + 3, make_ab4h_pixel(0.5f, 1.0f, 1.0f, 0.7f), 2.0f);
+            
+            // Multi-segment Body: Thorax (Green) & Abdomen (Cyan)
+            draw_rect_ab4h(pixels, W, H, (int)yx - 10, (int)yy - 12, 20, 24, neon_green);
+            draw_rect_ab4h(pixels, W, H, (int)yx - 8, (int)yy + 12, 16, 14, make_ab4h_pixel(0.0f, 0.7f, 1.0f, 1.0f));
+            
+            // Glowing energy engine core
+            draw_radial_glow(pixels, W, H, yx, yy, 15.0f, make_ab4h_pixel(1.0f, 0.0f, 0.5f, 0.6f));
+            
+            // Head and Detailed Antennas (Neon Pink)
+            draw_rect_ab4h(pixels, W, H, (int)yx - 5, (int)yy - 18, 10, 6, neon_pink);
+            draw_line_aa(pixels, W, H, yx - 3, yy - 18, yx - 10, yy - 28, neon_pink, 2.0f);
+            draw_line_aa(pixels, W, H, yx + 3, yy - 18, yx + 10, yy - 28, neon_pink, 2.0f);
         }
 
-        // 6. Draw Qotile (Shield/Base Swirl Enemy)
+        // 6. Draw Qotile (Enlarged rotating sacred geometry / portal)
         float qx = qotile_x * scale_x;
         float qy = qotile_y * scale_y;
         if (swirl_active == 1) {
-            // Spinning warning swirl
-            float spin_ang = frame_counter * 0.2f;
-            draw_line_aa(pixels, W, H, qx - 15 * cosf(spin_ang), qy - 15 * sinf(spin_ang), 
-                         qx + 15 * cosf(spin_ang), qy + 15 * sinf(spin_ang), neon_pink, 3.0f);
-            draw_line_aa(pixels, W, H, qx - 15 * sinf(spin_ang), qy + 15 * cosf(spin_ang), 
-                         qx + 15 * sinf(spin_ang), qy - 15 * cosf(spin_ang), neon_pink, 3.0f);
+            // Spinning warning swirl: Draw 8-point geometric star
+            float base_ang = frame_counter * 0.15f;
+            for (int i = 0; i < 4; i++) {
+                float ang = base_ang + i * (3.14159f / 4.0f);
+                draw_line_aa(pixels, W, H, qx - 28 * cosf(ang), qy - 28 * sinf(ang), 
+                             qx + 28 * cosf(ang), qy + 28 * sinf(ang), neon_pink, 3.5f);
+            }
+            draw_radial_glow(pixels, W, H, qx, qy, 40.0f, make_ab4h_pixel(1.5f, 0.1f, 0.5f, 0.5f));
         } else {
-            // Normal base
-            draw_rect_ab4h(pixels, W, H, (int)qx - 10, (int)qy - 25, 20, 50, neon_yellow);
+            // Layered Pulsing Column Base
+            float pulse = 1.0f + 0.08f * sinf(frame_counter * 0.1f);
+            int qw = (int)(24 * pulse * scale_x);
+            int qh = (int)(70 * pulse * scale_y);
+            
+            // Outer layer (Neon Red)
+            draw_rect_ab4h(pixels, W, H, (int)qx - qw/2, (int)qy - qh/2, qw, qh, make_ab4h_pixel(1.0f, 0.1f, 0.1f, 1.0f));
+            // Mid layer (Neon Orange)
+            draw_rect_ab4h(pixels, W, H, (int)qx - qw/3, (int)qy - qh/3, qw * 2/3, qh * 2/3, make_ab4h_pixel(1.0f, 0.5f, 0.0f, 1.0f));
+            // Inner Core (Neon Yellow)
+            draw_rect_ab4h(pixels, W, H, (int)qx - qw/6, (int)qy - qh/6, qw * 1/3, qh * 1/3, neon_yellow);
         }
 
-        // 7. Draw Zorlon Cannon ( primed glowing ball )
+        // 7. Draw Zorlon Cannon (Enlarged glowing blast ball)
         if (cannon_active == 2) {
             float cx = cannon_x * scale_x;
             float cy = cannon_y * scale_y;
-            draw_rect_ab4h(pixels, W, H, (int)cx - 8, (int)cy - 8, 16, 16, neon_pink);
-            draw_line_aa(pixels, W, H, cx - 20, cy, cx + 20, cy, neon_yellow, 2.0f);
+            draw_radial_glow(pixels, W, H, cx, cy, 32.0f, make_ab4h_pixel(0.0f, 0.9f, 1.0f, 0.6f));
+            draw_rect_ab4h(pixels, W, H, (int)cx - 10, (int)cy - 10, 20, 20, make_ab4h_pixel(1.0f, 0.8f, 1.0f, 1.0f));
+            draw_line_aa(pixels, W, H, cx - 35, cy, cx + 35, cy, neon_yellow, 3.0f);
         }
 
-        // 8. Draw Swirl (Fired swirling projectile)
+        // 8. Draw Swirl (Enlarged spinning launcher projectile)
         if (swirl_active == 2) {
             float sx = swirl_x * scale_x;
             float sy = swirl_y * scale_y;
-            float spin_ang = frame_counter * 0.4f;
-            draw_line_aa(pixels, W, H, sx - 12 * cosf(spin_ang), sy - 12 * sinf(spin_ang), 
-                         sx + 12 * cosf(spin_ang), sy + 12 * sinf(spin_ang), neon_pink, 2.5f);
+            float spin_ang = frame_counter * 0.35f;
+            draw_line_aa(pixels, W, H, sx - 22 * cosf(spin_ang), sy - 22 * sinf(spin_ang), 
+                         sx + 22 * cosf(spin_ang), sy + 22 * sinf(spin_ang), neon_pink, 4.0f);
+            draw_line_aa(pixels, W, H, sx - 22 * sinf(spin_ang), sy + 22 * cosf(spin_ang), 
+                         sx + 22 * sinf(spin_ang), sy - 22 * cosf(spin_ang), neon_pink, 4.0f);
+            draw_radial_glow(pixels, W, H, sx, sy, 25.0f, make_ab4h_pixel(1.2f, 0.1f, 0.3f, 0.4f));
         }
 
         // 9. Status bar layout
