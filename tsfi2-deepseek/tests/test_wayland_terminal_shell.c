@@ -29,7 +29,13 @@ typedef enum {
     MODE_WORDCRAFT,
     MODE_EASYSCRIPT,
     MODE_DNATYPEWRITER,
-    MODE_ZMACHINE
+    MODE_ZMACHINE,
+    MODE_INSTAWRITER,
+    MODE_INSTACALC,
+    MODE_APPLEPANIC,
+    MODE_AIRASSAULT,
+    MODE_SLINKYBEAR,
+    MODE_SLINKYPANIC
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -58,7 +64,10 @@ typedef enum {
     GFX_CIRCLE,
     GFX_POINT,
     GFX_TEXT,
-    GFX_STUFFED_3D
+    GFX_STUFFED_3D,
+    GFX_FILL_RECT,
+    GFX_ROUND_RECT,
+    GFX_PMG_PLAYER
 } GfxType;
 
 typedef struct {
@@ -74,6 +83,8 @@ typedef struct {
 #define MAX_GFX_PRIMITIVES 1024
 static GfxPrimitive gfx_primitives[MAX_GFX_PRIMITIVES];
 static int gfx_primitive_count = 0;
+static int mon_x = 22;
+static int mon_y = 67;
 void render_terminal_display(void);
 static void log_telemetry(const char *event_name);
 
@@ -103,6 +114,50 @@ static bool g_pong_loaded = false;
 static bool g_key_up_pressed = false;
 static bool g_key_down_pressed = false;
 static void update_pong_game(void);
+
+static double g_calc_cells[5][5] = {
+    { 100.0, 50.0, 150.0, 0.0, 0.0 },
+    { 20.0,  30.0, 50.0,  0.0, 0.0 },
+    { 120.0, 80.0, 200.0, 0.0, 0.0 },
+    { 0.0,   0.0,  0.0,   0.0, 0.0 },
+    { 0.0,   0.0,  0.0,   0.0, 0.0 }
+};
+static int g_calc_cursor_row = 0;
+static int g_calc_cursor_col = 0;
+static char g_calc_input_buffer[32] = {0};
+static int g_calc_input_len = 0;
+
+static bool g_applepanic_active = false;
+static int g_panic_player_x = 2;
+static int g_panic_player_y = 3;
+static int g_panic_monster_x = 25;
+static int g_panic_monster_y = 3;
+static int g_panic_monster_stuck_ticks = 0;
+static int g_panic_score = 0;
+static int g_panic_lives = 3;
+static int g_panic_dig_ticks[4][40] = {{0}};
+
+static bool g_airassault_active = false;
+static int g_air_player_x = 20;
+static int g_air_missile_x = -1;
+static int g_air_missile_y = -1;
+static int g_air_invaders_x[5] = { 5, 15, 25, 35, 10 };
+static int g_air_invaders_y[5] = { 0, 1, 0, 2, 1 };
+static int g_air_score = 0;
+static int g_air_shields = 3;
+
+static bool g_slinkybear_active = false;
+static int g_slinky_row = 0;
+static int g_slinky_col = 0;
+static int g_slinky_blocks[5][5] = {{0}};
+static int g_slinky_score = 0;
+static int g_slinky_lives = 3;
+
+static bool g_slinkypanic_active = false;
+static int g_slinky_monster_row = 4;
+static int g_slinky_monster_col = 4;
+static int g_slinky_monster_stuck = 0;
+static int g_slinky_hole[5][5] = {{0}};
 
 // Registry listeners
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
@@ -148,6 +203,14 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, 
 static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
     (void)data; (void)keyboard; (void)rate; (void)delay;
 }
+
+static void add_line(int x1, int y1, int x2, int y2, uint32_t color);
+static void add_circle(int x, int y, int r, uint32_t color);
+static void add_text(int x, int y, const char *text, uint32_t color);
+static void add_fill_rect(int x1, int y1, int x2, int y2, uint32_t color);
+static void add_round_rect(int x1, int y1, int x2, int y2, int r, uint32_t color);
+static void add_pmg_player(int player_idx, int x_offset, int y_offset);
+
 static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
     static int state = 0; // 0: normal, 1: esc, 2: bracket, 3: gfx_command
     static char parse_buf[128];
@@ -159,6 +222,9 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
         if (state == 0) {
             if (c == '\x1b') {
                 state = 1;
+            } else if (c == '\x01') {
+                state = 7; // HMI Frame Parsing state
+                parse_len = 0;
             } else {
                 lau_vram_write_char(vram, c);
             }
@@ -287,6 +353,95 @@ static void terminal_write_string(LauVRAM *vram, const char *str, int len) {
             vram->cursor_y = y;
             vram->is_dirty = true;
             state = 0;
+        } else if (state == 7) {
+            if (c == '\x03') {
+                state = 8;
+                parse_buf[parse_len] = '\0';
+            } else {
+                if (parse_len < (int)sizeof(parse_buf) - 2) {
+                    parse_buf[parse_len++] = c;
+                }
+            }
+        } else if (state == 8) {
+            state = 9; // Discard checksum byte 1
+        } else if (state == 9) {
+            state = 0; // Discard checksum byte 2, process HMI payload
+            if (parse_len > 1) {
+                char type = parse_buf[0];
+                char *payload = &parse_buf[1];
+                if (type == 'M') {
+                    gfx_primitive_count = 0; // Clear old primitives
+                    
+                    // Tokenize layout by '|'
+                    char *saveptr;
+                    char *widget = strtok_r(payload, "|", &saveptr);
+                    while (widget) {
+                        char *w_type = NULL;
+                        char *sx = NULL;
+                        char *sy = NULL;
+                        char *sw = NULL;
+                        char *sh = NULL;
+                        char *label = NULL;
+                        
+                        char *inner_save;
+                        w_type = strtok_r(widget, ",", &inner_save);
+                        if (w_type) {
+                            if (strcmp(w_type, "BOX") == 0) {
+                                sx = strtok_r(NULL, ",", &inner_save);
+                                sy = strtok_r(NULL, ",", &inner_save);
+                                sw = strtok_r(NULL, ",", &inner_save);
+                                sh = strtok_r(NULL, ",", &inner_save);
+                                label = strtok_r(NULL, ",", &inner_save);
+                                if (sx && sy && sw && sh && label) {
+                                    int x = atoi(sx);
+                                    int y = atoi(sy);
+                                    int w = atoi(sw);
+                                    int h = atoi(sh);
+                                    // 1. Drop shadow
+                                    add_fill_rect(x + 4, y + 4, x + w + 4, y + h + 4, 0x80000000);
+                                    // 2. Solid panel background
+                                    add_fill_rect(x, y, x + w, y + h, 0xFF1E1F29);
+                                    // 3. Purple border
+                                    add_line(x, y, x + w, y, 0xFFBD93F9);
+                                    add_line(x, y + h, x + w, y + h, 0xFFBD93F9);
+                                    add_line(x, y, x, y + h, 0xFFBD93F9);
+                                    add_line(x + w, y, x + w, y + h, 0xFFBD93F9);
+                                    // 4. Header text
+                                    add_text(x + 8, y + 8, label, 0xFFF1FA8C);
+                                }
+                            } else if (strcmp(w_type, "BUTTON") == 0) {
+                                sx = strtok_r(NULL, ",", &inner_save);
+                                sy = strtok_r(NULL, ",", &inner_save);
+                                label = strtok_r(NULL, ",", &inner_save);
+                                if (sx && sy && label) {
+                                    int x = atoi(sx);
+                                    int y = atoi(sy);
+                                    int w = strlen(label) * 9 + 14;
+                                    int h = 22;
+                                    // 1. Button shadow
+                                    add_fill_rect(x + 2, y + 2, x + w + 2, y + h + 2, 0x60000000);
+                                    // 2. Button base (rounded green rect)
+                                    add_round_rect(x, y, x + w, y + h, 4, 0xFF50FA7B);
+                                    // 3. Button text
+                                    add_text(x + 7, y + 5, label, 0xFF282A36);
+                                }
+                            } else if (strcmp(w_type, "PMG") == 0) {
+                                sx = strtok_r(NULL, ",", &inner_save);
+                                sy = strtok_r(NULL, ",", &inner_save);
+                                char *s_pidx = strtok_r(NULL, ",", &inner_save);
+                                if (sx && sy && s_pidx) {
+                                    int x = atoi(sx);
+                                    int y = atoi(sy);
+                                    int pidx = atoi(s_pidx);
+                                    add_pmg_player(pidx, x, y);
+                                }
+                            }
+                        }
+                        widget = strtok_r(NULL, "|", &saveptr);
+                    }
+                    vram->is_dirty = true;
+                }
+            }
         }
     }
 }
@@ -310,6 +465,27 @@ static void add_text(int x, int y, const char *text, uint32_t color) {
         gp->type = GFX_TEXT; gp->x1 = x; gp->y1 = y; gp->color = color;
         strncpy(gp->text, text, sizeof(gp->text));
         gp->text[sizeof(gp->text) - 1] = '\0';
+    }
+}
+
+static void add_fill_rect(int x1, int y1, int x2, int y2, uint32_t color) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_FILL_RECT; gp->x1 = x1; gp->y1 = y1; gp->x2 = x2; gp->y2 = y2; gp->color = color;
+    }
+}
+
+static void add_round_rect(int x1, int y1, int x2, int y2, int r, uint32_t color) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_ROUND_RECT; gp->x1 = x1; gp->y1 = y1; gp->x2 = x2; gp->y2 = y2; gp->r = r; gp->color = color;
+    }
+}
+
+static void add_pmg_player(int player_idx, int x_offset, int y_offset) {
+    if (gfx_primitive_count < MAX_GFX_PRIMITIVES) {
+        GfxPrimitive *gp = &gfx_primitives[gfx_primitive_count++];
+        gp->type = GFX_PMG_PLAYER; gp->r = player_idx; gp->x1 = x_offset; gp->y1 = y_offset;
     }
 }
 
@@ -920,6 +1096,648 @@ static void log_telemetry(const char *event_name) {
     vm_poke(&vm, 0xF100, (uint8_t)len);
 }
 
+static void redraw_instacalc_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    // Load live Choplifter Air Assault telemetry parameters into Row 4 (index 3)
+    g_calc_cells[3][0] = (double)vm_peek(&vm, 55056); // A4: Heli X
+    g_calc_cells[3][1] = (double)vm_peek(&vm, 55057); // B4: Heli Y
+    g_calc_cells[3][2] = (double)vm_peek(&vm, 55059); // C4: Fuel
+    g_calc_cells[3][3] = (double)vm_peek(&vm, 55060); // D4: On Board
+    g_calc_cells[3][4] = (double)vm_peek(&vm, 55061); // E4: Rescued
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        "        INSTA-CALC C64 SPREADSHEET (CIMARRON)     \r\n"
+        "==================================================\r\n"
+        "  - CARTRIDGE ACTIVE - CELLS AVAILABLE: 256       \r\n"
+        "  - MODE: ENTRY MODE  - RETRIEVAL PORT: $D630     \r\n"
+        "==================================================\r\n"
+        " [Press ESC to return to Terminal Menu]           \r\n"
+        " [Use I/K/J/L to move cursor, type new values/formulas] \r\n\r\n"
+        "    A         B         C         D         E     \r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int r = 0; r < 5; r++) {
+        snprintf(buf, sizeof(buf), " %d  ", r + 1);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        for (int c = 0; c < 5; c++) {
+            bool is_selected = (r == g_calc_cursor_row && c == g_calc_cursor_col);
+            if (is_selected) {
+                lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m", 10);
+            }
+            
+            if (g_calc_cells[r][c] == 0.0) {
+                snprintf(buf, sizeof(buf), "[        ]");
+            } else {
+                snprintf(buf, sizeof(buf), "[%7.2f]", g_calc_cells[r][c]);
+            }
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+            
+            if (is_selected) {
+                lau_vram_write_string(g_vram, "\x1b[0m", 4);
+            }
+            lau_vram_write_string(g_vram, "  ", 2);
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+    snprintf(buf, sizeof(buf), "\r\n Active Cell: %c%d = %s\r\n Row 4: CHOPLIFTER (A4:X, B4:Y, C4:Fuel, D4:Board, E4:Rescued)", 'A' + g_calc_cursor_col, g_calc_cursor_row + 1, g_calc_input_buffer);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void handle_instacalc_input(char ch) {
+    if (ch == 'i' || ch == 'I') {
+        if (g_calc_cursor_row > 0) g_calc_cursor_row--;
+        g_calc_input_len = 0;
+        g_calc_input_buffer[0] = '\0';
+        redraw_instacalc_screen();
+    } else if (ch == 'k' || ch == 'K') {
+        if (g_calc_cursor_row < 4) g_calc_cursor_row++;
+        g_calc_input_len = 0;
+        g_calc_input_buffer[0] = '\0';
+        redraw_instacalc_screen();
+    } else if (ch == 'j' || ch == 'J') {
+        if (g_calc_cursor_col > 0) g_calc_cursor_col--;
+        g_calc_input_len = 0;
+        g_calc_input_buffer[0] = '\0';
+        redraw_instacalc_screen();
+    } else if (ch == 'l' || ch == 'L') {
+        if (g_calc_cursor_col < 4) g_calc_cursor_col++;
+        g_calc_input_len = 0;
+        g_calc_input_buffer[0] = '\0';
+        redraw_instacalc_screen();
+    } else if (ch == '\n' || ch == '\r') {
+        if (g_calc_input_len > 0) {
+            g_calc_input_buffer[g_calc_input_len] = '\0';
+            if (g_calc_input_buffer[0] == '=') {
+                char c1_col = g_calc_input_buffer[1];
+                char c1_row = g_calc_input_buffer[2];
+                char op = g_calc_input_buffer[3];
+                char c2_col = g_calc_input_buffer[4];
+                char c2_row = g_calc_input_buffer[5];
+                
+                if (c1_col >= 'a' && c1_col <= 'e') c1_col -= 32;
+                if (c2_col >= 'a' && c2_col <= 'e') c2_col -= 32;
+                
+                if (c1_col >= 'A' && c1_col <= 'E' && c1_row >= '1' && c1_row <= '5' &&
+                    c2_col >= 'A' && c2_col <= 'E' && c2_row >= '1' && c2_row <= '5' &&
+                    (op == '+' || op == '-' || op == '*' || op == '/')) {
+                    
+                    double v1 = g_calc_cells[c1_row - '1'][c1_col - 'A'];
+                    double v2 = g_calc_cells[c2_row - '1'][c2_col - 'A'];
+                    double res = 0;
+                    if (op == '+') res = v1 + v2;
+                    else if (op == '-') res = v1 - v2;
+                    else if (op == '*') res = v1 * v2;
+                    else if (op == '/') res = (v2 != 0) ? (v1 / v2) : 0;
+                    
+                    g_calc_cells[g_calc_cursor_row][g_calc_cursor_col] = res;
+                }
+            } else {
+                g_calc_cells[g_calc_cursor_row][g_calc_cursor_col] = atof(g_calc_input_buffer);
+            }
+            g_calc_input_len = 0;
+            g_calc_input_buffer[0] = '\0';
+        }
+        redraw_instacalc_screen();
+    } else if (ch == 127 || ch == '\b') {
+        if (g_calc_input_len > 0) {
+            g_calc_input_len--;
+            g_calc_input_buffer[g_calc_input_len] = '\0';
+        }
+        redraw_instacalc_screen();
+    } else if (g_calc_input_len < 30 && ((ch >= '0' && ch <= '9') || ch == '.' || ch == '-' || ch == '=' ||
+                                         ch == '+' || ch == '*' || ch == '/' ||
+                                         (ch >= 'a' && ch <= 'e') || (ch >= 'A' && ch <= 'E'))) {
+        g_calc_input_buffer[g_calc_input_len++] = ch;
+        g_calc_input_buffer[g_calc_input_len] = '\0';
+        redraw_instacalc_screen();
+    }
+}
+
+static void redraw_applepanic_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        "        APPLE PANIC - RETRO TERMINAL GAME         \r\n"
+        "==================================================\r\n"
+        " Score: %05d   Lives: %d   Stage: 1\r\n"
+        "==================================================\r\n",
+        g_panic_score, g_panic_lives);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int floor = 0; floor < 4; floor++) {
+        char line1[41];
+        char line2[41];
+        memset(line1, ' ', 40);
+        memset(line2, ' ', 40);
+        line1[40] = '\0';
+        line2[40] = '\0';
+        
+        if (floor < 3) {
+            if (floor == 0) { line1[12] = 'H'; line2[12] = 'H'; }
+            if (floor == 1) { line1[28] = 'H'; line2[28] = 'H'; }
+            if (floor == 2) { line1[18] = 'H'; line2[18] = 'H'; }
+        }
+        
+        for (int c = 0; c < 40; c++) {
+            if (g_panic_dig_ticks[floor][c] > 0) {
+                line2[c] = '_';
+            } else {
+                line2[c] = '=';
+            }
+        }
+        
+        if (floor == 0) line2[12] = 'H';
+        if (floor == 1) line2[28] = 'H';
+        if (floor == 2) line2[18] = 'H';
+        
+        if (g_panic_player_y == floor) {
+            line1[g_panic_player_x] = 'P';
+        }
+        if (g_panic_monster_y == floor) {
+            line1[g_panic_monster_x] = 'M';
+        }
+        
+        snprintf(buf, sizeof(buf), "   %s\r\n   %s\r\n", line1, line2);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    }
+    
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        " [Press ESC to return to Terminal Menu]           \r\n"
+        " [A/D to move, W/S to climb, SPACE to dig holes]  \r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void update_applepanic_game(void) {
+    if (!g_applepanic_active) return;
+    
+    static int monster_tick = 0;
+    monster_tick++;
+    if (monster_tick % 20 == 0) {
+        for (int f = 0; f < 4; f++) {
+            for (int c = 0; c < 40; c++) {
+                if (g_panic_dig_ticks[f][c] > 0) {
+                    g_panic_dig_ticks[f][c]--;
+                }
+            }
+        }
+        
+        if (g_panic_monster_stuck_ticks > 0) {
+            g_panic_monster_stuck_ticks--;
+            if (g_panic_monster_stuck_ticks == 0) {
+                g_panic_dig_ticks[g_panic_monster_y][g_panic_monster_x] = 0;
+            }
+        } else {
+            if (g_panic_monster_x < g_panic_player_x) g_panic_monster_x++;
+            else if (g_panic_monster_x > g_panic_player_x) g_panic_monster_x--;
+            
+            if (g_panic_dig_ticks[g_panic_monster_y][g_panic_monster_x] > 0) {
+                g_panic_monster_stuck_ticks = 30;
+            }
+            
+            if (g_panic_monster_x == g_panic_player_x && g_panic_monster_y == g_panic_player_y) {
+                g_panic_lives--;
+                if (g_panic_lives <= 0) {
+                    g_panic_lives = 3;
+                    g_panic_score = 0;
+                }
+                g_panic_player_x = 2;
+                g_panic_player_y = 3;
+                g_panic_monster_x = 25;
+                g_panic_monster_y = 3;
+            }
+        }
+        redraw_applepanic_screen();
+    }
+}
+
+static void handle_applepanic_input(char ch) {
+    if (ch == 'a' || ch == 'A') {
+        if (g_panic_player_x > 0) g_panic_player_x--;
+        redraw_applepanic_screen();
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_panic_player_x < 39) g_panic_player_x++;
+        redraw_applepanic_screen();
+    } else if (ch == 'w' || ch == 'W') {
+        if (g_panic_player_y == 1 && g_panic_player_x == 12) g_panic_player_y = 0;
+        else if (g_panic_player_y == 2 && g_panic_player_x == 28) g_panic_player_y = 1;
+        else if (g_panic_player_y == 3 && g_panic_player_x == 18) g_panic_player_y = 2;
+        redraw_applepanic_screen();
+    } else if (ch == 's' || ch == 'S') {
+        if (g_panic_player_y == 0 && g_panic_player_x == 12) g_panic_player_y = 1;
+        else if (g_panic_player_y == 1 && g_panic_player_x == 28) g_panic_player_y = 2;
+        else if (g_panic_player_y == 2 && g_panic_player_x == 18) g_panic_player_y = 3;
+        redraw_applepanic_screen();
+    } else if (ch == ' ') {
+        int target_x = g_panic_player_x + 1;
+        if (target_x < 40) {
+            g_panic_dig_ticks[g_panic_player_y][target_x] = 50;
+            if (g_panic_monster_y == g_panic_player_y && g_panic_monster_x == target_x && g_panic_monster_stuck_ticks > 0) {
+                g_panic_score += 100;
+                g_panic_monster_x = 30;
+                g_panic_monster_y = 0;
+                g_panic_monster_stuck_ticks = 0;
+            }
+        }
+        redraw_applepanic_screen();
+    }
+}
+
+static void redraw_airassault_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        "   AIR ASSAULT - BY BOB LLORET (AHOY! ISSUE 5)    \r\n"
+        "==================================================\r\n"
+        " Score: %05d   Shields: %d/3   Stage: 1\r\n"
+        "==================================================\r\n",
+        g_air_score, g_air_shields);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int y = 0; y < 8; y++) {
+        char line[51];
+        memset(line, ' ', 50);
+        line[50] = '\0';
+        
+        if (y == 7) {
+            line[g_air_player_x] = '^';
+            if (g_air_player_x > 0) line[g_air_player_x - 1] = '=';
+            if (g_air_player_x < 49) line[g_air_player_x + 1] = '=';
+        }
+        
+        if (g_air_missile_y == y && g_air_missile_x >= 0 && g_air_missile_x < 50) {
+            line[g_air_missile_x] = '|';
+        }
+        
+        for (int i = 0; i < 5; i++) {
+            if (g_air_invaders_y[i] == y && g_air_invaders_x[i] >= 0 && g_air_invaders_x[i] < 50) {
+                line[g_air_invaders_x[i]] = 'v';
+            }
+        }
+        
+        snprintf(buf, sizeof(buf), "   %s\r\n", line);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+    }
+    
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        " [Press ESC to return to Terminal Menu]           \r\n"
+        " [A/D to move, SPACE to fire missile]             \r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void update_airassault_game(void) {
+    if (!g_airassault_active) return;
+    
+    static int air_tick = 0;
+    air_tick++;
+    if (air_tick % 5 == 0) {
+        if (g_air_missile_y >= 0) {
+            g_air_missile_y--;
+            for (int i = 0; i < 5; i++) {
+                if (g_air_invaders_y[i] == g_air_missile_y && abs(g_air_invaders_x[i] - g_air_missile_x) <= 1) {
+                    g_air_score += 100;
+                    g_air_invaders_y[i] = 0;
+                    g_air_invaders_x[i] = rand() % 48 + 1;
+                    g_air_missile_y = -1;
+                    g_air_missile_x = -1;
+                    break;
+                }
+            }
+        }
+        
+        if (air_tick % 25 == 0) {
+            for (int i = 0; i < 5; i++) {
+                g_air_invaders_y[i]++;
+                if (g_air_invaders_y[i] >= 7) {
+                    g_air_shields--;
+                    if (g_air_shields <= 0) {
+                        g_air_shields = 3;
+                        g_air_score = 0;
+                    }
+                    g_air_invaders_y[i] = 0;
+                    g_air_invaders_x[i] = rand() % 48 + 1;
+                }
+            }
+        }
+        redraw_airassault_screen();
+    }
+}
+
+static void handle_airassault_input(char ch) {
+    if (ch == 'a' || ch == 'A') {
+        if (g_air_player_x > 1) g_air_player_x--;
+        redraw_airassault_screen();
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_air_player_x < 48) g_air_player_x++;
+        redraw_airassault_screen();
+    } else if (ch == ' ') {
+        if (g_air_missile_y == -1) {
+            g_air_missile_x = g_air_player_x;
+            g_air_missile_y = 6;
+        }
+        redraw_airassault_screen();
+    }
+}
+
+static void redraw_slinkybear_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        "      SLINKY THE BEAR - AHOY! ISSUE 6 CUSTOM      \r\n"
+        "==================================================\r\n"
+        " Score: %05d   Lives: %d   Stage: 1\r\n"
+        "==================================================\r\n\r\n",
+        g_slinky_score, g_slinky_lives);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int r = 0; r < 5; r++) {
+        int leading_spaces = 24 - r * 3;
+        for (int s = 0; s < leading_spaces; s++) {
+            lau_vram_write_char(g_vram, ' ');
+        }
+        for (int c = 0; c <= r; c++) {
+            lau_vram_write_string(g_vram, "/\\  ", 4);
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+        
+        for (int s = 0; s < leading_spaces - 1; s++) {
+            lau_vram_write_char(g_vram, ' ');
+        }
+        for (int c = 0; c <= r; c++) {
+            char val_str[32];
+            if (g_slinky_row == r && g_slinky_col == c) {
+                snprintf(val_str, sizeof(val_str), "/\x1b[33mB\x1b[0m\\");
+            } else {
+                if (g_slinky_blocks[r][c] == 0) {
+                    snprintf(val_str, sizeof(val_str), "/0\\");
+                } else {
+                    snprintf(val_str, sizeof(val_str), "/\x1b[32m1\x1b[0m\\");
+                }
+            }
+            lau_vram_write_string(g_vram, val_str, strlen(val_str));
+            lau_vram_write_string(g_vram, "  ", 2);
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+    
+    snprintf(buf, sizeof(buf),
+        "\r\n==================================================\r\n"
+        " [Press ESC to return to Terminal Menu]           \r\n"
+        " [I/K/J/L to jump diagonally, color all blocks]  \r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void update_slinkybear_game(void) {
+    // Turn-based game, no real-time logic needed.
+}
+
+static void handle_slinkybear_input(char ch) {
+    int next_row = g_slinky_row;
+    int next_col = g_slinky_col;
+    bool moved = false;
+    
+    if (ch == 'i' || ch == 'I') {
+        next_row--;
+        next_col--;
+        moved = true;
+    } else if (ch == 'o' || ch == 'O') {
+        next_row--;
+        moved = true;
+    } else if (ch == 'k' || ch == 'K') {
+        next_row++;
+        moved = true;
+    } else if (ch == 'l' || ch == 'L') {
+        next_row++;
+        next_col++;
+        moved = true;
+    }
+    
+    if (moved) {
+        if (next_row < 0 || next_row > 4 || next_col < 0 || next_col > next_row) {
+            g_slinky_lives--;
+            if (g_slinky_lives <= 0) {
+                g_slinky_lives = 3;
+                g_slinky_score = 0;
+                memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+            }
+            g_slinky_row = 0;
+            g_slinky_col = 0;
+        } else {
+            g_slinky_row = next_row;
+            g_slinky_col = next_col;
+            if (g_slinky_blocks[g_slinky_row][g_slinky_col] == 0) {
+                g_slinky_blocks[g_slinky_row][g_slinky_col] = 1;
+                g_slinky_score += 10;
+            }
+        }
+        
+        bool win = true;
+        for (int r = 0; r < 5; r++) {
+            for (int c = 0; c <= r; c++) {
+                if (g_slinky_blocks[r][c] == 0) win = false;
+            }
+        }
+        if (win) {
+            g_slinky_score += 500;
+            memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+            g_slinky_row = 0;
+            g_slinky_col = 0;
+        }
+        
+        redraw_slinkybear_screen();
+    }
+}
+
+static void redraw_slinkypanic_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "==================================================\r\n"
+        "      SLINKY PANIC - HYBRID RESCUE / PLATFORM     \r\n"
+        "==================================================\r\n"
+        " Score: %05d   Lives: %d   Stage: 1\r\n"
+        "==================================================\r\n\r\n",
+        g_slinky_score, g_slinky_lives);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int r = 0; r < 5; r++) {
+        int leading_spaces = 24 - r * 3;
+        for (int s = 0; s < leading_spaces; s++) {
+            lau_vram_write_char(g_vram, ' ');
+        }
+        for (int c = 0; c <= r; c++) {
+            lau_vram_write_string(g_vram, "/\\  ", 4);
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+        
+        for (int s = 0; s < leading_spaces - 1; s++) {
+            lau_vram_write_char(g_vram, ' ');
+        }
+        for (int c = 0; c <= r; c++) {
+            char val_str[32];
+            if (g_slinky_row == r && g_slinky_col == c) {
+                snprintf(val_str, sizeof(val_str), "/\x1b[33mB\x1b[0m\\");
+            } else if (g_slinky_monster_row == r && g_slinky_col == c) {
+                snprintf(val_str, sizeof(val_str), "/\x1b[31mM\x1b[0m\\");
+            } else if (g_slinky_hole[r][c] > 0) {
+                snprintf(val_str, sizeof(val_str), "/_\\");
+            } else {
+                if (g_slinky_blocks[r][c] == 0) {
+                    snprintf(val_str, sizeof(val_str), "/0\\");
+                } else {
+                    snprintf(val_str, sizeof(val_str), "/\x1b[32m1\x1b[0m\\");
+                }
+            }
+            lau_vram_write_string(g_vram, val_str, strlen(val_str));
+            lau_vram_write_string(g_vram, "  ", 2);
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+    
+    snprintf(buf, sizeof(buf),
+        "\r\n==================================================\r\n"
+        " [Press ESC to return to Terminal Menu]           \r\n"
+        " [I/K/J/L to jump, SPACE to dig holes]            \r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void update_slinkypanic_game(void) {
+    if (!g_slinkypanic_active) return;
+    
+    static int monster_tick = 0;
+    monster_tick++;
+    if (monster_tick % 25 == 0) {
+        for (int r = 0; r < 5; r++) {
+            for (int c = 0; c <= r; c++) {
+                if (g_slinky_hole[r][c] > 0) {
+                    g_slinky_hole[r][c]--;
+                }
+            }
+        }
+        
+        if (g_slinky_monster_stuck > 0) {
+            g_slinky_monster_stuck--;
+            if (g_slinky_monster_stuck == 0) {
+                g_slinky_hole[g_slinky_monster_row][g_slinky_monster_col] = 0;
+            }
+        } else {
+            if (g_slinky_monster_row < g_slinky_row) {
+                g_slinky_monster_row++;
+                if (g_slinky_monster_col < g_slinky_col) g_slinky_monster_col++;
+            } else if (g_slinky_monster_row > g_slinky_row) {
+                g_slinky_monster_row--;
+                if (g_slinky_monster_col > g_slinky_col) g_slinky_monster_col--;
+            } else {
+                if (g_slinky_monster_col < g_slinky_col) g_slinky_monster_col++;
+                else if (g_slinky_monster_col > g_slinky_col) g_slinky_monster_col--;
+            }
+            
+            if (g_slinky_hole[g_slinky_monster_row][g_slinky_monster_col] > 0) {
+                g_slinky_monster_stuck = 15;
+            }
+            
+            if (g_slinky_monster_row == g_slinky_row && g_slinky_monster_col == g_slinky_col) {
+                g_slinky_lives--;
+                if (g_slinky_lives <= 0) {
+                    g_slinky_lives = 3;
+                    g_slinky_score = 0;
+                    memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+                }
+                g_slinky_row = 0;
+                g_slinky_col = 0;
+                g_slinky_monster_row = 4;
+                g_slinky_monster_col = 4;
+                g_slinky_monster_stuck = 0;
+            }
+        }
+        redraw_slinkypanic_screen();
+    }
+}
+
+static void handle_slinkypanic_input(char ch) {
+    int next_row = g_slinky_row;
+    int next_col = g_slinky_col;
+    bool moved = false;
+    
+    if (ch == 'i' || ch == 'I') {
+        next_row--;
+        next_col--;
+        moved = true;
+    } else if (ch == 'o' || ch == 'O') {
+        next_row--;
+        moved = true;
+    } else if (ch == 'k' || ch == 'K') {
+        next_row++;
+        moved = true;
+    } else if (ch == 'l' || ch == 'L') {
+        next_row++;
+        next_col++;
+        moved = true;
+    } else if (ch == ' ') {
+        g_slinky_hole[g_slinky_row][g_slinky_col] = 40;
+        redraw_slinkypanic_screen();
+    }
+    
+    if (moved) {
+        if (next_row < 0 || next_row > 4 || next_col < 0 || next_col > next_row) {
+            g_slinky_lives--;
+            if (g_slinky_lives <= 0) {
+                g_slinky_lives = 3;
+                g_slinky_score = 0;
+                memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+            }
+            g_slinky_row = 0;
+            g_slinky_col = 0;
+        } else {
+            if (next_row == g_slinky_monster_row && next_col == g_slinky_monster_col && g_slinky_monster_stuck > 0) {
+                g_slinky_score += 200;
+                g_slinky_monster_row = 4;
+                g_slinky_monster_col = 4;
+                g_slinky_monster_stuck = 0;
+                g_slinky_hole[next_row][next_col] = 0;
+            } else {
+                g_slinky_row = next_row;
+                g_slinky_col = next_col;
+                if (g_slinky_blocks[g_slinky_row][g_slinky_col] == 0) {
+                    g_slinky_blocks[g_slinky_row][g_slinky_col] = 1;
+                    g_slinky_score += 10;
+                }
+            }
+        }
+        
+        bool win = true;
+        for (int r = 0; r < 5; r++) {
+            for (int c = 0; c <= r; c++) {
+                if (g_slinky_blocks[r][c] == 0) win = false;
+            }
+        }
+        if (win) {
+            g_slinky_score += 500;
+            memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+            g_slinky_row = 0;
+            g_slinky_col = 0;
+        }
+        
+        redraw_slinkypanic_screen();
+    }
+}
+
 static void execute_command(const char *cmd) {
     char cmd_log[512];
     snprintf(cmd_log, sizeof(cmd_log), "Executed command: %s", cmd);
@@ -1007,7 +1825,11 @@ static void execute_command(const char *cmd) {
     }
     
     if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0 && strcasecmp(first_word, "PONG") != 0 &&
-        strcasecmp(first_word, "WORDCRAFT") != 0 && strcasecmp(first_word, "EASYSCRIPT") != 0 && strcasecmp(first_word, "DNATYPEWRITER") != 0) {
+        strcasecmp(first_word, "WORDCRAFT") != 0 && strcasecmp(first_word, "EASYSCRIPT") != 0 && strcasecmp(first_word, "DNATYPEWRITER") != 0 &&
+        strcasecmp(first_word, "INSTA") != 0 && strcasecmp(first_word, "CALC") != 0 && strcasecmp(first_word, "INSTACALC") != 0 &&
+        strcasecmp(first_word, "PANIC") != 0 && strcasecmp(first_word, "APPLEPANIC") != 0 &&
+        strcasecmp(first_word, "SLINKY") != 0 && strcasecmp(first_word, "SLINKYBEAR") != 0 &&
+        strcasecmp(first_word, "SLINKYPANIC") != 0) {
         g_mercenary_active = false;
         g_pong_active = false;
     }
@@ -1063,6 +1885,102 @@ static void execute_command(const char *cmd) {
         lau_vram_write_string(g_vram, header, strlen(header));
         log_telemetry("Rendered DNATypewriter Screen");
         return;
+    }
+     
+    if (first_word && strcasecmp(first_word, "INSTA") == 0) {
+         g_editor_mode = MODE_INSTAWRITER;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+         lau_vram_write_string(g_vram, clear_seq, 3);
+         const char *header = 
+             "==================================================\r\n"
+             "        INSTA-WRITER C64 WORD PROCESSOR (CIMARRON) \r\n"
+             "==================================================\r\n"
+             "  - MEMORY: 38K FREE     - STATUS: DOCUMENT MODE   \r\n"
+             "  - MARGINS: L=10 R=70   - SPACING: SINGLE         \r\n"
+             "==================================================\r\n"
+             " [Press ESC to return to Terminal Menu]          \r\n\r\n";
+         lau_vram_write_string(g_vram, header, strlen(header));
+         log_telemetry("Rendered Insta-Writer Screen");
+         return;
+    }
+    
+    if (first_word && (strcasecmp(first_word, "CALC") == 0 || strcasecmp(first_word, "INSTACALC") == 0)) {
+         g_editor_mode = MODE_INSTACALC;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+         lau_vram_write_string(g_vram, clear_seq, 3);
+         const char *header = 
+             "==================================================\r\n"
+             "        INSTA-CALC C64 SPREADSHEET (CIMARRON)     \r\n"
+             "==================================================\r\n"
+             "  - CARTRIDGE ACTIVE - CELLS AVAILABLE: 256       \r\n"
+             "  - MODE: ENTRY MODE  - RETRIEVAL PORT: $D630     \r\n"
+             "==================================================\r\n"
+             " [Press ESC to return to Terminal Menu]           \r\n\r\n"
+             "    A         B         C         D         E     \r\n"
+             " 1  [100.00]  [50.00]   [150.00]  [0.00]    [ ]   \r\n"
+             " 2  [20.00]   [30.00]   [50.00]   [0.00]    [ ]   \r\n"
+             " 3  [120.00]  [80.00]   [200.00]  [0.00]    [ ]   \r\n"
+             " 4  [ ]       [ ]       [ ]       [ ]       [ ]   \r\n"
+             " 5  [ ]       [ ]       [ ]       [ ]       [ ]   \r\n\r\n"
+             " Entry: A1 = ";
+         lau_vram_write_string(g_vram, header, strlen(header));
+         log_telemetry("Rendered Insta-Calc Screen");
+         return;
+    }
+    
+    if (first_word && (strcasecmp(first_word, "PANIC") == 0 || strcasecmp(first_word, "APPLEPANIC") == 0)) {
+         g_editor_mode = MODE_APPLEPANIC;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         g_applepanic_active = true;
+         g_panic_player_x = 2;
+         g_panic_player_y = 3;
+         g_panic_monster_x = 25;
+         g_panic_monster_y = 3;
+         g_panic_monster_stuck_ticks = 0;
+         g_panic_score = 0;
+         g_panic_lives = 3;
+         memset(g_panic_dig_ticks, 0, sizeof(g_panic_dig_ticks));
+         redraw_applepanic_screen();
+         log_telemetry("Rendered Apple Panic Screen");
+         return;
+    }
+    
+    if (first_word && (strcasecmp(first_word, "SLINKY") == 0 || strcasecmp(first_word, "SLINKYBEAR") == 0)) {
+         g_editor_mode = MODE_SLINKYBEAR;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         g_slinkybear_active = true;
+         g_slinky_row = 0;
+         g_slinky_col = 0;
+         g_slinky_score = 0;
+         g_slinky_lives = 3;
+         memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+         redraw_slinkybear_screen();
+         log_telemetry("Rendered Slinky the Bear Screen");
+    }
+    
+    if (first_word && strcasecmp(first_word, "SLINKYPANIC") == 0) {
+         g_editor_mode = MODE_SLINKYPANIC;
+         g_mercenary_active = false;
+         g_pong_active = false;
+         g_slinkypanic_active = true;
+         g_slinky_row = 0;
+         g_slinky_col = 0;
+         g_slinky_monster_row = 4;
+         g_slinky_monster_col = 4;
+         g_slinky_monster_stuck = 0;
+         g_slinky_score = 0;
+         g_slinky_lives = 3;
+         memset(g_slinky_blocks, 0, sizeof(g_slinky_blocks));
+         memset(g_slinky_hole, 0, sizeof(g_slinky_hole));
+         redraw_slinkypanic_screen();
+         log_telemetry("Rendered Slinky Panic Screen");
+         return;
     }
     
     if (first_word && (strcasecmp(first_word, "ADVENTURE") == 0 || strcasecmp(first_word, "ZMACHINE") == 0)) {
@@ -1936,6 +2854,24 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
     fflush(stdout);
     if (button == 272) {
         if (state == 1) { // Left press
+            // Check if user clicked an HMI button (GFX_ROUND_RECT)
+            for (int i = 0; i < gfx_primitive_count; i++) {
+                GfxPrimitive gp = gfx_primitives[i];
+                if (gp.type == GFX_ROUND_RECT) {
+                    int px1 = mon_x + gp.x1;
+                    int py1 = mon_y + gp.y1;
+                    int px2 = mon_x + gp.x2;
+                    int py2 = mon_y + gp.y2;
+                    if (mouse_px >= px1 && mouse_px <= px2 && mouse_py >= py1 && mouse_py <= py2) {
+                        printf("[HMI BUTTON CLICKED] %s\n", gp.text);
+                        if (g_vram) {
+                            g_vram->is_dirty = true;
+                        }
+                        return; // Bypass text drag selection
+                    }
+                }
+            }
+
             uint32_t diff = time - last_click_time;
             last_click_time = time;
             if (diff < 300) {
@@ -2435,6 +3371,65 @@ static void draw_circle(uint32_t *buf, int width, int height, int xc, int yc, in
         }
     }
 }
+static void draw_fill_rect(uint32_t *buf, int width, int height, int x1, int y1, int x2, int y2, uint32_t color) {
+    int start_x = x1 < x2 ? x1 : x2;
+    int end_x = x1 < x2 ? x2 : x1;
+    int start_y = y1 < y2 ? y1 : y2;
+    int end_y = y1 < y2 ? y2 : y1;
+    for (int y = start_y; y <= end_y; y++) {
+        for (int x = start_x; x <= end_x; x++) {
+            if (x >= 12 && x < width - 22 && y >= 57 && y < height - 32) {
+                buf[y * width + x] = color;
+            }
+        }
+    }
+}
+
+static void draw_fill_round_rect(uint32_t *buf, int width, int height, int x1, int y1, int x2, int y2, int r, uint32_t color) {
+    int start_x = x1 < x2 ? x1 : x2;
+    int end_x = x1 < x2 ? x2 : x1;
+    int start_y = y1 < y2 ? y1 : y2;
+    int end_y = y1 < y2 ? y2 : y1;
+    if (r <= 0) {
+        draw_fill_rect(buf, width, height, start_x, start_y, end_x, end_y, color);
+        return;
+    }
+    int w = end_x - start_x + 1;
+    int h = end_y - start_y + 1;
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+
+    draw_fill_rect(buf, width, height, start_x + r, start_y, end_x - r, end_y, color);
+    draw_fill_rect(buf, width, height, start_x, start_y + r, start_x + r - 1, end_y - r, color);
+    draw_fill_rect(buf, width, height, end_x - r + 1, start_y + r, end_x, end_y - r, color);
+
+    for (int dy = 0; dy < r; dy++) {
+        for (int dx = 0; dx < r; dx++) {
+            if (dx*dx + dy*dy <= r*r) {
+                int tx1 = start_x + r - 1 - dx;
+                int ty1 = start_y + r - 1 - dy;
+                if (tx1 >= 12 && tx1 < width - 22 && ty1 >= 57 && ty1 < height - 32) {
+                    buf[ty1 * width + tx1] = color;
+                }
+                int tx2 = end_x - r + 1 + dx;
+                int ty2 = start_y + r - 1 - dy;
+                if (tx2 >= 12 && tx2 < width - 22 && ty2 >= 57 && ty2 < height - 32) {
+                    buf[ty2 * width + tx2] = color;
+                }
+                int tx3 = start_x + r - 1 - dx;
+                int ty3 = end_y - r + 1 + dy;
+                if (tx3 >= 12 && tx3 < width - 22 && ty3 >= 57 && ty3 < height - 32) {
+                    buf[ty3 * width + tx3] = color;
+                }
+                int tx4 = end_x - r + 1 + dx;
+                int ty4 = end_y - r + 1 + dy;
+                if (tx4 >= 12 && tx4 < width - 22 && ty4 >= 57 && ty4 < height - 32) {
+                    buf[ty4 * width + tx4] = color;
+                }
+            }
+        }
+    }
+}
 
 static void sync_vram_to_cpu(void) {
     uint8_t buffer[9600];
@@ -2571,8 +3566,8 @@ void render_terminal_display(void) {
     
     int char_w = 10;
     int char_h = 18;
-    int mon_x = 22;
-    int mon_y = 67;
+    mon_x = 22;
+    mon_y = 67;
 
     int max_rows = (win_height - 80) / char_h;
     if (max_rows < 5) max_rows = 5;
@@ -2806,10 +3801,19 @@ void render_terminal_display(void) {
             draw_debug_text(&sb, 20, win_height - 25, "JIT_PERF: OPTIMIZED", 0xFFBD93F9, true);
         }
     }
+
     if (g_mercenary_active) {
         update_mercenary_yul_camera();
     } else if (g_pong_active) {
         update_pong_game();
+    } else if (g_applepanic_active) {
+        update_applepanic_game();
+    } else if (g_airassault_active) {
+        update_airassault_game();
+    } else if (g_slinkybear_active) {
+        update_slinkybear_game();
+    } else if (g_slinkypanic_active) {
+        update_slinkypanic_game();
     }
     // Draw VIDTEX graphics overlay
     for (int i = 0; i < gfx_primitive_count; i++) {
@@ -2850,6 +3854,44 @@ void render_terminal_display(void) {
             draw_debug_text(&sb, mon_x + gp.x1, mon_y + gp.y1, gp.text, gp.color, true);
         } else if (gp.type == GFX_STUFFED_3D) {
             draw_3d_stuffed_animal(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, gp.r, gp.query, gp.frame);
+        } else if (gp.type == GFX_FILL_RECT) {
+            draw_fill_rect(back_buffer, win_width, win_height, mon_x + gp.x1, mon_y + gp.y1, mon_x + gp.x2, mon_y + gp.y2, gp.color);
+        } else if (gp.type == GFX_ROUND_RECT) {
+            int px1 = mon_x + gp.x1;
+            int py1 = mon_y + gp.y1;
+            int px2 = mon_x + gp.x2;
+            int py2 = mon_y + gp.y2;
+            bool hover = (mouse_px >= px1 && mouse_px <= px2 && mouse_py >= py1 && mouse_py <= py2);
+            uint32_t color = gp.color;
+            if (hover) {
+                // Brighter/highlight color for interactive buttons
+                color = 0xFF8BE9FD;
+            }
+            draw_fill_round_rect(back_buffer, win_width, win_height, px1, py1, px2, py2, gp.r, color);
+        } else if (gp.type == GFX_PMG_PLAYER) {
+            int pidx = gp.r;
+            int dx = 0, dy = 0;
+            const char *q_name = "teddy";
+            if (pidx == 0) {
+                dx = (int)vm_peek(&vm, 55051);
+                dy = (int)vm_peek(&vm, 55052);
+                q_name = "teddy";
+            } else if (pidx == 1) {
+                dx = (int)vm_peek(&vm, 55055);
+                dy = (int)vm_peek(&vm, 55056);
+                q_name = "crow";
+            } else if (pidx == 2) {
+                dx = (int)vm_peek(&vm, 55057);
+                dy = (int)vm_peek(&vm, 55058);
+                q_name = "cat";
+            } else if (pidx == 3) {
+                dx = (int)vm_peek(&vm, 55070);
+                dy = (int)vm_peek(&vm, 55071);
+                q_name = "fish";
+            }
+            int px = mon_x + gp.x1 + dx;
+            int py = mon_y + gp.y1 + dy;
+            draw_3d_stuffed_animal(back_buffer, win_width, win_height, px, py, 24, q_name, g_frame_counter);
         }
     }
     // Draw the Telemetry HUD Sidebar
@@ -3337,7 +4379,17 @@ int main() {
                 if (val != 0) {
                     char ch = (char)val;
                     if (g_editor_mode != MODE_TERMINAL) {
-                        if (ch == '\n' || ch == '\r') {
+                        if (g_editor_mode == MODE_INSTACALC) {
+                            handle_instacalc_input(ch);
+                        } else if (g_editor_mode == MODE_APPLEPANIC) {
+                            handle_applepanic_input(ch);
+                        } else if (g_editor_mode == MODE_AIRASSAULT) {
+                            handle_airassault_input(ch);
+                        } else if (g_editor_mode == MODE_SLINKYBEAR) {
+                            handle_slinkybear_input(ch);
+                        } else if (g_editor_mode == MODE_SLINKYPANIC) {
+                            handle_slinkypanic_input(ch);
+                        } else if (ch == '\n' || ch == '\r') {
                             lau_vram_write_string(g_vram, "\r\n", 2);
                         } else if (ch == 127 || ch == '\b') {
                             lau_vram_write_char(g_vram, '\b');
@@ -3473,11 +4525,25 @@ int main() {
                             g_editor_mode = MODE_TERMINAL;
                             g_mercenary_active = false;
                             g_pong_active = false;
+                            g_applepanic_active = false;
+                            g_airassault_active = false;
+                            g_slinkybear_active = false;
+                            g_slinkypanic_active = false;
                             execute_command("GO MENU");
                         }
                     } else if (g_editor_mode != MODE_TERMINAL) {
                         // In editor mode, just write characters directly to VRAM
-                        if (ch == '\n' || ch == '\r') {
+                        if (g_editor_mode == MODE_INSTACALC) {
+                            handle_instacalc_input(ch);
+                        } else if (g_editor_mode == MODE_APPLEPANIC) {
+                            handle_applepanic_input(ch);
+                        } else if (g_editor_mode == MODE_AIRASSAULT) {
+                            handle_airassault_input(ch);
+                        } else if (g_editor_mode == MODE_SLINKYBEAR) {
+                            handle_slinkybear_input(ch);
+                        } else if (g_editor_mode == MODE_SLINKYPANIC) {
+                            handle_slinkypanic_input(ch);
+                        } else if (ch == '\n' || ch == '\r') {
                             lau_vram_write_string(g_vram, "\r\n", 2);
                         } else if (ch == 127 || ch == '\b') {
                             lau_vram_write_char(g_vram, '\b');

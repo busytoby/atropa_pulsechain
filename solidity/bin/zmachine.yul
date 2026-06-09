@@ -377,6 +377,26 @@ object "ZMachine" {
                         resultPtr := add(resultPtr, 30)
                     }
                 }
+                case 0x75736520 { // "use "
+                    let used := 0
+                    if eq(sload(add(2000300, 51)), 0) {
+                        if eq(roomId, 3) {
+                            sstore(3000805, 1)
+                            mstore(resultPtr, 0x596f7520737769706520746865204b6579636172642e2054686520706f727461) // "You swipe the Keycard. The porta"
+                            mstore(add(resultPtr, 32), 0x6c2068756d7320746f206c69666521204e6f727468206973206f70656e2e0a00) // "l hums to life! North is open.\n"
+                            resultPtr := add(resultPtr, 62)
+                            used := 1
+                        }
+                    }
+                    if iszero(used) {
+                        mstore(resultPtr, 0x4e6f7468696e672068617070656e732e0a000000000000000000000000000000) // "Nothing happens.\n"
+                        resultPtr := add(resultPtr, 17)
+                    }
+                }
+                case 0x75736500 { // "use"
+                    mstore(resultPtr, 0x55736520776861743f0a00000000000000000000000000000000000000000000) // "Use what?\n"
+                    resultPtr := add(resultPtr, 10)
+                }
                 case 0x6c6f6f6b { // "look"
                     let isZmmRoom := and(gt(roomId, 9), lt(roomId, 20))
                     if isZmmRoom {
@@ -508,11 +528,41 @@ object "ZMachine" {
                                 resultPtr := add(resultPtr, customLen)
                             }
                             if iszero(customLen) {
+                                if iszero(roomId) {
+                                    mstore(resultPtr, 0x596f7520617265206f7574736964652074686520566963746f7269616e20486f) // "You are outside the Victorian Ho"
+                                    mstore(add(resultPtr, 32), 0x7573652e00000000000000000000000000000000000000000000000000000000) // "use."
+                                    resultPtr := add(resultPtr, 36)
+                                }
                                 if eq(roomId, 1) {
                                     mstore(resultPtr, 0x596f7520617265207374616e64696e6720696e20746865206c6f6262792e0000) // "You are standing in the lobby."
                                     resultPtr := add(resultPtr, 30)
                                 }
-                                if iszero(eq(roomId, 1)) {
+                                if eq(roomId, 2) {
+                                    mstore(resultPtr, 0x596f752061726520696e20746865204c6976696e6720526f6f6d2e0000000000) // "You are in the Living Room."
+                                    resultPtr := add(resultPtr, 27)
+                                }
+                                if eq(roomId, 3) {
+                                    if sload(3000805) {
+                                        mstore(resultPtr, 0x596f752061726520696e2074686520556e7265616c20506f7274616c20566175) // "You are in the Unreal Portal Vau"
+                                        mstore(add(resultPtr, 32), 0x6c742e2054686520706f7274616c20676c6f7773206272696768746c79204e6f) // "lt. The portal glows brightly No"
+                                        mstore(add(resultPtr, 64), 0x7274682e0a000000000000000000000000000000000000000000000000000000) // "rth.\n"
+                                        resultPtr := add(resultPtr, 70)
+                                    }
+                                    if iszero(sload(3000805)) {
+                                        mstore(resultPtr, 0x596f752061726520696e2074686520556e7265616c20506f7274616c20566175) // "You are in the Unreal Portal Vau"
+                                        mstore(add(resultPtr, 32), 0x6c742e2041206c6f636b656420706f7274616c20617263682069732068657265) // "lt. A locked portal arch is here"
+                                        mstore(add(resultPtr, 64), 0x2e0a000000000000000000000000000000000000000000000000000000000000) // ".\n"
+                                        resultPtr := add(resultPtr, 66)
+                                    }
+                                }
+                                if eq(roomId, 4) {
+                                    mstore(resultPtr, 0x596f7520617265206f7574736964652074686520566963746f7269616e20486f) // "You are outside the Victorian Ho"
+                                    mstore(add(resultPtr, 32), 0x7573652e2041206461726b206d697374207368726f75647320746865206d616e) // "use. A dark mist shrouds the man"
+                                    mstore(add(resultPtr, 64), 0x6f722e0a00000000000000000000000000000000000000000000000000000000) // "or.\n"
+                                    resultPtr := add(resultPtr, 68)
+                                }
+                                let knownRoom := or(or(or(iszero(roomId), eq(roomId, 1)), or(eq(roomId, 2), eq(roomId, 3))), eq(roomId, 4))
+                                if iszero(knownRoom) {
                                     mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
                                     resultPtr := add(resultPtr, 25)
                                 }
@@ -1898,7 +1948,7 @@ object "ZMachine" {
                     }
                 }
                 case 0x6e6f7274 { // "nort" (North)
-                    let exits := sload(add(3200000, roomId))
+                    let exits := getRoomExits(roomId)
                     let dest := and(shr(24, exits), 0xff)
                     if dest {
                         sstore(add(4000000, player), dest)
@@ -1925,7 +1975,7 @@ object "ZMachine" {
                     }
                 }
                 case 0x736f7574 { // "sout" (South)
-                    let exits := sload(add(3200000, roomId))
+                    let exits := getRoomExits(roomId)
                     let dest := and(shr(16, exits), 0xff)
                     if dest {
                         sstore(add(4000000, player), dest)
@@ -1952,7 +2002,7 @@ object "ZMachine" {
                     }
                 }
                 case 0x65617374 { // "east" (East)
-                    let exits := sload(add(3200000, roomId))
+                    let exits := getRoomExits(roomId)
                     let dest := and(shr(8, exits), 0xff)
                     if dest {
                         sstore(add(4000000, player), dest)
@@ -1979,7 +2029,7 @@ object "ZMachine" {
                     }
                 }
                 case 0x77657374 { // "west" (West)
-                    let exits := sload(add(3200000, roomId))
+                    let exits := getRoomExits(roomId)
                     let dest := and(exits, 0xff)
                     if dest {
                         sstore(add(4000000, player), dest)
@@ -2091,7 +2141,7 @@ object "ZMachine" {
                 
                 // We will pack line commands (each line: fromX, fromY, toX, toY, color)
                 // Room 0: Victorian House Exterior
-                if iszero(roomIndex) {
+                if or(iszero(roomIndex), eq(roomIndex, 4)) {
                     mstore(0x20, 50) // Length: 50 bytes (10 lines * 5 bytes)
                     
                     // Line 0: Ground line (0, 150) to (240, 150)
@@ -2320,6 +2370,118 @@ object "ZMachine" {
 
                     return(0x00, 128)
                 }
+
+                // Room 3: Unreal Portal / Mystery Vault
+                if eq(roomIndex, 3) {
+                    mstore(0x20, 75) // Length: 75 bytes (15 lines * 5 bytes)
+                    
+                    // Line 0: Ground line
+                    mstore8(0x40, 0)
+                    mstore8(0x41, 150)
+                    mstore8(0x42, 240)
+                    mstore8(0x43, 150)
+                    mstore8(0x44, 1)
+                    
+                    // Line 1: Left Wall
+                    mstore8(0x45, 20)
+                    mstore8(0x46, 150)
+                    mstore8(0x47, 20)
+                    mstore8(0x48, 20)
+                    mstore8(0x49, 1)
+
+                    // Line 2: Right Wall
+                    mstore8(0x4a, 220)
+                    mstore8(0x4b, 150)
+                    mstore8(0x4c, 220)
+                    mstore8(0x4d, 20)
+                    mstore8(0x4e, 1)
+
+                    // Line 3: Arch Left
+                    mstore8(0x4f, 80)
+                    mstore8(0x50, 150)
+                    mstore8(0x51, 80)
+                    mstore8(0x52, 70)
+                    mstore8(0x53, 1)
+
+                    // Line 4: Arch Right
+                    mstore8(0x54, 160)
+                    mstore8(0x55, 150)
+                    mstore8(0x56, 160)
+                    mstore8(0x57, 70)
+                    mstore8(0x58, 1)
+
+                    // Line 5: Arch Top Left
+                    mstore8(0x59, 80)
+                    mstore8(0x5a, 70)
+                    mstore8(0x5b, 120)
+                    mstore8(0x5c, 40)
+                    mstore8(0x5d, 1)
+
+                    // Line 6: Arch Top Right
+                    mstore8(0x5e, 160)
+                    mstore8(0x5f, 70)
+                    mstore8(0x60, 120)
+                    mstore8(0x61, 40)
+                    mstore8(0x62, 1)
+
+                    // Line 7: Pedestal Base
+                    mstore8(0x63, 110)
+                    mstore8(0x64, 150)
+                    mstore8(0x65, 130)
+                    mstore8(0x66, 150)
+                    mstore8(0x67, 1)
+
+                    // Line 8: Pedestal Top
+                    mstore8(0x68, 115)
+                    mstore8(0x69, 130)
+                    mstore8(0x6a, 125)
+                    mstore8(0x6b, 130)
+                    mstore8(0x6c, 1)
+
+                    // Line 9: Pedestal Left
+                    mstore8(0x6d, 115)
+                    mstore8(0x6e, 130)
+                    mstore8(0x6f, 110)
+                    mstore8(0x70, 150)
+                    mstore8(0x71, 1)
+
+                    // Line 10: Pedestal Right
+                    mstore8(0x72, 125)
+                    mstore8(0x73, 130)
+                    mstore8(0x74, 130)
+                    mstore8(0x75, 150)
+                    mstore8(0x76, 1)
+
+                    // Line 11: Floating Crystal Left (color code 2: neon magenta)
+                    mstore8(0x77, 120)
+                    mstore8(0x78, 115)
+                    mstore8(0x79, 115)
+                    mstore8(0x7a, 120)
+                    mstore8(0x7b, 2)
+
+                    // Line 12: Floating Crystal Top
+                    mstore8(0x7c, 120)
+                    mstore8(0x7d, 115)
+                    mstore8(0x7e, 125)
+                    mstore8(0x7f, 120)
+                    mstore8(0x80, 2)
+
+                    // Line 13: Floating Crystal Right
+                    mstore8(0x81, 125)
+                    mstore8(0x82, 120)
+                    mstore8(0x83, 120)
+                    mstore8(0x84, 125)
+                    mstore8(0x85, 2)
+
+                    // Line 14: Floating Crystal Bottom
+                    mstore8(0x86, 115)
+                    mstore8(0x87, 120)
+                    mstore8(0x88, 120)
+                    mstore8(0x89, 125)
+                    mstore8(0x8a, 2)
+
+                    return(0x00, 160)
+                }
                 
                 // Return empty for other rooms
                 mstore(0x20, 0)
@@ -2331,6 +2493,16 @@ object "ZMachine" {
             }
 
             // --- Interpreter Helper Functions ---
+
+            function getRoomExits(roomId) -> exits {
+                exits := sload(add(3200000, roomId))
+                if iszero(exits) {
+                    if eq(roomId, 10) { exits := 0x01000000 } // North -> Room 1
+                    if eq(roomId, 1)  { exits := 0x000a0203 } // South -> Room 10, East -> Room 2, West -> Room 3
+                    if eq(roomId, 2)  { exits := 0x00000001 } // West -> Room 1
+                    if eq(roomId, 3)  { exits := 0x00000100 } // East -> Room 1
+                }
+            }
             
             function readRom16(offset) -> val {
                 let storageWordIndex := div(offset, 32)

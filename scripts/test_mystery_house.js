@@ -24,7 +24,7 @@ async function main() {
 
     console.log("Compiling and deploying zmachine.yul...");
     const zmBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachine.yul"));
-    const zmTx = await deployer.sendTransaction({ data: zmBytecode, gasLimit: 5000000 });
+    const zmTx = await deployer.sendTransaction({ data: zmBytecode, gasLimit: 15000000 });
     const zmReceipt = await zmTx.wait();
     const zmAddress = zmReceipt.contractAddress;
     console.log("Z-Machine contract deployed at:", zmAddress);

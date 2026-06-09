@@ -272,6 +272,7 @@
                 <h2><span class="icon">📖</span> Interactive Fiction Terminal</h2>
                 <p class="description">Command Parser linked to on-chain text adventure logic.</p>
                 
+                <canvas id="vectorCanvas" width="240" height="180" style="display: none; width: 100%; height: 240px; background: #0c0b0a; border: 1px solid var(--vaesen-gold-dim); border-radius: 4px; margin-bottom: 15px;"></canvas>
                 <div class="terminal-screen" id="termScreen">Z-Machine Story Engine initialized.
 Connect your wallet to retrieve the active story ROM.</div>
 
@@ -334,7 +335,8 @@ Connect your wallet to retrieve the active story ROM.</div>
 
         const zmABI = [
             "function parseCommand(address player, bytes calldata cmd) external view returns (bytes memory)",
-            "function decryptInvisiclue(address keySystem, address player, uint256 index) external view returns (string memory)"
+            "function decryptInvisiclue(address keySystem, address player, uint256 index) external view returns (string memory)",
+            "function getVectorScene(uint256 roomIndex) external view returns (bytes memory)"
         ];
 
         const PULSECHAIN_RPC = "https://rpc.pulsechain.com";
@@ -588,6 +590,57 @@ Connect your wallet to retrieve the active story ROM.</div>
             }
         }
 
+        async function updateVectorScene(roomId) {
+            const canvas = document.getElementById("vectorCanvas");
+            if (!canvas || !zmContract) return;
+            
+            try {
+                const vectorData = await zmContract.getVectorScene(roomId);
+                const bytes = ethers.getBytes(vectorData);
+                
+                if (bytes.length === 0 || bytes.length < 5) {
+                    canvas.style.display = "none";
+                    return;
+                }
+                
+                canvas.style.display = "block";
+                const ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.lineWidth = 2.5;
+                ctx.shadowBlur = 6;
+                
+                const numLines = Math.floor(bytes.length / 5);
+                for (let i = 0; i < numLines; i++) {
+                    const offset = i * 5;
+                    const x0 = bytes[offset];
+                    const y0 = bytes[offset + 1];
+                    const x1 = bytes[offset + 2];
+                    const y1 = bytes[offset + 3];
+                    const colorCode = bytes[offset + 4];
+                    
+                    if (colorCode === 2) {
+                        ctx.strokeStyle = "#ff3366";
+                        ctx.shadowColor = "#ff3366";
+                    } else if (colorCode === 3) {
+                        ctx.strokeStyle = "#33ccff";
+                        ctx.shadowColor = "#33ccff";
+                    } else {
+                        ctx.strokeStyle = "#c5a059";
+                        ctx.shadowColor = "#c5a059";
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x0, y0);
+                    ctx.lineTo(x1, y1);
+                    ctx.stroke();
+                }
+            } catch (err) {
+                console.error("Error drawing vector scene:", err);
+                canvas.style.display = "none";
+            }
+        }
+
         async function executeCommand(cmdText) {
             if (!zmContract) return;
             const termScreen = document.getElementById("termScreen");
@@ -741,6 +794,8 @@ Connect your wallet to retrieve the active story ROM.</div>
                 }
 
                 termScreen.innerText += `\n${text}\n\n# _`;
+                const newRoomId = await getPlayerRoomId();
+                await updateVectorScene(newRoomId);
             } catch (err) {
                 termScreen.innerText += `\n[Error calling parseCommand: ${err.message}]\n\n# _`;
             }
