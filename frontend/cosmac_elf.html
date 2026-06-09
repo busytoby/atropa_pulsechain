@@ -379,6 +379,17 @@
                 this.soundTimer = 0;
                 this.display.fill(0);
                 this.keys.fill(0);
+
+                // Pre-populate RLE-compressed alchemical sigil at 0x0900 (alternating stripes)
+                const sigil = [
+                    64, 1, 64, 0, 64, 1, 64, 0, 
+                    64, 1, 64, 0, 64, 1, 64, 0,
+                    64, 1, 64, 0, 64, 1, 64, 0,
+                    64, 1, 64, 0, 64, 1, 64, 0
+                ];
+                for (let i = 0; i < sigil.length; i++) {
+                    this.memory[0x0900 + i] = sigil[i];
+                }
             }
 
             loadRom(romBytes) {
@@ -1103,6 +1114,26 @@
                             }, delayMs);
                         } else {
                             logTrapEvent("[FORTH ERROR] timer requires [delayMs] [actionId] on stack", true);
+                        }
+                        break;
+                    case "decompress":
+                        if (forthStack.length >= 2) {
+                            const length = forthStack.pop();
+                            const srcAddr = forthStack.pop();
+                            let src = srcAddr;
+                            let dest = 0;
+                            const end = srcAddr + length;
+                            while (src < end && dest < 2048) {
+                                const count = cpu.memory[src++];
+                                const val = cpu.memory[src++];
+                                for (let i = 0; i < count && dest < 2048; i++) {
+                                    cpu.display[dest++] = val ? 1 : 0;
+                                }
+                            }
+                            logTrapEvent(`🎨 [DECOMPRESS] Inflated packed RLE graphics from 0x${srcAddr.toString(16).toUpperCase()} directly to Pixie Display.`, true);
+                            renderDisplay();
+                        } else {
+                            logTrapEvent("[FORTH ERROR] decompress requires [srcAddr] [length] on stack", true);
                         }
                         break;
                     default:
