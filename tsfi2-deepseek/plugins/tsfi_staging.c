@@ -453,6 +453,81 @@ void draw_debug_text(StagingBuffer *sb, int x, int y, const char *text, uint32_t
     }
 }
 
+void draw_debug_codepoint_clipped(StagingBuffer *sb, int x, int y, uint32_t codepoint, uint32_t color, int clip_y0, int clip_y1) {
+    if (!sb || sb->magic != TSFI_STAGING_MAGIC) return;
+    ensure_font_loaded();
+    
+    uint32_t *px = (uint32_t *)sb->data;
+    if (g_font_loaded) {
+        float scale = stbtt_ScaleForPixelHeight(&g_font_info, 16.0f);
+        int ascent, descent, lineGap;
+        stbtt_GetFontVMetrics(&g_font_info, &ascent, &descent, &lineGap);
+        int baseline = (int)(ascent * scale);
+
+        LauGlyph *lg = NULL;
+        if (codepoint < 0x10000) lg = g_glyph_cache[codepoint];
+
+        if (!lg && codepoint < 0x10000) {
+            lg = (LauGlyph*)lau_malloc(sizeof(LauGlyph));
+            lg->codepoint = codepoint;
+            stbtt_GetCodepointHMetrics(&g_font_info, codepoint, &lg->advance, &lg->gh);
+            stbtt_GetCodepointBitmapBox(&g_font_info, codepoint, scale, scale, &lg->x0, &lg->y0, &lg->gw, &lg->gh);
+            lg->gw = lg->gw - lg->x0;
+            lg->gh = lg->gh - lg->y0;
+            
+            if (lg->gw > 0 && lg->gh > 0) {
+                lg->bitmap = lau_malloc(lg->gw * lg->gh);
+                stbtt_MakeCodepointBitmap(&g_font_info, lg->bitmap, lg->gw, lg->gh, lg->gw, scale, scale, codepoint);
+            } else {
+                lg->bitmap = NULL;
+            }
+            g_glyph_cache[codepoint] = lg;
+        }
+
+        if (lg && lg->bitmap) {
+            for (int j = 0; j < lg->gh; j++) {
+                int py = y + baseline + lg->y0 + j;
+                if (py < clip_y0 || py >= clip_y1) continue;
+                if (py < 0 || py >= (int)sb->height) continue;
+                for (int i = 0; i < lg->gw; i++) {
+                    int px_idx = x + lg->x0 + i;
+                    if (px_idx < 0 || px_idx >= (int)sb->width) continue;
+                    float alpha = lg->bitmap[j * lg->gw + i] / 255.0f;
+                    if (alpha > 0.1f) {
+                        uint32_t src = px[py * sb->width + px_idx];
+                        uint8_t r = (uint8_t)(((color >> 16) & 0xFF) * alpha + ((src >> 16) & 0xFF) * (1.0f - alpha));
+                        uint8_t g = (uint8_t)(((color >> 8) & 0xFF) * alpha + ((src >> 8) & 0xFF) * (1.0f - alpha));
+                        uint8_t b = (uint8_t)((color & 0xFF) * alpha + (src & 0xFF) * (1.0f - alpha));
+                        px[py * sb->width + px_idx] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void draw_debug_text_clipped(StagingBuffer *sb, int x, int y, const char *text, uint32_t color, bool forward, int clip_y0, int clip_y1) {
+    if (!sb || sb->magic != TSFI_STAGING_MAGIC) return;
+    ensure_font_loaded();
+    
+    int cx = x;
+    int len = strlen(text);
+
+    if (g_font_loaded) {
+        float scale = stbtt_ScaleForPixelHeight(&g_font_info, 16.0f);
+        for (int t_idx = 0; t_idx < len; t_idx++) {
+            char c = forward ? text[t_idx] : text[len - 1 - t_idx];
+            uint32_t codepoint = (uint32_t)(unsigned char)c;
+            
+            draw_debug_codepoint_clipped(sb, cx, y, codepoint, color, clip_y0, clip_y1);
+            
+            int advance, lsb;
+            stbtt_GetCodepointHMetrics(&g_font_info, codepoint, &advance, &lsb);
+            cx += (int)(advance * scale);
+        }
+    }
+}
+
 void render_file_modal(StagingBuffer *sb, const char *path) {
     if (!sb || sb->magic != TSFI_STAGING_MAGIC) return;
     DIR *d; struct dirent *dir;

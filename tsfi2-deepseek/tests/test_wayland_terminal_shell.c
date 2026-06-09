@@ -2444,47 +2444,22 @@ void render_terminal_display(void) {
         .width = win_width,
         .height = win_height,
         .stride = win_width * 4,
-        .size = win_width * win_height * 4,
         .data = back_buffer
     };
 
-    // Render title status bar area
-    // Cyan status divider line at y=45
-    if (win_height > 50) {
-        for (int x = 0; x < win_width; x++) {
-            back_buffer[45 * win_width + x] = 0xFF8BE9FD; // Pastel Cyan status divider
-        }
-    }
+    // ANTIC Display List CPU Terminal Improvements
+    typedef struct {
+        int mode; // 2: Header, 4: Console/Text, 8: Diagnostics Graph
+        int start_y; // Pixel Y coordinate
+        int height; // Pixel height of this band
+        int lms_offset; // VRAM row offset (LMS)
+        int vscrol; // Vertical fine scroll offset (pixels, 0..17)
+    } TerminalDisplayInstruction;
 
-    draw_debug_text(&sb, 20, 15, "TSFI SOVEREIGN CPU TERMINAL", 0xFFBD93F9, true); // Pastel Purple
-    draw_debug_text(&sb, win_width - 280, 15, "[ SYS: AUDITED ] [ VM: RUNNING ]", 0xFF50FA7B, true); // Pastel Green
-
-    // Border around terminal panel
-    if (win_height > 70) {
-        // Left & Right borders
-        for (int y = 55; y < win_height - 12; y++) {
-            for (int dx = 0; dx < 2; dx++) {
-                back_buffer[y * win_width + 10 + dx] = 0xFF6272A4; // Slate gray border
-                back_buffer[y * win_width + (win_width - 12) + dx] = 0xFF6272A4;
-            }
-        }
-        // Top & Bottom borders
-        for (int x = 10; x < win_width - 10; x++) {
-            for (int dy = 0; dy < 2; dy++) {
-                back_buffer[(55 + dy) * win_width + x] = 0xFF6272A4;
-                back_buffer[((win_height - 14) + dy) * win_width + x] = 0xFF6272A4;
-            }
-        }
-    }
-
-    // Dracula premium console palette
-    static const uint32_t palette[16] = {
-        0xFF000000, 0xFFFF5555, 0xFF50FA7B, 0xFFF1FA8C,
-        0xFFBD93F9, 0xFFFF79C6, 0xFF8BE9FD, 0xFFF8F8F2,
-        0xFF6272A4, 0xFFFF5555, 0xFF50FA7B, 0xFFF1FA8C,
-        0xFFBD93F9, 0xFFFF79C6, 0xFF8BE9FD, 0xFFF8F8F2
-    };
-
+    // Static display list and smooth scroll state
+    static float s_smooth_scroll_y = 0.0f;
+    static int s_last_target_y = 0;
+    
     int char_w = 10;
     int char_h = 18;
     int mon_x = 22;
@@ -2494,10 +2469,53 @@ void render_terminal_display(void) {
     if (max_rows < 5) max_rows = 5;
     if (max_rows > 35) max_rows = 35;
 
-    int start_y = 0;
+    int target_start_y = 0;
     if (g_vram->cursor_y >= max_rows) {
-        start_y = g_vram->cursor_y - max_rows + 1;
+        target_start_y = g_vram->cursor_y - max_rows + 1;
     }
+
+    // Initialize/update smooth scroll
+    if (s_last_target_y != target_start_y) {
+        // Instant update if we jumped significantly, otherwise interpolate
+        if (abs(target_start_y - s_last_target_y) > 10) {
+            s_smooth_scroll_y = (float)target_start_y;
+        }
+        s_last_target_y = target_start_y;
+    }
+    // Interpolate towards the target row coordinate smoothly
+    float diff = (float)target_start_y - s_smooth_scroll_y;
+    if (fabsf(diff) > 0.001f) {
+        s_smooth_scroll_y += diff * 0.25f; // Lerp step
+    } else {
+        s_smooth_scroll_y = (float)target_start_y;
+    }
+
+    // LMS row pointer (integer base) and VSCROL fine pixel scroll offset
+    int lms_row_base = (int)floorf(s_smooth_scroll_y);
+    int fine_vscrol = (int)roundf((s_smooth_scroll_y - (float)lms_row_base) * (float)char_h);
+    if (fine_vscrol < 0) fine_vscrol = 0;
+    if (fine_vscrol >= char_h) fine_vscrol = char_h - 1;
+
+    // Display List Instructions definitions
+    // Band 1: Mode 2 Header (y = 0..45, status bar)
+    // Band 2: Mode 4 Console (y = 46..win_height - 32)
+    // Band 3: Mode 8 Diagnostics/Game overlay (y = win_height - 31..win_height)
+    int console_clip_y0 = 55;
+    int console_clip_y1 = win_height - 32;
+
+    TerminalDisplayInstruction display_list[] = {
+        { .mode = 2, .start_y = 0, .height = 46, .lms_offset = 0, .vscrol = 0 },
+        { .mode = 4, .start_y = 46, .height = (win_height - 32 - 46), .lms_offset = lms_row_base, .vscrol = fine_vscrol },
+        { .mode = 8, .start_y = win_height - 31, .height = 31, .lms_offset = 0, .vscrol = 0 }
+    };
+
+    // Dracula premium console palette
+    static const uint32_t palette[16] = {
+        0xFF000000, 0xFFFF5555, 0xFF50FA7B, 0xFFF1FA8C,
+        0xFFBD93F9, 0xFFFF79C6, 0xFF8BE9FD, 0xFFF8F8F2,
+        0xFF6272A4, 0xFFFF5555, 0xFF50FA7B, 0xFFF1FA8C,
+        0xFFBD93F9, 0xFFFF79C6, 0xFF8BE9FD, 0xFFF8F8F2
+    };
 
     int display_cols = (win_width - 44) / char_w;
     if (display_cols < 10) display_cols = 10;
@@ -2517,70 +2535,130 @@ void render_terminal_display(void) {
         g_superterm_scroll_x = 0;
     }
 
-    for (int y = 0; y < max_rows; y++) {
-        int vram_y = start_y + y;
-        if (vram_y >= LAU_VRAM_ROWS) break;
-        
-        for (int x = 0; x < display_cols; x++) {
-            int vram_x = g_superterm_scroll_x + x;
-            if (vram_x >= LAU_VRAM_COLS) break;
-            if (g_superterm_mode && vram_x >= g_superterm_cols) break;
-            
-            LauVRAMCell cell = g_vram->grid[vram_y][vram_x];
-            if (cell.character > 32) {
-                uint32_t fg = palette[cell.fg_color & 0xF];
-                if (cell.attributes & 1) fg = palette[(cell.fg_color & 0x7) + 8]; // Bold/Bright
-                
-                int px = mon_x + (x * char_w);
-                int py = mon_y + (y * char_h);
-                if (px >= 12 && px < win_width - 22 && py >= 57 && py < win_height - 32) {
-                    bool in_selection = false;
-                    if (select_start_x >= 0 && select_start_y >= 0 && select_end_x >= 0 && select_end_y >= 0) {
-                        int sy = select_start_y, ey = select_end_y;
-                        int sx = select_start_x, ex = select_end_x;
-                        if (sy > ey || (sy == ey && sx > ex)) {
-                            sy = select_end_y; ey = select_start_y;
-                            sx = select_end_x; ex = select_start_x;
-                        }
-                        if (vram_y > sy && vram_y < ey) in_selection = true;
-                        else if (vram_y == sy && vram_y == ey) in_selection = (vram_x >= sx && vram_x <= ex);
-                        else if (vram_y == sy) in_selection = (vram_x >= sx);
-                        else if (vram_y == ey) in_selection = (vram_x <= ex);
+    // Execute Display List
+    for (size_t dl_idx = 0; dl_idx < sizeof(display_list)/sizeof(display_list[0]); dl_idx++) {
+        TerminalDisplayInstruction inst = display_list[dl_idx];
+
+        if (inst.mode == 2) {
+            // Render Mode 2 Title/Status Bar
+            if (win_height > 50) {
+                for (int x = 0; x < win_width; x++) {
+                    back_buffer[45 * win_width + x] = 0xFF8BE9FD; // Pastel Cyan status divider
+                }
+            }
+            draw_debug_text(&sb, 20, 15, "TSFI SOVEREIGN CPU TERMINAL [ANTIC DL]", 0xFFBD93F9, true); // Pastel Purple
+            draw_debug_text(&sb, win_width - 280, 15, "[ SYS: AUDITED ] [ VM: RUNNING ]", 0xFF50FA7B, true); // Pastel Green
+        }
+        else if (inst.mode == 4) {
+            // Render Mode 4 Console Band with smooth scrolling
+            // Border around terminal panel
+            if (win_height > 70) {
+                // Left & Right borders
+                for (int y = console_clip_y0; y < console_clip_y1; y++) {
+                    for (int dx = 0; dx < 2; dx++) {
+                        back_buffer[y * win_width + 10 + dx] = 0xFF6272A4; // Slate gray border
+                        back_buffer[y * win_width + (win_width - 12) + dx] = 0xFF6272A4;
                     }
-                    
-                    if (in_selection) {
-                        for (int dy = 0; dy < char_h; dy++) {
-                            for (int dx = 0; dx < char_w; dx++) {
-                                int ty = py + dy;
-                                int tx = px + dx;
-                                if (tx >= 12 && tx < win_width - 22 && ty >= 57 && ty < win_height - 32) {
-                                    back_buffer[ty * win_width + tx] = 0xFF44475A; // Dracula selection bg
+                }
+                // Top & Bottom borders
+                for (int x = 10; x < win_width - 10; x++) {
+                    for (int dy = 0; dy < 2; dy++) {
+                        back_buffer[(console_clip_y0 + dy) * win_width + x] = 0xFF6272A4;
+                        back_buffer[((console_clip_y1 - 2) + dy) * win_width + x] = 0xFF6272A4;
+                    }
+                }
+            }
+
+            // Draw text cells with vertical smooth scroll offset and clipping
+            // Since we scroll down, we render extra rows (max_rows + 2) to pad smooth transition
+            int scroll_offset_y = inst.vscrol;
+            for (int y = 0; y < max_rows + 2; y++) {
+                int vram_y = inst.lms_offset + y;
+                if (vram_y >= LAU_VRAM_ROWS || vram_y < 0) continue;
+
+                for (int x = 0; x < display_cols; x++) {
+                    int vram_x = g_superterm_scroll_x + x;
+                    if (vram_x >= LAU_VRAM_COLS) break;
+                    if (g_superterm_mode && vram_x >= g_superterm_cols) break;
+
+                    LauVRAMCell cell = g_vram->grid[vram_y][vram_x];
+                    if (cell.character > 32) {
+                        uint32_t fg = palette[cell.fg_color & 0xF];
+                        if (cell.attributes & 1) fg = palette[(cell.fg_color & 0x7) + 8]; // Bold/Bright
+
+                        int px = mon_x + (x * char_w);
+                        int py = mon_y + (y * char_h) - scroll_offset_y;
+
+                        bool in_selection = false;
+                        if (select_start_x >= 0 && select_start_y >= 0 && select_end_x >= 0 && select_end_y >= 0) {
+                            int sy = select_start_y, ey = select_end_y;
+                            int sx = select_start_x, ex = select_end_x;
+                            if (sy > ey || (sy == ey && sx > ex)) {
+                                sy = select_end_y; ey = select_start_y;
+                                sx = select_end_x; ex = select_start_x;
+                            }
+                            if (vram_y > sy && vram_y < ey) in_selection = true;
+                            else if (vram_y == sy && vram_y == ey) in_selection = (vram_x >= sx && vram_x <= ex);
+                            else if (vram_y == sy) in_selection = (vram_x >= sx);
+                            else if (vram_y == ey) in_selection = (vram_x <= ex);
+                        }
+
+                        if (in_selection) {
+                            for (int dy = 0; dy < char_h; dy++) {
+                                for (int dx = 0; dx < char_w; dx++) {
+                                    int ty = py + dy;
+                                    int tx = px + dx;
+                                    if (tx >= 12 && tx < win_width - 22 && ty >= console_clip_y0 && ty < console_clip_y1) {
+                                        back_buffer[ty * win_width + tx] = 0xFF44475A; // Dracula selection bg
+                                    }
                                 }
                             }
+                            draw_debug_codepoint_clipped(&sb, px, py, cell.character, 0xFFF8F8F2, console_clip_y0, console_clip_y1);
+                        } else {
+                            draw_debug_codepoint_clipped(&sb, px, py, cell.character, fg, console_clip_y0, console_clip_y1);
                         }
-                        draw_debug_codepoint(&sb, px, py, cell.character, 0xFFF8F8F2);
-                    } else {
-                        draw_debug_codepoint(&sb, px, py, cell.character, fg);
+                    }
+                }
+            }
+
+            // Draw inverted green/amber cursor block (with smooth vertical translation)
+            int cy = g_vram->cursor_y - inst.lms_offset;
+            int cx = g_vram->cursor_x - g_superterm_scroll_x;
+            if (cy >= -1 && cy < max_rows + 2 && cx >= 0 && cx < display_cols) {
+                int px = mon_x + cx * char_w;
+                int py = mon_y + cy * char_h - scroll_offset_y;
+                for (int dy = 0; dy < char_h - 2; dy++) {
+                    for (int dx = 0; dx < char_w; dx++) {
+                        int ty = py + dy;
+                        int tx = px + dx;
+                        if (tx >= 12 && tx < win_width - 22 && ty >= console_clip_y0 && ty < console_clip_y1) {
+                            back_buffer[ty * win_width + tx] ^= 0xFF00FF00; // Electric green invert tint
+                        }
                     }
                 }
             }
         }
-    }
-    
-    // Draw inverted green/amber cursor block
-    int cy = g_vram->cursor_y - start_y;
-    int cx = g_vram->cursor_x - g_superterm_scroll_x;
-    if (cy >= 0 && cy < max_rows && cx >= 0 && cx < display_cols) {
-        int px = mon_x + cx * char_w;
-        int py = mon_y + cy * char_h;
-        for (int dy = 0; dy < char_h - 2; dy++) {
-            for (int dx = 0; dx < char_w; dx++) {
-                int ty = py + dy;
-                int tx = px + dx;
-                if (tx >= 12 && tx < win_width - 22 && ty >= 57 && ty < win_height - 32) {
-                    back_buffer[ty * win_width + tx] ^= 0xFF00FF00; // Electric green invert tint
+        else if (inst.mode == 8) {
+            // Render Mode 8 JIT Diagnostics Bar / Graphics
+            // Gray baseline divider
+            for (int x = 10; x < win_width - 10; x++) {
+                back_buffer[(win_height - 32) * win_width + x] = 0xFF6272A4;
+            }
+            // Draw a subtle diagnostic scrolling wave/histogram
+            static int wave_offset = 0;
+            wave_offset = (wave_offset + 1) % win_width;
+            for (int x = 20; x < win_width - 20; x += 4) {
+                float angle = (float)(x + wave_offset) * 0.05f;
+                int height = (int)(10.0f + sinf(angle) * 8.0f);
+                for (int y = 0; y < height; y++) {
+                    int ty = win_height - 10 - y;
+                    if (ty >= win_height - 31 && ty < win_height) {
+                        back_buffer[ty * win_width + x] = 0xFF50FA7B; // Diagnostics Wave in green
+                        back_buffer[ty * win_width + x + 1] = 0xFF50FA7B;
+                    }
                 }
             }
+            draw_debug_text(&sb, 20, win_height - 25, "JIT_PERF: OPTIMIZED", 0xFFBD93F9, true);
         }
     }
     if (g_mercenary_active) {
