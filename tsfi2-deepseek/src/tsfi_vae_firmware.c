@@ -87,6 +87,13 @@ void LauVaeFirmware_eval_sequential(LauVaeFirmware_State *state) {
             __mmask16 fur_mask = state->last_clip_mask & 0x2222; // Target lanes 1, 5, 9, 13
             current_wrf = _mm512_mask_add_ps(current_wrf, fur_mask, current_wrf, _mm512_mul_ps(noise_f, _mm512_set1_ps(harmonic_scale)));
 
+            // 4.5. Dynamic Volumetric Wind Modulation (W-Component)
+            float wind_drift = state->nand_source->external_params[2];
+            if (wind_drift != 0.0f) {
+                __mmask16 wind_mask = state->last_clip_mask & 0x9999; // Target lanes 0, 3, 4, 7, 8, 11, 12, 15
+                current_wrf = _mm512_mask_add_ps(current_wrf, wind_mask, current_wrf, _mm512_set1_ps(wind_drift * 0.05f));
+            }
+
             state->wrf[state->current_block_idx] = (__m512i)current_wrf;
             state->current_block_idx++;
         } else {
