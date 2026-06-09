@@ -1,0 +1,92 @@
+const { ethers } = require("ethers");
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+
+const PROVIDER_URL = "http://127.0.0.1:8545";
+
+function compileYul(yulPath) {
+    const output = execSync(`solc --strict-assembly --evm-version shanghai "${yulPath}" --bin`, { encoding: "utf8" });
+    const lines = output.split("\n");
+    const binIndex = lines.findIndex(line => line.includes("Binary representation:"));
+    if (binIndex === -1) {
+        throw new Error(`Could not find binary representation for ${yulPath}`);
+    }
+    return "0x" + lines[binIndex + 1].trim();
+}
+
+async function main() {
+    console.log("=== Launching Z-Machine Mystery House Vector Verification ===");
+    
+    const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+    const signers = await provider.listAccounts();
+    const deployer = signers[0];
+
+    console.log("Compiling and deploying zmachine.yul...");
+    const zmBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachine.yul"));
+    const zmTx = await deployer.sendTransaction({ data: zmBytecode, gasLimit: 5000000 });
+    const zmReceipt = await zmTx.wait();
+    const zmAddress = zmReceipt.contractAddress;
+    console.log("Z-Machine contract deployed at:", zmAddress);
+
+    const zmAbi = [
+        "function getVectorScene(uint256 roomIndex) public view returns (bytes)"
+    ];
+    const zm = new ethers.Contract(zmAddress, zmAbi, deployer);
+
+    // Call getVectorScene(0) to fetch the Victorian House outline
+    console.log("Fetching Room 0 vector scene...");
+    const vectorData = await zm.getVectorScene(0);
+    console.log(`Vector Data Length: ${ethers.getBytes(vectorData).length} bytes`);
+    
+    // Convert to byte array
+    const bytes = ethers.getBytes(vectorData);
+    if (bytes.length !== 50) {
+        throw new Error(`Expected exactly 50 bytes for vector scene, got ${bytes.length}`);
+    }
+    console.log("✓ Vector data size verification passed.");
+
+    // Validate the first line command: Ground line (0, 150) to (240, 150)
+    console.log("Validating ground line coordinates...");
+    const x0 = bytes[0];
+    const y0 = bytes[1];
+    const x1 = bytes[2];
+    const y1 = bytes[3];
+    const color = bytes[4];
+    console.log(`Line 0: (${x0}, ${y0}) -> (${x1}, ${y1}), color: ${color}`);
+    if (x0 !== 0 || y0 !== 150 || x1 !== 240 || y1 !== 150 || color !== 1) {
+        throw new Error("Ground line coordinates or color mismatch!");
+    }
+    console.log("✓ Ground line coordinates verified.");
+
+    // Validate Room 1 (Entry Hall)
+    console.log("Fetching Room 1 vector scene...");
+    const vectorData1 = await zm.getVectorScene(1);
+    const bytes1 = ethers.getBytes(vectorData1);
+    if (bytes1.length !== 50) {
+        throw new Error(`Expected 50 bytes for Room 1, got ${bytes1.length}`);
+    }
+    console.log("✓ Room 1 size verified. Left Wall start:", bytes1[5], "end:", bytes1[7]);
+    if (bytes1[5] !== 20 || bytes1[7] !== 20) {
+        throw new Error("Room 1 Left Wall coordinates mismatch");
+    }
+
+    // Validate Room 2 (Living Room)
+    console.log("Fetching Room 2 vector scene...");
+    const vectorData2 = await zm.getVectorScene(2);
+    const bytes2 = ethers.getBytes(vectorData2);
+    if (bytes2.length !== 50) {
+        throw new Error(`Expected 50 bytes for Room 2, got ${bytes2.length}`);
+    }
+    console.log("✓ Room 2 size verified. Fireplace Mantel start:", bytes2[30], "end:", bytes2[32]);
+    if (bytes2[30] !== 80 || bytes2[32] !== 160) {
+        throw new Error("Room 2 Fireplace coordinates mismatch");
+    }
+
+    console.log("=== All Z-Machine Mystery House tests passed successfully! ===");
+}
+
+main().catch(err => {
+    console.error("Test failed:", err);
+    process.exit(1);
+});

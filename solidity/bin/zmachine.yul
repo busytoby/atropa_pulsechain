@@ -2166,6 +2166,160 @@ object "ZMachine" {
                     
                     return(0x00, 128)
                 }
+
+                // Room 1: Entry Hall / Foyer with staircase
+                if eq(roomIndex, 1) {
+                    mstore(0x20, 50) // Length: 50 bytes (10 lines)
+                    
+                    // Line 0: Ground line
+                    mstore8(0x40, 0)
+                    mstore8(0x41, 150)
+                    mstore8(0x42, 240)
+                    mstore8(0x43, 150)
+                    mstore8(0x44, 1)
+                    
+                    // Line 1: Left Wall
+                    mstore8(0x45, 20)
+                    mstore8(0x46, 150)
+                    mstore8(0x47, 20)
+                    mstore8(0x48, 20)
+                    mstore8(0x49, 1)
+
+                    // Line 2: Right Wall
+                    mstore8(0x4a, 220)
+                    mstore8(0x4b, 150)
+                    mstore8(0x4c, 220)
+                    mstore8(0x4d, 20)
+                    mstore8(0x4e, 1)
+
+                    // Line 3: Ceiling
+                    mstore8(0x4f, 20)
+                    mstore8(0x50, 20)
+                    mstore8(0x51, 220)
+                    mstore8(0x52, 20)
+                    mstore8(0x53, 1)
+
+                    // Line 4: Stairs diagonal
+                    mstore8(0x54, 100)
+                    mstore8(0x55, 150)
+                    mstore8(0x56, 180)
+                    mstore8(0x57, 80)
+                    mstore8(0x58, 1)
+
+                    // Line 5: Stairs landing
+                    mstore8(0x59, 180)
+                    mstore8(0x5a, 80)
+                    mstore8(0x5b, 220)
+                    mstore8(0x5c, 80)
+                    mstore8(0x5d, 1)
+
+                    // Line 6: Left doorway vertical
+                    mstore8(0x5e, 60)
+                    mstore8(0x5f, 150)
+                    mstore8(0x60, 60)
+                    mstore8(0x61, 80)
+                    mstore8(0x62, 1)
+
+                    // Line 7: Left doorway top
+                    mstore8(0x63, 20)
+                    mstore8(0x64, 80)
+                    mstore8(0x65, 60)
+                    mstore8(0x66, 80)
+                    mstore8(0x67, 1)
+
+                    // Line 8: Right doorway vertical
+                    mstore8(0x68, 180)
+                    mstore8(0x69, 150)
+                    mstore8(0x6a, 180)
+                    mstore8(0x6b, 80)
+                    mstore8(0x6c, 1)
+
+                    // Line 9: Right doorway top
+                    mstore8(0x6d, 180)
+                    mstore8(0x6e, 80)
+                    mstore8(0x6f, 220)
+                    mstore8(0x70, 80)
+                    mstore8(0x71, 1)
+
+                    return(0x00, 128)
+                }
+
+                // Room 2: Living Room / Parlor with fireplace
+                if eq(roomIndex, 2) {
+                    mstore(0x20, 50) // Length: 50 bytes (10 lines)
+                    
+                    // Line 0: Ground line
+                    mstore8(0x40, 0)
+                    mstore8(0x41, 150)
+                    mstore8(0x42, 240)
+                    mstore8(0x43, 150)
+                    mstore8(0x44, 1)
+                    
+                    // Line 1: Left Wall
+                    mstore8(0x45, 20)
+                    mstore8(0x46, 150)
+                    mstore8(0x47, 20)
+                    mstore8(0x48, 20)
+                    mstore8(0x49, 1)
+
+                    // Line 2: Right Wall
+                    mstore8(0x4a, 220)
+                    mstore8(0x4b, 150)
+                    mstore8(0x4c, 220)
+                    mstore8(0x4d, 20)
+                    mstore8(0x4e, 1)
+
+                    // Line 3: Ceiling
+                    mstore8(0x4f, 20)
+                    mstore8(0x50, 20)
+                    mstore8(0x51, 220)
+                    mstore8(0x52, 20)
+                    mstore8(0x53, 1)
+
+                    // Line 4: Fireplace Outer Left
+                    mstore8(0x54, 90)
+                    mstore8(0x55, 150)
+                    mstore8(0x56, 90)
+                    mstore8(0x57, 90)
+                    mstore8(0x58, 1)
+
+                    // Line 5: Fireplace Outer Right
+                    mstore8(0x59, 150)
+                    mstore8(0x5a, 150)
+                    mstore8(0x5b, 150)
+                    mstore8(0x5c, 90)
+                    mstore8(0x5d, 1)
+
+                    // Line 6: Fireplace Outer Top (Mantel)
+                    mstore8(0x5e, 80)
+                    mstore8(0x5f, 90)
+                    mstore8(0x60, 160)
+                    mstore8(0x61, 90)
+                    mstore8(0x62, 1)
+
+                    // Line 7: Fireplace Inner Left
+                    mstore8(0x63, 105)
+                    mstore8(0x64, 150)
+                    mstore8(0x65, 105)
+                    mstore8(0x66, 115)
+                    mstore8(0x67, 1)
+
+                    // Line 8: Fireplace Inner Right
+                    mstore8(0x68, 135)
+                    mstore8(0x69, 150)
+                    mstore8(0x6a, 135)
+                    mstore8(0x6b, 115)
+                    mstore8(0x6c, 1)
+
+                    // Line 9: Fireplace Inner Top
+                    mstore8(0x6d, 105)
+                    mstore8(0x6e, 115)
+                    mstore8(0x6f, 135)
+                    mstore8(0x70, 115)
+                    mstore8(0x71, 1)
+
+                    return(0x00, 128)
+                }
                 
                 // Return empty for other rooms
                 mstore(0x20, 0)
