@@ -35,7 +35,8 @@ typedef enum {
     MODE_APPLEPANIC,
     MODE_AIRASSAULT,
     MODE_SLINKYBEAR,
-    MODE_SLINKYPANIC
+    MODE_SLINKYPANIC,
+    MODE_YULBUILD
 } EditorMode;
 static EditorMode g_editor_mode = MODE_TERMINAL;
 static bool g_dashboard_active = false;
@@ -1096,6 +1097,255 @@ static void log_telemetry(const char *event_name) {
     vm_poke(&vm, 0xF100, (uint8_t)len);
 }
 
+static char g_yulbuild_asm[8][32];
+static int g_yulbuild_addr[8];
+static int g_yulbuild_len[8];
+static int g_yulbuild_cursor = 0;
+static char g_yulbuild_input[64] = "";
+static int g_yulbuild_input_len = 0;
+
+static int assemble_6502(const char *asm_line, uint8_t *bytes) {
+    char mnemonic[16] = {0};
+    char arg[16] = {0};
+    while(*asm_line == ' ') asm_line++;
+    if (sscanf(asm_line, "%15s %15s", mnemonic, arg) <= 0) return 0;
+    for (int i = 0; mnemonic[i]; i++) {
+        if (mnemonic[i] >= 'a' && mnemonic[i] <= 'z') mnemonic[i] -= 32;
+    }
+    if (strcmp(mnemonic, "NOP") == 0) { bytes[0] = 0xEA; return 1; }
+    if (strcmp(mnemonic, "SEC") == 0) { bytes[0] = 0x38; return 1; }
+    if (strcmp(mnemonic, "CLC") == 0) { bytes[0] = 0x18; return 1; }
+    if (strcmp(mnemonic, "RTS") == 0) { bytes[0] = 0x60; return 1; }
+    if (strcmp(mnemonic, "INX") == 0) { bytes[0] = 0xE8; return 1; }
+    if (strcmp(mnemonic, "DEX") == 0) { bytes[0] = 0xCA; return 1; }
+    if (strcmp(mnemonic, "INY") == 0) { bytes[0] = 0xC8; return 1; }
+    if (strcmp(mnemonic, "DEY") == 0) { bytes[0] = 0x88; return 1; }
+    
+    bool immediate = (arg[0] == '#');
+    unsigned int val = 0;
+    if (immediate) {
+        if (arg[1] == '$') sscanf(arg + 2, "%x", &val);
+        else sscanf(arg + 1, "%u", &val);
+    } else {
+        if (arg[0] == '$') sscanf(arg + 1, "%x", &val);
+        else sscanf(arg, "%u", &val);
+    }
+    
+    if (strcmp(mnemonic, "LDA") == 0) {
+        if (immediate) { bytes[0] = 0xA9; bytes[1] = val & 0xFF; return 2; }
+        else {
+            if (val < 256) { bytes[0] = 0xA5; bytes[1] = val & 0xFF; return 2; }
+            else { bytes[0] = 0xAD; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+        }
+    }
+    if (strcmp(mnemonic, "LDX") == 0) {
+        if (immediate) { bytes[0] = 0xA2; bytes[1] = val & 0xFF; return 2; }
+        else {
+            if (val < 256) { bytes[0] = 0xA6; bytes[1] = val & 0xFF; return 2; }
+            else { bytes[0] = 0xAE; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+        }
+    }
+    if (strcmp(mnemonic, "LDY") == 0) {
+        if (immediate) { bytes[0] = 0xA0; bytes[1] = val & 0xFF; return 2; }
+        else {
+            if (val < 256) { bytes[0] = 0xA4; bytes[1] = val & 0xFF; return 2; }
+            else { bytes[0] = 0xAC; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+        }
+    }
+    if (strcmp(mnemonic, "STA") == 0) {
+        if (val < 256) { bytes[0] = 0x85; bytes[1] = val & 0xFF; return 2; }
+        else { bytes[0] = 0x8D; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+    }
+    if (strcmp(mnemonic, "STX") == 0) {
+        if (val < 256) { bytes[0] = 0x86; bytes[1] = val & 0xFF; return 2; }
+        else { bytes[0] = 0x8E; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+    }
+    if (strcmp(mnemonic, "STY") == 0) {
+        if (val < 256) { bytes[0] = 0x84; bytes[1] = val & 0xFF; return 2; }
+        else { bytes[0] = 0x8C; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+    }
+    if (strcmp(mnemonic, "ADC") == 0) { if (immediate) { bytes[0] = 0x69; bytes[1] = val & 0xFF; return 2; } }
+    if (strcmp(mnemonic, "SBC") == 0) { if (immediate) { bytes[0] = 0xE9; bytes[1] = val & 0xFF; return 2; } }
+    if (strcmp(mnemonic, "CMP") == 0) { if (immediate) { bytes[0] = 0xC9; bytes[1] = val & 0xFF; return 2; } }
+    if (strcmp(mnemonic, "JMP") == 0) { bytes[0] = 0x4C; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+    if (strcmp(mnemonic, "JSR") == 0) { bytes[0] = 0x20; bytes[1] = val & 0xFF; bytes[2] = (val >> 8) & 0xFF; return 3; }
+    return 0;
+}
+
+static void redraw_yulbuild_screen(void);
+
+static void init_yulbuild_state(void) {
+    strcpy(g_yulbuild_asm[0], "LDA #$01");
+    strcpy(g_yulbuild_asm[1], "STA $D400");
+    strcpy(g_yulbuild_asm[2], "LDA #$02");
+    strcpy(g_yulbuild_asm[3], "STA $D401");
+    strcpy(g_yulbuild_asm[4], "NOP");
+    strcpy(g_yulbuild_asm[5], "NOP");
+    strcpy(g_yulbuild_asm[6], "NOP");
+    strcpy(g_yulbuild_asm[7], "NOP");
+    
+    int addr = 4096;
+    for(int i = 0; i < 8; i++) {
+        g_yulbuild_addr[i] = addr;
+        uint8_t temp[3] = {0};
+        int l = assemble_6502(g_yulbuild_asm[i], temp);
+        if (l == 0) { l = 1; temp[0] = 0xEA; }
+        g_yulbuild_len[i] = l;
+        for(int b = 0; b < l; b++) {
+            vm_poke64(&vm, addr + b, temp[b]);
+        }
+        addr += l;
+    }
+    vm_poke64(&vm, 133, 4096);
+    g_yulbuild_cursor = 0;
+    g_yulbuild_input[0] = '\0';
+    g_yulbuild_input_len = 0;
+}
+
+static void redraw_yulbuild_screen(void) {
+    const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
+    lau_vram_write_string(g_vram, clear_seq, 3);
+    
+    int reg_a = (int)vm_peek(&vm, 128);
+    int reg_x = (int)vm_peek(&vm, 129);
+    int reg_y = (int)vm_peek(&vm, 130);
+    int reg_sp = (int)vm_peek(&vm, 131);
+    int reg_sr = (int)vm_peek(&vm, 132);
+    int reg_pc = (int)vm_peek(&vm, 133);
+    
+    int phys_trauma = (int)vm_peek(&vm, 54272);
+    int ment_trauma = (int)vm_peek(&vm, 54273);
+    
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "=====================================================\r\n"
+        "       YUL CPU TUI BUILDER & INTERACTIVE DEBUGGER     \r\n"
+        "=====================================================\r\n"
+        " [Press ESC to Return to Menu] [U: Cursor Up / D: Down] \r\n"
+        " [S: Step Program]            [R: Reset PC & CPU]     \r\n"
+        "=====================================================\r\n"
+        " ASSEMBLY CODE EDITOR (PC Target: $1000)             \r\n"
+        "-----------------------------------------------------\r\n");
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+    
+    for (int i = 0; i < 8; i++) {
+        bool is_cursor = (i == g_yulbuild_cursor);
+        bool is_pc = (g_yulbuild_addr[i] == reg_pc);
+        
+        char line_prefix[16] = "   ";
+        if (is_cursor && is_pc) strcpy(line_prefix, "=>*");
+        else if (is_cursor) strcpy(line_prefix, "=> ");
+        else if (is_pc) strcpy(line_prefix, " * ");
+        
+        if (is_cursor) {
+            lau_vram_write_string(g_vram, "\x1b[47m\x1b[30m", 10);
+        }
+        
+        snprintf(buf, sizeof(buf), "%s $%04X: %-20s", line_prefix, g_yulbuild_addr[i], g_yulbuild_asm[i]);
+        lau_vram_write_string(g_vram, buf, strlen(buf));
+        
+        lau_vram_write_string(g_vram, " (", 2);
+        for(int b = 0; b < g_yulbuild_len[i]; b++) {
+            int val = (int)vm_peek(&vm, g_yulbuild_addr[i] + b);
+            snprintf(buf, sizeof(buf), "%02X ", val);
+            lau_vram_write_string(g_vram, buf, strlen(buf));
+        }
+        lau_vram_write_string(g_vram, ")", 1);
+        
+        if (is_cursor) {
+            lau_vram_write_string(g_vram, "\x1b[0m", 4);
+        }
+        lau_vram_write_string(g_vram, "\r\n", 2);
+    }
+    
+    snprintf(buf, sizeof(buf),
+        "-----------------------------------------------------\r\n"
+        " ON-CHAIN CPU REGISTERS:                             \r\n"
+        "   PC: $%04X   SP: $%02X   A: $%02X   X: $%02X   Y: $%02X\r\n"
+        "   SR Flags: $%02X [N:%d V:%d B:%d D:%d I:%d Z:%d C:%d]\r\n"
+        "-----------------------------------------------------\r\n"
+        " SYSTEM STATUS & MMIO TRAUMA:                        \r\n"
+        "   PHYS_TRAUMA ($D400): %d   MENT_TRAUMA ($D401): %d  \r\n"
+        "=====================================================\r\n"
+        " Type instruction to write at cursor: \r\n"
+        " > %s",
+        reg_pc, reg_sp, reg_a, reg_x, reg_y,
+        reg_sr,
+        (reg_sr & 0x80) != 0, (reg_sr & 0x40) != 0, (reg_sr & 0x10) != 0,
+        (reg_sr & 0x08) != 0, (reg_sr & 0x04) != 0, (reg_sr & 0x02) != 0,
+        (reg_sr & 0x01) != 0,
+        phys_trauma, ment_trauma,
+        g_yulbuild_input);
+    lau_vram_write_string(g_vram, buf, strlen(buf));
+}
+
+static void handle_yulbuild_input(char ch) {
+    if (ch == 'u' || ch == 'U') {
+        if (g_yulbuild_cursor > 0) g_yulbuild_cursor--;
+        redraw_yulbuild_screen();
+    } else if (ch == 'd' || ch == 'D') {
+        if (g_yulbuild_cursor < 7) g_yulbuild_cursor++;
+        redraw_yulbuild_screen();
+    } else if (ch == 's' || ch == 'S') {
+        char cmd[512];
+        sprintf(cmd, "YULEXEC \"cpu6502\", \"c45b18080000000000000000000000000000000000000000000000000000000000000001\"");
+        vm.output_pos = 0;
+        tsfi_zmm_vm_exec(&vm, cmd);
+        redraw_yulbuild_screen();
+    } else if (ch == 'r' || ch == 'R') {
+        vm_poke64(&vm, 133, 4096);
+        vm_poke64(&vm, 128, 0);
+        vm_poke64(&vm, 129, 0);
+        vm_poke64(&vm, 130, 0);
+        vm_poke64(&vm, 131, 0xFF);
+        vm_poke64(&vm, 132, 0x20);
+        redraw_yulbuild_screen();
+    } else if (ch == '\n' || ch == '\r') {
+        if (g_yulbuild_input_len > 0) {
+            g_yulbuild_input[g_yulbuild_input_len] = '\0';
+            uint8_t temp[3] = {0};
+            int l = assemble_6502(g_yulbuild_input, temp);
+            if (l > 0) {
+                strcpy(g_yulbuild_asm[g_yulbuild_cursor], g_yulbuild_input);
+                g_yulbuild_len[g_yulbuild_cursor] = l;
+                int addr = 4096;
+                for(int i = 0; i < 8; i++) {
+                    g_yulbuild_addr[i] = addr;
+                    if (i == g_yulbuild_cursor) {
+                        for(int b = 0; b < l; b++) {
+                            vm_poke64(&vm, addr + b, temp[b]);
+                        }
+                    } else {
+                        uint8_t hex_bytes[3];
+                        int current_len = assemble_6502(g_yulbuild_asm[i], hex_bytes);
+                        if (current_len == 0) { current_len = 1; hex_bytes[0] = 0xEA; }
+                        g_yulbuild_len[i] = current_len;
+                        for(int b = 0; b < current_len; b++) {
+                            vm_poke64(&vm, addr + b, hex_bytes[b]);
+                        }
+                    }
+                    addr += g_yulbuild_len[i];
+                }
+                if (g_yulbuild_cursor < 7) g_yulbuild_cursor++;
+            }
+            g_yulbuild_input_len = 0;
+            g_yulbuild_input[0] = '\0';
+        }
+        redraw_yulbuild_screen();
+    } else if (ch == 127 || ch == '\b') {
+        if (g_yulbuild_input_len > 0) {
+            g_yulbuild_input_len--;
+            g_yulbuild_input[g_yulbuild_input_len] = '\0';
+        }
+        redraw_yulbuild_screen();
+    } else if (g_yulbuild_input_len < 30 && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+                                             (ch >= '0' && ch <= '9') || ch == ' ' || ch == '#' || ch == '$')) {
+        g_yulbuild_input[g_yulbuild_input_len++] = ch;
+        g_yulbuild_input[g_yulbuild_input_len] = '\0';
+        redraw_yulbuild_screen();
+    }
+}
+
 static void redraw_instacalc_screen(void) {
     const char clear_seq[] = { '\x1b', '\x1b', 'd', '\0' };
     lau_vram_write_string(g_vram, clear_seq, 3);
@@ -1826,6 +2076,7 @@ static void execute_command(const char *cmd) {
     
     if (first_word && strcasecmp(first_word, "SODARO") != 0 && strcasecmp(first_word, "MERCENARY") != 0 && strcasecmp(first_word, "PONG") != 0 &&
         strcasecmp(first_word, "WORDCRAFT") != 0 && strcasecmp(first_word, "EASYSCRIPT") != 0 && strcasecmp(first_word, "DNATYPEWRITER") != 0 &&
+        strcasecmp(first_word, "YULBUILD") != 0 &&
         strcasecmp(first_word, "INSTA") != 0 && strcasecmp(first_word, "CALC") != 0 && strcasecmp(first_word, "INSTACALC") != 0 &&
         strcasecmp(first_word, "PANIC") != 0 && strcasecmp(first_word, "APPLEPANIC") != 0 &&
         strcasecmp(first_word, "SLINKY") != 0 && strcasecmp(first_word, "SLINKYBEAR") != 0 &&
@@ -1941,6 +2192,15 @@ static void execute_command(const char *cmd) {
             lau_vram_write_string(g_vram, output, strlen(output));
         }
         log_telemetry("Rendered Hurwood Code Generator Screen");
+        return;
+    }
+
+    if (first_word && strcasecmp(first_word, "YULBUILD") == 0) {
+        g_editor_mode = MODE_YULBUILD;
+        g_mercenary_active = false;
+        g_pong_active = false;
+        init_yulbuild_state();
+        redraw_yulbuild_screen();
         return;
     }
 
@@ -4491,6 +4751,8 @@ int main() {
                     if (g_editor_mode != MODE_TERMINAL) {
                         if (g_editor_mode == MODE_INSTACALC) {
                             handle_instacalc_input(ch);
+                        } else if (g_editor_mode == MODE_YULBUILD) {
+                            handle_yulbuild_input(ch);
                         } else if (g_editor_mode == MODE_APPLEPANIC) {
                             handle_applepanic_input(ch);
                         } else if (g_editor_mode == MODE_AIRASSAULT) {
@@ -4645,6 +4907,8 @@ int main() {
                         // In editor mode, just write characters directly to VRAM
                         if (g_editor_mode == MODE_INSTACALC) {
                             handle_instacalc_input(ch);
+                        } else if (g_editor_mode == MODE_YULBUILD) {
+                            handle_yulbuild_input(ch);
                         } else if (g_editor_mode == MODE_APPLEPANIC) {
                             handle_applepanic_input(ch);
                         } else if (g_editor_mode == MODE_AIRASSAULT) {
