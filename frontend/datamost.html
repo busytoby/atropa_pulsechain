@@ -2839,8 +2839,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 const taxRateEl = document.getElementById("taxRateVal");
                 if (taxRateEl) {
                     try {
-                        const rate = await cpuContract.peek(54705);
-                        taxRateEl.innerText = `${rate.toString()}%`;
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const rate = bypass === 1 ? 0 : Number(await cpuContract.peek(54705));
+                        taxRateEl.innerText = `${rate}%`;
                     } catch (e) {
                         taxRateEl.innerText = "N/A";
                     }
@@ -12806,8 +12807,9 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 const taxRateEl = document.getElementById("taxRateVal");
                 if (taxRateEl) {
                     try {
-                        const rate = await cpuContract.peek(54705);
-                        taxRateEl.innerText = `${rate.toString()}%`;
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const rate = bypass === 1 ? 0 : Number(await cpuContract.peek(54705));
+                        taxRateEl.innerText = `${rate}%`;
                     } catch (e) {
                         taxRateEl.innerText = "N/A";
                     }
@@ -22524,10 +22526,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                 // Tax Rate
                 const taxRateEl = document.getElementById("taxRateVal");
-                if (taxRateEl) {
                     try {
-                        const rate = await cpuContract.peek(54705);
-                        taxRateEl.innerText = `${rate.toString()}%`;
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const rate = bypass === 1 ? 0 : Number(await cpuContract.peek(54705));
+                        taxRateEl.innerText = `${rate}%`;
                     } catch (e) {
                         taxRateEl.innerText = "N/A";
                     }
