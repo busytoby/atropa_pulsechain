@@ -27,6 +27,36 @@ function compileYul(yulPath) {
     return "0x" + lines[binIndex + 1].trim();
 }
 
+async function getOrDeploy(name, bytecode, deployer, provider) {
+    const cachePath = path.join(__dirname, "../scripts/deployed_addresses_localhost.json");
+    let cache = {};
+    if (fs.existsSync(cachePath)) {
+        try {
+            cache = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+        } catch (e) {}
+    }
+    
+    const cachedAddress = cache[name];
+    if (cachedAddress) {
+        try {
+            const code = await provider.getCode(cachedAddress);
+            if (code !== "0x") {
+                console.log(`Reusing deployed ${name} at: ${cachedAddress}`);
+                return cachedAddress;
+            }
+        } catch (e) {}
+    }
+    
+    console.log(`Deploying ${name}...`);
+    const tx = await deployer.sendTransaction({ data: bytecode, gasLimit: 15000000 });
+    const receipt = await tx.wait();
+    
+    cache[name] = receipt.contractAddress;
+    fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2));
+    console.log(`${name} deployed at: ${receipt.contractAddress}`);
+    return receipt.contractAddress;
+}
+
 async function main() {
     console.log("=== Launching Z-Machine Mystery House Vector Verification ===");
     
@@ -34,19 +64,11 @@ async function main() {
     const signers = await provider.listAccounts();
     const deployer = signers[0];
 
-    console.log("Compiling and deploying zmachine.yul...");
     const zmBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachine.yul"));
-    const zmTx = await deployer.sendTransaction({ data: zmBytecode, gasLimit: 15000000 });
-    const zmReceipt = await zmTx.wait();
-    const zmAddress = zmReceipt.contractAddress;
-    console.log("Z-Machine contract deployed at:", zmAddress);
+    const zmAddress = await getOrDeploy("zmachine", zmBytecode, deployer, provider);
 
-    console.log("Compiling and deploying zmachineParser.yul...");
     const parserBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachineParser.yul"));
-    const parserTx = await deployer.sendTransaction({ data: parserBytecode, gasLimit: 15000000 });
-    const parserReceipt = await parserTx.wait();
-    const parserAddress = parserReceipt.contractAddress;
-    console.log("Z-Machine Parser contract deployed at:", parserAddress);
+    const parserAddress = await getOrDeploy("zmachineParser", parserBytecode, deployer, provider);
 
     const zmAbi = [
         "function getVectorScene(uint256 roomIndex) public view returns (bytes)",
@@ -139,6 +161,18 @@ async function main() {
         const tx = await playerContract.parseCommand(playerWallet.address, Buffer.from(cmd), { gasLimit: 2000000 });
         await tx.wait();
         return response;
+    }
+
+    // Reset player room state and items in storage for a clean test run
+    try {
+        const playerSlot = ethers.toBeHex(4000000n + BigInt(playerWallet.address));
+        await provider.send("anvil_setStorageAt", [zmAddress, playerSlot, ethers.zeroPadValue("0x00", 32)]);
+        await provider.send("anvil_setStorageAt", [zmAddress, ethers.toBeHex(2000350), ethers.zeroPadValue("0x01", 32)]);
+        await provider.send("anvil_setStorageAt", [zmAddress, ethers.toBeHex(2000351), ethers.zeroPadValue("0x02", 32)]);
+        await provider.send("anvil_setStorageAt", [zmAddress, ethers.toBeHex(2000352), ethers.zeroPadValue("0x03", 32)]);
+        console.log("Player room state and items reset to defaults.");
+    } catch (err) {
+        console.log("Storage reset skipped (not running on Anvil or not supported).", err);
     }
 
     console.log("\nSimulating player traversal commands:");

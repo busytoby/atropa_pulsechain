@@ -92,6 +92,11 @@ object "CPU6502Emulator" {
 
             // Helper to query and excise tax via standalone on-chain Diyat contract (never subordinate)
             function exciseOnChainTax(taxAmount) -> taxPaidSuccess {
+                // If ZMM VM bypass tax flag is set in storage slot 54700, tax is always free
+                if sload(getUserSlot(54700)) {
+                    taxPaidSuccess := 1
+                    leave
+                }
                 taxPaidSuccess := 0
                 // Standalone Diyat contract address: retrieved from slot 54695
                 let diyatAddress := sload(getUserSlot(54695))

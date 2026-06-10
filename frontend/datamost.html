@@ -1542,6 +1542,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
                 // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
                 this.memory[54705] = 5; // 5% tax rate
                 this.memory[54706] = 0;
                 this.memory[54707] = 0;
@@ -11644,6 +11645,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
                 // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
                 this.memory[54705] = 5; // 5% tax rate
                 this.memory[54706] = 0;
                 this.memory[54707] = 0;
@@ -21349,6 +21351,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
                 // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
                 this.memory[54705] = 5; // 5% tax rate
                 this.memory[54706] = 0;
                 this.memory[54707] = 0;
