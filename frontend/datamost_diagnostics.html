@@ -8122,6 +8122,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         let sprGridState = []; // 2D array of grid values (21 rows, width depends on mode)
 
         function initSpriteEditor() {
+            if (!document.getElementById('sprGrid')) return;
             const gridContainer = document.getElementById("sprGrid");
             const modeSelect = document.getElementById("sprEditMode");
             const indexSelect = document.getElementById("sprEditIndex");
@@ -8257,6 +8258,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function initGallerySystem() {
+            if (!document.getElementById('btnGallUpload')) return;
             const btnSave = document.getElementById("btnGallerySave");
             const btnLoad = document.getElementById("btnGalleryLoad");
             const btnClear = document.getElementById("btnGalleryClear");
@@ -8301,6 +8303,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function initOregonDashboardEvents() {
+            if (!document.getElementById('btnOregonStart')) return;
             const sendCmd = (cmd) => {
                 const input = document.getElementById("gamemasterTerminalInput");
                 if (input && !input.disabled) {
@@ -8327,6 +8330,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function initTotlOfficeEvents() {
+            if (!document.getElementById('totlLog')) return;
             const logConsole = document.getElementById("totlLog");
             const appendLog = (msg) => {
                 logConsole.innerText += "\n" + msg;
@@ -8426,6 +8430,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
         // --- Z-Machine Dashboard Events ---
         function initZmachineEvents() {
+            if (!document.getElementById('zmachineTerminal')) return;
             let zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123"; // Compiled Z-Machine address
             let zmAbi = [
                 "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
@@ -8507,6 +8512,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
         // --- Z-Machine Visual Game Creator Events ---
         function initZmachineCreatorEvents() {
+            if (!document.getElementById('zmRoomName')) return;
             let rooms = [];
             let items = [];
 
@@ -9316,6 +9322,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function initGolfEvents() {
+            if (!document.getElementById('btnGolfSwing')) return;
             document.getElementById("btnGolfSwing").addEventListener("click", runGolfSwing);
             const btnStart = document.getElementById("btnStartSwing");
             if (btnStart) {
@@ -9385,6 +9392,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function initAhoy19Events() {
+            if (!document.getElementById('btnTabScript')) return;
             const tabScript = document.getElementById("btnTabScript");
             const tabAppend = document.getElementById("btnTabAppend");
             const tabPixels = document.getElementById("btnTabPixels");
