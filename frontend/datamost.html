@@ -1557,6 +1557,20 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
             async initializeGame(offset, programBytes, addrs, vals) {
                 this.memory.fill(0);
+                
+                // Restore tax parameters
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Restore/regenerate 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
+
                 const prog = ethers.getBytes(programBytes);
                 for (let i = 0; i < prog.length; i++) {
                     this.memory[offset + i] = prog[i];
@@ -11660,6 +11674,20 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             async initializeGame(offset, programBytes, addrs, vals) {
                 this.memory.fill(0);
+                
+                // Restore tax parameters
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Restore/regenerate 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
+
                 const prog = ethers.getBytes(programBytes);
                 for (let i = 0; i < prog.length; i++) {
                     this.memory[offset + i] = prog[i];
@@ -21366,6 +21394,20 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             async initializeGame(offset, programBytes, addrs, vals) {
                 this.memory.fill(0);
+                
+                // Restore tax parameters
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Restore/regenerate 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
+
                 const prog = ethers.getBytes(programBytes);
                 for (let i = 0; i < prog.length; i++) {
                     this.memory[offset + i] = prog[i];
