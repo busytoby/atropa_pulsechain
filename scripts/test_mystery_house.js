@@ -145,7 +145,7 @@ async function main() {
     console.log("Player room state and items reset to defaults.");
     console.log("\nSimulating player traversal commands:");
 
-    const player = "0x0000000000000000000000000000000000000001";
+    const player = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
     
     // Traversal gameplay loop simulation
     console.log("Command: look");
