@@ -683,6 +683,12 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             document.getElementById = function(id) {
                 const el = window.originalGetElementById.call(document, id);
                 if (el) return el;
+                
+                // Return null for canvas/screen elements so that existence checks work correctly
+                if (id.endsWith("Canvas") || id.endsWith("Screen")) {
+                    return null;
+                }
+                
                 return new Proxy({}, {
                     get: (target, prop) => {
                         if (prop === 'addEventListener') return () => {};
@@ -690,7 +696,8 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         if (prop === 'classList') {
                             return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
                         }
-                        return undefined;
+                        // Return no-op function for any other method calls (like appendChild)
+                        return () => {};
                     },
                     set: () => true
                 });
@@ -9848,6 +9855,12 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             document.getElementById = function(id) {
                 const el = window.originalGetElementById.call(document, id);
                 if (el) return el;
+                
+                // Return null for canvas/screen elements so that existence checks work correctly
+                if (id.endsWith("Canvas") || id.endsWith("Screen")) {
+                    return null;
+                }
+                
                 return new Proxy({}, {
                     get: (target, prop) => {
                         if (prop === 'addEventListener') return () => {};
@@ -9855,7 +9868,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         if (prop === 'classList') {
                             return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
                         }
-                        return undefined;
+                        // Return no-op function for any other method calls (like appendChild)
+                        return () => {};
                     },
                     set: () => true
                 });
@@ -18828,6 +18842,12 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             document.getElementById = function(id) {
                 const el = window.originalGetElementById.call(document, id);
                 if (el) return el;
+                
+                // Return null for canvas/screen elements so that existence checks work correctly
+                if (id.endsWith("Canvas") || id.endsWith("Screen")) {
+                    return null;
+                }
+                
                 return new Proxy({}, {
                     get: (target, prop) => {
                         if (prop === 'addEventListener') return () => {};
@@ -18835,7 +18855,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         if (prop === 'classList') {
                             return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
                         }
-                        return undefined;
+                        // Return no-op function for any other method calls (like appendChild)
+                        return () => {};
                     },
                     set: () => true
                 });
