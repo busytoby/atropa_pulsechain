@@ -3097,13 +3097,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 // 1. Fetch CPU state
                 if (cpuContract) {
                     try {
-                        const state = await cpuContract.getCPUState();
-                        document.getElementById("regA").innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regX").innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regY").innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regSR").innerText = Number(state[3]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regSP").innerText = Number(state[4]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regPC").innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0');
+                        const bankSelect = document.querySelector(".regBankSelect");
+                        const bankId = bankSelect ? Number(bankSelect.value) : 0;
+                        const state = bankId === 1 ? await cpuContract.getCPUStateBank(1) : await cpuContract.getCPUState();
+                        
+                        document.querySelectorAll("#regA").forEach(el => el.innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regX").forEach(el => el.innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regY").forEach(el => el.innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regSR").forEach(el => el.innerText = Number(state[3]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regSP").forEach(el => el.innerText = Number(state[4]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regPC").forEach(el => el.innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0'));
                     } catch (err) {
                         console.error("Error fetching CPU state:", err);
                     }
@@ -12863,13 +12866,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 // 1. Fetch CPU state
                 if (cpuContract) {
                     try {
-                        const state = await cpuContract.getCPUState();
-                        document.getElementById("regA").innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regX").innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regY").innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regSR").innerText = Number(state[3]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regSP").innerText = Number(state[4]).toString(16).toUpperCase().padStart(2, '0');
-                        document.getElementById("regPC").innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0');
+                        const bankSelects = document.querySelectorAll(".regBankSelect");
+                        const bankId = (bankSelects && bankSelects.length > 1) ? Number(bankSelects[1].value) : 0;
+                        const state = bankId === 1 ? await cpuContract.getCPUStateBank(1) : await cpuContract.getCPUState();
+                        
+                        document.querySelectorAll("#regA").forEach(el => el.innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regX").forEach(el => el.innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regY").forEach(el => el.innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regSR").forEach(el => el.innerText = Number(state[3]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regSP").forEach(el => el.innerText = Number(state[4]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regPC").forEach(el => el.innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0'));
                     } catch (err) {
                         console.error("Error fetching CPU state:", err);
                     }
