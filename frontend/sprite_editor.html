@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folklore 64x64 Sprite Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0a0b10;
+            --panel-bg: #11131c;
+            --neon-blue: #00f2fe;
+            --neon-green: #39ff14;
+            --border-color: #262938;
+            --text-primary: #f8f9fa;
+            --text-secondary: #8b92b6;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, var(--neon-blue) 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-family: 'Share Tech Mono', monospace;
+            margin-bottom: 30px;
+        }
+
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Sprite Grid Layout */
+        .grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .grid-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--neon-blue);
+        }
+
+        .canvas-wrapper {
+            background: #000;
+            border: 3px solid #1c1d28;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            cursor: crosshair;
+            width: 100%;
+            max-width: 512px;
+            aspect-ratio: 1;
+        }
+
+        /* Toolbox Controls */
+        .controls-panel {
+            gap: 20px;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            background-color: #1a1c27;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Orbitron', sans-serif;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        button:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        button.active {
+            background: rgba(0, 242, 254, 0.1);
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"] {
+            background-color: #171923;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace;
+            padding: 12px;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--neon-blue);
+        }
+
+        .code-box {
+            background-color: #07080c;
+            border: 1px solid #1c1d28;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--neon-green);
+            height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ff3366; /* Red: Disconnected */
+        }
+
+        .status-dot.connected {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+    </style>
+</head>
+<body>
+    <h1>Folklore 64x64 Sprite Editor</h1>
+    <div class="subtitle">Assemble, Solder, and Run Custom Bitmaps in On-chain Storage</div>
+
+    <div class="editor-container" style="grid-template-columns: 1fr 1fr 1fr; max-width: 1400px;">
+        <!-- Grid Drawing Canvas -->
+        <div class="panel">
+            <div class="grid-header">
+                <div class="grid-title">Matrix Grid Display</div>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="spriteCanvas" width="64" height="64"></canvas>
+            </div>
+        </div>
+
+        <!-- TV Typewriter / YouTube CRT Tuner Panel -->
+        <div class="panel" style="gap: 15px;">
+            <div class="grid-header">
+                <div class="grid-title" style="color: var(--neon-green);">CRT TV Typewriter Receiver</div>
+            </div>
+            
+            <!-- CRT Screen Container for YouTube Player -->
+            <div style="position: relative; background: #000; border: 3px solid #1c1d28; border-radius: 8px; aspect-ratio: 4/3; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <div id="player" style="width: 100%; height: 100%;"></div>
+                
+                <!-- CRT scanline overlays -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.2) 50%); background-size: 100% 4px; z-index: 2; pointer-events: none;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.3) 100%); z-index: 3; pointer-events: none;"></div>
+            </div>
+
+            <div class="field-group">
+                <label>YouTube Video ID / URL</label>
+                <input type="text" id="ytVideoId" value="dQw4w9WgXcQ" placeholder="Enter Video ID...">
+            </div>
+            <div class="btn-group">
+                <button id="btnTuneChannel" style="background: rgba(0, 242, 254, 0.1); border-color: var(--neon-blue); color: var(--neon-blue);">Tune Channel</button>
+                <button id="btnPlayVideo">Play/Pause</button>
+            </div>
+        </div>
+
+        <!-- Controls / Assembly Panel -->
+        <div class="panel controls-panel">
+            <div class="field-group">
+                <label>Active Folklore CPU Address</label>
+                <input type="text" id="contractAddr" placeholder="0x..." value="0x52173b6ac069619c206b9A0e75609fC92860AB2A">
+            </div>
+
+            <div class="btn-group">
+                <button id="btnPen" class="active">Pen</button>
+                <button id="btnEraser">Eraser</button>
+                <button id="btnClear">Clear Grid</button>
+                <button id="btnConnect">Connect Wallet</button>
+            </div>
+
+            <div class="btn-group">
+                <button id="btnSolder" style="background: rgba(57, 255, 20, 0.1); border-color: var(--neon-green); color: var(--neon-green);">Solder Grid</button>
+                <button id="btnExport">Export .bin</button>
+            </div>
+
+            <div class="field-group">
+                <label>Cartridge Assembly Bytecode (.bin)</label>
+                <div class="code-box" id="codeBox">No compiled cartridge data. Write pixels and export!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("spriteCanvas");
+        const ctx = canvas.getContext("2d");
+        const pixelSize = 1; // 1:1 logical pixels
+        const gridWidth = 64;
+        const gridHeight = 64;
+
+        // Initialize grid state (64x64 monochrome array of bits)
+        let grid = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(0));
+        let isDrawing = false;
+        let tool = 'pen'; // 'pen' or 'eraser'
+
+        // Web3 states
+        let provider, signer, contract;
+        const folkloreABI = [
+            "function poke(uint256 addr, uint256 val) external returns (uint256)",
+            "function peek(uint256 addr) external view returns (uint256)"
+        ];
+
+        // Draw routine
+        function redraw() {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00f2fe"; // Neon Blue for pixels
+
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    if (grid[y][x] === 1) {
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+        }
+
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: Math.floor((evt.clientX - rect.left) * scaleX),
+                y: Math.floor((evt.clientY - rect.top) * scaleY)
+            };
+        }
+
+        function drawPixel(evt) {
+            if (!isDrawing) return;
+            const pos = getMousePos(evt);
+            if (pos.x >= 0 && pos.x < gridWidth && pos.y >= 0 && pos.y < gridHeight) {
+                grid[pos.y][pos.x] = (tool === 'pen') ? 1 : 0;
+                redraw();
+            }
+        }
+
+        canvas.addEventListener("mousedown", (e) => { isDrawing = true; drawPixel(e); });
+        canvas.addEventListener("mousemove", drawPixel);
+        window.addEventListener("mouseup", () => { isDrawing = false; });
+
+        // Tool buttons
+        document.getElementById("btnPen").onclick = () => { tool = 'pen'; document.getElementById("btnPen").className = 'active'; document.getElementById("btnEraser").className = ''; };
+        document.getElementById("btnEraser").onclick = () => { tool = 'eraser'; document.getElementById("btnEraser").className = 'active'; document.getElementById("btnPen").className = ''; };
+        document.getElementById("btnClear").onclick = () => { grid = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(0)); redraw(); };
+
+        // Connect Wallet
+        document.getElementById("btnConnect").onclick = async () => {
+            if (window.ethereum) {
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner();
+                
+                const addr = document.getElementById("contractAddr").value.trim();
+                contract = new ethers.Contract(addr, folkloreABI, signer);
+
+                document.getElementById("statusDot").className = "status-dot connected";
+                document.getElementById("statusText").innerText = "Connected";
+                document.getElementById("btnConnect").innerText = "Connected";
+            } else {
+                alert("Metamask or web3 provider not detected!");
+            }
+        };
+
+        // Solder Grid to Folklore RAM
+        // Monochrome buffer stored at $E000 to $E1FF (512 bytes)
+        document.getElementById("btnSolder").onclick = async () => {
+            if (!contract) {
+                alert("Please connect wallet first!");
+                return;
+            }
+            console.log("Soldering sprite bit states directly to Folklore memory map...");
+            
+            // Pack bits into bytes
+            const bytes = [];
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x += 8) {
+                    let byteVal = 0;
+                    for (let b = 0; b < 8; b++) {
+                        if (grid[y][x + b] === 1) {
+                            byteVal |= (1 << (7 - b));
+                        }
+                    }
+                    bytes.push(byteVal);
+                }
+            }
+
+            // Write 512 bytes starting at $E000 (57344)
+            const baseAddr = 57344;
+            for (let i = 0; i < bytes.length; i++) {
+                await contract.poke(baseAddr + i, bytes[i]);
+            }
+            alert("Sprite successfully soldered to Folklore memory window!");
+        };
+
+        // Export binary cartridge assembly
+        document.getElementById("btnExport").onclick = () => {
+            // Compile a loader program:
+            // LDA #$byteVal, STA $E000+index
+            const bytes = [];
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x += 8) {
+                    let byteVal = 0;
+                    for (let b = 0; b < 8; b++) {
+                        if (grid[y][x + b] === 1) {
+                            byteVal |= (1 << (7 - b));
+                        }
+                    }
+                    bytes.push(byteVal);
+                }
+            }
+
+            // Create 6502 assembly loader code instructions
+            let assemblyCode = "; Folklore Sprite Loader Cartridge\n; Origin: $0200\n\nSTART:\n";
+            let opcodes = [];
+
+            const baseAddr = 0xE000;
+            for (let i = 0; i < bytes.length; i++) {
+                if (bytes[i] !== 0) {
+                    opcodes.push(0xA9, bytes[i]);
+                    const target = baseAddr + i;
+                    opcodes.push(0x8D, target & 0xFF, (target >> 8) & 0xFF);
+
+                    assemblyCode += `  LDA #$${bytes[i].toString(16).padStart(2, '0').toUpperCase()}\n`;
+                    assemblyCode += `  STA $${target.toString(16).toUpperCase()}\n`;
+                }
+            }
+            opcodes.push(0x60); // RTS
+            assemblyCode += "  RTS\n";
+
+            // Print hex
+            const hexString = opcodes.map(b => "0x" + b.toString(16).padStart(2, '0').toUpperCase()).join(", ");
+            document.getElementById("codeBox").innerText = `${assemblyCode}\n\nHex Binary Array:\n[${hexString}]`;
+        };
+
+        // YouTube Iframe API Integration
+        let ytPlayer;
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('player', {
+                videoId: 'dQw4w9WgXcQ', // Default video
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'modestbranding': 1,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            console.log("YouTube Player Loaded & Ready");
+        }
+
+        document.getElementById("btnTuneChannel").onclick = () => {
+            const rawVal = document.getElementById("ytVideoId").value.trim();
+            let videoId = rawVal;
+            // Handle full URL extraction
+            if (rawVal.includes("v=")) {
+                videoId = rawVal.split("v=")[1].split("&")[0];
+            } else if (rawVal.includes("youtu.be/")) {
+                videoId = rawVal.split("youtu.be/")[1].split("?")[0];
+            }
+            if (ytPlayer && ytPlayer.loadVideoById) {
+                ytPlayer.loadVideoById(videoId);
+                console.log(`Tuned channel to video ID: ${videoId}`);
+            }
+        };
+
+        document.getElementById("btnPlayVideo").onclick = () => {
+            if (ytPlayer) {
+                const state = ytPlayer.getPlayerState();
+                if (state === YT.PlayerState.PLAYING) {
+                    ytPlayer.pauseVideo();
+                } else {
+                    ytPlayer.playVideo();
+                }
+            }
+        };
+
+        // Start drawing canvas
+        redraw();
+    </script>
+</body>
+</html>
