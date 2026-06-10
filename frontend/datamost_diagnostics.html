@@ -2248,14 +2248,15 @@
             document.getElementById("btnConnect").innerText = "ZMM VM (Active)";
             
             // Try fetching config to load static files list and update disk UI, but keep contracts simulated
-            let anvilOnline = false;
-            try {
-                const res = await fetch("/api/config");
-                config = await res.json();
-                loadWorkspaceFileList();
-            } catch (e) {
-                console.warn("Could not pre-fetch workspace files config:", e.message);
-            }
+            fetch("/api/config")
+                .then(res => res.json())
+                .then(data => {
+                    config = data;
+                    loadWorkspaceFileList();
+                })
+                .catch(e => {
+                    console.warn("Could not pre-fetch workspace files config:", e.message);
+                });
             
             refreshDiskDirectory();
             await loadGame("pong");
@@ -2871,7 +2872,8 @@
             btn.disabled = true;
             try {
                 const tx = await cpuContract.poke(54752, 1);
-                appendOregonDashboardLog("[ON-CHAIN] Initiated nonce generation: " + tx.hash.substring(0, 10) + "...");
+                const txHash = tx && tx.hash ? tx.hash.substring(0, 10) + "..." : "SimulatedVM";
+                appendOregonDashboardLog("[ON-CHAIN] Initiated nonce generation: " + txHash);
                 await tx.wait();
                 appendOregonDashboardLog("[ON-CHAIN] Cryptographic nonce regenerated!");
                 updateTaxAndSecurityDashboard();
