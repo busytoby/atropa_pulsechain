@@ -461,8 +461,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                                 <button class="btn btn-primary" onclick="document.getElementById('zStoryFile').click()" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">📁 Choose .z3 Story File</button>
                                 <span id="zFileName" style="color: var(--text-secondary); font-size: 0.8rem;">No file selected</span>
                             </div>
-                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
                                 <button class="btn btn-primary" id="btnLoadDemoZrom" style="background: #002233; border-color: #ffaa00; color: #ffaa00; font-size: 0.8rem; padding: 6px 12px;">🎭 Load Demo Story</button>
+                                <button class="btn btn-primary" id="btnBindTargetRooms" style="background: #002233; border-color: #39ff14; color: #39ff14; font-size: 0.8rem; padding: 6px 12px;">🔗 Bind Target Rooms</button>
                                 <button class="btn btn-primary" id="btnUploadZrom" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">⚡ Deploy ROM to Chain</button>
                             </div>
                         </div>
@@ -8588,6 +8589,54 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 });
             }
 
+            const btnBindTarget = document.getElementById("btnBindTargetRooms");
+            if (btnBindTarget) {
+                btnBindTarget.addEventListener("click", async () => {
+                    if (!signer) {
+                        alert("Please connect your wallet first!");
+                        return;
+                    }
+                    term.innerHTML += `\n[ROOM BIND] Deploying Target Room Contract...`;
+                    term.scrollTop = term.scrollHeight;
+                    
+                    try {
+                        const targetBin = "0x608060405234801561000f575f80fd5b506102f18061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610055575f3560e01c806306fdde03146100595780630f2723ea1461009c57806395d89b41146100bd578063bd590d7e146100dd578063ff762044146100f0575b5f80fd5b60408051808201909152601581527427b716a1b430b4b71022b1b4379021b430b6b132b960591b60208201525b6040516100939190610151565b60405180910390f35b6100af6100aa36600461019c565b610110565b604051908152602001610093565b6040805180820190915260048152634543484f60e01b6020820152610086565b6100866100eb3660046101d1565b610125565b604080518082019091526004815263524f4f4d60e01b6020820152610086565b5f61011c82600261023d565b90505b92915050565b6060828260405160200161013a929190610260565b604051602081830303815290604052905092915050565b5f6020808352835180828501525f5b8181101561017c57858101830151858201604001528201610160565b505f604082860101526040601f19601f8301168501019250505092915050565b5f80604083850312156101ad575f80fd5b82356001600160a01b03811681146101c3575f80fd5b946020939093013593505050565b5f80602083850312156101e2575f80fd5b823567ffffffffffffffff808211156101f9575f80fd5b818501915085601f83011261020c575f80fd5b81358181111561021a575f80fd5b86602082850101111561022b575f80fd5b60209290920196919550909350505050565b808202811582820484141761011f57634e487b7160e01b5f52601160045260245ffd5b7f5b4543484f5d2054686520726f6f6d20726576657262657261746573207769748152706820796f757220636f6d6d616e643a202760781b602082015281836031830137602760f81b9101603181019190915260320191905056fea264697066735822122003afcc708d1820a0fd35befbd0978273f1a04c20ec445ed4a72fc5b0be1fd1aa64736f6c63430008150033";
+                        const targetFactory = new ethers.ContractFactory([], targetBin, signer);
+                        const targetContract = await targetFactory.deploy();
+                        await targetContract.waitForDeployment();
+                        const targetAddress = await targetContract.getAddress();
+                        term.innerHTML += `\n[ROOM BIND] Target Room Contract deployed at: ${targetAddress}`;
+                        
+                        term.innerHTML += `\n[ROOM BIND] Binding Target Contract to Z-Machine Rooms 1-25...`;
+                        term.scrollTop = term.scrollHeight;
+                        
+                        const formattedAddress = ethers.zeroPadValue(targetAddress, 32);
+                        
+                        for (let rId = 1; rId <= 25; rId++) {
+                            const roomSlot = ethers.toBeHex(2000000 + rId);
+                            try {
+                                await provider.send("anvil_setStorageAt", [
+                                    zmAddress,
+                                    roomSlot,
+                                    formattedAddress
+                                ]);
+                            } catch (e) {
+                                await provider.send("hardhat_setStorageAt", [
+                                    zmAddress,
+                                    roomSlot,
+                                    formattedAddress
+                                ]);
+                            }
+                        }
+                        term.innerHTML += `\n[ROOM BIND] Z-Machine room storage slots 1-25 bound successfully to ${targetAddress}!`;
+                    } catch (err) {
+                        console.error(err);
+                        term.innerHTML += `\n[ROOM BIND ERROR] Binding failed: ${err.message}`;
+                    }
+                    term.scrollTop = term.scrollHeight;
+                });
+            }
+
             document.getElementById("btnUploadZrom").addEventListener("click", async () => {
                 if (!romData) {
                     alert("Please select a .z3 story file or load the Demo story first!");
@@ -9683,7 +9732,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 <button class="btn btn-primary" onclick="document.getElementById('zStoryFile').click()" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">📁 Choose .z3 Story File</button>
                                 <span id="zFileName" style="color: var(--text-secondary); font-size: 0.8rem;">No file selected</span>
                             </div>
-                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                                <button class="btn btn-primary" id="btnBindTargetRooms" style="background: #002233; border-color: #39ff14; color: #39ff14; font-size: 0.8rem; padding: 6px 12px;">🔗 Bind Target Rooms</button>
                                 <button class="btn btn-primary" id="btnUploadZrom" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">⚡ Deploy ROM to Chain</button>
                             </div>
                         </div>
