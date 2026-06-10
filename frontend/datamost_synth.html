@@ -355,14 +355,28 @@
                     <!-- Voice 1 Controls (Waveform, ADSR) -->
                     <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
                         <h4 style="color: var(--neon-magenta); margin-top: 0; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">VOICE 1 SYNTH CONFIG</h4>
-                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
-                            <label style="font-size: 0.8rem; color: var(--text-secondary);">WAVEFORM:</label>
-                            <select id="synthWaveform" class="input-glow" style="padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta);">
-                                <option value="32" selected>Sawtooth</option>
-                                <option value="16">Triangle</option>
-                                <option value="64">Pulse (Square)</option>
-                                <option value="128">Noise</option>
-                            </select>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <label style="font-size: 0.8rem; color: var(--text-secondary);">PRESET:</label>
+                                <select id="synthPreset" class="input-glow" style="padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-blue);">
+                                    <option value="custom" selected>Custom Patch</option>
+                                    <option value="lead">Fat Saw Lead</option>
+                                    <option value="triangle">Chiptune Triangle</option>
+                                    <option value="brass">Synth Brass Pad</option>
+                                    <option value="pluck">Harpsichord Pluck</option>
+                                    <option value="laser">Sci-Fi Laser Zap</option>
+                                    <option value="noise">Chiptune Snare/Noise</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <label style="font-size: 0.8rem; color: var(--text-secondary);">WAVEFORM:</label>
+                                <select id="synthWaveform" class="input-glow" style="padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta);">
+                                    <option value="32" selected>Sawtooth</option>
+                                    <option value="16">Triangle</option>
+                                    <option value="64">Pulse (Square)</option>
+                                    <option value="128">Noise</option>
+                                </select>
+                            </div>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
                             <div>
@@ -2143,6 +2157,111 @@
             }
         }
 
+        const presets = {
+            lead: {
+                waveform: "32",
+                attack: 1,
+                decay: 6,
+                sustain: 10,
+                release: 5,
+                filterCutoff: 1200,
+                filterReso: 3,
+                filterMode: "16",
+                lfoToggle: "on",
+                lfoRate: 6,
+                lfoDepth: "0.2"
+            },
+            triangle: {
+                waveform: "16",
+                attack: 0,
+                decay: 2,
+                sustain: 15,
+                release: 2,
+                filterCutoff: 2047,
+                filterReso: 0,
+                filterMode: "0",
+                lfoToggle: "off",
+                lfoRate: 4,
+                lfoDepth: "0.1"
+            },
+            brass: {
+                waveform: "32",
+                attack: 6,
+                decay: 8,
+                sustain: 12,
+                release: 8,
+                filterCutoff: 600,
+                filterReso: 2,
+                filterMode: "16",
+                lfoToggle: "on",
+                lfoRate: 2,
+                lfoDepth: "0.4"
+            },
+            pluck: {
+                waveform: "64",
+                attack: 0,
+                decay: 4,
+                sustain: 0,
+                release: 2,
+                filterCutoff: 1500,
+                filterReso: 4,
+                filterMode: "16",
+                lfoToggle: "off",
+                lfoRate: 5,
+                lfoDepth: "0.1"
+            },
+            laser: {
+                waveform: "32",
+                attack: 0,
+                decay: 12,
+                sustain: 0,
+                release: 4,
+                filterCutoff: 1800,
+                filterReso: 6,
+                filterMode: "32",
+                lfoToggle: "on",
+                lfoRate: 15,
+                lfoDepth: "0.8"
+            },
+            noise: {
+                waveform: "128",
+                attack: 0,
+                decay: 5,
+                sustain: 0,
+                release: 3,
+                filterCutoff: 2047,
+                filterReso: 0,
+                filterMode: "0",
+                lfoToggle: "off",
+                lfoRate: 5,
+                lfoDepth: "0.1"
+            }
+        };
+
+        async function applyPreset() {
+            const presetKey = document.getElementById("synthPreset").value;
+            if (presetKey === "custom" || !presets[presetKey]) return;
+            const p = presets[presetKey];
+            
+            document.getElementById("synthWaveform").value = p.waveform;
+            document.getElementById("synthAttack").value = p.attack;
+            document.getElementById("synthDecay").value = p.decay;
+            document.getElementById("synthSustain").value = p.sustain;
+            document.getElementById("synthRelease").value = p.release;
+            document.getElementById("filterCutoff").value = p.filterCutoff;
+            document.getElementById("filterReso").value = p.filterReso;
+            document.getElementById("filterMode").value = p.filterMode;
+            document.getElementById("lfoToggle").value = p.lfoToggle;
+            document.getElementById("lfoRate").value = p.lfoRate;
+            document.getElementById("lfoDepth").value = p.lfoDepth;
+
+            await updateVoice1ADSR();
+            await updateVoice1Waveform();
+            updateFilterParams();
+        }
+
+        document.getElementById("synthPreset").addEventListener("change", applyPreset);
+
         ["synthAttack", "synthDecay", "synthSustain", "synthRelease"].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -2155,6 +2274,19 @@
         if (waveformEl) {
             waveformEl.addEventListener("change", updateVoice1Waveform);
         }
+
+        // Tweak reset listener to set preset back to custom
+        ["synthWaveform", "synthAttack", "synthDecay", "synthSustain", "synthRelease", "filterCutoff", "filterReso", "filterMode", "lfoToggle", "lfoRate", "lfoDepth"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("input", () => {
+                    document.getElementById("synthPreset").value = "custom";
+                });
+                el.addEventListener("change", () => {
+                    document.getElementById("synthPreset").value = "custom";
+                });
+            }
+        });
 
         // Manual Note Trigger
         document.querySelectorAll(".note-btn").forEach(btn => {
