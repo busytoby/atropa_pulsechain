@@ -9597,6 +9597,12 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         async function playRealSoundOnChainClip(clipId) {
+            if (!audioCtx) {
+                initAudioContext();
+            }
+            if (audioCtx && audioCtx.state === "suspended") {
+                await audioCtx.resume();
+            }
             if (!audioCtx || !musicContract) return;
             try {
                 const rawSamples = await musicContract.generateRealSoundClip(clipId);
