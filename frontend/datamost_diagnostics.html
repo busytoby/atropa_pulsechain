@@ -3718,7 +3718,7 @@
                             colorRam = ethers.getBytes(colorHex);
                         } catch (e) {}
 
-                        const score = Number(await cpuContract.peek(3));
+                        const score = Number(await cpuContract.peek(4));
                         const colStatusText = document.getElementById("collisionStatus");
                         colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
                         if (isCollision) {
