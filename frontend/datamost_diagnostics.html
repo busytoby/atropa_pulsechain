@@ -8370,6 +8370,57 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             // Draw Sprite 2: Alien Invader
             drawSpriteIcon(2, s2_x, s2_y, "#00ff7f", hasCollision);
+
+            // Draw Copilot recommendation HUD overlay on canvas if consensus routing is active
+            if (document.getElementById("chkRouteConsensus") && document.getElementById("chkRouteConsensus").checked && typeof copilotLastRecommendation !== "undefined" && copilotLastRecommendation) {
+                const mapS0X = (s0_x % 320);
+                const mapS0Y = (s0_y % 200);
+                const scaleX = 240 / 320;
+                const scaleY = 140 / 200;
+                const canvasX = 40 + mapS0X * scaleX;
+                const canvasY = 30 + mapS0Y * scaleY;
+                
+                ctx.save();
+                ctx.font = "bold 8px Orbitron";
+                ctx.fillStyle = "#ff00ff";
+                ctx.strokeStyle = "#ff00ff";
+                ctx.lineWidth = 1;
+                
+                if (copilotLastRecommendation === "LEFT") {
+                    ctx.beginPath();
+                    ctx.moveTo(canvasX - 5, canvasY + 6);
+                    ctx.lineTo(canvasX - 15, canvasY + 6);
+                    ctx.lineTo(canvasX - 11, canvasY + 2);
+                    ctx.moveTo(canvasX - 15, canvasY + 6);
+                    ctx.lineTo(canvasX - 11, canvasY + 10);
+                    ctx.stroke();
+                    ctx.fillText("AI ⬅", canvasX - 25, canvasY - 8);
+                } else if (copilotLastRecommendation === "RIGHT") {
+                    ctx.beginPath();
+                    ctx.moveTo(canvasX + 25, canvasY + 6);
+                    ctx.lineTo(canvasX + 35, canvasY + 6);
+                    ctx.lineTo(canvasX + 31, canvasY + 2);
+                    ctx.moveTo(canvasX + 35, canvasY + 6);
+                    ctx.lineTo(canvasX + 31, canvasY + 10);
+                    ctx.stroke();
+                    ctx.fillText("AI ➡", canvasX + 25, canvasY - 8);
+                } else if (copilotLastRecommendation === "FIRE") {
+                    const mapS2X = (s2_x % 320);
+                    const mapS2Y = (s2_y % 200);
+                    const canvasAlienX = 40 + mapS2X * scaleX;
+                    const canvasAlienY = 30 + mapS2Y * scaleY;
+                    
+                    ctx.beginPath();
+                    ctx.arc(canvasAlienX + 10, canvasAlienY + 10, 8, 0, 2 * Math.PI);
+                    ctx.moveTo(canvasAlienX + 10, canvasAlienY + 2);
+                    ctx.lineTo(canvasAlienX + 10, canvasAlienY + 18);
+                    ctx.moveTo(canvasAlienX + 2, canvasAlienY + 10);
+                    ctx.lineTo(canvasAlienX + 18, canvasAlienY + 10);
+                    ctx.stroke();
+                    ctx.fillText("LOCK", canvasAlienX - 8, canvasAlienY - 4);
+                }
+                ctx.restore();
+            }
         }
 
         function drawSpriteIcon(index, x, y, color, hasCollision) {
@@ -8615,6 +8666,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         let nodeARep = 100;
         let nodeBRep = 100;
         let nodeCRep = 100;
+        let copilotLastRecommendation = "";
 
         function recoverConsensusNodes() {
             nodeARep = 100;
@@ -8713,6 +8765,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     }
                 }
                 
+                copilotLastRecommendation = aiBestVote;
                 nodeB_Vote = (Math.random() * 100 < nodeBAcc) ? aiBestVote : directions[Math.floor(Math.random() * 4)];
             }
             
