@@ -3869,7 +3869,13 @@
             "VISITOR": ["V", "I2", "Z", "I1", "T", "ER"],
             "STAY": ["S", "T", "AY"],
             "WHILE": ["OO1", "AH1", "Y", "L"],
-            "FOREVER": ["F", "ER", "EH1", "V", "ER"]
+            "FOREVER": ["F", "ER", "EH1", "V", "ER"],
+            "WELCOME": ["OO1", "EH1", "L", "K", "A", "M"],
+            "SPEECH": ["S", "P", "E1", "CH"],
+            "SYNTHESIZER": ["S", "I1", "N", "TH", "UH1", "S", "AY", "Z", "ER"],
+            "GAUNTLET": ["G", "AW1", "N", "T", "L", "EH1", "T"],
+            "ATROPA": ["AH1", "T", "R", "O", "P", "AH1"],
+            "PULSECHAIN": ["P", "UH1", "L", "S", "CH", "AY", "N"]
         };
 
         const phonemeToCode = {};
@@ -3889,10 +3895,11 @@
         // Dialect-specific G2P Rule Sets mapping
         const dialectRules = {
             "english_g2p": [
+                { pat: "OUGHT", ph: ["AW1", "T"] },
+                { pat: "OUGH", ph: ["AW1", "F"] },
                 { pat: "TION", ph: ["SH", "UN"] },
                 { pat: "SION", ph: ["ZH", "UN"] },
                 { pat: "IGHT", ph: ["AY", "T"] },
-                { pat: "OUGH", ph: ["AW1", "F"] },
                 { pat: "ING", ph: ["I1", "NG"] },
                 { pat: "ALL", ph: ["AW1", "L"] },
                 { pat: "IGH", ph: ["AY"] },
@@ -3906,11 +3913,15 @@
                 { pat: "CH", ph: ["CH"] },
                 { pat: "NG", ph: ["NG"] },
                 { pat: "CK", ph: ["K"] },
+                { pat: "KN", ph: ["N"] },
+                { pat: "GN", ph: ["N"] },
+                { pat: "MB", ph: ["M"] },
                 { pat: "EE", ph: ["E1"] },
                 { pat: "EA", ph: ["E1"] },
                 { pat: "OO", ph: ["OO1"] },
                 { pat: "OU", ph: ["AW1"] },
                 { pat: "OW", ph: ["AW1"] },
+                { pat: "OA", ph: ["O"] },
                 { pat: "OI", ph: ["OY"] },
                 { pat: "OY", ph: ["OY"] },
                 { pat: "AY", ph: ["AY"] },
