@@ -541,15 +541,16 @@
                 if (!account) return 0n;
                 try {
                     const res = await fetch("/api/thunk-storage");
-                    const data = await res.json();
-                    const storage = data.storage || [];
+                    const text = await res.text();
                     
                     const mapKey = this.getMappingKey(account, 1n); // balances mapping is slot 1
                     const key64 = this.getNamespacedKey(this.address, mapKey);
                     
-                    for (const entry of storage) {
-                        if (BigInt(entry.key) === key64) {
-                            return BigInt("0x" + entry.val);
+                    // Regex match to retrieve key and val exactly as strings
+                    const matches = text.matchAll(/"key"\s*:\s*(\d+)\s*,\s*"val"\s*:\s*"([a-fA-F0-8]+)"/g);
+                    for (const m of matches) {
+                        if (BigInt(m[1]) === key64) {
+                            return BigInt("0x" + m[2]);
                         }
                     }
                 } catch (e) {
@@ -563,14 +564,14 @@
             async maxSupply() {
                 try {
                     const res = await fetch("/api/thunk-storage");
-                    const data = await res.json();
-                    const storage = data.storage || [];
+                    const text = await res.text();
                     
                     const key64 = this.getNamespacedKey(this.address, 7n); // maxSupply is slot 7
                     
-                    for (const entry of storage) {
-                        if (BigInt(entry.key) === key64) {
-                            return BigInt("0x" + entry.val);
+                    const matches = text.matchAll(/"key"\s*:\s*(\d+)\s*,\s*"val"\s*:\s*"([a-fA-F0-8]+)"/g);
+                    for (const m of matches) {
+                        if (BigInt(m[1]) === key64) {
+                            return BigInt("0x" + m[2]);
                         }
                     }
                 } catch (e) {
@@ -582,15 +583,15 @@
                 if (!asset) return 0n;
                 try {
                     const res = await fetch("/api/thunk-storage");
-                    const data = await res.json();
-                    const storage = data.storage || [];
+                    const text = await res.text();
                     
                     const mapKey = this.getMappingKey(asset, 8n); // _marketRates mapping is slot 8
                     const key64 = this.getNamespacedKey(this.address, mapKey);
                     
-                    for (const entry of storage) {
-                        if (BigInt(entry.key) === key64) {
-                            return BigInt("0x" + entry.val);
+                    const matches = text.matchAll(/"key"\s*:\s*(\d+)\s*,\s*"val"\s*:\s*"([a-fA-F0-8]+)"/g);
+                    for (const m of matches) {
+                        if (BigInt(m[1]) === key64) {
+                            return BigInt("0x" + m[2]);
                         }
                     }
                 } catch (e) {
