@@ -2094,39 +2094,51 @@
                 const nodeB_Active = this.reputations.nodeB >= slashLimit;
                 const nodeC_Active = this.reputations.nodeC >= slashLimit;
                 
-                let totalWeight = wA;
-                let matchingWeight = 0;
+                // Count weights for each candidate vote to resolve Byzantine consensus outcomes
+                const tallies = {};
+                if (voteA) tallies[voteA] = (tallies[voteA] || 0) + wA;
+                if (nodeB_Active && voteB) tallies[voteB] = (tallies[voteB] || 0) + wB;
+                if (nodeC_Active && voteC) tallies[voteC] = (tallies[voteC] || 0) + wC;
                 
-                if (voteA === direction) matchingWeight += wA;
-                if (nodeB_Active) {
-                    totalWeight += wB;
-                    if (voteB === direction) matchingWeight += wB;
+                let consensusDecision = null;
+                let maxWeight = 0;
+                for (const option in tallies) {
+                    if (tallies[option] > maxWeight) {
+                        maxWeight = tallies[option];
+                        consensusDecision = option;
+                    }
                 }
-                if (nodeC_Active) {
-                    totalWeight += wC;
-                    if (voteC === direction) matchingWeight += wC;
-                }
+                
+                let totalWeight = wA;
+                if (nodeB_Active) totalWeight += wB;
+                if (nodeC_Active) totalWeight += wC;
                 
                 const targetRatio = consensusThreshold === 1 ? 0.33 : consensusThreshold === 2 ? 0.66 : 1.0;
                 const requiredWeight = totalWeight * targetRatio;
-                const passed = matchingWeight >= requiredWeight;
                 
-                // Slashing logic
-                if (nodeB_Active && voteB !== direction) {
-                    this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
-                }
-                if (nodeC_Active && voteC !== direction) {
-                    this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
+                const passed = (maxWeight >= requiredWeight) && (consensusDecision === direction);
+                
+                // On-chain Slashing based on BFT Consensus
+                if (passed && consensusDecision) {
+                    // Slash nodes that voted against the consensus decision
+                    if (nodeB_Active && voteB && voteB !== consensusDecision) {
+                        this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
+                    }
+                    if (nodeC_Active && voteC && voteC !== consensusDecision) {
+                        this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
+                    }
+                } else {
+                    // Consensus failed or proposer proposed an invalid command: Proposer Node A is slashed
+                    this.reputations.nodeA = Math.max(0, this.reputations.nodeA - 10);
                 }
                 
-                if (passed) {
-                    // Inject into simulated CPU address space directly via cross-contract poke call
+                if (passed && consensusDecision) {
                     let joystickVal = 0xFF;
-                    if (direction === "UP") joystickVal &= ~0x01;
-                    else if (direction === "DOWN") joystickVal &= ~0x02;
-                    else if (direction === "LEFT") joystickVal &= ~0x04;
-                    else if (direction === "RIGHT") joystickVal &= ~0x08;
-                    else if (direction === "FIRE") joystickVal &= ~0x10;
+                    if (consensusDecision === "UP") joystickVal &= ~0x01;
+                    else if (consensusDecision === "DOWN") joystickVal &= ~0x02;
+                    else if (consensusDecision === "LEFT") joystickVal &= ~0x04;
+                    else if (consensusDecision === "RIGHT") joystickVal &= ~0x08;
+                    else if (consensusDecision === "FIRE") joystickVal &= ~0x10;
                     
                     this.cpu.poke(56320, joystickVal);
                     setTimeout(() => {
@@ -2136,7 +2148,7 @@
                 
                 return {
                     passed,
-                    matchingWeight,
+                    matchingWeight: maxWeight,
                     totalWeight,
                     reputations: { ...this.reputations }
                 };
@@ -8914,6 +8926,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             // Propose transaction to the simulated on-chain consensus contract
             const txResult = await consensusContract.proposeInput(direction, [nodeA_Vote, nodeB_Vote, nodeC_Vote], [wA, wB, wC], slashLimit, threshold);
             
+            nodeARep = txResult.reputations.nodeA;
             nodeBRep = txResult.reputations.nodeB;
             nodeCRep = txResult.reputations.nodeC;
             
@@ -8936,6 +8949,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             
             // Sync UI widgets with contract state variables
+            document.getElementById("nodeARep").innerText = `Rep: ${nodeARep}%`;
             document.getElementById("nodeBRep").innerText = `Rep: ${nodeBRep}%`;
             if (nodeBRep < slashLimit) {
                 document.getElementById("nodeBStatus").innerText = "SUSPENDED (SLASHED)";
