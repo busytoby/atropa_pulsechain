@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaesen Gothic Biorhythms & Agent Cycles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --vaesen-dark: #12100e;
+            --vaesen-sepia: #1c1815;
+            --vaesen-parchment: #25201b;
+            --vaesen-gold: #c5a059;
+            --vaesen-gold-dim: #8c7241;
+            --vaesen-cream: #e6dfd3;
+            --vaesen-ink: #0d0c0a;
+            --vaesen-muted: #a39785;
+            
+            --font-serif: 'IM Fell English', serif;
+            --font-header: 'Cinzel', serif;
+            --font-sans: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--vaesen-dark);
+            color: var(--vaesen-cream);
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 0;
+            background-image: radial-gradient(circle at 50% 50%, #1e1b17 0%, #0d0c0a 100%);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--vaesen-ink);
+            border-bottom: 2px solid var(--vaesen-gold);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-family: var(--font-header);
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            color: var(--vaesen-gold);
+            text-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--vaesen-parchment);
+            border: 1px solid var(--vaesen-gold-dim);
+            color: var(--vaesen-cream);
+            padding: 10px 20px;
+            font-family: var(--font-header);
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--vaesen-gold);
+            color: var(--vaesen-ink);
+            border-color: var(--vaesen-gold);
+            box-shadow: 0 0 10px rgba(197, 160, 89, 0.3);
+        }
+
+        .btn-primary {
+            background: var(--vaesen-gold);
+            color: var(--vaesen-ink);
+            border-color: var(--vaesen-gold);
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: var(--vaesen-cream);
+            border-color: var(--vaesen-cream);
+        }
+
+        .network-badge {
+            background: rgba(13, 12, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            color: var(--vaesen-muted);
+        }
+
+        .network-badge.connected {
+            border-color: var(--vaesen-gold-dim);
+            color: var(--vaesen-gold);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--vaesen-parchment);
+            border: 1px solid var(--vaesen-gold-dim);
+            border-radius: 4px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            pointer-events: none;
+        }
+
+        h2 {
+            font-family: var(--font-header);
+            font-size: 1.4rem;
+            color: var(--vaesen-gold);
+            margin-top: 0;
+            border-bottom: 1px solid var(--vaesen-gold-dim);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-family: var(--font-header);
+            font-size: 0.85rem;
+            color: var(--vaesen-muted);
+            margin-bottom: 8px;
+        }
+
+        .input-glow {
+            width: 100%;
+            background: var(--vaesen-ink);
+            border: 1px solid var(--vaesen-gold-dim);
+            color: var(--vaesen-cream);
+            padding: 12px;
+            border-radius: 3px;
+            box-sizing: border-box;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-glow:focus {
+            border-color: var(--vaesen-gold);
+        }
+
+        /* Biorhythm Chart Card */
+        .chart-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #chartCanvas {
+            background: var(--vaesen-ink);
+            border: 1px solid var(--vaesen-gold-dim);
+            border-radius: 4px;
+            width: 100%;
+            height: 300px;
+            display: block;
+        }
+
+        /* Cycles info section */
+        .cycles-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .cycle-state-card {
+            background: rgba(13, 12, 10, 0.4);
+            border: 1px solid var(--vaesen-gold-dim);
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .cycle-state-card h3 {
+            margin: 0;
+            font-family: var(--font-header);
+            font-size: 1.1rem;
+            color: var(--vaesen-gold);
+        }
+
+        .cycle-val {
+            font-size: 2rem;
+            font-family: var(--font-serif);
+            font-weight: bold;
+        }
+
+        .cycle-val.positive {
+            color: #8fa87b;
+        }
+
+        .cycle-val.negative {
+            color: #b56c6c;
+        }
+
+        .cycle-val.critical {
+            color: var(--vaesen-gold);
+            text-shadow: 0 0 5px var(--vaesen-gold);
+        }
+
+        .cycle-description {
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 0.95rem;
+            color: var(--vaesen-muted);
+            line-height: 1.4;
+        }
+
+        /* Logs Console */
+        .console-box {
+            grid-column: 1 / -1;
+            background: var(--vaesen-ink);
+            border: 1px solid var(--vaesen-gold-dim);
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            color: var(--vaesen-muted);
+            font-size: 0.85rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .console-log-entry {
+            margin-bottom: 5px;
+        }
+
+        .console-log-entry.info { color: var(--vaesen-muted); }
+        .console-log-entry.success { color: var(--vaesen-gold); }
+        .console-log-entry.error { color: #d9534f; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            🕯️ <span>VAESEN BIORHYTHMS</span>
+        </div>
+        <div class="header-actions">
+            <a href="/index.html" class="btn">Back to Hub</a>
+            <div class="network-badge" id="networkBadge">Disconnected</div>
+            <button class="btn btn-primary" id="btnConnect">Connect Wallet</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left: Configuration Form -->
+        <div class="left-column" style="display: flex; flex-direction: column; gap: 30px;">
+            <div class="card">
+                <h2><span class="icon">📜</span> Agent Parameters</h2>
+                <p class="description" style="margin-bottom: 20px;">Provide the agent's birth/activation date and the target date to calculate the gothic cycle values.</p>
+                
+                <div class="form-group">
+                    <label for="birthDate">Agent Birth/Activation Date:</label>
+                    <input type="date" id="birthDate" value="2000-01-01" class="input-glow">
+                </div>
+
+                <div class="form-group">
+                    <label for="targetDate">Target Observation Date:</label>
+                    <input type="date" id="targetDate" class="input-glow">
+                </div>
+
+                <button class="btn btn-primary" id="btnCalculate" style="width: 100%; margin-top: 10px;">Calculate Gothic Cycles</button>
+                <button class="btn" id="btnDeploy" style="width: 100%; margin-top: 10px; display: none;">Deploy Biorhythm Engine</button>
+            </div>
+        </div>
+
+        <!-- Right: Cycles Chart & Details -->
+        <div class="right-column" style="display: flex; flex-direction: column; gap: 30px;">
+            <div class="card chart-card">
+                <h2><span class="icon">⏳</span> 30-Day Biorhythm Viewport</h2>
+                <canvas id="chartCanvas" width="800" height="300"></canvas>
+
+                <div class="cycles-info-grid">
+                    <!-- Physical Cycle -->
+                    <div class="cycle-state-card" id="cardPhys">
+                        <h3>Vigour & Fortitude</h3>
+                        <div class="cycle-val" id="valPhys">0%</div>
+                        <div class="cycle-description" id="descPhys">Observe your strength cycles. Avoid heavy combat physical trauma on critical days.</div>
+                    </div>
+
+                    <!-- Emotional Cycle -->
+                    <div class="cycle-state-card" id="cardEmot">
+                        <h3>Terror Resistance</h3>
+                        <div class="cycle-val" id="valEmot">0%</div>
+                        <div class="cycle-description" id="descEmot">Sustaining mental fear checks in low state triggers severe trauma and panicked speech.</div>
+                    </div>
+
+                    <!-- Intellectual Cycle -->
+                    <div class="cycle-state-card" id="cardIntel">
+                        <h3>Supernatural Sight</h3>
+                        <div class="cycle-val" id="valIntel">0%</div>
+                        <div class="cycle-description" id="descIntel">A high index represents open Third Eye, increasing accuracy in Vaesen entity spotting.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Console Logs -->
+        <div class="console-box" id="consoleBox">
+            <div class="console-log-entry info">[System initializing: Connect wallet to query calculations on-chain.]</div>
+        </div>
+    </main>
+
+    <script>
+        const PROVIDER_URL = "http://127.0.0.1:8545";
+        let provider = null;
+        let signer = null;
+        let contractAddress = null;
+        let compiledYul = null;
+
+        const bioABI = [
+            "function daysBetween(uint256 y1, uint256 m1, uint256 d1, uint256 y2, uint256 m2, uint256 d2) external view returns (uint256)",
+            "function calculateBiorhythm(uint256 yBirth, uint256 mBirth, uint256 dBirth, uint256 yTarget, uint256 mTarget, uint256 dTarget) external view returns (int256 physical, int256 emotional, int256 intellectual, int256 diffDays)"
+        ];
+
+        // Init target date to today
+        document.getElementById("targetDate").value = new Date().toISOString().substring(0, 10);
+
+        function log(msg, type = "info") {
+            const box = document.getElementById("consoleBox");
+            const div = document.createElement("div");
+            div.className = `console-log-entry ${type}`;
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Wallet setup
+        async function connectWallet() {
+            try {
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    document.getElementById("btnConnect").innerText = signer.address.substring(0, 6) + "..." + signer.address.substring(38);
+                    
+                    const network = await provider.getNetwork();
+                    const badge = document.getElementById("networkBadge");
+                    badge.innerText = network.chainId === 31337n ? "Localhost (Anvil)" : `Chain ID: ${network.chainId}`;
+                    badge.className = "network-badge connected";
+                    
+                    log(`Wallet connected: ${signer.address}`, "success");
+                    await loadBytecode();
+                } else {
+                    log("Metamask/Web3 wallet extension not detected.", "error");
+                }
+            } catch (err) {
+                log(`Connection error: ${err.message}`, "error");
+            }
+        }
+
+        async function loadBytecode() {
+            try {
+                const res = await fetch("/compiled_yul.json");
+                compiledYul = await res.json();
+                if (compiledYul && compiledYul.biorhythm) {
+                    log("Biorhythm compiled Yul bytecode loaded from compiled_yul.json.", "info");
+                    document.getElementById("btnDeploy").style.display = "block";
+                }
+            } catch (e) {
+                log("Could not load compiled_yul.json from server.", "error");
+            }
+        }
+
+        async function deployContract() {
+            if (!compiledYul || !compiledYul.biorhythm) {
+                log("Bytecode not loaded yet.", "error");
+                return;
+            }
+            log("Broadcasting deployment transaction for Biorhythm Engine...");
+            try {
+                const factory = new ethers.ContractFactory(bioABI, compiledYul.biorhythm, signer);
+                const contract = await factory.deploy();
+                await contract.waitForDeployment();
+                contractAddress = await contract.getAddress();
+                log(`Biorhythm Engine deployed at: ${contractAddress}`, "success");
+                document.getElementById("btnDeploy").innerText = "Deployed OK";
+                document.getElementById("btnDeploy").disabled = true;
+            } catch (err) {
+                log(`Deployment failed: ${err.message}`, "error");
+            }
+        }
+
+        let audioCtx = null;
+        function playGothicChord(chordType) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === "suspended") {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+                // Diminished chord for critical states, minor for low states, major for high states
+                let ratios = [1.0, 1.25, 1.5, 2.0]; // Major
+                if (chordType === "minor") ratios = [1.0, 1.2, 1.5, 2.0];
+                if (chordType === "diminished") ratios = [1.0, 1.2, 1.414, 2.0];
+
+                const masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0, now);
+                masterGain.gain.linearRampToValueAtTime(0.2, now + 0.1);
+                masterGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+                masterGain.connect(audioCtx.destination);
+
+                ratios.forEach((ratio, i) => {
+                    const osc = audioCtx.createOscillator();
+                    osc.type = i % 2 === 0 ? "sine" : "triangle";
+                    osc.frequency.setValueAtTime(140 * ratio, now); // deep low key frequency
+                    osc.connect(masterGain);
+                    osc.start(now);
+                    osc.stop(now + 2.0);
+                });
+            } catch (e) {
+                console.error("Audio failed", e);
+            }
+        }
+
+        function getVaesenInterpretation(type, percentage) {
+            const val = Number(percentage);
+            if (Math.abs(val) <= 15) {
+                return {
+                    status: "CRITICAL TRANSITION",
+                    desc: type === "phys" ? "Physical vulnerability peak. Avoid heavy confrontations; injuries are prone to trigger Broken state immediately." 
+                        : type === "emot" ? "A critical day for fear. Mental defenses are down; Vaesen encounter causes immediate Panicked hysteria."
+                        : "Insight threshold day. Intuition is chaotic; predictions are highly unstable."
+                };
+            }
+            if (val > 0) {
+                return {
+                    status: val > 60 ? "PREMIUM HIGH STATE" : "STABLE ACCUMULATION",
+                    desc: type === "phys" ? "Stamina peak. High resistance to Physical trauma. You feel ready to face threats."
+                        : type === "emot" ? "Steady focus. Emotional clarity shields your mind from sanity degradation."
+                        : "Third eye fully open. Invisible supernatural traces and hidden clues are easily revealed."
+                };
+            } else {
+                return {
+                    status: val < -60 ? "SEVERE DEVIATION" : "LOW CYCLE RECESS",
+                    desc: type === "phys" ? "Lethargic cycle. Physical activities exhaust your energy quickly. Heavy blow warning."
+                        : type === "emot" ? "Melancholic baseline. Highly susceptible to paranoia, fear jitters, and voice stutter."
+                        : "Senses clouded. Spiritual vision is dim; supernatural entities are invisible to you."
+                };
+            }
+        }
+
+        async function doCalculations() {
+            const birthVal = document.getElementById("birthDate").value;
+            const targetVal = document.getElementById("targetDate").value;
+            if (!birthVal || !targetVal) {
+                log("Provide valid date inputs.", "error");
+                return;
+            }
+
+            const [by, bm, bd] = birthVal.split("-").map(Number);
+            const [ty, tm, td] = targetVal.split("-").map(Number);
+
+            log(`Calculating cycles for Target Date: ${targetVal}...`);
+
+            let phys, emot, intel, diffDays;
+
+            // If contract is deployed, call it on-chain
+            if (contractAddress) {
+                try {
+                    const localProvider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                    const contract = new ethers.Contract(contractAddress, bioABI, localProvider);
+                    const result = await contract.calculateBiorhythm(by, bm, bd, ty, tm, td);
+                    phys = Number(result.physical);
+                    emot = Number(result.emotional);
+                    intel = Number(result.intellectual);
+                    diffDays = Number(result.diffDays);
+                    log(`On-Chain calculations retrieved successfully. Elapsed days: ${diffDays}`, "success");
+                } catch (e) {
+                    log(`On-chain call failed: ${e.message}. Falling back to client-side logic.`, "warning");
+                    contractAddress = null;
+                }
+            }
+
+            // Fallback: Client-side JS calculation
+            if (!contractAddress) {
+                function isLeap(y) {
+                    return (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0));
+                }
+                function daysInMonth(m, leap) {
+                    if (m === 2) return 28 + leap;
+                    if ([4, 6, 9, 11].includes(m)) return 30;
+                    return 31;
+                }
+                function dateToDays(y, m, d) {
+                    let years = y - 1;
+                    let leapYears = Math.floor(years / 4) + Math.floor(years / 400) - Math.floor(years / 100);
+                    let days = years * 365 + leapYears;
+                    let leap = isLeap(y) ? 1 : 0;
+                    for (let curM = 1; curM < m; curM++) {
+                        days += daysInMonth(curM, leap);
+                    }
+                    return days + d;
+                }
+                function getSineVal(x, period) {
+                    let xScaled = x * 2;
+                    let h = period;
+                    if (xScaled < h) {
+                        let term = xScaled * (h - xScaled);
+                        return Math.floor((1600 * term) / (5 * h * h - 4 * term));
+                    } else {
+                        let x2 = xScaled - h;
+                        let term = x2 * (h - x2);
+                        return -Math.floor((1600 * term) / (5 * h * h - 4 * term));
+                    }
+                }
+
+                const d1 = dateToDays(by, bm, bd);
+                const d2 = dateToDays(ty, tm, td);
+                if (d2 < d1) {
+                    log("Target date must be after birthdate.", "error");
+                    return;
+                }
+                diffDays = d2 - d1;
+                phys = getSineVal(diffDays % 23, 23);
+                emot = getSineVal(diffDays % 28, 28);
+                intel = getSineVal(diffDays % 33, 33);
+                log(`Calculated cycles locally. Elapsed days: ${diffDays}`, "info");
+            }
+
+            // Update UI elements
+            updateUI("Phys", phys, "Vigour & Fortitude");
+            updateUI("Emot", emot, "Terror Resistance");
+            updateUI("Intel", intel, "Supernatural Sight");
+
+            // Play gothic acoustic feedback based on states
+            if (Math.abs(phys) <= 15 || Math.abs(emot) <= 15 || Math.abs(intel) <= 15) {
+                playGothicChord("diminished");
+            } else if (phys < 0 && emot < 0) {
+                playGothicChord("minor");
+            } else {
+                playGothicChord("major");
+            }
+
+            // Plot 30-day chart viewport
+            plotChart(diffDays);
+        }
+
+        function updateUI(id, val, name) {
+            const valEl = document.getElementById(`val${id}`);
+            const descEl = document.getElementById(`desc${id}`);
+            const cardEl = document.getElementById(`card${id}`);
+
+            valEl.innerText = `${val}%`;
+            
+            // Set colors
+            valEl.className = "cycle-val";
+            if (Math.abs(val) <= 15) {
+                valEl.classList.add("critical");
+                cardEl.style.borderColor = "var(--vaesen-gold)";
+            } else if (val > 0) {
+                valEl.classList.add("positive");
+                cardEl.style.borderColor = "rgba(143, 168, 123, 0.4)";
+            } else {
+                valEl.classList.add("negative");
+                cardEl.style.borderColor = "rgba(181, 108, 108, 0.4)";
+            }
+
+            const interpretation = getVaesenInterpretation(id.toLowerCase(), val);
+            descEl.innerHTML = `<strong>${interpretation.status}</strong><br>${interpretation.desc}`;
+        }
+
+        function plotChart(centerDays) {
+            const canvas = document.getElementById("chartCanvas");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = "rgba(197, 160, 89, 0.1)";
+            ctx.lineWidth = 1;
+            for (let y = 50; y < 300; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Center vertical line (target date)
+            ctx.strokeStyle = "rgba(197, 160, 89, 0.6)";
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw midline
+            ctx.strokeStyle = "rgba(197, 160, 89, 0.25)";
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width / 2, canvas.height / 2);
+            ctx.stroke();
+
+            // We will plot from centerDays - 15 to centerDays + 15
+            const width = canvas.width;
+            const height = canvas.height;
+            const halfHeight = height / 2;
+
+            function getSineVal(day, period) {
+                let x = day % period;
+                if (x < 0) x += period;
+                let xScaled = x * 2;
+                let h = period;
+                if (xScaled < h) {
+                    let term = xScaled * (h - xScaled);
+                    return (1600 * term) / (5 * h * h - 4 * term);
+                } else {
+                    let x2 = xScaled - h;
+                    let term = x2 * (h - x2);
+                    return -(1600 * term) / (5 * h * h - 4 * term);
+                }
+            }
+
+            // Plot three curves
+            const curves = [
+                { period: 23, color: "#e88080", label: "Physical" },
+                { period: 28, color: "#80cbe8", label: "Emotional" },
+                { period: 33, color: "#c8e880", label: "Intellectual" }
+            ];
+
+            curves.forEach(curve => {
+                ctx.strokeStyle = curve.color;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+
+                for (let px = 0; px <= width; px++) {
+                    const offsetDays = ((px / width) - 0.5) * 30; // -15 to +15
+                    const curDays = Math.round(centerDays + offsetDays);
+                    const val = getSineVal(curDays, curve.period); // -100 to 100
+                    const py = halfHeight - (val / 100) * (halfHeight - 20);
+
+                    if (px === 0) {
+                        ctx.moveTo(px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+            });
+
+            // Target points on midline
+            ctx.fillStyle = "#fff";
+            curves.forEach(curve => {
+                const val = getSineVal(centerDays, curve.period);
+                const py = halfHeight - (val / 100) * (halfHeight - 20);
+                ctx.beginPath();
+                ctx.arc(width / 2, py, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Attach listeners
+        document.getElementById("btnConnect").addEventListener("click", connectWallet);
+        document.getElementById("btnDeploy").addEventListener("click", deployContract);
+        document.getElementById("btnCalculate").addEventListener("click", doCalculations);
+    </script>
+</body>
+</html>
