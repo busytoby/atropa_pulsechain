@@ -8810,7 +8810,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 
                 // Deploy constructed ROM to chain using chunk uploader
                 const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
-                const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
+                const zmAbi = [
+                    "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+                    "function bindTokenAddress(uint256 objId, address token) public returns (bool)"
+                ];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
                 const term = document.getElementById("zmachineTerminal");
@@ -8824,6 +8827,19 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         const tx = await contract.uploadRomChunk(offset, slice);
                         await tx.wait();
                     }
+                    term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
+                    
+                    // Bind token addresses for items
+                    for (let idx = 0; idx < items.length; idx++) {
+                        const item = items[idx];
+                        if (item.token && ethers.isAddress(item.token)) {
+                            const objId = 50 + idx; // Items start at Object ID 50
+                            term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
+                            const txBind = await contract.bindTokenAddress(objId, item.token);
+                            await txBind.wait();
+                        }
+                    }
+                    
                     term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
                 } catch (err) {
                     console.error(err);
@@ -18046,7 +18062,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 
                 // Deploy constructed ROM to chain using chunk uploader
                 const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
-                const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
+                const zmAbi = [
+                    "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+                    "function bindTokenAddress(uint256 objId, address token) public returns (bool)"
+                ];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
                 const term = document.getElementById("zmachineTerminal");
@@ -18060,6 +18079,19 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         const tx = await contract.uploadRomChunk(offset, slice);
                         await tx.wait();
                     }
+                    term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
+                    
+                    // Bind token addresses for items
+                    for (let idx = 0; idx < items.length; idx++) {
+                        const item = items[idx];
+                        if (item.token && ethers.isAddress(item.token)) {
+                            const objId = 50 + idx; // Items start at Object ID 50
+                            term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
+                            const txBind = await contract.bindTokenAddress(objId, item.token);
+                            await txBind.wait();
+                        }
+                    }
+                    
                     term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
                 } catch (err) {
                     console.error(err);
@@ -27096,7 +27128,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 
                 // Deploy constructed ROM to chain using chunk uploader
                 const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
-                const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
+                const zmAbi = [
+                    "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+                    "function bindTokenAddress(uint256 objId, address token) public returns (bool)"
+                ];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
                 const term = document.getElementById("zmachineTerminal");
@@ -27110,6 +27145,19 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         const tx = await contract.uploadRomChunk(offset, slice);
                         await tx.wait();
                     }
+                    term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
+                    
+                    // Bind token addresses for items
+                    for (let idx = 0; idx < items.length; idx++) {
+                        const item = items[idx];
+                        if (item.token && ethers.isAddress(item.token)) {
+                            const objId = 50 + idx; // Items start at Object ID 50
+                            term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
+                            const txBind = await contract.bindTokenAddress(objId, item.token);
+                            await txBind.wait();
+                        }
+                    }
+                    
                     term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
                 } catch (err) {
                     console.error(err);
