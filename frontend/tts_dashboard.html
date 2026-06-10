@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS & Vocoder Interactive Terminal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        /* Specific CSS variables & overrides for high-end glowing retro styling */
+        :root {
+            --neon-green: #39ff14;
+            --neon-cyan: #00f2fe;
+            --neon-pink: #ff007f;
+            --neon-yellow: #ffcc00;
+        }
+
+        .dashboard-grid-tts {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .control-panel {
+            background: rgba(13, 17, 38, 0.75);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.05);
+        }
+
+        .visualizer-panel {
+            background: rgba(10, 10, 20, 0.9);
+            border: 1px solid rgba(255, 0, 127, 0.25);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.05);
+        }
+
+        .tts-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 15px;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            resize: vertical;
+            font-family: 'Rajdhani', sans-serif;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .tts-textarea:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .knob-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .slider-glow {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 242, 254, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider-glow::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-cyan);
+            transition: 0.1s;
+        }
+
+        .slider-glow.pink::-webkit-slider-thumb {
+            background: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        .slider-glow.green::-webkit-slider-thumb {
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+
+        /* Phoneme chip layout */
+        .phoneme-chain-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            min-height: 80px;
+            padding: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .phoneme-chip {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 3px rgba(0, 242, 254, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .phoneme-chip.active {
+            background: var(--neon-cyan);
+            color: #000;
+            text-shadow: none;
+            box-shadow: 0 0 8px var(--neon-cyan);
+            transform: scale(1.05);
+        }
+
+        .phoneme-chip.pause {
+            background: rgba(255, 0, 127, 0.1);
+            border-color: rgba(255, 0, 127, 0.4);
+            color: var(--neon-pink);
+            text-shadow: 0 0 3px rgba(255, 0, 127, 0.3);
+        }
+
+        .phoneme-chip.pause.active {
+            background: var(--neon-pink);
+            color: #000;
+            text-shadow: none;
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        /* Mouth visualizer */
+        .voice-box-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px dashed rgba(255, 0, 127, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .voice-box-mouth {
+            width: 80px;
+            height: 4px;
+            background: var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-pink);
+            border-radius: 4px;
+            transition: height 0.08s ease, border-radius 0.08s ease;
+        }
+
+        /* LED lights */
+        .led-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #222;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+            display: inline-block;
+            margin-right: 8px;
+            transition: all 0.2s;
+        }
+
+        .led-indicator.active-cyan {
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan), inset 0 1px 1px rgba(255,255,255,0.5);
+        }
+
+        .led-indicator.active-pink {
+            background: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink), inset 0 1px 1px rgba(255,255,255,0.5);
+        }
+
+        .quick-phrase-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-phrase-btn:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <!-- Navigation Header -->
+        <header>
+            <div class="logo">
+                <span class="pulse-glow">ATROPA SYSTEM 3</span>
+                <span class="subtitle">TTS & Vocoder Lab</span>
+            </div>
+            <div class="header-actions">
+                <a href="/index.html" class="btn btn-secondary">Hub Home</a>
+                <a href="/datamost.html" class="btn btn-secondary">Datamost Games</a>
+                <a href="/datamost_synth.html" class="btn btn-secondary">Datamost Synth</a>
+                <a href="/wallet.html" class="btn btn-secondary">Wallet Hub</a>
+                <div class="network-badge" id="networkBadge">Disconnected</div>
+                <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Two-column workspace layout -->
+        <div class="dashboard-grid-tts">
+            <!-- Left Panel: Input, Rules, Controls -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <section class="card control-panel">
+                    <h2><span class="icon">💬</span> Text Input & Dialect Processing</h2>
+                    <p class="description">Type standard sentences. G2P rules convert your graphemes into optimized retro phonemes.</p>
+                    
+                    <textarea id="ttsInput" class="tts-textarea" rows="3" placeholder="AHOY! Welcome to the Atropa network. Start your synthesis engine..."></textarea>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+                        <div style="flex-grow: 1; min-width: 200px;">
+                            <label for="dialectSelect" class="knob-label" style="display: block; margin-bottom: 5px;">Rule-Engine Dialect Mapping</label>
+                            <select id="dialectSelect" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                                <option value="english_g2p">Standard English (Votrax G2P)</option>
+                                <option value="mandarin_pinyin">Mandarin Pinyin Translation</option>
+                                <option value="cantonese_jyutping">Cantonese Jyutping Rules</option>
+                                <option value="korean_romanized">Korean Romanized Syllables</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 22px;">
+                            <button class="btn btn-primary" id="btnParseText">Parse G2P</button>
+                            <button class="btn btn-secondary" id="btnLocalSpeak">Local Play</button>
+                            <button class="btn btn-primary" id="btnChainSpeak" style="background: linear-gradient(135deg, var(--neon-pink) 0%, #aa005b 100%); color: #fff; border: none; text-shadow: 0 0 5px rgba(255,0,127,0.3);">On-Chain Speak</button>
+                        </div>
+                    </div>
+
+                    <div class="quick-phrases" style="margin-bottom: 20px;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary); margin-right: 10px; font-family: 'Orbitron';">PRESETS:</span>
+                        <button class="quick-phrase-btn" onclick="loadPreset('AHOY COMPUTER! RETRO SOUND ON CHAIN')">Ahoy Computer</button>
+                        <button class="quick-phrase-btn" onclick="loadPreset('HELLO VISITOR STAY FOREVER')">Stay Forever</button>
+                        <button class="quick-phrase-btn" onclick="loadPreset('ZHONG WEN HAO')">Mandarin Welcome</button>
+                        <button class="quick-phrase-btn" onclick="loadPreset('SEO UL AN NYEONG HA SEO YO')">Korean Welcome</button>
+                    </div>
+
+                    <h3 class="knob-label">Phoneme Sequence Output</h3>
+                    <div class="phoneme-chain-box" id="phonemeChain">
+                        <span style="color: var(--text-secondary); font-size: 0.95rem; font-style: italic;">Phoneme sequence will load here...</span>
+                    </div>
+                </section>
+
+                <section class="card control-panel" style="border-color: var(--neon-green); box-shadow: 0 0 10px rgba(57, 255, 20, 0.05);">
+                    <h2><span class="icon">🎹</span> SID Vocoder & Singing Speech</h2>
+                    <p class="description">Combine speech phonemes with SID frequency structures from the MusicMaker. Generates singing robot synth lines.</p>
+                    
+                    <div class="control-row">
+                        <div class="knob-container">
+                            <span class="knob-label">Vocoder Mode</span>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem; cursor: pointer;">
+                                    <input type="checkbox" id="vocoderToggle" style="width: 16px; height: 16px;"> Enable SID Vocoder
+                                </label>
+                            </div>
+                        </div>
+                        <div class="knob-container">
+                            <span class="knob-label">SID Waveform</span>
+                            <select id="sidWaveform" class="input-glow" style="width: 100%; padding: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; font-size: 0.85rem;">
+                                <option value="sawtooth">Sawtooth (Votrax Hybrid)</option>
+                                <option value="triangle">Triangle (Soft Flute)</option>
+                                <option value="square">Pulse/Square (Retro Chip)</option>
+                                <option value="noise">White Noise (Fricatives)</option>
+                            </select>
+                        </div>
+                        <div class="knob-container">
+                            <span class="knob-label">Singing Base Pitch</span>
+                            <input type="range" id="singingPitch" min="40" max="300" value="110" class="slider-glow green">
+                            <span style="font-size: 0.85rem; color: var(--neon-green); font-family: monospace; margin-top: 5px;" id="singingPitchVal">110 Hz</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" id="btnTestSing" style="border-color: var(--neon-green); color: var(--text-primary);">Play Singing Scale</button>
+                        <button class="btn btn-small" id="btnSyncSIDContract" style="background: rgba(57, 255, 20, 0.15); border-color: var(--neon-green); color: var(--neon-green);">Sync Vocoder Registers to Chain</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Panel: Oscilloscope, Formants, Diagnostics -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <section class="card visualizer-panel">
+                    <h2><span class="icon">🔮</span> Synthesis Visualizer</h2>
+                    <p class="description">Live analysis of phoneme formants, frequency mapping, and vocal track emulation.</p>
+                    
+                    <div class="voice-box-container">
+                        <div style="position: absolute; top: 10px; left: 10px; font-size: 0.75rem; font-family: 'Orbitron'; color: var(--neon-pink);">
+                            <span class="led-indicator" id="mouthLED"></span>VOX GATE STATUS
+                        </div>
+                        <div class="voice-box-mouth" id="voiceBoxMouth"></div>
+                    </div>
+
+                    <div class="terminal-container">
+                        <div class="terminal-header" style="background: rgba(255,255,255,0.02); padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; font-family: 'Orbitron'; color: var(--neon-pink);">
+                            Formant Oscilloscope
+                        </div>
+                        <canvas id="scopeCanvas" width="300" height="120" style="background: #040306; border: 1px solid rgba(255,0,127,0.15); width: 100%; border-radius: 0 0 8px 8px; image-rendering: pixelated;"></canvas>
+                    </div>
+
+                    <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                        <div><strong style="color: var(--text-secondary);">Active Phoneme:</strong> <span id="visualActivePhoneme" style="color: var(--neon-cyan); font-family: monospace;">PA0</span></div>
+                        <div><strong style="color: var(--text-secondary);">Formant Center:</strong> <span id="visualFormantCenter" style="color: var(--neon-pink); font-family: monospace;">N/A</span></div>
+                        <div><strong style="color: var(--text-secondary);">Inflection Bits:</strong> <span id="visualInflection" style="color: var(--neon-yellow); font-family: monospace;">0</span></div>
+                        <div><strong style="color: var(--text-secondary);">EVM Busy State:</strong> <span id="visualEVMState" style="color: var(--neon-green); font-family: monospace;">READY</span></div>
+                    </div>
+                </section>
+
+                <section class="card visualizer-panel" style="border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 242, 254, 0.05);">
+                    <h2><span class="icon">🔗</span> Speech Synthesizer On-Chain Stats</h2>
+                    <p class="description">Query and control variables within deployed smart contracts.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.95rem; font-family: monospace; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1);">
+                        <div><strong>Contract Address:</strong> <span id="speechContractAddr" style="color: var(--neon-cyan); word-break: break-all;">0x00...00</span></div>
+                        <div><strong>TMS5220 Command:</strong> <span id="tmsCommandText" style="color: var(--text-secondary);">0</span></div>
+                        <div><strong>TMS5220 Status:</strong> <span id="tmsStatusText" style="color: var(--text-secondary);">0</span></div>
+                        <div><strong>FIFO Length:</strong> <span id="tmsFifoText" style="color: var(--text-secondary);">0</span></div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label class="knob-label">Write Direct Phoneme Hex</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="directPhonemeCode" class="input-glow" style="width: 80px;" value="2" min="0" max="63">
+                            <input type="number" id="directInflection" class="input-glow" style="width: 80px;" value="1" min="0" max="3">
+                            <button class="btn btn-primary btn-small" id="btnWriteDirectPhoneme">Write</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- System Console Logs -->
+        <footer>
+            <div class="terminal-header">
+                <h3>Synthesis Engine Console Output</h3>
+                <button class="btn-clear" id="btnClearLogs" onclick="clearLogs()">Clear</button>
+            </div>
+            <div class="terminal-body" id="consoleLogs">
+                <div class="log-line info">Atropa TTS Engine Initialized. Please connect your Web3 wallet or use local simulation.</div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Rule sets & synthesis logic scripts -->
+    <script>
+        // Phoneme names matching standard Votrax SC-01A output definitions
+        const phonemeNames = [
+            "EH3", "EH2", "EH1", "PA0", "DT", "A2", "A1", "ZH",
+            "AH2", "I3", "I2", "I1", "M", "N", "B", "V",
+            "CH", "SH", "Z", "AW2", "NG", "AH1", "OO1", "OO",
+            "L", "K", "J", "H", "G", "F", "D", "S",
+            "A", "AY", "Y1", "UH3", "UH2", "UH1", "O", "OU",
+            "AST", "OT", "EL", "Y", "UR", "ER", "R", "THR",
+            "TH", "T", "P", "THV", "KAE", "JK", "PA1", "UN",
+            "AST2", "AW1", "E1", "E2", "VO", "AST3", "AST4", "AST5"
+        ];
+
+        const wordsPhonemes = {
+            "HELLO": ["H", "EH1", "L", "OU"],
+            "COMMODORE": ["K", "A", "M", "O", "D", "OU", "R"],
+            "COMPUTER": ["K", "A", "M", "P", "Y1", "OO1", "T", "ER"],
+            "PLAY": ["P", "L", "AY"],
+            "GAME": ["G", "AY", "M"],
+            "ALIEN": ["AY", "L", "Y1", "UN"],
+            "AHOY": ["AH1", "H", "OY"],
+            "RETRO": ["R", "EH1", "T", "R", "O"],
+            "SOUND": ["S", "AW1", "UN", "D"],
+            "ON": ["O", "N"],
+            "CHAIN": ["CH", "AY", "N"],
+            "ANOTHER": ["UH3", "N", "UH2", "THR", "ER"],
+            "VISITOR": ["V", "I2", "Z", "I1", "T", "ER"],
+            "STAY": ["S", "T", "AY"],
+            "WHILE": ["OO1", "AH1", "Y", "L"],
+            "FOREVER": ["F", "ER", "EH1", "V", "ER"]
+        };
+
+        const phonemeToCode = {};
+        phonemeNames.forEach((name, idx) => {
+            phonemeToCode[name] = idx;
+        });
+
+        const letterToPhonemes = {
+            "A": ["AY"], "B": ["B"], "C": ["S", "E1"], "D": ["D"], "E": ["E1"],
+            "F": ["F"], "G": ["G"], "H": ["H"], "I": ["AY"], "J": ["J"],
+            "K": ["K"], "L": ["L"], "M": ["M"], "N": ["N"], "O": ["O"],
+            "P": ["P"], "Q": ["K"], "R": ["R"], "S": ["S"], "T": ["T"],
+            "U": ["Y1", "OO1"], "V": ["V"], "W": ["OO1"], "X": ["K", "S"],
+            "Y": ["AY"], "Z": ["Z"], " ": ["PA0"]
+        };
+
+        const dialectRules = {
+            "english_g2p": [
+                { pat: "TION", ph: ["SH", "UN"] },
+                { pat: "SION", ph: ["ZH", "UN"] },
+                { pat: "IGHT", ph: ["AY", "T"] },
+                { pat: "OUGH", ph: ["AW1", "F"] },
+                { pat: "ING", ph: ["I1", "NG"] },
+                { pat: "ALL", ph: ["AW1", "L"] },
+                { pat: "IGH", ph: ["AY"] },
+                { pat: "TCH", ph: ["CH"] },
+                { pat: "THR", ph: ["THR"] },
+                { pat: "THV", ph: ["THV"] },
+                { pat: "PHO", ph: ["F", "O"] },
+                { pat: "PH", ph: ["F"] },
+                { pat: "TH", ph: ["TH"] },
+                { pat: "SH", ph: ["SH"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "CK", ph: ["K"] },
+                { pat: "EE", ph: ["E1"] },
+                { pat: "EA", ph: ["E1"] },
+                { pat: "OO", ph: ["OO1"] },
+                { pat: "OU", ph: ["AW1"] },
+                { pat: "OW", ph: ["AW1"] },
+                { pat: "OI", ph: ["OY"] },
+                { pat: "OY", ph: ["OY"] },
+                { pat: "AY", ph: ["AY"] },
+                { pat: "AI", ph: ["AY"] },
+                { pat: "ED", ph: ["D"] },
+                { pat: "ER", ph: ["ER"] },
+                { pat: "OR", ph: ["O", "R"] },
+                { pat: "UR", ph: ["UR"] },
+                { pat: "AR", ph: ["AH1", "R"] },
+                { pat: "QU", ph: ["K", "OO1"] },
+                { pat: "WH", ph: ["OO1"] },
+                { pat: "WR", ph: ["R"] },
+                { pat: "AU", ph: ["AW1"] },
+                { pat: "AW", ph: ["AW1"] },
+                { pat: "LE", ph: ["UH2", "L"] },
+                { pat: "IO", ph: ["E1", "OU"] },
+                { pat: "LL", ph: ["L"] },
+                { pat: "SS", ph: ["S"] },
+                { pat: "TT", ph: ["T"] },
+                { pat: "PP", ph: ["P"] },
+                { pat: "FF", ph: ["F"] },
+                { pat: "GG", ph: ["G"] },
+                { pat: "DD", ph: ["D"] },
+                { pat: "MM", ph: ["M"] },
+                { pat: "NN", ph: ["N"] },
+                { pat: "A", ph: ["AH1"] },
+                { pat: "E", ph: ["EH1"] },
+                { pat: "I", ph: ["I1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "U", ph: ["UH1"] },
+                { pat: "Y", ph: ["E1"] },
+                { pat: "B", ph: ["B"] },
+                { pat: "C", ph: ["K"] },
+                { pat: "D", ph: ["D"] },
+                { pat: "F", ph: ["F"] },
+                { pat: "G", ph: ["G"] },
+                { pat: "H", ph: ["H"] },
+                { pat: "J", ph: ["J"] },
+                { pat: "K", ph: ["K"] },
+                { pat: "L", ph: ["L"] },
+                { pat: "M", ph: ["M"] },
+                { pat: "N", ph: ["N"] },
+                { pat: "P", ph: ["P"] },
+                { pat: "R", ph: ["R"] },
+                { pat: "S", ph: ["S"] },
+                { pat: "T", ph: ["T"] },
+                { pat: "V", ph: ["V"] },
+                { pat: "W", ph: ["OO1"] },
+                { pat: "Z", ph: ["Z"] }
+            ],
+            "mandarin_pinyin": [
+                { pat: "ZHONG", ph: ["J", "OO1", "NG"] },
+                { pat: "SHEN", ph: ["SH", "UH1", "N"] },
+                { pat: "WEN", ph: ["OO1", "UH1", "N"] },
+                { pat: "HAO", ph: ["H", "AW1"] },
+                { pat: "HAN", ph: ["H", "A2", "N"] },
+                { pat: "ZH", ph: ["J"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "SH", ph: ["SH"] },
+                { pat: "SHI", ph: ["SH", "UR"] },
+                { pat: "CHI", ph: ["CH", "UR"] },
+                { pat: "ZHI", ph: ["J", "UR"] },
+                { pat: "YI", ph: ["E1", "E2"] },
+                { pat: "X", ph: ["SH"] },
+                { pat: "Q", ph: ["CH"] },
+                { pat: "J", ph: ["J"] },
+                { pat: "G", ph: ["G"] },
+                { pat: "K", ph: ["K"] },
+                { pat: "H", ph: ["H"] },
+                { pat: "I", ph: ["E1", "E2"] },
+                { pat: "U", ph: ["OO1", "OO"] },
+                { pat: "A", ph: ["AH1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "E", ph: ["UH2"] }
+            ],
+            "cantonese_jyutping": [
+                { pat: "GW", ph: ["G", "OO1"] },
+                { pat: "KW", ph: ["K", "OO1"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "Z", ph: ["J"] },
+                { pat: "C", ph: ["CH"] },
+                { pat: "AA", ph: ["AH1", "AH2"] },
+                { pat: "OE", ph: ["UH1"] },
+                { pat: "EO", ph: ["UH1"] },
+                { pat: "Y", ph: ["Y1"] },
+                { pat: "J", ph: ["Y1"] },
+                { pat: "I", ph: ["E1"] },
+                { pat: "U", ph: ["OO1"] },
+                { pat: "A", ph: ["AH1"] }
+            ],
+            "korean_romanized": [
+                { pat: "YEONG", ph: ["Y1", "UH1", "NG"] },
+                { pat: "AN", ph: ["AH1", "N"] },
+                { pat: "NYEONG", ph: ["N", "Y1", "UH1", "NG"] },
+                { pat: "HA", ph: ["H", "AH1"] },
+                { pat: "SEO", ph: ["SH", "UH1"] },
+                { pat: "YO", ph: ["Y1", "O"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "JJ", ph: ["J"] },
+                { pat: "GG", ph: ["G"] },
+                { pat: "DD", ph: ["D"] },
+                { pat: "AE", ph: ["EH1"] },
+                { pat: "EO", ph: ["UH1"] },
+                { pat: "EU", ph: ["UH3"] },
+                { pat: "UI", ph: ["UH3", "E1"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "Y", ph: ["Y1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "U", ph: ["OO1"] },
+                { pat: "I", ph: ["E1"] }
+            ]
+        };
+
+        function translateWordToPhonemes(word, dialect = "english_g2p") {
+            word = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            word = word.replace(/[^A-Z]/g, "");
+            if (!word) return [];
+            if (wordsPhonemes[word]) return wordsPhonemes[word];
+
+            let phonemes = [];
+            let index = 0;
+            const rules = dialectRules[dialect] || dialectRules["english_g2p"];
+
+            while (index < word.length) {
+                let matched = false;
+                for (let r of rules) {
+                    if (word.substring(index).startsWith(r.pat)) {
+                        phonemes.push(...r.ph);
+                        index += r.pat.length;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    let char = word[index];
+                    phonemes.push(...(letterToPhonemes[char] || ["PA0"]));
+                    index++;
+                }
+            }
+            return phonemes;
+        }
+
+        // Web Audio Synth setup
+        let audioCtx = null;
+        let isSpeaking = false;
+        let speechQueue = [];
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                logConsole("Web Audio Context initialized.");
+                drawSpectrumBackground();
+            }
+        }
+
+        function loadPreset(text) {
+            document.getElementById("ttsInput").value = text;
+            parseG2P();
+        }
+
+        function parseG2P() {
+            initAudio();
+            const text = document.getElementById("ttsInput").value;
+            const dialect = document.getElementById("dialectSelect").value;
+            const words = text.split(/\s+/);
+            const container = document.getElementById("phonemeChain");
+            container.innerHTML = "";
+            speechQueue = [];
+
+            words.forEach(word => {
+                const cleaned = word.replace(/[^a-zA-Z]/g, "");
+                if (cleaned) {
+                    const parsed = translateWordToPhonemes(cleaned, dialect);
+                    parsed.forEach(ph => {
+                        const chip = document.createElement("div");
+                        chip.className = `phoneme-chip ${ph.startsWith("PA") ? "pause" : ""}`;
+                        chip.innerText = ph;
+                        container.appendChild(chip);
+                        speechQueue.push({ phoneme: ph, element: chip });
+                    });
+                    // Insert word pause
+                    const pauseChip = document.createElement("div");
+                    pauseChip.className = "phoneme-chip pause";
+                    pauseChip.innerText = "PA1";
+                    container.appendChild(pauseChip);
+                    speechQueue.push({ phoneme: "PA1", element: pauseChip });
+                }
+            });
+
+            if (speechQueue.length === 0) {
+                container.innerHTML = '<span style="color: var(--text-secondary); font-style: italic;">No phonemes generated.</span>';
+            } else {
+                logConsole(`Generated ${speechQueue.length} phoneme sequence chain.`);
+            }
+        }
+
+        function playLocalPhoneme(name, duration = 0.16) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const isConsonant = ["S", "Z", "SH", "ZH", "CH", "H", "K", "G", "T", "D", "P", "F"].includes(name[0]) || ["SH", "ZH", "CH", "TH", "THR", "THV", "DT"].includes(name.substring(0, 3));
+            const isPause = name.startsWith("PA");
+
+            // Update UI mouth representation
+            const mouth = document.getElementById("voiceBoxMouth");
+            const led = document.getElementById("mouthLED");
+            let mouthHeight = 4;
+
+            if (isPause) {
+                mouthHeight = 2;
+                if (led) led.className = "led-indicator";
+            } else {
+                if (led) led.className = "led-indicator active-pink";
+                if (isConsonant) {
+                    mouthHeight = 12;
+                } else {
+                    mouthHeight = 28;
+                }
+            }
+
+            if (mouth) {
+                mouth.style.height = `${mouthHeight}px`;
+                mouth.style.borderRadius = mouthHeight > 8 ? "50%" : "4px";
+            }
+
+            document.getElementById("visualActivePhoneme").innerText = name;
+
+            if (isPause) return;
+
+            // Synthesis engine (Oscillator + Bandpass formant filters)
+            const baseFreq = Number(document.getElementById("singingPitch").value);
+            const useVocoder = document.getElementById("vocoderToggle").checked;
+            const waveform = document.getElementById("sidWaveform").value;
+
+            // Draw oscilloscope pulse animation
+            triggerScopePulse();
+
+            if (isConsonant) {
+                // White noise generator for fricatives
+                const bufferSize = audioCtx.sampleRate * duration;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noiseNode = audioCtx.createBufferSource();
+                noiseNode.buffer = buffer;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = "bandpass";
+                
+                let centerF = 1500;
+                if (["S", "Z"].includes(name[0])) centerF = 6000;
+                else if (name.startsWith("SH") || name.startsWith("CH")) centerF = 3200;
+
+                filter.frequency.setValueAtTime(centerF, now);
+                filter.Q.setValueAtTime(4, now);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                noiseNode.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noiseNode.start(now);
+                noiseNode.stop(now + duration);
+
+                document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (Noise)`;
+            } else {
+                // Vowels use oscillator + formant filters
+                const osc = audioCtx.createOscillator();
+                osc.type = useVocoder ? waveform : "sawtooth";
+                osc.frequency.setValueAtTime(baseFreq, now);
+
+                // Add slight vibrato if vocoder mode
+                if (useVocoder) {
+                    const lfo = audioCtx.createOscillator();
+                    const lfoGain = audioCtx.createGain();
+                    lfo.frequency.value = 6; // Hz
+                    lfoGain.gain.value = 4; // cents range
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(osc.frequency);
+                    lfo.start(now);
+                    lfo.stop(now + duration);
+                }
+
+                // Custom Formants definition for SC-01A center frequencies
+                const formant = audioCtx.createBiquadFilter();
+                formant.type = "bandpass";
+                
+                let centerF = 950;
+                if (name.startsWith("EE") || name.startsWith("E1") || name.startsWith("E2")) centerF = 450;
+                else if (name.startsWith("OO") || name.startsWith("U")) centerF = 580;
+                else if (name.startsWith("AH") || name.startsWith("A")) centerF = 1050;
+
+                formant.frequency.setValueAtTime(centerF, now);
+                formant.Q.setValueAtTime(8, now);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                osc.connect(formant);
+                formant.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+
+                document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (Formant)`;
+            }
+        }
+
+        async function playQueueLocal() {
+            if (isSpeaking || speechQueue.length === 0) return;
+            isSpeaking = true;
+            logConsole("Playing local synthesis stream...");
+
+            for (let i = 0; i < speechQueue.length; i++) {
+                const item = speechQueue[i];
+                // Visual highlight active chip
+                item.element.classList.add("active");
+                
+                playLocalPhoneme(item.phoneme);
+                
+                await new Promise(r => setTimeout(r, 170));
+                item.element.classList.remove("active");
+            }
+
+            // Reset mouth
+            const mouth = document.getElementById("voiceBoxMouth");
+            if (mouth) mouth.style.height = "4px";
+            const led = document.getElementById("mouthLED");
+            if (led) led.className = "led-indicator";
+
+            isSpeaking = false;
+            logConsole("Local synthesis stream complete.");
+        }
+
+        // Web3 Solidity Integration
+        let provider = null;
+        let signer = null;
+        let speechContract = null;
+        let musicContract = null;
+
+        const speechABI = [
+            "function getSpeechState() public view returns (uint256, uint256, uint256, uint256)",
+            "function writePhoneme(uint256 phoneme, uint256 inflection) public returns (uint256)",
+            "function clearBusy() public returns (uint256)",
+            "function getTMS5220State() public view returns (uint256, uint256, uint256)",
+            "function writeTMS5220Command(uint256 command) public returns (uint256)",
+            "function writeTMS5220Data(uint256 data) public returns (uint256)"
+        ];
+
+        const musicABI = [
+            "function poke(uint16 addr, uint8 val) external returns (uint256)",
+            "function peek(uint16 addr) external view returns (uint8)",
+            "function colortonePlay(uint8 key, uint8 voice) external returns (uint256)",
+            "function colortoneRelease(uint8 voice) external returns (uint256)"
+        ];
+
+        async function initWeb3() {
+            try {
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    const netBadge = document.getElementById("networkBadge");
+                    netBadge.innerText = "Local Anvil / Web3";
+                    netBadge.classList.add("connected");
+                    
+                    // Fetch deployed config address
+                    const response = await fetch("/config/user_config.json");
+                    const config = await response.json();
+                    
+                    const speechAddr = config.networks.localhost.speechSynthesizerAddress || "0x88750793089cC83298ab8087dDD1F92006072E7f";
+                    const musicAddr = config.networks.localhost.musicMakerAddress || "0xA51c84EAB021655403089AC83298ab8087DDD1F92";
+
+                    document.getElementById("speechContractAddr").innerText = speechAddr;
+                    
+                    speechContract = new ethers.Contract(speechAddr, speechABI, signer);
+                    musicContract = new ethers.Contract(musicAddr, musicABI, signer);
+
+                    logConsole("Web3 wallet connected successfully.");
+                    updateOnChainStats();
+                } else {
+                    logConsole("No Web3 wallet detected. Run in local simulation mode.");
+                }
+            } catch (err) {
+                console.error(err);
+                logConsole("Web3 Connection failed: " + err.message);
+            }
+        }
+
+        async function updateOnChainStats() {
+            if (!speechContract) return;
+            try {
+                const state = await speechContract.getTMS5220State();
+                document.getElementById("tmsCommandText").innerText = state[0].toString();
+                document.getElementById("tmsStatusText").innerText = state[1].toString();
+                document.getElementById("tmsFifoText").innerText = state[2].toString();
+                
+                const synthState = await speechContract.getSpeechState();
+                const busyFlag = Number(synthState[2]);
+                document.getElementById("visualEVMState").innerText = busyFlag === 1 ? "BUSY" : "READY";
+            } catch (err) {
+                console.warn("Could not query on-chain variables:", err);
+            }
+        }
+
+        async function writeDirectPhoneme() {
+            if (!speechContract) {
+                logConsole("Web3 contract not connected!");
+                return;
+            }
+            const code = Number(document.getElementById("directPhonemeCode").value);
+            const inflection = Number(document.getElementById("directInflection").value);
+            try {
+                logConsole(`Sending tx: writePhoneme(${code}, ${inflection})...`);
+                const tx = await speechContract.writePhoneme(code, inflection);
+                await tx.wait();
+                logConsole("On-chain phoneme write transaction complete.");
+                updateOnChainStats();
+            } catch (err) {
+                logConsole("Transaction failed: " + err.message);
+            }
+        }
+
+        async function sendOnChainSpeech() {
+            if (!speechContract) {
+                logConsole("Web3 contract not connected!");
+                return;
+            }
+            if (speechQueue.length === 0) {
+                logConsole("Phoneme queue is empty. Parse a phrase first!");
+                return;
+            }
+            try {
+                logConsole(`Beginning on-chain sequence write of ${speechQueue.length} phonemes...`);
+                for (let i = 0; i < speechQueue.length; i++) {
+                    const item = speechQueue[i];
+                    item.element.classList.add("active");
+                    
+                    const code = phonemeToCode[item.phoneme] !== undefined ? phonemeToCode[item.phoneme] : 3;
+                    const tx = await speechContract.writePhoneme(code, 1);
+                    await tx.wait();
+                    
+                    // Keep local play synchronized
+                    playLocalPhoneme(item.phoneme);
+
+                    await new Promise(r => setTimeout(r, 120));
+                    item.element.classList.remove("active");
+                }
+                logConsole("On-chain speech sequence complete!");
+                updateOnChainStats();
+            } catch (err) {
+                logConsole("On-chain speak failed: " + err.message);
+            }
+        }
+
+        // Singing Scale Test
+        async function playSingingScale() {
+            initAudio();
+            const scalePitches = [110, 123, 130, 146, 164, 174, 196, 220]; // A2 to A3 minor/major intervals
+            const vowelList = ["AH1", "EE1", "OO1", "EH1"];
+            logConsole("Playing singing speech scale demo...");
+
+            for (let i = 0; i < scalePitches.length; i++) {
+                const pitch = scalePitches[i];
+                document.getElementById("singingPitch").value = pitch;
+                document.getElementById("singingPitchVal").innerText = `${pitch} Hz`;
+                
+                const vowel = vowelList[i % vowelList.length];
+                playLocalPhoneme(vowel, 0.3);
+
+                if (musicContract) {
+                    // Option to sync with SID poke
+                    try {
+                        await musicContract.colortonePlay(i, 1);
+                    } catch (e) {}
+                }
+
+                await new Promise(r => setTimeout(r, 350));
+
+                if (musicContract) {
+                    try {
+                        await musicContract.colortoneRelease(1);
+                    } catch (e) {}
+                }
+            }
+            logConsole("Singing speech scale demo completed.");
+        }
+
+        // Visual Canvas Osc / Formants simulation
+        let canvas = document.getElementById("scopeCanvas");
+        let ctx = canvas.getContext("2d");
+        let pulseVal = 0;
+
+        function drawSpectrumBackground() {
+            ctx.fillStyle = "#040306";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw retro grid
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.08)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+        }
+
+        function triggerScopePulse() {
+            pulseVal = 1.0;
+        }
+
+        function renderScope() {
+            drawSpectrumBackground();
+
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.8)";
+            ctx.shadowColor = "rgba(0, 242, 254, 0.5)";
+            ctx.shadowBlur = 4;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x++) {
+                const centerF = document.getElementById("visualFormantCenter").innerText.includes("450") ? 0.02 : 0.05;
+                const damp = Math.exp(-x * 0.015);
+                const osc1 = Math.sin(x * centerF) * 35;
+                const osc2 = Math.sin(x * 0.08) * 10;
+                const y = (canvas.height / 2) + (osc1 + osc2) * damp * pulseVal;
+
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Decay pulse
+            if (pulseVal > 0.01) {
+                pulseVal *= 0.95;
+            } else {
+                pulseVal = 0.05; // background noise floor
+            }
+
+            ctx.shadowBlur = 0;
+            requestAnimationFrame(renderScope);
+        }
+
+        // Console utility helpers
+        function logConsole(msg) {
+            const container = document.getElementById("consoleLogs");
+            const div = document.createElement("div");
+            div.className = "log-line info";
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById("consoleLogs").innerHTML = "";
+        }
+
+        // Hook DOM events
+        document.getElementById("btnParseText").addEventListener("click", parseG2P);
+        document.getElementById("btnLocalSpeak").addEventListener("click", () => {
+            initAudio();
+            if (speechQueue.length === 0) parseG2P();
+            playQueueLocal();
+        });
+        document.getElementById("btnChainSpeak").addEventListener("click", sendOnChainSpeech);
+        document.getElementById("btnWriteDirectPhoneme").addEventListener("click", writeDirectPhoneme);
+        document.getElementById("btnTestSing").addEventListener("click", playSingingScale);
+        document.getElementById("btnConnect").addEventListener("click", initWeb3);
+
+        document.getElementById("singingPitch").addEventListener("input", (e) => {
+            document.getElementById("singingPitchVal").innerText = `${e.target.value} Hz`;
+        });
+
+        // Initialize on load
+        window.addEventListener("DOMContentLoaded", () => {
+            loadPreset("AHOY COMPUTER! RETRO SOUND ON CHAIN");
+            renderScope();
+            setTimeout(initWeb3, 800);
+        });
+    </script>
+</body>
+</html>
