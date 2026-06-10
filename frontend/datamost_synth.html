@@ -2130,9 +2130,31 @@
             } catch (e) {}
         }
 
+        async function updateVoice1Waveform() {
+            if (!musicContract) return;
+            const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+            try {
+                const state = await musicContract.getSIDState();
+                const currentCtrl = Number(state[4]);
+                const gate = currentCtrl & 1;
+                await musicContract.poke(54276, waveformVal | gate);
+            } catch (e) {
+                await musicContract.poke(54276, waveformVal);
+            }
+        }
+
         ["synthAttack", "synthDecay", "synthSustain", "synthRelease"].forEach(id => {
-            document.getElementById(id).addEventListener("change", updateVoice1ADSR);
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("change", updateVoice1ADSR);
+                el.addEventListener("input", updateVoice1ADSR);
+            }
         });
+
+        const waveformEl = document.getElementById("synthWaveform");
+        if (waveformEl) {
+            waveformEl.addEventListener("change", updateVoice1Waveform);
+        }
 
         // Manual Note Trigger
         document.querySelectorAll(".note-btn").forEach(btn => {
