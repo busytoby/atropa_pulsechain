@@ -15,6 +15,7 @@ const CONTRACTS_TO_DEPLOY = [
     { name: "graphicsSystem_v2", path: "../solidity/bin/graphicsSystem.yul", configKey: "graphicsSystemAddress" },
     { name: "speechSynthesizer", path: "../solidity/bin/speechSynthesizer.yul", configKey: "speechSynthesizerAddress" },
     { name: "zmachine", path: "../solidity/bin/zmachine.yul", configKey: "zmachineAddress" },
+    { name: "zmachineParser", path: "../solidity/bin/zmachineParser.yul", configKey: "zmachineParserAddress" },
     { name: "keySystem", path: "../solidity/bin/keySystem.yul", configKey: "keySystemAddress" },
     { name: "bGraph_v1", path: "../solidity/bin/bGraph.yul", configKey: "bGraphAddress" },
     { name: "folklore", path: "../solidity/bin/folklore.yul", configKey: "folkloreAddress" },
@@ -179,6 +180,18 @@ async function main() {
         config.networks.localhost.batcherAddress = batcherAddress;
     } else {
         console.warn("solidity/Batcher.json not found! Skipping batcher deployment.");
+    }
+
+    // Bind Parser to ZMachine
+    const zmachineAddress = config.networks.localhost.zmachineAddress;
+    const zmachineParserAddress = config.networks.localhost.zmachineParserAddress;
+    if (zmachineAddress && zmachineParserAddress) {
+        console.log("\nLinking ZMachineParser to ZMachine...");
+        const zmContract = new ethers.Contract(zmachineAddress, [
+            "function bindParserAddress(address parser) public returns (bool)"
+        ], deployer);
+        await (await zmContract.bindParserAddress(zmachineParserAddress)).wait();
+        console.log("  Successfully linked ZMachineParser!");
     }
 
     // Write updated config back to file

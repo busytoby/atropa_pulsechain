@@ -36,16 +36,28 @@ async function main() {
     console.log("\n[DEPLOY] Compiling and deploying zmachine.yul...");
     const yulPath = path.join(__dirname, "../solidity/bin/zmachine.yul");
     const zmachineBytecode = compileYul(yulPath);
-    const tx = await deployer.sendTransaction({ data: zmachineBytecode, gasLimit: 4000000 });
+    const tx = await deployer.sendTransaction({ data: zmachineBytecode, gasLimit: 15000000 });
     const receipt = await tx.wait();
     const zmachineAddress = receipt.contractAddress;
     console.log("Z-Machine deployed at:", zmachineAddress);
 
+    console.log("[DEPLOY] Compiling and deploying zmachineParser.yul...");
+    const parserBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachineParser.yul"));
+    const parserTx = await deployer.sendTransaction({ data: parserBytecode, gasLimit: 15000000 });
+    const parserReceipt = await parserTx.wait();
+    const parserAddress = parserReceipt.contractAddress;
+    console.log("Z-Machine Parser deployed at:", parserAddress);
+
     const abi = [
         "function parseCommand(address player, bytes cmd) public returns (string)",
-        "function getObjectProperty(uint256 objId, uint256 propId, address player) public view returns (uint256)"
+        "function getObjectProperty(uint256 objId, uint256 propId, address player) public view returns (uint256)",
+        "function bindParserAddress(address parser) public returns (bool)"
     ];
     const contract = new ethers.Contract(zmachineAddress, abi, player);
+
+    console.log("Linking Parser Address...");
+    const adminContract = new ethers.Contract(zmachineAddress, abi, deployer);
+    await (await adminContract.bindParserAddress(parserAddress)).wait();
 
     // 2. Deploy MockERC20 tokens for Object 50, 51, and 52
     console.log("\n[DEPLOY] Deploying MockERC20 tokens...");

@@ -29,10 +29,21 @@ async function main() {
     const zmAddress = zmReceipt.contractAddress;
     console.log("Z-Machine contract deployed at:", zmAddress);
 
+    console.log("Compiling and deploying zmachineParser.yul...");
+    const parserBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachineParser.yul"));
+    const parserTx = await deployer.sendTransaction({ data: parserBytecode, gasLimit: 15000000 });
+    const parserReceipt = await parserTx.wait();
+    const parserAddress = parserReceipt.contractAddress;
+    console.log("Z-Machine Parser contract deployed at:", parserAddress);
+
     const zmAbi = [
-        "function getVectorScene(uint256 roomIndex) public view returns (bytes)"
+        "function getVectorScene(uint256 roomIndex) public view returns (bytes)",
+        "function bindParserAddress(address parser) public returns (bool)"
     ];
     const zm = new ethers.Contract(zmAddress, zmAbi, deployer);
+
+    console.log("Linking Parser Address...");
+    await (await zm.bindParserAddress(parserAddress)).wait();
 
     // Call getVectorScene(0) to fetch the Victorian House outline
     console.log("Fetching Room 0 vector scene...");

@@ -42,6 +42,16 @@ async function main() {
     const zmachineAddress = receipt.contractAddress;
     console.log("ZMachine prototype deployed at:", zmachineAddress);
 
+    console.log("Compiling zmachineParser.yul...");
+    const parserBytecode = compileYul(path.join(__dirname, "../solidity/bin/zmachineParser.yul"));
+    const parserTx = await deployer.sendTransaction({
+        data: parserBytecode,
+        gasLimit: 15000000
+    });
+    const parserReceipt = await parserTx.wait();
+    const parserAddress = parserReceipt.contractAddress;
+    console.log("ZMachineParser deployed at:", parserAddress);
+
     // Define ABI for selector interaction
     const abi = [
         "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
@@ -50,9 +60,13 @@ async function main() {
         "function executeTokenReward(address token, address player, uint256 amount) public returns (bool)",
         "function executeTokenPayment(address token, address player, uint256 amount) public returns (bool)",
         "function triggerZ6Sound(address musicMaker, uint256 note, uint256 voice) public returns (bool)",
-        "function decryptInvisiclue(address keySystem, address player, uint256 hintId) public view returns (string)"
+        "function decryptInvisiclue(address keySystem, address player, uint256 hintId) public view returns (string)",
+        "function bindParserAddress(address parser) public returns (bool)"
     ];
     const contract = new ethers.Contract(zmachineAddress, abi, deployer);
+
+    console.log("Binding ZMachineParser address...");
+    await (await contract.bindParserAddress(parserAddress)).wait();
 
     // 1. Deploy MockERC20 token
     console.log("\nDeploying MockERC20 token for binding...");

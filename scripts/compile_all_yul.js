@@ -16,6 +16,7 @@ async function main() {
     console.log("Compiling all Yul contracts for the dashboard...");
     
     const zmachine = compileYul(path.join(__dirname, "../solidity/bin/zmachine.yul"));
+    const zmachineParser = compileYul(path.join(__dirname, "../solidity/bin/zmachineParser.yul"));
     const musicMaker = compileYul(path.join(__dirname, "../solidity/bin/musicMaker.yul"));
     const keySystem = compileYul(path.join(__dirname, "../solidity/bin/keySystem.yul"));
     const bGraph = compileYul(path.join(__dirname, "../solidity/bin/bGraph.yul"));
@@ -25,6 +26,7 @@ async function main() {
 
     const data = {
         zmachine,
+        zmachineParser,
         musicMaker,
         keySystem,
         bGraph,
