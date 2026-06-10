@@ -1764,19 +1764,45 @@
                 executeDiskCommand: async (cmdBytes) => {
                     const bytes = ethers.getBytes(cmdBytes);
                     let cmdStr = "";
+                    let headerEnd = 0;
                     for (let i = 0; i < bytes.length; i++) {
-                        if (bytes[i] === 0) break;
+                        if (bytes[i] === 0) {
+                            headerEnd = i;
+                            break;
+                        }
                         cmdStr += String.fromCharCode(bytes[i]);
                     }
                     if (cmdStr.startsWith("W0:")) {
                         const filename = cmdStr.substring(3).toUpperCase();
+                        const content = bytes.slice(headerEnd + 1);
+                        window.simulatedFileContents = window.simulatedFileContents || {};
+                        window.simulatedFileContents[filename] = content;
                         if (!simulatedDiskFiles.some(f => f.name === filename)) {
-                            simulatedDiskFiles.push({ name: filename, size: 256 });
+                            simulatedDiskFiles.push({ name: filename, size: content.length });
+                        } else {
+                            const f = simulatedDiskFiles.find(f => f.name === filename);
+                            if (f) f.size = content.length;
                         }
-                        console.log(`[ZMM VM] Saved file '${filename}' to simulated disk DFS`);
+                        console.log(`[ZMM VM] Saved file '${filename}' (${content.length} bytes) to simulated disk DFS`);
                     }
                     return { wait: async () => {} };
                 }
+            };
+            diskContract.executeDiskCommand.staticCall = async (cmdBytes) => {
+                const bytes = ethers.getBytes(cmdBytes);
+                let cmdStr = "";
+                for (let i = 0; i < bytes.length; i++) {
+                    if (bytes[i] === 0) break;
+                    cmdStr += String.fromCharCode(bytes[i]);
+                }
+                if (cmdStr.startsWith("R0:")) {
+                    const filename = cmdStr.substring(3).toUpperCase();
+                    window.simulatedFileContents = window.simulatedFileContents || {};
+                    const content = window.simulatedFileContents[filename] || new Uint8Array([]);
+                    console.log(`[ZMM VM] Read file '${filename}' from simulated disk DFS: ${content.length} bytes`);
+                    return content;
+                }
+                return new Uint8Array([]);
             };
             speechContract = {
                 speak: async () => ({ wait: async () => {} })
