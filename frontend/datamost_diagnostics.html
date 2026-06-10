@@ -387,10 +387,11 @@
 
                         <!-- Interactive Node Status Dashboard -->
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-family: 'Rajdhani', sans-serif; background: rgba(0,255,127,0.02); border: 1px solid rgba(0,255,127,0.15); padding: 10px; border-radius: 6px; font-size: 0.75rem;">
-                            <div style="border-right: 1px solid rgba(0,255,127,0.15); padding-right: 5px;">
+            <div style="border-right: 1px solid rgba(0,255,127,0.15); padding-right: 5px;">
                                 <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE A (USER)</div>
                                 <div style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
                                 <div id="nodeARep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
+                                <div id="nodeAStake" style="color: #00ffcc; font-size: 0.65rem; font-family: monospace;">Stake: 100.0 PLS</div>
                                 <div style="margin-top: 5px; font-family: monospace; font-size: 0.6rem; color: #888; word-break: break-all; line-height: 1.1;">
                                     Sig: <span id="nodeATxSig" style="color: var(--neon-blue);">0x8a92...ef3a</span>
                                 </div>
@@ -399,6 +400,7 @@
                                 <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE B (COPILOT)</div>
                                 <div id="nodeBStatus" style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
                                 <div id="nodeBRep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
+                                <div id="nodeBStake" style="color: #00ffcc; font-size: 0.65rem; font-family: monospace;">Stake: 32.0 PLS</div>
                                 <div style="margin-top: 5px;">
                                     Acc: <input type="range" id="nodeBAcc" min="10" max="100" value="75" style="width: 50px; vertical-align: middle;" oninput="document.getElementById('lblNodeBAcc').innerText = this.value + '%';">
                                     <span id="lblNodeBAcc" style="font-family: 'Orbitron'; color: #00ff7f; font-weight: bold;">75%</span>
@@ -416,7 +418,7 @@
                                     <span id="lblNodeCAcc" style="font-family: 'Orbitron'; color: #00ff7f; font-weight: bold;">60%</span>
                                 </div>
                                 <div id="nodeCBlockInfo" style="margin-top: 4px; font-family: monospace; font-size: 0.6rem; color: #00ffcc; line-height: 1.1;">
-                                    Stake: 32.0 PLS <br>Block: <span id="nodeCBlockHash" style="color:#fff;">0x93fc...a12c</span>
+                                    Stake: <span id="nodeCStake">32.0 PLS</span> <br>Block: <span id="nodeCBlockHash" style="color:#fff;">0x93fc...a12c</span>
                                 </div>
                                 <div style="margin-top: 4px;">
                                     <select id="nodeCByzStance" style="width: 100%; padding: 2px; background: #000; color: #ff007f; border: 1px solid rgba(255,0,127,0.3); font-family: 'Orbitron'; font-size: 0.65rem; border-radius: 4px; outline: none; cursor: pointer;">
@@ -424,6 +426,7 @@
                                         <option value="opposite">Attack: Subversive (Opposite)</option>
                                         <option value="noise">Attack: Entropy (Random Noise)</option>
                                         <option value="sabotage">Attack: Sabotage (Silent Null)</option>
+                                        <option value="forgery">Attack: Forgery (Invalid Sig)</option>
                                     </select>
                                 </div>
                             </div>
@@ -2085,20 +2088,54 @@
                     nodeB: 100,
                     nodeC: 100
                 };
+                this.stakes = {
+                    nodeA: 100.0,
+                    nodeB: 32.0,
+                    nodeC: 32.0
+                };
+                this.addresses = {
+                    nodeA: "0x8a92e3a1f8190235b80459c033878bca17e0ef3a",
+                    nodeB: "0xf8a921d2345e567890abcdef1234567890abcdef",
+                    nodeC: "0x93fcba12cd34567890abcdef1234567890abcdef"
+                };
             }
             
-            async proposeInput(direction, votes, weights, slashLimit, consensusThreshold) {
+            async proposeInput(direction, votes, signatures, weights, slashLimit, consensusThreshold) {
                 const [voteA, voteB, voteC] = votes;
+                const [sigA, sigB, sigC] = signatures;
                 const [wA, wB, wC] = weights;
                 
-                const nodeB_Active = this.reputations.nodeB >= slashLimit;
-                const nodeC_Active = this.reputations.nodeC >= slashLimit;
+                // Active status depends on both reputation threshold and having locked stake left
+                const nodeB_Active = this.reputations.nodeB >= slashLimit && this.stakes.nodeB > 0;
+                const nodeC_Active = this.reputations.nodeC >= slashLimit && this.stakes.nodeC > 0;
+                
+                // Cryptographic verification of proposed state envelopes
+                const isSigAValid = sigA && sigA.startsWith("0x") && sigA.length > 30;
+                const isSigBValid = !nodeB_Active || (sigB && sigB.startsWith("0x") && sigB.length > 30);
+                const isSigCValid = !nodeC_Active || (sigC && sigC.startsWith("0x") && sigC.length > 30);
+                
+                if (!isSigAValid) {
+                    this.reputations.nodeA = Math.max(0, this.reputations.nodeA - 20);
+                    this.stakes.nodeA = Math.max(0, this.stakes.nodeA - 20.0);
+                }
                 
                 // Count weights for each candidate vote to resolve Byzantine consensus outcomes
                 const tallies = {};
-                if (voteA) tallies[voteA] = (tallies[voteA] || 0) + wA;
-                if (nodeB_Active && voteB) tallies[voteB] = (tallies[voteB] || 0) + wB;
-                if (nodeC_Active && voteC) tallies[voteC] = (tallies[voteC] || 0) + wC;
+                if (isSigAValid && voteA) tallies[voteA] = (tallies[voteA] || 0) + wA;
+                
+                if (nodeB_Active && isSigBValid && voteB) {
+                    tallies[voteB] = (tallies[voteB] || 0) + wB;
+                } else if (nodeB_Active && !isSigBValid) {
+                    // Slashed for signature forgery / invalid envelopes
+                    this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 8.0);
+                }
+                
+                if (nodeC_Active && isSigCValid && voteC) {
+                    tallies[voteC] = (tallies[voteC] || 0) + wC;
+                } else if (nodeC_Active && !isSigCValid) {
+                    // Slashed for signature forgery / invalid envelopes
+                    this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 8.0);
+                }
                 
                 let consensusDecision = null;
                 let maxWeight = 0;
@@ -2118,22 +2155,26 @@
                 
                 const passed = (maxWeight >= requiredWeight) && (consensusDecision === direction);
                 
-                // On-chain Slashing based on BFT Consensus
+                // On-chain Slashing (both reputation and locked PLS stakes) based on BFT Consensus
                 if (passed && consensusDecision) {
                     // Slash nodes that voted against the consensus decision
                     if (nodeB_Active && voteB && voteB !== consensusDecision) {
                         this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
+                        this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 4.0);
                     }
                     if (nodeC_Active && voteC && voteC !== consensusDecision) {
                         this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
+                        this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 4.0);
                     }
                 } else {
                     // Consensus failed: Slash the validators who voted against the proposal direction for blocking the vote
                     if (nodeB_Active && voteB && voteB !== direction) {
                         this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
+                        this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 4.0);
                     }
                     if (nodeC_Active && voteC && voteC !== direction) {
                         this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
+                        this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 4.0);
                     }
                 }
                 
@@ -2155,7 +2196,8 @@
                     passed,
                     matchingWeight: maxWeight,
                     totalWeight,
-                    reputations: { ...this.reputations }
+                    reputations: { ...this.reputations },
+                    stakes: { ...this.stakes }
                 };
             }
             
@@ -2163,6 +2205,9 @@
                 this.reputations.nodeA = 100;
                 this.reputations.nodeB = 100;
                 this.reputations.nodeC = 100;
+                this.stakes.nodeA = 100.0;
+                this.stakes.nodeB = 32.0;
+                this.stakes.nodeC = 32.0;
             }
         }
 
@@ -8926,10 +8971,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             }
             
-            logBox.innerText += `\n[VOTE ROUND] Node A: ${nodeA_Vote} | Node B: ${nodeB_Vote || "SUSPENDED"} | Node C: ${nodeC_Vote || "SUSPENDED"}`;
+            // Generate mock cryptographic transaction signatures for verification
+            const sigA = "0x" + randHex(64);
+            const sigB = nodeB_Active ? "0x" + randHex(64) : null;
+            let sigC = nodeC_Active ? "0x" + randHex(64) : null;
             
-            // Propose transaction to the simulated on-chain consensus contract
-            const txResult = await consensusContract.proposeInput(direction, [nodeA_Vote, nodeB_Vote, nodeC_Vote], [wA, wB, wC], slashLimit, threshold);
+            if (nodeCByzStance === "forgery" && nodeC_Active) {
+                sigC = "0xforged_invalid_signature";
+            } else if (nodeCByzStance === "sabotage" || !nodeC_Active) {
+                sigC = null;
+            }
+            
+            logBox.innerText += `\n[VOTE ROUND] Node A: ${nodeA_Vote} | Node B: ${nodeB_Vote || "SUSPENDED"} | Node C: ${nodeC_Vote || "SUSPENDED"}`;
+            if (nodeCByzStance === "forgery" && nodeC_Active) {
+                logBox.innerText += `\n[ATTACK VECTOR] Node C attempting signature forgery!`;
+            }
+            
+            // Propose transaction to the simulated on-chain consensus contract (including signatures)
+            const txResult = await consensusContract.proposeInput(direction, [nodeA_Vote, nodeB_Vote, nodeC_Vote], [sigA, sigB, sigC], [wA, wB, wC], slashLimit, threshold);
             
             nodeARep = txResult.reputations.nodeA;
             nodeBRep = txResult.reputations.nodeB;
@@ -8955,21 +9014,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             
             // Sync UI widgets with contract state variables
             document.getElementById("nodeARep").innerText = `Rep: ${nodeARep}%`;
+            document.getElementById("nodeAStake").innerText = `Stake: ${txResult.stakes.nodeA.toFixed(1)} PLS`;
+            
             document.getElementById("nodeBRep").innerText = `Rep: ${nodeBRep}%`;
-            if (nodeBRep < slashLimit) {
-                document.getElementById("nodeBStatus").innerText = "SUSPENDED (SLASHED)";
+            document.getElementById("nodeBStake").innerText = `Stake: ${txResult.stakes.nodeB.toFixed(1)} PLS`;
+            if (nodeBRep < slashLimit || txResult.stakes.nodeB <= 0) {
+                document.getElementById("nodeBStatus").innerText = txResult.stakes.nodeB <= 0 ? "JAILED (STAKE POOR)" : "SUSPENDED (SLASHED)";
                 document.getElementById("nodeBStatus").style.color = "#ff007f";
-                logBox.innerText += `\n[SLASH] Node B reputation slashed on-chain to ${nodeBRep}%.`;
+                logBox.innerText += `\n[SLASH] Node B slashed on-chain to ${nodeBRep}% rep, ${txResult.stakes.nodeB.toFixed(1)} PLS.`;
             } else {
                 document.getElementById("nodeBStatus").innerText = "ONLINE";
                 document.getElementById("nodeBStatus").style.color = "#00ff7f";
             }
             
             document.getElementById("nodeCRep").innerText = `Rep: ${nodeCRep}%`;
-            if (nodeCRep < slashLimit) {
-                document.getElementById("nodeCStatus").innerText = "SUSPENDED (SLASHED)";
+            document.getElementById("nodeCStake").innerText = `${txResult.stakes.nodeC.toFixed(1)} PLS`;
+            if (nodeCRep < slashLimit || txResult.stakes.nodeC <= 0) {
+                document.getElementById("nodeCStatus").innerText = txResult.stakes.nodeC <= 0 ? "JAILED (STAKE POOR)" : "SUSPENDED (SLASHED)";
                 document.getElementById("nodeCStatus").style.color = "#ff007f";
-                logBox.innerText += `\n[SLASH] Node C reputation slashed on-chain to ${nodeCRep}%.`;
+                logBox.innerText += `\n[SLASH] Node C slashed on-chain to ${nodeCRep}% rep, ${txResult.stakes.nodeC.toFixed(1)} PLS.`;
             } else {
                 document.getElementById("nodeCStatus").innerText = "ONLINE";
                 document.getElementById("nodeCStatus").style.color = "#00ff7f";
