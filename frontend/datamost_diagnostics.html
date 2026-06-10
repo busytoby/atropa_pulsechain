@@ -2894,7 +2894,7 @@
         async function updateTaxAndSecurityDashboard() {
             if (!cpuContract) return;
             try {
-                const userAddress = signer ? await signer.getAddress() : "0x0000000000000000000000000000000000000000";
+                const userAddress = typeof signer !== "undefined" && signer ? await signer.getAddress() : (validatorList && validatorList[0] ? validatorList[0].address : "0x8a92e3a1f8190235b80459c033878bca17e0ef3a");
                 
                 // Sandbox context user
                 const userAddrEl = document.getElementById("securityUserAddr");
