@@ -8809,7 +8809,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
                 // Deploy constructed ROM to chain using chunk uploader
-                const zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123";
+                const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
                 const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
@@ -17814,7 +17814,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         // --- Z-Machine Dashboard Events ---
         function initZmachineEvents() {
             if (!document.getElementById('zmachineTerminal')) return;
-            let zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123"; // Compiled Z-Machine address
+            let zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f"; // Compiled Z-Machine address
             let zmAbi = [
                 "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
                 "function parseCommand(address player, bytes cmd) public returns (string)"
@@ -18045,7 +18045,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
                 // Deploy constructed ROM to chain using chunk uploader
-                const zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123";
+                const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
                 const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
@@ -26864,7 +26864,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         // --- Z-Machine Dashboard Events ---
         function initZmachineEvents() {
             if (!document.getElementById('zmachineTerminal')) return;
-            let zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123"; // Compiled Z-Machine address
+            let zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f"; // Compiled Z-Machine address
             let zmAbi = [
                 "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
                 "function parseCommand(address player, bytes cmd) public returns (string)"
@@ -27095,7 +27095,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
                 // Deploy constructed ROM to chain using chunk uploader
-                const zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123";
+                const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
                 const zmAbi = ["function uploadRomChunk(uint256 offset, bytes data) public returns (bool)"];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
