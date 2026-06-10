@@ -730,7 +730,11 @@
         function playLocalPhoneme(name, duration = 0.16) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
-            const isConsonant = ["S", "Z", "SH", "ZH", "CH", "H", "K", "G", "T", "D", "P", "F"].includes(name[0]) || ["SH", "ZH", "CH", "TH", "THR", "THV", "DT"].includes(name.substring(0, 3));
+            
+            // Consonant definitions
+            const isUnvoicedConsonant = ["S", "SH", "CH", "H", "K", "T", "P", "F", "TH"].some(p => name.startsWith(p));
+            const isVoicedConsonant = ["Z", "ZH", "J", "V", "D", "G", "B", "THR", "THV", "DT"].some(p => name.startsWith(p));
+            const isConsonant = isUnvoicedConsonant || isVoicedConsonant;
             const isPause = name.startsWith("PA");
 
             // Update UI mouth representation
@@ -759,16 +763,68 @@
 
             if (isPause) return;
 
-            // Synthesis engine (Oscillator + Bandpass formant filters)
+            // Synthesis engine parameters
             const baseFreq = Number(document.getElementById("singingPitch").value);
             const useVocoder = document.getElementById("vocoderToggle").checked;
             const waveform = document.getElementById("sidWaveform").value;
 
-            // Draw oscilloscope pulse animation
             triggerScopePulse();
 
+            // Formant frequencies mapping [F1, F2, F3]
+            const formantMap = {
+                "EH": [550, 1800, 2500],
+                "E1": [350, 2200, 2900],
+                "E2": [350, 2200, 2900],
+                "EE": [270, 2290, 3010],
+                "I1": [400, 1900, 2500],
+                "I2": [400, 1900, 2500],
+                "I3": [400, 1900, 2500],
+                "A1": [700, 1200, 2400],
+                "A2": [700, 1200, 2400],
+                "A": [730, 1100, 2440],
+                "AH1": [730, 1100, 2440],
+                "AH2": [730, 1100, 2440],
+                "AY": [500, 1700, 2400],
+                "OY": [450, 1000, 2200],
+                "UH1": [520, 1190, 2390],
+                "UH2": [520, 1190, 2390],
+                "UH3": [520, 1190, 2390],
+                "UR": [490, 1350, 1690],
+                "ER": [490, 1350, 1690],
+                "R": [450, 1300, 1700],
+                "O": [570, 840, 2400],
+                "OU": [500, 900, 2300],
+                "OO": [300, 870, 2240],
+                "OO1": [300, 870, 2240],
+                "AW1": [600, 950, 2400],
+                "AW2": [600, 950, 2400],
+                "Y": [300, 2200, 3000],
+                "Y1": [300, 2200, 3000],
+                "EL": [450, 1000, 2400],
+                "L": [400, 1000, 2400],
+                "M": [300, 1100, 2500],
+                "N": [300, 1400, 2700],
+                "NG": [300, 1800, 2700],
+                "UN": [400, 1500, 2500]
+            };
+
+            // Find matching formants
+            let formants = [500, 1500, 2500]; // fallback default vowel
+            for (const key in formantMap) {
+                if (name.startsWith(key)) {
+                    formants = formantMap[key];
+                    break;
+                }
+            }
+
+            // Create common gain output node
+            const mainGain = audioCtx.createGain();
+            mainGain.gain.setValueAtTime(0.12, now);
+            mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            mainGain.connect(audioCtx.destination);
+
             if (isConsonant) {
-                // White noise generator for fricatives
+                // Generate Noise Source
                 const bufferSize = audioCtx.sampleRate * duration;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -778,68 +834,118 @@
                 const noiseNode = audioCtx.createBufferSource();
                 noiseNode.buffer = buffer;
 
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = "bandpass";
+                // Bandpass filter the noise
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = "bandpass";
                 
                 let centerF = 1500;
-                if (["S", "Z"].includes(name[0])) centerF = 6000;
-                else if (name.startsWith("SH") || name.startsWith("CH")) centerF = 3200;
+                if (name.startsWith("S") || name.startsWith("Z")) centerF = 6000;
+                else if (name.startsWith("SH") || name.startsWith("ZH") || name.startsWith("CH")) centerF = 3200;
+                else if (name.startsWith("F") || name.startsWith("TH")) centerF = 2200;
 
-                filter.frequency.setValueAtTime(centerF, now);
-                filter.Q.setValueAtTime(4, now);
+                noiseFilter.frequency.setValueAtTime(centerF, now);
+                noiseFilter.Q.setValueAtTime(4, now);
 
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.06, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.08, now);
 
-                noiseNode.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioCtx.destination);
+                noiseNode.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(mainGain);
                 noiseNode.start(now);
                 noiseNode.stop(now + duration);
 
-                document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (Noise)`;
-            } else {
-                // Vowels use oscillator + formant filters
-                const osc = audioCtx.createOscillator();
-                osc.type = useVocoder ? waveform : "sawtooth";
-                osc.frequency.setValueAtTime(baseFreq, now);
+                // For voiced consonants, add the low voiced hum representing vocal folds
+                if (isVoicedConsonant) {
+                    const voiceOsc = audioCtx.createOscillator();
+                    voiceOsc.type = "sawtooth";
+                    voiceOsc.frequency.setValueAtTime(baseFreq * 0.8, now);
 
-                // Add slight vibrato if vocoder mode
-                if (useVocoder) {
-                    const lfo = audioCtx.createOscillator();
-                    const lfoGain = audioCtx.createGain();
-                    lfo.frequency.value = 6; // Hz
-                    lfoGain.gain.value = 4; // cents range
-                    lfo.connect(lfoGain);
-                    lfoGain.connect(osc.frequency);
-                    lfo.start(now);
-                    lfo.stop(now + duration);
+                    // Lowpass filter heavily to represent sound leaking through throat/cheeks
+                    const humFilter = audioCtx.createBiquadFilter();
+                    humFilter.type = "lowpass";
+                    humFilter.frequency.setValueAtTime(180, now);
+
+                    const humGain = audioCtx.createGain();
+                    humGain.gain.setValueAtTime(0.12, now);
+
+                    voiceOsc.connect(humFilter);
+                    humFilter.connect(humGain);
+                    humGain.connect(mainGain);
+
+                    voiceOsc.start(now);
+                    voiceOsc.stop(now + duration);
                 }
 
-                // Custom Formants definition for SC-01A center frequencies
-                const formant = audioCtx.createBiquadFilter();
-                formant.type = "bandpass";
+                document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (Noise)`;
+            } else {
+                // Voiced sounds (vowels, nasals, liquids)
+                // Glottal source oscillator
+                const osc = audioCtx.createOscillator();
+                osc.type = useVocoder ? waveform : "sawtooth";
                 
-                let centerF = 950;
-                if (name.startsWith("EE") || name.startsWith("E1") || name.startsWith("E2")) centerF = 450;
-                else if (name.startsWith("OO") || name.startsWith("U")) centerF = 580;
-                else if (name.startsWith("AH") || name.startsWith("A")) centerF = 1050;
+                // Human vocal cords have micro-jitter: add small random freq variation
+                const jitter = (Math.random() - 0.5) * 1.5; // ±0.75 Hz
+                osc.frequency.setValueAtTime(baseFreq + jitter, now);
 
-                formant.frequency.setValueAtTime(centerF, now);
-                formant.Q.setValueAtTime(8, now);
+                // Add slight natural vibrato
+                const lfo = audioCtx.createOscillator();
+                const lfoGain = audioCtx.createGain();
+                lfo.frequency.value = 5.8; // Standard human vibrato rate (5.5 - 6 Hz)
+                lfoGain.gain.value = useVocoder ? 5 : 2; // cents / pitch variation
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                lfo.start(now);
+                lfo.stop(now + duration);
 
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.12, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                // Glottal wave source filter (spectral tilt low-pass)
+                const spectralTilt = audioCtx.createBiquadFilter();
+                spectralTilt.type = "lowpass";
+                spectralTilt.frequency.setValueAtTime(1200, now);
+                spectralTilt.Q.setValueAtTime(1.0, now);
 
-                osc.connect(formant);
-                formant.connect(gain);
-                gain.connect(audioCtx.destination);
+                osc.connect(spectralTilt);
+
+                // Set up three parallel formant filters (F1, F2, F3)
+                const f1 = audioCtx.createBiquadFilter();
+                f1.type = "bandpass";
+                f1.frequency.setValueAtTime(formants[0], now);
+                f1.Q.setValueAtTime(10, now);
+                const g1 = audioCtx.createGain();
+                g1.gain.setValueAtTime(1.0, now); // Strongest formant
+
+                const f2 = audioCtx.createBiquadFilter();
+                f2.type = "bandpass";
+                f2.frequency.setValueAtTime(formants[1], now);
+                f2.Q.setValueAtTime(12, now);
+                const g2 = audioCtx.createGain();
+                g2.gain.setValueAtTime(0.4, now); // Second formant
+
+                const f3 = audioCtx.createBiquadFilter();
+                f3.type = "bandpass";
+                f3.frequency.setValueAtTime(formants[2], now);
+                f3.Q.setValueAtTime(10, now);
+                const g3 = audioCtx.createGain();
+                g3.gain.setValueAtTime(0.15, now); // Third formant
+
+                // Connect source to parallel formant filters
+                spectralTilt.connect(f1);
+                spectralTilt.connect(f2);
+                spectralTilt.connect(f3);
+
+                // Connect formant filters to their respective gains and then to the main output
+                f1.connect(g1);
+                f2.connect(g2);
+                f3.connect(g3);
+
+                g1.connect(mainGain);
+                g2.connect(mainGain);
+                g3.connect(mainGain);
+
                 osc.start(now);
                 osc.stop(now + duration);
 
-                document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (Formant)`;
+                document.getElementById("visualFormantCenter").innerText = `F1:${formants[0]} F2:${formants[1]} F3:${formants[2]} Hz`;
             }
         }
 
