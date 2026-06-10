@@ -678,22 +678,24 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         let provider, signer;
         
         // Prevent crashes when referencing elements from other split sub-dashboards
-        const originalGetElementById = document.getElementById;
-        document.getElementById = function(id) {
-            const el = originalGetElementById.call(document, id);
-            if (el) return el;
-            return new Proxy({}, {
-                get: (target, prop) => {
-                    if (prop === 'addEventListener') return () => {};
-                    if (prop === 'style') return {};
-                    if (prop === 'classList') {
-                        return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
-                    }
-                    return undefined;
-                },
-                set: () => true
-            });
-        };
+        if (!window.originalGetElementById) {
+            window.originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                const el = window.originalGetElementById.call(document, id);
+                if (el) return el;
+                return new Proxy({}, {
+                    get: (target, prop) => {
+                        if (prop === 'addEventListener') return () => {};
+                        if (prop === 'style') return {};
+                        if (prop === 'classList') {
+                            return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
+                        }
+                        return undefined;
+                    },
+                    set: () => true
+                });
+            };
+        }
         let config = {};
         let audioCtx;
         let isAudioPlaying = false;
@@ -2939,6 +2941,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             async function simStep() {
                 if (window.isSimulating) return;
                 window.isSimulating = true;
+                const startTime = performance.now();
                 try {
                 if (!provider) return;
 
@@ -3375,7 +3378,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     console.error("Simulation loop error:", err);
                 } finally {
                     window.isSimulating = false;
-                    setTimeout(simStep, window.simulationIntervalSpeed || 30);
+                    const elapsed = performance.now() - startTime;
+                    const nextDelay = Math.max(0, (window.simulationIntervalSpeed || 30) - elapsed);
+                    setTimeout(simStep, nextDelay);
                 }
             }
             simStep();
@@ -9812,22 +9817,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         let provider, signer;
         
         // Prevent crashes when referencing elements from other split sub-dashboards
-        const originalGetElementById = document.getElementById;
-        document.getElementById = function(id) {
-            const el = originalGetElementById.call(document, id);
-            if (el) return el;
-            return new Proxy({}, {
-                get: (target, prop) => {
-                    if (prop === 'addEventListener') return () => {};
-                    if (prop === 'style') return {};
-                    if (prop === 'classList') {
-                        return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
-                    }
-                    return undefined;
-                },
-                set: () => true
-            });
-        };
+        if (!window.originalGetElementById) {
+            window.originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                const el = window.originalGetElementById.call(document, id);
+                if (el) return el;
+                return new Proxy({}, {
+                    get: (target, prop) => {
+                        if (prop === 'addEventListener') return () => {};
+                        if (prop === 'style') return {};
+                        if (prop === 'classList') {
+                            return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
+                        }
+                        return undefined;
+                    },
+                    set: () => true
+                });
+            };
+        }
         let config = {};
         let audioCtx;
         let isAudioPlaying = false;
@@ -12073,6 +12080,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             async function simStep() {
                 if (window.isSimulating) return;
                 window.isSimulating = true;
+                const startTime = performance.now();
                 try {
                 if (!provider) return;
 
@@ -12509,7 +12517,9 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     console.error("Simulation loop error:", err);
                 } finally {
                     window.isSimulating = false;
-                    setTimeout(simStep, window.simulationIntervalSpeed || 30);
+                    const elapsed = performance.now() - startTime;
+                    const nextDelay = Math.max(0, (window.simulationIntervalSpeed || 30) - elapsed);
+                    setTimeout(simStep, nextDelay);
                 }
             }
             simStep();
@@ -18761,22 +18771,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         let provider, signer;
         
         // Prevent crashes when referencing elements from other split sub-dashboards
-        const originalGetElementById = document.getElementById;
-        document.getElementById = function(id) {
-            const el = originalGetElementById.call(document, id);
-            if (el) return el;
-            return new Proxy({}, {
-                get: (target, prop) => {
-                    if (prop === 'addEventListener') return () => {};
-                    if (prop === 'style') return {};
-                    if (prop === 'classList') {
-                        return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
-                    }
-                    return undefined;
-                },
-                set: () => true
-            });
-        };
+        if (!window.originalGetElementById) {
+            window.originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                const el = window.originalGetElementById.call(document, id);
+                if (el) return el;
+                return new Proxy({}, {
+                    get: (target, prop) => {
+                        if (prop === 'addEventListener') return () => {};
+                        if (prop === 'style') return {};
+                        if (prop === 'classList') {
+                            return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
+                        }
+                        return undefined;
+                    },
+                    set: () => true
+                });
+            };
+        }
         let config = {};
         let audioCtx;
         let isAudioPlaying = false;
@@ -21022,6 +21034,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             async function simStep() {
                 if (window.isSimulating) return;
                 window.isSimulating = true;
+                const startTime = performance.now();
                 try {
                 if (!provider) return;
 
@@ -21458,7 +21471,9 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     console.error("Simulation loop error:", err);
                 } finally {
                     window.isSimulating = false;
-                    setTimeout(simStep, window.simulationIntervalSpeed || 30);
+                    const elapsed = performance.now() - startTime;
+                    const nextDelay = Math.max(0, (window.simulationIntervalSpeed || 30) - elapsed);
+                    setTimeout(simStep, nextDelay);
                 }
             }
             simStep();
