@@ -2755,23 +2755,29 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         document.getElementById("btnRefreshDisk").addEventListener("click", refreshDiskDirectory);
 
         // Sprite movement transaction
-        document.getElementById("btnMoveSprite").addEventListener("click", async () => {
-            if (!graphicsContract) return;
-            const spriteId = parseInt(document.getElementById("selectSprite").value);
-            const x = parseInt(document.getElementById("spriteX").value);
-            const y = parseInt(document.getElementById("spriteY").value);
+        const btnMoveSprites = document.querySelectorAll("#btnMoveSprite");
+        const selectSprites = document.querySelectorAll("#selectSprite");
+        const spriteXs = document.querySelectorAll("#spriteX");
+        const spriteYs = document.querySelectorAll("#spriteY");
+        if (btnMoveSprites && btnMoveSprites.length > 0) {
+            btnMoveSprites[0].addEventListener("click", async () => {
+                if (!graphicsContract) return;
+                const spriteId = parseInt(selectSprites[0].value);
+                const x = parseInt(spriteXs[0].value);
+                const y = parseInt(spriteYs[0].value);
 
-            try {
-                document.getElementById("btnMoveSprite").innerText = "Moving...";
-                const tx = await graphicsContract.updateSprite(spriteId, x, y);
-                await tx.wait();
-                console.log(`Sprite ${spriteId} moved to (${x}, ${y})`);
-            } catch (err) {
-                console.error("Movement failed:", err);
-            } finally {
-                document.getElementById("btnMoveSprite").innerText = "Move";
-            }
-        });
+                try {
+                    btnMoveSprites[0].innerText = "Moving...";
+                    const tx = await graphicsContract.updateSprite(spriteId, x, y);
+                    await tx.wait();
+                    console.log(`Sprite ${spriteId} moved to (${x}, ${y})`);
+                } catch (err) {
+                    console.error("Movement failed:", err);
+                } finally {
+                    btnMoveSprites[0].innerText = "Move";
+                }
+            });
+        }
 
         const c64Palette = [
             "#000000", // 0: Black
@@ -12524,23 +12530,29 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         document.getElementById("btnRefreshDisk").addEventListener("click", refreshDiskDirectory);
 
         // Sprite movement transaction
-        document.getElementById("btnMoveSprite").addEventListener("click", async () => {
-            if (!graphicsContract) return;
-            const spriteId = parseInt(document.getElementById("selectSprite").value);
-            const x = parseInt(document.getElementById("spriteX").value);
-            const y = parseInt(document.getElementById("spriteY").value);
+        const btnMoveSprites_2 = document.querySelectorAll("#btnMoveSprite");
+        const selectSprites_2 = document.querySelectorAll("#selectSprite");
+        const spriteXs_2 = document.querySelectorAll("#spriteX");
+        const spriteYs_2 = document.querySelectorAll("#spriteY");
+        if (btnMoveSprites_2 && btnMoveSprites_2.length > 1) {
+            btnMoveSprites_2[1].addEventListener("click", async () => {
+                if (!graphicsContract) return;
+                const spriteId = parseInt(selectSprites_2[1].value);
+                const x = parseInt(spriteXs_2[1].value);
+                const y = parseInt(spriteYs_2[1].value);
 
-            try {
-                document.getElementById("btnMoveSprite").innerText = "Moving...";
-                const tx = await graphicsContract.updateSprite(spriteId, x, y);
-                await tx.wait();
-                console.log(`Sprite ${spriteId} moved to (${x}, ${y})`);
-            } catch (err) {
-                console.error("Movement failed:", err);
-            } finally {
-                document.getElementById("btnMoveSprite").innerText = "Move";
-            }
-        });
+                try {
+                    btnMoveSprites_2[1].innerText = "Moving...";
+                    const tx = await graphicsContract.updateSprite(spriteId, x, y);
+                    await tx.wait();
+                    console.log(`Sprite ${spriteId} moved to (${x}, ${y})`);
+                } catch (err) {
+                    console.error("Movement failed:", err);
+                } finally {
+                    btnMoveSprites_2[1].innerText = "Move";
+                }
+            });
+        }
 
         const c64Palette = [
             "#000000", // 0: Black
