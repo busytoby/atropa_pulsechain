@@ -518,6 +518,14 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                                 <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
                                 <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
                             </div>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    📍 Initial Room: 
+                                    <select class="zmItemLocation input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;">
+                                        <option value="">None (Limbo/Inventory)</option>
+                                    </select>
+                                </label>
+                            </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button class="btn btn-primary" id="btnAddZmItem" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Item</button>
                             </div>
@@ -532,6 +540,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                             <div style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px; max-height: 150px; overflow-y: auto;">
                                 <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #8a2be2; margin-bottom: 5px; border-bottom: 1px dashed rgba(138,43,226,0.3); padding-bottom: 3px;">💎 CURRENT ITEMS</div>
                                 <div class="zmItemsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem; font-family: monospace;"></div>
+                            </div>
+                        </div>
+
+                        <!-- ZIL Live Editor & Compiler -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #8a2be2; margin-bottom: 5px;">📜 ZIL LIVE CODE PREVIEW & IDE</div>
+                            <textarea class="zmZilCodeEditor input-glow" style="width: 100%; height: 120px; background: rgba(0,0,0,0.6); border: 1px solid #8a2be2; color: #00ff66; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 0.8rem; resize: vertical;" placeholder="ZIL (Zork Implementation Language) code will be generated here in real time..."></textarea>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                                <span style="font-size: 0.7rem; color: #888;">You can edit ZIL code directly and compile it!</span>
+                                <button class="btn btn-primary btnCompileZilCode" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.75rem; padding: 4px 10px;">⚙️ Compile ZIL Code</button>
                             </div>
                         </div>
 
@@ -8741,17 +8759,44 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 { name: "North of House", desc: "You are facing the north side of a white house." }
             ];
             let items = [
-                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" },
-                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0" }
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House" },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House" }
             ];
 
             const roomNameInput = dashboardSection.querySelector("#zmRoomName");
             const roomDescInput = dashboardSection.querySelector("#zmRoomDesc");
             const itemNameInput = dashboardSection.querySelector("#zmItemName");
             const itemTokenInput = dashboardSection.querySelector("#zmItemToken");
+            const itemLocationSelect = dashboardSection.querySelector(".zmItemLocation");
             const statusDiv = dashboardSection.querySelector("#zmCreatorStatus");
             const roomsList = dashboardSection.querySelector(".zmRoomsList");
             const itemsList = dashboardSection.querySelector(".zmItemsList");
+            const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
+            const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const updateZilPreview = () => {
+                if (!zilCodeEditor) return;
+                let zil = `;; Generated ZIL Game Story Source\n\n`;
+                rooms.forEach((r, idx) => {
+                    const cleanName = r.name.toUpperCase().replace(/\s+/g, "-");
+                    zil += `<ROOM ${cleanName}\n      (DESC "${r.name}")\n      (LDESC "${r.desc}")\n`;
+                    if (r.north) zil += `      (NORTH TO ${r.north.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.south) zil += `      (SOUTH TO ${r.south.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.east) zil += `      (EAST TO ${r.east.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.west) zil += `      (WEST TO ${r.west.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    zil += `>\n\n`;
+                });
+                items.forEach((itm, idx) => {
+                    const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
+                    const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
+                    zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    if (itm.token) {
+                        zil += `      (VALUE "${itm.token}") ; ERC-20 Bound Address\n`;
+                    }
+                    zil += `>\n\n`;
+                });
+                zilCodeEditor.value = zil;
+            };
 
             const updateStatus = () => {
                 if (statusDiv) {
@@ -8769,6 +8814,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         select.value = "";
                     }
                 });
+
+                // Update item location dropdown
+                if (itemLocationSelect) {
+                    const currentVal = itemLocationSelect.value;
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        itemLocationSelect.value = currentVal;
+                    } else {
+                        itemLocationSelect.value = "";
+                    }
+                }
 
                 // Render Rooms List
                 if (roomsList) {
@@ -8806,7 +8862,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     itemsList.innerHTML = items.map((itm, i) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #00f2fe;">
                             <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${itm.name}</strong>${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
+                                <strong>${itm.name}</strong>${itm.location ? ` [${itm.location}]` : ''}${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
                             </span>
                             <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
                         </div>
@@ -8820,6 +8876,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         });
                     });
                 }
+
+                updateZilPreview();
             };
             updateStatus();
 
@@ -8849,36 +8907,93 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             dashboardSection.querySelector("#btnAddZmItem").addEventListener("click", () => {
                 const name = itemNameInput.value.trim();
                 const token = itemTokenInput.value.trim();
+                const location = itemLocationSelect ? itemLocationSelect.value : "";
                 if (!name) {
                     alert("Please enter Item name!");
                     return;
                 }
-                items.push({ name, token: token || null });
+                items.push({ name, token: token || null, location: location || null });
                 itemNameInput.value = "";
                 itemTokenInput.value = "";
+                if (itemLocationSelect) itemLocationSelect.value = "";
                 updateStatus();
                 console.log("Added Item:", items);
             });
 
-            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
-                if (rooms.length === 0) {
-                    // Fallback to check if user supplied raw ZIL code in the description textarea
-                    const rawZilCode = roomDescInput.value.trim();
-                    if (rawZilCode.startsWith("<ROOM") || rawZilCode.startsWith("<OBJECT")) {
-                        console.log("Found ZIL code block input. Running browser ZILCH compiler...");
-                        // Basic ZIL Regex parser to compile structures
-                        const roomMatches = [...rawZilCode.matchAll(/<ROOM\s+([A-Za-z0-9\-]+)\s+\(DESC\s+"([^"]+)"\)/g)];
-                        roomMatches.forEach(m => {
-                            rooms.push({ name: m[1], desc: m[2] });
+            if (btnCompileZilCode) {
+                btnCompileZilCode.addEventListener("click", () => {
+                    const text = zilCodeEditor.value;
+                    const newRooms = [];
+                    const newItems = [];
+                    
+                    const roomBlocks = text.match(/<ROOM\s+[\s\S]+?>/g) || [];
+                    roomBlocks.forEach(block => {
+                        const nameMatch = block.match(/<ROOM\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        const ldescMatch = block.match(/\(LDESC\s+"([^"]+)"\)/);
+                        if (ldescMatch) desc = ldescMatch[1];
+                        else if (descMatch) desc = descMatch[1];
+                        
+                        const northMatch = block.match(/\(NORTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const southMatch = block.match(/\(SOUTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const eastMatch = block.match(/\(EAST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const westMatch = block.match(/\(WEST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        
+                        newRooms.push({
+                            name: descMatch ? descMatch[1] : cleanName,
+                            desc: desc,
+                            north: northMatch ? northMatch[1].replace(/\-/g, " ") : "",
+                            south: southMatch ? southMatch[1].replace(/\-/g, " ") : "",
+                            east: eastMatch ? eastMatch[1].replace(/\-/g, " ") : "",
+                            west: westMatch ? westMatch[1].replace(/\-/g, " ") : ""
                         });
-                        const objMatches = [...rawZilCode.matchAll(/<OBJECT\s+([A-Za-z0-9\-]+)\s+\(VALUE\s+(\d+)\)/g)];
-                        objMatches.forEach(m => {
-                            items.push({ name: m[1], token: null });
-                        });
-                        console.log("ZILCH compilation successful. Compiled rooms:", rooms.length, "items:", items.length);
-                    }
-                }
+                    });
 
+                    const objBlocks = text.match(/<OBJECT\s+[\s\S]+?>/g) || [];
+                    objBlocks.forEach(block => {
+                        const nameMatch = block.match(/<OBJECT\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        if (descMatch) desc = descMatch[1];
+                        
+                        const inMatch = block.match(/\(IN\s+([A-Za-z0-9\-]+)\)/);
+                        let location = "";
+                        if (inMatch && inMatch[1] !== "IN-LIMBO") {
+                            location = inMatch[1].replace(/\-/g, " ");
+                        }
+                        
+                        const valMatch = block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        let token = "";
+                        if (valMatch) {
+                            token = valMatch[1];
+                        }
+                        
+                        newItems.push({
+                            name: desc,
+                            token: token || null,
+                            location: location
+                        });
+                    });
+
+                    if (newRooms.length > 0) {
+                        rooms = newRooms;
+                        items = newItems;
+                        updateStatus();
+                        alert(`Compiled successfully: ${rooms.length} Rooms, ${items.length} Items detected!`);
+                    } else {
+                        alert("Could not compile any valid <ROOM ...> blocks from ZIL code. Check syntax!");
+                    }
+                });
+            }
+
+            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
                 if (rooms.length === 0) {
                     alert("Please add at least one Room or enter valid ZIL code before deploying!");
                     return;
@@ -8949,6 +9064,33 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         }
                     }
                     romBuffer[pOffset] = 0; // Terminate property table
+                });
+
+                // Write items to object table
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
+                    
+                    let parentId = 0;
+                    if (itm.location) {
+                        const rIdx = rooms.findIndex(r => r.name === itm.location);
+                        if (rIdx !== -1) {
+                            parentId = rIdx + 1;
+                        }
+                    }
+                    
+                    romBuffer[objOffset + 4] = parentId; // Parent ID
+                    romBuffer[objOffset + 5] = 0; // Sibling ID
+                    romBuffer[objOffset + 6] = 0; // Child ID
+                    
+                    // Address of properties table: starting at 0x0500 + (idx * 32)
+                    const propAddr = 0x0500 + (idx * 32);
+                    romBuffer[objOffset + 7] = (propAddr >> 8) & 0xFF; // High byte
+                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte
+                    
+                    // Write property table at propAddr
+                    romBuffer[propAddr] = 0; // Name length = 0
+                    romBuffer[propAddr + 1] = 0; // Terminate property table
                 });
 
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
@@ -9950,6 +10092,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
                                 <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
                             </div>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    📍 Initial Room: 
+                                    <select class="zmItemLocation input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;">
+                                        <option value="">None (Limbo/Inventory)</option>
+                                    </select>
+                                </label>
+                            </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button class="btn btn-primary" id="btnAddZmItem" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Item</button>
                             </div>
@@ -9964,6 +10114,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             <div style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px; max-height: 150px; overflow-y: auto;">
                                 <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #8a2be2; margin-bottom: 5px; border-bottom: 1px dashed rgba(138,43,226,0.3); padding-bottom: 3px;">💎 CURRENT ITEMS</div>
                                 <div class="zmItemsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem; font-family: monospace;"></div>
+                            </div>
+                        </div>
+
+                        <!-- ZIL Live Editor & Compiler -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #8a2be2; margin-bottom: 5px;">📜 ZIL LIVE CODE PREVIEW & IDE</div>
+                            <textarea class="zmZilCodeEditor input-glow" style="width: 100%; height: 120px; background: rgba(0,0,0,0.6); border: 1px solid #8a2be2; color: #00ff66; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 0.8rem; resize: vertical;" placeholder="ZIL (Zork Implementation Language) code will be generated here in real time..."></textarea>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                                <span style="font-size: 0.7rem; color: #888;">You can edit ZIL code directly and compile it!</span>
+                                <button class="btn btn-primary btnCompileZilCode" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.75rem; padding: 4px 10px;">⚙️ Compile ZIL Code</button>
                             </div>
                         </div>
 
@@ -18138,17 +18298,45 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 { name: "North of House", desc: "You are facing the north side of a white house." }
             ];
             let items = [
-                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" },
-                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0" }
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House" },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House" }
             ];
 
             const roomNameInput = dashboardSection.querySelector("#zmRoomName");
             const roomDescInput = dashboardSection.querySelector("#zmRoomDesc");
             const itemNameInput = dashboardSection.querySelector("#zmItemName");
             const itemTokenInput = dashboardSection.querySelector("#zmItemToken");
+            const itemLocationSelect = dashboardSection.querySelector(".zmItemLocation");
             const statusDiv = dashboardSection.querySelector("#zmCreatorStatus");
             const roomsList = dashboardSection.querySelector(".zmRoomsList");
             const itemsList = dashboardSection.querySelector(".zmItemsList");
+            const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
+            const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const updateZilPreview = () => {
+                if (!zilCodeEditor) return;
+                let zil = `;; Generated ZIL Game Story Source\n\n`;
+                rooms.forEach((r, idx) => {
+                    const cleanName = r.name.toUpperCase().replace(/\s+/g, "-");
+                    zil += `<ROOM ${cleanName}\n      (DESC "${r.name}")\n      (LDESC "${r.desc}")\n`;
+                    if (r.north) zil += `      (NORTH TO ${r.north.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.south) zil += `      (SOUTH TO ${r.south.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.east) zil += `      (EAST TO ${r.east.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.west) zil += `      (WEST TO ${r.west.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    zil += `>\n\n`;
+                });
+                items.forEach((itm, idx) => {
+                    const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
+                    const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
+                    zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    if (itm.token) {
+                        zil += `      (VALUE "${itm.token}") ; ERC-20 Bound Address\n`;
+                    }
+                    zil += `>\n\n`;
+                });
+                zilCodeEditor.value = zil;
+            };
+
             const updateStatus = () => {
                 if (statusDiv) {
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
@@ -18165,6 +18353,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         select.value = "";
                     }
                 });
+
+                // Update item location dropdown
+                if (itemLocationSelect) {
+                    const currentVal = itemLocationSelect.value;
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        itemLocationSelect.value = currentVal;
+                    } else {
+                        itemLocationSelect.value = "";
+                    }
+                }
 
                 // Render Rooms List
                 if (roomsList) {
@@ -18202,7 +18401,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     itemsList.innerHTML = items.map((itm, i) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #00f2fe;">
                             <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${itm.name}</strong>${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
+                                <strong>${itm.name}</strong>${itm.location ? ` [${itm.location}]` : ''}${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
                             </span>
                             <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
                         </div>
@@ -18216,6 +18415,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         });
                     });
                 }
+
+                updateZilPreview();
             };
             updateStatus();
 
@@ -18245,36 +18446,93 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             dashboardSection.querySelector("#btnAddZmItem").addEventListener("click", () => {
                 const name = itemNameInput.value.trim();
                 const token = itemTokenInput.value.trim();
+                const location = itemLocationSelect ? itemLocationSelect.value : "";
                 if (!name) {
                     alert("Please enter Item name!");
                     return;
                 }
-                items.push({ name, token: token || null });
+                items.push({ name, token: token || null, location: location || null });
                 itemNameInput.value = "";
                 itemTokenInput.value = "";
+                if (itemLocationSelect) itemLocationSelect.value = "";
                 updateStatus();
                 console.log("Added Item:", items);
             });
 
-            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
-                if (rooms.length === 0) {
-                    // Fallback to check if user supplied raw ZIL code in the description textarea
-                    const rawZilCode = roomDescInput.value.trim();
-                    if (rawZilCode.startsWith("<ROOM") || rawZilCode.startsWith("<OBJECT")) {
-                        console.log("Found ZIL code block input. Running browser ZILCH compiler...");
-                        // Basic ZIL Regex parser to compile structures
-                        const roomMatches = [...rawZilCode.matchAll(/<ROOM\s+([A-Za-z0-9\-]+)\s+\(DESC\s+"([^"]+)"\)/g)];
-                        roomMatches.forEach(m => {
-                            rooms.push({ name: m[1], desc: m[2] });
+            if (btnCompileZilCode) {
+                btnCompileZilCode.addEventListener("click", () => {
+                    const text = zilCodeEditor.value;
+                    const newRooms = [];
+                    const newItems = [];
+                    
+                    const roomBlocks = text.match(/<ROOM\s+[\s\S]+?>/g) || [];
+                    roomBlocks.forEach(block => {
+                        const nameMatch = block.match(/<ROOM\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        const ldescMatch = block.match(/\(LDESC\s+"([^"]+)"\)/);
+                        if (ldescMatch) desc = ldescMatch[1];
+                        else if (descMatch) desc = descMatch[1];
+                        
+                        const northMatch = block.match(/\(NORTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const southMatch = block.match(/\(SOUTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const eastMatch = block.match(/\(EAST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const westMatch = block.match(/\(WEST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        
+                        newRooms.push({
+                            name: descMatch ? descMatch[1] : cleanName,
+                            desc: desc,
+                            north: northMatch ? northMatch[1].replace(/\-/g, " ") : "",
+                            south: southMatch ? southMatch[1].replace(/\-/g, " ") : "",
+                            east: eastMatch ? eastMatch[1].replace(/\-/g, " ") : "",
+                            west: westMatch ? westMatch[1].replace(/\-/g, " ") : ""
                         });
-                        const objMatches = [...rawZilCode.matchAll(/<OBJECT\s+([A-Za-z0-9\-]+)\s+\(VALUE\s+(\d+)\)/g)];
-                        objMatches.forEach(m => {
-                            items.push({ name: m[1], token: null });
-                        });
-                        console.log("ZILCH compilation successful. Compiled rooms:", rooms.length, "items:", items.length);
-                    }
-                }
+                    });
 
+                    const objBlocks = text.match(/<OBJECT\s+[\s\S]+?>/g) || [];
+                    objBlocks.forEach(block => {
+                        const nameMatch = block.match(/<OBJECT\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        if (descMatch) desc = descMatch[1];
+                        
+                        const inMatch = block.match(/\(IN\s+([A-Za-z0-9\-]+)\)/);
+                        let location = "";
+                        if (inMatch && inMatch[1] !== "IN-LIMBO") {
+                            location = inMatch[1].replace(/\-/g, " ");
+                        }
+                        
+                        const valMatch = block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        let token = "";
+                        if (valMatch) {
+                            token = valMatch[1];
+                        }
+                        
+                        newItems.push({
+                            name: desc,
+                            token: token || null,
+                            location: location
+                        });
+                    });
+
+                    if (newRooms.length > 0) {
+                        rooms = newRooms;
+                        items = newItems;
+                        updateStatus();
+                        alert(`Compiled successfully: ${rooms.length} Rooms, ${items.length} Items detected!`);
+                    } else {
+                        alert("Could not compile any valid <ROOM ...> blocks from ZIL code. Check syntax!");
+                    }
+                });
+            }
+
+            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
                 if (rooms.length === 0) {
                     alert("Please add at least one Room or enter valid ZIL code before deploying!");
                     return;
@@ -18347,6 +18605,33 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[pOffset] = 0; // Terminate property table
                 });
 
+                // Write items to object table
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
+                    
+                    let parentId = 0;
+                    if (itm.location) {
+                        const rIdx = rooms.findIndex(r => r.name === itm.location);
+                        if (rIdx !== -1) {
+                            parentId = rIdx + 1;
+                        }
+                    }
+                    
+                    romBuffer[objOffset + 4] = parentId; // Parent ID
+                    romBuffer[objOffset + 5] = 0; // Sibling ID
+                    romBuffer[objOffset + 6] = 0; // Child ID
+                    
+                    // Address of properties table: starting at 0x0500 + (idx * 32)
+                    const propAddr = 0x0500 + (idx * 32);
+                    romBuffer[objOffset + 7] = (propAddr >> 8) & 0xFF; // High byte
+                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte
+                    
+                    // Write property table at propAddr
+                    romBuffer[propAddr] = 0; // Name length = 0
+                    romBuffer[propAddr + 1] = 0; // Terminate property table
+                });
+
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
                 // Deploy constructed ROM to chain using chunk uploader
@@ -18358,36 +18643,6 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
                 const term = document.querySelectorAll("#zmachineTerminal")[1];
-                term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
-                
-                const chunkSize = 256;
-                try {
-                    for (let offset = 0; offset < romBuffer.length; offset += chunkSize) {
-                        const end = Math.min(offset + chunkSize, romBuffer.length);
-                        const slice = romBuffer.slice(offset, end);
-                        const tx = await contract.uploadRomChunk(offset, slice);
-                        await tx.wait();
-                    }
-                    term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
-                    
-                    // Bind token addresses for items
-                    for (let idx = 0; idx < items.length; idx++) {
-                        const item = items[idx];
-                        if (item.token && ethers.isAddress(item.token)) {
-                            const objId = 50 + idx; // Items start at Object ID 50
-                            term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
-                            const txBind = await contract.bindTokenAddress(objId, item.token);
-                            await txBind.wait();
-                        }
-                    }
-                    
-                    term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
-                } catch (err) {
-                    console.error(err);
-                    term.innerHTML += `\n[CREATOR-ERROR] Failed to upload custom game: ${err.message}`;
-                }
-            });
-        }
                 term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
                 
                 const chunkSize = 256;
@@ -19345,6 +19600,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
                                 <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
                             </div>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    📍 Initial Room: 
+                                    <select class="zmItemLocation input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;">
+                                        <option value="">None (Limbo/Inventory)</option>
+                                    </select>
+                                </label>
+                            </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button class="btn btn-primary" id="btnAddZmItem" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Item</button>
                             </div>
@@ -19359,6 +19622,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             <div style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px; max-height: 150px; overflow-y: auto;">
                                 <div style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #8a2be2; margin-bottom: 5px; border-bottom: 1px dashed rgba(138,43,226,0.3); padding-bottom: 3px;">💎 CURRENT ITEMS</div>
                                 <div class="zmItemsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem; font-family: monospace;"></div>
+                            </div>
+                        </div>
+
+                        <!-- ZIL Live Editor & Compiler -->
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid #8a2be2; padding: 12px; border-radius: 6px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #8a2be2; margin-bottom: 5px;">📜 ZIL LIVE CODE PREVIEW & IDE</div>
+                            <textarea class="zmZilCodeEditor input-glow" style="width: 100%; height: 120px; background: rgba(0,0,0,0.6); border: 1px solid #8a2be2; color: #00ff66; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 0.8rem; resize: vertical;" placeholder="ZIL (Zork Implementation Language) code will be generated here in real time..."></textarea>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                                <span style="font-size: 0.7rem; color: #888;">You can edit ZIL code directly and compile it!</span>
+                                <button class="btn btn-primary btnCompileZilCode" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.75rem; padding: 4px 10px;">⚙️ Compile ZIL Code</button>
                             </div>
                         </div>
 
@@ -27378,17 +27651,44 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 { name: "North of House", desc: "You are facing the north side of a white house." }
             ];
             let items = [
-                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" },
-                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0" }
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House" },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House" }
             ];
 
             const roomNameInput = dashboardSection.querySelector("#zmRoomName");
             const roomDescInput = dashboardSection.querySelector("#zmRoomDesc");
             const itemNameInput = dashboardSection.querySelector("#zmItemName");
             const itemTokenInput = dashboardSection.querySelector("#zmItemToken");
+            const itemLocationSelect = dashboardSection.querySelector(".zmItemLocation");
             const statusDiv = dashboardSection.querySelector("#zmCreatorStatus");
             const roomsList = dashboardSection.querySelector(".zmRoomsList");
             const itemsList = dashboardSection.querySelector(".zmItemsList");
+            const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
+            const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const updateZilPreview = () => {
+                if (!zilCodeEditor) return;
+                let zil = `;; Generated ZIL Game Story Source\n\n`;
+                rooms.forEach((r, idx) => {
+                    const cleanName = r.name.toUpperCase().replace(/\s+/g, "-");
+                    zil += `<ROOM ${cleanName}\n      (DESC "${r.name}")\n      (LDESC "${r.desc}")\n`;
+                    if (r.north) zil += `      (NORTH TO ${r.north.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.south) zil += `      (SOUTH TO ${r.south.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.east) zil += `      (EAST TO ${r.east.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.west) zil += `      (WEST TO ${r.west.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    zil += `>\n\n`;
+                });
+                items.forEach((itm, idx) => {
+                    const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
+                    const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
+                    zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    if (itm.token) {
+                        zil += `      (VALUE "${itm.token}") ; ERC-20 Bound Address\n`;
+                    }
+                    zil += `>\n\n`;
+                });
+                zilCodeEditor.value = zil;
+            };
 
             const updateStatus = () => {
                 if (statusDiv) {
@@ -27406,6 +27706,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         select.value = "";
                     }
                 });
+
+                // Update item location dropdown
+                if (itemLocationSelect) {
+                    const currentVal = itemLocationSelect.value;
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        itemLocationSelect.value = currentVal;
+                    } else {
+                        itemLocationSelect.value = "";
+                    }
+                }
 
                 // Render Rooms List
                 if (roomsList) {
@@ -27443,7 +27754,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     itemsList.innerHTML = items.map((itm, i) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #00f2fe;">
                             <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${itm.name}</strong>${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
+                                <strong>${itm.name}</strong>${itm.location ? ` [${itm.location}]` : ''}${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
                             </span>
                             <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
                         </div>
@@ -27457,6 +27768,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         });
                     });
                 }
+
+                updateZilPreview();
             };
             updateStatus();
 
@@ -27486,36 +27799,93 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             dashboardSection.querySelector("#btnAddZmItem").addEventListener("click", () => {
                 const name = itemNameInput.value.trim();
                 const token = itemTokenInput.value.trim();
+                const location = itemLocationSelect ? itemLocationSelect.value : "";
                 if (!name) {
                     alert("Please enter Item name!");
                     return;
                 }
-                items.push({ name, token: token || null });
+                items.push({ name, token: token || null, location: location || null });
                 itemNameInput.value = "";
                 itemTokenInput.value = "";
+                if (itemLocationSelect) itemLocationSelect.value = "";
                 updateStatus();
                 console.log("Added Item:", items);
             });
 
-            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
-                if (rooms.length === 0) {
-                    // Fallback to check if user supplied raw ZIL code in the description textarea
-                    const rawZilCode = roomDescInput.value.trim();
-                    if (rawZilCode.startsWith("<ROOM") || rawZilCode.startsWith("<OBJECT")) {
-                        console.log("Found ZIL code block input. Running browser ZILCH compiler...");
-                        // Basic ZIL Regex parser to compile structures
-                        const roomMatches = [...rawZilCode.matchAll(/<ROOM\s+([A-Za-z0-9\-]+)\s+\(DESC\s+"([^"]+)"\)/g)];
-                        roomMatches.forEach(m => {
-                            rooms.push({ name: m[1], desc: m[2] });
+            if (btnCompileZilCode) {
+                btnCompileZilCode.addEventListener("click", () => {
+                    const text = zilCodeEditor.value;
+                    const newRooms = [];
+                    const newItems = [];
+                    
+                    const roomBlocks = text.match(/<ROOM\s+[\s\S]+?>/g) || [];
+                    roomBlocks.forEach(block => {
+                        const nameMatch = block.match(/<ROOM\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        const ldescMatch = block.match(/\(LDESC\s+"([^"]+)"\)/);
+                        if (ldescMatch) desc = ldescMatch[1];
+                        else if (descMatch) desc = descMatch[1];
+                        
+                        const northMatch = block.match(/\(NORTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const southMatch = block.match(/\(SOUTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const eastMatch = block.match(/\(EAST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const westMatch = block.match(/\(WEST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        
+                        newRooms.push({
+                            name: descMatch ? descMatch[1] : cleanName,
+                            desc: desc,
+                            north: northMatch ? northMatch[1].replace(/\-/g, " ") : "",
+                            south: southMatch ? southMatch[1].replace(/\-/g, " ") : "",
+                            east: eastMatch ? eastMatch[1].replace(/\-/g, " ") : "",
+                            west: westMatch ? westMatch[1].replace(/\-/g, " ") : ""
                         });
-                        const objMatches = [...rawZilCode.matchAll(/<OBJECT\s+([A-Za-z0-9\-]+)\s+\(VALUE\s+(\d+)\)/g)];
-                        objMatches.forEach(m => {
-                            items.push({ name: m[1], token: null });
-                        });
-                        console.log("ZILCH compilation successful. Compiled rooms:", rooms.length, "items:", items.length);
-                    }
-                }
+                    });
 
+                    const objBlocks = text.match(/<OBJECT\s+[\s\S]+?>/g) || [];
+                    objBlocks.forEach(block => {
+                        const nameMatch = block.match(/<OBJECT\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        if (descMatch) desc = descMatch[1];
+                        
+                        const inMatch = block.match(/\(IN\s+([A-Za-z0-9\-]+)\)/);
+                        let location = "";
+                        if (inMatch && inMatch[1] !== "IN-LIMBO") {
+                            location = inMatch[1].replace(/\-/g, " ");
+                        }
+                        
+                        const valMatch = block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        let token = "";
+                        if (valMatch) {
+                            token = valMatch[1];
+                        }
+                        
+                        newItems.push({
+                            name: desc,
+                            token: token || null,
+                            location: location
+                        });
+                    });
+
+                    if (newRooms.length > 0) {
+                        rooms = newRooms;
+                        items = newItems;
+                        updateStatus();
+                        alert(`Compiled successfully: ${rooms.length} Rooms, ${items.length} Items detected!`);
+                    } else {
+                        alert("Could not compile any valid <ROOM ...> blocks from ZIL code. Check syntax!");
+                    }
+                });
+            }
+
+            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
                 if (rooms.length === 0) {
                     alert("Please add at least one Room or enter valid ZIL code before deploying!");
                     return;
@@ -27588,6 +27958,33 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[pOffset] = 0; // Terminate property table
                 });
 
+                // Write items to object table
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
+                    
+                    let parentId = 0;
+                    if (itm.location) {
+                        const rIdx = rooms.findIndex(r => r.name === itm.location);
+                        if (rIdx !== -1) {
+                            parentId = rIdx + 1;
+                        }
+                    }
+                    
+                    romBuffer[objOffset + 4] = parentId; // Parent ID
+                    romBuffer[objOffset + 5] = 0; // Sibling ID
+                    romBuffer[objOffset + 6] = 0; // Child ID
+                    
+                    // Address of properties table: starting at 0x0500 + (idx * 32)
+                    const propAddr = 0x0500 + (idx * 32);
+                    romBuffer[objOffset + 7] = (propAddr >> 8) & 0xFF; // High byte
+                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte
+                    
+                    // Write property table at propAddr
+                    romBuffer[propAddr] = 0; // Name length = 0
+                    romBuffer[propAddr + 1] = 0; // Terminate property table
+                });
+
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
                 // Deploy constructed ROM to chain using chunk uploader
@@ -27599,36 +27996,6 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
                 const term = document.querySelectorAll("#zmachineTerminal")[2];
-                term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
-                
-                const chunkSize = 256;
-                try {
-                    for (let offset = 0; offset < romBuffer.length; offset += chunkSize) {
-                        const end = Math.min(offset + chunkSize, romBuffer.length);
-                        const slice = romBuffer.slice(offset, end);
-                        const tx = await contract.uploadRomChunk(offset, slice);
-                        await tx.wait();
-                    }
-                    term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
-                    
-                    // Bind token addresses for items
-                    for (let idx = 0; idx < items.length; idx++) {
-                        const item = items[idx];
-                        if (item.token && ethers.isAddress(item.token)) {
-                            const objId = 50 + idx; // Items start at Object ID 50
-                            term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
-                            const txBind = await contract.bindTokenAddress(objId, item.token);
-                            await txBind.wait();
-                        }
-                    }
-                    
-                    term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
-                } catch (err) {
-                    console.error(err);
-                    term.innerHTML += `\n[CREATOR-ERROR] Failed to upload custom game: ${err.message}`;
-                }
-            });
-        }
                 term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
                 
                 const chunkSize = 256;
