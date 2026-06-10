@@ -2128,8 +2128,13 @@
                         this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
                     }
                 } else {
-                    // Consensus failed or proposer proposed an invalid command: Proposer Node A is slashed
-                    this.reputations.nodeA = Math.max(0, this.reputations.nodeA - 10);
+                    // Consensus failed: Slash the validators who voted against the proposal direction for blocking the vote
+                    if (nodeB_Active && voteB && voteB !== direction) {
+                        this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
+                    }
+                    if (nodeC_Active && voteC && voteC !== direction) {
+                        this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
+                    }
                 }
                 
                 if (passed && consensusDecision) {
@@ -8819,7 +8824,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
         let recentUserVotes = [];
 
-        function simulateVote(direction) {
+        async function simulateVote(direction) {
             const threshold = parseInt(document.getElementById("consensusThreshold").value);
             const logBox = document.getElementById("consensusLog");
             const statusLabel = document.getElementById("consensusStatusLabel");
