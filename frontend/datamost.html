@@ -1541,6 +1541,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 this.interface = {
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
+                // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Initialize default 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
             }
 
             async initializeGame(offset, programBytes, addrs, vals) {
@@ -1564,11 +1575,86 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
             async poke(addr, val) {
                 this.memory[addr] = val;
+                // Hook poke to register 54735 (Tax Payment trigger)
+                if (addr === 54735 && val === 1) {
+                    const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                    const d6 = this.memory[54706] || 0;
+                    const d7 = this.memory[54707] || 0;
+                    const d8 = this.memory[54708] || 0;
+                    const d9 = this.memory[54709] || 100;
+                    const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                    
+                    let currentAxl = await this.peekUser(userAddress, 851);
+                    if (currentAxl >= taxDue) {
+                        currentAxl -= taxDue;
+                    } else {
+                        currentAxl = 0;
+                    }
+                    await this.pokeUser(userAddress, 851, currentAxl);
+                    
+                    this.memory[54706] = 0;
+                    this.memory[54707] = 0;
+                    this.memory[54708] = 0;
+                    this.memory[54709] = 0;
+                    this.memory[54735] = 0;
+                    
+                    setTimeout(() => {
+                        const balanceEl = document.getElementById("otAxlBalance");
+                        if (balanceEl) balanceEl.innerText = `${currentAxl} OTAXL`;
+                        
+                        const listEl = document.getElementById("recentTaxPaymentsList");
+                        if (listEl) {
+                            if (listEl.innerText.includes("No tax payments detected yet")) {
+                                listEl.innerHTML = "";
+                            }
+                            const logItem = document.createElement("div");
+                            logItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                            logItem.style.padding = "2px 0";
+                            logItem.innerHTML = `<span style="color: var(--neon-magenta);">[SimBlock]</span> User <span style="color: var(--neon-blue);">${userAddress.substring(0, 8)}...</span> paid <span style="color: #ffcc00; font-weight: bold;">${taxDue}</span> OTAXL tax`;
+                            listEl.appendChild(logItem);
+                        }
+                    }, 50);
+                }
+                
+                // Hook poke to register 54752 (Regen Nonce trigger)
+                if (addr === 54752 && val === 1) {
+                    for (let i = 0; i < 32; i++) {
+                        this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                    }
+                    this.memory[54752] = 0;
+                }
                 return { wait: async () => {} };
             }
 
             async peek(addr) {
                 return this.memory[addr];
+            }
+
+            async peekUser(user, addr) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                if (this.userBalances[user][addr] === undefined) {
+                    if (addr === 848) return 100; // 100 OTRT
+                    if (addr === 849) return 5;   // 5 OTWGN
+                    if (addr === 850) return 10;  // 10 OTOXN
+                    if (addr === 851) return 1000; // 1000 OTAXL
+                    if (addr === 852) return 8;   // 8 OTTNG
+                    if (addr === 853) return 12;  // 12 OTWHL
+                    if (addr === 854) return 15;  // 15 OTCLTH
+                    return 0;
+                }
+                return this.userBalances[user][addr];
+            }
+
+            async pokeUser(user, addr, val) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                this.userBalances[user][addr] = val;
+                return { wait: async () => {} };
             }
 
             async getCPUState() {
@@ -11557,6 +11643,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 this.interface = {
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
+                // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Initialize default 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
             }
 
             async initializeGame(offset, programBytes, addrs, vals) {
@@ -11580,11 +11677,86 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             async poke(addr, val) {
                 this.memory[addr] = val;
+                // Hook poke to register 54735 (Tax Payment trigger)
+                if (addr === 54735 && val === 1) {
+                    const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                    const d6 = this.memory[54706] || 0;
+                    const d7 = this.memory[54707] || 0;
+                    const d8 = this.memory[54708] || 0;
+                    const d9 = this.memory[54709] || 100;
+                    const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                    
+                    let currentAxl = await this.peekUser(userAddress, 851);
+                    if (currentAxl >= taxDue) {
+                        currentAxl -= taxDue;
+                    } else {
+                        currentAxl = 0;
+                    }
+                    await this.pokeUser(userAddress, 851, currentAxl);
+                    
+                    this.memory[54706] = 0;
+                    this.memory[54707] = 0;
+                    this.memory[54708] = 0;
+                    this.memory[54709] = 0;
+                    this.memory[54735] = 0;
+                    
+                    setTimeout(() => {
+                        const balanceEl = document.getElementById("otAxlBalance");
+                        if (balanceEl) balanceEl.innerText = `${currentAxl} OTAXL`;
+                        
+                        const listEl = document.getElementById("recentTaxPaymentsList");
+                        if (listEl) {
+                            if (listEl.innerText.includes("No tax payments detected yet")) {
+                                listEl.innerHTML = "";
+                            }
+                            const logItem = document.createElement("div");
+                            logItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                            logItem.style.padding = "2px 0";
+                            logItem.innerHTML = `<span style="color: var(--neon-magenta);">[SimBlock]</span> User <span style="color: var(--neon-blue);">${userAddress.substring(0, 8)}...</span> paid <span style="color: #ffcc00; font-weight: bold;">${taxDue}</span> OTAXL tax`;
+                            listEl.appendChild(logItem);
+                        }
+                    }, 50);
+                }
+                
+                // Hook poke to register 54752 (Regen Nonce trigger)
+                if (addr === 54752 && val === 1) {
+                    for (let i = 0; i < 32; i++) {
+                        this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                    }
+                    this.memory[54752] = 0;
+                }
                 return { wait: async () => {} };
             }
 
             async peek(addr) {
                 return this.memory[addr];
+            }
+
+            async peekUser(user, addr) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                if (this.userBalances[user][addr] === undefined) {
+                    if (addr === 848) return 100; // 100 OTRT
+                    if (addr === 849) return 5;   // 5 OTWGN
+                    if (addr === 850) return 10;  // 10 OTOXN
+                    if (addr === 851) return 1000; // 1000 OTAXL
+                    if (addr === 852) return 8;   // 8 OTTNG
+                    if (addr === 853) return 12;  // 12 OTWHL
+                    if (addr === 854) return 15;  // 15 OTCLTH
+                    return 0;
+                }
+                return this.userBalances[user][addr];
+            }
+
+            async pokeUser(user, addr, val) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                this.userBalances[user][addr] = val;
+                return { wait: async () => {} };
             }
 
             async getCPUState() {
@@ -21176,6 +21348,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 this.interface = {
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
+                // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Initialize default 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
             }
 
             async initializeGame(offset, programBytes, addrs, vals) {
@@ -21199,11 +21382,86 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             async poke(addr, val) {
                 this.memory[addr] = val;
+                // Hook poke to register 54735 (Tax Payment trigger)
+                if (addr === 54735 && val === 1) {
+                    const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                    const d6 = this.memory[54706] || 0;
+                    const d7 = this.memory[54707] || 0;
+                    const d8 = this.memory[54708] || 0;
+                    const d9 = this.memory[54709] || 100;
+                    const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                    
+                    let currentAxl = await this.peekUser(userAddress, 851);
+                    if (currentAxl >= taxDue) {
+                        currentAxl -= taxDue;
+                    } else {
+                        currentAxl = 0;
+                    }
+                    await this.pokeUser(userAddress, 851, currentAxl);
+                    
+                    this.memory[54706] = 0;
+                    this.memory[54707] = 0;
+                    this.memory[54708] = 0;
+                    this.memory[54709] = 0;
+                    this.memory[54735] = 0;
+                    
+                    setTimeout(() => {
+                        const balanceEl = document.getElementById("otAxlBalance");
+                        if (balanceEl) balanceEl.innerText = `${currentAxl} OTAXL`;
+                        
+                        const listEl = document.getElementById("recentTaxPaymentsList");
+                        if (listEl) {
+                            if (listEl.innerText.includes("No tax payments detected yet")) {
+                                listEl.innerHTML = "";
+                            }
+                            const logItem = document.createElement("div");
+                            logItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                            logItem.style.padding = "2px 0";
+                            logItem.innerHTML = `<span style="color: var(--neon-magenta);">[SimBlock]</span> User <span style="color: var(--neon-blue);">${userAddress.substring(0, 8)}...</span> paid <span style="color: #ffcc00; font-weight: bold;">${taxDue}</span> OTAXL tax`;
+                            listEl.appendChild(logItem);
+                        }
+                    }, 50);
+                }
+                
+                // Hook poke to register 54752 (Regen Nonce trigger)
+                if (addr === 54752 && val === 1) {
+                    for (let i = 0; i < 32; i++) {
+                        this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                    }
+                    this.memory[54752] = 0;
+                }
                 return { wait: async () => {} };
             }
 
             async peek(addr) {
                 return this.memory[addr];
+            }
+
+            async peekUser(user, addr) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                if (this.userBalances[user][addr] === undefined) {
+                    if (addr === 848) return 100; // 100 OTRT
+                    if (addr === 849) return 5;   // 5 OTWGN
+                    if (addr === 850) return 10;  // 10 OTOXN
+                    if (addr === 851) return 1000; // 1000 OTAXL
+                    if (addr === 852) return 8;   // 8 OTTNG
+                    if (addr === 853) return 12;  // 12 OTWHL
+                    if (addr === 854) return 15;  // 15 OTCLTH
+                    return 0;
+                }
+                return this.userBalances[user][addr];
+            }
+
+            async pokeUser(user, addr, val) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                this.userBalances[user][addr] = val;
+                return { wait: async () => {} };
             }
 
             async getCPUState() {
