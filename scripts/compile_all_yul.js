@@ -31,6 +31,7 @@ async function main() {
     const lights = compileYul(path.join(__dirname, "../solidity/bin/lights.yul"));
     const pulsecatcher = compileYul(path.join(__dirname, "../solidity/bin/pulsecatcher.yul"));
     const tvcolor = compileYul(path.join(__dirname, "../solidity/bin/tvcolor.yul"));
+    const auntsally = compileYul(path.join(__dirname, "../solidity/bin/auntsally.yul"));
     
     const erc20Bin = "0x" + fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.bin"), "utf8").trim();
     const erc20Abi = JSON.parse(fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.abi"), "utf8"));
@@ -52,6 +53,7 @@ async function main() {
         lights,
         pulsecatcher,
         tvcolor,
+        auntsally,
         mockErc20: {
             bin: erc20Bin,
             abi: erc20Abi
