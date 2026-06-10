@@ -79,6 +79,43 @@ async function main() {
     await (await token.transfer(zmachineAddress, ethers.parseEther("100"))).wait();
     console.log("ERC-20 token rewards active. Object 50 bound to:", tokenAddress);
 
+    // Deploy and bind Target.sol as the default Room Contract for rooms 1-25
+    console.log("Deploying Target contract as the default Room Contract...");
+    const compileSolidity = (solPath) => {
+        const { execSync } = require("child_process");
+        const output = execSync(`solc --bin --optimize --optimize-runs=200 --evm-version shanghai "${solPath}"`, { encoding: "utf8" });
+        const lines = output.split("\n");
+        const binIndex = lines.findIndex(line => line.includes("Binary:"));
+        if (binIndex === -1) {
+            throw new Error(`Could not find binary representation for ${solPath}`);
+        }
+        return "0x" + lines[binIndex + 1].trim();
+    };
+
+    const targetSolPath = path.join(__dirname, "../solidity/Target.sol");
+    const targetBin = compileSolidity(targetSolPath);
+    const targetAbi = [
+        "function Type() public view returns (string)",
+        "function name() public view returns (string)",
+        "function symbol() public view returns (string)",
+        "function execute(string cmd) public view returns (string)"
+    ];
+    const targetFactory = new ethers.ContractFactory(targetAbi, targetBin, player);
+    const targetContract = await targetFactory.deploy();
+    await targetContract.waitForDeployment();
+    const targetAddress = await targetContract.getAddress();
+    console.log("Target Room Contract deployed at:", targetAddress);
+
+    console.log("Binding Target Room Contract to room IDs 1 through 25...");
+    for (let rId = 1; rId <= 25; rId++) {
+        await provider.send("hardhat_setStorageAt", [
+            zmachineAddress,
+            ethers.toBeHex(2000000 + rId),
+            ethers.zeroPadValue(targetAddress, 32)
+        ]);
+    }
+    console.log("Room bindings complete.");
+
     // Initial setup info
     console.log("\nType commands below (e.g. 'look', 'take', or 'exit' to quit).\n");
 
