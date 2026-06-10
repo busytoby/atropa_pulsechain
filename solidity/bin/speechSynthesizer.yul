@@ -1118,6 +1118,116 @@ object "SpeechSynthesizer" {
                 return(0x6000, add(64, paddedBytesLen))
             }
 
+            // ----------------------------------------------------------------
+            // Method: synthesizeNeuralWav(bytes melFrames, uint256 upsampleFactor) -> bytes
+            // Selector: 0x20c4433b
+            // ----------------------------------------------------------------
+            if eq(selector, 0x20c4433b) {
+                let bytesOffset := calldataload(4)
+                let upsampleFactor := calldataload(36)
+                if gt(upsampleFactor, 200) { upsampleFactor := 200 }
+
+                let melLen := calldataload(add(4, bytesOffset))
+                let numFrames := div(melLen, 8)
+                if iszero(numFrames) { numFrames := 1 }
+
+                let totalSamples := mul(numFrames, upsampleFactor)
+
+                // Setup ABI bytes headers at 0x5000
+                mstore(0x5000, 0x20)
+                let totalBytes := add(44, mul(totalSamples, 2))
+                mstore(0x5020, totalBytes)
+
+                // Assemble WAV Header Word 0 (Bytes 0-31)
+                let chunkSizeVal := add(36, mul(totalSamples, 2))
+                let chunkSizeLE := or(shl(24, and(chunkSizeVal, 0xFF)), or(shl(16, and(shr(8, chunkSizeVal), 0xFF)), or(shl(8, and(shr(16, chunkSizeVal), 0xFF)), and(shr(24, chunkSizeVal), 0xFF))))
+
+                let word0 := 0x524946460000000057415645666d74201000000001000100803e0000007d0000
+                word0 := or(and(word0, not(shl(192, 0xFFFFFFFF))), shl(192, chunkSizeLE))
+                mstore(0x5040, word0)
+
+                // Assemble WAV Header Word 1 (Bytes 32-43)
+                let subchunk2Val := mul(totalSamples, 2)
+                let subchunk2LE := or(shl(24, and(subchunk2Val, 0xFF)), or(shl(16, and(shr(8, subchunk2Val), 0xFF)), or(shl(8, and(shr(16, subchunk2Val), 0xFF)), and(shr(24, subchunk2Val), 0xFF))))
+
+                let word1 := 0x0200100064617461000000000000000000000000000000000000000000000000
+                word1 := or(and(word1, not(shl(160, 0xFFFFFFFF))), shl(160, subchunk2LE))
+                mstore(0x5060, word1)
+
+                let prevSample := 0
+
+                for { let f := 0 } lt(f, numFrames) { f := add(f, 1) } {
+                    let wordIdx := div(mul(f, 8), 32)
+                    let byteOffsetInWord := mod(mul(f, 8), 32)
+                    let calldataWord := calldataload(add(100, mul(wordIdx, 32)))
+                    let frameBytes := shr(sub(224, mul(byteOffsetInWord, 8)), calldataWord)
+
+                    let m0 := and(shr(56, frameBytes), 0xFF)
+                    let m1 := and(shr(48, frameBytes), 0xFF)
+                    let m2 := and(shr(40, frameBytes), 0xFF)
+                    let m3 := and(shr(32, frameBytes), 0xFF)
+                    let m4 := and(shr(24, frameBytes), 0xFF)
+                    let m5 := and(shr(16, frameBytes), 0xFF)
+                    let m6 := and(shr(8, frameBytes), 0xFF)
+                    let m7 := and(frameBytes, 0xFF)
+
+                    for { let u := 0 } lt(u, upsampleFactor) { u := add(u, 1) } {
+                        let step := mod(u, 8)
+                        let dot := 0
+
+                        if eq(step, 0) {
+                            dot := add(mul(m0, 12), add(mul(m1, sub(0, 5)), add(mul(m2, 3), add(mul(m3, 0), add(mul(m4, 1), add(mul(m5, sub(0, 2)), add(mul(m6, 2), mul(m7, sub(0, 1)))))))))
+                        }
+                        if eq(step, 1) {
+                            dot := add(mul(m0, sub(0, 4)), add(mul(m1, 15), add(mul(m2, sub(0, 6)), add(mul(m3, 4), add(mul(m4, sub(0, 1)), add(mul(m5, 2), add(mul(m6, sub(0, 2)), mul(m7, 1))))))))
+                        }
+                        if eq(step, 2) {
+                            dot := add(mul(m0, 5), add(mul(m1, sub(0, 3)), add(mul(m2, 14), add(mul(m3, sub(0, 5)), add(mul(m4, 2), add(mul(m5, sub(0, 1)), add(mul(m6, 1), mul(m7, sub(0, 2)))))))))
+                        }
+                        if eq(step, 3) {
+                            dot := add(mul(m0, sub(0, 2)), add(mul(m1, 4), add(mul(m2, sub(0, 4)), add(mul(m3, 16), add(mul(m4, sub(0, 6)), add(mul(m5, 3), add(mul(m6, sub(0, 1)), mul(m7, 2))))))))
+                        }
+                        if eq(step, 4) {
+                            dot := add(mul(m0, 2), add(mul(m1, sub(0, 1)), add(mul(m2, 3), add(mul(m3, sub(0, 5)), add(mul(m4, 13), add(mul(m5, sub(0, 4)), add(mul(m6, 2), mul(m7, sub(0, 1)))))))))
+                        }
+                        if eq(step, 5) {
+                            dot := add(mul(m0, sub(0, 1)), add(mul(m1, 2), add(mul(m2, sub(0, 2)), add(mul(m3, 4), add(mul(m4, sub(0, 5)), add(mul(m5, 15), add(mul(m6, sub(0, 3)), mul(m7, 1))))))))
+                        }
+                        if eq(step, 6) {
+                            dot := add(mul(m0, 1), add(mul(m1, sub(0, 2)), add(mul(m2, 2), add(mul(m3, sub(0, 1)), add(mul(m4, 3), add(mul(m5, sub(0, 4)), add(mul(m6, 12), mul(m7, sub(0, 3)))))))))
+                        }
+                        if eq(step, 7) {
+                            dot := add(mul(m0, sub(0, 3)), add(mul(m1, 1), add(mul(m2, sub(0, 1)), add(mul(m3, 2), add(mul(m4, sub(0, 2)), add(mul(m5, 3), add(mul(m6, sub(0, 5)), mul(m7, 17))))))))
+                        }
+
+                        let sampleVal := div(mul(dot, 150), 10)
+                        
+                        sampleVal := div(add(mul(sampleVal, 8), mul(prevSample, 2)), 10)
+                        prevSample := sampleVal
+
+                        if sgt(sampleVal, 32767) { sampleVal := 32767 }
+                        if slt(sampleVal, sub(0, 32768)) { sampleVal := sub(0, 32768) }
+
+                        let sampleIdx := add(mul(f, upsampleFactor), u)
+                        let pcmValLE := or(shl(8, and(sampleVal, 0xFF)), and(shr(8, sampleVal), 0xFF))
+
+                        let byteOffset := add(44, mul(sampleIdx, 2))
+                        let wordOffset := div(byteOffset, 32)
+                        let bitShift := sub(240, mul(mod(byteOffset, 32), 8))
+                        
+                        let targetAddress := add(0x5040, mul(wordOffset, 32))
+                        let currentWord := mload(targetAddress)
+                        let mask := not(shl(bitShift, 0xFFFF))
+                        currentWord := and(currentWord, mask)
+                        currentWord := or(currentWord, shl(bitShift, pcmValLE))
+                        mstore(targetAddress, currentWord)
+                    }
+                }
+
+                let paddedBytesLen := mul(div(add(totalBytes, 31), 32), 32)
+                return(0x5000, add(64, paddedBytesLen))
+            }
+
             revert(0, 0)
         }
     }
