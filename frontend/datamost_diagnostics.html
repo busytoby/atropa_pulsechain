@@ -824,7 +824,7 @@
             "function writeTMS5220Data(uint256 data) public returns (uint256)"
         ];
 
-        let cpuContract, graphicsContract, musicContract, diskContract, speechContract, oregonTrailTokenContract;
+        let cpuContract, consensusContract, graphicsContract, musicContract, diskContract, speechContract, oregonTrailTokenContract;
         let batcherContract;
         let datamostNonce;
         const batcherABI = [
@@ -2072,6 +2072,79 @@
             }
         }
 
+        class SimulatedConsensus {
+            constructor(cpu) {
+                this.cpu = cpu;
+                this.target = "0x8920e4b2d5a37543d3e18a92e1ef3a17e0000000";
+                this.reputations = {
+                    nodeA: 100,
+                    nodeB: 100,
+                    nodeC: 100
+                };
+            }
+            
+            async proposeInput(direction, votes, weights, slashLimit, consensusThreshold) {
+                const [voteA, voteB, voteC] = votes;
+                const [wA, wB, wC] = weights;
+                
+                const nodeB_Active = this.reputations.nodeB >= slashLimit;
+                const nodeC_Active = this.reputations.nodeC >= slashLimit;
+                
+                let totalWeight = wA;
+                let matchingWeight = 0;
+                
+                if (voteA === direction) matchingWeight += wA;
+                if (nodeB_Active) {
+                    totalWeight += wB;
+                    if (voteB === direction) matchingWeight += wB;
+                }
+                if (nodeC_Active) {
+                    totalWeight += wC;
+                    if (voteC === direction) matchingWeight += wC;
+                }
+                
+                const targetRatio = consensusThreshold === 1 ? 0.33 : consensusThreshold === 2 ? 0.66 : 1.0;
+                const requiredWeight = totalWeight * targetRatio;
+                const passed = matchingWeight >= requiredWeight;
+                
+                // Slashing logic
+                if (nodeB_Active && voteB !== direction) {
+                    this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
+                }
+                if (nodeC_Active && voteC !== direction) {
+                    this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
+                }
+                
+                if (passed) {
+                    // Inject into simulated CPU address space directly via cross-contract poke call
+                    let joystickVal = 0xFF;
+                    if (direction === "UP") joystickVal &= ~0x01;
+                    else if (direction === "DOWN") joystickVal &= ~0x02;
+                    else if (direction === "LEFT") joystickVal &= ~0x04;
+                    else if (direction === "RIGHT") joystickVal &= ~0x08;
+                    else if (direction === "FIRE") joystickVal &= ~0x10;
+                    
+                    this.cpu.poke(56320, joystickVal);
+                    setTimeout(() => {
+                        this.cpu.poke(56320, 0xFF);
+                    }, 150);
+                }
+                
+                return {
+                    passed,
+                    matchingWeight,
+                    totalWeight,
+                    reputations: { ...this.reputations }
+                };
+            }
+            
+            resetReputations() {
+                this.reputations.nodeA = 100;
+                this.reputations.nodeB = 100;
+                this.reputations.nodeC = 100;
+            }
+        }
+
         function setupSimulatedVM() {
             provider = {
                 getStorage: async (target, slot) => {
@@ -2103,6 +2176,7 @@
                 }
             };
             cpuContract = new SimulatedCPU();
+            consensusContract = new SimulatedConsensus(cpuContract);
             graphicsContract = new SimulatedGraphics();
             musicContract = new SimulatedMusic();
             diskContract = {
@@ -8708,6 +8782,9 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             nodeARep = 100;
             nodeBRep = 100;
             nodeCRep = 100;
+            if (consensusContract) {
+                consensusContract.resetReputations();
+            }
             
             document.getElementById("nodeARep").innerText = "Rep: 100%";
             
@@ -8826,79 +8903,49 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             
             logBox.innerText += `\n[VOTE ROUND] Node A: ${nodeA_Vote} | Node B: ${nodeB_Vote || "SUSPENDED"} | Node C: ${nodeC_Vote || "SUSPENDED"}`;
             
-            let totalWeight = wA;
-            let matchingWeight = 0;
+            // Propose transaction to the simulated on-chain consensus contract
+            const txResult = await consensusContract.proposeInput(direction, [nodeA_Vote, nodeB_Vote, nodeC_Vote], [wA, wB, wC], slashLimit, threshold);
             
-            if (nodeA_Vote === direction) matchingWeight += wA;
+            nodeBRep = txResult.reputations.nodeB;
+            nodeCRep = txResult.reputations.nodeC;
             
-            if (nodeB_Active) {
-                totalWeight += wB;
-                if (nodeB_Vote === direction) matchingWeight += wB;
-            }
+            progressBar.style.width = `${(txResult.matchingWeight / txResult.totalWeight) * 100}%`;
             
-            if (nodeC_Active) {
-                totalWeight += wC;
-                if (nodeC_Vote === direction) matchingWeight += wC;
-            }
-            
-            progressBar.style.width = `${(matchingWeight / totalWeight) * 100}%`;
-            
-            // Scaled consensus threshold
             const targetRatio = threshold === 1 ? 0.33 : threshold === 2 ? 0.66 : 1.0;
-            const requiredWeight = totalWeight * targetRatio;
+            const requiredWeight = txResult.totalWeight * targetRatio;
             
-            if (matchingWeight >= requiredWeight) {
-                statusLabel.innerText = `STABLE (WT: ${matchingWeight}/${totalWeight} AGREED)`;
+            if (txResult.passed) {
+                statusLabel.innerText = `STABLE (WT: ${txResult.matchingWeight}/${txResult.totalWeight} AGREED)`;
                 statusLabel.style.color = "#00ff7f";
                 progressBar.style.background = "#00ff7f";
-                logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
-                writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
-                
-                if (cpuContract) {
-                    try {
-                        let joystickVal = 0xFF;
-                        if (direction === "UP") joystickVal &= ~0x01;
-                        else if (direction === "DOWN") joystickVal &= ~0x02;
-                        else if (direction === "LEFT") joystickVal &= ~0x04;
-                        else if (direction === "RIGHT") joystickVal &= ~0x08;
-                        else if (direction === "FIRE") joystickVal &= ~0x10;
-                        
-                        cpuContract.poke(56320, joystickVal);
-                        
-                        setTimeout(() => {
-                            try {
-                                cpuContract.poke(56320, 0xFF);
-                            } catch (e) {}
-                        }, 150);
-                    } catch (pokeErr) {
-                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
-                    }
-                }
+                logBox.innerText += `\n[ON-CHAIN TX SUCCESS] Consensus verified on-contract at target: ${consensusContract.target.substring(0, 10)}... routing joystick inputs.`;
+                writeToTerminal(`[CONSENSUS CONTRACT] Executed on-chain poke(56320, ${direction}).`);
             } else {
-                statusLabel.innerText = `METASTABLE STUTTER (WT: ${matchingWeight}/${totalWeight})`;
+                statusLabel.innerText = `METASTABLE STUTTER (WT: ${txResult.matchingWeight}/${txResult.totalWeight})`;
                 statusLabel.style.color = "#ff007f";
                 progressBar.style.background = "#ff007f";
-                logBox.innerText += `\n[WARNING] Consensus failed (needed WT ${Math.ceil(requiredWeight)}, got ${matchingWeight}). Input discarded.`;
+                logBox.innerText += `\n[WARNING] Consensus rejected by contract (needed WT ${Math.ceil(requiredWeight)}, got ${txResult.matchingWeight}). Input discarded.`;
             }
             
-            if (nodeB_Active && nodeB_Vote !== direction) {
-                nodeBRep = Math.max(0, nodeBRep - 10);
-                document.getElementById("nodeBRep").innerText = `Rep: ${nodeBRep}%`;
-                if (nodeBRep < slashLimit) {
-                    document.getElementById("nodeBStatus").innerText = "SUSPENDED (SLASHED)";
-                    document.getElementById("nodeBStatus").style.color = "#ff007f";
-                    logBox.innerText += `\n[SLASH] Node B reputation fell to ${nodeBRep}% (Limit: ${slashLimit}%). SUSPENDED.`;
-                }
+            // Sync UI widgets with contract state variables
+            document.getElementById("nodeBRep").innerText = `Rep: ${nodeBRep}%`;
+            if (nodeBRep < slashLimit) {
+                document.getElementById("nodeBStatus").innerText = "SUSPENDED (SLASHED)";
+                document.getElementById("nodeBStatus").style.color = "#ff007f";
+                logBox.innerText += `\n[SLASH] Node B reputation slashed on-chain to ${nodeBRep}%.`;
+            } else {
+                document.getElementById("nodeBStatus").innerText = "ONLINE";
+                document.getElementById("nodeBStatus").style.color = "#00ff7f";
             }
             
-            if (nodeC_Active && nodeC_Vote !== direction) {
-                nodeCRep = Math.max(0, nodeCRep - 10);
-                document.getElementById("nodeCRep").innerText = `Rep: ${nodeCRep}%`;
-                if (nodeCRep < slashLimit) {
-                    document.getElementById("nodeCStatus").innerText = "SUSPENDED (SLASHED)";
-                    document.getElementById("nodeCStatus").style.color = "#ff007f";
-                    logBox.innerText += `\n[SLASH] Node C reputation fell to ${nodeCRep}% (Limit: ${slashLimit}%). SUSPENDED.`;
-                }
+            document.getElementById("nodeCRep").innerText = `Rep: ${nodeCRep}%`;
+            if (nodeCRep < slashLimit) {
+                document.getElementById("nodeCStatus").innerText = "SUSPENDED (SLASHED)";
+                document.getElementById("nodeCStatus").style.color = "#ff007f";
+                logBox.innerText += `\n[SLASH] Node C reputation slashed on-chain to ${nodeCRep}%.`;
+            } else {
+                document.getElementById("nodeCStatus").innerText = "ONLINE";
+                document.getElementById("nodeCStatus").style.color = "#00ff7f";
             }
             
             logBox.scrollTop = logBox.scrollHeight;
