@@ -1661,6 +1661,34 @@ object "GraphicsSystem" {
                 return(0x00, 96)
             }
 
+            // ----------------------------------------------------------------
+            // Method 33: triggerLightPen(uint256 x, uint256 y)
+            // Selector: 0x23f17b67
+            // ----------------------------------------------------------------
+            if eq(selector, 0x23f17b67) {
+                let x := calldataload(4)
+                let y := calldataload(36)
+                
+                sstore(53267, x)
+                sstore(53268, y)
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 34: getLightPenState() -> (uint256 x, uint256 y)
+            // Selector: 0x7db9a459
+            // ----------------------------------------------------------------
+            if eq(selector, 0x7db9a459) {
+                let x := sload(53267)
+                let y := sload(53268)
+                
+                mstore(0x00, x)
+                mstore(0x20, y)
+                return(0x00, 64)
+            }
+
             revert(0, 0)
         }
     }
