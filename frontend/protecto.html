@@ -418,29 +418,53 @@
         class SimulatedToken {
             constructor(address) {
                 this.address = address;
+                
+                // Deterministic mock values based on the token address seed
+                const addrNum = parseInt(address.slice(-6), 16) || 42;
+                this.mockUserBalance = ethers.parseUnits(((addrNum % 800) + 50).toString(), 18);
+                this.mockTreasuryBalance = ethers.parseUnits(((addrNum % 8000) + 1200).toString(), 18);
+                this.mockMaxSupply = BigInt((addrNum % 500000) + 1000000);
+                this.mockMarketRate = ethers.parseUnits(((addrNum % 100) / 100 + 0.5).toFixed(4), 18);
+                this.mockType = "Double-Entry Ledger Asset (" + address.substring(0, 6) + ")";
             }
             async balanceOf(account) {
                 if (account === "0x1111111111111111111111111111111111111111") {
-                    return ethers.parseUnits("12500.0", 18);
+                    return this.mockTreasuryBalance;
                 }
-                return ethers.parseUnits("350.0", 18);
+                return this.mockUserBalance;
             }
             async Type() {
-                return "Double-Entry Ledger Asset";
+                return this.mockType;
             }
             async maxSupply() {
-                return 1000000n;
+                return this.mockMaxSupply;
             }
             async GetMarketRate(asset) {
-                return ethers.parseUnits("1.25", 18);
+                return this.mockMarketRate;
             }
             async approve(spender, value) {
                 return { wait: async () => {} };
             }
             async Purchase(counterparty, amount) {
+                // Adjust local balances to simulate on-chain transaction flow!
+                try {
+                    const toMove = ethers.parseUnits(amount.toString(), 0);
+                    if (this.mockTreasuryBalance >= toMove) {
+                        this.mockTreasuryBalance -= toMove;
+                        this.mockUserBalance += toMove;
+                    }
+                } catch (e) {}
                 return { wait: async () => {} };
             }
             async Redeem(counterparty, amount) {
+                // Adjust local balances to simulate on-chain transaction flow!
+                try {
+                    const toMove = ethers.parseUnits(amount.toString(), 0);
+                    if (this.mockUserBalance >= toMove) {
+                        this.mockUserBalance -= toMove;
+                        this.mockTreasuryBalance += toMove;
+                    }
+                } catch (e) {}
                 return { wait: async () => {} };
             }
             async Xie() { return "0x0000000000000000000000000000000000000000"; }
