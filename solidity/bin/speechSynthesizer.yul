@@ -719,6 +719,193 @@ object "SpeechSynthesizer" {
                 return(0x6000, add(64, mul(arrayLength, 32)))
             }
 
+            // ----------------------------------------------------------------
+            // Method: synthesizeWav(bytes32 phonemeKey, uint256 numSamples) -> bytes
+            // Selector: 0x02ceea6d
+            // ----------------------------------------------------------------
+            if eq(selector, 0x02ceea6d) {
+                let synthKey := calldataload(4)
+                let numSamples := calldataload(36)
+                if gt(numSamples, 1000) { numSamples := 1000 }
+
+                let synthVoiceId := sload(2) // 0 = Ana, 1 = Moloch
+                let synthBasePitch := 220
+                if eq(synthVoiceId, 1) {
+                    synthBasePitch := 85
+                }
+                
+                let synthEnergy := 0
+                let synthSoundType := 0 // 0 = silent, 1 = voiced, 2 = unvoiced, 3 = nasal
+
+                // Check phoneme keys by matching prefixes
+                let synthTwoChars := and(synthKey, 0xFFFF000000000000000000000000000000000000000000000000000000000000)
+                let synthOneChar := and(synthKey, 0xFF00000000000000000000000000000000000000000000000000000000000000)
+
+                if eq(synthTwoChars, 0x6161000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 90
+                    synthSoundType := 1
+                }
+                if eq(synthTwoChars, 0x6565000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 95
+                    synthSoundType := 1
+                }
+                if eq(synthTwoChars, 0x6f6f000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 85
+                    synthSoundType := 1
+                }
+                if eq(synthTwoChars, 0x7368000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 80
+                    synthSoundType := 2
+                }
+                if eq(synthOneChar, 0x7300000000000000000000000000000000000000000000000000000000000000) {
+                    if iszero(eq(synthTwoChars, 0x7368000000000000000000000000000000000000000000000000000000000000)) {
+                        synthEnergy := 70
+                        synthSoundType := 2
+                    }
+                }
+                if eq(synthOneChar, 0x6600000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 40
+                    synthSoundType := 2
+                }
+                if eq(synthOneChar, 0x6d00000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 50
+                    synthSoundType := 3
+                }
+                if eq(synthOneChar, 0x6e00000000000000000000000000000000000000000000000000000000000000) {
+                    synthEnergy := 45
+                    synthSoundType := 3
+                }
+
+                // Project K1..K9 coefficients into memory slots 0x4000 to 0x4008
+                for { let i := 0 } lt(i, 9) { i := add(i, 1) } {
+                    let K := 10
+                    if iszero(synthVoiceId) {
+                        if eq(i, 0) { K := 15 }
+                        if eq(i, 1) { K := sub(0, 25) }
+                        if eq(i, 2) { K := 40 }
+                        if eq(i, 3) { K := sub(0, 10) }
+                        if eq(i, 4) { K := 5 }
+                        if eq(i, 5) { K := sub(0, 8) }
+                        if eq(i, 6) { K := 12 }
+                        if eq(i, 7) { K := sub(0, 5) }
+                        if eq(i, 8) { K := 2 }
+                    }
+                    if eq(synthVoiceId, 1) {
+                        if eq(i, 0) { K := 85 }
+                        if eq(i, 1) { K := sub(0, 65) }
+                        if eq(i, 2) { K := 70 }
+                        if eq(i, 3) { K := sub(0, 45) }
+                        if eq(i, 4) { K := 35 }
+                        if eq(i, 5) { K := sub(0, 22) }
+                        if eq(i, 6) { K := 18 }
+                        if eq(i, 7) { K := sub(0, 10) }
+                        if eq(i, 8) { K := 5 }
+                    }
+
+                    if eq(synthSoundType, 1) {
+                        if lt(i, 3) { K := add(K, 15) }
+                    }
+                    if eq(synthSoundType, 2) {
+                        if lt(i, 4) { K := sub(K, 40) }
+                    }
+
+                    if sgt(K, 99) { K := 99 }
+                    if slt(K, sub(0, 99)) { K := sub(0, 99) }
+
+                    mstore(add(0x4000, mul(i, 32)), K)
+                }
+
+                // Clear Delay Line starting at 0x2000 (10 words)
+                for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                    mstore(add(0x2000, mul(i, 32)), 0)
+                }
+
+                // Setup ABI bytes headers at 0x5000
+                mstore(0x5000, 0x20)
+                let totalBytes := add(44, mul(numSamples, 2))
+                mstore(0x5020, totalBytes)
+
+                // Assemble WAV Header Word 0 (Bytes 0-31)
+                let chunkSizeVal := add(36, mul(numSamples, 2))
+                let chunkSizeLE := or(shl(24, and(chunkSizeVal, 0xFF)), or(shl(16, and(shr(8, chunkSizeVal), 0xFF)), or(shl(8, and(shr(16, chunkSizeVal), 0xFF)), and(shr(24, chunkSizeVal), 0xFF))))
+
+                let word0 := 0x524946460000000057415645666d74201000000001000100803e0000007d0000
+                word0 := or(and(word0, not(shl(192, 0xFFFFFFFF))), shl(192, chunkSizeLE))
+                mstore(0x5040, word0)
+
+                // Assemble WAV Header Word 1 (Bytes 32-43)
+                let subchunk2Val := mul(numSamples, 2)
+                let subchunk2LE := or(shl(24, and(subchunk2Val, 0xFF)), or(shl(16, and(shr(8, subchunk2Val), 0xFF)), or(shl(8, and(shr(16, subchunk2Val), 0xFF)), and(shr(24, subchunk2Val), 0xFF))))
+
+                let word1 := 0x0200100064617461000000000000000000000000000000000000000000000000
+                word1 := or(and(word1, not(shl(160, 0xFFFFFFFF))), shl(160, subchunk2LE))
+                mstore(0x5060, word1)
+
+                let seed := sload(101)
+                if iszero(seed) { seed := 12345 }
+
+                // Synthesis Loop
+                for { let t := 0 } lt(t, numSamples) { t := add(t, 1) } {
+                    let excitation := 0
+
+                    if eq(synthSoundType, 1) {
+                        let period := div(16000, synthBasePitch)
+                        excitation := sub(0, 50)
+                        if iszero(mod(t, period)) {
+                            excitation := 1000
+                        }
+                    }
+                    if eq(synthSoundType, 2) {
+                        let bit := and(seed, 1)
+                        seed := shr(1, seed)
+                        if bit {
+                            seed := xor(seed, 0xB400)
+                        }
+                        excitation := sub(mod(seed, 2000), 1000)
+                    }
+                    if eq(synthSoundType, 3) {
+                        let period := 106
+                        let val := mod(t, period)
+                        excitation := sub(mul(val, 20), 1000)
+                    }
+
+                    let forward := div(mul(excitation, synthEnergy), 100)
+
+                    for { let i := 9 } gt(i, 0) { } {
+                        i := sub(i, 1)
+                        let K := mload(add(0x4000, mul(i, 32)))
+                        let delayVal := mload(add(0x2000, mul(i, 32)))
+                        let nextForward := sub(forward, div(mul(K, delayVal), 100))
+                        let nextDelay := add(delayVal, div(mul(K, nextForward), 100))
+                        mstore(add(0x2000, mul(add(i, 1), 32)), nextDelay)
+                        forward := nextForward
+                    }
+                    mstore(0x2000, forward)
+
+                    // Convert to 16-bit PCM (signed)
+                    let pcmVal := mul(forward, 15)
+                    if sgt(pcmVal, 32767) { pcmVal := 32767 }
+                    if slt(pcmVal, sub(0, 32768)) { pcmVal := sub(0, 32768) }
+
+                    // Pack 16-bit values sequentially starting at offset 0x5040 (offset 44 bytes in payload)
+                    let pcmValLE := or(shl(8, and(pcmVal, 0xFF)), and(shr(8, pcmVal), 0xFF))
+
+                    let byteOffset := add(44, mul(t, 2))
+                    let wordOffset := div(byteOffset, 32)
+                    let bitShift := sub(240, mul(mod(byteOffset, 32), 8))
+                    
+                    let targetAddress := add(0x5040, mul(wordOffset, 32))
+                    let currentWord := mload(targetAddress)
+                    let mask := not(shl(bitShift, 0xFFFF))
+                    currentWord := and(currentWord, mask)
+                    currentWord := or(currentWord, shl(bitShift, pcmValLE))
+                    mstore(targetAddress, currentWord)
+                }
+
+                let paddedBytesLen := mul(div(add(totalBytes, 31), 32), 32)
+                return(0x5000, add(64, paddedBytesLen))
+            }
+
             revert(0, 0)
         }
     }
