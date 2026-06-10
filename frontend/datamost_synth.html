@@ -1717,19 +1717,23 @@
                 this.sidState = new Uint8Array(32);
             }
             async getSIDState() {
-                const v1_freq = Math.round(100 + Math.random() * 1000);
-                const v2_freq = Math.round(100 + Math.random() * 1000);
-                const v3_freq = Math.round(100 + Math.random() * 1000);
-                this.sidState[0] = v1_freq & 0xFF;
-                this.sidState[1] = (v1_freq >> 8) & 0xFF;
-                this.sidState[7] = v2_freq & 0xFF;
-                this.sidState[8] = (v2_freq >> 8) & 0xFF;
-                this.sidState[14] = v3_freq & 0xFF;
-                this.sidState[15] = (v3_freq >> 8) & 0xFF;
                 return this.sidState;
             }
             async poke(addr, val) {
+                if (addr >= 54272 && addr <= 54300) {
+                    this.sidState[addr - 54272] = val;
+                } else if (addr === 97) {
+                    this.sidState[25] = val; // Store PC Speaker volume / sample
+                }
                 return { wait: async () => {} };
+            }
+            async peek(addr) {
+                if (addr >= 54272 && addr <= 54300) {
+                    return this.sidState[addr - 54272];
+                } else if (addr === 97) {
+                    return this.sidState[25];
+                }
+                return 0;
             }
         }
 
