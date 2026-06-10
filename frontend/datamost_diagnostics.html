@@ -439,6 +439,10 @@
                                     <input type="checkbox" id="chkRouteConsensus" style="cursor: pointer;">
                                     <label for="chkRouteConsensus" style="color: #00ff7f; font-size: 0.75rem; font-family: 'Orbitron'; cursor: pointer; font-weight: bold;">Route Emulator Keys through Consensus</label>
                                 </div>
+                                <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                    <input type="checkbox" id="chkCopilotAutopilot" style="cursor: pointer;" onchange="toggleCopilotAutopilot()">
+                                    <label for="chkCopilotAutopilot" style="color: #ffcc00; font-size: 0.75rem; font-family: 'Orbitron'; cursor: pointer; font-weight: bold;">Copilot Autopilot (Continuous Play)</label>
+                                </div>
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">VOTING THRESHOLD & MAINTENANCE</label>
@@ -8667,6 +8671,38 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         let nodeBRep = 100;
         let nodeCRep = 100;
         let copilotLastRecommendation = "";
+        let lastS2X = 0;
+        let copilotAutopilotInterval = null;
+
+        function toggleCopilotAutopilot() {
+            const isChecked = document.getElementById("chkCopilotAutopilot") && document.getElementById("chkCopilotAutopilot").checked;
+            if (isChecked) {
+                if (!copilotAutopilotInterval) {
+                    const routeChk = document.getElementById("chkRouteConsensus");
+                    if (routeChk) routeChk.checked = true;
+                    
+                    copilotAutopilotInterval = setInterval(() => {
+                        let bestVote = copilotLastRecommendation || "FIRE";
+                        simulateVote(bestVote);
+                    }, 400);
+                    const logBox = document.getElementById("consensusLog");
+                    if (logBox) {
+                        logBox.innerText += "\n[COPILOT] Autopilot active. Driving consensus loops automatically.";
+                        logBox.scrollTop = logBox.scrollHeight;
+                    }
+                }
+            } else {
+                if (copilotAutopilotInterval) {
+                    clearInterval(copilotAutopilotInterval);
+                    copilotAutopilotInterval = null;
+                    const logBox = document.getElementById("consensusLog");
+                    if (logBox) {
+                        logBox.innerText += "\n[COPILOT] Autopilot deactivated.";
+                        logBox.scrollTop = logBox.scrollHeight;
+                    }
+                }
+            }
+        }
 
         function recoverConsensusNodes() {
             nodeARep = 100;
@@ -8743,21 +8779,31 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const directions = ["UP", "DOWN", "LEFT", "RIGHT"];
             
             if (nodeB_Active) {
-                // Intelligent gameplay heuristic for Copilot Node B
+                // Intelligent gameplay heuristic for Copilot Node B (with Lead Shooting velocity tracking)
                 let aiBestVote = direction;
                 
                 // If Space Invaders variables are active and sprites exist
                 const hasSpriteVars = typeof s0_x !== "undefined" && typeof s2_x !== "undefined";
                 if (hasSpriteVars && s0_x > 0 && s2_x > 0) {
+                    // Calculate velocity-adjusted target location (Lead Tracking)
+                    let velocity = 0;
+                    if (typeof lastS2X !== "undefined" && lastS2X > 0) {
+                        velocity = s2_x - lastS2X;
+                    }
+                    lastS2X = s2_x;
+
+                    // Lead factor of 3 frames projection
+                    const leadAlienX = s2_x + velocity * 3;
+
                     // Check if bullet represents an incoming threat
                     const bulletThreat = typeof s1_x !== "undefined" && s1_y > 100 && s1_y < s0_y && Math.abs(s1_x - s0_x) < 20;
                     if (bulletThreat) {
                         aiBestVote = s0_x > 160 ? "LEFT" : "RIGHT"; // dodge
                     } else {
-                        // Align horizontally with the alien and fire
-                        if (s2_x < s0_x - 12) {
+                        // Align horizontally with the lead alien and fire
+                        if (leadAlienX < s0_x - 12) {
                             aiBestVote = "LEFT";
-                        } else if (s2_x > s0_x + 12) {
+                        } else if (leadAlienX > s0_x + 12) {
                             aiBestVote = "RIGHT";
                         } else {
                             aiBestVote = "FIRE";
