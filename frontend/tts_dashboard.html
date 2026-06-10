@@ -368,6 +368,27 @@
                         <button class="btn btn-secondary" id="btnDeployNeuralLPC" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">Stream LPC to Chain</button>
                     </div>
                 </section>
+
+                <section class="card control-panel" style="border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.15);">
+                    <h2><span class="icon">🎙️</span> ElevenLabs 'Ana' Voice Emulation</h2>
+                    <p class="description">Condition and synthesize the signature Ana voice blueprint using quantized on-chain neural projection & vocoders.</p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label class="knob-label" style="display: block; margin-bottom: 5px;">Phoneme Array Sequence (comma separated)</label>
+                        <input type="text" id="anaPhonemesInput" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: monospace;" value="ee, oo, m, oo, s">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                        <button class="btn btn-secondary" id="btnUploadAnaWeights" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">1. Upload Weights</button>
+                        <button class="btn btn-secondary" id="btnRegisterAnaSpeaker" style="border-color: var(--neon-pink); color: var(--neon-pink);">2. Register 'Ana'</button>
+                        <button class="btn btn-primary" id="btnSynthesizeAnaVoice" style="background: linear-gradient(135deg, var(--neon-pink) 0%, #aa005b 100%); color: #fff; border: none; text-shadow: 0 0 5px rgba(255,0,127,0.3);">3. Synthesize On-Chain</button>
+                    </div>
+
+                    <div id="anaAudioContainer" style="display: none; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,0,127,0.2); align-items: center; justify-content: space-between; gap: 10px;">
+                        <span style="font-family: 'Orbitron'; font-size: 0.85rem; color: var(--neon-pink);">Emulated WAV:</span>
+                        <audio id="anaAudioPlayer" controls style="height: 30px; flex-grow: 1;"></audio>
+                    </div>
+                </section>
             </div>
 
             <!-- Right Panel: Oscilloscope, Formants, Diagnostics -->
@@ -854,7 +875,11 @@
             "function clearBusy() public returns (uint256)",
             "function getTMS5220State() public view returns (uint256, uint256, uint256)",
             "function writeTMS5220Command(uint256 command) public returns (uint256)",
-            "function writeTMS5220Data(uint256 data) public returns (uint256)"
+            "function writeTMS5220Data(uint256 data) public returns (uint256)",
+            "function registerSpeaker(bytes32 name, bytes32[8] memory embedding) public",
+            "function setQuantizedWeights(uint256 slotOffset, uint256 packedWeights) public",
+            "function predictMelQuantized(bytes32[] memory phonemes, bytes32 name) public view returns (bytes memory)",
+            "function synthesizeNeuralWav(bytes memory melFrames, uint256 upsampleFactor) public view returns (bytes memory)"
         ];
 
         const musicABI = [
@@ -1193,6 +1218,121 @@
             }
         }
 
+        // Ana Emulation Functions
+        function packWeights(weights32) {
+            let word = 0n;
+            for (let i = 0; i < 32; i++) {
+                let val = weights32[i] || 0;
+                if (val < 0) {
+                    val = 256 + val;
+                }
+                word = word | (BigInt(val) << BigInt(i * 8));
+            }
+            return "0x" + word.toString(16);
+        }
+
+        async function uploadAnaWeights() {
+            if (!speechContract) {
+                logConsole("Web3 contract not connected!");
+                return;
+            }
+            try {
+                logConsole("Uploading INT8 model weights to speech contract...");
+                const weightsA = [
+                    50, -20, 10, 0, 5, -5, 10, -10,
+                    -10, 60, -20, 15, 0, 10, -5, 5,
+                    20, -10, 70, -30, 10, 5, -10, 15,
+                    -5, 15, -15, 80, -20, 10, 0, 5
+                ];
+                const weightsB = [
+                    10, 0, 15, -10, 65, -15, 20, -20,
+                    -15, 10, 5, 10, -10, 75, -5, 10,
+                    5, -5, -10, 5, 15, -10, 85, -25,
+                    -10, 10, 20, -15, -20, 15, -15, 90
+                ];
+
+                const packed0 = packWeights(weightsA);
+                const packed1 = packWeights(weightsB);
+
+                let tx = await speechContract.setQuantizedWeights(0, packed0);
+                await tx.wait();
+                logConsole("Weight block 0 successfully written.");
+
+                tx = await speechContract.setQuantizedWeights(1, packed1);
+                await tx.wait();
+                logConsole("Weight block 1 successfully written. Weight Upload Complete!");
+            } catch (err) {
+                logConsole("Weight upload failed: " + err.message);
+            }
+        }
+
+        async function registerAnaSpeaker() {
+            if (!speechContract) {
+                logConsole("Web3 contract not connected!");
+                return;
+            }
+            try {
+                logConsole("Registering Ana speaker profile vector...");
+                const anaName = ethers.encodeBytes32String("ana");
+                const anaEmbedding = [
+                    ethers.toBeHex(12, 32),
+                    ethers.toBeHex(ethers.toTwos(-8, 256), 32),
+                    ethers.toBeHex(15, 32),
+                    ethers.toBeHex(0, 32),
+                    ethers.toBeHex(ethers.toTwos(-10, 256), 32),
+                    ethers.toBeHex(5, 32),
+                    ethers.toBeHex(ethers.toTwos(-5, 256), 32),
+                    ethers.toBeHex(8, 32)
+                ];
+                const tx = await speechContract.registerSpeaker(anaName, anaEmbedding);
+                await tx.wait();
+                logConsole("Ana speaker registered successfully!");
+            } catch (err) {
+                logConsole("Speaker registration failed: " + err.message);
+            }
+        }
+
+        async function synthesizeAnaVoice() {
+            if (!speechContract) {
+                logConsole("Web3 contract not connected!");
+                return;
+            }
+            try {
+                const rawSeq = document.getElementById("anaPhonemesInput").value;
+                const items = rawSeq.split(",").map(s => s.trim().toLowerCase());
+                logConsole(`Synthesizing Ana voice conditioning sequence: [${items.join(", ")}]`);
+
+                const phonemeSeqBytes = items.map(ph => {
+                    const bytes = ethers.toUtf8Bytes(ph);
+                    const padded = new Uint8Array(32);
+                    padded.set(bytes);
+                    return ethers.hexlify(padded);
+                });
+
+                const anaName = ethers.encodeBytes32String("ana");
+                
+                logConsole("Step A: Running quantized Mel prediction...");
+                const melBytesHex = await speechContract.predictMelQuantized(phonemeSeqBytes, anaName);
+                logConsole(`✓ Mel-spectrogram output: ${melBytesHex.substring(0, 50)}...`);
+
+                logConsole("Step B: Executing neural WAV synthesis vocoder...");
+                const upsampleFactor = 80;
+                const wavBytesHex = await speechContract.synthesizeNeuralWav(melBytesHex, upsampleFactor);
+                
+                const rawBytes = ethers.getBytes(wavBytesHex);
+                const blob = new Blob([rawBytes], { type: "audio/wav" });
+                const blobUrl = URL.createObjectURL(blob);
+
+                const player = document.getElementById("anaAudioPlayer");
+                player.src = blobUrl;
+                document.getElementById("anaAudioContainer").style.display = "flex";
+                logConsole("✓ WAV synthesis complete! Playing generated voice.");
+                player.play();
+            } catch (err) {
+                logConsole("Ana synthesis failed: " + err.message);
+            }
+        }
+
         // Console utility helpers
         function logConsole(msg) {
             const container = document.getElementById("consoleLogs");
@@ -1221,6 +1361,10 @@
 
         document.getElementById("btnRunNeuralGenerativePass").addEventListener("click", runNeuralFlowMatching);
         document.getElementById("btnDeployNeuralLPC").addEventListener("click", streamNeuralLpcToChain);
+
+        document.getElementById("btnUploadAnaWeights").addEventListener("click", uploadAnaWeights);
+        document.getElementById("btnRegisterAnaSpeaker").addEventListener("click", registerAnaSpeaker);
+        document.getElementById("btnSynthesizeAnaVoice").addEventListener("click", synthesizeAnaVoice);
 
         document.getElementById("singingPitch").addEventListener("input", (e) => {
             document.getElementById("singingPitchVal").innerText = `${e.target.value} Hz`;
