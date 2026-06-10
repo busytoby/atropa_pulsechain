@@ -671,6 +671,7 @@
                             <select id="selectSpeechEngine" class="input-glow" style="padding: 6px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">
                                 <option value="votrax" selected>Votrax SC-01A (Phoneme Oscillator)</option>
                                 <option value="ti_tms5220">TI TMS5220 (LPC Speech Synth)</option>
+                                <option value="neural_lpc">Neural Flow-Matching (LPC K1..K9)</option>
                                 <option value="tymac_sid">Tymac SID (4-bit Vol Digitizer)</option>
                                 <option value="access_realsound">Access RealSound (6-bit PC Speaker PWM)</option>
                             </select>
@@ -4307,6 +4308,70 @@
                     await txClear.wait();
                 } catch (err) {
                     console.error("Access RealSound transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            } else if (selectedEngine === "neural_lpc") {
+                if (!speechContract) {
+                    alert("Speech Synthesizer contract is not loaded.");
+                    return;
+                }
+                text = text.trim();
+                if (!text) return;
+
+                const words = text.split(/\s+/);
+                const phonemeSequence = [];
+                words.forEach(word => {
+                    const parsedPhonemes = translateWordToPhonemes(word, dialect);
+                    parsedPhonemes.forEach(p => phonemeSequence.push(p));
+                    phonemeSequence.push("PA1");
+                });
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "Neural LPC...";
+
+                try {
+                    const phonemeLpcTemplates = {
+                        "vowel": [0.65, 0.45, -0.12, -0.32, 0.05, 0.15, -0.05, 0.02, 0.12],
+                        "fricative": [-0.35, -0.25, 0.12, 0.35, -0.15, -0.45, 0.65, 0.55, 0.45],
+                        "nasal": [0.45, 0.15, 0.65, 0.25, -0.05, -0.15, 0.02, -0.05, 0.02],
+                        "pause": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                    };
+
+                    const getPhonemeTemplate = (name) => {
+                        if (name.startsWith("PA")) return phonemeLpcTemplates["pause"];
+                        if (["S", "Z", "SH", "ZH", "CH", "H", "K", "G", "T", "D", "P", "F"].includes(name[0])) return phonemeLpcTemplates["fricative"];
+                        if (["M", "N", "NG"].includes(name[0])) return phonemeLpcTemplates["nasal"];
+                        return phonemeLpcTemplates["vowel"];
+                    };
+
+                    for (let i = 0; i < Math.min(phonemeSequence.length, 10); i++) {
+                        const currentPh = phonemeSequence[i];
+                        const nextPh = (i + 1 < phonemeSequence.length) ? phonemeSequence[i+1] : "PA0";
+                        const currentTemp = getPhonemeTemplate(currentPh);
+                        const nextTemp = getPhonemeTemplate(nextPh);
+
+                        for (let step = 0; step < 2; step++) {
+                            const t = step / 2;
+                            const coeffs = [];
+                            for (let k = 0; k < 9; k++) {
+                                const target = currentTemp[k] + (nextTemp[k] - currentTemp[k]) * t;
+                                coeffs.push(Math.round((target + 1.0) * 50));
+                            }
+                            const pitch = 110 + Math.round(Math.sin(i * 1.5 + step) * 10);
+                            const energy = currentPh.startsWith("PA") ? 0 : 35;
+
+                            const code = phonemeToCode[currentPh] !== undefined ? phonemeToCode[currentPh] : 3;
+                            playPhoneme(code, 1);
+
+                            const tx = await speechContract.writeReflectionCoefficients(coeffs, pitch, energy);
+                            await tx.wait();
+
+                            await new Promise(r => setTimeout(r, 100));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Neural LPC stream failed:", err);
                 } finally {
                     if (btn) btn.innerText = "Speak";
                 }
