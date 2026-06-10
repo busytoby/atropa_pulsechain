@@ -2155,7 +2155,26 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 return new Uint8Array([]);
             };
             speechContract = {
-                speak: async () => ({ wait: async () => {} })
+                speak: async () => ({ wait: async () => {} }),
+                writePhoneme: async (code, inflection) => {
+                    playPhoneme(Number(code), Number(inflection));
+                    return { wait: async () => {} };
+                },
+                getSpeechState: async () => {
+                    return [0, 0, 0, 0];
+                },
+                clearBusy: async () => {
+                    return { wait: async () => {} };
+                },
+                getTMS5220State: async () => {
+                    return [0, 0, 0];
+                },
+                writeTMS5220Command: async (cmd) => {
+                    return { wait: async () => {} };
+                },
+                writeTMS5220Data: async (data) => {
+                    return { wait: async () => {} };
+                }
             };
             folkloreContract = {
                 checkLineOfSight: async () => 0,
@@ -12123,7 +12142,26 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 return new Uint8Array([]);
             };
             speechContract = {
-                speak: async () => ({ wait: async () => {} })
+                speak: async () => ({ wait: async () => {} }),
+                writePhoneme: async (code, inflection) => {
+                    playPhoneme(Number(code), Number(inflection));
+                    return { wait: async () => {} };
+                },
+                getSpeechState: async () => {
+                    return [0, 0, 0, 0];
+                },
+                clearBusy: async () => {
+                    return { wait: async () => {} };
+                },
+                getTMS5220State: async () => {
+                    return [0, 0, 0];
+                },
+                writeTMS5220Command: async (cmd) => {
+                    return { wait: async () => {} };
+                },
+                writeTMS5220Data: async (data) => {
+                    return { wait: async () => {} };
+                }
             };
             folkloreContract = {
                 checkLineOfSight: async () => 0,
@@ -21844,7 +21882,26 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 return new Uint8Array([]);
             };
             speechContract = {
-                speak: async () => ({ wait: async () => {} })
+                speak: async () => ({ wait: async () => {} }),
+                writePhoneme: async (code, inflection) => {
+                    playPhoneme(Number(code), Number(inflection));
+                    return { wait: async () => {} };
+                },
+                getSpeechState: async () => {
+                    return [0, 0, 0, 0];
+                },
+                clearBusy: async () => {
+                    return { wait: async () => {} };
+                },
+                getTMS5220State: async () => {
+                    return [0, 0, 0];
+                },
+                writeTMS5220Command: async (cmd) => {
+                    return { wait: async () => {} };
+                },
+                writeTMS5220Data: async (data) => {
+                    return { wait: async () => {} };
+                }
             };
             folkloreContract = {
                 checkLineOfSight: async () => 0,

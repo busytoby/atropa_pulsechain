@@ -1893,7 +1893,32 @@
                 return new Uint8Array([]);
             };
             speechContract = {
-                speak: async () => ({ wait: async () => {} })
+                speak: async () => ({ wait: async () => {} }),
+                writePhoneme: async (code, inflection) => {
+                    if (!audioCtx) {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (audioCtx.state === "suspended") {
+                        await audioCtx.resume();
+                    }
+                    playPhoneme(Number(code), Number(inflection));
+                    return { wait: async () => {} };
+                },
+                getSpeechState: async () => {
+                    return [0, 0, 0, 0];
+                },
+                clearBusy: async () => {
+                    return { wait: async () => {} };
+                },
+                getTMS5220State: async () => {
+                    return [0, 0, 0];
+                },
+                writeTMS5220Command: async (cmd) => {
+                    return { wait: async () => {} };
+                },
+                writeTMS5220Data: async (data) => {
+                    return { wait: async () => {} };
+                }
             };
             folkloreContract = {
                 checkLineOfSight: async () => 0,
@@ -3881,7 +3906,7 @@
         }
 
         function playTymacAudioSample(val) {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             const volume = val / 15.0;
             const osc = audioCtx.createOscillator();
@@ -3900,7 +3925,7 @@
         }
 
         function playTISpeechFrame(dataVal) {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
             const pitchCode = dataVal & 0x0F;
@@ -3931,7 +3956,7 @@
         }
 
         function playRealSoundAudioSample(val) {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             const volume = val / 63.0;
             
@@ -3990,7 +4015,7 @@
                 mouth.style.borderRadius = mouthHeight > 6 ? "50%" : "4px";
             }
 
-            if (isAudioPlaying && audioCtx && !isPause) {
+            if (audioCtx && !isPause) {
                 const now = audioCtx.currentTime;
                 const duration = 0.16;
                 const basePitch = 90 + (inflection * 15);
@@ -9332,7 +9357,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         async function playRealSoundOnChainClip(clipId) {
-            if (!isAudioPlaying || !audioCtx || !musicContract) return;
+            if (!audioCtx || !musicContract) return;
             try {
                 const rawSamples = await musicContract.generateRealSoundClip(clipId);
                 const sampleRate = 4000;
@@ -9481,7 +9506,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function playNavigationSound() {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
