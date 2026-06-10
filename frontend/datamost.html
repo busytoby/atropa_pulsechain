@@ -1775,6 +1775,11 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 this.target = "0x0000000000000000000000000000000000000000";
             }
             async updateSprite(id, x, y) {
+                if (cpuContract && cpuContract.memory) {
+                    const baseAddr = 53248 + (id * 2);
+                    cpuContract.memory[baseAddr] = x & 0xFF;
+                    cpuContract.memory[baseAddr + 1] = y & 0xFF;
+                }
                 return { wait: async () => {} };
             }
         }
@@ -11607,6 +11612,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 this.target = "0x0000000000000000000000000000000000000000";
             }
             async updateSprite(id, x, y) {
+                if (cpuContract && cpuContract.memory) {
+                    const baseAddr = 53248 + (id * 2);
+                    cpuContract.memory[baseAddr] = x & 0xFF;
+                    cpuContract.memory[baseAddr + 1] = y & 0xFF;
+                }
                 return { wait: async () => {} };
             }
         }
@@ -21211,6 +21221,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 this.target = "0x0000000000000000000000000000000000000000";
             }
             async updateSprite(id, x, y) {
+                if (cpuContract && cpuContract.memory) {
+                    const baseAddr = 53248 + (id * 2);
+                    cpuContract.memory[baseAddr] = x & 0xFF;
+                    cpuContract.memory[baseAddr + 1] = y & 0xFF;
+                }
                 return { wait: async () => {} };
             }
         }
