@@ -151,6 +151,51 @@
                         </div>
                     </div>
 
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <label class="reg-label" style="font-size: 0.7rem; color: var(--text-secondary);">Select Code Bank:</label>
+                            <select id="selectCodeBank" class="input-glow" style="width: 100%; padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-blue);">
+                                <option value="0">Bank 0</option>
+                                <option value="1">Bank 1</option>
+                                <option value="2">Bank 2</option>
+                                <option value="3">Bank 3</option>
+                                <option value="4">Bank 4</option>
+                                <option value="5">Bank 5</option>
+                                <option value="6">Bank 6</option>
+                                <option value="7">Bank 7</option>
+                                <option value="8">Bank 8</option>
+                                <option value="9">Bank 9</option>
+                                <option value="10">Bank 10</option>
+                                <option value="11">Bank 11</option>
+                                <option value="12">Bank 12</option>
+                                <option value="13">Bank 13</option>
+                                <option value="14">Bank 14</option>
+                                <option value="15" selected>Bank 15</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="reg-label" style="font-size: 0.7rem; color: var(--text-secondary);">Select Data Bank:</label>
+                            <select id="selectDataBank" class="input-glow" style="width: 100%; padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-magenta);">
+                                <option value="0">Bank 0</option>
+                                <option value="1">Bank 1</option>
+                                <option value="2">Bank 2</option>
+                                <option value="3">Bank 3</option>
+                                <option value="4">Bank 4</option>
+                                <option value="5">Bank 5</option>
+                                <option value="6">Bank 6</option>
+                                <option value="7">Bank 7</option>
+                                <option value="8">Bank 8</option>
+                                <option value="9">Bank 9</option>
+                                <option value="10">Bank 10</option>
+                                <option value="11">Bank 11</option>
+                                <option value="12">Bank 12</option>
+                                <option value="13">Bank 13</option>
+                                <option value="14">Bank 14</option>
+                                <option value="15" selected>Bank 15</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
                         <span class="reg-label">6509 CPU Emulation Mode:</span>
                         <select id="selectCpuMode" class="input-glow" style="padding: 4px; font-size: 0.8rem; background: #000; color: #fff; border: 1px solid var(--neon-blue);">
@@ -676,6 +721,38 @@
                     }
                 } catch (err) {
                     console.error("Failed to write CPU Mode register:", err);
+                }
+            });
+
+            document.getElementById("selectCodeBank").addEventListener("change", async (e) => {
+                if (!cpuContract) return;
+                const val = parseInt(e.target.value);
+                try {
+                    if (isSimulated) {
+                        await cpuContract.poke(0, val);
+                    } else {
+                        const activeSigner = await getWriteSigner();
+                        const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
+                        await (await writeCpu.poke(0, val)).wait();
+                    }
+                } catch (err) {
+                    console.error("Failed to write Code Bank register:", err);
+                }
+            });
+
+            document.getElementById("selectDataBank").addEventListener("change", async (e) => {
+                if (!cpuContract) return;
+                const val = parseInt(e.target.value);
+                try {
+                    if (isSimulated) {
+                        await cpuContract.poke(1, val);
+                    } else {
+                        const activeSigner = await getWriteSigner();
+                        const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
+                        await (await writeCpu.poke(1, val)).wait();
+                    }
+                } catch (err) {
+                    console.error("Failed to write Data Bank register:", err);
                 }
             });
         }
