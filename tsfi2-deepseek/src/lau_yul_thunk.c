@@ -849,6 +849,15 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 store_memory_32(ctx, offset.d[0], val);
                 break;
             }
+            case 0x53: { // MSTORE8
+                if (ctx->stack_ptr < 2) { printf("[DEBUG_EVM] Stack underflow at MSTORE8\n"); return false; }
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t val = ctx->stack[--ctx->stack_ptr];
+                if (offset.d[0] < 65536) {
+                    ctx->memory[offset.d[0]] = (uint8_t)(val.d[0] & 0xFF);
+                }
+                break;
+            }
             case 0x54: { // SLOAD
                 if (ctx->stack_ptr < 1) { printf("[DEBUG_EVM] Stack underflow at SLOAD\n"); return false; }
                 u256_t key = ctx->stack[ctx->stack_ptr - 1];
