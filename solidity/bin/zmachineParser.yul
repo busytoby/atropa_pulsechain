@@ -1656,6 +1656,74 @@ object "ZMachineParser" {
                             invPtr := add(invPtr, 18)
                             invPtr := appendNumberStr(invPtr, keysVal)
                             
+                            // Fetch Weapon
+                            mstore(0x1000, shl(224, 0xc2e22c95))
+                            mstore(0x1004, player)
+                            mstore(0x1024, 55061) // gauntletWeapon
+                            let okWeapon := staticcall(gas(), folkloreAddr, 0x1000, 68, 0x2000, 32)
+                            let weaponVal := 0
+                            if okWeapon { weaponVal := mload(0x2000) }
+                            
+                            // Append "\n- Equipped Weapon: "
+                            mstore(invPtr, 0x0a2d20457175697070656420576561706f6e3a20000000000000000000000000)
+                            invPtr := add(invPtr, 20)
+                            
+                            switch weaponVal
+                            case 1 {
+                                mstore(invPtr, 0x426174746c652041786500000000000000000000000000000000000000000000) // "Battle Axe"
+                                invPtr := add(invPtr, 10)
+                            }
+                            case 2 {
+                                mstore(invPtr, 0x53776f7264000000000000000000000000000000000000000000000000000000) // "Sword"
+                                invPtr := add(invPtr, 5)
+                            }
+                            case 3 {
+                                mstore(invPtr, 0x4d616769632057616e6400000000000000000000000000000000000000000000) // "Magic Wand"
+                                invPtr := add(invPtr, 10)
+                            }
+                            case 4 {
+                                mstore(invPtr, 0x426f770000000000000000000000000000000000000000000000000000000000) // "Bow"
+                                invPtr := add(invPtr, 3)
+                            }
+                            default {
+                                mstore(invPtr, 0x4e6f6e6500000000000000000000000000000000000000000000000000000000) // "None"
+                                invPtr := add(invPtr, 4)
+                            }
+                            
+                            // Fetch Armor
+                            mstore(0x1000, shl(224, 0xc2e22c95))
+                            mstore(0x1004, player)
+                            mstore(0x1024, 55062) // gauntletArmor
+                            let okArmor := staticcall(gas(), folkloreAddr, 0x1000, 68, 0x2000, 32)
+                            let armorVal := 0
+                            if okArmor { armorVal := mload(0x2000) }
+                            
+                            // Append "\n- Equipped Armor: "
+                            mstore(invPtr, 0x0a2d2045717569707065642041726d6f723a2000000000000000000000000000)
+                            invPtr := add(invPtr, 19)
+                            
+                            switch armorVal
+                            case 1 {
+                                mstore(invPtr, 0x4c6561746865722041726d6f7200000000000000000000000000000000000000) // "Leather Armor"
+                                invPtr := add(invPtr, 13)
+                            }
+                            case 2 {
+                                mstore(invPtr, 0x436861696e204d61696c00000000000000000000000000000000000000000000) // "Chain Mail"
+                                invPtr := add(invPtr, 10)
+                            }
+                            case 3 {
+                                mstore(invPtr, 0x506c617465204d61696c00000000000000000000000000000000000000000000) // "Plate Mail"
+                                invPtr := add(invPtr, 10)
+                            }
+                            case 4 {
+                                mstore(invPtr, 0x4d6167696320526f626573000000000000000000000000000000000000000000) // "Magic Robes"
+                                invPtr := add(invPtr, 11)
+                            }
+                            default {
+                                mstore(invPtr, 0x4e6f6e6500000000000000000000000000000000000000000000000000000000) // "None"
+                                invPtr := add(invPtr, 4)
+                            }
+                            
                             count := add(count, 1)
                         }
                     }

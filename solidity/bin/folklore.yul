@@ -247,6 +247,8 @@ object "cpu6502" {
                 // 55058: gauntletSpawnerY (16-bit)
                 // 55059: gauntletInputDirection (1=Up, 2=Down, 3=Left, 4=Right)
                 // 55060: gauntletFireAxisTrigger (Boolean)
+                // 55061: gauntletWeapon (1=Battle Axe, 2=Sword, 3=Magic Wand, 4=Bow)
+                // 55062: gauntletArmor (1=Leather Armor, 2=Chain Mail, 3=Plate Mail, 4=Magic Robes)
                 
                 let gauntletActive := sload(getUserSlot(55050))
                 if gauntletActive {

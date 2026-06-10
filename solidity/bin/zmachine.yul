@@ -161,6 +161,8 @@ object "ZMachine" {
                         case 34 { targetAddr := 55051 } // gauntletPlayerX
                         case 35 { targetAddr := 55052 } // gauntletPlayerY
                         case 36 { targetAddr := 55050 } // isGauntletActive
+                        case 37 { targetAddr := 55061 } // gauntletWeapon
+                        case 38 { targetAddr := 55062 } // gauntletArmor
                         
                         if targetAddr {
                             mstore(0x00, shl(224, 0xc2e22c95)) // peekUser(address,uint256)

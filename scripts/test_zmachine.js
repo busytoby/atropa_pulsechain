@@ -217,20 +217,28 @@ async function main() {
     // 55050: isGauntletActive = 1
     // 55053: gauntletHealth = 1750
     // 55054: gauntletKeys = 4
+    // 55061: gauntletWeapon = 1 (Battle Axe)
+    // 55062: gauntletArmor = 1 (Leather Armor)
     await waitForReceipt(await folkloreContract.poke(55050, 1), provider);
     await waitForReceipt(await folkloreContract.poke(55053, 1750), provider);
     await waitForReceipt(await folkloreContract.poke(55054, 4), provider);
+    await waitForReceipt(await folkloreContract.poke(55061, 1), provider);
+    await waitForReceipt(await folkloreContract.poke(55062, 1), provider);
 
     // Verify property values queried on Object ID 80
     console.log("Querying Object 80 bridged properties:");
     const activeVal = await extendedContract.getObjectProperty(80, 36, deployer.address);
     const healthVal = await extendedContract.getObjectProperty(80, 32, deployer.address);
     const keysVal = await extendedContract.getObjectProperty(80, 33, deployer.address);
+    const weaponVal = await extendedContract.getObjectProperty(80, 37, deployer.address);
+    const armorVal = await extendedContract.getObjectProperty(80, 38, deployer.address);
     console.log(`  - Active flag (Prop 36): ${activeVal}`);
     console.log(`  - Health (Prop 32): ${healthVal}`);
     console.log(`  - Keys (Prop 33): ${keysVal}`);
+    console.log(`  - Weapon (Prop 37): ${weaponVal}`);
+    console.log(`  - Armor (Prop 38): ${armorVal}`);
 
-    if (activeVal.toString() !== "1" || healthVal.toString() !== "1750" || keysVal.toString() !== "4") {
+    if (activeVal.toString() !== "1" || healthVal.toString() !== "1750" || keysVal.toString() !== "4" || weaponVal.toString() !== "1" || armorVal.toString() !== "1") {
         throw new Error("Gauntlet bridge property mismatch!");
     }
 
@@ -240,7 +248,7 @@ async function main() {
     const invResponse = await extendedContract.parseCommand.staticCall(deployer.address, cmdBytes);
     console.log("Z-Machine output:\n", invResponse);
 
-    if (!invResponse.includes("Gauntlet Health: 1750") || !invResponse.includes("Gauntlet Keys: 4")) {
+    if (!invResponse.includes("Gauntlet Health: 1750") || !invResponse.includes("Gauntlet Keys: 4") || !invResponse.includes("Equipped Weapon: Battle Axe") || !invResponse.includes("Equipped Armor: Leather Armor")) {
         throw new Error("Bridge inventory output does not contain mocked stats!");
     }
 
