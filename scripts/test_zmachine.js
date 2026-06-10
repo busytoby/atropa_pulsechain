@@ -8,6 +8,18 @@ const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
 
 // Helper to compile Yul
 function compileYul(yulPath) {
+    try {
+        const cachePath = path.join(__dirname, "../frontend/compiled_yul.json");
+        if (fs.existsSync(cachePath)) {
+            const cache = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+            const filename = path.basename(yulPath, ".yul");
+            if (cache[filename]) {
+                return cache[filename];
+            }
+        }
+    } catch (e) {
+        // Fall back to compilation
+    }
     const output = execSync(`solc --strict-assembly --evm-version shanghai "${yulPath}" --bin`, { encoding: "utf8" });
     const lines = output.split("\n");
     const binIndex = lines.findIndex(line => line.includes("Binary representation:"));
