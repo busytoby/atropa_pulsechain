@@ -10,6 +10,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
+        /* Piano Keyboard Styles */
+        .piano-key {
+            position: absolute;
+            bottom: 0;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: background 0.1s, transform 0.05s;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 8px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            font-weight: bold;
+            user-select: none;
+        }
+        .white-key {
+            height: 100%;
+            background: #ffffff;
+            color: #333333;
+            z-index: 1;
+        }
+        .white-key:hover {
+            background: #eeeeee;
+        }
+        .white-key:active, .white-key.active {
+            background: #00f2fe;
+            color: #000;
+            transform: translateY(2px);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .black-key {
+            background: #111111;
+            color: #ffffff;
+            z-index: 2;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.5);
+        }
+        .black-key:hover {
+            background: #222222;
+        }
+        .black-key:active, .black-key.active {
+            background: #ff007f;
+            color: #fff;
+            transform: translateY(2px);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+
         /* Sprite Editor Grid Styles */
         .sprite-grid {
             display: grid;
@@ -518,15 +568,24 @@
                     </div>
 
                     <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                        <h4 style="color: var(--neon-blue); margin-bottom: 8px; font-family: 'Orbitron', sans-serif;">MANUAL NOTE CONTROLLER</h4>
-                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="4291" style="padding: 6px 0;">C</button>
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="4816" style="padding: 6px 0;">D</button>
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="5406" style="padding: 6px 0;">E</button>
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="5728" style="padding: 6px 0;">F</button>
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="6429" style="padding: 6px 0;">G</button>
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="7217" style="padding: 6px 0;">A</button>
-                            <button class="btn btn-secondary btn-small note-btn" data-freq="8100" style="padding: 6px 0;">B</button>
+                        <h4 style="color: var(--neon-blue); margin-bottom: 12px; font-family: 'Orbitron', sans-serif;">MANUAL PIANO KEYBOARD</h4>
+                        <div id="pianoKeyboard" style="position: relative; height: 130px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; border: 2px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); margin-bottom: 12px;">
+                            <!-- White Keys -->
+                            <button class="piano-key white-key note-btn" data-freq="4291" style="left: 0%; width: 12.5%;" title="C4">C4</button>
+                            <button class="piano-key white-key note-btn" data-freq="4816" style="left: 12.5%; width: 12.5%;" title="D4">D4</button>
+                            <button class="piano-key white-key note-btn" data-freq="5406" style="left: 25%; width: 12.5%;" title="E4">E4</button>
+                            <button class="piano-key white-key note-btn" data-freq="5728" style="left: 37.5%; width: 12.5%;" title="F4">F4</button>
+                            <button class="piano-key white-key note-btn" data-freq="6429" style="left: 50%; width: 12.5%;" title="G4">G4</button>
+                            <button class="piano-key white-key note-btn" data-freq="7217" style="left: 62.5%; width: 12.5%;" title="A4">A4</button>
+                            <button class="piano-key white-key note-btn" data-freq="8100" style="left: 75%; width: 12.5%;" title="B4">B4</button>
+                            <button class="piano-key white-key note-btn" data-freq="8583" style="left: 87.5%; width: 12.5%; border-right: none;" title="C5">C5</button>
+
+                            <!-- Black Keys -->
+                            <button class="piano-key black-key note-btn" data-freq="4547" style="left: 8.5%; width: 8%; height: 60%;" title="C#4">C#</button>
+                            <button class="piano-key black-key note-btn" data-freq="5103" style="left: 21%; width: 8%; height: 60%;" title="D#4">D#</button>
+                            <button class="piano-key black-key note-btn" data-freq="6068" style="left: 46%; width: 8%; height: 60%;" title="F#4">F#</button>
+                            <button class="piano-key black-key note-btn" data-freq="6811" style="left: 58.5%; width: 8%; height: 60%;" title="G#4">G#</button>
+                            <button class="piano-key black-key note-btn" data-freq="7646" style="left: 71%; width: 8%; height: 60%;" title="A#4">A#</button>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px;">
                             <button class="btn btn-secondary btn-small" id="btnFXLaser" style="border-color: #ff5555; color: #ff5555; padding: 4px 0; font-size: 0.65rem;"><span class="icon">💥</span> Laser Zap</button>
