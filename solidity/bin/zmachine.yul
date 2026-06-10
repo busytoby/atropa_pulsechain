@@ -1719,8 +1719,7 @@ object "ZMachine" {
                             }
                             balanceVal := sload(balSlot)
                         }
-                        mstore(resultPtr, balanceVal)
-                        resultPtr := add(resultPtr, 32)
+                        resultPtr := writeDec(balanceVal, resultPtr)
                     }
                 }
                 case 0x746f7461 { // "tota" (totalSupply)
@@ -1742,8 +1741,7 @@ object "ZMachine" {
                             }
                             supplyVal := sload(supplySlot)
                         }
-                        mstore(resultPtr, supplyVal)
-                        resultPtr := add(resultPtr, 32)
+                        resultPtr := writeDec(supplyVal, resultPtr)
                     }
                 }
                 case 0x4765744c { // "GetL" (GetLibraryAddress)
@@ -2734,6 +2732,28 @@ object "ZMachine" {
                 endPtr := add(endPtr, 1)
                 mstore8(endPtr, add(d1, 48))
                 endPtr := add(endPtr, 1)
+            }
+
+            function writeDec(val, destPtr) -> endPtr {
+                if iszero(val) {
+                    mstore8(destPtr, 48)
+                    endPtr := add(destPtr, 1)
+                    leave
+                }
+                let temp := val
+                let len := 0
+                for {} gt(temp, 0) {} {
+                    len := add(len, 1)
+                    temp := div(temp, 10)
+                }
+                endPtr := add(destPtr, len)
+                temp := val
+                let curr := endPtr
+                for {} gt(temp, 0) {} {
+                    curr := sub(curr, 1)
+                    mstore8(curr, add(mod(temp, 10), 48))
+                    temp := div(temp, 10)
+                }
             }
 
             function findSpace(startOffset, cmdLen) -> spacePos {
