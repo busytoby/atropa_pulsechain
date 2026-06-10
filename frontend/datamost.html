@@ -1596,8 +1596,8 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     const d6 = this.memory[54706] || 0;
                     const d7 = this.memory[54707] || 0;
                     const d8 = this.memory[54708] || 0;
-                    const d9 = this.memory[54709] || 100;
-                    const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                    const bypass = this.memory[54700] || 0;
+                    const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
                     
                     let currentAxl = await this.peekUser(userAddress, 851);
                     if (currentAxl >= taxDue) {
@@ -2853,8 +2853,8 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         const d6 = Number(await cpuContract.peek(54706));
                         const d7 = Number(await cpuContract.peek(54707));
                         const d8 = Number(await cpuContract.peek(54708));
-                        const d9 = Number(await cpuContract.peek(54709));
-                        const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
                         taxDueEl.innerText = taxDue.toString();
                     } catch (e) {
                         taxDueEl.innerText = "N/A";
@@ -11713,8 +11713,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     const d6 = this.memory[54706] || 0;
                     const d7 = this.memory[54707] || 0;
                     const d8 = this.memory[54708] || 0;
-                    const d9 = this.memory[54709] || 100;
-                    const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                    const bypass = this.memory[54700] || 0;
+                    const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
                     
                     let currentAxl = await this.peekUser(userAddress, 851);
                     if (currentAxl >= taxDue) {
@@ -12820,8 +12820,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         const d6 = Number(await cpuContract.peek(54706));
                         const d7 = Number(await cpuContract.peek(54707));
                         const d8 = Number(await cpuContract.peek(54708));
-                        const d9 = Number(await cpuContract.peek(54709));
-                        const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
                         taxDueEl.innerText = taxDue.toString();
                     } catch (e) {
                         taxDueEl.innerText = "N/A";
@@ -21433,8 +21433,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     const d6 = this.memory[54706] || 0;
                     const d7 = this.memory[54707] || 0;
                     const d8 = this.memory[54708] || 0;
-                    const d9 = this.memory[54709] || 100;
-                    const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                    const bypass = this.memory[54700] || 0;
+                    const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
                     
                     let currentAxl = await this.peekUser(userAddress, 851);
                     if (currentAxl >= taxDue) {
@@ -22540,8 +22540,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         const d6 = Number(await cpuContract.peek(54706));
                         const d7 = Number(await cpuContract.peek(54707));
                         const d8 = Number(await cpuContract.peek(54708));
-                        const d9 = Number(await cpuContract.peek(54709));
-                        const taxDue = (d6 << 24) | (d7 << 16) | (d8 << 8) | d9;
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
                         taxDueEl.innerText = taxDue.toString();
                     } catch (e) {
                         taxDueEl.innerText = "N/A";
