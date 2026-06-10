@@ -37,6 +37,7 @@ async function main() {
     const tms9900 = compileYul(path.join(__dirname, "../solidity/bin/tms9900.yul"));
     const biorhythm = compileYul(path.join(__dirname, "../solidity/bin/biorhythm.yul"));
     const tty = compileYul(path.join(__dirname, "../solidity/bin/tty.yul"));
+    const adctts = compileYul(path.join(__dirname, "../solidity/bin/adc_tts.yul"));
     
     const erc20Bin = "0x" + fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.bin"), "utf8").trim();
     const erc20Abi = JSON.parse(fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.abi"), "utf8"));
@@ -64,6 +65,7 @@ async function main() {
         tms9900,
         biorhythm,
         tty,
+        adc_tts: adctts,
         mockErc20: {
             bin: erc20Bin,
             abi: erc20Abi
