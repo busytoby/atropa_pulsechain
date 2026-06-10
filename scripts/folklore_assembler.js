@@ -7,24 +7,51 @@ const PROVIDER_URL = "http://127.0.0.1:8545";
 
 // 6502 Opcodes
 const OP = {
-    LDA_IM: 0xA9, 
-    STA_ZP: 0x85, 
-    LDX_IM: 0xA2, 
-    INX: 0xE8,    
-    STA_ABS: 0x8D,
-    JMP: 0x4C     
+    LDA_IM: 0xA9, LDA_ZP: 0xA5, LDA_ABS: 0xAD,
+    STA_ZP: 0x85, STA_ABS: 0x8D,
+    LDX_IM: 0xA2, LDX_ZP: 0xA6, LDX_ABS: 0xAE,
+    STX_ZP: 0x86, STX_ABS: 0x8E,
+    LDY_IM: 0xA0, LDY_ZP: 0xA4, LDY_ABS: 0xAC,
+    STY_ZP: 0x84, STY_ABS: 0x8C,
+    INX: 0xE8, DEX: 0xCA,
+    INY: 0xC8, DEY: 0x88,
+    CLC: 0x18, SEC: 0x38,
+    ADC_IM: 0x69, ADC_ZP: 0x65,
+    SBC_IM: 0xE9, SBC_ZP: 0xE5,
+    CMP_IM: 0xC9, CMP_ZP: 0xC5,
+    BNE: 0xD0, BEQ: 0xF0,
+    JMP: 0x4C, RTS: 0x60
 };
 
 function assemble(codeLines) {
     const bytes = [];
     const labels = {};
-    const placeholders = [];
+    const placeholders = []; // For absolute 16-bit target labels (JMP)
+    const branchPlaceholders = []; // For relative 8-bit branch labels (BNE, BEQ)
     let origin = 0x200; 
     let currentPC = origin;
 
     for (let line of codeLines) {
         line = line.trim().split(";")[0].trim();
         if (!line) continue;
+
+        // Origin directive
+        if (line.toUpperCase().startsWith("ORIGIN")) {
+            const tokens = line.split(/\s+/);
+            origin = parseInt(tokens[1].replace("$", ""), 16);
+            currentPC = origin;
+            continue;
+        }
+
+        // Direct byte definitions
+        if (line.toUpperCase().startsWith(".BYTE")) {
+            const rawBytes = line.slice(5).split(",").map(x => parseInt(x.trim().replace("$", ""), 16));
+            for (const b of rawBytes) {
+                bytes.push(b);
+                currentPC += 1;
+            }
+            continue;
+        }
 
         if (line.endsWith(":")) {
             const labelName = line.slice(0, -1).trim();
@@ -36,10 +63,20 @@ function assemble(codeLines) {
         const mnemonic = tokens[0].toUpperCase();
         const arg = tokens[1] || "";
 
+        // Standard instructions
         if (mnemonic === "LDA") {
             if (arg.startsWith("#$")) {
                 bytes.push(OP.LDA_IM, parseInt(arg.slice(2), 16));
                 currentPC += 2;
+            } else if (arg.startsWith("$")) {
+                const val = parseInt(arg.slice(1), 16);
+                if (val <= 0xFF) {
+                    bytes.push(OP.LDA_ZP, val);
+                    currentPC += 2;
+                } else {
+                    bytes.push(OP.LDA_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    currentPC += 3;
+                }
             }
         } else if (mnemonic === "STA") {
             const val = parseInt(arg.replace("$", ""), 16);
@@ -54,25 +91,114 @@ function assemble(codeLines) {
             if (arg.startsWith("#$")) {
                 bytes.push(OP.LDX_IM, parseInt(arg.slice(2), 16));
                 currentPC += 2;
+            } else if (arg.startsWith("$")) {
+                const val = parseInt(arg.slice(1), 16);
+                if (val <= 0xFF) {
+                    bytes.push(OP.LDX_ZP, val);
+                    currentPC += 2;
+                } else {
+                    bytes.push(OP.LDX_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    currentPC += 3;
+                }
+            }
+        } else if (mnemonic === "LDY") {
+            if (arg.startsWith("#$")) {
+                bytes.push(OP.LDY_IM, parseInt(arg.slice(2), 16));
+                currentPC += 2;
+            } else if (arg.startsWith("$")) {
+                const val = parseInt(arg.slice(1), 16);
+                if (val <= 0xFF) {
+                    bytes.push(OP.LDY_ZP, val);
+                    currentPC += 2;
+                } else {
+                    bytes.push(OP.LDY_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    currentPC += 3;
+                }
+            }
+        } else if (mnemonic === "STY") {
+            const val = parseInt(arg.replace("$", ""), 16);
+            if (val <= 0xFF) {
+                bytes.push(OP.STY_ZP, val);
+                currentPC += 2;
+            } else {
+                bytes.push(OP.STY_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                currentPC += 3;
             }
         } else if (mnemonic === "INX") {
             bytes.push(OP.INX);
             currentPC += 1;
+        } else if (mnemonic === "DEX") {
+            bytes.push(OP.DEX);
+            currentPC += 1;
+        } else if (mnemonic === "INY") {
+            bytes.push(OP.INY);
+            currentPC += 1;
+        } else if (mnemonic === "DEY") {
+            bytes.push(OP.DEY);
+            currentPC += 1;
+        } else if (mnemonic === "CLC") {
+            bytes.push(OP.CLC);
+            currentPC += 1;
+        } else if (mnemonic === "SEC") {
+            bytes.push(OP.SEC);
+            currentPC += 1;
+        } else if (mnemonic === "ADC") {
+            if (arg.startsWith("#$")) {
+                bytes.push(OP.ADC_IM, parseInt(arg.slice(2), 16));
+                currentPC += 2;
+            } else if (arg.startsWith("$")) {
+                bytes.push(OP.ADC_ZP, parseInt(arg.slice(1), 16));
+                currentPC += 2;
+            }
+        } else if (mnemonic === "SBC") {
+            if (arg.startsWith("#$")) {
+                bytes.push(OP.SBC_IM, parseInt(arg.slice(2), 16));
+                currentPC += 2;
+            }
+        } else if (mnemonic === "CMP") {
+            if (arg.startsWith("#$")) {
+                bytes.push(OP.CMP_IM, parseInt(arg.slice(2), 16));
+                currentPC += 2;
+            }
+        } else if (mnemonic === "BNE") {
+            branchPlaceholders.push({ pcOffset: bytes.length + 1, target: arg, branchPC: currentPC + 2 });
+            bytes.push(OP.BNE, 0x00);
+            currentPC += 2;
+        } else if (mnemonic === "BEQ") {
+            branchPlaceholders.push({ pcOffset: bytes.length + 1, target: arg, branchPC: currentPC + 2 });
+            bytes.push(OP.BEQ, 0x00);
+            currentPC += 2;
         } else if (mnemonic === "JMP") {
-            const labelTarget = arg;
-            placeholders.push({ pcOffset: bytes.length + 1, target: labelTarget });
+            placeholders.push({ pcOffset: bytes.length + 1, target: arg });
             bytes.push(OP.JMP, 0x00, 0x00);
             currentPC += 3;
+        } else if (mnemonic === "RTS") {
+            bytes.push(OP.RTS);
+            currentPC += 1;
         }
     }
 
+    // Resolve 16-bit Absolute placeholders (JMP)
     for (const p of placeholders) {
         const addr = labels[p.target];
         if (addr === undefined) {
-            throw new Error(`Undefined label: ${p.target}`);
+            throw new Error(`Undefined absolute label: ${p.target}`);
         }
         bytes[p.pcOffset] = addr & 0xFF;
         bytes[p.pcOffset + 1] = (addr >> 8) & 0xFF;
+    }
+
+    // Resolve 8-bit Relative branch placeholders (BNE, BEQ)
+    for (const p of branchPlaceholders) {
+        const addr = labels[p.target];
+        if (addr === undefined) {
+            throw new Error(`Undefined branch label: ${p.target}`);
+        }
+        let offset = addr - p.branchPC;
+        if (offset < -128 || offset > 127) {
+            throw new Error(`Branch label ${p.target} out of range (offset: ${offset})`);
+        }
+        bytes[p.pcOffset] = offset & 0xFF;
     }
 
     return { bytes, origin };
