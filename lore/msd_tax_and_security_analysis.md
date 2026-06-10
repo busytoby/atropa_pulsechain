@@ -29,7 +29,7 @@ During integration testing, we resolved two critical emulation issues:
 To track Diyat taxes and maintenance fees received by the operating platform, we implemented a dedicated **Treasury and Double-Entry Ledger** pattern directly mapped to CPU memory:
 
 ### Register Layout
-* **Tax Due Registers (`$D5B2`–`$D5B5` / `54706`–`54709`)**: Stores the 32-bit calculated tax due value. This is computed dynamically via the COMTAX coprocessor as exactly 0.1% of the current remaining transaction gas (`div(gas(), 1000)`).
+* **Tax Due Registers (`$D5B2`–$D5B5 / `54706`–`54709`)**: Stores the 32-bit calculated tax due value. This is computed dynamically via the COMTAX coprocessor as exactly 0.1% of the current remaining transaction gas (`div(gas(), 1000)`).
 * **Tax Payment Trigger Register (`$D5CF` / `54735`)**: Writing a non-zero value to this register triggers the tax payment sequence:
   1. Reconstructs the 32-bit `taxDue` from the registers (derived dynamically from the transaction's remaining gas).
   2. Verifies the taxpayer's OTRT (Reward Token) emulated balance mapped at RAM address `848`.
@@ -67,26 +67,35 @@ To enable operator tracking of all received payments, the frontend parses the `T
 
 ---
 
-## 4. Multi-User CPU Security Review
+## 4. Multi-User CPU Security & Sandbox Isolation Architecture
 
-The emulated CPU operates in a shared contract environment. Security is enforced through isolation layers:
+The emulated CPU operates in a shared contract environment. Security, containment, and fault isolation are enforced through dedicated mechanisms:
 
-### Sandbox Isolation
-* **Address Namespace Separation**: User files, registers, and program states are strictly isolated using the `getUserSlot(addr)` function. Storage slots are derived deterministically:
-  $$\text{Slot} = \text{keccak256}(\text{getContextUser()}, \text{addr})$$
-  This prevents one user's emulation environment from reading or overwriting another user's variables, screen RAM, or directory records.
+### A. Sandbox Isolation and Storage Namespace Separation
+In a multi-user smart contract, preventing cross-user state corruption is critical. We achieve complete sandbox containment using deterministic storage virtualization:
+* **Mathematical Boundary Derivation**: Instead of mapping the emulated 64KB memory map directly to contiguous EVM storage slots, every memory access is routed through a hash-based slot calculator:
+  $$\text{Slot} = \text{keccak256}(\text{getContextUser()}, \text{address})$$
+* **Proof of Non-Overlap**: For two distinct users $U_1 \neq U_2$ and any two memory addresses $A_1, A_2$, the collision resistance property of $\text{keccak256}$ guarantees that:
+  $$\text{keccak256}(U_1, A_1) \neq \text{keccak256}(U_2, A_2)$$
+  Therefore, it is cryptographically impossible for User 1 to read, write, or corrupt the memory pages, stack frames, program counters, or registers of User 2.
 
-### CPU Re-entrancy and Block Debouncing
-* **Switch Bounce Security**: The Disk System enforces block-level call debouncing. If a user calls the Disk System multiple times in the same block, it reverts, preventing flash-loan style re-entrancy attacks or double-spend exploits.
-* **Dynamic Diyat Rate-Limiting**: To prevent off-chain scripts from spamming the `getCPUState()` selector within the same block, the CPU implements a gas-calibrated read penalty. If the selector is triggered multiple times in the same block (`number() == lastReadBlock`), a 2 unit Diyat tax is dynamically excised from the caller's balance and redirected to the treasury namespace, logging the penalty via `TaxPaid`.
-* **CPU Privilege Isolation**: System-level calls (like changing the underlying disk system configuration) are restricted to the authorized deployer/master keys, preventing malicious emulated code from altering virtual hardware routes.
+### B. Block-Level Re-entrancy and Switch-Bounce Debouncing
+To prevent flash-loan-assisted recursive calls and re-entrancy vulnerabilities in the Disk System:
+* **Caller Debouncing**: The system maintains a `lastCallerBlock` mapping in storage.
+* **Enforcement**: If any address initiates a call to the disk system or memory controllers while the transaction block is active and `block.number == lastCallerBlock`, the execution is aborted immediately. This neutralizes multi-transaction re-entrancy and state-manipulation loops.
 
-### Multi-User Inter-CPU Communication Security
-* **Register Conflict Resolution**: The multi-user communication registers originally proposed at `$D5E0`–`$D5FF` have been remapped to `$D610`–`$D613` to resolve address range collisions with the 256-bit Cryptographic Nonce Generator.
-* **Inter-User Interrupt Protection**: To prevent malicious actors from spamming interrupts (`IRQ`/`NMI`) to freeze other users' CPU states, three key security layers are designed:
-  1. *Diyat Interrupt Tax*: Excises a 5 unit Diyat tax from the sender for each triggered interrupt.
-  2. *Whitelisting*: Verifies that the recipient has whitelisted the sender in local RAM.
-  3. *Cooldown Watchdog*: Imposes a minimum 3-block cooldown interval between successive inter-user signals.
+### C. Dynamic Diyat Rate-Limiting & Read Penalties
+To mitigate off-chain client spam (e.g., automated scripts flooding the contract with `getCPUState()` calls to extract real-time register states), the system implements an active gas-calibrated read penalty:
+* **Read Tracker**: The CPU tracks the block number of the last state extraction.
+* **Excise Penalty**: If the selector is queried multiple times within the same block, a **2 OTRT unit Diyat penalty** is debited from the caller's balance, transferred to the treasury namespace, and logged.
 
-### Resource Controls (Gas Limits)
-* To prevent infinite loops (e.g. `JMP *`) from freezing the EVM node or draining gas, the CPU executes instructions in bounded batches (`runSteps(maxSteps)`). The maximum steps parameter acts as a hardware watchdog timer.
+### D. CPU Privilege Ring Isolation
+The emulated 6502 architecture executes code under virtual privilege rings, distinguishing between User programs and Supervisor routines:
+* **Supervisor Mode (Ring 0)**: Allowed to access physical device registers, alter disk mounting options, and adjust communication channels.
+* **User Mode (Ring 1)**: Executed programs cannot directly write to hardware control registers. Attempts to write to forbidden zones (such as rewriting the JiffyDOS kernel vectors or system disk layouts) trigger a virtual CPU fault, returning execution back to the supervisor shell.
+
+### E. Interrupt Sanitization & Inter-User Signalling Protection
+Users communicate and dispatch hardware interrupts (`IRQ`/`NMI`) to other users through mapped signal registers at `$D610`–`$D613`. To prevent malicious actors from freezing target CPU states via signal storms, three mitigations are active:
+1. **Diyat Signal Surcharge**: Triggering an external interrupt costs **5 OTRT units** per signal, discouraging high-frequency spam.
+2. **Whitelisting**: The recipient user must explicitly register the sender address in their local whitelist table; unsolicited interrupts are automatically discarded.
+3. **Cooldown Watchdog**: A minimum 3-block cooldown interval is enforced between signals. Any signal dispatched before the cooldown period expires is dropped without execution.
