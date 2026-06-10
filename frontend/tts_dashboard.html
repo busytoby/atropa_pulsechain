@@ -889,35 +889,142 @@
             "function colortoneRelease(uint8 voice) external returns (uint256)"
         ];
 
+        function generateWavBytes(duration = 1, sampleRate = 8000) {
+            const numSamples = Math.floor(duration * sampleRate);
+            const buffer = new ArrayBuffer(44 + numSamples);
+            const view = new DataView(buffer);
+
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + numSamples, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate, true);
+            view.setUint16(32, 1, true);
+            view.setUint16(34, 8, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, numSamples, true);
+
+            for (let i = 0; i < numSamples; i++) {
+                const t = i / sampleRate;
+                const s = Math.sin(2 * Math.PI * 440 * t);
+                const val = Math.floor((s + 1) * 127);
+                view.setUint8(44 + i, val);
+            }
+
+            return new Uint8Array(buffer);
+        }
+
+        class SimulatedSpeechContract {
+            constructor() {
+                this.tmsCommand = 0;
+                this.tmsStatus = 0;
+                this.tmsFifo = 0;
+                this.phonemesCount = 0;
+                this.currentPhoneme = 0;
+                this.busyFlag = 0;
+                this.inflection = 0;
+                this.coefficients = new Array(9).fill(0);
+                this.quantizedWeights = {};
+                this.speakers = {};
+            }
+
+            async getTMS5220State() {
+                return [this.tmsCommand, this.tmsStatus, this.tmsFifo];
+            }
+
+            async getSpeechState() {
+                return [this.phonemesCount, this.currentPhoneme, this.busyFlag, this.inflection];
+            }
+
+            async writePhoneme(phoneme, inflection) {
+                this.phonemesCount++;
+                this.currentPhoneme = phoneme;
+                this.inflection = inflection;
+                this.tmsFifo = Math.min(this.tmsFifo + 1, 16);
+                return { wait: async () => {} };
+            }
+
+            async clearBusy() {
+                this.busyFlag = 0;
+                return { wait: async () => {} };
+            }
+
+            async writeTMS5220Command(command) {
+                this.tmsCommand = command;
+                return { wait: async () => {} };
+            }
+
+            async writeTMS5220Data(data) {
+                this.tmsFifo = Math.min(this.tmsFifo + 1, 16);
+                return { wait: async () => {} };
+            }
+
+            async writeReflectionCoefficients(slotOffset, coefficients) {
+                this.coefficients[slotOffset] = coefficients;
+                return { wait: async () => {} };
+            }
+
+            async setQuantizedWeights(slotOffset, packedWeights) {
+                this.quantizedWeights[slotOffset] = packedWeights;
+                return { wait: async () => {} };
+            }
+
+            async registerSpeaker(name, embedding) {
+                this.speakers[name] = embedding;
+                return { wait: async () => {} };
+            }
+
+            async predictMelQuantized(phonemes, name) {
+                return "0xabcdef1234567890";
+            }
+
+            async synthesizeNeuralWav(melFrames, upsampleFactor) {
+                const wavBytes = generateWavBytes(1.5, 8000);
+                return ethers.hexlify(wavBytes);
+            }
+        }
+
+        class SimulatedMusicContract {
+            async poke(addr, val) {
+                return { wait: async () => {} };
+            }
+            async peek(addr) {
+                return 0;
+            }
+            async colortonePlay(key, voice) {
+                return { wait: async () => {} };
+            }
+            async colortoneRelease(voice) {
+                return { wait: async () => {} };
+            }
+        }
+
         async function initWeb3() {
             try {
-                if (window.ethereum) {
-                    provider = new ethers.BrowserProvider(window.ethereum);
-                    signer = await provider.getSigner();
-                    const netBadge = document.getElementById("networkBadge");
-                    netBadge.innerText = "Local Anvil / Web3";
-                    netBadge.classList.add("connected");
-                    
-                    // Fetch deployed config address
-                    const response = await fetch("/config/user_config.json");
-                    const config = await response.json();
-                    
-                    const speechAddr = config.networks.localhost.speechSynthesizerAddress || "0x88750793089cC83298ab8087dDD1F92006072E7f";
-                    const musicAddr = config.networks.localhost.musicMakerAddress || "0xA51c84EAB021655403089AC83298ab8087DDD1F92";
+                const netBadge = document.getElementById("networkBadge");
+                netBadge.innerText = "ZMM VM (Active)";
+                netBadge.className = "network-badge connected";
+                
+                document.getElementById("speechContractAddr").innerText = "ZMM_VM_SIMULATION";
+                
+                speechContract = new SimulatedSpeechContract();
+                musicContract = new SimulatedMusicContract();
 
-                    document.getElementById("speechContractAddr").innerText = speechAddr;
-                    
-                    speechContract = new ethers.Contract(speechAddr, speechABI, signer);
-                    musicContract = new ethers.Contract(musicAddr, musicABI, signer);
-
-                    logConsole("Web3 wallet connected successfully.");
-                    updateOnChainStats();
-                } else {
-                    logConsole("No Web3 wallet detected. Run in local simulation mode.");
-                }
+                logConsole("ZMM VM simulation initialized successfully.");
+                updateOnChainStats();
             } catch (err) {
                 console.error(err);
-                logConsole("Web3 Connection failed: " + err.message);
+                logConsole("ZMM VM initialization failed: " + err.message);
             }
         }
 
