@@ -1001,9 +1001,9 @@
             "function colortoneRelease(uint8 voice) external returns (uint256)"
         ];
 
-        function generateWavBytes(duration = 1, sampleRate = 8000) {
-            const numSamples = Math.floor(duration * sampleRate);
-            const buffer = new ArrayBuffer(44 + numSamples);
+        function generateWavBytes16(floatSamples, sampleRate = 16000) {
+            const numSamples = floatSamples.length;
+            const buffer = new ArrayBuffer(44 + numSamples * 2);
             const view = new DataView(buffer);
 
             const writeString = (view, offset, string) => {
@@ -1013,27 +1013,147 @@
             };
 
             writeString(view, 0, 'RIFF');
-            view.setUint32(4, 36 + numSamples, true);
+            view.setUint32(4, 36 + numSamples * 2, true);
             writeString(view, 8, 'WAVE');
             writeString(view, 12, 'fmt ');
             view.setUint32(16, 16, true);
             view.setUint16(20, 1, true);
             view.setUint16(22, 1, true);
             view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate, true);
-            view.setUint16(32, 1, true);
-            view.setUint16(34, 8, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
             writeString(view, 36, 'data');
-            view.setUint32(40, numSamples, true);
+            view.setUint32(40, numSamples * 2, true);
 
             for (let i = 0; i < numSamples; i++) {
-                const t = i / sampleRate;
-                const s = Math.sin(2 * Math.PI * 440 * t);
-                const val = Math.floor((s + 1) * 127);
-                view.setUint8(44 + i, val);
+                let s = floatSamples[i] * 8.0;
+                if (s > 1) s = 1;
+                if (s < -1) s = -1;
+                const pcmVal = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                view.setInt16(44 + i * 2, pcmVal, true);
             }
 
             return new Uint8Array(buffer);
+        }
+
+        class ZmmElevenLabsThunk {
+            constructor() {
+                this.voices = {
+                    "ana": {
+                        name: "Ana",
+                        gender: "female",
+                        basePitch: 220,
+                        latentCoefficients: [0.15, -0.25, 0.40, -0.10, 0.05, -0.08, 0.12, -0.05, 0.02]
+                    },
+                    "moloch": {
+                        name: "Moloch",
+                        gender: "male",
+                        basePitch: 85,
+                        latentCoefficients: [0.85, -0.65, 0.70, -0.45, 0.35, -0.22, 0.18, -0.10, 0.05]
+                    }
+                };
+
+                this.phonemeMap = {
+                    "aa": { type: "voiced", energy: 90, formants: [1.2, 0.8, -0.5] },
+                    "ee": { type: "voiced", energy: 95, formants: [1.5, 0.4, -0.2] },
+                    "oo": { type: "voiced", energy: 85, formants: [0.9, 0.9, -0.6] },
+                    "m":  { type: "nasal",  energy: 50, formants: [0.5, 0.3, -0.1] },
+                    "n":  { type: "nasal",  energy: 45, formants: [0.6, 0.4, -0.1] },
+                    "s":  { type: "unvoiced", energy: 70, formants: [0.0, 0.0, 0.0] },
+                    "sh": { type: "unvoiced", energy: 80, formants: [0.0, 0.0, 0.0] },
+                    "f":  { type: "unvoiced", energy: 40, formants: [0.0, 0.0, 0.0] },
+                    "p":  { type: "silent", energy: 0, formants: [0.0, 0.0, 0.0] }
+                };
+
+                this.activeVoice = "ana";
+                this.currentPitch = 220;
+                this.currentEnergy = 0;
+                this.reflectionCoefficients = new Float32Array(9);
+                this.lfsrState = 0xACE1;
+            }
+
+            nextNoiseSample() {
+                let bit = this.lfsrState & 1;
+                this.lfsrState >>= 1;
+                if (bit === 1) {
+                    this.lfsrState ^= 0xB400;
+                }
+                return ((this.lfsrState & 0xFF) / 255.0) * 2.0 - 1.0;
+            }
+
+            selectVoice(voiceId) {
+                if (!this.voices[voiceId]) {
+                    return false;
+                }
+                this.activeVoice = voiceId;
+                this.currentPitch = this.voices[voiceId].basePitch;
+                return true;
+            }
+
+            projectLatentCoefficients(phonemeKey) {
+                const voice = this.voices[this.activeVoice];
+                const phone = this.phonemeMap[phonemeKey] || { type: "silent", energy: 0, formants: [0,0,0] };
+
+                this.currentEnergy = phone.energy;
+
+                for (let i = 0; i < 9; i++) {
+                    let baseK = voice.latentCoefficients[i];
+                    let formantMod = 0.0;
+
+                    if (phone.type === "voiced" || phone.type === "nasal") {
+                        if (i < 3) {
+                            formantMod = phone.formants[i] * 0.3;
+                        }
+                    } else if (phone.type === "unvoiced") {
+                        if (i < 4) {
+                            formantMod = -0.4;
+                        }
+                    }
+
+                    let K = baseK + formantMod;
+                    if (K > 0.99) K = 0.99;
+                    if (K < -0.99) K = -0.99;
+
+                    this.reflectionCoefficients[i] = K;
+                }
+
+                return {
+                    coefficients: Array.from(this.reflectionCoefficients),
+                    pitch: this.currentPitch,
+                    energy: this.currentEnergy,
+                    type: phone.type
+                };
+            }
+
+            synthesizeLatticeSamples(numSamples, inputSignalType) {
+                const K = this.reflectionCoefficients;
+                const samples = new Float32Array(numSamples);
+                const delayLine = new Float32Array(10); 
+
+                for (let t = 0; t < numSamples; t++) {
+                    let excitation = 0.0;
+                    if (inputSignalType === "voiced") {
+                        excitation = (t % Math.round(16000 / this.currentPitch)) === 0 ? 1.0 : -0.05;
+                    } else if (inputSignalType === "unvoiced") {
+                        excitation = this.nextNoiseSample();
+                    } else if (inputSignalType === "nasal") {
+                        excitation = Math.sin(2 * Math.PI * 150 * t / 16000) * 0.5 + Math.sin(2 * Math.PI * 300 * t / 16000) * 0.2;
+                    }
+
+                    let forward = excitation * (this.currentEnergy / 100.0);
+
+                    for (let i = 8; i >= 0; i--) {
+                        forward = forward - K[i] * delayLine[i];
+                        delayLine[i + 1] = delayLine[i] + K[i] * forward;
+                    }
+                    delayLine[0] = forward;
+
+                    samples[t] = forward;
+                }
+
+                return samples;
+            }
         }
 
         class SimulatedSpeechContract {
@@ -1097,11 +1217,45 @@
             }
 
             async predictMelQuantized(phonemes, name) {
-                return "0xabcdef1234567890";
+                const decodedName = ethers.decodeBytes32String(name).toLowerCase();
+                const decodedPhonemes = phonemes.map(ph => {
+                    const bytes = ethers.getBytes(ph);
+                    let len = 0;
+                    while (len < 32 && bytes[len] !== 0) len++;
+                    return new TextDecoder().decode(bytes.slice(0, len)).toLowerCase();
+                });
+                const data = { phonemes: decodedPhonemes, voice: decodedName };
+                return ethers.hexlify(ethers.toUtf8Bytes(JSON.stringify(data)));
             }
 
             async synthesizeNeuralWav(melFrames, upsampleFactor) {
-                const wavBytes = generateWavBytes(1.5, 8000);
+                const utf8Bytes = ethers.getBytes(melFrames);
+                const jsonStr = new TextDecoder().decode(utf8Bytes);
+                let data;
+                try {
+                    data = JSON.parse(jsonStr);
+                } catch(e) {
+                    data = { phonemes: ["ee", "oo", "m", "oo", "s"], voice: "ana" };
+                }
+
+                const thunk = new ZmmElevenLabsThunk();
+                thunk.selectVoice(data.voice);
+
+                const sampleRate = 16000;
+                const phonemeDuration = 0.15;
+                const samplesPerPhoneme = Math.floor(sampleRate * phonemeDuration);
+                const totalSamples = samplesPerPhoneme * data.phonemes.length;
+
+                const allSamples = new Float32Array(totalSamples);
+
+                for (let i = 0; i < data.phonemes.length; i++) {
+                    const ph = data.phonemes[i];
+                    const projection = thunk.projectLatentCoefficients(ph);
+                    const pcm = thunk.synthesizeLatticeSamples(samplesPerPhoneme, projection.type);
+                    allSamples.set(pcm, i * samplesPerPhoneme);
+                }
+
+                const wavBytes = generateWavBytes16(allSamples, sampleRate);
                 return ethers.hexlify(wavBytes);
             }
         }
