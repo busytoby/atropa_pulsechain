@@ -23,6 +23,7 @@ async function main() {
     const speechSynthesizer = compileYul(path.join(__dirname, "../solidity/bin/speechSynthesizer.yul"));
     const sculpture = compileYul(path.join(__dirname, "../solidity/bin/sculpture.yul"));
     const breadboard = compileYul(path.join(__dirname, "../solidity/bin/breadboard.yul"));
+    const nelson = compileYul(path.join(__dirname, "../solidity/bin/nelson.yul"));
     
     const erc20Bin = "0x" + fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.bin"), "utf8").trim();
     const erc20Abi = JSON.parse(fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.abi"), "utf8"));
@@ -36,6 +37,7 @@ async function main() {
         speechSynthesizer,
         sculpture,
         breadboard,
+        nelson,
         mockErc20: {
             bin: erc20Bin,
             abi: erc20Abi
