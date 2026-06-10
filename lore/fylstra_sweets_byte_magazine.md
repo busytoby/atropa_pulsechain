@@ -34,3 +34,17 @@ We integrate a simulated SWEETS line editor command loop inside our [protecto.ht
 
 > [!NOTE]
 > Integrating Dan Fylstra's SWEETS editor concepts ensures that our virtual terminal emulation remains highly optimized, utilizing low-level memory offsets and avoiding high-overhead Javascript mock buffers.
+
+---
+
+## 4. Dan Fylstra's BYTE Issue #1 "Write Your Own Assembler" Jump Table & Bill Gates' Correction
+
+In September 1975 (BYTE Issue #1), Dan Fylstra published **"Write Your Own Assembler"**, providing an early guide to two-pass symbol-table assembly mapping. A key technical feature was routing execution index offsets using a 3-byte jump table (e.g. `JMP target1`, `JMP target2`...).
+
+The lookup index offset required multiplying the index by 3: `offset = index * 3`.
+Fylstra's original code had a bug where it only shifted the index left (`ASL` / multiply by 2), causing routing collisions. Programmers (including Bill Gates) identified the issue, pointing out that Gates' correction `(index * 2) + index` was required for 3-byte jump table alignments.
+
+We implemented a dedicated verification test at [scripts/test_branch_table.js](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/test_branch_table.js):
+1. **Gates' Correction Simulation**: Index 1 is multiplied by 3 using `ASL A` followed by `CLC; ADC $10`, routing correctly to Routine 1 (`0xB0`).
+2. **Bugged Run Simulation**: Multiplying by 2 causes offset routing to collide, attempting to execute an invalid offset segment (`0x31` address byte as opcode) and reverting with a CPU exception as expected.
+
