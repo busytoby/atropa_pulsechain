@@ -305,6 +305,174 @@ object "SpeechSynthesizer" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // Method: selectVoice(uint256) -> bool
+            // Selector: 0x3899c77b
+            // ----------------------------------------------------------------
+            if eq(selector, 0x3899c77b) {
+                let voiceId := calldataload(4)
+                sstore(2, voiceId)
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method: generateNeuralSpeech(bytes32) -> bool
+            // Selector: 0xc69b606a
+            // ----------------------------------------------------------------
+            if eq(selector, 0xc69b606a) {
+                let key := calldataload(4)
+                let voiceId := sload(2) // 0 = Ana, 1 = Moloch
+                let basePitch := 220
+                if eq(voiceId, 1) {
+                    basePitch := 85
+                }
+                
+                let energy := 0
+                let soundType := 0 // 0 = silent, 1 = voiced, 2 = unvoiced, 3 = nasal
+
+                // Check phoneme keys by matching prefixes
+                let twoChars := and(key, 0xFFFF000000000000000000000000000000000000000000000000000000000000)
+                let oneChar := and(key, 0xFF00000000000000000000000000000000000000000000000000000000000000)
+
+                // aa (0x6161)
+                if eq(twoChars, 0x6161000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 90
+                    soundType := 1
+                }
+                // ee (0x6565)
+                if eq(twoChars, 0x6565000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 95
+                    soundType := 1
+                }
+                // oo (0x6f6f)
+                if eq(twoChars, 0x6f6f000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 85
+                    soundType := 1
+                }
+                // sh (0x7368)
+                if eq(twoChars, 0x7368000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 80
+                    soundType := 2
+                }
+                // s (0x73)
+                if eq(oneChar, 0x7300000000000000000000000000000000000000000000000000000000000000) {
+                    if iszero(eq(twoChars, 0x7368000000000000000000000000000000000000000000000000000000000000)) {
+                        energy := 70
+                        soundType := 2
+                    }
+                }
+                // f (0x66)
+                if eq(oneChar, 0x6600000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 40
+                    soundType := 2
+                }
+                // m (0x6d)
+                if eq(oneChar, 0x6d00000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 50
+                    soundType := 3
+                }
+                // n (0x6e)
+                if eq(oneChar, 0x6e00000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 45
+                    soundType := 3
+                }
+
+                let cpu := getCpuAddress()
+                let callerAddr := caller()
+
+                // Default coefficients for Ana (0) or Moloch (1)
+                for { let i := 0 } lt(i, 9) { i := add(i, 1) } {
+                    let K := 10
+                    
+                    if iszero(voiceId) {
+                        if eq(i, 0) { K := 15 }
+                        if eq(i, 1) { K := sub(0, 25) }
+                        if eq(i, 2) { K := 40 }
+                        if eq(i, 3) { K := sub(0, 10) }
+                        if eq(i, 4) { K := 5 }
+                        if eq(i, 5) { K := sub(0, 8) }
+                        if eq(i, 6) { K := 12 }
+                        if eq(i, 7) { K := sub(0, 5) }
+                        if eq(i, 8) { K := 2 }
+                    }
+                    if eq(voiceId, 1) {
+                        if eq(i, 0) { K := 85 }
+                        if eq(i, 1) { K := sub(0, 65) }
+                        if eq(i, 2) { K := 70 }
+                        if eq(i, 3) { K := sub(0, 45) }
+                        if eq(i, 4) { K := 35 }
+                        if eq(i, 5) { K := sub(0, 22) }
+                        if eq(i, 6) { K := 18 }
+                        if eq(i, 7) { K := sub(0, 10) }
+                        if eq(i, 8) { K := 5 }
+                    }
+
+                    if eq(soundType, 1) {
+                        if lt(i, 3) {
+                            K := add(K, 15)
+                        }
+                    }
+                    if eq(soundType, 2) {
+                        if lt(i, 4) {
+                            K := sub(K, 40)
+                        }
+                    }
+
+                    if sgt(K, 99) { K := 99 }
+                    if slt(K, sub(0, 99)) { K := sub(0, 99) }
+
+                    pokeUser(cpu, callerAddr, add(54800, i), K)
+                }
+
+                pokeUser(cpu, callerAddr, 54809, basePitch)
+                pokeUser(cpu, callerAddr, 54810, energy)
+
+                let prevPitch := sload(100)
+                if iszero(prevPitch) {
+                    prevPitch := basePitch
+                }
+                let smoothedPitch := div(add(prevPitch, basePitch), 2)
+                sstore(100, basePitch)
+
+                let musicMaker := sload(1)
+                if iszero(iszero(musicMaker)) {
+                    let controlVal := 17
+                    let targetPitch := smoothedPitch
+
+                    if eq(soundType, 2) {
+                        controlVal := 129
+                        targetPitch := 80
+                    }
+                    if iszero(soundType) {
+                        controlVal := 0
+                        targetPitch := 0
+                    }
+
+                    let freq := mul(targetPitch, 10)
+                    let lo := and(freq, 0xff)
+                    let hi := and(shr(8, freq), 0xff)
+
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54272)
+                    mstore(0x1124, lo)
+                    let dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54273)
+                    mstore(0x1124, hi)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54276)
+                    mstore(0x1124, controlVal)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                }
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
