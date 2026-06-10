@@ -1633,27 +1633,82 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     ballX += vx;
                     ballY += vy;
                     
-                    if (ballX <= 24 || ballX >= 320) {
-                        vx = -vx;
-                        this.memory[2] = vx & 0xFF;
-                    }
                     if (ballY <= 50 || ballY >= 220) {
                         vy = -vy;
                         this.memory[3] = vy & 0xFF;
                     }
                     
-                    if (isDemoModeActive) {
-                        let pY = this.memory[53249] || 100;
-                        if (pY < ballY) pY += 1;
-                        else if (pY > ballY) pY -= 1;
-                        this.memory[53249] = pY & 0xFF;
-                    } else {
-                        let pX = this.memory[53248] || 40;
-                        let pY = this.memory[53249] || 100;
-                        if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
-                            vx = Math.abs(vx);
-                            this.memory[2] = vx & 0xFF;
+                    // Predict ball Y position at paddle X (40) to drive a smart predictive AI controller
+                    let predictedY = ballY;
+                    if (vx < 0) {
+                        let tempX = ballX;
+                        let tempY = ballY;
+                        let tempVy = vy;
+                        while (tempX > 40) {
+                            tempX += vx;
+                            tempY += tempVy;
+                            if (tempY <= 50) {
+                                tempY = 50;
+                                tempVy = -tempVy;
+                            } else if (tempY >= 220) {
+                                tempY = 220;
+                                tempVy = -tempVy;
+                            }
                         }
+                        predictedY = tempY;
+                    } else {
+                        // Drift back to center when ball is moving away
+                        predictedY = 135;
+                    }
+                    
+                    // Move the paddle toward predicted coordinate with smooth velocity capping
+                    let pX = this.memory[53248] || 40;
+                    let pY = this.memory[53249] || 100;
+                    const paddleSpeed = 2.5;
+                    if (pY < predictedY - 2) {
+                        pY += paddleSpeed;
+                    } else if (pY > predictedY + 2) {
+                        pY -= paddleSpeed;
+                    }
+                    this.memory[53249] = pY & 0xFF;
+
+                    // Deflection and bounce logic when the ball contacts the paddle
+                    if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
+                        if (vx < 0) {
+                            vx = Math.abs(vx);
+                            // Increase ball speed slightly on deflection to ramp up difficulty
+                            if (vx < 8) vx += 0.5;
+                            this.memory[2] = vx & 0xFF;
+                            
+                            // Increment the score tracked at memory cell 4
+                            let scoreVal = this.memory[4] || 0;
+                            scoreVal = (scoreVal + 1) % 100;
+                            this.memory[4] = scoreVal;
+                            
+                            // Play paddle deflection sound
+                            try { playSynthTone(300, 150); } catch (e) {}
+                        }
+                    }
+
+                    // Reset and goal tracking
+                    if (ballX <= 24) {
+                        // Goal scored on player: reset ball position and reset/reduce score
+                        ballX = 160;
+                        ballY = 120;
+                        vx = 3;
+                        vy = (Math.random() < 0.5 ? 3 : -3);
+                        this.memory[2] = vx & 0xFF;
+                        this.memory[3] = vy & 0xFF;
+                        
+                        let scoreVal = this.memory[4] || 0;
+                        if (scoreVal > 0) scoreVal--;
+                        this.memory[4] = scoreVal;
+                        
+                        try { playSynthTone(100, 400); } catch (e) {}
+                    } else if (ballX >= 320) {
+                        // Bounce off the right wall (computer/boundary)
+                        vx = -vx;
+                        this.memory[2] = vx & 0xFF;
                     }
                     
                     this.memory[53252] = ballX & 0xFF;
@@ -11410,27 +11465,82 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     ballX += vx;
                     ballY += vy;
                     
-                    if (ballX <= 24 || ballX >= 320) {
-                        vx = -vx;
-                        this.memory[2] = vx & 0xFF;
-                    }
                     if (ballY <= 50 || ballY >= 220) {
                         vy = -vy;
                         this.memory[3] = vy & 0xFF;
                     }
                     
-                    if (isDemoModeActive) {
-                        let pY = this.memory[53249] || 100;
-                        if (pY < ballY) pY += 1;
-                        else if (pY > ballY) pY -= 1;
-                        this.memory[53249] = pY & 0xFF;
-                    } else {
-                        let pX = this.memory[53248] || 40;
-                        let pY = this.memory[53249] || 100;
-                        if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
-                            vx = Math.abs(vx);
-                            this.memory[2] = vx & 0xFF;
+                    // Predict ball Y position at paddle X (40) to drive a smart predictive AI controller
+                    let predictedY = ballY;
+                    if (vx < 0) {
+                        let tempX = ballX;
+                        let tempY = ballY;
+                        let tempVy = vy;
+                        while (tempX > 40) {
+                            tempX += vx;
+                            tempY += tempVy;
+                            if (tempY <= 50) {
+                                tempY = 50;
+                                tempVy = -tempVy;
+                            } else if (tempY >= 220) {
+                                tempY = 220;
+                                tempVy = -tempVy;
+                            }
                         }
+                        predictedY = tempY;
+                    } else {
+                        // Drift back to center when ball is moving away
+                        predictedY = 135;
+                    }
+                    
+                    // Move the paddle toward predicted coordinate with smooth velocity capping
+                    let pX = this.memory[53248] || 40;
+                    let pY = this.memory[53249] || 100;
+                    const paddleSpeed = 2.5;
+                    if (pY < predictedY - 2) {
+                        pY += paddleSpeed;
+                    } else if (pY > predictedY + 2) {
+                        pY -= paddleSpeed;
+                    }
+                    this.memory[53249] = pY & 0xFF;
+
+                    // Deflection and bounce logic when the ball contacts the paddle
+                    if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
+                        if (vx < 0) {
+                            vx = Math.abs(vx);
+                            // Increase ball speed slightly on deflection to ramp up difficulty
+                            if (vx < 8) vx += 0.5;
+                            this.memory[2] = vx & 0xFF;
+                            
+                            // Increment the score tracked at memory cell 4
+                            let scoreVal = this.memory[4] || 0;
+                            scoreVal = (scoreVal + 1) % 100;
+                            this.memory[4] = scoreVal;
+                            
+                            // Play paddle deflection sound
+                            try { playSynthTone(300, 150); } catch (e) {}
+                        }
+                    }
+
+                    // Reset and goal tracking
+                    if (ballX <= 24) {
+                        // Goal scored on player: reset ball position and reset/reduce score
+                        ballX = 160;
+                        ballY = 120;
+                        vx = 3;
+                        vy = (Math.random() < 0.5 ? 3 : -3);
+                        this.memory[2] = vx & 0xFF;
+                        this.memory[3] = vy & 0xFF;
+                        
+                        let scoreVal = this.memory[4] || 0;
+                        if (scoreVal > 0) scoreVal--;
+                        this.memory[4] = scoreVal;
+                        
+                        try { playSynthTone(100, 400); } catch (e) {}
+                    } else if (ballX >= 320) {
+                        // Bounce off the right wall (computer/boundary)
+                        vx = -vx;
+                        this.memory[2] = vx & 0xFF;
                     }
                     
                     this.memory[53252] = ballX & 0xFF;
@@ -20959,27 +21069,82 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     ballX += vx;
                     ballY += vy;
                     
-                    if (ballX <= 24 || ballX >= 320) {
-                        vx = -vx;
-                        this.memory[2] = vx & 0xFF;
-                    }
                     if (ballY <= 50 || ballY >= 220) {
                         vy = -vy;
                         this.memory[3] = vy & 0xFF;
                     }
                     
-                    if (isDemoModeActive) {
-                        let pY = this.memory[53249] || 100;
-                        if (pY < ballY) pY += 1;
-                        else if (pY > ballY) pY -= 1;
-                        this.memory[53249] = pY & 0xFF;
-                    } else {
-                        let pX = this.memory[53248] || 40;
-                        let pY = this.memory[53249] || 100;
-                        if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
-                            vx = Math.abs(vx);
-                            this.memory[2] = vx & 0xFF;
+                    // Predict ball Y position at paddle X (40) to drive a smart predictive AI controller
+                    let predictedY = ballY;
+                    if (vx < 0) {
+                        let tempX = ballX;
+                        let tempY = ballY;
+                        let tempVy = vy;
+                        while (tempX > 40) {
+                            tempX += vx;
+                            tempY += tempVy;
+                            if (tempY <= 50) {
+                                tempY = 50;
+                                tempVy = -tempVy;
+                            } else if (tempY >= 220) {
+                                tempY = 220;
+                                tempVy = -tempVy;
+                            }
                         }
+                        predictedY = tempY;
+                    } else {
+                        // Drift back to center when ball is moving away
+                        predictedY = 135;
+                    }
+                    
+                    // Move the paddle toward predicted coordinate with smooth velocity capping
+                    let pX = this.memory[53248] || 40;
+                    let pY = this.memory[53249] || 100;
+                    const paddleSpeed = 2.5;
+                    if (pY < predictedY - 2) {
+                        pY += paddleSpeed;
+                    } else if (pY > predictedY + 2) {
+                        pY -= paddleSpeed;
+                    }
+                    this.memory[53249] = pY & 0xFF;
+
+                    // Deflection and bounce logic when the ball contacts the paddle
+                    if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
+                        if (vx < 0) {
+                            vx = Math.abs(vx);
+                            // Increase ball speed slightly on deflection to ramp up difficulty
+                            if (vx < 8) vx += 0.5;
+                            this.memory[2] = vx & 0xFF;
+                            
+                            // Increment the score tracked at memory cell 4
+                            let scoreVal = this.memory[4] || 0;
+                            scoreVal = (scoreVal + 1) % 100;
+                            this.memory[4] = scoreVal;
+                            
+                            // Play paddle deflection sound
+                            try { playSynthTone(300, 150); } catch (e) {}
+                        }
+                    }
+
+                    // Reset and goal tracking
+                    if (ballX <= 24) {
+                        // Goal scored on player: reset ball position and reset/reduce score
+                        ballX = 160;
+                        ballY = 120;
+                        vx = 3;
+                        vy = (Math.random() < 0.5 ? 3 : -3);
+                        this.memory[2] = vx & 0xFF;
+                        this.memory[3] = vy & 0xFF;
+                        
+                        let scoreVal = this.memory[4] || 0;
+                        if (scoreVal > 0) scoreVal--;
+                        this.memory[4] = scoreVal;
+                        
+                        try { playSynthTone(100, 400); } catch (e) {}
+                    } else if (ballX >= 320) {
+                        // Bounce off the right wall (computer/boundary)
+                        vx = -vx;
+                        this.memory[2] = vx & 0xFF;
                     }
                     
                     this.memory[53252] = ballX & 0xFF;
