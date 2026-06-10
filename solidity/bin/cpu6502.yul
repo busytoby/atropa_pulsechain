@@ -292,6 +292,18 @@ object "CPU6502Emulator" {
                     }
                     val := rowMask
                 }
+                case 55600 { // RTC Seconds: (timestamp % 3600) % 60
+                    val := mod(mod(timestamp(), 3600), 60)
+                }
+                case 55601 { // RTC Minutes: (timestamp % 3600) / 60
+                    val := div(mod(timestamp(), 3600), 60)
+                }
+                case 55602 { // RTC Hours: (timestamp % 86400) / 3600
+                    val := div(mod(timestamp(), 86400), 3600)
+                }
+                case 55603 { // RTC Epoch Timestamp
+                    val := timestamp()
+                }
                 default {
                     let targetAddr := addr
                     let cpuMode := sload(getUserSlot(54540))

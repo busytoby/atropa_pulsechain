@@ -750,7 +750,24 @@ object "cpu6502" {
             // ----------------------------------------------------------------
             if eq(selector, 0x7861d269) {
                 let addr := calldataload(4)
-                mstore(0x00, sload(getUserSlot(addr)))
+                let val := 0
+                switch addr
+                case 55600 {
+                    val := mod(mod(timestamp(), 3600), 60)
+                }
+                case 55601 {
+                    val := div(mod(timestamp(), 3600), 60)
+                }
+                case 55602 {
+                    val := div(mod(timestamp(), 86400), 3600)
+                }
+                case 55603 {
+                    val := timestamp()
+                }
+                default {
+                    val := sload(getUserSlot(addr))
+                }
+                mstore(0x00, val)
                 return(0x00, 32)
             }
 
