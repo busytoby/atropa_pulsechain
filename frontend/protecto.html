@@ -327,12 +327,84 @@
         let provider, signer, cpuContract, tokenContract;
         let readProvider, writeSigner;
         let config = {};
+        let isSimulated = false;
         const cbmPalette = [
             "#000000", "#ffffff", "#880000", "#aaffff",
             "#cc44cc", "#00cc55", "#0000aa", "#eeee77",
             "#dd8855", "#664400", "#ff7777", "#333333",
             "#777777", "#aaffaa", "#0088ff", "#bbbbbb"
         ];
+
+        class SimulatedCPU {
+            constructor() {
+                this.memory = new Uint8Array(65536);
+                // Initialize default register values
+                this.memory[128] = 0x00; // Reg A
+                this.memory[129] = 0x00; // Reg X
+                this.memory[130] = 0x00; // Reg Y
+                this.memory[133] = 0xf0; // Reg PC low byte
+                this.memory[134] = 0xff; // Reg PC high byte
+                this.memory[0] = 15;     // Exec Bank ($0000)
+                this.memory[1] = 15;     // Data Bank ($0001)
+            }
+            async peekUser(user, addr) {
+                // Keep the CPU registers moving slightly to look active
+                if (addr === 133) {
+                    this.memory[133] = (this.memory[133] + 1) % 256;
+                    if (this.memory[133] === 0) {
+                        this.memory[134] = (this.memory[134] + 1) % 256;
+                    }
+                }
+                return this.memory[addr];
+            }
+            async poke(addr, val) {
+                this.memory[addr] = val;
+                // Reflect updates in MMU visual status
+                if (addr === 0 || addr === 1) {
+                    this.memory[addr] = val;
+                }
+                if (addr === 54540) {
+                    console.log("[ZMM VM] Switched CPU mode:", val);
+                }
+                return { wait: async () => {} };
+            }
+        }
+
+        class SimulatedToken {
+            constructor(address) {
+                this.address = address;
+            }
+            async balanceOf(account) {
+                if (account === "0x1111111111111111111111111111111111111111") {
+                    return ethers.parseUnits("12500.0", 18);
+                }
+                return ethers.parseUnits("350.0", 18);
+            }
+            async Type() {
+                return "Double-Entry Ledger Asset";
+            }
+            async maxSupply() {
+                return 1000000n;
+            }
+            async GetMarketRate(asset) {
+                return ethers.parseUnits("1.25", 18);
+            }
+            async approve(spender, value) {
+                return { wait: async () => {} };
+            }
+            async Purchase(counterparty, amount) {
+                return { wait: async () => {} };
+            }
+            async Redeem(counterparty, amount) {
+                return { wait: async () => {} };
+            }
+            async Xie() { return "0x0000000000000000000000000000000000000000"; }
+            async Xia() { return "0x0000000000000000000000000000000000000000"; }
+            async Mai() { return "0x0000000000000000000000000000000000000000"; }
+            async Qi() { return "0x0000000000000000000000000000000000000000"; }
+            async Zuo() { return "0x0000000000000000000000000000000000000000"; }
+            async Yan(user) { return "0x0000000000000000000000000000000000000000"; }
+        }
 
         const catalogDetails = {
             "1": { retail: "$995.00", price: 12, name: "B128 Computer", stock: 145 },
@@ -342,6 +414,33 @@
             "5": { retail: "$29.95", price: 2, name: "Crush, Crumble & Chomp!", stock: 120 },
             "6": { retail: "$39.95", price: 3, name: "Temple of Apshai", stock: 95 }
         };
+
+        const cpuABI = [
+            "function peek(uint256 addr) external view returns (uint256)",
+            "function poke(uint256 addr, uint256 val) external",
+            "function getCPUState() external view returns (uint256 A, uint256 X, uint256 Y, uint256 SR, uint256 SP, uint256 PC)",
+            "function peekUser(address user, uint256 addr) external view returns (uint256)",
+            "function pokeUser(address user, uint256 addr, uint256 val) external"
+        ];
+        
+        const tokenABI = [
+            "function balanceOf(address account) external view returns (uint256)",
+            "function maxSupply() external view returns (uint256)",
+            "function GetMarketRate(address asset) external view returns (uint256)",
+            "function Type() external view returns (string)",
+            "function Zuo() external view returns (address)",
+            "function Qi() external view returns (address)",
+            "function Mai() external view returns (address)",
+            "function Xia() external view returns (address)",
+            "function Xie() external view returns (address)",
+            "function Yan(address user) external view returns (address)",
+            "function approve(address spender, uint256 value) external returns (bool)",
+            "function Purchase(address counterparty, uint256 amount) external",
+            "function Redeem(address counterparty, uint256 amount) external",
+            "function Charge(uint256 waat) external returns (uint256)",
+            "function Power(uint256 waat) external returns (uint256, uint256, uint256)",
+            "function OptIn(address contractAddr, bool allow) external"
+        ];
 
         // Initialize Web3 and DApp Config
         async function init() {
@@ -358,42 +457,36 @@
                 config = await res.json();
             } catch (err) {
                 console.error("Failed to fetch server config:", err);
-                return;
+                config = {
+                    networks: {
+                        localhost: {
+                            cpu6502Address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+                            oregonTrailToken: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+                        }
+                    }
+                };
             }
 
             const localhost = config.networks.localhost;
-            
-            const cpuABI = [
-                "function peek(uint256 addr) external view returns (uint256)",
-                "function poke(uint256 addr, uint256 val) external",
-                "function getCPUState() external view returns (uint256 A, uint256 X, uint256 Y, uint256 SR, uint256 SP, uint256 PC)",
-                "function peekUser(address user, uint256 addr) external view returns (uint256)",
-                "function pokeUser(address user, uint256 addr, uint256 val) external"
-            ];
-            
-            const tokenABI = [
-                "function balanceOf(address account) external view returns (uint256)",
-                "function maxSupply() external view returns (uint256)",
-                "function GetMarketRate(address asset) external view returns (uint256)",
-                "function Type() external view returns (string)",
-                "function Zuo() external view returns (address)",
-                "function Qi() external view returns (address)",
-                "function Mai() external view returns (address)",
-                "function Xia() external view returns (address)",
-                "function Xie() external view returns (address)",
-                "function Yan(address user) external view returns (address)",
-                "function approve(address spender, uint256 value) external returns (bool)",
-                "function Purchase(address counterparty, uint256 amount) external",
-                "function Redeem(address counterparty, uint256 amount) external",
-                "function Charge(uint256 waat) external returns (uint256)",
-                "function Power(uint256 waat) external returns (uint256, uint256, uint256)",
-                "function OptIn(address contractAddr, bool allow) external"
-            ];
 
-            readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            try {
+                readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                await readProvider.getBlockNumber(); // Probe check connection
+                cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, readProvider);
+                isSimulated = false;
+            } catch (rpcErr) {
+                console.warn("Local Hardhat/Anvil RPC node is offline. Falling back to ZMM VM emulation.");
+                isSimulated = true;
+                cpuContract = new SimulatedCPU();
+                const connectBtn = document.getElementById("btnConnect");
+                if (connectBtn) {
+                    connectBtn.innerText = "ZMM VM (Active)";
+                    connectBtn.style.background = "var(--neon-blue)";
+                }
+            }
 
             // 2. Try to hook up Web3 Provider/Signer if window.ethereum exists
-            if (window.ethereum) {
+            if (window.ethereum && !isSimulated) {
                 try {
                     provider = new ethers.BrowserProvider(window.ethereum);
                     const accounts = await provider.send("eth_accounts", []);
@@ -405,15 +498,10 @@
                 } catch (e) {
                     console.warn("Wallet signer connection failed:", e);
                 }
-            } else {
-                console.log("No Ethereum browser extension found.");
             }
 
             // Set up write signer
             writeSigner = signer;
-
-            // 3. Instantiate core contracts (read-only for telemetry loop)
-            cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, readProvider);
 
             // 4. Populate Token Dropdown from localhost config
             const selectEl = document.getElementById("selectLedgerToken");
@@ -451,28 +539,48 @@
                     }
                 });
 
+                if (selectEl.children.length === 0) {
+                    const opt = document.createElement("option");
+                    opt.value = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+                    opt.dataset.symbol = "OTRT";
+                    opt.innerText = "OTRT (Oregon Trail Token)";
+                    selectEl.appendChild(opt);
+                }
+
                 // Set initial tokenContract and sync configuration to CPU registers
                 let initialTokenAddr = selectEl.value;
-                if (initialTokenAddr && initialTokenAddr !== "default") {
-                    tokenContract = new ethers.Contract(initialTokenAddr, tokenABI, readProvider);
-                    syncCpuTokenConfig(initialTokenAddr);
+                if (isSimulated) {
+                    tokenContract = new SimulatedToken(initialTokenAddr);
                 } else {
-                    const defaultAddr = localhost.oregonTrailToken || localhost.oregonTrailTokenAddress;
-                    tokenContract = new ethers.Contract(defaultAddr, tokenABI, readProvider);
-                    syncCpuTokenConfig(defaultAddr);
+                    if (initialTokenAddr && initialTokenAddr !== "default") {
+                        tokenContract = new ethers.Contract(initialTokenAddr, tokenABI, readProvider);
+                        syncCpuTokenConfig(initialTokenAddr);
+                    } else {
+                        const defaultAddr = localhost.oregonTrailToken || localhost.oregonTrailTokenAddress;
+                        tokenContract = new ethers.Contract(defaultAddr, tokenABI, readProvider);
+                        syncCpuTokenConfig(defaultAddr);
+                    }
                 }
 
                 // Add change listener
                 selectEl.addEventListener("change", async (e) => {
                     const tokenAddr = e.target.value;
-                    if (tokenAddr && tokenAddr.startsWith("0x")) {
-                        tokenContract = new ethers.Contract(tokenAddr, tokenABI, readProvider);
-                        await syncCpuTokenConfig(tokenAddr);
+                    if (isSimulated) {
+                        tokenContract = new SimulatedToken(tokenAddr);
+                    } else {
+                        if (tokenAddr && tokenAddr.startsWith("0x")) {
+                            tokenContract = new ethers.Contract(tokenAddr, tokenABI, readProvider);
+                            await syncCpuTokenConfig(tokenAddr);
+                        }
                     }
                     updateSpecialOpsUI();
                 });
             } else {
-                tokenContract = new ethers.Contract(localhost.oregonTrailTokenAddress || localhost.oregonTrailToken, tokenABI, activeProvider);
+                if (isSimulated) {
+                    tokenContract = new SimulatedToken("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9");
+                } else {
+                    tokenContract = new ethers.Contract(localhost.oregonTrailTokenAddress || localhost.oregonTrailToken, tokenABI, readProvider);
+                }
             }
             
             initBankGrid();
@@ -523,12 +631,17 @@
                 
                 try {
                     const itemId = parseInt(document.getElementById("selectCatalogItem").value);
-                    const activeSigner = await getWriteSigner();
-                    const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
-                    // Write to Protecto catalog selection register
-                    await (await writeCpu.poke(54880, itemId)).wait();
-                    // Strobe Order desk trigger
-                    await (await writeCpu.poke(54892, 1)).wait();
+                    if (isSimulated) {
+                        await cpuContract.poke(54880, itemId);
+                        await cpuContract.poke(54892, 1);
+                    } else {
+                        const activeSigner = await getWriteSigner();
+                        const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
+                        // Write to Protecto catalog selection register
+                        await (await writeCpu.poke(54880, itemId)).wait();
+                        // Strobe Order desk trigger
+                        await (await writeCpu.poke(54892, 1)).wait();
+                    }
                     alert("Order placed successfully on-chain!");
                 } catch (err) {
                     console.error("Order desk transaction failed:", err);
@@ -543,10 +656,14 @@
                 if (!cpuContract) return;
                 const modeVal = parseInt(e.target.value);
                 try {
-                    const activeSigner = await getWriteSigner();
-                    const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
-                    // Update CPU Mode Register $D50C (54540)
-                    await (await writeCpu.poke(54540, modeVal)).wait();
+                    if (isSimulated) {
+                        await cpuContract.poke(54540, modeVal);
+                    } else {
+                        const activeSigner = await getWriteSigner();
+                        const writeCpu = new ethers.Contract(config.networks.localhost.cpu6502Address, cpuABI, activeSigner || readProvider);
+                        // Update CPU Mode Register $D50C (54540)
+                        await (await writeCpu.poke(54540, modeVal)).wait();
+                    }
                 } catch (err) {
                     console.error("Failed to write CPU Mode register:", err);
                 }
@@ -765,9 +882,9 @@
                         const selectEl = document.getElementById("selectLedgerToken");
                         const selectedOpt = selectEl ? selectEl.options[selectEl.selectedIndex] : null;
                         const symbol = selectedOpt ? selectedOpt.dataset.symbol : "TOKEN";
-                        
                         try {
-                            const userBalance = await tokenContract.balanceOf(userAddr);
+                            try {
+                                const userBalance = await tokenContract.balanceOf(userAddr);
                             document.getElementById("ledgerAcc1100").innerText = parseFloat(ethers.formatUnits(userBalance, 18)).toFixed(4) + " " + symbol;
                         } catch (be) {
                             console.error("Failed to fetch user balance:", be);
