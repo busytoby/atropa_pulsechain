@@ -523,36 +523,26 @@
             isSimulated = true;
             cpuContract = new SimulatedCPU();
             const connectBtn = document.getElementById("btnConnect");
-            if (connectBtn) {
-                connectBtn.innerText = "ZMM VM (Active)";
-                connectBtn.style.background = "var(--neon-blue)";
-            }
-
-            // Asynchronously probe the network provider so page load is 100% non-blocking!
-            try {
-                readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
-                if (window.ethereum) {
-                    provider = new ethers.BrowserProvider(window.ethereum);
-                    provider.send("eth_accounts", []).then(async (accounts) => {
-                        if (accounts.length > 0) {
-                            signer = await provider.getSigner();
-                            writeSigner = signer;
-                            cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer);
-                            isSimulated = false;
-                            if (connectBtn) {
-                                connectBtn.innerText = "Wallet Linked";
-                                connectBtn.classList.add("btn-success");
-                                connectBtn.style.background = "";
-                            }
-                            const selectEl = document.getElementById("selectLedgerToken");
-                            if (selectEl && selectEl.value && selectEl.value !== "default") {
-                                tokenContract = new ethers.Contract(selectEl.value, tokenABI, signer);
-                            }
-                        }
-                    }).catch(() => {});
+            
+            if (signer) {
+                try {
+                    readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                    cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer);
+                    isSimulated = false;
+                    if (connectBtn) {
+                        connectBtn.innerText = "Wallet Linked";
+                        connectBtn.classList.add("btn-success");
+                        connectBtn.style.background = "";
+                    }
+                } catch (rpcErr) {
+                    console.warn("Live connection failed, staying in ZMM VM.");
+                    isSimulated = true;
                 }
-            } catch (rpcErr) {
-                console.log("On-chain network probe skipped/offline. Running locally.");
+            } else {
+                if (connectBtn) {
+                    connectBtn.innerText = "ZMM VM (Active)";
+                    connectBtn.style.background = "var(--neon-blue)";
+                }
             }
 
             // Set up write signer
