@@ -312,6 +312,7 @@ object "SpeechSynthesizer" {
             if eq(selector, 0x3899c77b) {
                 let voiceId := calldataload(4)
                 sstore(2, voiceId)
+                sstore(200, 0) // Reset coefficient smoothing state
                 mstore(0x00, 1)
                 return(0x00, 32)
             }
@@ -377,11 +378,59 @@ object "SpeechSynthesizer" {
                     energy := 45
                     soundType := 3
                 }
+                // ih (0x6968)
+                if eq(twoChars, 0x6968000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 90
+                    soundType := 1
+                }
+                // eh (0x6568)
+                if eq(twoChars, 0x6568000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 88
+                    soundType := 1
+                }
+                // ah (0x6168)
+                if eq(twoChars, 0x6168000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 92
+                    soundType := 1
+                }
+                // th (0x7468)
+                if eq(twoChars, 0x7468000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 30
+                    soundType := 2
+                }
+                // z (0x7a)
+                if eq(oneChar, 0x7a00000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 60
+                    soundType := 1
+                }
+                // p (0x70)
+                if eq(oneChar, 0x7000000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 50
+                    soundType := 2
+                }
+                // t (0x74)
+                if eq(oneChar, 0x7400000000000000000000000000000000000000000000000000000000000000) {
+                    if iszero(eq(twoChars, 0x7468000000000000000000000000000000000000000000000000000000000000)) {
+                        energy := 52
+                        soundType := 2
+                    }
+                }
+                // k (0x6b)
+                if eq(oneChar, 0x6b00000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 48
+                    soundType := 2
+                }
+                // ng (0x6e67)
+                if eq(twoChars, 0x6e67000000000000000000000000000000000000000000000000000000000000) {
+                    energy := 40
+                    soundType := 3
+                }
 
                 let cpu := getCpuAddress()
                 let callerAddr := caller()
 
                 // Default coefficients for Ana (0) or Moloch (1)
+                let isInit := sload(200)
                 for { let i := 0 } lt(i, 9) { i := add(i, 1) } {
                     let K := 10
                     
@@ -422,7 +471,21 @@ object "SpeechSynthesizer" {
                     if sgt(K, 99) { K := 99 }
                     if slt(K, sub(0, 99)) { K := sub(0, 99) }
 
-                    pokeUser(cpu, callerAddr, add(54800, i), K)
+                    let smoothedK := K
+                    if isInit {
+                        let prevK := sload(add(101, i))
+                        smoothedK := div(add(mul(K, 3), prevK), 4)
+                    }
+                    sstore(add(101, i), smoothedK)
+
+                    pokeUser(cpu, callerAddr, add(54800, i), smoothedK)
+                }
+
+                if iszero(energy) {
+                    sstore(200, 0)
+                }
+                if energy {
+                    sstore(200, 1)
                 }
 
                 pokeUser(cpu, callerAddr, 54809, basePitch)
