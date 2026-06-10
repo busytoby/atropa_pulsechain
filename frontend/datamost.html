@@ -492,6 +492,20 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                                 <input type="text" id="zmRoomName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Room name (e.g. Dark Cave)">
                                 <input type="text" id="zmRoomDesc" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Description (e.g. You are inside a damp cave.)">
                             </div>
+                            <div class="zmRoomConnectionsRow" style="display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬅️ West: <select class="zmRoomWest input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ➡️ East: <select class="zmRoomEast input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬆️ North: <select class="zmRoomNorth input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬇️ South: <select class="zmRoomSouth input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                            </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button class="btn btn-primary" id="btnAddZmRoom" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Room</button>
                             </div>
@@ -8744,16 +8758,39 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
                 }
                 
+                // Update direction dropdowns
+                const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
+                dirSelects.forEach(select => {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">None</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        select.value = currentVal;
+                    } else {
+                        select.value = "";
+                    }
+                });
+
                 // Render Rooms List
                 if (roomsList) {
-                    roomsList.innerHTML = rooms.map((r, i) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #8a2be2;">
-                            <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${r.name}</strong>: ${r.desc}
-                            </span>
-                            <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
-                        </div>
-                    `).join("");
+                    roomsList.innerHTML = rooms.map((r, i) => {
+                        let connStr = "";
+                        if (r.west || r.east || r.north || r.south) {
+                            connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
+                                [r.west && `W➡️${r.west}`, r.east && `E➡️${r.east}`, r.north && `N➡️${r.north}`, r.south && `S➡️${r.south}`].filter(Boolean).join(", ") +
+                                `</div>`;
+                        }
+                        return `
+                            <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #8a2be2; margin-bottom: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+                                        <strong>${r.name}</strong>: ${r.desc}
+                                    </span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                                </div>
+                                ${connStr}
+                            </div>
+                        `;
+                    }).join("");
                     
                     roomsList.querySelectorAll(".btn-delete-room").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -8793,9 +8830,18 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     alert("Please fill in Room name and description!");
                     return;
                 }
-                rooms.push({ name, desc });
+                const west = dashboardSection.querySelector(".zmRoomWest").value;
+                const east = dashboardSection.querySelector(".zmRoomEast").value;
+                const north = dashboardSection.querySelector(".zmRoomNorth").value;
+                const south = dashboardSection.querySelector(".zmRoomSouth").value;
+
+                rooms.push({ name, desc, west, east, north, south });
                 roomNameInput.value = "";
                 roomDescInput.value = "";
+                dashboardSection.querySelector(".zmRoomWest").value = "";
+                dashboardSection.querySelector(".zmRoomEast").value = "";
+                dashboardSection.querySelector(".zmRoomNorth").value = "";
+                dashboardSection.querySelector(".zmRoomSouth").value = "";
                 updateStatus();
                 console.log("Added Room:", rooms);
             });
@@ -8859,7 +8905,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                 // Configure defaults table layout (62 bytes defaults + 9 bytes per object)
                 // Default table base: 0x0040. Defaults end at 0x0040 + 62 = 126 (0x007E)
-                // Write items/rooms mapping offsets
+                // Write items/rooms mapping offsets and property values (with connections)
                 rooms.forEach((r, idx) => {
                     const objId = idx + 1;
                     const objOffset = 0x40 + 62 + (idx * 9);
@@ -8868,6 +8914,41 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[objOffset + 4] = 0; // Parent ID
                     romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
                     romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
+
+                    // Write properties to table starting at 0x0100 + (idx * 32)
+                    const propStart = 0x0100 + (idx * 32);
+                    romBuffer[propStart] = 0; // Short name length = 0
+                    
+                    let pOffset = propStart + 1;
+                    if (r.west) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.west);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 4; // West Property ID = 4
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.east) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.east);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 3; // East Property ID = 3
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.north) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.north);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 1; // North Property ID = 1
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.south) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.south);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 2; // South Property ID = 2
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
                 });
 
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
@@ -9842,6 +9923,20 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             <div style="display: flex; gap: 10px; margin-bottom: 8px;">
                                 <input type="text" id="zmRoomName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Room name (e.g. Dark Cave)">
                                 <input type="text" id="zmRoomDesc" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Description (e.g. You are inside a damp cave.)">
+                            </div>
+                            <div class="zmRoomConnectionsRow" style="display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬅️ West: <select class="zmRoomWest input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ➡️ East: <select class="zmRoomEast input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬆️ North: <select class="zmRoomNorth input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬇️ South: <select class="zmRoomSouth input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button class="btn btn-primary" id="btnAddZmRoom" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Room</button>
@@ -18054,22 +18149,44 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const statusDiv = dashboardSection.querySelector("#zmCreatorStatus");
             const roomsList = dashboardSection.querySelector(".zmRoomsList");
             const itemsList = dashboardSection.querySelector(".zmItemsList");
-
             const updateStatus = () => {
                 if (statusDiv) {
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
                 }
                 
+                // Update direction dropdowns
+                const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
+                dirSelects.forEach(select => {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">None</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        select.value = currentVal;
+                    } else {
+                        select.value = "";
+                    }
+                });
+
                 // Render Rooms List
                 if (roomsList) {
-                    roomsList.innerHTML = rooms.map((r, i) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #8a2be2;">
-                            <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${r.name}</strong>: ${r.desc}
-                            </span>
-                            <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
-                        </div>
-                    `).join("");
+                    roomsList.innerHTML = rooms.map((r, i) => {
+                        let connStr = "";
+                        if (r.west || r.east || r.north || r.south) {
+                            connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
+                                [r.west && `W➡️${r.west}`, r.east && `E➡️${r.east}`, r.north && `N➡️${r.north}`, r.south && `S➡️${r.south}`].filter(Boolean).join(", ") +
+                                `</div>`;
+                        }
+                        return `
+                            <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #8a2be2; margin-bottom: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+                                        <strong>${r.name}</strong>: ${r.desc}
+                                    </span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                                </div>
+                                ${connStr}
+                            </div>
+                        `;
+                    }).join("");
                     
                     roomsList.querySelectorAll(".btn-delete-room").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -18109,9 +18226,18 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     alert("Please fill in Room name and description!");
                     return;
                 }
-                rooms.push({ name, desc });
+                const west = dashboardSection.querySelector(".zmRoomWest").value;
+                const east = dashboardSection.querySelector(".zmRoomEast").value;
+                const north = dashboardSection.querySelector(".zmRoomNorth").value;
+                const south = dashboardSection.querySelector(".zmRoomSouth").value;
+
+                rooms.push({ name, desc, west, east, north, south });
                 roomNameInput.value = "";
                 roomDescInput.value = "";
+                dashboardSection.querySelector(".zmRoomWest").value = "";
+                dashboardSection.querySelector(".zmRoomEast").value = "";
+                dashboardSection.querySelector(".zmRoomNorth").value = "";
+                dashboardSection.querySelector(".zmRoomSouth").value = "";
                 updateStatus();
                 console.log("Added Room:", rooms);
             });
@@ -18175,7 +18301,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                 // Configure defaults table layout (62 bytes defaults + 9 bytes per object)
                 // Default table base: 0x0040. Defaults end at 0x0040 + 62 = 126 (0x007E)
-                // Write items/rooms mapping offsets
+                // Write items/rooms mapping offsets and property values (with connections)
                 rooms.forEach((r, idx) => {
                     const objId = idx + 1;
                     const objOffset = 0x40 + 62 + (idx * 9);
@@ -18184,6 +18310,41 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[objOffset + 4] = 0; // Parent ID
                     romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
                     romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
+
+                    // Write properties to table starting at 0x0100 + (idx * 32)
+                    const propStart = 0x0100 + (idx * 32);
+                    romBuffer[propStart] = 0; // Short name length = 0
+                    
+                    let pOffset = propStart + 1;
+                    if (r.west) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.west);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 4; // West Property ID = 4
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.east) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.east);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 3; // East Property ID = 3
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.north) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.north);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 1; // North Property ID = 1
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.south) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.south);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 2; // South Property ID = 2
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
                 });
 
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
@@ -19157,6 +19318,20 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             <div style="display: flex; gap: 10px; margin-bottom: 8px;">
                                 <input type="text" id="zmRoomName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Room name (e.g. Dark Cave)">
                                 <input type="text" id="zmRoomDesc" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Description (e.g. You are inside a damp cave.)">
+                            </div>
+                            <div class="zmRoomConnectionsRow" style="display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬅️ West: <select class="zmRoomWest input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ➡️ East: <select class="zmRoomEast input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬆️ North: <select class="zmRoomNorth input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    ⬇️ South: <select class="zmRoomSouth input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;"><option value="">None</option></select>
+                                </label>
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button class="btn btn-primary" id="btnAddZmRoom" style="background: #1a0033; border-color: #8a2be2; color: #8a2be2; font-size: 0.8rem; padding: 6px 12px;">➕ Add Room</button>
@@ -27220,16 +27395,39 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
                 }
                 
+                // Update direction dropdowns
+                const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
+                dirSelects.forEach(select => {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">None</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        select.value = currentVal;
+                    } else {
+                        select.value = "";
+                    }
+                });
+
                 // Render Rooms List
                 if (roomsList) {
-                    roomsList.innerHTML = rooms.map((r, i) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #8a2be2;">
-                            <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${r.name}</strong>: ${r.desc}
-                            </span>
-                            <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
-                        </div>
-                    `).join("");
+                    roomsList.innerHTML = rooms.map((r, i) => {
+                        let connStr = "";
+                        if (r.west || r.east || r.north || r.south) {
+                            connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
+                                [r.west && `W➡️${r.west}`, r.east && `E➡️${r.east}`, r.north && `N➡️${r.north}`, r.south && `S➡️${r.south}`].filter(Boolean).join(", ") +
+                                `</div>`;
+                        }
+                        return `
+                            <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #8a2be2; margin-bottom: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+                                        <strong>${r.name}</strong>: ${r.desc}
+                                    </span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                                </div>
+                                ${connStr}
+                            </div>
+                        `;
+                    }).join("");
                     
                     roomsList.querySelectorAll(".btn-delete-room").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -27269,9 +27467,18 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     alert("Please fill in Room name and description!");
                     return;
                 }
-                rooms.push({ name, desc });
+                const west = dashboardSection.querySelector(".zmRoomWest").value;
+                const east = dashboardSection.querySelector(".zmRoomEast").value;
+                const north = dashboardSection.querySelector(".zmRoomNorth").value;
+                const south = dashboardSection.querySelector(".zmRoomSouth").value;
+
+                rooms.push({ name, desc, west, east, north, south });
                 roomNameInput.value = "";
                 roomDescInput.value = "";
+                dashboardSection.querySelector(".zmRoomWest").value = "";
+                dashboardSection.querySelector(".zmRoomEast").value = "";
+                dashboardSection.querySelector(".zmRoomNorth").value = "";
+                dashboardSection.querySelector(".zmRoomSouth").value = "";
                 updateStatus();
                 console.log("Added Room:", rooms);
             });
@@ -27335,7 +27542,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                 // Configure defaults table layout (62 bytes defaults + 9 bytes per object)
                 // Default table base: 0x0040. Defaults end at 0x0040 + 62 = 126 (0x007E)
-                // Write items/rooms mapping offsets
+                // Write items/rooms mapping offsets and property values (with connections)
                 rooms.forEach((r, idx) => {
                     const objId = idx + 1;
                     const objOffset = 0x40 + 62 + (idx * 9);
@@ -27344,6 +27551,41 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[objOffset + 4] = 0; // Parent ID
                     romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
                     romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
+
+                    // Write properties to table starting at 0x0100 + (idx * 32)
+                    const propStart = 0x0100 + (idx * 32);
+                    romBuffer[propStart] = 0; // Short name length = 0
+                    
+                    let pOffset = propStart + 1;
+                    if (r.west) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.west);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 4; // West Property ID = 4
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.east) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.east);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 3; // East Property ID = 3
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.north) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.north);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 1; // North Property ID = 1
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.south) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.south);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 2; // South Property ID = 2
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
                 });
 
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
