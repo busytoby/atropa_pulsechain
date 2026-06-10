@@ -644,8 +644,9 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         <div class="form-group">
                             <label>Sprite ID:</label>
                             <select id="selectSprite" class="input-glow" style="padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; width: 100%;">
-                                <option value="0">Sprite 0</option>
-                                <option value="1">Sprite 1</option>
+                                <option value="0">Sprite 0 (Player)</option>
+                                <option value="1">Sprite 1 (Bullet/Item)</option>
+                                <option value="2">Sprite 2 (Alien/Enemy)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -659,6 +660,24 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     </div>
                     <div id="collisionStatus" style="margin-top: 15px; text-align: center; font-weight: bold; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">
                         Collision Status: Calculating...
+                    </div>
+                    <!-- Sprite Pattern Painter -->
+                    <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">Sprite Pattern Painter (24x21 Grid)</label>
+                        <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+                            <canvas class="spritePainterCanvas" width="192" height="168" style="background: #000; border: 1px solid var(--border-color); border-radius: 4px; image-rendering: pixelated; cursor: crosshair;"></canvas>
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn btn-secondary btnPaintDraw" style="flex: 1; padding: 5px; font-size: 11px; background: var(--btn-primary-bg); border-color: var(--neon-blue);">✏️ Draw</button>
+                                    <button class="btn btn-secondary btnPaintErase" style="flex: 1; padding: 5px; font-size: 11px;">🧹 Erase</button>
+                                </div>
+                                <button class="btn btn-secondary btnPaintClear" style="padding: 5px; font-size: 11px;">❌ Clear Canvas</button>
+                                <button class="btn btn-secondary btnPaintInvert" style="padding: 5px; font-size: 11px;">🔄 Invert</button>
+                                <div style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top: 5px;">
+                                    Click/drag to paint. Custom sprites hot-reload instantly.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -1806,6 +1825,156 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
             }
         }
 
+        function setupSpritePainter(dashboardIdx) {
+            const selectSprite = document.querySelectorAll("#selectSprite")[dashboardIdx];
+            const canvas = document.querySelectorAll(".spritePainterCanvas")[dashboardIdx];
+            const btnDraw = document.querySelectorAll(".btnPaintDraw")[dashboardIdx];
+            const btnErase = document.querySelectorAll(".btnPaintErase")[dashboardIdx];
+            const btnClear = document.querySelectorAll(".btnPaintClear")[dashboardIdx];
+            const btnInvert = document.querySelectorAll(".btnPaintInvert")[dashboardIdx];
+            
+            if (!canvas || !selectSprite) return;
+            
+            const ctx = canvas.getContext("2d");
+            const cols = 24;
+            const rows = 21;
+            const pixelSize = 8;
+            
+            let isDrawing = false;
+            let currentMode = "draw"; // "draw" or "erase"
+            
+            const defaultPatterns = {
+                0: [0x000c00, 0x000c00, 0x001e00, 0x001e00, 0x003300, 0x003300, 0x007f80, 0x00ffff, 0x01ffe0, 0x03fff0, 0x07ffc0, 0x07ffc0, 0x07ffc0, 0x03ffc0, 0x01ff80, 0x00ff80, 0x007e00, 0x003c00, 0x001800, 0x001800, 0x000000],
+                1: [0x001800, 0x003c00, 0x003c00, 0x003c00, 0x003c00, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x000000, 0x000000],
+                2: [0x0003c0, 0x0007e0, 0x00ffff, 0x03dbf8, 0x03ffff, 0x00a500, 0x005a00, 0x008100, 0x00c300, 0x018180, 0x0300c0, 0x0300c0, 0x020040, 0x000000, 0, 0, 0, 0, 0, 0, 0]
+            };
+            
+            function getPattern(spriteId) {
+                try {
+                    const stored = localStorage.getItem(`c64_shared_sprite_${spriteId}`);
+                    if (stored) {
+                        return JSON.parse(stored);
+                    }
+                } catch(e) {}
+                return [...(defaultPatterns[spriteId] || defaultPatterns[0])];
+            }
+            
+            function savePattern(spriteId, pattern) {
+                localStorage.setItem(`c64_shared_sprite_${spriteId}`, JSON.stringify(pattern));
+                if (typeof spritePatterns !== 'undefined') {
+                    spritePatterns[spriteId] = pattern;
+                }
+            }
+            
+            function redraw() {
+                const spriteId = parseInt(selectSprite.value);
+                const pattern = getPattern(spriteId);
+                
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw grid lines
+                ctx.strokeStyle = "#222222";
+                ctx.lineWidth = 0.5;
+                for (let c = 0; c <= cols; c++) {
+                    ctx.beginPath();
+                    ctx.moveTo(c * pixelSize, 0);
+                    ctx.lineTo(c * pixelSize, canvas.height);
+                    ctx.stroke();
+                }
+                for (let r = 0; r <= rows; r++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, r * pixelSize);
+                    ctx.lineTo(canvas.width, r * pixelSize);
+                    ctx.stroke();
+                }
+                
+                // Draw pixels
+                ctx.fillStyle = spriteId === 0 ? "#ff007f" : (spriteId === 1 ? "#00f2fe" : "#00ff7f");
+                for (let r = 0; r < rows; r++) {
+                    const val = pattern[r] || 0;
+                    for (let c = 0; c < cols; c++) {
+                        const bit = 23 - c;
+                        if ((val & (1 << bit)) !== 0) {
+                            ctx.fillRect(c * pixelSize + 1, r * pixelSize + 1, pixelSize - 2, pixelSize - 2);
+                        }
+                    }
+                }
+            }
+            
+            function handlePaint(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const col = Math.floor(x / (rect.width / cols));
+                const row = Math.floor(y / (rect.height / rows));
+                
+                if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                    const spriteId = parseInt(selectSprite.value);
+                    const pattern = getPattern(spriteId);
+                    const bit = 23 - col;
+                    
+                    if (currentMode === "draw") {
+                        pattern[row] |= (1 << bit);
+                    } else {
+                        pattern[row] &= ~(1 << bit);
+                    }
+                    
+                    savePattern(spriteId, pattern);
+                    redraw();
+                }
+            }
+            
+            canvas.addEventListener("mousedown", (e) => {
+                isDrawing = true;
+                handlePaint(e);
+            });
+            
+            canvas.addEventListener("mousemove", (e) => {
+                if (isDrawing) handlePaint(e);
+            });
+            
+            window.addEventListener("mouseup", () => {
+                isDrawing = false;
+            });
+            
+            selectSprite.addEventListener("change", redraw);
+            
+            btnDraw.addEventListener("click", () => {
+                currentMode = "draw";
+                btnDraw.style.backgroundColor = "var(--btn-primary-bg)";
+                btnDraw.style.borderColor = "var(--neon-blue)";
+                btnErase.style.backgroundColor = "";
+                btnErase.style.borderColor = "";
+            });
+            
+            btnErase.addEventListener("click", () => {
+                currentMode = "erase";
+                btnErase.style.backgroundColor = "var(--btn-primary-bg)";
+                btnErase.style.borderColor = "var(--neon-magenta)";
+                btnDraw.style.backgroundColor = "";
+                btnDraw.style.borderColor = "";
+            });
+            
+            btnClear.addEventListener("click", () => {
+                const spriteId = parseInt(selectSprite.value);
+                savePattern(spriteId, new Array(rows).fill(0));
+                redraw();
+            });
+            
+            btnInvert.addEventListener("click", () => {
+                const spriteId = parseInt(selectSprite.value);
+                const pattern = getPattern(spriteId);
+                for (let r = 0; r < rows; r++) {
+                    pattern[r] = (~pattern[r]) & 0xFFFFFF;
+                }
+                savePattern(spriteId, pattern);
+                redraw();
+            });
+            
+            redraw();
+        }
+
         function setupSimulatedVM() {
             provider = {
                 getStorage: async (target, slot) => {
@@ -1903,6 +2072,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
+            
+            // Initialize Sprite Painter for any Sprite Controller cards found in the DOM
+            try {
+                const painterCanvases = document.querySelectorAll(".spritePainterCanvas");
+                for (let i = 0; i < painterCanvases.length; i++) {
+                    setupSpritePainter(i);
+                }
+            } catch (err) {
+                console.error("Sprite painter init failed:", err);
+            }
             
             // Default to fast, local, blockless ZMM VM simulation mode
             window.simulationIntervalSpeed = 30; // Fast 30ms simulation rate for smooth gameplay
@@ -10481,8 +10660,9 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         <div class="form-group">
                             <label>Sprite ID:</label>
                             <select id="selectSprite" class="input-glow" style="padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; width: 100%;">
-                                <option value="0">Sprite 0</option>
-                                <option value="1">Sprite 1</option>
+                                <option value="0">Sprite 0 (Player)</option>
+                                <option value="1">Sprite 1 (Bullet/Item)</option>
+                                <option value="2">Sprite 2 (Alien/Enemy)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -10496,6 +10676,24 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     </div>
                     <div id="collisionStatus" style="margin-top: 15px; text-align: center; font-weight: bold; color: var(--text-secondary); font-family: 'Orbitron', sans-serif;">
                         Collision Status: Calculating...
+                    </div>
+                    <!-- Sprite Pattern Painter -->
+                    <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">Sprite Pattern Painter (24x21 Grid)</label>
+                        <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+                            <canvas class="spritePainterCanvas" width="192" height="168" style="background: #000; border: 1px solid var(--border-color); border-radius: 4px; image-rendering: pixelated; cursor: crosshair;"></canvas>
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn btn-secondary btnPaintDraw" style="flex: 1; padding: 5px; font-size: 11px; background: var(--btn-primary-bg); border-color: var(--neon-blue);">✏️ Draw</button>
+                                    <button class="btn btn-secondary btnPaintErase" style="flex: 1; padding: 5px; font-size: 11px;">🧹 Erase</button>
+                                </div>
+                                <button class="btn btn-secondary btnPaintClear" style="padding: 5px; font-size: 11px;">❌ Clear Canvas</button>
+                                <button class="btn btn-secondary btnPaintInvert" style="padding: 5px; font-size: 11px;">🔄 Invert</button>
+                                <div style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top: 5px;">
+                                    Click/drag to paint. Custom sprites hot-reload instantly.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -11740,6 +11938,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
+            
+            // Initialize Sprite Painter for any Sprite Controller cards found in the DOM
+            try {
+                const painterCanvases = document.querySelectorAll(".spritePainterCanvas");
+                for (let i = 0; i < painterCanvases.length; i++) {
+                    setupSpritePainter(i);
+                }
+            } catch (err) {
+                console.error("Sprite painter init failed:", err);
+            }
             
             // Default to fast, local, blockless ZMM VM simulation mode
             window.simulationIntervalSpeed = 30; // Fast 30ms simulation rate for smooth gameplay
@@ -21349,6 +21557,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
+            
+            // Initialize Sprite Painter for any Sprite Controller cards found in the DOM
+            try {
+                const painterCanvases = document.querySelectorAll(".spritePainterCanvas");
+                for (let i = 0; i < painterCanvases.length; i++) {
+                    setupSpritePainter(i);
+                }
+            } catch (err) {
+                console.error("Sprite painter init failed:", err);
+            }
             
             // Default to fast, local, blockless ZMM VM simulation mode
             window.simulationIntervalSpeed = 30; // Fast 30ms simulation rate for smooth gameplay
