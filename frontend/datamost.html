@@ -518,12 +518,30 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                                 <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
                                 <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
                             </div>
-                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
-                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 140px;">
                                     📍 Initial Room: 
                                     <select class="zmItemLocation input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;">
                                         <option value="">None (Limbo/Inventory)</option>
                                     </select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemTakeable" checked style="accent-color: #8a2be2;"> 🎒 Takeable
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemLight" style="accent-color: #8a2be2;"> 💡 Light
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemWearable" style="accent-color: #8a2be2;"> 👕 Wearable
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemIsBag" style="accent-color: #8a2be2;"> 👜 Is Bag
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    Weight: <input type="number" class="zmItemWeight" value="1" min="1" max="100" style="width: 45px; padding: 2px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px; text-align: center;">
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    Value: <input type="number" class="zmItemValue" value="0" min="0" max="100" style="width: 45px; padding: 2px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px; text-align: center;">
                                 </label>
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -8759,8 +8777,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 { name: "North of House", desc: "You are facing the north side of a white house." }
             ];
             let items = [
-                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House" },
-                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House" }
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 }
             ];
 
             const roomNameInput = dashboardSection.querySelector("#zmRoomName");
@@ -8773,6 +8791,28 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const itemsList = dashboardSection.querySelector(".zmItemsList");
             const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
             const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const itemTakeableCheckbox = dashboardSection.querySelector(".zmItemTakeable");
+            const itemLightCheckbox = dashboardSection.querySelector(".zmItemLight");
+            const itemWearableCheckbox = dashboardSection.querySelector(".zmItemWearable");
+            const itemIsBagCheckbox = dashboardSection.querySelector(".zmItemIsBag");
+            const itemWeightInput = dashboardSection.querySelector(".zmItemWeight");
+            const itemValueInput = dashboardSection.querySelector(".zmItemValue");
+
+            const checkCircularContainment = (itemList) => {
+                for (let i = 0; i < itemList.length; i++) {
+                    let current = itemList[i];
+                    let path = new Set([current.name]);
+                    while (current && current.location) {
+                        if (path.has(current.location)) {
+                            return current.name;
+                        }
+                        path.add(current.location);
+                        current = itemList.find(itm => itm.name === current.location);
+                    }
+                }
+                return null;
+            };
 
             const updateZilPreview = () => {
                 if (!zilCodeEditor) return;
@@ -8790,8 +8830,23 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
                     const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
                     zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    
+                    const flags = [];
+                    if (itm.takeable) flags.push("TAKEBIT");
+                    if (itm.light) flags.push("LIGHTBIT");
+                    if (itm.wearable) flags.push("WEARBIT");
+                    if (itm.isBag) flags.push("CONTBIT");
+                    if (flags.length > 0) {
+                        zil += `      (FLAGS ${flags.join(" ")})\n`;
+                    }
+                    if (itm.weight !== undefined) {
+                        zil += `      (SIZE ${itm.weight})\n`;
+                    }
+                    if (itm.value !== undefined) {
+                        zil += `      (VALUE ${itm.value})\n`;
+                    }
                     if (itm.token) {
-                        zil += `      (VALUE "${itm.token}") ; ERC-20 Bound Address\n`;
+                        zil += `      (TOKEN "${itm.token}") ; ERC-20 Bound Address\n`;
                     }
                     zil += `>\n\n`;
                 });
@@ -8803,7 +8858,6 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
                 }
                 
-                // Update direction dropdowns
                 const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
                 dirSelects.forEach(select => {
                     const currentVal = select.value;
@@ -8815,24 +8869,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     }
                 });
 
-                // Update item location dropdown
                 if (itemLocationSelect) {
                     const currentVal = itemLocationSelect.value;
-                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
-                    if (rooms.some(r => r.name === currentVal)) {
+                    const bagOptions = items.filter(itm => itm.isBag).map(itm => `<option value="${itm.name}">👜 Inside ${itm.name}</option>`).join("");
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + 
+                        rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("") +
+                        bagOptions;
+                    if (rooms.some(r => r.name === currentVal) || items.some(itm => itm.isBag && itm.name === currentVal)) {
                         itemLocationSelect.value = currentVal;
                     } else {
                         itemLocationSelect.value = "";
                     }
                 }
 
-                // Render Rooms List
                 if (roomsList) {
                     roomsList.innerHTML = rooms.map((r, i) => {
                         let connStr = "";
                         if (r.west || r.east || r.north || r.south) {
                             connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
-                                [r.west && `W➡️${r.west}`, r.east && `E➡️${r.east}`, r.north && `N➡️${r.north}`, r.south && `S➡️${r.south}`].filter(Boolean).join(", ") +
+                                [r.west && `W\u27a1${r.west}`, r.east && `E\u27a1${r.east}`, r.north && `N\u27a1${r.north}`, r.south && `S\u27a1${r.south}`].filter(Boolean).join(", ") +
                                 `</div>`;
                         }
                         return `
@@ -8841,7 +8896,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                     <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
                                         <strong>${r.name}</strong>: ${r.desc}
                                     </span>
-                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
                                 </div>
                                 ${connStr}
                             </div>
@@ -8857,14 +8912,18 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     });
                 }
 
-                // Render Items List
                 if (itemsList) {
                     itemsList.innerHTML = items.map((itm, i) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #00f2fe;">
-                            <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${itm.name}</strong>${itm.location ? ` [${itm.location}]` : ''}${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
-                            </span>
-                            <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                        <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #00f2fe; margin-bottom: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; font-weight: bold;">
+                                    ${itm.name}${itm.location ? ` [in ${itm.location}]` : ''}
+                                </span>
+                                <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
+                            </div>
+                            <div style="font-size: 0.65rem; color: #aaa; margin-top: 2px;">
+                                Flags: ${[itm.takeable && '\ud83c\udf92Takeable', itm.light && '\ud83d\udca1Light', itm.wearable && '\ud83d\udc55Wearable', itm.isBag && '👜Bag'].filter(Boolean).join(", ") || 'None'} | Wt: ${itm.weight ?? 1} | Val: ${itm.value ?? 0}
+                            </div>
                         </div>
                     `).join("");
                     
@@ -8912,10 +8971,44 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     alert("Please enter Item name!");
                     return;
                 }
-                items.push({ name, token: token || null, location: location || null });
+                
+                const takeable = itemTakeableCheckbox ? itemTakeableCheckbox.checked : true;
+                const light = itemLightCheckbox ? itemLightCheckbox.checked : false;
+                const wearable = itemWearableCheckbox ? itemWearableCheckbox.checked : false;
+                const isBag = itemIsBagCheckbox ? itemIsBagCheckbox.checked : false;
+                const weight = itemWeightInput ? parseInt(itemWeightInput.value) || 1 : 1;
+                const value = itemValueInput ? parseInt(itemValueInput.value) || 0 : 0;
+
+                // Circular containment check
+                const tempItems = [...items, { name, location, isBag }];
+                const loopItem = checkCircularContainment(tempItems);
+                if (loopItem) {
+                    alert(`Error: Circular containment detected involving '${loopItem}'! A bag cannot contain itself or be placed inside a bag that is inside it.`);
+                    return;
+                }
+
+                items.push({ 
+                    name, 
+                    token: token || null, 
+                    location: location || null,
+                    takeable,
+                    light,
+                    wearable,
+                    isBag,
+                    weight,
+                    value
+                });
+                
                 itemNameInput.value = "";
                 itemTokenInput.value = "";
                 if (itemLocationSelect) itemLocationSelect.value = "";
+                if (itemTakeableCheckbox) itemTakeableCheckbox.checked = true;
+                if (itemLightCheckbox) itemLightCheckbox.checked = false;
+                if (itemWearableCheckbox) itemWearableCheckbox.checked = false;
+                if (itemIsBagCheckbox) itemIsBagCheckbox.checked = false;
+                if (itemWeightInput) itemWeightInput.value = "1";
+                if (itemValueInput) itemValueInput.value = "0";
+                
                 updateStatus();
                 console.log("Added Item:", items);
             });
@@ -8969,18 +9062,50 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             location = inMatch[1].replace(/\-/g, " ");
                         }
                         
-                        const valMatch = block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        const tokenMatch = block.match(/\(TOKEN\s+"([^"]+)"\)/) || block.match(/\(VALUE\s+"([^"]+)"\)/);
                         let token = "";
-                        if (valMatch) {
-                            token = valMatch[1];
+                        if (tokenMatch && isNaN(tokenMatch[1])) {
+                            token = tokenMatch[1];
                         }
+                        
+                        const flagsMatch = block.match(/\(FLAGS\s+([^)]+)\)/);
+                        let takeable = true;
+                        let light = false;
+                        let wearable = false;
+                        let isBag = false;
+                        if (flagsMatch) {
+                            const flagsStr = flagsMatch[1];
+                            takeable = flagsStr.includes("TAKEBIT");
+                            light = flagsStr.includes("LIGHTBIT");
+                            wearable = flagsStr.includes("WEARBIT");
+                            isBag = flagsStr.includes("CONTBIT");
+                        }
+                        
+                        const sizeMatch = block.match(/\(SIZE\s+(\d+)\)/);
+                        let weight = sizeMatch ? parseInt(sizeMatch[1]) : 1;
+                        
+                        const valMatch = block.match(/\(VALUE\s+(\d+)\)/);
+                        let value = valMatch ? parseInt(valMatch[1]) : 0;
                         
                         newItems.push({
                             name: desc,
                             token: token || null,
-                            location: location
+                            location: location,
+                            takeable,
+                            light,
+                            wearable,
+                            isBag,
+                            weight,
+                            value
                         });
                     });
+
+                    // Circular containment check on compiled items
+                    const loopItem = checkCircularContainment(newItems);
+                    if (loopItem) {
+                        alert(`Compile Error: Circular containment detected involving '${loopItem}'!`);
+                        return;
+                    }
 
                     if (newRooms.length > 0) {
                         rooms = newRooms;
@@ -9003,34 +9128,32 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     return;
                 }
 
+                // Check circular containment
+                const loopItem = checkCircularContainment(items);
+                if (loopItem) {
+                    alert(`Deploy Error: Circular containment detected involving '${loopItem}'!`);
+                    return;
+                }
+
                 console.log("Compiling custom Z3 game ROM...");
-                // Construct Z3 Story file buffer dynamically
                 const romBuffer = new Uint8Array(1024);
                 
-                // Write Z3 header
                 romBuffer[0] = 3; // Version 3
-                
-                // Initial PC at offset 0x0800
                 romBuffer[6] = 0x08;
                 romBuffer[7] = 0x00;
-
-                // Object Table Base Address at offset 0x0040
                 romBuffer[10] = 0x00;
                 romBuffer[11] = 0x40;
 
-                // Configure defaults table layout (62 bytes defaults + 9 bytes per object)
-                // Default table base: 0x0040. Defaults end at 0x0040 + 62 = 126 (0x007E)
-                // Write items/rooms mapping offsets and property values (with connections)
                 rooms.forEach((r, idx) => {
                     const objId = idx + 1;
                     const objOffset = 0x40 + 62 + (idx * 9);
                     
-                    // Assign parent/child tree properties
                     romBuffer[objOffset + 4] = 0; // Parent ID
+                    romBuffer[objOffset + 5] = 0; // Sibling ID
+                    romBuffer[objOffset + 6] = 0; // Child ID
                     romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
                     romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
 
-                    // Write properties to table starting at 0x0100 + (idx * 32)
                     const propStart = 0x0100 + (idx * 32);
                     romBuffer[propStart] = 0; // Short name length = 0
                     
@@ -9066,36 +9189,88 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[pOffset] = 0; // Terminate property table
                 });
 
-                // Write items to object table
+                // Compute tree relationships (parent, sibling, child) for items
+                const parents = {};
                 items.forEach((itm, idx) => {
                     const objId = 50 + idx;
-                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
-                    
                     let parentId = 0;
                     if (itm.location) {
                         const rIdx = rooms.findIndex(r => r.name === itm.location);
                         if (rIdx !== -1) {
                             parentId = rIdx + 1;
+                        } else {
+                            const itmIdx = items.findIndex(item => item.name === itm.location);
+                            if (itmIdx !== -1) {
+                                parentId = 50 + itmIdx;
+                            }
                         }
                     }
+                    parents[objId] = parentId;
+                });
+                const children = {};
+                const siblings = {};
+                for (const objId in parents) {
+                    const pId = parents[objId];
+                    if (pId > 0) {
+                        if (!children[pId]) children[pId] = [];
+                        children[pId].push(parseInt(objId));
+                    }
+                }
+                for (const pId in children) {
+                    const list = children[pId];
+                    for (let i = 0; i < list.length; i++) {
+                        const current = list[i];
+                        const nextSibling = (i + 1 < list.length) ? list[i + 1] : 0;
+                        siblings[current] = nextSibling;
+                    }
+                }
+
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
+                    
+                    const parentId = parents[objId] || 0;
+                    const firstChild = (children[objId] && children[objId].length > 0) ? children[objId][0] : 0;
+                    const nextSibling = siblings[objId] || 0;
+                    
+                    let attrHi = 0;
+                    let attrLo = 0;
+                    if (itm.light) attrHi |= 0x40;    // bit 17
+                    if (itm.takeable) attrHi |= 0x10; // bit 19
+                    if (itm.wearable) attrHi |= 0x04; // bit 21
+                    if (itm.isBag) {
+                        attrLo |= 0x03; // CONTBIT (0x02) & OPENBIT (0x01)
+                    }
+                    
+                    romBuffer[objOffset] = attrHi;
+                    romBuffer[objOffset + 1] = attrLo;
+                    romBuffer[objOffset + 2] = 0;
+                    romBuffer[objOffset + 3] = 0;
                     
                     romBuffer[objOffset + 4] = parentId; // Parent ID
-                    romBuffer[objOffset + 5] = 0; // Sibling ID
-                    romBuffer[objOffset + 6] = 0; // Child ID
+                    romBuffer[objOffset + 5] = nextSibling; // Sibling ID
+                    romBuffer[objOffset + 6] = firstChild; // Child ID
                     
-                    // Address of properties table: starting at 0x0500 + (idx * 32)
                     const propAddr = 0x0500 + (idx * 32);
                     romBuffer[objOffset + 7] = (propAddr >> 8) & 0xFF; // High byte
-                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte
+                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte (FIXED TYPO)
                     
-                    // Write property table at propAddr
                     romBuffer[propAddr] = 0; // Name length = 0
-                    romBuffer[propAddr + 1] = 0; // Terminate property table
+                    
+                    let pOffset = propAddr + 1;
+                    if (itm.weight !== undefined) {
+                        romBuffer[pOffset++] = 20; // Prop ID 20 (size is 1 byte, ID byte is 20)
+                        romBuffer[pOffset++] = itm.weight;
+                    }
+                    if (itm.value !== undefined) {
+                        romBuffer[pOffset++] = 21; // Prop ID 21 (size is 1 byte, ID byte is 21)
+                        romBuffer[pOffset++] = itm.value;
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
                 });
 
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
-                // Deploy constructed ROM to chain using chunk uploader
                 const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
                 const zmAbi = [
                     "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
@@ -9103,7 +9278,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 ];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
-                const term = document.querySelectorAll("#zmachineTerminal")[0];
+                const term = dashboardSection.querySelector(".zmTerminal") || document.querySelectorAll("#zmachineTerminal")[0];
                 term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
                 
                 const chunkSize = 256;
@@ -9116,11 +9291,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     }
                     term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
                     
-                    // Bind token addresses for items
                     for (let idx = 0; idx < items.length; idx++) {
                         const item = items[idx];
                         if (item.token && ethers.isAddress(item.token)) {
-                            const objId = 50 + idx; // Items start at Object ID 50
+                            const objId = 50 + idx;
                             term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
                             const txBind = await contract.bindTokenAddress(objId, item.token);
                             await txBind.wait();
@@ -10092,12 +10266,30 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
                                 <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
                             </div>
-                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
-                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 140px;">
                                     📍 Initial Room: 
                                     <select class="zmItemLocation input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;">
                                         <option value="">None (Limbo/Inventory)</option>
                                     </select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemTakeable" checked style="accent-color: #8a2be2;"> 🎒 Takeable
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemLight" style="accent-color: #8a2be2;"> 💡 Light
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemWearable" style="accent-color: #8a2be2;"> 👕 Wearable
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemIsBag" style="accent-color: #8a2be2;"> 👜 Is Bag
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    Weight: <input type="number" class="zmItemWeight" value="1" min="1" max="100" style="width: 45px; padding: 2px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px; text-align: center;">
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    Value: <input type="number" class="zmItemValue" value="0" min="0" max="100" style="width: 45px; padding: 2px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px; text-align: center;">
                                 </label>
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -18298,8 +18490,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 { name: "North of House", desc: "You are facing the north side of a white house." }
             ];
             let items = [
-                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House" },
-                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House" }
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 }
             ];
 
             const roomNameInput = dashboardSection.querySelector("#zmRoomName");
@@ -18312,6 +18504,28 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const itemsList = dashboardSection.querySelector(".zmItemsList");
             const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
             const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const itemTakeableCheckbox = dashboardSection.querySelector(".zmItemTakeable");
+            const itemLightCheckbox = dashboardSection.querySelector(".zmItemLight");
+            const itemWearableCheckbox = dashboardSection.querySelector(".zmItemWearable");
+            const itemIsBagCheckbox = dashboardSection.querySelector(".zmItemIsBag");
+            const itemWeightInput = dashboardSection.querySelector(".zmItemWeight");
+            const itemValueInput = dashboardSection.querySelector(".zmItemValue");
+
+            const checkCircularContainment = (itemList) => {
+                for (let i = 0; i < itemList.length; i++) {
+                    let current = itemList[i];
+                    let path = new Set([current.name]);
+                    while (current && current.location) {
+                        if (path.has(current.location)) {
+                            return current.name;
+                        }
+                        path.add(current.location);
+                        current = itemList.find(itm => itm.name === current.location);
+                    }
+                }
+                return null;
+            };
 
             const updateZilPreview = () => {
                 if (!zilCodeEditor) return;
@@ -18329,8 +18543,23 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
                     const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
                     zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    
+                    const flags = [];
+                    if (itm.takeable) flags.push("TAKEBIT");
+                    if (itm.light) flags.push("LIGHTBIT");
+                    if (itm.wearable) flags.push("WEARBIT");
+                    if (itm.isBag) flags.push("CONTBIT");
+                    if (flags.length > 0) {
+                        zil += `      (FLAGS ${flags.join(" ")})\n`;
+                    }
+                    if (itm.weight !== undefined) {
+                        zil += `      (SIZE ${itm.weight})\n`;
+                    }
+                    if (itm.value !== undefined) {
+                        zil += `      (VALUE ${itm.value})\n`;
+                    }
                     if (itm.token) {
-                        zil += `      (VALUE "${itm.token}") ; ERC-20 Bound Address\n`;
+                        zil += `      (TOKEN "${itm.token}") ; ERC-20 Bound Address\n`;
                     }
                     zil += `>\n\n`;
                 });
@@ -18342,7 +18571,6 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
                 }
                 
-                // Update direction dropdowns
                 const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
                 dirSelects.forEach(select => {
                     const currentVal = select.value;
@@ -18354,24 +18582,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     }
                 });
 
-                // Update item location dropdown
                 if (itemLocationSelect) {
                     const currentVal = itemLocationSelect.value;
-                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
-                    if (rooms.some(r => r.name === currentVal)) {
+                    const bagOptions = items.filter(itm => itm.isBag).map(itm => `<option value="${itm.name}">👜 Inside ${itm.name}</option>`).join("");
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + 
+                        rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("") +
+                        bagOptions;
+                    if (rooms.some(r => r.name === currentVal) || items.some(itm => itm.isBag && itm.name === currentVal)) {
                         itemLocationSelect.value = currentVal;
                     } else {
                         itemLocationSelect.value = "";
                     }
                 }
 
-                // Render Rooms List
                 if (roomsList) {
                     roomsList.innerHTML = rooms.map((r, i) => {
                         let connStr = "";
                         if (r.west || r.east || r.north || r.south) {
                             connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
-                                [r.west && `W➡️${r.west}`, r.east && `E➡️${r.east}`, r.north && `N➡️${r.north}`, r.south && `S➡️${r.south}`].filter(Boolean).join(", ") +
+                                [r.west && `W\u27a1${r.west}`, r.east && `E\u27a1${r.east}`, r.north && `N\u27a1${r.north}`, r.south && `S\u27a1${r.south}`].filter(Boolean).join(", ") +
                                 `</div>`;
                         }
                         return `
@@ -18380,7 +18609,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                     <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
                                         <strong>${r.name}</strong>: ${r.desc}
                                     </span>
-                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
                                 </div>
                                 ${connStr}
                             </div>
@@ -18396,14 +18625,18 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     });
                 }
 
-                // Render Items List
                 if (itemsList) {
                     itemsList.innerHTML = items.map((itm, i) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #00f2fe;">
-                            <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${itm.name}</strong>${itm.location ? ` [${itm.location}]` : ''}${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
-                            </span>
-                            <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                        <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #00f2fe; margin-bottom: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; font-weight: bold;">
+                                    ${itm.name}${itm.location ? ` [in ${itm.location}]` : ''}
+                                </span>
+                                <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
+                            </div>
+                            <div style="font-size: 0.65rem; color: #aaa; margin-top: 2px;">
+                                Flags: ${[itm.takeable && '\ud83c\udf92Takeable', itm.light && '\ud83d\udca1Light', itm.wearable && '\ud83d\udc55Wearable', itm.isBag && '👜Bag'].filter(Boolean).join(", ") || 'None'} | Wt: ${itm.weight ?? 1} | Val: ${itm.value ?? 0}
+                            </div>
                         </div>
                     `).join("");
                     
@@ -18451,10 +18684,44 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     alert("Please enter Item name!");
                     return;
                 }
-                items.push({ name, token: token || null, location: location || null });
+                
+                const takeable = itemTakeableCheckbox ? itemTakeableCheckbox.checked : true;
+                const light = itemLightCheckbox ? itemLightCheckbox.checked : false;
+                const wearable = itemWearableCheckbox ? itemWearableCheckbox.checked : false;
+                const isBag = itemIsBagCheckbox ? itemIsBagCheckbox.checked : false;
+                const weight = itemWeightInput ? parseInt(itemWeightInput.value) || 1 : 1;
+                const value = itemValueInput ? parseInt(itemValueInput.value) || 0 : 0;
+
+                // Circular containment check
+                const tempItems = [...items, { name, location, isBag }];
+                const loopItem = checkCircularContainment(tempItems);
+                if (loopItem) {
+                    alert(`Error: Circular containment detected involving '${loopItem}'! A bag cannot contain itself or be placed inside a bag that is inside it.`);
+                    return;
+                }
+
+                items.push({ 
+                    name, 
+                    token: token || null, 
+                    location: location || null,
+                    takeable,
+                    light,
+                    wearable,
+                    isBag,
+                    weight,
+                    value
+                });
+                
                 itemNameInput.value = "";
                 itemTokenInput.value = "";
                 if (itemLocationSelect) itemLocationSelect.value = "";
+                if (itemTakeableCheckbox) itemTakeableCheckbox.checked = true;
+                if (itemLightCheckbox) itemLightCheckbox.checked = false;
+                if (itemWearableCheckbox) itemWearableCheckbox.checked = false;
+                if (itemIsBagCheckbox) itemIsBagCheckbox.checked = false;
+                if (itemWeightInput) itemWeightInput.value = "1";
+                if (itemValueInput) itemValueInput.value = "0";
+                
                 updateStatus();
                 console.log("Added Item:", items);
             });
@@ -18508,18 +18775,50 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             location = inMatch[1].replace(/\-/g, " ");
                         }
                         
-                        const valMatch = block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        const tokenMatch = block.match(/\(TOKEN\s+"([^"]+)"\)/) || block.match(/\(VALUE\s+"([^"]+)"\)/);
                         let token = "";
-                        if (valMatch) {
-                            token = valMatch[1];
+                        if (tokenMatch && isNaN(tokenMatch[1])) {
+                            token = tokenMatch[1];
                         }
+                        
+                        const flagsMatch = block.match(/\(FLAGS\s+([^)]+)\)/);
+                        let takeable = true;
+                        let light = false;
+                        let wearable = false;
+                        let isBag = false;
+                        if (flagsMatch) {
+                            const flagsStr = flagsMatch[1];
+                            takeable = flagsStr.includes("TAKEBIT");
+                            light = flagsStr.includes("LIGHTBIT");
+                            wearable = flagsStr.includes("WEARBIT");
+                            isBag = flagsStr.includes("CONTBIT");
+                        }
+                        
+                        const sizeMatch = block.match(/\(SIZE\s+(\d+)\)/);
+                        let weight = sizeMatch ? parseInt(sizeMatch[1]) : 1;
+                        
+                        const valMatch = block.match(/\(VALUE\s+(\d+)\)/);
+                        let value = valMatch ? parseInt(valMatch[1]) : 0;
                         
                         newItems.push({
                             name: desc,
                             token: token || null,
-                            location: location
+                            location: location,
+                            takeable,
+                            light,
+                            wearable,
+                            isBag,
+                            weight,
+                            value
                         });
                     });
+
+                    // Circular containment check on compiled items
+                    const loopItem = checkCircularContainment(newItems);
+                    if (loopItem) {
+                        alert(`Compile Error: Circular containment detected involving '${loopItem}'!`);
+                        return;
+                    }
 
                     if (newRooms.length > 0) {
                         rooms = newRooms;
@@ -18542,34 +18841,32 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     return;
                 }
 
+                // Check circular containment
+                const loopItem = checkCircularContainment(items);
+                if (loopItem) {
+                    alert(`Deploy Error: Circular containment detected involving '${loopItem}'!`);
+                    return;
+                }
+
                 console.log("Compiling custom Z3 game ROM...");
-                // Construct Z3 Story file buffer dynamically
                 const romBuffer = new Uint8Array(1024);
                 
-                // Write Z3 header
                 romBuffer[0] = 3; // Version 3
-                
-                // Initial PC at offset 0x0800
                 romBuffer[6] = 0x08;
                 romBuffer[7] = 0x00;
-
-                // Object Table Base Address at offset 0x0040
                 romBuffer[10] = 0x00;
                 romBuffer[11] = 0x40;
 
-                // Configure defaults table layout (62 bytes defaults + 9 bytes per object)
-                // Default table base: 0x0040. Defaults end at 0x0040 + 62 = 126 (0x007E)
-                // Write items/rooms mapping offsets and property values (with connections)
                 rooms.forEach((r, idx) => {
                     const objId = idx + 1;
                     const objOffset = 0x40 + 62 + (idx * 9);
                     
-                    // Assign parent/child tree properties
                     romBuffer[objOffset + 4] = 0; // Parent ID
+                    romBuffer[objOffset + 5] = 0; // Sibling ID
+                    romBuffer[objOffset + 6] = 0; // Child ID
                     romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
                     romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
 
-                    // Write properties to table starting at 0x0100 + (idx * 32)
                     const propStart = 0x0100 + (idx * 32);
                     romBuffer[propStart] = 0; // Short name length = 0
                     
@@ -18605,36 +18902,88 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     romBuffer[pOffset] = 0; // Terminate property table
                 });
 
-                // Write items to object table
+                // Compute tree relationships (parent, sibling, child) for items
+                const parents = {};
                 items.forEach((itm, idx) => {
                     const objId = 50 + idx;
-                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
-                    
                     let parentId = 0;
                     if (itm.location) {
                         const rIdx = rooms.findIndex(r => r.name === itm.location);
                         if (rIdx !== -1) {
                             parentId = rIdx + 1;
+                        } else {
+                            const itmIdx = items.findIndex(item => item.name === itm.location);
+                            if (itmIdx !== -1) {
+                                parentId = 50 + itmIdx;
+                            }
                         }
                     }
+                    parents[objId] = parentId;
+                });
+                const children = {};
+                const siblings = {};
+                for (const objId in parents) {
+                    const pId = parents[objId];
+                    if (pId > 0) {
+                        if (!children[pId]) children[pId] = [];
+                        children[pId].push(parseInt(objId));
+                    }
+                }
+                for (const pId in children) {
+                    const list = children[pId];
+                    for (let i = 0; i < list.length; i++) {
+                        const current = list[i];
+                        const nextSibling = (i + 1 < list.length) ? list[i + 1] : 0;
+                        siblings[current] = nextSibling;
+                    }
+                }
+
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
+                    
+                    const parentId = parents[objId] || 0;
+                    const firstChild = (children[objId] && children[objId].length > 0) ? children[objId][0] : 0;
+                    const nextSibling = siblings[objId] || 0;
+                    
+                    let attrHi = 0;
+                    let attrLo = 0;
+                    if (itm.light) attrHi |= 0x40;    // bit 17
+                    if (itm.takeable) attrHi |= 0x10; // bit 19
+                    if (itm.wearable) attrHi |= 0x04; // bit 21
+                    if (itm.isBag) {
+                        attrLo |= 0x03; // CONTBIT (0x02) & OPENBIT (0x01)
+                    }
+                    
+                    romBuffer[objOffset] = attrHi;
+                    romBuffer[objOffset + 1] = attrLo;
+                    romBuffer[objOffset + 2] = 0;
+                    romBuffer[objOffset + 3] = 0;
                     
                     romBuffer[objOffset + 4] = parentId; // Parent ID
-                    romBuffer[objOffset + 5] = 0; // Sibling ID
-                    romBuffer[objOffset + 6] = 0; // Child ID
+                    romBuffer[objOffset + 5] = nextSibling; // Sibling ID
+                    romBuffer[objOffset + 6] = firstChild; // Child ID
                     
-                    // Address of properties table: starting at 0x0500 + (idx * 32)
                     const propAddr = 0x0500 + (idx * 32);
                     romBuffer[objOffset + 7] = (propAddr >> 8) & 0xFF; // High byte
-                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte
+                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte (FIXED TYPO)
                     
-                    // Write property table at propAddr
                     romBuffer[propAddr] = 0; // Name length = 0
-                    romBuffer[propAddr + 1] = 0; // Terminate property table
+                    
+                    let pOffset = propAddr + 1;
+                    if (itm.weight !== undefined) {
+                        romBuffer[pOffset++] = 20; // Prop ID 20 (size is 1 byte, ID byte is 20)
+                        romBuffer[pOffset++] = itm.weight;
+                    }
+                    if (itm.value !== undefined) {
+                        romBuffer[pOffset++] = 21; // Prop ID 21 (size is 1 byte, ID byte is 21)
+                        romBuffer[pOffset++] = itm.value;
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
                 });
 
                 console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
                 
-                // Deploy constructed ROM to chain using chunk uploader
                 const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
                 const zmAbi = [
                     "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
@@ -18642,7 +18991,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 ];
                 const contract = new ethers.Contract(zmAddress, zmAbi, signer);
                 
-                const term = document.querySelectorAll("#zmachineTerminal")[1];
+                const term = dashboardSection.querySelector(".zmTerminal") || document.querySelectorAll("#zmachineTerminal")[1];
                 term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
                 
                 const chunkSize = 256;
@@ -18655,11 +19004,10 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     }
                     term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
                     
-                    // Bind token addresses for items
                     for (let idx = 0; idx < items.length; idx++) {
                         const item = items[idx];
                         if (item.token && ethers.isAddress(item.token)) {
-                            const objId = 50 + idx; // Items start at Object ID 50
+                            const objId = 50 + idx;
                             term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
                             const txBind = await contract.bindTokenAddress(objId, item.token);
                             await txBind.wait();
@@ -19600,12 +19948,30 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                 <input type="text" id="zmItemName" class="input-glow" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="Item name (e.g. Golden Sword)">
                                 <input type="text" id="zmItemToken" class="input-glow" style="flex: 2; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 6px; font-family: monospace;" placeholder="ERC-20 Token Address for binding (Optional)">
                             </div>
-                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa;">
-                                <label style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.75rem; color: #aaa; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 140px;">
                                     📍 Initial Room: 
                                     <select class="zmItemLocation input-glow" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px;">
                                         <option value="">None (Limbo/Inventory)</option>
                                     </select>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemTakeable" checked style="accent-color: #8a2be2;"> 🎒 Takeable
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemLight" style="accent-color: #8a2be2;"> 💡 Light
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemWearable" style="accent-color: #8a2be2;"> 👕 Wearable
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="checkbox" class="zmItemIsBag" style="accent-color: #8a2be2;"> 👜 Is Bag
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    Weight: <input type="number" class="zmItemWeight" value="1" min="1" max="100" style="width: 45px; padding: 2px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px; text-align: center;">
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    Value: <input type="number" class="zmItemValue" value="0" min="0" max="100" style="width: 45px; padding: 2px; background: rgba(0,0,0,0.5); border: 1px solid #8a2be2; color: #fff; border-radius: 4px; text-align: center;">
                                 </label>
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -27651,8 +28017,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 { name: "North of House", desc: "You are facing the north side of a white house." }
             ];
             let items = [
-                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House" },
-                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House" }
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", location: "West of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", location: "North of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 }
             ];
 
             const roomNameInput = dashboardSection.querySelector("#zmRoomName");
@@ -27665,6 +28031,28 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const itemsList = dashboardSection.querySelector(".zmItemsList");
             const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
             const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const itemTakeableCheckbox = dashboardSection.querySelector(".zmItemTakeable");
+            const itemLightCheckbox = dashboardSection.querySelector(".zmItemLight");
+            const itemWearableCheckbox = dashboardSection.querySelector(".zmItemWearable");
+            const itemIsBagCheckbox = dashboardSection.querySelector(".zmItemIsBag");
+            const itemWeightInput = dashboardSection.querySelector(".zmItemWeight");
+            const itemValueInput = dashboardSection.querySelector(".zmItemValue");
+
+            const checkCircularContainment = (itemList) => {
+                for (let i = 0; i < itemList.length; i++) {
+                    let current = itemList[i];
+                    let path = new Set([current.name]);
+                    while (current && current.location) {
+                        if (path.has(current.location)) {
+                            return current.name;
+                        }
+                        path.add(current.location);
+                        current = itemList.find(itm => itm.name === current.location);
+                    }
+                }
+                return null;
+            };
 
             const updateZilPreview = () => {
                 if (!zilCodeEditor) return;
@@ -27682,8 +28070,23 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
                     const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
                     zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    
+                    const flags = [];
+                    if (itm.takeable) flags.push("TAKEBIT");
+                    if (itm.light) flags.push("LIGHTBIT");
+                    if (itm.wearable) flags.push("WEARBIT");
+                    if (itm.isBag) flags.push("CONTBIT");
+                    if (flags.length > 0) {
+                        zil += `      (FLAGS ${flags.join(" ")})\n`;
+                    }
+                    if (itm.weight !== undefined) {
+                        zil += `      (SIZE ${itm.weight})\n`;
+                    }
+                    if (itm.value !== undefined) {
+                        zil += `      (VALUE ${itm.value})\n`;
+                    }
                     if (itm.token) {
-                        zil += `      (VALUE "${itm.token}") ; ERC-20 Bound Address\n`;
+                        zil += `      (TOKEN "${itm.token}") ; ERC-20 Bound Address\n`;
                     }
                     zil += `>\n\n`;
                 });
@@ -27695,7 +28098,6 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
                 }
                 
-                // Update direction dropdowns
                 const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
                 dirSelects.forEach(select => {
                     const currentVal = select.value;
@@ -27707,24 +28109,25 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     }
                 });
 
-                // Update item location dropdown
                 if (itemLocationSelect) {
                     const currentVal = itemLocationSelect.value;
-                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
-                    if (rooms.some(r => r.name === currentVal)) {
+                    const bagOptions = items.filter(itm => itm.isBag).map(itm => `<option value="${itm.name}">👜 Inside ${itm.name}</option>`).join("");
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + 
+                        rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("") +
+                        bagOptions;
+                    if (rooms.some(r => r.name === currentVal) || items.some(itm => itm.isBag && itm.name === currentVal)) {
                         itemLocationSelect.value = currentVal;
                     } else {
                         itemLocationSelect.value = "";
                     }
                 }
 
-                // Render Rooms List
                 if (roomsList) {
                     roomsList.innerHTML = rooms.map((r, i) => {
                         let connStr = "";
                         if (r.west || r.east || r.north || r.south) {
                             connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
-                                [r.west && `W➡️${r.west}`, r.east && `E➡️${r.east}`, r.north && `N➡️${r.north}`, r.south && `S➡️${r.south}`].filter(Boolean).join(", ") +
+                                [r.west && `W\u27a1${r.west}`, r.east && `E\u27a1${r.east}`, r.north && `N\u27a1${r.north}`, r.south && `S\u27a1${r.south}`].filter(Boolean).join(", ") +
                                 `</div>`;
                         }
                         return `
@@ -27733,7 +28136,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                                     <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
                                         <strong>${r.name}</strong>: ${r.desc}
                                     </span>
-                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
                                 </div>
                                 ${connStr}
                             </div>
@@ -27749,14 +28152,18 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     });
                 }
 
-                // Render Items List
                 if (itemsList) {
                     itemsList.innerHTML = items.map((itm, i) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #00f2fe;">
-                            <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                                <strong>${itm.name}</strong>${itm.location ? ` [${itm.location}]` : ''}${itm.token ? ` (${itm.token.slice(0, 6)}...${itm.token.slice(-4)})` : ''}
-                            </span>
-                            <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span>
+                        <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #00f2fe; margin-bottom: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; font-weight: bold;">
+                                    ${itm.name}${itm.location ? ` [in ${itm.location}]` : ''}
+                                </span>
+                                <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
+                            </div>
+                            <div style="font-size: 0.65rem; color: #aaa; margin-top: 2px;">
+                                Flags: ${[itm.takeable && '\ud83c\udf92Takeable', itm.light && '\ud83d\udca1Light', itm.wearable && '\ud83d\udc55Wearable', itm.isBag && '👜Bag'].filter(Boolean).join(", ") || 'None'} | Wt: ${itm.weight ?? 1} | Val: ${itm.value ?? 0}
+                            </div>
                         </div>
                     `).join("");
                     
@@ -27804,10 +28211,43 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     alert("Please enter Item name!");
                     return;
                 }
-                items.push({ name, token: token || null, location: location || null });
+                
+                const takeable = itemTakeableCheckbox ? itemTakeableCheckbox.checked : true;
+                const light = itemLightCheckbox ? itemLightCheckbox.checked : false;
+                const wearable = itemWearableCheckbox ? itemWearableCheckbox.checked : false;
+                const isBag = itemIsBagCheckbox ? itemIsBagCheckbox.checked : false;
+                const weight = itemWeightInput ? parseInt(itemWeightInput.value) || 1 : 1;
+                const value = itemValueInput ? parseInt(itemValueInput.value) || 0 : 0;
+
+                const tempItems = [...items, { name, location, isBag }];
+                const loopItem = checkCircularContainment(tempItems);
+                if (loopItem) {
+                    alert(`Error: Circular containment detected involving '${loopItem}'! A bag cannot contain itself or be placed inside a bag that is inside it.`);
+                    return;
+                }
+
+                items.push({ 
+                    name, 
+                    token: token || null, 
+                    location: location || null,
+                    takeable,
+                    light,
+                    wearable,
+                    isBag,
+                    weight,
+                    value
+                });
+                
                 itemNameInput.value = "";
                 itemTokenInput.value = "";
                 if (itemLocationSelect) itemLocationSelect.value = "";
+                if (itemTakeableCheckbox) itemTakeableCheckbox.checked = true;
+                if (itemLightCheckbox) itemLightCheckbox.checked = false;
+                if (itemWearableCheckbox) itemWearableCheckbox.checked = false;
+                if (itemIsBagCheckbox) itemIsBagCheckbox.checked = false;
+                if (itemWeightInput) itemWeightInput.value = "1";
+                if (itemValueInput) itemValueInput.value = "0";
+                
                 updateStatus();
                 console.log("Added Item:", items);
             });
@@ -27861,18 +28301,49 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             location = inMatch[1].replace(/\-/g, " ");
                         }
                         
-                        const valMatch = block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        const tokenMatch = block.match(/\(TOKEN\s+"([^"]+)"\)/) || block.match(/\(VALUE\s+"([^"]+)"\)/);
                         let token = "";
-                        if (valMatch) {
-                            token = valMatch[1];
+                        if (tokenMatch && isNaN(tokenMatch[1])) {
+                            token = tokenMatch[1];
                         }
+                        
+                        const flagsMatch = block.match(/\(FLAGS\s+([^)]+)\)/);
+                        let takeable = true;
+                        let light = false;
+                        let wearable = false;
+                        let isBag = false;
+                        if (flagsMatch) {
+                            const flagsStr = flagsMatch[1];
+                            takeable = flagsStr.includes("TAKEBIT");
+                            light = flagsStr.includes("LIGHTBIT");
+                            wearable = flagsStr.includes("WEARBIT");
+                            isBag = flagsStr.includes("CONTBIT");
+                        }
+                        
+                        const sizeMatch = block.match(/\(SIZE\s+(\d+)\)/);
+                        let weight = sizeMatch ? parseInt(sizeMatch[1]) : 1;
+                        
+                        const valMatch = block.match(/\(VALUE\s+(\d+)\)/);
+                        let value = valMatch ? parseInt(valMatch[1]) : 0;
                         
                         newItems.push({
                             name: desc,
                             token: token || null,
-                            location: location
+                            location: location,
+                            takeable,
+                            light,
+                            wearable,
+                            isBag,
+                            weight,
+                            value
                         });
                     });
+
+                    const loopItem = checkCircularContainment(newItems);
+                    if (loopItem) {
+                        alert(`Compile Error: Circular containment detected involving '${loopItem}'!`);
+                        return;
+                    }
 
                     if (newRooms.length > 0) {
                         rooms = newRooms;

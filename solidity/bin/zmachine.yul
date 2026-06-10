@@ -2611,6 +2611,7 @@ object "ZMachine" {
                 let nameLen := readRom8(propTableOffset)
                 let dataPtr := add(propTableOffset, add(1, mul(nameLen, 2)))
                 
+                let found := 0
                 for {} 1 {} {
                     let sizeByte := readRom8(dataPtr)
                     if iszero(sizeByte) { break }
@@ -2627,9 +2628,14 @@ object "ZMachine" {
                         case 2 {
                             val := readRom16(dataPtr)
                         }
+                        found := 1
                         break
                     }
                     dataPtr := add(dataPtr, size)
+                }
+                
+                if iszero(found) {
+                    val := readRom16(add(objTableBase, mul(sub(propId, 1), 2)))
                 }
             }
 

@@ -36,7 +36,7 @@ async function main() {
     // Deploy using Ethers raw transaction factory
     const tx = await deployer.sendTransaction({
         data: bytecode,
-        gasLimit: 3000000
+        gasLimit: 15000000
     });
     const receipt = await tx.wait();
     const zmachineAddress = receipt.contractAddress;
