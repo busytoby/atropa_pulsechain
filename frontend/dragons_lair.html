@@ -247,8 +247,32 @@
     </div>
 
     <a href="index.html" class="nav-link">← Return to Main Dashboard</a>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <script>
+        const PROVIDER_URL = "http://127.0.0.1:8545";
+        let provider, signer, dragonsLairAddress, dragonsLairContract;
+
+        const dragonsLairABI = [
+            "function initializeGame() external view returns (uint256 score, uint256 lives, uint256 currentStage, uint256 promptActive, uint256 expectedAction, uint256 status)",
+            "function triggerPrompt() external view returns (uint256 expectedAction)",
+            "function updateGame(uint256 action) external view returns (uint256 score, uint256 lives, uint256 currentStage, uint256 promptActive, uint256 expectedAction, uint256 status)"
+        ];
+
+        const ACTION_MAP = {
+            "LEFT": 1,
+            "RIGHT": 2,
+            "SWORD": 3,
+            "UP": 4,
+            "DOWN": 5
+        };
+        const ACTION_REVERSE_MAP = {
+            1: "LEFT",
+            2: "RIGHT",
+            3: "SWORD",
+            4: "UP",
+            5: "DOWN"
+        };
+
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         let score = 0;
@@ -258,15 +282,35 @@
         let promptTimer = null;
         let expectedAction = "";
         let currentStage = 0;
+        let aiMode = false;
+
+        async function initWeb3() {
+            try {
+                provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+                const signers = await provider.listAccounts();
+                signer = signers[0];
+
+                const res = await fetch("/api/config");
+                const config = await res.json();
+                dragonsLairAddress = config.networks.localhost.dragonsLairAddress;
+                
+                dragonsLairContract = new ethers.Contract(dragonsLairAddress, dragonsLairABI, signer);
+                console.log("Connected to dragonsLair contract at:", dragonsLairAddress);
+            } catch (err) {
+                console.error("Failed to connect to local EVM contract:", err);
+            }
+        }
 
         function playSound(freq, type, duration) {
             try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
                 
-                // Sweep logic
                 if (type === 'sawtooth') {
                     osc.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + duration);
                 } else if (type === 'triangle') {
@@ -282,7 +326,7 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + duration);
             } catch(e) {
-                console.log("Audio not allowed yet:", e);
+                console.log("Audio error:", e);
             }
         }
 
@@ -296,10 +340,8 @@
 
         function updateHUD() {
             document.getElementById("scoreVal").innerText = String(score).padStart(5, '0');
-            document.getElementById("livesVal").innerText = "❤".repeat(lives) || "GAME OVER";
+            document.getElementById("livesVal").innerText = lives > 0 ? "❤".repeat(lives) : "GAME OVER";
         }
-
-        let aiMode = false;
 
         function toggleAiMode() {
             aiMode = !aiMode;
@@ -314,31 +356,36 @@
             }
         }
 
-        function triggerPrompt(action) {
-            promptActive = true;
-            expectedAction = action;
-            document.getElementById("promptBox").style.display = "block";
-            playSound(600, 'triangle', 0.25);
+        async function triggerPrompt(action) {
+            if (!dragonsLairContract) return;
+            try {
+                const actionId = await dragonsLairContract.triggerPrompt();
+                promptActive = true;
+                expectedAction = ACTION_REVERSE_MAP[Number(actionId)];
 
-            // AI Autoplay Mode hook
-            if (aiMode) {
-                const reactionDelay = 400 + Math.random() * 400; // Human-like delay 400-800ms
-                setTimeout(() => {
-                    if (promptActive && expectedAction === action) {
-                        makeMove(action);
-                    }
-                }, reactionDelay);
-            }
+                document.getElementById("promptBox").style.display = "block";
+                playSound(600, 'triangle', 0.25);
 
-            // Give the player 1.5 seconds to react
-            promptTimer = setTimeout(() => {
-                if (promptActive) {
-                    failAction("Too slow! Dirk fell into a bottomless pit.");
+                if (aiMode) {
+                    const reactionDelay = 400 + Math.random() * 400;
+                    setTimeout(() => {
+                        if (promptActive && expectedAction === action) {
+                            makeMove(action);
+                        }
+                    }, reactionDelay);
                 }
-            }, 1800);
+
+                promptTimer = setTimeout(() => {
+                    if (promptActive) {
+                        makeMove("NONE"); // Trigger timeout failure
+                    }
+                }, 1800);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function makeMove(action) {
+        async function makeMove(action) {
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -348,25 +395,55 @@
                 return;
             }
 
-            if (!promptActive) {
-                failAction("Wrong timing! Dirk made an unprompted action.");
-                return;
-            }
+            if (!dragonsLairContract) return;
 
-            if (action === expectedAction) {
-                successAction();
-            } else {
-                failAction(`Wrong move! Dirk swung his sword when he should have moved.`);
+            const actionId = ACTION_MAP[action] || 0; // 0 for NONE (too slow)
+            try {
+                const res = await dragonsLairContract.updateGame(actionId);
+                const newScore = Number(res[0]);
+                const newLives = Number(res[1]);
+                const newStage = Number(res[2]);
+                const newPromptActive = Number(res[3]) === 1;
+                const newExpected = ACTION_REVERSE_MAP[Number(res[4])] || "";
+                const newStatus = Number(res[5]);
+
+                if (newLives < lives) {
+                    lives = newLives;
+                    score = newScore;
+                    failAction(lives <= 0 ? "Game Over! Dirk met his demise." : "Wrong move! Dirk fell to the hazards.");
+                } else if (newStage > currentStage) {
+                    currentStage = newStage;
+                    score = newScore;
+                    successAction();
+                } else if (newStatus === 1) {
+                    winGame();
+                } else if (newStatus === 2) {
+                    lives = 0;
+                    failAction("Game Over! Dirk met his demise.");
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
 
-        function startGame() {
-            score = 0;
-            lives = 3;
-            gameActive = true;
-            currentStage = 1;
-            updateHUD();
-            nextStage();
+        async function startGame() {
+            if (!dragonsLairContract) await initWeb3();
+            if (!dragonsLairContract) return alert("Contract not loaded. Make sure Anvil is running!");
+
+            try {
+                const res = await dragonsLairContract.initializeGame();
+                score = Number(res[0]);
+                lives = Number(res[1]);
+                currentStage = Number(res[2]);
+                promptActive = Number(res[3]) === 1;
+                expectedAction = ACTION_REVERSE_MAP[Number(res[4])] || "";
+                
+                gameActive = true;
+                updateHUD();
+                nextStage();
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         function nextStage() {
@@ -385,6 +462,24 @@
                 setTimeout(() => {
                     triggerPrompt("SWORD");
                 }, 2500);
+            } else if (currentStage === 3) {
+                document.getElementById("gameScreen").src = "dragons_lair_action.png";
+                document.getElementById("statusMessage").innerText = "Stage 3: Falling bridge! Jump to the safe side!";
+                setTimeout(() => {
+                    triggerPrompt("LEFT");
+                }, 2000);
+            } else if (currentStage === 4) {
+                document.getElementById("gameScreen").src = "dragons_lair_title.png";
+                document.getElementById("statusMessage").innerText = "Stage 4: The Electric Knight! Dodge his attack!";
+                setTimeout(() => {
+                    triggerPrompt("LEFT");
+                }, 2200);
+            } else if (currentStage === 5) {
+                document.getElementById("gameScreen").src = "dragons_lair_action.png";
+                document.getElementById("statusMessage").innerText = "Stage 5: Final confrontation with Singe the Dragon!";
+                setTimeout(() => {
+                    triggerPrompt("SWORD");
+                }, 2000);
             } else {
                 winGame();
             }
@@ -395,12 +490,8 @@
             clearTimeout(promptTimer);
             document.getElementById("promptBox").style.display = "none";
             
-            score += 1500;
-            updateHUD();
             playSound(880, 'sine', 0.45);
-            
             document.getElementById("statusMessage").innerText = "Success! Dirk avoided the hazard.";
-            currentStage += 1;
             
             setTimeout(nextStage, 1500);
         }
@@ -410,11 +501,8 @@
             clearTimeout(promptTimer);
             document.getElementById("promptBox").style.display = "none";
             
-            lives -= 1;
-            updateHUD();
             triggerFlash();
             playSound(150, 'sawtooth', 0.6);
-            
             document.getElementById("statusMessage").innerText = msg;
             
             if (lives <= 0) {
@@ -436,6 +524,8 @@
             document.getElementById("statusMessage").innerText = "Game Over. Press any action to insert coin and try again.";
             document.getElementById("gameScreen").src = "dragons_lair_title.png";
         }
+
+        window.onload = initWeb3;
     </script>
 </body>
 </html>
