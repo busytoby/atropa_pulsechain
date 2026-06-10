@@ -4219,10 +4219,16 @@
 
                     const formant = audioCtx.createBiquadFilter();
                     formant.type = "bandpass";
-                    let centerFreq = 1000;
-                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2")) centerFreq = 450;
-                    else if (label.startsWith("OO")) centerFreq = 550;
-                    else if (label.startsWith("AH") || label.startsWith("A")) centerFreq = 950;
+                    let centerFreq = 800;
+                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label.startsWith("I") || label.startsWith("Y")) {
+                        centerFreq = 400;
+                    } else if (label.startsWith("OO") || label.startsWith("OU") || label.startsWith("O")) {
+                        centerFreq = 500;
+                    } else if (label.startsWith("EH")) {
+                        centerFreq = 650;
+                    } else if (label.startsWith("AH") || label.startsWith("A")) {
+                        centerFreq = 900;
+                    }
                     
                     formant.frequency.setValueAtTime(centerFreq, now);
                     formant.Q.setValueAtTime(6, now);
