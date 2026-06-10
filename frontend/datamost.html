@@ -4023,7 +4023,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         }
 
         function playTymacAudioSample(val) {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             const volume = val / 15.0;
             const osc = audioCtx.createOscillator();
@@ -4042,7 +4042,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         }
 
         function playTISpeechFrame(dataVal) {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
             const pitchCode = dataVal & 0x0F;
@@ -4073,7 +4073,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         }
 
         function playRealSoundAudioSample(val) {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
             const volume = val / 63.0;
             
@@ -4132,7 +4132,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 mouth.style.borderRadius = mouthHeight > 6 ? "50%" : "4px";
             }
 
-            if (isAudioPlaying && audioCtx && !isPause) {
+            if (audioCtx && !isPause) {
                 const now = audioCtx.currentTime;
                 const duration = 0.16;
                 const basePitch = 90 + (inflection * 15);
