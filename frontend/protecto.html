@@ -518,20 +518,24 @@
                 return hash;
             }
             getNamespacedKey(contractAddr, slotOrKey) {
-                const buf = new Uint8Array(16);
-                const contractVal = BigInt(contractAddr);
-                const keyVal = BigInt(slotOrKey);
-                for (let i = 0; i < 8; i++) {
-                    buf[7 - i] = Number((contractVal >> BigInt(i * 8)) & 0xffn);
-                    buf[15 - i] = Number((keyVal >> BigInt(i * 8)) & 0xffn);
+                let hash = 14695981039346656037n;
+                const cVal = BigInt(contractAddr) & 0xffffffffffffffffn;
+                const kVal = BigInt(slotOrKey) & 0xffffffffffffffffn;
+                for (let i = 0n; i < 8n; i++) {
+                    hash ^= (cVal >> (i * 8n)) & 0xffn;
+                    hash = (hash * 1099511628211n) & 0xffffffffffffffffn;
                 }
-                return this.fnv1a_64(buf);
+                for (let i = 0n; i < 8n; i++) {
+                    hash ^= (kVal >> (i * 8n)) & 0xffn;
+                    hash = (hash * 1099511628211n) & 0xffffffffffffffffn;
+                }
+                return hash;
             }
             getMappingKey(addr, slot) {
                 const buf = new Uint8Array(64);
                 const addrVal = BigInt(addr);
                 const slotVal = BigInt(slot);
-                for (let i = 0; i < 8; i++) {
+                for (let i = 0; i < 32; i++) {
                     buf[31 - i] = Number((addrVal >> BigInt(i * 8)) & 0xffn);
                     buf[63 - i] = Number((slotVal >> BigInt(i * 8)) & 0xffn);
                 }

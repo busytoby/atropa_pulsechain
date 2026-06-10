@@ -235,7 +235,20 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
 
     // Copy constructor storage changes to global context and persist
     for (int i = 0; i < init_ctx.storage_count; i++) {
-        context_sstore(&g_yul_evm_context, init_ctx.storage_keys[i], init_ctx.storage_vals[i]);
+        uint64_t raw_key = init_ctx.storage_keys[i];
+        bool found = false;
+        for (int j = 0; j < g_yul_evm_context.storage_count; j++) {
+            if (g_yul_evm_context.storage_keys[j] == raw_key) {
+                g_yul_evm_context.storage_vals[j] = init_ctx.storage_vals[i];
+                found = true;
+                break;
+            }
+        }
+        if (!found && g_yul_evm_context.storage_count < 4096) {
+            g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = raw_key;
+            g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = init_ctx.storage_vals[i];
+            g_yul_evm_context.storage_count++;
+        }
     }
     persist_reconciliation_data();
 
