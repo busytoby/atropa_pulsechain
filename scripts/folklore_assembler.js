@@ -23,11 +23,117 @@ const OP = {
     JMP: 0x4C, RTS: 0x60
 };
 
+function evaluateExpression(exprStr, labels) {
+    let cleaned = exprStr.trim();
+    if (cleaned.startsWith("#")) {
+        cleaned = cleaned.slice(1);
+    }
+    
+    // Split by operators and parenthesis while preserving them
+    const tokens = cleaned.split(/([\+\-\*\/\(\)])/);
+    
+    const processedTokens = tokens.map(token => {
+        let t = token.trim();
+        if (!t) return "";
+        
+        // If it is a label
+        if (labels[t] !== undefined) {
+            return labels[t].toString();
+        }
+        
+        // If it starts with '$' (hex)
+        if (t.startsWith("$")) {
+            return parseInt(t.slice(1), 16).toString();
+        }
+        
+        // Otherwise return the token (could be number or operator)
+        return t;
+    }).filter(x => x);
+
+    const valStack = [];
+    const opStack = [];
+    
+    function getPrecedence(op) {
+        if (op === "+" || op === "-") return 1;
+        if (op === "*" || op === "/") return 2;
+        return 0;
+    }
+    
+    function applyOp(op, a, b) {
+        if (op === "+") return a + b;
+        if (op === "-") return a - b;
+        if (op === "*") return a * b;
+        if (op === "/") {
+            if (b === 0) throw new Error("Division by zero");
+            return Math.floor(a / b);
+        }
+        return 0;
+    }
+    
+    for (let token of processedTokens) {
+        if (token === "(") {
+            opStack.push(token);
+        } else if (token === ")") {
+            while (opStack.length > 0 && opStack[opStack.length - 1] !== "(") {
+                const op = opStack.pop();
+                const b = valStack.pop();
+                const a = valStack.pop();
+                valStack.push(applyOp(op, a, b));
+            }
+            opStack.pop(); // Pop '('
+        } else if (["+", "-", "*", "/"].includes(token)) {
+            while (opStack.length > 0 && getPrecedence(opStack[opStack.length - 1]) >= getPrecedence(token)) {
+                const op = opStack.pop();
+                const b = valStack.pop();
+                const a = valStack.pop();
+                valStack.push(applyOp(op, a, b));
+            }
+            opStack.push(token);
+        } else {
+            if (token.startsWith("0x")) {
+                valStack.push(parseInt(token, 16));
+            } else {
+                const parsed = parseInt(token, 10);
+                if (isNaN(parsed)) {
+                    throw new Error(`Invalid token in expression: ${token}`);
+                }
+                valStack.push(parsed);
+            }
+        }
+    }
+    
+    while (opStack.length > 0) {
+        const op = opStack.pop();
+        const b = valStack.pop();
+        const a = valStack.pop();
+        valStack.push(applyOp(op, a, b));
+    }
+    
+    return valStack[0];
+}
+
+function hasUndefinedLabels(exprStr, labels) {
+    let cleaned = exprStr.replace("#", "").trim();
+    const tokens = cleaned.split(/[\+\-\*\/\(\)\s]+/);
+    for (let t of tokens) {
+        t = t.trim();
+        if (!t) continue;
+        if (t.startsWith("$")) continue;
+        if (!isNaN(parseInt(t, 10))) continue;
+        if (t.startsWith("0x")) continue;
+        if (labels[t] === undefined) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function assemble(codeLines) {
     const bytes = [];
     const labels = {};
-    const placeholders = []; // For absolute 16-bit target labels (JMP)
-    const branchPlaceholders = []; // For relative 8-bit branch labels (BNE, BEQ)
+    const placeholders = []; // For absolute 16-bit target labels
+    const branchPlaceholders = []; // For relative 8-bit branch labels
+    const immediatePlaceholders = []; // For immediate expression values
     let origin = 0x200; 
     let currentPC = origin;
 
@@ -61,68 +167,113 @@ function assemble(codeLines) {
 
         const tokens = line.split(/\s+/);
         const mnemonic = tokens[0].toUpperCase();
-        const arg = tokens[1] || "";
+        const arg = tokens.slice(1).join("");
 
         // Standard instructions
         if (mnemonic === "LDA") {
-            if (arg.startsWith("#$")) {
-                bytes.push(OP.LDA_IM, parseInt(arg.slice(2), 16));
-                currentPC += 2;
-            } else if (arg.startsWith("$")) {
-                const val = parseInt(arg.slice(1), 16);
-                if (val <= 0xFF) {
-                    bytes.push(OP.LDA_ZP, val);
-                    currentPC += 2;
+            if (arg.startsWith("#")) {
+                if (hasUndefinedLabels(arg, labels)) {
+                    immediatePlaceholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.LDA_IM, 0x00);
                 } else {
-                    bytes.push(OP.LDA_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    bytes.push(OP.LDA_IM, evaluateExpression(arg, labels) & 0xFF);
+                }
+                currentPC += 2;
+            } else {
+                if (hasUndefinedLabels(arg, labels)) {
+                    placeholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.LDA_ABS, 0x00, 0x00);
                     currentPC += 3;
+                } else {
+                    const val = evaluateExpression(arg, labels);
+                    if (val <= 0xFF) {
+                        bytes.push(OP.LDA_ZP, val);
+                        currentPC += 2;
+                    } else {
+                        bytes.push(OP.LDA_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                        currentPC += 3;
+                    }
                 }
             }
         } else if (mnemonic === "STA") {
-            const val = parseInt(arg.replace("$", ""), 16);
-            if (val <= 0xFF) {
-                bytes.push(OP.STA_ZP, val);
-                currentPC += 2;
-            } else {
-                bytes.push(OP.STA_ABS, val & 0xFF, (val >> 8) & 0xFF);
+            if (hasUndefinedLabels(arg, labels)) {
+                placeholders.push({ pcOffset: bytes.length + 1, target: arg });
+                bytes.push(OP.STA_ABS, 0x00, 0x00);
                 currentPC += 3;
-            }
-        } else if (mnemonic === "LDX") {
-            if (arg.startsWith("#$")) {
-                bytes.push(OP.LDX_IM, parseInt(arg.slice(2), 16));
-                currentPC += 2;
-            } else if (arg.startsWith("$")) {
-                const val = parseInt(arg.slice(1), 16);
+            } else {
+                const val = evaluateExpression(arg, labels);
                 if (val <= 0xFF) {
-                    bytes.push(OP.LDX_ZP, val);
+                    bytes.push(OP.STA_ZP, val);
                     currentPC += 2;
                 } else {
-                    bytes.push(OP.LDX_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    bytes.push(OP.STA_ABS, val & 0xFF, (val >> 8) & 0xFF);
                     currentPC += 3;
+                }
+            }
+        } else if (mnemonic === "LDX") {
+            if (arg.startsWith("#")) {
+                if (hasUndefinedLabels(arg, labels)) {
+                    immediatePlaceholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.LDX_IM, 0x00);
+                } else {
+                    bytes.push(OP.LDX_IM, evaluateExpression(arg, labels) & 0xFF);
+                }
+                currentPC += 2;
+            } else {
+                if (hasUndefinedLabels(arg, labels)) {
+                    placeholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.LDX_ABS, 0x00, 0x00);
+                    currentPC += 3;
+                } else {
+                    const val = evaluateExpression(arg, labels);
+                    if (val <= 0xFF) {
+                        bytes.push(OP.LDX_ZP, val);
+                        currentPC += 2;
+                    } else {
+                        bytes.push(OP.LDX_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                        currentPC += 3;
+                    }
                 }
             }
         } else if (mnemonic === "LDY") {
-            if (arg.startsWith("#$")) {
-                bytes.push(OP.LDY_IM, parseInt(arg.slice(2), 16));
-                currentPC += 2;
-            } else if (arg.startsWith("$")) {
-                const val = parseInt(arg.slice(1), 16);
-                if (val <= 0xFF) {
-                    bytes.push(OP.LDY_ZP, val);
-                    currentPC += 2;
+            if (arg.startsWith("#")) {
+                if (hasUndefinedLabels(arg, labels)) {
+                    immediatePlaceholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.LDY_IM, 0x00);
                 } else {
-                    bytes.push(OP.LDY_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    bytes.push(OP.LDY_IM, evaluateExpression(arg, labels) & 0xFF);
+                }
+                currentPC += 2;
+            } else {
+                if (hasUndefinedLabels(arg, labels)) {
+                    placeholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.LDY_ABS, 0x00, 0x00);
                     currentPC += 3;
+                } else {
+                    const val = evaluateExpression(arg, labels);
+                    if (val <= 0xFF) {
+                        bytes.push(OP.LDY_ZP, val);
+                        currentPC += 2;
+                    } else {
+                        bytes.push(OP.LDY_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                        currentPC += 3;
+                    }
                 }
             }
         } else if (mnemonic === "STY") {
-            const val = parseInt(arg.replace("$", ""), 16);
-            if (val <= 0xFF) {
-                bytes.push(OP.STY_ZP, val);
-                currentPC += 2;
-            } else {
-                bytes.push(OP.STY_ABS, val & 0xFF, (val >> 8) & 0xFF);
+            if (hasUndefinedLabels(arg, labels)) {
+                placeholders.push({ pcOffset: bytes.length + 1, target: arg });
+                bytes.push(OP.STY_ABS, 0x00, 0x00);
                 currentPC += 3;
+            } else {
+                const val = evaluateExpression(arg, labels);
+                if (val <= 0xFF) {
+                    bytes.push(OP.STY_ZP, val);
+                    currentPC += 2;
+                } else {
+                    bytes.push(OP.STY_ABS, val & 0xFF, (val >> 8) & 0xFF);
+                    currentPC += 3;
+                }
             }
         } else if (mnemonic === "INX") {
             bytes.push(OP.INX);
@@ -143,21 +294,41 @@ function assemble(codeLines) {
             bytes.push(OP.SEC);
             currentPC += 1;
         } else if (mnemonic === "ADC") {
-            if (arg.startsWith("#$")) {
-                bytes.push(OP.ADC_IM, parseInt(arg.slice(2), 16));
+            if (arg.startsWith("#")) {
+                if (hasUndefinedLabels(arg, labels)) {
+                    immediatePlaceholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.ADC_IM, 0x00);
+                } else {
+                    bytes.push(OP.ADC_IM, evaluateExpression(arg, labels) & 0xFF);
+                }
                 currentPC += 2;
-            } else if (arg.startsWith("$")) {
-                bytes.push(OP.ADC_ZP, parseInt(arg.slice(1), 16));
+            } else {
+                if (hasUndefinedLabels(arg, labels)) {
+                    placeholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.ADC_IM, 0x00); // Default ZP
+                } else {
+                    bytes.push(OP.ADC_ZP, evaluateExpression(arg, labels) & 0xFF);
+                }
                 currentPC += 2;
             }
         } else if (mnemonic === "SBC") {
-            if (arg.startsWith("#$")) {
-                bytes.push(OP.SBC_IM, parseInt(arg.slice(2), 16));
+            if (arg.startsWith("#")) {
+                if (hasUndefinedLabels(arg, labels)) {
+                    immediatePlaceholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.SBC_IM, 0x00);
+                } else {
+                    bytes.push(OP.SBC_IM, evaluateExpression(arg, labels) & 0xFF);
+                }
                 currentPC += 2;
             }
         } else if (mnemonic === "CMP") {
-            if (arg.startsWith("#$")) {
-                bytes.push(OP.CMP_IM, parseInt(arg.slice(2), 16));
+            if (arg.startsWith("#")) {
+                if (hasUndefinedLabels(arg, labels)) {
+                    immediatePlaceholders.push({ pcOffset: bytes.length + 1, target: arg });
+                    bytes.push(OP.CMP_IM, 0x00);
+                } else {
+                    bytes.push(OP.CMP_IM, evaluateExpression(arg, labels) & 0xFF);
+                }
                 currentPC += 2;
             }
         } else if (mnemonic === "BNE") {
@@ -178,25 +349,34 @@ function assemble(codeLines) {
         }
     }
 
-    // Resolve 16-bit Absolute placeholders (JMP)
+    // Resolve 16-bit Absolute placeholders (JMP, LDA, STA, etc.)
     for (const p of placeholders) {
-        const addr = labels[p.target];
-        if (addr === undefined) {
-            throw new Error(`Undefined absolute label: ${p.target}`);
+        const val = evaluateExpression(p.target, labels);
+        if (val === undefined || isNaN(val)) {
+            throw new Error(`Could not resolve expression: ${p.target}`);
         }
-        bytes[p.pcOffset] = addr & 0xFF;
-        bytes[p.pcOffset + 1] = (addr >> 8) & 0xFF;
+        bytes[p.pcOffset] = val & 0xFF;
+        bytes[p.pcOffset + 1] = (val >> 8) & 0xFF;
+    }
+
+    // Resolve 8-bit Immediate placeholders
+    for (const p of immediatePlaceholders) {
+        const val = evaluateExpression(p.target, labels);
+        if (val === undefined || isNaN(val)) {
+            throw new Error(`Could not resolve expression: ${p.target}`);
+        }
+        bytes[p.pcOffset] = val & 0xFF;
     }
 
     // Resolve 8-bit Relative branch placeholders (BNE, BEQ)
     for (const p of branchPlaceholders) {
-        const addr = labels[p.target];
-        if (addr === undefined) {
-            throw new Error(`Undefined branch label: ${p.target}`);
+        const val = evaluateExpression(p.target, labels);
+        if (val === undefined || isNaN(val)) {
+            throw new Error(`Could not resolve expression: ${p.target}`);
         }
-        let offset = addr - p.branchPC;
+        let offset = val - p.branchPC;
         if (offset < -128 || offset > 127) {
-            throw new Error(`Branch label ${p.target} out of range (offset: ${offset})`);
+            throw new Error(`Branch expression ${p.target} out of range (offset: ${offset})`);
         }
         bytes[p.pcOffset] = offset & 0xFF;
     }
@@ -352,4 +532,6 @@ main().catch(err => {
     console.error(err);
     process.exit(1);
 });
+
+module.exports = { assemble, evaluateExpression };
 
