@@ -385,51 +385,9 @@
                             </div>
                         </div>
 
-                        <!-- Interactive Node Status Dashboard -->
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-family: 'Rajdhani', sans-serif; background: rgba(0,255,127,0.02); border: 1px solid rgba(0,255,127,0.15); padding: 10px; border-radius: 6px; font-size: 0.75rem;">
-            <div style="border-right: 1px solid rgba(0,255,127,0.15); padding-right: 5px;">
-                                <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE A (USER)</div>
-                                <div style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
-                                <div id="nodeARep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
-                                <div id="nodeAStake" style="color: #00ffcc; font-size: 0.65rem; font-family: monospace;">Stake: 100.0 PLS</div>
-                                <div style="margin-top: 5px; font-family: monospace; font-size: 0.6rem; color: #888; word-break: break-all; line-height: 1.1;">
-                                    Sig: <span id="nodeATxSig" style="color: var(--neon-blue);">0x8a92...ef3a</span>
-                                </div>
-                            </div>
-                            <div style="border-right: 1px solid rgba(0,255,127,0.15); padding-right: 5px;">
-                                <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE B (COPILOT)</div>
-                                <div id="nodeBStatus" style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
-                                <div id="nodeBRep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
-                                <div id="nodeBStake" style="color: #00ffcc; font-size: 0.65rem; font-family: monospace;">Stake: 32.0 PLS</div>
-                                <div style="margin-top: 5px;">
-                                    Acc: <input type="range" id="nodeBAcc" min="10" max="100" value="75" style="width: 50px; vertical-align: middle;" oninput="document.getElementById('lblNodeBAcc').innerText = this.value + '%';">
-                                    <span id="lblNodeBAcc" style="font-family: 'Orbitron'; color: #00ff7f; font-weight: bold;">75%</span>
-                                </div>
-                                <div id="nodeBPrediction" style="margin-top: 4px; font-family: monospace; font-size: 0.6rem; color: #ff00ff; font-weight: bold;">
-                                    Bias: Invariance (88% Conf)
-                                </div>
-                            </div>
-                            <div>
-                                <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE C (VALIDATOR)</div>
-                                <div id="nodeCStatus" style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
-                                <div id="nodeCRep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
-                                <div style="margin-top: 5px;">
-                                    Acc: <input type="range" id="nodeCAcc" min="10" max="100" value="60" style="width: 50px; vertical-align: middle;" oninput="document.getElementById('lblNodeCAcc').innerText = this.value + '%';">
-                                    <span id="lblNodeCAcc" style="font-family: 'Orbitron'; color: #00ff7f; font-weight: bold;">60%</span>
-                                </div>
-                                <div id="nodeCBlockInfo" style="margin-top: 4px; font-family: monospace; font-size: 0.6rem; color: #00ffcc; line-height: 1.1;">
-                                    Stake: <span id="nodeCStake">32.0 PLS</span> <br>Block: <span id="nodeCBlockHash" style="color:#fff;">0x93fc...a12c</span>
-                                </div>
-                                <div style="margin-top: 4px;">
-                                    <select id="nodeCByzStance" style="width: 100%; padding: 2px; background: #000; color: #ff007f; border: 1px solid rgba(255,0,127,0.3); font-family: 'Orbitron'; font-size: 0.65rem; border-radius: 4px; outline: none; cursor: pointer;">
-                                        <option value="none">Behavior: Honest Validator</option>
-                                        <option value="opposite">Attack: Subversive (Opposite)</option>
-                                        <option value="noise">Attack: Entropy (Random Noise)</option>
-                                        <option value="sabotage">Attack: Sabotage (Silent Null)</option>
-                                        <option value="forgery">Attack: Forgery (Invalid Sig)</option>
-                                    </select>
-                                </div>
-                            </div>
+                        <!-- Interactive 11-Key PKI Validator Grid -->
+                        <div id="validatorGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-family: 'Rajdhani', sans-serif; background: rgba(0,255,127,0.02); border: 1px solid rgba(0,255,127,0.15); padding: 10px; border-radius: 6px; font-size: 0.7rem;">
+                            <!-- Dynamically populated 11 validator cards -->
                         </div>
 
                         <!-- Voting Simulation Controls -->
@@ -2083,58 +2041,41 @@
             constructor(cpu) {
                 this.cpu = cpu;
                 this.target = "0x8920e4b2d5a37543d3e18a92e1ef3a17e0000000";
-                this.reputations = {
-                    nodeA: 100,
-                    nodeB: 100,
-                    nodeC: 100
-                };
-                this.stakes = {
-                    nodeA: 100.0,
-                    nodeB: 32.0,
-                    nodeC: 32.0
-                };
-                this.addresses = {
-                    nodeA: "0x8a92e3a1f8190235b80459c033878bca17e0ef3a",
-                    nodeB: "0xf8a921d2345e567890abcdef1234567890abcdef",
-                    nodeC: "0x93fcba12cd34567890abcdef1234567890abcdef"
-                };
+                this.reputations = Array(11).fill(100);
+                this.stakes = Array(11).fill(32.0);
+                this.stakes[0] = 100.0;
             }
             
             async proposeInput(direction, votes, signatures, weights, slashLimit, consensusThreshold) {
-                const [voteA, voteB, voteC] = votes;
-                const [sigA, sigB, sigC] = signatures;
-                const [wA, wB, wC] = weights;
-                
-                // Active status depends on both reputation threshold and having locked stake left
-                const nodeB_Active = this.reputations.nodeB >= slashLimit && this.stakes.nodeB > 0;
-                const nodeC_Active = this.reputations.nodeC >= slashLimit && this.stakes.nodeC > 0;
-                
-                // Cryptographic verification of proposed state envelopes
-                const isSigAValid = sigA && sigA.startsWith("0x") && sigA.length > 30;
-                const isSigBValid = !nodeB_Active || (sigB && sigB.startsWith("0x") && sigB.length > 30);
-                const isSigCValid = !nodeC_Active || (sigC && sigC.startsWith("0x") && sigC.length > 30);
-                
-                if (!isSigAValid) {
-                    this.reputations.nodeA = Math.max(0, this.reputations.nodeA - 20);
-                    this.stakes.nodeA = Math.max(0, this.stakes.nodeA - 20.0);
-                }
-                
-                // Count weights for each candidate vote to resolve Byzantine consensus outcomes
+                let totalWeight = 0;
+                let matchingWeight = 0;
                 const tallies = {};
-                if (isSigAValid && voteA) tallies[voteA] = (tallies[voteA] || 0) + wA;
                 
-                if (nodeB_Active && isSigBValid && voteB) {
-                    tallies[voteB] = (tallies[voteB] || 0) + wB;
-                } else if (nodeB_Active && !isSigBValid) {
-                    // Slashed for signature forgery / invalid envelopes
-                    this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 8.0);
-                }
+                let accusedNode = null;
+                let disputeTriggered = false;
                 
-                if (nodeC_Active && isSigCValid && voteC) {
-                    tallies[voteC] = (tallies[voteC] || 0) + wC;
-                } else if (nodeC_Active && !isSigCValid) {
-                    // Slashed for signature forgery / invalid envelopes
-                    this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 8.0);
+                for (let i = 0; i < votes.length; i++) {
+                    const vote = votes[i];
+                    const sig = signatures[i];
+                    const w = weights[i];
+                    
+                    const isActive = this.reputations[i] >= slashLimit && this.stakes[i] > 0;
+                    const isSigValid = sig && sig.startsWith("0x") && sig.length > 30;
+                    
+                    if (isActive) {
+                        totalWeight += w;
+                        
+                        if (isSigValid) {
+                            if (vote) {
+                                tallies[vote] = (tallies[vote] || 0) + w;
+                            }
+                        } else {
+                            // Slashed for signature forgery
+                            this.stakes[i] = Math.max(0, this.stakes[i] - 8.0);
+                            disputeTriggered = true;
+                            accusedNode = `VAL #${i + 1}`;
+                        }
+                    }
                 }
                 
                 let consensusDecision = null;
@@ -2146,57 +2087,33 @@
                     }
                 }
                 
-                let totalWeight = wA;
-                if (nodeB_Active) totalWeight += wB;
-                if (nodeC_Active) totalWeight += wC;
-                
                 const targetRatio = consensusThreshold === 1 ? 0.33 : consensusThreshold === 2 ? 0.66 : 1.0;
                 const requiredWeight = totalWeight * targetRatio;
                 
                 const passed = (maxWeight >= requiredWeight) && (consensusDecision === direction);
                 
-                let accusedNode = null;
-                let disputeTriggered = false;
-                
-                // On-chain Slashing (both reputation and locked PLS stakes) based on BFT Consensus
-                if (passed && consensusDecision) {
-                    // Slash nodes that voted against the consensus decision
-                    if (nodeB_Active && voteB && voteB !== consensusDecision) {
-                        this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
-                        this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 4.0);
-                        accusedNode = "Node B";
-                        disputeTriggered = true;
+                // Slashing logic
+                for (let i = 0; i < votes.length; i++) {
+                    const vote = votes[i];
+                    const isActive = this.reputations[i] >= slashLimit && this.stakes[i] > 0;
+                    
+                    if (isActive) {
+                        if (passed && consensusDecision) {
+                            if (vote && vote !== consensusDecision) {
+                                this.reputations[i] = Math.max(0, this.reputations[i] - 10);
+                                this.stakes[i] = Math.max(0, this.stakes[i] - 4.0);
+                                disputeTriggered = true;
+                                accusedNode = `VAL #${i + 1}`;
+                            }
+                        } else {
+                            if (vote && vote !== direction) {
+                                this.reputations[i] = Math.max(0, this.reputations[i] - 10);
+                                this.stakes[i] = Math.max(0, this.stakes[i] - 4.0);
+                                disputeTriggered = true;
+                                accusedNode = `VAL #${i + 1}`;
+                            }
+                        }
                     }
-                    if (nodeC_Active && voteC && voteC !== consensusDecision) {
-                        this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
-                        this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 4.0);
-                        accusedNode = "Node C";
-                        disputeTriggered = true;
-                    }
-                } else {
-                    // Consensus failed: Slash the validators who voted against the proposal direction for blocking the vote
-                    if (nodeB_Active && voteB && voteB !== direction) {
-                        this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
-                        this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 4.0);
-                        accusedNode = "Node B";
-                        disputeTriggered = true;
-                    }
-                    if (nodeC_Active && voteC && voteC !== direction) {
-                        this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
-                        this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 4.0);
-                        accusedNode = "Node C";
-                        disputeTriggered = true;
-                    }
-                }
-                
-                // Signature forgery counts as dispute trigger
-                if (nodeB_Active && !isSigBValid) {
-                    accusedNode = "Node B";
-                    disputeTriggered = true;
-                }
-                if (nodeC_Active && !isSigCValid) {
-                    accusedNode = "Node C";
-                    disputeTriggered = true;
                 }
                 
                 if (passed && consensusDecision) {
@@ -2217,21 +2134,19 @@
                     passed,
                     matchingWeight: maxWeight,
                     totalWeight,
-                    reputations: { ...this.reputations },
-                    stakes: { ...this.stakes },
+                    reputations: [...this.reputations],
+                    stakes: [...this.stakes],
                     accusedNode,
                     disputeTriggered
                 };
             }
             
             resetReputations() {
-                this.reputations.nodeA = 100;
-                this.reputations.nodeB = 100;
-                this.reputations.nodeC = 100;
-                this.stakes.nodeA = 100.0;
-                this.stakes.nodeB = 32.0;
-                this.stakes.nodeC = 32.0;
+                this.reputations = Array(11).fill(100);
+                this.stakes = Array(11).fill(32.0);
+                this.stakes[0] = 100.0;
             }
+        }
         }
 
         function setupSimulatedVM() {
@@ -2327,6 +2242,7 @@
             
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
+            renderValidatorGrid();
             
             // Default to fast, local, blockless ZMM VM simulation mode
             window.simulationIntervalSpeed = 30; // Fast 30ms simulation rate for smooth gameplay
@@ -8830,9 +8746,64 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
-        let nodeARep = 100;
-        let nodeBRep = 100;
-        let nodeCRep = 100;
+        let validatorList = Array.from({length: 11}, (_, i) => {
+            const randHex = (len) => Array.from({length: len}, () => Math.floor(Math.random()*16).toString(16)).join('');
+            return {
+                id: i + 1,
+                name: i === 0 ? "VAL #1 (USER)" : (i === 1 ? "VAL #2 (COPILOT)" : `VAL #${i + 1}`),
+                address: "0x" + randHex(40),
+                status: "ONLINE",
+                reputation: 100,
+                stake: i === 0 ? 100.0 : 32.0,
+                weight: i === 0 ? 2 : 1,
+                stance: "none"
+            };
+        });
+
+        function updateValStance(index, stance) {
+            if (validatorList[index]) {
+                validatorList[index].stance = stance;
+            }
+        }
+
+        function renderValidatorGrid() {
+            const grid = document.getElementById("validatorGrid");
+            if (!grid) return;
+            grid.innerHTML = "";
+            validatorList.forEach((v, index) => {
+                const card = document.createElement("div");
+                card.style.border = "1px solid rgba(0,255,127,0.15)";
+                card.style.padding = "5px";
+                card.style.borderRadius = "4px";
+                card.style.background = v.status === "ONLINE" ? "rgba(0,255,127,0.02)" : "rgba(255,0,127,0.05)";
+                card.style.fontSize = "0.6rem";
+                
+                card.innerHTML = `
+                    <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.6rem;">${v.name}</div>
+                    <div id="valStatus_${index}" style="color: ${v.status === "ONLINE" ? "#00ff7f" : "#ff007f"}; font-weight: bold;">${v.status}</div>
+                    <div id="valRep_${index}" style="color: #ffa500; font-weight: bold;">Rep: ${v.reputation}%</div>
+                    <div id="valStake_${index}" style="color: #00ffcc; font-family: monospace;">Stake: ${v.stake.toFixed(1)} PLS</div>
+                    <div style="font-size: 0.5rem; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        Add: ${v.address.substring(0, 6)}...${v.address.substring(38)}
+                    </div>
+                    ${index > 0 ? `
+                    <div style="margin-top: 3px;">
+                        <select onchange="updateValStance(${index}, this.value)" style="width: 100%; font-size: 0.5rem; background: #000; color: #ff007f; border: 1px solid rgba(255,0,127,0.2); border-radius: 2px; outline: none; cursor: pointer;">
+                            <option value="none">Stance: Honest</option>
+                            <option value="opposite">Stance: Subversive</option>
+                            <option value="noise">Stance: Entropy</option>
+                            <option value="sabotage">Stance: Sabotage</option>
+                            <option value="forgery">Stance: Forgery</option>
+                        </select>
+                    </div>
+                    ` : `
+                    <div style="font-size: 0.5rem; color: #ffa500; font-weight: bold; margin-top: 4px;">PROPOSER</div>
+                    `}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
         let copilotLastRecommendation = "";
         let lastS2X = 0;
         let copilotAutopilotInterval = null;
@@ -8868,9 +8839,15 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         function recoverConsensusNodes() {
-            nodeARep = 100;
-            nodeBRep = 100;
-            nodeCRep = 100;
+            validatorList.forEach((v, index) => {
+                v.reputation = 100;
+                v.stake = index === 0 ? 100.0 : 32.0;
+                v.status = "ONLINE";
+            });
+            if (consensusContract) {
+                consensusContract.resetReputations();
+            }
+            renderValidatorGrid();
             if (consensusContract) {
                 consensusContract.resetReputations();
             }
@@ -8899,126 +8876,108 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const progressBar = document.getElementById("consensusProgressBar");
             
             const slashLimit = parseInt(document.getElementById("slashLimit") ? document.getElementById("slashLimit").value : 50);
-            const wA = parseInt(document.getElementById("weightA") ? document.getElementById("weightA").value : 2);
-            const wB = parseInt(document.getElementById("weightB") ? document.getElementById("weightB").value : 1);
-            const wC = parseInt(document.getElementById("weightC") ? document.getElementById("weightC").value : 1);
-
-            // Node A: ECDSA Transaction signature update
+            
+            // Generate mock cryptographic transaction signatures for verification
             const randHex = (len) => Array.from({length: len}, () => Math.floor(Math.random()*16).toString(16)).join('');
-            const nodeATxSigEl = document.getElementById("nodeATxSig");
-            if (nodeATxSigEl) {
-                nodeATxSigEl.innerText = "0x" + randHex(6) + "..." + randHex(4);
-            }
-
+            const directions = ["UP", "DOWN", "LEFT", "RIGHT"];
+            
+            const votes = [];
+            const signatures = [];
+            const weights = [];
+            
             // Node B: AI Momentum Predictive Model
             recentUserVotes.push(direction);
             if (recentUserVotes.length > 4) recentUserVotes.shift();
-            const nodeBPredEl = document.getElementById("nodeBPrediction");
-            if (nodeBPredEl) {
-                const uniqueVotes = new Set(recentUserVotes);
-                if (uniqueVotes.size === 1 && recentUserVotes.length >= 3) {
-                    nodeBPredEl.innerText = `Bias: Momentum (${direction} - 92% Conf)`;
-                } else if (uniqueVotes.size === 2) {
-                    nodeBPredEl.innerText = `Bias: Patterns (81% Conf)`;
-                } else {
-                    nodeBPredEl.innerText = `Bias: Entropy (39% Conf)`;
+            
+            // Intelligent gameplay heuristic for Copilot Node B (Validator 2)
+            let aiBestVote = direction;
+            const hasSpriteVars = typeof s0_x !== "undefined" && typeof s2_x !== "undefined";
+            if (hasSpriteVars && s0_x > 0 && s2_x > 0) {
+                let velocity = 0;
+                if (typeof lastS2X !== "undefined" && lastS2X > 0) {
+                    velocity = s2_x - lastS2X;
                 }
-            }
-
-            // Node C: Validator verification block hash
-            const nodeCBlockHashEl = document.getElementById("nodeCBlockHash");
-            if (nodeCBlockHashEl) {
-                nodeCBlockHashEl.innerText = "0x" + randHex(4) + "..." + randHex(4);
-            }
-
-            const nodeBAcc = document.getElementById("nodeBAcc") ? parseInt(document.getElementById("nodeBAcc").value) : 75;
-            const nodeCAcc = document.getElementById("nodeCAcc") ? parseInt(document.getElementById("nodeCAcc").value) : 60;
-            const nodeCByzStance = document.getElementById("nodeCByzStance") ? document.getElementById("nodeCByzStance").value : "none";
-            
-            const nodeB_Active = nodeBRep >= slashLimit;
-            const nodeC_Active = nodeCRep >= slashLimit;
-            
-            const nodeA_Vote = direction;
-            let nodeB_Vote = null;
-            let nodeC_Vote = null;
-            
-            const directions = ["UP", "DOWN", "LEFT", "RIGHT"];
-            
-            if (nodeB_Active) {
-                // Intelligent gameplay heuristic for Copilot Node B (with Lead Shooting velocity tracking)
-                let aiBestVote = direction;
-                
-                // If Space Invaders variables are active and sprites exist
-                const hasSpriteVars = typeof s0_x !== "undefined" && typeof s2_x !== "undefined";
-                if (hasSpriteVars && s0_x > 0 && s2_x > 0) {
-                    // Calculate velocity-adjusted target location (Lead Tracking)
-                    let velocity = 0;
-                    if (typeof lastS2X !== "undefined" && lastS2X > 0) {
-                        velocity = s2_x - lastS2X;
-                    }
-                    lastS2X = s2_x;
-
-                    // Lead factor of 3 frames projection
-                    const leadAlienX = s2_x + velocity * 3;
-
-                    // Check if bullet represents an incoming threat
-                    const bulletThreat = typeof s1_x !== "undefined" && s1_y > 100 && s1_y < s0_y && Math.abs(s1_x - s0_x) < 20;
-                    if (bulletThreat) {
-                        aiBestVote = s0_x > 160 ? "LEFT" : "RIGHT"; // dodge
+                lastS2X = s2_x;
+                const leadAlienX = s2_x + velocity * 3;
+                const bulletThreat = typeof s1_x !== "undefined" && s1_y > 100 && s1_y < s0_y && Math.abs(s1_x - s0_x) < 20;
+                if (bulletThreat) {
+                    aiBestVote = s0_x > 160 ? "LEFT" : "RIGHT";
+                } else {
+                    if (leadAlienX < s0_x - 12) {
+                        aiBestVote = "LEFT";
+                    } else if (leadAlienX > s0_x + 12) {
+                        aiBestVote = "RIGHT";
                     } else {
-                        // Align horizontally with the lead alien and fire
-                        if (leadAlienX < s0_x - 12) {
-                            aiBestVote = "LEFT";
-                        } else if (leadAlienX > s0_x + 12) {
-                            aiBestVote = "RIGHT";
-                        } else {
-                            aiBestVote = "FIRE";
-                        }
+                        aiBestVote = "FIRE";
+                    }
+                }
+            }
+            copilotLastRecommendation = aiBestVote;
+
+            for (let i = 0; i < 11; i++) {
+                const v = validatorList[i];
+                const isActive = v.reputation >= slashLimit && v.stake > 0;
+                weights.push(v.weight);
+                
+                if (!isActive) {
+                    votes.push(null);
+                    signatures.push(null);
+                    continue;
+                }
+                
+                let vote = direction;
+                let sig = "0x" + randHex(64);
+                
+                if (i === 0) {
+                    // VAL 1: Proposer (User)
+                    vote = direction;
+                } else if (i === 1) {
+                    // VAL 2: Copilot
+                    const acc = document.getElementById("nodeBAcc") ? parseInt(document.getElementById("nodeBAcc").value) : 75;
+                    vote = (Math.random() * 100 < acc) ? aiBestVote : directions[Math.floor(Math.random() * 4)];
+                } else {
+                    // VAL 3-11: Validators
+                    if (v.stance === "opposite") {
+                        const opposite = direction === "UP" ? "DOWN" : direction === "DOWN" ? "UP" : direction === "LEFT" ? "RIGHT" : "LEFT";
+                        vote = Math.random() < 0.85 ? opposite : directions[Math.floor(Math.random() * 4)];
+                    } else if (v.stance === "noise") {
+                        vote = directions[Math.floor(Math.random() * 4)];
+                    } else if (v.stance === "sabotage") {
+                        vote = null;
+                        sig = null;
+                    } else if (v.stance === "forgery") {
+                        vote = direction;
+                        sig = "0xforged_invalid_signature";
+                    } else {
+                        // Honest default (75% accuracy)
+                        vote = (Math.random() * 100 < 75) ? direction : directions[Math.floor(Math.random() * 4)];
                     }
                 }
                 
-                copilotLastRecommendation = aiBestVote;
-                nodeB_Vote = (Math.random() * 100 < nodeBAcc) ? aiBestVote : directions[Math.floor(Math.random() * 4)];
+                votes.push(vote);
+                signatures.push(sig);
             }
             
-            if (nodeC_Active) {
-                if (nodeCByzStance === "opposite") {
-                    const opposite = direction === "UP" ? "DOWN" : direction === "DOWN" ? "UP" : direction === "LEFT" ? "RIGHT" : "LEFT";
-                    nodeC_Vote = Math.random() < 0.85 ? opposite : directions[Math.floor(Math.random() * 4)];
-                } else if (nodeCByzStance === "noise") {
-                    nodeC_Vote = directions[Math.floor(Math.random() * 4)];
-                } else if (nodeCByzStance === "sabotage") {
-                    nodeC_Vote = null;
-                } else {
-                    nodeC_Vote = (Math.random() * 100 < nodeCAcc) ? direction : directions[Math.floor(Math.random() * 4)];
-                }
-            }
-            
-            // Generate mock cryptographic transaction signatures for verification
-            const sigA = "0x" + randHex(64);
-            const sigB = nodeB_Active ? "0x" + randHex(64) : null;
-            let sigC = nodeC_Active ? "0x" + randHex(64) : null;
-            
-            if (nodeCByzStance === "forgery" && nodeC_Active) {
-                sigC = "0xforged_invalid_signature";
-            } else if (nodeCByzStance === "sabotage" || !nodeC_Active) {
-                sigC = null;
-            }
-            
-            logBox.innerText += `\n[VOTE ROUND] Node A: ${nodeA_Vote} | Node B: ${nodeB_Vote || "SUSPENDED"} | Node C: ${nodeC_Vote || "SUSPENDED"}`;
-            if (nodeCByzStance === "forgery" && nodeC_Active) {
-                logBox.innerText += `\n[ATTACK VECTOR] Node C attempting signature forgery!`;
-            }
+            logBox.innerText += `\n[VOTE ROUND] Proposer proposes ${direction}. Batch verifying 11-key signature array...`;
             
             // Propose transaction to the simulated on-chain consensus contract (including signatures)
-            const txResult = await consensusContract.proposeInput(direction, [nodeA_Vote, nodeB_Vote, nodeC_Vote], [sigA, sigB, sigC], [wA, wB, wC], slashLimit, threshold);
+            const txResult = await consensusContract.proposeInput(direction, votes, signatures, weights, slashLimit, threshold);
             
-            nodeARep = txResult.reputations.nodeA;
-            nodeBRep = txResult.reputations.nodeB;
-            nodeCRep = txResult.reputations.nodeC;
+            // Sync validatorList variables with contract results
+            for (let i = 0; i < 11; i++) {
+                validatorList[i].reputation = txResult.reputations[i];
+                validatorList[i].stake = txResult.stakes[i];
+                if (txResult.stakes[i] <= 0 || txResult.reputations[i] < slashLimit) {
+                    validatorList[i].status = txResult.stakes[i] <= 0 ? "JAILED" : "SUSPENDED";
+                } else {
+                    validatorList[i].status = "ONLINE";
+                }
+            }
+            
+            // Re-render validator grid with live values
+            renderValidatorGrid();
             
             progressBar.style.width = `${(txResult.matchingWeight / txResult.totalWeight) * 100}%`;
-            
             const targetRatio = threshold === 1 ? 0.33 : threshold === 2 ? 0.66 : 1.0;
             const requiredWeight = txResult.totalWeight * targetRatio;
             
@@ -9026,39 +8985,13 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 statusLabel.innerText = `STABLE (WT: ${txResult.matchingWeight}/${txResult.totalWeight} AGREED)`;
                 statusLabel.style.color = "#00ff7f";
                 progressBar.style.background = "#00ff7f";
-                logBox.innerText += `\n[ON-CHAIN TX SUCCESS] Consensus verified on-contract at target: ${consensusContract.target.substring(0, 10)}... routing joystick inputs.`;
+                logBox.innerText += `\n[ON-CHAIN TX SUCCESS] 11-key PKI consensus verified at target address... routing joystick inputs.`;
                 writeToTerminal(`[CONSENSUS CONTRACT] Executed on-chain poke(56320, ${direction}).`);
             } else {
                 statusLabel.innerText = `METASTABLE STUTTER (WT: ${txResult.matchingWeight}/${txResult.totalWeight})`;
                 statusLabel.style.color = "#ff007f";
                 progressBar.style.background = "#ff007f";
-                logBox.innerText += `\n[WARNING] Consensus rejected by contract (needed WT ${Math.ceil(requiredWeight)}, got ${txResult.matchingWeight}). Input discarded.`;
-            }
-            
-            // Sync UI widgets with contract state variables
-            document.getElementById("nodeARep").innerText = `Rep: ${nodeARep}%`;
-            document.getElementById("nodeAStake").innerText = `Stake: ${txResult.stakes.nodeA.toFixed(1)} PLS`;
-            
-            document.getElementById("nodeBRep").innerText = `Rep: ${nodeBRep}%`;
-            document.getElementById("nodeBStake").innerText = `Stake: ${txResult.stakes.nodeB.toFixed(1)} PLS`;
-            if (nodeBRep < slashLimit || txResult.stakes.nodeB <= 0) {
-                document.getElementById("nodeBStatus").innerText = txResult.stakes.nodeB <= 0 ? "JAILED (STAKE POOR)" : "SUSPENDED (SLASHED)";
-                document.getElementById("nodeBStatus").style.color = "#ff007f";
-                logBox.innerText += `\n[SLASH] Node B slashed on-chain to ${nodeBRep}% rep, ${txResult.stakes.nodeB.toFixed(1)} PLS.`;
-            } else {
-                document.getElementById("nodeBStatus").innerText = "ONLINE";
-                document.getElementById("nodeBStatus").style.color = "#00ff7f";
-            }
-            
-            document.getElementById("nodeCRep").innerText = `Rep: ${nodeCRep}%`;
-            document.getElementById("nodeCStake").innerText = `${txResult.stakes.nodeC.toFixed(1)} PLS`;
-            if (nodeCRep < slashLimit || txResult.stakes.nodeC <= 0) {
-                document.getElementById("nodeCStatus").innerText = txResult.stakes.nodeC <= 0 ? "JAILED (STAKE POOR)" : "SUSPENDED (SLASHED)";
-                document.getElementById("nodeCStatus").style.color = "#ff007f";
-                logBox.innerText += `\n[SLASH] Node C slashed on-chain to ${nodeCRep}% rep, ${txResult.stakes.nodeC.toFixed(1)} PLS.`;
-            } else {
-                document.getElementById("nodeCStatus").innerText = "ONLINE";
-                document.getElementById("nodeCStatus").style.color = "#00ff7f";
+                logBox.innerText += `\n[WARNING] 11-key consensus rejected by contract (needed WT ${Math.ceil(requiredWeight)}, got ${txResult.matchingWeight}). Input discarded.`;
             }
             
             if (txResult.disputeTriggered) {
@@ -9089,7 +9022,15 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 logBox.innerText += `\n[PINPOINT] Divergence narrowed to exact cycle step: ${high}`;
                 logBox.innerText += `\n[YUL EVM PROVER] Executing executeStep(preState, instructionOpcode: 0x4C) on-chain...`;
                 
-                if (nodeCByzStance === "forgery") {
+                // Find if the accused node stance was forgery
+                let isForgery = false;
+                for (let i = 0; i < 11; i++) {
+                    if (`VAL #${i + 1}` === accused && validatorList[i].stance === "forgery") {
+                        isForgery = true;
+                    }
+                }
+                
+                if (isForgery) {
                     logBox.innerText += `\n[VERDICT] Cryptographic signature verification check failed. Forgery proven.`;
                 } else {
                     logBox.innerText += `\n[VERDICT] ${accused} asserted post-state hash 0xdead...beef, but Yul interpreter resolved 0x9f3d...8c2b. ${accused} FRAUD PROVED!`;
