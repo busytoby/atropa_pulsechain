@@ -41,6 +41,7 @@ async function main() {
     const assembler = compileYul(path.join(__dirname, "../solidity/bin/assembler.yul"));
     const elm = compileYul(path.join(__dirname, "../solidity/bin/elm.yul"));
     const ledger = compileYul(path.join(__dirname, "../solidity/bin/ledger.yul"));
+    const coreMemory = compileYul(path.join(__dirname, "../solidity/bin/core_memory.yul"));
     
     const erc20Bin = "0x" + fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.bin"), "utf8").trim();
     const erc20Abi = JSON.parse(fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.abi"), "utf8"));
@@ -72,6 +73,7 @@ async function main() {
         assembler,
         elm,
         ledger,
+        core_memory: coreMemory,
         mockErc20: {
             bin: erc20Bin,
             abi: erc20Abi
