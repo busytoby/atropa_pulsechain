@@ -431,11 +431,17 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label class="knob-label">Write Direct Phoneme Hex</label>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="number" id="directPhonemeCode" class="input-glow" style="width: 80px;" value="2" min="0" max="63">
-                            <input type="number" id="directInflection" class="input-glow" style="width: 80px;" value="1" min="0" max="3">
-                            <button class="btn btn-primary btn-small" id="btnWriteDirectPhoneme">Write</button>
+                        <label class="knob-label">Write Direct Phoneme</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; gap: 8px;">
+                                <select id="directPhonemeSelect" class="input-glow" style="flex: 1; min-width: 140px; background: #000; color: #fff; border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 4px; padding: 4px 8px; font-family: monospace;"></select>
+                                <input type="number" id="directInflection" class="input-glow" style="width: 60px;" value="1" min="0" max="3" title="Inflection Level (0-3)">
+                                <button class="btn btn-primary btn-small" id="btnWriteDirectPhoneme">Write</button>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+                                <span>Code: <strong id="directPhonemeCodeDisplay" style="color: var(--neon-cyan);">0x00 (0)</strong></span>
+                                <button class="btn btn-small" id="btnPreviewPhoneme" style="padding: 2px 8px; font-size: 0.75rem; background: rgba(0, 242, 254, 0.1); border-color: rgba(0, 242, 254, 0.3); border-radius: 4px; color: var(--neon-cyan); cursor: pointer;">🔊 Preview</button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -1049,14 +1055,18 @@
                 logConsole("Web3 contract not connected!");
                 return;
             }
-            const code = Number(document.getElementById("directPhonemeCode").value);
+            const selectEl = document.getElementById("directPhonemeSelect");
+            const code = Number(selectEl.value);
             const inflection = Number(document.getElementById("directInflection").value);
+            const phonemeName = selectEl.options[selectEl.selectedIndex].text.split(" ")[0];
             try {
-                logConsole(`Sending tx: writePhoneme(${code}, ${inflection})...`);
+                logConsole(`Sending tx: writePhoneme(${code} [${phonemeName}], ${inflection})...`);
                 const tx = await speechContract.writePhoneme(code, inflection);
                 await tx.wait();
                 logConsole("On-chain phoneme write transaction complete.");
                 updateOnChainStats();
+                initAudio();
+                playLocalPhoneme(phonemeName);
             } catch (err) {
                 logConsole("Transaction failed: " + err.message);
             }
@@ -1477,9 +1487,44 @@
             document.getElementById("singingPitchVal").innerText = `${e.target.value} Hz`;
         });
 
+        function initPhonemeSelector() {
+            const selectEl = document.getElementById("directPhonemeSelect");
+            if (!selectEl) return;
+            selectEl.innerHTML = "";
+            phonemeNames.forEach((name, idx) => {
+                const opt = document.createElement("option");
+                opt.value = idx;
+                opt.textContent = `${name} (0x${idx.toString(16).toUpperCase().padStart(2, '0')})`;
+                selectEl.appendChild(opt);
+            });
+            
+            const displayEl = document.getElementById("directPhonemeCodeDisplay");
+            selectEl.addEventListener("change", () => {
+                const val = Number(selectEl.value);
+                if (displayEl) {
+                    displayEl.textContent = `0x${val.toString(16).toUpperCase().padStart(2, '0')} (${val})`;
+                }
+            });
+            
+            if (displayEl && selectEl.options.length > 0) {
+                displayEl.textContent = `0x00 (0)`;
+            }
+
+            const previewBtn = document.getElementById("btnPreviewPhoneme");
+            if (previewBtn) {
+                previewBtn.addEventListener("click", () => {
+                    initAudio();
+                    const selectedName = selectEl.options[selectEl.selectedIndex].text.split(" ")[0];
+                    playLocalPhoneme(selectedName);
+                    logConsole(`Previewing local phoneme: ${selectedName}`);
+                });
+            }
+        }
+
         // Initialize on load
         window.addEventListener("DOMContentLoaded", () => {
             loadPreset("AHOY COMPUTER! RETRO SOUND ON CHAIN");
+            initPhonemeSelector();
             renderScope();
             setTimeout(initWeb3, 800);
         });
