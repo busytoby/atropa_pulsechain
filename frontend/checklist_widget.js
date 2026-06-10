@@ -2,6 +2,8 @@
     // 1. Inject Styles
     const styleEl = document.createElement('style');
     styleEl.textContent = `
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&display=swap');
+
         :root {
             --widget-neon-blue: #00f2fe;
             --widget-neon-purple: #4facfe;
@@ -19,6 +21,21 @@
             font-family: 'Rajdhani', sans-serif;
             color: #f0f4f8;
             user-select: none;
+        }
+
+        /* Custom Scrollbar */
+        .checklist-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .checklist-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        .checklist-list::-webkit-scrollbar-thumb {
+            background: var(--widget-neon-purple);
+            border-radius: 3px;
+        }
+        .checklist-list::-webkit-scrollbar-thumb:hover {
+            background: var(--widget-neon-blue);
         }
 
         .checklist-trigger {
