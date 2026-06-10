@@ -2154,14 +2154,20 @@
         }
 
         function setupSimulatedVM() {
+            window.simulatedBlockNumber = window.simulatedBlockNumber || 42000;
             provider = {
                 getStorage: async (target, slot) => {
+                    // Return mock storage or debouncer lastCallBlock
+                    if (slot && slot.length > 50) {
+                        return window.simulatedDebounceLastBlock || 0;
+                    }
                     const addr = parseInt(slot, 16);
                     if (!isNaN(addr) && cpuContract) {
                         return cpuContract.memory[addr];
                     }
                     return 0;
                 },
+                getBlockNumber: async () => window.simulatedBlockNumber,
                 getTransactionCount: async () => 0,
                 call: async (txOpts) => {
                     let hex = "0x";
@@ -2880,6 +2886,14 @@
                 const txHash = tx && tx.hash ? tx.hash.substring(0, 10) + "..." : "SimulatedVM";
                 appendOregonDashboardLog("[ON-CHAIN] Initiated nonce generation: " + txHash);
                 await tx.wait();
+                if (typeof signer === "undefined" || !signer) {
+                    window.simulatedDebounceLastBlock = window.simulatedBlockNumber;
+                    // Increment the block height after 500ms to clear the debouncer
+                    setTimeout(() => {
+                        window.simulatedBlockNumber++;
+                        updateTaxAndSecurityDashboard();
+                    }, 500);
+                }
                 appendOregonDashboardLog("[ON-CHAIN] Cryptographic nonce regenerated!");
                 updateTaxAndSecurityDashboard();
             } catch (err) {
