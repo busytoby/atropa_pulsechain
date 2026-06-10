@@ -266,6 +266,7 @@
                                 <option value="mandarin_pinyin">Mandarin Pinyin Translation</option>
                                 <option value="cantonese_jyutping">Cantonese Jyutping Rules</option>
                                 <option value="korean_romanized">Korean Romanized Syllables</option>
+                                <option value="robby_allophones">GI SP0256-AL2 (Robby Allophones)</option>
                             </select>
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 22px;">
@@ -294,21 +295,18 @@
                     <p class="description">Combine speech phonemes with SID frequency structures from the MusicMaker. Generates singing robot synth lines.</p>
                     
                     <div class="control-row">
-                        <div class="knob-container">
-                            <span class="knob-label">Vocoder Mode</span>
-                            <div style="display: flex; gap: 10px; margin-top: 5px;">
-                                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem; cursor: pointer;">
-                                    <input type="checkbox" id="vocoderToggle" style="width: 16px; height: 16px;"> Enable SID Vocoder
-                                </label>
-                            </div>
-                        </div>
-                        <div class="knob-container">
-                            <span class="knob-label">SID Waveform</span>
-                            <select id="sidWaveform" class="input-glow" style="width: 100%; padding: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; font-size: 0.85rem;">
-                                <option value="sawtooth">Sawtooth (Votrax Hybrid)</option>
-                                <option value="triangle">Triangle (Soft Flute)</option>
-                                <option value="square">Pulse/Square (Retro Chip)</option>
-                                <option value="noise">White Noise (Fricatives)</option>
+                        <div class="knob-container" style="flex: 2;">
+                            <span class="knob-label">Synthesis Engine / Waveform</span>
+                            <select id="sidWaveform" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-size: 0.9rem; margin-top: 5px;">
+                                <option value="sawtooth">Standard Sawtooth (Votrax Hybrid)</option>
+                                <option value="triangle">Standard Triangle (Soft Flute)</option>
+                                <option value="square">Standard Pulse/Square (Retro Chip)</option>
+                                <option value="noise">Standard White Noise (Fricatives)</option>
+                                <option value="sid_digi">Commodore 64 4-bit Digi (MOS 8580 Volume Hack)</option>
+                                <option value="tms5220">Texas Instruments TMS5220 (Speak & Spell ROM Chirp)</option>
+                                <option value="humanized_lpc">Humanized LPC (LF Flow & Breathiness)</option>
+                                <option value="msx_y8950">MSX-Audio Y8950 (4-bit ADPCM Sampler)</option>
+                                <option value="sp0256">GI SP0256-AL2 (MSX Robby Voice Synth)</option>
                             </select>
                         </div>
                         <div class="knob-container">
@@ -318,9 +316,94 @@
                         </div>
                     </div>
 
+                    <div class="control-row" style="margin-top: 15px; margin-bottom: 20px;">
+                        <div class="knob-container" style="flex: 1;">
+                            <span class="knob-label" style="color: var(--neon-cyan); margin-bottom: 8px; display: block;">Quick-Load Preset Voice Profiles</span>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-small btn-preset" data-profile="robby" style="border-color: var(--neon-pink); color: #fff; background: rgba(255, 0, 127, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Robby the Robot (SP0256)</button>
+                                <button class="btn btn-small btn-preset" data-profile="syd64" style="border-color: var(--neon-cyan); color: #fff; background: rgba(0, 242, 254, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Syd 64 (Commodore 64)</button>
+                                <button class="btn btn-small btn-preset" data-profile="stephen" style="border-color: var(--neon-green); color: #fff; background: rgba(57, 255, 20, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Stephen (TMS5220 LPC)</button>
+                                <button class="btn btn-small btn-preset" data-profile="human" style="border-color: #ff9900; color: #fff; background: rgba(255, 153, 0, 0.15); font-family: 'Orbitron'; font-size: 0.75rem; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid;">Breathy Human (LF Model)</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-secondary" id="btnTestSing" style="border-color: var(--neon-green); color: var(--text-primary);">Play Singing Scale</button>
                         <button class="btn btn-small" id="btnSyncSIDContract" style="background: rgba(57, 255, 20, 0.15); border-color: var(--neon-green); color: var(--neon-green);">Sync Vocoder Registers to Chain</button>
+                    </div>
+                </section>
+
+                <section class="card control-panel" style="border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 242, 254, 0.05);">
+                    <h2><span class="icon">📈</span> Interactive Pitch Contour Editor (Prosody)</h2>
+                    <p class="description">Draw or drag control points to shape the voice intonation contour (from 40 Hz to 300 Hz) over the timeline of the spoken phrase.</p>
+                    
+                    <div style="position: relative; background: #040306; border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px; padding: 10px; height: 180px; width: 100%;">
+                        <svg id="pitchContourSvg" viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; cursor: crosshair;">
+                            <!-- Grid lines -->
+                            <line x1="0" y1="25" x2="100" y2="25" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2"/>
+                            <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2"/>
+                            <line x1="0" y1="75" x2="100" y2="75" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2"/>
+                            <line x1="25" y1="0" x2="25" y2="100" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2"/>
+                            <line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2"/>
+                            <line x1="75" y1="0" x2="75" y2="100" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2"/>
+                            
+                            <!-- Contour Line -->
+                            <path id="contourPath" d="" fill="none" stroke="var(--neon-cyan)" stroke-width="2" style="filter: drop-shadow(0 0 4px var(--neon-cyan));"/>
+                            
+                            <!-- Control Points -->
+                            <circle id="cp0" cx="0" cy="50" r="3" fill="var(--neon-pink)" style="cursor: ns-resize; filter: drop-shadow(0 0 3px var(--neon-pink));"/>
+                            <circle id="cp1" cx="25" cy="50" r="3" fill="var(--neon-pink)" style="cursor: ns-resize; filter: drop-shadow(0 0 3px var(--neon-pink));"/>
+                            <circle id="cp2" cx="50" cy="50" r="3" fill="var(--neon-pink)" style="cursor: ns-resize; filter: drop-shadow(0 0 3px var(--neon-pink));"/>
+                            <circle id="cp3" cx="75" cy="50" r="3" fill="var(--neon-pink)" style="cursor: ns-resize; filter: drop-shadow(0 0 3px var(--neon-pink));"/>
+                            <circle id="cp4" cx="100" cy="50" r="3" fill="var(--neon-pink)" style="cursor: ns-resize; filter: drop-shadow(0 0 3px var(--neon-pink));"/>
+                        </svg>
+                        <div style="position: absolute; top: 5px; right: 10px; font-size: 0.7rem; font-family: monospace; color: var(--neon-cyan); pointer-events: none;">300 Hz</div>
+                        <div style="position: absolute; bottom: 5px; right: 10px; font-size: 0.7rem; font-family: monospace; color: var(--neon-cyan); pointer-events: none;">40 Hz</div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                        <button class="btn btn-small btn-preset" id="btnResetContour" style="border-color: rgba(255,255,255,0.2); color: #fff; background: rgba(255,255,255,0.05); padding: 4px 10px; font-size: 0.75rem;">Reset Flat</button>
+                        <button class="btn btn-small btn-preset" id="btnRisingContour" style="border-color: var(--neon-cyan); color: #fff; background: rgba(0, 242, 254, 0.1); padding: 4px 10px; font-size: 0.75rem;">Question (Rising)</button>
+                        <button class="btn btn-small btn-preset" id="btnFallingContour" style="border-color: var(--neon-pink); color: #fff; background: rgba(255, 0, 127, 0.1); padding: 4px 10px; font-size: 0.75rem;">Statement (Falling)</button>
+                        <button class="btn btn-small btn-preset" id="btnVibratoContour" style="border-color: var(--neon-yellow); color: #fff; background: rgba(255, 234, 0, 0.1); padding: 4px 10px; font-size: 0.75rem;">Singing (Vibrato)</button>
+                    </div>
+                </section>
+
+                <section class="card control-panel" style="border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.1);">
+                    <h2><span class="icon">⚔️</span> Vaesen Combat & Trauma Control Panel</h2>
+                    <p class="description">Simulate trauma states affecting voice prosody in real-time. Modulations match EVM CPU memory layout offsets 55043 (physical) and 55044 (mental).</p>
+                    
+                    <div class="control-row">
+                        <div class="knob-container">
+                            <span class="knob-label">Physical Trauma (Volume)</span>
+                            <select id="physicalTrauma" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-size: 0.9rem; margin-top: 5px;">
+                                <option value="0">Normal (100% Energy)</option>
+                                <option value="1">Exhausted (80% Energy)</option>
+                                <option value="2">Battered (60% Energy)</option>
+                                <option value="3">Broken (30% Energy)</option>
+                            </select>
+                        </div>
+                        <div class="knob-container">
+                            <span class="knob-label">Mental Trauma (Pitch & Jitter)</span>
+                            <select id="mentalTrauma" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-size: 0.9rem; margin-top: 5px;">
+                                <option value="0">Normal (Steady Pitch)</option>
+                                <option value="1">Shaken (Subtle Jitter)</option>
+                                <option value="2">Terrified (+20Hz Pitch, Mod Jitter)</option>
+                                <option value="3">Panicked (+40Hz Pitch, High Jitter, Stutter)</option>
+                                <option value="4">Melancholic (-25Hz Pitch, 50% Energy)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" id="btnSyncTraumaToChain" style="border-color: var(--neon-pink); color: var(--text-primary);">Sync Trauma to Chain</button>
+                        <button class="btn btn-primary" id="btnSimulateCombatTurn" style="background: linear-gradient(135deg, var(--neon-pink) 0%, #aa005b 100%); border: none; color: #fff;">Simulate Combat Round</button>
+                        <button class="btn btn-secondary" id="btnHealTrauma" style="border-color: var(--neon-cyan); color: var(--text-primary);">Heal/Rest</button>
+                    </div>
+
+                    <div id="combatStatusLog" style="margin-top: 15px; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 1px dashed rgba(255, 0, 127, 0.3); border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); min-height: 40px;">
+                        Combat simulator ready. Select trauma levels or run a simulated round.
                     </div>
                 </section>
 
@@ -641,6 +724,59 @@
                 { pat: "O", ph: ["O"] },
                 { pat: "U", ph: ["OO1"] },
                 { pat: "I", ph: ["E1"] }
+            ],
+            "robby_allophones": [
+                { pat: "TION", ph: ["SH", "UN"] },
+                { pat: "SION", ph: ["ZH", "UN"] },
+                { pat: "IGHT", ph: ["AY", "TT"] },
+                { pat: "ING", ph: ["IH", "NG"] },
+                { pat: "ALL", ph: ["AW", "LL"] },
+                { pat: "PH", ph: ["FF"] },
+                { pat: "TH", ph: ["TH"] },
+                { pat: "SH", ph: ["SH"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "EE", ph: ["IY"] },
+                { pat: "EA", ph: ["IY"] },
+                { pat: "OO", ph: ["UW1"] },
+                { pat: "OU", ph: ["AW"] },
+                { pat: "OW", ph: ["OW"] },
+                { pat: "ER", ph: ["ER1"] },
+                { pat: "OR", ph: ["OW", "RR1"] },
+                { pat: "AR", ph: ["AR"] },
+                { pat: "QU", ph: ["KK1", "WW"] },
+                { pat: "LL", ph: ["LL"] },
+                { pat: "SS", ph: ["SS"] },
+                { pat: "TT", ph: ["TT"] },
+                { pat: "FF", ph: ["FF"] },
+                { pat: "GG", ph: ["GG1"] },
+                { pat: "DD", ph: ["DD1"] },
+                { pat: "MM", ph: ["MM"] },
+                { pat: "NN", ph: ["NN1"] },
+                { pat: "A", ph: ["AE"] },
+                { pat: "E", ph: ["EH"] },
+                { pat: "I", ph: ["IH"] },
+                { pat: "O", ph: ["OW"] },
+                { pat: "U", ph: ["UW2"] },
+                { pat: "Y", ph: ["YY1"] },
+                { pat: "B", ph: ["BB1"] },
+                { pat: "C", ph: ["KK1"] },
+                { pat: "D", ph: ["DD1"] },
+                { pat: "F", ph: ["FF"] },
+                { pat: "G", ph: ["GG1"] },
+                { pat: "H", ph: ["HH1"] },
+                { pat: "J", ph: ["JH"] },
+                { pat: "K", ph: ["KK1"] },
+                { pat: "L", ph: ["LL"] },
+                { pat: "M", ph: ["MM"] },
+                { pat: "N", ph: ["NN1"] },
+                { pat: "P", ph: ["PP"] },
+                { pat: "R", ph: ["RR1"] },
+                { pat: "S", ph: ["SS"] },
+                { pat: "T", ph: ["TT"] },
+                { pat: "V", ph: ["VV"] },
+                { pat: "W", ph: ["WW"] },
+                { pat: "Z", ph: ["ZZ"] }
             ]
         };
 
@@ -648,7 +784,30 @@
             word = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
             word = word.replace(/[^A-Z]/g, "");
             if (!word) return [];
-            if (wordsPhonemes[word]) return wordsPhonemes[word];
+
+            if (dialect === "robby_allophones") {
+                const robbyPresets = {
+                    "HELLO": ["HH1", "EH", "LL", "OW"],
+                    "COMMODORE": ["KK1", "OW", "MM", "OW", "DD1", "OW", "RR1"],
+                    "COMPUTER": ["KK1", "AE", "MM", "PP", "UW2", "TT", "ER1"],
+                    "PLAY": ["PP", "LL", "EY"],
+                    "GAME": ["GG1", "EY", "MM"],
+                    "ALIEN": ["EY", "LL", "YY1", "AE", "NN1"],
+                    "AHOY": ["AE", "HH1", "OY"],
+                    "RETRO": ["RR1", "EH", "TT", "RR1", "OW"],
+                    "SOUND": ["SS", "AW", "NN1", "DD1"],
+                    "ON": ["OW", "NN1"],
+                    "CHAIN": ["CH", "EY", "NN1"],
+                    "ANOTHER": ["AE", "NN1", "UW2", "TH", "ER1"],
+                    "VISITOR": ["VV", "IH", "ZZ", "IH", "TT", "ER1"],
+                    "STAY": ["SS", "TT", "EY"],
+                    "WHILE": ["WW", "AY", "LL"],
+                    "FOREVER": ["FF", "OW", "RR1", "EH", "VV", "ER1"]
+                };
+                if (robbyPresets[word]) return robbyPresets[word];
+            } else {
+                if (wordsPhonemes[word]) return wordsPhonemes[word];
+            }
 
             let phonemes = [];
             let index = 0;
@@ -675,12 +834,16 @@
 
         // Web Audio Synth setup
         let audioCtx = null;
+        let analyser = null;
         let isSpeaking = false;
         let speechQueue = [];
 
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.connect(audioCtx.destination);
                 logConsole("Web Audio Context initialized.");
                 drawSpectrumBackground();
             }
@@ -727,13 +890,13 @@
             }
         }
 
-        function playLocalPhoneme(name, duration = 0.16) {
+        function playLocalPhoneme(name, duration = 0.16, queueProgress = null) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
             // Consonant definitions
-            const isUnvoicedConsonant = ["S", "SH", "CH", "H", "K", "T", "P", "F", "TH"].some(p => name.startsWith(p));
-            const isVoicedConsonant = ["Z", "ZH", "J", "V", "D", "G", "B", "THR", "THV", "DT"].some(p => name.startsWith(p));
+            const isUnvoicedConsonant = ["S", "SH", "CH", "H", "K", "T", "P", "F", "TH", "KK", "PP", "TT", "SS", "FF", "HH"].some(p => name.startsWith(p));
+            const isVoicedConsonant = ["Z", "ZH", "J", "V", "D", "G", "B", "THR", "THV", "DT", "BB", "DD", "GG", "VV", "ZZ", "JH"].some(p => name.startsWith(p));
             const isConsonant = isUnvoicedConsonant || isVoicedConsonant;
             const isPause = name.startsWith("PA");
 
@@ -764,11 +927,57 @@
             if (isPause) return;
 
             // Synthesis engine parameters
-            const baseFreq = Number(document.getElementById("singingPitch").value);
-            const useVocoder = document.getElementById("vocoderToggle").checked;
+            const rawBaseFreq = Number(document.getElementById("singingPitch").value);
+            const useVocoder = true;
             const waveform = document.getElementById("sidWaveform").value;
 
-            triggerScopePulse();
+            // --- Vaesen Trauma Prosody Modification ---
+            const physTrauma = parseInt(document.getElementById("physicalTrauma")?.value || "0");
+            const mentTrauma = parseInt(document.getElementById("mentalTrauma")?.value || "0");
+
+            let energyFactor = 1.0;
+            if (physTrauma === 1) energyFactor = 0.8;
+            else if (physTrauma === 2) energyFactor = 0.6;
+            else if (physTrauma === 3) energyFactor = 0.3;
+
+            let baseFreq = rawBaseFreq;
+            if (queueProgress !== null && window.getPitchFromContour) {
+                baseFreq = window.getPitchFromContour(queueProgress);
+            }
+            let jitterAmount = 0;
+            let stutterActive = false;
+
+            if (mentTrauma === 1) { // Shaken
+                jitterAmount = 4;
+            } else if (mentTrauma === 2) { // Terrified
+                baseFreq += 20;
+                jitterAmount = 12;
+            } else if (mentTrauma === 3) { // Panicked
+                baseFreq += 40;
+                jitterAmount = 25;
+                stutterActive = true;
+            } else if (mentTrauma === 4) { // Melancholic
+                baseFreq -= 25;
+                if (baseFreq < 30) baseFreq = 30;
+                energyFactor *= 0.5;
+            }
+
+            // Apply Jitter to baseFreq
+            if (jitterAmount > 0) {
+                const randVal = Math.floor(Math.random() * (jitterAmount * 2));
+                if (randVal < jitterAmount) {
+                    baseFreq -= randVal;
+                } else {
+                    baseFreq += (randVal - jitterAmount);
+                }
+                if (baseFreq < 30) baseFreq = 30;
+            }
+
+            // Stutter checking (periodically mute based on counter)
+            window.stutterCounter = (window.stutterCounter || 0) + 1;
+            if (stutterActive && (window.stutterCounter & 0x02) === 0) {
+                energyFactor = 0;
+            }
 
             // Formant frequencies mapping [F1, F2, F3]
             const formantMap = {
@@ -805,7 +1014,19 @@
                 "M": [300, 1100, 2500],
                 "N": [300, 1400, 2700],
                 "NG": [300, 1800, 2700],
-                "UN": [400, 1500, 2500]
+                "UN": [400, 1500, 2500],
+                // SP0256-AL2 (Robby) mappings
+                "IY": [270, 2290, 3010],
+                "IH": [400, 1900, 2500],
+                "AE": [700, 1800, 2400],
+                "AR": [730, 1100, 2440],
+                "OW": [570, 840, 2400],
+                "UW1": [300, 870, 2240],
+                "UW2": [300, 870, 2240],
+                "EY": [500, 1700, 2400],
+                "AW": [600, 950, 2400],
+                "ER1": [490, 1350, 1690],
+                "ER2": [490, 1350, 1690]
             };
 
             // Find matching formants
@@ -819,11 +1040,584 @@
 
             // Create common gain output node
             const mainGain = audioCtx.createGain();
-            mainGain.gain.setValueAtTime(0.12, now);
-            mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-            mainGain.connect(audioCtx.destination);
+            const targetVolume = 0.12 * energyFactor;
+            mainGain.gain.setValueAtTime(targetVolume, now);
+            mainGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, targetVolume * 0.01), now + duration);
+            mainGain.connect(analyser || audioCtx.destination);
 
-            if (isConsonant) {
+            if (useVocoder && waveform === "msx_y8950") {
+                // 1. Synthesize raw speech at 16kHz
+                const synthRate = 16000;
+                const numSynthSamples = Math.floor(synthRate * duration);
+                const synthData = new Float32Array(numSynthSamples);
+
+                if (isConsonant) {
+                    let centerF = 1500;
+                    if (name.startsWith("S") || name.startsWith("Z")) centerF = 6000;
+                    else if (name.startsWith("SH") || name.startsWith("ZH") || name.startsWith("CH")) centerF = 3200;
+                    else if (name.startsWith("F") || name.startsWith("TH")) centerF = 2200;
+
+                    const w0 = 2 * Math.PI * centerF / synthRate;
+                    const Q = 4;
+                    const alpha = Math.sin(w0) / (2 * Q);
+                    const b0 = alpha;
+                    const b1 = 0;
+                    const b2 = -alpha;
+                    const a0 = 1 + alpha;
+                    const a1 = -2 * Math.cos(w0);
+                    const a2 = 1 - alpha;
+                    
+                    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const x = Math.random() * 2 - 1;
+                        const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                        x2 = x1; x1 = x;
+                        y2 = y1; y1 = y;
+                        synthData[i] = y * 0.45;
+                    }
+                } else {
+                    let phase = 0;
+                    const excitation = new Float32Array(numSynthSamples);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const period = synthRate / baseFreq;
+                        excitation[i] = (phase % Math.round(period)) === 0 ? 1.0 : -0.05;
+                        phase += 1;
+                    }
+
+                    function applyResonator(input, f, Q_val) {
+                        const output = new Float32Array(input.length);
+                        const w0 = 2 * Math.PI * f / synthRate;
+                        const alpha = Math.sin(w0) / (2 * Q_val);
+                        const b0 = alpha;
+                        const b1 = 0;
+                        const b2 = -alpha;
+                        const a0 = 1 + alpha;
+                        const a1 = -2 * Math.cos(w0);
+                        const a2 = 1 - alpha;
+                        let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                        for (let i = 0; i < input.length; i++) {
+                            const x = input[i];
+                            const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                            x2 = x1; x1 = x;
+                            y2 = y1; y1 = y;
+                            output[i] = y;
+                        }
+                        return output;
+                    }
+
+                    const out1 = applyResonator(excitation, formants[0], 10);
+                    const out2 = applyResonator(excitation, formants[1], 12);
+                    const out3 = applyResonator(excitation, formants[2], 10);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        synthData[i] = out1[i] * 1.0 + out2[i] * 0.4 + out3[i] * 0.15;
+                    }
+                }
+
+                // 2. Yamaha Y8950 hardware ADPCM 4-bit encoder & decoder loop
+                const indexTable = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
+                const stepTable = [
+                    7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+                    50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230,
+                    253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963,
+                    1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327,
+                    3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487,
+                    12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
+                ];
+                let valprev = 0;
+                let adpcmIndex = 0;
+                for (let i = 0; i < numSynthSamples; i++) {
+                    let sample = Math.floor(synthData[i] * 32767);
+                    if (sample < -32768) sample = -32768;
+                    if (sample > 32767) sample = 32767;
+                    let diff = sample - valprev;
+                    let step = stepTable[adpcmIndex];
+                    let code = 0;
+                    if (diff < 0) {
+                        code = 8;
+                        diff = -diff;
+                    }
+                    let tempstep = step;
+                    if (diff >= tempstep) {
+                        code |= 4;
+                        diff -= tempstep;
+                    }
+                    tempstep >>= 1;
+                    if (diff >= tempstep) {
+                        code |= 2;
+                        diff -= tempstep;
+                    }
+                    tempstep >>= 1;
+                    if (diff >= tempstep) {
+                        code |= 1;
+                    }
+                    let diffq = step >> 3;
+                    if (code & 4) diffq += step;
+                    if (code & 2) diffq += (step >> 1);
+                    if (code & 1) diffq += (step >> 2);
+                    if (code & 8) valprev -= diffq;
+                    else valprev += diffq;
+                    if (valprev < -32768) valprev = -32768;
+                    if (valprev > 32767) valprev = 32767;
+                    adpcmIndex += indexTable[code];
+                    if (adpcmIndex < 0) adpcmIndex = 0;
+                    if (adpcmIndex > 88) adpcmIndex = 88;
+                    synthData[i] = valprev / 32767;
+                }
+                document.getElementById("visualFormantCenter").innerText = `16kHz 4-bit ADPCM (Y8950)`;
+
+                // 3. Output
+                const outRate = audioCtx.sampleRate;
+                const outBuffer = audioCtx.createBuffer(1, outRate * duration, outRate);
+                const outData = outBuffer.getChannelData(0);
+                for (let i = 0; i < outData.length; i++) {
+                    const srcIndex = i * (synthRate / outRate);
+                    const i0 = Math.floor(srcIndex);
+                    const i1 = Math.min(i0 + 1, numSynthSamples - 1);
+                    const frac = srcIndex - i0;
+                    outData[i] = (synthData[i0] * (1 - frac) + synthData[i1] * frac) * 0.9;
+                }
+                const sourceNode = audioCtx.createBufferSource();
+                sourceNode.buffer = outBuffer;
+                sourceNode.connect(mainGain);
+                sourceNode.start(now);
+                sourceNode.stop(now + duration);
+            } else if (useVocoder && waveform === "sp0256") {
+                // 1. Synthesize excitation at 10kHz (SP0256 native rate)
+                const synthRate = 10000;
+                const numSynthSamples = Math.floor(synthRate * duration);
+                const synthData = new Float32Array(numSynthSamples);
+
+                if (isConsonant) {
+                    let centerF = 1500;
+                    if (name.startsWith("S") || name.startsWith("Z")) centerF = 4000;
+                    else if (name.startsWith("SH") || name.startsWith("ZH") || name.startsWith("CH")) centerF = 3000;
+                    else if (name.startsWith("F") || name.startsWith("TH")) centerF = 2200;
+
+                    const w0 = 2 * Math.PI * centerF / synthRate;
+                    const Q = 3;
+                    const alpha = Math.sin(w0) / (2 * Q);
+                    const b0 = alpha;
+                    const b1 = 0;
+                    const b2 = -alpha;
+                    const a0 = 1 + alpha;
+                    const a1 = -2 * Math.cos(w0);
+                    const a2 = 1 - alpha;
+                    
+                    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const x = Math.random() * 2 - 1;
+                        const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                        x2 = x1; x1 = x;
+                        y2 = y1; y1 = y;
+                        synthData[i] = y * 0.4;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (SP0256 Noise)`;
+                } else {
+                    let phase = 0;
+                    const excitation = new Float32Array(numSynthSamples);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const period = synthRate / baseFreq;
+                        excitation[i] = (phase % Math.round(period)) === 0 ? 1.0 : -0.05;
+                        phase += 1;
+                    }
+
+                    // 12-stage cascade LPC filter K1..K12
+                    const K = new Float32Array(12);
+                    const f1_norm = (formants[0] - 500) / 1000;
+                    K[0] = -0.9 + 0.05 * f1_norm;
+                    K[1] = 0.5 + 0.15 * f1_norm;
+                    K[2] = -0.3;
+                    K[3] = 0.2;
+                    K[4] = -0.15;
+                    K[5] = 0.1;
+                    for (let idx = 6; idx < 12; idx++) {
+                        K[idx] = K[5] / Math.pow(2, idx - 5);
+                    }
+
+                    const delayLine = new Float32Array(13);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        let forward = excitation[i] * 0.6;
+                        for (let stage = 11; stage >= 0; stage--) {
+                            forward = forward - K[stage] * delayLine[stage];
+                            delayLine[stage + 1] = delayLine[stage] + K[stage] * forward;
+                        }
+                        delayLine[0] = forward;
+                        synthData[i] = forward;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `12-stage LPC (SP0256-AL2)`;
+                }
+
+                // 2. Upsample from 10kHz to AudioContext sample rate
+                const outRate = audioCtx.sampleRate;
+                const outBuffer = audioCtx.createBuffer(1, outRate * duration, outRate);
+                const outData = outBuffer.getChannelData(0);
+                for (let i = 0; i < outData.length; i++) {
+                    const srcIndex = i * (synthRate / outRate);
+                    const i0 = Math.floor(srcIndex);
+                    const i1 = Math.min(i0 + 1, numSynthSamples - 1);
+                    const frac = srcIndex - i0;
+                    outData[i] = (synthData[i0] * (1 - frac) + synthData[i1] * frac) * 0.95;
+                }
+
+                // 3. Play
+                const sourceNode = audioCtx.createBufferSource();
+                sourceNode.buffer = outBuffer;
+                sourceNode.connect(mainGain);
+                sourceNode.start(now);
+                sourceNode.stop(now + duration);
+            } else if (useVocoder && waveform === "humanized_lpc") {
+                // 1. Synthesize raw excitation (voiced/unvoiced) at 16kHz
+                const synthRate = 16000;
+                const numSynthSamples = Math.floor(synthRate * duration);
+                const synthData = new Float32Array(numSynthSamples);
+
+                if (isConsonant) {
+                    // White noise excitation
+                    let centerF = 1500;
+                    if (name.startsWith("S") || name.startsWith("Z")) centerF = 6000;
+                    else if (name.startsWith("SH") || name.startsWith("ZH") || name.startsWith("CH")) centerF = 3200;
+                    else if (name.startsWith("F") || name.startsWith("TH")) centerF = 2200;
+
+                    const w0 = 2 * Math.PI * centerF / synthRate;
+                    const Q = 4;
+                    const alpha = Math.sin(w0) / (2 * Q);
+                    const b0 = alpha;
+                    const b1 = 0;
+                    const b2 = -alpha;
+                    const a0 = 1 + alpha;
+                    const a1 = -2 * Math.cos(w0);
+                    const a2 = 1 - alpha;
+                    
+                    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const x = Math.random() * 2 - 1;
+                        const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                        x2 = x1; x1 = x;
+                        y2 = y1; y1 = y;
+                        synthData[i] = y * 0.45;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (Humanized Noise)`;
+                } else {
+                    // Voiced Liljencrants-Fant (LF) glottal flow model derivative with phase-locked aspiration
+                    let phase = 0;
+                    const excitation = new Float32Array(numSynthSamples);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        // True random micro-jitter for organic pitch variance instead of robotic cyclic sine-waves
+                        const microJitter = (Math.random() - 0.5) * 0.015;
+                        const currentPitch = baseFreq * (1 + microJitter);
+                        const period = synthRate / currentPitch;
+                        const tMod = phase % period;
+                        
+                        const Tp = 0.45 * period; // Glottal peak opening
+                        const Te = 0.55 * period; // Closure
+                        const Ta = 0.12 * period; // Return phase constant (longer return tail for softer closure)
+                        
+                        let pulse = 0.0;
+                        if (tMod < Tp) {
+                            pulse = Math.sin((Math.PI / 2) * (tMod / Tp));
+                        } else if (tMod < Te) {
+                            const frac = (tMod - Tp) / (Te - Tp);
+                            pulse = Math.cos((Math.PI / 2) * frac);
+                        } else {
+                            const returnFrac = (tMod - Te) / Ta;
+                            pulse = -0.15 * Math.exp(-returnFrac * 0.85); // Softer glottal return exponential curve
+                        }
+                        
+                        // DC correction
+                        pulse = pulse - 0.18;
+                        
+                        // Increased phase-locked aspiration noise (breathiness) to mask robotic impulses
+                        let breath = 0.0;
+                        if (tMod < Te) {
+                            const openRatio = Math.sin(Math.PI * (tMod / Te));
+                            breath = (Math.random() * 2 - 1) * 0.12 * openRatio;
+                        } else {
+                            breath = (Math.random() * 2 - 1) * 0.02;
+                        }
+                        
+                        const shimmer = 1.0 + (Math.sin(i * 0.02) * 0.01);
+                        // Blend in 35% breathiness and 65% glottal pulse
+                        excitation[i] = (pulse * 0.65 + breath * 0.35) * shimmer;
+                        phase += 1;
+                    }
+
+                    // 10-stage LPC lattice filter coefficients derived from formant map
+                    const K = new Float32Array(10);
+                    const f1_norm = (formants[0] - 500) / 1000;
+                    const f2_norm = (formants[1] - 1500) / 2000;
+                    K[0] = -0.85 + 0.1 * f1_norm;
+                    K[1] = 0.45 + 0.2 * f2_norm;
+                    K[2] = -0.25;
+                    K[3] = 0.15;
+                    K[4] = -0.1;
+                    for (let idx = 5; idx < 10; idx++) {
+                        K[idx] = K[4] / Math.pow(2, idx - 4);
+                    }
+
+                    const delayLine = new Float32Array(11);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        let forward = excitation[i] * 0.7; // Scale energy
+                        for (let stage = 9; stage >= 0; stage--) {
+                            forward = forward - K[stage] * delayLine[stage];
+                            delayLine[stage + 1] = delayLine[stage] + K[stage] * forward;
+                        }
+                        delayLine[0] = forward;
+                        synthData[i] = forward;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `F1:${formants[0]} F2:${formants[1]} F3:${formants[2]} Hz (Humanized LPC)`;
+                }
+
+                // 2. Upsample to AudioContext sample rate using linear interpolation
+                const outRate = audioCtx.sampleRate;
+                const outBuffer = audioCtx.createBuffer(1, outRate * duration, outRate);
+                const outData = outBuffer.getChannelData(0);
+                for (let i = 0; i < outData.length; i++) {
+                    const srcIndex = i * (synthRate / outRate);
+                    const i0 = Math.floor(srcIndex);
+                    const i1 = Math.min(i0 + 1, numSynthSamples - 1);
+                    const frac = srcIndex - i0;
+                    outData[i] = synthData[i0] * (1 - frac) + synthData[i1] * frac;
+                }
+
+                // 3. Play
+                const sourceNode = audioCtx.createBufferSource();
+                sourceNode.buffer = outBuffer;
+                sourceNode.connect(mainGain);
+                sourceNode.start(now);
+                sourceNode.stop(now + duration);
+            } else if (useVocoder && waveform === "tms5220") {
+                // 1. Synthesize raw excitation (voiced/unvoiced) at 8kHz (TMS5220 native rate)
+                const synthRate = 8000;
+                const numSynthSamples = Math.floor(synthRate * duration);
+                const synthData = new Float32Array(numSynthSamples);
+
+                // Authentic TMS5220 52-sample Chirp ROM table
+                const chirpTable = [
+                    0,   3,  15,  40,  76, 108, 113,  80,
+                   37,  38,  76,  68,  26,  50,  59,  19,
+                   55,  26,  37,  31,  29,   0,   0,   0,
+                    0,   0,   0,   0,   0,   0,   0,   0,
+                    0,   0,   0,   0,   0,   0,   0,   0,
+                    0,   0,   0,   0,   0,   0,   0,   0,
+                    0,   0,   0,   0
+                ];
+
+                if (isConsonant) {
+                    // White noise excitation
+                    let centerF = 1500;
+                    if (name.startsWith("S") || name.startsWith("Z")) centerF = 3500;
+                    else if (name.startsWith("SH") || name.startsWith("ZH") || name.startsWith("CH")) centerF = 3000;
+                    else if (name.startsWith("F") || name.startsWith("TH")) centerF = 2000;
+
+                    const w0 = 2 * Math.PI * centerF / synthRate;
+                    const Q = 4;
+                    const alpha = Math.sin(w0) / (2 * Q);
+                    const b0 = alpha;
+                    const b1 = 0;
+                    const b2 = -alpha;
+                    const a0 = 1 + alpha;
+                    const a1 = -2 * Math.cos(w0);
+                    const a2 = 1 - alpha;
+                    
+                    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const x = Math.random() * 2 - 1;
+                        const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                        x2 = x1; x1 = x;
+                        y2 = y1; y1 = y;
+                        synthData[i] = y * 0.4;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (TMS5220 Noise)`;
+                } else {
+                    // Voiced glottal pulse excitation using Chirp Table
+                    let phase = 0;
+                    const excitation = new Float32Array(numSynthSamples);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const period = synthRate / baseFreq;
+                        const tMod = Math.floor(phase % period);
+                        let pulse = 0.0;
+                        if (tMod < 52) {
+                            pulse = chirpTable[tMod] / 113.0; // Normalize by max peak
+                        }
+                        excitation[i] = pulse - 0.1; // Subtract DC offset
+                        phase += 1;
+                    }
+
+                    // 10-stage LPC lattice filter coefficients derived from formant map
+                    const K = new Float32Array(10);
+                    const f1_norm = (formants[0] - 500) / 1000;
+                    const f2_norm = (formants[1] - 1500) / 2000;
+                    K[0] = -0.85 + 0.1 * f1_norm;
+                    K[1] = 0.45 + 0.2 * f2_norm;
+                    K[2] = -0.25;
+                    K[3] = 0.15;
+                    K[4] = -0.1;
+                    for (let idx = 5; idx < 10; idx++) {
+                        K[idx] = K[4] / Math.pow(2, idx - 4);
+                    }
+
+                    const delayLine = new Float32Array(11);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        let forward = excitation[i] * 0.6; // Scale energy
+                        for (let stage = 9; stage >= 0; stage--) {
+                            forward = forward - K[stage] * delayLine[stage];
+                            delayLine[stage + 1] = delayLine[stage] + K[stage] * forward;
+                        }
+                        delayLine[0] = forward;
+                        synthData[i] = forward;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `F1:${formants[0]} F2:${formants[1]} F3:${formants[2]} Hz (TMS5220 LPC)`;
+                }
+
+                // 2. Upsample to AudioContext sample rate using linear interpolation
+                const outRate = audioCtx.sampleRate;
+                const outBuffer = audioCtx.createBuffer(1, outRate * duration, outRate);
+                const outData = outBuffer.getChannelData(0);
+                for (let i = 0; i < outData.length; i++) {
+                    const srcIndex = i * (synthRate / outRate);
+                    const i0 = Math.floor(srcIndex);
+                    const i1 = Math.min(i0 + 1, numSynthSamples - 1);
+                    const frac = srcIndex - i0;
+                    outData[i] = synthData[i0] * (1 - frac) + synthData[i1] * frac;
+                }
+
+                // 3. Play
+                const sourceNode = audioCtx.createBufferSource();
+                sourceNode.buffer = outBuffer;
+                sourceNode.connect(mainGain);
+                sourceNode.start(now);
+                sourceNode.stop(now + duration);
+            } else if (useVocoder && waveform === "sid_digi") {
+                // 1. Synthesize raw excitation (voiced/unvoiced) at 16kHz
+                const synthRate = 16000;
+                const numSynthSamples = Math.floor(synthRate * duration);
+                const synthData = new Float32Array(numSynthSamples);
+
+                if (isConsonant) {
+                    // White noise source
+                    let centerF = 1500;
+                    if (name.startsWith("S") || name.startsWith("Z")) centerF = 6000;
+                    else if (name.startsWith("SH") || name.startsWith("ZH") || name.startsWith("CH")) centerF = 3200;
+                    else if (name.startsWith("F") || name.startsWith("TH")) centerF = 2200;
+
+                    const w0 = 2 * Math.PI * centerF / synthRate;
+                    const Q = 4;
+                    const alpha = Math.sin(w0) / (2 * Q);
+                    const b0 = alpha;
+                    const b1 = 0;
+                    const b2 = -alpha;
+                    const a0 = 1 + alpha;
+                    const a1 = -2 * Math.cos(w0);
+                    const a2 = 1 - alpha;
+                    
+                    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const x = Math.random() * 2 - 1;
+                        const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                        x2 = x1; x1 = x;
+                        y2 = y1; y1 = y;
+                        synthData[i] = y * 0.5;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `${centerF} Hz (SID Digi Noise)`;
+                } else {
+                    // Voiced glottal pulse excitation
+                    let phase = 0;
+                    const excitation = new Float32Array(numSynthSamples);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        const jitter = (Math.random() - 0.5) * 1.5;
+                        const currentPitch = baseFreq + jitter;
+                        const period = synthRate / currentPitch;
+                        const tMod = phase % period;
+                        
+                        const Tp = 0.40 * period;
+                        const Tn = 0.16 * period;
+                        let pulse = 0.0;
+                        if (tMod < Tp) {
+                            const p = tMod / Tp;
+                            pulse = 3 * p * p - 2 * p * p * p;
+                        } else if (tMod < Tp + Tn) {
+                            const p = (tMod - Tp) / Tn;
+                            pulse = 1.0 - p * p;
+                        } else {
+                            pulse = 0.0;
+                        }
+                        excitation[i] = pulse - 0.25;
+                        phase += 1;
+                    }
+
+                    // Parallel formant filters (F1, F2, F3)
+                    function applyResonator(input, f, Q_val) {
+                        const output = new Float32Array(input.length);
+                        const w0 = 2 * Math.PI * f / synthRate;
+                        const alpha = Math.sin(w0) / (2 * Q_val);
+                        const b0 = alpha;
+                        const b1 = 0;
+                        const b2 = -alpha;
+                        const a0 = 1 + alpha;
+                        const a1 = -2 * Math.cos(w0);
+                        const a2 = 1 - alpha;
+                        let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+                        for (let i = 0; i < input.length; i++) {
+                            const x = input[i];
+                            const y = (b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2) / a0;
+                            x2 = x1; x1 = x;
+                            y2 = y1; y1 = y;
+                            output[i] = y;
+                        }
+                        return output;
+                    }
+
+                    const out1 = applyResonator(excitation, formants[0], 10);
+                    const out2 = applyResonator(excitation, formants[1], 12);
+                    const out3 = applyResonator(excitation, formants[2], 10);
+                    for (let i = 0; i < numSynthSamples; i++) {
+                        synthData[i] = out1[i] * 1.0 + out2[i] * 0.4 + out3[i] * 0.15;
+                    }
+                    document.getElementById("visualFormantCenter").innerText = `F1:${formants[0]} F2:${formants[1]} F3:${formants[2]} Hz (SID Digi)`;
+                }
+
+                // 2. Downsample to 6kHz
+                const digiRate = 6000;
+                const numDigiSamples = Math.floor(digiRate * duration);
+                const digiData = new Float32Array(numDigiSamples);
+                for (let j = 0; j < numDigiSamples; j++) {
+                    const srcIndex = Math.floor(j * (synthRate / digiRate));
+                    digiData[j] = synthData[Math.min(srcIndex, numSynthSamples - 1)];
+                }
+
+                // 3. Quantize to 4-bit (0-15 steps)
+                let maxVal = 0.001;
+                for (let i = 0; i < numDigiSamples; i++) {
+                    const abs = Math.abs(digiData[i]);
+                    if (abs > maxVal) maxVal = abs;
+                }
+                for (let i = 0; i < numDigiSamples; i++) {
+                    let norm = digiData[i] / maxVal;
+                    let quant = Math.round((norm + 1) * 7.5);
+                    if (quant < 0) quant = 0;
+                    if (quant > 15) quant = 15;
+                    digiData[i] = (quant / 7.5) - 1.0;
+                }
+
+                // 4. Upsample to AudioContext sample rate with Zero-Order Hold and mix carrier whine + hiss
+                const outRate = audioCtx.sampleRate;
+                const outBuffer = audioCtx.createBuffer(1, outRate * duration, outRate);
+                const outData = outBuffer.getChannelData(0);
+                for (let i = 0; i < outData.length; i++) {
+                    const digiIdx = Math.floor(i * (digiRate / outRate));
+                    const sample = digiData[Math.min(digiIdx, numDigiSamples - 1)];
+                    const whine = Math.sin(2 * Math.PI * 6000 * (i / outRate)) * 0.02;
+                    const hiss = (Math.random() * 2 - 1) * 0.005;
+                    outData[i] = sample * 0.8 + whine + hiss;
+                }
+
+                // 5. Output via AudioBufferSourceNode
+                const sourceNode = audioCtx.createBufferSource();
+                sourceNode.buffer = outBuffer;
+                sourceNode.connect(mainGain);
+                sourceNode.start(now);
+                sourceNode.stop(now + duration);
+            } else if (isConsonant) {
                 // Generate Noise Source
                 const bufferSize = audioCtx.sampleRate * duration;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -898,33 +1692,38 @@
                 lfo.start(now);
                 lfo.stop(now + duration);
 
-                // Glottal wave source filter (spectral tilt low-pass)
+                // Glottal wave source filter (spectral tilt low-pass to eliminate harsh high-frequency buzz)
                 const spectralTilt = audioCtx.createBiquadFilter();
                 spectralTilt.type = "lowpass";
-                spectralTilt.frequency.setValueAtTime(1200, now);
+                const tiltFreq = (waveform === "humanized_lpc" || waveform === "triangle") ? 600 : 800;
+                spectralTilt.frequency.setValueAtTime(tiltFreq, now);
                 spectralTilt.Q.setValueAtTime(1.0, now);
 
                 osc.connect(spectralTilt);
 
-                // Set up three parallel formant filters (F1, F2, F3)
+                // Set up three parallel formant filters (F1, F2, F3) with lower Q-factors to remove mechanical whistling
+                const q1 = 4.8;
+                const q2 = 6.2;
+                const q3 = 5.2;
+
                 const f1 = audioCtx.createBiquadFilter();
                 f1.type = "bandpass";
                 f1.frequency.setValueAtTime(formants[0], now);
-                f1.Q.setValueAtTime(10, now);
+                f1.Q.setValueAtTime(q1, now);
                 const g1 = audioCtx.createGain();
                 g1.gain.setValueAtTime(1.0, now); // Strongest formant
 
                 const f2 = audioCtx.createBiquadFilter();
                 f2.type = "bandpass";
                 f2.frequency.setValueAtTime(formants[1], now);
-                f2.Q.setValueAtTime(12, now);
+                f2.Q.setValueAtTime(q2, now);
                 const g2 = audioCtx.createGain();
                 g2.gain.setValueAtTime(0.4, now); // Second formant
 
                 const f3 = audioCtx.createBiquadFilter();
                 f3.type = "bandpass";
                 f3.frequency.setValueAtTime(formants[2], now);
-                f3.Q.setValueAtTime(10, now);
+                f3.Q.setValueAtTime(q3, now);
                 const g3 = audioCtx.createGain();
                 g3.gain.setValueAtTime(0.15, now); // Third formant
 
@@ -959,7 +1758,7 @@
                 // Visual highlight active chip
                 item.element.classList.add("active");
                 
-                playLocalPhoneme(item.phoneme);
+                playLocalPhoneme(item.phoneme, 0.16, i / (speechQueue.length - 1 || 1));
                 
                 await new Promise(r => setTimeout(r, 170));
                 item.element.classList.remove("active");
@@ -1134,7 +1933,23 @@
                 for (let t = 0; t < numSamples; t++) {
                     let excitation = 0.0;
                     if (inputSignalType === "voiced") {
-                        excitation = (t % Math.round(16000 / this.currentPitch)) === 0 ? 1.0 : -0.05;
+                        const period = 16000 / this.currentPitch;
+                        const tMod = t % period;
+                        const Tp = 0.45 * period;
+                        const Te = 0.55 * period;
+                        const Ta = 0.12 * period;
+                        let pulse = 0.0;
+                        if (tMod < Tp) {
+                            pulse = Math.sin((Math.PI / 2) * (tMod / Tp));
+                        } else if (tMod < Te) {
+                            const frac = (tMod - Tp) / (Te - Tp);
+                            pulse = Math.cos((Math.PI / 2) * frac);
+                        } else {
+                            const returnFrac = (tMod - Te) / Ta;
+                            pulse = -0.15 * Math.exp(-returnFrac * 0.85);
+                        }
+                        const breath = (this.nextNoiseSample()) * 0.08 * (tMod < Te ? Math.sin(Math.PI * (tMod / Te)) : 0.1);
+                        excitation = (pulse * 0.65 + breath * 0.35) - 0.15;
                     } else if (inputSignalType === "unvoiced") {
                         excitation = this.nextNoiseSample();
                     } else if (inputSignalType === "nasal") {
@@ -1423,39 +2238,72 @@
             }
         }
 
-        function triggerScopePulse() {
-            pulseVal = 1.0;
-        }
-
         function renderScope() {
             drawSpectrumBackground();
 
-            ctx.strokeStyle = "rgba(0, 242, 254, 0.8)";
-            ctx.shadowColor = "rgba(0, 242, 254, 0.5)";
-            ctx.shadowBlur = 4;
-            ctx.lineWidth = 2;
-
-            ctx.beginPath();
-            for (let x = 0; x < canvas.width; x++) {
-                const centerF = document.getElementById("visualFormantCenter").innerText.includes("450") ? 0.02 : 0.05;
-                const damp = Math.exp(-x * 0.015);
-                const osc1 = Math.sin(x * centerF) * 35;
-                const osc2 = Math.sin(x * 0.08) * 10;
-                const y = (canvas.height / 2) + (osc1 + osc2) * damp * pulseVal;
-
-                if (x === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+            if (!analyser) {
+                // If analyser is not ready yet, draw a quiet horizontal line
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height / 2);
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
+                requestAnimationFrame(renderScope);
+                return;
             }
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArrayFreq = new Uint8Array(bufferLength);
+            const dataArrayTime = new Uint8Array(bufferLength);
+            
+            analyser.getByteFrequencyData(dataArrayFreq);
+            analyser.getByteTimeDomainData(dataArrayTime);
+
+            // 1. Draw Real-Time FFT Frequency Spectrum (Formants area)
+            ctx.fillStyle = "rgba(255, 0, 127, 0.2)";
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.6)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            
+            // Only plot the lower half of the frequencies (0-11 kHz) where speech formants reside!
+            const limit = Math.floor(bufferLength * 0.65);
+            const barWidth = canvas.width / limit;
+            let x = 0;
+            
+            for (let i = 0; i < limit; i++) {
+                const percent = dataArrayFreq[i] / 255;
+                const y = canvas.height - (percent * canvas.height * 0.85);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                x += barWidth;
+            }
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
 
-            // Decay pulse
-            if (pulseVal > 0.01) {
-                pulseVal *= 0.95;
-            } else {
-                pulseVal = 0.05; // background noise floor
+            // 2. Draw Real-Time Oscilloscope Waveform
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.85)";
+            ctx.shadowColor = "rgba(0, 242, 254, 0.5)";
+            ctx.shadowBlur = 5;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            
+            const sliceWidth = canvas.width / bufferLength;
+            x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArrayTime[i] / 128.0;
+                const y = (v * canvas.height) / 2;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                x += sliceWidth;
             }
-
+            ctx.stroke();
             ctx.shadowBlur = 0;
+
             requestAnimationFrame(renderScope);
         }
 
@@ -1744,8 +2592,137 @@
         document.getElementById("btnSynthesizeAnaVoice").addEventListener("click", synthesizeAnaVoice);
 
         document.getElementById("singingPitch").addEventListener("input", (e) => {
-            document.getElementById("singingPitchVal").innerText = `${e.target.value} Hz`;
+            const pitch = Number(e.target.value);
+            document.getElementById("singingPitchVal").innerText = `${pitch} Hz`;
+            if (window.setContourFlat) {
+                window.setContourFlat(pitch);
+            }
         });
+
+        document.querySelectorAll(".btn-preset").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const profile = e.target.getAttribute("data-profile");
+                const sidWaveform = document.getElementById("sidWaveform");
+                const singingPitch = document.getElementById("singingPitch");
+                const singingPitchVal = document.getElementById("singingPitchVal");
+                const dialectSelect = document.getElementById("dialectSelect");
+
+                if (profile === "robby") {
+                    sidWaveform.value = "sp0256";
+                    singingPitch.value = 130;
+                    dialectSelect.value = "robby_allophones";
+                    logConsole("Loaded Voice Profile: Robby the Robot (SP0256-AL2 allophones, 130Hz)");
+                } else if (profile === "syd64") {
+                    sidWaveform.value = "sid_digi";
+                    singingPitch.value = 90;
+                    dialectSelect.value = "english_g2p";
+                    logConsole("Loaded Voice Profile: Syd 64 (Commodore 64 4-bit digi, 90Hz)");
+                } else if (profile === "stephen") {
+                    sidWaveform.value = "tms5220";
+                    singingPitch.value = 100;
+                    dialectSelect.value = "english_g2p";
+                    logConsole("Loaded Voice Profile: Stephen (TMS5220 LPC, 100Hz)");
+                } else if (profile === "human") {
+                    sidWaveform.value = "humanized_lpc";
+                    singingPitch.value = 110;
+                    dialectSelect.value = "english_g2p";
+                    logConsole("Loaded Voice Profile: Breathy Human (LF flow & phase-locked aspiration, 110Hz)");
+                }
+
+                // Update UI text indicator and re-trigger G2P parsing
+                singingPitchVal.innerText = `${singingPitch.value} Hz`;
+                if (window.setContourFlat) {
+                    window.setContourFlat(Number(singingPitch.value));
+                }
+                parseG2P();
+            });
+        });
+
+        function updateCombatStatus() {
+            const phys = parseInt(document.getElementById("physicalTrauma").value);
+            const ment = parseInt(document.getElementById("mentalTrauma").value);
+            const statusEl = document.getElementById("combatStatusLog");
+            
+            const physNames = ["Normal", "Exhausted (80% Energy)", "Battered (60% Energy)", "Broken (30% Energy)"];
+            const mentNames = ["Normal", "Shaken (Subtle Jitter)", "Terrified (+20Hz, Mod Jitter)", "Panicked (+40Hz, High Jitter, Stutter)", "Melancholic (-25Hz, 50% Energy)"];
+            
+            statusEl.innerHTML = `<span style="color: var(--neon-pink);">[STATE]</span> Physical: <strong>${physNames[phys]}</strong> | Mental: <strong>${mentNames[ment]}</strong>`;
+        }
+
+        async function syncTraumaToChain() {
+            const phys = parseInt(document.getElementById("physicalTrauma").value);
+            const ment = parseInt(document.getElementById("mentalTrauma").value);
+            logConsole(`Syncing trauma states to CPU RAM: Physical=${phys} (offset 55043), Mental=${ment} (offset 55044)...`);
+            if (speechContract) {
+                speechContract.physicalTrauma = phys;
+                speechContract.mentalTrauma = ment;
+                logConsole("Trauma states successfully loaded into ZMM CPU memory.");
+            }
+            updateCombatStatus();
+        }
+
+        function healTrauma() {
+            document.getElementById("physicalTrauma").value = "0";
+            document.getElementById("mentalTrauma").value = "0";
+            logConsole("Resting & healing trauma. Physical: Normal, Mental: Normal.");
+            updateCombatStatus();
+        }
+
+        async function simulateCombatTurn() {
+            initAudio();
+            let phys = parseInt(document.getElementById("physicalTrauma").value);
+            let ment = parseInt(document.getElementById("mentalTrauma").value);
+            
+            // Random combat events
+            const events = [
+                { text: "A physical hit! You take damage.", action: () => { phys = Math.min(3, phys + 1); } },
+                { text: "A horrifying sound echoes from the forest! Fear rises.", action: () => { ment = Math.min(4, ment + 1); } },
+                { text: "You catch your breath under cover.", action: () => { phys = Math.max(0, phys - 1); } },
+                { text: "You shake off the panic and reload.", action: () => { ment = Math.max(0, ment - 1); } },
+                { text: "The Vaesen attacks viciously! Heavy blow!", action: () => { phys = Math.min(3, phys + 2); } },
+                { text: "You witness a teammate get dragged into the shadow! Terror!", action: () => { ment = Math.min(4, ment + 2); } }
+            ];
+            
+            const event = events[Math.floor(Math.random() * events.length)];
+            event.action();
+            
+            document.getElementById("physicalTrauma").value = phys.toString();
+            document.getElementById("mentalTrauma").value = ment.toString();
+            
+            logConsole(`Combat Event: ${event.text}`);
+            updateCombatStatus();
+            
+            // Choose dialogue matching states
+            let quote = "We must advance carefully. The forest hides the Vaesen.";
+            if (phys === 3) {
+                quote = "MY BODY IS BROKEN. FALL BACK... NOW!";
+            } else if (ment === 3) {
+                quote = "IT IS INSIDE MY MIND! I CANNOT BREATHE! AHH!";
+            } else if (ment === 2) {
+                quote = "NO! STAY BACK! KEEP THE LIGHTS ON IT!";
+            } else if (phys === 2) {
+                quote = "I AM BATTERED... BUT I WILL NOT FALL!";
+            } else if (ment === 4) {
+                quote = "THERE IS NO HOPE... ALL IS LOST IN DESPAIR.";
+            } else if (ment === 1) {
+                quote = "DID YOU HEAR THAT? THE MIST IS WHISPERING...";
+            } else if (phys === 1) {
+                quote = "SO EXHAUSTED... CANNOT HOLD THE SHIELD MUCH LONGER.";
+            }
+            
+            document.getElementById("ttsInput").value = quote;
+            logConsole(`Simulating Voice Output: "${quote}"`);
+            
+            parseG2P();
+            playQueueLocal();
+        }
+
+        // Hook DOM events
+        document.getElementById("btnSyncTraumaToChain").addEventListener("click", syncTraumaToChain);
+        document.getElementById("btnSimulateCombatTurn").addEventListener("click", simulateCombatTurn);
+        document.getElementById("btnHealTrauma").addEventListener("click", healTrauma);
+        document.getElementById("physicalTrauma").addEventListener("change", updateCombatStatus);
+        document.getElementById("mentalTrauma").addEventListener("change", updateCombatStatus);
 
         function initPhonemeSelector() {
             const selectEl = document.getElementById("directPhonemeSelect");
@@ -1781,11 +2758,152 @@
             }
         }
 
+        // Pitch Contour Editor logic
+        let pitchContourPoints = [50, 50, 50, 50, 50]; // default flat 50% (approx 170Hz)
+
+        function initPitchContourEditor() {
+            const svg = document.getElementById("pitchContourSvg");
+            if (!svg) return;
+
+            // Initialize to base pitch from slider
+            const baseFreqInput = document.getElementById("singingPitch");
+            if (baseFreqInput) {
+                setContourFlat(Number(baseFreqInput.value));
+            }
+
+            function updatePath() {
+                const p = pitchContourPoints;
+                const pathStr = `M 0,${p[0]} L 25,${p[1]} L 50,${p[2]} L 75,${p[3]} L 100,${p[4]}`;
+                document.getElementById("contourPath").setAttribute("d", pathStr);
+                
+                for (let i = 0; i < 5; i++) {
+                    const cp = document.getElementById(`cp${i}`);
+                    if (cp) cp.setAttribute("cy", p[i]);
+                }
+            }
+
+            function setContourFlat(pitch) {
+                // map pitch [40, 300] to Y [100, 0]
+                const val = 100 - ((pitch - 40) / (300 - 40)) * 100;
+                for (let i = 0; i < 5; i++) {
+                    pitchContourPoints[i] = val;
+                }
+                updatePath();
+            }
+
+            window.setContourFlat = setContourFlat;
+
+            // Interpolate pitch from contour (progress is 0 to 1)
+            window.getPitchFromContour = function(progress) {
+                const t = Math.max(0, Math.min(1, progress));
+                const segment = Math.floor(t * 4);
+                const localT = (t - segment * 0.25) / 0.25;
+                const p = pitchContourPoints;
+                
+                let yVal = 50;
+                if (segment >= 4) {
+                    yVal = p[4];
+                } else {
+                    yVal = p[segment] * (1 - localT) + p[segment + 1] * localT;
+                }
+                
+                // map Y [100, 0] to pitch [40, 300]
+                const pitch = 40 + ((100 - yVal) / 100) * (300 - 40);
+                return Math.max(40, Math.min(300, pitch));
+            };
+
+            function handleInteraction(clientX, clientY) {
+                const rect = svg.getBoundingClientRect();
+                const xPct = ((clientX - rect.left) / rect.width) * 100;
+                const yPct = ((clientY - rect.top) / rect.height) * 100;
+                
+                // find closest control point X index (0, 25, 50, 75, 100)
+                let nearestIdx = 0;
+                let minDist = 100;
+                const fixedXs = [0, 25, 50, 75, 100];
+                for (let i = 0; i < 5; i++) {
+                    const dist = Math.abs(xPct - fixedXs[i]);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearestIdx = i;
+                    }
+                }
+                
+                // clamp yPct to [0, 100]
+                const clampedY = Math.max(0, Math.min(100, yPct));
+                pitchContourPoints[nearestIdx] = clampedY;
+                updatePath();
+            }
+
+            svg.addEventListener("mousedown", (e) => {
+                handleInteraction(e.clientX, e.clientY);
+                
+                const onMouseMove = (moveEvent) => {
+                    handleInteraction(moveEvent.clientX, moveEvent.clientY);
+                };
+                
+                const onMouseUp = () => {
+                    window.removeEventListener("mousemove", onMouseMove);
+                    window.removeEventListener("mouseup", onMouseUp);
+                };
+                
+                window.addEventListener("mousemove", onMouseMove);
+                window.addEventListener("mouseup", onMouseUp);
+            });
+
+            // Preset Buttons
+            document.getElementById("btnResetContour").addEventListener("click", () => {
+                const pitchVal = Number(document.getElementById("singingPitch").value);
+                setContourFlat(pitchVal);
+                logConsole("Contour reset flat to base pitch.");
+            });
+
+            document.getElementById("btnRisingContour").addEventListener("click", () => {
+                const pitchVal = Number(document.getElementById("singingPitch").value);
+                const baseVal = 100 - ((pitchVal - 40) / (300 - 40)) * 100;
+                pitchContourPoints[0] = baseVal;
+                pitchContourPoints[1] = baseVal;
+                pitchContourPoints[2] = Math.max(0, baseVal - 5);
+                pitchContourPoints[3] = Math.max(0, baseVal - 15);
+                pitchContourPoints[4] = Math.max(0, baseVal - 30);
+                updatePath();
+                logConsole("Applied Rising Intonation (Question) contour.");
+            });
+
+            document.getElementById("btnFallingContour").addEventListener("click", () => {
+                const pitchVal = Number(document.getElementById("singingPitch").value);
+                const baseVal = 100 - ((pitchVal - 40) / (300 - 40)) * 100;
+                pitchContourPoints[0] = Math.min(100, baseVal - 5);
+                pitchContourPoints[1] = Math.min(100, baseVal - 10);
+                pitchContourPoints[2] = baseVal;
+                pitchContourPoints[3] = Math.min(100, baseVal + 10);
+                pitchContourPoints[4] = Math.min(100, baseVal + 20);
+                updatePath();
+                logConsole("Applied Falling Intonation (Statement) contour.");
+            });
+
+            document.getElementById("btnVibratoContour").addEventListener("click", () => {
+                const pitchVal = Number(document.getElementById("singingPitch").value);
+                const baseVal = 100 - ((pitchVal - 40) / (300 - 40)) * 100;
+                pitchContourPoints[0] = baseVal;
+                pitchContourPoints[1] = Math.max(0, baseVal - 10);
+                pitchContourPoints[2] = Math.min(100, baseVal + 10);
+                pitchContourPoints[3] = Math.max(0, baseVal - 10);
+                pitchContourPoints[4] = baseVal;
+                updatePath();
+                logConsole("Applied Vibrato Intonation contour.");
+            });
+
+            updatePath();
+        }
+
         // Initialize on load
         window.addEventListener("DOMContentLoaded", () => {
             loadPreset("AHOY COMPUTER! RETRO SOUND ON CHAIN");
             initPhonemeSelector();
+            initPitchContourEditor();
             renderScope();
+            updateCombatStatus();
             setTimeout(initWeb3, 800);
         });
     </script>

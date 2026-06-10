@@ -26,7 +26,7 @@ enum {
 
 typedef struct {
     wave512 registers[TSFI_ZMM_REG_COUNT];
-    char output_buffer[4096];
+    char output_buffer[524288];
     int output_pos;
     
     // Neurology Integration

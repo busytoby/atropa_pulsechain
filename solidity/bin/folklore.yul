@@ -624,6 +624,83 @@ object "cpu6502" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: autotuneSpeech(uint256 eventId) -> bytes
+            // Selector: 0x51c726a8
+            // ----------------------------------------------------------------
+            if eq(selector, 0x51c726a8) {
+                let eventId := calldataload(4)
+                let speechSynth := 0x8ff9a7885e7CB3C01D556e1bC4f9fb2A6e7Ac167
+
+                // 1. Register optimized speaker coefficients for 'ana'
+                // registerSpeaker(bytes32 name, bytes32[8] embedding) -> 0x5f60cdf4
+                mstore(0x100, shl(224, 0x5f60cdf4))
+                mstore(0x104, 0x616e610000000000000000000000000000000000000000000000000000000000) // "ana"
+                mstore(0x124, 20)   // c0 (optimized from 15)
+                mstore(0x144, sub(0, 25)) // c1
+                mstore(0x164, 40)   // c2
+                mstore(0x184, sub(0, 10)) // c3
+                mstore(0x1A4, 5)    // c4
+                mstore(0x1C4, sub(0, 8))  // c5
+                mstore(0x1E4, 12)   // c6
+                mstore(0x204, sub(0, 10))  // c7 (optimized from -5)
+                
+                let successReg := call(gas(), speechSynth, 0, 0x100, 292, 0, 0)
+                
+                // 2. Perform predictMelQuantized
+                // predictMelQuantized(bytes32[] phonemes, bytes32 name) -> 0x18c1ab9a
+                mstore(0x240, shl(224, 0x18c1ab9a))
+                mstore(0x244, 64) // Offset
+                mstore(0x264, 0x616e610000000000000000000000000000000000000000000000000000000000) // "ana"
+                
+                let numPhonemes := 3
+                mstore(0x284, numPhonemes)
+                
+                if eq(eventId, 1) { // Jump kiai: "ee", "aa", "p"
+                    mstore(0x2A4, 0x6565000000000000000000000000000000000000000000000000000000000000)
+                    mstore(0x2C4, 0x6161000000000000000000000000000000000000000000000000000000000000)
+                    mstore(0x2E4, 0x7000000000000000000000000000000000000000000000000000000000000000)
+                }
+                if iszero(eq(eventId, 1)) { // Damage grunt: "oo", "m", "p"
+                    mstore(0x2A4, 0x6f6f000000000000000000000000000000000000000000000000000000000000)
+                    mstore(0x2C4, 0x6d00000000000000000000000000000000000000000000000000000000000000)
+                    mstore(0x2E4, 0x7000000000000000000000000000000000000000000000000000000000000000)
+                }
+                
+                let successPred := call(gas(), speechSynth, 0, 0x240, 196, 0x300, 512)
+                
+                // Extract Mel prediction
+                let melOffset := mload(0x300)
+                let melSize := mload(add(0x300, melOffset))
+                let melDataPtr := add(add(0x300, melOffset), 32)
+                
+                // 3. Synthesize voice using synthesizeNeuralWav
+                // synthesizeNeuralWav(bytes melFrames, uint256 upsampleFactor) -> 0x20c4433b
+                mstore(0x500, shl(224, 0x20c4433b))
+                mstore(0x504, 96) // Offset of bytes array
+                mstore(0x524, 2560) // upsampleFactor (2560)
+                mstore(0x544, 0x616e610000000000000000000000000000000000000000000000000000000000) // speaker name "ana"
+                mstore(0x564, melSize) // melFrames size
+                
+                // Copy melFrames data
+                let words := div(add(melSize, 31), 32)
+                for { let w := 0 } lt(w, words) { w := add(w, 1) } {
+                    mstore(add(0x584, mul(w, 32)), mload(add(melDataPtr, mul(w, 32))))
+                }
+                
+                let totalSynthInputSize := add(132, mul(words, 32))
+                let successSynth := call(gas(), speechSynth, 0, 0x500, totalSynthInputSize, 0x6000, 4096)
+                
+                if successSynth {
+                    // Return the synthesized WAV bytes buffer
+                    let outputOffset := mload(0x6000)
+                    let outputSize := mload(add(0x6000, outputOffset))
+                    return(add(0x6000, outputOffset), add(32, outputSize))
+                }
+                
+                revert(0, 0)
+            }
+
             revert(0, 0)
         }
     }

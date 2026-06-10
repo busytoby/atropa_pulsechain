@@ -663,16 +663,20 @@ void tsfi_zmm_vm_exec(TsfiZmmVmState *state, const char *code_in) {
                     cd_len++;
                 }
                 
-                uint8_t retval[4096];
-                size_t retval_len = sizeof(retval);
-                lau_yul_thunk_execute(name, cd_bytes, cd_len, retval, &retval_len);
-                
-                for (size_t i = 0; i < retval_len && state->output_pos < 4090; i++) {
-                    sprintf(&state->output_buffer[state->output_pos], "%02x", retval[i]);
-                    state->output_pos += 2;
+                size_t max_retval_len = 262144;
+                uint8_t *retval = malloc(max_retval_len);
+                if (retval) {
+                    size_t retval_len = max_retval_len;
+                    lau_yul_thunk_execute(name, cd_bytes, cd_len, retval, &retval_len);
+                    
+                    for (size_t i = 0; i < retval_len && (size_t)state->output_pos < (sizeof(state->output_buffer) - 10); i++) {
+                        sprintf(&state->output_buffer[state->output_pos], "%02x", retval[i]);
+                        state->output_pos += 2;
+                    }
+                    
+                    zmm_vm_record_cpu_state(state, name, cd_bytes, cd_len, retval, retval_len);
+                    free(retval);
                 }
-                
-                zmm_vm_record_cpu_state(state, name, cd_bytes, cd_len, retval, retval_len);
             }
         }
         else if (*p == 'R' || *p == 'r') {

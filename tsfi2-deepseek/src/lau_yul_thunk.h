@@ -12,10 +12,10 @@ typedef struct {
 typedef struct {
     u256_t stack[1024];
     int stack_ptr;
-    uint8_t memory[65536];
-    uint8_t calldata[4096];
+    uint8_t memory[524288];
+    uint8_t calldata[65536];
     size_t calldatasize;
-    uint8_t return_data[65536];
+    uint8_t return_data[524288];
     size_t return_size;
     
     uint64_t storage_keys[4096];

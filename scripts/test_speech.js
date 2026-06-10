@@ -11,7 +11,8 @@ const speechABI = [
     "function clearBusy() public returns (uint256)",
     "function getTMS5220State() public view returns (uint256, uint256, uint256)",
     "function writeTMS5220Command(uint256 command) public returns (uint256)",
-    "function writeTMS5220Data(uint256 data) public returns (uint256)"
+    "function writeTMS5220Data(uint256 data) public returns (uint256)",
+    "function bindCpuAddress(address cpu) public returns (bool)"
 ];
 
 async function main() {
@@ -22,9 +23,16 @@ async function main() {
 
     const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
     const speechAddress = config.networks.localhost.speechSynthesizerAddress;
+    const cpuAddress = config.networks.localhost.cpu6502Address;
     console.log("Speech Synthesizer Address:", speechAddress);
+    console.log("CPU 6502 Address:", cpuAddress);
 
     const speech = new ethers.Contract(speechAddress, speechABI, signer);
+
+    console.log("\n--- Binding CPU Address ---");
+    const bindTx = await speech.bindCpuAddress(cpuAddress);
+    await bindTx.wait();
+    console.log("CPU bound successfully.");
 
     console.log("\n--- Initial State ---");
     let state = await speech.getSpeechState();

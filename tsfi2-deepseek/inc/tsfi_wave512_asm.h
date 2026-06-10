@@ -7,7 +7,7 @@
 
 typedef struct {
     wave512 registers[TSFI_WAVE_REG_COUNT];
-    char output_buffer[4096];
+    char output_buffer[524288];
     int output_pos;
 } Wave512State;
 

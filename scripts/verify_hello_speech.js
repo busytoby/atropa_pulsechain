@@ -51,7 +51,9 @@ async function main() {
             const dataHex = hex.substring(2);
             const pcm = new Int16Array(dataHex.length / 4);
             for (let j = 0; j < pcm.length; j++) {
-                let val = parseInt(dataHex.substring(j * 4, j * 4 + 4), 16);
+                const b1 = parseInt(dataHex.substring(j * 4, j * 4 + 2), 16);
+                const b2 = parseInt(dataHex.substring(j * 4 + 2, j * 4 + 4), 16);
+                let val = (b1 << 8) | b2;
                 if (val >= 0x8000) val -= 0x10000;
                 pcm[j] = val;
             }

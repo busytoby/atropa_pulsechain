@@ -438,7 +438,7 @@ static u256_t load_calldata_32(YulEvmContext *ctx, uint64_t offset) {
 
 static u256_t load_memory_32(YulEvmContext *ctx, uint64_t offset) {
     u256_t r = {{0}};
-    if (offset + 32 > 65536) return r;
+    if (offset + 32 > 524288) return r;
     for (int i = 0; i < 32; i++) {
         uint8_t byte = ctx->memory[offset + i];
         r.d[3 - (i / 8)] |= ((uint64_t)byte) << (8 * (7 - (i % 8)));
@@ -447,7 +447,7 @@ static u256_t load_memory_32(YulEvmContext *ctx, uint64_t offset) {
 }
 
 static void store_memory_32(YulEvmContext *ctx, uint64_t offset, u256_t val) {
-    if (offset + 32 > 65536) return;
+    if (offset + 32 > 524288) return;
     for (int i = 0; i < 32; i++) {
         uint8_t byte = (uint8_t)(val.d[3 - (i / 8)] >> (8 * (7 - (i % 8))));
         ctx->memory[offset + i] = byte;
@@ -825,7 +825,7 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 for (uint64_t i = 0; i < length.d[0]; i++) {
                     uint64_t src_idx = offset.d[0] + i;
                     uint64_t dest_idx = dest_offset.d[0] + i;
-                    if (dest_idx < 65536) {
+                    if (dest_idx < 524288) {
                         ctx->memory[dest_idx] = (src_idx < ctx->calldatasize) ? ctx->calldata[src_idx] : 0;
                     }
                 }
@@ -853,7 +853,7 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 if (ctx->stack_ptr < 2) { printf("[DEBUG_EVM] Stack underflow at MSTORE8\n"); return false; }
                 u256_t offset = ctx->stack[--ctx->stack_ptr];
                 u256_t val = ctx->stack[--ctx->stack_ptr];
-                if (offset.d[0] < 65536) {
+                if (offset.d[0] < 524288) {
                     ctx->memory[offset.d[0]] = (uint8_t)(val.d[0] & 0xFF);
                 }
                 break;
@@ -901,9 +901,9 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 if (ctx->stack_ptr < 2) { printf("[DEBUG_EVM] Stack underflow at RETURN\n"); return false; }
                 u256_t offset = ctx->stack[--ctx->stack_ptr];
                 u256_t length = ctx->stack[--ctx->stack_ptr];
-                ctx->return_size = length.d[0] < 65536 ? length.d[0] : 65536;
-                if (offset.d[0] < 65536) {
-                     size_t avail = 65536 - offset.d[0];
+                ctx->return_size = length.d[0] < 524288 ? length.d[0] : 524288;
+                if (offset.d[0] < 524288) {
+                     size_t avail = 524288 - offset.d[0];
                      if (ctx->return_size > avail) ctx->return_size = avail;
                      memcpy(ctx->return_data, ctx->memory + offset.d[0], ctx->return_size);
                 } else {
@@ -915,9 +915,9 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 if (ctx->stack_ptr < 2) { printf("[DEBUG_EVM] Stack underflow at REVERT\n"); return false; }
                 u256_t offset = ctx->stack[--ctx->stack_ptr];
                 u256_t length = ctx->stack[--ctx->stack_ptr];
-                ctx->return_size = length.d[0] < 65536 ? length.d[0] : 65536;
-                if (offset.d[0] < 65536) {
-                     size_t avail = 65536 - offset.d[0];
+                ctx->return_size = length.d[0] < 524288 ? length.d[0] : 524288;
+                if (offset.d[0] < 524288) {
+                     size_t avail = 524288 - offset.d[0];
                      if (ctx->return_size > avail) ctx->return_size = avail;
                      memcpy(ctx->return_data, ctx->memory + offset.d[0], ctx->return_size);
                 } else {
@@ -941,7 +941,7 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 for (uint64_t i = 0; i < length.d[0]; i++) {
                     uint64_t src_idx = offset.d[0] + i;
                     uint64_t dest_idx = dest_offset.d[0] + i;
-                    if (dest_idx < 65536) {
+                    if (dest_idx < 524288) {
                         ctx->memory[dest_idx] = (src_idx < ctx->return_size) ? ctx->return_data[src_idx] : 0;
                     }
                 }
@@ -958,7 +958,7 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 u256_t retSize = ctx->stack[--ctx->stack_ptr];
                 (void)gas; (void)addr; (void)value; (void)argsOffset; (void)argsSize;
                 
-                if (retOffset.d[0] < 65536 && retSize.d[0] >= 32) {
+                if (retOffset.d[0] < 524288 && retSize.d[0] >= 32) {
                     memset(ctx->memory + retOffset.d[0], 0, retSize.d[0]);
                     ctx->memory[retOffset.d[0] + 31] = 1;
                 }
@@ -993,10 +993,9 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                     memset(sub_ctx.stack, 0, sizeof(sub_ctx.stack));
                     
                     memset(sub_ctx.calldata, 0, sizeof(sub_ctx.calldata));
-                    if (argsOffset.d[0] < 65536) {
-                        size_t to_copy = argsSize.d[0] < 4096 ? argsSize.d[0] : 4096;
-                        size_t avail = 65536 - argsOffset.d[0];
-                        if (to_copy > avail) to_copy = avail;
+                    if (argsOffset.d[0] < 524288) {
+                        size_t avail = 524288 - argsOffset.d[0];
+                        size_t to_copy = argsSize.d[0] < avail ? argsSize.d[0] : avail;
                         memcpy(sub_ctx.calldata, ctx->memory + argsOffset.d[0], to_copy);
                         sub_ctx.calldatasize = to_copy;
                     } else {
@@ -1009,9 +1008,9 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                         memcpy(ctx->storage_keys, sub_ctx.storage_keys, sizeof(ctx->storage_keys));
                         memcpy(ctx->storage_vals, sub_ctx.storage_vals, sizeof(ctx->storage_vals));
                         memcpy(ctx->memory, sub_ctx.memory, sizeof(ctx->memory));
-                        if (retOffset.d[0] < 65536) {
+                        if (retOffset.d[0] < 524288) {
                             size_t to_write = sub_ctx.return_size < retSize.d[0] ? sub_ctx.return_size : retSize.d[0];
-                            size_t avail = 65536 - retOffset.d[0];
+                            size_t avail = 524288 - retOffset.d[0];
                             if (to_write > avail) to_write = avail;
                             memcpy(ctx->memory + retOffset.d[0], sub_ctx.return_data, to_write);
                         }
@@ -1051,7 +1050,7 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
 
     // Setup calldata
     memset(g_yul_evm_context.calldata, 0, sizeof(g_yul_evm_context.calldata));
-    size_t size_to_copy = calldatasize < 4096 ? calldatasize : 4096;
+    size_t size_to_copy = calldatasize < sizeof(g_yul_evm_context.calldata) ? calldatasize : sizeof(g_yul_evm_context.calldata);
     memcpy(g_yul_evm_context.calldata, calldata, size_to_copy);
     g_yul_evm_context.calldatasize = size_to_copy;
 

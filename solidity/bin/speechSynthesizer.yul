@@ -683,21 +683,21 @@ object "SpeechSynthesizer" {
                         excitation := sub(mul(val, 20), 1000)
                     }
 
-                    let forward := div(mul(excitation, synthEnergy), 100)
+                    let forward := sdiv(mul(excitation, synthEnergy), 100)
 
                     for { let i := 9 } gt(i, 0) { } {
                         i := sub(i, 1)
                         let K := mload(add(0x4100, mul(i, 32)))
                         let delayVal := mload(add(0x2000, mul(i, 32)))
-                        let nextForward := sub(forward, div(mul(K, delayVal), 100))
-                        let nextDelay := add(delayVal, div(mul(K, nextForward), 100))
+                        let nextForward := sub(forward, sdiv(mul(K, delayVal), 100))
+                        let nextDelay := add(delayVal, sdiv(mul(K, nextForward), 100))
                         mstore(add(0x2000, mul(add(i, 1), 32)), nextDelay)
                         forward := nextForward
                     }
                     mstore(0x2000, forward)
 
                     // Convert to 16-bit PCM (signed)
-                    let pcmVal := mul(forward, 15)
+                    let pcmVal := mul(forward, 8)
                     if sgt(pcmVal, 32767) { pcmVal := 32767 }
                     if slt(pcmVal, sub(0, 32768)) { pcmVal := sub(0, 32768) }
 
@@ -964,21 +964,21 @@ object "SpeechSynthesizer" {
                         excitation := sub(mul(val, 20), 1000)
                     }
 
-                    let forward := div(mul(excitation, synthEnergy), 100)
+                    let forward := sdiv(mul(excitation, synthEnergy), 100)
 
                     for { let i := 9 } gt(i, 0) { } {
                         i := sub(i, 1)
                         let K := mload(add(0x4100, mul(i, 32)))
                         let delayVal := mload(add(0x2000, mul(i, 32)))
-                        let nextForward := sub(forward, div(mul(K, delayVal), 100))
-                        let nextDelay := add(delayVal, div(mul(K, nextForward), 100))
+                        let nextForward := sub(forward, sdiv(mul(K, delayVal), 100))
+                        let nextDelay := add(delayVal, sdiv(mul(K, nextForward), 100))
                         mstore(add(0x2000, mul(add(i, 1), 32)), nextDelay)
                         forward := nextForward
                     }
                     mstore(0x2000, forward)
 
                     // Convert to 16-bit PCM (signed)
-                    let pcmVal := mul(forward, 15)
+                    let pcmVal := mul(forward, 8)
                     if sgt(pcmVal, 32767) { pcmVal := 32767 }
                     if slt(pcmVal, sub(0, 32768)) { pcmVal := sub(0, 32768) }
 
@@ -1156,7 +1156,7 @@ object "SpeechSynthesizer" {
                             dot := add(dot, mul(weight, inputVal))
                         }
 
-                        let scaledVal := div(dot, 100)
+                        let scaledVal := sdiv(dot, 100)
                         if slt(scaledVal, 0) { scaledVal := 0 }
                         if sgt(scaledVal, 255) { scaledVal := 255 }
 
@@ -1188,7 +1188,15 @@ object "SpeechSynthesizer" {
             if eq(selector, 0x20c4433b) {
                 let bytesOffset := calldataload(4)
                 let upsampleFactor := calldataload(36)
-                if gt(upsampleFactor, 200) { upsampleFactor := 200 }
+                if gt(upsampleFactor, 3000) { upsampleFactor := 3000 }
+
+                let name := calldataload(68)
+                let baseSlot := 0
+                if name {
+                    mstore(0x00, name)
+                    mstore(0x20, 0x9999)
+                    baseSlot := keccak256(0x00, 0x40)
+                }
 
                 let melLen := calldataload(add(4, bytesOffset))
                 let numFrames := div(melLen, 8)
@@ -1217,14 +1225,32 @@ object "SpeechSynthesizer" {
                 word1 := or(and(word1, not(shl(160, 0xFFFFFFFF))), shl(160, subchunk2LE))
                 mstore(0x5060, word1)
 
-                let prevSample := 0
+                // Seed for LFSR noise
+                let seed := 0xACE1
+
+                // Clear delay line memory (13 slots: 0 to 12)
+                for { let i := 0 } lt(i, 13) { i := add(i, 1) } {
+                    mstore(add(0x2000, mul(i, 32)), 0)
+                }
+
+                // Phase accumulator for glottal pulse
+                let phase := 0
+
+                // Keep track of current parameters for smoothing
+                let currentPitch := 220
+                let currentEnergy := 0
+                for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                    mstore(add(0x4300, mul(i, 32)), 0)
+                }
+                mstore(0x4200, 0)
 
                 for { let f := 0 } lt(f, numFrames) { f := add(f, 1) } {
                     let wordIdx := div(mul(f, 8), 32)
                     let byteOffsetInWord := mod(mul(f, 8), 32)
-                    let calldataWord := calldataload(add(100, mul(wordIdx, 32)))
-                    let frameBytes := shr(sub(224, mul(byteOffsetInWord, 8)), calldataWord)
+                    let calldataWord := calldataload(add(add(36, bytesOffset), mul(wordIdx, 32)))
+                    let frameBytes := shr(sub(192, mul(byteOffsetInWord, 8)), calldataWord)
 
+                    // Extract frame energy and reflection coefficients
                     let m0 := and(shr(56, frameBytes), 0xFF)
                     let m1 := and(shr(48, frameBytes), 0xFF)
                     let m2 := and(shr(40, frameBytes), 0xFF)
@@ -1234,39 +1260,129 @@ object "SpeechSynthesizer" {
                     let m6 := and(shr(8, frameBytes), 0xFF)
                     let m7 := and(frameBytes, 0xFF)
 
+                    // Set target energy
+                    let targetEnergy := m0
+
+                    // Target reflection coefficients mapped from [0, 255] to [-95, 95]
+                    let k0 := sdiv(mul(sub(m1, 128), 95), 128)
+                    let k1 := sdiv(mul(sub(m2, 128), 95), 128)
+                    let k2 := sdiv(mul(sub(m3, 128), 95), 128)
+                    let k3 := sdiv(mul(sub(m4, 128), 95), 128)
+                    let k4 := sdiv(mul(sub(m5, 128), 95), 128)
+                    let k5 := sdiv(mul(sub(m6, 128), 95), 128)
+
+                    mstore(0x4000, k0)
+                    mstore(0x4020, k1)
+                    mstore(0x4040, k2)
+                    mstore(0x4060, k3)
+                    mstore(0x4080, k4)
+                    mstore(0x40a0, k5)
+                    mstore(0x40c0, sdiv(k5, 2))       // K6 (formant decay)
+                    mstore(0x40e0, sdiv(k5, 4))       // K7
+                    mstore(0x4100, sdiv(k5, 8))       // K8
+                    mstore(0x4120, sdiv(k5, 16))      // K9
+ 
+                    // Determine target pitch: extract from m7 (8th byte of Mel frame)
+                    let targetPitch := m7
+                    if iszero(targetPitch) { targetPitch := 220 }
+
+                    // Apply Autotune Pitch Correction if on-chain pitch contour exists
+                    if baseSlot {
+                        let autotunedPitch := sload(add(baseSlot, add(8, mod(f, 24))))
+                        if autotunedPitch {
+                            targetPitch := autotunedPitch
+                        }
+                    }
+
                     for { let u := 0 } lt(u, upsampleFactor) { u := add(u, 1) } {
-                        let step := mod(u, 8)
-                        let dot := 0
-
-                        if eq(step, 0) {
-                            dot := add(mul(m0, 12), add(mul(m1, sub(0, 5)), add(mul(m2, 3), add(mul(m3, 0), add(mul(m4, 1), add(mul(m5, sub(0, 2)), add(mul(m6, 2), mul(m7, sub(0, 1)))))))))
-                        }
-                        if eq(step, 1) {
-                            dot := add(mul(m0, sub(0, 4)), add(mul(m1, 15), add(mul(m2, sub(0, 6)), add(mul(m3, 4), add(mul(m4, sub(0, 1)), add(mul(m5, 2), add(mul(m6, sub(0, 2)), mul(m7, 1))))))))
-                        }
-                        if eq(step, 2) {
-                            dot := add(mul(m0, 5), add(mul(m1, sub(0, 3)), add(mul(m2, 14), add(mul(m3, sub(0, 5)), add(mul(m4, 2), add(mul(m5, sub(0, 1)), add(mul(m6, 1), mul(m7, sub(0, 2)))))))))
-                        }
-                        if eq(step, 3) {
-                            dot := add(mul(m0, sub(0, 2)), add(mul(m1, 4), add(mul(m2, sub(0, 4)), add(mul(m3, 16), add(mul(m4, sub(0, 6)), add(mul(m5, 3), add(mul(m6, sub(0, 1)), mul(m7, 2))))))))
-                        }
-                        if eq(step, 4) {
-                            dot := add(mul(m0, 2), add(mul(m1, sub(0, 1)), add(mul(m2, 3), add(mul(m3, sub(0, 5)), add(mul(m4, 13), add(mul(m5, sub(0, 4)), add(mul(m6, 2), mul(m7, sub(0, 1)))))))))
-                        }
-                        if eq(step, 5) {
-                            dot := add(mul(m0, sub(0, 1)), add(mul(m1, 2), add(mul(m2, sub(0, 2)), add(mul(m3, 4), add(mul(m4, sub(0, 5)), add(mul(m5, 15), add(mul(m6, sub(0, 3)), mul(m7, 1))))))))
-                        }
-                        if eq(step, 6) {
-                            dot := add(mul(m0, 1), add(mul(m1, sub(0, 2)), add(mul(m2, 2), add(mul(m3, sub(0, 1)), add(mul(m4, 3), add(mul(m5, sub(0, 4)), add(mul(m6, 12), mul(m7, sub(0, 3)))))))))
-                        }
-                        if eq(step, 7) {
-                            dot := add(mul(m0, sub(0, 3)), add(mul(m1, 1), add(mul(m2, sub(0, 1)), add(mul(m3, 2), add(mul(m4, sub(0, 2)), add(mul(m5, 3), add(mul(m6, sub(0, 5)), mul(m7, 17))))))))
+                        // Smoothly interpolate parameters (1/64 transition rate)
+                        currentPitch := add(currentPitch, sdiv(sub(targetPitch, currentPitch), 64))
+                        currentEnergy := add(currentEnergy, sdiv(sub(targetEnergy, currentEnergy), 64))
+                        for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                            let curK := mload(add(0x4300, mul(i, 32)))
+                            let targetK := mload(add(0x4000, mul(i, 32)))
+                            curK := add(curK, sdiv(sub(targetK, curK), 64))
+                            mstore(add(0x4300, mul(i, 32)), curK)
                         }
 
-                        let sampleVal := div(mul(dot, 150), 10)
-                        
-                        sampleVal := div(add(mul(sampleVal, 8), mul(prevSample, 2)), 10)
-                        prevSample := sampleVal
+                        let excitation := 0
+                        // Voiced vs Unvoiced based on target energy (m0) threshold
+                        if gt(targetEnergy, 30) {
+                            phase := add(phase, 1)
+
+                            // Step 1: LFSR Noise step
+                            let bit := and(seed, 1)
+                            seed := shr(1, seed)
+                            if bit { seed := xor(seed, 0xB400) }
+                            let noise := sub(mod(seed, 200), 100) // [-100, 100]
+
+                            // Step 2: Pitch Jitter (FM) using seed state
+                            // Modulate currentPitch by [-1%, +1%]
+                            let jitterPercent := sub(mod(seed, 21), 10) // [-10, 10]
+                            let jitteredPitch := add(currentPitch, sdiv(mul(currentPitch, jitterPercent), 1000))
+                            let period := sdiv(16000, jitteredPitch)
+                            if iszero(period) { period := 72 }
+
+                            // Step 3: Amplitude Shimmer (AM)
+                            // Modulate amplitude by [-8%, +8%]
+                            let shimmerPercent := sub(mod(seed, 17), 8) // [-8, 8]
+                            let shimmerFactor := add(100, shimmerPercent) // [92, 108]%
+
+                            let tMod := mod(phase, period)
+                            let Tp := div(mul(period, 40), 100)
+                            let Tn := div(mul(period, 16), 100)
+                            let pulse := 0
+                            
+                            if lt(tMod, Tp) {
+                                let ph := div(mul(tMod, 100), Tp)
+                                let ph2 := div(mul(ph, ph), 100)
+                                let ph3 := div(mul(ph2, ph), 100)
+                                pulse := sub(mul(3, ph2), mul(2, ph3))
+                            }
+                            if and(iszero(lt(tMod, Tp)), lt(tMod, add(Tp, Tn))) {
+                                let ph := div(mul(sub(tMod, Tp), 100), Tn)
+                                let ph2 := div(mul(ph, ph), 100)
+                                pulse := sub(100, ph2)
+                            }
+                            
+                            // Apply shimmer factor to pulse
+                            pulse := div(mul(pulse, shimmerFactor), 100)
+
+                            // Step 4: Mix 60% pulse and 40% noise (Breathy Voicing)
+                            let pulseScaled := sdiv(mul(sub(pulse, 29), 60), 10)
+                            let noiseScaled := sdiv(mul(noise, 40), 10)
+                            excitation := add(pulseScaled, noiseScaled)
+                        }
+                        if iszero(gt(targetEnergy, 30)) {
+                            let bit := and(seed, 1)
+                            seed := shr(1, seed)
+                            if bit { seed := xor(seed, 0xB400) }
+                            excitation := sub(mod(seed, 2000), 1000)
+                        }
+
+                        // Filter forward path
+                        let forward := sdiv(mul(excitation, currentEnergy), 100)
+
+                        for { let i := 10 } gt(i, 0) { } {
+                            i := sub(i, 1)
+                            let K := mload(add(0x4300, mul(i, 32)))
+                            let delayVal := mload(add(0x2000, mul(i, 32)))
+                            let nextForward := sub(forward, sdiv(mul(K, delayVal), 128))
+                            let nextDelay := add(delayVal, sdiv(mul(K, nextForward), 128))
+                            mstore(add(0x2000, mul(add(i, 1), 32)), nextDelay)
+                            forward := nextForward
+                        }
+                        mstore(0x2000, forward)
+
+                        // Scale to 16-bit PCM range
+                        let sampleVal := mul(forward, 3)
+
+                        // Step 5: Spectral Tilt Filter (1st-order Low Pass)
+                        // smoothed = sampleVal * 70 / 100 + lastOut * 30 / 100
+                        let lastOut := mload(0x4200)
+                        let smoothed := add(sdiv(mul(sampleVal, 70), 100), sdiv(mul(lastOut, 30), 100))
+                        mstore(0x4200, smoothed)
+                        sampleVal := smoothed
 
                         if sgt(sampleVal, 32767) { sampleVal := 32767 }
                         if slt(sampleVal, sub(0, 32768)) { sampleVal := sub(0, 32768) }
@@ -1305,6 +1421,16 @@ object "SpeechSynthesizer" {
                 for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
                     let val := calldataload(add(36, mul(i, 32)))
                     sstore(add(baseSlot, i), val)
+                }
+                
+                // Load optional dynamic pitch contour for autotuning if passed
+                if gt(calldatasize(), 292) {
+                    let pitchCount := div(sub(calldatasize(), 292), 32)
+                    if gt(pitchCount, 24) { pitchCount := 24 }
+                    for { let i := 0 } lt(i, pitchCount) { i := add(i, 1) } {
+                        let pitchVal := calldataload(add(292, mul(i, 32)))
+                        sstore(add(baseSlot, add(8, i)), pitchVal)
+                    }
                 }
                 return(0, 0)
             }
@@ -1363,6 +1489,14 @@ object "SpeechSynthesizer" {
                     if eq(synthOneChar, 0x6600000000000000000000000000000000000000000000000000000000000000) {
                         mstore(0x3000, 5) mstore(0x3020, sub(0, 50)) mstore(0x3040, 40) mstore(0x3060, sub(0, 10))
                         mstore(0x3080, 50) mstore(0x30a0, sub(0, 40)) mstore(0x30c0, 30) mstore(0x30e0, sub(0, 20))
+                    }
+                    if eq(synthOneChar, 0x6800000000000000000000000000000000000000000000000000000000000000) { // "h"
+                        mstore(0x3000, 15) mstore(0x3020, sub(0, 40)) mstore(0x3040, 30) mstore(0x3060, sub(0, 5))
+                        mstore(0x3080, 40) mstore(0x30a0, sub(0, 30)) mstore(0x30c0, 20) mstore(0x30e0, sub(0, 10))
+                    }
+                    if eq(synthOneChar, 0x6c00000000000000000000000000000000000000000000000000000000000000) { // "l"
+                        mstore(0x3000, 70) mstore(0x3020, 15) mstore(0x3040, sub(0, 40)) mstore(0x3060, 60)
+                        mstore(0x3080, sub(0, 20)) mstore(0x30a0, 10) mstore(0x30c0, sub(0, 5)) mstore(0x30e0, 5)
                     }
                     if eq(synthOneChar, 0x6d00000000000000000000000000000000000000000000000000000000000000) {
                         mstore(0x3000, 40) mstore(0x3020, 30) mstore(0x3040, sub(0, 10)) mstore(0x3060, 20)
@@ -1479,7 +1613,7 @@ object "SpeechSynthesizer" {
                             dot := add(dot, mul(weight, inputVal))
                         }
 
-                        let scaledVal := div(dot, 100)
+                        let scaledVal := add(sdiv(dot, 100), 128)
                         if slt(scaledVal, 0) { scaledVal := 0 }
                         if sgt(scaledVal, 255) { scaledVal := 255 }
 
@@ -1542,6 +1676,92 @@ object "SpeechSynthesizer" {
                 mstore(0x4800, weights0)
                 mstore(0x4820, weights1)
 
+                // --- PITCH CONTOUR GENERATION ENGINE ---
+                let startIndex := 0
+                for { let i := 0 } lt(i, add(numPhonemes, 1)) { i := add(i, 1) } {
+                    let isEnd := eq(i, numPhonemes)
+                    let isBoundary := isEnd
+                    if iszero(isEnd) {
+                        let curKey := calldataload(add(add(36, arrayOffset), mul(i, 32)))
+                        let curPrefix := and(curKey, 0xFFFFFF0000000000000000000000000000000000000000000000000000000000)
+                        if eq(curPrefix, 0x70615f0000000000000000000000000000000000000000000000000000000000) {
+                            isBoundary := 1
+                        }
+                    }
+                    if isBoundary {
+                        let blockLength := sub(i, startIndex)
+                        if gt(blockLength, 0) {
+                            let boundaryKey := 0
+                            if lt(i, numPhonemes) {
+                                boundaryKey := calldataload(add(add(36, arrayOffset), mul(i, 32)))
+                            }
+                            
+                            let basePitch := 220
+                            if eq(name, 0x6d6f6c6f63680000000000000000000000000000000000000000000000000000) {
+                                basePitch := 85
+                            }
+                            
+                            for { let j := 0 } lt(j, blockLength) { j := add(j, 1) } {
+                                let progressPercent := div(mul(j, 100), blockLength)
+                                let pitch := div(mul(basePitch, sub(105, div(mul(progressPercent, 13), 100))), 100)
+                                mstore(add(0x8000, mul(add(startIndex, j), 32)), pitch)
+                            }
+                            
+                            // Specific punctuation checks
+                            // boundaryType is PA_QUEST
+                            if eq(and(boundaryKey, 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000), 0x70615f7175657374000000000000000000000000000000000000000000000000) {
+                                let raisedCount := 0
+                                for { let k := sub(i, 1) } and(iszero(lt(k, startIndex)), lt(raisedCount, 2)) { k := sub(k, 1) } {
+                                    let curKey := calldataload(add(add(36, arrayOffset), mul(k, 32)))
+                                    let curPrefix := and(curKey, 0xFFFFFF0000000000000000000000000000000000000000000000000000000000)
+                                    if iszero(eq(curPrefix, 0x70615f0000000000000000000000000000000000000000000000000000000000)) {
+                                        let pVal := div(mul(basePitch, add(115, mul(raisedCount, 20))), 100)
+                                        mstore(add(0x8000, mul(k, 32)), pVal)
+                                        raisedCount := add(raisedCount, 1)
+                                    }
+                                }
+                            }
+                            
+                            // boundaryType is PA_EXCL
+                            if eq(and(boundaryKey, 0xFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000), 0x70615f6578636c00000000000000000000000000000000000000000000000000) {
+                                for { let k := startIndex } lt(k, i) { k := add(k, 1) } {
+                                    let oldP := mload(add(0x8000, mul(k, 32)))
+                                    mstore(add(0x8000, mul(k, 32)), div(mul(oldP, 115), 100))
+                                }
+                                for { let k := sub(i, 1) } iszero(lt(k, startIndex)) { k := sub(k, 1) } {
+                                    let curKey := calldataload(add(add(36, arrayOffset), mul(k, 32)))
+                                    let curPrefix := and(curKey, 0xFFFFFF0000000000000000000000000000000000000000000000000000000000)
+                                    if iszero(eq(curPrefix, 0x70615f0000000000000000000000000000000000000000000000000000000000)) {
+                                        mstore(add(0x8000, mul(k, 32)), div(mul(basePitch, 85), 100))
+                                        break
+                                    }
+                                }
+                            }
+                            
+                            // boundaryType is PA_COMMA
+                            if eq(and(boundaryKey, 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000), 0x70615f636f6d6d61000000000000000000000000000000000000000000000000) {
+                                for { let k := sub(i, 1) } iszero(lt(k, startIndex)) { k := sub(k, 1) } {
+                                    let curKey := calldataload(add(add(36, arrayOffset), mul(k, 32)))
+                                    let curPrefix := and(curKey, 0xFFFFFF0000000000000000000000000000000000000000000000000000000000)
+                                    if iszero(eq(curPrefix, 0x70615f0000000000000000000000000000000000000000000000000000000000)) {
+                                        mstore(add(0x8000, mul(k, 32)), div(mul(basePitch, 108), 100))
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if lt(i, numPhonemes) {
+                            let basePitch := 220
+                            if eq(name, 0x6d6f6c6f63680000000000000000000000000000000000000000000000000000) {
+                                basePitch := 85
+                            }
+                            mstore(add(0x8000, mul(i, 32)), basePitch)
+                        }
+                        startIndex := add(i, 1)
+                    }
+                }
+
                 for { let pIdx := 0 } lt(pIdx, numPhonemes) { pIdx := add(pIdx, 1) } {
                     let key := calldataload(add(add(36, arrayOffset), mul(pIdx, 32)))
                     
@@ -1575,6 +1795,14 @@ object "SpeechSynthesizer" {
                     if eq(synthOneChar, 0x6600000000000000000000000000000000000000000000000000000000000000) {
                         mstore(0x3000, 5) mstore(0x3020, sub(0, 50)) mstore(0x3040, 40) mstore(0x3060, sub(0, 10))
                         mstore(0x3080, 50) mstore(0x30a0, sub(0, 40)) mstore(0x30c0, 30) mstore(0x30e0, sub(0, 20))
+                    }
+                    if eq(synthOneChar, 0x6800000000000000000000000000000000000000000000000000000000000000) { // "h"
+                        mstore(0x3000, 15) mstore(0x3020, sub(0, 40)) mstore(0x3040, 30) mstore(0x3060, sub(0, 5))
+                        mstore(0x3080, 40) mstore(0x30a0, sub(0, 30)) mstore(0x30c0, 20) mstore(0x30e0, sub(0, 10))
+                    }
+                    if eq(synthOneChar, 0x6c00000000000000000000000000000000000000000000000000000000000000) { // "l"
+                        mstore(0x3000, 70) mstore(0x3020, 15) mstore(0x3040, sub(0, 40)) mstore(0x3060, 60)
+                        mstore(0x3080, sub(0, 20)) mstore(0x30a0, 10) mstore(0x30c0, sub(0, 5)) mstore(0x30e0, 5)
                     }
                     if eq(synthOneChar, 0x6d00000000000000000000000000000000000000000000000000000000000000) {
                         mstore(0x3000, 40) mstore(0x3020, 30) mstore(0x3040, sub(0, 10)) mstore(0x3060, 20)
@@ -1628,12 +1856,15 @@ object "SpeechSynthesizer" {
                             dot := add(dot, mul(weight, inputVal))
                         }
 
-                        let scaledVal := div(dot, 100)
+                        let scaledVal := add(sdiv(dot, 100), 128)
                         if slt(scaledVal, 0) { scaledVal := 0 }
                         if sgt(scaledVal, 255) { scaledVal := 255 }
 
                         mstore8(add(0x3100, r), scaledVal)
                     }
+
+                    let computedPitch := mload(add(0x8000, mul(pIdx, 32)))
+                    mstore8(0x3107, computedPitch)
 
                     let pcmWord := mload(0x3100)
                     let targetByteOffset := mul(pIdx, 8)
@@ -1644,7 +1875,7 @@ object "SpeechSynthesizer" {
                     let currentWord := mload(targetAddress)
                     let mask64 := not(shl(targetShift, 0xFFFFFFFFFFFFFFFF))
                     currentWord := and(currentWord, mask64)
-                    let cleanBytes := and(shr(224, pcmWord), 0xFFFFFFFFFFFFFFFF)
+                    let cleanBytes := and(shr(192, pcmWord), 0xFFFFFFFFFFFFFFFF)
                     currentWord := or(currentWord, shl(targetShift, cleanBytes))
                     mstore(targetAddress, currentWord)
                 }

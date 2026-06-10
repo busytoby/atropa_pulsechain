@@ -52,7 +52,7 @@ void tsfi_wave512_exec(Wave512State *state, const char *code_in) {
                 if (r >= 0 && r < TSFI_WAVE_REG_COUNT) {
                     float *f = (float*)&state->registers[r];
                     int n = snprintf(state->output_buffer + state->output_pos, 
-                                     4096 - state->output_pos,
+                                     sizeof(state->output_buffer) - state->output_pos,
                                      "W%d: [%.2f, %.2f... | %.2f...]\n", 
                                      r, f[0], f[1], f[16]);
                     if (n > 0) state->output_pos += n;

@@ -40,9 +40,13 @@ class ZmmElevenLabsThunk {
         // Active state registers
         this.activeVoice = "ana";
         this.currentPitch = 220;
+        this.targetPitch = 220;
         this.currentEnergy = 0;
-        this.reflectionCoefficients = new Float32Array(9);
+        this.targetEnergy = 0;
+        this.reflectionCoefficients = new Float32Array(10);
+        this.targetK = new Float32Array(10);
         this.lfsrState = 0xACE1; // 16-bit LFSR seed for unvoiced sibilants noise
+        this.phase = 0;
     }
 
     /**
@@ -78,37 +82,66 @@ class ZmmElevenLabsThunk {
         const voice = this.voices[this.activeVoice];
         const phone = this.phonemeMap[phonemeKey] || { type: "silent", energy: 0, formants: [0,0,0] };
 
-        this.currentEnergy = phone.energy;
+        this.targetEnergy = phone.energy;
+        this.targetPitch = voice.basePitch;
+
+        // Dynamic pitch variation depending on phoneme type
+        if (phone.type === "nasal") {
+            this.targetPitch = voice.basePitch * 0.95; // Nasals are slightly lower pitch
+        } else if (phone.type === "voiced" && phonemeKey === "ee") {
+            this.targetPitch = voice.basePitch * 1.05; // High front vowels are slightly higher pitch
+        }
 
         // Neural Flow-Matching Approximation: blend voice latent traits with phoneme formants
-        for (let i = 0; i < 9; i++) {
-            let baseK = voice.latentCoefficients[i];
-            let formantMod = 0.0;
+        for (let i = 0; i < 10; i++) {
+            if (i < 6) {
+                let baseK = voice.latentCoefficients[i] || 0;
+                let formantMod = 0.0;
 
-            if (phone.type === "voiced" || phone.type === "nasal") {
-                // Modulate K1..K3 based on formant properties
-                if (i < 3) {
-                    formantMod = phone.formants[i] * 0.3;
+                if (phone.type === "voiced" || phone.type === "nasal") {
+                    // Modulate K1..K3 based on formant properties
+                    if (i < 3) {
+                        formantMod = phone.formants[i] * 0.3;
+                    }
+                } else if (phone.type === "unvoiced") {
+                    // High frequency sibilance: shift coefficients towards negative reflection
+                    if (i < 4) {
+                        formantMod = -0.4;
+                    }
                 }
-            } else if (phone.type === "unvoiced") {
-                // High frequency sibilance: shift coefficients towards negative reflection
-                if (i < 4) {
-                    formantMod = -0.4;
-                }
+
+                // Clamped reflection coefficient boundary [-0.99, 0.99] to maintain lattice stability
+                let K = baseK + formantMod;
+                if (K > 0.99) K = 0.99;
+                if (K < -0.99) K = -0.99;
+
+                this.targetK[i] = K;
+            } else {
+                // K6..K9 derive via formant decay from K5 (this.targetK[5])
+                this.targetK[i] = this.targetK[5] / Math.pow(2, i - 5);
             }
+        }
 
-            // Clamped reflection coefficient boundary [-0.99, 0.99] to maintain lattice stability
-            let K = baseK + formantMod;
-            if (K > 0.99) K = 0.99;
-            if (K < -0.99) K = -0.99;
-
-            this.reflectionCoefficients[i] = K;
+        // If this is the first phoneme run or we are initialized to all zeros, seed the current values to target values
+        let isZero = true;
+        for (let i = 0; i < 10; i++) {
+            if (this.reflectionCoefficients[i] !== 0) {
+                isZero = false;
+                break;
+            }
+        }
+        if (isZero) {
+            this.currentPitch = this.targetPitch;
+            this.currentEnergy = this.targetEnergy;
+            for (let i = 0; i < 10; i++) {
+                this.reflectionCoefficients[i] = this.targetK[i];
+            }
         }
 
         return {
-            coefficients: Array.from(this.reflectionCoefficients),
-            pitch: this.currentPitch,
-            energy: this.currentEnergy,
+            coefficients: Array.from(this.targetK),
+            pitch: this.targetPitch,
+            energy: this.targetEnergy,
             type: phone.type
         };
     }
@@ -122,14 +155,48 @@ class ZmmElevenLabsThunk {
         const samples = new Float32Array(numSamples);
         
         // Lattice filter state memory (backward lattice paths)
-        const delayLine = new Float32Array(10); 
+        const delayLine = new Float32Array(11); 
 
         for (let t = 0; t < numSamples; t++) {
+            // Smoothly interpolate parameters towards targets to avoid clicks/glitches and simulate coarticulation
+            const alpha = 0.002; // slow smooth transition (~30-50ms)
+            this.currentPitch += alpha * (this.targetPitch - this.currentPitch);
+            this.currentEnergy += alpha * (this.targetEnergy - this.currentEnergy);
+            for (let i = 0; i < 10; i++) {
+                K[i] += alpha * (this.targetK[i] - K[i]);
+            }
+
             // Generate excitation source (voiced vs unvoiced)
             let excitation = 0.0;
             if (inputSignalType === "voiced") {
-                // Glottal pulse simulation using pitch-modulated oscillator (sawtooth approximation)
-                excitation = (t % Math.round(16000 / this.currentPitch)) === 0 ? 1.0 : -0.05;
+                this.phase += 1;
+                // Introduce subtle pitch jitter and shimmer for human vocal organic variations
+                const jitter = (Math.sin(this.phase * 0.05) + Math.cos(this.phase * 0.11)) * 0.01;
+                const period = Math.round(16000 / (this.currentPitch * (1.0 + jitter)));
+                const tMod = this.phase % period;
+                
+                // Rosenberg Glottal Pulse Model
+                // Tp: open phase duration (usually ~40% of pitch period)
+                // Tn: closed phase duration (usually ~16% of pitch period)
+                const Tp = Math.round(0.40 * period);
+                const Tn = Math.round(0.16 * period);
+                let pulse = 0.0;
+                
+                if (tMod < Tp) {
+                    const phase = tMod / Tp;
+                    pulse = 3 * phase * phase - 2 * phase * phase * phase;
+                } else if (tMod < Tp + Tn) {
+                    const phase = (tMod - Tp) / Tn;
+                    pulse = 1.0 - phase * phase;
+                } else {
+                    pulse = 0.0;
+                }
+                
+                // Subtract DC offset from the pulse to avoid pop/clicks
+                pulse = pulse - 0.25;
+                
+                // Mix in 92% glottal pulse and 8% random aspiration noise for natural voice breathiness
+                excitation = pulse * 0.92 + this.nextNoiseSample() * 0.08;
             } else if (inputSignalType === "unvoiced") {
                 excitation = this.nextNoiseSample();
             } else if (inputSignalType === "nasal") {
@@ -141,10 +208,7 @@ class ZmmElevenLabsThunk {
             let forward = excitation * (this.currentEnergy / 100.0);
 
             // Forward-Backward lattice filter flow
-            // equations: 
-            //   f_i-1 = f_i - K_i * b_i-1
-            //   b_i = b_i-1 + K_i * f_i-1
-            for (let i = 8; i >= 0; i--) {
+            for (let i = 9; i >= 0; i--) {
                 forward = forward - K[i] * delayLine[i];
                 delayLine[i + 1] = delayLine[i] + K[i] * forward;
             }

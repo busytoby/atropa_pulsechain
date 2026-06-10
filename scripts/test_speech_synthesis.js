@@ -94,7 +94,7 @@ async function main() {
     
     // 4. Synthesize WAV using neural vocoder mapping
     console.log("\n4. Running neural WAV synthesis...");
-    const wavBytesHex = await speechContract.synthesizeNeuralWav(melSpectrogramHex, 80);
+    const wavBytesHex = await speechContract.synthesizeNeuralWav(melSpectrogramHex, 2560, { gasLimit: 30000000 });
     const wavBytes = ethers.getBytes(wavBytesHex);
     console.log(`Neural WAV synthesis complete. WAV file size: ${wavBytes.length} bytes.`);
     

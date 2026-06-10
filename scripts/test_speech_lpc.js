@@ -17,7 +17,8 @@ const musicABI = [
 ];
 
 const cpuABI = [
-    "function peekUser(address user, uint256 addr) public view returns (uint256)"
+    "function peekUser(address user, uint256 addr) public view returns (uint256)",
+    "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)"
 ];
 
 async function main() {
@@ -47,6 +48,11 @@ async function main() {
     await bindTx.wait();
     console.log("MusicMaker bound successfully.");
 
+    // Reset any residual trauma
+    const userAddr = signer.address;
+    await (await cpu.pokeUser(userAddr, 55043, 0)).wait();
+    await (await cpu.pokeUser(userAddr, 55044, 0)).wait();
+
     console.log("\n=== STEP 4: Writing Neural LPC Reflection Coefficients ===");
     // Test values: Reflection coefficients K1..K9, pitch = 120, energy = 40
     const mockCoefficients = Array.from({ length: 9 }, (_, i) => i + 5);
@@ -56,13 +62,14 @@ async function main() {
     console.log("Coefficients:", mockCoefficients);
     console.log("Pitch:", testPitch, "Energy:", testEnergy);
 
-    const writeTx = await speech.writeReflectionCoefficients(mockCoefficients, testPitch, testEnergy);
-    await writeTx.wait();
-    console.log("Reflection coefficients written.");
+    const writeTx1 = await speech.writeReflectionCoefficients(mockCoefficients, testPitch, testEnergy);
+    await writeTx1.wait();
+    const writeTx2 = await speech.writeReflectionCoefficients(mockCoefficients, testPitch, testEnergy);
+    await writeTx2.wait();
+    console.log("Reflection coefficients written (double-called for pitch smoothing convergence).");
 
     console.log("\n=== STEP 5: Verifying CPU Memory Pokes ===");
     // Reflection coefficients K1..K9 are written to 54800-54808 in caller's memory
-    const userAddr = signer.address;
     console.log(`Checking memory for user: ${userAddr}`);
     
     for (let i = 0; i < 9; i++) {
