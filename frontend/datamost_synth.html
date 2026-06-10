@@ -656,6 +656,28 @@
                                 <div style="font-size: 0.85rem;"><span class="reg-label">PORT $61:</span> <span id="pitSpeakerText" style="color: #ffa500; font-family: 'Orbitron', monospace; float: right;">0x00</span></div>
                                 <div style="font-size: 0.85rem; margin-top: 4px;"><span class="reg-label">6-BIT DAC:</span> <span id="pitDacText" style="color: #ffa500; font-family: 'Orbitron', monospace; float: right;">0</span></div>
                             </div>
+
+                            <!-- Neural LPC Readout -->
+                            <div id="readoutNeuralLpc" style="border: 1px solid rgba(157, 78, 221, 0.4); border-radius: 6px; padding: 10px; background: rgba(157, 78, 221, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 0.8rem; font-weight: bold; color: #9d4edd; border-bottom: 1px solid rgba(157, 78, 221, 0.3); padding-bottom: 4px; margin-bottom: 6px; font-family: 'Orbitron', monospace;">NEURAL FLOW LPC</div>
+                                    <div style="font-size: 0.8rem; display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                        <span>PITCH: <span id="lpcPitchText" style="color: #9d4edd; font-family: 'Orbitron', monospace;">0 Hz</span></span>
+                                        <span>ENERGY: <span id="lpcEnergyText" style="color: #9d4edd; font-family: 'Orbitron', monospace;">0</span></span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 3px; align-items: flex-end; height: 32px; margin-top: 4px; border-bottom: 1px dashed rgba(157, 78, 221, 0.3); padding-bottom: 2px;">
+                                    <div id="lpcBar0" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K1"></div>
+                                    <div id="lpcBar1" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K2"></div>
+                                    <div id="lpcBar2" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K3"></div>
+                                    <div id="lpcBar3" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K4"></div>
+                                    <div id="lpcBar4" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K5"></div>
+                                    <div id="lpcBar5" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K6"></div>
+                                    <div id="lpcBar6" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K7"></div>
+                                    <div id="lpcBar7" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K8"></div>
+                                    <div id="lpcBar8" style="flex: 1; background: #9d4edd; height: 10%; transition: height 0.1s ease; border-radius: 2px 2px 0 0;" title="K9"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -3732,6 +3754,59 @@
                                     const mouth = document.getElementById("voiceBoxMouth");
                                     if (mouth) {
                                         mouth.style.height = `${4 + Math.floor(realVal / 3)}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
+                        }
+
+                        if (selectedEngine === "neural_lpc") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            
+                            // Batch lookup RAM for LPC parameters
+                            const peekPromises = [];
+                            for (let i = 0; i < 9; i++) {
+                                peekPromises.push(musicContract.peek(54800 + i));
+                            }
+                            peekPromises.push(musicContract.peek(54809)); // pitch
+                            peekPromises.push(musicContract.peek(54810)); // energy
+                            
+                            const results = await Promise.all(peekPromises);
+                            const kCoeffs = results.slice(0, 9).map(Number);
+                            const pitch = Number(results[9]);
+                            const energy = Number(results[10]);
+                            
+                            document.getElementById("lpcPitchText").innerText = pitch + " Hz";
+                            document.getElementById("lpcEnergyText").innerText = energy;
+                            
+                            for (let i = 0; i < 9; i++) {
+                                const bar = document.getElementById("lpcBar" + i);
+                                if (bar) {
+                                    bar.style.height = Math.max(5, Math.min(100, kCoeffs[i])) + "%";
+                                }
+                            }
+                            
+                            if (led && ledText) {
+                                if (energy > 0) {
+                                    led.style.background = "#9d4edd";
+                                    led.style.boxShadow = "0 0 8px #9d4edd";
+                                    ledText.innerText = "LPC STREAM";
+                                    ledText.style.color = "#9d4edd";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${4 + Math.floor(energy / 2)}px`;
                                         mouth.style.borderRadius = "50%";
                                     }
                                 } else {
