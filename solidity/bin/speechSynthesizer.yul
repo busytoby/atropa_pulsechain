@@ -1441,6 +1441,155 @@ object "SpeechSynthesizer" {
                 return(0x6000, add(64, paddedBytesLen))
             }
 
+            // ----------------------------------------------------------------
+            // Method: setQuantizedWeights(uint256 slotOffset, uint256 packedWeights)
+            // Selector: 0x200c2ae0
+            // ----------------------------------------------------------------
+            if eq(selector, 0x200c2ae0) {
+                let slotOffset := calldataload(4)
+                let packedWeights := calldataload(36)
+                
+                sstore(add(0x7777, slotOffset), packedWeights)
+                return(0, 0)
+            }
+
+            // ----------------------------------------------------------------
+            // Method: predictMelQuantized(bytes32[] phonemes, bytes32 name) -> bytes
+            // Selector: 0x18c1ab9a
+            // ----------------------------------------------------------------
+            if eq(selector, 0x18c1ab9a) {
+                let arrayOffset := calldataload(4)
+                let name := calldataload(36)
+                let numPhonemes := calldataload(add(4, arrayOffset))
+
+                mstore(0x6000, 0x20)
+                let totalOutputBytes := mul(numPhonemes, 8)
+                mstore(0x6020, totalOutputBytes)
+
+                mstore(0x00, name)
+                mstore(0x20, 0x9999)
+                let baseSlot := keccak256(0x00, 0x40)
+
+                for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
+                    mstore(add(0x4000, mul(i, 32)), sload(add(baseSlot, i)))
+                }
+
+                let weights0 := sload(0x7777)
+                let weights1 := sload(0x7778)
+                mstore(0x4800, weights0)
+                mstore(0x4820, weights1)
+
+                for { let pIdx := 0 } lt(pIdx, numPhonemes) { pIdx := add(pIdx, 1) } {
+                    let key := calldataload(add(add(36, arrayOffset), mul(pIdx, 32)))
+                    
+                    for { let j := 0 } lt(j, 8) { j := add(j, 1) } { mstore(add(0x3000, mul(j, 32)), 0) }
+
+                    let synthTwoChars := and(key, 0xFFFF000000000000000000000000000000000000000000000000000000000000)
+                    let synthOneChar := and(key, 0xFF00000000000000000000000000000000000000000000000000000000000000)
+
+                    if eq(synthTwoChars, 0x6161000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 90) mstore(0x3020, 10) mstore(0x3040, sub(0, 50)) mstore(0x3060, 80)
+                        mstore(0x3080, sub(0, 20)) mstore(0x30a0, 10) mstore(0x30c0, sub(0, 10)) mstore(0x30e0, 5)
+                    }
+                    if eq(synthTwoChars, 0x6565000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 95) mstore(0x3020, 20) mstore(0x3040, sub(0, 30)) mstore(0x3060, 90)
+                        mstore(0x3080, sub(0, 10)) mstore(0x30a0, 15) mstore(0x30c0, sub(0, 5)) mstore(0x30e0, 10)
+                    }
+                    if eq(synthTwoChars, 0x6f6f000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 85) mstore(0x3020, 5) mstore(0x3040, sub(0, 60)) mstore(0x3060, 70)
+                        mstore(0x3080, sub(0, 30)) mstore(0x30a0, 5) mstore(0x30c0, sub(0, 15)) mstore(0x30e0, 0)
+                    }
+                    if eq(synthTwoChars, 0x7368000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 10) mstore(0x3020, sub(0, 80)) mstore(0x3040, 80) mstore(0x3060, sub(0, 20))
+                        mstore(0x3080, 90) mstore(0x30a0, sub(0, 90)) mstore(0x30c0, 70) mstore(0x30e0, sub(0, 50))
+                    }
+                    if eq(synthOneChar, 0x7300000000000000000000000000000000000000000000000000000000000000) {
+                        if iszero(eq(synthTwoChars, 0x7368000000000000000000000000000000000000000000000000000000000000)) {
+                            mstore(0x3000, 5) mstore(0x3020, sub(0, 90)) mstore(0x3040, 90) mstore(0x3060, sub(0, 30))
+                            mstore(0x3080, 95) mstore(0x30a0, sub(0, 95)) mstore(0x30c0, 80) mstore(0x30e0, sub(0, 60))
+                        }
+                    }
+                    if eq(synthOneChar, 0x6600000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 5) mstore(0x3020, sub(0, 50)) mstore(0x3040, 40) mstore(0x3060, sub(0, 10))
+                        mstore(0x3080, 50) mstore(0x30a0, sub(0, 40)) mstore(0x30c0, 30) mstore(0x30e0, sub(0, 20))
+                    }
+                    if eq(synthOneChar, 0x6d00000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 40) mstore(0x3020, 30) mstore(0x3040, sub(0, 10)) mstore(0x3060, 20)
+                        mstore(0x3080, sub(0, 5)) mstore(0x30a0, 10) mstore(0x30c0, sub(0, 5)) mstore(0x30e0, 10)
+                    }
+                    if eq(synthOneChar, 0x6e00000000000000000000000000000000000000000000000000000000000000) {
+                        mstore(0x3000, 35) mstore(0x3020, 25) mstore(0x3040, sub(0, 15)) mstore(0x3060, 15)
+                        mstore(0x3080, sub(0, 5)) mstore(0x30a0, 5) mstore(0x30c0, sub(0, 10)) mstore(0x30e0, 5)
+                    }
+
+                    for { let j := 0 } lt(j, 8) { j := add(j, 1) } {
+                        let phVal := mload(add(0x3000, mul(j, 32)))
+                        let spkVal := mload(add(0x4000, mul(j, 32)))
+                        mstore(add(0x3000, mul(j, 32)), add(phVal, spkVal))
+                    }
+
+                    for { let r := 0 } lt(r, 8) { r := add(r, 1) } {
+                        let dot := 0
+                        let bias := 0
+                        if eq(r, 0) { bias := 10 }
+                        if eq(r, 1) { bias := sub(0, 5) }
+                        if eq(r, 2) { bias := 15 }
+                        if eq(r, 3) { bias := 0 }
+                        if eq(r, 4) { bias := 5 }
+                        if eq(r, 5) { bias := sub(0, 10) }
+                        if eq(r, 6) { bias := 20 }
+                        if eq(r, 7) { bias := sub(0, 15) }
+                        dot := mul(bias, 100)
+
+                        for { let c := 0 } lt(c, 8) { c := add(c, 1) } {
+                            let wIdx := add(mul(r, 8), c)
+                            let rawWeight := 0
+                            if lt(wIdx, 32) {
+                                let shift := mul(wIdx, 8)
+                                rawWeight := and(shr(shift, weights0), 0xFF)
+                            }
+                            if iszero(lt(wIdx, 32)) {
+                                let shift := mul(sub(wIdx, 32), 8)
+                                rawWeight := and(shr(shift, weights1), 0xFF)
+                            }
+
+                            let weight := 0
+                            if and(rawWeight, 0x80) {
+                                weight := or(rawWeight, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00)
+                            }
+                            if iszero(and(rawWeight, 0x80)) {
+                                weight := rawWeight
+                            }
+
+                            let inputVal := mload(add(0x3000, mul(c, 32)))
+                            dot := add(dot, mul(weight, inputVal))
+                        }
+
+                        let scaledVal := div(dot, 100)
+                        if slt(scaledVal, 0) { scaledVal := 0 }
+                        if sgt(scaledVal, 255) { scaledVal := 255 }
+
+                        mstore8(add(0x3100, r), scaledVal)
+                    }
+
+                    let pcmWord := mload(0x3100)
+                    let targetByteOffset := mul(pIdx, 8)
+                    let targetWordOffset := div(targetByteOffset, 32)
+                    let targetShift := sub(248, mul(mod(targetByteOffset, 32), 8))
+
+                    let targetAddress := add(0x6040, mul(targetWordOffset, 32))
+                    let currentWord := mload(targetAddress)
+                    let mask64 := not(shl(targetShift, 0xFFFFFFFFFFFFFFFF))
+                    currentWord := and(currentWord, mask64)
+                    let cleanBytes := and(shr(224, pcmWord), 0xFFFFFFFFFFFFFFFF)
+                    currentWord := or(currentWord, shl(targetShift, cleanBytes))
+                    mstore(targetAddress, currentWord)
+                }
+
+                let paddedBytesLen := mul(div(add(totalOutputBytes, 31), 32), 32)
+                return(0x6000, add(64, paddedBytesLen))
+            }
+
             revert(0, 0)
         }
     }
