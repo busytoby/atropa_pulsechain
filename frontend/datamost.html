@@ -1902,6 +1902,94 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 }
                 return { wait: async () => {} };
             }
+            async calculateGolfTrajectory(power, angle, wind, spin) {
+                // Simulate projectile trajectory with basic physics (gravity, wind, spin)
+                const xCoords = [];
+                const yCoords = [];
+                
+                const angleRad = (angle * Math.PI) / 180;
+                let vx = power * Math.cos(angleRad) * 1.5;
+                let vy = power * Math.sin(angleRad) * 1.5;
+                
+                let curX = 0;
+                let curY = 0;
+                const g = 9.8; // Gravity
+                const dt = 0.15; // Time step
+                
+                xCoords.push(Math.round(curX));
+                yCoords.push(Math.round(curY));
+                
+                for (let step = 0; step < 100; step++) {
+                    vy -= g * dt;
+                    vy += spin * 0.1;
+                    vx += wind * 0.05;
+                    
+                    curX += vx * dt;
+                    curY += vy * dt;
+                    
+                    if (curY < 0) {
+                        curY = 0;
+                        xCoords.push(Math.round(curX));
+                        yCoords.push(Math.round(curY));
+                        break;
+                    }
+                    
+                    xCoords.push(Math.round(curX));
+                    yCoords.push(Math.round(curY));
+                }
+                
+                return [xCoords, yCoords];
+            }
+            async getMercenaryGeometry(objId) {
+                // Return beautiful wireframe models for local simulation
+                if (objId === 1) {
+                    // Pyramidal structure (V=5, L=8)
+                    return [
+                        5, // V
+                        -15, 15, 15, -15, 0, // X coords
+                        0, 0, 0, 0, 25,      // Y coords
+                        -15, -15, 15, 15, 0, // Z coords
+                        8,                   // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Base square
+                        0, 4, 1, 4, 2, 4, 3, 4  // Apex lines
+                    ];
+                } else if (objId === 2) {
+                    // Flying Saucer / Hexagonal Prism (V=8, L=12)
+                    return [
+                        8, // V
+                        -10, 10, 15, 10, -10, -15, 0, 0, // X coords
+                        5, 5, 5, 5, 5, 5, 15, -5,        // Y coords
+                        -10, -10, 0, 10, 10, 0, 0, 0,    // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, // Outer ring
+                        0, 6, 1, 6, 2, 6, 3, 7, 4, 7, 5, 7  // Top & bottom caps
+                    ];
+                } else if (objId === 3) {
+                    // Defense Tower (V=8, L=12)
+                    return [
+                        8, // V
+                        -8, 8, 8, -8, -5, 5, 5, -5, // X coords
+                        0, 0, 0, 0, 30, 30, 30, 30, // Y coords
+                        -8, -8, 8, 8, -5, -5, 5, 5, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Vertical struts
+                    ];
+                } else {
+                    // Cuboid Block (V=8, L=12)
+                    return [
+                        8, // V
+                        -20, 20, 20, -20, -20, 20, 20, -20, // X coords
+                        0, 0, 0, 0, 15, 15, 15, 15,         // Y coords
+                        -10, -10, 10, 10, -10, -10, 10, 10, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Verticals
+                    ];
+                }
+            }
         }
 
         class SimulatedMusic {
@@ -8694,6 +8782,27 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 progressBar.style.background = "#00ff7f";
                 logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
                 writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+                
+                if (cpuContract) {
+                    try {
+                        let joystickVal = 0xFF;
+                        if (direction === "UP") joystickVal &= ~0x01;
+                        else if (direction === "DOWN") joystickVal &= ~0x02;
+                        else if (direction === "LEFT") joystickVal &= ~0x04;
+                        else if (direction === "RIGHT") joystickVal &= ~0x08;
+                        else if (direction === "FIRE") joystickVal &= ~0x10;
+                        
+                        cpuContract.poke(56320, joystickVal);
+                        
+                        setTimeout(() => {
+                            try {
+                                cpuContract.poke(56320, 0xFF);
+                            } catch (e) {}
+                        }, 150);
+                    } catch (pokeErr) {
+                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
+                    }
+                }
             } else {
                 statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
                 statusLabel.style.color = "#ff007f";
@@ -10427,6 +10536,31 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            // Keyboard controls for 3D Mercenary Mode navigation
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                    return;
+                }
+                
+                let action = null;
+                const key = e.key.toLowerCase();
+                
+                if (key === "w" || e.key === "ArrowUp") action = "FORWARD";
+                else if (key === "s" || e.key === "ArrowDown") action = "BACKWARD";
+                else if (key === "a") action = "LEFT";
+                else if (key === "d") action = "RIGHT";
+                else if (key === "q" || e.key === "ArrowLeft") action = "L_TURN";
+                else if (key === "e" || e.key === "ArrowRight") action = "R_TURN";
+                else if (key === "r") action = "UP";
+                else if (key === "f") action = "DOWN";
+                
+                if (action) {
+                    e.preventDefault();
+                    movePlayer(action);
+                }
+            });
+
             document.getElementById("btnToggleMercenaryMode").addEventListener("click", async () => {
                 isMercenaryMode = !isMercenaryMode;
                 const btn = document.getElementById("btnToggleMercenaryMode");
@@ -12063,6 +12197,94 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     cpuContract.memory[baseAddr + 1] = y & 0xFF;
                 }
                 return { wait: async () => {} };
+            }
+            async calculateGolfTrajectory(power, angle, wind, spin) {
+                // Simulate projectile trajectory with basic physics (gravity, wind, spin)
+                const xCoords = [];
+                const yCoords = [];
+                
+                const angleRad = (angle * Math.PI) / 180;
+                let vx = power * Math.cos(angleRad) * 1.5;
+                let vy = power * Math.sin(angleRad) * 1.5;
+                
+                let curX = 0;
+                let curY = 0;
+                const g = 9.8; // Gravity
+                const dt = 0.15; // Time step
+                
+                xCoords.push(Math.round(curX));
+                yCoords.push(Math.round(curY));
+                
+                for (let step = 0; step < 100; step++) {
+                    vy -= g * dt;
+                    vy += spin * 0.1;
+                    vx += wind * 0.05;
+                    
+                    curX += vx * dt;
+                    curY += vy * dt;
+                    
+                    if (curY < 0) {
+                        curY = 0;
+                        xCoords.push(Math.round(curX));
+                        yCoords.push(Math.round(curY));
+                        break;
+                    }
+                    
+                    xCoords.push(Math.round(curX));
+                    yCoords.push(Math.round(curY));
+                }
+                
+                return [xCoords, yCoords];
+            }
+            async getMercenaryGeometry(objId) {
+                // Return beautiful wireframe models for local simulation
+                if (objId === 1) {
+                    // Pyramidal structure (V=5, L=8)
+                    return [
+                        5, // V
+                        -15, 15, 15, -15, 0, // X coords
+                        0, 0, 0, 0, 25,      // Y coords
+                        -15, -15, 15, 15, 0, // Z coords
+                        8,                   // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Base square
+                        0, 4, 1, 4, 2, 4, 3, 4  // Apex lines
+                    ];
+                } else if (objId === 2) {
+                    // Flying Saucer / Hexagonal Prism (V=8, L=12)
+                    return [
+                        8, // V
+                        -10, 10, 15, 10, -10, -15, 0, 0, // X coords
+                        5, 5, 5, 5, 5, 5, 15, -5,        // Y coords
+                        -10, -10, 0, 10, 10, 0, 0, 0,    // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, // Outer ring
+                        0, 6, 1, 6, 2, 6, 3, 7, 4, 7, 5, 7  // Top & bottom caps
+                    ];
+                } else if (objId === 3) {
+                    // Defense Tower (V=8, L=12)
+                    return [
+                        8, // V
+                        -8, 8, 8, -8, -5, 5, 5, -5, // X coords
+                        0, 0, 0, 0, 30, 30, 30, 30, // Y coords
+                        -8, -8, 8, 8, -5, -5, 5, 5, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Vertical struts
+                    ];
+                } else {
+                    // Cuboid Block (V=8, L=12)
+                    return [
+                        8, // V
+                        -20, 20, 20, -20, -20, 20, 20, -20, // X coords
+                        0, 0, 0, 0, 15, 15, 15, 15,         // Y coords
+                        -10, -10, 10, 10, -10, -10, 10, 10, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Verticals
+                    ];
+                }
             }
         }
 
@@ -18706,6 +18928,27 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 progressBar.style.background = "#00ff7f";
                 logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
                 writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+                
+                if (cpuContract) {
+                    try {
+                        let joystickVal = 0xFF;
+                        if (direction === "UP") joystickVal &= ~0x01;
+                        else if (direction === "DOWN") joystickVal &= ~0x02;
+                        else if (direction === "LEFT") joystickVal &= ~0x04;
+                        else if (direction === "RIGHT") joystickVal &= ~0x08;
+                        else if (direction === "FIRE") joystickVal &= ~0x10;
+                        
+                        cpuContract.poke(56320, joystickVal);
+                        
+                        setTimeout(() => {
+                            try {
+                                cpuContract.poke(56320, 0xFF);
+                            } catch (e) {}
+                        }, 150);
+                    } catch (pokeErr) {
+                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
+                    }
+                }
             } else {
                 statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
                 statusLabel.style.color = "#ff007f";
@@ -20404,6 +20647,31 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            // Keyboard controls for 3D Mercenary Mode navigation
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                    return;
+                }
+                
+                let action = null;
+                const key = e.key.toLowerCase();
+                
+                if (key === "w" || e.key === "ArrowUp") action = "FORWARD";
+                else if (key === "s" || e.key === "ArrowDown") action = "BACKWARD";
+                else if (key === "a") action = "LEFT";
+                else if (key === "d") action = "RIGHT";
+                else if (key === "q" || e.key === "ArrowLeft") action = "L_TURN";
+                else if (key === "e" || e.key === "ArrowRight") action = "R_TURN";
+                else if (key === "r") action = "UP";
+                else if (key === "f") action = "DOWN";
+                
+                if (action) {
+                    e.preventDefault();
+                    movePlayer(action);
+                }
+            });
+
             document.getElementById("btnToggleMercenaryMode").addEventListener("click", async () => {
                 isMercenaryMode = !isMercenaryMode;
                 const btn = document.getElementById("btnToggleMercenaryMode");
@@ -21828,6 +22096,94 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     cpuContract.memory[baseAddr + 1] = y & 0xFF;
                 }
                 return { wait: async () => {} };
+            }
+            async calculateGolfTrajectory(power, angle, wind, spin) {
+                // Simulate projectile trajectory with basic physics (gravity, wind, spin)
+                const xCoords = [];
+                const yCoords = [];
+                
+                const angleRad = (angle * Math.PI) / 180;
+                let vx = power * Math.cos(angleRad) * 1.5;
+                let vy = power * Math.sin(angleRad) * 1.5;
+                
+                let curX = 0;
+                let curY = 0;
+                const g = 9.8; // Gravity
+                const dt = 0.15; // Time step
+                
+                xCoords.push(Math.round(curX));
+                yCoords.push(Math.round(curY));
+                
+                for (let step = 0; step < 100; step++) {
+                    vy -= g * dt;
+                    vy += spin * 0.1;
+                    vx += wind * 0.05;
+                    
+                    curX += vx * dt;
+                    curY += vy * dt;
+                    
+                    if (curY < 0) {
+                        curY = 0;
+                        xCoords.push(Math.round(curX));
+                        yCoords.push(Math.round(curY));
+                        break;
+                    }
+                    
+                    xCoords.push(Math.round(curX));
+                    yCoords.push(Math.round(curY));
+                }
+                
+                return [xCoords, yCoords];
+            }
+            async getMercenaryGeometry(objId) {
+                // Return beautiful wireframe models for local simulation
+                if (objId === 1) {
+                    // Pyramidal structure (V=5, L=8)
+                    return [
+                        5, // V
+                        -15, 15, 15, -15, 0, // X coords
+                        0, 0, 0, 0, 25,      // Y coords
+                        -15, -15, 15, 15, 0, // Z coords
+                        8,                   // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Base square
+                        0, 4, 1, 4, 2, 4, 3, 4  // Apex lines
+                    ];
+                } else if (objId === 2) {
+                    // Flying Saucer / Hexagonal Prism (V=8, L=12)
+                    return [
+                        8, // V
+                        -10, 10, 15, 10, -10, -15, 0, 0, // X coords
+                        5, 5, 5, 5, 5, 5, 15, -5,        // Y coords
+                        -10, -10, 0, 10, 10, 0, 0, 0,    // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, // Outer ring
+                        0, 6, 1, 6, 2, 6, 3, 7, 4, 7, 5, 7  // Top & bottom caps
+                    ];
+                } else if (objId === 3) {
+                    // Defense Tower (V=8, L=12)
+                    return [
+                        8, // V
+                        -8, 8, 8, -8, -5, 5, 5, -5, // X coords
+                        0, 0, 0, 0, 30, 30, 30, 30, // Y coords
+                        -8, -8, 8, 8, -5, -5, 5, 5, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Vertical struts
+                    ];
+                } else {
+                    // Cuboid Block (V=8, L=12)
+                    return [
+                        8, // V
+                        -20, 20, 20, -20, -20, 20, 20, -20, // X coords
+                        0, 0, 0, 0, 15, 15, 15, 15,         // Y coords
+                        -10, -10, 10, 10, -10, -10, 10, 10, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Verticals
+                    ];
+                }
             }
         }
 
@@ -28461,6 +28817,27 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 progressBar.style.background = "#00ff7f";
                 logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
                 writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+                
+                if (cpuContract) {
+                    try {
+                        let joystickVal = 0xFF;
+                        if (direction === "UP") joystickVal &= ~0x01;
+                        else if (direction === "DOWN") joystickVal &= ~0x02;
+                        else if (direction === "LEFT") joystickVal &= ~0x04;
+                        else if (direction === "RIGHT") joystickVal &= ~0x08;
+                        else if (direction === "FIRE") joystickVal &= ~0x10;
+                        
+                        cpuContract.poke(56320, joystickVal);
+                        
+                        setTimeout(() => {
+                            try {
+                                cpuContract.poke(56320, 0xFF);
+                            } catch (e) {}
+                        }, 150);
+                    } catch (pokeErr) {
+                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
+                    }
+                }
             } else {
                 statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
                 statusLabel.style.color = "#ff007f";
@@ -30105,6 +30482,31 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         e.preventDefault();
                         startSwingInput();
                     }
+                }
+            });
+
+            // Keyboard controls for 3D Mercenary Mode navigation
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                    return;
+                }
+                
+                let action = null;
+                const key = e.key.toLowerCase();
+                
+                if (key === "w" || e.key === "ArrowUp") action = "FORWARD";
+                else if (key === "s" || e.key === "ArrowDown") action = "BACKWARD";
+                else if (key === "a") action = "LEFT";
+                else if (key === "d") action = "RIGHT";
+                else if (key === "q" || e.key === "ArrowLeft") action = "L_TURN";
+                else if (key === "e" || e.key === "ArrowRight") action = "R_TURN";
+                else if (key === "r") action = "UP";
+                else if (key === "f") action = "DOWN";
+                
+                if (action) {
+                    e.preventDefault();
+                    movePlayer(action);
                 }
             });
 

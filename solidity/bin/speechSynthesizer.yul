@@ -654,20 +654,66 @@ object "SpeechSynthesizer" {
                         let cur := mload(add(0x4100, mul(i, 32)))
                         let target := mload(add(0x4000, mul(i, 32)))
                         let diff := sub(target, cur)
-                        cur := add(cur, sdiv(diff, 16))
+                        cur := add(cur, sdiv(diff, 256))
                         mstore(add(0x4100, mul(i, 32)), cur)
                     }
 
                     let excitation := 0
 
                     if eq(synthSoundType, 1) {
-                        // Pitch intonation contour (slight upward slide)
-                        let pitch := add(synthBasePitch, div(t, 25))
-                        let period := div(16000, pitch)
-                        excitation := sub(0, 50)
-                        if iszero(mod(t, period)) {
-                            excitation := 1000
+                        // LFSR step for continuous breathy noise
+                        let bit := and(seed, 1)
+                        seed := shr(1, seed)
+                        if bit {
+                            seed := xor(seed, 0xB400)
                         }
+                        let noise := sub(mod(seed, 200), 100) // [-100, 100]
+
+                        // Pitch contour + Jitter (using seed)
+                        let baseContourPitch := add(synthBasePitch, div(t, 25))
+                        let jitterPercent := sub(mod(seed, 17), 8) // [-8, 8] per-mil
+                        let jitteredPitch := add(baseContourPitch, sdiv(mul(baseContourPitch, jitterPercent), 1000))
+                        
+                        // 5.2Hz triangle vibrato LFO (phase step = 128 samples)
+                        let vibratoPhase := mod(div(t, 128), 24)
+                        let vibratoOffset := 0
+                        if lt(vibratoPhase, 12) {
+                            vibratoOffset := sub(vibratoPhase, 6)
+                        }
+                        if iszero(lt(vibratoPhase, 12)) {
+                            vibratoOffset := sub(18, vibratoPhase)
+                        }
+                        let finalPitch := add(jitteredPitch, vibratoOffset)
+
+                        let period := div(16000, finalPitch)
+                        if iszero(period) { period := 72 }
+                        let tMod := mod(t, period)
+                        
+                        let Tp := div(mul(period, 40), 100)
+                        let Tn := div(mul(period, 16), 100)
+                        let pulse := 0
+                        
+                        if lt(tMod, Tp) {
+                            let ph := div(mul(tMod, 100), Tp)
+                            let ph2 := div(mul(ph, ph), 100)
+                            let ph3 := div(mul(ph2, ph), 100)
+                            pulse := sub(mul(3, ph2), mul(2, ph3))
+                        }
+                        if and(iszero(lt(tMod, Tp)), lt(tMod, add(Tp, Tn))) {
+                            let ph := div(mul(sub(tMod, Tp), 100), Tn)
+                            let ph2 := div(mul(ph, ph), 100)
+                            pulse := sub(100, ph2)
+                        }
+                        
+                        // Amplitude Shimmer (2% cycles)
+                        let shimmerPercent := sub(mod(seed, 5), 2) // [-2, 2]%
+                        let shimmerFactor := add(100, shimmerPercent)
+
+                        // Mix 60% pulse and 40% breath noise
+                        let pulseScaled := mul(sub(pulse, 29), 6)
+                        let noiseScaled := mul(noise, 4)
+                        let mixedExcitation := add(pulseScaled, noiseScaled)
+                        excitation := sdiv(mul(mixedExcitation, shimmerFactor), 100)
                     }
                     if eq(synthSoundType, 2) {
                         let bit := and(seed, 1)
@@ -935,20 +981,66 @@ object "SpeechSynthesizer" {
                         let cur := mload(add(0x4100, mul(i, 32)))
                         let target := mload(add(0x4000, mul(i, 32)))
                         let diff := sub(target, cur)
-                        cur := add(cur, sdiv(diff, 16))
+                        cur := add(cur, sdiv(diff, 256))
                         mstore(add(0x4100, mul(i, 32)), cur)
                     }
 
                     let excitation := 0
 
                     if eq(synthSoundType, 1) {
-                        // Pitch intonation contour (slight upward slide)
-                        let pitch := add(synthBasePitch, div(t, 25))
-                        let period := div(16000, pitch)
-                        excitation := sub(0, 50)
-                        if iszero(mod(t, period)) {
-                            excitation := 1000
+                        // LFSR step for continuous breathy noise
+                        let bit := and(seed, 1)
+                        seed := shr(1, seed)
+                        if bit {
+                            seed := xor(seed, 0xB400)
                         }
+                        let noise := sub(mod(seed, 200), 100) // [-100, 100]
+
+                        // Pitch contour + Jitter (using seed)
+                        let baseContourPitch := add(synthBasePitch, div(t, 25))
+                        let jitterPercent := sub(mod(seed, 17), 8) // [-8, 8] per-mil
+                        let jitteredPitch := add(baseContourPitch, sdiv(mul(baseContourPitch, jitterPercent), 1000))
+                        
+                        // 5.2Hz triangle vibrato LFO (phase step = 128 samples)
+                        let vibratoPhase := mod(div(t, 128), 24)
+                        let vibratoOffset := 0
+                        if lt(vibratoPhase, 12) {
+                            vibratoOffset := sub(vibratoPhase, 6)
+                        }
+                        if iszero(lt(vibratoPhase, 12)) {
+                            vibratoOffset := sub(18, vibratoPhase)
+                        }
+                        let finalPitch := add(jitteredPitch, vibratoOffset)
+
+                        let period := div(16000, finalPitch)
+                        if iszero(period) { period := 72 }
+                        let tMod := mod(t, period)
+                        
+                        let Tp := div(mul(period, 40), 100)
+                        let Tn := div(mul(period, 16), 100)
+                        let pulse := 0
+                        
+                        if lt(tMod, Tp) {
+                            let ph := div(mul(tMod, 100), Tp)
+                            let ph2 := div(mul(ph, ph), 100)
+                            let ph3 := div(mul(ph2, ph), 100)
+                            pulse := sub(mul(3, ph2), mul(2, ph3))
+                        }
+                        if and(iszero(lt(tMod, Tp)), lt(tMod, add(Tp, Tn))) {
+                            let ph := div(mul(sub(tMod, Tp), 100), Tn)
+                            let ph2 := div(mul(ph, ph), 100)
+                            pulse := sub(100, ph2)
+                        }
+                        
+                        // Amplitude Shimmer (2% cycles)
+                        let shimmerPercent := sub(mod(seed, 5), 2) // [-2, 2]%
+                        let shimmerFactor := add(100, shimmerPercent)
+
+                        // Mix 60% pulse and 40% breath noise
+                        let pulseScaled := mul(sub(pulse, 29), 6)
+                        let noiseScaled := mul(noise, 4)
+                        let mixedExcitation := add(pulseScaled, noiseScaled)
+                        excitation := sdiv(mul(mixedExcitation, shimmerFactor), 100)
                     }
                     if eq(synthSoundType, 2) {
                         let bit := and(seed, 1)

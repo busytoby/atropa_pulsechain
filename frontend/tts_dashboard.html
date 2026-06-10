@@ -10,52 +10,134 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
     <style>
-        /* Specific CSS variables & overrides for high-end glowing retro styling */
+        /* High-end Cyberpunk Glassmorphism & Sci-Fi Aesthetic Overrides */
         :root {
             --neon-green: #39ff14;
             --neon-cyan: #00f2fe;
             --neon-pink: #ff007f;
             --neon-yellow: #ffcc00;
+            --neon-purple: #9d4edd;
+            --glass-bg: rgba(10, 15, 36, 0.65);
+            --glass-border: rgba(0, 242, 254, 0.2);
+            --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+        }
+
+        /* Animated background scanline grid */
+        body {
+            position: relative;
+            background-color: #03040b;
+            background-image: 
+                linear-gradient(rgba(18, 24, 48, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 24, 48, 0.3) 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(79, 172, 254, 0.12) 0%, transparent 60%),
+                        radial-gradient(circle at 10% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Scanline scan animation */
+        body::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 99999;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .glass-bg-container {
+            border: 1px solid rgba(0, 242, 254, 0.3) !important;
+            background: rgba(8, 11, 26, 0.8) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 242, 254, 0.15) !important;
         }
 
         .dashboard-grid-tts {
             display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-columns: 1.25fr 0.75fr;
             gap: 25px;
             margin-top: 20px;
         }
 
+        /* Glassmorphic cards with glowing border effect */
+        .card {
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 0 15px rgba(0, 242, 254, 0.03) !important;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.5), transparent);
+            transition: 0.5s;
+            transform: translateX(-100%);
+        }
+
+        .card:hover::before {
+            transform: translateX(100%);
+            transition: 1.5s;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 242, 254, 0.45) !important;
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 242, 254, 0.1), inset 0 0 15px rgba(0, 242, 254, 0.05) !important;
+        }
+
         .control-panel {
-            background: rgba(13, 17, 38, 0.75);
-            border: 1px solid rgba(0, 242, 254, 0.25);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.05);
+            border-color: rgba(0, 242, 254, 0.25) !important;
         }
 
         .visualizer-panel {
-            background: rgba(10, 10, 20, 0.9);
-            border: 1px solid rgba(255, 0, 127, 0.25);
-            box-shadow: 0 0 15px rgba(255, 0, 127, 0.05);
+            border-color: rgba(255, 0, 127, 0.25) !important;
+        }
+        
+        .visualizer-panel:hover {
+            border-color: rgba(255, 0, 127, 0.45) !important;
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 0, 127, 0.1), inset 0 0 15px rgba(255, 0, 127, 0.05) !important;
         }
 
         .tts-textarea {
             width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-color);
+            background: rgba(5, 7, 18, 0.8);
+            border: 1px solid rgba(0, 242, 254, 0.2);
             border-radius: 8px;
             color: var(--text-primary);
             padding: 15px;
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             line-height: 1.5;
             resize: vertical;
             font-family: 'Rajdhani', sans-serif;
             margin-bottom: 15px;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .tts-textarea:focus {
             outline: none;
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.35), inset 0 2px 4px rgba(0,0,0,0.6);
         }
 
         .control-row {
@@ -69,18 +151,26 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(255, 255, 255, 0.02);
-            padding: 10px;
+            background: rgba(255, 255, 255, 0.015);
+            padding: 12px;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        
+        .knob-container:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .knob-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             font-family: 'Orbitron', sans-serif;
             text-transform: uppercase;
             margin-bottom: 8px;
+            letter-spacing: 1px;
         }
 
         .slider-glow {
@@ -90,6 +180,7 @@
             background: rgba(0, 242, 254, 0.1);
             border-radius: 3px;
             outline: none;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
         }
 
         .slider-glow::-webkit-slider-thumb {
@@ -100,24 +191,49 @@
             border-radius: 50%;
             background: var(--neon-cyan);
             cursor: pointer;
-            box-shadow: 0 0 8px var(--neon-cyan);
-            transition: 0.1s;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            border: 2px solid #fff;
+            transition: all 0.1s;
+        }
+        
+        .slider-glow::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px var(--neon-cyan);
         }
 
         .slider-glow.pink::-webkit-slider-thumb {
             background: var(--neon-pink);
-            box-shadow: 0 0 8px var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+        .slider-glow.pink::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 15px var(--neon-pink);
         }
 
         .slider-glow.green::-webkit-slider-thumb {
             background: var(--neon-green);
-            box-shadow: 0 0 8px var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+        .slider-glow.green::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .input-glow {
+            background: rgba(0, 0, 0, 0.6) !important;
+            border: 1px solid rgba(0, 242, 254, 0.25) !important;
+            color: #fff !important;
+            border-radius: 8px !important;
+            transition: all 0.3s;
+        }
+        .input-glow:focus {
+            outline: none;
+            border-color: var(--neon-cyan) !important;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.4) !important;
         }
 
         /* Phoneme chip layout */
         .phoneme-chain-box {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 242, 254, 0.15);
             border-radius: 8px;
             min-height: 80px;
             padding: 12px;
@@ -127,13 +243,14 @@
             margin-bottom: 20px;
             max-height: 150px;
             overflow-y: auto;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
         }
 
         .phoneme-chip {
-            background: rgba(0, 242, 254, 0.1);
-            border: 1px solid rgba(0, 242, 254, 0.4);
-            border-radius: 4px;
-            padding: 4px 8px;
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.35);
+            border-radius: 6px;
+            padding: 5px 10px;
             font-family: monospace;
             font-size: 0.85rem;
             color: var(--neon-cyan);
@@ -142,29 +259,45 @@
             align-items: center;
             gap: 5px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .phoneme-chip:hover {
+            transform: translateY(-2px);
+            background: rgba(0, 242, 254, 0.18);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
         }
 
         .phoneme-chip.active {
             background: var(--neon-cyan);
             color: #000;
             text-shadow: none;
-            box-shadow: 0 0 8px var(--neon-cyan);
-            transform: scale(1.05);
+            box-shadow: 0 0 12px var(--neon-cyan);
+            transform: scale(1.08) translateY(-2px);
+            border-color: #fff;
+            font-weight: bold;
         }
 
         .phoneme-chip.pause {
-            background: rgba(255, 0, 127, 0.1);
-            border-color: rgba(255, 0, 127, 0.4);
+            background: rgba(255, 0, 127, 0.08);
+            border-color: rgba(255, 0, 127, 0.35);
             color: var(--neon-pink);
             text-shadow: 0 0 3px rgba(255, 0, 127, 0.3);
+        }
+        
+        .phoneme-chip.pause:hover {
+            background: rgba(255, 0, 127, 0.18);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px rgba(255, 0, 127, 0.3);
         }
 
         .phoneme-chip.pause.active {
             background: var(--neon-pink);
             color: #000;
             text-shadow: none;
-            box-shadow: 0 0 8px var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+            border-color: #fff;
         }
 
         /* Mouth visualizer */
@@ -173,60 +306,105 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px dashed rgba(255, 0, 127, 0.3);
+            background: radial-gradient(circle, rgba(20, 10, 30, 0.8) 0%, rgba(5, 3, 10, 0.95) 100%);
+            border: 1px solid rgba(255, 0, 127, 0.3);
+            box-shadow: inset 0 0 20px rgba(255, 0, 127, 0.15), 0 0 15px rgba(255, 0, 127, 0.05);
             border-radius: 12px;
-            padding: 20px;
+            padding: 30px;
             margin-bottom: 20px;
             position: relative;
+            min-height: 140px;
         }
 
         .voice-box-mouth {
-            width: 80px;
+            width: 90px;
             height: 4px;
-            background: var(--neon-pink);
-            box-shadow: 0 0 10px var(--neon-pink);
-            border-radius: 4px;
-            transition: height 0.08s ease, border-radius 0.08s ease;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-magenta), var(--neon-pink));
+            box-shadow: 0 0 15px var(--neon-pink), 0 0 30px var(--neon-pink);
+            border-radius: 10px;
+            transition: height 0.06s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-radius 0.06s ease;
         }
 
         /* LED lights */
         .led-indicator {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #222;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+            background: #151520;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.05);
             display: inline-block;
             margin-right: 8px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .led-indicator.active-cyan {
             background: var(--neon-cyan);
-            box-shadow: 0 0 8px var(--neon-cyan), inset 0 1px 1px rgba(255,255,255,0.5);
+            box-shadow: 0 0 10px var(--neon-cyan), 0 0 4px var(--neon-cyan), inset 0 1px 1px rgba(255,255,255,0.6);
         }
 
         .led-indicator.active-pink {
             background: var(--neon-pink);
-            box-shadow: 0 0 8px var(--neon-pink), inset 0 1px 1px rgba(255,255,255,0.5);
+            box-shadow: 0 0 10px var(--neon-pink), 0 0 4px var(--neon-pink), inset 0 1px 1px rgba(255,255,255,0.6);
         }
 
         .quick-phrase-btn {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 6px;
-            color: var(--text-primary);
+            color: var(--text-secondary);
             padding: 6px 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 500;
             transition: all 0.2s;
         }
 
         .quick-phrase-btn:hover {
-            background: rgba(0, 242, 254, 0.15);
+            background: rgba(0, 242, 254, 0.12);
             border-color: var(--neon-cyan);
             color: var(--neon-cyan);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .quick-phrase-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Modern sci-fi buttons overrides */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-cyan), #00b4d8) !important;
+            color: #000 !important;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 25px rgba(0, 242, 254, 0.5), 0 0 10px rgba(0, 242, 254, 0.2) !important;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid var(--neon-cyan) !important;
+            color: var(--neon-cyan) !important;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 242, 254, 0.1) !important;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3) !important;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -1838,20 +2016,39 @@
 
         class ZmmElevenLabsThunk {
             constructor() {
+                // Helper to create a 128-float speaker embedding vector
+                const makeEmbedding = (seed) => {
+                    const emb = new Float32Array(128);
+                    for (let i = 0; i < 128; i++) {
+                        emb[i] = Math.sin(seed + i * 0.45) * 0.5;
+                    }
+                    return emb;
+                };
+
                 this.voices = {
                     "ana": {
                         name: "Ana",
                         gender: "female",
                         basePitch: 220,
-                        latentCoefficients: [0.15, -0.25, 0.40, -0.10, 0.05, -0.08, 0.12, -0.05, 0.02]
+                        latentCoefficients: makeEmbedding(1.23)
                     },
                     "moloch": {
                         name: "Moloch",
                         gender: "male",
                         basePitch: 85,
-                        latentCoefficients: [0.85, -0.65, 0.70, -0.45, 0.35, -0.22, 0.18, -0.10, 0.05]
+                        latentCoefficients: makeEmbedding(4.56)
                     }
                 };
+
+                // Deterministic 16 x 128 Projection Matrix
+                this.projectionMatrix = [];
+                for (let i = 0; i < 16; i++) {
+                    const row = new Float32Array(128);
+                    for (let j = 0; j < 128; j++) {
+                        row[j] = Math.sin(i * 0.12 + j * 0.37) * 0.12;
+                    }
+                    this.projectionMatrix.push(row);
+                }
 
                 this.phonemeMap = {
                     "aa": { type: "voiced", energy: 90, formants: [1.2, 0.8, -0.5] },
@@ -1868,8 +2065,9 @@
                 this.activeVoice = "ana";
                 this.currentPitch = 220;
                 this.currentEnergy = 0;
-                this.reflectionCoefficients = new Float32Array(9);
+                this.reflectionCoefficients = new Float32Array(16); // LPC-16 Upgrade
                 this.lfsrState = 0xACE1;
+                this.frameBuffer = []; // Circular Frame Queue
             }
 
             nextNoiseSample() {
@@ -1890,27 +2088,59 @@
                 return true;
             }
 
+            pushFrame(phonemeKey) {
+                const projection = this.projectLatentCoefficients(phonemeKey);
+                this.frameBuffer.push({
+                    coefficients: Array.from(projection.coefficients),
+                    pitch: projection.pitch,
+                    energy: projection.energy,
+                    type: projection.type
+                });
+            }
+
+            synthesizeFromBuffer(samplesPerFrame) {
+                const totalSamples = this.frameBuffer.length * samplesPerFrame;
+                const samples = new Float32Array(totalSamples);
+                let offset = 0;
+                while (this.frameBuffer.length > 0) {
+                    const frame = this.frameBuffer.shift();
+                    this.reflectionCoefficients.set(frame.coefficients);
+                    this.currentPitch = frame.pitch;
+                    this.currentEnergy = frame.energy;
+                    const pcm = this.synthesizeLatticeSamples(samplesPerFrame, frame.type);
+                    samples.set(pcm, offset);
+                    offset += samplesPerFrame;
+                }
+                return samples;
+            }
+
             projectLatentCoefficients(phonemeKey) {
                 const voice = this.voices[this.activeVoice];
                 const phone = this.phonemeMap[phonemeKey] || { type: "silent", energy: 0, formants: [0,0,0] };
 
                 this.currentEnergy = phone.energy;
 
-                for (let i = 0; i < 9; i++) {
-                    let baseK = voice.latentCoefficients[i];
-                    let formantMod = 0.0;
+                // Neural Matrix Projection mapping 128-float embedding -> 16 LPC coefficients
+                for (let i = 0; i < 16; i++) {
+                    let val = 0;
+                    for (let j = 0; j < 128; j++) {
+                        val += voice.latentCoefficients[j] * this.projectionMatrix[i][j];
+                    }
 
+                    let formantMod = 0.0;
                     if (phone.type === "voiced" || phone.type === "nasal") {
                         if (i < 3) {
                             formantMod = phone.formants[i] * 0.3;
+                        } else if (i < 5) {
+                            formantMod = phone.formants[i - 3] * 0.15;
                         }
                     } else if (phone.type === "unvoiced") {
-                        if (i < 4) {
-                            formantMod = -0.4;
+                        if (i < 6) {
+                            formantMod = -0.35;
                         }
                     }
 
-                    let K = baseK + formantMod;
+                    let K = val + formantMod;
                     if (K > 0.99) K = 0.99;
                     if (K < -0.99) K = -0.99;
 
@@ -1928,12 +2158,15 @@
             synthesizeLatticeSamples(numSamples, inputSignalType) {
                 const K = this.reflectionCoefficients;
                 const samples = new Float32Array(numSamples);
-                const delayLine = new Float32Array(10); 
+                const delayLine = new Float32Array(17); // Delay line matching LPC-16
 
                 for (let t = 0; t < numSamples; t++) {
                     let excitation = 0.0;
                     if (inputSignalType === "voiced") {
-                        const period = 16000 / this.currentPitch;
+                        const vibrato = Math.sin(2 * Math.PI * 5.2 * t / 16000) * 0.012;
+                        const jitter = this.nextNoiseSample() * 0.008;
+                        const modulatedPitch = this.currentPitch * (1.0 + vibrato + jitter);
+                        const period = 16000 / modulatedPitch;
                         const tMod = t % period;
                         const Tp = 0.45 * period;
                         const Te = 0.55 * period;
@@ -1949,7 +2182,8 @@
                             pulse = -0.15 * Math.exp(-returnFrac * 0.85);
                         }
                         const breath = (this.nextNoiseSample()) * 0.08 * (tMod < Te ? Math.sin(Math.PI * (tMod / Te)) : 0.1);
-                        excitation = (pulse * 0.65 + breath * 0.35) - 0.15;
+                        const shimmer = 1.0 + this.nextNoiseSample() * 0.02;
+                        excitation = ((pulse * 0.65 + breath * 0.35) - 0.15) * shimmer;
                     } else if (inputSignalType === "unvoiced") {
                         excitation = this.nextNoiseSample();
                     } else if (inputSignalType === "nasal") {
@@ -1958,7 +2192,8 @@
 
                     let forward = excitation * (this.currentEnergy / 100.0);
 
-                    for (let i = 8; i >= 0; i--) {
+                    // LPC-16 Lattice filter implementation
+                    for (let i = 15; i >= 0; i--) {
                         forward = forward - K[i] * delayLine[i];
                         delayLine[i + 1] = delayLine[i] + K[i] * forward;
                     }
@@ -2059,16 +2294,14 @@
                 const sampleRate = 16000;
                 const phonemeDuration = 0.15;
                 const samplesPerPhoneme = Math.floor(sampleRate * phonemeDuration);
-                const totalSamples = samplesPerPhoneme * data.phonemes.length;
 
-                const allSamples = new Float32Array(totalSamples);
-
+                // Queue all phonemes into the circular frame buffer
                 for (let i = 0; i < data.phonemes.length; i++) {
-                    const ph = data.phonemes[i];
-                    const projection = thunk.projectLatentCoefficients(ph);
-                    const pcm = thunk.synthesizeLatticeSamples(samplesPerPhoneme, projection.type);
-                    allSamples.set(pcm, i * samplesPerPhoneme);
+                    thunk.pushFrame(data.phonemes[i]);
                 }
+
+                // Stream synthesis out from the frame buffer queue
+                const allSamples = thunk.synthesizeFromBuffer(samplesPerPhoneme);
 
                 const wavBytes = generateWavBytes16(allSamples, sampleRate);
                 return ethers.hexlify(wavBytes);

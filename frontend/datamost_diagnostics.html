@@ -385,6 +385,46 @@
                             </div>
                         </div>
 
+                        <!-- Interactive Node Status Dashboard -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-family: 'Rajdhani', sans-serif; background: rgba(0,255,127,0.02); border: 1px solid rgba(0,255,127,0.15); padding: 10px; border-radius: 6px; font-size: 0.75rem;">
+                            <div style="border-right: 1px solid rgba(0,255,127,0.15); padding-right: 5px;">
+                                <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE A (USER)</div>
+                                <div style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
+                                <div id="nodeARep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
+                                <div style="margin-top: 5px; font-family: monospace; font-size: 0.6rem; color: #888; word-break: break-all; line-height: 1.1;">
+                                    Sig: <span id="nodeATxSig" style="color: var(--neon-blue);">0x8a92...ef3a</span>
+                                </div>
+                            </div>
+                            <div style="border-right: 1px solid rgba(0,255,127,0.15); padding-right: 5px;">
+                                <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE B (COPILOT)</div>
+                                <div id="nodeBStatus" style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
+                                <div id="nodeBRep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
+                                <div style="margin-top: 5px;">
+                                    Acc: <input type="range" id="nodeBAcc" min="10" max="100" value="75" style="width: 50px; vertical-align: middle;" oninput="document.getElementById('lblNodeBAcc').innerText = this.value + '%';">
+                                    <span id="lblNodeBAcc" style="font-family: 'Orbitron'; color: #00ff7f; font-weight: bold;">75%</span>
+                                </div>
+                                <div id="nodeBPrediction" style="margin-top: 4px; font-family: monospace; font-size: 0.6rem; color: #ff00ff; font-weight: bold;">
+                                    Bias: Invariance (88% Conf)
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #fff; font-family: 'Orbitron'; font-size: 0.7rem;">NODE C (VALIDATOR)</div>
+                                <div id="nodeCStatus" style="color: #00ff7f; font-weight: bold; margin-top: 2px;">ONLINE</div>
+                                <div id="nodeCRep" style="color: #ffa500; font-weight: bold;">Rep: 100%</div>
+                                <div style="margin-top: 5px;">
+                                    Acc: <input type="range" id="nodeCAcc" min="10" max="100" value="60" style="width: 50px; vertical-align: middle;" oninput="document.getElementById('lblNodeCAcc').innerText = this.value + '%';">
+                                    <span id="lblNodeCAcc" style="font-family: 'Orbitron'; color: #00ff7f; font-weight: bold;">60%</span>
+                                </div>
+                                <div id="nodeCBlockInfo" style="margin-top: 4px; font-family: monospace; font-size: 0.6rem; color: #00ffcc; line-height: 1.1;">
+                                    Stake: 32.0 PLS <br>Block: <span id="nodeCBlockHash" style="color:#fff;">0x93fc...a12c</span>
+                                </div>
+                                <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="nodeCByz" style="cursor: pointer;">
+                                    <label for="nodeCByz" style="color: #ff007f; font-size: 0.65rem; font-family: 'Orbitron'; cursor: pointer; font-weight: bold;">Byzantine Mode</label>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Voting Simulation Controls -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-family: 'Rajdhani', sans-serif;">
                             <div>
@@ -395,13 +435,44 @@
                                     <button class="btn btn-small" id="btnVoteLeft" style="font-size: 0.75rem; padding: 5px 8px; border-color: #00ff7f; background: transparent; color: #fff;">⬅️ LEFT</button>
                                     <button class="btn btn-small" id="btnVoteRight" style="font-size: 0.75rem; padding: 5px 8px; border-color: #00ff7f; background: transparent; color: #fff;">➡️ RIGHT</button>
                                 </div>
+                                <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                                    <input type="checkbox" id="chkRouteConsensus" style="cursor: pointer;">
+                                    <label for="chkRouteConsensus" style="color: #00ff7f; font-size: 0.75rem; font-family: 'Orbitron'; cursor: pointer; font-weight: bold;">Route Emulator Keys through Consensus</label>
+                                </div>
                             </div>
                             <div>
-                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">VOTING THRESHOLD</label>
-                                <select id="consensusThreshold" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; outline: none;">
-                                    <option value="2">Simple Majority (2/3)</option>
-                                    <option value="3" selected>Unanimous (3/3)</option>
-                                    <option value="1">Single Node (1/3)</option>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">VOTING THRESHOLD & MAINTENANCE</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <select id="consensusThreshold" style="flex-grow: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; outline: none;">
+                                        <option value="2">Simple Majority (2/3)</option>
+                                        <option value="3" selected>Unanimous (3/3)</option>
+                                        <option value="1">Single Node (1/3)</option>
+                                    </select>
+                                    <button class="btn btn-small" onclick="recoverConsensusNodes()" style="border-color: #ffa500; color: #ffa500; font-family: 'Orbitron'; font-size: 0.75rem; padding: 4px 8px; background: transparent;">🔧 Reset</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Byzantine & Slashing Weights Configuration -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-family: 'Rajdhani', sans-serif; background: rgba(255,165,0,0.02); border: 1px solid rgba(255,165,0,0.15); padding: 8px; border-radius: 6px; font-size: 0.7rem;">
+                            <div>
+                                <label style="display: block; color: var(--text-secondary); margin-bottom: 2px; font-family: 'Orbitron'; font-size: 0.6rem;">WT A (USER)</label>
+                                <input type="number" id="weightA" value="2" min="1" max="5" style="width: 100%; padding: 2px; background: #000; color: #fff; border: 1px solid rgba(255,165,0,0.2); font-family: 'Orbitron'; font-size: 0.7rem; border-radius: 4px; outline: none; text-align: center;">
+                            </div>
+                            <div>
+                                <label style="display: block; color: var(--text-secondary); margin-bottom: 2px; font-family: 'Orbitron'; font-size: 0.6rem;">WT B (COPILOT)</label>
+                                <input type="number" id="weightB" value="1" min="1" max="5" style="width: 100%; padding: 2px; background: #000; color: #fff; border: 1px solid rgba(255,165,0,0.2); font-family: 'Orbitron'; font-size: 0.7rem; border-radius: 4px; outline: none; text-align: center;">
+                            </div>
+                            <div>
+                                <label style="display: block; color: var(--text-secondary); margin-bottom: 2px; font-family: 'Orbitron'; font-size: 0.6rem;">WT C (VALIDATOR)</label>
+                                <input type="number" id="weightC" value="1" min="1" max="5" style="width: 100%; padding: 2px; background: #000; color: #fff; border: 1px solid rgba(255,165,0,0.2); font-family: 'Orbitron'; font-size: 0.7rem; border-radius: 4px; outline: none; text-align: center;">
+                            </div>
+                            <div>
+                                <label style="display: block; color: var(--text-secondary); margin-bottom: 2px; font-family: 'Orbitron'; font-size: 0.6rem;">SLASH LIMIT</label>
+                                <select id="slashLimit" style="width: 100%; padding: 2px; background: #000; color: #fff; border: 1px solid rgba(255,165,0,0.2); font-family: 'Orbitron'; font-size: 0.65rem; border-radius: 4px; outline: none;">
+                                    <option value="70">70% Rep</option>
+                                    <option value="50" selected>50% Rep</option>
+                                    <option value="30">30% Rep</option>
                                 </select>
                             </div>
                         </div>
@@ -763,10 +834,73 @@
         let lastSpeechCounter = 0;
         let spritePatterns = [[], [], [], [], [], [], [], []];
 
+        const fallbackSpriteLayouts = [
+            // Sprite 0: Space Invader / Paddle
+            [
+                0x001800, 0x003c00, 0x007e00, 0x03ffc0,
+                0x0ffff0, 0x1fdbf8, 0x3ffffc, 0x3ffffc,
+                0x30ff0c, 0x1f00f8, 0x0f81f0, 0x07c3e0,
+                0x03e7c0, 0x01ff80, 0x00ff00, 0x007e00,
+                0x003c00, 0x001800, 0x000000, 0x000000,
+                0x000000
+            ],
+            // Sprite 1: Retro Ball / Sphere
+            [
+                0x000000, 0x000000, 0x000000, 0x000000,
+                0x000000, 0x0003c0, 0x000ff0, 0x001ff8,
+                0x003ffc, 0x003ffc, 0x003ffc, 0x003ffc,
+                0x001ff8, 0x000ff0, 0x0003c0, 0x000000,
+                0x000000, 0x000000, 0x000000, 0x000000,
+                0x000000
+            ],
+            // Sprite 2: Ghost / Alien
+            [
+                0x000000, 0x007e00, 0x00db00, 0x00ff00,
+                0x00ff00, 0x00ff00, 0x00c300, 0x00c300,
+                0x00c300, 0x00ff00, 0x00ff00, 0x00ff00,
+                0x007e00, 0x003c00, 0x001800, 0x000000,
+                0x000000, 0x000000, 0x000000, 0x000000,
+                0x000000
+            ],
+            // Sprite 3: Diamond / Star
+            [
+                0x000000, 0x000180, 0x0003c0, 0x0007e0,
+                0x000ff0, 0x001ff8, 0x003ffc, 0x007ffe,
+                0x00ffff, 0x00ffff, 0x00ffff, 0x007ffe,
+                0x003ffc, 0x001ff8, 0x000ff0, 0x0007e0,
+                0x0003c0, 0x000180, 0x000000, 0x000000,
+                0x000000
+            ]
+        ];
+
         const games = {
             pong: {
                 name: "Pong-on-Chain",
                 spriteEnableMask: 3,
+                spriteLayouts: [
+                    // Sprite 0: Paddle (Vertical bar)
+                    [
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Ball (Square)
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x001ff0, 0x001ff0, 0x001ff0, 0x001ff0,
+                        0x001ff0, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2 (unused/fallback)
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    // Sprite 3 (unused/fallback)
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA5, 0x08, 0xD0, 0x0F, 0xA2, 0x27, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA9, 
                     0x01, 0x85, 0x08, 0xAD, 0x00, 0xDC, 0x29, 0x04, 0xD0, 0x0F, 0xAD, 0x00, 
@@ -801,6 +935,37 @@
             anteater: {
                 name: "Ant Eater",
                 spriteEnableMask: 7,
+                spriteLayouts: [
+                    // Sprite 0: Ant Eater
+                    [
+                        0x001f80, 0x007fc0, 0x00ffe0, 0x01fff0,
+                        0x03ffff, 0x07ffff, 0x0fffff, 0x03dbfe,
+                        0x03ffff, 0x01ffff, 0x00ffe0, 0x007fc0,
+                        0x003f80, 0x001f00, 0x000e00, 0x000e00,
+                        0x001c00, 0x003800, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Ant / Insect
+                    [
+                        0x000000, 0x000000, 0x001800, 0x002400,
+                        0x002400, 0x007e00, 0x00db00, 0x00ff00,
+                        0x01ff80, 0x00ff00, 0x00db00, 0x007e00,
+                        0x002400, 0x002400, 0x001800, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Mound / Nest
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000180, 0x0003c0, 0x0007e0, 0x000ff0,
+                        0x001ff8, 0x003ffc, 0x007ffe, 0x00ffff,
+                        0x01ffff, 0x03ffff, 0x07ffff, 0x0fffff,
+                        0x1fffff, 0x3fffff, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Empty/unused fallback
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA9, 0x01, 0x8D, 0x15, 0xD0, 0xA9, 0x30, 0x8D, 0x00, 0xD0, 0xA9, 0x60, 
                     0x8D, 0x01, 0xD0, 0xA9, 0x05, 0x8D, 0x02, 0xD6, 0x60
@@ -814,6 +979,37 @@
             princessfrog: {
                 name: "Princess and the Frog",
                 spriteEnableMask: 7,
+                spriteLayouts: [
+                    // Sprite 0: Frog
+                    [
+                        0x000000, 0x006600, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x00ff00,
+                        0x01ff80, 0x03ffc0, 0x07ffe0, 0x0ffff0,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Princess crown
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x00db00,
+                        0x00ff00, 0x007e00, 0x003c00, 0x003c00,
+                        0x007e00, 0x00ff00, 0x01ff80, 0x03ffc0,
+                        0x07ffe0, 0x0ffff0, 0x1ffff8, 0x3ffffc,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Lilypad / Crown
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x007e00, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x1ffff8,
+                        0x3ffffc, 0x7ffffe, 0xfffffe, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Empty/unused fallback
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA9, 0x02, 0x8D, 0x15, 0xD0, 0xA9, 0x50, 0x8D, 0x00, 0xD0, 0xA9, 0x80, 
                     0x8D, 0x01, 0xD0, 0xA9, 0x06, 0x8D, 0x02, 0xD6, 0x60
@@ -827,6 +1023,44 @@
             crush: {
                 name: "Crush, Crumble and Chomp!",
                 spriteEnableMask: 15,
+                spriteLayouts: [
+                    // Sprite 0: Monster
+                    [
+                        0x0003c0, 0x0007e0, 0x000ff0, 0x001ff8,
+                        0x003ffc, 0x007ffe, 0x00ffff, 0x01ffff,
+                        0x03ffff, 0x07ffff, 0x0fffff, 0x1fffff,
+                        0x3fffff, 0x7fffff, 0xffffff, 0xffffff,
+                        0xe00007, 0xc00003, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Helicopter
+                    [
+                        0x000000, 0x000000, 0x3fffff, 0x001800,
+                        0x001800, 0x007e00, 0x01ffc0, 0x07fff0,
+                        0x0ffff0, 0x1ffff8, 0x1ffff8, 0x0ffff0,
+                        0x07fff0, 0x001800, 0x001800, 0x003c00,
+                        0x007e00, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Building
+                    [
+                        0x000000, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00
+                    ],
+                    // Sprite 3: Citizen
+                    [
+                        0x000000, 0x000000, 0x000000, 0x001800,
+                        0x003c00, 0x003c00, 0x001800, 0x007e00,
+                        0x00ff00, 0x00ff00, 0x007e00, 0x003c00,
+                        0x003c00, 0x002400, 0x002400, 0x006600,
+                        0x006600, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ],
                 program: [
                     0xA9, 0x03, 0x8D, 0x15, 0xD0,
                     0xA9, 0x80, 0x8D, 0x00, 0xD0,
@@ -844,6 +1078,44 @@
             spider: {
                 name: "Apple Cider Spider",
                 spriteEnableMask: 15,
+                spriteLayouts: [
+                    // Sprite 0: Spider
+                    [
+                        0x000000, 0x000000, 0x001800, 0x002400,
+                        0x807e01, 0x40e702, 0x21ff84, 0x13ffc8,
+                        0x0ffff0, 0x0ffff0, 0x13ffc8, 0x21ff84,
+                        0x40e702, 0x807e01, 0x002400, 0x001800,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Apple
+                    [
+                        0x000300, 0x000600, 0x001c00, 0x007c00,
+                        0x003e00, 0x01ffe0, 0x03fff0, 0x07fff8,
+                        0x0fffff, 0x0fffff, 0x0fffff, 0x0fffff,
+                        0x0fffff, 0x07fff8, 0x03fff0, 0x01ffe0,
+                        0x00ffc0, 0x007c00, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Cider Bottle
+                    [
+                        0x000000, 0x003c00, 0x003c00, 0x003c00,
+                        0x003c00, 0x007e00, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x0ffff0,
+                        0x0ffff0, 0x0ffff0, 0x0ffff0, 0x0ffff0,
+                        0x0ffff0, 0x0ffff0, 0x0ffff0, 0x07ffe0,
+                        0x000000
+                    ],
+                    // Sprite 3: Web Block
+                    [
+                        0xffffff, 0x800001, 0x400002, 0x200004,
+                        0x100008, 0x081810, 0x043c20, 0x027e40,
+                        0x01ff80, 0x01ff80, 0x027e40, 0x043c20,
+                        0x081810, 0x100008, 0x200004, 0x400002,
+                        0x800001, 0xffffff, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ],
                 program: [
                     0xA9, 0x04, 0x8D, 0x15, 0xD0,
                     0xA9, 0x70, 0x8D, 0x00, 0xD0,
@@ -861,6 +1133,29 @@
             ultima: {
                 name: "Ultima-on-Chain",
                 spriteEnableMask: 3,
+                spriteLayouts: [
+                    // Sprite 0: Avatar
+                    [
+                        0x001800, 0x003c00, 0x003c00, 0x001800,
+                        0x00ff00, 0x01ff80, 0x03ffc0, 0x07ffe0,
+                        0x0ffff0, 0x0dbf00, 0x0dbf00, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x00ff00,
+                        0x006600, 0x00c300, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Orc
+                    [
+                        0x006600, 0x00bd00, 0x00ff00, 0x00db00,
+                        0x007e00, 0x003c00, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x00ff00,
+                        0x00bd00, 0x006600, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Fallbacks
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA9, 0x05, 0x8D, 0x15, 0xD0,
                     0xA9, 0x50, 0x8D, 0x00, 0xD0,
@@ -875,6 +1170,44 @@
             miner2049er: {
                 name: "Miner 2049er",
                 spriteEnableMask: 15,
+                spriteLayouts: [
+                    // Sprite 0: Bounty Bob
+                    [
+                        0x007e00, 0x00ff00, 0x00db00, 0x00ff00,
+                        0x007e00, 0x003c00, 0x007e00, 0x00ff00,
+                        0x01ff80, 0x03ffc0, 0x07ffe0, 0x0ffff0,
+                        0x0ffff0, 0x0ffff0, 0x03ffc0, 0x03ffc0,
+                        0x066600, 0x0c0c00, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Elevator
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0xffffff,
+                        0xffffff, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0xffffff,
+                        0xffffff, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Mutant
+                    [
+                        0x000000, 0x003c00, 0x007e00, 0x00ff00,
+                        0x018180, 0x0381c0, 0x07c3e0, 0x0fffff,
+                        0x0fffff, 0x07c3e0, 0x0381c0, 0x018180,
+                        0x00ff00, 0x007e00, 0x003c00, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Hazard
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x00ff00,
+                        0x01ff80, 0x03ffc0, 0x07ffe0, 0x0ffff0,
+                        0x1ffff8, 0x3ffffc, 0x7ffffe, 0xffffff,
+                        0x7ffffe, 0x3ffffc, 0x1ffff8, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x007e00,
+                        0x001800
+                    ]
+                ],
                 program: [
                     0xA9, 0x06, 0x8D, 0x15, 0xD0,
                     0xA9, 0x90, 0x8D, 0x00, 0xD0,
@@ -1201,6 +1534,16 @@
             // Set enabled mask
             addrs.push(53269); vals.push(game.spriteEnableMask);
 
+            // Load sprite layout patterns for this game into CPU memory (addresses 54000+)
+            const layouts = game.spriteLayouts || fallbackSpriteLayouts;
+            for (let s = 0; s < layouts.length; s++) {
+                const baseAddr = 54000 + s * 32;
+                for (let r = 0; r < 21; r++) {
+                    addrs.push(baseAddr + r);
+                    vals.push(layouts[s][r]);
+                }
+            }
+
             // Initial velocities & score for Pong
             if (gameId === "pong") {
                 addrs.push(2); vals.push(3);  // Vel X = 3
@@ -1265,6 +1608,11 @@
                 setTimeout(() => {
                     speakText("ANOTHER VISITOR. STAY A WHILE... STAY FOREVER!").catch(err => console.error("Speech failed:", err));
                 }, 1000);
+            }
+
+            // Sync the sprite editor with the newly loaded ROM's sprites
+            if (typeof window.loadSpriteFromEVM === "function") {
+                window.loadSpriteFromEVM();
             }
         }
 
@@ -1334,7 +1682,7 @@
 
         class SimulatedCPU {
             constructor() {
-                this.memory = new Uint8Array(65536);
+                this.memory = new Array(65536).fill(0);
                 this.registers = {
                     a: 0,
                     x: 0,
@@ -1347,6 +1695,62 @@
                 this.interface = {
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
+
+                this.preloadDefaultSprites();
+            }
+
+            preloadDefaultSprites() {
+                const sprites = [
+                    // Sprite 0: Space Invader / Paddle
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x03ffc0,
+                        0x0ffff0, 0x1fdbf8, 0x3ffffc, 0x3ffffc,
+                        0x30ff0c, 0x1f00f8, 0x0f81f0, 0x07c3e0,
+                        0x03e7c0, 0x01ff80, 0x00ff00, 0x007e00,
+                        0x003c00, 0x001800, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Retro Ball / Sphere
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x0003c0, 0x000ff0, 0x001ff8,
+                        0x003ffc, 0x003ffc, 0x003ffc, 0x003ffc,
+                        0x001ff8, 0x000ff0, 0x0003c0, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Ghost / Alien
+                    [
+                        0x000000, 0x007e00, 0x00db00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00c300, 0x00c300,
+                        0x00c300, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x007e00, 0x003c00, 0x001800, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Diamond / Star
+                    [
+                        0x000000, 0x000180, 0x0003c0, 0x0007e0,
+                        0x000ff0, 0x001ff8, 0x003ffc, 0x007ffe,
+                        0x00ffff, 0x00ffff, 0x00ffff, 0x007ffe,
+                        0x003ffc, 0x001ff8, 0x000ff0, 0x0007e0,
+                        0x0003c0, 0x000180, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ];
+                for (let s = 0; s < sprites.length; s++) {
+                    const baseAddr = 54000 + s * 32;
+                    for (let r = 0; r < 21; r++) {
+                        this.memory[baseAddr + r] = sprites[s][r];
+                    }
+                }
+            }
+
+            async batchPoke(addrs, vals) {
+                for (let i = 0; i < addrs.length; i++) {
+                    this.memory[addrs[i]] = vals[i];
+                }
+                return { hash: "0x" + "0".repeat(64), wait: async () => {} };
             }
 
             async initializeGame(offset, programBytes, addrs, vals) {
@@ -1358,6 +1762,19 @@
                 for (let i = 0; i < addrs.length; i++) {
                     this.memory[addrs[i]] = vals[i];
                 }
+
+                // Check if sprite memory space (54000 to 54128) is blank, if so restore default sprites
+                let spriteAllZeros = true;
+                for (let i = 0; i < 128; i++) {
+                    if (this.memory[54000 + i] !== 0) {
+                        spriteAllZeros = false;
+                        break;
+                    }
+                }
+                if (spriteAllZeros) {
+                    this.preloadDefaultSprites();
+                }
+
                 this.registers.pc = offset;
                 console.log(`[ZMM VM] Initialized game ROM at memory block ${offset}`);
                 return { wait: async () => {} };
@@ -1403,6 +1820,7 @@
                 for (let i = 0; i < steps; i++) {
                     this.stepCPU();
                 }
+                this.updatePhysics();
                 return { wait: async () => {} };
             }
 
@@ -1431,7 +1849,9 @@
                 this.registers.x = (this.registers.x + (Math.random() < 0.15 ? 1 : 0)) % 256;
                 this.registers.y = (this.registers.y + (Math.random() < 0.05 ? 1 : 0)) % 256;
                 this.registers.sr = (this.registers.sr ^ (Math.random() < 0.05 ? 1 : 0)) % 256;
-                
+            }
+
+            updatePhysics() {
                 const selectGameEl = document.getElementById("selectGame");
                 const gameId = selectGameEl ? selectGameEl.value : "pong";
 
@@ -1535,6 +1955,94 @@
             }
             async updateSprite(id, x, y) {
                 return { wait: async () => {} };
+            }
+            async calculateGolfTrajectory(power, angle, wind, spin) {
+                // Simulate projectile trajectory with basic physics (gravity, wind, spin)
+                const xCoords = [];
+                const yCoords = [];
+                
+                const angleRad = (angle * Math.PI) / 180;
+                let vx = power * Math.cos(angleRad) * 1.5;
+                let vy = power * Math.sin(angleRad) * 1.5;
+                
+                let curX = 0;
+                let curY = 0;
+                const g = 9.8; // Gravity
+                const dt = 0.15; // Time step
+                
+                xCoords.push(Math.round(curX));
+                yCoords.push(Math.round(curY));
+                
+                for (let step = 0; step < 100; step++) {
+                    vy -= g * dt;
+                    vy += spin * 0.1;
+                    vx += wind * 0.05;
+                    
+                    curX += vx * dt;
+                    curY += vy * dt;
+                    
+                    if (curY < 0) {
+                        curY = 0;
+                        xCoords.push(Math.round(curX));
+                        yCoords.push(Math.round(curY));
+                        break;
+                    }
+                    
+                    xCoords.push(Math.round(curX));
+                    yCoords.push(Math.round(curY));
+                }
+                
+                return [xCoords, yCoords];
+            }
+            async getMercenaryGeometry(objId) {
+                // Return beautiful wireframe models for local simulation
+                if (objId === 1) {
+                    // Pyramidal structure (V=5, L=8)
+                    return [
+                        5, // V
+                        -15, 15, 15, -15, 0, // X coords
+                        0, 0, 0, 0, 25,      // Y coords
+                        -15, -15, 15, 15, 0, // Z coords
+                        8,                   // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Base square
+                        0, 4, 1, 4, 2, 4, 3, 4  // Apex lines
+                    ];
+                } else if (objId === 2) {
+                    // Flying Saucer / Hexagonal Prism (V=8, L=12)
+                    return [
+                        8, // V
+                        -10, 10, 15, 10, -10, -15, 0, 0, // X coords
+                        5, 5, 5, 5, 5, 5, 15, -5,        // Y coords
+                        -10, -10, 0, 10, 10, 0, 0, 0,    // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, // Outer ring
+                        0, 6, 1, 6, 2, 6, 3, 7, 4, 7, 5, 7  // Top & bottom caps
+                    ];
+                } else if (objId === 3) {
+                    // Defense Tower (V=8, L=12)
+                    return [
+                        8, // V
+                        -8, 8, 8, -8, -5, 5, 5, -5, // X coords
+                        0, 0, 0, 0, 30, 30, 30, 30, // Y coords
+                        -8, -8, 8, 8, -5, -5, 5, 5, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Vertical struts
+                    ];
+                } else {
+                    // Cuboid Block (V=8, L=12)
+                    return [
+                        8, // V
+                        -20, 20, 20, -20, -20, 20, 20, -20, // X coords
+                        0, 0, 0, 0, 15, 15, 15, 15,         // Y coords
+                        -10, -10, 10, 10, -10, -10, 10, 10, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Verticals
+                    ];
+                }
             }
         }
 
@@ -2687,8 +3195,24 @@
         window.addEventListener("keydown", async (e) => {
             if (!cpuContract || !graphicsContract || !musicContract) return;
 
-            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) {
+            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA")) {
                 return;
+            }
+
+            // Route standard controls through consensus voting system
+            if (document.getElementById("chkRouteConsensus") && document.getElementById("chkRouteConsensus").checked) {
+                let dir = null;
+                if (e.key === "ArrowLeft" || e.key === "a") dir = "LEFT";
+                else if (e.key === "ArrowRight" || e.key === "d") dir = "RIGHT";
+                else if (e.key === "ArrowUp" || e.key === "w") dir = "UP";
+                else if (e.key === "ArrowDown" || e.key === "s") dir = "DOWN";
+                else if (e.key === " " || e.key === "Spacebar") dir = "FIRE";
+                
+                if (dir) {
+                    e.preventDefault();
+                    simulateVote(dir);
+                    return;
+                }
             }
 
             // Keyboard matrix mapping check (non-blocking async poke)
@@ -7853,22 +8377,29 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const mappedX = (x % 320);
             const mappedY = (y % 200);
 
-            // Read from local storage to allow hot-reloading newly drawn sprites directly
-            try {
-                const stored = localStorage.getItem(`c64_shared_sprite_${index}`);
-                if (stored) {
-                    spritePatterns[index] = JSON.parse(stored);
+            // Read directly from Simulated CPU RAM to connect the sprite editor and the running game in real-time
+            if (cpuContract) {
+                const baseAddr = 54000 + index * 32;
+                pattern = [];
+                for (let r = 0; r < 21; r++) {
+                    pattern.push(Number(cpuContract.memory[baseAddr + r]) || 0);
                 }
-            } catch (e) {
-                console.error("Failed to load sprite from localStorage:", e);
-            }
-
-            let pattern = spritePatterns[index] || [];
-            let hasPattern = false;
-            for (let r = 0; r < pattern.length; r++) {
-                if (pattern[r] > 0) {
-                    hasPattern = true;
-                    break;
+                hasPattern = true;
+            } else {
+                try {
+                    const stored = localStorage.getItem(`c64_shared_sprite_${index}`);
+                    if (stored) {
+                        spritePatterns[index] = JSON.parse(stored);
+                    }
+                } catch (e) {
+                    console.error("Failed to load sprite from localStorage:", e);
+                }
+                pattern = spritePatterns[index] || [];
+                for (let r = 0; r < pattern.length; r++) {
+                    if (pattern[r] > 0) {
+                        hasPattern = true;
+                        break;
+                    }
                 }
             }
 
@@ -8081,36 +8612,194 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
         }
 
+        let nodeARep = 100;
+        let nodeBRep = 100;
+        let nodeCRep = 100;
+
+        function recoverConsensusNodes() {
+            nodeARep = 100;
+            nodeBRep = 100;
+            nodeCRep = 100;
+            
+            document.getElementById("nodeARep").innerText = "Rep: 100%";
+            
+            document.getElementById("nodeBRep").innerText = "Rep: 100%";
+            document.getElementById("nodeBStatus").innerText = "ONLINE";
+            document.getElementById("nodeBStatus").style.color = "#00ff7f";
+            
+            document.getElementById("nodeCRep").innerText = "Rep: 100%";
+            document.getElementById("nodeCStatus").innerText = "ONLINE";
+            document.getElementById("nodeCStatus").style.color = "#00ff7f";
+            
+            const logBox = document.getElementById("consensusLog");
+            logBox.innerText += "\n[MAINTENANCE] Nodes recovered to 100% reputation. Slashed suspensions lifted.";
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        let recentUserVotes = [];
+
         function simulateVote(direction) {
             const threshold = parseInt(document.getElementById("consensusThreshold").value);
             const logBox = document.getElementById("consensusLog");
             const statusLabel = document.getElementById("consensusStatusLabel");
             const progressBar = document.getElementById("consensusProgressBar");
             
+            const slashLimit = parseInt(document.getElementById("slashLimit") ? document.getElementById("slashLimit").value : 50);
+            const wA = parseInt(document.getElementById("weightA") ? document.getElementById("weightA").value : 2);
+            const wB = parseInt(document.getElementById("weightB") ? document.getElementById("weightB").value : 1);
+            const wC = parseInt(document.getElementById("weightC") ? document.getElementById("weightC").value : 1);
+
+            // Node A: ECDSA Transaction signature update
+            const randHex = (len) => Array.from({length: len}, () => Math.floor(Math.random()*16).toString(16)).join('');
+            const nodeATxSigEl = document.getElementById("nodeATxSig");
+            if (nodeATxSigEl) {
+                nodeATxSigEl.innerText = "0x" + randHex(6) + "..." + randHex(4);
+            }
+
+            // Node B: AI Momentum Predictive Model
+            recentUserVotes.push(direction);
+            if (recentUserVotes.length > 4) recentUserVotes.shift();
+            const nodeBPredEl = document.getElementById("nodeBPrediction");
+            if (nodeBPredEl) {
+                const uniqueVotes = new Set(recentUserVotes);
+                if (uniqueVotes.size === 1 && recentUserVotes.length >= 3) {
+                    nodeBPredEl.innerText = `Bias: Momentum (${direction} - 92% Conf)`;
+                } else if (uniqueVotes.size === 2) {
+                    nodeBPredEl.innerText = `Bias: Patterns (81% Conf)`;
+                } else {
+                    nodeBPredEl.innerText = `Bias: Entropy (39% Conf)`;
+                }
+            }
+
+            // Node C: Validator verification block hash
+            const nodeCBlockHashEl = document.getElementById("nodeCBlockHash");
+            if (nodeCBlockHashEl) {
+                nodeCBlockHashEl.innerText = "0x" + randHex(4) + "..." + randHex(4);
+            }
+
+            const nodeBAcc = document.getElementById("nodeBAcc") ? parseInt(document.getElementById("nodeBAcc").value) : 75;
+            const nodeCAcc = document.getElementById("nodeCAcc") ? parseInt(document.getElementById("nodeCAcc").value) : 60;
+            const nodeCByz = document.getElementById("nodeCByz") ? document.getElementById("nodeCByz").checked : false;
+            
+            const nodeB_Active = nodeBRep >= slashLimit;
+            const nodeC_Active = nodeCRep >= slashLimit;
+            
             const nodeA_Vote = direction;
-            const nodeB_Vote = Math.random() < 0.75 ? direction : ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random() * 4)];
-            const nodeC_Vote = Math.random() < 0.60 ? direction : ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random() * 4)];
+            let nodeB_Vote = null;
+            let nodeC_Vote = null;
             
-            logBox.innerText += `\n[VOTE ROUND] Node A voted ${nodeA_Vote} | Node B voted ${nodeB_Vote} | Node C voted ${nodeC_Vote}`;
+            const directions = ["UP", "DOWN", "LEFT", "RIGHT"];
             
-            let count = 0;
-            if (nodeA_Vote === direction) count++;
-            if (nodeB_Vote === direction) count++;
-            if (nodeC_Vote === direction) count++;
+            if (nodeB_Active) {
+                // Intelligent gameplay heuristic for Copilot Node B
+                let aiBestVote = direction;
+                
+                // If Space Invaders variables are active and sprites exist
+                const hasSpriteVars = typeof s0_x !== "undefined" && typeof s2_x !== "undefined";
+                if (hasSpriteVars && s0_x > 0 && s2_x > 0) {
+                    // Check if bullet represents an incoming threat
+                    const bulletThreat = typeof s1_x !== "undefined" && s1_y > 100 && s1_y < s0_y && Math.abs(s1_x - s0_x) < 20;
+                    if (bulletThreat) {
+                        aiBestVote = s0_x > 160 ? "LEFT" : "RIGHT"; // dodge
+                    } else {
+                        // Align horizontally with the alien and fire
+                        if (s2_x < s0_x - 12) {
+                            aiBestVote = "LEFT";
+                        } else if (s2_x > s0_x + 12) {
+                            aiBestVote = "RIGHT";
+                        } else {
+                            aiBestVote = "FIRE";
+                        }
+                    }
+                }
+                
+                nodeB_Vote = (Math.random() * 100 < nodeBAcc) ? aiBestVote : directions[Math.floor(Math.random() * 4)];
+            }
             
-            progressBar.style.width = `${(count / 3) * 100}%`;
+            if (nodeC_Active) {
+                if (nodeCByz) {
+                    const opposite = direction === "UP" ? "DOWN" : direction === "DOWN" ? "UP" : direction === "LEFT" ? "RIGHT" : "LEFT";
+                    nodeC_Vote = Math.random() < 0.85 ? opposite : directions[Math.floor(Math.random() * 4)];
+                } else {
+                    nodeC_Vote = (Math.random() * 100 < nodeCAcc) ? direction : directions[Math.floor(Math.random() * 4)];
+                }
+            }
             
-            if (count >= threshold) {
-                statusLabel.innerText = `STABLE (${count}/3 AGREED)`;
+            logBox.innerText += `\n[VOTE ROUND] Node A: ${nodeA_Vote} | Node B: ${nodeB_Vote || "SUSPENDED"} | Node C: ${nodeC_Vote || "SUSPENDED"}`;
+            
+            let totalWeight = wA;
+            let matchingWeight = 0;
+            
+            if (nodeA_Vote === direction) matchingWeight += wA;
+            
+            if (nodeB_Active) {
+                totalWeight += wB;
+                if (nodeB_Vote === direction) matchingWeight += wB;
+            }
+            
+            if (nodeC_Active) {
+                totalWeight += wC;
+                if (nodeC_Vote === direction) matchingWeight += wC;
+            }
+            
+            progressBar.style.width = `${(matchingWeight / totalWeight) * 100}%`;
+            
+            // Scaled consensus threshold
+            const targetRatio = threshold === 1 ? 0.33 : threshold === 2 ? 0.66 : 1.0;
+            const requiredWeight = totalWeight * targetRatio;
+            
+            if (matchingWeight >= requiredWeight) {
+                statusLabel.innerText = `STABLE (WT: ${matchingWeight}/${totalWeight} AGREED)`;
                 statusLabel.style.color = "#00ff7f";
                 progressBar.style.background = "#00ff7f";
                 logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
                 writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+                
+                if (cpuContract) {
+                    try {
+                        let joystickVal = 0xFF;
+                        if (direction === "UP") joystickVal &= ~0x01;
+                        else if (direction === "DOWN") joystickVal &= ~0x02;
+                        else if (direction === "LEFT") joystickVal &= ~0x04;
+                        else if (direction === "RIGHT") joystickVal &= ~0x08;
+                        else if (direction === "FIRE") joystickVal &= ~0x10;
+                        
+                        cpuContract.poke(56320, joystickVal);
+                        
+                        setTimeout(() => {
+                            try {
+                                cpuContract.poke(56320, 0xFF);
+                            } catch (e) {}
+                        }, 150);
+                    } catch (pokeErr) {
+                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
+                    }
+                }
             } else {
-                statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
+                statusLabel.innerText = `METASTABLE STUTTER (WT: ${matchingWeight}/${totalWeight})`;
                 statusLabel.style.color = "#ff007f";
                 progressBar.style.background = "#ff007f";
-                logBox.innerText += `\n[WARNING] Consensus failed (needed ${threshold}, got ${count}). Input discarded.`;
+                logBox.innerText += `\n[WARNING] Consensus failed (needed WT ${Math.ceil(requiredWeight)}, got ${matchingWeight}). Input discarded.`;
+            }
+            
+            if (nodeB_Active && nodeB_Vote !== direction) {
+                nodeBRep = Math.max(0, nodeBRep - 10);
+                document.getElementById("nodeBRep").innerText = `Rep: ${nodeBRep}%`;
+                if (nodeBRep < slashLimit) {
+                    document.getElementById("nodeBStatus").innerText = "SUSPENDED (SLASHED)";
+                    document.getElementById("nodeBStatus").style.color = "#ff007f";
+                    logBox.innerText += `\n[SLASH] Node B reputation fell to ${nodeBRep}% (Limit: ${slashLimit}%). SUSPENDED.`;
+                }
+            }
+            
+            if (nodeC_Active && nodeC_Vote !== direction) {
+                nodeCRep = Math.max(0, nodeCRep - 10);
+                document.getElementById("nodeCRep").innerText = `Rep: ${nodeCRep}%`;
+                if (nodeCRep < slashLimit) {
+                    document.getElementById("nodeCStatus").innerText = "SUSPENDED (SLASHED)";
+                    document.getElementById("nodeCStatus").style.color = "#ff007f";
+                    logBox.innerText += `\n[SLASH] Node C reputation fell to ${nodeCRep}% (Limit: ${slashLimit}%). SUSPENDED.`;
+                }
             }
             
             logBox.scrollTop = logBox.scrollHeight;
@@ -8152,6 +8841,35 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         cell.dataset.row = r;
                         cell.dataset.col = c;
                         
+                        function autoUpdateActiveSprite() {
+                            if (!cpuContract) return;
+                            const width = (sprEditMode === "single") ? 24 : 12;
+                            const rowVals = [];
+                            const baseAddr = 54000 + sprEditIndex * 32;
+
+                            for (let r = 0; r < 21; r++) {
+                                let rowVal = 0;
+                                for (let c = 0; c < width; c++) {
+                                    const val = sprGridState[r][c];
+                                    if (sprEditMode === "single") {
+                                        if (val !== 0) {
+                                            rowVal |= (1 << (23 - c));
+                                        }
+                                    } else {
+                                        rowVal |= (val << ((11 - c) * 2));
+                                    }
+                                }
+                                rowVals.push(rowVal);
+                                cpuContract.memory[baseAddr + r] = rowVal;
+                            }
+
+                            try {
+                                localStorage.setItem(`c64_shared_sprite_${sprEditIndex}`, JSON.stringify(rowVals));
+                            } catch(e) {
+                                console.error(e);
+                            }
+                        }
+
                         function paintCell() {
                             let val = row[c];
                             if (sprEditMode === "single") {
@@ -8167,6 +8885,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             else if (val === 1) cell.classList.add("color-01");
                             else if (val === 2) cell.classList.add("color-10");
                             else if (val === 3) cell.classList.add("color-11");
+                            autoUpdateActiveSprite();
                         }
 
                         cell.addEventListener("mousedown", (e) => {
@@ -8189,8 +8908,59 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 rebuildGrid();
             });
 
+            async function loadSpriteFromEVM() {
+                if (!cpuContract) return;
+                const baseAddr = 54000 + sprEditIndex * 32;
+
+                // Query C64 multi-color register for this sprite
+                let isMulticolor = false;
+                try {
+                    const mcReg = Number(await cpuContract.peek(53276));
+                    isMulticolor = (mcReg & (1 << sprEditIndex)) !== 0;
+                } catch(e) {}
+
+                const targetMode = isMulticolor ? "multi" : "single";
+                if (sprEditMode !== targetMode) {
+                    sprEditMode = targetMode;
+                    modeSelect.value = targetMode;
+                }
+                rebuildGrid();
+
+                const currentWidth = (sprEditMode === "single") ? 24 : 12;
+
+                try {
+                    for (let r = 0; r < 21; r++) {
+                        const val = Number(await cpuContract.peek(baseAddr + r));
+                        for (let c = 0; c < currentWidth; c++) {
+                            let cellVal = 0;
+                            if (sprEditMode === "single") {
+                                cellVal = ((val & (1 << (23 - c))) !== 0) ? 2 : 0;
+                            } else {
+                                cellVal = (val >> ((11 - c) * 2)) & 3;
+                            }
+                            sprGridState[r][c] = cellVal;
+                            
+                            // Map values to CSS color classes
+                            const cell = gridContainer.children[r * currentWidth + c];
+                            if (cell) {
+                                cell.className = "sprite-cell";
+                                if (cellVal === 0) cell.classList.add("color-00");
+                                else if (cellVal === 1) cell.classList.add("color-01");
+                                else if (cellVal === 2) cell.classList.add("color-10");
+                                else if (cellVal === 3) cell.classList.add("color-11");
+                            }
+                        }
+                    }
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Loaded Sprite ${sprEditIndex} from EVM RAM.`);
+                } catch (err) {
+                    console.error("Failed to load sprite from EVM:", err);
+                }
+            }
+            window.loadSpriteFromEVM = loadSpriteFromEVM;
+
             indexSelect.addEventListener("change", (e) => {
                 sprEditIndex = parseInt(e.target.value);
+                loadSpriteFromEVM();
             });
 
             btnClear.addEventListener("click", () => {
@@ -8254,7 +9024,43 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            // Bind interactive C64 screen click to hot-switch the active sprite editor index
+            function bindInteractiveCanvasClick(canvasId) {
+                const canvasEl = document.getElementById(canvasId);
+                if (!canvasEl) return;
+                
+                canvasEl.addEventListener("mousedown", async (e) => {
+                    if (!cpuContract) return;
+                    const rect = canvasEl.getBoundingClientRect();
+                    const scaleX = 320 / rect.width;
+                    const scaleY = 200 / rect.height;
+                    const clickX = (e.clientX - rect.left) * scaleX;
+                    const clickY = (e.clientY - rect.top) * scaleY;
+                    
+                    for (let s = 0; s < 8; s++) {
+                        let sx = Number(await cpuContract.peek(53248 + s * 2)) || 0;
+                        let sy = Number(await cpuContract.peek(53248 + s * 2 + 1)) || 0;
+                        
+                        sx = sx % 320;
+                        sy = sy % 200;
+                        
+                        if (clickX >= sx && clickX <= sx + 24 && clickY >= sy && clickY <= sy + 21) {
+                            console.log(`[CLICK ACTION] Selected Sprite ${s} at coordinates (${sx}, ${sy}).`);
+                            const indexSelect = document.getElementById("sprEditIndex");
+                            if (indexSelect) {
+                                indexSelect.value = s.toString();
+                                indexSelect.dispatchEvent(new Event('change'));
+                            }
+                            break;
+                        }
+                    }
+                });
+            }
+            bindInteractiveCanvasClick("c64Screen");
+            bindInteractiveCanvasClick("vulkanScreen");
+
             rebuildGrid();
+            setTimeout(loadSpriteFromEVM, 150);
         }
 
         function initGallerySystem() {
@@ -9331,12 +10137,37 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             
             // Spacebar support for golf swing
             window.addEventListener("keydown", (e) => {
-                if (e.code === "Space" && document.activeElement.tagName !== "INPUT") {
+                if (e.code === "Space" && document.activeElement && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
                     const golfCard = document.getElementById("swingMeterCanvas");
                     if (golfCard && golfCard.getBoundingClientRect().top < window.innerHeight && golfCard.getBoundingClientRect().bottom > 0) {
                         e.preventDefault();
                         startSwingInput();
                     }
+                }
+            });
+
+            // Keyboard controls for 3D Mercenary Mode navigation
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                    return;
+                }
+                
+                let action = null;
+                const key = e.key.toLowerCase();
+                
+                if (key === "w" || e.key === "ArrowUp") action = "FORWARD";
+                else if (key === "s" || e.key === "ArrowDown") action = "BACKWARD";
+                else if (key === "a") action = "LEFT";
+                else if (key === "d") action = "RIGHT";
+                else if (key === "q" || e.key === "ArrowLeft") action = "L_TURN";
+                else if (key === "e" || e.key === "ArrowRight") action = "R_TURN";
+                else if (key === "r") action = "UP";
+                else if (key === "f") action = "DOWN";
+                
+                if (action) {
+                    e.preventDefault();
+                    movePlayer(action);
                 }
             });
 
@@ -9370,7 +10201,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             window.addEventListener("keydown", (e) => {
                 if (!isMercenaryMode) return;
-                if (document.activeElement.tagName === "INPUT") return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) return;
                 
                 const key = e.key.toLowerCase();
                 if (key === 'w') { e.preventDefault(); movePlayer('FORWARD'); }

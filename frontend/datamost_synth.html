@@ -300,27 +300,67 @@
                             <input type="range" id="lfoRate" min="1" max="10" value="4" style="width: 80px; accent-color: var(--neon-magenta);">
                             <label style="font-size: 0.65rem; color: var(--text-secondary); margin-left: 5px;">Depth:</label>
                             <input type="range" id="lfoDepth" min="0.1" max="1.0" step="0.1" value="0.5" style="width: 80px; accent-color: var(--neon-blue);">
+                            
+                            <!-- ADSR Mode Selection -->
+                            <label style="font-size: 0.65rem; color: var(--text-secondary); margin-left: 10px; font-weight: bold; font-family: 'Orbitron';">ADSR Source:</label>
+                            <select id="adsrSource" class="input-glow" style="padding: 2px 5px; font-size: 0.65rem; background: #000; color: #fff; width: 110px; border-color: #ffcc00; font-family: 'Orbitron'; cursor: pointer;">
+                                <option value="chain" selected>🔗 Chain Reg</option>
+                                <option value="manual">🎛️ Manual Sliders</option>
+                            </select>
                         </div>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
                         <!-- Voice 1 -->
-                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.2);">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 1 (Bass)</span>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.2); font-family: 'Rajdhani', sans-serif;">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-family: 'Orbitron';">Voice 1 (Bass)</span>
                             <div id="v1FreqText" style="font-size: 1.2rem; font-weight: bold; color: var(--neon-magenta); font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
-                            <div id="v1NoteText" style="font-size: 0.8rem; color: var(--neon-blue); font-family: monospace;">---</div>
+                            <div id="v1NoteText" style="font-size: 0.8rem; color: var(--neon-blue); font-family: monospace; margin-bottom: 8px;">---</div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.65rem; border-top: 1px solid rgba(255, 0, 127, 0.15); padding-top: 6px; font-family: 'Orbitron';">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>A: <input type="range" id="v1_atk" min="0" max="15" value="5" style="width: 50px; vertical-align: middle;"></span>
+                                    <span>D: <input type="range" id="v1_dcy" min="0" max="15" value="9" style="width: 50px; vertical-align: middle;"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                    <span>S: <input type="range" id="v1_sus" min="0" max="15" value="12" style="width: 50px; vertical-align: middle;"></span>
+                                    <span>R: <input type="range" id="v1_rel" min="0" max="15" value="6" style="width: 50px; vertical-align: middle;"></span>
+                                </div>
+                            </div>
                         </div>
                         <!-- Voice 2 -->
-                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.2);">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 2 (Lead)</span>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.2); font-family: 'Rajdhani', sans-serif;">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-family: 'Orbitron';">Voice 2 (Lead)</span>
                             <div id="v2FreqText" style="font-size: 1.2rem; font-weight: bold; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
-                            <div id="v2NoteText" style="font-size: 0.8rem; color: var(--neon-magenta); font-family: monospace;">---</div>
+                            <div id="v2NoteText" style="font-size: 0.8rem; color: var(--neon-magenta); font-family: monospace; margin-bottom: 8px;">---</div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.65rem; border-top: 1px solid rgba(0, 242, 254, 0.15); padding-top: 6px; font-family: 'Orbitron';">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>A: <input type="range" id="v2_atk" min="0" max="15" value="5" style="width: 50px; vertical-align: middle;"></span>
+                                    <span>D: <input type="range" id="v2_dcy" min="0" max="15" value="9" style="width: 50px; vertical-align: middle;"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                    <span>S: <input type="range" id="v2_sus" min="0" max="15" value="12" style="width: 50px; vertical-align: middle;"></span>
+                                    <span>R: <input type="range" id="v2_rel" min="0" max="15" value="6" style="width: 50px; vertical-align: middle;"></span>
+                                </div>
+                            </div>
                         </div>
                         <!-- Voice 3 -->
-                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.2);">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Voice 3 (Arp)</span>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.2); font-family: 'Rajdhani', sans-serif;">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-family: 'Orbitron';">Voice 3 (Arp)</span>
                             <div id="v3FreqText" style="font-size: 1.2rem; font-weight: bold; color: #00ffcc; font-family: 'Orbitron', sans-serif; margin-top: 5px;">0 Hz</div>
-                            <div id="v3NoteText" style="font-size: 0.8rem; color: #ffcc00; font-family: monospace;">---</div>
+                            <div id="v3NoteText" style="font-size: 0.8rem; color: #ffcc00; font-family: monospace; margin-bottom: 8px;">---</div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.65rem; border-top: 1px solid rgba(0, 255, 204, 0.15); padding-top: 6px; font-family: 'Orbitron';">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>A: <input type="range" id="v3_atk" min="0" max="15" value="5" style="width: 50px; vertical-align: middle;"></span>
+                                    <span>D: <input type="range" id="v3_dcy" min="0" max="15" value="9" style="width: 50px; vertical-align: middle;"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                    <span>S: <input type="range" id="v3_sus" min="0" max="15" value="12" style="width: 50px; vertical-align: middle;"></span>
+                                    <span>R: <input type="range" id="v3_rel" min="0" max="15" value="6" style="width: 50px; vertical-align: middle;"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -749,7 +789,19 @@
                             </div>
                             <textarea id="wordcraftText" rows="6" style="width: 100%; background: transparent; border: none; outline: none; font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #3b2f2f; font-size: 1rem; resize: none; line-height: 1.4;" placeholder="Type document content here..."></textarea>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
+
+                        <!-- Wordcraft Cabinet view -->
+                        <div id="wordcraftCabinet" style="display: none; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3); border: 2px solid #ba55d3; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                            <div style="font-family: 'Orbitron', monospace; font-size: 0.85rem; color: #ba55d3; font-weight: bold; border-bottom: 1px solid rgba(186, 85, 211, 0.4); padding-bottom: 5px; margin-bottom: 5px; text-transform: uppercase;">
+                                🗄️ DFS Disk Directory Catalog
+                            </div>
+                            <div id="diskDirectoryList" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(186, 85, 211, 0.3); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.95rem; min-height: 80px; max-height: 150px; overflow-y: auto; color: var(--neon-cyan);">
+                                [Empty Cabinet]
+                            </div>
+                            <button class="btn btn-secondary" id="btnRefreshDisk" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 6px 12px; margin-top: 5px; cursor: pointer; width: 100%;">🔄 Refresh Catalog</button>
+                        </div>
+
+                        <div id="wordcraftControlsRow" style="display: flex; flex-direction: column; gap: 10px;">
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <span class="reg-label" style="min-width: 90px; font-size: 0.85rem;">FILE NAME:</span>
                                 <input type="text" id="docNameInput" value="document.txt" placeholder="document.txt" class="input-glow" style="flex-grow: 1; font-family: 'Orbitron', sans-serif;">
@@ -765,7 +817,7 @@
                                 <button class="btn btn-primary" id="btnWordcraftSave" style="background: #ba55d3; border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">💾 Save to DFS</button>
                                 <button class="btn btn-primary" id="btnWordcraftLoad" style="background: #4b382a; border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📂 Load from DFS</button>
                             </div>
-<div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
                                 <button class="btn btn-secondary" id="btnWordcraftSaveWorkspace" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">💾 Save to Workspace</button>
                                 <button class="btn btn-secondary" id="btnWordcraftLoadWorkspace" style="border-color: #ba55d3; color: var(--text-primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">📂 Load from Workspace</button>
                             </div>
@@ -1039,10 +1091,73 @@
         let lastSpeechCounter = 0;
         let spritePatterns = [[], [], [], [], [], [], [], []];
 
+        const fallbackSpriteLayouts = [
+            // Sprite 0: Space Invader / Paddle
+            [
+                0x001800, 0x003c00, 0x007e00, 0x03ffc0,
+                0x0ffff0, 0x1fdbf8, 0x3ffffc, 0x3ffffc,
+                0x30ff0c, 0x1f00f8, 0x0f81f0, 0x07c3e0,
+                0x03e7c0, 0x01ff80, 0x00ff00, 0x007e00,
+                0x003c00, 0x001800, 0x000000, 0x000000,
+                0x000000
+            ],
+            // Sprite 1: Retro Ball / Sphere
+            [
+                0x000000, 0x000000, 0x000000, 0x000000,
+                0x000000, 0x0003c0, 0x000ff0, 0x001ff8,
+                0x003ffc, 0x003ffc, 0x003ffc, 0x003ffc,
+                0x001ff8, 0x000ff0, 0x0003c0, 0x000000,
+                0x000000, 0x000000, 0x000000, 0x000000,
+                0x000000
+            ],
+            // Sprite 2: Ghost / Alien
+            [
+                0x000000, 0x007e00, 0x00db00, 0x00ff00,
+                0x00ff00, 0x00ff00, 0x00c300, 0x00c300,
+                0x00c300, 0x00ff00, 0x00ff00, 0x00ff00,
+                0x007e00, 0x003c00, 0x001800, 0x000000,
+                0x000000, 0x000000, 0x000000, 0x000000,
+                0x000000
+            ],
+            // Sprite 3: Diamond / Star
+            [
+                0x000000, 0x000180, 0x0003c0, 0x0007e0,
+                0x000ff0, 0x001ff8, 0x003ffc, 0x007ffe,
+                0x00ffff, 0x00ffff, 0x00ffff, 0x007ffe,
+                0x003ffc, 0x001ff8, 0x000ff0, 0x0007e0,
+                0x0003c0, 0x000180, 0x000000, 0x000000,
+                0x000000
+            ]
+        ];
+
         const games = {
             pong: {
                 name: "Pong-on-Chain",
                 spriteEnableMask: 3,
+                spriteLayouts: [
+                    // Sprite 0: Paddle (Vertical bar)
+                    [
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x1c0000, 0x1c0000,
+                        0x1c0000, 0x1c0000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Ball (Square)
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x001ff0, 0x001ff0, 0x001ff0, 0x001ff0,
+                        0x001ff0, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2 (unused/fallback)
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    // Sprite 3 (unused/fallback)
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA5, 0x08, 0xD0, 0x0F, 0xA2, 0x27, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA9, 
                     0x01, 0x85, 0x08, 0xAD, 0x00, 0xDC, 0x29, 0x04, 0xD0, 0x0F, 0xAD, 0x00, 
@@ -1077,6 +1192,37 @@
             anteater: {
                 name: "Ant Eater",
                 spriteEnableMask: 7,
+                spriteLayouts: [
+                    // Sprite 0: Ant Eater
+                    [
+                        0x001f80, 0x007fc0, 0x00ffe0, 0x01fff0,
+                        0x03ffff, 0x07ffff, 0x0fffff, 0x03dbfe,
+                        0x03ffff, 0x01ffff, 0x00ffe0, 0x007fc0,
+                        0x003f80, 0x001f00, 0x000e00, 0x000e00,
+                        0x001c00, 0x003800, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Ant / Insect
+                    [
+                        0x000000, 0x000000, 0x001800, 0x002400,
+                        0x002400, 0x007e00, 0x00db00, 0x00ff00,
+                        0x01ff80, 0x00ff00, 0x00db00, 0x007e00,
+                        0x002400, 0x002400, 0x001800, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Mound / Nest
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000180, 0x0003c0, 0x0007e0, 0x000ff0,
+                        0x001ff8, 0x003ffc, 0x007ffe, 0x00ffff,
+                        0x01ffff, 0x03ffff, 0x07ffff, 0x0fffff,
+                        0x1fffff, 0x3fffff, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Empty/unused fallback
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA9, 0x01, 0x8D, 0x15, 0xD0, 0xA9, 0x30, 0x8D, 0x00, 0xD0, 0xA9, 0x60, 
                     0x8D, 0x01, 0xD0, 0xA9, 0x05, 0x8D, 0x02, 0xD6, 0x60
@@ -1090,6 +1236,37 @@
             princessfrog: {
                 name: "Princess and the Frog",
                 spriteEnableMask: 7,
+                spriteLayouts: [
+                    // Sprite 0: Frog
+                    [
+                        0x000000, 0x006600, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x00ff00,
+                        0x01ff80, 0x03ffc0, 0x07ffe0, 0x0ffff0,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Princess crown
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x00db00,
+                        0x00ff00, 0x007e00, 0x003c00, 0x003c00,
+                        0x007e00, 0x00ff00, 0x01ff80, 0x03ffc0,
+                        0x07ffe0, 0x0ffff0, 0x1ffff8, 0x3ffffc,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Lilypad / Crown
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x007e00, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x1ffff8,
+                        0x3ffffc, 0x7ffffe, 0xfffffe, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Empty/unused fallback
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA9, 0x02, 0x8D, 0x15, 0xD0, 0xA9, 0x50, 0x8D, 0x00, 0xD0, 0xA9, 0x80, 
                     0x8D, 0x01, 0xD0, 0xA9, 0x06, 0x8D, 0x02, 0xD6, 0x60
@@ -1103,6 +1280,44 @@
             crush: {
                 name: "Crush, Crumble and Chomp!",
                 spriteEnableMask: 15,
+                spriteLayouts: [
+                    // Sprite 0: Monster
+                    [
+                        0x0003c0, 0x0007e0, 0x000ff0, 0x001ff8,
+                        0x003ffc, 0x007ffe, 0x00ffff, 0x01ffff,
+                        0x03ffff, 0x07ffff, 0x0fffff, 0x1fffff,
+                        0x3fffff, 0x7fffff, 0xffffff, 0xffffff,
+                        0xe00007, 0xc00003, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Helicopter
+                    [
+                        0x000000, 0x000000, 0x3fffff, 0x001800,
+                        0x001800, 0x007e00, 0x01ffc0, 0x07fff0,
+                        0x0ffff0, 0x1ffff8, 0x1ffff8, 0x0ffff0,
+                        0x07fff0, 0x001800, 0x001800, 0x003c00,
+                        0x007e00, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Building
+                    [
+                        0x000000, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x00ff00
+                    ],
+                    // Sprite 3: Citizen
+                    [
+                        0x000000, 0x000000, 0x000000, 0x001800,
+                        0x003c00, 0x003c00, 0x001800, 0x007e00,
+                        0x00ff00, 0x00ff00, 0x007e00, 0x003c00,
+                        0x003c00, 0x002400, 0x002400, 0x006600,
+                        0x006600, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ],
                 program: [
                     0xA9, 0x03, 0x8D, 0x15, 0xD0,
                     0xA9, 0x80, 0x8D, 0x00, 0xD0,
@@ -1120,6 +1335,44 @@
             spider: {
                 name: "Apple Cider Spider",
                 spriteEnableMask: 15,
+                spriteLayouts: [
+                    // Sprite 0: Spider
+                    [
+                        0x000000, 0x000000, 0x001800, 0x002400,
+                        0x807e01, 0x40e702, 0x21ff84, 0x13ffc8,
+                        0x0ffff0, 0x0ffff0, 0x13ffc8, 0x21ff84,
+                        0x40e702, 0x807e01, 0x002400, 0x001800,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Apple
+                    [
+                        0x000300, 0x000600, 0x001c00, 0x007c00,
+                        0x003e00, 0x01ffe0, 0x03fff0, 0x07fff8,
+                        0x0fffff, 0x0fffff, 0x0fffff, 0x0fffff,
+                        0x0fffff, 0x07fff8, 0x03fff0, 0x01ffe0,
+                        0x00ffc0, 0x007c00, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Cider Bottle
+                    [
+                        0x000000, 0x003c00, 0x003c00, 0x003c00,
+                        0x003c00, 0x007e00, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x0ffff0,
+                        0x0ffff0, 0x0ffff0, 0x0ffff0, 0x0ffff0,
+                        0x0ffff0, 0x0ffff0, 0x0ffff0, 0x07ffe0,
+                        0x000000
+                    ],
+                    // Sprite 3: Web Block
+                    [
+                        0xffffff, 0x800001, 0x400002, 0x200004,
+                        0x100008, 0x081810, 0x043c20, 0x027e40,
+                        0x01ff80, 0x01ff80, 0x027e40, 0x043c20,
+                        0x081810, 0x100008, 0x200004, 0x400002,
+                        0x800001, 0xffffff, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ],
                 program: [
                     0xA9, 0x04, 0x8D, 0x15, 0xD0,
                     0xA9, 0x70, 0x8D, 0x00, 0xD0,
@@ -1137,6 +1390,29 @@
             ultima: {
                 name: "Ultima-on-Chain",
                 spriteEnableMask: 3,
+                spriteLayouts: [
+                    // Sprite 0: Avatar
+                    [
+                        0x001800, 0x003c00, 0x003c00, 0x001800,
+                        0x00ff00, 0x01ff80, 0x03ffc0, 0x07ffe0,
+                        0x0ffff0, 0x0dbf00, 0x0dbf00, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x00ff00,
+                        0x006600, 0x00c300, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Orc
+                    [
+                        0x006600, 0x00bd00, 0x00ff00, 0x00db00,
+                        0x007e00, 0x003c00, 0x00ff00, 0x01ff80,
+                        0x03ffc0, 0x07ffe0, 0x0ffff0, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x00ff00,
+                        0x00bd00, 0x006600, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Fallbacks
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                ],
                 program: [
                     0xA9, 0x05, 0x8D, 0x15, 0xD0,
                     0xA9, 0x50, 0x8D, 0x00, 0xD0,
@@ -1151,6 +1427,44 @@
             miner2049er: {
                 name: "Miner 2049er",
                 spriteEnableMask: 15,
+                spriteLayouts: [
+                    // Sprite 0: Bounty Bob
+                    [
+                        0x007e00, 0x00ff00, 0x00db00, 0x00ff00,
+                        0x007e00, 0x003c00, 0x007e00, 0x00ff00,
+                        0x01ff80, 0x03ffc0, 0x07ffe0, 0x0ffff0,
+                        0x0ffff0, 0x0ffff0, 0x03ffc0, 0x03ffc0,
+                        0x066600, 0x0c0c00, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Elevator
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0xffffff,
+                        0xffffff, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0xffffff,
+                        0xffffff, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Mutant
+                    [
+                        0x000000, 0x003c00, 0x007e00, 0x00ff00,
+                        0x018180, 0x0381c0, 0x07c3e0, 0x0fffff,
+                        0x0fffff, 0x07c3e0, 0x0381c0, 0x018180,
+                        0x00ff00, 0x007e00, 0x003c00, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Hazard
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x00ff00,
+                        0x01ff80, 0x03ffc0, 0x07ffe0, 0x0ffff0,
+                        0x1ffff8, 0x3ffffc, 0x7ffffe, 0xffffff,
+                        0x7ffffe, 0x3ffffc, 0x1ffff8, 0x0ffff0,
+                        0x07ffe0, 0x03ffc0, 0x01ff80, 0x007e00,
+                        0x001800
+                    ]
+                ],
                 program: [
                     0xA9, 0x06, 0x8D, 0x15, 0xD0,
                     0xA9, 0x90, 0x8D, 0x00, 0xD0,
@@ -1477,6 +1791,16 @@
             // Set enabled mask
             addrs.push(53269); vals.push(game.spriteEnableMask);
 
+            // Load sprite layout patterns for this game into CPU memory (addresses 54000+)
+            const layouts = game.spriteLayouts || fallbackSpriteLayouts;
+            for (let s = 0; s < layouts.length; s++) {
+                const baseAddr = 54000 + s * 32;
+                for (let r = 0; r < 21; r++) {
+                    addrs.push(baseAddr + r);
+                    vals.push(layouts[s][r]);
+                }
+            }
+
             // Initial velocities & score for Pong
             if (gameId === "pong") {
                 addrs.push(2); vals.push(3);  // Vel X = 3
@@ -1542,6 +1866,11 @@
                     speakText("ANOTHER VISITOR. STAY A WHILE... STAY FOREVER!").catch(err => console.error("Speech failed:", err));
                 }, 1000);
             }
+
+            // Sync the sprite editor with the newly loaded ROM's sprites
+            if (typeof window.loadSpriteFromEVM === "function") {
+                window.loadSpriteFromEVM();
+            }
         }
 
         function wrapDiskContract(contract, activeSigner) {
@@ -1602,15 +1931,35 @@
         }
 
         // --- ZMM VM Simulation Fallbacks ---
-        let simulatedDiskFiles = [
-            { name: "PONG.PRG", size: 64 },
-            { name: "OREGON.TXT", size: 256 },
-            { name: "BBS.TXT", size: 128 }
-        ];
+        let simulatedDiskFiles = [];
+        try {
+            const savedFiles = localStorage.getItem("simulatedDiskFiles");
+            if (savedFiles) {
+                simulatedDiskFiles = JSON.parse(savedFiles);
+            }
+        } catch(e) {}
+        if (simulatedDiskFiles.length === 0) {
+            simulatedDiskFiles = [
+                { name: "PONG.PRG", size: 64 },
+                { name: "OREGON.TXT", size: 256 },
+                { name: "BBS.TXT", size: 128 }
+            ];
+        }
+
+        window.simulatedFileContents = {};
+        try {
+            const savedContents = localStorage.getItem("simulatedFileContents");
+            if (savedContents) {
+                const parsed = JSON.parse(savedContents);
+                for (const key in parsed) {
+                    window.simulatedFileContents[key] = new Uint8Array(parsed[key]);
+                }
+            }
+        } catch(e) {}
 
         class SimulatedCPU {
             constructor() {
-                this.memory = new Uint8Array(65536);
+                this.memory = new Array(65536).fill(0);
                 this.registers = {
                     a: 0,
                     x: 0,
@@ -1623,6 +1972,62 @@
                 this.interface = {
                     encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
                 };
+
+                this.preloadDefaultSprites();
+            }
+
+            preloadDefaultSprites() {
+                const sprites = [
+                    // Sprite 0: Space Invader / Paddle
+                    [
+                        0x001800, 0x003c00, 0x007e00, 0x03ffc0,
+                        0x0ffff0, 0x1fdbf8, 0x3ffffc, 0x3ffffc,
+                        0x30ff0c, 0x1f00f8, 0x0f81f0, 0x07c3e0,
+                        0x03e7c0, 0x01ff80, 0x00ff00, 0x007e00,
+                        0x003c00, 0x001800, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 1: Retro Ball / Sphere
+                    [
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000, 0x0003c0, 0x000ff0, 0x001ff8,
+                        0x003ffc, 0x003ffc, 0x003ffc, 0x003ffc,
+                        0x001ff8, 0x000ff0, 0x0003c0, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 2: Ghost / Alien
+                    [
+                        0x000000, 0x007e00, 0x00db00, 0x00ff00,
+                        0x00ff00, 0x00ff00, 0x00c300, 0x00c300,
+                        0x00c300, 0x00ff00, 0x00ff00, 0x00ff00,
+                        0x007e00, 0x003c00, 0x001800, 0x000000,
+                        0x000000, 0x000000, 0x000000, 0x000000,
+                        0x000000
+                    ],
+                    // Sprite 3: Diamond / Star
+                    [
+                        0x000000, 0x000180, 0x0003c0, 0x0007e0,
+                        0x000ff0, 0x001ff8, 0x003ffc, 0x007ffe,
+                        0x00ffff, 0x00ffff, 0x00ffff, 0x007ffe,
+                        0x003ffc, 0x001ff8, 0x000ff0, 0x0007e0,
+                        0x0003c0, 0x000180, 0x000000, 0x000000,
+                        0x000000
+                    ]
+                ];
+                for (let s = 0; s < sprites.length; s++) {
+                    const baseAddr = 54000 + s * 32;
+                    for (let r = 0; r < 21; r++) {
+                        this.memory[baseAddr + r] = sprites[s][r];
+                    }
+                }
+            }
+
+            async batchPoke(addrs, vals) {
+                for (let i = 0; i < addrs.length; i++) {
+                    this.memory[addrs[i]] = vals[i];
+                }
+                return { hash: "0x" + "0".repeat(64), wait: async () => {} };
             }
 
             async initializeGame(offset, programBytes, addrs, vals) {
@@ -1634,6 +2039,19 @@
                 for (let i = 0; i < addrs.length; i++) {
                     this.memory[addrs[i]] = vals[i];
                 }
+
+                // Check if sprite memory space (54000 to 54128) is blank, if so restore default sprites
+                let spriteAllZeros = true;
+                for (let i = 0; i < 128; i++) {
+                    if (this.memory[54000 + i] !== 0) {
+                        spriteAllZeros = false;
+                        break;
+                    }
+                }
+                if (spriteAllZeros) {
+                    this.preloadDefaultSprites();
+                }
+
                 this.registers.pc = offset;
                 console.log(`[ZMM VM] Initialized game ROM at memory block ${offset}`);
                 return { wait: async () => {} };
@@ -1679,6 +2097,7 @@
                 for (let i = 0; i < steps; i++) {
                     this.stepCPU();
                 }
+                this.updatePhysics();
                 return { wait: async () => {} };
             }
 
@@ -1707,7 +2126,9 @@
                 this.registers.x = (this.registers.x + (Math.random() < 0.15 ? 1 : 0)) % 256;
                 this.registers.y = (this.registers.y + (Math.random() < 0.05 ? 1 : 0)) % 256;
                 this.registers.sr = (this.registers.sr ^ (Math.random() < 0.05 ? 1 : 0)) % 256;
-                
+            }
+
+            updatePhysics() {
                 const selectGameEl = document.getElementById("selectGame");
                 const gameId = selectGameEl ? selectGameEl.value : "pong";
 
@@ -1812,6 +2233,94 @@
             async updateSprite(id, x, y) {
                 return { wait: async () => {} };
             }
+            async calculateGolfTrajectory(power, angle, wind, spin) {
+                // Simulate projectile trajectory with basic physics (gravity, wind, spin)
+                const xCoords = [];
+                const yCoords = [];
+                
+                const angleRad = (angle * Math.PI) / 180;
+                let vx = power * Math.cos(angleRad) * 1.5;
+                let vy = power * Math.sin(angleRad) * 1.5;
+                
+                let curX = 0;
+                let curY = 0;
+                const g = 9.8; // Gravity
+                const dt = 0.15; // Time step
+                
+                xCoords.push(Math.round(curX));
+                yCoords.push(Math.round(curY));
+                
+                for (let step = 0; step < 100; step++) {
+                    vy -= g * dt;
+                    vy += spin * 0.1;
+                    vx += wind * 0.05;
+                    
+                    curX += vx * dt;
+                    curY += vy * dt;
+                    
+                    if (curY < 0) {
+                        curY = 0;
+                        xCoords.push(Math.round(curX));
+                        yCoords.push(Math.round(curY));
+                        break;
+                    }
+                    
+                    xCoords.push(Math.round(curX));
+                    yCoords.push(Math.round(curY));
+                }
+                
+                return [xCoords, yCoords];
+            }
+            async getMercenaryGeometry(objId) {
+                // Return beautiful wireframe models for local simulation
+                if (objId === 1) {
+                    // Pyramidal structure (V=5, L=8)
+                    return [
+                        5, // V
+                        -15, 15, 15, -15, 0, // X coords
+                        0, 0, 0, 0, 25,      // Y coords
+                        -15, -15, 15, 15, 0, // Z coords
+                        8,                   // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Base square
+                        0, 4, 1, 4, 2, 4, 3, 4  // Apex lines
+                    ];
+                } else if (objId === 2) {
+                    // Flying Saucer / Hexagonal Prism (V=8, L=12)
+                    return [
+                        8, // V
+                        -10, 10, 15, 10, -10, -15, 0, 0, // X coords
+                        5, 5, 5, 5, 5, 5, 15, -5,        // Y coords
+                        -10, -10, 0, 10, 10, 0, 0, 0,    // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, // Outer ring
+                        0, 6, 1, 6, 2, 6, 3, 7, 4, 7, 5, 7  // Top & bottom caps
+                    ];
+                } else if (objId === 3) {
+                    // Defense Tower (V=8, L=12)
+                    return [
+                        8, // V
+                        -8, 8, 8, -8, -5, 5, 5, -5, // X coords
+                        0, 0, 0, 0, 30, 30, 30, 30, // Y coords
+                        -8, -8, 8, 8, -5, -5, 5, 5, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Vertical struts
+                    ];
+                } else {
+                    // Cuboid Block (V=8, L=12)
+                    return [
+                        8, // V
+                        -20, 20, 20, -20, -20, 20, 20, -20, // X coords
+                        0, 0, 0, 0, 15, 15, 15, 15,         // Y coords
+                        -10, -10, 10, 10, -10, -10, 10, 10, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Verticals
+                    ];
+                }
+            }
         }
 
         class SimulatedMusic {
@@ -1896,6 +2405,16 @@
                         } else {
                             const f = simulatedDiskFiles.find(f => f.name === filename);
                             if (f) f.size = content.length;
+                        }
+                        try {
+                            localStorage.setItem("simulatedDiskFiles", JSON.stringify(simulatedDiskFiles));
+                            const ser = {};
+                            for (const key in window.simulatedFileContents) {
+                                ser[key] = Array.from(window.simulatedFileContents[key]);
+                            }
+                            localStorage.setItem("simulatedFileContents", JSON.stringify(ser));
+                        } catch(e) {
+                            console.error("Failed to save simulated DFS to localStorage:", e);
                         }
                         console.log(`[ZMM VM] Saved file '${filename}' (${content.length} bytes) to simulated disk DFS`);
                     }
@@ -2436,6 +2955,9 @@
         });
         // Global keydown listeners for active sprite navigation (WASD/Arrow Keys)
         window.addEventListener("keydown", (e) => {
+            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA")) {
+                return;
+            }
             const step = 8;
             let moved = false;
             let dx = 0, dy = 0;
@@ -3159,7 +3681,7 @@
         window.addEventListener("keydown", async (e) => {
             if (!cpuContract || !graphicsContract || !musicContract) return;
 
-            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) {
+            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA")) {
                 return;
             }
 
@@ -3396,18 +3918,42 @@
                         
                         const v1_freq = (Number(state[1]) << 8) | Number(state[0]);
                         const v1_ctrl = Number(state[4]);
-                        const v1_ad = Number(state[5]);
-                        const v1_sr = Number(state[6]);
+                        let v1_ad = Number(state[5]);
+                        let v1_sr = Number(state[6]);
                         
                         const v2_freq = (Number(state[8]) << 8) | Number(state[7]);
                         const v2_ctrl = Number(state[11]);
-                        const v2_ad = Number(state[12]);
-                        const v2_sr = Number(state[13]);
+                        let v2_ad = Number(state[12]);
+                        let v2_sr = Number(state[13]);
                         
                         const v3_freq = (Number(state[15]) << 8) | Number(state[14]);
                         const v3_ctrl = Number(state[18]);
-                        const v3_ad = Number(state[19]);
-                        const v3_sr = Number(state[20]);
+                        let v3_ad = Number(state[19]);
+                        let v3_sr = Number(state[20]);
+
+                        const adsrSrc = document.getElementById("adsrSource") ? document.getElementById("adsrSource").value : "chain";
+                        if (adsrSrc === "manual") {
+                            const v1a = parseInt(document.getElementById("v1_atk").value);
+                            const v1d = parseInt(document.getElementById("v1_dcy").value);
+                            const v1s = parseInt(document.getElementById("v1_sus").value);
+                            const v1r = parseInt(document.getElementById("v1_rel").value);
+                            v1_ad = (v1a << 4) | v1d;
+                            v1_sr = (v1s << 4) | v1r;
+
+                            const v2a = parseInt(document.getElementById("v2_atk").value);
+                            const v2d = parseInt(document.getElementById("v2_dcy").value);
+                            const v2s = parseInt(document.getElementById("v2_sus").value);
+                            const v2r = parseInt(document.getElementById("v2_rel").value);
+                            v2_ad = (v2a << 4) | v2d;
+                            v2_sr = (v2s << 4) | v2r;
+
+                            const v3a = parseInt(document.getElementById("v3_atk").value);
+                            const v3d = parseInt(document.getElementById("v3_dcy").value);
+                            const v3s = parseInt(document.getElementById("v3_sus").value);
+                            const v3r = parseInt(document.getElementById("v3_rel").value);
+                            v3_ad = (v3a << 4) | v3d;
+                            v3_sr = (v3s << 4) | v3r;
+                        }
 
                         const v1Hz = Math.round(v1_freq * 0.06097);
                         const v2Hz = Math.round(v2_freq * 0.06097);
@@ -4551,6 +5097,9 @@
 
         document.getElementById("btnDeskTypewriter").addEventListener("click", () => {
             document.getElementById("wordcraftWorkspace").style.display = "flex";
+            document.getElementById("wordcraftTextContainer").style.display = "block";
+            document.getElementById("wordcraftControlsRow").style.display = "flex";
+            document.getElementById("wordcraftCabinet").style.display = "none";
             const container = document.getElementById("wordcraftTextContainer");
             if (container) {
                 container.style.background = "#f4ecd8";
@@ -4571,6 +5120,9 @@
 
         document.getElementById("btnDeskEasyScript").addEventListener("click", () => {
             document.getElementById("wordcraftWorkspace").style.display = "flex";
+            document.getElementById("wordcraftTextContainer").style.display = "block";
+            document.getElementById("wordcraftControlsRow").style.display = "flex";
+            document.getElementById("wordcraftCabinet").style.display = "none";
             const container = document.getElementById("wordcraftTextContainer");
             if (container) {
                 container.style.background = "#3b5dc9";
@@ -4590,12 +5142,17 @@
         });
 
         document.getElementById("btnDeskCabinet").addEventListener("click", async () => {
+            document.getElementById("wordcraftTextContainer").style.display = "none";
+            document.getElementById("wordcraftControlsRow").style.display = "none";
+            document.getElementById("wordcraftCabinet").style.display = "flex";
             const statusDiv = document.getElementById("wordcraftStatus");
-            statusDiv.innerText = "Accessing File Cabinet...";
-            const btnLoadDir = document.getElementById("btnLoadDir");
-            if (btnLoadDir) {
-                btnLoadDir.click();
+            statusDiv.innerText = "Accessing File Cabinet (DFS)...";
+            try {
+                await refreshDiskDirectory();
                 statusDiv.innerText = "DFS Directory updated in File Cabinet.";
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Failed to fetch directory.";
             }
         });
 
@@ -8540,22 +9097,29 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const mappedX = (x % 320);
             const mappedY = (y % 200);
 
-            // Read from local storage to allow hot-reloading newly drawn sprites directly
-            try {
-                const stored = localStorage.getItem(`c64_shared_sprite_${index}`);
-                if (stored) {
-                    spritePatterns[index] = JSON.parse(stored);
+            // Read directly from Simulated CPU RAM to connect the sprite editor and the running game in real-time
+            if (cpuContract) {
+                const baseAddr = 54000 + index * 32;
+                pattern = [];
+                for (let r = 0; r < 21; r++) {
+                    pattern.push(Number(cpuContract.memory[baseAddr + r]) || 0);
                 }
-            } catch (e) {
-                console.error("Failed to load sprite from localStorage:", e);
-            }
-
-            let pattern = spritePatterns[index] || [];
-            let hasPattern = false;
-            for (let r = 0; r < pattern.length; r++) {
-                if (pattern[r] > 0) {
-                    hasPattern = true;
-                    break;
+                hasPattern = true;
+            } else {
+                try {
+                    const stored = localStorage.getItem(`c64_shared_sprite_${index}`);
+                    if (stored) {
+                        spritePatterns[index] = JSON.parse(stored);
+                    }
+                } catch (e) {
+                    console.error("Failed to load sprite from localStorage:", e);
+                }
+                pattern = spritePatterns[index] || [];
+                for (let r = 0; r < pattern.length; r++) {
+                    if (pattern[r] > 0) {
+                        hasPattern = true;
+                        break;
+                    }
                 }
             }
 
@@ -8793,6 +9357,27 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 progressBar.style.background = "#00ff7f";
                 logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
                 writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+                
+                if (cpuContract) {
+                    try {
+                        let joystickVal = 0xFF;
+                        if (direction === "UP") joystickVal &= ~0x01;
+                        else if (direction === "DOWN") joystickVal &= ~0x02;
+                        else if (direction === "LEFT") joystickVal &= ~0x04;
+                        else if (direction === "RIGHT") joystickVal &= ~0x08;
+                        else if (direction === "FIRE") joystickVal &= ~0x10;
+                        
+                        cpuContract.poke(56320, joystickVal);
+                        
+                        setTimeout(() => {
+                            try {
+                                cpuContract.poke(56320, 0xFF);
+                            } catch (e) {}
+                        }, 150);
+                    } catch (pokeErr) {
+                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
+                    }
+                }
             } else {
                 statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
                 statusLabel.style.color = "#ff007f";
@@ -8839,6 +9424,35 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         cell.dataset.row = r;
                         cell.dataset.col = c;
                         
+                        function autoUpdateActiveSprite() {
+                            if (!cpuContract) return;
+                            const width = (sprEditMode === "single") ? 24 : 12;
+                            const rowVals = [];
+                            const baseAddr = 54000 + sprEditIndex * 32;
+
+                            for (let r = 0; r < 21; r++) {
+                                let rowVal = 0;
+                                for (let c = 0; c < width; c++) {
+                                    const val = sprGridState[r][c];
+                                    if (sprEditMode === "single") {
+                                        if (val !== 0) {
+                                            rowVal |= (1 << (23 - c));
+                                        }
+                                    } else {
+                                        rowVal |= (val << ((11 - c) * 2));
+                                    }
+                                }
+                                rowVals.push(rowVal);
+                                cpuContract.memory[baseAddr + r] = rowVal;
+                            }
+
+                            try {
+                                localStorage.setItem(`c64_shared_sprite_${sprEditIndex}`, JSON.stringify(rowVals));
+                            } catch(e) {
+                                console.error(e);
+                            }
+                        }
+
                         function paintCell() {
                             let val = row[c];
                             if (sprEditMode === "single") {
@@ -8854,6 +9468,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                             else if (val === 1) cell.classList.add("color-01");
                             else if (val === 2) cell.classList.add("color-10");
                             else if (val === 3) cell.classList.add("color-11");
+                            autoUpdateActiveSprite();
                         }
 
                         cell.addEventListener("mousedown", (e) => {
@@ -8876,8 +9491,59 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 rebuildGrid();
             });
 
+            async function loadSpriteFromEVM() {
+                if (!cpuContract) return;
+                const baseAddr = 54000 + sprEditIndex * 32;
+
+                // Query C64 multi-color register for this sprite
+                let isMulticolor = false;
+                try {
+                    const mcReg = Number(await cpuContract.peek(53276));
+                    isMulticolor = (mcReg & (1 << sprEditIndex)) !== 0;
+                } catch(e) {}
+
+                const targetMode = isMulticolor ? "multi" : "single";
+                if (sprEditMode !== targetMode) {
+                    sprEditMode = targetMode;
+                    modeSelect.value = targetMode;
+                }
+                rebuildGrid();
+
+                const currentWidth = (sprEditMode === "single") ? 24 : 12;
+
+                try {
+                    for (let r = 0; r < 21; r++) {
+                        const val = Number(await cpuContract.peek(baseAddr + r));
+                        for (let c = 0; c < currentWidth; c++) {
+                            let cellVal = 0;
+                            if (sprEditMode === "single") {
+                                cellVal = ((val & (1 << (23 - c))) !== 0) ? 2 : 0;
+                            } else {
+                                cellVal = (val >> ((11 - c) * 2)) & 3;
+                            }
+                            sprGridState[r][c] = cellVal;
+                            
+                            // Map values to CSS color classes
+                            const cell = gridContainer.children[r * currentWidth + c];
+                            if (cell) {
+                                cell.className = "sprite-cell";
+                                if (cellVal === 0) cell.classList.add("color-00");
+                                else if (cellVal === 1) cell.classList.add("color-01");
+                                else if (cellVal === 2) cell.classList.add("color-10");
+                                else if (cellVal === 3) cell.classList.add("color-11");
+                            }
+                        }
+                    }
+                    console.log(`[SPRITE EDITOR] Loaded Sprite ${sprEditIndex} from EVM RAM.`);
+                } catch (err) {
+                    console.error("Failed to load sprite from EVM:", err);
+                }
+            }
+            window.loadSpriteFromEVM = loadSpriteFromEVM;
+
             indexSelect.addEventListener("change", (e) => {
                 sprEditIndex = parseInt(e.target.value);
+                loadSpriteFromEVM();
             });
 
             btnClear.addEventListener("click", () => {
@@ -8941,7 +9607,43 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            // Bind interactive C64 screen click to hot-switch the active sprite editor index
+            function bindInteractiveCanvasClick(canvasId) {
+                const canvasEl = document.getElementById(canvasId);
+                if (!canvasEl) return;
+                
+                canvasEl.addEventListener("mousedown", async (e) => {
+                    if (!cpuContract) return;
+                    const rect = canvasEl.getBoundingClientRect();
+                    const scaleX = 320 / rect.width;
+                    const scaleY = 200 / rect.height;
+                    const clickX = (e.clientX - rect.left) * scaleX;
+                    const clickY = (e.clientY - rect.top) * scaleY;
+                    
+                    for (let s = 0; s < 8; s++) {
+                        let sx = Number(await cpuContract.peek(53248 + s * 2)) || 0;
+                        let sy = Number(await cpuContract.peek(53248 + s * 2 + 1)) || 0;
+                        
+                        sx = sx % 320;
+                        sy = sy % 200;
+                        
+                        if (clickX >= sx && clickX <= sx + 24 && clickY >= sy && clickY <= sy + 21) {
+                            console.log(`[CLICK ACTION] Selected Sprite ${s} at coordinates (${sx}, ${sy}).`);
+                            const indexSelect = document.getElementById("sprEditIndex");
+                            if (indexSelect) {
+                                indexSelect.value = s.toString();
+                                indexSelect.dispatchEvent(new Event('change'));
+                            }
+                            break;
+                        }
+                    }
+                });
+            }
+            bindInteractiveCanvasClick("c64Screen");
+            bindInteractiveCanvasClick("vulkanScreen");
+
             rebuildGrid();
+            setTimeout(loadSpriteFromEVM, 150);
         }
 
         function initGallerySystem() {
@@ -10024,12 +10726,37 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             
             // Spacebar support for golf swing
             window.addEventListener("keydown", (e) => {
-                if (e.code === "Space" && document.activeElement.tagName !== "INPUT") {
+                if (e.code === "Space" && document.activeElement && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
                     const golfCard = document.getElementById("swingMeterCanvas");
                     if (golfCard && golfCard.getBoundingClientRect().top < window.innerHeight && golfCard.getBoundingClientRect().bottom > 0) {
                         e.preventDefault();
                         startSwingInput();
                     }
+                }
+            });
+
+            // Keyboard controls for 3D Mercenary Mode navigation
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                    return;
+                }
+                
+                let action = null;
+                const key = e.key.toLowerCase();
+                
+                if (key === "w" || e.key === "ArrowUp") action = "FORWARD";
+                else if (key === "s" || e.key === "ArrowDown") action = "BACKWARD";
+                else if (key === "a") action = "LEFT";
+                else if (key === "d") action = "RIGHT";
+                else if (key === "q" || e.key === "ArrowLeft") action = "L_TURN";
+                else if (key === "e" || e.key === "ArrowRight") action = "R_TURN";
+                else if (key === "r") action = "UP";
+                else if (key === "f") action = "DOWN";
+                
+                if (action) {
+                    e.preventDefault();
+                    movePlayer(action);
                 }
             });
 
@@ -10063,7 +10790,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             window.addEventListener("keydown", (e) => {
                 if (!isMercenaryMode) return;
-                if (document.activeElement.tagName === "INPUT") return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) return;
                 
                 const key = e.key.toLowerCase();
                 if (key === 'w') { e.preventDefault(); movePlayer('FORWARD'); }
