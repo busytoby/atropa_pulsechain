@@ -505,6 +505,8 @@
                                     <option value="bassline">Synth Bass</option>
                                     <option value="arpeggio">Arp Chords</option>
                                     <option value="rests">Alternating Rests</option>
+                                    <option value="majorPentatonic">Major Pentatonic</option>
+                                    <option value="gametheme">Retro Theme</option>
                                 </select>
                             </div>
                         </div>
@@ -526,10 +528,12 @@
                             <button class="btn btn-secondary btn-small note-btn" data-freq="7217" style="padding: 6px 0;">A</button>
                             <button class="btn btn-secondary btn-small note-btn" data-freq="8100" style="padding: 6px 0;">B</button>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px;">
-                            <button class="btn btn-secondary btn-small" id="btnFXLaser" style="border-color: #ff5555; color: #ff5555; padding: 4px 0;"><span class="icon">💥</span> Laser Zap</button>
-                            <button class="btn btn-secondary btn-small" id="btnFXExplode" style="border-color: #ffaa00; color: #ffaa00; padding: 4px 0;"><span class="icon">🔥</span> Explosion</button>
-                            <button class="btn btn-secondary btn-small" id="btnFXCoin" style="border-color: #ffff00; color: #ffff00; padding: 4px 0;"><span class="icon">🪙</span> Coin Collect</button>
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px;">
+                            <button class="btn btn-secondary btn-small" id="btnFXLaser" style="border-color: #ff5555; color: #ff5555; padding: 4px 0; font-size: 0.65rem;"><span class="icon">💥</span> Laser Zap</button>
+                            <button class="btn btn-secondary btn-small" id="btnFXExplode" style="border-color: #ffaa00; color: #ffaa00; padding: 4px 0; font-size: 0.65rem;"><span class="icon">🔥</span> Explosion</button>
+                            <button class="btn btn-secondary btn-small" id="btnFXCoin" style="border-color: #ffff00; color: #ffff00; padding: 4px 0; font-size: 0.65rem;"><span class="icon">🪙</span> Coin</button>
+                            <button class="btn btn-secondary btn-small" id="btnFXWarp" style="border-color: #00f2fe; color: #00f2fe; padding: 4px 0; font-size: 0.65rem;"><span class="icon">🌀</span> Warp</button>
+                            <button class="btn btn-secondary btn-small" id="btnFXPowerup" style="border-color: #39ff14; color: #39ff14; padding: 4px 0; font-size: 0.65rem;"><span class="icon">⚡</span> Power Up</button>
                         </div>
                     </div>
                     </div>
@@ -2229,7 +2233,9 @@
                 default: [4291, 5406, 6429, 8583, 6429, 5406, 4291, 0],
                 bassline: [4291, 4291, 5728, 5728, 4816, 4816, 4291, 4291],
                 arpeggio: [4291, 5406, 6429, 8583, 8583, 6429, 5406, 4291],
-                rests: [4291, 0, 5406, 0, 6429, 0, 8583, 0]
+                rests: [4291, 0, 5406, 0, 6429, 0, 8583, 0],
+                majorPentatonic: [4291, 4816, 5406, 6429, 7217, 8583, 7217, 6429],
+                gametheme: [4291, 6429, 5728, 5406, 4816, 5406, 4291, 0]
             };
             
             const activeSheet = sheets[preset] || sheets.default;
@@ -2276,6 +2282,31 @@
                 await pokeSIDFreq(8583, 17); // Note 2
                 await new Promise(r => setTimeout(r, 150));
                 await pokeSIDFreq(0, 16);
+            } catch(e){}
+        });
+
+        document.getElementById("btnFXWarp").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // Futuristic low to high pitch sweep
+                for (let f = 2000; f < 14000; f += 800) {
+                    await pokeSIDFreq(f, 17); // Triangle
+                    await new Promise(r => setTimeout(r, 10));
+                }
+                await pokeSIDFreq(0, 16);
+            } catch(e){}
+        });
+
+        document.getElementById("btnFXPowerup").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // Energetic stepping synth chime
+                const freqs = [3200, 4800, 6400, 9600, 12800];
+                for (let f of freqs) {
+                    await pokeSIDFreq(f, 65); // Pulse/Square wave
+                    await new Promise(r => setTimeout(r, 60));
+                }
+                await pokeSIDFreq(0, 64);
             } catch(e){}
         });
 
