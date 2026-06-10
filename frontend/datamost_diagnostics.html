@@ -8848,22 +8848,8 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 consensusContract.resetReputations();
             }
             renderValidatorGrid();
-            if (consensusContract) {
-                consensusContract.resetReputations();
-            }
-            
-            document.getElementById("nodeARep").innerText = "Rep: 100%";
-            
-            document.getElementById("nodeBRep").innerText = "Rep: 100%";
-            document.getElementById("nodeBStatus").innerText = "ONLINE";
-            document.getElementById("nodeBStatus").style.color = "#00ff7f";
-            
-            document.getElementById("nodeCRep").innerText = "Rep: 100%";
-            document.getElementById("nodeCStatus").innerText = "ONLINE";
-            document.getElementById("nodeCStatus").style.color = "#00ff7f";
-            
             const logBox = document.getElementById("consensusLog");
-            logBox.innerText += "\n[MAINTENANCE] Nodes recovered to 100% reputation. Slashed suspensions lifted.";
+            logBox.innerText += "\n[MAINTENANCE] All 11 PKI validator nodes restored to 100% reputation and restaked. Suspensions lifted.";
             logBox.scrollTop = logBox.scrollHeight;
         }
 
