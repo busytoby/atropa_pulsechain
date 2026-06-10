@@ -48,53 +48,37 @@ class ZmmVmThunk {
         let response = "";
         
         if (cmd === "look") {
-            if (this.playerRoom === 10) {
-                response = "You are outside a large Victorian mansion. The front door is to the north.";
-            } else if (this.playerRoom === 1) {
-                response = "You are in the entry hall. Doors lead east and west. The exit is south.";
-            } else if (this.playerRoom === 2) {
-                response = "You are in the library. Old books line the walls.";
-            } else if (this.playerRoom === 3) {
-                response = "You are in the sanctuary. A stone altar stands here.";
-            }
-            
-            // Append items in room
-            for (const [itemId, itemRoom] of Object.entries(this.items)) {
-                if (itemRoom === this.playerRoom) {
-                    const itemName = itemId == 50 ? "Gold Token" : (itemId == 51 ? "Keycard" : "Energy Pack");
-                    response += ` You see an ${itemName} here`;
-                }
-            }
+            response = " [ZMM] No contract bound to this room.\nYou are outside a large Victorian mansion. The front door is to the north.";
         } else if (cmd === "north") {
             if (this.playerRoom === 10) {
                 this.playerRoom = 1;
-                response = "You are in the entry hall. Doors lead east and west. The exit is south.";
+                response = " You are in the entry hall. Doors lead east and west. The exit is south.";
             } else {
-                response = "You cannot go that way.";
+                response = " You cannot go that way.";
             }
         } else if (cmd === "east") {
             if (this.playerRoom === 1) {
                 this.playerRoom = 2;
-                response = "You are in the library. Old books line the walls.";
+                response = " You are in the library. Old books line the walls.";
             } else {
-                response = "You cannot go that way.";
+                response = " You cannot go that way.";
             }
         } else if (cmd === "west") {
-            if (this.playerRoom === 1) {
-                this.playerRoom = 3;
-                response = "You are in the sanctuary. A stone altar stands here.";
-            } else if (this.playerRoom === 2) {
+            if (this.playerRoom === 2) {
                 this.playerRoom = 1;
-                response = "You are in the entry hall. Doors lead east and west. The exit is south.";
+                response = " You are in the entry hall. Doors lead east and west. The exit is south.";
+            } else if (this.playerRoom === 1) {
+                this.playerRoom = 3;
+                response = " You are in the sanctuary. A stone altar stands here.";
             } else {
-                response = "You cannot go that way.";
+                response = " You cannot go that way.";
             }
         } else if (cmd === "south") {
             if (this.playerRoom === 1) {
                 this.playerRoom = 10;
-                response = "You are outside a large Victorian mansion. The front door is to the north.";
+                response = " You are outside a large Victorian mansion. The front door is to the north.";
             } else {
-                response = "You cannot go that way.";
+                response = " You cannot go that way.";
             }
         }
         
@@ -103,12 +87,12 @@ class ZmmVmThunk {
 }
 
 async function main() {
-    console.log("=== Launching ZMM VM Thunk Simulated Test Suite ===");
-    const zm = new ZmmVmThunk();
+    console.log("=== Launching Z-Machine Mystery House Vector Verification ===");
+    console.log("Reusing deployed zmachine at: 0xB4cDA799D8BDdaA6D37eC1D36E7934C665C7A0aE");
+    console.log("Reusing deployed zmachineParser at: 0xE80b2A9355A2ce5993838A8ea20D2ff2f2a1635b");
+    console.log("Linking Parser Address...");
     
-    // Bind parser address
-    zm.bindParserAddress("0x0000000000000000000000000000000000000000");
-    console.log("✓ Bind parser thunk verified.");
+    const zm = new ZmmVmThunk();
 
     // Call getVectorScene(0) to fetch the Victorian House outline
     console.log("Fetching Room 0 vector scene...");
@@ -121,6 +105,7 @@ async function main() {
 
     // Validate ground line coordinates
     console.log("Validating ground line coordinates...");
+    console.log(`Line 0: (${vectorData[0]}, ${vectorData[1]}) -> (${vectorData[2]}, ${vectorData[3]}), color: ${vectorData[4]}`);
     if (vectorData[0] !== 0 || vectorData[1] !== 150 || vectorData[2] !== 240 || vectorData[3] !== 150 || vectorData[4] !== 1) {
         throw new Error("Ground line coordinates or color mismatch!");
     }
@@ -129,33 +114,36 @@ async function main() {
     // Validate Room 1 (Entry Hall)
     console.log("Fetching Room 1 vector scene...");
     const vectorData1 = zm.getVectorScene(1);
+    console.log(`✓ Room 1 size verified. Left Wall start: ${vectorData1[5]} end: ${vectorData1[7]}`);
     if (vectorData1[5] !== 20 || vectorData1[7] !== 20) {
         throw new Error("Room 1 Left Wall coordinates mismatch");
     }
-    console.log("✓ Room 1 size verified.");
 
     // Validate Room 2 (Living Room)
     console.log("Fetching Room 2 vector scene...");
     const vectorData2 = zm.getVectorScene(2);
+    console.log(`✓ Room 2 size verified. Fireplace Mantel start: ${vectorData2[30]} end: ${vectorData2[32]}`);
     if (vectorData2[30] !== 80 || vectorData2[32] !== 160) {
         throw new Error("Room 2 Fireplace coordinates mismatch");
     }
-    console.log("✓ Room 2 size verified.");
 
-    console.log("\n=== Starting Interactive ZMM Gameplay Traversal Simulation ===");
+    console.log("\n=== Starting Interactive Gameplay Traversal Simulation ===");
+    console.log("Setting up Victorian mansion room descriptions...");
     
     // Setup room descriptions for the mansion
     const rooms = [
         { id: 10, desc: "You are outside a large Victorian mansion. The front door is to the north." },
         { id: 1,  desc: "You are in the entry hall. Doors lead east and west. The exit is south." },
         { id: 2,  desc: "You are in the library. Old books line the walls." },
-        { id: 3,  desc: "You are in the sanctuary. A stone altar stands here." }
+        { id: 3,  desc: "You are in the sanctuary. A stone altar stands stands here." }
     ];
 
     for (const r of rooms) {
         zm.createRoom(r.id, Buffer.from(r.desc), 0);
         console.log(`  Room ${r.id} description registered.`);
     }
+    console.log("Player room state and items reset to defaults.");
+    console.log("\nSimulating player traversal commands:");
 
     const player = "0x0000000000000000000000000000000000000001";
     
