@@ -615,6 +615,136 @@ object "cpu6502" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD: pushUnicodeKey(uint256 codePoint)
+            // Selector: 0x7684ddbd
+            // Pushes a Unicode code point to the keyboard FIFO buffer.
+            // ----------------------------------------------------------------
+            if eq(selector, 0x7684ddbd) {
+                let codePoint := calldataload(4)
+                let head := sload(getUserSlot(55200))
+                let tail := sload(getUserSlot(55201))
+                
+                // Initialize size limit to 64 slots if not set
+                let limit := sload(getUserSlot(55202))
+                if iszero(limit) {
+                    limit := 64
+                    sstore(getUserSlot(55202), limit)
+                }
+
+                // Check if buffer is full: (tail + 1) % limit == head
+                let nextTail := mod(add(tail, 1), limit)
+                if iszero(eq(nextTail, head)) {
+                    // Write to FIFO slot (starting at 55203)
+                    sstore(getUserSlot(add(55203, tail)), codePoint)
+                    sstore(getUserSlot(55201), nextTail)
+                }
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD: popUnicodeKey() -> uint256 codePoint
+            // Selector: 0x42555906
+            // Pops a Unicode code point from the keyboard FIFO buffer.
+            // ----------------------------------------------------------------
+            if eq(selector, 0x42555906) {
+                let head := sload(getUserSlot(55200))
+                let tail := sload(getUserSlot(55201))
+                let codePoint := 0
+
+                // If buffer is not empty: head != tail
+                if iszero(eq(head, tail)) {
+                    codePoint := sload(getUserSlot(add(55203, head)))
+                    
+                    let limit := sload(getUserSlot(55202))
+                    if iszero(limit) { limit := 64 }
+
+                    let nextHead := mod(add(head, 1), limit)
+                    sstore(getUserSlot(55200), nextHead)
+                }
+
+                mstore(0x00, codePoint)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD: recordTransition(uint256 state, uint256 action)
+            // Selector: 0xc05000f7
+            // Records a step's state and action during the active episode.
+            // ----------------------------------------------------------------
+            if eq(selector, 0xc05000f7) {
+                let stateVal := calldataload(4)
+                let actionVal := calldataload(36)
+                
+                let stepCount := sload(getUserSlot(55500))
+                // Limit episode history to 100 steps to control storage overhead
+                if lt(stepCount, 100) {
+                    // Pack state-action: state (bits 0-127), action (bits 128-255)
+                    let packed := add(stateVal, shl(128, actionVal))
+                    sstore(getUserSlot(add(55501, stepCount)), packed)
+                    sstore(getUserSlot(55500), add(stepCount, 1))
+                }
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD: applyMonteCarloScore(int256 score)
+            // Selector: 0xcc396490
+            // Evaluates performance and updates all recorded transition weights.
+            // ----------------------------------------------------------------
+            if eq(selector, 0xcc396490) {
+                let score := calldataload(4)
+                let stepCount := sload(getUserSlot(55500))
+
+                for { let i := 0 } lt(i, stepCount) { i := add(i, 1) } {
+                    let packed := sload(getUserSlot(add(55501, i)))
+                    let stateVal := and(packed, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                    let actionVal := shr(128, packed)
+
+                    // Helper to resolve policy weight slot key: keccak256(state, action, salt)
+                    mstore(0x00, stateVal)
+                    mstore(0x20, actionVal)
+                    mstore(0x40, 0x88888888)
+                    let weightSlot := keccak256(0x00, 96)
+
+                    let weight := sload(weightSlot)
+                    // Convert signed values appropriately in EVM
+                    weight := add(weight, score)
+                    sstore(weightSlot, weight)
+
+                    // Clear episode steps
+                    sstore(getUserSlot(add(55501, i)), 0)
+                }
+
+                // Reset episode step count
+                sstore(getUserSlot(55500), 0)
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD: getPolicyWeight(uint256 state, uint256 action) -> int256 weight
+            // Selector: 0xa25b60c0
+            // Returns the recorded policy utility weight for a state-action pair.
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa25b60c0) {
+                let stateVal := calldataload(4)
+                let actionVal := calldataload(36)
+
+                mstore(0x00, stateVal)
+                mstore(0x20, actionVal)
+                mstore(0x40, 0x88888888)
+                let weightSlot := keccak256(0x00, 96)
+
+                mstore(0x00, sload(weightSlot))
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD: peek(uint256 addr)
             // Selector: 0x7861d269
             // ----------------------------------------------------------------
