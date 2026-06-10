@@ -219,6 +219,30 @@
             <button class="btn" onclick="resetGame()">Reset</button>
         </div>
 
+        <div class="btn-group" style="margin-top: 10px; width: 100%;">
+            <button class="btn" id="btnMint" onclick="mintHarvestToLedger()" style="border-color: #ffa500; color: #ffa500; background: rgba(255, 165, 0, 0.05);">🔮 Mint Harvest to Ledger</button>
+        </div>
+
+        <!-- Color pickers grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; width: 100%; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; color: #a59cb4; border: 1px solid rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <label>Outer Ring:</label>
+                <input type="color" id="colOuter" value="#ff007f" onchange="updateColors()" style="border: none; background: transparent; cursor: pointer; width: 30px; height: 30px;">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <label>Mid Ring:</label>
+                <input type="color" id="colMid" value="#ffaa00" onchange="updateColors()" style="border: none; background: transparent; cursor: pointer; width: 30px; height: 30px;">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <label>Inner Ring:</label>
+                <input type="color" id="colInner" value="#00e676" onchange="updateColors()" style="border: none; background: transparent; cursor: pointer; width: 30px; height: 30px;">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <label>Ship / Core:</label>
+                <input type="color" id="colPrimary" value="#00f2fe" onchange="updateColors()" style="border: none; background: transparent; cursor: pointer; width: 30px; height: 30px;">
+            </div>
+        </div>
+
         <div class="controls-info">
             <strong>[A / D]</strong> Rotate Ship &nbsp;|&nbsp; 
             <strong>[W]</strong> Thrust &nbsp;|&nbsp; 
@@ -233,6 +257,8 @@
         <a href="ledger.html" class="nav-link" style="color: var(--ring-mid);">🔮 Go to Alchemical Ledger</a>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+
     <script>
         const canvas = document.getElementById("vectorCanvas");
         const ctx = canvas.getContext("2d");
@@ -244,6 +270,27 @@
 
         // Audio Setup
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let engineOsc = null;
+        let engineGain = null;
+
+        function initEngineSound() {
+            try {
+                if (engineOsc) return; // already initialized
+                
+                engineOsc = audioCtx.createOscillator();
+                engineGain = audioCtx.createGain();
+                
+                engineOsc.type = "triangle";
+                engineOsc.frequency.setValueAtTime(60, audioCtx.currentTime);
+                engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+                
+                engineOsc.connect(engineGain);
+                engineGain.connect(audioCtx.destination);
+                engineOsc.start(0);
+            } catch(e) {
+                console.error("Audio engine init error:", e);
+            }
+        }
         
         function playLaserSound() {
             try {
@@ -275,6 +322,118 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.4);
             } catch(e) {}
+        }
+
+        // Web3 Ledger & Game Contract Integration Configuration
+        let provider;
+        let signer;
+        let starCastleContract;
+        let config = {};
+        
+        const starCastleAddress = "0xCd1963be7AEf4b3819AE6Cc1340962319eD6b237";
+        const ledgerAddress = "0xDEb3626C53C52C544A0702Ec3f0A881C8d1d3678";
+        
+        const starCastleABI = [
+            "function initializeGame() external returns (uint256, uint256, uint256, uint256, uint256, uint256)",
+            "function recordHarvest(uint256 score, uint256 lives, uint256 lead, uint256 mercury, uint256 sulfur, uint256 status) external returns (uint256)",
+            "function getHarvestState() external view returns (uint256, uint256, uint256, uint256, uint256, uint256)",
+            "function mintHarvestOnChain(address ledgerAddr) external returns (uint256)"
+        ];
+
+        async function initWeb3() {
+            try {
+                const res = await fetch("/api/config");
+                if (res.ok) {
+                    config = await res.json();
+                }
+            } catch (e) {
+                console.warn("Config loading error, using static fallback addresses:", e);
+            }
+        }
+
+        async function mintHarvestToLedger() {
+            if (!leadHarvested && !mercuryHarvested && !sulfurHarvested) {
+                alert("No alchemical reagents harvested yet! Break shield segments or the core to harvest reagents.");
+                return;
+            }
+            
+            try {
+                if (typeof window.ethereum === "undefined") {
+                    alert("Browser wallet not found. Please install MetaMask or run on an Ethereum-enabled browser.");
+                    return;
+                }
+                
+                await initWeb3();
+                const activeStarCastleAddr = (config.networks && config.networks.localhost && config.networks.localhost.starCastleAddress) || starCastleAddress;
+                const activeLedgerAddr = (config.networks && config.networks.localhost && config.networks.localhost.ledgerAddress) || ledgerAddress;
+
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                
+                starCastleContract = new ethers.Contract(activeStarCastleAddr, starCastleABI, signer);
+                
+                const btn = document.getElementById("btnMint");
+                btn.disabled = true;
+                btn.innerText = "⏳ Recording & Minting to Ledger...";
+                
+                // 1. Record current game telemetry on-chain in the StarCastle contract
+                console.log("Recording harvest state on-chain...");
+                const status = gameActive ? 1 : 2;
+                const recordTx = await starCastleContract.recordHarvest(score, lives, leadHarvested, mercuryHarvested, sulfurHarvested, status);
+                await recordTx.wait();
+
+                // 2. Trigger on-chain minting (makes cross-contract calls from StarCastle -> ZarrellaLedger)
+                console.log("Triggering on-chain cross-contract ledger minting...");
+                const mintTx = await starCastleContract.mintHarvestOnChain(activeLedgerAddr);
+                await mintTx.wait();
+                
+                leadHarvested = 0;
+                mercuryHarvested = 0;
+                sulfurHarvested = 0;
+                saveHarvestedReagents();
+                alert("🔮 Alchemical harvest successfully recorded on-chain and minted to Zarrella Ledger!");
+            } catch (err) {
+                console.error("On-chain minting failed:", err);
+                alert(`Minting failed: ${err.message}`);
+            } finally {
+                const btn = document.getElementById("btnMint");
+                btn.disabled = false;
+                btn.innerText = "🔮 Mint Harvest to Ledger";
+            }
+        }
+
+        // Initialize Web3 configs on startup
+        initWeb3();
+
+        // Color Sliders custom update callback
+        let shipColor = "#00f2fe";
+
+        function updateColors() {
+            const colOuter = document.getElementById("colOuter").value;
+            const colMid = document.getElementById("colMid").value;
+            const colInner = document.getElementById("colInner").value;
+            const colPrimary = document.getElementById("colPrimary").value;
+
+            // Update rings array
+            rings[2].color = colOuter;
+            rings[1].color = colMid;
+            rings[0].color = colInner;
+
+            // Update ship & central core color variable
+            shipColor = colPrimary;
+
+            // Update CSS variables for full cabinet/neon integration
+            document.documentElement.style.setProperty('--primary', colPrimary);
+            
+            // Generate glowing translucent rgba fallback
+            const r = parseInt(colPrimary.slice(1, 3), 16);
+            const g = parseInt(colPrimary.slice(3, 5), 16);
+            const b = parseInt(colPrimary.slice(5, 7), 16);
+            document.documentElement.style.setProperty('--primary-glow', `rgba(${r}, ${g}, ${b}, 0.6)`);
+            document.documentElement.style.setProperty('--ring-outer', colOuter);
+            document.documentElement.style.setProperty('--ring-mid', colMid);
+            document.documentElement.style.setProperty('--ring-inner', colInner);
         }
 
         // Game Entities
@@ -360,20 +519,20 @@
             const x2 = ship.x + Math.cos(ship.angle - 2.5) * ship.radius;
             const y2 = ship.y + Math.sin(ship.angle - 2.5) * ship.radius;
 
-            drawVectorLine(x0, y0, x1, y1, "#00f2fe");
-            drawVectorLine(x1, y1, ship.x - cos * (ship.radius/3), ship.y - sin * (ship.radius/3), "#00f2fe");
-            drawVectorLine(ship.x - cos * (ship.radius/3), ship.y - sin * (ship.radius/3), x2, y2, "#00f2fe");
-            drawVectorLine(x2, y2, x0, y0, "#00f2fe");
+            drawVectorLine(x0, y0, x1, y1, shipColor);
+            drawVectorLine(x1, y1, ship.x - cos * (ship.radius/3), ship.y - sin * (ship.radius/3), shipColor);
+            drawVectorLine(ship.x - cos * (ship.radius/3), ship.y - sin * (ship.radius/3), x2, y2, shipColor);
+            drawVectorLine(x2, y2, x0, y0, shipColor);
         }
 
         function drawCastle() {
             const cx = size / 2;
             const cy = size / 2;
             
-            // Draw central target core (shielded castle)
+            // Draw central target core (shielded castle) using dynamic primary/shipColor
             ctx.lineWidth = 2;
-            ctx.strokeStyle = "#ff0055";
-            ctx.shadowColor = "#ff0055";
+            ctx.strokeStyle = shipColor;
+            ctx.shadowColor = shipColor;
             ctx.shadowBlur = 8;
             ctx.beginPath();
             ctx.arc(cx, cy, 20, 0, Math.PI * 2);
@@ -382,7 +541,7 @@
             // Core center indicator
             ctx.beginPath();
             ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-            ctx.fillStyle = "#ff0055";
+            ctx.fillStyle = shipColor;
             ctx.fill();
 
             // Reset shadows
@@ -480,6 +639,8 @@
         function update() {
             if (!gameActive) return;
 
+            let thrusting = false;
+
             if (aiMode) {
                 runAiLogic();
             } else {
@@ -489,6 +650,7 @@
                 if (keys["KeyW"] || keys["ArrowUp"]) {
                     ship.vx += Math.cos(ship.angle) * ship.speed;
                     ship.vy += Math.sin(ship.angle) * ship.speed;
+                    thrusting = true;
                 }
                 if (keys["Space"] || keys["KeyJ"]) {
                     fireLaser();
@@ -502,6 +664,30 @@
             ship.vy *= ship.friction;
             ship.x += ship.vx;
             ship.y += ship.vy;
+
+            // Engine Audio Modulator
+            if (audioCtx.state !== 'suspended') {
+                initEngineSound();
+                let isThrusting = thrusting;
+                if (aiMode) {
+                    // In AI Mode, active movement adjusts output dynamically
+                    const currentSpeed = Math.hypot(ship.vx, ship.vy);
+                    isThrusting = currentSpeed > 0.5;
+                }
+                
+                if (engineOsc && engineGain) {
+                    const targetFreq = isThrusting ? 150 : 60;
+                    const targetVol = isThrusting ? 0.12 : 0.02;
+                    
+                    const currentFreq = engineOsc.frequency.value;
+                    const nextFreq = currentFreq + (targetFreq - currentFreq) * 0.08;
+                    engineOsc.frequency.setValueAtTime(nextFreq, audioCtx.currentTime);
+                    
+                    const currentVol = engineGain.gain.value;
+                    const nextVol = currentVol + (targetVol - currentVol) * 0.08;
+                    engineGain.gain.setValueAtTime(nextVol, audioCtx.currentTime);
+                }
+            }
 
             // Screen Wrap
             if (ship.x < 0) ship.x = size;
@@ -689,8 +875,8 @@
 
             // HUD Score & Lives top text (vector styled)
             ctx.font = "14px Orbitron";
-            ctx.fillStyle = "#00f2fe";
-            ctx.shadowColor = "#00f2fe";
+            ctx.fillStyle = shipColor;
+            ctx.shadowColor = shipColor;
             ctx.shadowBlur = 4;
             ctx.fillText(`SCORE: ${String(score).padStart(5, '0')}`, 20, 30);
             ctx.fillText(`SHIPS: ${lives}`, size - 100, 30);
@@ -715,6 +901,7 @@
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            initEngineSound();
             score = 0;
             lives = 3;
             gameActive = true;
@@ -728,6 +915,9 @@
             score = 0;
             lives = 3;
             gameActive = false;
+            if (engineGain) {
+                engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
             resetShip();
             resetCastle();
             leadHarvested = 0;
@@ -739,10 +929,16 @@
 
         function gameOver() {
             gameActive = false;
+            if (engineGain) {
+                engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
             saveHarvestedReagents();
             alert(`GAME OVER! Final Score: ${score}\nLead Harvested: ${leadHarvested}\nMercury Harvested: ${mercuryHarvested}\nSulfur Harvested: ${sulfurHarvested}`);
             resetGame();
         }
+
+        // Initialize color config initially
+        updateColors();
 
         // Load reagents initially
         loadHarvestedReagents();

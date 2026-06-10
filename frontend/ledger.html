@@ -13,10 +13,15 @@
     <style>
         .ledger-grid {
             display: grid;
-            grid-template-columns: 1fr 2fr;
+            grid-template-columns: 1fr 1.2fr 1fr;
             gap: 20px;
         }
-        @media(max-width: 900px) {
+        @media(max-width: 1200px) {
+            .ledger-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media(max-width: 800px) {
             .ledger-grid {
                 grid-template-columns: 1fr;
             }
@@ -82,6 +87,12 @@
         .credit {
             color: var(--neon-magenta);
         }
+        .tab-btn.active {
+            background: rgba(0, 242, 254, 0.15) !important;
+            border-color: var(--neon-blue) !important;
+            color: var(--neon-blue) !important;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -96,6 +107,10 @@
                 <a href="/index.html" class="btn btn-secondary">Dashboard</a>
                 <a href="/wallet.html" class="btn btn-secondary">Wallet Hub</a>
                 <a href="/protecto.html" class="btn btn-secondary">Protecto Console</a>
+                <select id="networkSelect" class="btn btn-secondary" style="background: #000; color: #fff; border: 1px solid var(--neon-purple); cursor: pointer; text-transform: uppercase;" onchange="switchNetwork()">
+                    <option value="localhost">Local EVM (Anvil)</option>
+                    <option value="zmm">ZMM VM (Simulated)</option>
+                </select>
                 <div class="network-badge" id="networkBadge">Disconnected</div>
                 <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
             </div>
@@ -135,6 +150,76 @@
                     <button class="transmute-btn" id="btnTransmute">Perform Transmutation</button>
                 </section>
             </div>
+
+            <!-- Middle Side: Dysnomia & LAU Tokens Hub -->
+            <section class="card" id="dysnomiaTokensHubCard">
+                <h2><span class="icon">🌌</span> Dysnomia & LAU Tokens Hub</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
+                    Track live Dysnomia identities, LAU tokens, and ZMM VM object trees across execution boundaries.
+                </p>
+
+                <!-- Sub-Tabs for Network State -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn btn-secondary tab-btn active" id="tabAnvilEVM" style="padding: 6px 12px; font-size: 0.85rem; flex: 1;" onclick="setHubTab('anvil')">Anvil EVM</button>
+                    <button class="btn btn-secondary tab-btn" id="tabZmmVM" style="padding: 6px 12px; font-size: 0.85rem; flex: 1;" onclick="setHubTab('zmm')">ZMM VM</button>
+                </div>
+
+                <!-- Anvil EVM Tab Panel -->
+                <div id="panelAnvilEVM">
+                    <div class="balance-card-sub" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <span class="label">LAU Token Address</span>
+                        <span class="value" style="font-size: 0.8rem; word-break: break-all; color: var(--neon-purple);" id="hubLauAddress">-</span>
+                    </div>
+                    <div class="balance-card-sub">
+                        <span class="label">LAU User Balance</span>
+                        <span class="value" id="hubLauBalance">0.00 LAU</span>
+                    </div>
+                    <div class="balance-card-sub" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <span class="label">CHO Token (DYS Base)</span>
+                        <span class="value" style="font-size: 0.8rem; word-break: break-all; color: var(--neon-blue);" id="hubChoAddress">-</span>
+                    </div>
+                    <div class="balance-card-sub">
+                        <span class="label">CHO Balance</span>
+                        <span class="value" id="hubChoBalance">0.00 CHO</span>
+                    </div>
+                    
+                    <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                        <h4 style="font-family: 'Orbitron', sans-serif; color: var(--neon-magenta); font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase;">mariarahel LAU Metrics</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                                <span style="color: var(--text-secondary);">Identity (Pole):</span>
+                                <span id="lauMetricIdentity" style="font-weight: bold; color: var(--text-primary); font-family: monospace;">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                                <span style="color: var(--text-secondary);">Soul:</span>
+                                <span id="lauMetricSoul" style="font-weight: bold; color: var(--text-primary); font-family: monospace;">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                                <span style="color: var(--text-secondary);">Aura:</span>
+                                <span id="lauMetricAura" style="font-weight: bold; color: var(--text-primary); font-family: monospace;">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZMM VM Tab Panel -->
+                <div id="panelZmmVM" style="display: none;">
+                    <div class="balance-card-sub" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <span class="label">Z-Machine Address</span>
+                        <span class="value" style="font-size: 0.8rem; word-break: break-all; color: var(--neon-purple);" id="hubZmachineAddress">-</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(0, 242, 254, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 15px; font-family: monospace; font-size: 0.85rem; color: #00ffcc; min-height: 140px; white-space: pre-wrap;" id="zmmInventoryConsole">
+Loading ZMM VM inventory coordinates and items...
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="zmmCommandInput" placeholder="Enter command (e.g. look, inve, go north)..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--neon-purple); border-radius: 8px; color: #fff; font-family: 'Rajdhani', sans-serif; font-size: 1rem;">
+                        <button class="btn btn-connect" style="padding: 10px 20px; font-size: 0.85rem;" onclick="sendZmmCommand()">Send</button>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem; flex: 1;" onclick="queryZmmInventory()">Refresh</button>
+                    </div>
+                </div>
+            </section>
 
             <!-- Right Side: Double-Entry Journal Entry Logs -->
             <section class="card">
@@ -177,6 +262,8 @@
         let provider;
         let signer;
         let config = {};
+        let currentEnv = "localhost";
+        
         const btnConnect = document.getElementById("btnConnect");
         const networkBadge = document.getElementById("networkBadge");
         const consoleLogs = document.getElementById("consoleLogs");
@@ -199,6 +286,22 @@
             consoleLogs.scrollTop = consoleLogs.scrollHeight;
         }
 
+        function switchNetwork() {
+            const select = document.getElementById("networkSelect");
+            currentEnv = select.value;
+            log(`Switched target ledger environment to: ${currentEnv === 'zmm' ? 'ZMM VM (CHO Token)' : 'Local EVM (LAU Token)'}`, "info");
+            
+            if (signer) {
+                networkBadge.innerText = currentEnv === 'zmm' ? "ZMM VM (On-Chain)" : "Localhost (Anvil)";
+                networkBadge.className = "network-badge connected";
+            } else {
+                networkBadge.innerText = "Disconnected";
+                networkBadge.className = "network-badge";
+            }
+            
+            updateBalances(signer ? signer.address : null);
+        }
+
         async function connectWallet() {
             if (typeof window.ethereum === "undefined") {
                 log("Metamask/Browser wallet not found.", "error");
@@ -214,7 +317,7 @@
                 
                 const network = await provider.getNetwork();
                 let networkName = `Chain ID: ${network.chainId}`;
-                if (network.chainId === 31337n) networkName = "Localhost (Anvil)";
+                if (network.chainId === 31337n) networkName = currentEnv === 'zmm' ? "ZMM VM (On-Chain)" : "Localhost (Anvil)";
                 networkBadge.innerText = networkName;
                 networkBadge.className = "network-badge connected";
 
@@ -224,19 +327,106 @@
             }
         }
 
+        let currentHubTab = "anvil";
+        function setHubTab(tabName) {
+            currentHubTab = tabName;
+            document.getElementById("tabAnvilEVM").className = "btn btn-secondary tab-btn" + (tabName === "anvil" ? " active" : "");
+            document.getElementById("tabZmmVM").className = "btn btn-secondary tab-btn" + (tabName === "zmm" ? " active" : "");
+            
+            document.getElementById("panelAnvilEVM").style.display = tabName === "anvil" ? "block" : "none";
+            document.getElementById("panelZmmVM").style.display = tabName === "zmm" ? "block" : "none";
+            
+            if (tabName === "zmm") {
+                queryZmmInventory();
+            }
+        }
+
+        async function queryZmmInventory() {
+            if (!config.networks || !config.networks.localhost) return;
+            const localhostContracts = config.networks.localhost;
+            const zmachineAddr = localhostContracts.zmachineAddress || "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
+            const consoleEl = document.getElementById("zmmInventoryConsole");
+            consoleEl.innerText = "Querying ZMM VM on-chain state...";
+            
+            try {
+                const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                const zmAbi = [
+                    "function parseCommand(address player, bytes cmd) public returns (bytes)"
+                ];
+                const zmContract = new ethers.Contract(zmachineAddr, zmAbi, activeProvider);
+                const queryUser = signer ? (await signer.getAddress()) : "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+                
+                // Query "look" and "inve"
+                const lookBytes = await zmContract.parseCommand.staticCall(queryUser, ethers.toUtf8Bytes("look"));
+                const lookStr = ethers.toUtf8String(lookBytes);
+                
+                const inveBytes = await zmContract.parseCommand.staticCall(queryUser, ethers.toUtf8Bytes("inve"));
+                const inveStr = ethers.toUtf8String(inveBytes);
+                
+                consoleEl.innerText = `[ZMM VM Position / Area]\n${lookStr.trim()}\n\n[ZMM VM Carrying Inventory]\n${inveStr.trim()}`;
+                log("ZMM VM state fetched successfully via staticCall.", "success");
+            } catch (e) {
+                consoleEl.innerText = `Error querying ZMM VM: ${e.message}\nMake sure zmachine is compiled & deployed.`;
+                log(`ZMM query failed: ${e.message}`, "error");
+            }
+        }
+
+        async function sendZmmCommand() {
+            const inputEl = document.getElementById("zmmCommandInput");
+            const cmdText = inputEl.value.trim();
+            if (!cmdText) return;
+            
+            if (!signer) {
+                log("Please connect your wallet to submit commands to the on-chain ZMM VM.", "warning");
+                return;
+            }
+            if (!config.networks || !config.networks.localhost) return;
+            const localhostContracts = config.networks.localhost;
+            const zmachineAddr = localhostContracts.zmachineAddress || "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
+            
+            log(`Sending ZMM command: "${cmdText}"`, "info");
+            
+            try {
+                const zmAbi = [
+                    "function parseCommand(address player, bytes cmd) public returns (bytes)"
+                ];
+                const zmContract = new ethers.Contract(zmachineAddr, zmAbi, signer);
+                const cmdBytes = ethers.toUtf8Bytes(cmdText);
+                
+                // Static call first to see the message/output
+                const outputBytes = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
+                const outputText = ethers.toUtf8String(outputBytes);
+                log(`ZMM Command Output: ${outputText}`, "success");
+                
+                // If it's a state-modifying action, execute transaction
+                const action = cmdText.split(/\s+/)[0].toLowerCase();
+                const stateModifying = ["take", "use", "go", "n", "s", "e", "w", "north", "south", "east", "west", "play"];
+                if (stateModifying.includes(action)) {
+                    log("Syncing action to on-chain storage...", "info");
+                    const tx = await zmContract.parseCommand(signer.address, cmdBytes, { gasLimit: 1000000 });
+                    await tx.wait();
+                    log("Action synced successfully.", "success");
+                }
+                
+                inputEl.value = "";
+                await queryZmmInventory();
+            } catch (e) {
+                log(`Failed to execute ZMM command: ${e.message}`, "error");
+            }
+        }
+
         async function updateBalances(userAddress) {
             if (!config.networks || !config.networks.localhost) return;
             const localhostContracts = config.networks.localhost;
             
             try {
-                // Find deployed ERC20 token address
-                const tokenAddr = localhostContracts.mockLauAddress || localhostContracts.oregonTrailToken || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
-                
-                // Use fallback provider if no browser wallet
+                // Query the upgraded ledger contract directly
+                const tokenAddr = localhostContracts.ledgerAddress || "0x50F903ee8e55348C72f1EbE7E36421469C568e7D";
+
                 const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
                 const tokenContract = new ethers.Contract(tokenAddr, erc20Abi, activeProvider);
                 
-                let symbol = "DYS";
+                let symbol = "ZAL";
                 try {
                     symbol = await tokenContract.symbol();
                 } catch(e) {}
@@ -246,26 +436,82 @@
                     decimals = await tokenContract.decimals();
                 } catch(e) {}
 
-                // Fetch User Balance (Acc 1100)
-                const userAddr = userAddress || "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-                const userBal = await tokenContract.balanceOf(userAddr);
+                // Fetch User Balance (Acc 1100) using balanceOf(1100)
+                const userBal = await tokenContract.balanceOf("0x000000000000000000000000000000000000044C");
                 const userFormatted = parseFloat(ethers.formatUnits(userBal, decimals)).toFixed(4);
                 document.getElementById("ledgerAcc1100").innerText = `${userFormatted} ${symbol}`;
 
-                // Fetch Treasury Vault (Acc 1200)
-                const treasuryAddr = "0x1111111111111111111111111111111111111111";
-                const treasuryBal = await tokenContract.balanceOf(treasuryAddr);
+                // Fetch Treasury Vault (Acc 1200) using balanceOf(1200)
+                const treasuryBal = await tokenContract.balanceOf("0x00000000000000000000000000000000000004B0");
                 const treasuryFormatted = parseFloat(ethers.formatUnits(treasuryBal, decimals)).toFixed(4);
                 document.getElementById("ledgerAcc1200").innerText = `${treasuryFormatted} ${symbol}`;
 
-                // Fetch Accrued Diyat Fees (Acc 2200)
+                // Fetch Accrued Diyat Fees (Acc 2200) using balanceOf(2200)
                 const diyatAddr = "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69";
-                const diyatBal = await tokenContract.balanceOf(diyatAddr);
-                const diyatFormatted = parseFloat(ethers.formatUnits(diyatBal, decimals)).toFixed(4);
+                let diyatFormatted = "0.0000";
+                try {
+                    const diyatBal = await tokenContract.balanceOf("0x0000000000000000000000000000000000000898");
+                    diyatFormatted = parseFloat(ethers.formatUnits(diyatBal, decimals)).toFixed(4);
+                } catch (e) {}
                 document.getElementById("ledgerAcc2200").innerText = `${diyatFormatted} CABS`;
 
-                // Fill Mock/Stored Journal Logs
-                const storedLogs = JSON.parse(localStorage.getItem("cabs_ledger_logs") || "[]");
+                // Query Dysnomia & LAU Tokens Hub Info
+                const hubLauAddress = localhostContracts.mariarahelLau || "0x6c615C766EE6b7e69275b0D070eF50acc93ab880";
+                const hubChoAddress = localhostContracts.CHO || "0xcADC60d0DFf1256915B70C5Bd12591d5002b5179";
+                const hubZmachineAddress = localhostContracts.zmachineAddress || "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
+                
+                document.getElementById("hubLauAddress").innerText = hubLauAddress;
+                document.getElementById("hubChoAddress").innerText = hubChoAddress;
+                document.getElementById("hubZmachineAddress").innerText = hubZmachineAddress;
+
+                const queryUser = userAddress || "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+                
+                // Query LAU Balance
+                try {
+                    const lauContract = new ethers.Contract(hubLauAddress, erc20Abi, activeProvider);
+                    const lauBal = await lauContract.balanceOf(queryUser);
+                    document.getElementById("hubLauBalance").innerText = `${parseFloat(ethers.formatUnits(lauBal, 18)).toFixed(4)} LAU`;
+                } catch (lauErr) {
+                    document.getElementById("hubLauBalance").innerText = "0.0000 LAU (Error)";
+                }
+                
+                // Query CHO Balance
+                try {
+                    const choContract = new ethers.Contract(hubChoAddress, erc20Abi, activeProvider);
+                    const choBal = await choContract.balanceOf(queryUser);
+                    document.getElementById("hubChoBalance").innerText = `${parseFloat(ethers.formatUnits(choBal, 18)).toFixed(4)} CHO`;
+                } catch (choErr) {
+                    document.getElementById("hubChoBalance").innerText = "0.0000 CHO (Error)";
+                }
+
+                // Query mariarahel LAU Metrics
+                try {
+                    const lauAbi = [
+                        "function Saat(uint256) external view returns (uint64)"
+                    ];
+                    const metricsLauContract = new ethers.Contract(hubLauAddress, lauAbi, activeProvider);
+                    const [identity, soul, aura] = await Promise.all([
+                        metricsLauContract.Saat(0),
+                        metricsLauContract.Saat(1),
+                        metricsLauContract.Saat(2)
+                    ]);
+                    document.getElementById("lauMetricIdentity").innerText = identity.toString();
+                    document.getElementById("lauMetricSoul").innerText = soul.toString();
+                    document.getElementById("lauMetricAura").innerText = aura.toString();
+                } catch (metricErr) {
+                    document.getElementById("lauMetricIdentity").innerText = "Error";
+                    document.getElementById("lauMetricSoul").innerText = "Error";
+                    document.getElementById("lauMetricAura").innerText = "Error";
+                }
+
+                // Refresh ZMM panel if it is active
+                if (currentHubTab === "zmm") {
+                    queryZmmInventory();
+                }
+
+                // Fill Environment Specific Journal Logs
+                const logKey = currentEnv === "zmm" ? "zmm_ledger_logs" : "cabs_ledger_logs";
+                const storedLogs = JSON.parse(localStorage.getItem(logKey) || "[]");
                 let journalHtml = "";
                 if (storedLogs.length === 0) {
                     journalHtml = `
@@ -291,7 +537,7 @@
                     });
                 }
                 ledgerJournalBody.innerHTML = journalHtml;
-                log(`Double-entry balances queried successfully from ERC20 token at ${tokenAddr}.`, "success");
+                log(`Double-entry balances queried successfully from live ERC20 token at ${tokenAddr}.`, "success");
             } catch (e) {
                 log(`ERC20 Balance query error: ${e.message}`, "error");
             }
@@ -304,32 +550,22 @@
             }
             if (!config.networks || !config.networks.localhost) return;
             const localhostContracts = config.networks.localhost;
-            const tokenAddr = localhostContracts.mockLauAddress || localhostContracts.oregonTrailToken || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
-
-            const tokenContract = new ethers.Contract(tokenAddr, erc20Abi, signer);
+            
+            const tokenAddr = localhostContracts.ledgerAddress || "0x50F903ee8e55348C72f1EbE7E36421469C568e7D";
+            const ledgerABI = [
+                "function postTransaction(uint256 debitAccount, uint256 creditAccount, uint256 amount) external returns (uint256)"
+            ];
+            const ledgerContract = new ethers.Contract(tokenAddr, ledgerABI, signer);
 
             try {
-                let symbol = "DYS";
-                try {
-                    symbol = await tokenContract.symbol();
-                } catch(e) {}
-                
-                let decimals = 18;
-                try {
-                    decimals = await tokenContract.decimals();
-                } catch(e) {}
-
-                const treasuryAddr = "0x1111111111111111111111111111111111111111";
-                const transferAmount = ethers.parseUnits("10", decimals);
-
-                log(`Sending ERC20 transfer of 10 ${symbol} to Treasury (${treasuryAddr})...`, "info");
-                const tx = await tokenContract.transfer(treasuryAddr, transferAmount);
+                log(`Sending double-entry transmutation: Debit 1200, Credit 1100, Amount 10 ZAL...`, "info");
+                const tx = await ledgerContract.postTransaction(1200, 1100, 10);
                 log(`Transaction sent. Hash: ${tx.hash}`, "info");
                 await tx.wait();
-                log(`Transfer confirmed! 10 ${symbol} shifted from User (1100) to Treasury (1200).`, "success");
+                log(`Transfer confirmed! 10 ZAL shifted from User (1100) to Treasury (1200).`, "success");
 
-                // Save to local logs
-                const storedLogs = JSON.parse(localStorage.getItem("cabs_ledger_logs") || "[]");
+                const logKey = currentEnv === "zmm" ? "zmm_ledger_logs" : "cabs_ledger_logs";
+                const storedLogs = JSON.parse(localStorage.getItem(logKey) || "[]");
                 storedLogs.unshift({
                     time: new Date().toLocaleTimeString(),
                     account: "1100 & 1200",
@@ -337,7 +573,7 @@
                     debit: "10.0000",
                     credit: "10.0000"
                 });
-                localStorage.setItem("cabs_ledger_logs", JSON.stringify(storedLogs.slice(0, 10)));
+                localStorage.setItem(logKey, JSON.stringify(storedLogs.slice(0, 10)));
 
                 const address = await signer.getAddress();
                 await updateBalances(address);
