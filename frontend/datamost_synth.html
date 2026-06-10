@@ -4263,6 +4263,14 @@
         }
 
         async function speakText(text) {
+            if (typeof window !== 'undefined') {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+            }
             const selectedEngine = document.getElementById("selectSpeechEngine").value;
             const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
             
