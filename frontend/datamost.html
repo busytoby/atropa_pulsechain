@@ -4172,22 +4172,41 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                     osc.type = "sawtooth";
                     osc.frequency.setValueAtTime(basePitch, now);
 
-                    const formant = audioCtx.createBiquadFilter();
-                    formant.type = "bandpass";
-                    let centerFreq = 1000;
-                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2")) centerFreq = 450;
-                    else if (label.startsWith("OO")) centerFreq = 550;
-                    else if (label.startsWith("AH") || label.startsWith("A")) centerFreq = 950;
-                    
-                    formant.frequency.setValueAtTime(centerFreq, now);
-                    formant.Q.setValueAtTime(6, now);
+                    let f1Freq = 600;
+                    let f2Freq = 1500;
+                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
+                        f1Freq = 300;
+                        f2Freq = 2200;
+                    } else if (label.startsWith("OO") || label === "U") {
+                        f1Freq = 400;
+                        f2Freq = 900;
+                    } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
+                        f1Freq = 800;
+                        f2Freq = 1200;
+                    }
+
+                    const formant1 = audioCtx.createBiquadFilter();
+                    formant1.type = "bandpass";
+                    formant1.frequency.setValueAtTime(f1Freq, now);
+                    formant1.Q.setValueAtTime(8, now);
+
+                    const formant2 = audioCtx.createBiquadFilter();
+                    formant2.type = "bandpass";
+                    formant2.frequency.setValueAtTime(f2Freq, now);
+                    formant2.Q.setValueAtTime(8, now);
+
+                    const mix = audioCtx.createGain();
+                    mix.gain.setValueAtTime(0.5, now);
 
                     const gain = audioCtx.createGain();
                     gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-                    osc.connect(formant);
-                    formant.connect(gain);
+                    osc.connect(formant1);
+                    osc.connect(formant2);
+                    formant1.connect(mix);
+                    formant2.connect(mix);
+                    mix.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(now);
                     osc.stop(now + duration);
@@ -4218,6 +4237,12 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         }
 
         async function speakText(text) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
             const selectedEngine = document.getElementById("selectSpeechEngine").value;
             const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
             
@@ -14159,22 +14184,41 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     osc.type = "sawtooth";
                     osc.frequency.setValueAtTime(basePitch, now);
 
-                    const formant = audioCtx.createBiquadFilter();
-                    formant.type = "bandpass";
-                    let centerFreq = 1000;
-                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2")) centerFreq = 450;
-                    else if (label.startsWith("OO")) centerFreq = 550;
-                    else if (label.startsWith("AH") || label.startsWith("A")) centerFreq = 950;
-                    
-                    formant.frequency.setValueAtTime(centerFreq, now);
-                    formant.Q.setValueAtTime(6, now);
+                    let f1Freq = 600;
+                    let f2Freq = 1500;
+                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
+                        f1Freq = 300;
+                        f2Freq = 2200;
+                    } else if (label.startsWith("OO") || label === "U") {
+                        f1Freq = 400;
+                        f2Freq = 900;
+                    } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
+                        f1Freq = 800;
+                        f2Freq = 1200;
+                    }
+
+                    const formant1 = audioCtx.createBiquadFilter();
+                    formant1.type = "bandpass";
+                    formant1.frequency.setValueAtTime(f1Freq, now);
+                    formant1.Q.setValueAtTime(8, now);
+
+                    const formant2 = audioCtx.createBiquadFilter();
+                    formant2.type = "bandpass";
+                    formant2.frequency.setValueAtTime(f2Freq, now);
+                    formant2.Q.setValueAtTime(8, now);
+
+                    const mix = audioCtx.createGain();
+                    mix.gain.setValueAtTime(0.5, now);
 
                     const gain = audioCtx.createGain();
                     gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-                    osc.connect(formant);
-                    formant.connect(gain);
+                    osc.connect(formant1);
+                    osc.connect(formant2);
+                    formant1.connect(mix);
+                    formant2.connect(mix);
+                    mix.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(now);
                     osc.stop(now + duration);
@@ -14205,6 +14249,12 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         async function speakText(text) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
             const selectedEngine = document.getElementById("selectSpeechEngine").value;
             const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
             
@@ -23889,22 +23939,41 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     osc.type = "sawtooth";
                     osc.frequency.setValueAtTime(basePitch, now);
 
-                    const formant = audioCtx.createBiquadFilter();
-                    formant.type = "bandpass";
-                    let centerFreq = 1000;
-                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2")) centerFreq = 450;
-                    else if (label.startsWith("OO")) centerFreq = 550;
-                    else if (label.startsWith("AH") || label.startsWith("A")) centerFreq = 950;
-                    
-                    formant.frequency.setValueAtTime(centerFreq, now);
-                    formant.Q.setValueAtTime(6, now);
+                    let f1Freq = 600;
+                    let f2Freq = 1500;
+                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
+                        f1Freq = 300;
+                        f2Freq = 2200;
+                    } else if (label.startsWith("OO") || label === "U") {
+                        f1Freq = 400;
+                        f2Freq = 900;
+                    } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
+                        f1Freq = 800;
+                        f2Freq = 1200;
+                    }
+
+                    const formant1 = audioCtx.createBiquadFilter();
+                    formant1.type = "bandpass";
+                    formant1.frequency.setValueAtTime(f1Freq, now);
+                    formant1.Q.setValueAtTime(8, now);
+
+                    const formant2 = audioCtx.createBiquadFilter();
+                    formant2.type = "bandpass";
+                    formant2.frequency.setValueAtTime(f2Freq, now);
+                    formant2.Q.setValueAtTime(8, now);
+
+                    const mix = audioCtx.createGain();
+                    mix.gain.setValueAtTime(0.5, now);
 
                     const gain = audioCtx.createGain();
                     gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-                    osc.connect(formant);
-                    formant.connect(gain);
+                    osc.connect(formant1);
+                    osc.connect(formant2);
+                    formant1.connect(mix);
+                    formant2.connect(mix);
+                    mix.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(now);
                     osc.stop(now + duration);
@@ -23935,6 +24004,12 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         }
 
         async function speakText(text) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
             const selectedEngine = document.getElementById("selectSpeechEngine").value;
             const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
             

@@ -253,6 +253,60 @@ async function main() {
     }
 
     console.log("Gauntlet Stat Bridge verification passed!");
+
+    console.log("\nTesting Z-Machine Interactive Combat Loop...");
+
+    // Move player from Room 10 (outside) to Room 1 (Entry Hall)
+    console.log("Command: north");
+    const moveRes = await extendedContract.parseCommand.staticCall(deployer.address, Buffer.from("north"));
+    await waitForReceipt(await extendedContract.parseCommand(deployer.address, Buffer.from("north")), provider);
+
+    // Call look to check room and active enemy description
+    console.log("Command: look");
+    const lookRes = await extendedContract.parseCommand.staticCall(deployer.address, Buffer.from("look"));
+    console.log("Z-Machine output:\n", lookRes);
+    if (!lookRes.includes("A Troll (Health: 50) stands here")) {
+        throw new Error("Troll not present or health incorrect!");
+    }
+
+    // Try to take the Gold Token (should be blocked)
+    console.log("Command: take (blocked by Troll)");
+    const takeBlockedRes = await extendedContract.parseCommand.staticCall(deployer.address, Buffer.from("take"));
+    console.log("Z-Machine output:\n", takeBlockedRes);
+    if (!takeBlockedRes.includes("The Troll blocks you from taking the Gold Token")) {
+        throw new Error("Troll did not block taking the Gold Token!");
+    }
+
+    // Execute first attack transaction to deal 25 damage (Mocked weapon Battle Axe)
+    console.log("Command: attack (hit 1)");
+    await waitForReceipt(await extendedContract.parseCommand(deployer.address, Buffer.from("attack")), provider);
+    const attackRes1 = await extendedContract.parseCommand.staticCall(deployer.address, Buffer.from("look"));
+    console.log("Z-Machine output after attack 1:\n", attackRes1);
+    if (!attackRes1.includes("A Troll (Health: 25) stands here")) {
+        throw new Error("Troll health did not decrease correctly!");
+    }
+
+    // Attack again to defeat the Troll
+    console.log("Command: attack (hit 2 - defeat)");
+    await waitForReceipt(await extendedContract.parseCommand(deployer.address, Buffer.from("attack")), provider);
+
+    // Call look to check room description after Troll is defeated
+    const lookDefeatedRes = await extendedContract.parseCommand.staticCall(deployer.address, Buffer.from("look"));
+    console.log("Z-Machine output after Troll is defeated:\n", lookDefeatedRes);
+    if (lookDefeatedRes.includes("A Troll")) {
+        throw new Error("Troll should be defeated and absent from room description!");
+    }
+
+    // Try to take the Gold Token now that Troll is defeated
+    console.log("Command: take (unlocked)");
+    await waitForReceipt(await extendedContract.parseCommand(deployer.address, Buffer.from("take")), provider);
+    const lookFinalRes = await extendedContract.parseCommand.staticCall(deployer.address, Buffer.from("look"));
+    console.log("Z-Machine output after taking Gold Token:\n", lookFinalRes);
+    if (lookFinalRes.includes("You see a Gold Token here")) {
+        throw new Error("Gold Token should have been taken!");
+    }
+
+    console.log("Z-Machine Interactive Combat Loop verification passed successfully!");
 }
 
 main().catch((error) => {

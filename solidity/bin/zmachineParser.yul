@@ -161,40 +161,67 @@ object "ZMachineParser" {
                 }
                 case 0x74616b65 { // "take"
                     let taken := 0
-                    if eq(sload(add(2000300, 50)), roomId) {
-                        sstore(add(2000300, 50), 0) // move to inventory (Room 0)
-                        mstore(resultPtr, 0x596f7520746f6f6b2074686520476f6c6420546f6b656e2e0000000000000000) // "You took the Gold Token."
-                        resultPtr := add(resultPtr, 24)
+                    let enemyType := 0
+                    if eq(roomId, 1) { enemyType := 1 }
+                    if eq(roomId, 2) { enemyType := 2 }
+                    if eq(roomId, 3) { enemyType := 3 }
+                    let enemyDead := sload(add(5200000, roomId))
+                    let blocked := 0
+                    if and(enemyType, iszero(enemyDead)) {
+                        blocked := 1
+                        if eq(enemyType, 1) {
+                            mstore(resultPtr, 0x5468652054726f6c6c20626c6f636b7320796f752066726f6d2074616b696e67) // "The Troll blocks you from taking"
+                            mstore(add(resultPtr, 32), 0x2074686520476f6c6420546f6b656e2e00000000000000000000000000000000) // " the Gold Token."
+                            resultPtr := add(resultPtr, 48)
+                        }
+                        if eq(enemyType, 2) {
+                            mstore(resultPtr, 0x54686520546869656620626c6f636b7320796f752066726f6d2074616b696e67) // "The Thief blocks you from taking"
+                            mstore(add(resultPtr, 32), 0x20746865204b6579636172642e00000000000000000000000000000000000000) // " the Keycard."
+                            resultPtr := add(resultPtr, 45)
+                        }
+                        if eq(enemyType, 3) {
+                            mstore(resultPtr, 0x546865204576696c2050726965737420626c6f636b7320796f752066726f6d20) // "The Evil Priest blocks you from "
+                            mstore(add(resultPtr, 32), 0x74616b696e672074686520456e65726779205061636b2e000000000000000000) // "taking the Energy Pack."
+                            resultPtr := add(resultPtr, 56)
+                        }
                         taken := 1
-                        
-                        let tokenAddr := sload(add(2000000, 50))
-                        if tokenAddr {
-                            let rewardSuccess := erc20Transfer(tokenAddr, player, 1000000000000000000)
-                            if rewardSuccess {
-                                mstore(resultPtr, 0x20284552433230207472616e7361637465642129000000000000000000000000) // " (ERC20 transacted!)"
-                                resultPtr := add(resultPtr, 20)
+                    }
+                    if iszero(blocked) {
+                        if eq(sload(add(2000300, 50)), roomId) {
+                            sstore(add(2000300, 50), 0) // move to inventory (Room 0)
+                            mstore(resultPtr, 0x596f7520746f6f6b2074686520476f6c6420546f6b656e2e0000000000000000) // "You took the Gold Token."
+                            resultPtr := add(resultPtr, 24)
+                            taken := 1
+                            
+                            let tokenAddr := sload(add(2000000, 50))
+                            if tokenAddr {
+                                let rewardSuccess := erc20Transfer(tokenAddr, player, 1000000000000000000)
+                                if rewardSuccess {
+                                    mstore(resultPtr, 0x20284552433230207472616e7361637465642129000000000000000000000000) // " (ERC20 transacted!)"
+                                    resultPtr := add(resultPtr, 20)
+                                }
                             }
                         }
-                    }
-                    if iszero(taken) {
-                        if eq(sload(add(2000300, 51)), roomId) {
-                            sstore(add(2000300, 51), 0)
-                            mstore(resultPtr, 0x596f7520746f6f6b20746865204b6579636172642e0000000000000000000000) // "You took the Keycard."
-                            resultPtr := add(resultPtr, 21)
-                            taken := 1
+                        if iszero(taken) {
+                            if eq(sload(add(2000300, 51)), roomId) {
+                                sstore(add(2000300, 51), 0)
+                                mstore(resultPtr, 0x596f7520746f6f6b20746865204b6579636172642e0000000000000000000000) // "You took the Keycard."
+                                resultPtr := add(resultPtr, 21)
+                                taken := 1
+                            }
                         }
-                    }
-                    if iszero(taken) {
-                        if eq(sload(add(2000300, 52)), roomId) {
-                            sstore(add(2000300, 52), 0)
-                            mstore(resultPtr, 0x596f7520746f6f6b2074686520456e65726779205061636b2e00000000000000) // "You took the Energy Pack."
-                            resultPtr := add(resultPtr, 25)
-                            taken := 1
+                        if iszero(taken) {
+                            if eq(sload(add(2000300, 52)), roomId) {
+                                sstore(add(2000300, 52), 0)
+                                mstore(resultPtr, 0x596f7520746f6f6b2074686520456e65726779205061636b2e00000000000000) // "You took the Energy Pack."
+                                resultPtr := add(resultPtr, 25)
+                                taken := 1
+                            }
                         }
-                    }
-                    if iszero(taken) {
-                        mstore(resultPtr, 0x5468657265206973206e6f7468696e67206865726520746f2074616b652e0000) // "There is nothing here to take."
-                        resultPtr := add(resultPtr, 30)
+                        if iszero(taken) {
+                            mstore(resultPtr, 0x5468657265206973206e6f7468696e67206865726520746f2074616b652e0000) // "There is nothing here to take."
+                            resultPtr := add(resultPtr, 30)
+                        }
                     }
                 }
                 case 0x75736520 { // "use "
@@ -403,6 +430,43 @@ object "ZMachineParser" {
                         if eq(sload(add(2000300, 52)), roomId) {
                             mstore(resultPtr, 0x20596f752073656520616e20456e65726779205061636b20686572652e000000) // " You see an Energy Pack here."
                             resultPtr := add(resultPtr, 28)
+                        }
+                        
+                        let enemyType := 0
+                        if eq(roomId, 1) { enemyType := 1 }
+                        if eq(roomId, 2) { enemyType := 2 }
+                        if eq(roomId, 3) { enemyType := 3 }
+
+                        let enemyDead := sload(add(5200000, roomId))
+                        if and(enemyType, iszero(enemyDead)) {
+                            let enemyHealth := sload(add(5100000, roomId))
+                            if iszero(enemyHealth) {
+                                if eq(enemyType, 1) { enemyHealth := 50 }
+                                if eq(enemyType, 2) { enemyHealth := 30 }
+                                if eq(enemyType, 3) { enemyHealth := 80 }
+                            }
+                            
+                            if eq(enemyType, 1) {
+                                mstore(resultPtr, 0x20412054726f6c6c20284865616c74683a200000000000000000000000000000) // " A Troll (Health: "
+                                resultPtr := add(resultPtr, 18)
+                                resultPtr := appendNumberStr(resultPtr, enemyHealth)
+                                mstore(resultPtr, 0x29207374616e647320686572652c20626c6f636b696e6720796f752e00000000) // ") stands here, blocking you."
+                                resultPtr := add(resultPtr, 28)
+                            }
+                            if eq(enemyType, 2) {
+                                mstore(resultPtr, 0x204120546869656620284865616c74683a200000000000000000000000000000) // " A Thief (Health: "
+                                resultPtr := add(resultPtr, 18)
+                                resultPtr := appendNumberStr(resultPtr, enemyHealth)
+                                mstore(resultPtr, 0x29206c75726b7320696e2074686520736861646f77732e000000000000000000) // ") lurks in the shadows."
+                                resultPtr := add(resultPtr, 23)
+                            }
+                            if eq(enemyType, 3) {
+                                mstore(resultPtr, 0x20416e204576696c2050726965737420284865616c74683a2000000000000000) // " An Evil Priest (Health: "
+                                resultPtr := add(resultPtr, 25)
+                                resultPtr := appendNumberStr(resultPtr, enemyHealth)
+                                mstore(resultPtr, 0x29207374616e64732062792074686520616c7461722e00000000000000000000) // ") stands by the altar."
+                                resultPtr := add(resultPtr, 22)
+                            }
                         }
                     }
                 }
@@ -1737,8 +1801,13 @@ object "ZMachineParser" {
                     }
                 }
                 case 0x7377696e { // "swin" (Swing)
-                    mstore(resultPtr, 0x51756173696d6f646f207377696e677321000000000000000000000000000000) // "Quasimodo swings!"
-                    resultPtr := add(resultPtr, 17)
+                    resultPtr := executeZmmCombat(player, roomId, resultPtr)
+                }
+                case 0x61747461 { // "atta" (Attack)
+                    resultPtr := executeZmmCombat(player, roomId, resultPtr)
+                }
+                case 0x6b696c6c { // "kill"
+                    resultPtr := executeZmmCombat(player, roomId, resultPtr)
                 }
                 case 0x7a617000 { // "zap" (Zap)
                     sstore(3000500, 1) // active target flag
@@ -2392,6 +2461,109 @@ object "ZMachineParser" {
                     }
                     entryPtr := add(entryPtr, 128)
                 }
+            }
+            function executeZmmCombat(player, roomId, resultPtr) -> newResultPtr {
+                newResultPtr := resultPtr
+                let enemyType := 0
+                if eq(roomId, 1) { enemyType := 1 }
+                if eq(roomId, 2) { enemyType := 2 }
+                if eq(roomId, 3) { enemyType := 3 }
+                let enemyDead := sload(add(5200000, roomId))
+                if or(iszero(enemyType), enemyDead) {
+                    mstore(resultPtr, 0x5468657265206973206e6f20656e656d79206a65726520746f2066696768742e) // "There is no enemy here to fight."
+                    newResultPtr := add(resultPtr, 32)
+                    leave
+                }
+                let enemyHealth := sload(add(5100000, roomId))
+                if iszero(enemyHealth) {
+                    if eq(enemyType, 1) { enemyHealth := 50 }
+                    if eq(enemyType, 2) { enemyHealth := 30 }
+                    if eq(enemyType, 3) { enemyHealth := 80 }
+                }
+                let weaponVal := 0
+                let folkloreAddr := sload(2500000)
+                if folkloreAddr {
+                    mstore(0x1000, shl(224, 0xc2e22c95))
+                    mstore(0x1004, player)
+                    mstore(0x1024, 55061)
+                    let okWeapon := staticcall(gas(), folkloreAddr, 0x1000, 68, 0x2000, 32)
+                    if okWeapon { weaponVal := mload(0x2000) }
+                }
+                let dmg := 5
+                let weaponName := 0x4669737473000000000000000000000000000000000000000000000000000000
+                let weaponLen := 5
+                switch weaponVal
+                case 1 {
+                    dmg := 25
+                    weaponName := 0x426174746c652041786500000000000000000000000000000000000000000000
+                    weaponLen := 10
+                }
+                case 2 {
+                    dmg := 15
+                    weaponName := 0x53776f7264000000000000000000000000000000000000000000000000000000
+                    weaponLen := 5
+                }
+                case 3 {
+                    dmg := 20
+                    weaponName := 0x4d616769632057616e6400000000000000000000000000000000000000000000
+                    weaponLen := 10
+                }
+                case 4 {
+                    dmg := 12
+                    weaponName := 0x426f770000000000000000000000000000000000000000000000000000000000
+                    weaponLen := 3
+                }
+                if gt(dmg, enemyHealth) { dmg := enemyHealth }
+                enemyHealth := sub(enemyHealth, dmg)
+                sstore(add(5100000, roomId), enemyHealth)
+                mstore(resultPtr, 0x596f752061747461636b20746865200000000000000000000000000000000000)
+                let ptr := add(resultPtr, 15)
+                let enemyName := 0
+                let enemyNameLen := 0
+                if eq(enemyType, 1) {
+                    enemyName := 0x54726f6c6c000000000000000000000000000000000000000000000000000000
+                    enemyNameLen := 5
+                }
+                if eq(enemyType, 2) {
+                    enemyName := 0x5468696566000000000000000000000000000000000000000000000000000000
+                    enemyNameLen := 5
+                }
+                if eq(enemyType, 3) {
+                    enemyName := 0x4576696c20507269657374000000000000000000000000000000000000000000
+                    enemyNameLen := 11
+                }
+                mstore(ptr, enemyName)
+                ptr := add(ptr, enemyNameLen)
+                mstore(ptr, 0x207769746820796f757220000000000000000000000000000000000000000000)
+                ptr := add(ptr, 11)
+                mstore(ptr, weaponName)
+                ptr := add(ptr, weaponLen)
+                mstore(ptr, 0x206465616c696e67200000000000000000000000000000000000000000000000)
+                ptr := add(ptr, 9)
+                ptr := appendNumberStr(ptr, dmg)
+                mstore(ptr, 0x2064616d6167652e0a0000000000000000000000000000000000000000000000)
+                ptr := add(ptr, 9)
+                if iszero(enemyHealth) {
+                    sstore(add(5200000, roomId), 1)
+                    mstore(ptr, 0x5468652000000000000000000000000000000000000000000000000000000000)
+                    ptr := add(ptr, 4)
+                    mstore(ptr, enemyName)
+                    ptr := add(ptr, enemyNameLen)
+                    mstore(ptr, 0x2066616c6c7320746f207468652067726f756e642c2064656665617465642100)
+                    ptr := add(ptr, 31)
+                }
+                if enemyHealth {
+                    mstore(ptr, 0x5468652000000000000000000000000000000000000000000000000000000000)
+                    ptr := add(ptr, 4)
+                    mstore(ptr, enemyName)
+                    ptr := add(ptr, enemyNameLen)
+                    mstore(ptr, 0x2068617320000000000000000000000000000000000000000000000000000000)
+                    ptr := add(ptr, 5)
+                    ptr := appendNumberStr(ptr, enemyHealth)
+                    mstore(ptr, 0x2048502072656d61696e696e672e000000000000000000000000000000000000)
+                    ptr := add(ptr, 14)
+                }
+                newResultPtr := ptr
             }
             function appendNumberStr(dest, val) -> newDest {
                 if iszero(val) {
