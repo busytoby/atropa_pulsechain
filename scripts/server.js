@@ -44,6 +44,26 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API endpoint to serve thunk storage reconciliation data
+    if (req.url === "/api/thunk-storage") {
+        const storagePath = path.join(__dirname, "../tsfi2-deepseek/evm_storage.json");
+        if (fs.existsSync(storagePath)) {
+            const data = fs.readFileSync(storagePath, "utf8");
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(data);
+        } else {
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({ storage: [] }));
+        }
+        return;
+    }
+
     // POST API endpoint to save deployed keys into user_config.json
     if (req.url === "/api/save-keys" && req.method === "POST") {
         let body = "";

@@ -239,16 +239,16 @@
                             <span class="ledger-value" id="ledgerUserAddr" style="font-size: 0.8rem; color: #ba55d3; font-family: monospace;">0x...</span>
                         </div>
                         <div class="ledger-row">
-                            <span class="ledger-label">Account 1100 (User Balance)</span>
-                            <span class="ledger-value" id="ledgerAcc1100">0 TOKEN</span>
+                            <span class="ledger-label">Deployer (tx.origin)</span>
+                            <span class="ledger-value" id="ledgerDeployer">0 TOKEN</span>
                         </div>
                         <div class="ledger-row">
-                            <span class="ledger-label">Account 1200 (Treasury Vault)</span>
-                            <span class="ledger-value" id="ledgerAcc1200" style="color: #00ffcc;">0 TOKEN</span>
+                            <span class="ledger-label">Contract (address(this))</span>
+                            <span class="ledger-value" id="ledgerContractSelf" style="color: #00ffcc;">0 TOKEN</span>
                         </div>
                         <div class="ledger-row">
-                            <span class="ledger-label">Account 2200 (Accrued Diyat Fees)</span>
-                            <span class="ledger-value" id="ledgerAcc2200" style="color: var(--neon-magenta);">0 TOKEN</span>
+                            <span class="ledger-label">VOID VM Bridge (CREATE2)</span>
+                            <span class="ledger-value" id="ledgerVoidBridge" style="color: var(--neon-magenta);">0 TOKEN</span>
                         </div>
                     </div>
 
@@ -380,6 +380,70 @@
             "#777777", "#aaffaa", "#0088ff", "#bbbbbb"
         ];
 
+        function saveSimulatedState() {
+            try {
+                // Serialize ERC20 state
+                const erc20Data = {};
+                if (window.simulatedERC20State) {
+                    for (const [addr, tokenState] of Object.entries(window.simulatedERC20State)) {
+                        const balances = {};
+                        for (const [holder, bal] of Object.entries(tokenState.balances)) {
+                            balances[holder] = bal.toString();
+                        }
+                        erc20Data[addr] = {
+                            balances,
+                            maxSupply: tokenState.maxSupply.toString(),
+                            marketRate: tokenState.marketRate.toString(),
+                            type: tokenState.type
+                        };
+                    }
+                }
+                localStorage.setItem("zmm_simulated_erc20_state", JSON.stringify(erc20Data));
+
+                // Serialize CPU state
+                if (cpuContract && cpuContract.memory) {
+                    const memArr = Array.from(cpuContract.memory);
+                    localStorage.setItem("zmm_simulated_cpu_memory", JSON.stringify(memArr));
+                }
+            } catch (e) {
+                console.error("Failed to save ZMM simulated state:", e);
+            }
+        }
+
+        function loadSimulatedState() {
+            try {
+                // Restore ERC20 state
+                const erc20Raw = localStorage.getItem("zmm_simulated_erc20_state");
+                if (erc20Raw) {
+                    const erc20Data = JSON.parse(erc20Raw);
+                    window.simulatedERC20State = {};
+                    for (const [addr, tokenState] of Object.entries(erc20Data)) {
+                        const balances = {};
+                        for (const [holder, balStr] of Object.entries(tokenState.balances)) {
+                            balances[holder] = BigInt(balStr);
+                        }
+                        window.simulatedERC20State[addr] = {
+                            balances,
+                            maxSupply: BigInt(tokenState.maxSupply),
+                            marketRate: BigInt(tokenState.marketRate),
+                            type: tokenState.type
+                        };
+                    }
+                }
+
+                // Restore CPU memory
+                const cpuRaw = localStorage.getItem("zmm_simulated_cpu_memory");
+                if (cpuRaw && cpuContract && cpuContract.memory) {
+                    const memArr = JSON.parse(cpuRaw);
+                    if (memArr.length === 65536) {
+                        cpuContract.memory.set(memArr);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load ZMM simulated state:", e);
+            }
+        }
+
         class SimulatedCPU {
             constructor() {
                 this.memory = new Uint8Array(65536);
@@ -411,6 +475,7 @@
                 if (addr === 54540) {
                     console.log("[ZMM VM] Switched CPU mode:", val);
                 }
+                saveSimulatedState();
                 return { wait: async () => {} };
             }
         }
@@ -423,21 +488,52 @@
                 window.simulatedERC20State = window.simulatedERC20State || {};
                 if (!window.simulatedERC20State[this.address]) {
                     const addrNum = parseInt(this.address.slice(-6), 16) || 42;
-                    window.simulatedERC20State[this.address] = {
-                        userBalance: ethers.parseUnits(((addrNum % 800) + 50).toString(), 18),
-                        treasuryBalance: ethers.parseUnits(((addrNum % 8000) + 1200).toString(), 18),
+                    const state = {
+                        balances: {},
                         maxSupply: BigInt((addrNum % 500000) + 1000000),
                         marketRate: ethers.parseUnits(((addrNum % 100) / 100 + 0.5).toFixed(4), 18),
                         type: "Double-Entry Ledger Asset (" + address.substring(0, 6) + ")"
                     };
+                    
+                    // Seed initial balances matching CABS accounting standards
+                    const userBalBytes = ethers.parseUnits(((addrNum % 800) + 50).toString(), 18);
+                    const treasuryBalBytes = ethers.parseUnits(((addrNum % 8000) + 1200).toString(), 18);
+                    
+                    // Mapping Account 1100 (Default VM User 0x0)
+                    state.balances["0x0000000000000000000000000000000000000000"] = userBalBytes;
+                    // Mapping Account 1100 (Hardhat Account #0)
+                    state.balances["0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"] = userBalBytes;
+                    // Mapping Account 1200 (Treasury Vault Address)
+                    state.balances["0x1111111111111111111111111111111111111111"] = treasuryBalBytes;
+                    
+                    window.simulatedERC20State[this.address] = state;
                 }
             }
             async balanceOf(account) {
-                const state = window.simulatedERC20State[this.address];
-                if (account && account.toLowerCase() === "0x1111111111111111111111111111111111111111") {
-                    return state.treasuryBalance;
+                if (!account) return 0n;
+                try {
+                    const res = await fetch("/api/thunk-storage");
+                    const data = await res.json();
+                    const storage = data.storage || [];
+                    
+                    const fullHash = ethers.solidityPackedKeccak256(["address", "uint256"], [account, 3n]);
+                    const key64 = BigInt(fullHash) & 0xffffffffffffffffn;
+                    
+                    for (const entry of storage) {
+                        if (BigInt(entry.key) === key64) {
+                            return BigInt("0x" + entry.val);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to query thunk storage:", e);
                 }
-                return state.userBalance;
+                
+                const state = window.simulatedERC20State[this.address];
+                const accLower = account.toLowerCase();
+                if (state && state.balances && state.balances[accLower] !== undefined) {
+                    return state.balances[accLower];
+                }
+                return 0n; // Standard ERC-20 return 0 for uninitialized addresses
             }
             async Type() {
                 return window.simulatedERC20State[this.address].type;
@@ -455,14 +551,18 @@
                 // Perform standard ERC-20 balance updates inside the database state
                 try {
                     const state = window.simulatedERC20State[this.address];
-                    // cost = amount * rate
-                    const cost = (amount * state.marketRate) / ethers.parseUnits("1", 18);
+                    const sender = signer ? (await signer.getAddress()).toLowerCase() : "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+                    const treasury = "0x1111111111111111111111111111111111111111";
                     
-                    // Subtract from treasury, add to user
-                    if (state.treasuryBalance >= amount) {
-                        state.treasuryBalance -= amount;
-                        state.userBalance += amount;
+                    const userBalance = state.balances[sender] || 0n;
+                    const treasuryBalance = state.balances[treasury] || 0n;
+                    
+                    // Swap: subtract from treasury, add to user
+                    if (treasuryBalance >= amount) {
+                        state.balances[treasury] = treasuryBalance - amount;
+                        state.balances[sender] = userBalance + amount;
                     }
+                    saveSimulatedState();
                 } catch (e) {
                     console.error("Simulated purchase failed:", e);
                 }
@@ -472,21 +572,58 @@
                 // Perform standard ERC-20 balance updates inside the database state
                 try {
                     const state = window.simulatedERC20State[this.address];
-                    if (state.userBalance >= amount) {
-                        state.userBalance -= amount;
-                        state.treasuryBalance += amount;
+                    const sender = signer ? (await signer.getAddress()).toLowerCase() : "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+                    const treasury = "0x1111111111111111111111111111111111111111";
+                    
+                    const userBalance = state.balances[sender] || 0n;
+                    const treasuryBalance = state.balances[treasury] || 0n;
+                    
+                    if (userBalance >= amount) {
+                        state.balances[sender] = userBalance - amount;
+                        state.balances[treasury] = treasuryBalance + amount;
                     }
+                    saveSimulatedState();
                 } catch (e) {
                     console.error("Simulated redemption failed:", e);
                 }
                 return { wait: async () => {} };
             }
-            async Xie() { return "0x0000000000000000000000000000000000000000"; }
-            async Xia() { return "0x0000000000000000000000000000000000000000"; }
-            async Mai() { return "0x0000000000000000000000000000000000000000"; }
-            async Qi() { return "0x0000000000000000000000000000000000000000"; }
-            async Zuo() { return "0x0000000000000000000000000000000000000000"; }
-            async Yan(user) { return "0x0000000000000000000000000000000000000000"; }
+            async Xie() {
+                if (this.address === "0x5eb3bc0a489c5a8288765d2336659ebca68fcd00") {
+                    return "0x9d4454B023096f34B160D6B654540c56A1F81688";
+                }
+                throw new Error("Reverted");
+            }
+            async Xia() {
+                if (this.address === "0x9d4454b023096f34b160d6b654540c56a1f81688") {
+                    return "0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf";
+                }
+                throw new Error("Reverted");
+            }
+            async Mai() {
+                if (this.address === "0x8f86403a4de0bb5791fa46b8e795c547942fe4cf") {
+                    return "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF";
+                }
+                throw new Error("Reverted");
+            }
+            async Qi() {
+                if (this.address === "0x0e801d84fa97b50751dbf25036d067dcf18858bf") {
+                    return "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf";
+                }
+                throw new Error("Reverted");
+            }
+            async Zuo() {
+                if (this.address === "0x99bba657f2bbc93c02d617f8ba121cb8fc104acf") {
+                    return "0xb4dC171C0edEc8C0032cd0f2d30921c09FA35e34";
+                }
+                throw new Error("Reverted");
+            }
+            async Yan(user) {
+                if (this.address === "0x5eb3bc0a489c5a8288765d2336659ebca68fcd00") {
+                    return "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570";
+                }
+                return "0x0000000000000000000000000000000000000000";
+            }
         }
 
         const catalogDetails = {
@@ -560,6 +697,7 @@
             // Instant simulated VM boot without network timeouts
             isSimulated = true;
             cpuContract = new SimulatedCPU();
+            loadSimulatedState();
             const connectBtn = document.getElementById("btnConnect");
             
             if (signer) {
@@ -608,6 +746,8 @@
                     { name: "CHOA Token", key: "CHOA", symbol: "CHOA" },
                     { name: "CHEON Token", key: "CHEON", symbol: "CHEON" },
                     { name: "CHO Token", key: "CHO", symbol: "CHO" },
+                    { name: "VOID Token", key: "VOID", symbol: "VOID" },
+                    { name: "VOID QING", key: "VOID_QING", symbol: "QING" },
                     { name: "TestLAU Token", key: "TestLAU", symbol: "LAU" }
                 ];
 
@@ -932,29 +1072,30 @@
                 if (!cpuContract) return;
                 
                 try {
-                    let userAddr;
+                    let vmUserAddr = "0x0000000000000000000000000000000000000000";
+                    let accountingUserAddr;
                     if (signer) {
                         try {
-                            userAddr = await signer.getAddress();
+                            accountingUserAddr = await signer.getAddress();
                         } catch (se) {}
                     }
-                    if (!userAddr) {
-                        userAddr = "0x0000000000000000000000000000000000000000";
+                    if (!accountingUserAddr) {
+                        accountingUserAddr = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
                     }
 
                     // 1. Fetch CPU state using peekUser context
-                    const regA = await cpuContract.peekUser(userAddr, 128);
-                    const regX = await cpuContract.peekUser(userAddr, 129);
-                    const regY = await cpuContract.peekUser(userAddr, 130);
-                    const regPC = await cpuContract.peekUser(userAddr, 133);
+                    const regA = await cpuContract.peekUser(vmUserAddr, 128);
+                    const regX = await cpuContract.peekUser(vmUserAddr, 129);
+                    const regY = await cpuContract.peekUser(vmUserAddr, 130);
+                    const regPC = await cpuContract.peekUser(vmUserAddr, 133);
                     document.getElementById("cpuRegA").innerText = Number(regA).toString(16).toUpperCase().padStart(2, '0');
                     document.getElementById("cpuRegX").innerText = Number(regX).toString(16).toUpperCase().padStart(2, '0');
                     document.getElementById("cpuRegY").innerText = Number(regY).toString(16).toUpperCase().padStart(2, '0');
                     document.getElementById("cpuRegPC").innerText = Number(regPC).toString(16).toUpperCase().padStart(4, '0');
 
                     // 2. Fetch Zero-Page Bank selectors (Address 0 and 1)
-                    const execBank = await cpuContract.peekUser(userAddr, 0);
-                    const dataBank = await cpuContract.peekUser(userAddr, 1);
+                    const execBank = await cpuContract.peekUser(vmUserAddr, 0);
+                    const dataBank = await cpuContract.peekUser(vmUserAddr, 1);
                     document.getElementById("execBankText").innerText = execBank;
                     document.getElementById("dataBankText").innerText = dataBank;
 
@@ -991,30 +1132,38 @@
                         // Update target address display in UI
                         const addrEl = document.getElementById("ledgerUserAddr");
                         if (addrEl) {
-                            addrEl.innerText = userAddr.substring(0, 8) + "..." + userAddr.substring(38);
+                            addrEl.innerText = accountingUserAddr.substring(0, 8) + "..." + accountingUserAddr.substring(38);
                         }
 
                         const selectEl = document.getElementById("selectLedgerToken");
                         const selectedOpt = selectEl ? selectEl.options[selectEl.selectedIndex] : null;
                         const symbol = selectedOpt ? selectedOpt.dataset.symbol : "TOKEN";
                         try {
+                            // 1. Deployer (tx.origin) balance
                             try {
-                                const userBalance = await tokenContract.balanceOf(userAddr);
-                            document.getElementById("ledgerAcc1100").innerText = parseFloat(ethers.formatUnits(userBalance, 18)).toFixed(4) + " " + symbol;
-                        } catch (be) {
-                            console.error("Failed to fetch user balance:", be);
-                            document.getElementById("ledgerAcc1100").innerText = "Error " + symbol;
-                        }
+                                const deployerBalance = await tokenContract.balanceOf(accountingUserAddr);
+                                document.getElementById("ledgerDeployer").innerText = parseFloat(ethers.formatUnits(deployerBalance, 18)).toFixed(4) + " " + symbol;
+                            } catch (e) {
+                                document.getElementById("ledgerDeployer").innerText = "0.0000 " + symbol;
+                            }
 
-                        try {
-                            // Query treasury balance
-                            const treasuryAddr = "0x1111111111111111111111111111111111111111";
-                            const treasuryBalance = await tokenContract.balanceOf(treasuryAddr);
-                            document.getElementById("ledgerAcc1200").innerText = parseFloat(ethers.formatUnits(treasuryBalance, 18)).toFixed(4) + " " + symbol;
-                        } catch (te) {
-                            console.error("Failed to fetch treasury balance:", te);
-                            document.getElementById("ledgerAcc1200").innerText = "Error " + symbol;
-                        }
+                            // 2. Contract address(this) uncirculated balance
+                            try {
+                                const contractAddr = tokenContract.address || selectEl.value;
+                                const contractBalance = await tokenContract.balanceOf(contractAddr);
+                                document.getElementById("ledgerContractSelf").innerText = parseFloat(ethers.formatUnits(contractBalance, 18)).toFixed(4) + " " + symbol;
+                            } catch (e) {
+                                document.getElementById("ledgerContractSelf").innerText = "0.0000 " + symbol;
+                            }
+
+                            // 3. VOID VM Bridge (CREATE2) balance
+                            try {
+                                const voidAddr = "0xCd19062a6d3019b02A676D72e51D8de7A398dE25";
+                                const voidBalance = await tokenContract.balanceOf(voidAddr);
+                                document.getElementById("ledgerVoidBridge").innerText = parseFloat(ethers.formatUnits(voidBalance, 18)).toFixed(4) + " " + symbol;
+                            } catch (e) {
+                                document.getElementById("ledgerVoidBridge").innerText = "0.0000 " + symbol;
+                            }
                             
                             // --- On-Chain Integration Diagnostics logic ---
                             const diagSection = document.getElementById("tokenDiagnosticsSection");
@@ -1063,7 +1212,7 @@
 
                                     // Try fetching Yan (Yue mapping for CHAN)
                                     try {
-                                        const yue = await tokenContract.Yan(userAddr);
+                                        const yue = await tokenContract.Yan(accountingUserAddr);
                                         if (yue && yue !== "0x0000000000000000000000000000000000000000") {
                                             document.getElementById("diagYue").innerText = yue.substring(0, 10) + "...";
                                             diagYueRow.style.display = "flex";
@@ -1111,10 +1260,10 @@
                     }
                     
                     // Peek accounts receivable dues directly from register 54706-54709 using user context
-                    const r0 = await cpuContract.peekUser(userAddr, 54706);
-                    const r1 = await cpuContract.peekUser(userAddr, 54707);
-                    const r2 = await cpuContract.peekUser(userAddr, 54708);
-                    const r3 = await cpuContract.peekUser(userAddr, 54709);
+                    const r0 = await cpuContract.peekUser(vmUserAddr, 54706);
+                    const r1 = await cpuContract.peekUser(vmUserAddr, 54707);
+                    const r2 = await cpuContract.peekUser(vmUserAddr, 54708);
+                    const r3 = await cpuContract.peekUser(vmUserAddr, 54709);
                     const taxDue = (Number(r3) << 24) | (Number(r2) << 16) | (Number(r1) << 8) | Number(r0);
                     
                     const selectEl2 = document.getElementById("selectLedgerToken");

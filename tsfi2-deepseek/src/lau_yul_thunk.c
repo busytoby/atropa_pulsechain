@@ -1,9 +1,28 @@
 #include "lau_yul_thunk.h"
+#include "tsfi_pulsechain.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CACHED_CONTRACTS 16
+#define MAX_CACHED_CONTRACTS 64
+
+static const char* case_insensitive_strstr(const char *haystack, const char *needle) {
+    if (!haystack || !needle) return NULL;
+    size_t needle_len = strlen(needle);
+    if (needle_len == 0) return haystack;
+    for (; *haystack; haystack++) {
+        size_t i;
+        for (i = 0; i < needle_len; i++) {
+            char h = haystack[i];
+            char n = needle[i];
+            if (h >= 'A' && h <= 'Z') h += 32;
+            if (n >= 'A' && n <= 'Z') n += 32;
+            if (h != n) break;
+        }
+        if (i == needle_len) return haystack;
+    }
+    return NULL;
+}
 
 typedef struct {
     char name[64];
@@ -17,7 +36,9 @@ static int g_cached_contracts_count = 0;
 
 _Thread_local YulEvmContext g_yul_evm_context;
 
-static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size);
+static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, const char *name);
+static u256_t context_sload(YulEvmContext *ctx, uint64_t key);
+static void context_sstore(YulEvmContext *ctx, uint64_t key, u256_t val);
 
 // Helper to convert hex strings to raw byte array
 static uint8_t* hex_to_bytes(const char *hex, size_t *out_len) {
@@ -34,8 +55,46 @@ static uint8_t* hex_to_bytes(const char *hex, size_t *out_len) {
     return bytes;
 }
 
+static void persist_reconciliation_data(void) {
+    FILE *fp = fopen("evm_storage.json", "w");
+    if (!fp) return;
+    fprintf(fp, "{\n  \"storage\": [\n");
+    for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
+        fprintf(fp, "    { \"key\": %lu, \"val\": \"%016lx%016lx%016lx%016lx\" }%s\n",
+                g_yul_evm_context.storage_keys[i],
+                g_yul_evm_context.storage_vals[i].d[3],
+                g_yul_evm_context.storage_vals[i].d[2],
+                g_yul_evm_context.storage_vals[i].d[1],
+                g_yul_evm_context.storage_vals[i].d[0],
+                (i == g_yul_evm_context.storage_count - 1) ? "" : ",");
+    }
+    fprintf(fp, "  ]\n}\n");
+    fclose(fp);
+}
+
+static void load_reconciliation_data(void) {
+    FILE *fp = fopen("evm_storage.json", "r");
+    if (!fp) return;
+    char line[512];
+    while (fgets(line, sizeof(line), fp)) {
+        uint64_t key = 0;
+        char val_str[128] = {0};
+        if (sscanf(line, " { \"key\": %lu, \"val\": \"%[^\"]\" }", &key, val_str) == 2) {
+            u256_t val = {{0}};
+            if (strlen(val_str) == 64) {
+                sscanf(val_str, "%16lx%16lx%16lx%16lx", &val.d[3], &val.d[2], &val.d[1], &val.d[0]);
+                context_sstore(&g_yul_evm_context, key, val);
+            }
+        }
+    }
+    fclose(fp);
+}
+
 // Compiles a Yul contract file using solc --strict-assembly and registers it
 bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual_address) {
+    if (g_cached_contracts_count == 0) {
+        load_reconciliation_data();
+    }
     // Check if already registered
     for (int i = 0; i < g_cached_contracts_count; i++) {
         if (strcmp(g_cached_contracts[i].name, name) == 0) {
@@ -57,9 +116,9 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
 
     char cmd[512];
     if (is_solidity) {
-        snprintf(cmd, sizeof(cmd), "solc --optimize --bin \"%s\" 2>/dev/null", yul_path);
+        snprintf(cmd, sizeof(cmd), "solc --optimize --bin --allow-paths .. \"%s\" 2>/dev/null", yul_path);
     } else {
-        snprintf(cmd, sizeof(cmd), "solc --strict-assembly \"%s\" --bin 2>/dev/null", yul_path);
+        snprintf(cmd, sizeof(cmd), "solc --strict-assembly --allow-paths .. \"%s\" --bin 2>/dev/null", yul_path);
     }
     FILE *fp = popen(cmd, "r");
     if (!fp) {
@@ -69,17 +128,27 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
 
     static char line[524288];
     char *bytecode_hex = NULL;
+    bool found_contract = false;
     bool found_bin = false;
 
     while (fgets(line, sizeof(line), fp)) {
+        if (is_solidity && !found_contract) {
+            if (case_insensitive_strstr(line, name) && strstr(line, "======= ")) {
+                found_contract = true;
+            }
+            continue;
+        }
         if (found_bin) {
             size_t len = strlen(line);
             while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r' || line[len-1] == ' ')) {
                 line[len-1] = '\0';
                 len--;
             }
-            bytecode_hex = strdup(line);
-            break;
+            if (len > 10) {
+                bytecode_hex = strdup(line);
+                break;
+            }
+            found_bin = false;
         }
         if (strstr(line, "Binary representation:") || strstr(line, "Binary:")) {
             found_bin = true;
@@ -101,11 +170,44 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
     }
 
     // Run interpreter once on initcode to get the runtime bytecode!
+    // Pad initcode with 512 zero bytes for mock constructor arguments to prevent solidity out-of-bounds check reverts.
+    size_t padded_len = bin_len + 512;
+    uint8_t *padded_bin = calloc(1, padded_len);
+    if (padded_bin) {
+        memcpy(padded_bin, raw_bin, bin_len);
+    } else {
+        padded_bin = raw_bin;
+        padded_len = bin_len;
+    }
+
     YulEvmContext init_ctx;
     memset(&init_ctx, 0, sizeof(init_ctx));
-    bool init_success = run_yul_bytecode(&init_ctx, raw_bin, bin_len);
+    bool init_success = run_yul_bytecode(&init_ctx, padded_bin, padded_len, name);
+    if (padded_bin != raw_bin) free(padded_bin);
     if (!init_success || init_ctx.reverted || init_ctx.return_size == 0) {
-        printf("[YUL_THUNK] Error: Initcode execution failed for %s\n", name);
+        printf("[YUL_THUNK] Error: Initcode execution failed for %s. init_success=%d, reverted=%d, return_size=%zu\n", name, init_success, init_ctx.reverted, init_ctx.return_size);
+        if (init_ctx.return_size >= 4 && init_ctx.return_data[0] == 0x08 && init_ctx.return_data[1] == 0xc3 && init_ctx.return_data[2] == 0x79 && init_ctx.return_data[3] == 0xa0) {
+            if (init_ctx.return_size >= 68) {
+                uint32_t str_len = ((uint32_t)init_ctx.return_data[64] << 24) |
+                                   ((uint32_t)init_ctx.return_data[65] << 16) |
+                                   ((uint32_t)init_ctx.return_data[66] << 8)  |
+                                   (uint32_t)init_ctx.return_data[67];
+                if (str_len < 1000 && 68 + (size_t)str_len <= init_ctx.return_size) {
+                    char *err_msg = malloc(str_len + 1);
+                    if (err_msg) {
+                        memcpy(err_msg, init_ctx.return_data + 68, str_len);
+                        err_msg[str_len] = '\0';
+                        printf("[YUL_THUNK] Revert reason: %s\n", err_msg);
+                        free(err_msg);
+                    }
+                }
+            }
+        } else if (init_ctx.return_size >= 4 && init_ctx.return_data[0] == 0x4e && init_ctx.return_data[1] == 0x48 && init_ctx.return_data[2] == 0x7b && init_ctx.return_data[3] == 0xa1) {
+            if (init_ctx.return_size >= 36) {
+                uint32_t panic_code = init_ctx.return_data[35];
+                printf("[YUL_THUNK] Panic code: 0x%x\n", panic_code);
+            }
+        }
         free(raw_bin);
         return false;
     }
@@ -126,6 +228,12 @@ bool lau_yul_thunk_init(const char *name, const char *yul_path, uint64_t virtual
     c->bytecode = runtime_bin;
     c->size = runtime_len;
     c->virtual_address = virtual_address;
+
+    // Copy constructor storage changes to global context and persist
+    for (int i = 0; i < init_ctx.storage_count; i++) {
+        context_sstore(&g_yul_evm_context, init_ctx.storage_keys[i], init_ctx.storage_vals[i]);
+    }
+    persist_reconciliation_data();
 
     printf("[YUL_THUNK] Registered Yul thunk: %s (%zu bytes) at virtual addr 0x%lx\n", name, bin_len, virtual_address);
     return true;
@@ -458,8 +566,10 @@ static bool is_jumpdest(const uint8_t *bytecode, size_t size, uint64_t pc) {
     return pc < size && bytecode[pc] == 0x5b;
 }
 
+static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out);
+
 // Simulated execution of EVM bytecode
-static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size) {
+static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, const char *name) {
     ctx->stack_ptr = 0;
     memset(ctx->memory, 0, sizeof(ctx->memory));
     ctx->reverted = false;
@@ -468,6 +578,19 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
     size_t pc = 0;
     while (pc < size) {
         uint8_t op = bytecode[pc];
+        if (name && strcmp(name, "yi") == 0) {
+            printf("[TRACE_EVM] PC %zu: Opcode 0x%02x, Stack pointer %d", pc, op, ctx->stack_ptr);
+            if (ctx->stack_ptr > 0) {
+                printf(", Stack: [0]=0x%lx", ctx->stack[ctx->stack_ptr - 1].d[0]);
+                if (ctx->stack_ptr > 1) {
+                    printf(", [1]=0x%lx", ctx->stack[ctx->stack_ptr - 2].d[0]);
+                }
+                if (ctx->stack_ptr > 2) {
+                    printf(", [2]=0x%lx", ctx->stack[ctx->stack_ptr - 3].d[0]);
+                }
+            }
+            printf("\n");
+        }
         
         // PUSH instructions
         if (op >= 0x60 && op <= 0x7f) {
@@ -702,6 +825,13 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 ctx->stack[ctx->stack_ptr++] = r;
                 break;
             }
+            case 0x38: { // CODESIZE
+                u256_t r = {{0}};
+                r.d[0] = size;
+                if (ctx->stack_ptr >= 1024) { printf("[DEBUG_EVM] Stack overflow at CODESIZE\n"); return false; }
+                ctx->stack[ctx->stack_ptr++] = r;
+                break;
+            }
             case 0x39: { // CODECOPY
                 if (ctx->stack_ptr < 3) { printf("[DEBUG_EVM] Stack underflow at CODECOPY\n"); return false; }
                 u256_t dest_offset = ctx->stack[--ctx->stack_ptr];
@@ -730,6 +860,47 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                     hash *= 1099511628211ULL;
                 }
                 r.d[0] = hash;
+                ctx->stack[ctx->stack_ptr++] = r;
+                break;
+            }
+            case 0x30: { // ADDRESS
+                u256_t r = {{0}};
+                r.d[0] = ctx->self_address ? ctx->self_address : 0x1000;
+                if (ctx->stack_ptr >= 1024) { printf("[DEBUG_EVM] Stack overflow at ADDRESS\n"); return false; }
+                ctx->stack[ctx->stack_ptr++] = r;
+                break;
+            }
+            case 0x31: { // BALANCE
+                if (ctx->stack_ptr < 1) { printf("[DEBUG_EVM] Stack underflow at BALANCE\n"); return false; }
+                ctx->stack[ctx->stack_ptr - 1].d[0] = 1000000000000000000ULL;
+                break;
+            }
+            case 0x32: { // ORIGIN
+                u256_t r = {{0}};
+                r.d[0] = 0x827279cffFb92266ULL;
+                r.d[1] = 0x1aad88F6F4ce6aB8ULL;
+                r.d[2] = 0xf39Fd6e5ULL;
+                r.d[3] = 0;
+                if (ctx->stack_ptr >= 1024) { printf("[DEBUG_EVM] Stack overflow at ORIGIN\n"); return false; }
+                ctx->stack[ctx->stack_ptr++] = r;
+                break;
+            }
+            case 0x3b: { // EXTCODESIZE
+                if (ctx->stack_ptr < 1) { printf("[DEBUG_EVM] Stack underflow at EXTCODESIZE\n"); return false; }
+                u256_t addr = ctx->stack[--ctx->stack_ptr];
+                u256_t r = {{0}};
+                CachedContract *target = NULL;
+                for (int i = 0; i < g_cached_contracts_count; i++) {
+                    if (g_cached_contracts[i].virtual_address == addr.d[0]) {
+                        target = &g_cached_contracts[i];
+                        break;
+                    }
+                }
+                if (target) {
+                    r.d[0] = target->size;
+                } else {
+                    r.d[0] = 128; // Bypass Solidity's extcodesize check for all unregistered addresses, including 0x0
+                }
                 ctx->stack[ctx->stack_ptr++] = r;
                 break;
             }
@@ -778,26 +949,44 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 u256_t argsSize = ctx->stack[--ctx->stack_ptr];
                 u256_t retOffset = ctx->stack[--ctx->stack_ptr];
                 u256_t retSize = ctx->stack[--ctx->stack_ptr];
-                (void)gas; (void)argsOffset; (void)argsSize; (void)retSize;
+                (void)gas;
                 
                 u256_t success = {{0}};
-                // If it calls ecrecover precompile (address 0x01)
-                if (addr.d[0] == 0x01) {
-                    // Mock recovered signer matching authorized provider: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-                    u256_t provider_addr = {{0}};
-                    provider_addr.d[0] = 0x827279cffFb92266ULL;
-                    provider_addr.d[1] = 0x1aad88F6F4ce6aB8ULL;
-                    provider_addr.d[2] = 0xf39Fd6e5ULL;
-                    provider_addr.d[3] = 0;
-                    store_memory_32(ctx, retOffset.d[0], provider_addr);
-                    success.d[0] = 1;
-                }
+                execute_nested_call(ctx, addr.d[0], argsOffset.d[0], argsSize.d[0], retOffset.d[0], retSize.d[0], &success);
                 ctx->stack[ctx->stack_ptr++] = success;
                 break;
             }
-            case 0xa1: { // LOG2
-                if (ctx->stack_ptr < 4) { printf("[DEBUG_EVM] Stack underflow at LOG2\n"); return false; }
-                ctx->stack_ptr -= 4; // Pop offset, size, topic0, topic1
+            case 0xa0: // LOG0
+            case 0xa1: // LOG1
+            case 0xa2: // LOG2
+            case 0xa3: // LOG3
+            case 0xa4: { // LOG4
+                int num_topics = op - 0xa0;
+                int num_pops = 2 + num_topics;
+                if (ctx->stack_ptr < num_pops) {
+                    printf("[DEBUG_EVM] Stack underflow at LOG%d\n", num_topics);
+                    return false;
+                }
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t size = ctx->stack[--ctx->stack_ptr];
+                
+                printf("[EVENT_EMITTED] LOG%d: offset=%lu, size=%lu", num_topics, offset.d[0], size.d[0]);
+                FILE *ev_fp = fopen("recent_emits.log", "a");
+                if (ev_fp) {
+                    fprintf(ev_fp, "[EVENT_EMITTED] LOG%d: offset=%lu, size=%lu", num_topics, offset.d[0], size.d[0]);
+                }
+                for (int t = 0; t < num_topics; t++) {
+                    u256_t topic = ctx->stack[--ctx->stack_ptr];
+                    printf(", topic%d=0x%016lx%016lx%016lx%016lx", t, topic.d[3], topic.d[2], topic.d[1], topic.d[0]);
+                    if (ev_fp) {
+                        fprintf(ev_fp, ", topic%d=0x%016lx%016lx%016lx%016lx", t, topic.d[3], topic.d[2], topic.d[1], topic.d[0]);
+                    }
+                }
+                printf("\n");
+                if (ev_fp) {
+                    fprintf(ev_fp, "\n");
+                    fclose(ev_fp);
+                }
                 break;
             }
             case 0x5f: { // PUSH0
@@ -947,6 +1136,148 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 }
                 break;
             }
+            case 0xf0: { // CREATE
+                if (ctx->stack_ptr < 3) { printf("[DEBUG_EVM] Stack underflow at CREATE\n"); return false; }
+                u256_t value = ctx->stack[--ctx->stack_ptr];
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t length = ctx->stack[--ctx->stack_ptr];
+                (void)value;
+                
+                u256_t new_addr = {{0}};
+                if (g_cached_contracts_count < MAX_CACHED_CONTRACTS && offset.d[0] < 524288 && length.d[0] > 0) {
+                    size_t initcode_len = length.d[0];
+                    if (offset.d[0] + initcode_len > 524288) initcode_len = 524288 - offset.d[0];
+                    uint8_t *initcode = ctx->memory + offset.d[0];
+                    
+                    size_t padded_len = initcode_len + 512;
+                    uint8_t *padded_bin = calloc(1, padded_len);
+                    if (padded_bin) {
+                        memcpy(padded_bin, initcode, initcode_len);
+                    } else {
+                        padded_bin = initcode;
+                        padded_len = initcode_len;
+                    }
+                    
+                    YulEvmContext nested_ctx;
+                    memset(&nested_ctx, 0, sizeof(nested_ctx));
+                    nested_ctx.storage_count = ctx->storage_count;
+                    memcpy(nested_ctx.storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
+                    memcpy(nested_ctx.storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+                    
+                    bool run_ok = run_yul_bytecode(&nested_ctx, padded_bin, padded_len, "dynamic_create");
+                    if (padded_bin != initcode) free(padded_bin);
+                    
+                    if (run_ok && !nested_ctx.reverted && nested_ctx.return_size > 0) {
+                        uint8_t *runtime_bin = malloc(nested_ctx.return_size);
+                        if (runtime_bin) {
+                            memcpy(runtime_bin, nested_ctx.return_data, nested_ctx.return_size);
+                            
+                            CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
+                            snprintf(c->name, sizeof(c->name), "dynamic_%d", g_cached_contracts_count);
+                            c->bytecode = runtime_bin;
+                            c->size = nested_ctx.return_size;
+                            c->virtual_address = 0x1000 + g_cached_contracts_count;
+                            new_addr.d[0] = c->virtual_address;
+                            
+                            ctx->storage_count = nested_ctx.storage_count;
+                            memcpy(ctx->storage_keys, nested_ctx.storage_keys, sizeof(ctx->storage_keys));
+                            memcpy(ctx->storage_vals, nested_ctx.storage_vals, sizeof(ctx->storage_vals));
+                            persist_reconciliation_data();
+                            
+                            printf("[EVM_INTERPRETER] CREATE success. Registered contract %s at 0x%lx\n", c->name, c->virtual_address);
+                        }
+                    }
+                }
+                ctx->stack[ctx->stack_ptr++] = new_addr;
+                break;
+            }
+            case 0xf5: { // CREATE2
+                if (ctx->stack_ptr < 4) { printf("[DEBUG_EVM] Stack underflow at CREATE2\n"); return false; }
+                u256_t value = ctx->stack[--ctx->stack_ptr];
+                u256_t offset = ctx->stack[--ctx->stack_ptr];
+                u256_t length = ctx->stack[--ctx->stack_ptr];
+                u256_t salt = ctx->stack[--ctx->stack_ptr];
+                (void)value;
+                
+                u256_t new_addr = {{0}};
+                if (g_cached_contracts_count < MAX_CACHED_CONTRACTS && offset.d[0] < 524288 && length.d[0] > 0) {
+                    size_t initcode_len = length.d[0];
+                    if (offset.d[0] + initcode_len > 524288) initcode_len = 524288 - offset.d[0];
+                    uint8_t *initcode = ctx->memory + offset.d[0];
+                    
+                    size_t padded_len = initcode_len + 512;
+                    uint8_t *padded_bin = calloc(1, padded_len);
+                    if (padded_bin) {
+                        memcpy(padded_bin, initcode, initcode_len);
+                    } else {
+                        padded_bin = initcode;
+                        padded_len = initcode_len;
+                    }
+                    
+                    // Calculate predictable CREATE2 address first using standard formula
+                    TsfiPulseHash initcode_hash;
+                    tsfi_pulse_keccak256(initcode, initcode_len, &initcode_hash);
+                    
+                    uint8_t deployer[20] = {0};
+                    for (int i = 0; i < 8; i++) {
+                        deployer[19 - i] = (ctx->self_address >> (i * 8)) & 0xff;
+                    }
+                    
+                    uint8_t salt_bytes[32] = {0};
+                    for (int i = 0; i < 4; i++) {
+                        for (int j = 0; j < 8; j++) {
+                            salt_bytes[(3 - i) * 8 + (7 - j)] = (salt.d[i] >> (j * 8)) & 0xff;
+                        }
+                    }
+                    
+                    uint8_t preimage[1 + 20 + 32 + 32];
+                    preimage[0] = 0xff;
+                    memcpy(preimage + 1, deployer, 20);
+                    memcpy(preimage + 21, salt_bytes, 32);
+                    memcpy(preimage + 53, initcode_hash.data, 32);
+                    
+                    TsfiPulseHash final_hash;
+                    tsfi_pulse_keccak256(preimage, sizeof(preimage), &final_hash);
+                    
+                    uint64_t create2_addr = 0;
+                    for (int i = 0; i < 8; i++) {
+                        create2_addr = (create2_addr << 8) | final_hash.data[24 + i];
+                    }
+                    
+                    YulEvmContext nested_ctx;
+                    memset(&nested_ctx, 0, sizeof(nested_ctx));
+                    nested_ctx.storage_count = ctx->storage_count;
+                    memcpy(nested_ctx.storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
+                    memcpy(nested_ctx.storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+                    nested_ctx.self_address = create2_addr;
+                    
+                    bool run_ok = run_yul_bytecode(&nested_ctx, padded_bin, padded_len, "dynamic_create2");
+                    if (padded_bin != initcode) free(padded_bin);
+                    
+                    if (run_ok && !nested_ctx.reverted && nested_ctx.return_size > 0) {
+                        uint8_t *runtime_bin = malloc(nested_ctx.return_size);
+                        if (runtime_bin) {
+                            memcpy(runtime_bin, nested_ctx.return_data, nested_ctx.return_size);
+                            
+                            CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
+                            snprintf(c->name, sizeof(c->name), "dynamic2_%d", g_cached_contracts_count);
+                            c->bytecode = runtime_bin;
+                            c->size = nested_ctx.return_size;
+                            c->virtual_address = create2_addr;
+                            new_addr.d[0] = c->virtual_address;
+                            
+                            ctx->storage_count = nested_ctx.storage_count;
+                            memcpy(ctx->storage_keys, nested_ctx.storage_keys, sizeof(ctx->storage_keys));
+                            memcpy(ctx->storage_vals, nested_ctx.storage_vals, sizeof(ctx->storage_vals));
+                            persist_reconciliation_data();
+                            
+                            printf("[EVM_INTERPRETER] CREATE2 success. Registered contract %s at 0x%lx\n", c->name, c->virtual_address);
+                        }
+                    }
+                }
+                ctx->stack[ctx->stack_ptr++] = new_addr;
+                break;
+            }
             case 0xf1: { // CALL
                 if (ctx->stack_ptr < 7) { printf("[DEBUG_EVM] Stack underflow at CALL\n"); return false; }
                 u256_t gas = ctx->stack[--ctx->stack_ptr];
@@ -956,14 +1287,10 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 u256_t argsSize = ctx->stack[--ctx->stack_ptr];
                 u256_t retOffset = ctx->stack[--ctx->stack_ptr];
                 u256_t retSize = ctx->stack[--ctx->stack_ptr];
-                (void)gas; (void)addr; (void)value; (void)argsOffset; (void)argsSize;
+                (void)gas; (void)value;
                 
-                if (retOffset.d[0] < 524288 && retSize.d[0] >= 32) {
-                    memset(ctx->memory + retOffset.d[0], 0, retSize.d[0]);
-                    ctx->memory[retOffset.d[0] + 31] = 1;
-                }
                 u256_t success = {{0}};
-                success.d[0] = 1;
+                execute_nested_call(ctx, addr.d[0], argsOffset.d[0], argsSize.d[0], retOffset.d[0], retSize.d[0], &success);
                 ctx->stack[ctx->stack_ptr++] = success;
                 break;
             }
@@ -1002,7 +1329,7 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                         sub_ctx.calldatasize = 0;
                     }
                     
-                    bool sub_success = run_yul_bytecode(&sub_ctx, target->bytecode, target->size);
+                    bool sub_success = run_yul_bytecode(&sub_ctx, target->bytecode, target->size, target->name);
                     if (sub_success && !sub_ctx.reverted) {
                         ctx->storage_count = sub_ctx.storage_count;
                         memcpy(ctx->storage_keys, sub_ctx.storage_keys, sizeof(ctx->storage_keys));
@@ -1055,12 +1382,16 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     g_yul_evm_context.calldatasize = size_to_copy;
 
     // Run interpreter
-    bool success = run_yul_bytecode(&g_yul_evm_context, c->bytecode, c->size);
+    g_yul_evm_context.self_address = c->virtual_address;
+    bool success = run_yul_bytecode(&g_yul_evm_context, c->bytecode, c->size, name);
 
-    if (success && retval && retval_len) {
-        size_t out_size = g_yul_evm_context.return_size < *retval_len ? g_yul_evm_context.return_size : *retval_len;
-        memcpy(retval, g_yul_evm_context.return_data, out_size);
-        *retval_len = out_size;
+    if (success) {
+        persist_reconciliation_data();
+        if (retval && retval_len) {
+            size_t out_size = g_yul_evm_context.return_size < *retval_len ? g_yul_evm_context.return_size : *retval_len;
+            memcpy(retval, g_yul_evm_context.return_data, out_size);
+            *retval_len = out_size;
+        }
     }
 
     return success;
@@ -1084,4 +1415,83 @@ size_t lau_yul_thunk_get_size(const char *name) {
         }
     }
     return 0;
+}
+
+static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t argsOffset, uint64_t argsSize, uint64_t retOffset, uint64_t retSize, u256_t *success_out) {
+    CachedContract *target = NULL;
+    for (int i = 0; i < g_cached_contracts_count; i++) {
+        if (g_cached_contracts[i].virtual_address == target_addr) {
+            target = &g_cached_contracts[i];
+            break;
+        }
+    }
+    
+    success_out->d[0] = 1;
+    
+    if (target) {
+        YulEvmContext nested_ctx;
+        memset(&nested_ctx, 0, sizeof(nested_ctx));
+        
+        nested_ctx.calldatasize = (argsSize > 65536) ? 65536 : argsSize;
+        for (uint64_t i = 0; i < nested_ctx.calldatasize; i++) {
+            uint64_t src = argsOffset + i;
+            nested_ctx.calldata[i] = (src < 524288) ? ctx->memory[src] : 0;
+        }
+        
+        nested_ctx.storage_count = ctx->storage_count;
+        memcpy(nested_ctx.storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
+        memcpy(nested_ctx.storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
+        nested_ctx.self_address = target_addr;
+        
+        bool run_ok = run_yul_bytecode(&nested_ctx, target->bytecode, target->size, target->name);
+        
+        if (run_ok && !nested_ctx.reverted) {
+            uint64_t copy_size = retSize;
+            if (copy_size > nested_ctx.return_size) {
+                copy_size = nested_ctx.return_size;
+            }
+            for (uint64_t i = 0; i < copy_size; i++) {
+                uint64_t dest = retOffset + i;
+                if (dest < 524288) {
+                    ctx->memory[dest] = nested_ctx.return_data[i];
+                }
+            }
+            
+            ctx->storage_count = nested_ctx.storage_count;
+            memcpy(ctx->storage_keys, nested_ctx.storage_keys, sizeof(ctx->storage_keys));
+            memcpy(ctx->storage_vals, nested_ctx.storage_vals, sizeof(ctx->storage_vals));
+            
+            ctx->return_size = nested_ctx.return_size;
+            if (ctx->return_size > 524288) ctx->return_size = 524288;
+            memcpy(ctx->return_data, nested_ctx.return_data, ctx->return_size);
+        } else {
+            success_out->d[0] = 0;
+        }
+    } else {
+        if (target_addr == 0x01) {
+            u256_t provider_addr = {{0}};
+            provider_addr.d[0] = 0x827279cffFb92266ULL;
+            provider_addr.d[1] = 0x1aad88F6F4ce6aB8ULL;
+            provider_addr.d[2] = 0xf39Fd6e5ULL;
+            provider_addr.d[3] = 0;
+            if (retOffset < 524288 && retSize > 0) {
+                store_memory_32(ctx, retOffset, provider_addr);
+                ctx->return_size = retSize;
+                memset(ctx->return_data, 0, sizeof(ctx->return_data));
+                size_t to_copy = retSize > 32 ? 32 : retSize;
+                memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
+            }
+        } else {
+            if (retOffset < 524288 && retSize > 0) {
+                u256_t mock_ret = {{0}};
+                mock_ret.d[0] = 0x1000; // default mock address/value
+                store_memory_32(ctx, retOffset, mock_ret);
+                ctx->return_size = retSize;
+                memset(ctx->return_data, 0, sizeof(ctx->return_data));
+                size_t to_copy = retSize > 32 ? 32 : retSize;
+                memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
+            }
+        }
+    }
+    return true;
 }

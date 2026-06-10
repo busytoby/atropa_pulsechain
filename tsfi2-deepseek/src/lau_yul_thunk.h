@@ -22,6 +22,7 @@ typedef struct {
     u256_t storage_vals[4096];
     int storage_count;
     bool reverted;
+    uint64_t self_address;
 } YulEvmContext;
 
 extern _Thread_local YulEvmContext g_yul_evm_context;
