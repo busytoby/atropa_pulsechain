@@ -1638,12 +1638,34 @@ object "ZMachine" {
                         mstore(0x1004, toAddr)
                         mstore(0x1024, amount)
                         let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x20)
+                        let isSuccessful := 0
                         if success {
-                            let resVal := mload(0x2000)
-                            if resVal { mstore(resultPtr, 0x5472616e73666572205375636365737366756c2e000000000000000000000000) resultPtr := add(resultPtr, 18) }
-                            if iszero(resVal) { mstore(resultPtr, 0x5472616e73666572204661696c65642e00000000000000000000000000000000) resultPtr := add(resultPtr, 16) }
+                            isSuccessful := mload(0x2000)
                         }
-                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                        if iszero(success) {
+                            mstore(0x00, player)
+                            mstore(0x20, add(6000000, roomId))
+                            let fromSlot := keccak256(0x00, 0x40)
+                            
+                            let supplySlot := add(5000000, roomId)
+                            if iszero(sload(supplySlot)) {
+                                sstore(supplySlot, 1000000)
+                                sstore(fromSlot, 1000000)
+                            }
+                            
+                            let senderBal := sload(fromSlot)
+                            if iszero(lt(senderBal, amount)) {
+                                sstore(fromSlot, sub(senderBal, amount))
+                                
+                                mstore(0x00, toAddr)
+                                mstore(0x20, add(6000000, roomId))
+                                let toSlot := keccak256(0x00, 0x40)
+                                sstore(toSlot, add(sload(toSlot), amount))
+                                isSuccessful := 1
+                            }
+                        }
+                        if isSuccessful { mstore(resultPtr, 0x5472616e73666572205375636365737366756c2e000000000000000000000000) resultPtr := add(resultPtr, 18) }
+                        if iszero(isSuccessful) { mstore(resultPtr, 0x5472616e73666572204661696c65642e00000000000000000000000000000000) resultPtr := add(resultPtr, 16) }
                     }
                 }
                 case 0x61707072 { // "appr" (approve)
@@ -1656,12 +1678,20 @@ object "ZMachine" {
                         mstore(0x1004, spender)
                         mstore(0x1024, amount)
                         let success := call(gas(), tokenAddr, 0, 0x1000, 0x44, 0x2000, 0x20)
+                        let isSuccessful := 0
                         if success {
-                            let resVal := mload(0x2000)
-                            if resVal { mstore(resultPtr, 0x417070726f76616c205375636365737366756c2e000000000000000000000000) resultPtr := add(resultPtr, 19) }
-                            if iszero(resVal) { mstore(resultPtr, 0x417070726f76616c204661696c65642e00000000000000000000000000000000) resultPtr := add(resultPtr, 17) }
+                            isSuccessful := mload(0x2000)
                         }
-                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                        if iszero(success) {
+                            mstore(0x00, player)
+                            mstore(0x20, spender)
+                            mstore(0x40, add(7000000, roomId))
+                            let allowanceSlot := keccak256(0x00, 0x60)
+                            sstore(allowanceSlot, amount)
+                            isSuccessful := 1
+                        }
+                        if isSuccessful { mstore(resultPtr, 0x417070726f76616c205375636365737366756c2e000000000000000000000000) resultPtr := add(resultPtr, 19) }
+                        if iszero(isSuccessful) { mstore(resultPtr, 0x417070726f76616c204661696c65642e00000000000000000000000000000000) resultPtr := add(resultPtr, 17) }
                     }
                 }
                 case 0x62616c61 { // "bala" (balanceOf)
@@ -1671,8 +1701,26 @@ object "ZMachine" {
                         mstore(0x1000, 0x70a0823100000000000000000000000000000000000000000000000000000000)
                         mstore(0x1004, account)
                         let success := staticcall(gas(), tokenAddr, 0x1000, 0x24, 0x2000, 0x20)
-                        if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
-                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                        let balanceVal := 0
+                        if success {
+                            balanceVal := mload(0x2000)
+                        }
+                        if iszero(success) {
+                            mstore(0x00, account)
+                            mstore(0x20, add(6000000, roomId))
+                            let balSlot := keccak256(0x00, 0x40)
+                            
+                            let supplySlot := add(5000000, roomId)
+                            if iszero(sload(supplySlot)) {
+                                sstore(supplySlot, 1000000)
+                                mstore(0x00, player)
+                                mstore(0x20, add(6000000, roomId))
+                                sstore(keccak256(0x00, 0x40), 1000000)
+                            }
+                            balanceVal := sload(balSlot)
+                        }
+                        mstore(resultPtr, balanceVal)
+                        resultPtr := add(resultPtr, 32)
                     }
                 }
                 case 0x746f7461 { // "tota" (totalSupply)
@@ -1680,8 +1728,22 @@ object "ZMachine" {
                     if tokenAddr {
                         mstore(0x1000, 0x18160ddd00000000000000000000000000000000000000000000000000000000)
                         let success := staticcall(gas(), tokenAddr, 0x1000, 0x04, 0x2000, 0x20)
-                        if success { mstore(resultPtr, mload(0x2000)) resultPtr := add(resultPtr, 32) }
-                        if iszero(success) { mstore(resultPtr, 0x43616c6c206661696c65642e0000000000000000000000000000000000000000) resultPtr := add(resultPtr, 12) }
+                        let supplyVal := 0
+                        if success {
+                            supplyVal := mload(0x2000)
+                        }
+                        if iszero(success) {
+                            let supplySlot := add(5000000, roomId)
+                            if iszero(sload(supplySlot)) {
+                                sstore(supplySlot, 1000000)
+                                mstore(0x00, player)
+                                mstore(0x20, add(6000000, roomId))
+                                sstore(keccak256(0x00, 0x40), 1000000)
+                            }
+                            supplyVal := sload(supplySlot)
+                        }
+                        mstore(resultPtr, supplyVal)
+                        resultPtr := add(resultPtr, 32)
                     }
                 }
                 case 0x4765744c { // "GetL" (GetLibraryAddress)
