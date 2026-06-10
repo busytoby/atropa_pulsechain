@@ -1755,6 +1755,11 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
         async function init() {
             drawVulkanPlaceholder();
             
+            // Setup default local provider and wallet fallback
+            provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const fallbackPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            signer = new ethers.Wallet(fallbackPrivateKey, provider);
+
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
             
@@ -1811,6 +1816,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 try {
                     const browserProvider = new ethers.BrowserProvider(window.ethereum);
                     const browserSigner = await browserProvider.getSigner();
+                    signer = browserSigner; // Set global signer
                     const address = await browserSigner.getAddress();
                     
                     // Update active contracts to use browser signer (preserving ZMM VM Simulated CPU/graphics/music)
@@ -10970,6 +10976,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         async function init() {
             drawVulkanPlaceholder();
             
+            // Setup default local provider and wallet fallback
+            provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const fallbackPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            signer = new ethers.Wallet(fallbackPrivateKey, provider);
+
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
             
@@ -11026,6 +11037,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 try {
                     const browserProvider = new ethers.BrowserProvider(window.ethereum);
                     const browserSigner = await browserProvider.getSigner();
+                    signer = browserSigner; // Set global signer
                     const address = await browserSigner.getAddress();
                     
                     // Update active contracts to use browser signer (preserving ZMM VM Simulated CPU/graphics/music)
@@ -19965,6 +19977,11 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         async function init() {
             drawVulkanPlaceholder();
             
+            // Setup default local provider and wallet fallback
+            provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const fallbackPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            signer = new ethers.Wallet(fallbackPrivateKey, provider);
+
             // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
             setupSimulatedVM();
             
@@ -20021,6 +20038,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 try {
                     const browserProvider = new ethers.BrowserProvider(window.ethereum);
                     const browserSigner = await browserProvider.getSigner();
+                    signer = browserSigner; // Set global signer
                     const address = await browserSigner.getAddress();
                     
                     // Update active contracts to use browser signer (preserving ZMM VM Simulated CPU/graphics/music)
