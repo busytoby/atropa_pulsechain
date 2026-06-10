@@ -678,7 +678,8 @@
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <span class="reg-label">DIALECT/LANG:</span>
                             <select id="selectDialect" class="input-glow" style="padding: 6px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">
-                                <option value="mandarin_pinyin" selected>Chinese (Mandarin Pinyin)</option>
+                                <option value="english_g2p" selected>English (Phonetic G2P)</option>
+                                <option value="mandarin_pinyin">Chinese (Mandarin Pinyin)</option>
                                 <option value="cantonese_jyutping">Chinese (Cantonese Jyutping)</option>
                                 <option value="korean_romanized">Korean (Revised Romanization)</option>
                             </select>
@@ -3811,6 +3812,79 @@
 
         // Dialect-specific G2P Rule Sets mapping
         const dialectRules = {
+            "english_g2p": [
+                { pat: "TION", ph: ["SH", "UN"] },
+                { pat: "SION", ph: ["ZH", "UN"] },
+                { pat: "IGHT", ph: ["AY", "T"] },
+                { pat: "OUGH", ph: ["AW1", "F"] },
+                { pat: "ING", ph: ["I1", "NG"] },
+                { pat: "ALL", ph: ["AW1", "L"] },
+                { pat: "IGH", ph: ["AY"] },
+                { pat: "TCH", ph: ["CH"] },
+                { pat: "THR", ph: ["THR"] },
+                { pat: "THV", ph: ["THV"] },
+                { pat: "PHO", ph: ["F", "O"] },
+                { pat: "PH", ph: ["F"] },
+                { pat: "TH", ph: ["TH"] },
+                { pat: "SH", ph: ["SH"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "CK", ph: ["K"] },
+                { pat: "EE", ph: ["E1"] },
+                { pat: "EA", ph: ["E1"] },
+                { pat: "OO", ph: ["OO1"] },
+                { pat: "OU", ph: ["AW1"] },
+                { pat: "OW", ph: ["AW1"] },
+                { pat: "OI", ph: ["OY"] },
+                { pat: "OY", ph: ["OY"] },
+                { pat: "AY", ph: ["AY"] },
+                { pat: "AI", ph: ["AY"] },
+                { pat: "ED", ph: ["D"] },
+                { pat: "ER", ph: ["ER"] },
+                { pat: "OR", ph: ["O", "R"] },
+                { pat: "UR", ph: ["UR"] },
+                { pat: "AR", ph: ["AH1", "R"] },
+                { pat: "QU", ph: ["K", "OO1"] },
+                { pat: "WH", ph: ["OO1"] },
+                { pat: "WR", ph: ["R"] },
+                { pat: "AU", ph: ["AW1"] },
+                { pat: "AW", ph: ["AW1"] },
+                { pat: "LE", ph: ["UH2", "L"] },
+                { pat: "IO", ph: ["E1", "OU"] },
+                { pat: "LL", ph: ["L"] },
+                { pat: "SS", ph: ["S"] },
+                { pat: "TT", ph: ["T"] },
+                { pat: "PP", ph: ["P"] },
+                { pat: "FF", ph: ["F"] },
+                { pat: "GG", ph: ["G"] },
+                { pat: "DD", ph: ["D"] },
+                { pat: "MM", ph: ["M"] },
+                { pat: "NN", ph: ["N"] },
+                { pat: "A", ph: ["AH1"] },
+                { pat: "E", ph: ["EH1"] },
+                { pat: "I", ph: ["I1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "U", ph: ["UH1"] },
+                { pat: "Y", ph: ["E1"] },
+                { pat: "B", ph: ["B"] },
+                { pat: "C", ph: ["K"] },
+                { pat: "D", ph: ["D"] },
+                { pat: "F", ph: ["F"] },
+                { pat: "G", ph: ["G"] },
+                { pat: "H", ph: ["H"] },
+                { pat: "J", ph: ["J"] },
+                { pat: "K", ph: ["K"] },
+                { pat: "L", ph: ["L"] },
+                { pat: "M", ph: ["M"] },
+                { pat: "N", ph: ["N"] },
+                { pat: "P", ph: ["P"] },
+                { pat: "R", ph: ["R"] },
+                { pat: "S", ph: ["S"] },
+                { pat: "T", ph: ["T"] },
+                { pat: "V", ph: ["V"] },
+                { pat: "W", ph: ["OO1"] },
+                { pat: "Z", ph: ["Z"] }
+            ],
             "mandarin_pinyin": [
                 { pat: "ZHONG", ph: ["J", "OO1", "NG"] },
                 { pat: "SHEN", ph: ["SH", "UH1", "N"] },
@@ -3875,7 +3949,7 @@
         };
 
         // Grapheme-to-Phoneme translation rule engine with Dialect mapping
-        function translateWordToPhonemes(word, dialect = "mandarin_pinyin") {
+        function translateWordToPhonemes(word, dialect = "english_g2p") {
             // Clean diacritics and normalize input
             word = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
             word = word.replace(/[^A-Z]/g, "");
