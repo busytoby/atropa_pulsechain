@@ -183,6 +183,13 @@
         const ledgerJournalBody = document.getElementById("ledgerJournalBody");
         const btnTransmute = document.getElementById("btnTransmute");
 
+        const erc20Abi = [
+            "function balanceOf(address) external view returns (uint256)",
+            "function decimals() external view returns (uint8)",
+            "function transfer(address, uint256) external returns (bool)",
+            "function symbol() external view returns (string)"
+        ];
+
         function log(msg, type = "info") {
             const time = new Date().toLocaleTimeString();
             const line = document.createElement("div");
@@ -221,65 +228,122 @@
             if (!config.networks || !config.networks.localhost) return;
             const localhostContracts = config.networks.localhost;
             
-            // Query standard accounts
             try {
-                const dysAddr = localhostContracts.GenesisDYSAddress || localhostContracts.AtropaTokenAddress;
-                if (!dysAddr) {
-                    log("AtropaToken/GenesisDYSAddress not found in configuration", "error");
-                    return;
-                }
-                const erc20Abi = ["function balanceOf(address) external view returns (uint256)"];
-                const tokenContract = new ethers.Contract(dysAddr, erc20Abi, provider);
+                // Find deployed ERC20 token address
+                const tokenAddr = localhostContracts.mockLauAddress || localhostContracts.oregonTrailToken || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+                
+                // Use fallback provider if no browser wallet
+                const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                const tokenContract = new ethers.Contract(tokenAddr, erc20Abi, activeProvider);
+                
+                let symbol = "DYS";
+                try {
+                    symbol = await tokenContract.symbol();
+                } catch(e) {}
+                
+                let decimals = 18;
+                try {
+                    decimals = await tokenContract.decimals();
+                } catch(e) {}
 
-                // Fetch User (Acc 1100)
+                // Fetch User Balance (Acc 1100)
                 const userAddr = userAddress || "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
                 const userBal = await tokenContract.balanceOf(userAddr);
-                document.getElementById("ledgerAcc1100").innerText = parseFloat(ethers.formatUnits(userBal, 18)).toFixed(4) + " DYS";
+                const userFormatted = parseFloat(ethers.formatUnits(userBal, decimals)).toFixed(4);
+                document.getElementById("ledgerAcc1100").innerText = `${userFormatted} ${symbol}`;
 
                 // Fetch Treasury Vault (Acc 1200)
                 const treasuryAddr = "0x1111111111111111111111111111111111111111";
                 const treasuryBal = await tokenContract.balanceOf(treasuryAddr);
-                document.getElementById("ledgerAcc1200").innerText = parseFloat(ethers.formatUnits(treasuryBal, 18)).toFixed(4) + " DYS";
+                const treasuryFormatted = parseFloat(ethers.formatUnits(treasuryBal, decimals)).toFixed(4);
+                document.getElementById("ledgerAcc1200").innerText = `${treasuryFormatted} ${symbol}`;
 
-                // Dummy claim for Diyat Fees (Acc 2200)
-                document.getElementById("ledgerAcc2200").innerText = "24.5000 CABS";
+                // Fetch Accrued Diyat Fees (Acc 2200)
+                const diyatAddr = "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69";
+                const diyatBal = await tokenContract.balanceOf(diyatAddr);
+                const diyatFormatted = parseFloat(ethers.formatUnits(diyatBal, decimals)).toFixed(4);
+                document.getElementById("ledgerAcc2200").innerText = `${diyatFormatted} CABS`;
 
-                // Fill mock double-entry journal logs
-                ledgerJournalBody.innerHTML = `
-                    <tr>
-                        <td>Just Now</td>
-                        <td>Account 1100</td>
-                        <td>Substrate verification query</td>
-                        <td class="debit">+1.2400 DYS</td>
-                        <td>-</td>
-                    </tr>
-                    <tr>
-                        <td>5 mins ago</td>
-                        <td>Account 1200</td>
-                        <td>Moxey room key unlock reward</td>
-                        <td>-</td>
-                        <td class="credit">-0.5000 DYS</td>
-                    </tr>
-                    <tr>
-                        <td>10 mins ago</td>
-                        <td>Account 2200</td>
-                        <td>Diyat Tax settlement fee</td>
-                        <td class="debit">+0.0125 CABS</td>
-                        <td>-</td>
-                    </tr>
-                `;
-                log("Double-entry ledger balances queried successfully.", "success");
+                // Fill Mock/Stored Journal Logs
+                const storedLogs = JSON.parse(localStorage.getItem("cabs_ledger_logs") || "[]");
+                let journalHtml = "";
+                if (storedLogs.length === 0) {
+                    journalHtml = `
+                        <tr>
+                            <td>System</td>
+                            <td>Account 1100</td>
+                            <td>Initial system allocation</td>
+                            <td class="debit">+0 ${symbol}</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                } else {
+                    storedLogs.forEach(entry => {
+                        journalHtml += `
+                            <tr>
+                                <td>${entry.time}</td>
+                                <td>${entry.account}</td>
+                                <td>${entry.desc}</td>
+                                <td class="debit">${entry.debit !== '-' ? '+' + entry.debit + ' ' + symbol : '-'}</td>
+                                <td class="credit">${entry.credit !== '-' ? '-' + entry.credit + ' ' + symbol : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                ledgerJournalBody.innerHTML = journalHtml;
+                log(`Double-entry balances queried successfully from ERC20 token at ${tokenAddr}.`, "success");
             } catch (e) {
-                log(`Balance query error: ${e.message}`, "error");
+                log(`ERC20 Balance query error: ${e.message}`, "error");
             }
         }
 
         async function transmute() {
-            log("Dispatched on-chain alchemical transmutation instruction...", "info");
-            setTimeout(() => {
-                log("Transmutation successfully processed. State logs updated.", "success");
-                updateBalances(null);
-            }, 1000);
+            if (!signer) {
+                log("Please connect your browser wallet to perform an on-chain transfer.", "warning");
+                return;
+            }
+            if (!config.networks || !config.networks.localhost) return;
+            const localhostContracts = config.networks.localhost;
+            const tokenAddr = localhostContracts.mockLauAddress || localhostContracts.oregonTrailToken || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+
+            const tokenContract = new ethers.Contract(tokenAddr, erc20Abi, signer);
+
+            try {
+                let symbol = "DYS";
+                try {
+                    symbol = await tokenContract.symbol();
+                } catch(e) {}
+                
+                let decimals = 18;
+                try {
+                    decimals = await tokenContract.decimals();
+                } catch(e) {}
+
+                const treasuryAddr = "0x1111111111111111111111111111111111111111";
+                const transferAmount = ethers.parseUnits("10", decimals);
+
+                log(`Sending ERC20 transfer of 10 ${symbol} to Treasury (${treasuryAddr})...`, "info");
+                const tx = await tokenContract.transfer(treasuryAddr, transferAmount);
+                log(`Transaction sent. Hash: ${tx.hash}`, "info");
+                await tx.wait();
+                log(`Transfer confirmed! 10 ${symbol} shifted from User (1100) to Treasury (1200).`, "success");
+
+                // Save to local logs
+                const storedLogs = JSON.parse(localStorage.getItem("cabs_ledger_logs") || "[]");
+                storedLogs.unshift({
+                    time: new Date().toLocaleTimeString(),
+                    account: "1100 & 1200",
+                    desc: "Alchemical Transmutation",
+                    debit: "10.0000",
+                    credit: "10.0000"
+                });
+                localStorage.setItem("cabs_ledger_logs", JSON.stringify(storedLogs.slice(0, 10)));
+
+                const address = await signer.getAddress();
+                await updateBalances(address);
+            } catch (err) {
+                log(`Transmutation failed: ${err.message}`, "error");
+            }
         }
 
         async function init() {

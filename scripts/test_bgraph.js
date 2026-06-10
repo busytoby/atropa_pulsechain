@@ -20,9 +20,11 @@ async function main() {
     const deployer = signers[0];
 
     const bgInterface = new ethers.Interface([
-        "function linearRegression(int256[] x, int256[] y) external view returns (int256 slope, int256 intercept, int256 rSquared)",
+        "function linearRegression(int256[] x, int256[] y) external view returns (int256 slope, int256 intercept, int256 rSquared, int256 correlation)",
         "function plotBarChart(uint256[] values) external view returns (uint256[] coordinates)",
-        "function evaluateJobDecisionTree(uint256[] answers) external view returns (uint256 jobIndex)"
+        "function evaluateJobDecisionTree(uint256[] answers) external view returns (uint256 jobIndex)",
+        "function computeStats(int256[] values) external view returns (int256 mean, int256 variance, int256 stdDev)",
+        "function plotPieChart(uint256[] values) external view returns (uint256[] angles)"
     ]);
 
     const bgContract = new ethers.Contract(bGraphAddress, bgInterface, deployer);
@@ -37,7 +39,8 @@ async function main() {
     console.log(`Retrieved Slope: ${Number(reg.slope) / 1000} (Expected: 0.6)`);
     console.log(`Retrieved Intercept: ${Number(reg.intercept) / 1000} (Expected: 2.2)`);
     console.log(`Retrieved R-Squared: ${Number(reg.rSquared) / 1000} (Expected: ~0.6)`);
-
+    console.log(`Retrieved Correlation (r): ${Number(reg.correlation) / 1000} (Expected: ~0.774)`);
+ 
     if (Math.abs(Number(reg.slope) - 600) > 10 || Math.abs(Number(reg.intercept) - 2200) > 10) {
         console.error("FAIL: Linear regression slope/intercept mismatch!");
         process.exit(1);
@@ -79,6 +82,40 @@ async function main() {
         process.exit(1);
     }
     console.log("SUCCESS: 'What's My Job?' decision tree successfully verified!");
+
+    console.log("\n=== STEP 5: Testing B/Graph Statistics (computeStats) ===");
+    // Values: 10, 20, 30, 40, 50. Mean: 30, Variance: 200, StdDev: sqrt(200) = ~14.14
+    const statsVals = [10, 20, 30, 40, 50];
+    const stats = await bgContract.computeStats(statsVals);
+    console.log(`Retrieved Mean: ${Number(stats.mean) / 1000} (Expected: 30)`);
+    console.log(`Retrieved Variance: ${Number(stats.variance) / 1000} (Expected: 200)`);
+    console.log(`Retrieved StdDev: ${Number(stats.stdDev) / 1000} (Expected: ~14.14)`);
+
+    if (Math.abs(Number(stats.mean) - 30000) > 10 || Math.abs(Number(stats.variance) - 200000) > 10) {
+        console.error("FAIL: Statistics calculations mismatch!");
+        process.exit(1);
+    }
+    console.log("SUCCESS: Statistics successfully computed!");
+
+    console.log("\n=== STEP 6: Testing B/Graph Pie Chart Angles (plotPieChart) ===");
+    // Values: 10, 20, 70. Sum = 100. Slices: 10% (36 degrees), 20% (72 degrees), 70% (252 degrees).
+    const pieVals = [10, 20, 70];
+    const angles = await bgContract.plotPieChart(pieVals);
+    console.log(`Angles output length: ${angles.length} (Expected: 6 [3 slices * 2 angles])`);
+
+    // Slices (start -> end):
+    // 0 -> 36
+    // 36 -> 108
+    // 108 -> 360
+    const expectedAngles = [0, 36000, 36000, 108000, 108000, 360000];
+    for (let i = 0; i < 6; i++) {
+        console.log(`  Angle ${i}: ${Number(angles[i]) / 1000} degrees`);
+        if (Math.abs(Number(angles[i]) - expectedAngles[i]) > 10) {
+            console.error(`FAIL: Angle ${i} mismatch!`);
+            process.exit(1);
+        }
+    }
+    console.log("SUCCESS: Pie chart angles successfully verified!");
 }
 
 main().catch(err => {

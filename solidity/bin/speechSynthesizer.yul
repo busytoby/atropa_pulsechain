@@ -160,6 +160,110 @@ object "SpeechSynthesizer" {
             }
 
             // ----------------------------------------------------------------
+            // Method: writeFormants(uint256 f1, uint256 f2, uint256 f3) -> bool
+            // Selector: 0x07c01cb1
+            // ----------------------------------------------------------------
+            if eq(selector, 0x07c01cb1) {
+                let f1 := calldataload(4)
+                let f2 := calldataload(36)
+                let f3 := calldataload(68)
+
+                let musicMaker := sload(1)
+                if iszero(iszero(musicMaker)) {
+                    // Voice 1 Freq Low/High/Control
+                    let freq1 := mul(f1, 10)
+                    let lo1 := and(freq1, 0xff)
+                    let hi1 := and(shr(8, freq1), 0xff)
+                    
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54272)
+                    mstore(0x1124, lo1)
+                    let dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    mstore(0x1104, 54273)
+                    mstore(0x1124, hi1)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    mstore(0x1104, 54276)
+                    mstore(0x1124, 17) // Sawtooth
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+
+                    // Voice 2 Freq Low/High/Control
+                    let freq2 := mul(f2, 10)
+                    let lo2 := and(freq2, 0xff)
+                    let hi2 := and(shr(8, freq2), 0xff)
+                    
+                    mstore(0x1104, 54279)
+                    mstore(0x1124, lo2)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    mstore(0x1104, 54280)
+                    mstore(0x1124, hi2)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    mstore(0x1104, 54283)
+                    mstore(0x1124, 17) // Sawtooth
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+
+                    // Voice 3 Freq Low/High/Control
+                    let freq3 := mul(f3, 10)
+                    let lo3 := and(freq3, 0xff)
+                    let hi3 := and(shr(8, freq3), 0xff)
+                    
+                    mstore(0x1104, 54286)
+                    mstore(0x1124, lo3)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    mstore(0x1104, 54287)
+                    mstore(0x1124, hi3)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    mstore(0x1104, 54290)
+                    mstore(0x1124, 17) // Sawtooth
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                }
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // Method: writeReflectionCoefficients(uint256[9] coefficients, uint256 pitch, uint256 energy) -> bool
             // Selector: 0xbd7856a3
             // ----------------------------------------------------------------

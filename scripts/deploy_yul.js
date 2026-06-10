@@ -21,7 +21,9 @@ const CONTRACTS_TO_DEPLOY = [
     { name: "keySystem", path: "../solidity/bin/keySystem.yul", configKey: "keySystemAddress" },
     { name: "bGraph_v1", path: "../solidity/bin/bGraph.yul", configKey: "bGraphAddress" },
     { name: "folklore", path: "../solidity/bin/folklore.yul", configKey: "folkloreAddress" },
-    { name: "diyat", path: "../solidity/bin/diyat.yul", configKey: "diyatAddress" }
+    { name: "diyat", path: "../solidity/bin/diyat.yul", configKey: "diyatAddress" },
+    { name: "ledger", path: "../solidity/bin/ledger.yul", configKey: "ledgerAddress" },
+    { name: "biorhythm", path: "../solidity/bin/biorhythm.yul", configKey: "biorhythmAddress" }
 ];
 
 // Compile Yul contract using solc

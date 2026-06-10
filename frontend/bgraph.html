@@ -112,7 +112,8 @@
                 <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
                     <div><strong>Slope:</strong> <span id="valSlope">N/A</span></div>
                     <div><strong>Intercept:</strong> <span id="valIntercept">N/A</span></div>
-                    <div style="grid-column: 1 / -1;"><strong>R-Squared:</strong> <span id="valRSquared">N/A</span></div>
+                    <div><strong>R-Squared:</strong> <span id="valRSquared">N/A</span></div>
+                    <div><strong>Correlation (r):</strong> <span id="valCorrelation">N/A</span></div>
                 </div>
 
                 <canvas id="canvasRegression"></canvas>
@@ -131,6 +132,92 @@
                 <button class="btn btn-primary" id="btnPlotBars" style="width: 100%;">Plot Bar Chart</button>
 
                 <canvas id="canvasBars"></canvas>
+            </section>
+
+            <!-- Statistics Card -->
+            <section class="card">
+                <h2><span class="icon">📐</span> Statistics Calculator</h2>
+                <p class="description">Computes Mean, Variance, and Standard Deviation on-chain.</p>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="statsValues">Dataset (comma-separated):</label>
+                    <input type="text" id="statsValues" value="10, 20, 30, 40, 50" class="input-glow">
+                </div>
+
+                <button class="btn btn-primary" id="btnComputeStats" style="width: 100%;">Compute Statistics</button>
+
+                <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <div><strong>Mean:</strong> <span id="valMean">N/A</span></div>
+                    <div><strong>Variance:</strong> <span id="valVariance">N/A</span></div>
+                    <div style="grid-column: 1 / -1;"><strong>Std Dev:</strong> <span id="valStdDev">N/A</span></div>
+                </div>
+            </section>
+
+            <!-- Pie Chart Card -->
+            <section class="card">
+                <h2><span class="icon">🍕</span> Pie Chart Plotter</h2>
+                <p class="description">Plots colored pie chart slices using starting and ending angles computed on-chain.</p>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="pieValues">Slice Values (comma-separated):</label>
+                    <input type="text" id="pieValues" value="10, 20, 70" class="input-glow">
+                </div>
+
+                <button class="btn btn-primary" id="btnPlotPie" style="width: 100%;">Plot Pie Chart</button>
+
+                <canvas id="canvasPie"></canvas>
+            </section>
+
+            <!-- Matrix Calculator Card -->
+            <section class="card">
+                <h2><span class="icon">🧮</span> Spreadsheet Matrix Calculator</h2>
+                <p class="description">Computes matrix values sum natively on-chain.</p>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="matrixValues">Matrix Cells (comma-separated):</label>
+                    <input type="text" id="matrixValues" value="1, 2, 3, 4, 5, 6, 7, 8, 9" class="input-glow">
+                </div>
+                <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label for="matrixRows">Rows:</label>
+                        <input type="number" id="matrixRows" value="3" class="input-glow">
+                    </div>
+                    <div class="form-group">
+                        <label for="matrixCols">Cols:</label>
+                        <input type="number" id="matrixCols" value="3" class="input-glow">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="btnComputeMatrix" style="width: 100%;">Compute Matrix Sum</button>
+
+                <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; text-align: center;">
+                    <div style="font-size: 1.2rem;"><strong>On-Chain Sum:</strong> <span id="valMatrixSum" style="color: var(--neon-blue); font-weight: bold;">N/A</span></div>
+                </div>
+            </section>
+
+            <!-- Biorhythm Card -->
+            <section class="card">
+                <h2><span class="icon">🧬</span> Biorhythm Plotter</h2>
+                <p class="description">Calculates physical, emotional, and intellectual cycles on-chain.</p>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="birthDate">Birth Date (YYYY-MM-DD):</label>
+                    <input type="date" id="birthDate" value="2000-01-01" class="input-glow">
+                </div>
+                <div class="form-group">
+                    <label for="targetDate">Target Date (YYYY-MM-DD):</label>
+                    <input type="date" id="targetDate" value="2026-06-10" class="input-glow">
+                </div>
+
+                <button class="btn btn-primary" id="btnPlotBiorhythm" style="width: 100%;">Plot Cycles</button>
+
+                <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; font-size: 0.85rem;">
+                    <div><strong>Phys:</strong> <span id="valPhys" style="color: #ff007f;">N/A</span></div>
+                    <div><strong>Emot:</strong> <span id="valEmot" style="color: #00f2fe;">N/A</span></div>
+                    <div><strong>Intel:</strong> <span id="valIntel" style="color: #9b5de5;">N/A</span></div>
+                </div>
+
+                <canvas id="canvasBiorhythm" style="height: 120px;"></canvas>
             </section>
 
             <!-- "What's My Job?" Classifier Card -->
@@ -183,16 +270,23 @@
 
     <script>
         const PROVIDER_URL = "http://127.0.0.1:8545";
-        let provider, signer, bGraphAddress;
-        let bGraphContract;
+        let provider, signer, bGraphAddress, biorhythmAddress;
+        let bGraphContract, biorhythmContract;
 
         // Answers state: Q0, Q1, Q2
         let answers = [0, 0, 0];
 
         const bgABI = [
-            "function linearRegression(int256[] x, int256[] y) external view returns (int256 slope, int256 intercept, int256 rSquared)",
+            "function linearRegression(int256[] x, int256[] y) external view returns (int256 slope, int256 intercept, int256 rSquared, int256 correlation)",
             "function plotBarChart(uint256[] values) external view returns (uint256[] coordinates)",
-            "function evaluateJobDecisionTree(uint256[] answers) external view returns (uint256 jobIndex)"
+            "function evaluateJobDecisionTree(uint256[] answers) external view returns (uint256 jobIndex)",
+            "function computeStats(int256[] values) external view returns (int256 mean, int256 variance, int256 stdDev)",
+            "function plotPieChart(uint256[] values) external view returns (uint256[] angles)",
+            "function computeMatrixSum(uint256[] matrix, uint256 rows, uint256 cols) external view returns (uint256 sum)"
+        ];
+
+        const bioABI = [
+            "function calculateBiorhythm(uint256 yBirth, uint256 mBirth, uint256 dBirth, uint256 yTarget, uint256 mTarget, uint256 dTarget) external view returns (int256 physical, int256 emotional, int256 intellectual, int256 diffDays)"
         ];
 
         const jobs = {
@@ -220,8 +314,10 @@
                 const res = await fetch("/api/config");
                 const config = await res.json();
                 bGraphAddress = config.networks.localhost.bGraphAddress;
+                biorhythmAddress = config.networks.localhost.biorhythmAddress;
                 
                 bGraphContract = new ethers.Contract(bGraphAddress, bgABI, signer);
+                biorhythmContract = new ethers.Contract(biorhythmAddress, bioABI, signer);
 
                 networkBadge.innerText = "Connected";
                 networkBadge.classList.add("connected");
@@ -292,27 +388,135 @@
             }
         });
 
-        // Linear Regression Action
-        document.getElementById("btnComputeReg").addEventListener("click", async () => {
-            if (!bGraphContract) return alert("Contract not loaded");
-            
-            const xs = document.getElementById("regX").value.split(",").map(n => BigInt(Number(n.trim()) * 1000));
-            const ys = document.getElementById("regY").value.split(",").map(n => BigInt(Number(n.trim()) * 1000));
+        let scatterPoints = [
+            { x: 1, y: 2 },
+            { x: 2, y: 4 },
+            { x: 3, y: 5 },
+            { x: 4, y: 4 },
+            { x: 5, y: 5 }
+        ];
+
+        async function triggerRegressionCompute() {
+            if (!bGraphContract) return;
+            const xs = scatterPoints.map(p => BigInt(Math.round(p.x * 1000)));
+            const ys = scatterPoints.map(p => BigInt(Math.round(p.y * 1000)));
 
             try {
                 const reg = await bGraphContract.linearRegression(xs, ys);
                 const slope = Number(reg.slope) / 1000;
                 const intercept = Number(reg.intercept) / 1000;
                 const r2 = Number(reg.rSquared) / 1000;
+                const correlation = Number(reg.correlation) / 1000;
 
                 document.getElementById("valSlope").innerText = slope.toFixed(3);
                 document.getElementById("valIntercept").innerText = intercept.toFixed(3);
                 document.getElementById("valRSquared").innerText = r2.toFixed(3);
+                document.getElementById("valCorrelation").innerText = correlation.toFixed(3);
 
-                // Draw to Canvas
-                plotRegression(xs.map(n => Number(n) / 1000), ys.map(n => Number(n) / 1000), slope, intercept);
+                plotRegression(scatterPoints.map(p => p.x), scatterPoints.map(p => p.y), slope, intercept);
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        // Linear Regression Action
+        document.getElementById("btnComputeReg").addEventListener("click", () => {
+            const xs = document.getElementById("regX").value.split(",").map(Number);
+            const ys = document.getElementById("regY").value.split(",").map(Number);
+            scatterPoints = xs.map((x, i) => ({ x, y: ys[i] || 0 }));
+            triggerRegressionCompute();
+        });
+
+        // Draggable point events on canvasRegression
+        let activeDragPointIdx = -1;
+        const regCanvas = document.getElementById("canvasRegression");
+
+        regCanvas.addEventListener("mousedown", (e) => {
+            if (scatterPoints.length === 0) return;
+            const rect = regCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const padding = 40;
+            const width = regCanvas.width - padding * 2;
+            const height = regCanvas.height - padding * 2;
+            const minX = 0;
+            const maxX = 6;
+            const minY = 0;
+            const maxY = 6;
+
+            const getX = x => padding + ((x - minX) / (maxX - minX)) * width;
+            const getY = y => regCanvas.height - padding - ((y - minY) / (maxY - minY)) * height;
+
+            for (let i = 0; i < scatterPoints.length; i++) {
+                const px = getX(scatterPoints[i].x);
+                const py = getY(scatterPoints[i].y);
+                const dist = Math.hypot(mouseX - px, mouseY - py);
+                if (dist < 12) {
+                    activeDragPointIdx = i;
+                    regCanvas.style.cursor = "grabbing";
+                    break;
+                }
+            }
+        });
+
+        regCanvas.addEventListener("mousemove", (e) => {
+            const rect = regCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (activeDragPointIdx !== -1) {
+                const padding = 40;
+                const width = regCanvas.width - padding * 2;
+                const height = regCanvas.height - padding * 2;
+                const minX = 0;
+                const maxX = 6;
+                const minY = 0;
+                const maxY = 6;
+
+                let newX = minX + ((mouseX - padding) / width) * (maxX - minX);
+                let newY = minY + ((regCanvas.height - padding - mouseY) / height) * (maxY - minY);
+
+                newX = Math.max(0, Math.min(6, Math.round(newX * 10) / 10));
+                newY = Math.max(0, Math.min(6, Math.round(newY * 10) / 10));
+
+                scatterPoints[activeDragPointIdx].x = newX;
+                scatterPoints[activeDragPointIdx].y = newY;
+
+                document.getElementById("regX").value = scatterPoints.map(p => p.x).join(", ");
+                document.getElementById("regY").value = scatterPoints.map(p => p.y).join(", ");
+
+                triggerRegressionCompute();
+            } else {
+                const padding = 40;
+                const width = regCanvas.width - padding * 2;
+                const height = regCanvas.height - padding * 2;
+                const minX = 0;
+                const maxX = 6;
+                const minY = 0;
+                const maxY = 6;
+
+                const getX = x => padding + ((x - minX) / (maxX - minX)) * width;
+                const getY = y => regCanvas.height - padding - ((y - minY) / (maxY - minY)) * height;
+
+                let hovering = false;
+                for (let i = 0; i < scatterPoints.length; i++) {
+                    const px = getX(scatterPoints[i].x);
+                    const py = getY(scatterPoints[i].y);
+                    const dist = Math.hypot(mouseX - px, mouseY - py);
+                    if (dist < 12) {
+                        hovering = true;
+                        break;
+                    }
+                }
+                regCanvas.style.cursor = hovering ? "grab" : "default";
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (activeDragPointIdx !== -1) {
+                activeDragPointIdx = -1;
+                regCanvas.style.cursor = "default";
             }
         });
 
@@ -339,9 +543,21 @@
             const getX = x => padding + ((x - minX) / (maxX - minX)) * width;
             const getY = y => canvas.height - padding - ((y - minY) / (maxY - minY)) * height;
 
+            // Draw grid lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            ctx.lineWidth = 1;
+            for (let val = 1; val <= 6; val++) {
+                ctx.beginPath();
+                ctx.moveTo(getX(val), getY(minY));
+                ctx.lineTo(getX(val), getY(maxY));
+                ctx.moveTo(getX(minX), getY(val));
+                ctx.lineTo(getX(maxX), getY(val));
+                ctx.stroke();
+            }
+
             // Draw axis
             ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(getX(minX), getY(0));
             ctx.lineTo(getX(maxX), getY(0));
@@ -410,6 +626,159 @@
                 ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
                 ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
             }
+        }
+
+        document.getElementById("btnPlotPie").addEventListener("click", async () => {
+            if (!bGraphContract) return alert("Contract not loaded");
+            const values = document.getElementById("pieValues").value.split(",").map(n => Number(n.trim()));
+            try {
+                const angles = await bGraphContract.plotPieChart(values);
+                drawPieChart(angles);
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        function drawPieChart(angles) {
+            console.log("drawPieChart received angles:", angles);
+            const canvas = document.getElementById("canvasPie");
+            if (!canvas) {
+                console.error("Canvas element 'canvasPie' not found.");
+                return;
+            }
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = canvas.offsetWidth || 300;
+            canvas.height = canvas.offsetHeight || 250;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 20;
+
+            console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}, Center: (${centerX}, ${centerY}), Radius: ${radius}`);
+
+            const colors = [
+                "#00f2fe", // Neon Blue
+                "#ff007f", // Neon Pink
+                "#9b5de5", // Violet
+                "#f15bb5", // Pink Magenta
+                "#fbc531", // Yellow
+                "#4cd137"  // Green
+            ];
+
+            const len = angles.length / 2;
+            for (let i = 0; i < len; i++) {
+                const startAngleDeg = Number(angles[i * 2]) / 1000;
+                const endAngleDeg = Number(angles[i * 2 + 1]) / 1000;
+                const startAngleRad = startAngleDeg * (Math.PI / 180) - Math.PI / 2;
+                const endAngleRad = endAngleDeg * (Math.PI / 180) - Math.PI / 2;
+
+                console.log(`Slice ${i}: ${startAngleDeg}° to ${endAngleDeg}° (rad: ${startAngleRad.toFixed(3)} to ${endAngleRad.toFixed(3)})`);
+
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngleRad, endAngleRad);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = "rgba(0,0,0,0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        document.getElementById("btnComputeStats").addEventListener("click", async () => {
+            if (!bGraphContract) return alert("Contract not loaded");
+            const values = document.getElementById("statsValues").value.split(",").map(n => BigInt(Number(n.trim())));
+            try {
+                const stats = await bGraphContract.computeStats(values);
+                const mean = Number(stats.mean) / 1000;
+                const variance = Number(stats.variance) / 1000;
+                const stdDev = Number(stats.stdDev) / 1000;
+
+                document.getElementById("valMean").innerText = mean.toFixed(3);
+                document.getElementById("valVariance").innerText = variance.toFixed(3);
+                document.getElementById("valStdDev").innerText = stdDev.toFixed(3);
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        document.getElementById("btnComputeMatrix").addEventListener("click", async () => {
+            if (!bGraphContract) return alert("Contract not loaded");
+            const matrixVals = document.getElementById("matrixValues").value.split(",").map(n => Number(n.trim()));
+            const rows = Number(document.getElementById("matrixRows").value);
+            const cols = Number(document.getElementById("matrixCols").value);
+            try {
+                const sum = await bGraphContract.computeMatrixSum(matrixVals, rows, cols);
+                document.getElementById("valMatrixSum").innerText = sum.toString();
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        document.getElementById("btnPlotBiorhythm").addEventListener("click", async () => {
+            if (!biorhythmContract) return alert("Contract not loaded");
+            const birthStr = document.getElementById("birthDate").value;
+            const targetStr = document.getElementById("targetDate").value;
+            if (!birthStr || !targetStr) return alert("Please select dates");
+            const [yBirth, mBirth, dBirth] = birthStr.split("-").map(Number);
+            const [yTarget, mTarget, dTarget] = targetStr.split("-").map(Number);
+            try {
+                const res = await biorhythmContract.calculateBiorhythm(yBirth, mBirth, dBirth, yTarget, mTarget, dTarget);
+                const phys = Number(res[0]);
+                const emot = Number(res[1]);
+                const intel = Number(res[2]);
+
+                document.getElementById("valPhys").innerText = phys + "%";
+                document.getElementById("valEmot").innerText = emot + "%";
+                document.getElementById("valIntel").innerText = intel + "%";
+
+                drawBiorhythmChart(phys, emot, intel);
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        function drawBiorhythmChart(phys, emot, intel) {
+            const canvas = document.getElementById("canvasBiorhythm");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const midY = canvas.height / 2;
+            const barWidth = Math.floor(canvas.width / 5);
+            const gap = Math.floor(canvas.width / 15);
+
+            // Draw center baseline
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, midY);
+            ctx.lineTo(canvas.width, midY);
+            ctx.stroke();
+
+            const cycles = [
+                { name: "Physical", val: phys, color: "#ff007f" },
+                { name: "Emotional", val: emot, color: "#00f2fe" },
+                { name: "Intellectual", val: intel, color: "#9b5de5" }
+            ];
+
+            cycles.forEach((cycle, idx) => {
+                const x = gap + idx * (barWidth + gap);
+                const heightVal = (cycle.val / 100) * (midY - 15);
+
+                ctx.fillStyle = cycle.color;
+                ctx.fillRect(x, midY, barWidth, -heightVal);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "10px Rajdhani";
+                ctx.textAlign = "center";
+                ctx.fillText(`${cycle.name}: ${cycle.val}%`, x + barWidth / 2, heightVal >= 0 ? midY - heightVal - 5 : midY - heightVal + 12);
+            });
         }
 
         window.onload = init;

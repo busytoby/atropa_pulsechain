@@ -59,6 +59,7 @@ object "BGraph" {
                 let slope := 0
                 let intercept := 0
                 let rSquared := 0
+                let correlation := 0
 
                 if iszero(eq(den, 0)) {
                     // Scale calculations by 1000 for fixed-point precision
@@ -72,13 +73,22 @@ object "BGraph" {
                         let rNum := mul(num, num)
                         let rDen := mul(den, denY)
                         rSquared := sdiv(mul(rNum, 1000), rDen)
+
+                        let multDen := mul(den, denY)
+                        if gt(multDen, 0) {
+                            let rDenSqrt := sqrt(multDen)
+                            if gt(rDenSqrt, 0) {
+                                correlation := sdiv(mul(num, 1000), rDenSqrt)
+                            }
+                        }
                     }
                 }
 
                 mstore(0x00, slope)
                 mstore(0x20, intercept)
                 mstore(0x40, rSquared)
-                return(0x00, 96)
+                mstore(0x60, correlation)
+                return(0x00, 128)
             }
 
             // ----------------------------------------------------------------
@@ -185,6 +195,123 @@ object "BGraph" {
                 }
                 
                 mstore(0x00, jobIndex)
+                return(0x00, 32)
+            }
+
+            // Helper function: Integer Square Root
+            function sqrt(x) -> y {
+                if gt(x, 3) {
+                    y := x
+                    let temp := add(div(x, 2), 1)
+                    for { } lt(temp, y) { } {
+                        y := temp
+                        temp := div(add(div(x, temp), temp), 2)
+                    }
+                }
+                if iszero(gt(x, 3)) {
+                    if gt(x, 0) {
+                        y := 1
+                    }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 4: computeStats(int256[] values) -> (int256 mean, int256 variance, int256 stdDev)
+            // Selector: 0x14fcdea7
+            // ----------------------------------------------------------------
+            if eq(selector, 0x14fcdea7) {
+                let valOffset := add(4, calldataload(4))
+                let len := calldataload(valOffset)
+                if iszero(len) { revert(0, 0) }
+
+                let sum := 0
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    let v := calldataload(add(add(valOffset, 32), mul(i, 32)))
+                    sum := add(sum, v)
+                }
+
+                // Mean scaled by 1000
+                let mean := sdiv(mul(sum, 1000), len)
+
+                let sumSqDiff := 0
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    let v := calldataload(add(add(valOffset, 32), mul(i, 32)))
+                    let diff := sub(mul(v, 1000), mean)
+                    sumSqDiff := add(sumSqDiff, mul(diff, diff))
+                }
+
+                let varianceLong := sdiv(sumSqDiff, len)
+                let variance := sdiv(varianceLong, 1000)
+                let stdDev := 0
+                if gt(varianceLong, 0) {
+                    stdDev := sqrt(varianceLong)
+                }
+
+                mstore(0x00, mean)
+                mstore(0x20, variance)
+                mstore(0x40, stdDev)
+                return(0x00, 96)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 5: plotPieChart(uint256[] values) -> (uint256[] angles)
+            // Selector: 0xa32b99b0
+            // ----------------------------------------------------------------
+            if eq(selector, 0xa32b99b0) {
+                let valOffset := add(4, calldataload(4))
+                let len := calldataload(valOffset)
+                if iszero(len) { revert(0, 0) }
+
+                let sum := 0
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    let v := calldataload(add(add(valOffset, 32), mul(i, 32)))
+                    sum := add(sum, v)
+                }
+
+                let outSize := mul(len, 2)
+                mstore(0x00, 32)
+                mstore(0x20, outSize)
+
+                let currentAngle := 0
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    let v := calldataload(add(add(valOffset, 32), mul(i, 32)))
+                    let deltaAngle := 0
+                    if gt(sum, 0) {
+                        deltaAngle := div(mul(v, 360000), sum)
+                    }
+                    let nextAngle := add(currentAngle, deltaAngle)
+
+                    let baseIdx := add(0x40, mul(i, 64))
+                    mstore(baseIdx, currentAngle)
+                    mstore(add(baseIdx, 32), nextAngle)
+
+                    currentAngle := nextAngle
+                }
+
+                let totalBytes := add(0x40, mul(outSize, 32))
+                return(0x00, totalBytes)
+            }
+
+            // ----------------------------------------------------------------
+            // METHOD 6: computeMatrixSum(uint256[] matrix, uint256 rows, uint256 cols) -> (uint256 sum)
+            // Selector: 0xb0ebf26e
+            // ----------------------------------------------------------------
+            if eq(selector, 0xb0ebf26e) {
+                let matOffset := add(4, calldataload(4))
+                let len := calldataload(matOffset)
+                let rows := calldataload(36)
+                let cols := calldataload(68)
+                
+                let limit := mul(rows, cols)
+                if gt(limit, len) { limit := len }
+
+                let sum := 0
+                for { let i := 0 } lt(i, limit) { i := add(i, 1) } {
+                    let v := calldataload(add(add(matOffset, 32), mul(i, 32)))
+                    sum := add(sum, v)
+                }
+
+                mstore(0x00, sum)
                 return(0x00, 32)
             }
 
