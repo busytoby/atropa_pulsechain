@@ -640,6 +640,85 @@ object "SpeechSynthesizer" {
                 return(0x5000, add(64, paddedBytesLen))
             }
 
+            // ----------------------------------------------------------------
+            // Method: parseTextToPhonemes(string memory text) -> bytes32[]
+            // Selector: 0x9a3c6cfe
+            // ----------------------------------------------------------------
+            if eq(selector, 0x9a3c6cfe) {
+                let offset := calldataload(4)
+                let len := calldataload(add(4, offset))
+                
+                let arrayLength := 0
+                let memStart := 0x6040
+
+                let textStart := add(36, offset)
+                let i := 0
+                for { } lt(i, len) { } {
+                    let char1 := byte(0, calldataload(add(textStart, i)))
+                    
+                    let char2 := 0
+                    if lt(add(i, 1), len) {
+                        char2 := byte(0, calldataload(add(textStart, add(i, 1))))
+                    }
+
+                    let phoneme := 0
+                    let advance := 1
+
+                    if and(eq(char1, 115), eq(char2, 104)) {
+                        phoneme := 0x7368000000000000000000000000000000000000000000000000000000000000
+                        advance := 2
+                    }
+                    if and(eq(char1, 101), eq(char2, 101)) {
+                        phoneme := 0x6565000000000000000000000000000000000000000000000000000000000000
+                        advance := 2
+                    }
+                    if and(eq(char1, 111), eq(char2, 111)) {
+                        phoneme := 0x6f6f000000000000000000000000000000000000000000000000000000000000
+                        advance := 2
+                    }
+                    if and(eq(char1, 97), eq(char2, 97)) {
+                        phoneme := 0x6161000000000000000000000000000000000000000000000000000000000000
+                        advance := 2
+                    }
+
+                    if iszero(phoneme) {
+                        if eq(char1, 97) {
+                            phoneme := 0x6161000000000000000000000000000000000000000000000000000000000000
+                        }
+                        if eq(char1, 101) {
+                            phoneme := 0x6565000000000000000000000000000000000000000000000000000000000000
+                        }
+                        if eq(char1, 111) {
+                            phoneme := 0x6f6f000000000000000000000000000000000000000000000000000000000000
+                        }
+                        if eq(char1, 115) {
+                            phoneme := 0x7300000000000000000000000000000000000000000000000000000000000000
+                        }
+                        if eq(char1, 102) {
+                            phoneme := 0x6600000000000000000000000000000000000000000000000000000000000000
+                        }
+                        if eq(char1, 109) {
+                            phoneme := 0x6d00000000000000000000000000000000000000000000000000000000000000
+                        }
+                        if eq(char1, 110) {
+                            phoneme := 0x6e00000000000000000000000000000000000000000000000000000000000000
+                        }
+                    }
+
+                    if iszero(iszero(phoneme)) {
+                        mstore(add(memStart, mul(arrayLength, 32)), phoneme)
+                        arrayLength := add(arrayLength, 1)
+                    }
+
+                    i := add(i, advance)
+                }
+
+                mstore(0x6000, 0x20)
+                mstore(0x6020, arrayLength)
+                
+                return(0x6000, add(64, mul(arrayLength, 32)))
+            }
+
             revert(0, 0)
         }
     }
