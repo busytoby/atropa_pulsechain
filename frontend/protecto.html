@@ -467,37 +467,47 @@
                 };
             }
 
-            const localhost = config.networks.localhost;
+            const localhost = (config && config.networks && config.networks.localhost)
+                ? config.networks.localhost
+                : {
+                    cpu6502Address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+                    oregonTrailToken: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+                };
 
-            try {
-                readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
-                await readProvider.getBlockNumber(); // Probe check connection
-                cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, readProvider);
-                isSimulated = false;
-            } catch (rpcErr) {
-                console.warn("Local Hardhat/Anvil RPC node is offline. Falling back to ZMM VM emulation.");
-                isSimulated = true;
-                cpuContract = new SimulatedCPU();
-                const connectBtn = document.getElementById("btnConnect");
-                if (connectBtn) {
-                    connectBtn.innerText = "ZMM VM (Active)";
-                    connectBtn.style.background = "var(--neon-blue)";
-                }
+            // Instant simulated VM boot without network timeouts
+            isSimulated = true;
+            cpuContract = new SimulatedCPU();
+            const connectBtn = document.getElementById("btnConnect");
+            if (connectBtn) {
+                connectBtn.innerText = "ZMM VM (Active)";
+                connectBtn.style.background = "var(--neon-blue)";
             }
 
-            // 2. Try to hook up Web3 Provider/Signer if window.ethereum exists
-            if (window.ethereum && !isSimulated) {
-                try {
+            // Asynchronously probe the network provider so page load is 100% non-blocking!
+            try {
+                readProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                if (window.ethereum) {
                     provider = new ethers.BrowserProvider(window.ethereum);
-                    const accounts = await provider.send("eth_accounts", []);
-                    if (accounts.length > 0) {
-                        signer = await provider.getSigner();
-                        document.getElementById("btnConnect").innerText = "Wallet Linked";
-                        document.getElementById("btnConnect").classList.add("btn-success");
-                    }
-                } catch (e) {
-                    console.warn("Wallet signer connection failed:", e);
+                    provider.send("eth_accounts", []).then(async (accounts) => {
+                        if (accounts.length > 0) {
+                            signer = await provider.getSigner();
+                            writeSigner = signer;
+                            cpuContract = new ethers.Contract(localhost.cpu6502Address, cpuABI, signer);
+                            isSimulated = false;
+                            if (connectBtn) {
+                                connectBtn.innerText = "Wallet Linked";
+                                connectBtn.classList.add("btn-success");
+                                connectBtn.style.background = "";
+                            }
+                            const selectEl = document.getElementById("selectLedgerToken");
+                            if (selectEl && selectEl.value && selectEl.value !== "default") {
+                                tokenContract = new ethers.Contract(selectEl.value, tokenABI, signer);
+                            }
+                        }
+                    }).catch(() => {});
                 }
+            } catch (rpcErr) {
+                console.log("On-chain network probe skipped/offline. Running locally.");
             }
 
             // Set up write signer
