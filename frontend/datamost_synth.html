@@ -696,6 +696,7 @@
                                 <option value="neural_lpc">Neural Flow-Matching (LPC K1..K9)</option>
                                 <option value="tymac_sid">Tymac SID (4-bit Vol Digitizer)</option>
                                 <option value="access_realsound">Access RealSound (6-bit PC Speaker PWM)</option>
+                                <option value="hybrid_combined">Hybrid Composite (Votrax + TMS5220 + RealSound)</option>
                             </select>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
@@ -3653,7 +3654,7 @@
                         document.getElementById("voicePhonemeText").innerText = `${label} (${phonemeCode})`;
                         document.getElementById("voiceInflectionText").innerText = inflection;
 
-                        if (selectedEngine === "votrax" && counter !== lastSpeechCounter) {
+                        if ((selectedEngine === "votrax" || selectedEngine === "hybrid_combined") && counter !== lastSpeechCounter) {
                             lastSpeechCounter = counter;
                             playPhoneme(phonemeCode, inflection);
                         }
@@ -3667,7 +3668,7 @@
                         document.getElementById("tiCommandText").innerText = "0x" + tmsCmd.toString(16).toUpperCase();
                         document.getElementById("tiFifoText").innerText = tmsFifoLen;
                         
-                        if (selectedEngine === "ti_tms5220") {
+                        if (selectedEngine === "ti_tms5220" || selectedEngine === "hybrid_combined") {
                             const led = document.getElementById("voiceStatusLED");
                             const ledText = document.getElementById("voiceStatusText");
                             const isBusy = (tmsStatus & 0x80) !== 0;
