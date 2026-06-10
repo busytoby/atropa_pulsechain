@@ -26,6 +26,7 @@ async function main() {
     const nelson = compileYul(path.join(__dirname, "../solidity/bin/nelson.yul"));
     const mahoney = compileYul(path.join(__dirname, "../solidity/bin/mahoney.yul"));
     const estle = compileYul(path.join(__dirname, "../solidity/bin/estle.yul"));
+    const i8080 = compileYul(path.join(__dirname, "../solidity/bin/i8080.yul"));
     
     const erc20Bin = "0x" + fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.bin"), "utf8").trim();
     const erc20Abi = JSON.parse(fs.readFileSync(path.join(__dirname, "../solidity/bin/MockERC20.abi"), "utf8"));
@@ -42,6 +43,7 @@ async function main() {
         nelson,
         mahoney,
         estle,
+        i8080,
         mockErc20: {
             bin: erc20Bin,
             abi: erc20Abi
