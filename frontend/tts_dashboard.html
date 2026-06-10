@@ -323,6 +323,51 @@
                         <button class="btn btn-small" id="btnSyncSIDContract" style="background: rgba(57, 255, 20, 0.15); border-color: var(--neon-green); color: var(--neon-green);">Sync Vocoder Registers to Chain</button>
                     </div>
                 </section>
+
+                <section class="card control-panel" style="border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 242, 254, 0.05);">
+                    <h2><span class="icon">🧠</span> Neural Generative LPC Filter (Autoencoder & Flow-Matching)</h2>
+                    <p class="description">Complement the retro LPC filter with a simulated Flow-Matching engine predicting reflection coefficients (K1..K9) frame-by-frame.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); margin-bottom: 15px;">
+                        <div>
+                            <span class="knob-label" style="color: var(--neon-cyan);">Live Neural Excitation Grid (K1..K9)</span>
+                            <div id="neuralGrid" style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin-top: 10px;">
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k1" style="background: var(--neon-cyan); width: 100%; height: 20%; transition: height 0.1s;"></div>K1
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k2" style="background: var(--neon-cyan); width: 100%; height: 40%; transition: height 0.1s;"></div>K2
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k3" style="background: var(--neon-cyan); width: 100%; height: 50%; transition: height 0.1s;"></div>K3
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k4" style="background: var(--neon-cyan); width: 100%; height: 30%; transition: height 0.1s;"></div>K4
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k5" style="background: var(--neon-cyan); width: 100%; height: 60%; transition: height 0.1s;"></div>K5
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k6" style="background: var(--neon-cyan); width: 100%; height: 70%; transition: height 0.1s;"></div>K6
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k7" style="background: var(--neon-cyan); width: 100%; height: 10%; transition: height 0.1s;"></div>K7
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k8" style="background: var(--neon-cyan); width: 100%; height: 15%; transition: height 0.1s;"></div>K8
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
+                                    <div id="bar-k9" style="background: var(--neon-cyan); width: 100%; height: 80%; transition: height 0.1s;"></div>K9
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" id="btnRunNeuralGenerativePass" style="background: linear-gradient(135deg, var(--neon-cyan) 0%, #008fa4 100%); color: #000; border: none; font-weight: bold;">Run Neural Flow-Matching Pass</button>
+                        <button class="btn btn-secondary" id="btnDeployNeuralLPC" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">Stream LPC to Chain</button>
+                    </div>
+                </section>
             </div>
 
             <!-- Right Panel: Oscilloscope, Formants, Diagnostics -->
@@ -1012,6 +1057,142 @@
             requestAnimationFrame(renderScope);
         }
 
+        // --- Neural Flow-Matching & LPC Generation Logic ---
+        let generatedLpcSequence = [];
+        let isNeuralPlaying = false;
+
+        // Base reflection coefficients for standard vocal tract shapes
+        const phonemeLpcTemplates = {
+            "vowel": [0.65, 0.45, -0.12, -0.32, 0.05, 0.15, -0.05, 0.02, 0.12],
+            "fricative": [-0.35, -0.25, 0.12, 0.35, -0.15, -0.45, 0.65, 0.55, 0.45],
+            "nasal": [0.45, 0.15, 0.65, 0.25, -0.05, -0.15, 0.02, -0.05, 0.02],
+            "pause": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        };
+
+        function getPhonemeTemplate(name) {
+            if (name.startsWith("PA")) return phonemeLpcTemplates["pause"];
+            if (["S", "Z", "SH", "ZH", "CH", "H", "K", "G", "T", "D", "P", "F"].includes(name[0])) return phonemeLpcTemplates["fricative"];
+            if (["M", "N", "NG"].includes(name[0])) return phonemeLpcTemplates["nasal"];
+            return phonemeLpcTemplates["vowel"];
+        }
+
+        function runNeuralFlowMatching() {
+            if (speechQueue.length === 0) {
+                logConsole("Please parse a sentence using G2P first!");
+                return;
+            }
+            logConsole("Running flow-matching pass to predict continuous acoustic frames...");
+            generatedLpcSequence = [];
+
+            let currentPitch = Number(document.getElementById("singingPitch").value);
+
+            for (let i = 0; i < speechQueue.length; i++) {
+                const currentPh = speechQueue[i].phoneme;
+                const nextPh = (i + 1 < speechQueue.length) ? speechQueue[i+1].phoneme : "PA0";
+                
+                const currentTemp = getPhonemeTemplate(currentPh);
+                const nextTemp = getPhonemeTemplate(nextPh);
+
+                // Flow-matching generates 3 transition steps (vector fields) between frames
+                for (let step = 0; step < 3; step++) {
+                    const t = step / 3;
+                    const coeffs = [];
+                    // Linear flow-matching interpolation between acoustic states
+                    for (let k = 0; k < 9; k++) {
+                        const target = currentTemp[k] + (nextTemp[k] - currentTemp[k]) * t;
+                        // Map -1.0..1.0 to EVM friendly scale (0 to 100)
+                        coeffs.push(Math.round((target + 1.0) * 50));
+                    }
+
+                    // Dynamically predict pitch variation (prosody) using flow fields
+                    const baseStepPitch = currentPitch + Math.sin(i * 1.5 + step) * 12;
+
+                    generatedLpcSequence.push({
+                        coeffs: coeffs,
+                        pitch: Math.round(baseStepPitch),
+                        energy: currentPh.startsWith("PA") ? 0 : 35,
+                        phonemeName: currentPh
+                    });
+                }
+            }
+            logConsole(`Successfully generated ${generatedLpcSequence.length} Neural LPC frames! Ready to stream.`);
+            playNeuralSequenceLocal();
+        }
+
+        async function playNeuralSequenceLocal() {
+            if (isNeuralPlaying || generatedLpcSequence.length === 0) return;
+            isNeuralPlaying = true;
+            initAudio();
+
+            logConsole("Synthesizing Neural LPC frames locally...");
+            for (let i = 0; i < generatedLpcSequence.length; i++) {
+                const frame = generatedLpcSequence[i];
+                
+                // Update UI grid
+                for (let k = 0; k < 9; k++) {
+                    const bar = document.getElementById(`bar-k${k+1}`);
+                    if (bar) bar.style.height = `${frame.coeffs[k]}%`;
+                }
+
+                // Render dynamic formant pitch modulation
+                document.getElementById("visualActivePhoneme").innerText = `NEURAL (${frame.phonemeName})`;
+                document.getElementById("visualFormantCenter").innerText = `${frame.pitch} Hz (Pitch)`;
+
+                // Synthesize local frame audio
+                playLocalPhoneme(frame.phonemeName, 0.08);
+
+                await new Promise(r => setTimeout(r, 80));
+            }
+
+            // Reset UI bars
+            for (let k = 0; k < 9; k++) {
+                const bar = document.getElementById(`bar-k${k+1}`);
+                if (bar) bar.style.height = "10%";
+            }
+
+            isNeuralPlaying = false;
+            logConsole("Neural local playback complete.");
+        }
+
+        async function streamNeuralLpcToChain() {
+            if (!speechContract) {
+                logConsole("Web3 contract not connected!");
+                return;
+            }
+            if (generatedLpcSequence.length === 0) {
+                logConsole("No Neural LPC frames generated! Run flow-matching pass first.");
+                return;
+            }
+            try {
+                logConsole(`Streaming ${generatedLpcSequence.length} LPC frames to the blockchain...`);
+                for (let i = 0; i < Math.min(generatedLpcSequence.length, 12); i++) { // limit stream length for gas safety
+                    const frame = generatedLpcSequence[i];
+                    
+                    // Update local visualizer
+                    for (let k = 0; k < 9; k++) {
+                        const bar = document.getElementById(`bar-k${k+1}`);
+                        if (bar) bar.style.height = `${frame.coeffs[k]}%`;
+                    }
+                    playLocalPhoneme(frame.phonemeName, 0.08);
+
+                    logConsole(`Streaming frame ${i+1}: Coefficients: [${frame.coeffs.join(",")}], Pitch: ${frame.pitch}`);
+                    
+                    const tx = await speechContract.writeReflectionCoefficients(
+                        frame.coeffs,
+                        frame.pitch,
+                        frame.energy
+                    );
+                    await tx.wait();
+
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                logConsole("Neural LPC frames successfully streamed on-chain!");
+                updateOnChainStats();
+            } catch (err) {
+                logConsole("Streaming failed: " + err.message);
+            }
+        }
+
         // Console utility helpers
         function logConsole(msg) {
             const container = document.getElementById("consoleLogs");
@@ -1037,6 +1218,9 @@
         document.getElementById("btnWriteDirectPhoneme").addEventListener("click", writeDirectPhoneme);
         document.getElementById("btnTestSing").addEventListener("click", playSingingScale);
         document.getElementById("btnConnect").addEventListener("click", initWeb3);
+
+        document.getElementById("btnRunNeuralGenerativePass").addEventListener("click", runNeuralFlowMatching);
+        document.getElementById("btnDeployNeuralLPC").addEventListener("click", streamNeuralLpcToChain);
 
         document.getElementById("singingPitch").addEventListener("input", (e) => {
             document.getElementById("singingPitchVal").innerText = `${e.target.value} Hz`;

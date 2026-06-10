@@ -148,6 +148,79 @@ object "SpeechSynthesizer" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // Method: bindMusicMaker(address musicMaker) -> bool
+            // Selector: 0x665d2526
+            // ----------------------------------------------------------------
+            if eq(selector, 0x665d2526) {
+                let musicMaker := and(calldataload(4), 0xffffffffffffffffffffffffffffffffffffffff)
+                sstore(1, musicMaker)
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method: writeReflectionCoefficients(uint256[9] coefficients, uint256 pitch, uint256 energy) -> bool
+            // Selector: 0xbd7856a3
+            // ----------------------------------------------------------------
+            if eq(selector, 0xbd7856a3) {
+                let cpu := getCpuAddress()
+                let callerAddr := caller()
+                
+                // Poke 9 reflection coefficients to addresses 54800 to 54808
+                for { let i := 0 } lt(i, 9) { i := add(i, 1) } {
+                    let coef := calldataload(add(4, mul(i, 32)))
+                    pokeUser(cpu, callerAddr, add(54800, i), coef)
+                }
+
+                let pitch := calldataload(292)
+                let energy := calldataload(324)
+
+                pokeUser(cpu, callerAddr, 54809, pitch)
+                pokeUser(cpu, callerAddr, 54810, energy)
+
+                // If musicMaker address is set, poke frequency registers to voice 1
+                let musicMaker := sload(1)
+                if iszero(iszero(musicMaker)) {
+                    let freq := mul(pitch, 10)
+                    let lo := and(freq, 0xff)
+                    let hi := and(shr(8, freq), 0xff)
+                    
+                    // Poke Voice 1 Freq Low
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54272)
+                    mstore(0x1124, lo)
+                    let dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    // Poke Voice 1 Freq High
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54273)
+                    mstore(0x1124, hi)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                    
+                    // Poke Voice 1 Control (Gate + Sawtooth = 17)
+                    mstore(0x1100, shl(224, 0x86bb605e))
+                    mstore(0x1104, 54276)
+                    mstore(0x1124, 17)
+                    dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
+                    if iszero(dummy) {
+                        returndatacopy(0, 0, returndatasize())
+                        revert(0, returndatasize())
+                    }
+                }
+
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
