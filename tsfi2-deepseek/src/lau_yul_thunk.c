@@ -83,7 +83,11 @@ static void load_reconciliation_data(void) {
             u256_t val = {{0}};
             if (strlen(val_str) == 64) {
                 sscanf(val_str, "%16lx%16lx%16lx%16lx", &val.d[3], &val.d[2], &val.d[1], &val.d[0]);
-                context_sstore(&g_yul_evm_context, key, val);
+                if (g_yul_evm_context.storage_count < 4096) {
+                    g_yul_evm_context.storage_keys[g_yul_evm_context.storage_count] = key;
+                    g_yul_evm_context.storage_vals[g_yul_evm_context.storage_count] = val;
+                    g_yul_evm_context.storage_count++;
+                }
             }
         }
     }
@@ -510,9 +514,23 @@ static u256_t u256_mulmod(u256_t a, u256_t b, u256_t N) {
     return res;
 }
 
+static uint64_t get_namespaced_key(uint64_t self_addr, uint64_t key) {
+    uint64_t hash = 14695981039346656037ULL;
+    for (int i = 0; i < 8; i++) {
+        hash ^= (self_addr >> (i * 8)) & 0xff;
+        hash *= 1099511628211ULL;
+    }
+    for (int i = 0; i < 8; i++) {
+        hash ^= (key >> (i * 8)) & 0xff;
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
 static u256_t context_sload(YulEvmContext *ctx, uint64_t key) {
+    uint64_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
     for (int i = 0; i < ctx->storage_count; i++) {
-        if (ctx->storage_keys[i] == key) {
+        if (ctx->storage_keys[i] == ns_key) {
             return ctx->storage_vals[i];
         }
     }
@@ -521,14 +539,15 @@ static u256_t context_sload(YulEvmContext *ctx, uint64_t key) {
 }
 
 static void context_sstore(YulEvmContext *ctx, uint64_t key, u256_t val) {
+    uint64_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
     for (int i = 0; i < ctx->storage_count; i++) {
-        if (ctx->storage_keys[i] == key) {
+        if (ctx->storage_keys[i] == ns_key) {
             ctx->storage_vals[i] = val;
             return;
         }
     }
     if (ctx->storage_count < 4096) {
-        ctx->storage_keys[ctx->storage_count] = key;
+        ctx->storage_keys[ctx->storage_count] = ns_key;
         ctx->storage_vals[ctx->storage_count] = val;
         ctx->storage_count++;
     }

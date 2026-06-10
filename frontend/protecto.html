@@ -509,6 +509,34 @@
                     window.simulatedERC20State[this.address] = state;
                 }
             }
+            fnv1a_64(buf) {
+                let hash = 14695981039346656037n;
+                for (let i = 0; i < buf.length; i++) {
+                    hash ^= BigInt(buf[i]);
+                    hash = (hash * 1099511628211n) & 0xffffffffffffffffn;
+                }
+                return hash;
+            }
+            getNamespacedKey(contractAddr, slotOrKey) {
+                const buf = new Uint8Array(16);
+                const contractVal = BigInt(contractAddr);
+                const keyVal = BigInt(slotOrKey);
+                for (let i = 0; i < 8; i++) {
+                    buf[7 - i] = Number((contractVal >> BigInt(i * 8)) & 0xffn);
+                    buf[15 - i] = Number((keyVal >> BigInt(i * 8)) & 0xffn);
+                }
+                return this.fnv1a_64(buf);
+            }
+            getMappingKey(addr, slot) {
+                const buf = new Uint8Array(64);
+                const addrVal = BigInt(addr);
+                const slotVal = BigInt(slot);
+                for (let i = 0; i < 8; i++) {
+                    buf[31 - i] = Number((addrVal >> BigInt(i * 8)) & 0xffn);
+                    buf[63 - i] = Number((slotVal >> BigInt(i * 8)) & 0xffn);
+                }
+                return this.fnv1a_64(buf);
+            }
             async balanceOf(account) {
                 if (!account) return 0n;
                 try {
@@ -516,8 +544,8 @@
                     const data = await res.json();
                     const storage = data.storage || [];
                     
-                    const fullHash = ethers.solidityPackedKeccak256(["address", "uint256"], [account, 3n]);
-                    const key64 = BigInt(fullHash) & 0xffffffffffffffffn;
+                    const mapKey = this.getMappingKey(account, 1n); // balances mapping is slot 1
+                    const key64 = this.getNamespacedKey(this.address, mapKey);
                     
                     for (const entry of storage) {
                         if (BigInt(entry.key) === key64) {
@@ -525,13 +553,7 @@
                         }
                     }
                 } catch (e) {
-                    console.error("Failed to query thunk storage:", e);
-                }
-                
-                const state = window.simulatedERC20State[this.address];
-                const accLower = account.toLowerCase();
-                if (state && state.balances && state.balances[accLower] !== undefined) {
-                    return state.balances[accLower];
+                    console.error("Failed to query thunk storage balance:", e);
                 }
                 return 0n; // Standard ERC-20 return 0 for uninitialized addresses
             }
@@ -539,10 +561,42 @@
                 return window.simulatedERC20State[this.address].type;
             }
             async maxSupply() {
-                return window.simulatedERC20State[this.address].maxSupply;
+                try {
+                    const res = await fetch("/api/thunk-storage");
+                    const data = await res.json();
+                    const storage = data.storage || [];
+                    
+                    const key64 = this.getNamespacedKey(this.address, 7n); // maxSupply is slot 7
+                    
+                    for (const entry of storage) {
+                        if (BigInt(entry.key) === key64) {
+                            return BigInt("0x" + entry.val);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to query thunk storage maxSupply:", e);
+                }
+                return 0n;
             }
             async GetMarketRate(asset) {
-                return window.simulatedERC20State[this.address].marketRate;
+                if (!asset) return 0n;
+                try {
+                    const res = await fetch("/api/thunk-storage");
+                    const data = await res.json();
+                    const storage = data.storage || [];
+                    
+                    const mapKey = this.getMappingKey(asset, 8n); // _marketRates mapping is slot 8
+                    const key64 = this.getNamespacedKey(this.address, mapKey);
+                    
+                    for (const entry of storage) {
+                        if (BigInt(entry.key) === key64) {
+                            return BigInt("0x" + entry.val);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to query thunk storage market rate:", e);
+                }
+                return 0n;
             }
             async approve(spender, value) {
                 return { wait: async () => {} };
