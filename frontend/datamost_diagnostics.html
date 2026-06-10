@@ -418,9 +418,13 @@
                                 <div id="nodeCBlockInfo" style="margin-top: 4px; font-family: monospace; font-size: 0.6rem; color: #00ffcc; line-height: 1.1;">
                                     Stake: 32.0 PLS <br>Block: <span id="nodeCBlockHash" style="color:#fff;">0x93fc...a12c</span>
                                 </div>
-                                <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                                    <input type="checkbox" id="nodeCByz" style="cursor: pointer;">
-                                    <label for="nodeCByz" style="color: #ff007f; font-size: 0.65rem; font-family: 'Orbitron'; cursor: pointer; font-weight: bold;">Byzantine Mode</label>
+                                <div style="margin-top: 4px;">
+                                    <select id="nodeCByzStance" style="width: 100%; padding: 2px; background: #000; color: #ff007f; border: 1px solid rgba(255,0,127,0.3); font-family: 'Orbitron'; font-size: 0.65rem; border-radius: 4px; outline: none; cursor: pointer;">
+                                        <option value="none">Behavior: Honest Validator</option>
+                                        <option value="opposite">Attack: Subversive (Opposite)</option>
+                                        <option value="noise">Attack: Entropy (Random Noise)</option>
+                                        <option value="sabotage">Attack: Sabotage (Silent Null)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -8844,7 +8848,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             const nodeBAcc = document.getElementById("nodeBAcc") ? parseInt(document.getElementById("nodeBAcc").value) : 75;
             const nodeCAcc = document.getElementById("nodeCAcc") ? parseInt(document.getElementById("nodeCAcc").value) : 60;
-            const nodeCByz = document.getElementById("nodeCByz") ? document.getElementById("nodeCByz").checked : false;
+            const nodeCByzStance = document.getElementById("nodeCByzStance") ? document.getElementById("nodeCByzStance").value : "none";
             
             const nodeB_Active = nodeBRep >= slashLimit;
             const nodeC_Active = nodeCRep >= slashLimit;
@@ -8893,9 +8897,13 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             }
             
             if (nodeC_Active) {
-                if (nodeCByz) {
+                if (nodeCByzStance === "opposite") {
                     const opposite = direction === "UP" ? "DOWN" : direction === "DOWN" ? "UP" : direction === "LEFT" ? "RIGHT" : "LEFT";
                     nodeC_Vote = Math.random() < 0.85 ? opposite : directions[Math.floor(Math.random() * 4)];
+                } else if (nodeCByzStance === "noise") {
+                    nodeC_Vote = directions[Math.floor(Math.random() * 4)];
+                } else if (nodeCByzStance === "sabotage") {
+                    nodeC_Vote = null;
                 } else {
                     nodeC_Vote = (Math.random() * 100 < nodeCAcc) ? direction : directions[Math.floor(Math.random() * 4)];
                 }
