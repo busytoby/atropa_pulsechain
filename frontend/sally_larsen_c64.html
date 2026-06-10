@@ -1694,7 +1694,8 @@
             const grid1 = spriteData[1].frames[spriteData[1].activeFrameIdx];
             grid1.forEach(row => row.fill(0));
 
-            const fov = 35;
+            // Reduce FOV to 24 to prevent vertices from projecting out of bounds (0-23, 0-20)
+            const fov = 24;
             const viewDistance = 80;
 
             const projected = [];
@@ -1745,9 +1746,8 @@
                 drawLineOnGrid(p1.x, p1.y, p2.x, p2.y);
             });
 
-            if (editingSpriteIdx === 1) {
-                updateGridDisplay();
-            }
+            // Automatically switch editor to Sprite 1 to show rasterized results
+            setEditingSprite(1);
             updatePreview();
             generateCode();
         }
