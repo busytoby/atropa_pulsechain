@@ -219,6 +219,20 @@ object "CPU6502Emulator" {
                 setReg(0x83, sp)
             }
 
+            function readWord(addr) -> w {
+                w := or(and(sload(getUserSlot(addr)), 0xFF), shl(8, and(sload(getUserSlot(add(addr, 1))), 0xFF)))
+            }
+
+            function delegateGame(addr, val) {
+                let cop := sload(getUserSlot(54698))
+                if cop {
+                    mstore(0x300, shl(224, 0x69e5ee0b)) // executeGame(uint256,uint256)
+                    mstore(0x304, addr)
+                    mstore(0x324, val)
+                    let success := delegatecall(gas(), cop, 0x300, 68, 0x00, 0)
+                }
+            }
+
             // Helper function to fetch the current 6509 data bank
             function getDataBank() -> bank {
                 bank := 15
@@ -469,75 +483,6 @@ object "CPU6502Emulator" {
                     }
                 }
 
-                function checkOnScaffold(py) -> onScaffold {
-                    onScaffold := 0
-                    if eq(py, 8) { onScaffold := 1 }
-                    if eq(py, 16) { onScaffold := 1 }
-                    if eq(py, 24) { onScaffold := 1 }
-                }
-
-                function applyAirTime(py, jumpTimerSlot, actionSlot, onScaffold, pvy) -> new_py {
-                    let jumpTimer := sload(getUserSlot(jumpTimerSlot))
-                    let action := sload(getUserSlot(actionSlot))
-                    if and(eq(action, 1), onScaffold) {
-                        jumpTimer := 4
-                        sstore(getUserSlot(actionSlot), 0)
-                    }
-
-                    new_py := py
-                    if gt(jumpTimer, 0) {
-                        if gt(new_py, 1) { new_py := sub(new_py, 2) }
-                        if iszero(gt(new_py, 1)) { new_py := 0 }
-                        jumpTimer := sub(jumpTimer, 1)
-                        sstore(getUserSlot(jumpTimerSlot), jumpTimer)
-                    }
-                    if iszero(gt(jumpTimer, 0)) {
-                        new_py := add(new_py, pvy)
-                        let postMoveOnScaffold := checkOnScaffold(new_py)
-                        if iszero(postMoveOnScaffold) {
-                            new_py := add(new_py, 1) // Fall down
-                        }
-                    }
-                }
-
-                function checkStrikeCollision(strikeType, dist, targetStance) -> hit, dmg {
-                    hit := 0
-                    dmg := 0
-                    
-                    // If target is in running stance (0), they are fully vulnerable
-                    if iszero(targetStance) {
-                        if eq(strikeType, 1) { // Punch
-                            if or(lt(dist, 15), eq(dist, 15)) {
-                                hit := 1
-                                dmg := 100
-                            }
-                        }
-                        if eq(strikeType, 2) { // Kick
-                            if or(lt(dist, 25), eq(dist, 25)) {
-                                hit := 1
-                                dmg := 100
-                            }
-                        }
-                        leave
-                    }
-                    
-                    // Otherwise, stance affects dodging:
-                    // Low stance (2) ducks under Punches (1)
-                    // High stance (3) jumps over Kicks (2)
-                    if eq(strikeType, 1) { // Punch (High/Short strike)
-                        if and(or(lt(dist, 15), eq(dist, 15)), iszero(eq(targetStance, 2))) {
-                            hit := 1
-                            dmg := 10
-                        }
-                    }
-                    if eq(strikeType, 2) { // Kick (Low/Long strike)
-                        if and(or(lt(dist, 25), eq(dist, 25)), iszero(eq(targetStance, 3))) {
-                            hit := 1
-                            dmg := 15
-                        }
-                    }
-                }
-
                 switch addr
                 case 54560 { // Ring Buffer Push ($D520)
                     let head := sload(getUserSlot(54565))
@@ -623,45 +568,7 @@ object "CPU6502Emulator" {
                     sstore(getUserSlot(55019), and(val, 0xFF))
                 }
                 case 55020 { // Lode Runner Action Trigger ($D6EC)
-                    sstore(getUserSlot(55020), val)
-                    if val {
-                        let px := sload(getUserSlot(55018))
-                        let py := sload(getUserSlot(55019))
-                        if eq(val, 1) { // Dig Left
-                            if and(gt(px, 0), lt(py, 24)) {
-                                let tx := sub(px, 1)
-                                let ty := add(py, 1)
-                                let t_addr := add(1024, add(mul(ty, 40), tx))
-                                let tile := sload(getUserSlot(t_addr))
-                                if eq(tile, 1) { // Brick Wall (diggable)
-                                    sstore(getUserSlot(t_addr), 6) // Replace with dug hole
-                                }
-                            }
-                        }
-                        if eq(val, 2) { // Dig Right
-                            if and(lt(px, 39), lt(py, 24)) {
-                                let tx := add(px, 1)
-                                let ty := add(py, 1)
-                                let t_addr := add(1024, add(mul(ty, 40), tx))
-                                let tile := sload(getUserSlot(t_addr))
-                                if eq(tile, 1) { // Brick Wall
-                                    sstore(getUserSlot(t_addr), 6) // Dug hole
-                                }
-                            }
-                        }
-                        if eq(val, 3) { // Collect Gold
-                            if and(lt(px, 40), lt(py, 25)) {
-                                let t_addr := add(1024, add(mul(py, 40), px))
-                                let tile := sload(getUserSlot(t_addr))
-                                if eq(tile, 5) { // Gold Bar
-                                    sstore(getUserSlot(t_addr), 0) // Clear tile
-                                    let score := sload(getUserSlot(55021)) // Score register $D6ED
-                                    sstore(getUserSlot(55021), add(score, 1))
-                                }
-                            }
-                        }
-                        sstore(getUserSlot(55020), 0) // Clear action trigger
-                    }
+                    delegateGame(55020, val)
                 }
                 case 55040 { // Karateka Player Stance ($D700)
                     sstore(getUserSlot(55040), val)
@@ -682,34 +589,7 @@ object "CPU6502Emulator" {
                     sstore(getUserSlot(55045), val)
                 }
                 case 55046 { // Karateka Combat Tick Trigger ($D706)
-                    sstore(getUserSlot(55046), val)
-                    if val {
-                        let p_stance := sload(getUserSlot(55040))
-                        let p_strike := sload(getUserSlot(55041))
-                        let e_stance := sload(getUserSlot(55042))
-                        let dist := sload(getUserSlot(55043))
-                        let p_health := sload(getUserSlot(55044))
-                        let e_health := sload(getUserSlot(55045))
-                        
-                        if iszero(p_health) { p_health := 100 }
-                        if iszero(e_health) { e_health := 100 }
-                        
-                        if p_strike {
-                            let hit, dmg := checkStrikeCollision(p_strike, dist, e_stance)
-                            if hit {
-                                if gt(dmg, e_health) {
-                                    e_health := 0
-                                }
-                                if iszero(gt(dmg, e_health)) {
-                                    e_health := sub(e_health, dmg)
-                                }
-                                sstore(getUserSlot(55045), e_health)
-                            }
-                        }
-                        
-                        sstore(getUserSlot(55041), 0) // Clear strike to Idle
-                        sstore(getUserSlot(55046), 0) // Clear trigger
-                    }
+                    delegateGame(55046, val)
                 }
                 case 55056 { // Choplifter Player Heli X Coordinate ($D710)
                     sstore(getUserSlot(55056), val)
@@ -730,125 +610,10 @@ object "CPU6502Emulator" {
                     sstore(getUserSlot(55061), val)
                 }
                 case 55062 { // Choplifter Physics Tick Trigger ($D716)
-                    sstore(getUserSlot(55062), val)
-                    if val {
-                        let px := sload(getUserSlot(55056))
-                        let py := sload(getUserSlot(55057))
-                        let flags := sload(getUserSlot(55058))
-                        let fuel := sload(getUserSlot(55059))
-                        
-                        if gt(fuel, 0) {
-                            fuel := sub(fuel, 1) // Apply fuel tax
-                            sstore(getUserSlot(55059), fuel)
-                            
-                            let dir := and(flags, 1) // 0 = Left, 1 = Right
-                            let speed := and(shr(1, flags), 3) // Speed: 0-3
-                            
-                            if eq(dir, 1) { // Move Right
-                                px := add(px, speed)
-                                if gt(px, 319) { px := 319 }
-                            }
-                            if iszero(dir) { // Move Left
-                                if gt(px, speed) {
-                                    px := sub(px, speed)
-                                }
-                                if iszero(gt(px, speed)) {
-                                    px := 0
-                                }
-                            }
-                            sstore(getUserSlot(55056), px)
-                        }
-                        sstore(getUserSlot(55062), 0) // Clear trigger
-                    }
+                    delegateGame(55062, val)
                 }
                 case 54927 { // Cannonball Blitz Physics Trigger ($D68F)
-                    sstore(getUserSlot(54927), val)
-                    if val {
-                        let px := sload(getUserSlot(54912))
-                        let py := sload(getUserSlot(54913))
-                        let pvx := sload(getUserSlot(54914))
-                        let pvy := sload(getUserSlot(54915))
-                        
-                        // Treat velocities as signed
-                        if gt(pvx, 127) { pvx := sub(pvx, 256) }
-                        if gt(pvy, 127) { pvy := sub(pvy, 256) }
-                        
-                        // Apply movement
-                        px := add(px, pvx)
-                        
-                        let onScaffold := checkOnScaffold(py)
-                        py := applyAirTime(py, 54926, 54929, onScaffold, pvy)
-                        
-                        // Keep within boundaries
-                        if gt(px, 39) { px := 39 }
-                        if gt(py, 24) { py := 24 }
-                        
-                        // Save Player coordinates
-                        sstore(getUserSlot(54912), px)
-                        sstore(getUserSlot(54913), py)
-                        
-                        // Update Rolling Cannonball 1
-                        let ox := sload(getUserSlot(54916))
-                        let oy := sload(getUserSlot(54917))
-                        let active := sload(getUserSlot(54918))
-                        let collided := 0
-                        
-                        if active {
-                            ox := add(ox, 1)
-                            if gt(ox, 39) {
-                                ox := 0
-                            }
-                            sstore(getUserSlot(54916), ox)
-                            
-                            // Check Collision
-                            if and(eq(px, ox), eq(py, oy)) {
-                                collided := 1
-                                sstore(getUserSlot(54928), 1) // Set collision flag
-                                // Reset player position to start (0, 24)
-                                sstore(getUserSlot(54912), 0)
-                                sstore(getUserSlot(54913), 24)
-                            }
-                        }
-                        
-                        // Update Rolling Cannonball 2 (Right-to-Left, Speed 2)
-                        let ox2 := sload(getUserSlot(54919))
-                        let oy2 := sload(getUserSlot(54920))
-                        let active2 := sload(getUserSlot(54921))
-                        if active2 {
-                            if gt(ox2, 1) { ox2 := sub(ox2, 2) }
-                            if iszero(gt(ox2, 1)) { ox2 := 39 }
-                            sstore(getUserSlot(54919), ox2)
-                            
-                            // Check Collision
-                            if and(eq(px, ox2), eq(py, oy2)) {
-                                collided := 1
-                                sstore(getUserSlot(54928), 1) // Set collision flag
-                                // Reset player position to start (0, 24)
-                                sstore(getUserSlot(54912), 0)
-                                sstore(getUserSlot(54913), 24)
-                            }
-                        }
-                        
-                        // Update score if no collision
-                        if iszero(collided) {
-                            let score := sload(getUserSlot(54925))
-                            sstore(getUserSlot(54925), add(score, 10))
-                        }
-                        
-                        // Charge 1 OTRT Arcade Play Tax
-                        let playTax := 1
-                        if exciseOnChainTax(playTax) {
-                            log3(0, 0, 0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925, getContextUser(), playTax)
-                        }
-                        
-                        // Emit CannonballStep event log
-                        let currentScore := sload(getUserSlot(54925))
-                        mstore(0x300, currentScore)
-                        mstore(0x320, collided)
-                        log2(0x300, 64, 0xbc8ad72f2ba16a9205578bc41b22e18413b63200ff9dfe8bc9c8be7ce6823908, getContextUser())
-                        
-                        sstore(getUserSlot(54927), 0) // Clear trigger
-                    }
+                    delegateGame(54927, val)
                 }
                 case 54949 { // Hometax Calculation Trigger ($D6A5)
                     sstore(getUserSlot(54949), val)
@@ -861,26 +626,18 @@ object "CPU6502Emulator" {
                         }
 
                         // Apply deductions
-                        let dedCategory := sload(getUserSlot(54948))
-                        let ded := 0
-                        if eq(dedCategory, 1) { ded := 1000 } // Single
-                        if eq(dedCategory, 2) { ded := 2000 } // Joint
-                        if eq(dedCategory, 3) { ded := 5000 } // Corporation
+                        let ded := 1000
+                        let cat := sload(getUserSlot(54948))
+                        if eq(cat, 2) { ded := 2000 }
+                        if eq(cat, 3) { ded := 5000 }
 
                         let net := 0
-                        if gt(gross, ded) {
-                            net := sub(gross, ded)
-                        }
+                        if gt(gross, ded) { net := sub(gross, ded) }
 
                         // Bracket tax rate
-                        let tax := 0
-                        if net {
-                            let rate := 10 // 10%
-                            if gt(net, 10000) {
-                                rate := 15 // 15%
-                            }
-                            tax := div(mul(net, rate), 100)
-                        }
+                        let rate := 10
+                        if gt(net, 10000) { rate := 15 }
+                        let tax := div(mul(net, rate), 100)
 
                         // Store 32-bit tax result across 54950-54953
                         sstore(getUserSlot(54950), and(shr(24, tax), 0xFF))
@@ -891,180 +648,32 @@ object "CPU6502Emulator" {
                         sstore(getUserSlot(54949), 0) // Clear trigger
                     }
                 }
-                case 55024 { // Smurfs Physics Trigger ($D6B0)
-                    sstore(getUserSlot(55024), val)
-                    if val {
-                        let isGameOver := sload(getUserSlot(55034))
-                        let isGameWin := sload(getUserSlot(55035))
-                        if and(iszero(isGameOver), iszero(isGameWin)) {
-                            // Read Player pos & velocity
-                            let px := sload(getUserSlot(55027))
-                            let py := sload(getUserSlot(55028))
-                            let pvy := sload(getUserSlot(55029))
-                            let jumping := sload(getUserSlot(55030))
-                            let energy := sload(getUserSlot(55031))
-                            let score := sload(getUserSlot(55032))
-                            let screen := sload(getUserSlot(55033))
-                            
-                            // Apply signed coordinate conversion for velocity
-                            if gt(pvy, 127) { pvy := sub(pvy, 256) }
-
-                            // Read Inputs
-                            let moveDir := sload(getUserSlot(55025))
-                            let jumpTrigger := sload(getUserSlot(55026))
-
-                            // Horizontal movement
-                            if eq(moveDir, 1) { // Left
-                                if gt(px, 15) { px := sub(px, 3) }
-                            }
-                            if eq(moveDir, 2) { // Right
-                                px := add(px, 3)
-                                if gt(px, 785) { // Transition screen
-                                    if lt(screen, 3) {
-                                        screen := add(screen, 1)
-                                        px := 20
-                                        score := add(score, 500)
-                                    }
-                                    if eq(screen, 3) {
-                                        if gt(px, 785) { px := 785 }
-                                    }
-                                }
-                            }
-
-                            // Jump physics (Evolved: Double Jump support)
-                            if jumpTrigger {
-                                let canJump := 0
-                                if iszero(jumping) {
-                                    jumping := 1
-                                    canJump := 1
-                                }
-                                // Double Jump logic: slot 55042 holds jump counter
-                                let jumpCount := sload(getUserSlot(55042))
-                                if and(jumping, lt(jumpCount, 2)) {
-                                    jumpCount := add(jumpCount, 1)
-                                    sstore(getUserSlot(55042), jumpCount)
-                                    canJump := 1
-                                }
-                                
-                                if canJump {
-                                    pvy := sub(0, 11) // Slighly lower impulse for double jump control
-                                    sstore(getUserSlot(55036), 1) // Sound Strobe: 1 (jump)
-                                }
-                                sstore(getUserSlot(55026), 0) // Clear trigger
-                            }
-                            
-                            if jumping {
-                                py := add(py, pvy)
-                                pvy := add(pvy, 1) // Gravity
-                                if or(gt(py, 520), eq(py, 520)) {
-                                    py := 520
-                                    pvy := 0
-                                    jumping := 0
-                                    sstore(getUserSlot(55042), 0) // Reset jump count on ground
-                                }
-                            }
-
-                            // Obstacle & collision check per screen
-                            if eq(screen, 1) {
-                                // Fence at x = 360, height 25 (y=495)
-                                if and(and(gt(px, 345), lt(px, 375)), or(gt(py, 495), eq(py, 495))) {
-                                    if gt(energy, 20) { energy := sub(energy, 20) }
-                                    if iszero(gt(energy, 20)) { energy := 0 }
-                                    if gt(px, 30) { px := sub(px, 30) }
-                                    sstore(getUserSlot(55036), 2) // Hit Sound
-                                }
-                                // Rock at x = 600, height 15 (y=505)
-                                if and(and(gt(px, 580), lt(px, 620)), or(gt(py, 505), eq(py, 505))) {
-                                    if gt(energy, 25) { energy := sub(energy, 25) }
-                                    if iszero(gt(energy, 25)) { energy := 0 }
-                                    if gt(px, 30) { px := sub(px, 30) }
-                                    sstore(getUserSlot(55036), 2) // Hit Sound
-                                }
-                            }
-
-                            if eq(screen, 2) {
-                                // Stalagmite at x = 400, height 30 (y=490)
-                                if and(and(gt(px, 380), lt(px, 420)), or(gt(py, 490), eq(py, 490))) {
-                                    if gt(energy, 20) { energy := sub(energy, 20) }
-                                    if iszero(gt(energy, 20)) { energy := 0 }
-                                    if gt(px, 30) { px := sub(px, 30) }
-                                    sstore(getUserSlot(55036), 2) // Hit Sound
-                                }
-                                
-                                // Bat movement
-                                let bat_x := sload(getUserSlot(55037))
-                                let bat_y := sload(getUserSlot(55038))
-                                let bat_vx := sload(getUserSlot(55039))
-                                if gt(bat_vx, 127) { bat_vx := sub(bat_vx, 256) }
-                                
-                                bat_x := add(bat_x, bat_vx)
-                                if or(lt(bat_x, 150), gt(bat_x, 650)) {
-                                    bat_vx := sub(0, bat_vx)
-                                }
-                                sstore(getUserSlot(55037), bat_x)
-                                sstore(getUserSlot(55039), and(bat_vx, 0xFF))
-
-                                // Bat collision (distance squared check)
-                                let dx := sub(px, bat_x)
-                                let dy := sub(sub(py, 20), bat_y)
-                                let dist_sq := add(mul(dx, dx), mul(dy, dy))
-                                if lt(dist_sq, 784) { // 28^2
-                                    if gt(energy, 30) { energy := sub(energy, 30) }
-                                    if iszero(gt(energy, 30)) { energy := 0 }
-                                    if gt(px, 30) { px := sub(px, 30) }
-                                    sstore(getUserSlot(55036), 2) // Hit Sound
-                                }
-                            }
-
-                            if eq(screen, 3) {
-                                // Gargamel movement
-                                let gargamel_x := sload(getUserSlot(55040))
-                                let gargamel_vx := sload(getUserSlot(55041))
-                                if gt(gargamel_vx, 127) { gargamel_vx := sub(gargamel_vx, 256) }
-
-                                gargamel_x := add(gargamel_x, gargamel_vx)
-                                if or(lt(gargamel_x, 250), gt(gargamel_x, 600)) {
-                                    gargamel_vx := sub(0, gargamel_vx)
-                                }
-                                sstore(getUserSlot(55040), gargamel_x)
-                                sstore(getUserSlot(55041), and(gargamel_vx, 0xFF))
-
-                                // Gargamel collision
-                                if and(and(gt(px, sub(gargamel_x, 20)), lt(px, add(gargamel_x, 20))), or(gt(py, 480), eq(py, 480))) {
-                                    if gt(energy, 40) { energy := sub(energy, 40) }
-                                    if iszero(gt(energy, 40)) { energy := 0 }
-                                    if gt(px, 40) { px := sub(px, 40) }
-                                    sstore(getUserSlot(55036), 2) // Hit Sound
-                                }
-
-                                // Win Check (Cage x = 680)
-                                if or(gt(px, 665), eq(px, 665)) {
-                                    isGameWin := 1
-                                    score := add(score, 5000)
-                                    sstore(getUserSlot(55036), 3) // Win Sound
-                                }
-                            }
-
-                            // Update energy/gameover
-                            if iszero(energy) {
-                                isGameOver := 1
-                                sstore(getUserSlot(55036), 4) // GameOver Sound
-                            }
-
-                            // Save positions
-                            sstore(getUserSlot(55027), px)
-                            sstore(getUserSlot(55028), py)
-                            sstore(getUserSlot(55029), and(pvy, 0xFF))
-                            sstore(getUserSlot(55030), jumping)
-                            sstore(getUserSlot(55031), energy)
-                            sstore(getUserSlot(55032), score)
-                            sstore(getUserSlot(55033), screen)
-                            sstore(getUserSlot(55034), isGameOver)
-                            sstore(getUserSlot(55035), isGameWin)
-                        }
+                case 55104 { // Math Function Unit command register ($D740)
+                    sstore(getUserSlot(55104), val)
+                    let mathCop := sload(getUserSlot(54697))
+                    if mathCop {
+                        let opA := readWord(55100)
+                        let opB := readWord(55102)
                         
-                        sstore(getUserSlot(55024), 0) // Clear trigger
+                        mstore(0x300, shl(224, 0x2f32067e)) // executeMath(uint256,uint256,uint256)
+                        mstore(0x304, val)
+                        mstore(0x324, opA)
+                        mstore(0x344, opB)
+                        
+                        let success := call(gas(), mathCop, 0, 0x300, 100, 0x300, 64)
+                        if success {
+                            let res := mload(0x300)
+                            let status := mload(0x320)
+                            sstore(getUserSlot(55105), and(res, 0xFF))
+                            sstore(getUserSlot(55106), and(shr(8, res), 0xFF))
+                            sstore(getUserSlot(55107), and(shr(16, res), 0xFF))
+                            sstore(getUserSlot(55108), and(shr(24, res), 0xFF))
+                            sstore(getUserSlot(55109), status)
+                        }
                     }
+                }
+                case 55024 { // Smurfs Physics Trigger ($D6B0)
+                    delegateGame(55024, val)
                 }
                 case 54954 { // Hometax Payment Release Trigger ($D6AA)
                     sstore(getUserSlot(54954), val)
@@ -1452,28 +1061,21 @@ object "CPU6502Emulator" {
                     sstore(getUserSlot(54648), val)
                     if val {
                         let cmd := and(sload(getUserSlot(54640)), 0xFF)
-                        let x0 := or(shl(8, and(sload(getUserSlot(54642)), 0xFF)), and(sload(getUserSlot(54641)), 0xFF))
+                        let x0 := readWord(54641)
                         let y0 := and(sload(getUserSlot(54643)), 0xFF)
-                        let x1 := or(shl(8, and(sload(getUserSlot(54645)), 0xFF)), and(sload(getUserSlot(54644)), 0xFF))
+                        let x1 := readWord(54644)
                         let y1 := and(sload(getUserSlot(54646)), 0xFF)
                         let color := and(sload(getUserSlot(54647)), 0xFF)
 
-                        switch cmd
-                        case 1 { // Draw Pixel
-                            plotPixel(x0, y0, color)
-                        }
-                        case 2 { // Draw Line
-                            drawLine(x0, y0, x1, y1, color)
-                        }
-                        case 3 { // Draw Circle (Radius is x1)
-                            drawCircle(x0, y0, x1, color)
-                        }
-                        case 4 { // Clear Canvas
+                        if eq(cmd, 1) { plotPixel(x0, y0, color) }
+                        if eq(cmd, 2) { drawLine(x0, y0, x1, y1, color) }
+                        if eq(cmd, 3) { drawCircle(x0, y0, x1, color) }
+                        if eq(cmd, 4) {
                             for { let i := 0 } lt(i, 8192) { i := add(i, 1) } {
                                 sstore(getUserSlot(add(8192, i)), 0)
                             }
                         }
-                        case 5 { // Copy Framebuffer (Fill Screen & Color RAM)
+                        if eq(cmd, 5) {
                             for { let i := 0 } lt(i, 200) { i := add(i, 1) } {
                                 sstore(getUserSlot(add(1024, i)), color)
                                 sstore(getUserSlot(add(55296, i)), color)

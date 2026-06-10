@@ -11,6 +11,8 @@ const CONTRACTS_TO_DEPLOY = [
     { name: "diskSystem_v5", path: "../solidity/bin/diskSystem.yul", configKey: "diskSystemAddress" },
     { name: "genesis", path: "../solidity/bin/genesis.yul", configKey: "genesisAddress" },
     { name: "acousticOracle", path: "../solidity/bin/acousticOracle.yul", configKey: "acousticOracleAddress" },
+    { name: "mathCoprocessor", path: "../solidity/bin/mathCoprocessor.yul", configKey: "mathCoprocessorAddress" },
+    { name: "gameCoprocessor", path: "../solidity/bin/gameCoprocessor.yul", configKey: "gameCoprocessorAddress" },
     { name: "cpu6502_v18", path: "../solidity/bin/cpu6502.yul", configKey: "cpu6502Address" },
     { name: "graphicsSystem_v2", path: "../solidity/bin/graphicsSystem.yul", configKey: "graphicsSystemAddress" },
     { name: "speechSynthesizer", path: "../solidity/bin/speechSynthesizer.yul", configKey: "speechSynthesizerAddress" },
@@ -142,7 +144,7 @@ async function main() {
         const deployTx = await deployer.sendTransaction({
             to: factoryAddress,
             data: createCalldata,
-            gasLimit: 10000000
+            gasLimit: 25000000
         });
         await deployTx.wait();
         console.log(`  Deployed: ${contract.name} successfully at ${predictedAddress}`);
@@ -192,6 +194,29 @@ async function main() {
         ], deployer);
         await (await zmContract.bindParserAddress(zmachineParserAddress)).wait();
         console.log("  Successfully linked ZMachineParser!");
+    }
+
+    // Bind MathCoprocessor to CPU6502 for deployer
+    const cpu6502Address = config.networks.localhost.cpu6502Address;
+    const mathCoprocessorAddress = config.networks.localhost.mathCoprocessorAddress;
+    if (cpu6502Address && mathCoprocessorAddress) {
+        console.log("\nLinking MathCoprocessor to CPU6502...");
+        const cpuContract = new ethers.Contract(cpu6502Address, [
+            "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)"
+        ], deployer);
+        await (await cpuContract.pokeUser(deployer.address, 54697, mathCoprocessorAddress)).wait();
+        console.log("  Successfully linked MathCoprocessor!");
+    }
+
+    // Bind GameCoprocessor to CPU6502 for deployer
+    const gameCoprocessorAddress = config.networks.localhost.gameCoprocessorAddress;
+    if (cpu6502Address && gameCoprocessorAddress) {
+        console.log("\nLinking GameCoprocessor to CPU6502...");
+        const cpuContract = new ethers.Contract(cpu6502Address, [
+            "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)"
+        ], deployer);
+        await (await cpuContract.pokeUser(deployer.address, 54698, gameCoprocessorAddress)).wait();
+        console.log("  Successfully linked GameCoprocessor!");
     }
 
     // Write updated config back to file
