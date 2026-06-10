@@ -198,6 +198,8 @@ const server = http.createServer((req, res) => {
     if (parsedUrl.pathname.startsWith("/Wallet/bin/Contracts/")) {
         // Expose Solidity compiled output files securely
         absolutePath = path.join(__dirname, "..", filePath);
+    } else if (parsedUrl.pathname === "/config/user_config.json") {
+        absolutePath = CONFIG_PATH;
     } else if (!absolutePath.startsWith(path.join(__dirname, "../frontend"))) {
         res.writeHead(403, { "Content-Type": "text/plain" });
         res.end("Forbidden");
