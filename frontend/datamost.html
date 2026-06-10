@@ -462,6 +462,7 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                                 <span id="zFileName" style="color: var(--text-secondary); font-size: 0.8rem;">No file selected</span>
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button class="btn btn-primary" id="btnLoadDemoZrom" style="background: #002233; border-color: #ffaa00; color: #ffaa00; font-size: 0.8rem; padding: 6px 12px;">🎭 Load Demo Story</button>
                                 <button class="btn btn-primary" id="btnUploadZrom" style="background: #002233; border-color: #00f2fe; color: #00f2fe; font-size: 0.8rem; padding: 6px 12px;">⚡ Deploy ROM to Chain</button>
                             </div>
                         </div>
@@ -8535,7 +8536,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         // --- Z-Machine Dashboard Events ---
         function initZmachineEvents() {
             if (!document.getElementById('zmachineTerminal')) return;
-            let zmAddress = "0x1b955CE65B91e7543F5fDAc792A782277cBE7123"; // Compiled Z-Machine address
+            let zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
             let zmAbi = [
                 "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
                 "function parseCommand(address player, bytes cmd) public returns (string)"
@@ -8560,9 +8561,30 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 }
             });
 
+            // Demo ROM Builder
+            const loadDemoBtn = document.getElementById("btnLoadDemoZrom");
+            if (loadDemoBtn) {
+                loadDemoBtn.addEventListener("click", () => {
+                    const demoRom = new Uint8Array(1024);
+                    demoRom[0] = 3; // Version 3
+                    demoRom[6] = 0x08; // PC
+                    demoRom[7] = 0x00;
+                    demoRom[10] = 0x00; // Object Table Base
+                    demoRom[11] = 0x40;
+                    // Obj 50 prop offset
+                    demoRom[503 + 7] = 0x01;
+                    demoRom[503 + 8] = 0x00;
+
+                    romData = demoRom;
+                    fileNameSpan.textContent = "Demo_Z3_ROM.z3 (1 KB)";
+                    term.innerHTML += `\n[Z-ROM] Built-in Z3 Demo ROM loaded. Click "Deploy" to install it.`;
+                    term.scrollTop = term.scrollHeight;
+                });
+            }
+
             document.getElementById("btnUploadZrom").addEventListener("click", async () => {
                 if (!romData) {
-                    alert("Please select a .z3 story file first!");
+                    alert("Please select a .z3 story file or load the Demo story first!");
                     return;
                 }
                 if (!signer) {
@@ -8588,6 +8610,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                     console.error(err);
                     term.innerHTML += `\n[Z-ROM ERROR] Upload failed: ${err.message}`;
                 }
+                term.scrollTop = term.scrollHeight;
             });
 
             const sendCommand = async () => {
@@ -8600,8 +8623,21 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
                 try {
                     const contract = new ethers.Contract(zmAddress, zmAbi, signer);
-                    const tx = await contract.parseCommand(signer.address, ethers.toUtf8Bytes(cmd));
-                    term.innerHTML += `\n${tx}`;
+                    // 1. Get the return text via staticCall simulation
+                    const response = await contract.parseCommand.staticCall(signer.address, ethers.toUtf8Bytes(cmd));
+                    term.innerHTML += `\n${response}`;
+                    term.scrollTop = term.scrollHeight;
+
+                    // 2. Perform actual state-modifying transaction on-chain
+                    const stateModifying = ["take", "use", "go", "n", "s", "e", "w", "north", "south", "east", "west", "play"];
+                    const parts = cmd.toLowerCase().split(/\s+/);
+                    if (stateModifying.includes(parts[0])) {
+                        term.innerHTML += `\n[On-Chain] Syncing state to blockchain...`;
+                        term.scrollTop = term.scrollHeight;
+                        const tx = await contract.parseCommand(signer.address, ethers.toUtf8Bytes(cmd), { gasLimit: 1000000 });
+                        await tx.wait();
+                        term.innerHTML += `\n[On-Chain] Confirmed.`;
+                    }
                 } catch (err) {
                     term.innerHTML += `\n[Z-MACHINE] Error executing command: ${err.message}`;
                 }
