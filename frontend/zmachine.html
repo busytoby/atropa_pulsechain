@@ -717,6 +717,16 @@ Connect your wallet to retrieve the active story ROM.</div>
                 const result = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
                 let text = ethers.toUtf8String(result);
 
+                // Check if the command modifies state
+                const stateModifying = ["take", "use", "go", "n", "s", "e", "w", "north", "south", "east", "west", "play"];
+                if (stateModifying.includes(action) && signer) {
+                    termScreen.innerText += `\n[On-Chain] Syncing action to blockchain...`;
+                    termScreen.scrollTop = termScreen.scrollHeight;
+                    const zmContractWithSigner = zmContract.connect(signer);
+                    const tx = await zmContractWithSigner.parseCommand(await signer.getAddress(), cmdBytes, { gasLimit: 1000000 });
+                    await tx.wait();
+                }
+
                 if (text.includes("[SONIC_SIGNATURE:")) {
                     const match = text.match(/\[SONIC_SIGNATURE:(\d+),(\d+)\]/);
                     if (match) {
