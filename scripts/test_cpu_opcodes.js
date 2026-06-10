@@ -33,13 +33,13 @@ async function main() {
     }
 
     // Test helper to load program, run, and check state
-    async function testProgram(name, bytes, setupFunc, assertFunc) {
+    async function testProgram(name, bytes, setupFunc, assertFunc, maxSteps) {
         console.log(`\nRunning Test: ${name}`);
         
         // Reset CPU State atomically
         await sendTx(cpu.batchPoke(
             [0x80, 0x81, 0x82, 0x83, 0x84, 0x85],
-            [0, 0, 0, 0xFF, 0, 8192],
+            [0, 0, 0, 0xFF, 0x20, 8192], // 0x83 is SP (0xFF), 0x84 is SR (0x20), 0x85 is PC (8192)
             { nonce }
         ));
 
@@ -52,7 +52,8 @@ async function main() {
         }
 
         // Run steps
-        await sendTx(cpu.runSteps(bytes.length, { nonce }));
+        const steps = maxSteps || bytes.length;
+        await sendTx(cpu.runSteps(steps, { nonce }));
 
         // Get and verify state
         const state = await cpu.getCPUState();
@@ -68,7 +69,7 @@ async function main() {
             console.log(`  PASS: ${name}`);
         } catch (err) {
             console.error(`  FAIL: ${name}`);
-            console.error(`  State: A=${A}, X=${X}, Y=${Y}, SR=${SR.toString(2)}, SP=${SP}, PC=${PC}`);
+            console.error(`  State: A=${A}, X=${X}, Y=${Y}, SR=0x${SR.toString(16)} (bin:${SR.toString(2)}), SP=0x${SP.toString(16)}, PC=0x${PC.toString(16)}`);
             console.error(err);
         }
     }
@@ -130,6 +131,78 @@ async function main() {
             if (val !== 100) throw new Error(`Expected $3000 to be 100, got ${val}`);
         }
     );
+
+    // 4. Test Subroutines & Stack (PHA, PLA, JSR, RTS)
+    await testProgram(
+        "Subroutines & Stack (PHA, PLA, JSR, RTS)",
+        [
+            0xA9, 0x42,       // LDA #$42
+            0x48,             // PHA
+            0xA9, 0x00,       // LDA #$00
+            0x68,             // PLA
+            0x20, 0x0B, 0x20, // JSR $200B (8192 + 11 = 8203)
+            0x00,             // BRK (at 0x2009)
+            0x00,             // Padding/BRK (at 0x200A)
+            0xE8,             // INX (at 0x200B)
+            0x60              // RTS (at 0x200C)
+        ],
+        null,
+        async (state) => {
+            if (state.A !== 0x42) throw new Error(`Expected A to be 0x42, got 0x${state.A.toString(16)}`);
+            if (state.X !== 1) throw new Error(`Expected X to be 1 (incremented in subroutine), got ${state.X}`);
+            if (state.SP !== 0xFF) throw new Error(`Expected Stack Pointer to be 0xFF after return, got 0x${state.SP.toString(16)}`);
+        },
+        10 // maxSteps
+    );
+
+    // 5. Test Branching, Loops & Indexed Stores (LDX, DEX, BNE, STA abs,X)
+    await testProgram(
+        "Branching & Loops (DEX/BNE Countdown)",
+        [
+            0xA2, 0x05,       // LDX #$05
+            0x8A,             // TXA (loop start at 0x2002)
+            0x9D, 0x00, 0x30, // STA $3000, X
+            0xCA,             // DEX
+            0xD0, 0xF9,       // BNE -7 (offset from PC 0x2009 to 0x2002)
+            0x00              // BRK
+        ],
+        null,
+        async (state, cpu) => {
+            if (state.X !== 0) throw new Error(`Expected X to be 0 at end of loop, got ${state.X}`);
+            for (let i = 1; i <= 5; i++) {
+                const val = Number(await cpu.peek(0x3000 + i));
+                if (val !== i) {
+                    throw new Error(`Expected $3000 + ${i} to contain ${i}, got ${val}`);
+                }
+            }
+        },
+        30 // maxSteps
+    );
+
+    // 6. Test Arithmetic Flags (CLC, ADC, SEC, SBC)
+    await testProgram(
+        "Arithmetic Flags (ADC / SBC Carry, Zero, Negative)",
+        [
+            0x18,             // CLC
+            0xA9, 0xFF,       // LDA #$FF
+            0x69, 0x01,       // ADC #$01 -> A=0x00, Carry (C) and Zero (Z) set, Negative (N) clear
+            0x38,             // SEC
+            0xE9, 0x01,       // SBC #$01 -> A=0xFF, Carry (C) and Zero (Z) clear, Negative (N) set
+            0x00              // BRK
+        ],
+        null,
+        async (state) => {
+            if (state.A !== 0xFF) throw new Error(`Expected A to be 0xFF, got 0x${state.A.toString(16)}`);
+            const carrySet = (state.SR & 0x01) !== 0;
+            const zeroSet = (state.SR & 0x02) !== 0;
+            const negativeSet = (state.SR & 0x80) !== 0;
+            if (carrySet) throw new Error("Expected Carry flag (C) to be clear after SBC borrow");
+            if (zeroSet) throw new Error("Expected Zero flag (Z) to be clear after SBC");
+            if (!negativeSet) throw new Error("Expected Negative flag (N) to be set after SBC (result 0xFF)");
+        },
+        10 // maxSteps
+    );
 }
 
 main().catch(console.error);
+
