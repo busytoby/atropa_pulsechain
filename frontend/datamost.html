@@ -8709,8 +8709,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         // --- Z-Machine Visual Game Creator Events ---
         function initZmachineCreatorEvents() {
             if (!document.getElementById('zmRoomName')) return;
-            let rooms = [];
-            let items = [];
+            let rooms = [
+                { name: "West of House", desc: "You are standing in an open field west of a white house." },
+                { name: "North of House", desc: "You are facing the north side of a white house." }
+            ];
+            let items = [
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0" }
+            ];
 
             const roomNameInput = document.getElementById("zmRoomName");
             const roomDescInput = document.getElementById("zmRoomDesc");
@@ -8721,6 +8727,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const updateStatus = () => {
                 statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
             };
+            updateStatus();
 
             document.getElementById("btnAddZmRoom").addEventListener("click", () => {
                 const name = roomNameInput.value.trim();
@@ -17961,8 +17968,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         // --- Z-Machine Visual Game Creator Events ---
         function initZmachineCreatorEvents() {
             if (!document.getElementById('zmRoomName')) return;
-            let rooms = [];
-            let items = [];
+            let rooms = [
+                { name: "West of House", desc: "You are standing in an open field west of a white house." },
+                { name: "North of House", desc: "You are facing the north side of a white house." }
+            ];
+            let items = [
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0" }
+            ];
 
             const roomNameInput = document.getElementById("zmRoomName");
             const roomDescInput = document.getElementById("zmRoomDesc");
@@ -17973,6 +17986,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const updateStatus = () => {
                 statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
             };
+            updateStatus();
 
             document.getElementById("btnAddZmRoom").addEventListener("click", () => {
                 const name = roomNameInput.value.trim();
@@ -27027,8 +27041,14 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
         // --- Z-Machine Visual Game Creator Events ---
         function initZmachineCreatorEvents() {
             if (!document.getElementById('zmRoomName')) return;
-            let rooms = [];
-            let items = [];
+            let rooms = [
+                { name: "West of House", desc: "You are standing in an open field west of a white house." },
+                { name: "North of House", desc: "You are facing the north side of a white house." }
+            ];
+            let items = [
+                { name: "Gold Token", token: config?.networks?.localhost?.mockAtropaMathAddress || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" },
+                { name: "Keycard", token: config?.networks?.localhost?.mockLauAddress || "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0" }
+            ];
 
             const roomNameInput = document.getElementById("zmRoomName");
             const roomDescInput = document.getElementById("zmRoomDesc");
@@ -27039,6 +27059,7 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             const updateStatus = () => {
                 statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
             };
+            updateStatus();
 
             document.getElementById("btnAddZmRoom").addEventListener("click", () => {
                 const name = roomNameInput.value.trim();
