@@ -61,8 +61,14 @@ object "CPU6502Emulator" {
                     }
                 }
 
+                let targetAddr := addr
+                if and(iszero(lt(addr, 0x80)), lt(addr, 0x86)) {
+                    let bankId := sload(getUserSlotPrivate(54539))
+                    targetAddr := add(addr, mul(bankId, 0x100))
+                }
+
                 mstore(0x00, user)
-                mstore(0x20, addr)
+                mstore(0x20, targetAddr)
                 slot := keccak256(0x00, 64)
             }
 
@@ -2822,6 +2828,17 @@ object "CPU6502Emulator" {
                 let addr := calldataload(4)
                 let val := calldataload(36)
                 writeMemory(addr, val)
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
+            // Method: setRegisterBank(uint256 bankId)
+            // Selector: 0xe65576a8
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe65576a8) {
+                let bankId := calldataload(4)
+                sstore(getUserSlotPrivate(54539), bankId)
                 mstore(0x00, 1)
                 return(0x00, 32)
             }
