@@ -149,6 +149,65 @@ async function main() {
 
     const hintStr = await contract.decryptInvisiclue(keySystemAddress, deployer.address, 1, { gasLimit: 3000000 });
     console.log("Decrypted hint payload:", hintStr);
+
+    // 8. Test Gauntlet Stat Bridge
+    console.log("\nTesting Gauntlet/Folklore CPU Stat Bridge...");
+    console.log("Compiling and deploying folklore.yul...");
+    const folkloreBytecode = compileYul(path.join(__dirname, "../solidity/bin/folklore.yul"));
+    const folkloreTx = await deployer.sendTransaction({ data: folkloreBytecode, gasLimit: 15000000 });
+    const folkloreReceipt = await folkloreTx.wait();
+    const folkloreAddress = folkloreReceipt.contractAddress;
+    console.log("Folklore contract deployed at:", folkloreAddress);
+
+    // Bind folklore contract inside Z-Machine
+    console.log("Binding Folklore CPU contract inside Z-Machine...");
+    const extendedAbi = [
+        ...abi,
+        "function bindFolkloreAddress(address folklore) public returns (bool)",
+        "function parseCommand(address player, bytes cmd) public returns (string)"
+    ];
+    const extendedContract = new ethers.Contract(zmachineAddress, extendedAbi, deployer);
+    await (await extendedContract.bindFolkloreAddress(folkloreAddress)).wait();
+
+    // Mock Gauntlet state variables on Folklore CPU contract
+    console.log("Mocking active Gauntlet game state on Folklore...");
+    const folkloreAbi = [
+        "function poke(uint256 addr, uint256 val) public returns (bool)",
+        "function peek(uint256 addr) public view returns (uint256)"
+    ];
+    const folkloreContract = new ethers.Contract(folkloreAddress, folkloreAbi, deployer);
+    
+    // 55050: isGauntletActive = 1
+    // 55053: gauntletHealth = 1750
+    // 55054: gauntletKeys = 4
+    await (await folkloreContract.poke(55050, 1)).wait();
+    await (await folkloreContract.poke(55053, 1750)).wait();
+    await (await folkloreContract.poke(55054, 4)).wait();
+
+    // Verify property values queried on Object ID 80
+    console.log("Querying Object 80 bridged properties:");
+    const activeVal = await extendedContract.getObjectProperty(80, 36, deployer.address);
+    const healthVal = await extendedContract.getObjectProperty(80, 32, deployer.address);
+    const keysVal = await extendedContract.getObjectProperty(80, 33, deployer.address);
+    console.log(`  - Active flag (Prop 36): ${activeVal}`);
+    console.log(`  - Health (Prop 32): ${healthVal}`);
+    console.log(`  - Keys (Prop 33): ${keysVal}`);
+
+    if (activeVal.toString() !== "1" || healthVal.toString() !== "1750" || keysVal.toString() !== "4") {
+        throw new Error("Gauntlet bridge property mismatch!");
+    }
+
+    // Verify Z-Machine Inventory command outputs the bridged values
+    console.log("Executing 'inventory' command on Z-Machine parser...");
+    const cmdBytes = ethers.Buffer.from("inventory");
+    const invResponse = await extendedContract.parseCommand(deployer.address, cmdBytes);
+    console.log("Z-Machine output:\n", invResponse);
+
+    if (!invResponse.includes("Gauntlet Health: 1750") || !invResponse.includes("Gauntlet Keys: 4")) {
+        throw new Error("Bridge inventory output does not contain mocked stats!");
+    }
+
+    console.log("Gauntlet Stat Bridge verification passed!");
 }
 
 main().catch((error) => {

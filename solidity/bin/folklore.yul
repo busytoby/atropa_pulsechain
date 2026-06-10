@@ -576,6 +576,23 @@ object "cpu6502" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD: peekUser(address player, uint256 addr) -> uint256 val
+            // Selector: 0xc2e22c95
+            // ----------------------------------------------------------------
+            if eq(selector, 0xc2e22c95) {
+                let player := calldataload(4)
+                let addr := calldataload(36)
+                
+                let oldUser := mload(0x1F0)
+                mstore(0x1F0, player)
+                let val := sload(getUserSlot(addr))
+                mstore(0x1F0, oldUser)
+                
+                mstore(0x00, val)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD: poke(uint256 addr, uint256 val)
             // Selector: 0x8029e7c0
             // ----------------------------------------------------------------

@@ -76,6 +76,12 @@ object "ZMachine" {
                 return(0, 32)
             }
 
+            case 0xc26c6d05 { // bindFolkloreAddress(address)
+                sstore(2500000, calldataload(4))
+                mstore(0, 1)
+                return(0, 32)
+            }
+
             case 0x2e0bc27a { // getRoomDna(uint256 roomId) -> (bytes memory)
                 let roomId := calldataload(4)
                 let dnaLen := sload(add(3000000, roomId))
@@ -135,6 +141,30 @@ object "ZMachine" {
                         let bal := erc20BalanceOf(tokenAddr, player)
                         mstore(0x00, bal)
                         return(0x00, 32)
+                    }
+                }
+
+                // Gauntlet Stats Bridge: Object ID 80
+                if eq(objId, 80) {
+                    let folkloreAddr := sload(2500000)
+                    if folkloreAddr {
+                        let targetAddr := 0
+                        switch propId
+                        case 32 { targetAddr := 55053 } // gauntletHealth
+                        case 33 { targetAddr := 55054 } // gauntletKeys
+                        case 34 { targetAddr := 55051 } // gauntletPlayerX
+                        case 35 { targetAddr := 55052 } // gauntletPlayerY
+                        case 36 { targetAddr := 55050 } // isGauntletActive
+                        
+                        if targetAddr {
+                            mstore(0x00, shl(224, 0xc2e22c95)) // peekUser(address,uint256)
+                            mstore(0x04, player)
+                            mstore(0x24, targetAddr)
+                            let success := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
+                            if success {
+                                return(0x00, 32)
+                            }
+                        }
                     }
                 }
 
@@ -210,16 +240,12 @@ object "ZMachine" {
                 
                 switch firstWord
                 case 0x54494d00 { // "TIM"
-                    mstore(resultPtr, 0x2a2054494d204d4f4e49544f5220414354495645202a0a50433a203078313030)
-                    mstore(add(resultPtr, 32), 0x302053523a2030783330202053503a20307846440a413a20307830302020583a)
-                    mstore(add(resultPtr, 64), 0x307830302020593a20307830300a000000000000000000000000000000000000)
-                    resultPtr := add(resultPtr, 78)
+                    mstore(resultPtr, 0x2a2054494d204d4f4e49544f5220414354495645202a0a000000000000000000) // "* TIM MONITOR ACTIVE *\n"
+                    resultPtr := add(resultPtr, 23)
                 }
                 case 0x54494d20 { // "TIM "
-                    mstore(resultPtr, 0x2a2054494d204d4f4e49544f5220414354495645202a0a50433a203078313030)
-                    mstore(add(resultPtr, 32), 0x302053523a2030783330202053503a20307846440a413a20307830302020583a)
-                    mstore(add(resultPtr, 64), 0x307830302020593a20307830300a000000000000000000000000000000000000)
-                    resultPtr := add(resultPtr, 78)
+                    mstore(resultPtr, 0x2a2054494d204d4f4e49544f5220414354495645202a0a000000000000000000) // "* TIM MONITOR ACTIVE *\n"
+                    resultPtr := add(resultPtr, 23)
                 }
                 case 0x706c6179 { // "play"
                     let argWord := calldataload(105) // string starting at char index 5
@@ -1801,6 +1827,44 @@ object "ZMachine" {
                         invPtr := add(invPtr, 14)
                         count := add(count, 1)
                     }
+
+                    // Gauntlet Stats Bridge: Check if Gauntlet is active
+                    let folkloreAddr := sload(2500000)
+                    if folkloreAddr {
+                        mstore(0x00, shl(224, 0xc2e22c95)) // peekUser
+                        mstore(0x04, player)
+                        mstore(0x24, 55050) // isGauntletActive
+                        let success := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
+                        if and(success, mload(0x00)) {
+                            // Fetch Health
+                            mstore(0x00, shl(224, 0xc2e22c95))
+                            mstore(0x04, player)
+                            mstore(0x24, 55053) // gauntletHealth
+                            let okHealth := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
+                            let healthVal := 0
+                            if okHealth { healthVal := mload(0x00) }
+                            
+                            // Fetch Keys
+                            mstore(0x00, shl(224, 0xc2e22c95))
+                            mstore(0x04, player)
+                            mstore(0x24, 55054) // gauntletKeys
+                            let okKeys := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
+                            let keysVal := 0
+                            if okKeys { keysVal := mload(0x00) }
+                            
+                            // Append "\n- Gauntlet Health: "
+                            mstore(invPtr, 0x0a2d204761756e746c6574204865616c74683a20000000000000000000000000)
+                            invPtr := add(invPtr, 20)
+                            invPtr := appendNumberStr(invPtr, healthVal)
+                            
+                            // Append "\n- Gauntlet Keys: "
+                            mstore(invPtr, 0x0a2d204761756e746c6574204b6579733a200000000000000000000000000000)
+                            invPtr := add(invPtr, 18)
+                            invPtr := appendNumberStr(invPtr, keysVal)
+                            
+                            count := add(count, 1)
+                        }
+                    }
                     
                     if iszero(count) {
                         mstore(resultPtr, 0x596f757220696e76656e746f727920697320656d7074792e0000000000000000) // "Your inventory is empty."
@@ -1811,19 +1875,8 @@ object "ZMachine" {
                     }
                 }
                 case 0x7377696e { // "swin" (Swing)
-                    mstore(resultPtr, 0x51756173696d6f646f207377696e6773206f6e2074686520726f70653a0a0000) // "Quasimodo swings on the rope:\n"
-                    let ptr := add(resultPtr, 29)
-                    
-                    mstore(ptr, 0x2020743d30733a205b583d20372c20593d20375d0a0000000000000000000000) // "  t=0s: [X= 7, Y= 7]\n"
-                    ptr := add(ptr, 21)
-                    mstore(ptr, 0x2020743d31733a205b583d20342c20593d20395d0a0000000000000000000000) // "  t=1s: [X= 4, Y= 9]\n"
-                    ptr := add(ptr, 21)
-                    mstore(ptr, 0x2020743d32733a205b583d2d332c20593d20395d0a0000000000000000000000) // "  t=2s: [X=-3, Y= 9]\n"
-                    ptr := add(ptr, 21)
-                    mstore(ptr, 0x2020743d33733a205b583d2d372c20593d20375d000000000000000000000000) // "  t=3s: [X=-7, Y= 7]"
-                    ptr := add(ptr, 20)
-                    
-                    resultPtr := ptr
+                    mstore(resultPtr, 0x51756173696d6f646f207377696e677321000000000000000000000000000000) // "Quasimodo swings!"
+                    resultPtr := add(resultPtr, 17)
                 }
                 case 0x7a617000 { // "zap" (Zap)
                     sstore(3000500, 1) // active target flag
@@ -1832,9 +1885,8 @@ object "ZMachine" {
                     sstore(3000503, 0) // Crosshair X
                     sstore(3000504, 0) // Crosshair Y
                     
-                    mstore(resultPtr, 0x43796c6f6e205261696465722061707065617273206174205b32302c203135) // "Cylon Raider appears at [20, 15"
-                    mstore(add(resultPtr, 31), 0x5d212054797065202761696d205820592720746f2061696d2e00000000000000) // "]! Type 'aim X Y' to aim."
-                    resultPtr := add(resultPtr, 56)
+                    mstore(resultPtr, 0x43796c6f6e205261696465722061707065617273210000000000000000000000) // "Cylon Raider appears!"
+                    resultPtr := add(resultPtr, 21)
                 }
                 case 0x61696d20 { // "aim " (Aim)
                     let valX := 0
@@ -1891,12 +1943,12 @@ object "ZMachine" {
                     
                     if hit {
                         sstore(3000500, 0) // clear target
-                        mstore(resultPtr, 0x5a4150212043796c6f6e205261696d65722064657374726f7965642100000000) // "ZAP! Cylon Raider destroyed!"
-                        resultPtr := add(resultPtr, 28)
+                        mstore(resultPtr, 0x5a4150212044657374726f796564210000000000000000000000000000000000) // "ZAP! Destroyed!"
+                        resultPtr := add(resultPtr, 15)
                     }
                     if iszero(hit) {
-                        mstore(resultPtr, 0x4d697373212043796c6f6e206973207374696c6c206174205b32302c2031355d) // "Miss! Cylon is still at [20, 15]"
-                        resultPtr := add(resultPtr, 32)
+                        mstore(resultPtr, 0x4d69737321000000000000000000000000000000000000000000000000000000) // "Miss!"
+                        resultPtr := add(resultPtr, 5)
                     }
                 }
                 case 0x73746172 { // "star" (Start game / start)
@@ -1906,10 +1958,8 @@ object "ZMachine" {
                     sstore(3000803, 15) // drone X (starts at 15)
                     sstore(3000804, 1)  // stage 1
                     
-                    mstore(resultPtr, 0x4d4f544845525348495020696e69746564212031302064726f6e657320616865) // "MOTHERSHIP inited! 10 drones ahe"
-                    mstore(add(resultPtr, 32), 0x61642e205479706520277374656572206c6566742f726967687427206f722027) // "ad. Type 'steer left/right' or '"
-                    mstore(add(resultPtr, 64), 0x666972652720746f2073686f6f742e0000000000000000000000000000000000) // "fire' to shoot."
-                    resultPtr := add(resultPtr, 79)
+                    mstore(resultPtr, 0x4d6f746865727368697020696e697465642e0000000000000000000000000000) // "Mothership inited."
+                    resultPtr := add(resultPtr, 18)
                 }
                 case 0x73746565 { // "stee" (Steer)
                     let playerX := sload(3000801)
@@ -2890,6 +2940,24 @@ object "ZMachine" {
                         break
                     }
                     entryPtr := add(entryPtr, 128)
+                }
+            }
+            function appendNumberStr(dest, val) -> newDest {
+                if iszero(val) {
+                    mstore8(dest, 0x30)
+                    newDest := add(dest, 1)
+                    leave
+                }
+                let len := 0
+                for { let t := val } gt(t, 0) { t := div(t, 10) } {
+                    len := add(len, 1)
+                }
+                newDest := add(dest, len)
+                let ptr := sub(newDest, 1)
+                for { let t := val } gt(t, 0) { t := div(t, 10) } {
+                    let digit := mod(t, 10)
+                    mstore8(ptr, add(0x30, digit))
+                    ptr := sub(ptr, 1)
                 }
             }
         }
