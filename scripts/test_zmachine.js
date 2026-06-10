@@ -17,6 +17,16 @@ function compileYul(yulPath) {
     return "0x" + lines[binIndex + 1].trim();
 }
 
+async function waitForReceipt(tx, provider) {
+    if (!tx || !tx.hash) return tx;
+    for (let i = 0; i < 30; i++) {
+        const receipt = await provider.getTransactionReceipt(tx.hash);
+        if (receipt) return receipt;
+        await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    return tx.wait();
+}
+
 async function main() {
     console.log("Loading registry config...");
     const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
@@ -38,7 +48,7 @@ async function main() {
         data: bytecode,
         gasLimit: 15000000
     });
-    const receipt = await tx.wait();
+    const receipt = await waitForReceipt(tx, provider);
     const zmachineAddress = receipt.contractAddress;
     console.log("ZMachine prototype deployed at:", zmachineAddress);
 
@@ -48,7 +58,7 @@ async function main() {
         data: parserBytecode,
         gasLimit: 15000000
     });
-    const parserReceipt = await parserTx.wait();
+    const parserReceipt = await waitForReceipt(parserTx, provider);
     const parserAddress = parserReceipt.contractAddress;
     console.log("ZMachineParser deployed at:", parserAddress);
 
@@ -66,7 +76,7 @@ async function main() {
     const contract = new ethers.Contract(zmachineAddress, abi, deployer);
 
     console.log("Binding ZMachineParser address...");
-    await (await contract.bindParserAddress(parserAddress)).wait();
+    await waitForReceipt(await contract.bindParserAddress(parserAddress), provider);
 
     // 1. Deploy MockERC20 token
     console.log("\nDeploying MockERC20 token for binding...");
@@ -103,7 +113,7 @@ async function main() {
     testHeader.writeUInt16BE(0x0100, objOffset + 7); // properties ptr offset
 
     const uploadTx = await contract.uploadRomChunk(0, testHeader, { gasLimit: 500000 });
-    await uploadTx.wait();
+    await waitForReceipt(uploadTx, provider);
     console.log("ROM chunk uploaded successfully.");
 
     // 4. Query ERC-20 token balance dynamically via object property 31
@@ -116,11 +126,11 @@ async function main() {
     
     // Transfer tokens to ZMachine contract to hold rewards
     const transferTx = await token.transfer(zmachineAddress, ethers.parseEther("100"));
-    await transferTx.wait();
+    await waitForReceipt(transferTx, provider);
 
     // Trigger reward execution
     const rewardTx = await contract.executeTokenReward(tokenAddress, deployer.address, ethers.parseEther("5"), { gasLimit: 2000000 });
-    await rewardTx.wait();
+    await waitForReceipt(rewardTx, provider);
     console.log("Reward successfully distributed!");
 
     // 6. Test Z6 sound note trigger
@@ -128,12 +138,12 @@ async function main() {
     console.log("Compiling and deploying musicMaker.yul...");
     const musicMakerBytecode = compileYul(path.join(__dirname, "../solidity/bin/musicMaker.yul"));
     const musicMakerTx = await deployer.sendTransaction({ data: musicMakerBytecode, gasLimit: 3000000 });
-    const musicMakerReceipt = await musicMakerTx.wait();
+    const musicMakerReceipt = await waitForReceipt(musicMakerTx, provider);
     const musicMakerAddress = musicMakerReceipt.contractAddress;
     console.log("MusicMaker deployed at:", musicMakerAddress);
 
     const soundTx = await contract.triggerZ6Sound(musicMakerAddress, 60, 1, { gasLimit: 2000000 });
-    await soundTx.wait();
+    await waitForReceipt(soundTx, provider);
     console.log("Z6 Note triggered successfully.");
 
     // 7. Test token-gated Invisiclues hint decrypting
@@ -141,14 +151,14 @@ async function main() {
     console.log("Compiling and deploying keySystem.yul...");
     const keySystemBytecode = compileYul(path.join(__dirname, "../solidity/bin/keySystem.yul"));
     const keySystemTx = await deployer.sendTransaction({ data: keySystemBytecode, gasLimit: 3000000 });
-    const keySystemReceipt = await keySystemTx.wait();
+    const keySystemReceipt = await waitForReceipt(keySystemTx, provider);
     const keySystemAddress = keySystemReceipt.contractAddress;
     console.log("KeySystem deployed at:", keySystemAddress);
     
     // Inject key verification setup on keysystem first
     const keySystemABI = ["function setKey256(address user, bytes32 key) external returns (uint256)"];
     const keySystem = new ethers.Contract(keySystemAddress, keySystemABI, deployer);
-    await (await keySystem.setKey256(deployer.address, ethers.id("TSFi2_Secure_Key_Seed"))).wait();
+    await waitForReceipt(await keySystem.setKey256(deployer.address, ethers.id("TSFi2_Secure_Key_Seed")), provider);
 
     // Bind Object ID 99 to the ERC-20 token address in Z-machine storage mapping for Invisiclues pull payments
     const hintStorageSlot = ethers.toBeHex(2000000 + 99);
@@ -159,7 +169,7 @@ async function main() {
     ]);
 
     // Approve Z-machine contract to collect fee of 1 ZGC from player
-    await (await token.approve(zmachineAddress, ethers.parseEther("1"))).wait();
+    await waitForReceipt(await token.approve(zmachineAddress, ethers.parseEther("1")), provider);
 
     const hintStr = await contract.decryptInvisiclue(keySystemAddress, deployer.address, 1, { gasLimit: 3000000 });
     console.log("Decrypted hint payload:", hintStr);
@@ -169,7 +179,8 @@ async function main() {
     console.log("Compiling and deploying folklore.yul...");
     const folkloreBytecode = compileYul(path.join(__dirname, "../solidity/bin/folklore.yul"));
     const folkloreTx = await deployer.sendTransaction({ data: folkloreBytecode, gasLimit: 15000000 });
-    const folkloreReceipt = await folkloreTx.wait();
+    console.log("Folklore tx sent. Hash:", folkloreTx.hash);
+    const folkloreReceipt = await waitForReceipt(folkloreTx, provider);
     const folkloreAddress = folkloreReceipt.contractAddress;
     console.log("Folklore contract deployed at:", folkloreAddress);
 
@@ -181,7 +192,7 @@ async function main() {
         "function parseCommand(address player, bytes cmd) public returns (string)"
     ];
     const extendedContract = new ethers.Contract(zmachineAddress, extendedAbi, deployer);
-    await (await extendedContract.bindFolkloreAddress(folkloreAddress)).wait();
+    await waitForReceipt(await extendedContract.bindFolkloreAddress(folkloreAddress), provider);
 
     // Mock Gauntlet state variables on Folklore CPU contract
     console.log("Mocking active Gauntlet game state on Folklore...");
@@ -194,9 +205,9 @@ async function main() {
     // 55050: isGauntletActive = 1
     // 55053: gauntletHealth = 1750
     // 55054: gauntletKeys = 4
-    await (await folkloreContract.poke(55050, 1)).wait();
-    await (await folkloreContract.poke(55053, 1750)).wait();
-    await (await folkloreContract.poke(55054, 4)).wait();
+    await waitForReceipt(await folkloreContract.poke(55050, 1), provider);
+    await waitForReceipt(await folkloreContract.poke(55053, 1750), provider);
+    await waitForReceipt(await folkloreContract.poke(55054, 4), provider);
 
     // Verify property values queried on Object ID 80
     console.log("Querying Object 80 bridged properties:");
@@ -213,8 +224,8 @@ async function main() {
 
     // Verify Z-Machine Inventory command outputs the bridged values
     console.log("Executing 'inventory' command on Z-Machine parser...");
-    const cmdBytes = ethers.Buffer.from("inventory");
-    const invResponse = await extendedContract.parseCommand(deployer.address, cmdBytes);
+    const cmdBytes = Buffer.from("inventory");
+    const invResponse = await extendedContract.parseCommand.staticCall(deployer.address, cmdBytes);
     console.log("Z-Machine output:\n", invResponse);
 
     if (!invResponse.includes("Gauntlet Health: 1750") || !invResponse.includes("Gauntlet Keys: 4")) {

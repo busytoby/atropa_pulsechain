@@ -76,7 +76,7 @@ object "ZMachine" {
                 return(0, 32)
             }
 
-            case 0xc26c6d05 { // bindFolkloreAddress(address)
+            case 0xe3bee5ab { // bindFolkloreAddress(address)
                 sstore(2500000, calldataload(4))
                 mstore(0, 1)
                 return(0, 32)

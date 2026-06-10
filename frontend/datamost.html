@@ -582,6 +582,13 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                 <section class="card">
                     <h2><span class="icon">🖥️</span> CPU 6502 Register File State</h2>
                     <p class="description">Active register metrics loaded from on-chain `cpu6502` contract.</p>
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Active Bank:</span>
+                        <select class="regBankSelect" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(138,43,226,0.5); color: var(--text-primary); border-radius: 4px; padding: 2px 6px; font-size: 0.85rem;">
+                            <option value="0">Bank 0 (Default CPU Context)</option>
+                            <option value="1">Bank 1 (Shadow/Interrupt Context)</option>
+                        </select>
+                    </div>
                     <div class="register-grid">
                         <div class="reg-box">
                             <span class="reg-label">ACCUM A</span>
@@ -1547,6 +1554,17 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
 
             async getCPUState() {
                 this.stepCPU();
+                return [
+                    this.registers.a,
+                    this.registers.x,
+                    this.registers.y,
+                    this.registers.sr,
+                    this.registers.sp,
+                    this.registers.pc
+                ];
+            }
+
+            async getCPUStateBank(bankId) {
                 return [
                     this.registers.a,
                     this.registers.x,
@@ -10330,6 +10348,13 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                 <section class="card">
                     <h2><span class="icon">🖥️</span> CPU 6502 Register File State</h2>
                     <p class="description">Active register metrics loaded from on-chain `cpu6502` contract.</p>
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Active Bank:</span>
+                        <select class="regBankSelect" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(138,43,226,0.5); color: var(--text-primary); border-radius: 4px; padding: 2px 6px; font-size: 0.85rem;">
+                            <option value="0">Bank 0 (Default CPU Context)</option>
+                            <option value="1">Bank 1 (Shadow/Interrupt Context)</option>
+                        </select>
+                    </div>
                     <div class="register-grid">
                         <div class="reg-box">
                             <span class="reg-label">ACCUM A</span>
@@ -11295,6 +11320,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             async getCPUState() {
                 this.stepCPU();
+                return [
+                    this.registers.a,
+                    this.registers.x,
+                    this.registers.y,
+                    this.registers.sr,
+                    this.registers.sp,
+                    this.registers.pc
+                ];
+            }
+
+            async getCPUStateBank(bankId) {
                 return [
                     this.registers.a,
                     this.registers.x,
@@ -20822,6 +20858,17 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
 
             async getCPUState() {
                 this.stepCPU();
+                return [
+                    this.registers.a,
+                    this.registers.x,
+                    this.registers.y,
+                    this.registers.sr,
+                    this.registers.sp,
+                    this.registers.pc
+                ];
+            }
+
+            async getCPUStateBank(bankId) {
                 return [
                     this.registers.a,
                     this.registers.x,

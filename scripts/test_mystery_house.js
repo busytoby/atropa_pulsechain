@@ -94,6 +94,91 @@ async function main() {
         throw new Error("Room 2 Fireplace coordinates mismatch");
     }
 
+    // 3. Define extended ABI for interactive gameplay simulation
+    console.log("\n=== Starting Interactive Gameplay Traversal Simulation ===");
+    const zmExtendedAbi = [
+        ...zmAbi,
+        "function createRoom(uint256 roomId, bytes desc, uint256 exits) public returns (bool)",
+        "function parseCommand(address player, bytes cmd) public returns (string)"
+    ];
+    const zmExtended = new ethers.Contract(zmAddress, zmExtendedAbi, deployer);
+
+    // Setup room descriptions for the mansion
+    console.log("Setting up Victorian mansion room descriptions...");
+    const rooms = [
+        { id: 10, desc: "You are outside a large Victorian mansion. The front door is to the north." },
+        { id: 1,  desc: "You are in the entry hall. Doors lead east and west. The exit is south." },
+        { id: 2,  desc: "You are in the library. Old books line the walls." },
+        { id: 3,  desc: "You are in the sanctuary. A stone altar stands here." }
+    ];
+
+    for (const r of rooms) {
+        const descBytes = Buffer.from(r.desc);
+        await (await zmExtended.createRoom(r.id, descBytes, 0)).wait();
+        console.log(`  Room ${r.id} description registered.`);
+    }
+
+    // Traversal gameplay loop simulation
+    const playerWallet = signers[1];
+    const playerContract = new ethers.Contract(zmAddress, zmExtendedAbi, playerWallet);
+
+    async function executeCommand(cmd) {
+        const response = await playerContract.parseCommand.staticCall(playerWallet.address, Buffer.from(cmd));
+        const tx = await playerContract.parseCommand(playerWallet.address, Buffer.from(cmd), { gasLimit: 2000000 });
+        await tx.wait();
+        return response;
+    }
+
+    console.log("\nSimulating player traversal commands:");
+
+    // Look (starts at Room 10)
+    console.log("Command: look");
+    const responseLook = await executeCommand("look");
+    console.log("Output:\n", responseLook);
+    if (!responseLook.includes("outside a large Victorian mansion")) {
+        throw new Error("Initial look description mismatch!");
+    }
+
+    // Go North to Room 1
+    console.log("Command: north");
+    const responseNorth = await executeCommand("north");
+    console.log("Output:\n", responseNorth);
+    if (!responseNorth.includes("entry hall")) {
+        throw new Error("North navigation failed!");
+    }
+
+    // Go East to Room 2
+    console.log("Command: east");
+    const responseEast = await executeCommand("east");
+    console.log("Output:\n", responseEast);
+    if (!responseEast.includes("library")) {
+        throw new Error("East navigation failed!");
+    }
+
+    // Attempt invalid South direction from Room 2
+    console.log("Command: south");
+    const responseInvalid = await executeCommand("south");
+    console.log("Output:\n", responseInvalid);
+    if (!responseInvalid.includes("cannot go that way")) {
+        throw new Error("Invalid exit validation failed!");
+    }
+
+    // Go West back to Room 1
+    console.log("Command: west");
+    const responseWest = await executeCommand("west");
+    console.log("Output:\n", responseWest);
+    if (!responseWest.includes("entry hall")) {
+        throw new Error("West navigation back to Room 1 failed!");
+    }
+
+    // Go West to Room 3
+    console.log("Command: west");
+    const responseSanctuary = await executeCommand("west");
+    console.log("Output:\n", responseSanctuary);
+    if (!responseSanctuary.includes("sanctuary")) {
+        throw new Error("West navigation to Sanctuary failed!");
+    }
+
     console.log("=== All Z-Machine Mystery House tests passed successfully! ===");
 }
 

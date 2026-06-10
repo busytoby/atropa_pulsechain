@@ -1625,26 +1625,26 @@ object "ZMachineParser" {
                     // Gauntlet Stats Bridge: Check if Gauntlet is active
                     let folkloreAddr := sload(2500000)
                     if folkloreAddr {
-                        mstore(0x00, shl(224, 0xc2e22c95)) // peekUser
-                        mstore(0x04, player)
-                        mstore(0x24, 55050) // isGauntletActive
-                        let success := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
-                        if and(success, mload(0x00)) {
+                        mstore(0x1000, shl(224, 0xc2e22c95)) // peekUser
+                        mstore(0x1004, player)
+                        mstore(0x1024, 55050) // isGauntletActive
+                        let success := staticcall(gas(), folkloreAddr, 0x1000, 68, 0x2000, 32)
+                        if and(success, mload(0x2000)) {
                             // Fetch Health
-                            mstore(0x00, shl(224, 0xc2e22c95))
-                            mstore(0x04, player)
-                            mstore(0x24, 55053) // gauntletHealth
-                            let okHealth := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
+                            mstore(0x1000, shl(224, 0xc2e22c95))
+                            mstore(0x1004, player)
+                            mstore(0x1024, 55053) // gauntletHealth
+                            let okHealth := staticcall(gas(), folkloreAddr, 0x1000, 68, 0x2000, 32)
                             let healthVal := 0
-                            if okHealth { healthVal := mload(0x00) }
+                            if okHealth { healthVal := mload(0x2000) }
                             
                             // Fetch Keys
-                            mstore(0x00, shl(224, 0xc2e22c95))
-                            mstore(0x04, player)
-                            mstore(0x24, 55054) // gauntletKeys
-                            let okKeys := staticcall(gas(), folkloreAddr, 0x00, 68, 0x00, 32)
+                            mstore(0x1000, shl(224, 0xc2e22c95))
+                            mstore(0x1004, player)
+                            mstore(0x1024, 55054) // gauntletKeys
+                            let okKeys := staticcall(gas(), folkloreAddr, 0x1000, 68, 0x2000, 32)
                             let keysVal := 0
-                            if okKeys { keysVal := mload(0x00) }
+                            if okKeys { keysVal := mload(0x2000) }
                             
                             // Append "\n- Gauntlet Health: "
                             mstore(invPtr, 0x0a2d204761756e746c6574204865616c74683a20000000000000000000000000)

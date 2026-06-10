@@ -72,6 +72,14 @@ object "CPU6502Emulator" {
                 slot := keccak256(0x00, 64)
             }
 
+            function getUserSlotForBank(addr, bankId) -> slot {
+                let user := getContextUser()
+                let targetAddr := add(addr, mul(bankId, 0x100))
+                mstore(0x00, user)
+                mstore(0x20, targetAddr)
+                slot := keccak256(0x00, 64)
+            }
+
             // Helper to resolve double-hashed storage slot for gallery drawings
             function getGallerySlot(user, gallerySlotIndex, offset) -> slot {
                 mstore(0x00, user)
@@ -2607,6 +2615,21 @@ object "CPU6502Emulator" {
                 mstore(0x60, getReg(0x84))
                 mstore(0x80, getReg(0x83))
                 mstore(0xA0, getReg(0x85))
+                return(0x00, 192)
+            }
+
+            // ----------------------------------------------------------------
+            // Method 15: getCPUStateBank(uint256 bankId) -> (uint256 A, uint256 X, uint256 Y, uint256 SR, uint256 SP, uint256 PC)
+            // Selector: 0x59ae65f2
+            // ----------------------------------------------------------------
+            if eq(selector, 0x59ae65f2) {
+                let bankId := calldataload(4)
+                mstore(0x00, sload(getUserSlotForBank(0x80, bankId)))
+                mstore(0x20, sload(getUserSlotForBank(0x81, bankId)))
+                mstore(0x40, sload(getUserSlotForBank(0x82, bankId)))
+                mstore(0x60, sload(getUserSlotForBank(0x84, bankId)))
+                mstore(0x80, sload(getUserSlotForBank(0x83, bankId)))
+                mstore(0xA0, sload(getUserSlotForBank(0x85, bankId)))
                 return(0x00, 192)
             }
 
