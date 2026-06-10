@@ -2155,27 +2155,48 @@
                 
                 const passed = (maxWeight >= requiredWeight) && (consensusDecision === direction);
                 
+                let accusedNode = null;
+                let disputeTriggered = false;
+                
                 // On-chain Slashing (both reputation and locked PLS stakes) based on BFT Consensus
                 if (passed && consensusDecision) {
                     // Slash nodes that voted against the consensus decision
                     if (nodeB_Active && voteB && voteB !== consensusDecision) {
                         this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
                         this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 4.0);
+                        accusedNode = "Node B";
+                        disputeTriggered = true;
                     }
                     if (nodeC_Active && voteC && voteC !== consensusDecision) {
                         this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
                         this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 4.0);
+                        accusedNode = "Node C";
+                        disputeTriggered = true;
                     }
                 } else {
                     // Consensus failed: Slash the validators who voted against the proposal direction for blocking the vote
                     if (nodeB_Active && voteB && voteB !== direction) {
                         this.reputations.nodeB = Math.max(0, this.reputations.nodeB - 10);
                         this.stakes.nodeB = Math.max(0, this.stakes.nodeB - 4.0);
+                        accusedNode = "Node B";
+                        disputeTriggered = true;
                     }
                     if (nodeC_Active && voteC && voteC !== direction) {
                         this.reputations.nodeC = Math.max(0, this.reputations.nodeC - 10);
                         this.stakes.nodeC = Math.max(0, this.stakes.nodeC - 4.0);
+                        accusedNode = "Node C";
+                        disputeTriggered = true;
                     }
+                }
+                
+                // Signature forgery counts as dispute trigger
+                if (nodeB_Active && !isSigBValid) {
+                    accusedNode = "Node B";
+                    disputeTriggered = true;
+                }
+                if (nodeC_Active && !isSigCValid) {
+                    accusedNode = "Node C";
+                    disputeTriggered = true;
                 }
                 
                 if (passed && consensusDecision) {
@@ -2197,7 +2218,9 @@
                     matchingWeight: maxWeight,
                     totalWeight,
                     reputations: { ...this.reputations },
-                    stakes: { ...this.stakes }
+                    stakes: { ...this.stakes },
+                    accusedNode,
+                    disputeTriggered
                 };
             }
             
@@ -9036,6 +9059,42 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
             } else {
                 document.getElementById("nodeCStatus").innerText = "ONLINE";
                 document.getElementById("nodeCStatus").style.color = "#00ff7f";
+            }
+            
+            if (txResult.disputeTriggered) {
+                // Trigger the on-chain interactive bisection dispute game!
+                const accused = txResult.accusedNode;
+                logBox.innerText += `\n\n[DISPUTE INITIATED] Challenger flag raised against ${accused}!`;
+                logBox.scrollTop = logBox.scrollHeight;
+                
+                let low = 0;
+                let high = 10000;
+                let stepCount = 0;
+                
+                while (high - low > 1) {
+                    stepCount++;
+                    let mid = Math.floor((low + high) / 2);
+                    // Bisection binary search simulation
+                    let agree = mid < 7500;
+                    logBox.innerText += `\n[BISECTION STEP ${stepCount}] Frame range [${low}, ${high}] | Checking cycle state at cycle #${mid} -> ${agree ? "AGREE (Match)" : "DIVERGED (Mismatch)"}`;
+                    logBox.scrollTop = logBox.scrollHeight;
+                    if (agree) {
+                        low = mid;
+                    } else {
+                        high = mid;
+                    }
+                    await new Promise(r => setTimeout(r, 60)); // Fast aesthetic delays
+                }
+                
+                logBox.innerText += `\n[PINPOINT] Divergence narrowed to exact cycle step: ${high}`;
+                logBox.innerText += `\n[YUL EVM PROVER] Executing executeStep(preState, instructionOpcode: 0x4C) on-chain...`;
+                
+                if (nodeCByzStance === "forgery") {
+                    logBox.innerText += `\n[VERDICT] Cryptographic signature verification check failed. Forgery proven.`;
+                } else {
+                    logBox.innerText += `\n[VERDICT] ${accused} asserted post-state hash 0xdead...beef, but Yul interpreter resolved 0x9f3d...8c2b. ${accused} FRAUD PROVED!`;
+                }
+                logBox.scrollTop = logBox.scrollHeight;
             }
             
             logBox.scrollTop = logBox.scrollHeight;
