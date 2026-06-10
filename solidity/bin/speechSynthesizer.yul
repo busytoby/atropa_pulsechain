@@ -176,13 +176,97 @@ object "SpeechSynthesizer" {
                 let pitch := calldataload(292)
                 let energy := calldataload(324)
 
-                pokeUser(cpu, callerAddr, 54809, pitch)
-                pokeUser(cpu, callerAddr, 54810, energy)
+                // Retrieve Vaesen Trauma parameters from host memory
+                let physTrauma := peekUser(cpu, callerAddr, 55043)
+                let mentTrauma := peekUser(cpu, callerAddr, 55044)
+
+                // Adjust pitch and energy based on Vaesen Trauma states
+                let currentPitch := pitch
+                let currentEnergy := energy
+
+                // 1. Physical Trauma -> Volume / Energy suppression
+                if eq(physTrauma, 1) { // Exhausted
+                    currentEnergy := div(mul(currentEnergy, 80), 100)
+                }
+                if eq(physTrauma, 2) { // Battered
+                    currentEnergy := div(mul(currentEnergy, 60), 100)
+                }
+                if eq(physTrauma, 3) { // Broken
+                    currentEnergy := div(mul(currentEnergy, 30), 100)
+                }
+
+                // 2. Mental Trauma -> Pitch & Jitter modulation
+                let jitter := 0
+                if eq(mentTrauma, 1) { // Shaken
+                    jitter := 4
+                }
+                if eq(mentTrauma, 2) { // Terrified
+                    currentPitch := add(currentPitch, 20)
+                    jitter := 12
+                }
+                if eq(mentTrauma, 3) { // Panicked
+                    currentPitch := add(currentPitch, 40)
+                    jitter := 25
+                    // Periodic stutter: mute voice based on slot/counter
+                    let counter := sload(102)
+                    sstore(102, add(counter, 1))
+                    if iszero(and(counter, 0x02)) {
+                        currentEnergy := 0
+                    }
+                }
+                if eq(mentTrauma, 4) { // Melancholic
+                    if gt(currentPitch, 30) {
+                        currentPitch := sub(currentPitch, 25)
+                    }
+                    currentEnergy := div(mul(currentEnergy, 50), 100)
+                }
+
+                // Calculate random jitter using a Linear Congruential Generator (LCG)
+                if gt(jitter, 0) {
+                    let seed := sload(101)
+                    if iszero(seed) {
+                        seed := 12345
+                    }
+                    seed := add(mul(seed, 1664525), 1013904223)
+                    sstore(101, seed)
+                    
+                    let randVal := mod(seed, mul(jitter, 2))
+                    if lt(randVal, jitter) {
+                        if gt(currentPitch, randVal) {
+                            currentPitch := sub(currentPitch, randVal)
+                        }
+                    }
+                    if iszero(lt(randVal, jitter)) {
+                        currentPitch := add(currentPitch, sub(randVal, jitter))
+                    }
+                }
+
+                pokeUser(cpu, callerAddr, 54809, currentPitch)
+                pokeUser(cpu, callerAddr, 54810, currentEnergy)
+
+                // Retrieve the previously written pitch to perform smoothing/interpolation
+                let prevPitch := sload(100)
+                if iszero(prevPitch) {
+                    prevPitch := currentPitch
+                }
+                // Calculate smoothed pitch (average of previous and current) to eliminate robotic buzz/steppiness
+                let smoothedPitch := div(add(prevPitch, currentPitch), 2)
+                sstore(100, currentPitch)
 
                 // If musicMaker address is set, poke frequency registers to voice 1
                 let musicMaker := sload(1)
                 if iszero(iszero(musicMaker)) {
-                    let freq := mul(pitch, 10)
+                    // Qwen-level Speech Synthesis: Voiced vs. Unvoiced Waveform Routing
+                    // If pitch is 0, route to C64 SID Noise generator (waveform control 129) for unvoiced sibilants (s, sh, f).
+                    // If pitch > 0, route to C64 SID Sawtooth generator (waveform control 17) for voiced vowels.
+                    let controlVal := 17
+                    let targetPitch := smoothedPitch
+                    if iszero(currentPitch) {
+                        controlVal := 129
+                        targetPitch := 80 // Default base noise frequency
+                    }
+
+                    let freq := mul(targetPitch, 10)
                     let lo := and(freq, 0xff)
                     let hi := and(shr(8, freq), 0xff)
                     
@@ -206,10 +290,10 @@ object "SpeechSynthesizer" {
                         revert(0, returndatasize())
                     }
                     
-                    // Poke Voice 1 Control (Gate + Sawtooth = 17)
+                    // Poke Voice 1 Control (17 for Sawtooth, 129 for Noise)
                     mstore(0x1100, shl(224, 0x86bb605e))
                     mstore(0x1104, 54276)
-                    mstore(0x1124, 17)
+                    mstore(0x1124, controlVal)
                     dummy := call(gas(), musicMaker, 0, 0x1100, 68, 0, 0)
                     if iszero(dummy) {
                         returndatacopy(0, 0, returndatasize())
