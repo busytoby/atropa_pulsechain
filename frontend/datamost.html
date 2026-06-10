@@ -3313,14 +3313,16 @@ DISCONNECTED. TYPE "DIAL" OR CLICK BUTTON TO CONNECT.</div>
                         } catch (e) {}
 
                         const score = Number(await cpuContract.peek(3));
-                        const colStatusText = document.getElementById("collisionStatus");
-                        colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
-                        if (isCollision) {
-                            colStatusText.style.color = "var(--neon-magenta)";
-                            playSynthTone(100, 500); 
-                            pokeSIDFreq(1000, 0x21);
-                        } else {
-                            colStatusText.style.color = "var(--neon-blue)";
+                        const colStatusText = document.querySelectorAll("#collisionStatus")[0];
+                        if (colStatusText) {
+                            colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
+                            if (isCollision) {
+                                colStatusText.style.color = "var(--neon-magenta)";
+                                playSynthTone(100, 500); 
+                                pokeSIDFreq(1000, 0x21);
+                            } else {
+                                colStatusText.style.color = "var(--neon-blue)";
+                            }
                         }
 
                         drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, isCollision, borderHex, bgHex, screenRam, colorRam);
@@ -13088,14 +13090,16 @@ RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
                         } catch (e) {}
 
                         const score = Number(await cpuContract.peek(3));
-                        const colStatusText = document.getElementById("collisionStatus");
-                        colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
-                        if (isCollision) {
-                            colStatusText.style.color = "var(--neon-magenta)";
-                            playSynthTone(100, 500); 
-                            pokeSIDFreq(1000, 0x21);
-                        } else {
-                            colStatusText.style.color = "var(--neon-blue)";
+                        const colStatusText = document.querySelectorAll("#collisionStatus")[1];
+                        if (colStatusText) {
+                            colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask}`;
+                            if (isCollision) {
+                                colStatusText.style.color = "var(--neon-magenta)";
+                                playSynthTone(100, 500); 
+                                pokeSIDFreq(1000, 0x21);
+                            } else {
+                                colStatusText.style.color = "var(--neon-blue)";
+                            }
                         }
 
                         drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, isCollision, borderHex, bgHex, screenRam, colorRam);
