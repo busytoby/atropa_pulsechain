@@ -417,54 +417,68 @@
 
         class SimulatedToken {
             constructor(address) {
-                this.address = address;
+                this.address = address.toLowerCase();
                 
-                // Deterministic mock values based on the token address seed
-                const addrNum = parseInt(address.slice(-6), 16) || 42;
-                this.mockUserBalance = ethers.parseUnits(((addrNum % 800) + 50).toString(), 18);
-                this.mockTreasuryBalance = ethers.parseUnits(((addrNum % 8000) + 1200).toString(), 18);
-                this.mockMaxSupply = BigInt((addrNum % 500000) + 1000000);
-                this.mockMarketRate = ethers.parseUnits(((addrNum % 100) / 100 + 0.5).toFixed(4), 18);
-                this.mockType = "Double-Entry Ledger Asset (" + address.substring(0, 6) + ")";
+                // Initialize standard ERC-20 storage state globally if it doesn't exist
+                window.simulatedERC20State = window.simulatedERC20State || {};
+                if (!window.simulatedERC20State[this.address]) {
+                    const addrNum = parseInt(this.address.slice(-6), 16) || 42;
+                    window.simulatedERC20State[this.address] = {
+                        userBalance: ethers.parseUnits(((addrNum % 800) + 50).toString(), 18),
+                        treasuryBalance: ethers.parseUnits(((addrNum % 8000) + 1200).toString(), 18),
+                        maxSupply: BigInt((addrNum % 500000) + 1000000),
+                        marketRate: ethers.parseUnits(((addrNum % 100) / 100 + 0.5).toFixed(4), 18),
+                        type: "Double-Entry Ledger Asset (" + address.substring(0, 6) + ")"
+                    };
+                }
             }
             async balanceOf(account) {
-                if (account === "0x1111111111111111111111111111111111111111") {
-                    return this.mockTreasuryBalance;
+                const state = window.simulatedERC20State[this.address];
+                if (account && account.toLowerCase() === "0x1111111111111111111111111111111111111111") {
+                    return state.treasuryBalance;
                 }
-                return this.mockUserBalance;
+                return state.userBalance;
             }
             async Type() {
-                return this.mockType;
+                return window.simulatedERC20State[this.address].type;
             }
             async maxSupply() {
-                return this.mockMaxSupply;
+                return window.simulatedERC20State[this.address].maxSupply;
             }
             async GetMarketRate(asset) {
-                return this.mockMarketRate;
+                return window.simulatedERC20State[this.address].marketRate;
             }
             async approve(spender, value) {
                 return { wait: async () => {} };
             }
             async Purchase(counterparty, amount) {
-                // Adjust local balances to simulate on-chain transaction flow!
+                // Perform standard ERC-20 balance updates inside the database state
                 try {
-                    const toMove = ethers.parseUnits(amount.toString(), 0);
-                    if (this.mockTreasuryBalance >= toMove) {
-                        this.mockTreasuryBalance -= toMove;
-                        this.mockUserBalance += toMove;
+                    const state = window.simulatedERC20State[this.address];
+                    // cost = amount * rate
+                    const cost = (amount * state.marketRate) / ethers.parseUnits("1", 18);
+                    
+                    // Subtract from treasury, add to user
+                    if (state.treasuryBalance >= amount) {
+                        state.treasuryBalance -= amount;
+                        state.userBalance += amount;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error("Simulated purchase failed:", e);
+                }
                 return { wait: async () => {} };
             }
             async Redeem(counterparty, amount) {
-                // Adjust local balances to simulate on-chain transaction flow!
+                // Perform standard ERC-20 balance updates inside the database state
                 try {
-                    const toMove = ethers.parseUnits(amount.toString(), 0);
-                    if (this.mockUserBalance >= toMove) {
-                        this.mockUserBalance -= toMove;
-                        this.mockTreasuryBalance += toMove;
+                    const state = window.simulatedERC20State[this.address];
+                    if (state.userBalance >= amount) {
+                        state.userBalance -= amount;
+                        state.treasuryBalance += amount;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error("Simulated redemption failed:", e);
+                }
                 return { wait: async () => {} };
             }
             async Xie() { return "0x0000000000000000000000000000000000000000"; }
