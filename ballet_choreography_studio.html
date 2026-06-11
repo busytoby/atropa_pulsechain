@@ -289,6 +289,8 @@
     <div id="studio-layout">
         <!-- Left Panel: Ballet Position Choreography & Stance Controls -->
         <div class="panel">
+            <button class="btn btn-gold" id="btn-director-mode" onclick="toggleDirectorMode()" style="margin-bottom: 8px; font-size: 13px;">🎬 START BALLET DIRECTOR</button>
+
             <div class="section-title">
                 CHOREOGRAPHY <span>POSITIONS</span>
             </div>
@@ -585,6 +587,54 @@ Status: Awaiting user to start music.</div>
                 kickGain.connect(analyser);
                 kick.start(now);
                 kick.stop(now + 0.22);
+            }
+
+            // Auto-Director Mode Sequencer (cycles every 8 beats)
+            if (directorMode && beatIndex > 0 && beatIndex % 8 === 0) {
+                const acts = ["plie", "arabesque", "pirouette", "grandjete", "attitude"];
+                let nextIndex = (acts.indexOf(activeStance) + 1) % acts.length;
+                let nextAct = acts[nextIndex];
+                
+                setStance(nextAct);
+
+                const actTitles = {
+                    plie: "Act I - The Descent (Plié)",
+                    arabesque: "Act II - Starlight Extension (Arabesque)",
+                    pirouette: "Act III - Cosmic Rotation (Pirouette)",
+                    grandjete: "Act IV - Ethereal Leap (Grand Jeté)",
+                    attitude: "Act V - Dynamic Balance (Attitude)"
+                };
+                logEvent(`🎬 DIRECTOR: Modulating act to ${actTitles[nextAct]}.`);
+
+                // Auto-trigger pose render after LERP transition finishes
+                setTimeout(() => {
+                    if (directorMode && activeStance === nextAct) {
+                        triggerControlNetRender();
+                    }
+                }, 1600);
+            }
+        }
+
+        let directorMode = false;
+        function toggleDirectorMode() {
+            initAudio();
+            const btn = document.getElementById("btn-director-mode");
+            if (directorMode) {
+                directorMode = false;
+                btn.innerText = "🎬 START BALLET DIRECTOR";
+                btn.style.borderColor = "var(--glow-gold)";
+                btn.style.color = "var(--glow-gold)";
+                logEvent("System: Ballet Auto-Director Mode deactivated.");
+            } else {
+                directorMode = true;
+                btn.innerText = "🎬 STOP BALLET DIRECTOR";
+                btn.style.borderColor = "var(--glow-cyan)";
+                btn.style.color = "var(--glow-cyan)";
+                logEvent("System: Ballet Auto-Director Mode activated! Directing performance acts.");
+                
+                if (!isSoundPlaying) {
+                    toggleSound();
+                }
             }
         }
 
