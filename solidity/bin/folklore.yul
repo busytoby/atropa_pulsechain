@@ -258,17 +258,42 @@ object "cpu6502" {
                 }
 
                 if eq(screen, 3) {
-                    // Gargamel patrol physics
-                    let gargamel_x := sload(getUserSlot(55040))
-                    let gargamel_vx := sload(getUserSlot(55041))
-                    if gt(gargamel_vx, 127) { gargamel_vx := sub(gargamel_vx, 256) }
+                     // Gargamel proximity patrol-to-chase state AI
+                     let gargamel_x := sload(getUserSlot(55040))
+                     let gargamel_vx := sload(getUserSlot(55041))
+                     if gt(gargamel_vx, 127) { gargamel_vx := sub(gargamel_vx, 256) }
 
-                    gargamel_x := add(gargamel_x, gargamel_vx)
-                    if or(lt(gargamel_x, 300), gt(gargamel_x, 650)) {
-                        gargamel_vx := sub(0, gargamel_vx)
-                    }
-                    sstore(getUserSlot(55040), gargamel_x)
-                    sstore(getUserSlot(55041), and(gargamel_vx, 0xFF))
+                     // Calculate absolute distance between player and Gargamel
+                     let dist_x := 0
+                     if gt(px, gargamel_x) { dist_x := sub(px, gargamel_x) }
+                     if iszero(gt(px, gargamel_x)) { dist_x := sub(gargamel_x, px) }
+
+                     if lt(dist_x, 200) {
+                         // CHASE MODE: Increase velocity magnitude and seek player direction
+                         if gt(px, gargamel_x) {
+                             gargamel_vx := 5
+                         }
+                         if iszero(gt(px, gargamel_x)) {
+                             gargamel_vx := sub(0, 5)
+                         }
+                     } else {
+                         // PATROL MODE: Move and bounce off wall boundaries
+                         if iszero(gargamel_vx) {
+                             gargamel_vx := sub(0, 3) // Initial patrol direction
+                         }
+                         if or(lt(gargamel_x, 300), gt(gargamel_x, 650)) {
+                             if lt(gargamel_x, 300) {
+                                 gargamel_vx := 3
+                             }
+                             if gt(gargamel_x, 650) {
+                                 gargamel_vx := sub(0, 3)
+                             }
+                         }
+                     }
+
+                     gargamel_x := add(gargamel_x, gargamel_vx)
+                     sstore(getUserSlot(55040), gargamel_x)
+                     sstore(getUserSlot(55041), and(gargamel_vx, 0xFF))
 
                     // Gargamel proximity check
                     let dx := sub(px, gargamel_x)
