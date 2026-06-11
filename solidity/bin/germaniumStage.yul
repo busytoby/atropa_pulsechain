@@ -1,6 +1,7 @@
 /*
     OC71 Germanium Common-Emitter Stage Simulator.
     Calculates dynamic collector current to output a distorted audio signal.
+    Features dynamic bias stabilization & sag discharge paths modeled on Elektuur Issue #2.
 */
 object "GermaniumStage" {
     code {
@@ -80,10 +81,17 @@ object "GermaniumStage" {
                 // Collector output: Vout = Vcc - Ic * Rc (Vcc = 9V, Rc = 4.7k)
                 let Vout := sub(9000000000000000000, sdiv(mul(Ic, 4700000000000000000000), scale))
                 
-                // Update internal capacitor charges
+                // Update internal capacitor charges with charging & leakage/stabilization discharging paths
                 let dt_div_C := 10000000000000000
-                sstore(100, add(V_c_in, sdiv(mul(Ib, dt_div_C), scale)))
-                sstore(101, add(V_c_e, sdiv(mul(mul(Ib, add(1, BETA())), dt_div_C), scale)))
+                
+                let charging_b := sdiv(mul(Ib, dt_div_C), scale)
+                let discharge_b := sdiv(mul(V_c_in, 1000000000000000), scale) // 1e15 Base Discharge Rate
+                sstore(100, sub(add(V_c_in, charging_b), discharge_b))
+
+                let charging_e := sdiv(mul(mul(Ib, add(1, BETA())), dt_div_C), scale)
+                let discharge_e := sdiv(mul(V_c_e, 5000000000000000), scale) // 5e15 Emitter Discharge Rate
+                sstore(101, sub(add(V_c_e, charging_e), discharge_e))
+                
                 mstore(0, Vout)
                 return(0, 32)
             }
