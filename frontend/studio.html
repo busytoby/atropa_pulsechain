@@ -1600,9 +1600,17 @@
                     let rawOut = Number(decoded[0]) / 1e18;
 
                     // Multiply the returned rawOut by the reciprocal of compGainState (expanding the dynamics)
-                    rawOut = rawOut * (1.0 / compGainState);
+                    let expandedOut = rawOut * (1.0 / compGainState);
+                    
+                    // Asymmetric Soft Saturation (Issue 1) to model early transistor non-linear limits:
+                    let saturatedOut = expandedOut;
+                    if (expandedOut > 0.0) {
+                        saturatedOut = expandedOut / (1.0 + Math.abs(expandedOut) * 0.25);
+                    } else {
+                        saturatedOut = expandedOut / (1.0 + Math.abs(expandedOut) * 0.20);
+                    }
 
-                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+                    const outVolts = await applyEquaLimiter(saturatedOut, 0.51);
 
                     samples.push(outVolts);
                     samples.shift();
