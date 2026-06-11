@@ -760,8 +760,8 @@ Status: Awaiting user to start music.</div>
             leg: { x: 130, y: 320, w: 80, h: 150 }
         };
 
-        function drawSegmentAlongBone(p1, p2, srcRect, widthScale = 1.0) {
-            if (!sdImage) return;
+        function drawSegmentAlongBone(p1, p2, srcRect, widthScale = 1.0, partImage) {
+            if (!partImage) return;
             let sc1 = project(p1);
             let sc2 = project(p2);
             if (!sc1 || !sc2) return;
@@ -779,15 +779,15 @@ Status: Awaiting user to start music.</div>
             ctx.translate((sc1.x + sc2.x) / 2, (sc1.y + sc2.y) / 2);
             ctx.rotate(angle - Math.PI / 2);
             ctx.drawImage(
-                sdImage,
+                partImage,
                 srcRect.x, srcRect.y, srcRect.w, srcRect.h,
                 -thickness / 2, -len / 2, thickness, len
             );
             ctx.restore();
         }
 
-        function drawSegmentAtJoint(p, srcRect, scaleVal, radiusScale = 1.0) {
-            if (!sdImage) return;
+        function drawSegmentAtJoint(p, srcRect, scaleVal, partImage, radiusScale = 1.0) {
+            if (!partImage) return;
             let proj = project(p);
             if (!proj) return;
             let size = srcRect.w * (camera.fov / proj.depth) * radiusScale * scaleVal * 1.35;
@@ -795,13 +795,14 @@ Status: Awaiting user to start music.</div>
             ctx.save();
             ctx.translate(proj.x, proj.y);
             ctx.drawImage(
-                sdImage,
+                partImage,
                 srcRect.x, srcRect.y, srcRect.w, srcRect.h,
                 -size / 2, -size / 2, size, size
             );
             ctx.restore();
         }
 
+        let sdParts = { head: null, torso: null, lArm: null, rArm: null, lLeg: null, rLeg: null };
         let sdImage = null;
 
         // Volumetric Spotlight beam
@@ -875,15 +876,17 @@ Status: Awaiting user to start music.</div>
         function drawBear3D(offset3D, scale, angles, baseColor) {
             const joints = getBearSkeleton(offset3D, scale, angles);
             const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
+            
+            // Render individually rigged body segments if all parts are loaded
+            const useSD = isOverlayEnabled && sdParts.head && sdParts.torso && sdParts.lArm && sdParts.rArm && sdParts.lLeg && sdParts.rLeg;
 
-            if (sdImage && isOverlayEnabled) {
-                // Render rigged photorealistic segments
-                drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale);
-                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale);
-                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale);
-                drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale);
-                drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale);
-                drawSegmentAtJoint(joints.head, segments.head, scale, 1.0);
+            if (useSD) {
+                drawSegmentAlongBone(joints.neck, joints.midHip, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.torso);
+                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.lArm);
+                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.rArm);
+                drawSegmentAlongBone(joints.midHip, joints.lFoot, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.lLeg);
+                drawSegmentAlongBone(joints.midHip, joints.rFoot, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.rLeg);
+                drawSegmentAtJoint(joints.head, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.head, 1.0);
             } else {
                 // Volumetric rendering
                 drawVolumetricCapsule(joints.neck, joints.lShoulder, 15 * scale, baseColor);
@@ -1074,7 +1077,7 @@ Status: Awaiting user to start music.</div>
         poseCanvas.height = 512;
         const pCtx = poseCanvas.getContext("2d");
 
-        function extractControlNetPoses(angles, offset) {
+        function extractControlNetPoses(angles, offset, partFilter) {
             dCtx.fillStyle = "#000000";
             dCtx.fillRect(0, 0, 512, 512);
 
@@ -1107,7 +1110,7 @@ Status: Awaiting user to start music.</div>
                 return { x: scX, y: scY, depth: z2 };
             }
 
-            const joints = {
+            let joints = {
                 head: localProj(jointsRaw.head),
                 neck: localProj(jointsRaw.neck),
                 lShoulder: localProj(jointsRaw.lShoulder),
@@ -1118,6 +1121,43 @@ Status: Awaiting user to start music.</div>
                 lFoot: localProj(jointsRaw.lFoot),
                 rFoot: localProj(jointsRaw.rFoot)
             };
+
+            let scaleFactor = 1.0;
+            if (partFilter) {
+                let partJointKeys = [];
+                if (partFilter === 'head') partJointKeys = ['head', 'neck'];
+                else if (partFilter === 'torso') partJointKeys = ['neck', 'midHip', 'lShoulder', 'rShoulder'];
+                else if (partFilter === 'lArm') partJointKeys = ['lShoulder', 'lPaw'];
+                else if (partFilter === 'rArm') partJointKeys = ['rShoulder', 'rPaw'];
+                else if (partFilter === 'lLeg') partJointKeys = ['midHip', 'lFoot'];
+                else if (partFilter === 'rLeg') partJointKeys = ['midHip', 'rFoot'];
+
+                let pts = partJointKeys.map(k => joints[k]).filter(p => p !== null);
+                if (pts.length > 0) {
+                    let minX = Math.min(...pts.map(p => p.x));
+                    let maxX = Math.max(...pts.map(p => p.x));
+                    let minY = Math.min(...pts.map(p => p.y));
+                    let maxY = Math.max(...pts.map(p => p.y));
+                    
+                    let cx = (minX + maxX) / 2;
+                    let cy = (minY + maxY) / 2;
+                    
+                    let w = maxX - minX;
+                    let h = maxY - minY;
+                    let size = Math.max(w, h, 40);
+                    scaleFactor = Math.min(5.0, 320 / size);
+                    
+                    for (let k in joints) {
+                        if (joints[k]) {
+                            joints[k] = {
+                                x: (joints[k].x - cx) * scaleFactor + 256,
+                                y: (joints[k].y - cy) * scaleFactor + 256,
+                                depth: joints[k].depth
+                            };
+                        }
+                    }
+                }
+            }
 
             function drawBone(ctxType, j1, j2, isDepth, color, width) {
                 if (!j1 || !j2) return;
@@ -1138,46 +1178,72 @@ Status: Awaiting user to start music.</div>
                 ctxType.restore();
             }
 
+            const scaleW = (w, sf) => partFilter ? w * sf : w;
+
             // 1. Depth Map Draw
-            if (joints.head) {
-                dCtx.save();
-                let rad = 35 * 1.2 * (900 / joints.head.depth);
-                let grad = dCtx.createRadialGradient(joints.head.x, joints.head.y, rad * 0.2, joints.head.x, joints.head.y, rad);
-                let dVal = Math.max(0, Math.min(255, 255 - Math.floor((joints.head.depth - 350) / 600 * 255)));
-                let cStr1 = `rgb(${dVal},${dVal},${dVal})`;
-                let cStr2 = `rgb(${Math.max(0, dVal-80)},${Math.max(0, dVal-80)},${Math.max(0, dVal-80)})`;
-                grad.addColorStop(0, cStr1);
-                grad.addColorStop(1, cStr2);
-                dCtx.fillStyle = grad;
-                dCtx.beginPath();
-                dCtx.arc(joints.head.x, joints.head.y, rad, 0, Math.PI * 2);
-                dCtx.fill();
-                dCtx.restore();
+            if (!partFilter || partFilter === 'head') {
+                if (joints.head) {
+                    dCtx.save();
+                    let rad = 35 * 1.2 * (900 / joints.head.depth) * (partFilter ? scaleFactor : 1.0);
+                    let grad = dCtx.createRadialGradient(joints.head.x, joints.head.y, rad * 0.2, joints.head.x, joints.head.y, rad);
+                    let dVal = Math.max(0, Math.min(255, 255 - Math.floor((joints.head.depth - 350) / 600 * 255)));
+                    let cStr1 = `rgb(${dVal},${dVal},${dVal})`;
+                    let cStr2 = `rgb(${Math.max(0, dVal-80)},${Math.max(0, dVal-80)},${Math.max(0, dVal-80)})`;
+                    grad.addColorStop(0, cStr1);
+                    grad.addColorStop(1, cStr2);
+                    dCtx.fillStyle = grad;
+                    dCtx.beginPath();
+                    dCtx.arc(joints.head.x, joints.head.y, rad, 0, Math.PI * 2);
+                    dCtx.fill();
+                    dCtx.restore();
+                }
+                drawBone(dCtx, joints.head, joints.neck, true, null, scaleW(14, scaleFactor));
             }
-            drawBone(dCtx, joints.head, joints.neck, true, null, 14);
-            drawBone(dCtx, joints.neck, joints.lShoulder, true, null, 10);
-            drawBone(dCtx, joints.lShoulder, joints.lPaw, true, null, 10);
-            drawBone(dCtx, joints.neck, joints.rShoulder, true, null, 10);
-            drawBone(dCtx, joints.rShoulder, joints.rPaw, true, null, 10);
-            drawBone(dCtx, joints.neck, joints.midHip, true, null, 14);
-            drawBone(dCtx, joints.midHip, joints.lFoot, true, null, 10);
-            drawBone(dCtx, joints.midHip, joints.rFoot, true, null, 10);
+            if (!partFilter || partFilter === 'torso') {
+                drawBone(dCtx, joints.neck, joints.lShoulder, true, null, scaleW(10, scaleFactor));
+                drawBone(dCtx, joints.neck, joints.rShoulder, true, null, scaleW(10, scaleFactor));
+                drawBone(dCtx, joints.neck, joints.midHip, true, null, scaleW(14, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'lArm') {
+                drawBone(dCtx, joints.lShoulder, joints.lPaw, true, null, scaleW(10, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'rArm') {
+                drawBone(dCtx, joints.rShoulder, joints.rPaw, true, null, scaleW(10, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'lLeg') {
+                drawBone(dCtx, joints.midHip, joints.lFoot, true, null, scaleW(10, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'rLeg') {
+                drawBone(dCtx, joints.midHip, joints.rFoot, true, null, scaleW(10, scaleFactor));
+            }
 
             // 2. OpenPose Map Draw
-            if (joints.head) {
-                pCtx.fillStyle = "#ff00ff";
-                pCtx.beginPath();
-                pCtx.arc(joints.head.x, joints.head.y, 14, 0, Math.PI*2);
-                pCtx.fill();
+            if (!partFilter || partFilter === 'head') {
+                if (joints.head) {
+                    pCtx.fillStyle = "#ff00ff";
+                    pCtx.beginPath();
+                    pCtx.arc(joints.head.x, joints.head.y, scaleW(14, scaleFactor), 0, Math.PI*2);
+                    pCtx.fill();
+                }
+                drawBone(pCtx, joints.head, joints.neck, false, "#ff0000", scaleW(8, scaleFactor));
             }
-            drawBone(pCtx, joints.head, joints.neck, false, "#ff0000", 8);
-            drawBone(pCtx, joints.neck, joints.lShoulder, false, "#0000ff", 6);
-            drawBone(pCtx, joints.lShoulder, joints.lPaw, false, "#00ffff", 6);
-            drawBone(pCtx, joints.neck, joints.rShoulder, false, "#ff0000", 6);
-            drawBone(pCtx, joints.rShoulder, joints.rPaw, false, "#ff8000", 6);
-            drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", 8);
-            drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", 6);
-            drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", 6);
+            if (!partFilter || partFilter === 'torso') {
+                drawBone(pCtx, joints.neck, joints.lShoulder, false, "#0000ff", scaleW(6, scaleFactor));
+                drawBone(pCtx, joints.neck, joints.rShoulder, false, "#ff0000", scaleW(6, scaleFactor));
+                drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", scaleW(8, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'lArm') {
+                drawBone(pCtx, joints.lShoulder, joints.lPaw, false, "#00ffff", scaleW(6, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'rArm') {
+                drawBone(pCtx, joints.rShoulder, joints.rPaw, false, "#ff8000", scaleW(6, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'lLeg') {
+                drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", scaleW(6, scaleFactor));
+            }
+            if (!partFilter || partFilter === 'rLeg') {
+                drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", scaleW(6, scaleFactor));
+            }
 
             return {
                 depthData: depthCanvas.toDataURL("image/png"),
@@ -1185,27 +1251,18 @@ Status: Awaiting user to start music.</div>
             };
         }
 
-        function triggerControlNetRender() {
-            initAudio();
-            const btn = document.getElementById("btn-ai-render");
-            const statusBox = document.getElementById("ai-status");
-            const promptText = document.getElementById("ai-prompt").value;
+        function generatePart(partName, promptText, cnData) {
+            let partPrompt = promptText;
+            if (partName === 'head') partPrompt += ", cute teddy bear head, high detail fluffy face";
+            else if (partName === 'torso') partPrompt += ", teddy bear torso wearing ballet tutu, fluffy fur";
+            else if (partName === 'lArm' || partName === 'rArm') partPrompt += ", teddy bear arm, fluffy fur";
+            else if (partName === 'lLeg' || partName === 'rLeg') partPrompt += ", teddy bear leg, fluffy fur";
 
-            btn.disabled = true;
-            btn.innerText = "Generating...";
-            statusBox.innerText = "Status: Rendering ballet pose...";
-
-            let angles = getChoreographyAngles(activeStance, choreographyTime);
-            let offset = getModelOffset(activeStance, choreographyTime);
-            const cnData = extractControlNetPoses(angles, offset);
-
-            logEvent("AI Ballet: Triggering ControlNet synthesis on GPU worker...");
-
-            fetch("http://127.0.0.1:8000/generate-bear", {
+            return fetch("http://127.0.0.1:8000/generate-bear", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    prompt: promptText,
+                    prompt: partPrompt,
                     profile: "dream",
                     steps: 6,
                     cfg: 1.5,
@@ -1219,10 +1276,8 @@ Status: Awaiting user to start music.</div>
                 return res.json();
             })
             .then(data => {
-                if (data.status === "success") {
-                    logEvent("AI Ballet: Synthesis complete! Extracting texture...");
-                    statusBox.innerText = "Status: Extracting alpha key...";
-
+                if (data.status !== "success") throw new Error(data.message);
+                return new Promise((resolve, reject) => {
                     const newImg = new Image();
                     newImg.onload = () => {
                         const tempCanvas = document.createElement("canvas");
@@ -1241,17 +1296,45 @@ Status: Awaiting user to start music.</div>
                             }
                         }
                         tempCtx.putImageData(imgData, 0, 0);
-
-                        sdImage = tempCanvas;
-                        btn.disabled = false;
-                        btn.innerText = "Synthesize Ballet Pose";
-                        statusBox.innerText = "Status: Rigged Texture Active";
-                        logEvent("AI Ballet: Photorealistic ballet dancer overlay loaded.");
+                        resolve(tempCanvas);
                     };
+                    newImg.onerror = reject;
                     newImg.src = "http://127.0.0.1:8000/" + data.url + "?t=" + Date.now();
-                } else {
-                    throw new Error(data.message);
-                }
+                });
+            });
+        }
+
+        function triggerControlNetRender() {
+            initAudio();
+            const btn = document.getElementById("btn-ai-render");
+            const statusBox = document.getElementById("ai-status");
+            const promptText = document.getElementById("ai-prompt").value;
+
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+            statusBox.innerText = "Status: Rendering 6 parts in parallel...";
+
+            let angles = getChoreographyAngles(activeStance, choreographyTime);
+            let offset = getModelOffset(activeStance, choreographyTime);
+
+            logEvent("AI Ballet: Triggering parallel ControlNet synthesis for body parts...");
+
+            const parts = ["head", "torso", "lArm", "rArm", "lLeg", "rLeg"];
+            const promises = parts.map(part => {
+                const cnData = extractControlNetPoses(angles, offset, part);
+                return generatePart(part, promptText, cnData)
+                    .then(canvas => {
+                        sdParts[part] = canvas;
+                        logEvent(`AI Ballet: Part '${part}' synthesis complete.`);
+                    });
+            });
+
+            Promise.all(promises)
+            .then(() => {
+                btn.disabled = false;
+                btn.innerText = "Synthesize Ballet Pose";
+                statusBox.innerText = "Status: Rigged Textures Active";
+                logEvent("AI Ballet: Parallel multi-part photorealistic textures loaded successfully.");
             })
             .catch(err => {
                 console.error(err);
