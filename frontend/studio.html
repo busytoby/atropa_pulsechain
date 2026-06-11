@@ -756,6 +756,7 @@
             await registerModule("SteamWhistle", "../solidity/bin/steamWhistle.yul", "0x49");
             await registerModule("RingModulator", "../solidity/bin/ringModulator.yul", "0x51");
             await registerModule("FormantFilter", "../solidity/bin/formantFilter.yul", "0x95");
+            await registerModule("EnvelopeDetector", "../solidity/bin/envelopeDetector.yul", "0x85");
             await registerModule("RhythmGenerator", "../solidity/bin/rhythmGenerator.yul", "0x67");
             log("All system modules successfully registered.");
             triggerSingleSimulationStep();
@@ -1324,14 +1325,19 @@
                 const angle = (Date.now() / 1000) * Math.PI * 2;
                 const stimulus = Math.sin(angle) * (Math.random() > 0.85 ? 1.5 : 0.0); // Sparse impulse train
 
-                // Compander tracking over stimulus amplitude
-                const stimulusAbs = Math.abs(stimulus);
-                const attackCoeff = 0.4; // fast attack
-                const releaseCoeff = 0.05; // slow release
-                if (stimulusAbs > formantCompEnv) {
-                    formantCompEnv = formantCompEnv + attackCoeff * (stimulusAbs - formantCompEnv);
-                } else {
-                    formantCompEnv = formantCompEnv + releaseCoeff * (stimulusAbs - formantCompEnv);
+                // Call EnvelopeDetector contract to perform point-contact diode tracking
+                const envIface = new ethers.Interface(["function processSample(int256) returns (int256)"]);
+                const envCalldata = envIface.encodeFunctionData("processSample", [BigInt(Math.round(Math.abs(stimulus) * 1e18))]);
+                const envRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "EnvelopeDetector", calldata: envCalldata })
+                });
+                const envPayload = await envRes.json();
+                
+                if (envPayload && envPayload.result && envPayload.result.output) {
+                    const envDecoded = envIface.decodeFunctionResult("processSample", "0x" + envPayload.result.output);
+                    formantCompEnv = Number(envDecoded[0]) / 1e18;
                 }
 
                 // Dynamic compGain scaling factor (reduction factor)
