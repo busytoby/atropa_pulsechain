@@ -373,13 +373,46 @@
                 CONTROLNET BALLET PUPPET
             </div>
             <div class="card" style="border-color: rgba(255, 196, 0, 0.25);">
-                <div style="font-size: 11px; color: #94a3b8;">Custom Prompt:</div>
+                <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Alchemical Style:</span>
+                    <select id="ai-style" onchange="updatePromptStyle()" style="background: #000; border: 1px solid #1e293b; color: var(--glow-gold); border-radius: 4px; font-size: 11px; padding: 2px 4px; outline: none; font-family: 'Share Tech Mono', monospace;">
+                        <option value="plush">🧸 Classic Plush</option>
+                        <option value="gold">🪙 Liquid Gold</option>
+                        <option value="glass">💎 Crystal Glass</option>
+                        <option value="steampunk">⚙️ Clockwork Steampunk</option>
+                        <option value="cyberpunk">🌐 Holographic Cyberpunk</option>
+                    </select>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Custom Prompt:</div>
                 <textarea id="ai-prompt" rows="3" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Outfit', sans-serif; resize: none;">A highly detailed photorealistic teddy bear plush performing ballet dance, wearing a pink tutu dress, brown fur, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background</textarea>
                 <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
                     <input type="checkbox" id="show-ai-overlay" checked> Overlay on Stage
                 </label>
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8; margin-top: 2px;">
+                    <input type="checkbox" id="canny-edge-outline"> Canny Edge Outline (Sobel)
+                </label>
                 <button class="btn btn-gold" id="btn-ai-render" onclick="triggerControlNetRender()">Synthesize Ballet Pose</button>
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
+            </div>
+
+            <div class="section-title">
+                CONTROLNET MAP DEBUGGER
+            </div>
+            <div class="card" style="border-color: rgba(0, 240, 255, 0.25); display: flex; gap: 8px;">
+                <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">DEPTH/SOBEL MAP</div>
+                    <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img id="dbg-depth-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                        <span id="dbg-depth-placeholder" style="font-size: 10px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                    </div>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">OPENPOSE MAP</div>
+                    <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img id="dbg-pose-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                        <span id="dbg-pose-placeholder" style="font-size: 10px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                    </div>
+                </div>
             </div>
 
             <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
@@ -407,6 +440,7 @@ Status: Awaiting user to start music.</div>
     <script>
         const canvas = document.getElementById("stageCanvas");
         const ctx = canvas.getContext("2d");
+        let logHistory = [];
 
         // Camera state
         const camera = {
@@ -421,11 +455,14 @@ Status: Awaiting user to start music.</div>
 
         function resize() {
             const container = document.getElementById("viewport-container");
+            if (!container) return;
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
         }
-        window.addEventListener("resize", resize);
-        resize();
+        const resizeObserver = new ResizeObserver(() => {
+            resize();
+        });
+        resizeObserver.observe(document.getElementById("viewport-container"));
 
         class Point3D {
             constructor(x, y, z) {
@@ -663,6 +700,21 @@ Status: Awaiting user to start music.</div>
             }
         }
 
+        function updatePromptStyle() {
+            const style = document.getElementById("ai-style").value;
+            const promptArea = document.getElementById("ai-prompt");
+            const styles = {
+                plush: "A highly detailed photorealistic teddy bear plush performing ballet dance, wearing a pink tutu dress, brown fur, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background",
+                gold: "A highly detailed photorealistic solid gold statue of a teddy bear performing ballet dance, wearing a metallic gold tutu, polished mirror finish, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background",
+                glass: "A highly detailed photorealistic translucent crystal glass sculpture of a teddy bear performing ballet dance, wearing a glass tutu, light refraction, caustics, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background",
+                steampunk: "A highly detailed photorealistic steampunk brass clockwork robotic teddy bear performing ballet dance, gears and pistons, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background",
+                cyberpunk: "A highly detailed photorealistic digital hologram of a teddy bear performing ballet dance, glowing cyan neon wireframe, glitch scanlines, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background"
+            };
+            if (styles[style]) {
+                promptArea.value = styles[style];
+            }
+        }
+
         function toggleSound() {
             initAudio();
             if (!audioCtx) return;
@@ -814,7 +866,12 @@ Status: Awaiting user to start music.</div>
 
             let angle = Math.atan2(dy, dx);
             let avgDepth = (sc1.depth + sc2.depth) / 2;
-            let thickness = srcRect.w * (camera.fov / avgDepth) * widthScale * 1.5;
+            let sf = partImage.scaleFactor || 1.0;
+            let thickness = srcRect.w * (camera.fov / avgDepth) * widthScale * 1.5 / sf;
+            let drawLen = len;
+            if (partImage.scaleFactor) {
+                drawLen = 512 * (camera.fov / avgDepth) * widthScale / sf;
+            }
 
             ctx.save();
             ctx.translate((sc1.x + sc2.x) / 2, (sc1.y + sc2.y) / 2);
@@ -822,7 +879,7 @@ Status: Awaiting user to start music.</div>
             ctx.drawImage(
                 partImage,
                 srcRect.x, srcRect.y, srcRect.w, srcRect.h,
-                -thickness / 2, -len / 2, thickness, len
+                -thickness / 2, -drawLen / 2, thickness, drawLen
             );
             ctx.restore();
         }
@@ -831,7 +888,8 @@ Status: Awaiting user to start music.</div>
             if (!partImage) return;
             let proj = project(p);
             if (!proj) return;
-            let size = srcRect.w * (camera.fov / proj.depth) * radiusScale * scaleVal * 1.35;
+            let sf = partImage.scaleFactor || 1.0;
+            let size = srcRect.w * (camera.fov / proj.depth) * radiusScale * scaleVal * 1.35 / sf;
 
             ctx.save();
             ctx.translate(proj.x, proj.y);
@@ -914,6 +972,93 @@ Status: Awaiting user to start music.</div>
             ctx.restore();
         }
 
+        function drawFloorShadows(offset3D, jointsRaw, scale) {
+            ctx.save();
+            ctx.shadowBlur = 0;
+            
+            // Center drop shadow
+            let centerFloor = new Point3D(offset3D.x, -90, offset3D.z);
+            let scCenter = project(centerFloor);
+            if (scCenter) {
+                let rX = 85 * scale * (camera.fov / scCenter.depth);
+                let rY = 32 * scale * (camera.fov / scCenter.depth);
+                let grad = ctx.createRadialGradient(scCenter.x, scCenter.y, 0, scCenter.x, scCenter.y, rX);
+                grad.addColorStop(0, "rgba(0, 0, 0, 0.55)");
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(scCenter.x, scCenter.y, rX, rY, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Foot shadows
+            if (jointsRaw.lFoot) {
+                let lFootFloor = new Point3D(jointsRaw.lFoot.x, -95, jointsRaw.lFoot.z);
+                let scL = project(lFootFloor);
+                if (scL) {
+                    let rX = 28 * scale * (camera.fov / scL.depth);
+                    let rY = 12 * scale * (camera.fov / scL.depth);
+                    let grad = ctx.createRadialGradient(scL.x, scL.y, 0, scL.x, scL.y, rX);
+                    grad.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(scL.x, scL.y, rX, rY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            if (jointsRaw.rFoot) {
+                let rFootFloor = new Point3D(jointsRaw.rFoot.x, -95, jointsRaw.rFoot.z);
+                let scR = project(rFootFloor);
+                if (scR) {
+                    let rX = 28 * scale * (camera.fov / scR.depth);
+                    let rY = 12 * scale * (camera.fov / scR.depth);
+                    let grad = ctx.createRadialGradient(scR.x, scR.y, 0, scR.x, scR.y, rX);
+                    grad.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(scR.x, scR.y, rX, rY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawFurTexture(ctx, joints, scale) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(120, 80, 50, 0.25)";
+            ctx.lineWidth = 1 * scale;
+            
+            function drawFuzzyOutline(p3d, radius) {
+                let proj = project(p3d);
+                if (!proj) return;
+                let screenRadius = radius * (camera.fov / proj.depth);
+                if (screenRadius <= 5) return;
+                
+                ctx.beginPath();
+                for (let i = 0; i < 45; i++) {
+                    let angle = (i / 45) * Math.PI * 2;
+                    let len = screenRadius + (Math.random() * 5 - 2.5) * scale;
+                    let x1 = proj.x + Math.cos(angle) * screenRadius;
+                    let y1 = proj.y + Math.sin(angle) * screenRadius;
+                    let x2 = proj.x + Math.cos(angle) * len;
+                    let y2 = proj.y + Math.sin(angle) * len;
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                }
+                ctx.stroke();
+            }
+
+            drawFuzzyOutline(joints.head, 35);
+            let lEar = new Point3D(joints.head.x - 28 * scale, joints.head.y + 28 * scale, joints.head.z - 8 * scale);
+            let rEar = new Point3D(joints.head.x + 28 * scale, joints.head.y + 28 * scale, joints.head.z + 8 * scale);
+            drawFuzzyOutline(lEar, 14);
+            drawFuzzyOutline(rEar, 14);
+            ctx.restore();
+        }
+
         function drawBear3D(offset3D, scale, angles, baseColor) {
             // Draw wooden barre if in practice studio
             if (window.practiceStudioActive) {
@@ -965,18 +1110,61 @@ Status: Awaiting user to start music.</div>
             }
 
             const joints = getBearSkeleton(offset3D, scale, angles);
+            
+            // Draw floor shadows under the bear
+            drawFloorShadows(offset3D, joints, scale);
+
+            // Draw soft glowing alchemical rim light halo behind body parts
+            ctx.save();
+            ctx.shadowBlur = 24;
+            ctx.shadowColor = "rgba(255, 196, 0, 0.55)";
+            drawVolumetricSphere(joints.head, 36 * scale, "rgba(255, 196, 0, 0.12)");
+            drawVolumetricCapsule(joints.neck, joints.midHip, 43 * scale, "rgba(255, 196, 0, 0.12)");
+            ctx.restore();
+
             const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
             
             // Render individually rigged body segments if all parts are loaded
             const useSD = isOverlayEnabled && sdParts.head && sdParts.torso && sdParts.lArm && sdParts.rArm && sdParts.lLeg && sdParts.rLeg;
 
             if (useSD) {
+                // 1. Draw SD Parts (the base textures)
                 drawSegmentAlongBone(joints.neck, joints.midHip, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.torso);
                 drawSegmentAlongBone(joints.lShoulder, joints.lPaw, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.lArm);
                 drawSegmentAlongBone(joints.rShoulder, joints.rPaw, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.rArm);
                 drawSegmentAlongBone(joints.midHip, joints.lFoot, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.lLeg);
                 drawSegmentAlongBone(joints.midHip, joints.rFoot, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.rLeg);
                 drawSegmentAtJoint(joints.head, { x: 0, y: 0, w: 512, h: 512 }, scale, sdParts.head, 1.0);
+
+                // 2. Add Volumetric Shading Layer (Multiply Pass)
+                ctx.save();
+                ctx.globalCompositeOperation = "multiply";
+                const shadingColor = "rgba(180, 170, 160, 0.65)";
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 15 * scale, shadingColor);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 13 * scale, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 15 * scale, shadingColor);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 13 * scale, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 14 * scale, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 14 * scale, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 42 * scale, shadingColor);
+
+                let lEar = new Point3D(joints.head.x - 28 * scale, joints.head.y + 28 * scale, joints.head.z - 8 * scale);
+                let rEar = new Point3D(joints.head.x + 28 * scale, joints.head.y + 28 * scale, joints.head.z + 8 * scale);
+                drawVolumetricSphere(lEar, 14 * scale, shadingColor);
+                drawVolumetricSphere(rEar, 14 * scale, shadingColor);
+                drawVolumetricSphere(joints.head, 35 * scale, shadingColor);
+                ctx.restore();
+
+                // 3. Add Volumetric Highlight Layer (Overlay Pass)
+                ctx.save();
+                ctx.globalCompositeOperation = "overlay";
+                const highlightColor = "rgba(255, 230, 200, 0.4)";
+                drawVolumetricSphere(joints.head, 35 * scale, highlightColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 42 * scale, highlightColor);
+                ctx.restore();
+
+                // 4. Draw 3D Tutu Skirt on top of body textures
+                drawTutu3D(joints.midHip, scale, "rgba(255, 0, 127, 0.8)");
             } else {
                 // Volumetric rendering
                 drawVolumetricCapsule(joints.neck, joints.lShoulder, 15 * scale, baseColor);
@@ -1005,6 +1193,9 @@ Status: Awaiting user to start music.</div>
                 drawVolumetricSphere(joints.lFoot, 15 * scale, baseColor);
                 drawVolumetricSphere(joints.rFoot, 15 * scale, baseColor);
             }
+
+            // Draw procedural fur fluffiness overlay on top of the teddy bear body
+            drawFurTexture(ctx, joints, scale);
         }
 
         // Draw Stage floor Grid
@@ -1216,7 +1407,6 @@ Status: Awaiting user to start music.</div>
             else if (dir === "out") camera.distance = Math.min(2000, camera.distance + 100);
         }
 
-        let logHistory = [];
         window.logHistoryIndex = -1;
 
         function logEvent(msg) {
@@ -1333,6 +1523,54 @@ Status: Awaiting user to start music.</div>
         poseCanvas.width = 512;
         poseCanvas.height = 512;
         const pCtx = poseCanvas.getContext("2d");
+
+        function applySobelFilter(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const output = ctx.createImageData(width, height);
+            const outData = output.data;
+
+            function getGray(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) return 0;
+                const idx = (y * width + x) * 4;
+                return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            }
+
+            const gx = [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ];
+            const gy = [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ];
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let valX = 0;
+                    let valY = 0;
+
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const pixel = getGray(x + kx, y + ky);
+                            valX += pixel * gx[ky + 1][kx + 1];
+                            valY += pixel * gy[ky + 1][kx + 1];
+                        }
+                    }
+
+                    const magnitude = Math.min(255, Math.sqrt(valX * valX + valY * valY));
+                    const idx = (y * width + x) * 4;
+                    outData[idx] = magnitude;     // R
+                    outData[idx + 1] = magnitude; // G
+                    outData[idx + 2] = magnitude; // B
+                    outData[idx + 3] = 255;       // A
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
 
         function extractControlNetPoses(angles, offset, partFilter) {
             dCtx.fillStyle = "#000000";
@@ -1502,9 +1740,14 @@ Status: Awaiting user to start music.</div>
                 drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", scaleW(6, scaleFactor));
             }
 
+            if (document.getElementById("canny-edge-outline") && document.getElementById("canny-edge-outline").checked) {
+                applySobelFilter(dCtx, 512, 512);
+            }
+
             return {
                 depthData: depthCanvas.toDataURL("image/png"),
-                poseData: poseCanvas.toDataURL("image/png")
+                poseData: poseCanvas.toDataURL("image/png"),
+                scaleFactor: scaleFactor
             };
         }
 
@@ -1547,9 +1790,10 @@ Status: Awaiting user to start music.</div>
                         const px = imgData.data;
                         for (let i = 0; i < px.length; i += 4) {
                             let r = px[i], g = px[i+1], b = px[i+2];
-                            if (r < 18 && g < 18 && b < 18) {
-                                let maxVal = Math.max(r, g, b);
-                                px[i+3] = Math.max(0, Math.min(255, (maxVal - 3) / 15 * 255));
+                            let brightness = (r + g + b) / 3;
+                            let chroma = Math.max(r, g, b) - Math.min(r, g, b);
+                            if ((brightness < 45 && chroma < 15) || brightness < 15) {
+                                px[i+3] = Math.max(0, Math.min(255, (brightness - 8) / 20 * 255));
                             }
                         }
                         tempCtx.putImageData(imgData, 0, 0);
@@ -1574,6 +1818,24 @@ Status: Awaiting user to start music.</div>
             let angles = getChoreographyAngles(activeStance, choreographyTime);
             let offset = getModelOffset(activeStance, choreographyTime);
 
+            // Extract and show full debug maps in the debug panel
+            const dbgCnData = extractControlNetPoses(angles, offset, null);
+            const dbgDepthImg = document.getElementById("dbg-depth-preview");
+            const dbgDepthPh = document.getElementById("dbg-depth-placeholder");
+            const dbgPoseImg = document.getElementById("dbg-pose-preview");
+            const dbgPosePh = document.getElementById("dbg-pose-placeholder");
+            
+            if (dbgDepthImg && dbgDepthPh) {
+                dbgDepthImg.src = dbgCnData.depthData;
+                dbgDepthImg.style.display = "block";
+                dbgDepthPh.style.display = "none";
+            }
+            if (dbgPoseImg && dbgPosePh) {
+                dbgPoseImg.src = dbgCnData.poseData;
+                dbgPoseImg.style.display = "block";
+                dbgPosePh.style.display = "none";
+            }
+
             logEvent("The heavy gears of the Alchemical Synthesizer begin to turn. The air hums with GPU voltage as the Z-Machine drafts the ControlNet bones for the dancer's body segments...");
 
             const parts = ["head", "torso", "lArm", "rArm", "lLeg", "rLeg"];
@@ -1581,6 +1843,7 @@ Status: Awaiting user to start music.</div>
                 const cnData = extractControlNetPoses(angles, offset, part);
                 return generatePart(part, promptText, cnData)
                     .then(canvas => {
+                        canvas.scaleFactor = cnData.scaleFactor;
                         sdParts[part] = canvas;
                         logEvent(`[Z-Machine Story] The loom finishes spinning the '${part}' segment, wrapping it in dense, detailed textures.`);
                     });
@@ -1604,6 +1867,59 @@ Status: Awaiting user to start music.</div>
 
         let currentAngles = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0, headYaw: 0, headPitch: 0 };
         let currentOffset = new Point3D(0, 0, 0);
+        let particles = [];
+
+        function updateAndDrawParticles(bass, volume) {
+            // Spawn particles if audio is playing or randomly as ambient sparkles
+            const spawnCount = Math.floor(bass * 4) + (Math.random() < 0.15 ? 1 : 0);
+            for (let i = 0; i < spawnCount; i++) {
+                if (particles.length < 180) {
+                    const isGold = Math.random() < 0.5;
+                    particles.push({
+                        x: currentOffset.x + (Math.random() * 320 - 160),
+                        y: -95, // floor level
+                        z: currentOffset.z + (Math.random() * 320 - 160),
+                        vx: (Math.random() * 1.6 - 0.8),
+                        vy: (Math.random() * 2 + 1) * (1.0 + bass * 1.5), // Rise faster on bass beats
+                        vz: (Math.random() * 1.6 - 0.8),
+                        life: 70 + Math.random() * 50,
+                        maxLife: 120,
+                        size: 1.5 + Math.random() * 2.5,
+                        color: isGold ? "rgba(255, 196, 0, A)" : "rgba(0, 240, 255, A)"
+                    });
+                }
+            }
+
+            // Update & Render particles in 3D projection
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.z += p.vz;
+                p.life -= 1;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                const sc = project(new Point3D(p.x, p.y, p.z));
+                if (sc) {
+                    const ageRatio = p.life / p.maxLife;
+                    const alpha = ageRatio * (0.35 + bass * 0.65);
+                    const drawSize = p.size * (1.0 + bass * 0.8) * (camera.fov / sc.depth);
+                    
+                    ctx.save();
+                    ctx.shadowBlur = 6 + bass * 10;
+                    ctx.shadowColor = p.color.replace(", A)", ", 1)");
+                    ctx.fillStyle = p.color.replace("A", alpha);
+                    ctx.beginPath();
+                    ctx.arc(sc.x, sc.y, Math.max(0.5, drawSize), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
 
         // Main Animation loop
         function loop() {
@@ -1662,6 +1978,9 @@ Status: Awaiting user to start music.</div>
 
             // Draw Bear with interpolated joints
             drawBear3D(currentOffset, 1.2, currentAngles, "rgba(255, 0, 127, 0.85)");
+
+            // Update & Render beat-reactive particles
+            updateAndDrawParticles(bass, volume);
 
             requestAnimationFrame(loop);
         }
