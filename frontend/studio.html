@@ -591,9 +591,14 @@
         let vactrolLdr = 1.0;
         let vactrolLight = 0.0;
         let resonantPhaseAngle = 0.0;
+        let subharmonicPhase = 0.0;
 
         // Current parameters
         const params = {
+            speech: {
+                phoneme: 0.0,
+                samples: 100.0
+            },
             philicorda: {
                 pitch: 1.0,
                 rcRate: 5.0
@@ -711,6 +716,10 @@
                 { id: "whistlePitch", label: "Whistle Pitch/Time Constant", min: 0.5, max: 4.0, step: 0.1, key: "pitch", unit: "x" },
                 { id: "whistleNoiseMix", label: "Avalanche Noise Mix", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" },
                 { id: "whistleMode", label: "Generator Mode (0=Whistle, 1=Flame)", min: 0, max: 1, step: 1, key: "mode", unit: "m" }
+            ],
+            speech: [
+                { id: "speechPhoneme", label: "Selected Phoneme", min: 0, max: 15, step: 1, key: "phoneme", unit: "" },
+                { id: "speechSamples", label: "Sample Count", min: 50, max: 500, step: 10, key: "samples", unit: "samples" }
             ],
             ringmod: [
                 { id: "ringmodPhilicordaPitch", label: "Philicorda Pitch Coeff", min: 0.1, max: 5.0, step: 0.1, key: "pitch", unit: "Hz", module: "philicorda", subKey: "pitch" },
@@ -1443,7 +1452,23 @@
             }
 
             // Check if signal amplitude exceeds soft limit
+            let subharmonicOutput = 0.0;
             if (Math.abs(inputScaled) > softLimit) {
+                // Philips Philicorda Sub-Harmonic Divider (Issue 12)
+                // Redirect peak excess to f/2 division frequency
+                const stepPitch = activeModule === "formant" ? (params.formant.pitchF || 0.1) : 0.05;
+                subharmonicPhase += stepPitch * Math.PI;
+                if (subharmonicPhase > Math.PI * 2.0) {
+                    subharmonicPhase -= Math.PI * 2.0;
+                }
+                const f2Osc = Math.sin(subharmonicPhase * 0.5);
+                const clipExcess = Math.abs(inputScaled) - softLimit;
+                subharmonicOutput = f2Osc * clipExcess * 0.45;
+
+                // Scale inputScaled down by subtracting excess, inserting the warm sub-harmonic
+                const sign = Math.sign(inputScaled);
+                inputScaled = sign * softLimit + subharmonicOutput;
+
                 triggerClipWarning();
                 if (document.getElementById("chkCCSAuto").checked) {
                     masterAttenuation = Math.max(0.1, masterAttenuation - 0.08);
@@ -1922,7 +1947,16 @@
                     tunnelOut = decoded[0];
                 }
 
-                // 3. Ring Modulate the two
+                // 3. Ring Modulate the two with AM Modulation Index Limiting (Issue 11)
+                // Normalize the modulating input to ensure the modulation index m <= 1.0 to prevent carrier phase reversal.
+                let pOutDouble = Number(philicordaOut) / 1e18;
+                let tOutDouble = Number(tunnelOut) / 1e18;
+                const maxMod = Math.max(0.01, Math.abs(pOutDouble));
+                if (Math.abs(tOutDouble) > maxMod) {
+                    tOutDouble = Math.sign(tOutDouble) * maxMod;
+                    tunnelOut = BigInt(Math.round(tOutDouble * 1e18));
+                }
+
                 const rIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
                 const rCalldata = rIface.encodeFunctionData("processSample", [philicordaOut, tunnelOut]);
                 const rRes = await fetch(API_URL, {
@@ -1973,30 +2007,32 @@
                     formantCompActive = false;
                 }
 
-                // Dynamic compGain scaling factor
-                let targetCompGain = 1.0;
-                if (formantCompActive && formantCompEnv > 0.0) {
-                    targetCompGain = compStrikeThreshold / formantCompEnv;
+                // Dynamic compGain scaling factor using fast-attack/slow-release window over stimulus amplitude
+                const stimulusAmp = Math.abs(stimulus);
+                const targetCompGain = stimulusAmp > 0.15 ? (0.15 / stimulusAmp) : 1.0;
+                
+                const attackCoeff = 0.8;  // fast attack
+                const releaseCoeff = 0.05; // slow release
+                
+                let compGain = compGainState;
+                if (targetCompGain < compGain) {
+                    compGain += (targetCompGain - compGain) * attackCoeff;
+                } else {
+                    compGain += (targetCompGain - compGain) * releaseCoeff;
                 }
-                if (targetCompGain < 0.05) targetCompGain = 0.05; // avoid divide by zero/underflow
-
-                // Zero-crossing synchronization: only update compGainState when stimulus changes polarity
-                let zeroCrossed = false;
-                if ((stimulus >= 0.0 && prevStimulusState < 0.0) || (stimulus < 0.0 && prevStimulusState >= 0.0)) {
-                    zeroCrossed = true;
-                }
-                prevStimulusState = stimulus;
-
-                if (zeroCrossed) {
-                    compGainState = targetCompGain;
-                }
+                if (compGain < 0.05) compGain = 0.05;
+                if (compGain > 1.0) compGain = 1.0;
+                compGainState = compGain;
 
                 // Zener Avalanche Dither Injection (Issue 11)
                 let zenerDither = 0.0;
                 if (formantCompActive) {
-                             // Gallium Phosphide (GaP) LED Photocoupler Compressor (Issue 18)
+                    zenerDither = (Math.random() - 0.5) * 0.02;
+                }
+
+                // Gallium Phosphide (GaP) LED Photocoupler Compressor (Issue 18)
                 // Model the optocoupler's slow-attack, slow-decay response
-                const targetLight = Math.max(0.0, Math.abs(stimulusAmp) - 0.15) * 5.0;
+                const targetLight = Math.max(0.0, stimulusAmp - 0.15) * 5.0;
                 if (targetLight > vactrolLight) {
                     vactrolLight += (targetLight - vactrolLight) * 0.1; // attack rate
                 } else {
@@ -2006,8 +2042,14 @@
                 const rSeries = 150.0;
                 const optoGain = vactrolLdr / (rSeries + vactrolLdr); // shunt voltage divider
 
-                // Apply Mullard-Style Varistor (VDR) & GaP Optocoupler compression
-                const compressedStimulus = ((stimulusAmp / (1.0 + vdrConductance)) * optoGain) + zenerDither;
+                // Mullard-style varistor parameters
+                const vdrG0 = 0.1;
+                const vdrAlpha = 0.5;
+                const vdrBeta = 2.0;
+                const vdrConductance = vdrG0 * (1.0 + vdrAlpha * Math.pow(stimulusAmp, vdrBeta));
+
+                // Apply Mullard-Style Varistor (VDR) & GaP Optocoupler compression scaled by compGain
+                const compressedStimulus = ((stimulus / (1.0 + vdrConductance)) * optoGain * compGain) + zenerDither;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
