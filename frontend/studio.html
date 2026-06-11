@@ -1302,7 +1302,12 @@
             } else if (activeModule === "germanium") {
                 const inputAmp = params.germanium.inputAmp;
                 const angle = (Date.now() / 1000) * Math.PI * 2;
-                const inputSignal = BigInt(Math.round(Math.sin(angle) * inputAmp * 1e18));
+                
+                // Thermal bias shift: Germanium conduction threshold drops by 2.5mV/°C (Issue 16)
+                const tempDelta = filterTemperature - 25.0; // difference from ambient
+                const thermalOffset = tempDelta * 0.0025; // 2.5mV per degree C
+                const rawSignal = Math.sin(angle) * inputAmp + thermalOffset;
+                const inputSignal = BigInt(Math.round(rawSignal * 1e18));
 
                 const iface = new ethers.Interface(["function processSample(int256) returns (int256)"]);
                 const calldata = iface.encodeFunctionData("processSample", [inputSignal]);
