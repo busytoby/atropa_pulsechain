@@ -1,7 +1,7 @@
 /*
     OC71 Germanium Common-Emitter Stage Simulator.
-    Calculates dynamic collector current to output a distorted audio signal.
-    Features dynamic bias stabilization & sag discharge paths modeled on Elektuur Issue #2.
+    Uses pre-computed tables for base-emitter voltage drops and shunting currents,
+    modeling the dynamic saturation curve without expensive Newton-Raphson loop iterations.
 */
 object "GermaniumStage" {
     code {
@@ -11,47 +11,51 @@ object "GermaniumStage" {
     object "runtime" {
         code {
             function SCALE() -> val { val := 1000000000000000000 }
-            function VT() -> val { val := 26000000000000000 }      // 26mV
-            function IS() -> val { val := 1000000000000 }          // 1uA Saturation Current
-            function BETA() -> val { val := 100 }                  // Current Gain
+            function BETA() -> val { val := 100 } // Current Gain
 
-            // Taylor Series Expansion for exp(x)
-            function fixedExp(x) -> val {
-                if slt(x, 0) {
-                    val := 0
-                    leave
-                }
-                let scale := SCALE()
-                let x2 := sdiv(mul(x, x), scale)
-                let x3 := sdiv(mul(x2, x), scale)
-                let x4 := sdiv(mul(x3, x), scale)
-                val := add(add(add(add(scale, x), sdiv(x2, 2)), sdiv(x3, 6)), sdiv(x4, 24))
+            // 17-Point Precomputed Germanium Base-Emitter Voltage Table (0V to 1.6V inputs)
+            function getGermaniumLUT(idx) -> v {
+                switch idx
+                case 0 { v := 0 }
+                case 1 { v := 40000000000000000 }    // 0.04V
+                case 2 { v := 80000000000000000 }    // 0.08V
+                case 3 { v := 115000000000000000 }   // 0.115V
+                case 4 { v := 140000000000000000 }   // 0.14V
+                case 5 { v := 160000000000000000 }   // 0.16V
+                case 6 { v := 175000000000000000 }   // 0.175V
+                case 7 { v := 185000000000000000 }   // 0.185V
+                case 8 { v := 195000000000000000 }   // 0.195V
+                case 9 { v := 202000000000000000 }   // 0.202V
+                case 10 { v := 208000000000000000 }  // 0.208V
+                case 11 { v := 213000000000000000 }  // 0.213V
+                case 12 { v := 218000000000000000 }  // 0.218V
+                case 13 { v := 222000000000000000 }  // 0.222V
+                case 14 { v := 226000000000000000 }  // 0.226V
+                case 15 { v := 230000000000000000 }  // 0.230V
+                case 16 { v := 235000000000000000 }  // 0.235V
+                default { v := 235000000000000000 }
             }
 
-            // Newton-Raphson loop finding base-emitter voltage
-            function solveVbe(vbe_input, Rb) -> Vbe {
-                let scale := SCALE()
-                let vt := VT()
-                let is_val := IS()
-                Vbe := 150000000000000000 // 150mV starting point
-                
-                let coeff := sdiv(mul(Rb, is_val), vt)
-                
-                for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
-                    let x := sdiv(mul(Vbe, scale), vt)
-                    
-                    // Clamp to keep expTerm within reasonable bounds for Taylor series
-                    if sgt(x, 4000000000000000000) { x := 4000000000000000000 } // Clamp to 4.0
-                    if slt(x, sub(0, 5000000000000000000)) { x := sub(0, 5000000000000000000) } // Clamp to -5.0
-
-                    let expTerm := fixedExp(x)
-                    
-                    let Ib := sdiv(mul(is_val, sub(expTerm, scale)), scale)
-                    let F := sub(sub(vbe_input, Vbe), sdiv(mul(Ib, Rb), scale))
-                    let dF := sub(0, add(scale, sdiv(mul(coeff, expTerm), scale)))
-                    
-                    Vbe := sub(Vbe, sdiv(mul(F, scale), dF))
+            // Interpolates Vbe voltage drop from input base voltage
+            function solveVbe(vbe_input) -> Vbe {
+                if slt(vbe_input, 0) {
+                    Vbe := 0
+                    leave
                 }
+                
+                // Map input scale: 0V to 1.6V (1.6e18) over 16 intervals (0.1V step size)
+                let delta := 100000000000000000
+                let idx := div(vbe_input, delta)
+                let frac := mod(vbe_input, delta)
+                
+                if sgt(idx, 15) {
+                    Vbe := getGermaniumLUT(16)
+                    leave
+                }
+                
+                let y0 := getGermaniumLUT(idx)
+                let y1 := getGermaniumLUT(add(idx, 1))
+                Vbe := add(y0, sdiv(mul(sub(y1, y0), frac), delta))
             }
 
             // processSample(int256 inputVoltage, int256 extraParam) -> int256 outputVoltage
@@ -68,20 +72,20 @@ object "GermaniumStage" {
                 let Vbe_input := sub(V_b, V_e)
                 
                 let Rb := 100000000000000000000000 // 100k Ohm source resistance
-                let Vbe := solveVbe(Vbe_input, Rb)
+                let Vbe := solveVbe(Vbe_input)
                 
-                let x := sdiv(mul(Vbe, scale), VT())
-                if sgt(x, 4000000000000000000) { x := 4000000000000000000 }
-                if slt(x, sub(0, 5000000000000000000)) { x := sub(0, 5000000000000000000) }
+                // Base current shunting equation: Ib = (Vbe_input - Vbe) / Rb
+                let Ib := 0
+                if sgt(Vbe_input, Vbe) {
+                    Ib := sdiv(mul(sub(Vbe_input, Vbe), scale), Rb)
+                }
                 
-                let expTerm := fixedExp(x)
-                let Ib := sdiv(mul(IS(), sub(expTerm, scale)), scale)
                 let Ic := mul(Ib, BETA())
                 
                 // Collector output: Vout = Vcc - Ic * Rc (Vcc = 9V, Rc = 4.7k)
                 let Vout := sub(9000000000000000000, sdiv(mul(Ic, 4700000000000000000000), scale))
                 
-                // Update internal capacitor charges with charging & leakage/stabilization discharging paths
+                // Update internal capacitor charges
                 let dt_div_C := 10000000000000000
                 
                 let charging_b := sdiv(mul(Ib, dt_div_C), scale)
