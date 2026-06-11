@@ -446,7 +446,7 @@
                     <h2>📺 LIVE OSCILLOSCOPE</h2>
                     <div id="clipIndicator" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 5px 12px; border-radius: 4px; color: #ef4444; font-size: 0.8rem; font-weight: bold; opacity: 0; transition: opacity 0.1s ease-in-out; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);">
                         <span style="display: inline-block; width: 8px; height: 8px; background-color: #ef4444; border-radius: 50%; box-shadow: 0 0 8px #ef4444;"></span>
-                        ⚠️ OVERLOAD CLIPPING
+                        ⚠️ OVERLOAD CLIPPING (<span id="clipCount">0</span>)
                     </div>
                 </div>
                 
@@ -794,19 +794,31 @@
         }
 
         let clipTimeout = null;
+        let clippingEvents = 0;
         function triggerClipWarning() {
+            clippingEvents++;
+            const counter = document.getElementById("clipCount");
+            if (counter) counter.textContent = clippingEvents;
+
             const indicator = document.getElementById("clipIndicator");
-            if (!indicator) return;
-            indicator.style.opacity = "1";
-            indicator.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.4)";
+            if (indicator) {
+                indicator.style.opacity = "1";
+                indicator.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.4)";
+            }
+            
+            // Flash the browser title to capture attention
+            document.title = `⚠️ OVERLOAD DETECTED (${clippingEvents}) | TSFi2 Studio`;
             
             // Log to telemetry panel
-            log("⚠️ WARNING: Signal amplitude exceeded SOAR boundary! Sharp clipping / Limiting active.");
+            log(`⚠️ WARNING: Signal amplitude exceeded SOAR boundary! Sharp clipping / Limiting active (Incident #${clippingEvents}).`);
             
             if (clipTimeout) clearTimeout(clipTimeout);
             clipTimeout = setTimeout(() => {
-                indicator.style.opacity = "0";
-                indicator.style.boxShadow = "none";
+                if (indicator) {
+                    indicator.style.opacity = "0";
+                    indicator.style.boxShadow = "none";
+                }
+                document.title = "TSFi2 Synthesis Studio";
             }, 800);
         }
 
