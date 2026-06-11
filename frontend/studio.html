@@ -745,6 +745,7 @@
             await registerModule("PhilicordaGenerator", "../solidity/bin/philicordaGenerator.yul", "0x99");
             await registerModule("PushPullStage", "../solidity/bin/pushPullStage.yul", "0x66");
             await registerModule("tunnelDiodeOscillator", "../solidity/bin/tunnelDiodeOscillator.yul", "0x42");
+            await registerModule("StroboscopeOscillator", "../solidity/bin/stroboscopeOscillator.yul", "0x33");
             await registerModule("DebuggerV4", "../solidity/bin/debugger.yul", "0x03");
             await registerModule("Z550mIndicator", "../solidity/bin/z550mIndicator.yul", "0x55");
             await registerModule("GermaniumStage", "../solidity/bin/germaniumStage.yul", "0x71");
@@ -1041,6 +1042,34 @@
                     drawWaveform();
 
                     const mappedDigit = Math.max(0, Math.min(9, Math.round((outVolts + 0.5) * 3.6)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "stroboscope") {
+                // Simulate Stroboscope Relaxation Trigger
+                const rate = params.stroboscope.rate; // Vcc charge voltage
+                const vccVal = BigInt(Math.round(rate * 1e18));
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [vccVal, 0n]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "StroboscopeOscillator", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    // Map output 0-10V down to Nixie range 0-9
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(outVolts * 0.9)));
                     setNixieDigit(mappedDigit);
                 }
             } else if (activeModule === "pushpull") {
