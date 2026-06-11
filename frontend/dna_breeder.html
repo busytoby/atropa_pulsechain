@@ -242,6 +242,49 @@
                     <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 10px; border-color: var(--neon-magenta); color: var(--neon-magenta); font-size: 1rem; padding: 8px 15px;">💾 Save & Deploy to Room 10 (The Void)</button>
                 </div>
 
+                <div class="dna-card" style="margin-top: 15px;">
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 12px; color: #ffd700; font-size: 1.1rem;">🎛️ DAC Synthesizer & Envelope</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Timbre Voice</span>
+                            <select id="synthTimbre" class="dna-input" style="width: 140px; padding: 2px;">
+                                <option value="0">Chime (Sine/Tri)</option>
+                                <option value="1">Strings (Saw/Tri)</option>
+                                <option value="2">Brass (Saw/Pulse)</option>
+                                <option value="3">Organ (Square Mix)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Attack Time</span>
+                                <span id="valAttack">0.02s</span>
+                            </div>
+                            <input type="range" id="synthAttack" min="0.005" max="0.5" step="0.01" value="0.02" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Decay Time</span>
+                                <span id="valDecay">0.30s</span>
+                            </div>
+                            <input type="range" id="synthDecay" min="0.05" max="1.5" step="0.05" value="0.30" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Sustain Level</span>
+                                <span id="valSustain">10%</span>
+                            </div>
+                            <input type="range" id="synthSustain" min="0.0" max="1.0" step="0.05" value="0.10" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Release Time</span>
+                                <span id="valRelease">0.15s</span>
+                            </div>
+                            <input type="range" id="synthRelease" min="0.05" max="1.0" step="0.05" value="0.15" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- DNA Emblem Sigil & Phenotype Bear Card -->
                 <div class="dna-card" style="margin-top: 15px; text-align: center;">
                     <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue); font-size: 1.1rem;">🛡️ DNA Phenotype & Sigil</h3>
@@ -538,36 +581,24 @@ Type 'LOOK' to begin.</div>
                 const actx = new AudioContext();
                 let stepTime = 0;
                 
-                // 0: chime, 1: strings, 2: brass, 3: organ
-                let attack = 0.01;
-                let decay = 0.28;
-                let sustain = 0.0001; 
-                let release = 0.05;
-                let peakVol = 1.0;
+                const attack = parseFloat(document.getElementById("synthAttack").value);
+                const decay = parseFloat(document.getElementById("synthDecay").value);
+                const sustain = parseFloat(document.getElementById("synthSustain").value);
+                const release = parseFloat(document.getElementById("synthRelease").value);
+                const activeTimbre = parseInt(document.getElementById("synthTimbre").value);
                 
+                let peakVol = 1.0;
                 let oscType1 = "triangle";
                 let oscType2 = "square";
                 let oscType3 = "sawtooth";
                 
-                if (timbre === 1) { // strings
-                    attack = 0.15;
-                    decay = 0.35;
-                    sustain = 0.6;
-                    release = 0.25;
+                if (activeTimbre === 1) { // strings
                     oscType1 = "triangle";
                     oscType2 = "sawtooth";
-                } else if (timbre === 2) { // brass
-                    attack = 0.04;
-                    decay = 0.15;
-                    sustain = 0.4;
-                    release = 0.08;
+                } else if (activeTimbre === 2) { // brass
                     oscType1 = "sawtooth";
                     oscType2 = "square";
-                } else if (timbre === 3) { // organ
-                    attack = 0.005;
-                    decay = 0.4;
-                    sustain = 0.95;
-                    release = 0.01;
+                } else if (activeTimbre === 3) { // organ
                     oscType1 = "square";
                     oscType2 = "triangle";
                 }
@@ -768,6 +799,20 @@ Type 'LOOK' to begin.</div>
                 console.error("Write error:", err);
                 alert("Failed to write to contract: " + err.message);
             }
+        });
+
+        // Update Synth Slider Labels
+        document.getElementById("synthAttack").addEventListener("input", (e) => {
+            document.getElementById("valAttack").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("synthDecay").addEventListener("input", (e) => {
+            document.getElementById("valDecay").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("synthSustain").addEventListener("input", (e) => {
+            document.getElementById("valSustain").innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
+        });
+        document.getElementById("synthRelease").addEventListener("input", (e) => {
+            document.getElementById("valRelease").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
         });
 
         // HUD Updater
