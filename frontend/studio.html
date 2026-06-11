@@ -430,6 +430,14 @@
                         </div>
                         <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Coil-less Synchrodyne Signal Multiplier</p>
                     </div>
+
+                    <div class="module-card" data-module="formant">
+                        <div class="header-row">
+                            <span class="module-name">🗣️ Formant Filter (Issue 5/6)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Quadrature Envelope Damped Vowel Filter</p>
+                    </div>
                 </div>
 
                 <div style="margin-top: auto;">
@@ -557,6 +565,10 @@
             },
             ringmod: {
                 // uses philicorda and tunnel parameters directly
+            },
+            formant: {
+                pitchF: 0.2,
+                dampingQ: 0.05
             }
         };
  
@@ -607,6 +619,10 @@
             ringmod: [
                 { id: "ringmodPhilicordaPitch", label: "Philicorda Pitch Coeff", min: 0.1, max: 5.0, step: 0.1, key: "pitch", unit: "Hz", module: "philicorda", subKey: "pitch" },
                 { id: "ringmodTunnelPitch", label: "Tunnel LC Pitch Factor", min: 0.5, max: 10.0, step: 0.1, key: "pitch", unit: "x", module: "tunnel", subKey: "pitch" }
+            ],
+            formant: [
+                { id: "formantPitchF", label: "Formant Center Frequency", min: 0.01, max: 0.5, step: 0.01, key: "pitchF", unit: "f" },
+                { id: "formantDampingQ", label: "Base Damping Coefficient", min: 0.01, max: 0.2, step: 0.005, key: "dampingQ", unit: "q" }
             ]
         };
 
@@ -706,6 +722,7 @@
             await registerModule("SnareSynthesizer", "../solidity/bin/snareSynthesizer.yul", "0x48");
             await registerModule("SteamWhistle", "../solidity/bin/steamWhistle.yul", "0x49");
             await registerModule("RingModulator", "../solidity/bin/ringModulator.yul", "0x51");
+            await registerModule("FormantFilter", "../solidity/bin/formantFilter.yul", "0x95");
             log("All system modules successfully registered.");
             triggerSingleSimulationStep();
         }
@@ -773,7 +790,8 @@
                               activeModule === "snare" ? "#facc15" :
                               activeModule === "whistle" ? "#38bdf8" :
                               activeModule === "gyrator" ? "#a855f7" :
-                              activeModule === "ringmod" ? "#f43f5e" : "#ffaa00";
+                              activeModule === "ringmod" ? "#f43f5e" :
+                              activeModule === "formant" ? "#10b981" : "#ffaa00";
             ctx.lineWidth = 3;
             ctx.shadowColor = ctx.strokeStyle;
             ctx.shadowBlur = 10;
@@ -1211,6 +1229,38 @@
 
                 if (rPayload && rPayload.result && rPayload.result.output) {
                     const decoded = rIface.decodeFunctionResult("processSample", "0x" + rPayload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "formant") {
+                // Generate a raw noise modulated impulse pulse train
+                const angle = (Date.now() / 1000) * Math.PI * 2;
+                const stimulus = Math.sin(angle) * (Math.random() > 0.85 ? 1.5 : 0.0); // Sparse impulse train
+                const inputVal = BigInt(Math.round(stimulus * 1e18));
+
+                const pitchF = BigInt(Math.round(params.formant.pitchF * 1e18));
+                const dampingQ = BigInt(Math.round(params.formant.dampingQ * 1e18));
+                const packedVal = pitchF + (dampingQ << 128n);
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputVal, packedVal]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "FormantFilter", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
                     const rawOut = Number(decoded[0]) / 1e18;
                     const outVolts = await applyEquaLimiter(rawOut, 0.51);
 
