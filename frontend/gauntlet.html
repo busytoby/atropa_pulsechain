@@ -1428,49 +1428,47 @@ Status: Awaiting hero to join the battle.</div>
             }
         }
 
-        // Sobel preprocessor
+        // Sobel preprocessor - Highly optimized for realtime 60fps rendering
         function applySobelFilter(ctx, width, height) {
             const imgData = ctx.getImageData(0, 0, width, height);
             const data = imgData.data;
             const output = ctx.createImageData(width, height);
             const outData = output.data;
 
-            function getGray(x, y) {
-                if (x < 0 || x >= width || y < 0 || y >= height) return 0;
-                const idx = (y * width + x) * 4;
-                return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            // Precalculate grayscale values once per pixel using fast integer approximation
+            const grayscale = new Uint8Array(width * height);
+            for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+                grayscale[j] = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
             }
 
-            const gx = [
-                [-1, 0, 1],
-                [-2, 0, 2],
-                [-1, 0, 1]
-            ];
-            const gy = [
-                [-1, -2, -1],
-                [ 0,  0,  0],
-                [ 1,  2,  1]
-            ];
+            // Perform Sobel filter convolution (skipping 1-pixel border to eliminate out-of-bounds checks)
+            for (let y = 1; y < height - 1; y++) {
+                const rowIdx = y * width;
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = rowIdx + x;
 
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    let valX = 0;
-                    let valY = 0;
+                    // 3x3 Neighborhood
+                    const tl = grayscale[idx - width - 1];
+                    const t  = grayscale[idx - width];
+                    const tr = grayscale[idx - width + 1];
+                    const l  = grayscale[idx - 1];
+                    const r  = grayscale[idx + 1];
+                    const bl = grayscale[idx + width - 1];
+                    const b  = grayscale[idx + width];
+                    const br = grayscale[idx + width + 1];
 
-                    for (let ky = -1; ky <= 1; ky++) {
-                        for (let kx = -1; kx <= 1; kx++) {
-                            const pixel = getGray(x + kx, y + ky);
-                            valX += pixel * gx[ky + 1][kx + 1];
-                            valY += pixel * gy[ky + 1][kx + 1];
-                        }
-                    }
+                    // Kernel convolutions using bit shifts for multipliers
+                    const valX = (tr + (r << 1) + br) - (tl + (l << 1) + bl);
+                    const valY = (bl + (b << 1) + br) - (tl + (t << 1) + tr);
 
-                    const magnitude = Math.min(255, Math.sqrt(valX * valX + valY * valY));
-                    const idx = (y * width + x) * 4;
-                    outData[idx] = magnitude;     // R
-                    outData[idx + 1] = magnitude; // G
-                    outData[idx + 2] = magnitude; // B
-                    outData[idx + 3] = 255;       // A
+                    const magnitude = Math.sqrt(valX * valX + valY * valY);
+                    const outIdx = idx << 2; // idx * 4
+
+                    const clamped = magnitude > 255 ? 255 : magnitude;
+                    outData[outIdx]     = clamped;
+                    outData[outIdx + 1] = clamped;
+                    outData[outIdx + 2] = clamped;
+                    outData[outIdx + 3] = 255;
                 }
             }
 
