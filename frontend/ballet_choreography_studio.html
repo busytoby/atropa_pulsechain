@@ -57,6 +57,26 @@
             text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
         }
 
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            transition: color 0.2s;
+        }
+
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--glow-gold);
+        }
+
         #studio-layout {
             display: grid;
             grid-template-columns: 350px 1fr 350px;
@@ -340,7 +360,14 @@
 <body>
 
     <header>
-        <div class="logo">TSFi Ballet Choreography Studio</div>
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <div class="logo">TSFi Ballet Choreography Studio</div>
+            <div class="header-nav">
+                <a href="ballet_choreography_studio.html" class="active">Choreography Studio</a>
+                <a href="dragons_lair.html">Storybook</a>
+                <a href="character_animator.html">Animator</a>
+            </div>
+        </div>
         <div class="subtitle" id="synth-status">GENERATIVE CHORD SYNAPSE: ACTIVE</div>
     </header>
 

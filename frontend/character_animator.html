@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi Character Animation Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030408;
+            --panel-bg: rgba(8, 12, 24, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glow-gold: #ffc400;
+            --glow-magenta: #ff007f;
+            --glow-cyan: #00f0ff;
+            --text-color: #f1f5f9;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 0, 127, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 10% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: rgba(3, 5, 12, 0.85);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--glow-gold), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .tag {
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--glow-cyan);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+            margin-left: 20px;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--glow-gold);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            flex: 1;
+            padding: 24px;
+            gap: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .control-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+            margin: 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"], textarea, select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--glow-magenta);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.25);
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #cbd5e1;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 0, 127, 0.05);
+            border-color: rgba(255, 0, 127, 0.3);
+            color: #fff;
+        }
+
+        .preset-btn.active {
+            background: linear-gradient(135deg, rgba(255, 0, 127, 0.15), rgba(0, 240, 255, 0.15));
+            border-color: var(--glow-cyan);
+            color: #fff;
+        }
+
+        .synthesize-btn {
+            background: linear-gradient(90deg, var(--glow-magenta), #9333ea);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(255, 0, 127, 0.3);
+        }
+
+        .synthesize-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 0, 127, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .synthesize-btn:disabled {
+            background: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Right Preview Panel */
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .player-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 480px;
+            position: relative;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        #animation-canvas {
+            background: #000;
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 20px;
+            background: rgba(0,0,0,0.4);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .circle-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .circle-btn:hover {
+            background: var(--glow-gold);
+            color: black;
+            border-color: var(--glow-gold);
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .speed-slider {
+            -webkit-appearance: none;
+            width: 100px;
+            height: 4px;
+            border-radius: 2px;
+            background: #1e293b;
+            outline: none;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--glow-cyan);
+            cursor: pointer;
+        }
+
+        /* Filmstrip and Progress */
+        .filmstrip-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .filmstrip-grid {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .filmstrip-frame {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            background: #05070f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .filmstrip-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .filmstrip-frame.active {
+            border-color: var(--glow-magenta);
+        }
+
+        /* Progress Bar overlay */
+        .progress-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 4, 8, 0.9);
+            border-radius: 16px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 40px;
+            z-index: 5;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.05);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border-left-color: var(--glow-magenta);
+            animation: spin 1s linear infinite;
+        }
+
+        .progress-text {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .progress-logs {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--glow-cyan);
+            max-height: 120px;
+            overflow-y: auto;
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-group">
+            <span class="logo">TSFi Sovereign</span>
+            <span class="tag">Animation Studio</span>
+        </div>
+        <nav>
+            <a href="ballet_choreography_studio.html">Choreography Studio</a>
+            <a href="dragons_lair.html">Storybook</a>
+            <a href="character_animator.html" class="active">Animator</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="control-panel">
+            <h3 class="section-title">Character Preset</h3>
+            <div class="preset-grid">
+                <button class="preset-btn active" onclick="selectPreset('dragon')">🐉 Red Dragon</button>
+                <button class="preset-btn" onclick="selectPreset('knight')">🛡️ Teddy Knight</button>
+                <button class="preset-btn" onclick="selectPreset('crow')">🦅 Ballet Crow</button>
+                <button class="preset-btn" onclick="selectPreset('beast')">👹 Cave Beast</button>
+            </div>
+
+            <div class="form-group">
+                <label for="prompt-input">Synthesis Prompt</label>
+                <textarea id="prompt-input" rows="4">A cute chibi red dragon plush toy, matted dark crimson scales, soft yellow belly plates, tiny dragon wings, big glossy black eyes, 1980s hand-drawn dark fantasy visual aesthetic, studio lighting, hyper detailed textures</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="motion-select">Motion Style</label>
+                <select id="motion-select">
+                    <option value="walk">Walk Cycle (Alternating steps)</option>
+                    <option value="jump">Leap / Jump (Crouch & launch)</option>
+                    <option value="wave">Friendly Wave (Right wing arm)</option>
+                    <option value="ballet">Ballet Sequence (Classical positions)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="frames-select">Frame Count (Cycles)</label>
+                <select id="frames-select">
+                    <option value="6">6 Frames (Fast Synthesis)</option>
+                    <option value="8" selected>8 Frames (Smooth Loop)</option>
+                    <option value="12">12 Frames (High Detail - Slow)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="profile-select">Generation Profile</label>
+                <select id="profile-select">
+                    <option value="turbo" selected>Turbo (Fast synthesis, 4 steps)</option>
+                    <option value="dream">Dreamshaper (High quality, 8 steps)</option>
+                </select>
+            </div>
+
+            <button id="btn-synthesize" class="synthesize-btn" onclick="triggerSynthesis()">Synthesize Animation</button>
+        </div>
+
+        <div class="preview-container">
+            <div class="player-card">
+                <!-- Progress overlay -->
+                <div id="progress-overlay" class="progress-overlay">
+                    <div class="spinner"></div>
+                    <div id="progress-text" class="progress-text">Initializing Synthesizer...</div>
+                    <div id="progress-logs" class="progress-logs"></div>
+                </div>
+
+                <div id="preview-placeholder" class="placeholder-text">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🎬</div>
+                    Select your character, prompt, and motion cycle,<br>then click <strong>Synthesize Animation</strong> to generate looping frames.
+                </div>
+
+                <canvas id="animation-canvas" width="512" height="512" style="display: none;"></canvas>
+
+                <div id="controls-bar" class="player-controls" style="display: none;">
+                    <button class="circle-btn" onclick="prevFrame()">◀</button>
+                    <button id="btn-play-pause" class="circle-btn" onclick="togglePlay()">⏸</button>
+                    <button class="circle-btn" onclick="nextFrame()">▶</button>
+                    <div class="speed-control">
+                        <span>Speed</span>
+                        <input type="range" class="speed-slider" id="speed-slider" min="2" max="20" value="8" oninput="updateSpeed(this.value)">
+                        <span id="speed-display">8 fps</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filmstrip-card" id="filmstrip-card" style="display: none;">
+                <h4 class="section-title">Synthesized Frame Sequence</h4>
+                <div class="filmstrip-grid" id="filmstrip-grid">
+                    <!-- Filmstrip images injected here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const presets = {
+            dragon: "A cute chibi red dragon plush toy, matted dark crimson scales, soft yellow belly plates, tiny dragon wings, big glossy black eyes, 1980s hand-drawn dark fantasy visual aesthetic, studio lighting, hyper detailed textures",
+            knight: "A cute brown teddy bear knight plush, wearing mini iron helmet and miniature chainmail armor, matted faux-fur textures, dark fantasy retro design, cinematic studio lighting",
+            crow: "extreme macro photography of a stuffed animal crow plush, hyper-detailed individual synthetic feathers, matted black faux-plumage textures, visible stitching, studio lighting, neutral background",
+            beast: "A cute horned cave beast plush toy, shaggy matted blue fur, glowing yellow eyes, large clawed soft hands, fantasy character concept art style, retro illustration aesthetic"
+        };
+
+        let currentPreset = 'dragon';
+        let synthesizedFrames = [];
+        let currentFrameIndex = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let fps = 8;
+
+        function selectPreset(name) {
+            currentPreset = name;
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('prompt-input').value = presets[name];
+        }
+
+        function addLog(message) {
+            const logs = document.getElementById('progress-logs');
+            logs.innerHTML += `[${new Date().toLocaleTimeString()}] ${message}<br>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        async function triggerSynthesis() {
+            const prompt = document.getElementById('prompt-input').value;
+            const motion = document.getElementById('motion-select').value;
+            const num_frames = parseInt(document.getElementById('frames-select').value);
+            const profile = document.getElementById('profile-select').value;
+            const steps = profile === 'turbo' ? 4 : 8;
+
+            // Show UI progress overlay
+            document.getElementById('progress-overlay').style.display = 'flex';
+            document.getElementById('btn-synthesize').disabled = true;
+            const logBox = document.getElementById('progress-logs');
+            logBox.innerHTML = '';
+            
+            addLog("Allocating Shared Memory maps...");
+            addLog(`Triggering synthesis: ${motion.toUpperCase()} cycle of character.`);
+            addLog(`Rendering ${num_frames} frames using Vulkan SD backend...`);
+
+            try {
+                // Simulate progressive log updates as the server works
+                let progressInterval = setInterval(() => {
+                    const stepNum = Math.floor(Math.random() * steps) + 1;
+                    addLog(`Vulkan pipe running dynamic pose/depth mapping...`);
+                }, 4000);
+
+                const response = await fetch('http://127.0.0.1:8000/generate-animation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        motion: motion,
+                        profile: profile,
+                        steps: steps,
+                        cfg: 1.5,
+                        num_frames: num_frames
+                    })
+                });
+
+                clearInterval(progressInterval);
+
+                if (!response.ok) {
+                    throw new Error("Failed to synthesize animation. Vulkan pipeline error.");
+                }
+
+                const result = await response.json();
+                if (result.status === 'success' && result.frames && result.frames.length > 0) {
+                    addLog(`Success! Synthesized ${result.frames.length} frames.`);
+                    synthesizedFrames = result.frames;
+                    loadAnimation(result.frames);
+                } else {
+                    throw new Error(result.message || "Synthesis returned empty frame sequence.");
+                }
+
+            } catch (err) {
+                addLog(`ERROR: ${err.message}`);
+                alert("Animation Synthesis Failed. See logs for details.");
+            } finally {
+                document.getElementById('progress-overlay').style.display = 'none';
+                document.getElementById('btn-synthesize').disabled = false;
+            }
+        }
+
+        const canvas = document.getElementById('animation-canvas');
+        const ctx = canvas.getContext('2d');
+        let frameImages = [];
+
+        function loadAnimation(frameUrls) {
+            // Hide placeholder, show canvas and controls
+            document.getElementById('preview-placeholder').style.display = 'none';
+            canvas.style.display = 'block';
+            document.getElementById('controls-bar').style.display = 'flex';
+            document.getElementById('filmstrip-card').style.display = 'block';
+
+            const filmGrid = document.getElementById('filmstrip-grid');
+            filmGrid.innerHTML = '';
+
+            frameImages = [];
+            let loadedCount = 0;
+
+            frameUrls.forEach((url, index) => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedCount++;
+                    if (loadedCount === frameUrls.length) {
+                        currentFrameIndex = 0;
+                        drawFrame(0);
+                        startPlayback();
+                    }
+                };
+                img.src = `http://127.0.0.1:8000/${url}?t=${Date.now()}`;
+                frameImages.push(img);
+
+                // Build filmstrip frame item
+                const frameDiv = document.createElement('div');
+                frameDiv.className = `filmstrip-frame ${index === 0 ? 'active' : ''}`;
+                frameDiv.id = `filmstrip-frame-${index}`;
+                frameDiv.onclick = () => selectFrame(index);
+                
+                const thumb = document.createElement('img');
+                thumb.src = img.src;
+                frameDiv.appendChild(thumb);
+                filmGrid.appendChild(frameDiv);
+            });
+        }
+
+        function drawFrame(index) {
+            if (frameImages[index]) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(frameImages[index], 0, 0, canvas.width, canvas.height);
+                
+                // Highlight active filmstrip frame
+                document.querySelectorAll('.filmstrip-frame').forEach(f => f.classList.remove('active'));
+                const activeEl = document.getElementById(`filmstrip-frame-${index}`);
+                if (activeEl) activeEl.classList.add('active');
+            }
+        }
+
+        function startPlayback() {
+            isPlaying = true;
+            document.getElementById('btn-play-pause').innerText = '⏸';
+            if (playInterval) clearInterval(playInterval);
+            playInterval = setInterval(() => {
+                currentFrameIndex = (currentFrameIndex + 1) % frameImages.length;
+                drawFrame(currentFrameIndex);
+            }, 1000 / fps);
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            document.getElementById('btn-play-pause').innerText = '▶';
+            if (playInterval) clearInterval(playInterval);
+        }
+
+        function togglePlay() {
+            if (isPlaying) stopPlayback();
+            else startPlayback();
+        }
+
+        function nextFrame() {
+            stopPlayback();
+            currentFrameIndex = (currentFrameIndex + 1) % frameImages.length;
+            drawFrame(currentFrameIndex);
+        }
+
+        function prevFrame() {
+            stopPlayback();
+            currentFrameIndex = (currentFrameIndex - 1 + frameImages.length) % frameImages.length;
+            drawFrame(currentFrameIndex);
+        }
+
+        function selectFrame(index) {
+            stopPlayback();
+            currentFrameIndex = index;
+            drawFrame(index);
+        }
+
+        function updateSpeed(val) {
+            fps = parseInt(val);
+            document.getElementById('speed-display').innerText = `${fps} fps`;
+            if (isPlaying) {
+                startPlayback();
+            }
+        }
+    </script>
+</body>
+</html>
