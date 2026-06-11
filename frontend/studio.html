@@ -406,6 +406,14 @@
                         </div>
                         <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">LCG Noise & Resonant Membrane Drum</p>
                     </div>
+
+                    <div class="module-card" data-module="whistle">
+                        <div class="header-row">
+                            <span class="module-name">💨 Steam Whistle (Issue 1)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">TUP-TUN Relaxation & Avalanche Noise</p>
+                    </div>
                 </div>
 
                 <div style="margin-top: auto;">
@@ -518,6 +526,11 @@
                 noiseDecay: 0.1,
                 noiseMix: 0.5,
                 trigger: 0
+            },
+            whistle: {
+                pitch: 1.5,
+                noiseMix: 0.3,
+                trigger: 0
             }
         };
  
@@ -559,6 +572,10 @@
                 { id: "snareDecayD", label: "Damping Constant (Decay)", min: 0.005, max: 0.1, step: 0.005, key: "decayD", unit: "d" },
                 { id: "snareNoiseDecay", label: "Noise Envelope Decay", min: 0.01, max: 0.5, step: 0.01, key: "noiseDecay", unit: "nd" },
                 { id: "snareNoiseMix", label: "Noise Mix Ratio", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" }
+            ],
+            whistle: [
+                { id: "whistlePitch", label: "Whistle Pitch Frequency", min: 0.5, max: 4.0, step: 0.1, key: "pitch", unit: "x" },
+                { id: "whistleNoiseMix", label: "Avalanche Noise Mix", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" }
             ]
         };
 
@@ -595,11 +612,12 @@
                 container.appendChild(group);
             });
 
-            if (activeModule === "drum" || activeModule === "snare") {
+            if (activeModule === "drum" || activeModule === "snare" || activeModule === "whistle") {
                 const btn = document.createElement("button");
                 btn.className = "btn btn-primary btn-block";
                 btn.style.marginTop = "15px";
-                btn.textContent = activeModule === "drum" ? "🥁 Trigger Drum Hit" : "🥁 Trigger Snare Hit";
+                btn.textContent = activeModule === "drum" ? "🥁 Trigger Drum Hit" : 
+                                  activeModule === "snare" ? "🥁 Trigger Snare Hit" : "💨 Trigger Whistle Blow";
                 btn.addEventListener("mousedown", () => {
                     params[activeModule].trigger = 1;
                     triggerSingleSimulationStep();
@@ -642,6 +660,7 @@
             await registerModule("DrumSynthesizer", "../solidity/bin/drumSynthesizer.yul", "0x45");
             await registerModule("GyratorFilter", "../solidity/bin/gyratorFilter.yul", "0x47");
             await registerModule("SnareSynthesizer", "../solidity/bin/snareSynthesizer.yul", "0x48");
+            await registerModule("SteamWhistle", "../solidity/bin/steamWhistle.yul", "0x49");
             log("All system modules successfully registered.");
             triggerSingleSimulationStep();
         }
@@ -707,6 +726,7 @@
                               activeModule === "pushpull" ? "#ff007f" :
                               activeModule === "drum" ? "#00ff00" :
                               activeModule === "snare" ? "#facc15" :
+                              activeModule === "whistle" ? "#38bdf8" :
                               activeModule === "gyrator" ? "#a855f7" : "#ffaa00";
             ctx.lineWidth = 3;
             ctx.shadowColor = ctx.strokeStyle;
@@ -982,6 +1002,36 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name: "SnareSynthesizer", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "whistle") {
+                const triggerVal = params.whistle.trigger ? 1000000000000000000n : 0n;
+                params.whistle.trigger = 0; // reset trigger state
+
+                const pitch = BigInt(Math.round(params.whistle.pitch * 1e18));
+                const noiseMix = BigInt(Math.round(params.whistle.noiseMix * 1e18));
+                const packedVal = pitch + (noiseMix << 128n);
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [triggerVal, packedVal]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "SteamWhistle", calldata })
                 });
                 const payload = await res.json();
 
