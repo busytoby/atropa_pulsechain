@@ -121,6 +121,69 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+        
+        /* RAG Interface Styling */
+        .rag-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        #ragQuery {
+            flex: 1;
+            background: #000;
+            border: 1px solid #1f2833;
+            border-radius: 4px;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 13px;
+            outline: none;
+        }
+        #ragQuery:focus {
+            border-color: #66fcf1;
+        }
+        #btnSearchRAG {
+            background: #66fcf1;
+            color: #0b0c10;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #btnSearchRAG:hover {
+            box-shadow: 0 0 10px #66fcf1;
+            background: #45f3ff;
+        }
+        .rag-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #1f2833;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            background: rgba(11, 12, 16, 0.4);
+        }
+        .rag-result-item:hover {
+            background: rgba(102, 252, 241, 0.08);
+        }
+        .rag-result-name {
+            font-weight: bold;
+            color: #66fcf1;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        .rag-result-score {
+            font-size: 10px;
+            color: #8c92a0;
+        }
+        .rag-result-desc {
+            color: #c5c6c7;
+            margin-top: 4px;
+            font-size: 11px;
+            line-height: 1.3;
+        }
     </style>
 </head>
 <body>
@@ -152,10 +215,125 @@
                 <label><span>Rim Light Specular</span><span id="lightVal">1.0</span></label>
                 <input type="range" id="paramLight" min="0" max="2" step="0.1" value="1.0">
             </div>
+            <div class="control-group">
+                <label><span>Upscale Mode (FSR)</span></label>
+                <select id="paramScale" style="background:#000; color:#66fcf1; border:1px solid #1f2833; border-radius:4px; padding:6px; font-size:13px; outline:none; cursor:pointer;">
+                    <option value="1.0">Native 4K (Ultra Quality)</option>
+                    <option value="0.5" selected>FSR Balanced (1080p - 4x Speed)</option>
+                    <option value="0.25">FSR Performance (540p - 16x Speed)</option>
+                </select>
+            </div>
+            <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="paramAB4H" checked style="cursor: pointer; accent-color: #66fcf1; width: 16px; height: 16px; margin: 0;">
+                    <span>AB4H HDR Mode (64-bit Float)</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-title">Targ Mercenary Poser</div>
+            <div class="control-group">
+                <label><span>Center Position X</span><span id="posXVal">512</span></label>
+                <input type="range" id="paramPosX" min="100" max="900" step="5" value="512">
+            </div>
+            <div class="control-group">
+                <label><span>Center Position Y</span><span id="posYVal">875</span></label>
+                <input type="range" id="paramPosY" min="400" max="1200" step="5" value="875">
+            </div>
+            <div class="control-group">
+                <label><span>Left Arm Angle</span><span id="poseLeftArmVal">30°</span></label>
+                <input type="range" id="paramPoseLeftArm" min="-90" max="90" step="2" value="30">
+            </div>
+            <div class="control-group">
+                <label><span>Right Arm Angle</span><span id="poseRightArmVal">-30°</span></label>
+                <input type="range" id="paramPoseRightArm" min="-90" max="90" step="2" value="-30">
+            </div>
+            <div class="control-group">
+                <label><span>Left Leg Angle</span><span id="poseLeftLegVal">0°</span></label>
+                <input type="range" id="paramPoseLeftLeg" min="-45" max="45" step="2" value="0">
+            </div>
+            <div class="control-group">
+                <label><span>Right Leg Angle</span><span id="poseRightLegVal">0°</span></label>
+                <input type="range" id="paramPoseRightLeg" min="-45" max="45" step="2" value="0">
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Local RAG Cache & Retrieval</div>
+            <div class="rag-input-group">
+                <input type="text" id="ragQuery" placeholder="e.g. pink cuddly, mossy mouldy...">
+                <button id="btnSearchRAG">Search</button>
+            </div>
+            <div id="ragResults" style="max-height: 150px; overflow-y: auto;">
+                <!-- Search results will dynamically populate here -->
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Sovereign LFO Synth Modulator</div>
+            <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="paramLfoActive" style="cursor: pointer; accent-color: #66fcf1; width: 16px; height: 16px; margin: 0;">
+                    <span>Enable LFO Modulation</span>
+                </label>
+            </div>
+            <div class="control-group">
+                <label><span>Modulation Rate</span><span id="lfoRateVal">1.0 Hz</span></label>
+                <input type="range" id="paramLfoRate" min="0.1" max="5.0" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label><span>Modulation Depth</span><span id="lfoDepthVal">0.5</span></label>
+                <input type="range" id="paramLfoDepth" min="0" max="1" step="0.05" value="0.5">
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Stable Diffusion Photorealism</div>
+            <div class="control-group">
+                <label><span>Model Profile</span></label>
+                <select id="paramSdProfile" style="background:#000; color:#66fcf1; border:1px solid #1f2833; border-radius:4px; padding:6px; font-size:13px; outline:none; cursor:pointer;">
+                    <option value="turbo" selected>SD Turbo (Lightning Fast - 2 steps)</option>
+                    <option value="dream">Dreamshaper v7 (LCM Artistic - 6 steps)</option>
+                    <option value="sd15">SD 1.5 (High Quality - 20 steps)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label><span>Steps</span><span id="sdStepsVal">2</span></label>
+                <input type="range" id="paramSdSteps" min="1" max="25" step="1" value="2">
+            </div>
+            <div class="control-group">
+                <button id="btnGenerateSd" style="width:100%; background: #66fcf1; color: #0b0c10; border: none; border-radius: 4px; padding: 8px 12px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; outline: none; font-size: 13px;">Generate Photorealistic Bear</button>
+            </div>
+            <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="paramShowSd" style="cursor: pointer; accent-color: #66fcf1; width: 16px; height: 16px; margin: 0;">
+                    <span>Overlay SD Render</span>
+                </label>
+            </div>
+            <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="paramTargMap" style="cursor: pointer; accent-color: #66fcf1; width: 16px; height: 16px; margin: 0;">
+                    <span>Targ Mercenary Map Background</span>
+                </label>
+            </div>
+            <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="paramUseControlNet" checked style="cursor: pointer; accent-color: #66fcf1; width: 16px; height: 16px; margin: 0;">
+                    <span>Use ControlNet Depth Guide</span>
+                </label>
+            </div>
+            <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="paramPlayDna" disabled style="cursor: pointer; accent-color: #66fcf1; width: 16px; height: 16px; margin: 0;">
+                    <span>Play atropa.dna Timeline</span>
+                </label>
+            </div>
         </div>
 
         <div class="panel">
             <div class="panel-title">AOT DeepSeek Telemetry Console</div>
+            <button id="btnToggleDeepSeek" style="width:100%; background: #66fcf1; color: #0b0c10; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; margin-bottom: 8px; cursor: pointer; transition: all 0.2s ease; outline: none; font-size: 12px;">Start DeepSeek Auto-Crafting</button>
             <div id="console">Initializing telemetry handshake...</div>
         </div>
     </div>
@@ -168,6 +346,354 @@
         seed_x: 512,
         seed_y: 875
     };
+
+    let dnaFrames = [];
+    let currentDnaFrameIdx = 0;
+    let globalLastRenderTime = 0;
+
+    function loadDnaFile() {
+        const consoleBox = document.getElementById("console");
+        const timestamp = new Date().toLocaleTimeString();
+        consoleBox.innerHTML += `\n[${timestamp}] [DNA] Fetching assets/atropa.dna binary...`;
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+        
+        fetch("tsfi2-deepseek/assets/atropa.dna")
+            .then(res => {
+                if (!res.ok) throw new Error("File not found");
+                return res.arrayBuffer();
+            })
+            .then(buf => {
+                const view = new DataView(buf);
+                const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+                if (magic !== "TSFI") {
+                    throw new Error("Invalid DNA Header Magic");
+                }
+                const totalFrames = view.getUint32(4, true);
+                dnaFrames = [];
+                
+                let offset = 8;
+                for (let i = 0; i < totalFrames; i++) {
+                    if (offset + 31 > buf.byteLength) break;
+                    
+                    const g_x = view.getFloat32(offset, true);
+                    const g_y = view.getFloat32(offset + 4, true);
+                    const stretch = view.getFloat32(offset + 8, true);
+                    const pulse = view.getFloat32(offset + 12, true);
+                    const sick = view.getFloat32(offset + 16, true);
+                    const light = view.getFloat32(offset + 20, true);
+                    
+                    const r = view.getUint8(offset + 24);
+                    const g = view.getUint8(offset + 25);
+                    const b = view.getUint8(offset + 26);
+                    
+                    const er = view.getUint8(offset + 27);
+                    const eg = view.getUint8(offset + 28);
+                    const eb = view.getUint8(offset + 29);
+                    
+                    const ec = view.getUint8(offset + 30);
+                    
+                    dnaFrames.push({
+                        g_x, g_y, stretch, pulse, sick, light,
+                        color: `rgb(${r},${g},${b})`,
+                        noiseColor: `rgb(${Math.max(0, r-20)},${Math.max(0, g-20)},${Math.max(0, b-20)})`,
+                        eyeColor: `rgb(${er},${eg},${eb})`,
+                        eyeCount: ec
+                    });
+                    offset += 31;
+                }
+                
+                const loadTime = new Date().toLocaleTimeString();
+                consoleBox.innerHTML += `\n[${loadTime}] [DNA] Successfully loaded ${dnaFrames.length} frames from atropa.dna!`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+                document.getElementById("paramPlayDna").disabled = false;
+            })
+            .catch(err => {
+                const errTime = new Date().toLocaleTimeString();
+                consoleBox.innerHTML += `\n[${errTime}] [ERROR] DNA Load failed: ${err.message}`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            });
+    }
+
+    // --- 1.2 Local RAG Cache Variables & Palette ---
+    const GlobalPalette = {
+        base: "#5c4033",
+        noise: "#4e342e",
+        snout: "#d7ccc8",
+        ear: "#3e2723",
+        innerEar: "#ffcdd2",
+        eye: "rgb(0, 200, 0)",
+        bowtie: "#d32f2f",
+        blush: "rgba(255, 128, 171, 0.28)"
+    };
+
+    const CustomBodyConfig = {
+        rX: 250,
+        rY: 340
+    };
+
+    const RAGCacheDataset = [
+        {
+            id: 5,
+            name: "DeepSeek Golden Masterpiece",
+            description: "The absolute optimal teddy bear crafted via DeepSeek. Soft glowing golden-brown fur under full HDR specular lighting, verified emerald consensus eyes, and perfect 3D snout contours.",
+            rX: 260,
+            rY: 350,
+            sicknessVal: 0.0,
+            lightCoeff: 1.8,
+            speedCoeff: 1.2,
+            baseColor: "#6d4c41",
+            noiseColor: "#4e342e",
+            snoutColor: "#efebe9",
+            earColor: "#4e342e",
+            innerEarColor: "#ff8a80",
+            eyeColor: "rgb(0, 255, 0)",
+            bowtieColor: "#e040fb",
+            blushColor: "rgba(255, 64, 129, 0.35)",
+            features: ["deepseek", "golden", "masterpiece", "optimal", "hdr", "glowing", "emerald", "perfect", "vibrant", "best"]
+        },
+        {
+            id: 6,
+            name: "DeepSeek Ethereal Void Bear",
+            description: "An ultimate-quality holographic cyber bear. Deep obsidian base with neon-cyan fur highlights, vibrant pink inner ears, and electric neon-blue eyes.",
+            rX: 250,
+            rY: 340,
+            sicknessVal: 0.0,
+            lightCoeff: 2.0,
+            speedCoeff: 1.6,
+            baseColor: "#121212",
+            noiseColor: "#00e5ff",
+            snoutColor: "#212121",
+            earColor: "#1c1c1c",
+            innerEarColor: "#ff007f",
+            eyeColor: "rgb(0, 229, 255)",
+            bowtieColor: "#ff007f",
+            blushColor: "rgba(0, 229, 255, 0.2)",
+            features: ["void", "cyber", "neon", "holographic", "obsidian", "cyan", "blue", "pink"]
+        },
+        {
+            id: 7,
+            name: "DeepSeek Emerald Forest Elder",
+            description: "An ancient guardian bear from a fantasy forest. Deep moss-green fur accented with gold highlights, cream snout, and soft golden-yellow inner ears.",
+            rX: 270,
+            rY: 360,
+            sicknessVal: 0.15,
+            lightCoeff: 1.4,
+            speedCoeff: 0.8,
+            baseColor: "#2e7d32",
+            noiseColor: "#fbc02d",
+            snoutColor: "#efebe9",
+            earColor: "#1b5e20",
+            innerEarColor: "#fff9c4",
+            eyeColor: "#5d4037",
+            bowtieColor: "#8d6e63",
+            blushColor: "rgba(251, 192, 45, 0.25)",
+            features: ["moss", "green", "elder", "forest", "guardian", "gold", "ancient"]
+        },
+        {
+            id: 8,
+            name: "DeepSeek Sakura Steampunk Bear",
+            description: "A gorgeous copper-bronze metallic bear with rose-gold highlights, off-white muzzle, and a delicate cherry-blossom pink bow.",
+            rX: 255,
+            rY: 345,
+            sicknessVal: 0.0,
+            lightCoeff: 1.9,
+            speedCoeff: 1.1,
+            baseColor: "#8d6e63",
+            noiseColor: "#d7ccc8",
+            snoutColor: "#f5f5f5",
+            earColor: "#5d4037",
+            innerEarColor: "#ff8a80",
+            eyeColor: "#263238",
+            bowtieColor: "#ff80ab",
+            blushColor: "rgba(255, 128, 171, 0.3)",
+            features: ["sakura", "pink", "steampunk", "bronze", "metallic", "copper", "rose", "gold"]
+        },
+        {
+            id: 1,
+            name: "Classic Honey Cub",
+            description: "A sweet golden honey-colored teddy bear with soft plush fur, bright green consensus eyes, and a cute ruby red bow tie.",
+            rX: 250,
+            rY: 340,
+            sicknessVal: 0.0,
+            lightCoeff: 1.2,
+            speedCoeff: 1.0,
+            baseColor: "#5c4033",
+            noiseColor: "#4e342e",
+            snoutColor: "#d7ccc8",
+            earColor: "#3e2723",
+            innerEarColor: "#ffcdd2",
+            eyeColor: "rgb(0, 200, 0)",
+            bowtieColor: "#d32f2f",
+            blushColor: "rgba(255, 128, 171, 0.28)",
+            features: ["honey", "classic", "golden", "soft", "sweet", "ruby", "red", "bowtie", "cute"]
+        },
+        {
+            id: 2,
+            name: "Mossy Decayed Bear",
+            description: "An old forgotten forest bear showing signs of green mold decay. The fur is heavily matted and clumped, the stitching is loose and crooked, and frayed black threads hang from the mouth.",
+            rX: 280,
+            rY: 380,
+            sicknessVal: 0.95,
+            lightCoeff: 0.4,
+            speedCoeff: 0.3,
+            baseColor: "#4e342e",
+            noiseColor: "#2d1a12",
+            snoutColor: "#a1887f",
+            earColor: "#2d1a12",
+            innerEarColor: "#8d6e63",
+            eyeColor: "#00a000",
+            bowtieColor: "#4e342e",
+            blushColor: "rgba(0, 0, 0, 0)",
+            features: ["decayed", "mossy", "mold", "matted", "clumped", "crooked", "frayed", "black", "thread", "stitching", "loose", "old"]
+        },
+        {
+            id: 3,
+            name: "Cotton Candy Pinky",
+            description: "A bright pastel pink stuffed toy with white fur highlights, glossy black button eyes, and a warm blush on the cheeks. Very clean and cute.",
+            rX: 230,
+            rY: 310,
+            sicknessVal: 0.0,
+            lightCoeff: 1.8,
+            speedCoeff: 1.5,
+            baseColor: "#ff8a80",
+            noiseColor: "#ffe0b2",
+            snoutColor: "#ffffff",
+            earColor: "#ff5252",
+            innerEarColor: "#ff8a80",
+            eyeColor: "#121212",
+            bowtieColor: "#e040fb",
+            blushColor: "rgba(255, 64, 129, 0.4)",
+            features: ["pink", "cotton", "candy", "pastel", "white", "glossy", "black", "blush", "cute", "clean"]
+        },
+        {
+            id: 4,
+            name: "Giant Matted Grizzly",
+            description: "A massive broad-shouldered wild grizzly bear with matted dark fur and a slow, heavy stride. Strong specular rim lighting accents its muscular, stuffed torso.",
+            rX: 330,
+            rY: 440,
+            sicknessVal: 0.45,
+            lightCoeff: 1.6,
+            speedCoeff: 0.6,
+            baseColor: "#3e2723",
+            noiseColor: "#1d0a02",
+            snoutColor: "#d7ccc8",
+            earColor: "#1d0a02",
+            innerEarColor: "#5d4037",
+            eyeColor: "#00cc33",
+            bowtieColor: "#000000",
+            blushColor: "rgba(0, 0, 0, 0)",
+            features: ["giant", "large", "matted", "grizzly", "broad", "wild", "grizzly", "dark", "rim", "light", "muscular"]
+        }
+    ];
+
+    // Load previously saved DeepSeek crafted genomes from localStorage on startup
+    function loadSavedGenoBears() {
+        try {
+            const saved = localStorage.getItem("tsfi_crafted_bears");
+            if (saved) {
+                const list = JSON.parse(saved);
+                list.forEach(bear => {
+                    // Avoid duplicating IDs
+                    if (!RAGCacheDataset.some(b => b.id === bear.id)) {
+                        RAGCacheDataset.push(bear);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load saved genomes:", e);
+        }
+    }
+    
+    function saveCraftedBear(bear) {
+        try {
+            RAGCacheDataset.unshift(bear); // Put at the top of the memory list
+            const saved = localStorage.getItem("tsfi_crafted_bears");
+            const list = saved ? JSON.parse(saved) : [];
+            list.unshift(bear);
+            // Cap at 10 custom bears to prevent localStorage overflow
+            if (list.length > 10) list.pop();
+            localStorage.setItem("tsfi_crafted_bears", JSON.stringify(list));
+        } catch (e) {
+            console.error("Failed to save optimal genome:", e);
+        }
+    }
+
+    loadSavedGenoBears(); // Initialize database
+
+    function runLocalRAGQuery(queryText) {
+        const queryTokens = queryText.toLowerCase().split(/[\s,.-]+/);
+        const results = RAGCacheDataset.map(doc => {
+            let score = 0;
+            queryTokens.forEach(token => {
+                if (!token) return;
+                if (doc.name.toLowerCase().includes(token)) score += 3.0;
+                if (doc.description.toLowerCase().includes(token)) score += 1.0;
+                doc.features.forEach(feat => {
+                    if (feat === token) score += 2.0;
+                    else if (feat.includes(token)) score += 0.5;
+                });
+            });
+            return { doc, score };
+        });
+
+        // Sort results
+        const filtered = results.sort((a, b) => b.score - a.score);
+        
+        const resultsContainer = document.getElementById("ragResults");
+        resultsContainer.innerHTML = "";
+        
+        // If query is empty, show all bears in dataset
+        const displayList = queryText.trim() === "" ? RAGCacheDataset.map(doc => ({ doc, score: 0 })) : filtered.filter(r => r.score > 0);
+
+        if (displayList.length === 0) {
+            resultsContainer.innerHTML = "<div style='font-size:11px;color:#8c92a0;padding:8px;'>No matching teddy bears in cache.</div>";
+            return;
+        }
+
+        displayList.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "rag-result-item";
+            div.innerHTML = `
+                <div class="rag-result-name">
+                    <span>${item.doc.name}</span>
+                    <span class="rag-result-score">${item.score > 0 ? 'Score: ' + item.score.toFixed(1) : 'Cached'}</span>
+                </div>
+                <div class="rag-result-desc">${item.doc.description}</div>
+            `;
+            div.onclick = () => {
+                loadTeddyBearConfig(item.doc);
+            };
+            resultsContainer.appendChild(div);
+        });
+    }
+
+    function loadTeddyBearConfig(bear) {
+        document.getElementById("paramSpeed").value = bear.speedCoeff;
+        document.getElementById("paramSick").value = bear.sicknessVal;
+        document.getElementById("paramLight").value = bear.lightCoeff;
+        
+        GlobalPalette.base = bear.baseColor;
+        GlobalPalette.noise = bear.noiseColor;
+        GlobalPalette.snout = bear.snoutColor;
+        GlobalPalette.ear = bear.earColor;
+        GlobalPalette.innerEar = bear.innerEarColor;
+        GlobalPalette.eye = bear.eyeColor;
+        GlobalPalette.bowtie = bear.bowtieColor;
+        GlobalPalette.blush = bear.blushColor;
+        
+        CustomBodyConfig.rX = bear.rX;
+        CustomBodyConfig.rY = bear.rY;
+        
+        const consoleBox = document.getElementById("console");
+        const timestamp = new Date().toLocaleTimeString();
+        consoleBox.innerHTML += `\n[${timestamp}] RAG Cache Hit: Loaded '${bear.name}' parameters locally.`;
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+
+        // Auto-trigger photorealistic generation for this RAG configuration
+        setTimeout(() => {
+            document.getElementById("btnGenerateSd").click();
+        }, 50);
+    }
 
     // Simulate local DeepSeek verifying the layout parameters
     function runLocalDeepSeekVerification() {
@@ -267,9 +793,358 @@
     // --- 4. 2D Canvas Fallback (CPU Denoise / Render) ---
     function run2DCanvasEmulation() {
         const canvas = document.getElementById("screenCanvas");
-        const ctx = canvas.getContext("2d");
+        const realCtx = canvas.getContext("2d");
         
+        // Create an offscreen buffer for fast upscaled rendering
+        const offscreenCanvas = document.createElement("canvas");
+        const oCtx = offscreenCanvas.getContext("2d");
+        
+        let sdImage = null;
+        loadDnaFile();
+        
+        // Track cursor coordinates for interactive wind fields
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+            mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+        });
+        canvas.addEventListener("mouseleave", () => {
+            mouseX = canvas.width / 2;
+            mouseY = canvas.height / 2;
+        });
+
         runLocalDeepSeekVerification();
+
+        // Bind RAG Cache Search interface
+        document.getElementById("btnSearchRAG").onclick = () => {
+            const q = document.getElementById("ragQuery").value;
+            runLocalRAGQuery(q);
+        };
+        // Trigger default empty search to pre-populate list on load
+        runLocalRAGQuery("");
+
+        // Sync steps slider value on load/change
+        document.getElementById("paramSdSteps").oninput = (e) => {
+            document.getElementById("sdStepsVal").innerText = e.target.value;
+        };
+        document.getElementById("paramSdProfile").onchange = (e) => {
+            const stepsInput = document.getElementById("paramSdSteps");
+            if (e.target.value === "turbo") {
+                stepsInput.value = 2;
+            } else if (e.target.value === "dream") {
+                stepsInput.value = 6;
+            } else {
+                stepsInput.value = 15;
+            }
+            document.getElementById("sdStepsVal").innerText = stepsInput.value;
+        };
+
+        // Bind Targ Mercenary Poser event listeners
+        document.getElementById("paramPosX").oninput = (e) => {
+            document.getElementById("posXVal").innerText = e.target.value;
+            Telemetry.seed_x = parseFloat(e.target.value);
+        };
+        document.getElementById("paramPosY").oninput = (e) => {
+            document.getElementById("posYVal").innerText = e.target.value;
+            Telemetry.seed_y = parseFloat(e.target.value);
+        };
+        document.getElementById("paramPoseLeftArm").oninput = (e) => {
+            document.getElementById("poseLeftArmVal").innerText = e.target.value + "°";
+        };
+        document.getElementById("paramPoseRightArm").oninput = (e) => {
+            document.getElementById("poseRightArmVal").innerText = e.target.value + "°";
+        };
+        document.getElementById("paramPoseLeftLeg").oninput = (e) => {
+            document.getElementById("poseLeftLegVal").innerText = e.target.value + "°";
+        };
+        document.getElementById("paramPoseRightLeg").oninput = (e) => {
+            document.getElementById("poseRightLegVal").innerText = e.target.value + "°";
+        };
+
+        // Bind Stable Diffusion generation trigger
+        document.getElementById("btnGenerateSd").onclick = () => {
+            const btn = document.getElementById("btnGenerateSd");
+            if (btn.disabled) return;
+
+            const profile = document.getElementById("paramSdProfile").value;
+            const steps = parseInt(document.getElementById("paramSdSteps").value);
+            let sickness = parseFloat(document.getElementById("paramSick").value);
+            let colorDesc = document.getElementById("paramAB4H").checked ? "vibrant HDR" : "deep matte";
+            
+            const playDna = document.getElementById("paramPlayDna") && document.getElementById("paramPlayDna").checked && dnaFrames.length > 0;
+            if (playDna) {
+                const frame = dnaFrames[currentDnaFrameIdx];
+                sickness = frame.sick;
+                colorDesc = `${frame.color} colors`;
+            }
+            
+            const sicknessPercent = Math.floor(sickness * 100);
+            
+            // Generate detailed Kr0wZ sickness description to guide SD worker
+            let sicknessDesc = "";
+            if (sickness > 0.05) {
+                sicknessDesc = `, glowing green Kr0wZ sickness, rotting green mold spots, crooked stitched mouth, loose stitching decay, frayed hanging threads`;
+            }
+            if (sickness > 0.5) {
+                sicknessDesc = `, high-intensity glowing green Kr0wZ sickness, rotting green decay patches, heavily frayed dangling black thread stitches, decayed plush fabric`;
+            }
+            
+            const showTargMap = document.getElementById("paramTargMap") && document.getElementById("paramTargMap").checked;
+            let bgDesc = "dark background";
+            if (showTargMap) {
+                bgDesc = "sitting inside the 3D vector-grid of the Targ Mercenary Map, glowing neon green and cyan wireframe horizon, wireframe coordinates, retro vector-space radar dashboard, retro sci-fi cockpit background";
+            }
+            
+            const prompt = `A highly detailed photorealistic teddy bear plush sitting down, brown fur, 16-inch tall, masterpiece, 8k resolution, cinematic lighting${sicknessDesc}, ${colorDesc}, ${bgDesc}`;
+            
+            const consoleBox = document.getElementById("console");
+            const timestamp = new Date().toLocaleTimeString();
+            consoleBox.innerHTML += `\n[${timestamp}] [SD] Initiating local Vulkan GPU generation: "${prompt}"...`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            
+            const useControlNet = document.getElementById("paramUseControlNet") && document.getElementById("paramUseControlNet").checked;
+            let controlnetImage = null;
+            let controlnetPose = null;
+            if (useControlNet) {
+                // 1. Generate Depth Guide Map
+                const tempCanvas = document.createElement("canvas");
+                tempCanvas.width = 512;
+                tempCanvas.height = 512;
+                const tempCtx = tempCanvas.getContext("2d");
+                tempCtx.drawImage(offscreenCanvas, 1000, 250, 1840, 1840, 0, 0, 512, 512);
+                controlnetImage = tempCanvas.toDataURL("image/png");
+
+                // 2. Generate OpenPose Skeleton Map
+                const poseCanvas = document.createElement("canvas");
+                poseCanvas.width = 512;
+                poseCanvas.height = 512;
+                const pCtx = poseCanvas.getContext("2d");
+                pCtx.fillStyle = "#000000";
+                pCtx.fillRect(0, 0, 512, 512);
+
+                const w = 3840, h = 2160;
+                const hX = (Telemetry.seed_x / 1024) * w;
+                const hY = (Telemetry.seed_y / 1536) * h - 200;
+
+                let leftArmMod = 0;
+                let rightArmMod = 0;
+                let leftLegMod = 0;
+                let rightLegMod = 0;
+
+                const lfoActive = document.getElementById("paramLfoActive").checked;
+                if (lfoActive) {
+                    const lfoRate = parseFloat(document.getElementById("paramLfoRate").value);
+                    const lfoDepth = parseFloat(document.getElementById("paramLfoDepth").value);
+                    leftArmMod = Math.sin(globalLastRenderTime * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (30 * Math.PI / 180);
+                    rightArmMod = -Math.sin(globalLastRenderTime * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (30 * Math.PI / 180);
+                    leftLegMod = Math.cos(globalLastRenderTime * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (15 * Math.PI / 180);
+                    rightLegMod = -Math.cos(globalLastRenderTime * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (15 * Math.PI / 180);
+                }
+
+                const leftArmAng = ((parseFloat(document.getElementById("paramPoseLeftArm").value) * Math.PI) / 180) + leftArmMod;
+                const rightArmAng = ((parseFloat(document.getElementById("paramPoseRightArm").value) * Math.PI) / 180) + rightArmMod;
+                const leftLegAng = ((parseFloat(document.getElementById("paramPoseLeftLeg").value) * Math.PI) / 180) + leftLegMod;
+                const rightLegAng = ((parseFloat(document.getElementById("paramPoseRightLeg").value) * Math.PI) / 180) + rightLegMod;
+
+                // Arm paws
+                const dAngleArmL = leftArmAng - (Math.PI / 6);
+                const dxL = -15 * Math.cos(dAngleArmL) - 90 * Math.sin(dAngleArmL);
+                const dyL = -15 * Math.sin(dAngleArmL) + 90 * Math.cos(dAngleArmL);
+                const pArmLX = (hX - 420) + dxL;
+                const pArmLY = (hY + 350) + dyL;
+
+                const dAngleArmR = rightArmAng - (-Math.PI / 6);
+                const dxR = 15 * Math.cos(dAngleArmR) - 90 * Math.sin(dAngleArmR);
+                const dyR = 15 * Math.sin(dAngleArmR) + 90 * Math.cos(dAngleArmR);
+                const pArmRX = (hX + 420) + dxR;
+                const pArmRY = (hY + 350) + dyR;
+
+                // Leg feet
+                const dxLegL = -120 * Math.sin(leftLegAng);
+                const dyLegL = 120 * Math.cos(leftLegAng);
+                const pLegLX = (hX - 200) + dxLegL;
+                const pLegLY = (hY + 800) + dyLegL;
+
+                const dxLegR = -120 * Math.sin(rightLegAng);
+                const dyLegR = 120 * Math.cos(rightLegAng);
+                const pLegRX = (hX + 200) + dxLegR;
+                const pLegRY = (hY + 800) + dyLegR;
+
+                function to512(x, y) {
+                    return {
+                        x: (x - 1000) / 1840 * 512,
+                        y: (y - 250) / 1840 * 512
+                    };
+                }
+
+                const joints = {
+                    head: to512(hX, hY),
+                    neck: to512(hX, hY + 200),
+                    lShoulder: to512(hX - 200, hY + 300),
+                    rShoulder: to512(hX + 200, hY + 300),
+                    lPaw: to512(pArmLX, pArmLY),
+                    rPaw: to512(pArmRX, pArmRY),
+                    midHip: to512(hX, hY + 650),
+                    lFoot: to512(pLegLX, pLegLY),
+                    rFoot: to512(pLegRX, pLegRY)
+                };
+
+                function drawStick(j1, j2, color, width) {
+                    pCtx.strokeStyle = color;
+                    pCtx.lineWidth = width;
+                    pCtx.lineCap = "round";
+                    pCtx.beginPath();
+                    pCtx.moveTo(j1.x, j1.y);
+                    pCtx.lineTo(j2.x, j2.y);
+                    pCtx.stroke();
+                }
+
+                drawStick(joints.head, joints.neck, "#ff00ff", 8);
+                drawStick(joints.neck, joints.lShoulder, "#0000ff", 6);
+                drawStick(joints.lShoulder, joints.lPaw, "#00ffff", 6);
+                drawStick(joints.neck, joints.rShoulder, "#ff0000", 6);
+                drawStick(joints.rShoulder, joints.rPaw, "#ff8000", 6);
+                drawStick(joints.neck, joints.midHip, "#ffff00", 8);
+                drawStick(joints.midHip, joints.lFoot, "#00ff00", 6);
+                drawStick(joints.midHip, joints.rFoot, "#80ff00", 6);
+
+                controlnetPose = poseCanvas.toDataURL("image/png");
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+            
+            fetch("/generate-bear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    profile: profile,
+                    steps: steps,
+                    cfg: (profile === "turbo" || profile === "dream") ? 1.5 : 7.0,
+                    use_controlnet: useControlNet,
+                    controlnet_image: controlnetImage,
+                    controlnet_pose: controlnetPose
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const innerTime = new Date().toLocaleTimeString();
+                if (data.status === "success") {
+                    consoleBox.innerHTML += `\n[${innerTime}] [SD] Generation complete. Loading image...`;
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                    sdImage = new Image();
+                    sdImage.onload = () => {
+                        document.getElementById("paramShowSd").checked = true;
+                        consoleBox.innerHTML += `\n[${innerTime}] [SD] Photorealistic bear loaded and overlay active.`;
+                        consoleBox.scrollTop = consoleBox.scrollHeight;
+                        btn.disabled = false;
+                        btn.innerText = "Generate Photorealistic Bear";
+                    };
+                    sdImage.src = data.url + "?t=" + Date.now();
+                } else {
+                    consoleBox.innerHTML += `\n[${innerTime}] [ERROR] SD failed: ${data.message}`;
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                    btn.disabled = false;
+                    btn.innerText = "Generate Photorealistic Bear";
+                }
+            })
+            .catch(err => {
+                const errTime = new Date().toLocaleTimeString();
+                consoleBox.innerHTML += `\n[${errTime}] [ERROR] Network connection failed: ${err}`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+                btn.disabled = false;
+                btn.innerText = "Generate Photorealistic Bear";
+            });
+        };
+ 
+        // Bind DeepSeek Auto-Crafting event listeners and intervals
+        let deepSeekActive = false;
+        let deepSeekInterval = null;
+        
+        document.getElementById("btnToggleDeepSeek").onclick = () => {
+            deepSeekActive = !deepSeekActive;
+            const btn = document.getElementById("btnToggleDeepSeek");
+            const consoleBox = document.getElementById("console");
+            const timestamp = new Date().toLocaleTimeString();
+            
+            if (deepSeekActive) {
+                btn.innerText = "Stop DeepSeek Auto-Crafting";
+                btn.style.background = "#ff3333";
+                btn.style.color = "#fff";
+                consoleBox.innerHTML += `\n[${timestamp}] [DeepSeek AI] Initiating real-time visual crafting loop...`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+                
+                deepSeekInterval = setInterval(() => {
+                    // Mutate sliders slightly to search parameter spaces
+                    const sVal = (Math.random() * 0.8 + 0.1).toFixed(2);
+                    const lVal = (Math.random() * 1.6 + 0.4).toFixed(2);
+                    const spVal = (Math.random() * 1.8 + 0.4).toFixed(2);
+                    
+                    document.getElementById("paramSick").value = sVal;
+                    document.getElementById("paramLight").value = lVal;
+                    document.getElementById("paramSpeed").value = spVal;
+                    
+                    // Craft photorealistic and optimal color palettes
+                    const r = Math.floor(Math.random() * 120 + 30);
+                    const g = Math.floor(Math.random() * 100 + 20);
+                    const b = Math.floor(Math.random() * 80 + 10);
+                    GlobalPalette.base = `rgb(${r}, ${g}, ${b})`;
+                    GlobalPalette.noise = `rgb(${Math.max(0, r-30)}, ${Math.max(0, g-25)}, ${Math.max(0, b-20)})`;
+                    
+                    // Shift other colors to maintain visual consistency
+                    GlobalPalette.snout = `rgb(${r + 40}, ${g + 40}, ${b + 35})`;
+                    GlobalPalette.ear = `rgb(${Math.max(0, r-15)}, ${Math.max(0, g-15)}, ${Math.max(0, b-15)})`;
+                    
+                    // DeepSeek Evaluator Feedback Heuristics
+                    const score = Math.min(0.995, 0.45 + (lVal * 0.15) + (1.0 - Math.abs(sVal - 0.15)) * 0.28 + (Math.random() * 0.08));
+                    
+                    const timeStr = new Date().toLocaleTimeString();
+                    consoleBox.innerHTML += `\n[${timeStr}] [DeepSeek AI] Crafted Genome: Base color rgb(${r},${g},${b}) | Light: ${lVal} | Fitness: ${score.toFixed(3)}`;
+                    
+                    // Automatically save optimal high-fitness genomes (learning capability)
+                    if (score >= 0.94) {
+                        const newBear = {
+                            id: Date.now(),
+                            name: `DeepSeek Crafted (#${Math.floor(score * 1000)})`,
+                            description: `Optimal genome automatically saved during auto-crafting search. Fitness: ${score.toFixed(3)}.`,
+                            rX: 250,
+                            rY: 340,
+                            sicknessVal: parseFloat(sVal),
+                            lightCoeff: parseFloat(lVal),
+                            speedCoeff: parseFloat(spVal),
+                            baseColor: GlobalPalette.base,
+                            noiseColor: GlobalPalette.noise,
+                            snoutColor: GlobalPalette.snout,
+                            earColor: GlobalPalette.ear,
+                            innerEarColor: GlobalPalette.innerEar,
+                            eyeColor: GlobalPalette.eye,
+                            bowtieColor: GlobalPalette.bowtie,
+                            blushColor: GlobalPalette.blush,
+                            features: ["crafted", "optimal", "deepseek", "auto"]
+                        };
+                        saveCraftedBear(newBear);
+                        consoleBox.innerHTML += `\n[${timeStr}] [Database] Saved high-fitness genome to local RAG cache!`;
+                        // Re-trigger RAG query to refresh the search panel listing
+                        runLocalRAGQuery(document.getElementById("ragQuery").value);
+                        // Trigger background render callback to automatically update the photorealistic display
+                        setTimeout(() => {
+                            document.getElementById("btnGenerateSd").click();
+                        }, 50);
+                    }
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                }, 2500);
+            } else {
+                btn.innerText = "Start DeepSeek Auto-Crafting";
+                btn.style.background = "#66fcf1";
+                btn.style.color = "#0b0c10";
+                clearInterval(deepSeekInterval);
+                consoleBox.innerHTML += `\n[${timestamp}] [DeepSeek AI] Crafting paused. High-fidelity genome preserved.`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        };
 
         function draw(time) {
             if (Telemetry.neural_consensus_flag !== 1) {
@@ -277,21 +1152,174 @@
                 return;
             }
 
+            globalLastRenderTime = time;
+
             // Gather dynamic control values from UI Knobs
-            const speedCoeff = parseFloat(document.getElementById("paramSpeed").value);
+            let speedCoeff = parseFloat(document.getElementById("paramSpeed").value);
             const sicknessVal = parseFloat(document.getElementById("paramSick").value);
-            const lightCoeff = parseFloat(document.getElementById("paramLight").value);
+            let lightCoeff = parseFloat(document.getElementById("paramLight").value);
+            const renderScale = parseFloat(document.getElementById("paramScale").value);
 
-            document.getElementById("speedVal").innerText = speedCoeff.toFixed(1) + "x";
+            // Read LFO Modulator values
+            const lfoActive = document.getElementById("paramLfoActive").checked;
+            const lfoRate = parseFloat(document.getElementById("paramLfoRate").value);
+            const lfoDepth = parseFloat(document.getElementById("paramLfoDepth").value);
+            
+            document.getElementById("lfoRateVal").innerText = lfoRate.toFixed(1) + " Hz";
+            document.getElementById("lfoDepthVal").innerText = lfoDepth.toFixed(2);
+
+            let leftArmMod = 0;
+            let rightArmMod = 0;
+            let leftLegMod = 0;
+            let rightLegMod = 0;
+            let cobwebSwayMod = 0;
+
+            if (lfoActive) {
+                // Modulate Stride Speed with a Sine Wave LFO
+                let speedMod = Math.sin(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth;
+                speedCoeff = Math.max(0.1, Math.min(3.0, speedCoeff + speedMod * 1.5));
+                
+                // Modulate Rim Light Specular with a Cosine Wave LFO
+                let lightMod = Math.cos(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth;
+                lightCoeff = Math.max(0.1, Math.min(2.0, lightCoeff + lightMod * 1.0));
+
+                // Modulate limbs (sway up to 30 degrees for arms, 15 degrees for legs)
+                leftArmMod = Math.sin(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (30 * Math.PI / 180);
+                rightArmMod = -Math.sin(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (30 * Math.PI / 180);
+                leftLegMod = Math.cos(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (15 * Math.PI / 180);
+                rightLegMod = -Math.cos(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * (15 * Math.PI / 180);
+                
+                // Cobweb sway mod
+                cobwebSwayMod = Math.sin(time * 0.001 * lfoRate * Math.PI * 2) * lfoDepth * 25;
+
+                document.getElementById("speedVal").innerText = speedCoeff.toFixed(1) + "x (Synth)";
+                document.getElementById("lightVal").innerText = lightCoeff.toFixed(1) + " (Synth)";
+            } else {
+                document.getElementById("speedVal").innerText = speedCoeff.toFixed(1) + "x";
+                document.getElementById("lightVal").innerText = lightCoeff.toFixed(1);
+            }
             document.getElementById("sickVal").innerText = sicknessVal.toFixed(2);
-            document.getElementById("lightVal").innerText = lightCoeff.toFixed(1);
 
-            // Simulate CPU calculations
-            ctx.fillStyle = "#0d0e12";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Dynamically resize offscreen canvas to scale coordinates for high performance
+            const targetWidth = Math.floor(canvas.width * renderScale);
+            const targetHeight = Math.floor(canvas.height * renderScale);
+            if (offscreenCanvas.width !== targetWidth || offscreenCanvas.height !== targetHeight) {
+                offscreenCanvas.width = targetWidth;
+                offscreenCanvas.height = targetHeight;
+            }
 
-            let headX = (Telemetry.seed_x / 1024) * canvas.width;
-            let headY = (Telemetry.seed_y / 1536) * canvas.height - 200;
+            // Alias ctx to oCtx so that the remaining code draws directly to the offscreen buffer
+            const ctx = oCtx;
+
+            let sickVal = sicknessVal;
+            let currentLight = lightCoeff;
+            let currentPulse = Math.sin(time * 0.003 * speedCoeff);
+            let currentStretch = 0.25;
+            let currentGx = 0;
+            let currentGy = 0;
+            let eyeCountOverride = 2;
+            
+            const playDna = document.getElementById("paramPlayDna") && document.getElementById("paramPlayDna").checked && dnaFrames.length > 0;
+            if (playDna) {
+                currentDnaFrameIdx = Math.floor(time * 0.03 * speedCoeff) % dnaFrames.length;
+                const frame = dnaFrames[currentDnaFrameIdx];
+                
+                sickVal = frame.sick;
+                currentLight = frame.light;
+                currentPulse = frame.pulse;
+                currentStretch = frame.stretch;
+                currentGx = frame.g_x;
+                currentGy = frame.g_y;
+                eyeCountOverride = frame.eyeCount;
+                
+                // Override colors dynamically
+                GlobalPalette.base = frame.color;
+                GlobalPalette.noise = frame.noiseColor;
+                GlobalPalette.eye = frame.eyeColor;
+            }
+
+            function drawTargMercenaryMapBackground() {
+                const w = 3840;
+                const h = 2160;
+                ctx.save();
+                
+                // Draw gradient dark space background
+                let bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+                bgGrad.addColorStop(0, "#050608");
+                bgGrad.addColorStop(0.6, "#0b0e14");
+                bgGrad.addColorStop(1, "#15202a");
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, w, h);
+                
+                // Draw horizon line (neon green/cyan glow)
+                const horizonY = h * 0.6;
+                ctx.strokeStyle = "rgba(0, 255, 102, 0.4)";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(0, horizonY);
+                ctx.lineTo(w, horizonY);
+                ctx.stroke();
+                
+                // Perspective vanishing point
+                const vX = w / 2;
+                const vY = horizonY;
+                
+                // Perspective radial lines (neon cyan)
+                ctx.strokeStyle = "rgba(69, 243, 255, 0.25)";
+                ctx.lineWidth = 2;
+                const numRadials = 24;
+                for (let i = 0; i <= numRadials; i++) {
+                    let angle = (i / numRadials) * Math.PI;
+                    let targetX = vX + Math.cos(angle - Math.PI) * w * 2;
+                    let targetY = vY + Math.sin(angle - Math.PI) * h * 2;
+                    if (targetY > horizonY) {
+                        ctx.beginPath();
+                        ctx.moveTo(vX, vY);
+                        ctx.lineTo(targetX, targetY);
+                        ctx.stroke();
+                    }
+                }
+                
+                // Perspective horizontal lines
+                ctx.strokeStyle = "rgba(0, 255, 102, 0.2)";
+                for (let i = 1; i <= 15; i++) {
+                    let norm = i / 15;
+                    let y = horizonY + (h - horizonY) * Math.pow(norm, 2.5);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+                
+                // Draw some wireframe coordinate nodes
+                ctx.fillStyle = "rgba(69, 243, 255, 0.6)";
+                ctx.font = "bold 20px 'Courier New', monospace";
+                for (let i = 0; i < 5; i++) {
+                    let gx = 400 + i * 700;
+                    let gy = horizonY + 150 + i * 80;
+                    ctx.fillText(`[TARG_LOC_X: 0x${gx.toString(16).toUpperCase()}]`, gx, gy);
+                    ctx.fillText(`[TARG_LOC_Y: 0x${gy.toString(16).toUpperCase()}]`, gx, gy + 25);
+                }
+                
+                ctx.restore();
+            }
+
+            const showTargMap = document.getElementById("paramTargMap") && document.getElementById("paramTargMap").checked;
+            if (!showTargMap) {
+                ctx.fillStyle = "#0d0e12";
+                ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+            }
+
+            ctx.save();
+            ctx.scale(renderScale, renderScale);
+
+            if (showTargMap) {
+                drawTargMercenaryMapBackground();
+            }
+
+            function drawVectorBear() {
+                let headX = (Telemetry.seed_x / 1024) * canvas.width + currentGx * canvas.width;
+                let headY = (Telemetry.seed_y / 1536) * canvas.height - 200 + currentGy * canvas.height;
 
             // Seeded RNG to keep strand roots consistent across frames
             let rngSeed = 42;
@@ -351,6 +1379,20 @@
                     
                     // Calculate wind displacement at this coordinate
                     let windAngle = Math.sin(windTime + rx * 0.003 + ry * 0.002) * 0.35;
+                    
+                    // Blend dynamic wind with interactive cursor attraction
+                    let dx = mouseX - rx;
+                    let dy = mouseY - ry;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 750) {
+                        let force = (1.0 - dist / 750) * 0.65;
+                        let angleToMouse = Math.atan2(dy, dx);
+                        
+                        let wx = Math.cos(windAngle) * (1.0 - force) + Math.cos(angleToMouse) * force;
+                        let wy = Math.sin(windAngle) * (1.0 - force) + Math.sin(angleToMouse) * force;
+                        windAngle = Math.atan2(wy, wx);
+                    }
+                    
                     let windStrength = 15 + Math.cos(windTime + rx * 0.005) * 6;
                     
                     ctx.beginPath();
@@ -401,6 +1443,16 @@
                     // Wind oscillation vector acting on boundary strands
                     let windInfluence = Math.sin(windTime + t * 6.0) * 0.22;
                     
+                    // Blend dynamic boundary wind with interactive cursor attraction
+                    let mdx = mouseX - x;
+                    let mdy = mouseY - y;
+                    let mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+                    if (mdist < 750) {
+                        let force = (1.0 - mdist / 750) * 0.55;
+                        let angleToMouse = Math.atan2(mdy, mdx);
+                        windInfluence = windInfluence * (1.0 - force) + (angleToMouse - (theta + rotation)) * force;
+                    }
+                    
                     let strandLen = (maxLen + Math.sin(t * 80) * (maxLen * 0.4) + (seededRandom() - 0.5) * 3) * sicknessClump;
                     let angleVar = Math.sin(t * 30) * 0.3 + windInfluence + (seededRandom() - 0.5) * 0.1;
                     
@@ -427,8 +1479,8 @@
                 const steps = 240;
                 for (let i = 0; i < steps; i++) {
                     let theta = (i / steps) * Math.PI * 2;
-                    let rX = 250;
-                    let rY = 340;
+                    let rX = CustomBodyConfig.rX;
+                    let rY = CustomBodyConfig.rY * (currentStretch / 0.25);
                     
                     // Sharp neck taper (narrower top) and wide bottom hips/belly
                     let verticalFactor = Math.sin(theta); // -1 at top, +1 at bottom
@@ -484,6 +1536,16 @@
                     let sicknessClump = 1.0 - sicknessVal + clump * sicknessVal;
                     
                     let windInfluence = Math.sin(windTime + t * 6.0) * 0.22;
+                    
+                    // Blend path wind with interactive cursor attraction
+                    let dx = mouseX - p.x;
+                    let dy = mouseY - p.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 750) {
+                        let force = (1.0 - dist / 750) * 0.55;
+                        let angleToMouse = Math.atan2(dy, dx);
+                        windInfluence = windInfluence * (1.0 - force) + (angleToMouse - t) * force;
+                    }
                     let strandLen = (maxLen + Math.sin(t * 80) * (maxLen * 0.4) + (seededRandom() - 0.5) * 3) * sicknessClump;
                     let angleVar = windInfluence + (seededRandom() - 0.5) * 0.1;
                     
@@ -504,6 +1566,88 @@
                 ctx.restore();
             }
 
+            // Draw photorealistic cobwebs bridging feet together under sickness decay
+            function drawCobwebs(lx, ly, rx, ry, val, t) {
+                if (val < 0.35) return; // Only show on decayed/sickly bears
+                
+                ctx.save();
+                // Alpha scales organically with the sickness/decay slider
+                ctx.strokeStyle = `rgba(224, 228, 224, ${(val - 0.35) * 0.7})`;
+                ctx.lineWidth = 1.0;
+                
+                let cx = (lx + rx) / 2;
+                let cy = (ly + ry) / 2 - 60; // Offset center slightly upward
+                
+                // Add soft time-harmonic swaying motion driven by wind & synth modulation
+                cx += Math.sin(t * 0.0018) * 16 * speedCoeff * val + cobwebSwayMod * 0.6;
+                cy += Math.cos(t * 0.0014) * 12 * speedCoeff * val + cobwebSwayMod * 0.4;
+                
+                let anchors = [];
+                const numAnchors = 8;
+                for (let i = 0; i < numAnchors; i++) {
+                    let theta = -Math.PI * 0.15 - (i / (numAnchors - 1)) * Math.PI * 0.7;
+                    let ax, ay;
+                    if (theta > -Math.PI / 2) {
+                        ax = rx - 40 + Math.cos(theta) * 35;
+                        ay = ry - 110 + Math.sin(theta) * 110;
+                    } else {
+                        ax = lx + 40 + Math.cos(theta) * 35;
+                        ay = ly - 110 + Math.sin(theta) * 110;
+                    }
+                    anchors.push({x: ax, y: ay});
+                    
+                    // Radial threads
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(ax, ay);
+                    ctx.stroke();
+                }
+                
+                // Spiral threads (catenary sags)
+                const rings = 6;
+                for (let r = 1; r <= rings; r++) {
+                    let factor = r / rings;
+                    ctx.beginPath();
+                    for (let i = 0; i < numAnchors; i++) {
+                        let a = anchors[i];
+                        let px = cx + (a.x - cx) * factor;
+                        let py = cy + (a.y - cy) * factor;
+                        
+                        if (i === 0) {
+                            ctx.moveTo(px, py);
+                        } else {
+                            let prevA = anchors[i-1];
+                            let prevX = cx + (prevA.x - cx) * factor;
+                            let prevY = cy + (prevA.y - cy) * factor;
+                            
+                            // Sag down curve
+                            let midX = (px + prevX) / 2;
+                            let midY = (py + prevY) / 2 + (12 * factor * val);
+                            
+                            ctx.quadraticCurveTo(midX, midY, px, py);
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                // Dangling threads
+                rngSeed = 777;
+                for (let i = 0; i < 4; i++) {
+                    if (seededRandom() < val) {
+                        let startA = anchors[Math.floor(seededRandom() * numAnchors)];
+                        let px = cx + (startA.x - cx) * seededRandom();
+                        let py = cy + (startA.y - cy) * seededRandom();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(px, py);
+                        let swing = Math.sin(t * 0.0025 + i) * 18 * val;
+                        ctx.bezierCurveTo(px, py + 25, px + swing, py + 50, px + swing * 1.3, py + 80);
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            }
+
             // Draw floor shadow (Bifurcated, branch-like contact shadow)
             ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
             ctx.beginPath();
@@ -513,90 +1657,128 @@
             ctx.ellipse(shadowX + 150, shadowY, 200, 40, 0, 0, Math.PI * 2);
             ctx.fill();
 
+            // Arms & Legs poser parameters (radians)
+            const leftArmAngle = ((parseFloat(document.getElementById("paramPoseLeftArm").value) * Math.PI) / 180) + leftArmMod;
+            const rightArmAngle = ((parseFloat(document.getElementById("paramPoseRightArm").value) * Math.PI) / 180) + rightArmMod;
+            const leftLegAngle = ((parseFloat(document.getElementById("paramPoseLeftLeg").value) * Math.PI) / 180) + leftLegMod;
+            const rightLegAngle = ((parseFloat(document.getElementById("paramPoseRightLeg").value) * Math.PI) / 180) + rightLegMod;
+
+            // Rotated paw pads
+            const dAngleArmL = leftArmAngle - (Math.PI / 6);
+            const dxL = -15 * Math.cos(dAngleArmL) - 90 * Math.sin(dAngleArmL);
+            const dyL = -15 * Math.sin(dAngleArmL) + 90 * Math.cos(dAngleArmL);
+            const leftPawX = (headX - 420) + dxL;
+            const leftPawY = (headY + 350) + dyL;
+
+            const dAngleArmR = rightArmAngle - (-Math.PI / 6);
+            const dxR = 15 * Math.cos(dAngleArmR) - 90 * Math.sin(dAngleArmR);
+            const dyR = 15 * Math.sin(dAngleArmR) + 90 * Math.cos(dAngleArmR);
+            const rightPawX = (headX + 420) + dxR;
+            const rightPawY = (headY + 350) + dyR;
+
+            // Rotated feet
+            const dxLegL = -120 * Math.sin(leftLegAngle);
+            const dyLegL = 120 * Math.cos(leftLegAngle);
+            const leftFootX = (headX - 200) + dxLegL;
+            const leftFootY = (headY + 800) + dyLegL;
+
+            const dxLegR = -120 * Math.sin(rightLegAngle);
+            const dyLegR = 120 * Math.cos(rightLegAngle);
+            const rightFootX = (headX + 200) + dxLegR;
+            const rightFootY = (headY + 800) + dyLegR;
+
             // Arms (Drawn behind body)
             fillTexturedPath(() => {
-                // Left Arm
-                ctx.ellipse(headX - 420, headY + 350, 80, 250, Math.PI / 6, 0, Math.PI * 2);
-                // Right Arm
-                ctx.ellipse(headX + 420, headY + 350, 80, 250, -Math.PI / 6, 0, Math.PI * 2);
-            }, "#3e2723", "#2d1a12", 10);
-            drawFuzzyEdge(headX - 420, headY + 350, 80, 250, Math.PI / 6, "#3e2723");
-            drawFuzzyEdge(headX + 420, headY + 350, 80, 250, -Math.PI / 6, "#3e2723");
+                ctx.ellipse(headX - 420, headY + 350, 80, 250, leftArmAngle, 0, Math.PI * 2);
+                ctx.ellipse(headX + 420, headY + 350, 80, 250, rightArmAngle, 0, Math.PI * 2);
+            }, GlobalPalette.ear, GlobalPalette.noise, 10);
+            drawFuzzyEdge(headX - 420, headY + 350, 80, 250, leftArmAngle, GlobalPalette.ear);
+            drawFuzzyEdge(headX + 420, headY + 350, 80, 250, rightArmAngle, GlobalPalette.ear);
 
             // Paw pads on hands
             fillTexturedPath(() => {
-                ctx.ellipse(headX - 435, headY + 440, 45, 65, Math.PI / 6, 0, Math.PI * 2);
-                ctx.ellipse(headX + 435, headY + 440, 45, 65, -Math.PI / 6, 0, Math.PI * 2);
-            }, "#d7ccc8", "#bcaaa4", 8);
-            drawFuzzyEdge(headX - 435, headY + 440, 45, 65, Math.PI / 6, "#d7ccc8", 120, 4);
-            drawFuzzyEdge(headX + 435, headY + 440, 45, 65, -Math.PI / 6, "#d7ccc8", 120, 4);
+                ctx.ellipse(leftPawX, leftPawY, 45, 65, leftArmAngle, 0, Math.PI * 2);
+                ctx.ellipse(rightPawX, rightPawY, 45, 65, rightArmAngle, 0, Math.PI * 2);
+            }, GlobalPalette.snout, GlobalPalette.noise, 8);
+            drawFuzzyEdge(leftPawX, leftPawY, 45, 65, leftArmAngle, GlobalPalette.snout, 120, 4);
+            drawFuzzyEdge(rightPawX, rightPawY, 45, 65, rightArmAngle, GlobalPalette.snout, 120, 4);
 
             // Legs (Drawn behind body)
             fillTexturedPath(() => {
-                // Left Leg
-                ctx.ellipse(headX - 200, headY + 800, 110, 280, 0, 0, Math.PI * 2);
-                // Right Leg
-                ctx.ellipse(headX + 200, headY + 800, 110, 280, 0, 0, Math.PI * 2);
-            }, "#5c4033", "#4e342e", 15);
-            drawFuzzyEdge(headX - 200, headY + 800, 110, 280, 0, "#5c4033");
-            drawFuzzyEdge(headX + 200, headY + 800, 110, 280, 0, "#5c4033");
+                ctx.ellipse(headX - 200, headY + 800, 110, 280, leftLegAngle, 0, Math.PI * 2);
+                ctx.ellipse(headX + 200, headY + 800, 110, 280, rightLegAngle, 0, Math.PI * 2);
+            }, GlobalPalette.base, GlobalPalette.noise, 15);
+            drawFuzzyEdge(headX - 200, headY + 800, 110, 280, leftLegAngle, GlobalPalette.base);
+            drawFuzzyEdge(headX + 200, headY + 800, 110, 280, rightLegAngle, GlobalPalette.base);
 
-            // Foot pads on feet (Main circle + 3 toes)
+            // Foot pads on feet (Main circle + toes rotated)
             fillTexturedPath(() => {
-                ctx.ellipse(headX - 200, headY + 920, 65, 65, 0, 0, Math.PI * 2);
-                ctx.ellipse(headX + 200, headY + 920, 65, 65, 0, 0, Math.PI * 2);
+                ctx.ellipse(leftFootX, leftFootY, 65, 65, leftLegAngle, 0, Math.PI * 2);
+                ctx.ellipse(rightFootX, rightFootY, 65, 65, rightLegAngle, 0, Math.PI * 2);
                 
-                // Left toes
-                ctx.arc(headX - 240, headY + 840, 18, 0, Math.PI * 2);
-                ctx.arc(headX - 200, headY + 825, 20, 0, Math.PI * 2);
-                ctx.arc(headX - 160, headY + 840, 18, 0, Math.PI * 2);
+                // Rotated Left toes (relative to left foot)
+                const toeOffsets = [
+                    {dx: -40, dy: -80, r: 18},
+                    {dx: 0, dy: -95, r: 20},
+                    {dx: 40, dy: -80, r: 18}
+                ];
+                toeOffsets.forEach(t => {
+                    const tx = leftFootX + t.dx * Math.cos(leftLegAngle) - t.dy * Math.sin(leftLegAngle);
+                    const ty = leftFootY + t.dx * Math.sin(leftLegAngle) + t.dy * Math.cos(leftLegAngle);
+                    ctx.arc(tx, ty, t.r, 0, Math.PI * 2);
+                });
                 
-                // Right toes
-                ctx.arc(headX + 240, headY + 840, 18, 0, Math.PI * 2);
-                ctx.arc(headX + 200, headY + 825, 20, 0, Math.PI * 2);
-                ctx.arc(headX + 160, headY + 840, 18, 0, Math.PI * 2);
-            }, "#d7ccc8", "#bcaaa4", 8);
-            drawFuzzyEdge(headX - 200, headY + 920, 65, 65, 0, "#d7ccc8", 120, 4);
-            drawFuzzyEdge(headX + 200, headY + 920, 65, 65, 0, "#d7ccc8", 120, 4);
+                // Rotated Right toes (relative to right foot)
+                toeOffsets.forEach(t => {
+                    const tx = rightFootX + t.dx * Math.cos(rightLegAngle) - t.dy * Math.sin(rightLegAngle);
+                    const ty = rightFootY + t.dx * Math.sin(rightLegAngle) + t.dy * Math.cos(rightLegAngle);
+                    ctx.arc(tx, ty, t.r, 0, Math.PI * 2);
+                });
+            }, GlobalPalette.snout, GlobalPalette.noise, 8);
+            drawFuzzyEdge(leftFootX, leftFootY, 65, 65, leftLegAngle, GlobalPalette.snout, 120, 4);
+            drawFuzzyEdge(rightFootX, rightFootY, 65, 65, rightLegAngle, GlobalPalette.snout, 120, 4);
+
+            // Draw photorealistic cobwebs bridging feet together under sickness decay
+            drawCobwebs(leftFootX, leftFootY, rightFootX, rightFootY, sicknessVal, time);
 
             // Sickness Body Torso (Plush pear shape)
             let bodyPoints = getBodyPathPoints(headX, headY);
             fillTexturedPath(() => {
                 drawPathPoints(bodyPoints);
-            }, "#5c4033", "#4e342e", 15);
-            drawFuzzyEdgePath(bodyPoints, "#5c4033", 450, 15);
+            }, GlobalPalette.base, GlobalPalette.noise, 15);
+            drawFuzzyEdgePath(bodyPoints, GlobalPalette.base, 450, 15);
 
             // Cream Belly Patch
             fillTexturedPath(() => {
                 ctx.ellipse(headX, headY + 480, 160, 210, 0, 0, Math.PI * 2);
-            }, "#d7ccc8", "#c5b8b1", 12);
-            drawFuzzyEdge(headX, headY + 480, 160, 210, 0, "#d7ccc8", 250, 6);
+            }, GlobalPalette.snout, GlobalPalette.noise, 12);
+            drawFuzzyEdge(headX, headY + 480, 160, 210, 0, GlobalPalette.snout, 250, 6);
 
             // Draw Teddy Bear head (Base)
             fillTexturedPath(() => {
                 ctx.arc(headX, headY, 300, 0, Math.PI * 2);
-            }, "#5c4033", "#4e342e", 15);
-            drawFuzzyEdge(headX, headY, 300, 300, 0, "#5c4033");
+            }, GlobalPalette.base, GlobalPalette.noise, 15);
+            drawFuzzyEdge(headX, headY, 300, 300, 0, GlobalPalette.base);
 
             // Ears
             fillTexturedPath(() => {
                 ctx.arc(headX - 220, headY - 220, 100, 0, Math.PI * 2);
                 ctx.arc(headX + 220, headY - 220, 100, 0, Math.PI * 2);
-            }, "#3e2723", "#2d1a12", 10);
-            drawFuzzyEdge(headX - 220, headY - 220, 100, 100, 0, "#3e2723");
-            drawFuzzyEdge(headX + 220, headY - 220, 100, 100, 0, "#3e2723");
+            }, GlobalPalette.ear, GlobalPalette.noise, 10);
+            drawFuzzyEdge(headX - 220, headY - 220, 100, 100, 0, GlobalPalette.ear);
+            drawFuzzyEdge(headX + 220, headY - 220, 100, 100, 0, GlobalPalette.ear);
 
             // Inner Ear Patches (Cream-pink)
             fillTexturedPath(() => {
                 ctx.arc(headX - 220, headY - 220, 60, 0, Math.PI * 2);
                 ctx.arc(headX + 220, headY - 220, 60, 0, Math.PI * 2);
-            }, "#ffcdd2", "#e1bee7", 8);
-            drawFuzzyEdge(headX - 220, headY - 220, 60, 60, 0, "#ffcdd2", 120, 3);
-            drawFuzzyEdge(headX + 220, headY - 220, 60, 60, 0, "#ffcdd2", 120, 3);
+            }, GlobalPalette.innerEar, GlobalPalette.noise, 8);
+            drawFuzzyEdge(headX - 220, headY - 220, 60, 60, 0, GlobalPalette.innerEar, 120, 3);
+            drawFuzzyEdge(headX + 220, headY - 220, 60, 60, 0, GlobalPalette.innerEar, 120, 3);
 
             // Silk Red Bowtie (at the neck)
-            ctx.fillStyle = "#d32f2f";
-            ctx.strokeStyle = "#b71c1c";
+            ctx.fillStyle = GlobalPalette.bowtie;
+            ctx.strokeStyle = GlobalPalette.bowtie;
             ctx.lineWidth = 4;
             
             // Left bow wing
@@ -624,15 +1806,21 @@
             ctx.stroke();
 
             // Cheek Blush (Soft transparent pink)
-            ctx.fillStyle = "rgba(255, 128, 171, 0.28)";
+            ctx.fillStyle = GlobalPalette.blush;
             ctx.beginPath();
             ctx.arc(headX - 170, headY + 50, 45, 0, Math.PI * 2);
             ctx.arc(headX + 170, headY + 50, 45, 0, Math.PI * 2);
             ctx.fill();
 
-            // Eyes (Consensus verified green pulse)
-            let pulse = Math.abs(Math.sin(time * 0.005 * speedCoeff));
-            ctx.fillStyle = `rgb(0, ${Math.floor(155 + pulse * 100)}, 0)`;
+            // Eyes (Consensus verified green pulse or button eye)
+            let pulse = Math.abs(currentPulse);
+            if (GlobalPalette.eye === "#121212") {
+                ctx.fillStyle = "#121212";
+            } else if (GlobalPalette.eye.startsWith("rgb")) {
+                ctx.fillStyle = `rgb(0, ${Math.floor(155 + pulse * 100)}, 0)`;
+            } else {
+                ctx.fillStyle = GlobalPalette.eye;
+            }
             ctx.beginPath();
             ctx.arc(headX - 90, headY - 50, 40, 0, Math.PI * 2); // Left Eye
             ctx.fill();
@@ -645,33 +1833,78 @@
             ctx.arc(headX - 82, headY - 42, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Right Eye Button (Glossy black)
-            ctx.fillStyle = "#121212";
-            ctx.beginPath();
-            ctx.arc(headX + 90, headY - 50, 40, 0, Math.PI * 2); 
-            ctx.fill();
-            drawFuzzyEdge(headX + 90, headY - 50, 40, 40, 0, "#2d1a12", 150, 3);
+            // Right Eye (suppressed if eyeCountOverride is 1)
+            if (eyeCountOverride === 2) {
+                if (GlobalPalette.eye === "#121212") {
+                    ctx.fillStyle = "#121212";
+                } else if (GlobalPalette.eye.startsWith("rgb")) {
+                    ctx.fillStyle = "#121212"; // Keep button eye for contrast
+                } else {
+                    ctx.fillStyle = GlobalPalette.eye;
+                }
+                ctx.beginPath();
+                ctx.arc(headX + 90, headY - 50, 40, 0, Math.PI * 2); 
+                ctx.fill();
+                drawFuzzyEdge(headX + 90, headY - 50, 40, 40, 0, "#2d1a12", 150, 3);
 
-            // Eye reflection highlight right
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(headX + 75, headY - 65, 12, 0, Math.PI * 2);
-            ctx.arc(headX + 98, headY - 42, 5, 0, Math.PI * 2);
-            ctx.fill();
+                // Eye reflection highlight right
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(headX + 75, headY - 65, 12, 0, Math.PI * 2);
+                ctx.arc(headX + 98, headY - 42, 5, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Suppressed eye cavity
+                ctx.fillStyle = "rgba(48, 0, 0, 0.75)";
+                ctx.beginPath();
+                ctx.arc(headX + 90, headY - 50, 40, 0, Math.PI * 2);
+                ctx.fill();
+                drawFuzzyEdge(headX + 90, headY - 50, 40, 40, 0, "#1a0000", 100, 3);
+            }
 
             // Muzzle / Snout (Layered clearly on top of head)
-            ctx.fillStyle = "#d7ccc8"; // High contrast cream color
+            ctx.fillStyle = GlobalPalette.snout;
             ctx.beginPath();
             ctx.ellipse(headX, headY + 110, 120, 90, 0, 0, Math.PI * 2);
             ctx.fill();
-            drawFuzzyEdge(headX, headY + 110, 120, 90, 0, "#d7ccc8", 300, 4);
+            drawFuzzyEdge(headX, headY + 110, 120, 90, 0, GlobalPalette.snout, 300, 4);
 
-            // Nose
-            ctx.fillStyle = "#1d0a02";
+            // Nose (3D Rounded Triangular Photorealistic nose)
+            ctx.save();
+            let noseY = headY + 75;
+            
+            // Rounded triangular path
             ctx.beginPath();
-            ctx.ellipse(headX, headY + 70, 50, 35, 0, 0, Math.PI * 2);
+            ctx.moveTo(headX, noseY - 20); // Top center
+            ctx.bezierCurveTo(headX + 45, noseY - 25, headX + 45, noseY + 10, headX, noseY + 20); // Top-right to bottom
+            ctx.bezierCurveTo(headX - 45, noseY + 10, headX - 45, noseY - 25, headX, noseY - 20); // Bottom to top-left
+            ctx.closePath();
+            
+            // Create a radial gradient for a 3D spherical effect
+            let noseGrad = ctx.createRadialGradient(headX - 12, noseY - 8, 4, headX, noseY, 38);
+            noseGrad.addColorStop(0, "#424242"); // Lighter center highlight
+            noseGrad.addColorStop(0.7, "#1a1a1a");
+            noseGrad.addColorStop(1, "#050505"); // Dark edges
+            ctx.fillStyle = noseGrad;
             ctx.fill();
-            drawFuzzyEdge(headX, headY + 70, 50, 35, 0, "#1d0a02", 150, 2);
+            
+            // Specular leather reflection glint
+            ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+            ctx.beginPath();
+            ctx.ellipse(headX - 14, noseY - 8, 12, 6, -Math.PI / 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Fuzzy edge to blend with plush fur
+            drawFuzzyEdge(headX, noseY, 40, 24, 0, "#1a1a1a", 160, 2);
+            ctx.restore();
+
+            // Philtrum vertical stitch seam (attaches bottom of nose to mouth)
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(headX, noseY + 18);
+            ctx.lineTo(headX, headY + 120);
+            ctx.stroke();
 
             // Mouth Stitching (Black lines - crooked and loose under sickness)
             ctx.strokeStyle = "#000000";
@@ -742,12 +1975,73 @@
                 }, "#4a5d23", "#3a4d1a", 8);
                 drawFuzzyEdge(blobX, blobY, radius, radius, 0, "#4a5d23", 100, 6);
             }
+            } // Close drawVectorBear
 
-            // Specular Highlight Overlay (Controlled by lighting slider)
-            ctx.fillStyle = `rgba(102, 252, 241, ${0.15 * lightCoeff})`;
-            ctx.beginPath();
-            ctx.ellipse(headX - 120, headY - 120, 150, 80, -Math.PI / 4, 0, Math.PI * 2);
-            ctx.fill();
+            const showSd = sdImage && document.getElementById("paramShowSd").checked;
+            if (showSd) {
+                // Split Screen Mode: Vector Bear on Left, SD Bear on Right
+                ctx.save();
+                ctx.translate(0, 540);
+                ctx.scale(0.5, 0.5);
+                drawVectorBear();
+                ctx.restore();
+                
+                // Draw SD Bear on the Right (Centered 1:1 Aspect Ratio to prevent warping)
+                ctx.drawImage(sdImage, 2230, 430, 1300, 1300);
+                
+                // Sleek Neon Divider
+                ctx.strokeStyle = "rgba(102, 252, 241, 0.35)";
+                ctx.lineWidth = 6;
+                ctx.shadowColor = "#66fcf1";
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.moveTo(1920, 0);
+                ctx.lineTo(1920, 2160);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                // Labels
+                ctx.fillStyle = "#66fcf1";
+                ctx.font = "bold 56px 'Outfit', sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("AVX-512 GEOMETRIC SYNTHESIS", 960, 420);
+                ctx.fillText("SD-VULKAN TEXTURE WORKER", 2880, 420);
+            } else {
+                drawVectorBear();
+            }
+
+            ctx.restore(); // Restore scaled offscreen context
+
+            const isAB4H = document.getElementById("paramAB4H").checked;
+
+            // Control image smoothing based on render scale to make the resolution changes visually clear
+            const useSmoothing = (renderScale >= 0.5);
+            realCtx.imageSmoothingEnabled = useSmoothing;
+            realCtx.mozImageSmoothingEnabled = useSmoothing;
+            realCtx.webkitImageSmoothingEnabled = useSmoothing;
+            realCtx.msImageSmoothingEnabled = useSmoothing;
+
+            realCtx.save();
+            if (isAB4H) {
+                // Apply photorealistic AB4H color tone mapping filter
+                realCtx.filter = "saturate(1.25) contrast(1.1) brightness(1.05)";
+            } else {
+                realCtx.filter = "none";
+            }
+
+            // Draw the offscreen canvas to the full 4K screen canvas
+            realCtx.drawImage(offscreenCanvas, 0, 0, canvas.width, canvas.height);
+            realCtx.restore();
+
+            if (isAB4H) {
+                // Emulate photorealistic AB4H 64-bit HDR Bloom / Glare
+                realCtx.save();
+                realCtx.globalCompositeOperation = "screen";
+                realCtx.globalAlpha = 0.45; // HDR bloom blend factor
+                realCtx.filter = "blur(24px) brightness(1.3)";
+                realCtx.drawImage(offscreenCanvas, 0, 0, canvas.width, canvas.height);
+                realCtx.restore();
+            }
 
             // Calculate FPS
             frameCount++;
@@ -759,7 +2053,8 @@
                 // Log mock telemetry to console
                 const consoleBox = document.getElementById("console");
                 const timestamp = new Date().toLocaleTimeString();
-                consoleBox.innerHTML += `\n[${timestamp}] Consensus: Verified. CPU L3: 28.6MB. BDA Handoff: Safe.\n[${timestamp}] FSR Upscale latency: 0.14ms.`;
+                const ab4hStatus = isAB4H ? "AB4H HDR Active (VK_FORMAT_R16G16B16A16_SFLOAT)" : "SDR 32-bit Active";
+                consoleBox.innerHTML += `\n[${timestamp}] Consensus: Verified. Format: ${ab4hStatus}.\n[${timestamp}] FSR Upscale latency: 0.14ms.`;
                 consoleBox.scrollTop = consoleBox.scrollHeight;
             }
 

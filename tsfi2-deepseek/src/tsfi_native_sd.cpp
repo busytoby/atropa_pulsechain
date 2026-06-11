@@ -88,6 +88,13 @@ int main(int argc, char** argv) {
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
     if (!ctx) {
+        if (profile == MODEL_DREAMSHAPER) {
+            printf("[WARNING] Failed to load Dreamshaper. Falling back to SD 1.5 weights.\n");
+            params.model_path = "assets/models/sd15.safetensors";
+            ctx = new_sd_ctx(&params);
+        }
+    }
+    if (!ctx) {
         printf("[FRACTURE] Failed to create Stable Diffusion Context (GPU/Model Error)\n");
         return 1;
     }
@@ -102,7 +109,8 @@ int main(int argc, char** argv) {
     gen_params.width = shm_depth ? shm_depth->width : 512;
     gen_params.height = shm_depth ? shm_depth->height : 512;
     gen_params.batch_count = 1;
-    gen_params.seed = -1;
+    srand((unsigned int)time(NULL) ^ (unsigned int)clock());
+    gen_params.seed = rand();
     gen_params.strength = strength;
     gen_params.control_strength = 0.9f;
     gen_params.control_guidance_end = 1.0f;

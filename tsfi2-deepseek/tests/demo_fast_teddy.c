@@ -17,7 +17,8 @@ void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
     // Wave calculations for natural arm movement
     float arm_wave = sinf(time_val * M_PI * 1.5f);
     
-    // ZMM parallelization across X (16 pixels at a time)
+    // ZMM parallelization across X (16 pixels at a time) and OpenMP multi-processing across Y
+    #pragma omp parallel for schedule(dynamic)
     for (int y = 0; y < HEIGHT; y++) {
         float ny = (float)y / HEIGHT * 2.0f - 1.0f;
         __m512 vy = _mm512_set1_ps(ny);

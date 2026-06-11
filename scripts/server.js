@@ -38,6 +38,7 @@ const server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
+    console.log(`[SERVER] ${req.method} ${req.url}`);
     if (req.method === "OPTIONS") {
         res.writeHead(204);
         res.end();
@@ -363,6 +364,9 @@ const server = http.createServer((req, res) => {
     // Serve static files from frontend directory
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     let filePath = parsedUrl.pathname === "/" ? "/index.html" : parsedUrl.pathname;
+    if (filePath.startsWith("/frontend/")) {
+        filePath = filePath.replace("/frontend/", "/");
+    }
     let absolutePath = path.join(__dirname, "../frontend", filePath);
     
     // Safety check to prevent directory traversal
@@ -380,15 +384,32 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    const serveFile = (fileToServe) => {
+        const ext = path.extname(fileToServe);
+        const contentType = MIME_TYPES[ext] || "application/octet-stream";
+        res.writeHead(200, { "Content-Type": contentType });
+        fs.createReadStream(fileToServe).pipe(res);
+    };
+
     fs.exists(absolutePath, (exists) => {
-        if (exists) {
-            const ext = path.extname(absolutePath);
-            const contentType = MIME_TYPES[ext] || "application/octet-stream";
-            res.writeHead(200, { "Content-Type": contentType });
-            fs.createReadStream(absolutePath).pipe(res);
+        if (exists && fs.statSync(absolutePath).isFile()) {
+            serveFile(absolutePath);
         } else {
-            res.writeHead(404, { "Content-Type": "text/plain" });
-            res.end("404 Not Found");
+            const ext = path.extname(absolutePath);
+            if (!ext) {
+                const htmlPath = absolutePath + ".html";
+                fs.exists(htmlPath, (htmlExists) => {
+                    if (htmlExists && fs.statSync(htmlPath).isFile()) {
+                        serveFile(htmlPath);
+                    } else {
+                        res.writeHead(404, { "Content-Type": "text/plain" });
+                        res.end("404 Not Found");
+                    }
+                });
+            } else {
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.end("404 Not Found");
+            }
         }
     });
 });

@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi Tournament 3D Engine - Alpha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030408;
+            --panel-bg: rgba(6, 9, 20, 0.85);
+            --border-glow: rgba(0, 240, 255, 0.4);
+            --glow-cyan: #00f0ff;
+            --glow-green: #39ff14;
+            --glow-magenta: #ff007f;
+            --glow-yellow: #ffea00;
+            --text-color: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(10, 20, 45, 0.3) 0%, transparent 80%);
+        }
+
+        /* CRT Screen Scanline Effect Disabled */
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: rgba(4, 6, 12, 0.95);
+            border-bottom: 1px solid #101626;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        #main-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr 360px;
+            flex: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .side-panel {
+            background: var(--panel-bg);
+            border-right: 1px solid #141d33;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+        }
+
+        .side-panel.right {
+            border-right: none;
+            border-left: 1px solid #141d33;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.6);
+        }
+
+        .panel-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header span {
+            color: var(--glow-cyan);
+            font-family: 'Share Tech Mono', monospace;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .card {
+            background: rgba(9, 13, 27, 0.55);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 12px rgba(255,255,255,0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--glow-cyan), transparent);
+            opacity: 0.5;
+        }
+
+        .card:hover {
+            border-color: var(--glow-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2), inset 0 0 12px rgba(255,255,255,0.02);
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meter {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-green));
+            width: 100%;
+            transition: width 0.15s ease-out;
+            box-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        .meter-fill.hp-bar {
+            background: linear-gradient(90deg, var(--glow-magenta), #ff5d00);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .stat-label {
+            color: #64748b;
+        }
+
+        .stat-value {
+            color: #e2e8f0;
+            text-align: right;
+        }
+
+        #arena-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #070914 0%, #010204 100%);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn {
+            background: rgba(0, 240, 255, 0.03);
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            padding: 12px 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+
+        .btn:hover {
+            background: var(--glow-cyan);
+            color: #000;
+            box-shadow: 0 0 25px var(--glow-cyan);
+            text-shadow: none;
+        }
+
+        .btn.btn-magenta {
+            border-color: var(--glow-magenta);
+            color: var(--glow-magenta);
+            background: rgba(255, 0, 127, 0.03);
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.1);
+        }
+
+        .btn.btn-magenta:hover {
+            background: var(--glow-magenta);
+            color: #fff;
+            box-shadow: 0 0 25px var(--glow-magenta);
+            text-shadow: none;
+        }
+
+        #console-log {
+            flex: 1;
+            background: #010103;
+            border: 1px solid #141d33;
+            border-radius: 8px;
+            padding: 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--glow-green);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.95);
+        }
+
+        /* Bracket connect lines */
+        .bracket-node {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 2px solid #1e293b;
+            padding-left: 14px;
+            position: relative;
+        }
+
+        .bracket-node.active {
+            border-left-color: var(--glow-cyan);
+        }
+
+        .bracket-bear {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #1e293b;
+            transition: all 0.3s ease;
+        }
+
+        .bracket-bear.winner {
+            color: var(--glow-green);
+            border-color: rgba(57, 255, 20, 0.4);
+            background: rgba(57, 255, 20, 0.05);
+            text-shadow: 0 0 6px rgba(57, 255, 20, 0.3);
+        }
+
+        .bracket-bear.active {
+            color: var(--glow-cyan);
+            border-color: rgba(0, 240, 255, 0.4);
+            background: rgba(0, 240, 255, 0.05);
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Oscilloscope Waveform Display */
+        #oscilloscope-container {
+            height: 90px;
+            background: #000;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #oscilloscope {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(6, 9, 20, 0.95);
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            backdrop-filter: blur(12px);
+            z-index: 5;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+
+        .ctrl-btn {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #64748b;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .ctrl-btn:hover {
+            border-color: var(--glow-cyan);
+            color: var(--glow-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">TSFi Tournament 3D Engine</div>
+        <div class="subtitle" id="synth-status">SYNTHESIS SYNAPSE ENGINE: ACTIVE</div>
+    </header>
+
+    <div id="main-layout">
+        <!-- Left Panel: Match Statistics & Active Combatants -->
+        <div class="side-panel">
+            <div class="panel-header">
+                ACTIVE FIGHTERS <span>OBBBA-2026</span>
+            </div>
+
+            <!-- Bear 1 Card -->
+            <div class="card" id="card-bear1">
+                <div class="card-title">
+                    <span id="name-b1" style="color: var(--glow-cyan)">Mercenary Alpha</span>
+                    <span id="type-b1" style="font-family: 'Share Tech Mono', monospace; font-size:11px;">GENOME: BESSEL</span>
+                </div>
+                <div class="meter">
+                    <div id="hp-b1" class="meter-fill hp-bar" style="width: 100%"></div>
+                </div>
+                <div class="stats-grid">
+                    <span class="stat-label">Biotika Spikes:</span>
+                    <span class="stat-value" id="spike-b1">0.00V</span>
+                    <span class="stat-label">Bessel Phase:</span>
+                    <span class="stat-value" id="phase-b1">0.00 rad</span>
+                    <span class="stat-label">Decay Sickness:</span>
+                    <span class="stat-value" id="sick-b1">0.00%</span>
+                </div>
+            </div>
+
+            <div style="text-align: center; color: var(--glow-magenta); font-weight: bold; font-family: 'Share Tech Mono', monospace;">VS</div>
+
+            <!-- Bear 2 Card -->
+            <div class="card" id="card-bear2">
+                <div class="card-title">
+                    <span id="name-b2" style="color: var(--glow-magenta)">Bessel Surf Bear</span>
+                    <span id="type-b2" style="font-family: 'Share Tech Mono', monospace; font-size:11px;">GENOME: WAVEFRONT</span>
+                </div>
+                <div class="meter">
+                    <div id="hp-b2" class="meter-fill hp-bar" style="width: 100%"></div>
+                </div>
+                <div class="stats-grid">
+                    <span class="stat-label">Biotika Spikes:</span>
+                    <span class="stat-value" id="spike-b2">0.00V</span>
+                    <span class="stat-label">Bessel Phase:</span>
+                    <span class="stat-value" id="phase-b2">0.00 rad</span>
+                    <span class="stat-label">Decay Sickness:</span>
+                    <span class="stat-value" id="sick-b2">0.00%</span>
+                </div>
+            </div>
+
+            <button class="btn btn-magenta" id="btn-start-match">Initiate Arena Match</button>
+            <button class="btn" id="btn-next-round">Next Tournament Stage</button>
+
+            <!-- AI Puppet Control Panel -->
+            <div class="card" style="margin-top: 10px; border-color: rgba(255, 234, 0, 0.25);">
+                <div class="card-title" style="color: var(--glow-yellow); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🤖 AI PUPPET CONSOLE</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Prompt:</div>
+                <textarea id="ai-prompt" rows="3" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Outfit', sans-serif; resize: none; margin-bottom: 8px;">A highly detailed photorealistic teddy bear plush standing pose, brown fur, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background</textarea>
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
+                        <input type="checkbox" id="show-ai-overlay" checked> Overlay on Arena
+                    </label>
+                </div>
+                <button class="btn" id="btn-ai-render" style="border-color: var(--glow-yellow); color: var(--glow-yellow); text-shadow: 0 0 8px rgba(255, 234, 0, 0.4); background: rgba(255, 234, 0, 0.02); padding: 8px 12px;">AI Render Pose</button>
+                <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 6px; word-break: break-all;">Status: Idle</div>
+            </div>
+        </div>
+
+        <!-- Center Viewport: Canvas 3D Engine -->
+        <div id="arena-container">
+            <canvas id="canvas3d"></canvas>
+            
+            <div class="control-panel">
+                <button class="ctrl-btn" id="btn-orbit-l">↺</button>
+                <button class="ctrl-btn" id="btn-orbit-r">↻</button>
+                <button class="ctrl-btn" id="btn-orbit-u">▲</button>
+                <button class="ctrl-btn" id="btn-orbit-d">▼</button>
+                <button class="ctrl-btn" id="btn-zoom-i">+</button>
+                <button class="ctrl-btn" id="btn-zoom-o">-</button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Tournament Brackets & Console log -->
+        <div class="side-panel right">
+            <div class="panel-header">
+                TOURNAMENT BRACKET <span>STAGE A</span>
+            </div>
+
+            <div class="card" style="gap: 12px;">
+                <div class="bracket-node active">
+                    <div>
+                        <div class="bracket-bear active" id="node-b1">Mercenary Alpha</div>
+                        <div class="bracket-vs">VS</div>
+                        <div class="bracket-bear" id="node-b2">Bessel Surf Bear</div>
+                    </div>
+                </div>
+
+                <div class="bracket-node">
+                    <div>
+                        <div class="bracket-bear" id="node-b3">Biotika Spike Bear</div>
+                        <div class="bracket-vs">VS</div>
+                        <div class="bracket-bear" id="node-b4">Atropa Kr0wZ</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-header">
+                SOVEREIGN AUDIO WAVEFORM
+            </div>
+            <div id="oscilloscope-container">
+                <canvas id="oscilloscope"></canvas>
+            </div>
+
+            <div class="panel-header">
+                ARENA LOG <span>STDERR/STDOUT</span>
+            </div>
+            <div id="console-log">Initializing tournament subsystem...
+System: Loaded 4 physical DNA models.
+Vector engine: 3D Shader pipeline aligned.
+Synth: AudioContext initialized on user interaction.
+Ready to initiate tournament match.</div>
+        </div>
+    </div>
+
+    <script>
+        // Custom 3D Projection Engine
+        const canvas = document.getElementById("canvas3d");
+        const ctx = canvas.getContext("2d");
+
+        // Camera state
+        const camera = {
+            yaw: -Math.PI / 4,
+            pitch: Math.PI / 6,
+            distance: 1300,
+            x: 0,
+            y: 0,
+            z: 0,
+            fov: 1100
+        };
+
+        // Resize handler
+        function resize() {
+            const container = document.getElementById("arena-container");
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        // 3D Point class
+        class Point3D {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        // Web Audio Synthesizer Subsystem
+        let audioCtx = null;
+        let analyser = null;
+        let ambientOsc = null;
+        let ambientGain = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.connect(audioCtx.destination);
+
+                // Set up ambient analog synth drone
+                ambientOsc = audioCtx.createOscillator();
+                ambientGain = audioCtx.createGain();
+                ambientOsc.type = "sawtooth";
+                ambientOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low A note
+                
+                // Low-pass filter for analog warmth
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(120, audioCtx.currentTime);
+                
+                ambientOsc.connect(filter);
+                filter.connect(ambientGain);
+                ambientGain.connect(analyser);
+                
+                ambientGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                ambientOsc.start();
+                
+                document.getElementById("synth-status").innerText = "SYNTHESIS SYNAPSE ENGINE: ONLINE";
+                logEvent("Synth: Audio drone started successfully.");
+            } catch (e) {
+                console.error("Failed to initialize audio", e);
+            }
+        }
+
+        // Trigger combat impact sound
+        function playHitSound(strength = 1) {
+            if (!audioCtx) initAudio();
+            if (!audioCtx) return;
+
+            let now = audioCtx.currentTime;
+            
+            // Sub-bass sine wave boom
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+            
+            gain.gain.setValueAtTime(0.5 * strength, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(analyser);
+            osc.start();
+            osc.stop(now + 0.35);
+
+            // Resonant FM sweep click
+            let fmOsc = audioCtx.createOscillator();
+            let fmGain = audioCtx.createGain();
+            fmOsc.type = "sawtooth";
+            fmOsc.frequency.setValueAtTime(800 * strength, now);
+            fmOsc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+            
+            fmGain.gain.setValueAtTime(0.12 * strength, now);
+            fmGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            
+            fmOsc.connect(fmGain);
+            fmGain.connect(analyser);
+            fmOsc.start();
+            fmOsc.stop(now + 0.2);
+        }
+
+        // Oscilloscope drawing
+        const oscCanvas = document.getElementById("oscilloscope");
+        const oscCtx = oscCanvas.getContext("2d");
+        
+        function drawOscilloscope() {
+            requestAnimationFrame(drawOscilloscope);
+            
+            oscCanvas.width = oscCanvas.clientWidth;
+            oscCanvas.height = oscCanvas.clientHeight;
+            
+            oscCtx.fillStyle = "#020204";
+            oscCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
+            
+            if (!analyser) {
+                // Idle horizontal wave
+                oscCtx.strokeStyle = "rgba(0, 240, 255, 0.2)";
+                oscCtx.lineWidth = 2;
+                oscCtx.beginPath();
+                oscCtx.moveTo(0, oscCanvas.height / 2);
+                oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+                oscCtx.stroke();
+                return;
+            }
+            
+            let bufferLength = analyser.frequencyBinCount;
+            let dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+            
+            oscCtx.strokeStyle = "rgba(0, 240, 255, 0.85)";
+            oscCtx.lineWidth = 2;
+            oscCtx.beginPath();
+            
+            let sliceWidth = oscCanvas.width / bufferLength;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                let v = dataArray[i] / 128.0;
+                let y = (v * oscCanvas.height) / 2;
+                
+                if (i === 0) {
+                    oscCtx.moveTo(x, y);
+                } else {
+                    oscCtx.lineTo(x, y);
+                }
+                
+                x += sliceWidth;
+            }
+            
+            oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+            oscCtx.stroke();
+        }
+        drawOscilloscope();
+
+        // Bessel math helper for ground grid distortion
+        function bessel_j0(x) {
+            let val = 0.0;
+            let term = 1.0;
+            for (let k = 0; k < 12; k++) {
+                if (k > 0) {
+                    term *= - (x * x) / (4.0 * k * k);
+                }
+                val += term;
+            }
+            return val;
+        }
+
+        // Project 3D coordinate to 2D screen coordinate
+        function project(p) {
+            let x = p.x - camera.x;
+            let y = p.y - camera.y;
+            let z = p.z - camera.z;
+
+            // Rotate around Y-axis (Yaw)
+            let cosY = Math.cos(camera.yaw);
+            let sinY = Math.sin(camera.yaw);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+
+            // Rotate around X-axis (Pitch)
+            let cosP = Math.cos(camera.pitch);
+            let sinP = Math.sin(camera.pitch);
+            let y2 = y * cosP - z1 * sinP;
+            let z2 = y * sinP + z1 * cosP;
+
+            // Offset camera distance
+            z2 += camera.distance;
+
+            if (z2 <= 10) return null; // Behind camera clipping
+
+            let scX = (x1 * camera.fov) / z2 + canvas.width / 2;
+            let scY = (-y2 * camera.fov) / z2 + canvas.height / 2;
+
+            return { x: scX, y: scY, depth: z2 };
+        }
+
+        // Draw 3D Line
+        function drawLine3D(p1, p2, color, width = 1) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+        }
+
+        // 3D Particles Subsystem
+        let particles = [];
+        function createExplosion(pos, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: Math.random() * 10 + 5,
+                    vz: (Math.random() - 0.5) * 12,
+                    life: 1.0,
+                    decay: 0.03 + Math.random() * 0.02,
+                    color: color
+                });
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.z += p.vz;
+                p.vy -= 0.35; // Gravity
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                let proj = project(new Point3D(p.x, p.y, p.z));
+                if (proj) {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, Math.max(1, 4 * p.life * (camera.fov / proj.depth)), 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Bear model definition (3D skeleton nodes)
+        function getBearSkeleton(offset3D, scale, angles, pulse, sickness) {
+            const { leftArm, rightArm, leftLeg, rightLeg } = angles;
+            
+            let head = new Point3D(offset3D.x, offset3D.y + 160 * scale, offset3D.z);
+            let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale, offset3D.z);
+            let lShoulder = new Point3D(offset3D.x - 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale, offset3D.z);
+
+            // Arm paw rotations
+            let lPaw = new Point3D(
+                lShoulder.x + Math.sin(leftArm) * 90 * scale,
+                lShoulder.y - Math.cos(leftArm) * 90 * scale,
+                lShoulder.z + Math.sin(pulse * 0.5) * 20 * scale
+            );
+            let rPaw = new Point3D(
+                rShoulder.x - Math.sin(rightArm) * 90 * scale,
+                rShoulder.y - Math.cos(rightArm) * 90 * scale,
+                rShoulder.z - Math.sin(pulse * 0.5) * 20 * scale
+            );
+
+            // Leg foot rotations
+            let lFoot = new Point3D(
+                offset3D.x - 50 * scale + Math.sin(leftLeg) * 80 * scale,
+                midHip.y - Math.cos(leftLeg) * 80 * scale,
+                offset3D.z + 10 * scale
+            );
+            let rFoot = new Point3D(
+                offset3D.x + 50 * scale - Math.sin(rightLeg) * 80 * scale,
+                midHip.y - Math.cos(rightLeg) * 80 * scale,
+                offset3D.z - 10 * scale
+            );
+
+            return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
+        }
+
+        // Draw 3D wireframe bear
+        function drawBear3D(offset3D, scale, angles, pulse, sickness, palette) {
+            const joints = getBearSkeleton(offset3D, scale, angles, pulse, sickness);
+
+            const headCol = palette.head || "rgba(0, 240, 255, 0.85)";
+            const boneCol = palette.bone || "rgba(226, 232, 240, 0.7)";
+            const webCol = palette.web || "rgba(255, 0, 127, 0.4)";
+
+            // Draw Head representation with glowing shadow
+            let projHead = project(joints.head);
+            if (projHead) {
+                ctx.save();
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = headCol;
+                
+                // Outer glow halo
+                ctx.strokeStyle = headCol;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(projHead.x, projHead.y, 45 * scale * (camera.fov / projHead.depth), 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner filled glowing head circle
+                let rad = 35 * scale * (camera.fov / projHead.depth);
+                let grad = ctx.createRadialGradient(projHead.x, projHead.y, rad * 0.2, projHead.x, projHead.y, rad);
+                grad.addColorStop(0, "rgba(255,255,255,0.9)");
+                grad.addColorStop(0.3, headCol);
+                grad.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(projHead.x, projHead.y, rad, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Draw bones with dynamic drop shadows
+            ctx.save();
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = boneCol;
+            drawLine3D(joints.head, joints.neck, boneCol, 4.5);
+            drawLine3D(joints.neck, joints.lShoulder, boneCol, 3.5);
+            drawLine3D(joints.lShoulder, joints.lPaw, boneCol, 3.5);
+            drawLine3D(joints.neck, joints.rShoulder, boneCol, 3.5);
+            drawLine3D(joints.rShoulder, joints.rPaw, boneCol, 3.5);
+            drawLine3D(joints.neck, joints.midHip, boneCol, 4.5);
+            drawLine3D(joints.midHip, joints.lFoot, boneCol, 3.5);
+            drawLine3D(joints.midHip, joints.rFoot, boneCol, 3.5);
+            ctx.restore();
+
+            // Draw connecting cobwebs under sickness decay
+            if (sickness > 0.35) {
+                const websCount = 6;
+                for (let i = 0; i <= websCount; i++) {
+                    let t = i / websCount;
+                    let p1 = new Point3D(
+                        joints.lFoot.x + (joints.rFoot.x - joints.lFoot.x) * t,
+                        joints.lFoot.y + (joints.rFoot.y - joints.lFoot.y) * t - Math.sin(t * Math.PI) * 15 * scale,
+                        joints.lFoot.z + (joints.rFoot.z - joints.lFoot.z) * t
+                    );
+                    let p2 = new Point3D(p1.x, p1.y - 12 * scale * sickness, p1.z);
+                    drawLine3D(p1, p2, webCol, 1.5);
+                }
+            }
+        }
+
+        // Draw 3D Arena Ground Grid with Bessel Distortion
+        function drawArenaGrid(timeMs) {
+            const gridLimit = 850;
+            const step = 85;
+            
+            ctx.save();
+            ctx.shadowBlur = 10;
+            
+            // Draw grid lines modulated by Bessel gravity wave
+            for (let i = -gridLimit; i <= gridLimit; i += step) {
+                // Parallel to Z-axis
+                ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
+                ctx.shadowColor = "rgba(0, 240, 255, 0.3)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let j = -gridLimit; j <= gridLimit; j += 40) {
+                    let dist = Math.sqrt(i*i + j*j);
+                    // Bessel wave ripple outward from center
+                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32;
+                    let sc = project(new Point3D(i, -100 + ripple, j));
+                    if (sc) {
+                        if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+
+                // Parallel to X-axis
+                ctx.beginPath();
+                for (let j = -gridLimit; j <= gridLimit; j += 40) {
+                    let dist = Math.sqrt(j*j + i*i);
+                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32;
+                    let sc = project(new Point3D(j, -100 + ripple, i));
+                    if (sc) {
+                        if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Draw outer perimeter boundary ring
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.4)";
+            ctx.shadowColor = "rgba(255, 0, 127, 0.5)";
+            ctx.lineWidth = 3;
+            const circleSteps = 48;
+            let prevPt = null;
+            for (let i = 0; i <= circleSteps; i++) {
+                let theta = (i / circleSteps) * Math.PI * 2;
+                let rx = Math.cos(theta) * 750;
+                let rz = Math.sin(theta) * 750;
+                let dist = Math.sqrt(rx*rx + rz*rz);
+                let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32;
+                let pt = new Point3D(rx, -100 + ripple, rz);
+                if (prevPt) {
+                    drawLine3D(prevPt, pt, "rgba(255, 0, 127, 0.4)", 3);
+                }
+                prevPt = pt;
+            }
+            ctx.restore();
+        }
+
+        // Tournament participants genome specs
+        const participants = [
+            { id: "b1", name: "Mercenary Alpha", type: "BESSEL", hp: 100, spike: 0.25, phase: 0.1, sick: 0.25, pos: new Point3D(-280, 0, 0), color: { head: "rgba(0, 240, 255, 0.85)", bone: "#fff", web: "rgba(0, 240, 255, 0.3)" } },
+            { id: "b2", name: "Bessel Surf Bear", type: "WAVEFRONT", hp: 100, spike: 0.15, phase: 1.45, sick: 0.45, pos: new Point3D(280, 0, 0), color: { head: "rgba(57, 255, 20, 0.85)", bone: "#fff", web: "rgba(57, 255, 20, 0.3)" } },
+            { id: "b3", name: "Biotika Spike", type: "BIOTIKA", hp: 100, spike: 0.85, phase: 0.35, sick: 0.55, pos: new Point3D(-280, 0, 0), color: { head: "rgba(255, 0, 127, 0.85)", bone: "#fff", web: "rgba(255, 0, 127, 0.3)" } },
+            { id: "b4", name: "Atropa Kr0wZ", type: "MUTATION", hp: 100, spike: 0.95, phase: 1.95, sick: 0.75, pos: new Point3D(280, 0, 0), color: { head: "rgba(255, 234, 0, 0.85)", bone: "#fff", web: "rgba(255, 234, 0, 0.3)" } }
+        ];
+
+        let fighter1 = participants[0];
+        let fighter2 = participants[1];
+        let matchActive = false;
+        let time = 0;
+        let sdImage = null;
+
+        // Hidden canvases for pose / depth extraction
+        const depthCanvas = document.createElement("canvas");
+        depthCanvas.width = 512;
+        depthCanvas.height = 512;
+        const dCtx = depthCanvas.getContext("2d");
+
+        const poseCanvas = document.createElement("canvas");
+        poseCanvas.width = 512;
+        poseCanvas.height = 512;
+        const pCtx = poseCanvas.getContext("2d");
+
+        function projectToViewport512(p, centerOffset) {
+            let x = p.x - centerOffset.x;
+            let y = p.y - centerOffset.y;
+            let z = p.z - centerOffset.z;
+
+            let cosY = Math.cos(camera.yaw);
+            let sinY = Math.sin(camera.yaw);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+
+            let cosP = Math.cos(camera.pitch);
+            let sinP = Math.sin(camera.pitch);
+            let y2 = y * cosP - z1 * sinP;
+            let z2 = y * sinP + z1 * cosP;
+
+            z2 += 650; 
+
+            if (z2 <= 10) return null;
+
+            let scX = (x1 * 900) / z2 + 256;
+            let scY = (-y2 * 900) / z2 + 256;
+
+            return { x: scX, y: scY, depth: z2 };
+        }
+
+        function extractControlNetPoses(angles, offset, palette) {
+            dCtx.fillStyle = "#000000";
+            dCtx.fillRect(0, 0, 512, 512);
+
+            pCtx.fillStyle = "#000000";
+            pCtx.fillRect(0, 0, 512, 512);
+
+            const jointsRaw = getBearSkeleton(offset, 1.2, angles, 0.0, 0.0);
+            
+            const joints = {
+                head: projectToViewport512(jointsRaw.head, offset),
+                neck: projectToViewport512(jointsRaw.neck, offset),
+                lShoulder: projectToViewport512(jointsRaw.lShoulder, offset),
+                rShoulder: projectToViewport512(jointsRaw.rShoulder, offset),
+                lPaw: projectToViewport512(jointsRaw.lPaw, offset),
+                rPaw: projectToViewport512(jointsRaw.rPaw, offset),
+                midHip: projectToViewport512(jointsRaw.midHip, offset),
+                lFoot: projectToViewport512(jointsRaw.lFoot, offset),
+                rFoot: projectToViewport512(jointsRaw.rFoot, offset)
+            };
+
+            function drawBone(ctxType, j1, j2, isDepth, color, width) {
+                if (!j1 || !j2) return;
+                ctxType.save();
+                if (isDepth) {
+                    let avgDepth = (j1.depth + j2.depth) / 2;
+                    let dVal = Math.max(0, Math.min(255, 255 - Math.floor((avgDepth - 350) / 600 * 255)));
+                    ctxType.strokeStyle = `rgb(${dVal},${dVal},${dVal})`;
+                } else {
+                    ctxType.strokeStyle = color;
+                }
+                ctxType.lineWidth = width;
+                ctxType.lineCap = "round";
+                ctxType.beginPath();
+                ctxType.moveTo(j1.x, j1.y);
+                ctxType.lineTo(j2.x, j2.y);
+                ctxType.stroke();
+                ctxType.restore();
+            }
+
+            if (joints.head) {
+                dCtx.save();
+                let rad = 35 * 1.2 * (900 / joints.head.depth);
+                let grad = dCtx.createRadialGradient(joints.head.x, joints.head.y, rad * 0.2, joints.head.x, joints.head.y, rad);
+                let dVal = Math.max(0, Math.min(255, 255 - Math.floor((joints.head.depth - 350) / 600 * 255)));
+                let cStr1 = `rgb(${dVal},${dVal},${dVal})`;
+                let cStr2 = `rgb(${Math.max(0, dVal-80)},${Math.max(0, dVal-80)},${Math.max(0, dVal-80)})`;
+                grad.addColorStop(0, cStr1);
+                grad.addColorStop(1, cStr2);
+                dCtx.fillStyle = grad;
+                dCtx.beginPath();
+                dCtx.arc(joints.head.x, joints.head.y, rad, 0, Math.PI * 2);
+                dCtx.fill();
+                dCtx.restore();
+            }
+
+            drawBone(dCtx, joints.head, joints.neck, true, null, 14);
+            drawBone(dCtx, joints.neck, joints.lShoulder, true, null, 10);
+            drawBone(dCtx, joints.lShoulder, joints.lPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.rShoulder, true, null, 10);
+            drawBone(dCtx, joints.rShoulder, joints.rPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.midHip, true, null, 14);
+            drawBone(dCtx, joints.midHip, joints.lFoot, true, null, 10);
+            drawBone(dCtx, joints.midHip, joints.rFoot, true, null, 10);
+
+            if (joints.head) {
+                pCtx.fillStyle = "#ff00ff";
+                pCtx.beginPath();
+                pCtx.arc(joints.head.x, joints.head.y, 14, 0, Math.PI*2);
+                pCtx.fill();
+            }
+            drawBone(pCtx, joints.head, joints.neck, false, "#ff0000", 8);
+            drawBone(pCtx, joints.neck, joints.lShoulder, false, "#0000ff", 6);
+            drawBone(pCtx, joints.lShoulder, joints.lPaw, false, "#00ffff", 6);
+            drawBone(pCtx, joints.neck, joints.rShoulder, false, "#ff0000", 6);
+            drawBone(pCtx, joints.rShoulder, joints.rPaw, false, "#ff8000", 6);
+            drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", 8);
+            drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", 6);
+            drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", 6);
+
+            return {
+                depthData: depthCanvas.toDataURL("image/png"),
+                poseData: poseCanvas.toDataURL("image/png")
+            };
+        }
+
+        function updateUI() {
+            document.getElementById("name-b1").innerText = fighter1.name;
+            document.getElementById("type-b1").innerText = "GENOME: " + fighter1.type;
+            document.getElementById("hp-b1").style.width = fighter1.hp + "%";
+            document.getElementById("spike-b1").innerText = fighter1.spike.toFixed(2) + "V";
+            document.getElementById("phase-b1").innerText = fighter1.phase.toFixed(2) + " rad";
+            document.getElementById("sick-b1").innerText = (fighter1.sick * 100).toFixed(0) + "%";
+
+            document.getElementById("name-b2").innerText = fighter2.name;
+            document.getElementById("type-b2").innerText = "GENOME: " + fighter2.type;
+            document.getElementById("hp-b2").style.width = fighter2.hp + "%";
+            document.getElementById("spike-b2").innerText = fighter2.spike.toFixed(2) + "V";
+            document.getElementById("phase-b2").innerText = fighter2.phase.toFixed(2) + " rad";
+            document.getElementById("sick-b2").innerText = (fighter2.sick * 100).toFixed(0) + "%";
+        }
+
+        function logEvent(msg) {
+            const consoleBox = document.getElementById("console-log");
+            const timestamp = new Date().toLocaleTimeString();
+            consoleBox.innerHTML += `\n[${timestamp}] ${msg}`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        // Camera control event bindings
+        document.getElementById("btn-orbit-l").onclick = () => { initAudio(); camera.yaw -= 0.15; };
+        document.getElementById("btn-orbit-r").onclick = () => { initAudio(); camera.yaw += 0.15; };
+        document.getElementById("btn-orbit-u").onclick = () => { initAudio(); camera.pitch = Math.min(Math.PI/2, camera.pitch + 0.1); };
+        document.getElementById("btn-orbit-d").onclick = () => { initAudio(); camera.pitch = Math.max(-Math.PI/2, camera.pitch - 0.1); };
+        document.getElementById("btn-zoom-i").onclick = () => { initAudio(); camera.distance = Math.max(300, camera.distance - 100); };
+        document.getElementById("btn-zoom-o").onclick = () => { initAudio(); camera.distance = Math.min(2200, camera.distance + 100); };
+
+        // Orbit via drag mouse
+        let isDragging = false;
+        let prevMouseX = 0;
+        let prevMouseY = 0;
+        canvas.onmousedown = (e) => {
+            initAudio();
+            isDragging = true;
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+        };
+        window.onmouseup = () => isDragging = false;
+        window.onmousemove = (e) => {
+            if (!isDragging) return;
+            let dx = e.clientX - prevMouseX;
+            let dy = e.clientY - prevMouseY;
+            camera.yaw += dx * 0.005;
+            camera.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, camera.pitch - dy * 0.005));
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+        };
+
+        // Match Simulation
+        document.getElementById("btn-start-match").onclick = () => {
+            initAudio();
+            if (matchActive) return;
+            fighter1.hp = 100;
+            fighter2.hp = 100;
+            matchActive = true;
+            logEvent(`⚔️ Arena Match Commencing: ${fighter1.name} vs ${fighter2.name}!`);
+        };
+
+        let currentStage = 0;
+        document.getElementById("btn-next-round").onclick = () => {
+            initAudio();
+            if (matchActive) return;
+            if (currentStage === 0) {
+                fighter1 = participants[0]; // Mercenary Alpha
+                fighter2 = participants[2]; // Biotika Spike
+                document.getElementById("node-b1").className = "bracket-bear winner";
+                document.getElementById("node-b3").className = "bracket-bear active";
+                document.getElementById("node-b4").className = "bracket-bear winner";
+                currentStage = 1;
+                logEvent("🏆 Semifinals Configured. Stage B Brackets updated.");
+                updateUI();
+            } else {
+                fighter1 = participants[0];
+                fighter2 = participants[3]; // Atropa Kr0wZ
+                logEvent("🏆 Tournament Grand Finale configured!");
+                updateUI();
+            }
+        };
+
+        // Trigger request to backend Python server
+        document.getElementById("btn-ai-render").onclick = () => {
+            initAudio();
+            
+            const btn = document.getElementById("btn-ai-render");
+            const statusBox = document.getElementById("ai-status");
+            const promptText = document.getElementById("ai-prompt").value;
+            
+            btn.disabled = true;
+            btn.innerText = "Extracting pose...";
+            statusBox.innerText = "Status: Rendering depth/pose maps...";
+
+            // Get current active angles for fighter 1
+            let b1Angles = {
+                leftArm: Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                rightArm: -Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                leftLeg: Math.cos(time * 0.0025) * (20 * Math.PI / 180),
+                rightLeg: -Math.cos(time * 0.0025) * (20 * Math.PI / 180)
+            };
+
+            // Extract pose base64 strings
+            const cnData = extractControlNetPoses(b1Angles, fighter1.pos, fighter1.color);
+
+            statusBox.innerText = "Status: Generating on Vulkan Server...";
+            logEvent("AI Puppet: Sending pose & depth maps to ControlNet worker...");
+
+            // Send to python server on port 8000
+            fetch("http://127.0.0.1:8000/generate-bear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: promptText,
+                    profile: "dream", // use dream/turbo profile for faster generation
+                    steps: 6,
+                    cfg: 1.5,
+                    use_controlnet: true,
+                    controlnet_image: cnData.depthData,
+                    controlnet_pose: cnData.poseData
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    logEvent("AI Puppet: Generation complete! Loading texture...");
+                    statusBox.innerText = "Status: Loading texture...";
+                    
+                    const newImg = new Image();
+                    newImg.onload = () => {
+                        // Dynamically extract the bear and make background transparent
+                        const tempCanvas = document.createElement("canvas");
+                        tempCanvas.width = newImg.width;
+                        tempCanvas.height = newImg.height;
+                        const tempCtx = tempCanvas.getContext("2d");
+                        tempCtx.drawImage(newImg, 0, 0);
+                        
+                        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        const px = imgData.data;
+                        for (let i = 0; i < px.length; i += 4) {
+                            let r = px[i];
+                            let g = px[i+1];
+                            let b = px[i+2];
+                            // Compute brightness
+                            let brightness = (r + g + b) / 3;
+                            if (brightness < 40) {
+                                // Clean edge feathering based on luminance
+                                px[i+3] = Math.max(0, Math.min(255, (brightness - 10) / 30 * 255));
+                            }
+                        }
+                        tempCtx.putImageData(imgData, 0, 0);
+
+                        sdImage = tempCanvas;
+                        btn.disabled = false;
+                        btn.innerText = "AI Render Pose";
+                        statusBox.innerText = "Status: Active (Overlaid)";
+                        logEvent("AI Puppet: Photorealistic texture loaded onto fighter.");
+                    };
+                    // Load relative to the python server
+                    newImg.src = "http://127.0.0.1:8000/" + data.url + "?t=" + Date.now();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerText = "AI Render Pose";
+                statusBox.innerText = "Status: Error - " + err.message;
+                logEvent("AI Puppet [ERROR]: " + err.message);
+            });
+        };
+
+        // Main Simulation Loop
+        function loop() {
+            time += 16; 
+
+            // Clear Canvas
+            ctx.fillStyle = "#030408";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid & floor warping
+            drawArenaGrid(time);
+
+            // Modulations for fighter 1 limbs (Bessel movement)
+            let b1Angles = {
+                leftArm: Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                rightArm: -Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                leftLeg: Math.cos(time * 0.0025) * (20 * Math.PI / 180),
+                rightLeg: -Math.cos(time * 0.0025) * (20 * Math.PI / 180)
+            };
+
+            // Modulations for fighter 2 limbs (Biotika spiking movement)
+            let b2Angles = {
+                leftArm: Math.cos(time * 0.0035) * (50 * Math.PI / 180),
+                rightArm: -Math.cos(time * 0.0035) * (50 * Math.PI / 180),
+                leftLeg: Math.sin(time * 0.0035) * (15 * Math.PI / 180),
+                rightLeg: -Math.sin(time * 0.0035) * (15 * Math.PI / 180)
+            };
+
+            // Process Combat/AI
+            if (matchActive) {
+                if (time % 750 < 16) {
+                    let attacker = Math.random() > 0.5 ? fighter1 : fighter2;
+                    let defender = attacker === fighter1 ? fighter2 : fighter1;
+                    
+                    let dmg = Math.round(12 + attacker.spike * 10 - defender.sick * 4);
+                    defender.hp = Math.max(0, defender.hp - dmg);
+                    
+                    // Trigger Audio & Visual Sparks
+                    playHitSound(1.0 + attacker.spike * 0.5);
+                    createExplosion(defender.pos, attacker.color.head);
+
+                    logEvent(`💥 ${attacker.name} triggers a ${attacker.type} pulse strike! Deals ${dmg} dmg to ${defender.name}.`);
+
+                    // Check win condition
+                    if (defender.hp <= 0) {
+                        matchActive = false;
+                        logEvent(`🏆 Match Complete! ${attacker.name} defeats ${defender.name} in the arena.`);
+                    }
+                }
+            }
+
+            // Render 3D fighters in dynamic positions
+            if (sdImage && sdImage.complete && document.getElementById("show-ai-overlay").checked) {
+                // If AI puppet image is active, draw it overlaid on top of fighter 1's position
+                let proj = project(new Point3D(fighter1.pos.x, fighter1.pos.y + 70 * 1.2, fighter1.pos.z));
+                if (proj) {
+                    let size = 260 * 1.2 * (camera.fov / proj.depth);
+                    ctx.save();
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = "rgba(255, 234, 0, 0.4)";
+                    ctx.drawImage(sdImage, proj.x - size / 2, proj.y - size / 2, size, size);
+                    ctx.restore();
+                }
+            } else {
+                drawBear3D(fighter1.pos, 1.2, b1Angles, Math.sin(time*0.005), fighter1.sick, fighter1.color);
+            }
+            
+            drawBear3D(fighter2.pos, 1.2, b2Angles, Math.sin(time*0.005), fighter2.sick, fighter2.color);
+
+            // Render 3D combat particles
+            updateAndDrawParticles();
+
+            updateUI();
+            requestAnimationFrame(loop);
+        }
+
+        // Initialize display
+        updateUI();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
