@@ -56,63 +56,36 @@
                     </div>
                 </section>
 
-                <!-- GNSS Tracker Card -->
-                <section class="card gps-card">
-                    <h2><span class="icon">🛰️</span> GNSS Tracker</h2>
-                    <p class="description">Live GPS monitoring and Wireless Command terminal.</p>
-                    
-                    <div class="form-group">
-                        <label for="wsUrl">WebSocket URL:</label>
-                        <div class="input-with-action">
-                            <input type="text" id="wsUrl" value="ws://192.168.4.1/ws" class="input-glow" style="flex-grow: 1; margin-right: 10px;">
-                            <button class="btn btn-small" id="btnConnectWs">Connect</button>
+                <!-- 3D Teddy Bear DNA Synthesis Card -->
+                <section class="card bear-synthesis-card" style="border-color: var(--neon-amber); box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);">
+                    <h2><span class="icon">🧸</span> DNA & Audio Synthesizer Status</h2>
+                    <p class="description">Monitor genome configurations and load crossover audio/DNA metrics.</p>
+
+                    <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.9rem; color: #f59e0b; display: flex; flex-direction: column; gap: 8px;">
+                        <div>🧬 Total Cards in Deck: <span id="deckCardCount" style="color: #fff; font-weight: bold;">0</span></div>
+                        <div>📈 Maximum DNA Score: <span id="maxDnaScore" style="color: #fff; font-weight: bold;">0</span></div>
+                        <div style="border-top: 1px solid rgba(245, 158, 11, 0.15); padding-top: 8px; margin-top: 4px;">
+                            <strong>Active Synthesis Channels:</strong>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8rem; color: #a1a1aa; margin-top: 6px;">
+                                <div>🔈 Timbre Mod: <span style="color: #f59e0b;">Web Audio</span></div>
+                                <div>🎮 System: <span style="color: #f59e0b;">Z-Machine Bag</span></div>
+                                <div>💻 Assembly: <span style="color: #f59e0b;">6502 Sectors</span></div>
+                                <div>📜 Story: <span style="color: #f59e0b;">ZIL Compile</span></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- WiFi Connection Controls -->
-                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                        <label>Connect Board to Wi-Fi Network:</label>
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <select id="wifiNetworkSelect" class="input-glow" style="flex-grow: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 10px;">
-                                <option value="">Select a Network...</option>
-                            </select>
-                            <button class="btn btn-small" id="btnScanWifi">Scan</button>
-                        </div>
-                        <div class="input-with-action">
-                            <input type="password" id="wifiPass" placeholder="Enter Wi-Fi Password" class="input-glow" style="flex-grow: 1; margin-right: 10px;">
-                            <button class="btn btn-primary" id="btnConnectWifi" style="padding: 6px 15px;">Connect</button>
-                        </div>
-                        <div id="wifiStatus" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 8px;">Board Status: Disconnected from local LAN</div>
-                    </div>
-
-
-                    <div class="gps-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem;">
-                        <div><strong>Time (UTC):</strong> <span id="gpsTime">N/A</span></div>
-                        <div><strong>Satellites:</strong> <span id="gpsSats">0</span></div>
-                        <div><strong>Latitude:</strong> <span id="gpsLat">N/A</span> <span id="gpsNS"></span></div>
-                        <div><strong>Longitude:</strong> <span id="gpsLon">N/A</span> <span id="gpsEW"></span></div>
-                        <div><strong>Altitude:</strong> <span id="gpsAlt">0.0</span> M</div>
-                        <div><strong>Fix Status:</strong> <span id="gpsFix" style="color: var(--neon-magenta);">No Fix</span></div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="wsCmd">Transmit Command:</label>
-                        <div class="input-with-action">
-                            <input type="text" id="wsCmd" placeholder=":auth <r_hex> <s_hex>" class="input-glow" style="flex-grow: 1; margin-right: 10px;">
-                            <button class="btn btn-primary" id="btnSendCmd" style="padding: 6px 15px;">Send</button>
-                        </div>
-                    </div>
-
-                    <div class="terminal-container" style="margin-top: 15px;">
-                        <div class="terminal-header" style="padding: 5px 10px; background: rgba(255, 255, 255, 0.05); border-radius: 4px 4px 0 0; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); border-bottom: none;">
-                            <span style="font-size: 0.85rem; font-family: 'Orbitron', sans-serif; color: var(--neon-blue);">NMEA Stream & CLI</span>
-                            <button class="btn-clear" id="btnClearGpsLogs" style="font-size: 0.8rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">Clear</button>
-                        </div>
-                        <div id="gpsLogs" style="height: 150px; overflow-y: auto; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 0 0 8px 8px; padding: 8px; font-family: monospace; font-size: 0.85rem; color: #a2b4c2; white-space: pre-wrap; word-break: break-all;">
-                            <div class="log-line info" style="color: var(--text-secondary);">Offline. Connect to start stream.</div>
-                        </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                        <a href="/teddy_bear_tournament_3d.html" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: none; font-weight: bold; text-align: center; display: block; text-decoration: none; padding: 10px 0; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase;">
+                            Launch 3D Bear Tournament
+                        </a>
+                        <a href="/dna_breeder.html" class="btn btn-secondary btn-block" style="text-align: center; display: block; text-decoration: none; padding: 10px 0; border-radius: 8px; font-size: 0.9rem;">
+                            Open DNA Breeder Console
+                        </a>
                     </div>
                 </section>
+
+
             </div>
 
             <!-- Center/Right: Contract Controls -->

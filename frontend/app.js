@@ -538,199 +538,42 @@ btnLaunchGenesis.addEventListener("click", async () => {
     }
 });
 
-// GNSS Tracker WebSocket Client Interface
-let gpsWs = null;
 
-const wsUrlEl = document.getElementById("wsUrl");
-const btnConnectWsEl = document.getElementById("btnConnectWs");
-const gpsTimeEl = document.getElementById("gpsTime");
-const gpsSatsEl = document.getElementById("gpsSats");
-const gpsLatEl = document.getElementById("gpsLat");
-const gpsNSEl = document.getElementById("gpsNS");
-const gpsLonEl = document.getElementById("gpsLon");
-const gpsEWEl = document.getElementById("gpsEW");
-const gpsAltEl = document.getElementById("gpsAlt");
-const gpsFixEl = document.getElementById("gpsFix");
-const wsCmdEl = document.getElementById("wsCmd");
-const btnSendCmdEl = document.getElementById("btnSendCmd");
-const btnClearGpsLogsEl = document.getElementById("btnClearGpsLogs");
-const gpsLogsEl = document.getElementById("gpsLogs");
 
-function logGps(msg, type = "info") {
-    const line = document.createElement("div");
-    line.className = `log-line ${type}`;
-    if (type === "error") line.style.color = "var(--neon-magenta)";
-    else if (type === "success") line.style.color = "#00ff7f";
-    else if (type === "warning") line.style.color = "var(--neon-purple)";
-    
-    line.innerText = msg;
-    gpsLogsEl.appendChild(line);
-    gpsLogsEl.scrollTop = gpsLogsEl.scrollHeight;
+// 3D Teddy Bear Deck & Synthesis Stats Loader
+function loadBearSynthesisStats() {
+    let savedDeck = [];
+    try {
+        const stored = localStorage.getItem("tsfi_hardball_deck");
+        if (stored) savedDeck = JSON.parse(stored);
+    } catch (e) {
+        console.error("Error loading hardball deck:", e);
+    }
+
+    const deckCardCountEl = document.getElementById("deckCardCount");
+    const maxDnaScoreEl = document.getElementById("maxDnaScore");
+
+    if (deckCardCountEl) deckCardCountEl.innerText = savedDeck.length;
+
+    let maxScore = 0;
+    savedDeck.forEach(card => {
+        // Evaluate score metadata or base metrics if present
+        if (card.score && !isNaN(card.score)) {
+            maxScore = Math.max(maxScore, parseInt(card.score));
+        } else if (card.bag && card.bag.score && !isNaN(card.bag.score)) {
+            maxScore = Math.max(maxScore, parseInt(card.bag.score));
+        }
+    });
+
+    if (maxDnaScoreEl) maxDnaScoreEl.innerText = maxScore;
 }
 
-btnClearGpsLogsEl.addEventListener("click", () => {
-    gpsLogsEl.innerHTML = "";
-    logGps("Console logs cleared.");
-});
-
-btnConnectWsEl.addEventListener("click", () => {
-    if (gpsWs && (gpsWs.readyState === WebSocket.OPEN || gpsWs.readyState === WebSocket.CONNECTING)) {
-        logGps("Disconnecting from GPS WebSocket...");
-        gpsWs.close();
-        return;
-    }
-
-    const url = wsUrlEl.value.trim();
-    logGps(`Connecting to WebSocket: ${url}...`);
-    btnConnectWsEl.innerText = "Connecting";
-    btnConnectWsEl.style.background = "var(--neon-purple)";
-
-    try {
-        gpsWs = new WebSocket(url);
-        
-        gpsWs.onopen = () => {
-            logGps("Connected to board WebSocket!", "success");
-            btnConnectWsEl.innerText = "Disconnect";
-            btnConnectWsEl.style.background = "var(--neon-magenta)";
-            btnConnectWsEl.style.color = "#fff";
-        };
-
-        gpsWs.onclose = () => {
-            logGps("Disconnected from WebSocket.");
-            btnConnectWsEl.innerText = "Connect";
-            btnConnectWsEl.style.background = "";
-            btnConnectWsEl.style.color = "";
-            gpsWs = null;
-        };
-
-        gpsWs.onerror = (err) => {
-            logGps(`WebSocket error.`, "error");
-        };
-
-        gpsWs.onmessage = (event) => {
-            const dataStr = event.data.trim();
-            
-            // Check if JSON telemetry packet
-            if (dataStr.startsWith("{") && dataStr.endsWith("}")) {
-                try {
-                    const parsed = JSON.parse(dataStr);
-                    if (parsed.type === "status") {
-                        gpsTimeEl.innerText = parsed.time || "N/A";
-                        gpsSatsEl.innerText = parsed.sats || "0";
-                        gpsLatEl.innerText = parsed.lat || "N/A";
-                        gpsNSEl.innerText = parsed.ns || "";
-                        gpsLonEl.innerText = parsed.lon || "N/A";
-                        gpsEWEl.innerText = parsed.ew || "";
-                        gpsAltEl.innerText = parsed.alt || "0.0";
-                        
-                        const hasFix = parsed.fix !== "0";
-                        gpsFixEl.innerText = hasFix ? "Fix OK" : "No Fix";
-                        gpsFixEl.style.color = hasFix ? "#00ff7f" : "var(--neon-magenta)";
-                        return;
-                    } else if (parsed.type === "wifi_scan_results") {
-                        const selectEl = document.getElementById("wifiNetworkSelect");
-                        const scanBtn = document.getElementById("btnScanWifi");
-                        
-                        selectEl.innerHTML = '<option value="">Select a Network...</option>';
-                        parsed.networks.forEach(net => {
-                            const option = document.createElement("option");
-                            option.value = net.ssid;
-                            option.innerText = `${net.ssid} (${net.rssi} dBm)`;
-                            selectEl.appendChild(option);
-                        });
-                        
-                        scanBtn.innerText = "Scan";
-                        scanBtn.disabled = false;
-                        logGps(`WiFi Scan finished: Found ${parsed.networks.length} networks.`, "success");
-                        return;
-                    } else if (parsed.type === "wifi_scan_err") {
-                        const scanBtn = document.getElementById("btnScanWifi");
-                        scanBtn.innerText = "Scan";
-                        scanBtn.disabled = false;
-                        logGps(`WiFi Scan error: ${parsed.msg}`, "error");
-                        return;
-                    } else if (parsed.type === "wifi_connected") {
-                        const statusEl = document.getElementById("wifiStatus");
-                        statusEl.innerText = `Board Status: Connected (IP: ${parsed.ip})`;
-                        statusEl.style.color = "#00ff7f";
-                        logGps(`Board connected to LAN. IP Address: ${parsed.ip}`, "success");
-                        return;
-                    }
-                } catch (e) {
-                    // Ignore JSON parse errors, treat as raw message
-                }
-            }
-            
-            // Print to GPS stream log
-            logGps(dataStr);
-        };
-    } catch (err) {
-        logGps(`Failed to create WebSocket connection: ${err.message}`, "error");
-        btnConnectWsEl.innerText = "Connect";
-        btnConnectWsEl.style.background = "";
-    }
-});
-
-btnSendCmdEl.addEventListener("click", () => {
-    if (!gpsWs || gpsWs.readyState !== WebSocket.OPEN) {
-        logGps("Error: WebSocket is not connected.", "error");
-        return;
-    }
-
-    const cmd = wsCmdEl.value.trim();
-    if (!cmd) return;
-
-    gpsWs.send(cmd);
-    wsCmdEl.value = "";
-});
-
-wsCmdEl.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        btnSendCmdEl.click();
-    }
-});
-
-// WiFi Scanner & Connector Button Event Listeners
-const btnScanWifiEl = document.getElementById("btnScanWifi");
-const btnConnectWifiEl = document.getElementById("btnConnectWifi");
-const wifiNetworkSelectEl = document.getElementById("wifiNetworkSelect");
-const wifiPassEl = document.getElementById("wifiPass");
-const wifiStatusEl = document.getElementById("wifiStatus");
-
-btnScanWifiEl.addEventListener("click", () => {
-    if (!gpsWs || gpsWs.readyState !== WebSocket.OPEN) {
-        logGps("Error: WebSocket is not connected. Connect to the board AP first.", "error");
-        return;
-    }
-    
-    logGps("Requesting board to scan Wi-Fi networks...");
-    btnScanWifiEl.innerText = "Scanning...";
-    btnScanWifiEl.disabled = true;
-    gpsWs.send(":wifi_scan");
-});
-
-btnConnectWifiEl.addEventListener("click", () => {
-    if (!gpsWs || gpsWs.readyState !== WebSocket.OPEN) {
-        logGps("Error: WebSocket is not connected.", "error");
-        return;
-    }
-    
-    const selectedSsid = wifiNetworkSelectEl.value;
-    const password = wifiPassEl.value;
-    
-    if (!selectedSsid) {
-        logGps("Error: Please select a Wi-Fi network from the dropdown.", "error");
-        return;
-    }
-    
-    logGps(`Connecting board to Wi-Fi SSID: '${selectedSsid}'...`);
-    wifiStatusEl.innerText = "Board Status: Connecting...";
-    wifiStatusEl.style.color = "var(--neon-purple)";
-    
-    // Command structure: :wifi_connect <ssid> <password>
-    gpsWs.send(`:wifi_connect ${selectedSsid} ${password}`);
-    wifiPassEl.value = "";
-});
+// Add statistics update trigger to existing setup
+const originalLoadConfigKeys = loadConfigKeys;
+loadConfigKeys = async function() {
+    await originalLoadConfigKeys();
+    loadBearSynthesisStats();
+};
 
 // ============================================================================
 // DATAMOST SIMULATOR EMBEDDED ENGINE
