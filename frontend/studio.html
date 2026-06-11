@@ -594,7 +594,8 @@
             },
             tunnel: {
                 bias: 0.8,
-                pitch: 2.0
+                pitch: 2.0,
+                temp: 25.0
             },
             pushpull: {
                 bias: 0.0,
@@ -665,7 +666,8 @@
             ],
             tunnel: [
                 { id: "bias", label: "Steady Bias Current", min: 0.1, max: 3.0, step: 0.1, key: "bias", unit: "mA" },
-                { id: "pitch", label: "LC Tank Pitch Factor", min: 0.5, max: 10.0, step: 0.1, key: "pitch", unit: "x" }
+                { id: "pitch", label: "LC Tank Pitch Factor", min: 0.5, max: 10.0, step: 0.1, key: "pitch", unit: "x" },
+                { id: "tunnelTemp", label: "Diode Junction Temp", min: -10.0, max: 85.0, step: 1.0, key: "temp", unit: "°C" }
             ],
             pushpull: [
                 { id: "bias", label: "Base Diode Bias Voltage", min: 0.0, max: 0.3, step: 0.01, key: "bias", unit: "V" },
@@ -1481,10 +1483,12 @@
                 }
             } else if (activeModule === "tunnel") {
                 const bias = BigInt(Math.round(params.tunnel.bias * 1e18));
-                const pitch = BigInt(Math.round(params.tunnel.pitch * 1e18));
+                const pitchVal = BigInt(Math.round(params.tunnel.pitch * 1e18));
+                const tempVal = BigInt(Math.round(params.tunnel.temp));
+                const packedPitch = pitchVal + (tempVal << 128n);
 
                 const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
-                const calldata = iface.encodeFunctionData("processSample", [bias, pitch]);
+                const calldata = iface.encodeFunctionData("processSample", [bias, packedPitch]);
 
                 const res = await fetch(API_URL, {
                     method: "POST",

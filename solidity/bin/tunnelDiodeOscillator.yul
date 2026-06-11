@@ -14,7 +14,6 @@ object "TunnelDiodeOscillator" {
             function SCALE() -> val { val := 1000000000000000000 }
 
             // 17-Point Precomputed Esaki Tunnel Diode I-V Curve (0V to 1.6V inputs)
-            // Current values Id in Amperes scaled to 1e18 (so 1mA = 1e15)
             function getTunnelLUT(idx) -> id {
                 switch idx
                 case 0 { id := 0 }
@@ -37,57 +36,68 @@ object "TunnelDiodeOscillator" {
                 default { id := 7000000000000000000 }
             }
 
-            // Non-linear Tunnel Diode I-V characteristics: Id(V)
-            function getDiodeCurrent(V) -> Id {
+            // Non-linear Tunnel Diode I-V characteristics with Esaki thermal scaling: Id(V, temp)
+            function getDiodeCurrent(V, temp) -> Id {
                 let scale := SCALE()
                 if slt(V, 0) {
-                    // Reverse bias heavy conduction
                     Id := sdiv(mul(V, 100000000000000000), scale) // V * 0.1
                     leave
                 }
                 
-                // Map input scale: 0V to 1.6V over 16 intervals (0.1V step size)
                 let delta := 100000000000000000
                 let idx := div(V, delta)
                 let frac := mod(V, delta)
                 
                 if sgt(idx, 15) {
                     Id := getTunnelLUT(16)
-                    leave
                 }
+                if iszero(sgt(idx, 15)) {
+                    let y0 := getTunnelLUT(idx)
+                    let y1 := getTunnelLUT(add(idx, 1))
+                    Id := add(y0, sdiv(mul(sub(y1, y0), frac), delta))
+                }
+
+                // Esaki Temperature Drift scaling
+                let tempShift := sub(temp, 25)
                 
-                let y0 := getTunnelLUT(idx)
-                let y1 := getTunnelLUT(add(idx, 1))
-                Id := add(y0, sdiv(mul(sub(y1, y0), frac), delta))
+                if lt(idx, 3) {
+                    // Tunneling probability decreases: -0.2% per degree C above 25C
+                    let factor := sub(scale, mul(tempShift, 2000000000000000))
+                    Id := sdiv(mul(Id, factor), scale)
+                }
+                if iszero(lt(idx, 3)) {
+                    // Excess leakage current increases: +0.8% per degree C above 25C
+                    let factor := add(scale, mul(tempShift, 8000000000000000))
+                    Id := sdiv(mul(Id, factor), scale)
+                }
             }
 
-            // processSample(int256 bias, int256 pitch) -> int256 outputVoltage
+            // processSample(int256 bias, int256 packedPitch) -> int256 outputVoltage
             // selector: 0x07a96d8c
             if eq(selector, 0x07a96d8c) {
                 let bias := calldataload(4)
-                let pitch := calldataload(36)
+                let packedPitch := calldataload(36)
                 
                 let scale := SCALE()
+
+                // Unpack pitch and diode temperature
+                let pitch := and(packedPitch, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                let temp := shr(128, packedPitch)
+                if iszero(temp) { temp := 25 }
                 
                 // State variables stored in slots
-                // Slot 200: Vc (capacitor voltage)
-                // Slot 201: Il (inductor current)
                 let Vc := sload(200)
                 let Il := sload(201)
                 
                 // LC constants: C = 10nF, L = 100uH
-                // dt = pitch * 10^-9 sec. We use Euler integration.
-                let dt := mul(pitch, 1000000000) // pitch scaled to dt units
-                
-                // C_inv = 1 / C = 10^8
-                // L_inv = 1 / L = 10^4
+                let dt := mul(pitch, 1000000000)
                 let C_inv := 100000000
                 let L_inv := 10000
                 
-                let Id := getDiodeCurrent(Vc)
+                let Id := getDiodeCurrent(Vc, temp)
                 
                 // dVc = (Ibias - Il - Id) / C
-                let Ibias := bias // e.g. 3mA = 3 * 10^15
+                let Ibias := bias
                 let dVc := mul(sub(sub(Ibias, Il), Id), C_inv)
                 let Vc_next := add(Vc, sdiv(mul(dVc, dt), scale))
                 
@@ -97,8 +107,8 @@ object "TunnelDiodeOscillator" {
                 let Il_next := add(Il, sdiv(mul(dIl, dt), scale))
                 
                 // Soft boundary clamps to maintain numerical stability
-                if sgt(Vc_next, 2000000000000000000) { Vc_next := 2000000000000000000 } // max 2.0V
-                if slt(Vc_next, sub(0, 500000000000000000)) { Vc_next := sub(0, 500000000000000000) } // min -0.5V
+                if sgt(Vc_next, 2000000000000000000) { Vc_next := 2000000000000000000 }
+                if slt(Vc_next, sub(0, 500000000000000000)) { Vc_next := sub(0, 500000000000000000) }
                 
                 sstore(200, Vc_next)
                 sstore(201, Il_next)
