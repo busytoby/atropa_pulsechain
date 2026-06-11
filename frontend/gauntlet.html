@@ -1546,6 +1546,10 @@ Status: Awaiting hero to join the battle.</div>
                                     saveHarvestedReagents();
                                 }
                                 logEvent(`[Z-Machine] Successfully restored Gauntlet Hero state values!`);
+                                if (onChainMode) {
+                                    logEvent(`[Z-Machine] Synchronizing restored state to Folklore CPU...`);
+                                    syncStateToChain();
+                                }
                             } else {
                                 logEvent(`[Z-Machine] Cannot load: Card type '${card.bag ? card.bag.type : "unknown"}' is not gauntlet_hero compatible.`);
                             }
