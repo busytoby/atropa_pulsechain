@@ -564,6 +564,7 @@
         let bionikaVm = 0.0;
         let bionikaLastSpikeTime = 0;
         let filterTemperature = 25.0;
+        let bionikaAxonQueue = new Array(12).fill(0.0);
 
         // Current parameters
         const params = {
@@ -1097,6 +1098,16 @@
             // Bionika leak integration step (leak rate = 5% per simulation frame)
             bionikaVm = bionikaVm * 0.95;
 
+            // Axonal propagation step: shift the queue and retrieve the spike arriving at the synapse (Issue 17)
+            let physicalSpike = 0.0;
+            if (bionikaAxonQueue.length > 0) {
+                physicalSpike = bionikaAxonQueue.shift();
+            }
+            if (physicalSpike > 0.5) {
+                masterAttenuation = Math.max(0.05, masterAttenuation - 0.30);
+                log("⚡ Bionika Synapse: Action potential arrived at nerve ending! Attenuation reflex active.");
+            }
+
             // Check if signal amplitude exceeds soft limit
             if (Math.abs(inputScaled) > softLimit) {
                 triggerClipWarning();
@@ -1108,16 +1119,17 @@
                 // Inject stimulus into Bionika Spiking Neuron
                 bionikaVm += 0.35;
 
+                let fired = false;
                 // Threshold check (1.0 threshold voltage) with 200ms refractory lockout
                 if (bionikaVm >= 1.0 && Date.now() - bionikaLastSpikeTime > 200) {
                     bionikaVm = 0.0; // reset potential
                     bionikaLastSpikeTime = Date.now();
-                    log("⚡ Bionika Neural Reflex: Acoustic threshold spike fired! Triggering dynamic ear-protection attenuation.");
-                    
-                    // Aggressive protective reflex attenuation
-                    masterAttenuation = Math.max(0.05, masterAttenuation - 0.30);
+                    log("⚡ Bionika Axon: Action potential fired! Propagating along the nerve...");
+                    fired = true;
                 }
+                bionikaAxonQueue.push(fired ? 1.0 : 0.0);
             } else {
+                bionikaAxonQueue.push(0.0);
                 // Exponential Half-life recovery (Yttrium 90 curve)
                 if (document.getElementById("chkCCSAuto").checked && Date.now() - lastClipTime > 500) {
                     const halfLifeSteps = 30.0; // recover 50% deficit every 30 frames
