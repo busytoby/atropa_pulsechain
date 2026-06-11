@@ -655,6 +655,7 @@ object "SpeechSynthesizer" {
                 
                 let synthEnergy := 0
                 let synthSoundType := 0 // 0 = silent, 1 = voiced, 2 = unvoiced, 3 = nasal
+                let voicingStrength := 0 // 0 = unvoiced, 100 = fully voiced
 
                 // Check phoneme keys by matching prefixes
                 let synthTwoChars := and(synthKey, 0xFFFF000000000000000000000000000000000000000000000000000000000000)
@@ -663,14 +664,17 @@ object "SpeechSynthesizer" {
                 if eq(synthTwoChars, 0x6161000000000000000000000000000000000000000000000000000000000000) {
                     synthEnergy := 90
                     synthSoundType := 1
+                    voicingStrength := 85
                 }
                 if eq(synthTwoChars, 0x6565000000000000000000000000000000000000000000000000000000000000) {
                     synthEnergy := 95
                     synthSoundType := 1
+                    voicingStrength := 90
                 }
                 if eq(synthTwoChars, 0x6f6f000000000000000000000000000000000000000000000000000000000000) {
                     synthEnergy := 85
                     synthSoundType := 1
+                    voicingStrength := 80
                 }
                 if eq(synthTwoChars, 0x7368000000000000000000000000000000000000000000000000000000000000) {
                     synthEnergy := 80
@@ -689,10 +693,12 @@ object "SpeechSynthesizer" {
                 if eq(synthOneChar, 0x6d00000000000000000000000000000000000000000000000000000000000000) {
                     synthEnergy := 50
                     synthSoundType := 3
+                    voicingStrength := 65
                 }
                 if eq(synthOneChar, 0x6e00000000000000000000000000000000000000000000000000000000000000) {
                     synthEnergy := 45
                     synthSoundType := 3
+                    voicingStrength := 60
                 }
 
                 // Project K1..K9 coefficients into memory slots 0x4000 to 0x4008
@@ -813,10 +819,10 @@ object "SpeechSynthesizer" {
                         let shimmerPercent := sub(mod(seed, 5), 2) // [-2, 2]%
                         let shimmerFactor := add(100, shimmerPercent)
 
-                        // Mix 60% pulse and 40% breath noise
-                        let pulseScaled := mul(sub(pulse, 29), 6)
-                        let noiseScaled := mul(noise, 4)
-                        let mixedExcitation := add(pulseScaled, noiseScaled)
+                        // Dynamic Mixed Excitation (MELP-style)
+                        let pulseScaled := mul(sub(pulse, 29), 10)
+                        let noiseScaled := mul(noise, 10)
+                        let mixedExcitation := div(add(mul(pulseScaled, voicingStrength), mul(noiseScaled, sub(100, voicingStrength))), 100)
                         excitation := sdiv(mul(mixedExcitation, shimmerFactor), 100)
                     }
                     if eq(synthSoundType, 2) {
