@@ -5031,8 +5031,12 @@
                             const code = phonemeToCode[currentPh] !== undefined ? phonemeToCode[currentPh] : 3;
                             playPhoneme(code, 1);
 
-                            const tx = await speechContract.writeReflectionCoefficients(coeffs, pitch, energy);
-                            await tx.wait();
+                            try {
+                                const tx = await speechContract.writeReflectionCoefficients(coeffs, pitch, energy);
+                                if (tx && tx.wait) await tx.wait();
+                            } catch (writeErr) {
+                                console.warn("LPC frame write failed:", writeErr);
+                            }
 
                             await new Promise(r => setTimeout(r, 100));
                         }
