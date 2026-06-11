@@ -1456,7 +1456,7 @@ Status: Awaiting user to start music.</div>
             let angles = getChoreographyAngles(activeStance, choreographyTime);
             let offset = getModelOffset(activeStance, choreographyTime);
 
-            logEvent("AI Ballet: Triggering parallel ControlNet synthesis for body parts...");
+            logEvent("The heavy gears of the Alchemical Synthesizer begin to turn. The air hums with GPU voltage as the Z-Machine drafts the ControlNet bones for the dancer's body segments...");
 
             const parts = ["head", "torso", "lArm", "rArm", "lLeg", "rLeg"];
             const promises = parts.map(part => {
@@ -1464,7 +1464,7 @@ Status: Awaiting user to start music.</div>
                 return generatePart(part, promptText, cnData)
                     .then(canvas => {
                         sdParts[part] = canvas;
-                        logEvent(`AI Ballet: Part '${part}' synthesis complete.`);
+                        logEvent(`[Z-Machine Story] The loom finishes spinning the '${part}' segment, wrapping it in dense, detailed textures.`);
                     });
             });
 
@@ -1473,14 +1473,14 @@ Status: Awaiting user to start music.</div>
                 btn.disabled = false;
                 btn.innerText = "Synthesize Ballet Pose";
                 statusBox.innerText = "Status: Rigged Textures Active";
-                logEvent("AI Ballet: Parallel multi-part photorealistic textures loaded successfully.");
+                logEvent("With a sudden flash of light, the six separate segment tapestries merge! The dancer stands fully clothed in high-resolution velvet and fur, rigged onto the 3D grid.");
             })
             .catch(err => {
                 console.error(err);
                 btn.disabled = false;
                 btn.innerText = "Synthesize Ballet Pose";
                 statusBox.innerText = "Error: " + err.message;
-                logEvent("AI Ballet [ERROR]: " + err.message);
+                logEvent(`A sudden static burst disrupts the loom! The Z-Machine's alchemical link to the GPU worker has severed: ${err.message}`);
             });
         }
 
