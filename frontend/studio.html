@@ -1368,12 +1368,15 @@
             // Cool exponentially towards ambient, then add power dissipation heat rise
             filterTemperature = T_ambient + deltaT * Math.exp(-lambda_t) + power * theta_ja * 0.04;
 
-            // Thermal runaway protect: if Temp > 45°C, throttle master gain
+            // CCS Transistor Heat Sink Auto-Ranging Limiter (Issue 15)
+            // If Temp > 45°C, dynamically scale down masterAttenuation in the closed feedback loop
             let thermalThrottling = 1.0;
             if (filterTemperature > 45.0) {
+                const thermalOverload = (filterTemperature - 45.0) * 0.04;
+                masterAttenuation = Math.max(0.05, masterAttenuation - thermalOverload);
                 thermalThrottling = Math.max(0.1, 1.0 - (filterTemperature - 45.0) * 0.025);
                 if (Math.random() > 0.96) {
-                    log(`⚠️ [THERMAL RUNAWAY WARNING] Junction at ${filterTemperature.toFixed(1)}°C. Throttling active gain ceiling to ${(thermalThrottling * 100).toFixed(0)}%`);
+                    log(`⚠️ [CCS HEAT SINK OVERLOAD] Junction at ${filterTemperature.toFixed(1)}°C. Throttling current source. Attenuation set to ${(masterAttenuation * 100).toFixed(0)}%`);
                 }
             }
 
@@ -1981,8 +1984,14 @@
                     zenerDither = (Math.random() - 0.5) * 0.015;
                 }
 
-                // Scale down stimulus by synchronized compGainState, apply distributed pre-attenuation, and add Zener dither
-                const compressedStimulus = (stimulus * compGainState * currentPreAttenuation) + zenerDither;
+                // Mullard Mullard-Style Varistor (VDR) pre-filter compression (Issue 15)
+                const vdrBeta = 3.0;
+                const vdrAlpha = 2.5;
+                const vdrG0 = 0.12;
+                const stimulusAmp = stimulus * compGainState * currentPreAttenuation;
+                const vdrConductance = vdrG0 * (1.0 + vdrAlpha * Math.pow(Math.abs(stimulusAmp), vdrBeta));
+                // V_compressed = V_in / (1 + G(V_in))
+                const compressedStimulus = (stimulusAmp / (1.0 + vdrConductance)) + zenerDither;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
@@ -2034,8 +2043,9 @@
                     const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
                     let rawOut = Number(decoded[0]) / 1e18;
 
-                    // Multiply the returned rawOut by the reciprocal of compGainState (expanding the dynamics)
-                    let expandedOut = rawOut * (1.0 / compGainState);
+                    // Mullard Mullard-Style Varistor (VDR) post-filter expansion to restore dynamics
+                    const vdrExpConductance = vdrG0 * (1.0 + vdrAlpha * Math.pow(Math.abs(rawOut), vdrBeta));
+                    let expandedOut = rawOut * (1.0 + vdrExpConductance) * (1.0 / compGainState);
                     
                     // Asymmetric Soft Saturation (Issue 1) to model early transistor non-linear limits:
                     let saturatedOut = expandedOut;
