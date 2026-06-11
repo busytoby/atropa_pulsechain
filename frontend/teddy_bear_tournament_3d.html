@@ -444,6 +444,63 @@
             <button class="btn btn-magenta" id="btn-start-match">Initiate Arena Match</button>
             <button class="btn" id="btn-next-round">Next Tournament Stage</button>
 
+            <!-- DNA & AI Synthesis Suite Controls -->
+            <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
+                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🧬 DNA & SYNTHESIS SUITE</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Modify active fighter genome traits manually or synthesize new dimensions:</div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Head Scale</span>
+                            <span id="val-head">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-head" min="0.6" max="1.6" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Torso Width</span>
+                            <span id="val-torso">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-torso" min="0.6" max="1.6" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Ear Scale</span>
+                            <span id="val-ears">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-ears" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Muzzle Scale</span>
+                            <span id="val-muzzle">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-muzzle" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Arm Thickness</span>
+                            <span id="val-arms">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-arms" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Leg Thickness</span>
+                            <span id="val-legs">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-legs" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Fur Density / Length</span>
+                            <span id="val-fur">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-fur" min="0.0" max="2.0" step="0.1" value="1.0" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+
             <!-- AI Puppet Control Panel -->
             <div class="card" style="margin-top: 10px; border-color: rgba(255, 234, 0, 0.25);">
                 <div class="card-title" style="color: var(--glow-yellow); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🤖 AI PUPPET CONSOLE</div>
@@ -1056,6 +1113,15 @@ Ready to initiate tournament match.</div>
 
         // Draw 3D wireframe bear
         function drawBear3D(offset3D, scale, angles, pulse, sickness, palette) {
+            // Read active genome traits from DNA Synthesis Suite
+            const headScale = parseFloat(document.getElementById("synth-head")?.value || 1.0);
+            const torsoWidth = parseFloat(document.getElementById("synth-torso")?.value || 1.0);
+            const earScale = parseFloat(document.getElementById("synth-ears")?.value || 1.0);
+            const muzzleScale = parseFloat(document.getElementById("synth-muzzle")?.value || 1.0);
+            const armWidth = parseFloat(document.getElementById("synth-arms")?.value || 1.0);
+            const legWidth = parseFloat(document.getElementById("synth-legs")?.value || 1.0);
+            const furLen = parseFloat(document.getElementById("synth-fur")?.value || 1.0);
+
             const joints = getBearSkeleton(offset3D, scale, angles, pulse, sickness);
 
             const baseCol = palette.head || "rgba(0, 240, 255, 0.85)";
@@ -1068,8 +1134,8 @@ Ready to initiate tournament match.</div>
             ctx.save();
             ctx.shadowBlur = 24;
             ctx.shadowColor = baseCol.replace("0.85", "1.0");
-            drawVolumetricSphere(joints.head, 39 * scale, "rgba(255, 255, 255, 0.08)");
-            drawVolumetricCapsule(joints.neck, joints.midHip, 46 * scale, "rgba(255, 255, 255, 0.08)");
+            drawVolumetricSphere(joints.head, 39 * scale * headScale, "rgba(255, 255, 255, 0.08)");
+            drawVolumetricCapsule(joints.neck, joints.midHip, 46 * scale * torsoWidth, "rgba(255, 255, 255, 0.08)");
             ctx.restore();
 
             const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
@@ -1078,78 +1144,78 @@ Ready to initiate tournament match.</div>
             if (useSD) {
                 // Draw rigged photorealistic segments on top of active 3D joints
                 // 1. Draw Torso segment
-                drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale);
+                drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale * torsoWidth);
 
                 // 2. Draw Limbs segments
-                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale);
-                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale);
-                drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale);
-                drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale);
+                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale * armWidth);
+                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale * armWidth);
+                drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale * legWidth);
+                drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale * legWidth);
 
                 // 3. Draw Head segment
-                drawSegmentAtJoint(joints.head, segments.head, scale, 1.0);
+                drawSegmentAtJoint(joints.head, segments.head, scale, headScale);
 
                 // 4. Add Volumetric Shading Layer (Multiply Pass)
                 ctx.save();
                 ctx.globalCompositeOperation = "multiply";
                 const shadingColor = "rgba(180, 170, 160, 0.65)";
-                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale, shadingColor);
-                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale, shadingColor);
-                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale, shadingColor);
-                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale, shadingColor);
-                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale, shadingColor);
-                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale, shadingColor);
-                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, shadingColor);
 
-                let lEar = new Point3D(joints.head.x - 30 * scale, joints.head.y + 30 * scale, joints.head.z - 10 * scale);
-                let rEar = new Point3D(joints.head.x + 30 * scale, joints.head.y + 30 * scale, joints.head.z + 10 * scale);
-                drawVolumetricSphere(lEar, 15 * scale, shadingColor);
-                drawVolumetricSphere(rEar, 15 * scale, shadingColor);
-                drawVolumetricSphere(joints.head, 38 * scale, shadingColor);
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawVolumetricSphere(lEar, 15 * scale * earScale, shadingColor);
+                drawVolumetricSphere(rEar, 15 * scale * earScale, shadingColor);
+                drawVolumetricSphere(joints.head, 38 * scale * headScale, shadingColor);
                 ctx.restore();
 
                 // 5. Add Volumetric Highlight Layer (Overlay Pass)
                 ctx.save();
                 ctx.globalCompositeOperation = "overlay";
                 const highlightColor = "rgba(255, 230, 200, 0.4)";
-                drawVolumetricSphere(joints.head, 38 * scale, highlightColor);
-                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale, highlightColor);
+                drawVolumetricSphere(joints.head, 38 * scale * headScale, highlightColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, highlightColor);
                 ctx.restore();
             } else {
                 // Fallback to geometric volumetric solid shading
                 // 1. Draw Limbs (Capsules)
-                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale, baseCol);
-                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale, baseCol);
-                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale, baseCol);
-                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale, baseCol);
-                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale, baseCol);
-                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, baseCol);
 
                 // 2. Draw Torso (Body capsule)
-                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, baseCol);
 
                 // 3. Draw Ears (Spheres offset relative to head)
-                let lEar = new Point3D(joints.head.x - 30 * scale, joints.head.y + 30 * scale, joints.head.z - 10 * scale);
-                let rEar = new Point3D(joints.head.x + 30 * scale, joints.head.y + 30 * scale, joints.head.z + 10 * scale);
-                drawVolumetricSphere(lEar, 15 * scale, baseCol);
-                drawVolumetricSphere(rEar, 15 * scale, baseCol);
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawVolumetricSphere(lEar, 15 * scale * earScale, baseCol);
+                drawVolumetricSphere(rEar, 15 * scale * earScale, baseCol);
 
                 // 4. Draw Head
-                drawVolumetricSphere(joints.head, 38 * scale, baseCol);
+                drawVolumetricSphere(joints.head, 38 * scale * headScale, baseCol);
 
                 // 5. Draw Snout & Eyes
-                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale, joints.head.z + 25 * scale);
-                drawVolumetricSphere(snout, 12 * scale, "rgba(255,255,255,0.95)"); 
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
+                drawVolumetricSphere(snout, 12 * scale * muzzleScale, "rgba(255,255,255,0.95)"); 
 
                 // 6. Draw Paws & Feet
-                drawVolumetricSphere(joints.lPaw, 14 * scale, baseCol);
-                drawVolumetricSphere(joints.rPaw, 14 * scale, baseCol);
-                drawVolumetricSphere(joints.lFoot, 16 * scale, baseCol);
-                drawVolumetricSphere(joints.rFoot, 16 * scale, baseCol);
+                drawVolumetricSphere(joints.lPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricSphere(joints.rPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricSphere(joints.lFoot, 16 * scale * legWidth, baseCol);
+                drawVolumetricSphere(joints.rFoot, 16 * scale * legWidth, baseCol);
             }
 
             // Draw procedural fur fluffiness overlay
-            drawFurTexture(ctx, joints, scale);
+            drawFurTexture(ctx, joints, scale * furLen);
 
             // Draw connecting cobwebs under sickness decay
             if (sickness > 0.35) {
@@ -1819,6 +1885,29 @@ Ready to initiate tournament match.</div>
             overlay.innerHTML = `<img src="${imgSrc}" style="max-height: 85vh; border: 5px solid #d2b48c; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">`;
             overlay.style.display = "flex";
         }
+
+        // DNA Synthesis Suite UI Bindings
+        document.getElementById("synth-head").addEventListener("input", (e) => {
+            document.getElementById("val-head").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-torso").addEventListener("input", (e) => {
+            document.getElementById("val-torso").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-ears").addEventListener("input", (e) => {
+            document.getElementById("val-ears").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-muzzle").addEventListener("input", (e) => {
+            document.getElementById("val-muzzle").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-arms").addEventListener("input", (e) => {
+            document.getElementById("val-arms").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-legs").addEventListener("input", (e) => {
+            document.getElementById("val-legs").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-fur").addEventListener("input", (e) => {
+            document.getElementById("val-fur").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
 
         loadDeckList();
         requestAnimationFrame(loop);
