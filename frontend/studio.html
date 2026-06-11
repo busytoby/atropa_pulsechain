@@ -988,6 +988,7 @@
             auxSamples2.shift();
         };
         function drawWaveform() {
+            const chkMixer = document.getElementById("chkRetroMixer");
             // Resize canvas to parent
             const rect = scopeCanvas.getBoundingClientRect();
             scopeCanvas.width = rect.width;
@@ -1051,6 +1052,18 @@
                 }
             }
             ctx.stroke();
+            
+            // TVT-6 Raster Scan Phosphor Dot Overlay (Issue 7)
+            if (chkMixer && chkMixer.checked) {
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.shadowBlur = 8;
+                for (let i = 0; i < samples.length; i++) {
+                    const x = i * step;
+                    const y = (scopeCanvas.height / 2) - (samples[i] * (scopeCanvas.height / 2) * 0.8);
+                    ctx.fillRect(x - 2, y - 2, 4, 4);
+                }
+            }
             ctx.shadowBlur = 0; // reset
 
             // Decay animations smoothly
@@ -1081,7 +1094,6 @@
             }
             
             // 6. TV Tournament Resistor Video Mixer Overlay (Issue 1)
-            const chkMixer = document.getElementById("chkRetroMixer");
             if (chkMixer && chkMixer.checked) {
                 // Plot Trace 1: Cyan trace (Upper vertical offset)
                 ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
