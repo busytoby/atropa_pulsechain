@@ -1,16 +1,10 @@
 object "TunnelDiodeOscillator" {
-    // ========================================================================
-    // DEPLOYMENT INITIALIZATION BLOCK (INITCODE)
-    // ========================================================================
     code {
         if callvalue() { revert(0, 0) }
         datacopy(0x00, dataoffset("runtime"), datasize("runtime"))
         return(0x00, datasize("runtime"))
     }
     
-    // ========================================================================
-    // MAIN RUNTIME ENVIRONMENT
-    // ========================================================================
     object "runtime" {
         code {
             if lt(calldatasize(), 4) { revert(0, 0) }
@@ -18,61 +12,53 @@ object "TunnelDiodeOscillator" {
 
             // Helpers
             function SCALE() -> val { val := 1000000000000000000 }
-            function VT() -> val { val := 26000000000000000 }      // 26mV thermal voltage
-            function IP() -> val { val := 5000000000000000 }       // 5mA Peak Current
-            function VP() -> val { val := 80000000000000000 }      // 80mV Peak Voltage
-            function IV() -> val { val := 500000000000000 }        // 0.5mA Valley Current
-            function VV() -> val { val := 350000000000000000 }     // 350mV Valley Voltage
 
-            // Exponential approximation: exp(x)
-            function fixedExp(x) -> val {
-                let scale := SCALE()
-                let x2 := sdiv(mul(x, x), scale)
-                let x3 := sdiv(mul(x2, x), scale)
-                let x4 := sdiv(mul(x3, x), scale)
-                val := add(add(add(add(scale, x), sdiv(x2, 2)), sdiv(x3, 6)), sdiv(x4, 24))
-            }
-
-            // Exponential approximation: exp(-x) for positive x
-            function fixedExpNeg(x) -> val {
-                let scale := SCALE()
-                let ex := fixedExp(x)
-                if iszero(ex) { ex := 1 }
-                val := sdiv(mul(scale, scale), ex)
+            // 17-Point Precomputed Esaki Tunnel Diode I-V Curve (0V to 1.6V inputs)
+            // Current values Id in Amperes scaled to 1e18 (so 1mA = 1e15)
+            function getTunnelLUT(idx) -> id {
+                switch idx
+                case 0 { id := 0 }
+                case 1 { id := 4800000000000000 }    // 4.8mA (near 80mV peak)
+                case 2 { id := 3500000000000000 }    // 3.5mA (negative resistance region)
+                case 3 { id := 1800000000000000 }    // 1.8mA
+                case 4 { id := 600000000000000 }     // 0.6mA (near 350mV valley)
+                case 5 { id := 900000000000000 }     // 0.9mA (diffusion starting)
+                case 6 { id := 2500000000000000 }    // 2.5mA
+                case 7 { id := 7500000000000000 }    // 7.5mA
+                case 8 { id := 20000000000000000 }   // 20mA
+                case 9 { id := 50000000000000000 }   // 50mA
+                case 10 { id := 120000000000000000 } // 120mA
+                case 11 { id := 280000000000000000 } // 280mA
+                case 12 { id := 600000000000000000 } // 600mA
+                case 13 { id := 1200000000000000000 } // 1.2A
+                case 14 { id := 2200000000000000000 } // 2.2A
+                case 15 { id := 4000000000000000000 } // 4.0A
+                case 16 { id := 7000000000000000000 } // 7.0A
+                default { id := 7000000000000000000 }
             }
 
             // Non-linear Tunnel Diode I-V characteristics: Id(V)
             function getDiodeCurrent(V) -> Id {
                 let scale := SCALE()
-                let vp := VP()
-                let ip := IP()
-                
-                // If V is negative, it conducts heavily in reverse bias
                 if slt(V, 0) {
-                    Id := sdiv(mul(V, 100000000000000000), scale) // simple slope
+                    // Reverse bias heavy conduction
+                    Id := sdiv(mul(V, 100000000000000000), scale) // V * 0.1
                     leave
                 }
                 
-                // Tunneling Current component: It = Ip * (V/Vp) * e^(1 - V/Vp)
-                let ratio := sdiv(mul(V, scale), vp)
-                let It := 0
-                if iszero(sgt(V, vp)) {
-                    let expTerm := fixedExp(sub(scale, ratio))
-                    It := sdiv(mul(mul(ip, ratio), expTerm), mul(scale, scale))
-                }
-                if sgt(V, vp) {
-                    let expTerm := fixedExpNeg(sub(ratio, scale))
-                    It := sdiv(mul(mul(ip, ratio), expTerm), mul(scale, scale))
+                // Map input scale: 0V to 1.6V over 16 intervals (0.1V step size)
+                let delta := 100000000000000000
+                let idx := div(V, delta)
+                let frac := mod(V, delta)
+                
+                if sgt(idx, 15) {
+                    Id := getTunnelLUT(16)
+                    leave
                 }
                 
-                // Excess & Diffusion Current component: Idiff = Iv * e^((V - Vv) / Vt)
-                let Idiff := 0
-                if sgt(V, 300000000000000000) { // starting around 300mV
-                    let diffRatio := sdiv(mul(sub(V, 300000000000000000), scale), VT())
-                    Idiff := sdiv(mul(500000000000000, fixedExp(diffRatio)), scale)
-                }
-                
-                Id := add(It, Idiff)
+                let y0 := getTunnelLUT(idx)
+                let y1 := getTunnelLUT(add(idx, 1))
+                Id := add(y0, sdiv(mul(sub(y1, y0), frac), delta))
             }
 
             // processSample(int256 bias, int256 pitch) -> int256 outputVoltage
@@ -117,7 +103,6 @@ object "TunnelDiodeOscillator" {
                 sstore(200, Vc_next)
                 sstore(201, Il_next)
                 
-                // Return output voltage scaled up for audio output
                 mstore(0x00, Vc_next)
                 return(0x00, 32)
             }
