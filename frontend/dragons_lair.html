@@ -719,32 +719,38 @@
             {
                 text: "Dirk the Daring stood before the gaping maw of the dark, imposing castle entrance, his heart pounding in his chest. Before him lay the entrance to the legendary Dragon's Lair, a place from which no adventurer had ever returned. With a firm grip on his heavy steel sword, he stepped into the gloomy shadows, stepping across the threshold of fate.",
                 type: "system",
-                timestamp: "12:00:00 AM"
+                timestamp: "12:00:00 AM",
+                illustration: "assets/storybook/page1.png"
             },
             {
                 text: "Suddenly, the stone floor collapsed! Dirk sprinted down the crumbling corridor as giant burning boulders rained down from the high arched ceiling. Leaping forward at the last second, he rolled through a narrow doorway as the hall fell into the bottomless cavern behind him.",
                 type: "system",
-                timestamp: "12:01:15 AM"
+                timestamp: "12:01:15 AM",
+                illustration: "assets/storybook/page2.png"
             },
             {
                 text: "Dirk crept deeper into the sulfuric caverns. Without warning, a colossal, fire-breathing beast lunged from the darkness! Dirk drew his glowing blade in a split second, deflecting the dragon's fiery breath with his steel shield and striking a heavy blow that sent the monster retreating into the shadows.",
                 type: "system",
-                timestamp: "12:02:40 AM"
+                timestamp: "12:02:40 AM",
+                illustration: "assets/storybook/page3.png"
             },
             {
                 text: "Further inside, Dirk encountered a rotting stone bridge suspended over an endless abyss of magma. As he crossed, the stone arches crumbled into dust! Gathering all his strength, Dirk took a flying leap to the left, catching the edge of a stable ledge just as the bridge vanished.",
                 type: "system",
-                timestamp: "12:03:55 AM"
+                timestamp: "12:03:55 AM",
+                illustration: "assets/storybook/page4.png"
             },
             {
                 text: "In the heart of the keep, the Electric Knight blocked his path, crackling with static energy and raising an electrified energy blade. The Knight lunged with blinding speed, but Dirk dodged right under the blade, striking the Knight's power core and disabling the mechanical defender.",
                 type: "system",
-                timestamp: "12:05:10 AM"
+                timestamp: "12:05:10 AM",
+                illustration: "assets/storybook/page5.png"
             },
             {
                 text: "Dirk finally reached the grand treasure chamber, where Princess Daphne was trapped inside a glowing cage. Guarding her was Singe, the massive red dragon. With a final, heroic battle cry, Dirk avoided Singe's claws, lunged forward, and drove his sword deep into the dragon's heart. Dirk rescued Daphne, and their legend was forever etched in the stars!",
                 type: "system",
-                timestamp: "12:06:30 AM"
+                timestamp: "12:06:30 AM",
+                illustration: "assets/storybook/page6.png"
             }
         ];
 
@@ -888,12 +894,30 @@
             storyBook.forEach((entry, idx) => {
                 const row = document.createElement("div");
                 row.className = "editor-row";
+                
+                let thumbHtml = "";
+                if (entry.illustration) {
+                    thumbHtml = `
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                            <img src="${entry.illustration}" style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(0,0,0,0.2);">
+                            <button class="book-btn" onclick="generateArtForPage(${idx})" style="padding: 4px 8px; font-size: 0.75rem;">🎨 Redraw Scene</button>
+                        </div>
+                    `;
+                } else {
+                    thumbHtml = `
+                        <div style="margin-top: 5px;">
+                            <button class="book-btn" onclick="generateArtForPage(${idx})" style="padding: 4px 8px; font-size: 0.75rem;">🎨 Draw Scene</button>
+                        </div>
+                    `;
+                }
+
                 row.innerHTML = `
                     <div class="editor-label">
                         <span>PAGE ${idx + 1} (${entry.type.toUpperCase()})</span>
                         <button class="editor-btn-delete" onclick="deleteEditorPage(${idx})">Delete Page</button>
                     </div>
                     <textarea class="editor-textarea" id="editor-page-${idx}">${entry.text}</textarea>
+                    ${thumbHtml}
                 `;
                 container.appendChild(row);
             });
@@ -909,9 +933,100 @@
             container.appendChild(actionRow);
         }
 
+        function generateArtForPage(idx) {
+            saveCurrentEditorTexts();
+            const text = storyBook[idx].text;
+            const btn = event.target;
+            btn.innerText = "⏳ Casting Art Spell...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const dataUrl = generateProceduralIllustration(text);
+                storyBook[idx].illustration = dataUrl;
+                populateEditor();
+            }, 800);
+        }
+
+        function generateProceduralIllustration(prompt) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 400;
+            canvas.height = 300;
+            const ctx = canvas.getContext("2d");
+
+            // Match color palettes based on keywords
+            let p = prompt.toLowerCase();
+            let grad = ctx.createRadialGradient(200, 150, 20, 200, 150, 250);
+
+            if (p.includes("fire") || p.includes("lava") || p.includes("burning") || p.includes("dragon")) {
+                grad.addColorStop(0, '#ffaa00');
+                grad.addColorStop(0.5, '#d87000');
+                grad.addColorStop(1, '#1a0d00');
+            } else if (p.includes("electric") || p.includes("knight") || p.includes("lightning")) {
+                grad.addColorStop(0, '#00ffff');
+                grad.addColorStop(0.5, '#0088cc');
+                grad.addColorStop(1, '#050a12');
+            } else if (p.includes("hall") || p.includes("stone") || p.includes("gates") || p.includes("castle") || p.includes("corridor")) {
+                grad.addColorStop(0, '#807090');
+                grad.addColorStop(0.5, '#3d2b4f');
+                grad.addColorStop(1, '#0c0714');
+            } else {
+                grad.addColorStop(0, '#ffaa00');
+                grad.addColorStop(0.6, '#3d2b1f');
+                grad.addColorStop(1, '#0d0b0f');
+            }
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 400, 300);
+
+            // Draw fantasy ambient details
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 15; i++) {
+                ctx.beginPath();
+                ctx.arc(200 + (Math.random() - 0.5) * 150, 150 + (Math.random() - 0.5) * 100, Math.random() * 80 + 20, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            if (p.includes("fire") || p.includes("lava") || p.includes("burning") || p.includes("dragon")) {
+                ctx.fillStyle = 'rgba(255, 170, 0, 0.6)';
+                for (let i = 0; i < 40; i++) {
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * 400, Math.random() * 300, Math.random() * 3 + 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (p.includes("electric") || p.includes("knight") || p.includes("lightning")) {
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 6; i++) {
+                    ctx.beginPath();
+                    let sx = Math.random() * 400, sy = Math.random() * 300;
+                    ctx.moveTo(sx, sy);
+                    for (let j = 0; j < 5; j++) {
+                        sx += (Math.random() - 0.5) * 40;
+                        sy += (Math.random() - 0.5) * 40;
+                        ctx.lineTo(sx, sy);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // Vintage vignette & border overlay
+            let vign = ctx.createRadialGradient(200, 150, 100, 200, 150, 220);
+            vign.addColorStop(0, 'rgba(0,0,0,0)');
+            vign.addColorStop(1, 'rgba(0,0,0,0.85)');
+            ctx.fillStyle = vign;
+            ctx.fillRect(0, 0, 400, 300);
+
+            ctx.strokeStyle = 'rgba(255, 170, 0, 0.25)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, 380, 280);
+
+            return canvas.toDataURL("image/png");
+        }
+
         function addNewEditorPage() {
             saveCurrentEditorTexts();
-            storyBook.push({ text: "Write your custom story page text here...", type: "custom", timestamp: new Date().toLocaleTimeString() });
+            storyBook.push({ text: "Write your custom story page text here...", type: "custom", timestamp: new Date().toLocaleTimeString(), illustration: "" });
             populateEditor();
         }
 
@@ -1044,7 +1159,11 @@
             if (leftIdx < storyBook.length) {
                 leftTextRaw = storyBook[leftIdx].text;
                 leftPageWords = parseWords(leftTextRaw, "left");
-                leftContent.innerHTML = renderSpans(leftPageWords, true);
+                let illHtml = "";
+                if (storyBook[leftIdx].illustration) {
+                    illHtml = `<div class="page-illustration-container" style="width: 100%; height: 160px; overflow: hidden; border-radius: 8px; border: 2px solid #3d2b1f; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);"><img src="${storyBook[leftIdx].illustration}" style="width: 100%; height: 100%; object-fit: cover;"></div>`;
+                }
+                leftContent.innerHTML = illHtml + renderSpans(leftPageWords, true);
                 leftNum.innerText = `Page ${leftIdx + 1}`;
             } else {
                 leftTextRaw = "";
@@ -1056,7 +1175,11 @@
             if (rightIdx < storyBook.length) {
                 rightTextRaw = storyBook[rightIdx].text;
                 rightPageWords = parseWords(rightTextRaw, "right");
-                rightContent.innerHTML = renderSpans(rightPageWords, true);
+                let illHtml = "";
+                if (storyBook[rightIdx].illustration) {
+                    illHtml = `<div class="page-illustration-container" style="width: 100%; height: 160px; overflow: hidden; border-radius: 8px; border: 2px solid #3d2b1f; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);"><img src="${storyBook[rightIdx].illustration}" style="width: 100%; height: 100%; object-fit: cover;"></div>`;
+                }
+                rightContent.innerHTML = illHtml + renderSpans(rightPageWords, true);
                 rightNum.innerText = `Page ${rightIdx + 1}`;
             } else {
                 rightTextRaw = "";
