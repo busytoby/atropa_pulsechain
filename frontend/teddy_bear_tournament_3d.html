@@ -446,8 +446,8 @@
 
             <!-- DNA & AI Synthesis Suite Controls -->
             <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
-                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🧬 DNA & SYNTHESIS SUITE</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Modify active fighter genome traits manually or synthesize new dimensions:</div>
+                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🧬 DNA & AUDIO SYNTHESIS SUITE</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Modify active fighter genome traits & audio synthesizer parameters:</div>
                 <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px;">
                     <div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
@@ -497,6 +497,47 @@
                             <span id="val-fur">1.00x</span>
                         </div>
                         <input type="range" id="synth-fur" min="0.0" max="2.0" step="0.1" value="1.0" style="width: 100%;">
+                    </div>
+
+                    <!-- Audio Synth ADSR Subsection -->
+                    <div style="border-top: 1px solid rgba(0, 240, 255, 0.15); margin-top: 4px; padding-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Timbre Voice</span>
+                            <select id="synth-timbre" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 2px;">
+                                <option value="sine" selected>Chime (Sine/Tri)</option>
+                                <option value="sawtooth">Strings (Saw/Tri)</option>
+                                <option value="triangle">Brass (Saw/Pulse)</option>
+                                <option value="square">Organ (Square Mix)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Attack Time</span>
+                                <span id="val-attack">0.02s</span>
+                            </div>
+                            <input type="range" id="synth-attack" min="0.005" max="0.5" step="0.01" value="0.02" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Decay Time</span>
+                                <span id="val-decay">0.30s</span>
+                            </div>
+                            <input type="range" id="synth-decay" min="0.05" max="1.5" step="0.05" value="0.30" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Sustain Level</span>
+                                <span id="val-sustain">20%</span>
+                            </div>
+                            <input type="range" id="synth-sustain" min="0.0" max="1.0" step="0.05" value="0.20" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Release Time</span>
+                                <span id="val-release">0.15s</span>
+                            </div>
+                            <input type="range" id="synth-release" min="0.05" max="1.0" step="0.05" value="0.15" style="width: 100%;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -690,6 +731,15 @@ Ready to initiate tournament match.</div>
 
             let now = audioCtx.currentTime;
             
+            // Read active synthesizer parameters
+            const attack = parseFloat(document.getElementById("synth-attack")?.value || 0.02);
+            const decay = parseFloat(document.getElementById("synth-decay")?.value || 0.30);
+            const sustain = parseFloat(document.getElementById("synth-sustain")?.value || 0.20);
+            const release = parseFloat(document.getElementById("synth-release")?.value || 0.15);
+            const activeTimbre = document.getElementById("synth-timbre")?.value || "sine";
+
+            const totalDuration = attack + decay + release + 0.1;
+
             // Sub-bass sine wave boom
             let osc = audioCtx.createOscillator();
             let gain = audioCtx.createGain();
@@ -705,20 +755,24 @@ Ready to initiate tournament match.</div>
             osc.start();
             osc.stop(now + 0.35);
 
-            // Resonant FM sweep click
+            // Synthesized timbre sweep based on envelope values
             let fmOsc = audioCtx.createOscillator();
             let fmGain = audioCtx.createGain();
-            fmOsc.type = "sawtooth";
+            fmOsc.type = activeTimbre;
             fmOsc.frequency.setValueAtTime(800 * strength, now);
-            fmOsc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+            fmOsc.frequency.exponentialRampToValueAtTime(150 * strength, now + attack + decay);
             
-            fmGain.gain.setValueAtTime(0.12 * strength, now);
-            fmGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            // Apply ADSR Envelope
+            fmGain.gain.setValueAtTime(0, now);
+            fmGain.gain.linearRampToValueAtTime(0.25 * strength, now + attack);
+            fmGain.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay);
+            fmGain.gain.setValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay + 0.1);
+            fmGain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay + 0.1 + release);
             
             fmOsc.connect(fmGain);
             fmGain.connect(analyser);
             fmOsc.start();
-            fmOsc.stop(now + 0.2);
+            fmOsc.stop(now + totalDuration);
         }
 
         // Oscilloscope drawing
@@ -1814,6 +1868,11 @@ Ready to initiate tournament match.</div>
                 timestamp: Date.now(),
                 score: "TOURNAMENT",
                 style: "Arena Battle",
+            savedDeck.push({
+                image: cardBase64,
+                timestamp: Date.now(),
+                score: "TOURNAMENT",
+                style: "Arena Battle",
                 dnaTraits: {
                     head: parseFloat(document.getElementById("synth-head")?.value || 1.0),
                     torso: parseFloat(document.getElementById("synth-torso")?.value || 1.0),
@@ -1822,17 +1881,24 @@ Ready to initiate tournament match.</div>
                     arms: parseFloat(document.getElementById("synth-arms")?.value || 1.0),
                     legs: parseFloat(document.getElementById("synth-legs")?.value || 1.0),
                     fur: parseFloat(document.getElementById("synth-fur")?.value || 1.0)
+                },
+                audioTraits: {
+                    timbre: document.getElementById("synth-timbre")?.value || "sine",
+                    attack: parseFloat(document.getElementById("synth-attack")?.value || 0.02),
+                    decay: parseFloat(document.getElementById("synth-decay")?.value || 0.30),
+                    sustain: parseFloat(document.getElementById("synth-sustain")?.value || 0.20),
+                    release: parseFloat(document.getElementById("synth-release")?.value || 0.15)
                 }
             });
 
             localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
-            logEvent("💾 Saved tournament battle card successfully with DNA scale traits!");
+            logEvent("💾 Saved tournament battle card successfully with DNA & Audio traits!");
             loadDeckList();
 
             if (!drawerExpanded) toggleDeckDrawer();
         }
 
-        function restoreDnaTraits(traits) {
+        function restoreDnaTraits(traits, audioTraits) {
             if (!traits) return;
             const mappings = [
                 { id: "synth-head", valId: "val-head", key: "head" },
@@ -1851,7 +1917,34 @@ Ready to initiate tournament match.</div>
                     if (valEl) valEl.innerText = `${parseFloat(traits[m.key]).toFixed(2)}x`;
                 }
             });
-            logEvent("🧬 Restored 3D volumetric scale traits from selected DNA card!");
+
+            if (audioTraits) {
+                const audioMappings = [
+                    { id: "synth-attack", valId: "val-attack", key: "attack", suffix: "s" },
+                    { id: "synth-decay", valId: "val-decay", key: "decay", suffix: "s" },
+                    { id: "synth-sustain", valId: "val-sustain", key: "sustain", isPercent: true },
+                    { id: "synth-release", valId: "val-release", key: "release", suffix: "s" }
+                ];
+                audioMappings.forEach(am => {
+                    const el = document.getElementById(am.id);
+                    const valEl = document.getElementById(am.valId);
+                    if (el && audioTraits[am.key] !== undefined) {
+                        el.value = audioTraits[am.key];
+                        if (valEl) {
+                            if (am.isPercent) {
+                                valEl.innerText = `${Math.round(parseFloat(audioTraits[am.key]) * 100)}%`;
+                            } else {
+                                valEl.innerText = `${parseFloat(audioTraits[am.key]).toFixed(2)}${am.suffix}`;
+                            }
+                        }
+                    }
+                });
+                const timbreEl = document.getElementById("synth-timbre");
+                if (timbreEl && audioTraits.timbre !== undefined) {
+                    timbreEl.value = audioTraits.timbre;
+                }
+            }
+            logEvent("🧬 Restored 3D volumetric scale & audio synthesizer traits from selected DNA card!");
         }
 
         function loadDeckList() {
@@ -1883,7 +1976,7 @@ Ready to initiate tournament match.</div>
                     };
                     cardNode.ondblclick = (e) => {
                         if (e.target.className === "deck-card-delete") return;
-                        restoreDnaTraits(card.dnaTraits);
+                        restoreDnaTraits(card.dnaTraits, card.audioTraits);
                     };
 
                     cardNode.innerHTML = `
@@ -1943,6 +2036,18 @@ Ready to initiate tournament match.</div>
         });
         document.getElementById("synth-fur").addEventListener("input", (e) => {
             document.getElementById("val-fur").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-attack").addEventListener("input", (e) => {
+            document.getElementById("val-attack").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("synth-decay").addEventListener("input", (e) => {
+            document.getElementById("val-decay").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("synth-sustain").addEventListener("input", (e) => {
+            document.getElementById("val-sustain").innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
+        });
+        document.getElementById("synth-release").addEventListener("input", (e) => {
+            document.getElementById("val-release").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
         });
 
         loadDeckList();
