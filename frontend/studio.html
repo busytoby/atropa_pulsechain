@@ -332,6 +332,14 @@
                     <span style="font-weight: bold; font-size: 0.95rem; color: #00f2fe;">🎚️ Equa-Amplifier AGC</span>
                     <input type="checkbox" id="chkEquaLimiter" checked style="width: 18px; height: 18px; cursor: pointer;">
                 </div>
+                <div style="background: rgba(244, 63, 94, 0.03); border: 1px solid rgba(244, 63, 94, 0.15); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: bold; font-size: 0.95rem; color: #f43f5e;">⚡ CCS Auto-Attenuation</span>
+                    <input type="checkbox" id="chkCCSAuto" checked style="width: 18px; height: 18px; cursor: pointer;">
+                </div>
+                <div id="ccsStatusPanel" style="background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.1); border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #fda4af; display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span>CCS Attenuation Gain:</span>
+                    <span id="txtCCSGain" style="font-weight: bold;">100%</span>
+                </div>
                 <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Click on a module to load its parameters and view its live state loop.</p>
                 
                 <div class="module-list">
@@ -802,22 +810,48 @@
             }, 800);
         }
 
+        let masterAttenuation = 1.0;
+        let lastClipTime = 0;
+
         // Apply Equa-Amplifier dynamic limiter (AGC)
         async function applyEquaLimiter(outVolts, loadImpedance = 0.51) {
+            // Apply current master attenuation (auto-gain protection)
+            const inputScaled = outVolts * masterAttenuation;
+
             // SOAR voltage ceiling calculation: V_max = I_limit * loadRL
             const I_limit = 1.969696969696969697;
             const V_max = I_limit * loadImpedance;
             const softLimit = V_max * 0.95;
 
             // Check if signal amplitude exceeds soft limit
-            if (Math.abs(outVolts) > softLimit) {
+            if (Math.abs(inputScaled) > softLimit) {
                 triggerClipWarning();
+                if (document.getElementById("chkCCSAuto").checked) {
+                    masterAttenuation = Math.max(0.1, masterAttenuation - 0.08);
+                    lastClipTime = Date.now();
+                }
+            } else {
+                // Slow recovery if no clipping has occurred recently (e.g. 500ms recovery window)
+                if (document.getElementById("chkCCSAuto").checked && Date.now() - lastClipTime > 500) {
+                    masterAttenuation = Math.min(1.0, masterAttenuation + 0.02);
+                }
+            }
+
+            // Update UI status text
+            const txtCcs = document.getElementById("txtCCSGain");
+            if (txtCcs) {
+                txtCcs.textContent = `${(masterAttenuation * 100).toFixed(0)}%`;
+                if (masterAttenuation < 0.99) {
+                    txtCcs.style.color = "#f43f5e";
+                } else {
+                    txtCcs.style.color = "#fda4af";
+                }
             }
 
             const isChecked = document.getElementById("chkEquaLimiter").checked;
-            if (!isChecked) return outVolts;
+            if (!isChecked) return inputScaled;
 
-            const inputVal = BigInt(Math.round(outVolts * 1e18));
+            const inputVal = BigInt(Math.round(inputScaled * 1e18));
             const loadVal = BigInt(Math.round(loadImpedance * 1e18));
 
             const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
