@@ -1944,7 +1944,7 @@
                 const inputVal = BigInt(Math.round(stimulus * 1e18));
                 const rcDecay = BigInt(Math.round(params.semafoon.rcDecay * 1e18));
 
-                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256,int256)"]);
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256,int256,int256)"]);
                 const calldata = iface.encodeFunctionData("processSample", [inputVal, rcDecay]);
 
                 const res = await fetch(API_URL, {
@@ -1957,16 +1957,25 @@
                 if (payload && payload.result && payload.result.output) {
                     const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
                     const rawOut = Number(decoded[0]) / 1e18;
-                    const envelope = Number(decoded[1]) / 1e18;
-                    semafoonEnvState = envelope;
+                    const envA = Number(decoded[1]) / 1e18;
+                    const envB = Number(decoded[2]) / 1e18;
+                    
+                    semafoonEnvState = envA; // Set primary visual state to envA
+                    if (envA > 0.4 && Math.random() > 0.94) {
+                        log("🔊 Semafoon FDM: Channel A (1000Hz) selective call tone detected!");
+                    }
+                    if (envB > 0.4 && Math.random() > 0.94) {
+                        log("🔊 Semafoon FDM: Channel B (2000Hz) selective call tone detected!");
+                    }
+
                     const outVolts = await applyEquaLimiter(rawOut, 0.51);
 
                     samples.push(outVolts);
                     samples.shift();
                     drawWaveform();
 
-                    // Display mapped envelope value on Nixie digit
-                    const mappedDigit = Math.max(0, Math.min(9, Math.round(envelope * 9)));
+                    // Display mapped combined FDM envelope values on Nixie digit
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round((envA + envB) * 4.5)));
                     setNixieDigit(mappedDigit);
                 }
             } else if (activeModule === "transducer") {
