@@ -837,9 +837,13 @@
             return outVolts;
         }
 
+        let isSimulationRunning = false;
         // Trigger a step simulation
         async function triggerSingleSimulationStep() {
-            if (activeModule === "philicorda") {
+            if (isSimulationRunning) return;
+            isSimulationRunning = true;
+            try {
+                if (activeModule === "philicorda") {
                 const pitch = BigInt(Math.round(params.philicorda.pitch * 1e18));
                 const rcRate = BigInt(Math.round(params.philicorda.rcRate * 1e18));
                 
@@ -1171,6 +1175,11 @@
                     const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
                     setNixieDigit(mappedDigit);
                 }
+            }
+            } catch (err) {
+                console.error("Simulation step error:", err);
+            } finally {
+                isSimulationRunning = false;
             }
         }
 
