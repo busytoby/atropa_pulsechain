@@ -1079,8 +1079,22 @@
                 }
             }
 
-            // Apply current master attenuation and thermal throttling
-            const inputScaled = outVolts * masterAttenuation * thermalThrottling;
+            // 2. Gallium Phosphide (GaP) LED Photocoupler Opto-Compressor (Issue 18)
+            const V_forward = 0.6; // Forward threshold of GaP LED
+            const alpha_led = 0.4;
+            const led_brightness = Math.max(0.0, (Math.abs(outVolts) - V_forward) * alpha_led);
+            
+            // LDR resistance decays exponentially with light intensity
+            const R_dark = 10000.0; // 10k Ohm dark resistance
+            const gamma_ldr = 2.5;
+            const R_ldr = R_dark * Math.exp(-gamma_ldr * led_brightness);
+            
+            // Attenuation divider with a 1.2k Ohm series resistor
+            const R_series = 1200.0;
+            const optoGain = R_ldr / (R_series + R_ldr);
+
+            // Apply current master attenuation, thermal throttling, and opto-compression
+            const inputScaled = outVolts * masterAttenuation * thermalThrottling * optoGain;
 
             // SOAR voltage ceiling calculation: V_max = I_limit * loadRL
             let I_limit = 1.969696969696969697;
