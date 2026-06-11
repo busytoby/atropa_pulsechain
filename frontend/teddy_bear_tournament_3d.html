@@ -1918,6 +1918,10 @@ Ready to initiate tournament match.</div>
                     hex += "a9" + earsVal.toString(16).padStart(2, '0');
                     hex += "8d02d0";
                     hex += "60"; // Return from Subroutine
+                    
+                    // Standard counter.bin test bytes (LDA $10, ADC #$01, STA $10, RTS) -> a5106901851060
+                    hex += "a5106901851060";
+                    
                     return hex.padEnd(512, "0"); // Pad block payload size to full floppy sectors
                 })()
             });
