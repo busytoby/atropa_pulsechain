@@ -1234,8 +1234,8 @@ Status: Awaiting user to start music.</div>
             let targetAngles = getChoreographyAngles(activeStance, choreographyTime);
             let targetOffset = getModelOffset(activeStance, choreographyTime);
 
-            // 3. Smooth Stance Transition Interpolation (Lerp)
-            let lerpSpeed = 0.08;
+            // 3. Smooth Stance Transition Interpolation (Lerp - set to 0.025 for graceful ballet movement)
+            let lerpSpeed = 0.025;
             currentAngles.leftArm += (targetAngles.leftArm - currentAngles.leftArm) * lerpSpeed;
             currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
             currentAngles.leftLeg += (targetAngles.leftLeg - currentAngles.leftLeg) * lerpSpeed;
