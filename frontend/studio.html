@@ -563,6 +563,7 @@
         let compGainState = 1.0;
         let bionikaVm = 0.0;
         let bionikaLastSpikeTime = 0;
+        let filterTemperature = 25.0;
 
         // Current parameters
         const params = {
@@ -1057,8 +1058,28 @@
 
         // Apply Equa-Amplifier dynamic limiter (AGC)
         async function applyEquaLimiter(outVolts, loadImpedance = 0.51) {
-            // Apply current master attenuation (auto-gain protection)
-            const inputScaled = outVolts * masterAttenuation;
+            // 1. Thermal Junction Heat Accumulation & Half-Life Cooling (Bell Micro-Temperature, Issue 16)
+            const T_ambient = 25.0;
+            const power = outVolts * outVolts; 
+            const theta_ja = 45.0; // thermal resistance (degrees C / Watt)
+            const thermalHalfLife = 40.0; // 40 simulation steps half-life cooling
+            const lambda_t = Math.LN2 / thermalHalfLife;
+
+            const deltaT = filterTemperature - T_ambient;
+            // Cool exponentially towards ambient, then add power dissipation heat rise
+            filterTemperature = T_ambient + deltaT * Math.exp(-lambda_t) + power * theta_ja * 0.04;
+
+            // Thermal runaway protect: if Temp > 45°C, throttle master gain
+            let thermalThrottling = 1.0;
+            if (filterTemperature > 45.0) {
+                thermalThrottling = Math.max(0.1, 1.0 - (filterTemperature - 45.0) * 0.025);
+                if (Math.random() > 0.96) {
+                    log(`⚠️ [THERMAL RUNAWAY WARNING] Junction at ${filterTemperature.toFixed(1)}°C. Throttling active gain ceiling to ${(thermalThrottling * 100).toFixed(0)}%`);
+                }
+            }
+
+            // Apply current master attenuation and thermal throttling
+            const inputScaled = outVolts * masterAttenuation * thermalThrottling;
 
             // SOAR voltage ceiling calculation: V_max = I_limit * loadRL
             let I_limit = 1.969696969696969697;
