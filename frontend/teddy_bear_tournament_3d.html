@@ -391,13 +391,37 @@
                 <div class="card-title" style="color: var(--glow-yellow); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🤖 AI PUPPET CONSOLE</div>
                 <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Prompt:</div>
                 <textarea id="ai-prompt" rows="3" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Outfit', sans-serif; resize: none; margin-bottom: 8px;">A highly detailed photorealistic teddy bear plush standing pose, brown fur, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background</textarea>
-                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
                     <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
                         <input type="checkbox" id="show-ai-overlay" checked> Overlay on Arena
+                    </label>
+                    <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
+                        <input type="checkbox" id="canny-edge-outline"> Canny Edge Outline (Sobel)
                     </label>
                 </div>
                 <button class="btn" id="btn-ai-render" style="border-color: var(--glow-yellow); color: var(--glow-yellow); text-shadow: 0 0 8px rgba(255, 234, 0, 0.4); background: rgba(255, 234, 0, 0.02); padding: 8px 12px;">AI Render Pose</button>
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 6px; word-break: break-all;">Status: Idle</div>
+            </div>
+
+            <!-- ControlNet Map Debugger Crossover -->
+            <div class="card" style="border-color: rgba(0, 240, 255, 0.25);">
+                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🔍 CONTROLNET MAP DEBUGGER</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <div style="flex: 1; text-align: center;">
+                        <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">DEPTH/SOBEL MAP</div>
+                        <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img id="dbg-depth-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                            <span id="dbg-depth-placeholder" style="font-size: 9px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">OPENPOSE MAP</div>
+                        <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img id="dbg-pose-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                            <span id="dbg-pose-placeholder" style="font-size: 9px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -756,54 +780,304 @@ Ready to initiate tournament match.</div>
             return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
         }
 
+        // Shaded 3D Sphere Helper
+        function drawVolumetricSphere(p3d, radius, baseColor) {
+            let proj = project(p3d);
+            if (!proj) return;
+            let screenRadius = radius * (camera.fov / proj.depth);
+            if (screenRadius <= 1) return;
+
+            ctx.save();
+            // Radial gradient offset for specular light highlight
+            let highlightX = proj.x - screenRadius * 0.25;
+            let highlightY = proj.y - screenRadius * 0.25;
+            let grad = ctx.createRadialGradient(highlightX, highlightY, screenRadius * 0.05, proj.x, proj.y, screenRadius);
+            
+            grad.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+            grad.addColorStop(0.25, baseColor);
+            grad.addColorStop(1, "rgba(5, 8, 20, 0.95)");
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, screenRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Shaded 3D Capsule Helper (Limbs & Torso)
+        function drawVolumetricCapsule(p1, p2, radius, baseColor) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let r1 = radius * (camera.fov / sc1.depth);
+            let r2 = radius * (camera.fov / sc2.depth);
+            let avgRadius = (r1 + r2) / 2;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            let nx = -dy / len;
+            let ny = dx / len;
+
+            ctx.save();
+            // Perpendicular linear gradient to shade cylinders
+            let grad = ctx.createLinearGradient(sc1.x - nx * avgRadius, sc1.y - ny * avgRadius, sc1.x + nx * avgRadius, sc1.y + ny * avgRadius);
+            grad.addColorStop(0, "rgba(4, 6, 15, 0.95)");
+            grad.addColorStop(0.3, baseColor);
+            grad.addColorStop(0.55, "rgba(255, 255, 255, 0.8)");
+            grad.addColorStop(0.75, baseColor);
+            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = avgRadius * 2;
+            ctx.lineCap = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // UV Coordinates mapping regions of the generated photorealistic bear template
+        const segments = {
+            head: { x: 180, y: 20, w: 152, h: 152 },
+            torso: { x: 170, y: 172, w: 172, h: 190 },
+            arm: { x: 100, y: 170, w: 70, h: 140 },
+            leg: { x: 130, y: 320, w: 80, h: 150 }
+        };
+
+        // Renders a photorealistic sprite segment stretched along a 3D bone vector
+        function drawSegmentAlongBone(p1, p2, srcRect, widthScale = 1.0) {
+            if (!sdImage) return;
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            let angle = Math.atan2(dy, dx);
+            let avgDepth = (sc1.depth + sc2.depth) / 2;
+            let thickness = srcRect.w * (camera.fov / avgDepth) * widthScale * 1.5;
+
+            ctx.save();
+            ctx.translate((sc1.x + sc2.x) / 2, (sc1.y + sc2.y) / 2);
+            ctx.rotate(angle - Math.PI / 2); // Rotate to align with bone vector
+            
+            ctx.drawImage(
+                sdImage,
+                srcRect.x, srcRect.y, srcRect.w, srcRect.h,
+                -thickness / 2, -len / 2, thickness, len
+            );
+            ctx.restore();
+        }
+
+        // Renders a photorealistic sprite segment centered at a 3D joint point
+        function drawSegmentAtJoint(p, srcRect, scaleVal, radiusScale = 1.0) {
+            if (!sdImage) return;
+            let proj = project(p);
+            if (!proj) return;
+            let size = srcRect.w * (camera.fov / proj.depth) * radiusScale * scaleVal * 1.35;
+
+            ctx.save();
+            ctx.translate(proj.x, proj.y);
+            ctx.drawImage(
+                sdImage,
+                srcRect.x, srcRect.y, srcRect.w, srcRect.h,
+                -size / 2, -size / 2, size, size
+            );
+            ctx.restore();
+        }
+
+        function drawFloorShadows(offset3D, jointsRaw, scale) {
+            ctx.save();
+            ctx.shadowBlur = 0;
+            
+            // Center drop shadow
+            let centerFloor = new Point3D(offset3D.x, -90, offset3D.z);
+            let scCenter = project(centerFloor);
+            if (scCenter) {
+                let rX = 85 * scale * (camera.fov / scCenter.depth);
+                let rY = 32 * scale * (camera.fov / scCenter.depth);
+                let grad = ctx.createRadialGradient(scCenter.x, scCenter.y, 0, scCenter.x, scCenter.y, rX);
+                grad.addColorStop(0, "rgba(0, 0, 0, 0.55)");
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(scCenter.x, scCenter.y, rX, rY, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Foot shadows
+            if (jointsRaw.lFoot) {
+                let lFootFloor = new Point3D(jointsRaw.lFoot.x, -95, jointsRaw.lFoot.z);
+                let scL = project(lFootFloor);
+                if (scL) {
+                    let rX = 28 * scale * (camera.fov / scL.depth);
+                    let rY = 12 * scale * (camera.fov / scL.depth);
+                    let grad = ctx.createRadialGradient(scL.x, scL.y, 0, scL.x, scL.y, rX);
+                    grad.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(scL.x, scL.y, rX, rY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            if (jointsRaw.rFoot) {
+                let rFootFloor = new Point3D(jointsRaw.rFoot.x, -95, jointsRaw.rFoot.z);
+                let scR = project(rFootFloor);
+                if (scR) {
+                    let rX = 28 * scale * (camera.fov / scR.depth);
+                    let rY = 12 * scale * (camera.fov / scR.depth);
+                    let grad = ctx.createRadialGradient(scR.x, scR.y, 0, scR.x, scR.y, rX);
+                    grad.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(scR.x, scR.y, rX, rY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawFurTexture(ctx, joints, scale) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(120, 80, 50, 0.25)";
+            ctx.lineWidth = 1 * scale;
+            
+            function drawFuzzyOutline(p3d, radius) {
+                let proj = project(p3d);
+                if (!proj) return;
+                let screenRadius = radius * (camera.fov / proj.depth);
+                if (screenRadius <= 5) return;
+                
+                ctx.beginPath();
+                for (let i = 0; i < 45; i++) {
+                    let angle = (i / 45) * Math.PI * 2;
+                    let len = screenRadius + (Math.random() * 5 - 2.5) * scale;
+                    let x1 = proj.x + Math.cos(angle) * screenRadius;
+                    let y1 = proj.y + Math.sin(angle) * screenRadius;
+                    let x2 = proj.x + Math.cos(angle) * len;
+                    let y2 = proj.y + Math.sin(angle) * len;
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                }
+                ctx.stroke();
+            }
+
+            drawFuzzyOutline(joints.head, 35);
+            let lEar = new Point3D(joints.head.x - 28 * scale, joints.head.y + 28 * scale, joints.head.z - 8 * scale);
+            let rEar = new Point3D(joints.head.x + 28 * scale, joints.head.y + 28 * scale, joints.head.z + 8 * scale);
+            drawFuzzyOutline(lEar, 14);
+            drawFuzzyOutline(rEar, 14);
+            ctx.restore();
+        }
+
         // Draw 3D wireframe bear
         function drawBear3D(offset3D, scale, angles, pulse, sickness, palette) {
             const joints = getBearSkeleton(offset3D, scale, angles, pulse, sickness);
 
-            const headCol = palette.head || "rgba(0, 240, 255, 0.85)";
-            const boneCol = palette.bone || "rgba(226, 232, 240, 0.7)";
+            const baseCol = palette.head || "rgba(0, 240, 255, 0.85)";
             const webCol = palette.web || "rgba(255, 0, 127, 0.4)";
 
-            // Draw Head representation with glowing shadow
-            let projHead = project(joints.head);
-            if (projHead) {
-                ctx.save();
-                ctx.shadowBlur = 30;
-                ctx.shadowColor = headCol;
-                
-                // Outer glow halo
-                ctx.strokeStyle = headCol;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(projHead.x, projHead.y, 45 * scale * (camera.fov / projHead.depth), 0, Math.PI * 2);
-                ctx.stroke();
+            // 0. Draw floor shadows under the bear
+            drawFloorShadows(offset3D, joints, scale);
 
-                // Inner filled glowing head circle
-                let rad = 35 * scale * (camera.fov / projHead.depth);
-                let grad = ctx.createRadialGradient(projHead.x, projHead.y, rad * 0.2, projHead.x, projHead.y, rad);
-                grad.addColorStop(0, "rgba(255,255,255,0.9)");
-                grad.addColorStop(0.3, headCol);
-                grad.addColorStop(1, "rgba(0,0,0,0)");
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(projHead.x, projHead.y, rad, 0, Math.PI * 2);
-                ctx.fill();
+            // 0.5. Draw soft glowing alchemical rim light halo behind body parts
+            ctx.save();
+            ctx.shadowBlur = 24;
+            ctx.shadowColor = baseCol.replace("0.85", "1.0");
+            drawVolumetricSphere(joints.head, 39 * scale, "rgba(255, 255, 255, 0.08)");
+            drawVolumetricCapsule(joints.neck, joints.midHip, 46 * scale, "rgba(255, 255, 255, 0.08)");
+            ctx.restore();
+
+            const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
+            const useSD = sdImage && isOverlayEnabled && (palette === fighter1.color);
+
+            if (useSD) {
+                // Draw rigged photorealistic segments on top of active 3D joints
+                // 1. Draw Torso segment
+                drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale);
+
+                // 2. Draw Limbs segments
+                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale);
+                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale);
+                drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale);
+                drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale);
+
+                // 3. Draw Head segment
+                drawSegmentAtJoint(joints.head, segments.head, scale, 1.0);
+
+                // 4. Add Volumetric Shading Layer (Multiply Pass)
+                ctx.save();
+                ctx.globalCompositeOperation = "multiply";
+                const shadingColor = "rgba(180, 170, 160, 0.65)";
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale, shadingColor);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale, shadingColor);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale, shadingColor);
+
+                let lEar = new Point3D(joints.head.x - 30 * scale, joints.head.y + 30 * scale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale, joints.head.y + 30 * scale, joints.head.z + 10 * scale);
+                drawVolumetricSphere(lEar, 15 * scale, shadingColor);
+                drawVolumetricSphere(rEar, 15 * scale, shadingColor);
+                drawVolumetricSphere(joints.head, 38 * scale, shadingColor);
                 ctx.restore();
+
+                // 5. Add Volumetric Highlight Layer (Overlay Pass)
+                ctx.save();
+                ctx.globalCompositeOperation = "overlay";
+                const highlightColor = "rgba(255, 230, 200, 0.4)";
+                drawVolumetricSphere(joints.head, 38 * scale, highlightColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale, highlightColor);
+                ctx.restore();
+            } else {
+                // Fallback to geometric volumetric solid shading
+                // 1. Draw Limbs (Capsules)
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale, baseCol);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale, baseCol);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale, baseCol);
+
+                // 2. Draw Torso (Body capsule)
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale, baseCol);
+
+                // 3. Draw Ears (Spheres offset relative to head)
+                let lEar = new Point3D(joints.head.x - 30 * scale, joints.head.y + 30 * scale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale, joints.head.y + 30 * scale, joints.head.z + 10 * scale);
+                drawVolumetricSphere(lEar, 15 * scale, baseCol);
+                drawVolumetricSphere(rEar, 15 * scale, baseCol);
+
+                // 4. Draw Head
+                drawVolumetricSphere(joints.head, 38 * scale, baseCol);
+
+                // 5. Draw Snout & Eyes
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale, joints.head.z + 25 * scale);
+                drawVolumetricSphere(snout, 12 * scale, "rgba(255,255,255,0.95)"); 
+
+                // 6. Draw Paws & Feet
+                drawVolumetricSphere(joints.lPaw, 14 * scale, baseCol);
+                drawVolumetricSphere(joints.rPaw, 14 * scale, baseCol);
+                drawVolumetricSphere(joints.lFoot, 16 * scale, baseCol);
+                drawVolumetricSphere(joints.rFoot, 16 * scale, baseCol);
             }
 
-            // Draw bones with dynamic drop shadows
-            ctx.save();
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = boneCol;
-            drawLine3D(joints.head, joints.neck, boneCol, 4.5);
-            drawLine3D(joints.neck, joints.lShoulder, boneCol, 3.5);
-            drawLine3D(joints.lShoulder, joints.lPaw, boneCol, 3.5);
-            drawLine3D(joints.neck, joints.rShoulder, boneCol, 3.5);
-            drawLine3D(joints.rShoulder, joints.rPaw, boneCol, 3.5);
-            drawLine3D(joints.neck, joints.midHip, boneCol, 4.5);
-            drawLine3D(joints.midHip, joints.lFoot, boneCol, 3.5);
-            drawLine3D(joints.midHip, joints.rFoot, boneCol, 3.5);
-            ctx.restore();
+            // Draw procedural fur fluffiness overlay
+            drawFurTexture(ctx, joints, scale);
 
             // Draw connecting cobwebs under sickness decay
             if (sickness > 0.35) {
@@ -933,6 +1207,54 @@ Ready to initiate tournament match.</div>
             return { x: scX, y: scY, depth: z2 };
         }
 
+        function applySobelFilter(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const output = ctx.createImageData(width, height);
+            const outData = output.data;
+
+            function getGray(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) return 0;
+                const idx = (y * width + x) * 4;
+                return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            }
+
+            const gx = [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ];
+            const gy = [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ];
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let valX = 0;
+                    let valY = 0;
+
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const pixel = getGray(x + kx, y + ky);
+                            valX += pixel * gx[ky + 1][kx + 1];
+                            valY += pixel * gy[ky + 1][kx + 1];
+                        }
+                    }
+
+                    const magnitude = Math.min(255, Math.sqrt(valX * valX + valY * valY));
+                    const idx = (y * width + x) * 4;
+                    outData[idx] = magnitude;     // R
+                    outData[idx + 1] = magnitude; // G
+                    outData[idx + 2] = magnitude; // B
+                    outData[idx + 3] = 255;       // A
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
+
         function extractControlNetPoses(angles, offset, palette) {
             dCtx.fillStyle = "#000000";
             dCtx.fillRect(0, 0, 512, 512);
@@ -1012,6 +1334,10 @@ Ready to initiate tournament match.</div>
             drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", 8);
             drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", 6);
             drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", 6);
+
+            if (document.getElementById("canny-edge-outline") && document.getElementById("canny-edge-outline").checked) {
+                applySobelFilter(dCtx, 512, 512);
+            }
 
             return {
                 depthData: depthCanvas.toDataURL("image/png"),
@@ -1124,6 +1450,23 @@ Ready to initiate tournament match.</div>
 
             // Extract pose base64 strings
             const cnData = extractControlNetPoses(b1Angles, fighter1.pos, fighter1.color);
+
+            // Update ControlNet debugger previews
+            const dbgDepthImg = document.getElementById("dbg-depth-preview");
+            const dbgDepthPh = document.getElementById("dbg-depth-placeholder");
+            const dbgPoseImg = document.getElementById("dbg-pose-preview");
+            const dbgPosePh = document.getElementById("dbg-pose-placeholder");
+            
+            if (dbgDepthImg && dbgDepthPh) {
+                dbgDepthImg.src = cnData.depthData;
+                dbgDepthImg.style.display = "block";
+                dbgDepthPh.style.display = "none";
+            }
+            if (dbgPoseImg && dbgPosePh) {
+                dbgPoseImg.src = cnData.poseData;
+                dbgPoseImg.style.display = "block";
+                dbgPosePh.style.display = "none";
+            }
 
             statusBox.innerText = "Status: Generating on Vulkan Server...";
             logEvent("AI Puppet: Sending pose & depth maps to ControlNet worker...");
@@ -1247,21 +1590,7 @@ Ready to initiate tournament match.</div>
             }
 
             // Render 3D fighters in dynamic positions
-            if (sdImage && sdImage.complete && document.getElementById("show-ai-overlay").checked) {
-                // If AI puppet image is active, draw it overlaid on top of fighter 1's position
-                let proj = project(new Point3D(fighter1.pos.x, fighter1.pos.y + 70 * 1.2, fighter1.pos.z));
-                if (proj) {
-                    let size = 260 * 1.2 * (camera.fov / proj.depth);
-                    ctx.save();
-                    ctx.shadowBlur = 25;
-                    ctx.shadowColor = "rgba(255, 234, 0, 0.4)";
-                    ctx.drawImage(sdImage, proj.x - size / 2, proj.y - size / 2, size, size);
-                    ctx.restore();
-                }
-            } else {
-                drawBear3D(fighter1.pos, 1.2, b1Angles, Math.sin(time*0.005), fighter1.sick, fighter1.color);
-            }
-            
+            drawBear3D(fighter1.pos, 1.2, b1Angles, Math.sin(time*0.005), fighter1.sick, fighter1.color);
             drawBear3D(fighter2.pos, 1.2, b2Angles, Math.sin(time*0.005), fighter2.sick, fighter2.color);
 
             // Render 3D combat particles
