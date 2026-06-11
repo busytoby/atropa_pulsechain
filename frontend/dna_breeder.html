@@ -242,11 +242,16 @@
                     <button class="btn btn-secondary" id="btnWriteOnChain" style="width: 100%; margin-top: 10px; border-color: var(--neon-magenta); color: var(--neon-magenta); font-size: 1rem; padding: 8px 15px;">💾 Save & Deploy to Room 10 (The Void)</button>
                 </div>
 
-                <!-- DNA Emblem Sigil Card -->
+                <!-- DNA Emblem Sigil & Phenotype Bear Card -->
                 <div class="dna-card" style="margin-top: 15px; text-align: center;">
-                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue); font-size: 1.1rem;">🛡️ Room DNA Sigil</h3>
-                    <div id="emblemContainer" style="display: inline-block; width: 140px; height: 140px; background: rgba(0,0,0,0.5); border-radius: 50%; border: 1px solid var(--border-color); padding: 10px; box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.2);">
-                        <!-- SVG dynamically generated here -->
+                    <h3 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: var(--neon-blue); font-size: 1.1rem;">🛡️ DNA Phenotype & Sigil</h3>
+                    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                        <div id="emblemContainer" style="display: inline-block; width: 140px; height: 140px; background: rgba(0,0,0,0.5); border-radius: 50%; border: 1px solid var(--border-color); padding: 10px; box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.2);">
+                            <!-- SVG dynamically generated here -->
+                        </div>
+                        <div id="phenotypeBearContainer" style="display: inline-block; width: 140px; height: 140px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; box-shadow: inset 0 0 15px rgba(255, 0, 127, 0.2);">
+                            <canvas id="phenotypeBearCanvas" width="120" height="120" style="width: 100%; height: 100%;"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -781,6 +786,113 @@ Type 'LOOK' to begin.</div>
             document.getElementById("hudOsc").innerText = `${osc} Hz`;
 
             generateEmblem(dna);
+            drawPhenotypeBear(dna);
+        }
+
+        function drawPhenotypeBear(dna) {
+            const canvas = document.getElementById("phenotypeBearCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const huePrimary = Math.floor((dna[0] / 255) * 360);
+            const hueSecondary = Math.floor((dna[4] / 255) * 360);
+            
+            const furColor = `hsl(${huePrimary}, 80%, 40%)`;
+            const innerEarColor = `hsl(${hueSecondary}, 80%, 65%)`;
+            const snoutColor = `hsl(${hueSecondary}, 50%, 80%)`;
+            const eyeColor = dna[12] > 128 ? "var(--neon-cyan)" : "var(--neon-magenta)";
+            
+            const earScale = 0.8 + (dna[8] % 5) * 0.1;
+            const noseScale = 0.7 + (dna[10] % 6) * 0.1;
+            const headWidth = 45 + (dna[18] % 10);
+            const mouthGrumpiness = ((dna[14] / 255) - 0.5) * 15;
+
+            ctx.save();
+            ctx.translate(60, 60);
+
+            // Draw Ears
+            ctx.fillStyle = furColor;
+            ctx.strokeStyle = innerEarColor;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.arc(-22, -22, 14 * earScale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = innerEarColor;
+            ctx.beginPath();
+            ctx.arc(-22, -22, 7 * earScale, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = furColor;
+            ctx.beginPath();
+            ctx.arc(22, -22, 14 * earScale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = innerEarColor;
+            ctx.beginPath();
+            ctx.arc(22, -22, 7 * earScale, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Head
+            ctx.fillStyle = furColor;
+            ctx.strokeStyle = "rgba(255,255,255,0.2)";
+            ctx.beginPath();
+            ctx.arc(0, 0, headWidth - 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Eyes
+            ctx.fillStyle = eyeColor;
+            ctx.beginPath();
+            ctx.arc(-14, -6, 5, 0, Math.PI * 2);
+            ctx.arc(14, -6, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowColor = eyeColor;
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(-14, -6, 2, 0, Math.PI * 2);
+            ctx.arc(14, -6, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Muzzle
+            ctx.fillStyle = snoutColor;
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 16, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nose
+            ctx.fillStyle = "#000";
+            ctx.beginPath();
+            ctx.ellipse(0, 6, 7 * noseScale, 5 * noseScale, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mouth
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(-8, 12);
+            ctx.quadraticCurveTo(0, 12 + mouthGrumpiness, 8, 12);
+            ctx.stroke();
+
+            // Mechanical Line Mutation
+            if (dna[28] % 2 === 0) {
+                ctx.strokeStyle = "rgba(0, 240, 255, 0.6)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(-headWidth + 15, 0);
+                ctx.lineTo(-18, 0);
+                ctx.moveTo(18, 0);
+                ctx.lineTo(headWidth - 15, 0);
+                ctx.stroke();
+            }
+
+            ctx.restore();
         }
 
         function generateEmblem(dna) {
