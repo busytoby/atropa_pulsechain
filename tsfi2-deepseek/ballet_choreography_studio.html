@@ -382,8 +382,13 @@
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
             </div>
 
-            <div class="section-title">
-                CHOREOGRAPHY CONSOLE
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>CHOREOGRAPHY CONSOLE</span>
+                <div style="display: flex; gap: 4px;">
+                    <button class="cam-btn" onclick="scrubLogHistory(-1)" title="Step Back" style="width: 22px; height: 22px; font-size: 10px; padding: 0;">◀</button>
+                    <button class="cam-btn" onclick="scrubLogHistory(1)" title="Step Forward" style="width: 22px; height: 22px; font-size: 10px; padding: 0;">▶</button>
+                    <button class="cam-btn" onclick="resumeLiveLogs()" title="Live Monitor" style="width: 32px; height: 22px; font-size: 8px; padding: 0 2px;">LIVE</button>
+                </div>
             </div>
             <div id="console">Initializing Ballet Stage...
 System: Vector engine loaded 3D meshes.
@@ -708,7 +713,10 @@ Status: Awaiting user to start music.</div>
             oscCtx.fillStyle = "#010204";
             oscCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
 
-            if (!analyser) {
+            let bufferLength = analyser ? analyser.frequencyBinCount : 256;
+            let drawFourier = window.logHistoryIndex !== -1 && logHistory[window.logHistoryIndex];
+
+            if (!analyser && !drawFourier) {
                 oscCtx.strokeStyle = "rgba(255, 0, 127, 0.2)";
                 oscCtx.lineWidth = 2;
                 oscCtx.beginPath();
@@ -718,18 +726,28 @@ Status: Awaiting user to start music.</div>
                 return;
             }
 
-            let bufferLength = analyser.frequencyBinCount;
-            let dataArray = new Uint8Array(bufferLength);
-            analyser.getByteTimeDomainData(dataArray);
+            let dataArray;
+            if (drawFourier) {
+                dataArray = getFourierWaveOfText(logHistory[window.logHistoryIndex].text, bufferLength);
+            } else {
+                dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+            }
 
-            oscCtx.strokeStyle = "rgba(255, 0, 127, 0.85)";
+            oscCtx.strokeStyle = drawFourier ? "rgba(0, 240, 255, 0.9)" : "rgba(255, 0, 127, 0.85)";
             oscCtx.lineWidth = 2;
             oscCtx.beginPath();
             let sliceWidth = oscCanvas.width / bufferLength;
             let x = 0;
             for (let i = 0; i < bufferLength; i++) {
-                let v = dataArray[i] / 128.0;
-                let y = (v * oscCanvas.height) / 2;
+                let y;
+                if (drawFourier) {
+                    // Normalize historic Fourier wave around vertical center
+                    y = (dataArray[i] * oscCanvas.height / 2.5) + (oscCanvas.height / 2);
+                } else {
+                    let v = dataArray[i] / 128.0;
+                    y = (v * oscCanvas.height) / 2;
+                }
                 if (i === 0) oscCtx.moveTo(x, y);
                 else oscCtx.lineTo(x, y);
                 x += sliceWidth;
@@ -1198,11 +1216,111 @@ Status: Awaiting user to start music.</div>
             else if (dir === "out") camera.distance = Math.min(2000, camera.distance + 100);
         }
 
+        let logHistory = [];
+        window.logHistoryIndex = -1;
+
         function logEvent(msg) {
             const consoleBox = document.getElementById("console");
             const timestamp = new Date().toLocaleTimeString();
-            consoleBox.innerHTML += `\n[${timestamp}] ${msg}`;
+            const logEntry = `[${timestamp}] ${msg}`;
+            
+            // Capture a snapshot of the dancer's pose/kinetics at the moment of this log
+            logHistory.push({
+                text: logEntry,
+                stance: activeStance,
+                time: choreographyTime,
+                angles: Object.assign({}, currentAngles),
+                offset: Object.assign({}, currentOffset)
+            });
+
+            if (window.logHistoryIndex === -1 || window.logHistoryIndex === logHistory.length - 2) {
+                window.logHistoryIndex = -1;
+            }
+
+            consoleBox.innerHTML += `\n${logEntry}`;
+            if (window.logHistoryIndex === -1) {
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        }
+
+        window.scrubLogHistory = function(dir) {
+            if (logHistory.length === 0) return;
+            if (window.logHistoryIndex === -1) {
+                window.logHistoryIndex = logHistory.length - 1;
+            }
+            
+            window.logHistoryIndex += dir;
+            if (window.logHistoryIndex < 0) window.logHistoryIndex = 0;
+            if (window.logHistoryIndex >= logHistory.length) {
+                resumeLiveLogs();
+                return;
+            }
+
+            const state = logHistory[window.logHistoryIndex];
+            const consoleBox = document.getElementById("console");
+            
+            // Format console output to highlight historic scroll state
+            let html = "";
+            for (let i = 0; i < logHistory.length; i++) {
+                if (i === window.logHistoryIndex) {
+                    html += `<div style="background: rgba(0, 240, 255, 0.15); color: var(--glow-cyan); padding: 2px 4px; border-left: 2px solid var(--glow-cyan); font-weight: bold;">▶ ${logHistory[i].text}</div>`;
+                } else {
+                    html += `<div>${logHistory[i].text}</div>`;
+                }
+            }
+            consoleBox.innerHTML = html;
+            
+            // Scroll to the active highlighted historic log
+            const highlighted = consoleBox.querySelector("div[style*='rgba(0, 240, 255']");
+            if (highlighted) highlighted.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+            // Restore the exact pose / stance state
+            activeStance = state.stance;
+            
+            // Apply coordinates directly
+            currentAngles.leftArm = state.angles.leftArm;
+            currentAngles.rightArm = state.angles.rightArm;
+            currentAngles.leftLeg = state.angles.leftLeg;
+            currentAngles.rightLeg = state.angles.rightLeg;
+            currentAngles.headYaw = state.angles.headYaw;
+            currentAngles.headPitch = state.angles.headPitch;
+            
+            currentOffset.x = state.offset.x;
+            currentOffset.y = state.offset.y;
+            currentOffset.z = state.offset.z;
+        }
+
+        window.resumeLiveLogs = function() {
+            window.logHistoryIndex = -1;
+            const consoleBox = document.getElementById("console");
+            consoleBox.innerHTML = logHistory.map(h => `<div>${h.text}</div>`).join("");
             consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        window.getFourierWaveOfText = function(text, length) {
+            let wave = new Float32Array(length);
+            let f1 = 0, f2 = 0, f3 = 0, f4 = 0;
+            for (let i = 0; i < text.length; i++) {
+                let char = text.charCodeAt(i);
+                if (char % 4 === 0) f1++;
+                else if (char % 4 === 1) f2++;
+                else if (char % 4 === 2) f3++;
+                else f4++;
+            }
+            
+            let amp1 = (f1 / text.length) || 0.25;
+            let amp2 = (f2 / text.length) || 0.25;
+            let amp3 = (f3 / text.length) || 0.25;
+            let amp4 = (f4 / text.length) || 0.25;
+
+            for (let i = 0; i < length; i++) {
+                let theta = (i / length) * Math.PI * 2;
+                wave[i] = Math.sin(theta * 2) * amp1 + 
+                          Math.sin(theta * 5) * amp2 + 
+                          Math.sin(theta * 8) * amp3 + 
+                          Math.sin(theta * 14) * amp4;
+            }
+            return wave;
         }
 
         // Hidden canvases for pose/depth extraction
@@ -1520,25 +1638,27 @@ Status: Awaiting user to start music.</div>
             // 3. Draw Stage grid
             drawStageGrid(choreographyTime);
 
-            // 4. Calculate active choreography target motion state driven by synthesizer frequencies
-            let targetAngles = getChoreographyAngles(activeStance, choreographyTime, bass, mid, treble, volume);
-            let targetOffset = getModelOffset(activeStance, choreographyTime, bass, mid, treble, volume);
+            if (window.logHistoryIndex === -1) {
+                // 4. Calculate active choreography target motion state driven by synthesizer frequencies
+                let targetAngles = getChoreographyAngles(activeStance, choreographyTime, bass, mid, treble, volume);
+                let targetOffset = getModelOffset(activeStance, choreographyTime, bass, mid, treble, volume);
 
-            // 5. Smooth Stance Transition Interpolation (Lerp - set to 0.025 for graceful ballet movement)
-            let lerpSpeed = 0.025;
-            currentAngles.leftArm += (targetAngles.leftArm - currentAngles.leftArm) * lerpSpeed;
-            currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
-            currentAngles.leftLeg += (targetAngles.leftLeg - currentAngles.leftLeg) * lerpSpeed;
-            currentAngles.rightLeg += (targetAngles.rightLeg - currentAngles.rightLeg) * lerpSpeed;
-            
-            if (currentAngles.headYaw === undefined) currentAngles.headYaw = 0;
-            if (currentAngles.headPitch === undefined) currentAngles.headPitch = 0;
-            currentAngles.headYaw += ((targetAngles.headYaw || 0) - currentAngles.headYaw) * lerpSpeed;
-            currentAngles.headPitch += ((targetAngles.headPitch || 0) - currentAngles.headPitch) * lerpSpeed;
+                // 5. Smooth Stance Transition Interpolation (Lerp - set to 0.025 for graceful ballet movement)
+                let lerpSpeed = 0.025;
+                currentAngles.leftArm += (targetAngles.leftArm - currentAngles.leftArm) * lerpSpeed;
+                currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
+                currentAngles.leftLeg += (targetAngles.leftLeg - currentAngles.leftLeg) * lerpSpeed;
+                currentAngles.rightLeg += (targetAngles.rightLeg - currentAngles.rightLeg) * lerpSpeed;
+                
+                if (currentAngles.headYaw === undefined) currentAngles.headYaw = 0;
+                if (currentAngles.headPitch === undefined) currentAngles.headPitch = 0;
+                currentAngles.headYaw += ((targetAngles.headYaw || 0) - currentAngles.headYaw) * lerpSpeed;
+                currentAngles.headPitch += ((targetAngles.headPitch || 0) - currentAngles.headPitch) * lerpSpeed;
 
-            currentOffset.x += (targetOffset.x - currentOffset.x) * lerpSpeed;
-            currentOffset.y += (targetOffset.y - currentOffset.y) * lerpSpeed;
-            currentOffset.z += (targetOffset.z - currentOffset.z) * lerpSpeed;
+                currentOffset.x += (targetOffset.x - currentOffset.x) * lerpSpeed;
+                currentOffset.y += (targetOffset.y - currentOffset.y) * lerpSpeed;
+                currentOffset.z += (targetOffset.z - currentOffset.z) * lerpSpeed;
+            }
 
             // Draw Bear with interpolated joints
             drawBear3D(currentOffset, 1.2, currentAngles, "rgba(255, 0, 127, 0.85)");
@@ -1598,6 +1718,15 @@ Status: Awaiting user to start music.</div>
                     } else if (arg === "release") {
                         window.barreHold = false;
                         consoleBox.innerHTML += `\n[Z-Machine] Dancer releases the barre.`;
+                    }
+                } else if (action === "log" || action === "history") {
+                    if (arg === "back" || arg === "prev") {
+                        scrubLogHistory(-1);
+                    } else if (arg === "forward" || arg === "next") {
+                        scrubLogHistory(1);
+                    } else if (arg === "live") {
+                        resumeLiveLogs();
+                        consoleBox.innerHTML += `\n[Z-Machine] Re-engaged live monitoring.`;
                     }
                 } else if (action === "orbit") {
                     cameraOrbit(arg);
