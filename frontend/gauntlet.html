@@ -1360,7 +1360,17 @@ Status: Awaiting hero to join the battle.</div>
                 image: cardBase64,
                 timestamp: Date.now(),
                 score: "GAUNTLET",
-                style: `Score ${score}`
+                style: `Score ${score}`,
+                bag: {
+                    type: "gauntlet_hero",
+                    score: score,
+                    health: Math.floor(health),
+                    keys: keysCount,
+                    level: currentLevel,
+                    inventory: {
+                        reagents: { lead: leadHarvested, mercury: mercuryHarvested, sulfur: sulfurHarvested }
+                    }
+                }
             });
 
             localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
@@ -1498,6 +1508,50 @@ Status: Awaiting hero to join the battle.</div>
                 } else if (action === "card" || action === "deck") {
                     if (arg === "save") {
                         saveCurrentCardToDeck();
+                    } else if (arg === "inspect") {
+                        const idx = parseInt(arg2);
+                        let savedDeck = [];
+                        try {
+                            const stored = localStorage.getItem("tsfi_hardball_deck");
+                            if (stored) savedDeck = JSON.parse(stored);
+                        } catch(e){}
+                        if (savedDeck[idx]) {
+                            const info = savedDeck[idx];
+                            logEvent(`[Z-Machine] Inspecting Card #${idx}:`);
+                            logEvent(`- Source Application: ${info.score}`);
+                            logEvent(`- Stored Metadata: ${info.style}`);
+                            logEvent(`- Nested State Bag: ${JSON.stringify(info.bag || {}, null, 2)}`);
+                        } else {
+                            logEvent(`[Z-Machine] Card index ${arg2} not found in collection.`);
+                        }
+                    } else if (arg === "load") {
+                        const idx = parseInt(arg2);
+                        let savedDeck = [];
+                        try {
+                            const stored = localStorage.getItem("tsfi_hardball_deck");
+                            if (stored) savedDeck = JSON.parse(stored);
+                        } catch(e){}
+                        if (savedDeck[idx]) {
+                            const card = savedDeck[idx];
+                            logEvent(`[Z-Machine] Loading State Bag from Card #${idx}...`);
+                            if (card.bag && card.bag.type === "gauntlet_hero") {
+                                score = card.bag.score || score;
+                                health = card.bag.health || health;
+                                keysCount = card.bag.keys || keysCount;
+                                currentLevel = card.bag.level || currentLevel;
+                                if (card.bag.inventory && card.bag.inventory.reagents) {
+                                    leadHarvested = card.bag.inventory.reagents.lead || 0;
+                                    mercuryHarvested = card.bag.inventory.reagents.mercury || 0;
+                                    sulfurHarvested = card.bag.inventory.reagents.sulfur || 0;
+                                    saveHarvestedReagents();
+                                }
+                                logEvent(`[Z-Machine] Successfully restored Gauntlet Hero state values!`);
+                            } else {
+                                logEvent(`[Z-Machine] Cannot load: Card type '${card.bag ? card.bag.type : "unknown"}' is not gauntlet_hero compatible.`);
+                            }
+                        } else {
+                            logEvent(`[Z-Machine] Card index ${arg2} not found in collection.`);
+                        }
                     } else {
                         logEvent(`[Z-Machine] Shared collection deck count: ${document.getElementById("deck-count").innerText}`);
                     }

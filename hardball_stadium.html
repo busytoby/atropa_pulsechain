@@ -1127,7 +1127,15 @@ Status: Press Pitch to begin.</div>
                 image: cardBase64,
                 timestamp: Date.now(),
                 score: `VIS ${scoreVis} - HOME ${scoreHome}`,
-                style: currentPresetName
+                style: currentPresetName,
+                bag: {
+                    type: "baseball_lineup",
+                    score: { visitors: scoreVis, home: scoreHome },
+                    inning: inning,
+                    outs: outs,
+                    strikes: strikes,
+                    balls: balls
+                }
             });
 
             localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
@@ -1318,6 +1326,47 @@ Status: Press Pitch to begin.</div>
                     if (arg === "save") {
                         saveCurrentCardToDeck();
                         consoleBox.innerHTML += `\n[Z-Machine] Committing current frame snapshot to shared deck...`;
+                    } else if (arg === "inspect") {
+                        const idx = parseInt(arg2);
+                        let savedDeck = [];
+                        try {
+                            const stored = localStorage.getItem("tsfi_hardball_deck");
+                            if (stored) savedDeck = JSON.parse(stored);
+                        } catch(e){}
+                        if (savedDeck[idx]) {
+                            const info = savedDeck[idx];
+                            consoleBox.innerHTML += `\n[Z-Machine] Inspecting Card #${idx}:`;
+                            consoleBox.innerHTML += `\n- Source: ${info.score}`;
+                            consoleBox.innerHTML += `\n- Style: ${info.style}`;
+                            consoleBox.innerHTML += `\n- State Bag: ${JSON.stringify(info.bag || {})}`;
+                        } else {
+                            consoleBox.innerHTML += `\n[Z-Machine] Card index ${arg2} not found.`;
+                        }
+                    } else if (arg === "load") {
+                        const idx = parseInt(arg2);
+                        let savedDeck = [];
+                        try {
+                            const stored = localStorage.getItem("tsfi_hardball_deck");
+                            if (stored) savedDeck = JSON.parse(stored);
+                        } catch(e){}
+                        if (savedDeck[idx]) {
+                            const card = savedDeck[idx];
+                            consoleBox.innerHTML += `\n[Z-Machine] Loading State Bag from Card #${idx}...`;
+                            if (card.bag && card.bag.type === "baseball_lineup") {
+                                scoreVis = card.bag.score.visitors;
+                                scoreHome = card.bag.score.home;
+                                inning = card.bag.inning;
+                                outs = card.bag.outs;
+                                strikes = card.bag.strikes;
+                                balls = card.bag.balls;
+                                updateScoreboard();
+                                consoleBox.innerHTML += `\n[Z-Machine] Successfully restored Baseball Lineup state!`;
+                            } else {
+                                consoleBox.innerHTML += `\n[Z-Machine] Cannot load: Card type '${card.bag ? card.bag.type : "unknown"}' is not baseball_lineup compatible.`;
+                            }
+                        } else {
+                            consoleBox.innerHTML += `\n[Z-Machine] Card index ${arg2} not found.`;
+                        }
                     } else if (arg === "clear") {
                         localStorage.removeItem("tsfi_hardball_deck");
                         loadDeckList();
