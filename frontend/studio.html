@@ -1340,7 +1340,9 @@
                 }
             } else if (activeModule === "rhythm") {
                 // Determine clock trigger state based on tempo
-                const framesPerStep = 900 / params.rhythm.tempo;
+                // Dynamically modulate tempo by the master control voltage attenuation (CCS protection)
+                const dynamicTempo = params.rhythm.tempo * masterAttenuation;
+                const framesPerStep = 900 / dynamicTempo;
                 frameAccumulator++;
                 let clockVal = 0n;
                 if (frameAccumulator >= framesPerStep) {
