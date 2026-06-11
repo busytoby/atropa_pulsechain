@@ -438,6 +438,14 @@
                         </div>
                         <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Quadrature Envelope Damped Vowel Filter</p>
                     </div>
+
+                    <div class="module-card" data-module="rhythm">
+                        <div class="header-row">
+                            <span class="module-name">🎵 SGS Rhythm Sequencer (Issue 7/8)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Clock Dividers & Trigger Pattern Matrix</p>
+                    </div>
                 </div>
 
                 <div style="margin-top: auto;">
@@ -515,6 +523,7 @@
         let activeModule = "philicorda";
         let activeDigit = 0;
         let isSweeping = false;
+        let frameAccumulator = 0;
 
         // Current parameters
         const params = {
@@ -569,6 +578,10 @@
             formant: {
                 pitchF: 0.2,
                 dampingQ: 0.05
+            },
+            rhythm: {
+                pattern: 0,
+                tempo: 120
             }
         };
  
@@ -623,6 +636,10 @@
             formant: [
                 { id: "formantPitchF", label: "Formant Center Frequency", min: 0.01, max: 0.5, step: 0.01, key: "pitchF", unit: "f" },
                 { id: "formantDampingQ", label: "Base Damping Coefficient", min: 0.01, max: 0.2, step: 0.005, key: "dampingQ", unit: "q" }
+            ],
+            rhythm: [
+                { id: "rhythmPattern", label: "SGS Programmed Pattern (0=Rock, 1=Waltz)", min: 0, max: 1, step: 1, key: "pattern", unit: "p" },
+                { id: "rhythmTempo", label: "Sequencer Clock Tempo (BPM)", min: 60, max: 240, step: 5, key: "tempo", unit: "BPM" }
             ]
         };
 
@@ -723,6 +740,7 @@
             await registerModule("SteamWhistle", "../solidity/bin/steamWhistle.yul", "0x49");
             await registerModule("RingModulator", "../solidity/bin/ringModulator.yul", "0x51");
             await registerModule("FormantFilter", "../solidity/bin/formantFilter.yul", "0x95");
+            await registerModule("RhythmGenerator", "../solidity/bin/rhythmGenerator.yul", "0x67");
             log("All system modules successfully registered.");
             triggerSingleSimulationStep();
         }
@@ -791,7 +809,8 @@
                               activeModule === "whistle" ? "#38bdf8" :
                               activeModule === "gyrator" ? "#a855f7" :
                               activeModule === "ringmod" ? "#f43f5e" :
-                              activeModule === "formant" ? "#10b981" : "#ffaa00";
+                              activeModule === "formant" ? "#10b981" :
+                              activeModule === "rhythm" ? "#eab308" : "#ffaa00";
             ctx.lineWidth = 3;
             ctx.shadowColor = ctx.strokeStyle;
             ctx.shadowBlur = 10;
@@ -1271,6 +1290,87 @@
                     const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
                     setNixieDigit(mappedDigit);
                 }
+            } else if (activeModule === "rhythm") {
+                // Determine clock trigger state based on tempo
+                const framesPerStep = 900 / params.rhythm.tempo;
+                frameAccumulator++;
+                let clockVal = 0n;
+                if (frameAccumulator >= framesPerStep) {
+                    clockVal = 1000000000000000000n;
+                    frameAccumulator -= framesPerStep;
+                }
+
+                // 1. Call Rhythm Generator
+                const rIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const rCalldata = rIface.encodeFunctionData("processSample", [clockVal, BigInt(params.rhythm.pattern)]);
+                
+                const rRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "RhythmGenerator", calldata: rCalldata })
+                });
+                const rPayload = await rRes.json();
+                let bitmask = 0;
+                if (rPayload && rPayload.result && rPayload.result.output) {
+                    const decoded = rIface.decodeFunctionResult("processSample", "0x" + rPayload.result.output);
+                    bitmask = Number(decoded[0]);
+                }
+
+                // If triggers are high, trigger active voice hits
+                let kickTrigger = (bitmask & 1) ? 1000000000000000000n : 0n;
+                let snareTrigger = (bitmask & 2) ? 1000000000000000000n : 0n;
+                let hihatTrigger = (bitmask & 4) ? 1000000000000000000n : 0n;
+
+                // 2. Process Membrane Drum (Kick)
+                const dPitch = BigInt(Math.round(params.drum.pitchK * 1e18));
+                const dDecay = BigInt(Math.round(params.drum.decayD * 1e18));
+                const dPacked = dPitch + (dDecay << 128n);
+                const dIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const dCalldata = dIface.encodeFunctionData("processSample", [kickTrigger, dPacked]);
+                const dRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "DrumSynthesizer", calldata: dCalldata })
+                });
+                const dPayload = await dRes.json();
+                let kickOut = 0.0;
+                if (dPayload && dPayload.result && dPayload.result.output) {
+                    const decoded = dIface.decodeFunctionResult("processSample", "0x" + dPayload.result.output);
+                    kickOut = Number(decoded[0]) / 1e18;
+                }
+
+                // 3. Process Snare Drum
+                // If hihat trigger is active, we can trigger Snare with short decay or higher noise mix
+                let activeSnareTrigger = snareTrigger || hihatTrigger;
+                let sPitch = BigInt(Math.round(params.snare.pitchK * 1e18));
+                let sDecay = BigInt(Math.round((hihatTrigger ? 0.005 : params.snare.decayD) * 1e18));
+                let sNoiseDecay = BigInt(Math.round((hihatTrigger ? 0.02 : params.snare.noiseDecay) * 1e18));
+                let sNoiseMix = BigInt(Math.round((hihatTrigger ? 0.9 : params.snare.noiseMix) * 1e18));
+                const sPacked = sPitch + (sDecay << 64n) + (sNoiseDecay << 128n) + (sNoiseMix << 192n);
+                const sIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const sCalldata = sIface.encodeFunctionData("processSample", [activeSnareTrigger, sPacked]);
+                const sRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "SnareSynthesizer", calldata: sCalldata })
+                });
+                const sPayload = await sRes.json();
+                let snareOut = 0.0;
+                if (sPayload && sPayload.result && sPayload.result.output) {
+                    const decoded = sIface.decodeFunctionResult("processSample", "0x" + sPayload.result.output);
+                    snareOut = Number(decoded[0]) / 1e18;
+                }
+
+                // Mix outputs and apply Equa Limiter
+                const mixedOut = kickOut + snareOut;
+                const outVolts = await applyEquaLimiter(mixedOut, 0.51);
+
+                samples.push(outVolts);
+                samples.shift();
+                drawWaveform();
+
+                const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
+                setNixieDigit(mappedDigit);
             }
             } catch (err) {
                 console.error("Simulation step error:", err);
