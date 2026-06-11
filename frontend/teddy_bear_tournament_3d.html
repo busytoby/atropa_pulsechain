@@ -1868,11 +1868,6 @@ Ready to initiate tournament match.</div>
                 timestamp: Date.now(),
                 score: "TOURNAMENT",
                 style: "Arena Battle",
-            savedDeck.push({
-                image: cardBase64,
-                timestamp: Date.now(),
-                score: "TOURNAMENT",
-                style: "Arena Battle",
                 dnaTraits: {
                     head: parseFloat(document.getElementById("synth-head")?.value || 1.0),
                     torso: parseFloat(document.getElementById("synth-torso")?.value || 1.0),
@@ -1888,11 +1883,28 @@ Ready to initiate tournament match.</div>
                     decay: parseFloat(document.getElementById("synth-decay")?.value || 0.30),
                     sustain: parseFloat(document.getElementById("synth-sustain")?.value || 0.20),
                     release: parseFloat(document.getElementById("synth-release")?.value || 0.15)
+                },
+                bag: {
+                    type: "tournament_bear",
+                    fighter1: {
+                        name: fighter1.name,
+                        hp: fighter1.hp,
+                        spike: fighter1.spike,
+                        phase: fighter1.phase,
+                        sick: fighter1.sick
+                    },
+                    fighter2: {
+                        name: fighter2.name,
+                        hp: fighter2.hp,
+                        spike: fighter2.spike,
+                        phase: fighter2.phase,
+                        sick: fighter2.sick
+                    }
                 }
             });
 
             localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
-            logEvent("💾 Saved tournament battle card successfully with DNA & Audio traits!");
+            logEvent("💾 Saved tournament battle card successfully with DNA, Audio & Z-Machine Bag traits!");
             loadDeckList();
 
             if (!drawerExpanded) toggleDeckDrawer();
