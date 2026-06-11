@@ -576,6 +576,8 @@
         let spriteRotation = 0;
         let spriteX = 0;
         let formantCompEnv = 0.0;
+        let metabolicImpedance = 1.0;
+        let lastOutVolts = 0.0;
         let semafoonEnvState = 0.0;
         let orbitAngleState = 0.0;
         let formantCompActive = false;
@@ -1473,8 +1475,13 @@
                 saturationFactor = 1.0 - (bionikaVm * 0.4); // ranges from 1.0 down to 0.6 under neural stress
             }
 
+            // Frequency-dependent saturation limit reduction (Issue 15 Telcan tape model)
+            let prevOut = typeof lastOutVolts !== "undefined" ? lastOutVolts : 0.0;
+            const hfRate = Math.abs(outVolts - prevOut);
+            lastOutVolts = outVolts;
+
             let saturatedVal = inputScaled;
-            const saturationThreshold = softLimit * saturationFactor;
+            const saturationThreshold = softLimit * saturationFactor * Math.max(0.5, 1.0 - hfRate * 0.25);
             if (Math.abs(inputScaled) > saturationThreshold) {
                 const sign = Math.sign(inputScaled);
                 const absVal = Math.abs(inputScaled);
@@ -1994,7 +2001,16 @@
                 if (finalPitchF < 0.01) finalPitchF = 0.01;
                 if (finalPitchF > 0.6) finalPitchF = 0.6;
 
-                let dynamicDampingQ = params.formant.dampingQ;
+                // NASA Gulliver/Wolf Trap bio-detector metabolic impedance shunt (Issue 15)
+                const metabolicGrowth = formantCompEnv * 0.15;
+                metabolicImpedance = Math.max(0.1, metabolicImpedance - metabolicGrowth + 0.02);
+                if (metabolicImpedance > 1.0) metabolicImpedance = 1.0;
+                
+                if (metabolicImpedance < 0.8 && Math.random() > 0.98) {
+                    log(`🦠 [NASA BIO-DETECTOR] Electrolyte impedance at ${(metabolicImpedance * 100).toFixed(1)}%. Shunting feedback loop.`);
+                }
+
+                let dynamicDampingQ = params.formant.dampingQ * (1.0 / metabolicImpedance);
                 const stabilityScore = checkGraeffeStability(finalPitchF, dynamicDampingQ);
                 if (stabilityScore >= 0.98) {
                     dynamicDampingQ = dynamicDampingQ * 2.0; // scale up damping (reduce Q) to pull poles in
