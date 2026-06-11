@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi Ballet Choreography Studio - Alpha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #04050a;
+            --panel-bg: rgba(7, 10, 22, 0.9);
+            --glow-gold: #ffc400;
+            --glow-magenta: #ff007f;
+            --glow-cyan: #00f0ff;
+            --text-color: #f1f5f9;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 50% 10%, rgba(255, 0, 127, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 28px;
+            background: rgba(3, 5, 12, 0.95);
+            border-bottom: 1px solid #141c30;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--glow-gold), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--glow-cyan);
+            font-size: 13px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        #studio-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            flex: 1;
+            height: calc(100vh - 58px);
+            overflow: hidden;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-right: 1px solid #141c30;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .panel.right {
+            border-right: none;
+            border-left: 1px solid #141c30;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .section-title span {
+            color: var(--glow-magenta);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .card {
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .choreography-btn {
+            background: rgba(255, 0, 127, 0.05);
+            border: 1px solid rgba(255, 0, 127, 0.3);
+            color: #ffb3d9;
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .choreography-btn:hover, .choreography-btn.active {
+            background: var(--glow-magenta);
+            color: #fff;
+            border-color: var(--glow-magenta);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        .btn-status {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--glow-cyan);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: #94a3b8;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--glow-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 6px var(--glow-cyan);
+        }
+
+        #viewport-container {
+            position: relative;
+            background: radial-gradient(circle at center, #090c1a 0%, #020307 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            padding: 10px 16px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--glow-cyan);
+            color: #000;
+            box-shadow: 0 0 20px var(--glow-cyan);
+        }
+
+        .btn.btn-gold {
+            border-color: var(--glow-gold);
+            color: var(--glow-gold);
+        }
+
+        .btn.btn-gold:hover {
+            background: var(--glow-gold);
+            color: #000;
+            box-shadow: 0 0 20px var(--glow-gold);
+        }
+
+        #console {
+            flex: 1;
+            background: #010205;
+            border: 1px solid #141c30;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: #4ade80;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        #oscilloscope-container {
+            height: 100px;
+            background: #000;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #oscilloscope {
+            width: 100%;
+            height: 100%;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(5, 7, 18, 0.95);
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .cam-btn {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .cam-btn:hover {
+            border-color: var(--glow-cyan);
+            color: var(--glow-cyan);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">TSFi Ballet Choreography Studio</div>
+        <div class="subtitle" id="synth-status">GENERATIVE CHORD SYNAPSE: ACTIVE</div>
+    </header>
+
+    <div id="studio-layout">
+        <!-- Left Panel: Ballet Position Choreography & Stance Controls -->
+        <div class="panel">
+            <div class="section-title">
+                CHOREOGRAPHY <span>POSITIONS</span>
+            </div>
+            
+            <div class="choreography-btn active" id="pos-plie" onclick="setStance('plie')">
+                Plié <span class="btn-status">ACT I</span>
+            </div>
+            <div class="choreography-btn" id="pos-arabesque" onclick="setStance('arabesque')">
+                Arabesque <span class="btn-status">ACT II</span>
+            </div>
+            <div class="choreography-btn" id="pos-pirouette" onclick="setStance('pirouette')">
+                Pirouette <span class="btn-status">ACT III</span>
+            </div>
+            <div class="choreography-btn" id="pos-grandjete" onclick="setStance('grandjete')">
+                Grand Jeté <span class="btn-status">ACT IV</span>
+            </div>
+            <div class="choreography-btn" id="pos-attitude" onclick="setStance('attitude')">
+                Attitude <span class="btn-status">FINALE</span>
+            </div>
+
+            <div class="section-title">
+                TEMPO & BEAT MODULATOR
+            </div>
+            <div class="card">
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Tempo (BPM)</span>
+                        <span id="val-bpm">96</span>
+                    </div>
+                    <input type="range" id="bpm-slider" min="60" max="160" value="96" oninput="updateTempo()">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Synthesis Resonance</span>
+                        <span id="val-resonance">45%</span>
+                    </div>
+                    <input type="range" id="resonance-slider" min="10" max="90" value="45" oninput="updateResonance()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Viewport: Volumetric 3D Stage -->
+        <div id="viewport-container">
+            <canvas id="stageCanvas"></canvas>
+            
+            <div class="camera-controls">
+                <button class="cam-btn" onclick="cameraOrbit('left')">↺</button>
+                <button class="cam-btn" onclick="cameraOrbit('right')">↻</button>
+                <button class="cam-btn" onclick="cameraOrbit('up')">▲</button>
+                <button class="cam-btn" onclick="cameraOrbit('down')">▼</button>
+                <button class="cam-btn" onclick="cameraZoom('in')">+</button>
+                <button class="cam-btn" onclick="cameraZoom('out')">-</button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Sound Synthesis & ControlNet Renderer -->
+        <div class="panel right">
+            <div class="section-title">
+                SOUNDTRACK SEQUENCER
+            </div>
+            <div id="oscilloscope-container">
+                <canvas id="oscilloscope"></canvas>
+            </div>
+            
+            <button class="btn" id="btn-toggle-sound" onclick="toggleSound()">Start Ballet Soundtrack</button>
+
+            <div class="section-title">
+                CONTROLNET BALLET PUPPET
+            </div>
+            <div class="card" style="border-color: rgba(255, 196, 0, 0.25);">
+                <div style="font-size: 11px; color: #94a3b8;">Custom Prompt:</div>
+                <textarea id="ai-prompt" rows="3" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Outfit', sans-serif; resize: none;">A highly detailed photorealistic teddy bear plush performing ballet dance, wearing a pink tutu dress, brown fur, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background</textarea>
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
+                    <input type="checkbox" id="show-ai-overlay" checked> Overlay on Stage
+                </label>
+                <button class="btn btn-gold" id="btn-ai-render" onclick="triggerControlNetRender()">Synthesize Ballet Pose</button>
+                <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
+            </div>
+
+            <div class="section-title">
+                CHOREOGRAPHY CONSOLE
+            </div>
+            <div id="console">Initializing Ballet Stage...
+System: Vector engine loaded 3D meshes.
+Stage: Synthesizer core loaded.
+Status: Awaiting user to start music.</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("stageCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Camera state
+        const camera = {
+            yaw: -Math.PI / 4,
+            pitch: Math.PI / 8,
+            distance: 1200,
+            x: 0,
+            y: 50,
+            z: 0,
+            fov: 1100
+        };
+
+        function resize() {
+            const container = document.getElementById("viewport-container");
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        class Point3D {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        // Project 3D coordinate to 2D
+        function project(p) {
+            let x = p.x - camera.x;
+            let y = p.y - camera.y;
+            let z = p.z - camera.z;
+
+            let cosY = Math.cos(camera.yaw);
+            let sinY = Math.sin(camera.yaw);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+
+            let cosP = Math.cos(camera.pitch);
+            let sinP = Math.sin(camera.pitch);
+            let y2 = y * cosP - z1 * sinP;
+            let z2 = y * sinP + z1 * cosP;
+
+            z2 += camera.distance;
+            if (z2 <= 10) return null;
+
+            let scX = (x1 * camera.fov) / z2 + canvas.width / 2;
+            let scY = (-y2 * camera.fov) / z2 + canvas.height / 2;
+            return { x: scX, y: scY, depth: z2 };
+        }
+
+        function drawLine3D(p1, p2, color, width = 1) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+        }
+
+        // 3D Lighting and Volumetric Primitives
+        function drawVolumetricSphere(p3d, radius, baseColor) {
+            let proj = project(p3d);
+            if (!proj) return;
+            let screenRadius = radius * (camera.fov / proj.depth);
+            if (screenRadius <= 1) return;
+
+            ctx.save();
+            let highlightX = proj.x - screenRadius * 0.25;
+            let highlightY = proj.y - screenRadius * 0.25;
+            let grad = ctx.createRadialGradient(highlightX, highlightY, screenRadius * 0.05, proj.x, proj.y, screenRadius);
+            grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+            grad.addColorStop(0.3, baseColor);
+            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, screenRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawVolumetricCapsule(p1, p2, radius, baseColor) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let r1 = radius * (camera.fov / sc1.depth);
+            let r2 = radius * (camera.fov / sc2.depth);
+            let avgRadius = (r1 + r2) / 2;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            let nx = -dy / len;
+            let ny = dx / len;
+
+            ctx.save();
+            let grad = ctx.createLinearGradient(sc1.x - nx * avgRadius, sc1.y - ny * avgRadius, sc1.x + nx * avgRadius, sc1.y + ny * avgRadius);
+            grad.addColorStop(0, "rgba(4, 6, 15, 0.95)");
+            grad.addColorStop(0.3, baseColor);
+            grad.addColorStop(0.55, "rgba(255, 255, 255, 0.8)");
+            grad.addColorStop(0.75, baseColor);
+            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = avgRadius * 2;
+            ctx.lineCap = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Web Audio Generative Synthesizer soundtrack
+        let audioCtx = null;
+        let analyser = null;
+        let soundInterval = null;
+        let isSoundPlaying = false;
+        let synthBpm = 96;
+        let filterQ = 1;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.connect(audioCtx.destination);
+            } catch (e) {
+                console.error("Audio init error", e);
+            }
+        }
+
+        function playChordNote(freq, startTime, duration, voiceType = "triangle") {
+            if (!audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let filter = audioCtx.createBiquadFilter();
+
+            osc.type = voiceType;
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            filter.type = "lowpass";
+            filter.frequency.setValueAtTime(400, startTime);
+            filter.frequency.exponentialRampToValueAtTime(1800, startTime + 0.1);
+            filter.Q.setValueAtTime(filterQ, startTime);
+
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.12, startTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(analyser);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration + 0.1);
+        }
+
+        function playSynthesizerBeat(beatIndex) {
+            if (!audioCtx) return;
+            let now = audioCtx.currentTime;
+            
+            // Major 7th chord progressions for ballet ambiance
+            const chords = [
+                [130.81, 164.81, 196.00, 246.94], // Cmaj7
+                [146.83, 174.61, 220.00, 261.63], // Dm7
+                [164.81, 196.00, 246.94, 293.66], // Em7
+                [174.61, 220.00, 261.63, 329.63]  // Fmaj7
+            ];
+            
+            let chord = chords[Math.floor(beatIndex / 4) % chords.length];
+
+            // Trigger arpeggiator notes on beats
+            let duration = (60 / synthBpm) * 1.5;
+            chord.forEach((freq, index) => {
+                let noteTime = now + index * (60 / synthBpm) * 0.25;
+                playChordNote(freq, noteTime, duration, "triangle");
+            });
+
+            // Drum beat rhythm
+            if (beatIndex % 2 === 0) {
+                // Kick drum sub sweep
+                let kick = audioCtx.createOscillator();
+                let kickGain = audioCtx.createGain();
+                kick.type = "sine";
+                kick.frequency.setValueAtTime(100, now);
+                kick.frequency.exponentialRampToValueAtTime(45, now + 0.15);
+                kickGain.gain.setValueAtTime(0.4, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                kick.connect(kickGain);
+                kickGain.connect(analyser);
+                kick.start(now);
+                kick.stop(now + 0.22);
+            }
+        }
+
+        function toggleSound() {
+            initAudio();
+            if (!audioCtx) return;
+
+            const btn = document.getElementById("btn-toggle-sound");
+            if (isSoundPlaying) {
+                clearInterval(soundInterval);
+                isSoundPlaying = false;
+                btn.innerText = "Start Ballet Soundtrack";
+                logEvent("Audio: Generative synthesizer paused.");
+            } else {
+                let beat = 0;
+                let msPerBeat = (60 / synthBpm) * 1000;
+                soundInterval = setInterval(() => {
+                    playSynthesizerBeat(beat);
+                    beat++;
+                }, msPerBeat);
+                isSoundPlaying = true;
+                btn.innerText = "Pause Ballet Soundtrack";
+                logEvent("Audio: Generative chord soundtrack sequencer started.");
+            }
+        }
+
+        function updateTempo() {
+            const val = document.getElementById("bpm-slider").value;
+            document.getElementById("val-bpm").innerText = val;
+            synthBpm = parseInt(val);
+            if (isSoundPlaying) {
+                // Restart sequencer to apply tempo change
+                toggleSound();
+                toggleSound();
+            }
+        }
+
+        function updateResonance() {
+            const val = document.getElementById("resonance-slider").value;
+            document.getElementById("val-resonance").innerText = val + "%";
+            filterQ = parseFloat(val) / 10;
+        }
+
+        // Oscilloscope Visualizer
+        const oscCanvas = document.getElementById("oscilloscope");
+        const oscCtx = oscCanvas.getContext("2d");
+        function drawOscilloscope() {
+            requestAnimationFrame(drawOscilloscope);
+            oscCanvas.width = oscCanvas.clientWidth;
+            oscCanvas.height = oscCanvas.clientHeight;
+            oscCtx.fillStyle = "#010204";
+            oscCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
+
+            if (!analyser) {
+                oscCtx.strokeStyle = "rgba(255, 0, 127, 0.2)";
+                oscCtx.lineWidth = 2;
+                oscCtx.beginPath();
+                oscCtx.moveTo(0, oscCanvas.height / 2);
+                oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+                oscCtx.stroke();
+                return;
+            }
+
+            let bufferLength = analyser.frequencyBinCount;
+            let dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            oscCtx.strokeStyle = "rgba(255, 0, 127, 0.85)";
+            oscCtx.lineWidth = 2;
+            oscCtx.beginPath();
+            let sliceWidth = oscCanvas.width / bufferLength;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                let v = dataArray[i] / 128.0;
+                let y = (v * oscCanvas.height) / 2;
+                if (i === 0) oscCtx.moveTo(x, y);
+                else oscCtx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+            oscCtx.stroke();
+        }
+        drawOscilloscope();
+
+        // 3D Bear Skeleton calculations
+        function getBearSkeleton(offset3D, scale, angles) {
+            const { leftArm, rightArm, leftLeg, rightLeg } = angles;
+            let head = new Point3D(offset3D.x, offset3D.y + 160 * scale, offset3D.z);
+            let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale, offset3D.z);
+            let lShoulder = new Point3D(offset3D.x - 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale, offset3D.z);
+
+            let lPaw = new Point3D(
+                lShoulder.x + Math.sin(leftArm) * 90 * scale,
+                lShoulder.y - Math.cos(leftArm) * 90 * scale,
+                lShoulder.z
+            );
+            let rPaw = new Point3D(
+                rShoulder.x - Math.sin(rightArm) * 90 * scale,
+                rShoulder.y - Math.cos(rightArm) * 90 * scale,
+                rShoulder.z
+            );
+            let lFoot = new Point3D(
+                offset3D.x - 50 * scale + Math.sin(leftLeg) * 80 * scale,
+                midHip.y - Math.cos(leftLeg) * 80 * scale,
+                offset3D.z
+            );
+            let rFoot = new Point3D(
+                offset3D.x + 50 * scale - Math.sin(rightLeg) * 80 * scale,
+                midHip.y - Math.cos(rightLeg) * 80 * scale,
+                offset3D.z
+            );
+
+            return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
+        }
+
+        // Rigged Sprite segments mapping
+        const segments = {
+            head: { x: 180, y: 20, w: 152, h: 152 },
+            torso: { x: 170, y: 172, w: 172, h: 190 },
+            arm: { x: 100, y: 170, w: 70, h: 140 },
+            leg: { x: 130, y: 320, w: 80, h: 150 }
+        };
+
+        function drawSegmentAlongBone(p1, p2, srcRect, widthScale = 1.0) {
+            if (!sdImage) return;
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            let angle = Math.atan2(dy, dx);
+            let avgDepth = (sc1.depth + sc2.depth) / 2;
+            let thickness = srcRect.w * (camera.fov / avgDepth) * widthScale * 1.5;
+
+            ctx.save();
+            ctx.translate((sc1.x + sc2.x) / 2, (sc1.y + sc2.y) / 2);
+            ctx.rotate(angle - Math.PI / 2);
+            ctx.drawImage(
+                sdImage,
+                srcRect.x, srcRect.y, srcRect.w, srcRect.h,
+                -thickness / 2, -len / 2, thickness, len
+            );
+            ctx.restore();
+        }
+
+        function drawSegmentAtJoint(p, srcRect, scaleVal, radiusScale = 1.0) {
+            if (!sdImage) return;
+            let proj = project(p);
+            if (!proj) return;
+            let size = srcRect.w * (camera.fov / proj.depth) * radiusScale * scaleVal * 1.35;
+
+            ctx.save();
+            ctx.translate(proj.x, proj.y);
+            ctx.drawImage(
+                sdImage,
+                srcRect.x, srcRect.y, srcRect.w, srcRect.h,
+                -size / 2, -size / 2, size, size
+            );
+            ctx.restore();
+        }
+
+        let sdImage = null;
+
+        function drawBear3D(offset3D, scale, angles, baseColor) {
+            const joints = getBearSkeleton(offset3D, scale, angles);
+            const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
+
+            if (sdImage && isOverlayEnabled) {
+                // Render rigged photorealistic segments
+                drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale);
+                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale);
+                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale);
+                drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale);
+                drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale);
+                drawSegmentAtJoint(joints.head, segments.head, scale, 1.0);
+            } else {
+                // Volumetric rendering
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 15 * scale, baseColor);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 13 * scale, baseColor);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 15 * scale, baseColor);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 13 * scale, baseColor);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 14 * scale, baseColor);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 14 * scale, baseColor);
+
+                drawVolumetricCapsule(joints.neck, joints.midHip, 42 * scale, baseColor);
+
+                let lEar = new Point3D(joints.head.x - 28 * scale, joints.head.y + 28 * scale, joints.head.z - 8 * scale);
+                let rEar = new Point3D(joints.head.x + 28 * scale, joints.head.y + 28 * scale, joints.head.z + 8 * scale);
+                drawVolumetricSphere(lEar, 14 * scale, baseColor);
+                drawVolumetricSphere(rEar, 14 * scale, baseColor);
+
+                drawVolumetricSphere(joints.head, 35 * scale, baseColor);
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale, joints.head.z + 24 * scale);
+                drawVolumetricSphere(snout, 11 * scale, "rgba(255, 255, 255, 0.9)");
+
+                drawVolumetricSphere(joints.lPaw, 13 * scale, baseColor);
+                drawVolumetricSphere(joints.rPaw, 13 * scale, baseColor);
+                drawVolumetricSphere(joints.lFoot, 15 * scale, baseColor);
+                drawVolumetricSphere(joints.rFoot, 15 * scale, baseColor);
+            }
+        }
+
+        // Draw Stage floor Grid
+        function drawStageGrid(timeMs) {
+            const gridLimit = 850;
+            const step = 85;
+            ctx.save();
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(255, 0, 127, 0.25)";
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.18)";
+            ctx.lineWidth = 1.5;
+
+            for (let i = -gridLimit; i <= gridLimit; i += step) {
+                // Z-axis lines modulated by smooth breathing waves
+                ctx.beginPath();
+                for (let j = -gridLimit; j <= gridLimit; j += 40) {
+                    let sc = project(new Point3D(i, -100 + Math.sin(j/200 + timeMs*0.0025)*15, j));
+                    if (sc) {
+                        if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+
+                // X-axis lines
+                ctx.beginPath();
+                for (let j = -gridLimit; j <= gridLimit; j += 40) {
+                    let sc = project(new Point3D(j, -100 + Math.sin(i/200 + timeMs*0.0025)*15, i));
+                    if (sc) {
+                        if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Draw stage boundary ring
+            ctx.strokeStyle = "rgba(0, 240, 255, 0.35)";
+            ctx.shadowColor = "rgba(0, 240, 255, 0.4)";
+            ctx.lineWidth = 3;
+            let prev = null;
+            for (let i = 0; i <= 48; i++) {
+                let angle = (i / 48) * Math.PI * 2;
+                let pt = new Point3D(Math.cos(angle)*700, -100, Math.sin(angle)*700);
+                if (prev) {
+                    drawLine3D(prev, pt, "rgba(0, 240, 255, 0.35)", 3);
+                }
+                prev = pt;
+            }
+            ctx.restore();
+        }
+
+        // Ballet choreography kinetics database
+        let activeStance = "plie";
+        let choreographyTime = 0;
+
+        function setStance(name) {
+            initAudio();
+            document.querySelectorAll(".choreography-btn").forEach(btn => btn.classList.remove("active"));
+            document.getElementById(`pos-${name}`).classList.add("active");
+            activeStance = name;
+            logEvent(`Dance: Stance updated to ${name.toUpperCase()}`);
+        }
+
+        function getChoreographyAngles(stance, timeMs) {
+            let armL = 0, armR = 0, legL = 0, legR = 0;
+            let t = timeMs * 0.002 * (synthBpm / 96);
+
+            switch (stance) {
+                case "plie":
+                    // Smooth squatting bend
+                    let bend = Math.sin(t) * 0.3 + 0.3;
+                    armL = Math.PI / 4 + bend;
+                    armR = Math.PI / 4 + bend;
+                    legL = bend;
+                    legR = -bend;
+                    break;
+                case "arabesque":
+                    // Standing on left leg, right leg held horizontally backward
+                    armL = Math.PI / 2; // Arm extended forward
+                    armR = -Math.PI / 3; // Arm backward
+                    legL = 0; // standing
+                    legR = Math.PI / 2 + Math.sin(t)*0.1; // Back extended leg
+                    break;
+                case "pirouette":
+                    // Spin around Y axis (represented in joints as arm circle and leg tucked)
+                    armL = Math.PI / 3;
+                    armR = Math.PI / 3;
+                    legL = 0;
+                    legR = Math.PI / 4; // bent leg touching knee
+                    // Continuously rotate camera yaw to visual spin
+                    camera.yaw += 0.02;
+                    break;
+                case "grandjete":
+                    // Split in mid-air (leap height parabolic)
+                    armL = Math.PI / 2;
+                    armR = -Math.PI / 2;
+                    legL = -Math.PI / 3; // front leg split
+                    legR = Math.PI / 3;  // back leg split
+                    break;
+                case "attitude":
+                    // Standing leg straight, back leg bent upward
+                    armL = Math.PI / 2.2;
+                    armR = Math.PI / 1.5;
+                    legL = 0;
+                    legR = Math.PI / 3 + Math.sin(t)*0.1;
+                    break;
+            }
+
+            return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR };
+        }
+
+        function getModelOffset(stance, timeMs) {
+            let x = 0, y = 0, z = 0;
+            let t = timeMs * 0.002 * (synthBpm / 96);
+
+            switch (stance) {
+                case "plie":
+                    y = -Math.abs(Math.sin(t)) * 40; // drop height
+                    break;
+                case "grandjete":
+                    // Leap trajectory Y-axis
+                    let loopT = (t % Math.PI);
+                    y = Math.sin(loopT) * 120; // jump height
+                    x = (loopT - Math.PI/2) * 100; // translate forward
+                    break;
+            }
+
+            return new Point3D(x, y, z);
+        }
+
+        // Camera Modifiers
+        function cameraOrbit(dir) {
+            if (dir === "left") camera.yaw -= 0.15;
+            else if (dir === "right") camera.yaw += 0.15;
+            else if (dir === "up") camera.pitch = Math.min(Math.PI/2.2, camera.pitch + 0.08);
+            else if (dir === "down") camera.pitch = Math.max(-Math.PI/2.2, camera.pitch - 0.08);
+        }
+
+        function cameraZoom(dir) {
+            if (dir === "in") camera.distance = Math.max(300, camera.distance - 100);
+            else if (dir === "out") camera.distance = Math.min(2000, camera.distance + 100);
+        }
+
+        function logEvent(msg) {
+            const consoleBox = document.getElementById("console");
+            const timestamp = new Date().toLocaleTimeString();
+            consoleBox.innerHTML += `\n[${timestamp}] ${msg}`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        // Hidden canvases for pose/depth extraction
+        const depthCanvas = document.createElement("canvas");
+        depthCanvas.width = 512;
+        depthCanvas.height = 512;
+        const dCtx = depthCanvas.getContext("2d");
+
+        const poseCanvas = document.createElement("canvas");
+        poseCanvas.width = 512;
+        poseCanvas.height = 512;
+        const pCtx = poseCanvas.getContext("2d");
+
+        function extractControlNetPoses(angles, offset) {
+            dCtx.fillStyle = "#000000";
+            dCtx.fillRect(0, 0, 512, 512);
+
+            pCtx.fillStyle = "#000000";
+            pCtx.fillRect(0, 0, 512, 512);
+
+            // Calculate 3D joints
+            const jointsRaw = getBearSkeleton(offset, 1.2, angles);
+            
+            // Map relative projection
+            function localProj(p) {
+                let x = p.x - offset.x;
+                let y = p.y - offset.y;
+                let z = p.z - offset.z;
+
+                let cosY = Math.cos(camera.yaw);
+                let sinY = Math.sin(camera.yaw);
+                let x1 = x * cosY - z * sinY;
+                let z1 = x * sinY + z * cosY;
+
+                let cosP = Math.cos(camera.pitch);
+                let sinP = Math.sin(camera.pitch);
+                let y2 = y * cosP - z1 * sinP;
+                let z2 = y * sinP + z1 * cosP + 650;
+
+                if (z2 <= 10) return null;
+
+                let scX = (x1 * 900) / z2 + 256;
+                let scY = (-y2 * 900) / z2 + 256;
+                return { x: scX, y: scY, depth: z2 };
+            }
+
+            const joints = {
+                head: localProj(jointsRaw.head),
+                neck: localProj(jointsRaw.neck),
+                lShoulder: localProj(jointsRaw.lShoulder),
+                rShoulder: localProj(jointsRaw.rShoulder),
+                lPaw: localProj(jointsRaw.lPaw),
+                rPaw: localProj(jointsRaw.rPaw),
+                midHip: localProj(jointsRaw.midHip),
+                lFoot: localProj(jointsRaw.lFoot),
+                rFoot: localProj(jointsRaw.rFoot)
+            };
+
+            function drawBone(ctxType, j1, j2, isDepth, color, width) {
+                if (!j1 || !j2) return;
+                ctxType.save();
+                if (isDepth) {
+                    let avgDepth = (j1.depth + j2.depth) / 2;
+                    let dVal = Math.max(0, Math.min(255, 255 - Math.floor((avgDepth - 350) / 600 * 255)));
+                    ctxType.strokeStyle = `rgb(${dVal},${dVal},${dVal})`;
+                } else {
+                    ctxType.strokeStyle = color;
+                }
+                ctxType.lineWidth = width;
+                ctxType.lineCap = "round";
+                ctxType.beginPath();
+                ctxType.moveTo(j1.x, j1.y);
+                ctxType.lineTo(j2.x, j2.y);
+                ctxType.stroke();
+                ctxType.restore();
+            }
+
+            // 1. Depth Map Draw
+            if (joints.head) {
+                dCtx.save();
+                let rad = 35 * 1.2 * (900 / joints.head.depth);
+                let grad = dCtx.createRadialGradient(joints.head.x, joints.head.y, rad * 0.2, joints.head.x, joints.head.y, rad);
+                let dVal = Math.max(0, Math.min(255, 255 - Math.floor((joints.head.depth - 350) / 600 * 255)));
+                let cStr1 = `rgb(${dVal},${dVal},${dVal})`;
+                let cStr2 = `rgb(${Math.max(0, dVal-80)},${Math.max(0, dVal-80)},${Math.max(0, dVal-80)})`;
+                grad.addColorStop(0, cStr1);
+                grad.addColorStop(1, cStr2);
+                dCtx.fillStyle = grad;
+                dCtx.beginPath();
+                dCtx.arc(joints.head.x, joints.head.y, rad, 0, Math.PI * 2);
+                dCtx.fill();
+                dCtx.restore();
+            }
+            drawBone(dCtx, joints.head, joints.neck, true, null, 14);
+            drawBone(dCtx, joints.neck, joints.lShoulder, true, null, 10);
+            drawBone(dCtx, joints.lShoulder, joints.lPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.rShoulder, true, null, 10);
+            drawBone(dCtx, joints.rShoulder, joints.rPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.midHip, true, null, 14);
+            drawBone(dCtx, joints.midHip, joints.lFoot, true, null, 10);
+            drawBone(dCtx, joints.midHip, joints.rFoot, true, null, 10);
+
+            // 2. OpenPose Map Draw
+            if (joints.head) {
+                pCtx.fillStyle = "#ff00ff";
+                pCtx.beginPath();
+                pCtx.arc(joints.head.x, joints.head.y, 14, 0, Math.PI*2);
+                pCtx.fill();
+            }
+            drawBone(pCtx, joints.head, joints.neck, false, "#ff0000", 8);
+            drawBone(pCtx, joints.neck, joints.lShoulder, false, "#0000ff", 6);
+            drawBone(pCtx, joints.lShoulder, joints.lPaw, false, "#00ffff", 6);
+            drawBone(pCtx, joints.neck, joints.rShoulder, false, "#ff0000", 6);
+            drawBone(pCtx, joints.rShoulder, joints.rPaw, false, "#ff8000", 6);
+            drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", 8);
+            drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", 6);
+            drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", 6);
+
+            return {
+                depthData: depthCanvas.toDataURL("image/png"),
+                poseData: poseCanvas.toDataURL("image/png")
+            };
+        }
+
+        function triggerControlNetRender() {
+            initAudio();
+            const btn = document.getElementById("btn-ai-render");
+            const statusBox = document.getElementById("ai-status");
+            const promptText = document.getElementById("ai-prompt").value;
+
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+            statusBox.innerText = "Status: Rendering ballet pose...";
+
+            let angles = getChoreographyAngles(activeStance, choreographyTime);
+            let offset = getModelOffset(activeStance, choreographyTime);
+            const cnData = extractControlNetPoses(angles, offset);
+
+            logEvent("AI Ballet: Triggering ControlNet synthesis on GPU worker...");
+
+            fetch("http://127.0.0.1:8000/generate-bear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: promptText,
+                    profile: "dream",
+                    steps: 6,
+                    cfg: 1.5,
+                    use_controlnet: true,
+                    controlnet_image: cnData.depthData,
+                    controlnet_pose: cnData.poseData
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    logEvent("AI Ballet: Synthesis complete! Extracting texture...");
+                    statusBox.innerText = "Status: Extracting alpha key...";
+
+                    const newImg = new Image();
+                    newImg.onload = () => {
+                        const tempCanvas = document.createElement("canvas");
+                        tempCanvas.width = newImg.width;
+                        tempCanvas.height = newImg.height;
+                        const tempCtx = tempCanvas.getContext("2d");
+                        tempCtx.drawImage(newImg, 0, 0);
+
+                        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        const px = imgData.data;
+                        for (let i = 0; i < px.length; i += 4) {
+                            let r = px[i], g = px[i+1], b = px[i+2];
+                            let brightness = (r + g + b) / 3;
+                            if (brightness < 40) {
+                                px[i+3] = Math.max(0, Math.min(255, (brightness - 10) / 30 * 255));
+                            }
+                        }
+                        tempCtx.putImageData(imgData, 0, 0);
+
+                        sdImage = tempCanvas;
+                        btn.disabled = false;
+                        btn.innerText = "Synthesize Ballet Pose";
+                        statusBox.innerText = "Status: Rigged Texture Active";
+                        logEvent("AI Ballet: Photorealistic ballet dancer overlay loaded.");
+                    };
+                    newImg.src = "http://127.0.0.1:8000/" + data.url + "?t=" + Date.now();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerText = "Synthesize Ballet Pose";
+                statusBox.innerText = "Error: " + err.message;
+                logEvent("AI Ballet [ERROR]: " + err.message);
+            });
+        }
+
+        // Main Animation loop
+        function loop() {
+            choreographyTime += 16;
+
+            ctx.fillStyle = "#04050a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Stage grid
+            drawStageGrid(choreographyTime);
+
+            // Calculate active choreography motion state
+            let angles = getChoreographyAngles(activeStance, choreographyTime);
+            let offset = getModelOffset(activeStance, choreographyTime);
+
+            // Draw Bear
+            drawBear3D(offset, 1.2, angles, "rgba(255, 0, 127, 0.85)");
+
+            requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
