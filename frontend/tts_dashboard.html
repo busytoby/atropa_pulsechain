@@ -650,6 +650,29 @@
                         <audio id="anaAudioPlayer" controls style="height: 30px; flex-grow: 1;"></audio>
                     </div>
                 </section>
+
+                <section class="card control-panel" style="border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 242, 254, 0.15); margin-top: 20px;">
+                    <h2><span class="icon">🎚️</span> Levinson-Durbin Reflection Coefficient Solver</h2>
+                    <p class="description">Solve reflection coefficients (K1..K9) from an autocorrelation sequence R(0)..R(9) using the Levinson-Durbin recursion algorithm.</p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label class="knob-label" style="display: block; margin-bottom: 5px;">Autocorrelation R(0)..R(9) (comma-separated floats)</label>
+                        <input type="text" id="autocorrInput" class="input-glow" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: monospace;" value="1.0, 0.82, 0.55, 0.31, 0.12, -0.05, -0.18, -0.25, -0.21, -0.12">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                        <button class="btn btn-primary" id="btnSolveLPC" style="background: linear-gradient(135deg, var(--neon-cyan) 0%, #008fa4 100%); color: #000; border: none; font-weight: bold;">Solve K-Coefficients</button>
+                        <button class="btn btn-secondary" id="btnLoadSolvedK" style="border-color: var(--neon-green); color: var(--neon-green); display: none;">Apply to Synthesizer</button>
+                    </div>
+
+                    <div id="solverResultsPanel" style="display: none; background: rgba(0, 0, 0, 0.4); padding: 12px; border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px;">
+                        <span style="font-family: 'Orbitron'; font-size: 0.85rem; color: var(--neon-cyan); display: block; margin-bottom: 8px;">Solved Coefficients:</span>
+                        <div id="solvedKGrid" style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin-bottom: 12px;">
+                            <!-- Dynamically filled solved bars -->
+                        </div>
+                        <div id="solverLog" style="max-height: 120px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); background: #000; padding: 8px; border-radius: 4px; white-space: pre-wrap;"></div>
+                    </div>
+                </section>
             </div>
 
             <!-- Right Panel: Oscilloscope, Formants, Diagnostics -->
@@ -1968,7 +1991,8 @@
             "function registerSpeaker(bytes32 name, bytes32[8] memory embedding) public",
             "function setQuantizedWeights(uint256 slotOffset, uint256 packedWeights) public",
             "function predictMelQuantized(bytes32[] memory phonemes, bytes32 name) public view returns (bytes memory)",
-            "function synthesizeNeuralWav(bytes memory melFrames, uint256 upsampleFactor) public view returns (bytes memory)"
+            "function synthesizeNeuralWav(bytes memory melFrames, uint256 upsampleFactor) public view returns (bytes memory)",
+            "function writeReflectionCoefficients(uint256[9] coefficients, uint256 pitch, uint256 energy) public returns (bool)"
         ];
 
         const musicABI = [
@@ -2251,8 +2275,10 @@
                 return { wait: async () => {} };
             }
 
-            async writeReflectionCoefficients(slotOffset, coefficients) {
-                this.coefficients[slotOffset] = coefficients;
+            async writeReflectionCoefficients(coefficients, pitch, energy) {
+                this.coefficients = coefficients;
+                this.pitch = pitch;
+                this.energy = energy;
                 return { wait: async () => {} };
             }
 
@@ -2791,6 +2817,104 @@
             }
         }
 
+        let solvedReflectionCoefficients = null;
+
+        function solveLpcLevinsonDurbin() {
+            try {
+                const rawInput = document.getElementById("autocorrInput").value;
+                const R = rawInput.split(",").map(s => parseFloat(s.trim()));
+                if (R.length < 10) {
+                    logConsole("Solver Error: Enter at least 10 values for R(0)..R(9)!");
+                    return;
+                }
+                if (isNaN(R[0]) || R[0] <= 0) {
+                    logConsole("Solver Error: R(0) must be a positive number!");
+                    return;
+                }
+
+                const p = 9;
+                let A = new Float32Array(p + 1);
+                let K = new Float32Array(p + 1);
+                let E = R[0];
+
+                let logLines = [];
+                logLines.push(`Levinson-Durbin Recursion (Order p=${p})`);
+                logLines.push(`R(0) = ${R[0].toFixed(6)}`);
+                logLines.push(`Initial Error E(0) = ${E.toFixed(6)}\n`);
+
+                for (let i = 1; i <= p; i++) {
+                    let lambda = R[i];
+                    for (let j = 1; j < i; j++) {
+                        lambda -= A[j] * R[i - j];
+                    }
+                    
+                    let k = lambda / E;
+                    K[i] = k;
+                    E = (1 - k * k) * E;
+
+                    logLines.push(`Step ${i}:`);
+                    logLines.push(`  Lambda = ${lambda.toFixed(6)}`);
+                    logLines.push(`  K${i} (Reflection) = ${k.toFixed(6)}`);
+                    logLines.push(`  Residual E(${i}) = ${E.toFixed(6)}`);
+
+                    let nextA = new Float32Array(p + 1);
+                    nextA[i] = k;
+                    for (let j = 1; j < i; j++) {
+                        nextA[j] = A[j] - k * A[i - j];
+                    }
+                    A = nextA;
+                }
+
+                solvedReflectionCoefficients = Array.from(K.slice(1));
+                
+                let gridHtml = "";
+                for (let i = 1; i <= 9; i++) {
+                    let valPercent = Math.min(Math.max(Math.abs(K[i]) * 100, 0), 100);
+                    let color = K[i] >= 0 ? "var(--neon-cyan)" : "var(--neon-pink)";
+                    gridHtml += `
+                        <div style="background: rgba(255,255,255,0.05); height: 60px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.65rem;">
+                            <div style="background: ${color}; width: 100%; height: ${valPercent}%;" title="K${i}: ${K[i].toFixed(4)}"></div>
+                            <span style="font-size: 0.6rem; margin-top: 2px;">K${i}</span>
+                        </div>
+                    `;
+                }
+                document.getElementById("solvedKGrid").innerHTML = gridHtml;
+                document.getElementById("solverLog").innerText = logLines.join("\n");
+                document.getElementById("solverResultsPanel").style.display = "block";
+                document.getElementById("btnLoadSolvedK").style.display = "inline-block";
+
+                logConsole("Levinson-Durbin solved successfully. Press 'Apply to Synthesizer' to load K1..K9.");
+            } catch (err) {
+                logConsole("Solver processing failed: " + err.message);
+            }
+        }
+
+        async function loadSolvedKToSynthesizer() {
+            if (!solvedReflectionCoefficients) return;
+            try {
+                let scaledCoeffs = solvedReflectionCoefficients.map(k => Math.round((k * 0.5 + 0.5) * 100));
+                
+                for (let k = 0; k < 9; k++) {
+                    const bar = document.getElementById(`bar-k${k+1}`);
+                    if (bar) bar.style.height = `${scaledCoeffs[k]}%`;
+                }
+
+                if (speechContract) {
+                    const tx = await speechContract.writeReflectionCoefficients(
+                        scaledCoeffs,
+                        100,
+                        100
+                    );
+                    if (tx && tx.wait) await tx.wait();
+                    logConsole(`Applied solved coefficients to synthesizer: [${scaledCoeffs.join(",")}]`);
+                } else {
+                    logConsole("Synthesizer coefficients updated locally.");
+                }
+            } catch (err) {
+                logConsole("Failed applying coefficients: " + err.message);
+            }
+        }
+
         // Console utility helpers
         function logConsole(msg) {
             const container = document.getElementById("consoleLogs");
@@ -2823,6 +2947,8 @@
         document.getElementById("btnUploadAnaWeights").addEventListener("click", uploadAnaWeights);
         document.getElementById("btnRegisterAnaSpeaker").addEventListener("click", registerAnaSpeaker);
         document.getElementById("btnSynthesizeAnaVoice").addEventListener("click", synthesizeAnaVoice);
+        document.getElementById("btnSolveLPC").addEventListener("click", solveLpcLevinsonDurbin);
+        document.getElementById("btnLoadSolvedK").addEventListener("click", loadSolvedKToSynthesizer);
 
         document.getElementById("singingPitch").addEventListener("input", (e) => {
             const pitch = Number(e.target.value);
