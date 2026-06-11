@@ -539,6 +539,7 @@
         let spriteScale = 1.0;
         let spriteRotation = 0;
         let spriteX = 0;
+        let formantCompEnv = 0.0;
 
         // Current parameters
         const params = {
@@ -1322,7 +1323,28 @@
                 // Generate a raw noise modulated impulse pulse train
                 const angle = (Date.now() / 1000) * Math.PI * 2;
                 const stimulus = Math.sin(angle) * (Math.random() > 0.85 ? 1.5 : 0.0); // Sparse impulse train
-                const inputVal = BigInt(Math.round(stimulus * 1e18));
+
+                // Compander tracking over stimulus amplitude
+                const stimulusAbs = Math.abs(stimulus);
+                const attackCoeff = 0.4; // fast attack
+                const releaseCoeff = 0.05; // slow release
+                if (stimulusAbs > formantCompEnv) {
+                    formantCompEnv = formantCompEnv + attackCoeff * (stimulusAbs - formantCompEnv);
+                } else {
+                    formantCompEnv = formantCompEnv + releaseCoeff * (stimulusAbs - formantCompEnv);
+                }
+
+                // Dynamic compGain scaling factor (reduction factor)
+                const compThreshold = 0.3;
+                let compGain = 1.0;
+                if (formantCompEnv > compThreshold) {
+                    compGain = compThreshold / formantCompEnv;
+                }
+                if (compGain < 0.05) compGain = 0.05; // avoid divide by zero/underflow
+
+                // Scale down stimulus by compGain before sending to the VM FormantFilter
+                const compressedStimulus = stimulus * compGain;
+                const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 const pitchF = BigInt(Math.round(params.formant.pitchF * 1e18));
                 const dampingQ = BigInt(Math.round(params.formant.dampingQ * 1e18));
@@ -1340,7 +1362,11 @@
 
                 if (payload && payload.result && payload.result.output) {
                     const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
-                    const rawOut = Number(decoded[0]) / 1e18;
+                    let rawOut = Number(decoded[0]) / 1e18;
+
+                    // Multiply the returned rawOut by the reciprocal of compGain (expanding the dynamics)
+                    rawOut = rawOut * (1.0 / compGain);
+
                     const outVolts = await applyEquaLimiter(rawOut, 0.51);
 
                     samples.push(outVolts);
