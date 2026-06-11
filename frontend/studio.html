@@ -321,6 +321,9 @@
                 <a href="http://127.0.0.1:9092" target="_blank" class="btn btn-secondary" style="border-color: #00ff00; color: #f8fafc; text-shadow: 0 0 5px #00ff00;">🌌 System0 Studio</a>
                 <button class="btn btn-primary" id="btnRunSweep">⚡ Run Telemetry Sweep</button>
                 <button class="btn btn-secondary" id="btnToggleSound" style="border-color: #ff9f00; color: #ff9f00;">🔊 Toggle Sound</button>
+                <label class="btn btn-secondary" style="display: flex; align-items: center; gap: 5px; cursor: pointer; border-color: #00ffcc; color: #00ffcc; margin: 0; padding: 6px 12px; font-size: 14px; border-radius: 4px;">
+                    <input type="checkbox" id="chkRetroMixer" style="accent-color: #00ffcc;" checked> Retro Mixer
+                </label>
             </div>
         </header>
 
@@ -999,6 +1002,34 @@
             // 5. Space-Needle Scatter (Project West Ford)
             if (formantCompEnv > 0.3) {
                 drawSpaceNeedleScatter(ctx, scopeCanvas.width, scopeCanvas.height, formantCompEnv);
+            }
+            
+            // 6. TV Tournament Resistor Video Mixer Overlay (Issue 1)
+            const chkMixer = document.getElementById("chkRetroMixer");
+            if (chkMixer && chkMixer.checked) {
+                // Horizontal scanline raster overlay (Sync blanking)
+                ctx.fillStyle = "rgba(15, 23, 42, 0.18)";
+                for (let y = 0; y < scopeCanvas.height; y += 3) {
+                    ctx.fillRect(0, y, scopeCanvas.width, 1.5);
+                }
+                
+                // Dynamic high-frequency thermal resistor noise (RF snow)
+                ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+                for (let i = 0; i < 20; i++) {
+                    const rx = Math.random() * scopeCanvas.width;
+                    const ry = Math.random() * scopeCanvas.height;
+                    const rw = Math.random() * 20 + 5;
+                    ctx.fillRect(rx, ry, rw, 1);
+                }
+                
+                // Vertical sync roll bar (faint moving AC hum hum-bar overlay)
+                const humY = (Date.now() / 20) % (scopeCanvas.height * 2) - scopeCanvas.height;
+                const grad = ctx.createLinearGradient(0, humY, 0, humY + 120);
+                grad.addColorStop(0, "rgba(255, 255, 255, 0)");
+                grad.addColorStop(0.5, "rgba(255, 255, 255, 0.035)");
+                grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, scopeCanvas.width, scopeCanvas.height);
             }
         }
 
