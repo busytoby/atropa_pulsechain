@@ -947,9 +947,20 @@
             logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
         }
 
-        // Update Nixie Indicator Display
-        function setNixieDigit(digit) {
-            activeDigit = Math.max(0, Math.min(9, Math.round(digit)));
+        // Update Nixie Indicator Display with Zener Diode Nixie Meter Protection (Issue 18)
+        function setNixieDigit(digit, rawVolts = null) {
+            let valToClamp = digit;
+            if (rawVolts !== null) {
+                const VZ = 1.6;
+                if (Math.abs(rawVolts) > VZ) {
+                    const shuntFactor = VZ / Math.abs(rawVolts);
+                    valToClamp = digit * shuntFactor;
+                    if (Math.random() > 0.98) {
+                        log(`⚡ [ZENER METER SHUNT] Nixie meter voltage (${Math.abs(rawVolts).toFixed(2)}V) exceeds ${VZ}V threshold! Shunting excess to ground.`);
+                    }
+                }
+            }
+            activeDigit = Math.max(0, Math.min(9, Math.round(valToClamp)));
             document.querySelectorAll(".nixie-digit").forEach(el => {
                 if (parseInt(el.getAttribute("data-digit")) === activeDigit) {
                     el.classList.add("glow");
@@ -2047,12 +2058,14 @@
                     const vdrExpConductance = vdrG0 * (1.0 + vdrAlpha * Math.pow(Math.abs(rawOut), vdrBeta));
                     let expandedOut = rawOut * (1.0 + vdrExpConductance) * (1.0 / compGainState);
                     
-                    // Asymmetric Soft Saturation (Issue 1) to model early transistor non-linear limits:
+                    // Raytheon Piezoresistive Bias Modulation (Issue 10)
+                    // The stress (filter output envelope) dynamically shifts the saturation boundary downward
+                    const stressFactor = 1.0 + formantCompEnv * 1.5;
                     let saturatedOut = expandedOut;
                     if (expandedOut > 0.0) {
-                        saturatedOut = expandedOut / (1.0 + Math.abs(expandedOut) * 0.25);
+                        saturatedOut = expandedOut / (1.0 + Math.abs(expandedOut) * 0.25 * stressFactor);
                     } else {
-                        saturatedOut = expandedOut / (1.0 + Math.abs(expandedOut) * 0.20);
+                        saturatedOut = expandedOut / (1.0 + Math.abs(expandedOut) * 0.20 * stressFactor);
                     }
 
                     const outVolts = await applyEquaLimiter(saturatedOut, 0.51);
@@ -2062,7 +2075,7 @@
                     drawWaveform();
 
                     const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
-                    setNixieDigit(mappedDigit);
+                    setNixieDigit(mappedDigit, outVolts);
                 }
             } else if (activeModule === "rhythm") {
                 // Determine clock trigger state based on tempo
