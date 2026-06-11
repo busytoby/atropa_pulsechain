@@ -1321,8 +1321,8 @@
                 const rawSignal = Math.sin(angle) * inputAmp + thermalOffset;
                 const inputSignal = BigInt(Math.round(rawSignal * 1e18));
 
-                const iface = new ethers.Interface(["function processSample(int256) returns (int256)"]);
-                const calldata = iface.encodeFunctionData("processSample", [inputSignal]);
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputSignal, 0n]);
 
                 const res = await fetch(API_URL, {
                     method: "POST",

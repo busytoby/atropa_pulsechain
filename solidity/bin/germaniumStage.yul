@@ -54,9 +54,9 @@ object "GermaniumStage" {
                 }
             }
 
-            // processSample(int256 inputVoltage) -> int256 outputVoltage
-            // selector: 0x96118bcb
-            if eq(shr(224, calldataload(0)), 0x96118bcb) {
+            // processSample(int256 inputVoltage, int256 extraParam) -> int256 outputVoltage
+            // selector: 0x07a96d8c
+            if eq(shr(224, calldataload(0)), 0x07a96d8c) {
                 let input := calldataload(4)
                 let scale := SCALE()
                 
