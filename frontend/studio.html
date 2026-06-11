@@ -565,6 +565,7 @@
         let bionikaLastSpikeTime = 0;
         let filterTemperature = 25.0;
         let bionikaAxonQueue = new Array(12).fill(0.0);
+        let currentPreAttenuation = 1.0;
 
         // Current parameters
         const params = {
@@ -1079,22 +1080,27 @@
                 }
             }
 
-            // 2. Gallium Phosphide (GaP) LED Photocoupler Opto-Compressor (Issue 18)
+            // 2. Gallium Phosphide (GaP) LED Photocoupler Opto-Compressor with Veder-Bias (Issue 18/19)
+            const L_bias = 0.08; // Constant Plumbicon background light bias to eliminate lag
             const V_forward = 0.6; // Forward threshold of GaP LED
             const alpha_led = 0.4;
-            const led_brightness = Math.max(0.0, (Math.abs(outVolts) - V_forward) * alpha_led);
+            const led_brightness = L_bias + Math.max(0.0, (Math.abs(outVolts) - V_forward) * alpha_led);
             
             // LDR resistance decays exponentially with light intensity
-            const R_dark = 10000.0; // 10k Ohm dark resistance
+            const R_dark = 10000.0;
             const gamma_ldr = 2.5;
             const R_ldr = R_dark * Math.exp(-gamma_ldr * led_brightness);
             
-            // Attenuation divider with a 1.2k Ohm series resistor
             const R_series = 1200.0;
             const optoGain = R_ldr / (R_series + R_ldr);
 
-            // Apply current master attenuation, thermal throttling, and opto-compression
-            const inputScaled = outVolts * masterAttenuation * thermalThrottling * optoGain;
+            // Acoustic Gain Distribution (Issue 19)
+            // Distribute attenuation load: preAtt for input stage of next frame, postAtt for output stage
+            currentPreAttenuation = Math.sqrt(masterAttenuation) * optoGain;
+            const postAtt = Math.sqrt(masterAttenuation) * thermalThrottling;
+
+            // Apply current distributed post-attenuation
+            const inputScaled = outVolts * postAtt;
 
             // SOAR voltage ceiling calculation: V_max = I_limit * loadRL
             let I_limit = 1.969696969696969697;
@@ -1300,7 +1306,7 @@
                 // Simulate pushpull output stages
                 const inputAmp = params.pushpull.inputAmp;
                 const angle = (Date.now() / 1000) * Math.PI * 2;
-                const inputSignal = BigInt(Math.round(Math.sin(angle) * inputAmp * 1e18));
+                const inputSignal = BigInt(Math.round(Math.sin(angle) * inputAmp * currentPreAttenuation * 1e18));
                 const bias = BigInt(Math.round(params.pushpull.bias * 1e18));
 
                 const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
@@ -1332,7 +1338,7 @@
                 // Thermal bias shift: Germanium conduction threshold drops by 2.5mV/°C (Issue 16)
                 const tempDelta = filterTemperature - 25.0; // difference from ambient
                 const thermalOffset = tempDelta * 0.0025; // 2.5mV per degree C
-                const rawSignal = Math.sin(angle) * inputAmp + thermalOffset;
+                const rawSignal = (Math.sin(angle) * inputAmp + thermalOffset) * currentPreAttenuation;
                 const inputSignal = BigInt(Math.round(rawSignal * 1e18));
 
                 const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
@@ -1636,8 +1642,8 @@
                     zenerDither = (Math.random() - 0.5) * 0.015;
                 }
 
-                // Scale down stimulus by synchronized compGainState and add Zener dither
-                const compressedStimulus = (stimulus * compGainState) + zenerDither;
+                // Scale down stimulus by synchronized compGainState, apply distributed pre-attenuation, and add Zener dither
+                const compressedStimulus = (stimulus * compGainState * currentPreAttenuation) + zenerDither;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
