@@ -1813,14 +1813,45 @@ Ready to initiate tournament match.</div>
                 image: cardBase64,
                 timestamp: Date.now(),
                 score: "TOURNAMENT",
-                style: "Arena Battle"
+                style: "Arena Battle",
+                dnaTraits: {
+                    head: parseFloat(document.getElementById("synth-head")?.value || 1.0),
+                    torso: parseFloat(document.getElementById("synth-torso")?.value || 1.0),
+                    ears: parseFloat(document.getElementById("synth-ears")?.value || 1.0),
+                    muzzle: parseFloat(document.getElementById("synth-muzzle")?.value || 1.0),
+                    arms: parseFloat(document.getElementById("synth-arms")?.value || 1.0),
+                    legs: parseFloat(document.getElementById("synth-legs")?.value || 1.0),
+                    fur: parseFloat(document.getElementById("synth-fur")?.value || 1.0)
+                }
             });
 
             localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
-            logEvent("💾 Saved tournament battle card successfully into shared deck!");
+            logEvent("💾 Saved tournament battle card successfully with DNA scale traits!");
             loadDeckList();
 
             if (!drawerExpanded) toggleDeckDrawer();
+        }
+
+        function restoreDnaTraits(traits) {
+            if (!traits) return;
+            const mappings = [
+                { id: "synth-head", valId: "val-head", key: "head" },
+                { id: "synth-torso", valId: "val-torso", key: "torso" },
+                { id: "synth-ears", valId: "val-ears", key: "ears" },
+                { id: "synth-muzzle", valId: "val-muzzle", key: "muzzle" },
+                { id: "synth-arms", valId: "val-arms", key: "arms" },
+                { id: "synth-legs", valId: "val-legs", key: "legs" },
+                { id: "synth-fur", valId: "val-fur", key: "fur" }
+            ];
+            mappings.forEach(m => {
+                const el = document.getElementById(m.id);
+                const valEl = document.getElementById(m.valId);
+                if (el && traits[m.key] !== undefined) {
+                    el.value = traits[m.key];
+                    if (valEl) valEl.innerText = `${parseFloat(traits[m.key]).toFixed(2)}x`;
+                }
+            });
+            logEvent("🧬 Restored 3D volumetric scale traits from selected DNA card!");
         }
 
         function loadDeckList() {
@@ -1845,9 +1876,14 @@ Ready to initiate tournament match.</div>
                 savedDeck.forEach((card, idx) => {
                     const cardNode = document.createElement("div");
                     cardNode.className = "deck-card-thumb";
+                    cardNode.title = "Single-click to preview. Double-click to load DNA Synthesis scales.";
                     cardNode.onclick = (e) => {
                         if (e.target.className === "deck-card-delete") return;
                         openCardLightbox(card.image);
+                    };
+                    cardNode.ondblclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        restoreDnaTraits(card.dnaTraits);
                     };
 
                     cardNode.innerHTML = `
