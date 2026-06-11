@@ -1,6 +1,9 @@
 import os
 import struct
 import subprocess
+import base64
+import urllib.request
+import json
 from PIL import Image
 
 def load_dna_frame(file_path, frame_idx):
@@ -89,8 +92,42 @@ def render_dragon_frame(frame_idx=700):
         img.save(png_out)
         print(f"[Director] Animated Dragon DNA frame ({width}x{height}) successfully saved to: {png_out}")
         os.remove(raw_path_adj)
-    else:
-        print("[Error] SD Worker output raw file not found.")
+        
+        # Local Moondream VLM Verification
+        print("[Director] Initiating local VLM verification...")
+        VLM_URL = "http://127.0.0.1:11435/api/generate"
+        with open(png_out, "rb") as image_file:
+            b64_data = base64.b64encode(image_file.read()).decode('utf-8')
+            
+        payload = {
+            "model": "moondream",
+            "prompt": (
+                "Analyze this 2D animated dragon frame rendered from DNA. "
+                "Confirm if it matches the Dragon's Lair style specification: "
+                "Is the dragon red with large yellow/orange eyes? "
+                "Is the character drawn in an expressive 1980s cel animation style with bold contours?"
+            ),
+            "images": [b64_data],
+            "stream": False
+        }
+        
+        try:
+            req = urllib.request.Request(
+                VLM_URL,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = response.read().decode('utf-8')
+                res_json = json.loads(res_data)
+                feedback = res_json.get("response", "")
+                print("\n=== Moondream DNA Verification Analysis ===")
+                print(feedback)
+                print("===========================================\n")
+        except Exception as e:
+            print(f"[VLM ERROR] Failed to connect to Ollama/VLM: {e}")
+            print("Make sure Ollama is running on port 11435.")
 
 if __name__ == "__main__":
     import sys
