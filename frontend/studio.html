@@ -414,6 +414,14 @@
                         </div>
                         <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">TUP-TUN Relaxation & Avalanche Noise</p>
                     </div>
+
+                    <div class="module-card" data-module="ringmod">
+                        <div class="header-row">
+                            <span class="module-name">🔔 Ring Modulator (Issue 5)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Coil-less Synchrodyne Signal Multiplier</p>
+                    </div>
                 </div>
 
                 <div style="margin-top: auto;">
@@ -532,6 +540,9 @@
                 noiseMix: 0.3,
                 mode: 0,
                 trigger: 0
+            },
+            ringmod: {
+                // uses philicorda and tunnel parameters directly
             }
         };
  
@@ -578,6 +589,10 @@
                 { id: "whistlePitch", label: "Whistle Pitch/Time Constant", min: 0.5, max: 4.0, step: 0.1, key: "pitch", unit: "x" },
                 { id: "whistleNoiseMix", label: "Avalanche Noise Mix", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" },
                 { id: "whistleMode", label: "Generator Mode (0=Whistle, 1=Flame)", min: 0, max: 1, step: 1, key: "mode", unit: "m" }
+            ],
+            ringmod: [
+                { id: "ringmodPhilicordaPitch", label: "Philicorda Pitch Coeff", min: 0.1, max: 5.0, step: 0.1, key: "pitch", unit: "Hz", module: "philicorda", subKey: "pitch" },
+                { id: "ringmodTunnelPitch", label: "Tunnel LC Pitch Factor", min: 0.5, max: 10.0, step: 0.1, key: "pitch", unit: "x", module: "tunnel", subKey: "pitch" }
             ]
         };
 
@@ -591,8 +606,15 @@
                 const group = document.createElement("div");
                 group.className = "control-group";
                 
+                let targetParams = params[activeModule];
+                let targetKey = cfg.key;
+                if (cfg.module && cfg.subKey) {
+                    targetParams = params[cfg.module];
+                    targetKey = cfg.subKey;
+                }
+
                 const label = document.createElement("label");
-                label.innerHTML = `${cfg.label} <span class="val-display" id="val-${cfg.id}">${params[activeModule][cfg.key].toFixed(2)} ${cfg.unit}</span>`;
+                label.innerHTML = `${cfg.label} <span class="val-display" id="val-${cfg.id}">${targetParams[targetKey].toFixed(2)} ${cfg.unit}</span>`;
                 
                 const slider = document.createElement("input");
                 slider.type = "range";
@@ -600,11 +622,17 @@
                 slider.min = cfg.min;
                 slider.max = cfg.max;
                 slider.step = cfg.step;
-                slider.value = params[activeModule][cfg.key];
+                slider.value = targetParams[targetKey];
                 
                 slider.addEventListener("input", (e) => {
                     const val = parseFloat(e.target.value);
-                    params[activeModule][cfg.key] = val;
+                    let targetParams = params[activeModule];
+                    let targetKey = cfg.key;
+                    if (cfg.module && cfg.subKey) {
+                        targetParams = params[cfg.module];
+                        targetKey = cfg.subKey;
+                    }
+                    targetParams[targetKey] = val;
                     document.getElementById(`val-${cfg.id}`).textContent = `${val.toFixed(2)} ${cfg.unit}`;
                     triggerSingleSimulationStep();
                 });
@@ -663,6 +691,7 @@
             await registerModule("GyratorFilter", "../solidity/bin/gyratorFilter.yul", "0x47");
             await registerModule("SnareSynthesizer", "../solidity/bin/snareSynthesizer.yul", "0x48");
             await registerModule("SteamWhistle", "../solidity/bin/steamWhistle.yul", "0x49");
+            await registerModule("RingModulator", "../solidity/bin/ringModulator.yul", "0x51");
             log("All system modules successfully registered.");
             triggerSingleSimulationStep();
         }
@@ -729,7 +758,8 @@
                               activeModule === "drum" ? "#00ff00" :
                               activeModule === "snare" ? "#facc15" :
                               activeModule === "whistle" ? "#38bdf8" :
-                              activeModule === "gyrator" ? "#a855f7" : "#ffaa00";
+                              activeModule === "gyrator" ? "#a855f7" :
+                              activeModule === "ringmod" ? "#f43f5e" : "#ffaa00";
             ctx.lineWidth = 3;
             ctx.shadowColor = ctx.strokeStyle;
             ctx.shadowBlur = 10;
@@ -1040,6 +1070,64 @@
 
                 if (payload && payload.result && payload.result.output) {
                     const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "ringmod") {
+                // 1. Generate Philicorda Sample
+                const pPitch = BigInt(Math.round(params.philicorda.pitch * 1e18));
+                const pRcRate = BigInt(Math.round(params.philicorda.rcRate * 1e18));
+                const pIface = new ethers.Interface(["function processSample(int256,int256) returns (int256,int256)"]);
+                const pCalldata = pIface.encodeFunctionData("processSample", [pPitch, pRcRate]);
+                
+                const pRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "PhilicordaGenerator", calldata: pCalldata })
+                });
+                const pPayload = await pRes.json();
+                let philicordaOut = 0n;
+                if (pPayload && pPayload.result && pPayload.result.output) {
+                    const decoded = pIface.decodeFunctionResult("processSample", "0x" + pPayload.result.output);
+                    philicordaOut = decoded[0];
+                }
+
+                // 2. Generate Tunnel Diode Sample
+                const tBias = BigInt(Math.round(params.tunnel.bias * 1e18));
+                const tPitch = BigInt(Math.round(params.tunnel.pitch * 1e18));
+                const tIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const tCalldata = tIface.encodeFunctionData("processSample", [tBias, tPitch]);
+
+                const tRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "tunnelDiodeOscillator", calldata: tCalldata })
+                });
+                const tPayload = await tRes.json();
+                let tunnelOut = 0n;
+                if (tPayload && tPayload.result && tPayload.result.output) {
+                    const decoded = tIface.decodeFunctionResult("processSample", "0x" + tPayload.result.output);
+                    tunnelOut = decoded[0];
+                }
+
+                // 3. Ring Modulate the two
+                const rIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const rCalldata = rIface.encodeFunctionData("processSample", [philicordaOut, tunnelOut]);
+                const rRes = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "RingModulator", calldata: rCalldata })
+                });
+                const rPayload = await rRes.json();
+
+                if (rPayload && rPayload.result && rPayload.result.output) {
+                    const decoded = rIface.decodeFunctionResult("processSample", "0x" + rPayload.result.output);
                     const rawOut = Number(decoded[0]) / 1e18;
                     const outVolts = await applyEquaLimiter(rawOut, 0.51);
 
