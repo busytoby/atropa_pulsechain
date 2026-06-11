@@ -754,6 +754,76 @@ Status: Awaiting user to start music.</div>
 
         let sdImage = null;
 
+        // Volumetric Spotlight beam
+        function drawSpotlight() {
+            let topProj = project(new Point3D(0, 600, 0));
+            let bottomProj1 = project(new Point3D(-380, -100, -380));
+            let bottomProj2 = project(new Point3D(380, -100, 380));
+            
+            if (topProj && bottomProj1 && bottomProj2) {
+                ctx.save();
+                let grad = ctx.createLinearGradient(topProj.x, topProj.y, (bottomProj1.x + bottomProj2.x)/2, (bottomProj1.y + bottomProj2.y)/2);
+                grad.addColorStop(0, "rgba(255, 0, 127, 0.28)");
+                grad.addColorStop(0.4, "rgba(0, 240, 255, 0.12)");
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(topProj.x, topProj.y);
+                ctx.lineTo(bottomProj1.x, bottomProj1.y);
+                ctx.lineTo(bottomProj2.x, bottomProj2.y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Shaded 3D Tutu skirt
+        function drawTutu3D(midHip, scale, color) {
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+            ctx.strokeStyle = color;
+            
+            const rings = 3;
+            const steps = 18;
+            for (let r = 0; r < rings; r++) {
+                let ringRad = (40 + r * 15) * scale;
+                let heightOffset = -10 * scale + r * 3 * scale;
+                ctx.lineWidth = (3 - r) * 1.5;
+                ctx.beginPath();
+                for (let i = 0; i <= steps; i++) {
+                    let angle = (i / steps) * Math.PI * 2;
+                    let pt = new Point3D(
+                        midHip.x + Math.cos(angle) * ringRad,
+                        midHip.y + heightOffset,
+                        midHip.z + Math.sin(angle) * ringRad
+                    );
+                    let sc = project(pt);
+                    if (sc) {
+                        if (i === 0) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // Draw radial tutu ribs
+            for (let i = 0; i < steps; i += 2) {
+                let angle = (i / steps) * Math.PI * 2;
+                let ptOuter = new Point3D(
+                    midHip.x + Math.cos(angle) * 75 * scale,
+                    midHip.y - 4 * scale,
+                    midHip.z + Math.sin(angle) * 75 * scale
+                );
+                let ptInner = new Point3D(midHip.x, midHip.y - 12 * scale, midHip.z);
+                drawLine3D(ptInner, ptOuter, "rgba(255, 255, 255, 0.25)", 1);
+            }
+            ctx.restore();
+        }
+
+        let sdImage = null;
+
         function drawBear3D(offset3D, scale, angles, baseColor) {
             const joints = getBearSkeleton(offset3D, scale, angles);
             const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
@@ -776,6 +846,9 @@ Status: Awaiting user to start music.</div>
                 drawVolumetricCapsule(joints.midHip, joints.rFoot, 14 * scale, baseColor);
 
                 drawVolumetricCapsule(joints.neck, joints.midHip, 42 * scale, baseColor);
+
+                // Draw 3D Tutu Skirt on body
+                drawTutu3D(joints.midHip, scale, "rgba(255, 0, 127, 0.8)");
 
                 let lEar = new Point3D(joints.head.x - 28 * scale, joints.head.y + 28 * scale, joints.head.z - 8 * scale);
                 let rEar = new Point3D(joints.head.x + 28 * scale, joints.head.y + 28 * scale, joints.head.z + 8 * scale);
@@ -1141,6 +1214,9 @@ Status: Awaiting user to start music.</div>
             });
         }
 
+        let currentAngles = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0 };
+        let currentOffset = new Point3D(0, 0, 0);
+
         // Main Animation loop
         function loop() {
             choreographyTime += 16;
@@ -1148,15 +1224,29 @@ Status: Awaiting user to start music.</div>
             ctx.fillStyle = "#04050a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Stage grid
+            // 1. Draw Volumetric Spotlight Beam
+            drawSpotlight();
+
+            // 2. Draw Stage grid
             drawStageGrid(choreographyTime);
 
-            // Calculate active choreography motion state
-            let angles = getChoreographyAngles(activeStance, choreographyTime);
-            let offset = getModelOffset(activeStance, choreographyTime);
+            // Calculate active choreography target motion state
+            let targetAngles = getChoreographyAngles(activeStance, choreographyTime);
+            let targetOffset = getModelOffset(activeStance, choreographyTime);
 
-            // Draw Bear
-            drawBear3D(offset, 1.2, angles, "rgba(255, 0, 127, 0.85)");
+            // 3. Smooth Stance Transition Interpolation (Lerp)
+            let lerpSpeed = 0.08;
+            currentAngles.leftArm += (targetAngles.leftArm - currentAngles.leftArm) * lerpSpeed;
+            currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
+            currentAngles.leftLeg += (targetAngles.leftLeg - currentAngles.leftLeg) * lerpSpeed;
+            currentAngles.rightLeg += (targetAngles.rightLeg - currentAngles.rightLeg) * lerpSpeed;
+
+            currentOffset.x += (targetOffset.x - currentOffset.x) * lerpSpeed;
+            currentOffset.y += (targetOffset.y - currentOffset.y) * lerpSpeed;
+            currentOffset.z += (targetOffset.z - currentOffset.z) * lerpSpeed;
+
+            // Draw Bear with interpolated joints
+            drawBear3D(currentOffset, 1.2, currentAngles, "rgba(255, 0, 127, 0.85)");
 
             requestAnimationFrame(loop);
         }
