@@ -896,6 +896,10 @@ int main() {
                 if (smurf_x > stal_x - 40.0f && smurf_x < stal_x - 15.0f) {
                     should_jump = true;
                 }
+                float stalactite_x = 450.0f;
+                if (smurf_x > stalactite_x - 50.0f && smurf_x < stalactite_x - 15.0f) {
+                    should_jump = true;
+                }
                 if (fabsf(crow_x - smurf_x) < 70.0f && crow_y > floor_y - 90.0f) {
                     should_jump = true;
                 }
@@ -922,7 +926,8 @@ int main() {
                 should_jump = false;
             }
 
-            if (should_jump && !smurf_jumping) {
+            int jumpCount = (int)thunk_peek(55065);
+            if (should_jump && jumpCount < 2) {
                 thunk_poke(55026, 1); // Trigger Jump in Yul
             }
             if (ai_mode && game_screen != 3) {
