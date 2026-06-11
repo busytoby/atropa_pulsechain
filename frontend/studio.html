@@ -513,8 +513,43 @@
                     </div>
                 </div>
                 
-                <div class="scope-container">
+                <div class="scope-container" style="position: relative; box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.95); border: 2px solid #1e293b;">
                     <canvas id="scopeCanvas"></canvas>
+                    <!-- CRT Glass Glare Overlay -->
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.3) 100%); z-index: 5;"></div>
+                    <!-- Curved Screen Mask Shadow -->
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; box-shadow: inset 0 0 40px rgba(0,0,0,0.85); border-radius: 12px; z-index: 6;"></div>
+                </div>
+
+                <!-- CRT Oscilloscope Screen Customizer Row -->
+                <div class="crt-controls-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); padding: 15px; border-radius: 12px; backdrop-filter: blur(10px);">
+                    <div class="control-group">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px;">CRT Phosphor Theme</label>
+                        <select id="selCrtTheme" class="slider-glow" style="background: #0b0f19; color: #f8fafc; border: 1px solid rgba(255,255,255,0.15); padding: 6px; border-radius: 6px; font-family: inherit; font-size: 0.85rem; width: 100%; outline: none; cursor: pointer; transition: all 0.2s;">
+                            <option value="auto">📟 Auto-Module Color</option>
+                            <option value="green">🟢 P1 Green Phosphor</option>
+                            <option value="amber">🟠 P4 Amber Glow</option>
+                            <option value="cyan">🔵 P11 Cyan Vector</option>
+                            <option value="blue">🌌 Royal Blue CRT</option>
+                            <option value="white">⚪ Monochrome White</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">Intensity <span class="val-display" id="valCrtIntensity" style="color: #00f2fe; font-family: monospace;">1.0</span></label>
+                        <input type="range" id="sldCrtIntensity" class="slider-glow" min="0.2" max="2.0" step="0.1" value="1.0" style="cursor: pointer;">
+                    </div>
+                    <div class="control-group">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">Focus / Bloom <span class="val-display" id="valCrtFocus" style="color: #00f2fe; font-family: monospace;">8px</span></label>
+                        <input type="range" id="sldCrtFocus" class="slider-glow" min="0" max="20" step="1" value="8" style="cursor: pointer;">
+                    </div>
+                    <div class="control-group">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">Decay Rate <span class="val-display" id="valCrtDecay" style="color: #00f2fe; font-family: monospace;">85%</span></label>
+                        <input type="range" id="sldCrtDecay" class="slider-glow" min="0.50" max="0.98" step="0.02" value="0.84" style="cursor: pointer;">
+                    </div>
+                    <div class="control-group">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">Time-Scale <span class="val-display" id="valCrtXScale" style="color: #00f2fe; font-family: monospace;">1.0x</span></label>
+                        <input type="range" id="sldCrtXScale" class="slider-glow" min="0.5" max="2.0" step="0.1" value="1.0" style="cursor: pointer;">
+                    </div>
                 </div>
 
                 <!-- Keyboard Panel -->
@@ -566,6 +601,19 @@
         const scopeCanvas = document.getElementById("scopeCanvas");
         const ctx = scopeCanvas.getContext("2d");
         const logBox = document.getElementById("telemetryLog");
+
+        // Offscreen canvas for analog phosphor decay trails
+        let trailCanvas = null;
+        let trailCtx = null;
+
+        // CRT Color Themes
+        const crtThemes = {
+            green: { primary: "#00ffcc", glow: "#00ff88", grid: "rgba(0, 255, 204, 0.08)" },
+            amber: { primary: "#ffa500", glow: "#ff7700", grid: "rgba(255, 165, 0, 0.08)" },
+            cyan: { primary: "#00f2fe", glow: "#09adfc", grid: "rgba(0, 242, 254, 0.08)" },
+            blue: { primary: "#38bdf8", glow: "#0055ff", grid: "rgba(56, 189, 248, 0.08)" },
+            white: { primary: "#f8fafc", glow: "#cbd5e1", grid: "rgba(248, 250, 252, 0.08)" }
+        };
         
         let activeModule = "philicorda";
         let activeDigit = 0;
@@ -1049,10 +1097,69 @@
             scopeCanvas.width = rect.width;
             scopeCanvas.height = rect.height;
             
-            ctx.clearRect(0, 0, scopeCanvas.width, scopeCanvas.height);
+            // Get CRT Customizer inputs
+            const selTheme = document.getElementById("selCrtTheme").value;
+            const sldIntensity = parseFloat(document.getElementById("sldCrtIntensity").value);
+            const sldFocus = parseFloat(document.getElementById("sldCrtFocus").value);
+            const sldDecay = parseFloat(document.getElementById("sldCrtDecay").value);
+            const sldXScale = parseFloat(document.getElementById("sldCrtXScale").value);
+
+            // Update customizer displays
+            document.getElementById("valCrtIntensity").textContent = sldIntensity.toFixed(1);
+            document.getElementById("valCrtFocus").textContent = sldFocus.toFixed(0) + "px";
+            document.getElementById("valCrtDecay").textContent = Math.round(sldDecay * 100) + "%";
+            document.getElementById("valCrtXScale").textContent = sldXScale.toFixed(1) + "x";
+
+            // Determine colors and styling
+            let primaryColor = "#00ffcc";
+            let glowColor = "#00ff88";
+            let gridColor = "rgba(255, 255, 255, 0.05)";
+            let centerLineColor = "rgba(0, 242, 254, 0.15)";
+
+            if (selTheme === "auto") {
+                primaryColor = activeModule === "philicorda" ? "#00ffcc" :
+                               activeModule === "tunnel" ? "#00f2fe" :
+                               activeModule === "pushpull" ? "#ff007f" :
+                               activeModule === "drum" ? "#00ff00" :
+                               activeModule === "snare" ? "#facc15" :
+                               activeModule === "whistle" ? "#38bdf8" :
+                               activeModule === "gyrator" ? "#a855f7" :
+                               activeModule === "ringmod" ? "#f43f5e" :
+                               activeModule === "formant" ? "#10b981" :
+                               activeModule === "rhythm" ? "#eab308" :
+                               activeModule === "semafoon" ? "#22d3ee" :
+                               activeModule === "transducer" ? "#ec4899" : "#ffaa00";
+                glowColor = primaryColor;
+                gridColor = "rgba(255, 255, 255, 0.05)";
+                centerLineColor = "rgba(255, 255, 255, 0.12)";
+            } else {
+                const theme = crtThemes[selTheme];
+                primaryColor = theme.primary;
+                glowColor = theme.glow;
+                gridColor = theme.grid;
+                centerLineColor = theme.primary + "33"; // 20% opacity
+            }
+
+            // Setup or update trail canvas
+            if (!trailCanvas || trailCanvas.width !== scopeCanvas.width || trailCanvas.height !== scopeCanvas.height) {
+                trailCanvas = document.createElement("canvas");
+                trailCanvas.width = scopeCanvas.width;
+                trailCanvas.height = scopeCanvas.height;
+                trailCtx = trailCanvas.getContext("2d");
+                trailCtx.fillStyle = "#020617";
+                trailCtx.fillRect(0, 0, trailCanvas.width, trailCanvas.height);
+            }
+
+            // Apply analog phosphor decay trail
+            trailCtx.fillStyle = `rgba(2, 6, 23, ${1.0 - sldDecay})`;
+            trailCtx.fillRect(0, 0, trailCanvas.width, trailCanvas.height);
+
+            // Clear main canvas with retro background
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(0, 0, scopeCanvas.width, scopeCanvas.height);
             
-            // Draw grid
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            // Draw grid (sharp, static background)
+            ctx.strokeStyle = gridColor;
             ctx.lineWidth = 1;
             const gridCells = 8;
             for (let i = 1; i < gridCells; i++) {
@@ -1072,93 +1179,116 @@
             }
 
             // Draw center line
-            ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+            ctx.strokeStyle = centerLineColor;
             ctx.beginPath();
             ctx.moveTo(0, scopeCanvas.height / 2);
             ctx.lineTo(scopeCanvas.width, scopeCanvas.height / 2);
             ctx.stroke();
 
-            // Plot samples
-            ctx.strokeStyle = activeModule === "philicorda" ? "#00ffcc" :
-                              activeModule === "tunnel" ? "#00f2fe" :
-                              activeModule === "pushpull" ? "#ff007f" :
-                              activeModule === "drum" ? "#00ff00" :
-                              activeModule === "snare" ? "#facc15" :
-                              activeModule === "whistle" ? "#38bdf8" :
-                              activeModule === "gyrator" ? "#a855f7" :
-                              activeModule === "ringmod" ? "#f43f5e" :
-                              activeModule === "formant" ? "#10b981" :
-                              activeModule === "rhythm" ? "#eab308" :
-                              activeModule === "semafoon" ? "#22d3ee" :
-                              activeModule === "transducer" ? "#ec4899" : "#ffaa00";
-            ctx.lineWidth = 3;
-            ctx.shadowColor = ctx.strokeStyle;
-            ctx.shadowBlur = 10;
-            ctx.beginPath();
+            // Set up trail drawing parameters
+            trailCtx.save();
+            trailCtx.strokeStyle = primaryColor;
+            trailCtx.lineWidth = 2 + (sldFocus * 0.1);
+            trailCtx.shadowColor = glowColor;
+            trailCtx.shadowBlur = sldFocus;
+            trailCtx.globalAlpha = sldIntensity;
 
-            const step = scopeCanvas.width / (samples.length - 1);
+            // Plot main waveform sample to trail canvas
+            trailCtx.beginPath();
+            const step = (scopeCanvas.width / (samples.length - 1)) * sldXScale;
+            const totalW = (samples.length - 1) * step;
+            const startX = (scopeCanvas.width - totalW) / 2;
+
             for (let i = 0; i < samples.length; i++) {
-                const x = i * step;
+                const x = startX + i * step;
                 const y = (scopeCanvas.height / 2) - (samples[i] * (scopeCanvas.height / 2) * 0.8);
                 if (i === 0) {
-                    ctx.moveTo(x, y);
+                    trailCtx.moveTo(x, y);
                 } else {
-                    ctx.lineTo(x, y);
+                    trailCtx.lineTo(x, y);
                 }
             }
-            ctx.stroke();
+            trailCtx.stroke();
             
             // TVT-6 Raster Scan Phosphor Dot Overlay (Issue 7)
             if (chkMixer && chkMixer.checked) {
-                ctx.fillStyle = ctx.strokeStyle;
-                ctx.shadowColor = ctx.strokeStyle;
-                ctx.shadowBlur = 8;
+                trailCtx.fillStyle = primaryColor;
                 for (let i = 0; i < samples.length; i++) {
-                    const x = i * step;
+                    const x = startX + i * step;
                     const y = (scopeCanvas.height / 2) - (samples[i] * (scopeCanvas.height / 2) * 0.8);
-                    ctx.fillRect(x - 2, y - 2, 4, 4);
+                    trailCtx.fillRect(x - 2, y - 2, 4, 4);
                 }
             }
-            ctx.shadowBlur = 0; // reset
 
             // Wave Rider Surfer Craft (Issue 7 + 8)
             if (samples.length > 5) {
                 const rIdx = Math.floor(samples.length * 0.6);
-                const rx = rIdx * step;
+                const rx = startX + rIdx * step;
                 const ry = (scopeCanvas.height / 2) - (samples[rIdx] * (scopeCanvas.height / 2) * 0.8);
                 const prevY = (scopeCanvas.height / 2) - (samples[rIdx - 1] * (scopeCanvas.height / 2) * 0.8);
                 const angle = Math.atan2(ry - prevY, step);
                 
-                ctx.save();
-                ctx.translate(rx, ry);
-                ctx.rotate(angle);
+                trailCtx.save();
+                trailCtx.translate(rx, ry);
+                trailCtx.rotate(angle);
                 
                 // Draw surfer craft (glowing triangular vector design)
-                ctx.fillStyle = ctx.strokeStyle;
-                ctx.shadowColor = ctx.strokeStyle;
-                ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.moveTo(-10, -5);
-                ctx.lineTo(12, 0);
-                ctx.lineTo(-10, 5);
-                ctx.closePath();
-                ctx.fill();
+                trailCtx.fillStyle = primaryColor;
+                trailCtx.shadowBlur = sldFocus + 5;
+                trailCtx.beginPath();
+                trailCtx.moveTo(-10, -5);
+                trailCtx.lineTo(12, 0);
+                trailCtx.lineTo(-10, 5);
+                trailCtx.closePath();
+                trailCtx.fill();
                 
                 // Draw flickering rocket booster flame
-                ctx.fillStyle = "#ff5500";
-                ctx.shadowColor = "#ff5500";
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.moveTo(-10, -3);
-                ctx.lineTo(-16 - Math.random() * 6, 0);
-                ctx.lineTo(-10, 3);
-                ctx.closePath();
-                ctx.fill();
+                trailCtx.fillStyle = "#ff5500";
+                trailCtx.shadowColor = "#ff5500";
+                trailCtx.shadowBlur = 8;
+                trailCtx.beginPath();
+                trailCtx.moveTo(-10, -3);
+                trailCtx.lineTo(-16 - Math.random() * 6, 0);
+                trailCtx.lineTo(-10, 3);
+                trailCtx.closePath();
+                trailCtx.fill();
                 
-                ctx.restore();
-                ctx.shadowBlur = 0;
+                trailCtx.restore();
             }
 
+            // TV Tournament Resistor Video Mixer Overlay Traces (Issue 1)
+            if (chkMixer && chkMixer.checked) {
+                // Plot Trace 1: Cyan/Theme trace (Upper vertical offset)
+                trailCtx.strokeStyle = primaryColor === "#f8fafc" ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 242, 254, 0.4)";
+                trailCtx.lineWidth = 1.5;
+                trailCtx.beginPath();
+                for (let i = 0; i < auxSamples1.length; i++) {
+                    const x = startX + i * step;
+                    const y = (scopeCanvas.height * 0.25) - (auxSamples1[i] * (scopeCanvas.height * 0.15));
+                    if (i === 0) trailCtx.moveTo(x, y);
+                    else trailCtx.lineTo(x, y);
+                }
+                trailCtx.stroke();
+
+                // Plot Trace 2: Pink/Theme complementary trace (Lower vertical offset)
+                trailCtx.strokeStyle = "rgba(255, 0, 127, 0.4)";
+                trailCtx.lineWidth = 1.5;
+                trailCtx.beginPath();
+                for (let i = 0; i < auxSamples2.length; i++) {
+                    const x = startX + i * step;
+                    const y = (scopeCanvas.height * 0.75) - (auxSamples2[i] * (scopeCanvas.height * 0.15));
+                    if (i === 0) trailCtx.moveTo(x, y);
+                    else trailCtx.lineTo(x, y);
+                }
+                trailCtx.stroke();
+            }
+            
+            trailCtx.restore();
+
+            // Draw the trail canvas onto the main canvas
+            ctx.drawImage(trailCanvas, 0, 0);
+
+            // Draw sharp overlay items static on the screen
             // Decay animations smoothly
             spriteScale += (1.0 - spriteScale) * 0.15;
             spriteX += (0 - spriteX) * 0.15;
@@ -1185,38 +1315,9 @@
             if (formantCompEnv > 0.3) {
                 drawSpaceNeedleScatter(ctx, scopeCanvas.width, scopeCanvas.height, formantCompEnv);
             }
-            
-            // 6. TV Tournament Resistor Video Mixer Overlay (Issue 1)
+
+            // CRT Scanlines and RF overlays (crisp foreground layer on main canvas)
             if (chkMixer && chkMixer.checked) {
-                // Plot Trace 1: Cyan trace (Upper vertical offset)
-                ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
-                ctx.lineWidth = 1.5;
-                ctx.shadowColor = ctx.strokeStyle;
-                ctx.shadowBlur = 5;
-                ctx.beginPath();
-                for (let i = 0; i < auxSamples1.length; i++) {
-                    const x = i * step;
-                    const y = (scopeCanvas.height * 0.25) - (auxSamples1[i] * (scopeCanvas.height * 0.15));
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-
-                // Plot Trace 2: Pink trace (Lower vertical offset)
-                ctx.strokeStyle = "rgba(255, 0, 127, 0.4)";
-                ctx.lineWidth = 1.5;
-                ctx.shadowColor = ctx.strokeStyle;
-                ctx.shadowBlur = 5;
-                ctx.beginPath();
-                for (let i = 0; i < auxSamples2.length; i++) {
-                    const x = i * step;
-                    const y = (scopeCanvas.height * 0.75) - (auxSamples2[i] * (scopeCanvas.height * 0.15));
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-
                 // Horizontal scanline raster overlay (Sync blanking)
                 ctx.fillStyle = "rgba(15, 23, 42, 0.18)";
                 for (let y = 0; y < scopeCanvas.height; y += 3) {
@@ -2452,6 +2553,13 @@
                 kb.appendChild(key);
             });
         }
+
+        // Bind CRT controls listeners to redraw waveform immediately
+        ["selCrtTheme", "sldCrtIntensity", "sldCrtFocus", "sldCrtDecay", "sldCrtXScale"].forEach(id => {
+            document.getElementById(id).addEventListener("input", () => {
+                drawWaveform();
+            });
+        });
 
         // Initialize UI
         rebuildControls();
