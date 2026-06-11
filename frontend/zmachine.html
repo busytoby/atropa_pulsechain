@@ -641,12 +641,413 @@ Connect your wallet to retrieve the active story ROM.</div>
             }
         }
 
-        async function executeCommand(cmdText) {
-            if (!zmContract) return;
+        class Point3D {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        let balletMode = false;
+        let balletStance = "plie";
+        let balletDirector = false;
+        let balletTime = 0;
+        let balletCamera = { yaw: 0, pitch: 0, distance: 650, fov: 900 };
+        let currentBalletAngles = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0, headYaw: 0, headPitch: 0 };
+        let currentBalletOffset = new Point3D(0, 0, 0);
+        let lastBeatTime = 0;
+        let beatCount = 0;
+
+        function getBalletAngles(stance, timeMs) {
+            let armL = 0, armR = 0, legL = 0, legR = 0;
+            let headYaw = 0, headPitch = 0;
+            let t = timeMs * 0.002;
+
+            switch (stance) {
+                case "plie":
+                    let bend = 0.2 + (Math.sin(t * 1.5) * 0.15);
+                    armL = Math.PI / 4 + bend;
+                    armR = Math.PI / 4 + bend;
+                    legL = bend;
+                    legR = -bend;
+                    headYaw = Math.sin(t * 0.5) * 0.1;
+                    headPitch = bend * 0.2;
+                    break;
+                case "arabesque":
+                    armL = Math.PI / 2; 
+                    armR = -Math.PI / 3; 
+                    legL = 0; 
+                    legR = Math.PI / 2.5 + (Math.sin(t) * 0.1); 
+                    headYaw = -0.2;
+                    headPitch = 0.25;
+                    break;
+                case "pirouette":
+                    armL = Math.PI / 3;
+                    armR = Math.PI / 3;
+                    legL = 0;
+                    legR = Math.PI / 4;
+                    balletCamera.yaw += 0.03;
+                    headYaw = Math.sin(t * 12.0) * 0.3;
+                    headPitch = Math.sin(t * 2.0) * 0.1;
+                    break;
+                case "grandjete":
+                    armL = Math.PI / 2;
+                    armR = -Math.PI / 2;
+                    legL = -Math.PI / 3;
+                    legR = Math.PI / 3;
+                    headYaw = 0;
+                    headPitch = 0.15;
+                    break;
+                case "attitude":
+                    armL = Math.PI / 2.2;
+                    armR = Math.PI / 1.5;
+                    legL = 0;
+                    legR = Math.PI / 3 + (Math.sin(t) * 0.15);
+                    headYaw = -0.15;
+                    headPitch = 0.1;
+                    break;
+                case "releve":
+                    let riseVal = 0.15 + (Math.sin(t * 2) * 0.05);
+                    armL = -Math.PI / 1.1;
+                    armR = Math.PI / 1.1;
+                    legL = -riseVal;
+                    legR = riseVal;
+                    headYaw = 0;
+                    headPitch = 0.25;
+                    break;
+                case "fouette":
+                    let rotSpeed = t * 6.0;
+                    armL = Math.PI / 4 + Math.sin(rotSpeed) * 0.3;
+                    armR = -Math.PI / 4 + Math.cos(rotSpeed) * 0.3;
+                    legL = 0;
+                    legR = Math.PI / 3 + Math.sin(rotSpeed) * 0.5;
+                    balletCamera.yaw += Math.sin(rotSpeed) * 0.05 + 0.02;
+                    headYaw = Math.sin(t * 8.0) * 0.4;
+                    headPitch = 0.05;
+                    break;
+                case "adagio":
+                    let sweep = Math.sin(t * 0.5);
+                    armL = Math.PI / 3 + sweep * 0.4;
+                    armR = -Math.PI / 3 - sweep * 0.4;
+                    legL = 0;
+                    legR = Math.PI / 2.5 + sweep * 0.35;
+                    headYaw = Math.sin(t * 0.8) * 0.25;
+                    headPitch = Math.cos(t * 0.8) * 0.15;
+                    break;
+                case "chasse":
+                    let slide = Math.sin(t * 2.0);
+                    armL = Math.PI / 2.5 + slide * 0.2;
+                    armR = Math.PI / 2.5 - slide * 0.2;
+                    legL = Math.PI / 6 + slide * 0.15;
+                    legR = -Math.PI / 6 - slide * 0.15;
+                    headYaw = slide * 0.25;
+                    headPitch = -0.05;
+                    break;
+            }
+
+            return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR, headYaw, headPitch };
+        }
+
+        function getBalletOffset(stance, timeMs) {
+            let x = 0, y = 0, z = 0;
+            let t = timeMs * 0.002;
+
+            switch (stance) {
+                case "plie":
+                    y = -20 + Math.sin(t * 1.5) * -15;
+                    break;
+                case "grandjete":
+                    let loopT = (t % Math.PI);
+                    y = Math.sin(loopT) * 70; 
+                    x = (loopT - Math.PI/2) * 100; 
+                    break;
+                case "releve":
+                    y = 35;
+                    break;
+                case "chasse":
+                    x = Math.sin(t * 2.0) * 120;
+                    y = -10 + Math.abs(Math.sin(t * 2.0)) * -15;
+                    break;
+                case "fouette":
+                    x = Math.cos(t * 1.5) * 30;
+                    z = Math.sin(t * 1.5) * 30;
+                    break;
+            }
+
+            return new Point3D(x, y, z);
+        }
+
+        function getBalletSkeleton(offset3D, scale, angles) {
+            const { leftArm, rightArm, leftLeg, rightLeg, headYaw = 0, headPitch = 0 } = angles;
+            let headX = offset3D.x + Math.sin(headYaw) * 15 * scale;
+            let headY = offset3D.y + 160 * scale - Math.cos(headPitch) * 5 * scale;
+            let headZ = offset3D.z + Math.cos(headYaw) * 15 * scale;
+            let head = new Point3D(headX, headY, headZ);
+            
+            let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale, offset3D.z);
+            let lShoulder = new Point3D(offset3D.x - 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale, offset3D.z);
+
+            let lPaw = new Point3D(
+                lShoulder.x + Math.sin(leftArm) * 90 * scale,
+                lShoulder.y - Math.cos(leftArm) * 90 * scale,
+                lShoulder.z
+            );
+            let rPaw = new Point3D(
+                rShoulder.x - Math.sin(rightArm) * 90 * scale,
+                rShoulder.y - Math.cos(rightArm) * 90 * scale,
+                rShoulder.z
+            );
+            let lFoot = new Point3D(
+                offset3D.x - 50 * scale + Math.sin(leftLeg) * 80 * scale,
+                midHip.y - Math.cos(leftLeg) * 80 * scale,
+                offset3D.z
+            );
+            let rFoot = new Point3D(
+                offset3D.x + 50 * scale - Math.sin(rightLeg) * 80 * scale,
+                midHip.y - Math.cos(rightLeg) * 80 * scale,
+                offset3D.z
+            );
+
+            return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
+        }
+
+        function drawVectorBear3D(ctx, w, h, offset, angles) {
+            const scale = 0.65;
+            const jointsRaw = getBalletSkeleton(offset, scale, angles);
+            
+            function project(p) {
+                let x = p.x - offset.x;
+                let y = p.y - offset.y;
+                let z = p.z - offset.z;
+
+                let cosY = Math.cos(balletCamera.yaw);
+                let sinY = Math.sin(balletCamera.yaw);
+                let x1 = x * cosY - z * sinY;
+                let z1 = x * sinY + z * cosY;
+
+                let cosP = Math.cos(balletCamera.pitch);
+                let sinP = Math.sin(balletCamera.pitch);
+                let y2 = y * cosP - z1 * sinP;
+                let z2 = y * sinP + z1 * cosP + balletCamera.distance;
+
+                if (z2 <= 10) return null;
+
+                let scX = (x1 * balletCamera.fov) / z2 + w / 2;
+                let scY = (-y2 * balletCamera.fov) / z2 + h / 2 + 25;
+                return { x: scX, y: scY };
+            }
+
+            const joints = {
+                head: project(jointsRaw.head),
+                neck: project(jointsRaw.neck),
+                lShoulder: project(jointsRaw.lShoulder),
+                rShoulder: project(jointsRaw.rShoulder),
+                lPaw: project(jointsRaw.lPaw),
+                rPaw: project(jointsRaw.rPaw),
+                midHip: project(jointsRaw.midHip),
+                lFoot: project(jointsRaw.lFoot),
+                rFoot: project(jointsRaw.rFoot)
+            };
+
+            function drawBone(j1, j2, color, width) {
+                if (!j1 || !j2) return;
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = "round";
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.moveTo(j1.x, j1.y);
+                ctx.lineTo(j2.x, j2.y);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            const gold = "rgba(197, 160, 89, 0.95)";
+            const goldDim = "rgba(140, 114, 65, 0.75)";
+            const glowPink = "rgba(255, 51, 102, 0.9)";
+            
+            // Draw tutu
+            if (joints.midHip) {
+                ctx.save();
+                ctx.strokeStyle = glowPink;
+                ctx.shadowColor = glowPink;
+                ctx.shadowBlur = 8;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                let steps = 12;
+                for (let i = 0; i <= steps; i++) {
+                    let angle = (i / steps) * Math.PI * 2;
+                    let pt = new Point3D(
+                        offset.x + Math.cos(angle) * 35 * scale,
+                        offset.y - 10 * scale,
+                        offset.z + Math.sin(angle) * 35 * scale
+                    );
+                    let sc = project(pt);
+                    if (sc) {
+                        if (i === 0) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Draw head
+            if (joints.head) {
+                ctx.save();
+                ctx.fillStyle = gold;
+                ctx.shadowColor = gold;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(joints.head.x, joints.head.y, 15 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Draw limbs
+            drawBone(joints.head, joints.neck, gold, 5);
+            drawBone(joints.neck, joints.lShoulder, goldDim, 3.5);
+            drawBone(joints.lShoulder, joints.lPaw, gold, 3.5);
+            drawBone(joints.neck, joints.rShoulder, goldDim, 3.5);
+            drawBone(joints.rShoulder, joints.rPaw, gold, 3.5);
+            drawBone(joints.neck, joints.midHip, gold, 5);
+            drawBone(joints.midHip, joints.lFoot, goldDim, 3.5);
+            drawBone(joints.midHip, joints.rFoot, goldDim, 3.5);
+        }
+
+        function getBalletDescription(stance) {
+            switch (stance) {
+                case "plie": return "[Ballet Director] Vector Bear transitions smoothly into a low Plié knee squat.";
+                case "arabesque": return "[Ballet Director] Vector Bear balances gracefully in a classic Arabesque extension.";
+                case "pirouette": return "[Ballet Director] Vector Bear spins rapidly in a Pirouette on the vector grid.";
+                case "grandjete": return "[Ballet Director] Vector Bear leaps majestically across the canvas in a split Grand Jeté.";
+                case "attitude": return "[Ballet Director] Vector Bear strikes a steady Attitude pose.";
+                case "releve": return "[Ballet Director] Vector Bear rises onto Pointe in a high Relevé.";
+                case "fouette": return "[Ballet Director] Vector Bear executes whipped Fouetté turns.";
+                case "adagio": return "[Ballet Director] Vector Bear flows slowly in a gorgeous Adagio movement.";
+                case "chasse": return "[Ballet Director] Vector Bear glides with low rhythm in a Chassé slide.";
+                default: return "[Ballet Director] Vector Bear is standing at attention.";
+            }
+        }
+
+        function runBalletLoop() {
+            if (!balletMode) return;
+            requestAnimationFrame(runBalletLoop);
+
+            balletTime += 16;
+            const canvas = document.getElementById("vectorCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (balletDirector) {
+                if (balletTime - lastBeatTime > 2500) {
+                    lastBeatTime = balletTime;
+                    const acts = ["plie", "arabesque", "pirouette", "grandjete", "attitude", "releve", "fouette", "adagio", "chasse"];
+                    beatCount = (beatCount + 1) % acts.length;
+                    balletStance = acts[beatCount];
+                    
+                    const termScreen = document.getElementById("termScreen");
+                    termScreen.innerText += `\n${getBalletDescription(balletStance)}\n\n# _`;
+                    termScreen.scrollTop = termScreen.scrollHeight;
+                }
+            }
+
+            let targetAngles = getBalletAngles(balletStance, balletTime);
+            let targetOffset = getBalletOffset(balletStance, balletTime);
+
+            let lerpSpeed = 0.05;
+            currentBalletAngles.leftArm += (targetAngles.leftArm - currentBalletAngles.leftArm) * lerpSpeed;
+            currentBalletAngles.rightArm += (targetAngles.rightArm - currentBalletAngles.rightArm) * lerpSpeed;
+            currentBalletAngles.leftLeg += (targetAngles.leftLeg - currentBalletAngles.leftLeg) * lerpSpeed;
+            currentBalletAngles.rightLeg += (targetAngles.rightLeg - currentBalletAngles.rightLeg) * lerpSpeed;
+            currentBalletAngles.headYaw += (targetAngles.headYaw - currentBalletAngles.headYaw) * lerpSpeed;
+            currentBalletAngles.headPitch += (targetAngles.headPitch - currentBalletAngles.headPitch) * lerpSpeed;
+
+            currentBalletOffset.x += (targetOffset.x - currentBalletOffset.x) * lerpSpeed;
+            currentBalletOffset.y += (targetOffset.y - currentBalletOffset.y) * lerpSpeed;
+            currentBalletOffset.z += (targetOffset.z - currentBalletOffset.z) * lerpSpeed;
+
+            drawVectorBear3D(ctx, canvas.width, canvas.height, currentBalletOffset, currentBalletAngles);
+        }
+
+        function handleBalletCommand(cmdText) {
             const termScreen = document.getElementById("termScreen");
             const cmd = cmdText.trim();
             const parts = cmd.split(/\s+/);
             const action = parts[0].toLowerCase();
+            const arg = parts[1] ? parts[1].toLowerCase() : "";
+
+            const canvas = document.getElementById("vectorCanvas");
+
+            if (action === "ballet") {
+                if (arg === "exit") {
+                    balletMode = false;
+                    canvas.style.display = "none";
+                    termScreen.innerText += `\n[Ballet Mode exited. Returning to Interactive Fiction...]\n\n# _`;
+                } else {
+                    termScreen.innerText += `\nZ-Machine Ballet Director Console\n==============================\nCommands:\n - dance [pose]\n - director start/stop\n - orbit left/right/up/down\n - zoom in/out\n - ballet exit\n\nPoses: plie, arabesque, pirouette, grandjete, attitude, releve, fouette, adagio, chasse\n\n# _`;
+                }
+            } else if (action === "dance" || action === "pose") {
+                const poses = ["plie", "arabesque", "pirouette", "grandjete", "attitude", "releve", "fouette", "adagio", "chasse"];
+                if (poses.includes(arg)) {
+                    balletStance = arg;
+                    if (!balletMode) {
+                        balletMode = true;
+                        canvas.style.display = "block";
+                        runBalletLoop();
+                    }
+                    termScreen.innerText += `\n${getBalletDescription(arg)}\n\n# _`;
+                } else {
+                    termScreen.innerText += `\n[Unknown pose. Available: ${poses.join(", ")}]\n\n# _`;
+                }
+            } else if (action === "director") {
+                if (arg === "start") {
+                    balletDirector = true;
+                    if (!balletMode) {
+                        balletMode = true;
+                        canvas.style.display = "block";
+                        runBalletLoop();
+                    }
+                    termScreen.innerText += `\n[Ballet Director mode ACTIVATED. Cycling poses dynamically...]\n\n# _`;
+                } else {
+                    balletDirector = false;
+                    termScreen.innerText += `\n[Ballet Director mode DEACTIVATED.]\n\n# _`;
+                }
+            } else if (action === "orbit") {
+                if (arg === "left") balletCamera.yaw -= 0.2;
+                else if (arg === "right") balletCamera.yaw += 0.2;
+                else if (arg === "up") balletCamera.pitch = Math.min(Math.PI/2.2, balletCamera.pitch + 0.1);
+                else if (arg === "down") balletCamera.pitch = Math.max(-Math.PI/2.2, balletCamera.pitch - 0.1);
+                termScreen.innerText += `\n[Orbiting camera ${arg}]\n\n# _`;
+            } else if (action === "zoom") {
+                if (arg === "in") balletCamera.distance = Math.max(300, balletCamera.distance - 75);
+                else if (arg === "out") balletCamera.distance = Math.min(1500, balletCamera.distance + 75);
+                termScreen.innerText += `\n[Zooming camera ${arg}]\n\n# _`;
+            } else if (action === "poses") {
+                termScreen.innerText += `\nAvailable poses: plie, arabesque, pirouette, grandjete, attitude, releve, fouette, adagio, chasse\n\n# _`;
+            }
+            termScreen.scrollTop = termScreen.scrollHeight;
+        }
+
+        async function executeCommand(cmdText) {
+            const termScreen = document.getElementById("termScreen");
+            const cmd = cmdText.trim();
+            const parts = cmd.split(/\s+/);
+            const action = parts[0].toLowerCase();
+
+            // Intercept ballet director commands
+            if (action === "dance" || action === "pose" || action === "director" || action === "orbit" || action === "zoom" || action === "ballet" || action === "poses") {
+                handleBalletCommand(cmdText);
+                return;
+            }
+
+            if (!zmContract) return;
 
             try {
                 const roomId = await getPlayerRoomId();
