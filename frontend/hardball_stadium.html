@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi C64 Hardball Alchemical Stadium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030408;
+            --panel-bg: rgba(6, 9, 20, 0.85);
+            --border-glow: rgba(0, 240, 255, 0.3);
+            --glow-cyan: #00f0ff;
+            --glow-gold: #ffc400;
+            --glow-magenta: #ff007f;
+            --glow-green: #39ff14;
+            --text-color: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 50% 30%, rgba(10, 20, 45, 0.35) 0%, transparent 80%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 30px;
+            background: rgba(4, 6, 12, 0.95);
+            border-bottom: 1px solid #101626;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        #main-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr 340px;
+            flex: 1;
+            height: calc(100vh - 56px);
+            overflow: hidden;
+        }
+
+        .side-panel {
+            background: var(--panel-bg);
+            border-right: 1px solid #141d33;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            overflow-y: auto;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+        }
+
+        .side-panel.right {
+            border-right: none;
+            border-left: 1px solid #141d33;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.6);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 6px;
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            background: rgba(1, 2, 5, 0.8);
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.02);
+            transition: border-color 0.3s;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            padding: 8px 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .btn:hover {
+            background: var(--glow-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--glow-cyan);
+        }
+
+        .btn-gold {
+            border-color: var(--glow-gold);
+            color: var(--glow-gold);
+        }
+
+        .btn-gold:hover {
+            background: var(--glow-gold);
+            color: #000;
+            box-shadow: 0 0 15px var(--glow-gold);
+        }
+
+        #viewport-container {
+            position: relative;
+            background: radial-gradient(circle at center, #070914 0%, #010205 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #101626;
+        }
+
+        #stageCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 1.0);
+        }
+
+        #console {
+            flex: 1;
+            background: #010205;
+            border: 1px solid #141c30;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: #4ade80;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        /* CRT Scanline & Curved Glass Effect Overlay */
+        .crt-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        .scoreboard-c64 {
+            width: 100%;
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .sb-val {
+            color: var(--glow-gold);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">TSFi Hardball Alchemical Stadium</div>
+        <div style="font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #64748b;">
+            ENGINE: VULKAN-WAYLAND SIMULATOR
+        </div>
+    </header>
+
+    <div id="main-layout">
+        <!-- Left Panel: Gameplay Commands & Match State -->
+        <div class="side-panel">
+            <div class="section-title">GAME SCOREBOARD</div>
+            <div class="scoreboard-c64">
+                <div>VISITORS<br><span class="sb-val" id="sb-vis">0</span></div>
+                <div>HOME<br><span class="sb-val" id="sb-home">2</span></div>
+                <div>INNING<br><span class="sb-val" id="sb-inning">5</span></div>
+                <div>OUTS<br><span class="sb-val" id="sb-outs">2</span></div>
+            </div>
+
+            <div class="scoreboard-c64" style="margin-top: -6px;">
+                <div>STRIKES<br><span class="sb-val" id="sb-strikes">0</span></div>
+                <div>BALLS<br><span class="sb-val" id="sb-balls">1</span></div>
+                <div style="grid-column: span 2;">RESULT<br><span class="sb-val" id="sb-result" style="color: var(--glow-cyan); font-size: 10px;">READY</span></div>
+            </div>
+
+            <div class="section-title">STADIUM CONTROLS</div>
+            <button class="btn btn-gold" onclick="triggerPitch()">⚾ Pitch Ball (ENTER)</button>
+            <button class="btn" onclick="triggerSwing()">⚔️ Swing Bat (SPACE)</button>
+
+            <div class="section-title">CHOREOGRAPHY CONSOLE</div>
+            <div id="console">System: Vulcan-Wayland hardball module online.
+Stage: Retro vanishing lines projected.
+Status: Press Pitch to begin.</div>
+        </div>
+
+        <!-- Center Arena Viewport -->
+        <div id="viewport-container">
+            <div class="crt-overlay"></div>
+            <canvas id="stageCanvas"></canvas>
+        </div>
+
+        <!-- Right Panel: ControlNet Integration & Preprocessors -->
+        <div class="side-panel right">
+            <div class="section-title">ALCHEMICAL BASEBALL SYNTHESIZER</div>
+            <div class="card" style="border-color: rgba(255, 196, 0, 0.25);">
+                <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Retro Presets:</span>
+                    <select id="card-style" style="background: #000; border: 1px solid #1e293b; color: var(--glow-gold); border-radius: 4px; font-size: 11px; padding: 2px 4px; outline: none; font-family: 'Share Tech Mono', monospace;">
+                        <option value="cardboard">🏷️ 1985 Classic Cardboard</option>
+                        <option value="oil">🎨 1952 Vintage Oil Painting</option>
+                        <option value="chrome">💿 1999 Holographic Foil</option>
+                        <option value="pixel">📺 1989 Pixel Art Screen</option>
+                    </select>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Custom Synthesis Prompt:</div>
+                <textarea id="ai-prompt" rows="3" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Outfit', sans-serif; resize: none;">A highly detailed retro baseball card, masterpiece, cinematic lighting, cardboard frame border, vintage sports outfit</textarea>
+                
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
+                    <input type="checkbox" id="show-ai-overlay" checked> Overlay on Stadium
+                </label>
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8; margin-top: -2px;">
+                    <input type="checkbox" id="canny-edge-outline"> Canny Edge Outline (Sobel)
+                </label>
+                <button class="btn btn-gold" id="btn-ai-render" onclick="triggerControlNetRender()">Synthesize Baseball Card</button>
+                <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
+            </div>
+
+            <div class="section-title">CONTROLNET MAP DEBUGGER</div>
+            <div class="card" style="border-color: rgba(0, 240, 255, 0.25); display: flex; flex-direction: row; gap: 8px;">
+                <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">DEPTH/SOBEL MAP</div>
+                    <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img id="dbg-depth-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                        <span id="dbg-depth-placeholder" style="font-size: 10px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                    </div>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">OPENPOSE MAP</div>
+                    <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img id="dbg-pose-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                        <span id="dbg-pose-placeholder" style="font-size: 10px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("stageCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Camera setup mimicking C64 viewport perspective
+        const camera = {
+            yaw: 0.0,
+            pitch: 0.05,
+            distance: 650,
+            fov: 600
+        };
+
+        // Projected point representation
+        function project(p) {
+            let cosY = Math.cos(camera.yaw);
+            let sinY = Math.sin(camera.yaw);
+            let cosP = Math.cos(camera.pitch);
+            let sinP = Math.sin(camera.pitch);
+
+            let x1 = p.x * cosY - p.z * sinY;
+            let z1 = p.x * sinY + p.z * cosY;
+            let y2 = p.y * cosP - z1 * sinP;
+            let z2 = p.y * sinP + z1 * cosP + camera.distance;
+
+            if (z2 <= 10) return null;
+
+            let scX = (x1 * camera.fov) / z2 + canvas.width / 2;
+            let scY = (-y2 * camera.fov) / z2 + canvas.height / 2;
+            return { x: scX, y: scY, depth: z2 };
+        }
+
+        // Draw basic lines in 3D
+        function drawLine3D(p1, p2, color, width = 1) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Draw solid cylinders/capsules for body mapping
+        function drawVolumetricCapsule(p1, p2, radius, color) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let r1 = radius * (camera.fov / sc1.depth);
+            let r2 = radius * (camera.fov / sc2.depth);
+            let avgRadius = (r1 + r2) / 2;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = avgRadius * 2;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawVolumetricSphere(p3d, radius, color) {
+            let proj = project(p3d);
+            if (!proj) return;
+            let screenRadius = radius * (camera.fov / proj.depth);
+            if (screenRadius <= 1) return;
+
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, screenRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Sobel preprocessor
+        function applySobelFilter(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const output = ctx.createImageData(width, height);
+            const outData = output.data;
+
+            function getGray(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) return 0;
+                const idx = (y * width + x) * 4;
+                return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            }
+
+            const gx = [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ];
+            const gy = [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ];
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let valX = 0;
+                    let valY = 0;
+
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const pixel = getGray(x + kx, y + ky);
+                            valX += pixel * gx[ky + 1][kx + 1];
+                            valY += pixel * gy[ky + 1][kx + 1];
+                        }
+                    }
+
+                    const magnitude = Math.min(255, Math.sqrt(valX * valX + valY * valY));
+                    const idx = (y * width + x) * 4;
+                    outData[idx] = magnitude;     // R
+                    outData[idx + 1] = magnitude; // G
+                    outData[idx + 2] = magnitude; // B
+                    outData[idx + 3] = 255;       // A
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
+
+        // Bounding boxes / Pose tracking maps
+        const depthCanvas = document.createElement("canvas");
+        depthCanvas.width = 512;
+        depthCanvas.height = 512;
+        const dCtx = depthCanvas.getContext("2d");
+
+        const poseCanvas = document.createElement("canvas");
+        poseCanvas.width = 512;
+        poseCanvas.height = 512;
+        const pCtx = poseCanvas.getContext("2d");
+
+        function getFighterSkeleton(offset, scale, swingAngle, position) {
+            // Pitcher
+            if (position === 'pitcher') {
+                return {
+                    head: { x: offset.x, y: 55 * scale, z: offset.z },
+                    neck: { x: offset.x, y: 35 * scale, z: offset.z },
+                    midHip: { x: offset.x, y: -20 * scale, z: offset.z },
+                    lShoulder: { x: offset.x - 15 * scale, y: 35 * scale, z: offset.z },
+                    rShoulder: { x: offset.x + 15 * scale, y: 35 * scale, z: offset.z },
+                    lPaw: { x: offset.x - 20 * scale, y: 0 * scale, z: offset.z },
+                    rPaw: { x: offset.x + 20 * scale, y: 15 * scale, z: offset.z },
+                    lFoot: { x: offset.x - 12 * scale, y: -65 * scale, z: offset.z },
+                    rFoot: { x: offset.x + 12 * scale, y: -65 * scale, z: offset.z }
+                };
+            }
+            // Batter
+            else if (position === 'batter') {
+                let batX = offset.x + Math.cos(swingAngle) * 40 * scale;
+                let batY = 15 * scale + Math.sin(swingAngle) * 15 * scale;
+                return {
+                    head: { x: offset.x, y: 65 * scale, z: offset.z },
+                    neck: { x: offset.x, y: 40 * scale, z: offset.z },
+                    midHip: { x: offset.x, y: -25 * scale, z: offset.z },
+                    lShoulder: { x: offset.x - 18 * scale, y: 40 * scale, z: offset.z },
+                    rShoulder: { x: offset.x + 18 * scale, y: 40 * scale, z: offset.z },
+                    lPaw: { x: offset.x - 22 * scale, y: 15 * scale, z: offset.z },
+                    rPaw: { x: batX, y: batY, z: offset.z }, // holding/swinging bat
+                    lFoot: { x: offset.x - 15 * scale, y: -70 * scale, z: offset.z },
+                    rFoot: { x: offset.x + 15 * scale, y: -70 * scale, z: offset.z }
+                };
+            }
+            // Catcher
+            else {
+                return {
+                    head: { x: offset.x, y: 25 * scale, z: offset.z },
+                    neck: { x: offset.x, y: 10 * scale, z: offset.z },
+                    midHip: { x: offset.x, y: -30 * scale, z: offset.z },
+                    lShoulder: { x: offset.x - 15 * scale, y: 10 * scale, z: offset.z },
+                    rShoulder: { x: offset.x + 15 * scale, y: 10 * scale, z: offset.z },
+                    lPaw: { x: offset.x - 18 * scale, y: -10 * scale, z: offset.z },
+                    rPaw: { x: offset.x + 18 * scale, y: -10 * scale, z: offset.z },
+                    lFoot: { x: offset.x - 14 * scale, y: -55 * scale, z: offset.z },
+                    rFoot: { x: offset.x + 14 * scale, y: -55 * scale, z: offset.z }
+                };
+            }
+        }
+
+        function extractControlNetPoses(position) {
+            dCtx.fillStyle = "#000000";
+            dCtx.fillRect(0, 0, 512, 512);
+
+            pCtx.fillStyle = "#000000";
+            pCtx.fillRect(0, 0, 512, 512);
+
+            let offset = (position === 'pitcher') ? { x: 0, y: 0, z: 220 } : (position === 'batter' ? { x: -45, y: 0, z: -60 } : { x: 0, y: 0, z: -100 });
+            let sk = getFighterSkeleton(offset, 1.2, batSwingAngle, position);
+
+            function projectTo512(pt) {
+                let p = project(pt);
+                if (!p) return null;
+                // map to 512 range
+                return { x: p.x, y: p.y, depth: p.depth };
+            }
+
+            let joints = {
+                head: projectTo512(sk.head),
+                neck: projectTo512(sk.neck),
+                lShoulder: projectTo512(sk.lShoulder),
+                rShoulder: projectTo512(sk.rShoulder),
+                lPaw: projectTo512(sk.lPaw),
+                rPaw: projectTo512(sk.rPaw),
+                midHip: projectTo512(sk.midHip),
+                lFoot: projectTo512(sk.lFoot),
+                rFoot: projectTo512(sk.rFoot)
+            };
+
+            function drawBone(ctxType, j1, j2, isDepth, color, width) {
+                if (!j1 || !j2) return;
+                ctxType.save();
+                if (isDepth) {
+                    let avgDepth = (j1.depth + j2.depth) / 2;
+                    let dVal = Math.max(0, Math.min(255, 255 - Math.floor((avgDepth - 350) / 600 * 255)));
+                    ctxType.strokeStyle = `rgb(${dVal},${dVal},${dVal})`;
+                } else {
+                    ctxType.strokeStyle = color;
+                }
+                ctxType.lineWidth = width;
+                ctxType.lineCap = "round";
+                ctxType.beginPath();
+                ctxType.moveTo(j1.x / canvas.width * 512, j1.y / canvas.height * 512);
+                ctxType.lineTo(j2.x / canvas.width * 512, j2.y / canvas.height * 512);
+                ctxType.stroke();
+                ctxType.restore();
+            }
+
+            // Draw depth spheres & capsules
+            if (joints.head) {
+                dCtx.save();
+                let rad = 30 * (600 / joints.head.depth);
+                let grad = dCtx.createRadialGradient(joints.head.x/canvas.width*512, joints.head.y/canvas.height*512, rad*0.2, joints.head.x/canvas.width*512, joints.head.y/canvas.height*512, rad);
+                let dVal = Math.max(0, Math.min(255, 255 - Math.floor((joints.head.depth - 350) / 600 * 255)));
+                grad.addColorStop(0, `rgb(${dVal},${dVal},${dVal})`);
+                grad.addColorStop(1, `rgb(${Math.max(0, dVal-80)},${Math.max(0, dVal-80)},${Math.max(0, dVal-80)})`);
+                dCtx.fillStyle = grad;
+                dCtx.beginPath();
+                dCtx.arc(joints.head.x/canvas.width*512, joints.head.y/canvas.height*512, rad, 0, Math.PI*2);
+                dCtx.fill();
+                dCtx.restore();
+            }
+
+            drawBone(dCtx, joints.head, joints.neck, true, null, 14);
+            drawBone(dCtx, joints.neck, joints.lShoulder, true, null, 10);
+            drawBone(dCtx, joints.lShoulder, joints.lPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.rShoulder, true, null, 10);
+            drawBone(dCtx, joints.rShoulder, joints.rPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.midHip, true, null, 14);
+            drawBone(dCtx, joints.midHip, joints.lFoot, true, null, 10);
+            drawBone(dCtx, joints.midHip, joints.rFoot, true, null, 10);
+
+            // Openpose bones
+            drawBone(pCtx, joints.head, joints.neck, false, "#ff0000", 8);
+            drawBone(pCtx, joints.neck, joints.lShoulder, false, "#0000ff", 6);
+            drawBone(pCtx, joints.lShoulder, joints.lPaw, false, "#00ffff", 6);
+            drawBone(pCtx, joints.neck, joints.rShoulder, false, "#ff0000", 6);
+            drawBone(pCtx, joints.rShoulder, joints.rPaw, false, "#ff8000", 6);
+            drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", 8);
+            drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", 6);
+            drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", 6);
+
+            if (document.getElementById("canny-edge-outline")?.checked) {
+                applySobelFilter(dCtx, 512, 512);
+            }
+
+            return {
+                depthData: depthCanvas.toDataURL("image/png"),
+                poseData: poseCanvas.toDataURL("image/png")
+            };
+        }
+
+        // Game state variables
+        let scoreHome = 2;
+        let scoreVis = 0;
+        let inning = 5;
+        let outs = 2;
+        let strikes = 0;
+        let balls = 1;
+
+        let ballX = 0, ballY = 35, ballZ = 220;
+        let ballVX = 0, ballVY = 0, ballVZ = 0;
+        let ballActive = false;
+
+        let batSwingAngle = 0;
+        let batSwinging = false;
+
+        let sdPitcher = null, sdBatter = null, sdCatcher = null;
+
+        function logEvent(msg) {
+            const consoleBox = document.getElementById("console");
+            consoleBox.innerHTML += `\n${msg}`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function updateScoreboard() {
+            document.getElementById("sb-vis").innerText = scoreVis;
+            document.getElementById("sb-home").innerText = scoreHome;
+            document.getElementById("sb-inning").innerText = inning;
+            document.getElementById("sb-outs").innerText = outs;
+            document.getElementById("sb-strikes").innerText = strikes;
+            document.getElementById("sb-balls").innerText = balls;
+        }
+
+        function triggerPitch() {
+            if (ballActive) return;
+            ballActive = true;
+            ballX = 0;
+            ballY = 35;
+            ballZ = 220;
+            
+            ballVX = (Math.random() * 2 - 1);
+            ballVY = 4;
+            ballVZ = -8;
+            logEvent("⚾ Pitch is thrown! Curve ball sliding towards the strike zone...");
+            document.getElementById("sb-result").innerText = "IN FLIGHT";
+        }
+
+        function triggerSwing() {
+            if (batSwinging) return;
+            batSwinging = true;
+            batSwingAngle = 0;
+            logEvent("⚔️ Batter swings the bat with high velocity!");
+        }
+
+        // Floor drop shadows
+        function drawFloorShadows(offset3D, scale) {
+            ctx.save();
+            let centerFloor = { x: offset3D.x, y: -90, z: offset3D.z };
+            let sc = project(centerFloor);
+            if (sc) {
+                let rX = 75 * scale * (camera.fov / sc.depth);
+                let rY = 28 * scale * (camera.fov / sc.depth);
+                let grad = ctx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, rX);
+                grad.addColorStop(0, "rgba(0, 0, 0, 0.6)");
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(sc.x, sc.y, rX, rY, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // Spotlights tracking the home plate zone
+        function drawSpotlights(bass = 0.1) {
+            let top1 = project({ x: -400, y: 600, z: -100 });
+            let top2 = project({ x: 400, y: 600, z: -100 });
+            let target = project({ x: 0, y: -90, z: -100 });
+
+            if (top1 && target) {
+                ctx.save();
+                let grad = ctx.createLinearGradient(top1.x, top1.y, target.x, target.y);
+                let alpha = 0.10 + bass * 0.18;
+                grad.addColorStop(0, `rgba(0, 240, 255, ${alpha * 1.5})`);
+                grad.addColorStop(0.5, `rgba(0, 240, 255, ${alpha * 0.6})`);
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(top1.x, top1.y);
+                ctx.lineTo(target.x - 120, target.y);
+                ctx.lineTo(target.x + 120, target.y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            if (top2 && target) {
+                ctx.save();
+                let grad = ctx.createLinearGradient(top2.x, top2.y, target.x, target.y);
+                let alpha = 0.10 + bass * 0.18;
+                grad.addColorStop(0, `rgba(255, 0, 127, ${alpha * 1.5})`);
+                grad.addColorStop(0.5, `rgba(255, 0, 127, ${alpha * 0.6})`);
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(top2.x, top2.y);
+                ctx.lineTo(target.x - 120, target.y);
+                ctx.lineTo(target.x + 120, target.y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Synthesize single segment
+        function generateSegment(part, prompt, cnData) {
+            let localPrompt = prompt;
+            if (part === 'pitcher') localPrompt += ", retro baseball pitcher standing on pitcher mound, vintage uniform";
+            else if (part === 'batter') localPrompt += ", vintage baseball batter swinging a yellow wooden bat";
+            else if (part === 'catcher') localPrompt += ", vintage baseball catcher squatting wearing mask and mitt";
+
+            return fetch("http://127.0.0.1:8000/generate-bear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: localPrompt,
+                    profile: "dream",
+                    steps: 6,
+                    cfg: 1.5,
+                    use_controlnet: true,
+                    controlnet_image: cnData.depthData,
+                    controlnet_pose: cnData.poseData
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== "success") throw new Error(data.message);
+                return new Promise((resolve) => {
+                    let img = new Image();
+                    img.onload = () => resolve(img);
+                    img.src = "http://127.0.0.1:8000/" + data.url + "?t=" + Date.now();
+                });
+            });
+        }
+
+        function triggerControlNetRender() {
+            const btn = document.getElementById("btn-ai-render");
+            const statusBox = document.getElementById("ai-status");
+            const promptText = document.getElementById("ai-prompt").value;
+
+            btn.disabled = true;
+            btn.innerText = "Synthesizing...";
+            statusBox.innerText = "Status: Rendering segments in parallel...";
+
+            // Extract pitcher maps to update debugger view
+            const dbgData = extractControlNetPoses('pitcher');
+            document.getElementById("dbg-depth-preview").src = dbgData.depthData;
+            document.getElementById("dbg-depth-preview").style.display = "block";
+            document.getElementById("dbg-depth-placeholder").style.display = "none";
+
+            document.getElementById("dbg-pose-preview").src = dbgData.poseData;
+            document.getElementById("dbg-pose-preview").style.display = "block";
+            document.getElementById("dbg-pose-placeholder").style.display = "none";
+
+            logEvent("Z-Machine Stadium: Sending layout geometry vectors to Vulkan server...");
+
+            const parts = ["pitcher", "batter", "catcher"];
+            const promises = parts.map(part => {
+                const cnData = extractControlNetPoses(part);
+                return generateSegment(part, promptText, cnData)
+                    .then(img => {
+                        if (part === 'pitcher') sdPitcher = img;
+                        else if (part === 'batter') sdBatter = img;
+                        else if (part === 'catcher') sdCatcher = img;
+                        logEvent(`[Synthesis] Segment '${part}' finished rendering successfully.`);
+                    });
+            });
+
+            Promise.all(promises)
+            .then(() => {
+                btn.disabled = false;
+                btn.innerText = "Synthesize Baseball Card";
+                statusBox.innerText = "Status: Compositing Rigged Card";
+                logEvent("🏆 Crossover complete! Rigged retro baseball card composited onto stadium.");
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerText = "Synthesize Baseball Card";
+                statusBox.innerText = "Status: Idle";
+            });
+        }
+
+        // Draw segment inside stadium canvas
+        function drawOverlaySegment(offset, scale, img) {
+            let p = project(offset);
+            if (!p || !img) return;
+            let size = 220 * (camera.fov / p.depth) * scale;
+            ctx.save();
+            ctx.drawImage(img, p.x - size/2, p.y - size/2, size, size);
+            ctx.restore();
+        }
+
+        // Resize Canvas dynamically
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        // Keyboard Event bindings
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") triggerPitch();
+            else if (e.key === " ") triggerSwing();
+        });
+
+        // Main animation loop
+        function loop() {
+            // Update physics
+            if (ballActive) {
+                ballX += ballVX;
+                ballY += ballVY;
+                ballZ += ballVZ;
+                ballVY -= 0.12; // curve gravity
+
+                if (ballZ <= -120) {
+                    ballActive = false;
+                    // Collision check
+                    if (batSwinging && Math.abs(ballX) < 18 && Math.abs(ballY - 15) < 18) {
+                        scoreHome++;
+                        strikes = 0;
+                        balls = 0;
+                        document.getElementById("sb-result").innerText = "HOME RUN!";
+                        logEvent("💥 HIT! Ball crunched into deep field! HOME RUN!");
+                    } else {
+                        if (Math.abs(ballX) < 12 && ballY > -10 && ballY < 45) {
+                            strikes++;
+                            if (strikes >= 3) {
+                                strikes = 0; outs++;
+                                if (outs >= 3) { outs = 0; inning++; }
+                                document.getElementById("sb-result").innerText = "STRIKE OUT";
+                                logEvent("❌ Strike three! Batter struck out!");
+                            } else {
+                                document.getElementById("sb-result").innerText = "STRIKE";
+                                logEvent("⚾ Strike! Right down the pipe.");
+                            }
+                        } else {
+                            balls++;
+                            if (balls >= 4) {
+                                balls = 0;
+                                document.getElementById("sb-result").innerText = "WALK";
+                                logEvent("🚶 Walk! Batter takes base.");
+                            } else {
+                                document.getElementById("sb-result").innerText = "BALL";
+                                logEvent("🟢 Ball. Outside zone.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (batSwinging) {
+                batSwingAngle += 0.22;
+                if (batSwingAngle >= Math.PI) {
+                    batSwinging = false;
+                    batSwingAngle = 0;
+                }
+            }
+
+            updateScoreboard();
+
+            // Clear Screen
+            ctx.fillStyle = "#030408";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Stage Spotlight
+            drawSpotlights(0.1);
+
+            // Perspective Outfield Ground Foul lines
+            drawLine3D({ x: -180, y: -90, z: -100 }, { x: -5, y: -90, z: 600 }, "rgba(0, 240, 255, 0.22)", 1.5);
+            drawLine3D({ x: 180, y: -90, z: -100 }, { x: 5, y: -90, z: 600 }, "rgba(0, 240, 255, 0.22)", 1.5);
+
+            // Draw drop shadows
+            drawFloorShadows({ x: 0, y: 0, z: 220 }, 1.2);
+            drawFloorShadows({ x: -45, y: 0, z: -60 }, 1.2);
+            drawFloorShadows({ x: 0, y: 0, z: -100 }, 1.2);
+
+            const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
+            const useSD = isOverlayEnabled && sdPitcher && sdBatter && sdCatcher;
+
+            if (useSD) {
+                // Render synthesized baseball player cards
+                drawOverlaySegment({ x: 0, y: 0, z: 220 }, 1.2, sdPitcher);
+                drawOverlaySegment({ x: -45, y: 0, z: -60 }, 1.2, sdBatter);
+                drawOverlaySegment({ x: 0, y: 0, z: -100 }, 1.2, sdCatcher);
+            } else {
+                // Render volumetric solid geometry
+                // 1. Pitcher mound elements
+                drawVolumetricCapsule({ x: 0, y: -20, z: 220 }, { x: 0, y: 35, z: 220 }, 12, "rgba(0, 240, 255, 0.8)");
+                drawVolumetricSphere({ x: 0, y: 45, z: 220 }, 14, "rgba(255, 196, 0, 0.9)");
+
+                // 2. Batter elements
+                drawVolumetricCapsule({ x: -45, y: -25, z: -60 }, { x: -45, y: 40, z: -60 }, 15, "rgba(0, 240, 255, 0.8)");
+                drawVolumetricSphere({ x: -45, y: 50, z: -60 }, 18, "rgba(255, 196, 0, 0.9)");
+                
+                // Draw bat swinging
+                if (batSwinging) {
+                    let batX = -45 + Math.cos(batSwingAngle) * 45;
+                    let batY = 20 + Math.sin(batSwingAngle) * 15;
+                    drawLine3D({ x: -45, y: 20, z: -60 }, { x: batX, y: batY, z: -60 }, "rgba(255, 234, 0, 0.95)", 4);
+                } else {
+                    drawLine3D({ x: -45, y: 20, z: -60 }, { x: -25, y: 55, z: -60 }, "rgba(255, 234, 0, 0.95)", 4);
+                }
+
+                // 3. Catcher elements
+                drawVolumetricCapsule({ x: 0, y: -30, z: -100 }, { x: 0, y: 15, z: -100 }, 16, "rgba(0, 240, 255, 0.8)");
+                drawVolumetricSphere({ x: 0, y: 25, z: -100 }, 19, "rgba(255, 196, 0, 0.9)");
+            }
+
+            // Draw baseball ball
+            if (ballActive) {
+                let p = project({ x: ballX, y: ballY, z: ballZ });
+                if (p) {
+                    let rad = 6 * (600 / p.depth);
+                    ctx.save();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
