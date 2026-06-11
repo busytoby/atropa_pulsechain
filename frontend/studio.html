@@ -571,6 +571,7 @@
         let activeDigit = 0;
         let isSweeping = false;
         let frameAccumulator = 0;
+        let rhythmPhaseAccumulator = 0;
         let spriteScale = 1.0;
         let spriteRotation = 0;
         let spriteX = 0;
@@ -1991,12 +1992,11 @@
                 }
                 // Dynamically modulate tempo by the master control voltage attenuation (CCS protection) and Bionika CV
                 const dynamicTempo = (params.rhythm.tempo + tempoOffset) * masterAttenuation;
-                const framesPerStep = 900 / dynamicTempo;
-                frameAccumulator++;
+                rhythmPhaseAccumulator += Math.round(dynamicTempo * 10);
                 let clockVal = 0n;
-                if (frameAccumulator >= framesPerStep) {
+                if (rhythmPhaseAccumulator >= 9000) {
                     clockVal = 1000000000000000000n;
-                    frameAccumulator -= framesPerStep;
+                    rhythmPhaseAccumulator -= 9000;
                 }
 
                 // 1. Call Rhythm Generator
