@@ -601,7 +601,9 @@
                 inputAmp: 1.0
             },
             stroboscope: {
-                rate: 1.5
+                rate: 1.5,
+                chargeTC: 10.0,
+                dischargeTC: 3.0
             },
             germanium: {
                 inputAmp: 0.8,
@@ -670,7 +672,9 @@
                 { id: "inputAmp", label: "Input Signal Amplitude", min: 0.1, max: 2.0, step: 0.1, key: "inputAmp", unit: "V" }
             ],
             stroboscope: [
-                { id: "rate", label: "Pulse Trigger Rate", min: 0.1, max: 5.0, step: 0.1, key: "rate", unit: "Hz" }
+                { id: "rate", label: "Pulse Trigger Vcc", min: 0.1, max: 10.0, step: 0.1, key: "rate", unit: "V" },
+                { id: "chargeTC", label: "Charging Constant (Pulse Width)", min: 1.0, max: 50.0, step: 1.0, key: "chargeTC", unit: "tc" },
+                { id: "dischargeTC", label: "Discharging Constant (Fall Time)", min: 1.0, max: 20.0, step: 1.0, key: "dischargeTC", unit: "tc" }
             ],
             germanium: [
                 { id: "inputAmp", label: "Input Signal Amplitude", min: 0.1, max: 2.0, step: 0.1, key: "inputAmp", unit: "V" },
@@ -952,6 +956,37 @@
 
         // Canvas Waveform Rendering
         let samples = Array.from({ length: 100 }, () => 0);
+        let auxSamples1 = Array.from({ length: 100 }, () => 0);
+        let auxSamples2 = Array.from({ length: 100 }, () => 0);
+
+        // Dynamic push proxy for multi-channel oscilloscope multiplexing (Issue 4)
+        samples.push = function(val) {
+            Array.prototype.push.call(this, val);
+            
+            let aux1 = 0;
+            let aux2 = 0;
+            if (activeModule === "stroboscope") {
+                aux1 = params.stroboscope.rate;
+                aux2 = val; // Output pulse capacitor value
+            } else if (activeModule === "bionika") {
+                aux1 = params.bionika.stimulus;
+                aux2 = val;
+            } else if (activeModule === "formant") {
+                aux1 = typeof formantCompEnv !== "undefined" ? formantCompEnv : 0;
+                aux2 = val;
+            } else if (activeModule === "rhythm") {
+                aux1 = params.rhythm.tempo / 120.0;
+                aux2 = val;
+            } else if (activeModule === "semafoon") {
+                aux1 = typeof semafoonEnvState !== "undefined" ? semafoonEnvState : 0;
+                aux2 = val;
+            }
+            
+            auxSamples1.push(aux1);
+            auxSamples1.shift();
+            auxSamples2.push(aux2);
+            auxSamples2.shift();
+        };
         function drawWaveform() {
             // Resize canvas to parent
             const rect = scopeCanvas.getBoundingClientRect();
@@ -1048,6 +1083,35 @@
             // 6. TV Tournament Resistor Video Mixer Overlay (Issue 1)
             const chkMixer = document.getElementById("chkRetroMixer");
             if (chkMixer && chkMixer.checked) {
+                // Plot Trace 1: Cyan trace (Upper vertical offset)
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                for (let i = 0; i < auxSamples1.length; i++) {
+                    const x = i * step;
+                    const y = (scopeCanvas.height * 0.25) - (auxSamples1[i] * (scopeCanvas.height * 0.15));
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                // Plot Trace 2: Pink trace (Lower vertical offset)
+                ctx.strokeStyle = "rgba(255, 0, 127, 0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                for (let i = 0; i < auxSamples2.length; i++) {
+                    const x = i * step;
+                    const y = (scopeCanvas.height * 0.75) - (auxSamples2[i] * (scopeCanvas.height * 0.15));
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
                 // Horizontal scanline raster overlay (Sync blanking)
                 ctx.fillStyle = "rgba(15, 23, 42, 0.18)";
                 for (let y = 0; y < scopeCanvas.height; y += 3) {
@@ -1434,8 +1498,12 @@
                 const rate = params.stroboscope.rate; // Vcc charge voltage
                 const vccVal = BigInt(Math.round(rate * 1e18));
 
+                const chargeTCVal = BigInt(Math.round(params.stroboscope.chargeTC));
+                const dischargeTCVal = BigInt(Math.round(params.stroboscope.dischargeTC));
+                const packedParams = chargeTCVal + (dischargeTCVal << 128n);
+
                 const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
-                const calldata = iface.encodeFunctionData("processSample", [vccVal, 0n]);
+                const calldata = iface.encodeFunctionData("processSample", [vccVal, packedParams]);
 
                 const res = await fetch(API_URL, {
                     method: "POST",

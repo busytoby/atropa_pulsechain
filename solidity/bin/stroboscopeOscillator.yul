@@ -2,7 +2,7 @@
     Sylvania Stroboscopic Relaxation Oscillator.
     Simulates a neon gas-discharge or stroboscopic tube trigger circuit.
     Charges capacitor towards Vcc and discharges rapidly when striking threshold is reached.
-    Produces trigger pulses and relaxation sawtooth LFO waves for synthesizers.
+    Supports adjustable charge (T_on) and discharge (T_off) time constants.
 */
 object "StroboscopeOscillator" {
     code {
@@ -11,10 +11,17 @@ object "StroboscopeOscillator" {
     }
     object "runtime" {
         code {
-            // processSample(int256 vcc, int256 dummy) -> int256 outputVoltage
-            // selector: 0x07a96d8c (matches standard oscillator processSample signature)
+            // processSample(int256 vcc, int256 packedParams) -> int256 outputVoltage
+            // selector: 0x07a96d8c
             if eq(shr(224, calldataload(0)), 0x07a96d8c) {
                 let Vcc := calldataload(4)
+                let packedParams := calldataload(36)
+                
+                let chargeTC := and(packedParams, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                let dischargeTC := shr(128, packedParams)
+                
+                if iszero(chargeTC) { chargeTC := 10 }
+                if iszero(dischargeTC) { dischargeTC := 3 }
 
                 // Load state variables
                 let V_c := sload(400)       // Capacitor voltage
@@ -25,10 +32,8 @@ object "StroboscopeOscillator" {
 
                 if is_discharging {
                     // Rapid discharge: V_c decays towards V_extinguish
-                    // dVc = (V_extinguish - V_c) / 3 (fast time constant)
-                    // MUST use signed sdiv since diff can be negative!
                     let diff := sub(V_extinguish, V_c)
-                    V_c := add(V_c, sdiv(diff, 3))
+                    V_c := add(V_c, sdiv(diff, dischargeTC))
 
                     // If we drop below extinguish threshold, stop discharging
                     if slt(V_c, add(V_extinguish, 100000000000000000)) {
@@ -37,9 +42,8 @@ object "StroboscopeOscillator" {
                 }
                 if iszero(is_discharging) {
                     // Charging phase: V_c charges towards Vcc via resistor
-                    // dVc = (Vcc - V_c) / 10 (slower time constant)
                     let diff := sub(Vcc, V_c)
-                    V_c := add(V_c, sdiv(diff, 10))
+                    V_c := add(V_c, sdiv(diff, chargeTC))
 
                     // If we exceed strike threshold, ignite discharge phase
                     if sgt(V_c, V_strike) {
