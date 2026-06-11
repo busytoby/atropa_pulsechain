@@ -904,24 +904,52 @@ Status: Awaiting user to start music.</div>
         let sdParts = { head: null, torso: null, lArm: null, rArm: null, lLeg: null, rLeg: null };
         let sdImage = null;
 
-        // Volumetric Spotlight beam
-        function drawSpotlight() {
-            let topProj = project(new Point3D(0, 600, 0));
-            let bottomProj1 = project(new Point3D(-380, -100, -380));
-            let bottomProj2 = project(new Point3D(380, -100, 380));
-            
-            if (topProj && bottomProj1 && bottomProj2) {
+        // Volumetric Spotlight beams tracking the dancer
+        function drawSpotlight(offset3D, bass = 0.1, treble = 0.1) {
+            const targetX = offset3D ? offset3D.x : 0;
+            const targetZ = offset3D ? offset3D.z : 0;
+
+            // Spotlight 1: Top-Left (Cyan, pulses on bass)
+            let top1 = project(new Point3D(-450, 650, -150));
+            let bot1A = project(new Point3D(targetX - 180, -100, targetZ - 180));
+            let bot1B = project(new Point3D(targetX + 180, -100, targetZ + 180));
+
+            if (top1 && bot1A && bot1B) {
                 ctx.save();
-                let grad = ctx.createLinearGradient(topProj.x, topProj.y, (bottomProj1.x + bottomProj2.x)/2, (bottomProj1.y + bottomProj2.y)/2);
-                grad.addColorStop(0, "rgba(255, 0, 127, 0.28)");
-                grad.addColorStop(0.4, "rgba(0, 240, 255, 0.12)");
+                let grad = ctx.createLinearGradient(top1.x, top1.y, (bot1A.x + bot1B.x)/2, (bot1A.y + bot1B.y)/2);
+                let alpha = 0.10 + bass * 0.28;
+                grad.addColorStop(0, `rgba(0, 240, 255, ${alpha * 1.5})`);
+                grad.addColorStop(0.4, `rgba(0, 240, 255, ${alpha * 0.6})`);
                 grad.addColorStop(1, "rgba(0, 0, 0, 0)");
                 
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.moveTo(topProj.x, topProj.y);
-                ctx.lineTo(bottomProj1.x, bottomProj1.y);
-                ctx.lineTo(bottomProj2.x, bottomProj2.y);
+                ctx.moveTo(top1.x, top1.y);
+                ctx.lineTo(bot1A.x, bot1A.y);
+                ctx.lineTo(bot1B.x, bot1B.y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Spotlight 2: Top-Right (Magenta/Pink, pulses on treble/high frequencies)
+            let top2 = project(new Point3D(450, 650, -150));
+            let bot2A = project(new Point3D(targetX - 180, -100, targetZ + 180));
+            let bot2B = project(new Point3D(targetX + 180, -100, targetZ - 180));
+
+            if (top2 && bot2A && bot2B) {
+                ctx.save();
+                let grad = ctx.createLinearGradient(top2.x, top2.y, (bot2A.x + bot2B.x)/2, (bot2A.y + bot2B.y)/2);
+                let alpha = 0.10 + treble * 0.28;
+                grad.addColorStop(0, `rgba(255, 0, 127, ${alpha * 1.5})`);
+                grad.addColorStop(0.4, `rgba(255, 0, 127, ${alpha * 0.6})`);
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(top2.x, top2.y);
+                ctx.lineTo(bot2A.x, bot2A.y);
+                ctx.lineTo(bot2B.x, bot2B.y);
                 ctx.closePath();
                 ctx.fill();
                 ctx.restore();
@@ -1948,8 +1976,8 @@ Status: Awaiting user to start music.</div>
                 volume = (bass + mid + treble) / 3;
             }
 
-            // 2. Draw Volumetric Spotlight Beam (height modulates slightly on volume spikes)
-            drawSpotlight();
+            // 2. Draw Volumetric Spotlight Beam (tracks dancer and modulates on audio beats)
+            drawSpotlight(currentOffset, bass, treble);
 
             // 3. Draw Stage grid
             drawStageGrid(choreographyTime);
