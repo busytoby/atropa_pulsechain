@@ -1057,7 +1057,15 @@
             const inputScaled = outVolts * masterAttenuation;
 
             // SOAR voltage ceiling calculation: V_max = I_limit * loadRL
-            const I_limit = 1.969696969696969697;
+            let I_limit = 1.969696969696969697;
+            
+            // Stress-Sensitive Piezoresistive Bias Modulation (Issue 10)
+            if (activeModule === "formant" && typeof formantCompEnv !== "undefined") {
+                const stressSensitivity = 0.5;
+                I_limit = I_limit - (formantCompEnv * stressSensitivity);
+                if (I_limit < 0.5) I_limit = 0.5;
+            }
+
             const V_max = I_limit * loadImpedance;
             const softLimit = V_max * 0.95;
 
