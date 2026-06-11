@@ -308,7 +308,19 @@
                 Grand Jeté <span class="btn-status">ACT IV</span>
             </div>
             <div class="choreography-btn" id="pos-attitude" onclick="setStance('attitude')">
-                Attitude <span class="btn-status">FINALE</span>
+                Attitude <span class="btn-status">ACT V</span>
+            </div>
+            <div class="choreography-btn" id="pos-releve" onclick="setStance('releve')">
+                Relevé <span class="btn-status">ACT VI</span>
+            </div>
+            <div class="choreography-btn" id="pos-fouette" onclick="setStance('fouette')">
+                Fouetté <span class="btn-status">ACT VII</span>
+            </div>
+            <div class="choreography-btn" id="pos-adagio" onclick="setStance('adagio')">
+                Adagio <span class="btn-status">ACT VIII</span>
+            </div>
+            <div class="choreography-btn" id="pos-chasse" onclick="setStance('chasse')">
+                Chassé <span class="btn-status">FINALE</span>
             </div>
 
             <div class="section-title">
@@ -588,10 +600,9 @@ Status: Awaiting user to start music.</div>
                 kick.start(now);
                 kick.stop(now + 0.22);
             }
-
             // Auto-Director Mode Sequencer (cycles every 8 beats)
             if (directorMode && beatIndex > 0 && beatIndex % 8 === 0) {
-                const acts = ["plie", "arabesque", "pirouette", "grandjete", "attitude"];
+                const acts = ["plie", "arabesque", "pirouette", "grandjete", "attitude", "releve", "fouette", "adagio", "chasse"];
                 let nextIndex = (acts.indexOf(activeStance) + 1) % acts.length;
                 let nextAct = acts[nextIndex];
                 
@@ -602,11 +613,13 @@ Status: Awaiting user to start music.</div>
                     arabesque: "Act II - Starlight Extension (Arabesque)",
                     pirouette: "Act III - Cosmic Rotation (Pirouette)",
                     grandjete: "Act IV - Ethereal Leap (Grand Jeté)",
-                    attitude: "Act V - Dynamic Balance (Attitude)"
+                    attitude: "Act V - Dynamic Balance (Attitude)",
+                    releve: "Act VI - Celestial Pointe (Relevé)",
+                    fouette: "Act VII - Whipping Tempest (Fouetté)",
+                    adagio: "Act VIII - Flowing Devotion (Adagio)",
+                    chasse: "Act IX - Rhythm Glide (Chassé)"
                 };
-                logEvent(`🎬 DIRECTOR: Modulating act to ${actTitles[nextAct]}.`);
-
-                // Auto-trigger pose render after LERP transition finishes
+                logEvent(`🎬 DIRECTOR: Modulating act to ${actTitles[nextAct]}.`);                // Auto-trigger pose render after LERP transition finishes
                 setTimeout(() => {
                     if (directorMode && activeStance === nextAct) {
                         triggerControlNetRender();
@@ -721,8 +734,11 @@ Status: Awaiting user to start music.</div>
 
         // 3D Bear Skeleton calculations
         function getBearSkeleton(offset3D, scale, angles) {
-            const { leftArm, rightArm, leftLeg, rightLeg } = angles;
-            let head = new Point3D(offset3D.x, offset3D.y + 160 * scale, offset3D.z);
+            const { leftArm, rightArm, leftLeg, rightLeg, headYaw = 0, headPitch = 0 } = angles;
+            let headX = offset3D.x + Math.sin(headYaw) * 15 * scale;
+            let headY = offset3D.y + 160 * scale - Math.cos(headPitch) * 5 * scale;
+            let headZ = offset3D.z + Math.cos(headYaw) * 15 * scale;
+            let head = new Point3D(headX, headY, headZ);
             let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale, offset3D.z);
             let lShoulder = new Point3D(offset3D.x - 70 * scale, offset3D.y + 90 * scale, offset3D.z);
             let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
@@ -979,8 +995,9 @@ Status: Awaiting user to start music.</div>
             logEvent(`Dance: Stance updated to ${name.toUpperCase()}`);
         }
 
-        function getChoreographyAngles(stance, timeMs, bass, mid, treble, volume) {
+        function getChoreographyAngles(stance, timeMs, bass = 0.1, mid = 0.1, treble = 0.1, volume = 0.1) {
             let armL = 0, armR = 0, legL = 0, legR = 0;
+            let headYaw = 0, headPitch = 0;
             let t = timeMs * 0.002 * (synthBpm / 96);
 
             switch (stance) {
@@ -991,6 +1008,8 @@ Status: Awaiting user to start music.</div>
                     armR = Math.PI / 4 + bend + mid * 0.2;
                     legL = bend;
                     legR = -bend;
+                    headYaw = Math.sin(t * 0.5) * 0.1;
+                    headPitch = bend * 0.2;
                     break;
                 case "arabesque":
                     // Standing extension modulated by mids and highs (arpeggios)
@@ -998,6 +1017,8 @@ Status: Awaiting user to start music.</div>
                     armR = -Math.PI / 3 - mid * 0.15; 
                     legL = 0; 
                     legR = Math.PI / 2 + (treble * 0.25); 
+                    headYaw = -0.2;
+                    headPitch = 0.25;
                     break;
                 case "pirouette":
                     // Spin around vertical Y axis, arm width reacting to mid frequency notes
@@ -1007,6 +1028,8 @@ Status: Awaiting user to start music.</div>
                     legR = Math.PI / 4 + treble * 0.12;
                     // Spin speed modulated by total synth volume
                     camera.yaw += 0.01 + volume * 0.03;
+                    headYaw = Math.sin(t * 12.0) * 0.3; // Spotting rotation
+                    headPitch = Math.sin(t * 2.0) * 0.1;
                     break;
                 case "grandjete":
                     // Split in mid-air (height boosted by kick drum bass)
@@ -1014,6 +1037,8 @@ Status: Awaiting user to start music.</div>
                     armR = -Math.PI / 2 - mid * 0.25;
                     legL = -Math.PI / 3 - bass * 0.25;
                     legR = Math.PI / 3 + bass * 0.25;
+                    headYaw = 0;
+                    headPitch = 0.15;
                     break;
                 case "attitude":
                     // Standing leg straight, back leg bent upward responding to arpeggio highs
@@ -1021,13 +1046,56 @@ Status: Awaiting user to start music.</div>
                     armR = Math.PI / 1.5 + mid * 0.2;
                     legL = 0;
                     legR = Math.PI / 3 + treble * 0.35;
+                    headYaw = -0.15;
+                    headPitch = 0.1;
+                    break;
+                case "releve":
+                    // Rise on toes/pointe, arms raised gracefully overhead
+                    let riseVal = 0.1 + (treble * 0.15);
+                    armL = -Math.PI / 1.1 + (mid * 0.1);
+                    armR = Math.PI / 1.1 - (mid * 0.1);
+                    legL = -riseVal;
+                    legR = riseVal;
+                    headYaw = 0;
+                    headPitch = 0.2 + (treble * 0.15);
+                    break;
+                case "fouette":
+                    // Rapid leg whipped round-and-round, arms pivoting to balance
+                    let rotSpeed = t * 6.0;
+                    armL = Math.PI / 4 + Math.sin(rotSpeed) * 0.3;
+                    armR = -Math.PI / 4 + Math.cos(rotSpeed) * 0.3;
+                    legL = 0;
+                    legR = Math.PI / 3 + Math.sin(rotSpeed) * 0.5 + (treble * 0.2);
+                    camera.yaw += Math.sin(rotSpeed) * 0.05 + 0.02;
+                    headYaw = Math.sin(t * 8.0) * 0.4;
+                    headPitch = 0.05;
+                    break;
+                case "adagio":
+                    // Slow, sweeping high extensions
+                    let sweep = Math.sin(t * 0.5);
+                    armL = Math.PI / 3 + sweep * 0.4 + mid * 0.25;
+                    armR = -Math.PI / 3 - sweep * 0.4 - mid * 0.25;
+                    legL = 0;
+                    legR = Math.PI / 2.5 + sweep * 0.35 + treble * 0.2;
+                    headYaw = Math.sin(t * 0.8) * 0.25;
+                    headPitch = Math.cos(t * 0.8) * 0.15;
+                    break;
+                case "chasse":
+                    // Low sliding glide
+                    let slide = Math.sin(t * 2.0);
+                    armL = Math.PI / 2.5 + slide * 0.2;
+                    armR = Math.PI / 2.5 - slide * 0.2;
+                    legL = Math.PI / 6 + slide * 0.15;
+                    legR = -Math.PI / 6 - slide * 0.15;
+                    headYaw = slide * 0.25;
+                    headPitch = -0.05;
                     break;
             }
 
-            return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR };
+            return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR, headYaw, headPitch };
         }
 
-        function getModelOffset(stance, timeMs, bass, mid, treble, volume) {
+        function getModelOffset(stance, timeMs, bass = 0.1, mid = 0.1, treble = 0.1, volume = 0.1) {
             let x = 0, y = 0, z = 0;
             let t = timeMs * 0.002 * (synthBpm / 96);
 
@@ -1040,6 +1108,17 @@ Status: Awaiting user to start music.</div>
                     let loopT = (t % Math.PI);
                     y = Math.sin(loopT) * 70 + (bass * 85); 
                     x = (loopT - Math.PI/2) * 100; 
+                    break;
+                case "releve":
+                    y = 35 + (treble * 25); // Elevate on pointe
+                    break;
+                case "chasse":
+                    x = Math.sin(t * 2.0) * 120; // Side-to-side slide
+                    y = -10 + Math.abs(Math.sin(t * 2.0)) * -15; // Low stance height
+                    break;
+                case "fouette":
+                    x = Math.cos(t * 1.5) * 30;
+                    z = Math.sin(t * 1.5) * 30;
                     break;
             }
 
@@ -1345,7 +1424,7 @@ Status: Awaiting user to start music.</div>
             });
         }
 
-        let currentAngles = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0 };
+        let currentAngles = { leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0, headYaw: 0, headPitch: 0 };
         let currentOffset = new Point3D(0, 0, 0);
 
         // Main Animation loop
@@ -1391,6 +1470,11 @@ Status: Awaiting user to start music.</div>
             currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
             currentAngles.leftLeg += (targetAngles.leftLeg - currentAngles.leftLeg) * lerpSpeed;
             currentAngles.rightLeg += (targetAngles.rightLeg - currentAngles.rightLeg) * lerpSpeed;
+            
+            if (currentAngles.headYaw === undefined) currentAngles.headYaw = 0;
+            if (currentAngles.headPitch === undefined) currentAngles.headPitch = 0;
+            currentAngles.headYaw += ((targetAngles.headYaw || 0) - currentAngles.headYaw) * lerpSpeed;
+            currentAngles.headPitch += ((targetAngles.headPitch || 0) - currentAngles.headPitch) * lerpSpeed;
 
             currentOffset.x += (targetOffset.x - currentOffset.x) * lerpSpeed;
             currentOffset.y += (targetOffset.y - currentOffset.y) * lerpSpeed;
