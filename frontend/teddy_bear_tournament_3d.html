@@ -1751,12 +1751,25 @@ Ready to initiate tournament match.</div>
             };
 
             // Modulations for fighter 2 limbs (Biotika spiking movement)
+            // Dynamically controlled by the ADSR/DNA synthesizer sliders to link Biotika's physical reflection characteristics
+            const armsScale = parseFloat(document.getElementById("synth-arms")?.value || 1.0);
+            const legsScale = parseFloat(document.getElementById("synth-legs")?.value || 1.0);
+            const attackTime = parseFloat(document.getElementById("synth-attack")?.value || 0.02);
+
             let b2Angles = {
-                leftArm: Math.cos(time * 0.0035) * (50 * Math.PI / 180),
-                rightArm: -Math.cos(time * 0.0035) * (50 * Math.PI / 180),
-                leftLeg: Math.sin(time * 0.0035) * (15 * Math.PI / 180),
-                rightLeg: -Math.sin(time * 0.0035) * (15 * Math.PI / 180)
+                leftArm: Math.cos(time * 0.0035 * attackTime * 50) * (50 * Math.PI / 180) * armsScale,
+                rightArm: -Math.cos(time * 0.0035 * attackTime * 50) * (50 * Math.PI / 180) * armsScale,
+                leftLeg: Math.sin(time * 0.0035 * attackTime * 50) * (15 * Math.PI / 180) * legsScale,
+                rightLeg: -Math.sin(time * 0.0035 * attackTime * 50) * (15 * Math.PI / 180) * legsScale
             };
+
+            // Bind Biotika Spike's active parameters directly to synthesis sliders (e.g. envelope decay controls spike decay threshold)
+            if (fighter2 && fighter2.name === "Biotika Spike") {
+                const decayVal = parseFloat(document.getElementById("synth-decay")?.value || 0.30);
+                const furScale = parseFloat(document.getElementById("synth-fur")?.value || 1.0);
+                fighter2.spike = 0.5 + decayVal * 0.5;
+                fighter2.phase = 0.1 + furScale * 0.25;
+            }
 
             // Process Combat/AI
             if (matchActive) {
