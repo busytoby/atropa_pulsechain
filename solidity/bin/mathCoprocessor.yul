@@ -34,17 +34,15 @@ object "MathCoprocessor" {
                 default { s := 1000000000000000000 }
             }
 
-            // High-precision interpolated Sine function (scaled 1e18)
+            // Radian-based fixed-point Sine (scaled 1e18)
             function getSin(theta) -> s {
                 let pi := 3141592653589793238
                 let twoPi := 6283185307179586476
                 let halfPi := 1570796326794896619
                 
-                // Modulo twoPi
                 theta := mod(theta, twoPi)
                 if slt(theta, 0) { theta := add(theta, twoPi) }
                 
-                // Quadrant symmetry mapping
                 let phi := theta
                 let sign := 1
                 
@@ -57,7 +55,6 @@ object "MathCoprocessor" {
                     phi := sub(pi, phi)
                 }
                 
-                // Interpolation step: delta = halfPi / 16
                 let delta := 98174770424681038
                 let idx := div(phi, delta)
                 let frac := mod(phi, delta)
@@ -72,6 +69,47 @@ object "MathCoprocessor" {
             function getCos(theta) -> c {
                 let halfPi := 1570796326794896619
                 c := getSin(add(theta, halfPi))
+            }
+
+            // Normalized Phase (0 to 1e18) fixed-point Sine (scaled 1e18)
+            function getSinNormalized(phi) -> s {
+                let one := 1000000000000000000
+                phi := mod(phi, one)
+                if slt(phi, 0) { phi := add(phi, one) }
+
+                let q1 := 250000000000000000
+                let q2 := 500000000000000000
+                let q3 := 750000000000000000
+
+                let idx_input := phi
+                let sign := 1
+
+                if and(iszero(slt(phi, q1)), slt(phi, q2)) {
+                    idx_input := sub(q2, phi)
+                }
+                if and(iszero(slt(phi, q2)), slt(phi, q3)) {
+                    idx_input := sub(phi, q2)
+                    sign := sub(0, 1)
+                }
+                if iszero(slt(phi, q3)) {
+                    idx_input := sub(one, phi)
+                    sign := sub(0, 1)
+                }
+
+                // delta = q1 / 16 = 15625000000000000
+                let delta := 15625000000000000
+                let idx := div(idx_input, delta)
+                let frac := mod(idx_input, delta)
+
+                let y0 := getSineLUT(idx)
+                let y1 := getSineLUT(add(idx, 1))
+
+                let interp := add(y0, sdiv(mul(sub(y1, y0), frac), delta))
+                s := mul(interp, sign)
+            }
+
+            function getCosNormalized(phi) -> c {
+                c := getSinNormalized(add(phi, 250000000000000000))
             }
 
             // executeMath(uint256 op, uint256 a, uint256 b) -> (uint256 res, uint256 status)
@@ -146,6 +184,12 @@ object "MathCoprocessor" {
                     case 3 { res := 954114361 }          // Apex Prime
                     case 4 { res := 953473954114361 }    // VERTEX of DYSNOMIA
                     default { status := 1 }
+                }
+                case 11 { // Normalized Sine
+                    res := getSinNormalized(opA)
+                }
+                case 12 { // Normalized Cosine
+                    res := getCosNormalized(opA)
                 }
 
                 mstore(0x00, res)
