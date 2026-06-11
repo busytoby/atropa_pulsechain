@@ -524,6 +524,9 @@
         let activeDigit = 0;
         let isSweeping = false;
         let frameAccumulator = 0;
+        let spriteScale = 1.0;
+        let spriteRotation = 0;
+        let spriteX = 0;
 
         // Current parameters
         const params = {
@@ -828,6 +831,51 @@
             }
             ctx.stroke();
             ctx.shadowBlur = 0; // reset
+
+            // Draw dancing/pulsing speaker sprite (modulates dynamically based on rhythm triggers)
+            if (activeModule === "rhythm") {
+                // Decay animations smoothly
+                spriteScale += (1.0 - spriteScale) * 0.15;
+                spriteX += (0 - spriteX) * 0.15;
+
+                drawRetroSprite(ctx, scopeCanvas.width - 60 + spriteX, 60, spriteScale, spriteRotation);
+            }
+        }
+
+        function drawRetroSprite(ctx, x, y, scale, rotation) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.rotate(rotation);
+
+            // Draw speaker box
+            ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+            ctx.strokeStyle = "#eab308"; // yellow to match rhythm sequencer color
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.rect(-25, -35, 50, 70);
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw outer speaker cone
+            ctx.strokeStyle = "#f43f5e";
+            ctx.beginPath();
+            ctx.arc(0, 10, 15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw inner speaker cone (pulses outward on drum hits)
+            ctx.fillStyle = "#f43f5e";
+            ctx.beginPath();
+            ctx.arc(0, 10, Math.max(3, 7 * (scale - 0.2)), 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw tweeter
+            ctx.strokeStyle = "#00f2fe";
+            ctx.beginPath();
+            ctx.arc(0, -18, 6, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
         }
 
         let clipTimeout = null;
@@ -1314,6 +1362,17 @@
                 if (rPayload && rPayload.result && rPayload.result.output) {
                     const decoded = rIface.decodeFunctionResult("processSample", "0x" + rPayload.result.output);
                     bitmask = Number(decoded[0]);
+                }
+
+                // Update sprite animation properties based on trigger bitmask
+                if (bitmask & 1) { // Kick -> scale bump
+                    spriteScale = 1.5;
+                }
+                if (bitmask & 2) { // Snare -> lateral shake
+                    spriteX = (Math.random() > 0.5 ? 1 : -1) * 12;
+                }
+                if (bitmask & 4) { // Hi-hat -> spin rotation slightly
+                    spriteRotation += 0.4;
                 }
 
                 // If triggers are high, trigger active voice hits
