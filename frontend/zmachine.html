@@ -658,6 +658,8 @@ Connect your wallet to retrieve the active story ROM.</div>
         let currentBalletOffset = new Point3D(0, 0, 0);
         let lastBeatTime = 0;
         let beatCount = 0;
+        let practiceStudioActive = false;
+        let barreHold = false;
 
         function getBalletAngles(stance, timeMs) {
             let armL = 0, armR = 0, legL = 0, legR = 0;
@@ -744,6 +746,11 @@ Connect your wallet to retrieve the active story ROM.</div>
                     headYaw = slide * 0.25;
                     headPitch = -0.05;
                     break;
+            }
+
+            if (barreHold) {
+                // Stretch left arm horizontally to rest on the barre
+                armL = Math.PI / 2.2;
             }
 
             return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR, headYaw, headPitch };
@@ -871,6 +878,25 @@ Connect your wallet to retrieve the active story ROM.</div>
             const goldDim = "rgba(140, 114, 65, 0.75)";
             const glowPink = "rgba(255, 51, 102, 0.9)";
             
+            // Draw wooden barre if in practice studio
+            if (practiceStudioActive) {
+                const pBarreLeft = new Point3D(offset.x - 150 * scale, offset.y + 80 * scale, offset.z - 30 * scale);
+                const pBarreRight = new Point3D(offset.x + 150 * scale, offset.y + 80 * scale, offset.z - 30 * scale);
+                const scLeft = project(pBarreLeft);
+                const scRight = project(pBarreRight);
+                if (scLeft && scRight) {
+                    drawBone(pBarreLeft, pBarreRight, "rgba(150, 100, 60, 0.9)", 6); // Brown wooden rail
+                }
+                
+                const pPostLeftTop = new Point3D(offset.x - 90 * scale, offset.y + 80 * scale, offset.z - 30 * scale);
+                const pPostLeftBottom = new Point3D(offset.x - 90 * scale, offset.y - 70 * scale, offset.z - 30 * scale);
+                const pPostRightTop = new Point3D(offset.x + 90 * scale, offset.y + 80 * scale, offset.z - 30 * scale);
+                const pPostRightBottom = new Point3D(offset.x + 90 * scale, offset.y - 70 * scale, offset.z - 30 * scale);
+                
+                drawBone(pPostLeftTop, pPostLeftBottom, "rgba(120, 120, 120, 0.6)", 3.5);
+                drawBone(pPostRightTop, pPostRightBottom, "rgba(120, 120, 120, 0.6)", 3.5);
+            }
+
             // Draw tutu
             if (joints.midHip) {
                 ctx.save();
@@ -985,9 +1011,35 @@ Connect your wallet to retrieve the active story ROM.</div>
 
             const canvas = document.getElementById("vectorCanvas");
 
+            if (action === "practice" || action === "studio" || (action === "goto" && arg === "studio")) {
+                practiceStudioActive = true;
+                balletStance = "plie";
+                if (!balletMode) {
+                    balletMode = true;
+                    canvas.style.display = "block";
+                    runBalletLoop();
+                }
+                termScreen.innerText += `\n\nBallet Practice Studio (Room 101)\n=================================\nYou are standing in the center of a beautiful, sunlit Ballet Practice Studio. High-arched mirrors line the wall, reflecting the soft glow of the vector grid. A mahogany barre runs along the side, and the wooden floor is perfectly polished. A vector-graphic teddy bear wearing a pink tutu stands in first position, waiting for your directions.\n\nType 'dance [pose]' to instruct the dancer, or 'director start' to begin the choreographic sequence.\n\nType 'barre hold' or 'barre release' to toggle practice assistance.\n\n# _`;
+                termScreen.scrollTop = termScreen.scrollHeight;
+                return;
+            }
+
+            if (action === "barre") {
+                if (arg === "hold") {
+                    barreHold = true;
+                    termScreen.innerText += `\n[Vector Bear holds onto the mahogany barre for stability.]\n\n# _`;
+                } else if (arg === "release") {
+                    barreHold = false;
+                    termScreen.innerText += `\n[Vector Bear releases the barre, relying on core balance.]\n\n# _`;
+                }
+                termScreen.scrollTop = termScreen.scrollHeight;
+                return;
+            }
+
             if (action === "ballet") {
                 if (arg === "exit") {
                     balletMode = false;
+                    practiceStudioActive = false;
                     canvas.style.display = "none";
                     termScreen.innerText += `\n[Ballet Mode exited. Returning to Interactive Fiction...]\n\n# _`;
                 } else {
@@ -1040,9 +1092,10 @@ Connect your wallet to retrieve the active story ROM.</div>
             const cmd = cmdText.trim();
             const parts = cmd.split(/\s+/);
             const action = parts[0].toLowerCase();
+            const arg = parts[1] ? parts[1].toLowerCase() : "";
 
             // Intercept ballet director commands
-            if (action === "dance" || action === "pose" || action === "director" || action === "orbit" || action === "zoom" || action === "ballet" || action === "poses") {
+            if (action === "dance" || action === "pose" || action === "director" || action === "orbit" || action === "zoom" || action === "ballet" || action === "poses" || action === "practice" || action === "studio" || (action === "goto" && arg === "studio") || action === "barre") {
                 handleBalletCommand(cmdText);
                 return;
             }
