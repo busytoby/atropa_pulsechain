@@ -976,67 +976,67 @@ Status: Awaiting user to start music.</div>
             logEvent(`Dance: Stance updated to ${name.toUpperCase()}`);
         }
 
-        function getChoreographyAngles(stance, timeMs) {
+        function getChoreographyAngles(stance, timeMs, bass, mid, treble, volume) {
             let armL = 0, armR = 0, legL = 0, legR = 0;
             let t = timeMs * 0.002 * (synthBpm / 96);
 
             switch (stance) {
                 case "plie":
-                    // Smooth squatting bend
-                    let bend = Math.sin(t) * 0.3 + 0.3;
-                    armL = Math.PI / 4 + bend;
-                    armR = Math.PI / 4 + bend;
+                    // Smooth squatting bend driven by bass (kick drum) and volume
+                    let bend = (bass * 0.5) + (Math.sin(t) * 0.1);
+                    armL = Math.PI / 4 + bend + mid * 0.2;
+                    armR = Math.PI / 4 + bend + mid * 0.2;
                     legL = bend;
                     legR = -bend;
                     break;
                 case "arabesque":
-                    // Standing on left leg, right leg held horizontally backward
-                    armL = Math.PI / 2; // Arm extended forward
-                    armR = -Math.PI / 3; // Arm backward
-                    legL = 0; // standing
-                    legR = Math.PI / 2 + Math.sin(t)*0.1; // Back extended leg
+                    // Standing extension modulated by mids and highs (arpeggios)
+                    armL = Math.PI / 2 + mid * 0.2; 
+                    armR = -Math.PI / 3 - mid * 0.15; 
+                    legL = 0; 
+                    legR = Math.PI / 2 + (treble * 0.25); 
                     break;
                 case "pirouette":
-                    // Spin around Y axis (represented in joints as arm circle and leg tucked)
-                    armL = Math.PI / 3;
-                    armR = Math.PI / 3;
+                    // Spin around vertical Y axis, arm width reacting to mid frequency notes
+                    armL = Math.PI / 3 + mid * 0.15;
+                    armR = Math.PI / 3 + mid * 0.15;
                     legL = 0;
-                    legR = Math.PI / 4; // bent leg touching knee
-                    // Continuously rotate camera yaw to visual spin
-                    camera.yaw += 0.02;
+                    legR = Math.PI / 4 + treble * 0.12;
+                    // Spin speed modulated by total synth volume
+                    camera.yaw += 0.01 + volume * 0.03;
                     break;
                 case "grandjete":
-                    // Split in mid-air (leap height parabolic)
-                    armL = Math.PI / 2;
-                    armR = -Math.PI / 2;
-                    legL = -Math.PI / 3; // front leg split
-                    legR = Math.PI / 3;  // back leg split
+                    // Split in mid-air (height boosted by kick drum bass)
+                    armL = Math.PI / 2 + mid * 0.25;
+                    armR = -Math.PI / 2 - mid * 0.25;
+                    legL = -Math.PI / 3 - bass * 0.25;
+                    legR = Math.PI / 3 + bass * 0.25;
                     break;
                 case "attitude":
-                    // Standing leg straight, back leg bent upward
-                    armL = Math.PI / 2.2;
-                    armR = Math.PI / 1.5;
+                    // Standing leg straight, back leg bent upward responding to arpeggio highs
+                    armL = Math.PI / 2.2 + mid * 0.2;
+                    armR = Math.PI / 1.5 + mid * 0.2;
                     legL = 0;
-                    legR = Math.PI / 3 + Math.sin(t)*0.1;
+                    legR = Math.PI / 3 + treble * 0.35;
                     break;
             }
 
             return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR };
         }
 
-        function getModelOffset(stance, timeMs) {
+        function getModelOffset(stance, timeMs, bass, mid, treble, volume) {
             let x = 0, y = 0, z = 0;
             let t = timeMs * 0.002 * (synthBpm / 96);
 
             switch (stance) {
                 case "plie":
-                    y = -Math.abs(Math.sin(t)) * 40; // drop height
+                    y = -bass * 75; // Bounces directly in sync with bass drum hits
                     break;
                 case "grandjete":
-                    // Leap trajectory Y-axis
+                    // Leap height reacting directly to bass beats
                     let loopT = (t % Math.PI);
-                    y = Math.sin(loopT) * 120; // jump height
-                    x = (loopT - Math.PI/2) * 100; // translate forward
+                    y = Math.sin(loopT) * 70 + (bass * 85); 
+                    x = (loopT - Math.PI/2) * 100; 
                     break;
             }
 
@@ -1272,17 +1272,37 @@ Status: Awaiting user to start music.</div>
             ctx.fillStyle = "#04050a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Draw Volumetric Spotlight Beam
+            // 1. Get real-time audio frequency bands from the synthesizer analyser
+            let volume = 0.1, bass = 0.1, mid = 0.1, treble = 0.1;
+            if (analyser) {
+                let bufferLength = analyser.frequencyBinCount;
+                let dataArray = new Uint8Array(bufferLength);
+                analyser.getByteFrequencyData(dataArray);
+
+                let bassSum = 0, midSum = 0, trebleSum = 0;
+                let third = Math.floor(bufferLength / 3);
+
+                for (let i = 0; i < third; i++) bassSum += dataArray[i];
+                for (let i = third; i < 2 * third; i++) midSum += dataArray[i];
+                for (let i = 2 * third; i < bufferLength; i++) trebleSum += dataArray[i];
+
+                bass = (bassSum / third) / 255.0;
+                mid = (midSum / third) / 255.0;
+                treble = (trebleSum / third) / 255.0;
+                volume = (bass + mid + treble) / 3;
+            }
+
+            // 2. Draw Volumetric Spotlight Beam (height modulates slightly on volume spikes)
             drawSpotlight();
 
-            // 2. Draw Stage grid
+            // 3. Draw Stage grid
             drawStageGrid(choreographyTime);
 
-            // Calculate active choreography target motion state
-            let targetAngles = getChoreographyAngles(activeStance, choreographyTime);
-            let targetOffset = getModelOffset(activeStance, choreographyTime);
+            // 4. Calculate active choreography target motion state driven by synthesizer frequencies
+            let targetAngles = getChoreographyAngles(activeStance, choreographyTime, bass, mid, treble, volume);
+            let targetOffset = getModelOffset(activeStance, choreographyTime, bass, mid, treble, volume);
 
-            // 3. Smooth Stance Transition Interpolation (Lerp - set to 0.025 for graceful ballet movement)
+            // 5. Smooth Stance Transition Interpolation (Lerp - set to 0.025 for graceful ballet movement)
             let lerpSpeed = 0.025;
             currentAngles.leftArm += (targetAngles.leftArm - currentAngles.leftArm) * lerpSpeed;
             currentAngles.rightArm += (targetAngles.rightArm - currentAngles.rightArm) * lerpSpeed;
