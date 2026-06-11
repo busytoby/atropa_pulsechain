@@ -389,6 +389,13 @@
 System: Vector engine loaded 3D meshes.
 Stage: Synthesizer core loaded.
 Status: Awaiting user to start music.</div>
+            <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
+                <div style="font-size: 11px; color: #94a3b8; font-family: 'Share Tech Mono', monospace; display: flex; gap: 5px;">
+                    <span style="color: var(--glow-cyan); font-weight: bold;">Z-MACHINE:</span>
+                    <span>INPUT COMMAND</span>
+                </div>
+                <input type="text" id="z-input" placeholder="Type commands (e.g. dance plie, practice start, director start)" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: var(--glow-cyan); padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Share Tech Mono', monospace; outline: none; margin-top: 6px;">
+            </div>
         </div>
     </div>
 
@@ -890,6 +897,55 @@ Status: Awaiting user to start music.</div>
         }
 
         function drawBear3D(offset3D, scale, angles, baseColor) {
+            // Draw wooden barre if in practice studio
+            if (window.practiceStudioActive) {
+                let leftPoint = new Point3D(offset3D.x - 150 * scale, offset3D.y + 80 * scale, offset3D.z - 30 * scale);
+                let rightPoint = new Point3D(offset3D.x + 150 * scale, offset3D.y + 80 * scale, offset3D.z - 30 * scale);
+                let scLeft = project(leftPoint);
+                let scRight = project(rightPoint);
+                if (scLeft && scRight) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(139, 90, 43, 0.9)"; // Mahogany barre
+                    ctx.lineWidth = 8 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(scLeft.x, scLeft.y);
+                    ctx.lineTo(scRight.x, scRight.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                
+                // Draw metal posts
+                let p1 = new Point3D(offset3D.x - 90 * scale, offset3D.y + 80 * scale, offset3D.z - 30 * scale);
+                let p2 = new Point3D(offset3D.x - 90 * scale, offset3D.y - 70 * scale, offset3D.z - 30 * scale);
+                let p3 = new Point3D(offset3D.x + 90 * scale, offset3D.y + 80 * scale, offset3D.z - 30 * scale);
+                let p4 = new Point3D(offset3D.x + 90 * scale, offset3D.y - 70 * scale, offset3D.z - 30 * scale);
+                
+                let scP1 = project(p1);
+                let scP2 = project(p2);
+                let scP3 = project(p3);
+                let scP4 = project(p4);
+                if (scP1 && scP2) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(100, 116, 139, 0.7)";
+                    ctx.lineWidth = 4 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(scP1.x, scP1.y);
+                    ctx.lineTo(scP2.x, scP2.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                if (scP3 && scP4) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(100, 116, 139, 0.7)";
+                    ctx.lineWidth = 4 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(scP3.x, scP3.y);
+                    ctx.lineTo(scP4.x, scP4.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
             const joints = getBearSkeleton(offset3D, scale, angles);
             const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
             
@@ -1090,6 +1146,10 @@ Status: Awaiting user to start music.</div>
                     headYaw = slide * 0.25;
                     headPitch = -0.05;
                     break;
+            }
+
+            if (window.barreHold) {
+                armL = Math.PI / 2.2;
             }
 
             return { leftArm: armL, rightArm: armR, leftLeg: legL, rightLeg: legR, headYaw, headPitch };
@@ -1485,6 +1545,72 @@ Status: Awaiting user to start music.</div>
 
             requestAnimationFrame(loop);
         }
+
+        window.practiceStudioActive = false;
+        window.barreHold = false;
+
+        document.getElementById("z-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const val = e.target.value.trim();
+                if (!val) return;
+                e.target.value = "";
+
+                const consoleBox = document.getElementById("console");
+                consoleBox.innerHTML += `\n\n> ${val}`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+
+                const parts = val.split(/\s+/);
+                const action = parts[0].toLowerCase();
+                const arg = parts[1] ? parts[1].toLowerCase() : "";
+
+                if (action === "dance" || action === "pose") {
+                    const poses = ["plie", "arabesque", "pirouette", "grandjete", "attitude", "releve", "fouette", "adagio", "chasse"];
+                    if (poses.includes(arg)) {
+                        setStance(arg);
+                        consoleBox.innerHTML += `\n[Z-Machine] Directing dancer to pose: ${arg.toUpperCase()}`;
+                        // Trigger Stable Diffusion overlay synthesis
+                        triggerControlNetRender();
+                    } else {
+                        consoleBox.innerHTML += `\n[Z-Machine] Unknown pose. Available: ${poses.join(", ")}`;
+                    }
+                } else if (action === "director") {
+                    if (arg === "start") {
+                        if (!directorMode) toggleDirectorMode();
+                        consoleBox.innerHTML += `\n[Z-Machine] Auto-Director sequence started. Cycling poses...`;
+                    } else if (arg === "stop") {
+                        if (directorMode) toggleDirectorMode();
+                        consoleBox.innerHTML += `\n[Z-Machine] Auto-Director sequence stopped.`;
+                    }
+                } else if (action === "practice") {
+                    if (arg === "start") {
+                        window.practiceStudioActive = true;
+                        setStance("plie");
+                        consoleBox.innerHTML += `\n\nBallet Practice Studio (Room 101)\n=================================\nYou have initialized the Ballet Practice Studio. High-arched mirrors line the stage walls. A mahogany barre has materialized next to the dancer.\n\nTry typing 'barre hold' to support the dancer.`;
+                    } else if (arg === "stop") {
+                        window.practiceStudioActive = false;
+                        window.barreHold = false;
+                        consoleBox.innerHTML += `\n[Z-Machine] Practice studio deactivated. Barre cleared.`;
+                    }
+                } else if (action === "barre") {
+                    if (arg === "hold") {
+                        window.barreHold = true;
+                        consoleBox.innerHTML += `\n[Z-Machine] Dancer grabs the mahogany barre for support. Left arm stabilized.`;
+                    } else if (arg === "release") {
+                        window.barreHold = false;
+                        consoleBox.innerHTML += `\n[Z-Machine] Dancer releases the barre.`;
+                    }
+                } else if (action === "orbit") {
+                    cameraOrbit(arg);
+                    consoleBox.innerHTML += `\n[Z-Machine] Orbiting camera ${arg}`;
+                } else if (action === "zoom") {
+                    cameraZoom(arg);
+                    consoleBox.innerHTML += `\n[Z-Machine] Zooming camera ${arg}`;
+                } else {
+                    consoleBox.innerHTML += `\n[Z-Machine] Unrecognized command. Try 'dance plie', 'director start', or 'practice start'.`;
+                }
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        });
 
         requestAnimationFrame(loop);
     </script>
