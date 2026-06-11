@@ -587,7 +587,8 @@
             },
             bionika: {
                 stimulus: 0.4,
-                leakRate: 0.1
+                leakRate: 0.1,
+                route: 0
             },
             drum: {
                 pitchK: 0.05,
@@ -655,7 +656,8 @@
             ],
             bionika: [
                 { id: "stimulus", label: "Synaptic Stimulus", min: 0.0, max: 1.0, step: 0.05, key: "stimulus", unit: "V" },
-                { id: "leakRate", label: "Membrane Leak Rate", min: 0.0, max: 0.5, step: 0.01, key: "leakRate", unit: "/tick" }
+                { id: "leakRate", label: "Membrane Leak Rate", min: 0.0, max: 0.5, step: 0.01, key: "leakRate", unit: "/tick" },
+                { id: "bionikaRoute", label: "CV Modulation Route (0=None, 1=Formant Pitch, 2=Tempo, 3=Tunnel Bias)", min: 0, max: 3, step: 1, key: "route", unit: "r" }
             ],
             drum: [
                 { id: "pitchK", label: "Spring Constant (Pitch)", min: 0.005, max: 0.2, step: 0.005, key: "pitchK", unit: "k" },
@@ -1462,7 +1464,11 @@
                 }
 
                 // 2. Generate Tunnel Diode Sample
-                const tBias = BigInt(Math.round(params.tunnel.bias * 1e18));
+                let biasOffset = 0.0;
+                if (params.bionika.route === 3) {
+                    biasOffset = bionikaVm * 0.4; // up to 0.4V bias modulation
+                }
+                const tBias = BigInt(Math.round((params.tunnel.bias + biasOffset) * 1e18));
                 const tPitch = BigInt(Math.round(params.tunnel.pitch * 1e18));
                 const tIface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
                 const tCalldata = tIface.encodeFunctionData("processSample", [tBias, tPitch]);
@@ -1567,7 +1573,11 @@
                     scatterOffset = Math.sin(Date.now() * 0.15) * excess * 0.12;
                 }
 
-                let finalPitchF = params.formant.pitchF + scatterOffset;
+                let modOffset = 0.0;
+                if (params.bionika.route === 1) {
+                    modOffset = bionikaVm * 0.15; // modulate pitch up to 0.15f
+                }
+                let finalPitchF = params.formant.pitchF + scatterOffset + modOffset;
                 if (finalPitchF < 0.01) finalPitchF = 0.01;
                 if (finalPitchF > 0.6) finalPitchF = 0.6;
 
@@ -1603,8 +1613,12 @@
                 }
             } else if (activeModule === "rhythm") {
                 // Determine clock trigger state based on tempo
-                // Dynamically modulate tempo by the master control voltage attenuation (CCS protection)
-                const dynamicTempo = params.rhythm.tempo * masterAttenuation;
+                let tempoOffset = 0.0;
+                if (params.bionika.route === 2) {
+                    tempoOffset = bionikaVm * 60.0; // modulate tempo up to 60 BPM
+                }
+                // Dynamically modulate tempo by the master control voltage attenuation (CCS protection) and Bionika CV
+                const dynamicTempo = (params.rhythm.tempo + tempoOffset) * masterAttenuation;
                 const framesPerStep = 900 / dynamicTempo;
                 frameAccumulator++;
                 let clockVal = 0n;
