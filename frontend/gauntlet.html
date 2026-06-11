@@ -729,6 +729,113 @@ Status: Awaiting hero to join the battle.</div>
         let lastPhysTrauma = 0;
         let lastMentTrauma = 0;
 
+        function playTraumaAlertAudio(phys, ment) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                let f1Freq = 500, f2Freq = 1500, f3Freq = 2500;
+                let pitch = 100;
+                let energy = 1.0;
+                let isVoiced = true;
+                let duration = 0.6;
+                let label = "";
+
+                if (ment === 2) { // Terrified
+                    f1Freq = 800; f2Freq = 2000; f3Freq = 3200; // "Ah"/"Ee" mix
+                    pitch = 180; // High pitch panic
+                    energy = 1.2;
+                    duration = 0.8;
+                    label = "TERRIFIED VOICE ALERT";
+                } else if (ment === 4) { // Melancholic
+                    f1Freq = 300; f2Freq = 800; f3Freq = 2000; // "Oo" sigh
+                    pitch = 65; // Very low pitch sigh
+                    energy = 0.4;
+                    duration = 1.2;
+                    label = "MELANCHOLIC SIGH";
+                } else if (phys === 1) { // Exhausted
+                    f1Freq = 400; f2Freq = 1000; f3Freq = 2200; // "Uh" groan
+                    pitch = 85;
+                    energy = 0.7;
+                    duration = 0.5;
+                    label = "EXHAUSTED GROAN";
+                } else if (phys === 3) { // Broken
+                    f1Freq = 250; f2Freq = 700; f3Freq = 1800; // Glitched deep gasp
+                    pitch = 45;
+                    energy = 0.2;
+                    duration = 1.5;
+                    label = "BROKEN GLITCH WARNING";
+                } else {
+                    return; // Normal state, no vocal alerts
+                }
+
+                logEvent(`[Vaesen Speech] Local procedural voice triggered: ${label} (Pitch=${pitch}Hz, Energy=${Math.round(energy*100)}%)`);
+
+                let src;
+                let gainNode = audioCtx.createGain();
+                
+                if (isVoiced) {
+                    src = audioCtx.createOscillator();
+                    src.type = 'sawtooth';
+                    src.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+                    if (ment === 2) {
+                        src.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+                        src.frequency.linearRampToValueAtTime(pitch * 1.15, audioCtx.currentTime + 0.2);
+                        src.frequency.linearRampToValueAtTime(pitch * 0.9, audioCtx.currentTime + 0.4);
+                        src.frequency.linearRampToValueAtTime(pitch * 1.05, audioCtx.currentTime + duration);
+                    } else {
+                        src.frequency.exponentialRampToValueAtTime(pitch * 0.85, audioCtx.currentTime + duration);
+                    }
+                } else {
+                    const bufferSize = audioCtx.sampleRate * duration;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    src = audioCtx.createBufferSource();
+                    src.buffer = buffer;
+                }
+
+                let bp1 = audioCtx.createBiquadFilter();
+                bp1.type = 'bandpass';
+                bp1.frequency.setValueAtTime(f1Freq, audioCtx.currentTime);
+                bp1.Q.setValueAtTime(8, audioCtx.currentTime);
+
+                let bp2 = audioCtx.createBiquadFilter();
+                bp2.type = 'bandpass';
+                bp2.frequency.setValueAtTime(f2Freq, audioCtx.currentTime);
+                bp2.Q.setValueAtTime(10, audioCtx.currentTime);
+
+                let bp3 = audioCtx.createBiquadFilter();
+                bp3.type = 'bandpass';
+                bp3.frequency.setValueAtTime(f3Freq, audioCtx.currentTime);
+                bp3.Q.setValueAtTime(12, audioCtx.currentTime);
+
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3 * energy, audioCtx.currentTime + 0.08);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                src.connect(bp1);
+                src.connect(bp2);
+                src.connect(bp3);
+
+                bp1.connect(gainNode);
+                bp2.connect(gainNode);
+                bp3.connect(gainNode);
+
+                gainNode.connect(audioCtx.destination);
+
+                src.start();
+                if (src.stop) {
+                    src.stop(audioCtx.currentTime + duration);
+                }
+            } catch(e) {
+                console.warn("Speech synthesis alert error:", e);
+            }
+        }
+
         async function syncTraumaToChain(phys_trauma, ment_trauma) {
             if (!folkloreContract || !onChainMode) return;
             try {
@@ -760,8 +867,6 @@ Status: Awaiting hero to join the battle.</div>
         }
 
         function checkAndSyncTrauma() {
-            if (!folkloreContract || !onChainMode) return;
-
             let phys_trauma = 0;
             if (health < 150) {
                 phys_trauma = 3;
@@ -792,7 +897,10 @@ Status: Awaiting hero to join the battle.</div>
             if (phys_trauma !== lastPhysTrauma || ment_trauma !== lastMentTrauma) {
                 lastPhysTrauma = phys_trauma;
                 lastMentTrauma = ment_trauma;
-                syncTraumaToChain(phys_trauma, ment_trauma);
+                playTraumaAlertAudio(phys_trauma, ment_trauma);
+                if (folkloreContract && onChainMode) {
+                    syncTraumaToChain(phys_trauma, ment_trauma);
+                }
             }
         }
 
