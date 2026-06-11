@@ -164,6 +164,9 @@ bin/test_wayland_terminal_shell: tests/test_wayland_terminal_shell.c $(CORE_OBJS
 bin/tsfi_font_editor: src/tsfi_font_editor.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/tsfi_mcp_server: src/tsfi_mcp_server.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_zmm_rpc.o $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 # --- Tool Realization ---
 bin/tsfi_v2c: tools/tsfi_v2c.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $<

@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi2 Synthesis & Telemetry Studio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --neon-amber: #ffaa00;
+            --neon-amber-glow: rgba(255, 170, 0, 0.4);
+            --neon-orange: #ff5500;
+            --neon-orange-glow: rgba(255, 85, 0, 0.5);
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: radial-gradient(circle at top, #0f172a, #020617);
+            color: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .studio-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header.studio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        header .title-area h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #00f2fe, #ff007f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        header .title-area p {
+            margin: 4px 0 0 0;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr 400px;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .studio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        /* Module Controls */
+        .module-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .module-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .module-card.active {
+            border-color: #00f2fe;
+            background: rgba(0, 242, 254, 0.04);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+        }
+
+        .module-card .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .module-card .module-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .module-card .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .module-card.active .status-dot {
+            background: #00ffcc;
+            box-shadow: 0 0 8px #00ffcc;
+        }
+
+        /* Scope & Plotter */
+        .scope-container {
+            position: relative;
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+        }
+
+        canvas#scopeCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Nixie tube Indicator Panel */
+        .nixie-panel {
+            background: #0b0f19;
+            border: 2px solid #1e293b;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .nixie-tube {
+            width: 65px;
+            height: 110px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px 30px 8px 8px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nixie-tube::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+        }
+
+        .nixie-digits-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .nixie-digit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            color: rgba(255, 85, 0, 0.03);
+            text-shadow: none;
+            transition: all 0.1s ease;
+            user-select: none;
+        }
+
+        .nixie-digit.glow {
+            color: var(--neon-orange);
+            text-shadow: 0 0 6px var(--neon-orange), 0 0 18px var(--neon-orange), 0 0 35px var(--neon-orange);
+            z-index: 10;
+        }
+
+        /* Parameters Controls */
+        .params-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-group .val-display {
+            color: #00f2fe;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .slider-glow {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider-glow::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #00f2fe;
+            cursor: pointer;
+            box-shadow: 0 0 8px #00f2fe;
+            transition: transform 0.1s;
+        }
+
+        .slider-glow::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Keyboard Styles */
+        .studio-keyboard {
+            background: #0b0f19;
+            border: 2px solid #1e293b;
+            border-radius: 12px;
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* Console Output */
+        .console-box {
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #a2b4c2;
+            height: 120px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="studio-container">
+        
+        <header class="studio-header">
+            <div class="title-area">
+                <h1>TSFi2 SYNTHESIS & TELEMETRY STUDIO</h1>
+                <p>Closed-loop physical simulation modeling and Nixie visual debugging</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="/index.html" class="btn btn-secondary">🏠 Back to Hub</a>
+                <a href="http://127.0.0.1:9092" target="_blank" class="btn btn-secondary" style="border-color: #00ff00; color: #f8fafc; text-shadow: 0 0 5px #00ff00;">🌌 System0 Studio</a>
+                <button class="btn btn-primary" id="btnRunSweep">⚡ Run Telemetry Sweep</button>
+            </div>
+        </header>
+
+        <div class="studio-grid">
+            
+            <!-- Left Panel: Module Rack Selection -->
+            <div class="panel">
+                <h2>📁 MODULE RACK</h2>
+                <div style="background: rgba(0, 242, 254, 0.03); border: 1px solid rgba(0, 242, 254, 0.15); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: bold; font-size: 0.95rem; color: #00f2fe;">🎚️ Equa-Amplifier AGC</span>
+                    <input type="checkbox" id="chkEquaLimiter" checked style="width: 18px; height: 18px; cursor: pointer;">
+                </div>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Click on a module to load its parameters and view its live state loop.</p>
+                
+                <div class="module-list">
+                    <div class="module-card active" data-module="philicorda">
+                        <div class="header-row">
+                            <span class="module-name">🎹 Philicorda Gas Oscillator</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Neon Relaxation & Octave Division</p>
+                    </div>
+
+                    <div class="module-card" data-module="tunnel">
+                        <div class="header-row">
+                            <span class="module-name">🌀 Tunnel Diode VCO</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Negative Differential Resistance LC Tank</p>
+                    </div>
+
+                    <div class="module-card" data-module="pushpull">
+                        <div class="header-row">
+                            <span class="module-name">🔌 Push-Pull Output Stage</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Symmetry Amplification & Crossover Dead-Zones</p>
+                    </div>
+
+                    <div class="module-card" data-module="stroboscope">
+                        <div class="header-row">
+                            <span class="module-name">💡 Stroboscope Trigger</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Sylvania relaxation clock</p>
+                    </div>
+
+                    <div class="module-card" data-module="germanium">
+                        <div class="header-row">
+                            <span class="module-name">🧪 Germanium Stage (Issue 1)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Newton-Raphson Saturation & Sag</p>
+                    </div>
+
+                    <div class="module-card" data-module="bionika">
+                        <div class="header-row">
+                            <span class="module-name">⚡ Bionika Neuron (Issue 14)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Leaky Integration & Spiking Threshold</p>
+                    </div>
+
+                    <div class="module-card" data-module="drum">
+                        <div class="header-row">
+                            <span class="module-name">🥁 Drum Synthesizer (Issue 2)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">State-Variable Damped Membrane Resonator</p>
+                    </div>
+
+                    <div class="module-card" data-module="gyrator">
+                        <div class="header-row">
+                            <span class="module-name">🌀 Gyrator Filter (Issue 2)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Active Simulated Inductor Bandpass</p>
+                    </div>
+
+                    <div class="module-card" data-module="snare">
+                        <div class="header-row">
+                            <span class="module-name">🥁 Snare Drum (Issue 2)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">LCG Noise & Resonant Membrane Drum</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: auto;">
+                    <h3>DEBUGGER TELEMETRY LINK</h3>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <button class="btn btn-secondary btn-block" id="btnTestDebuggerLink">🧪 Trigger CPU Debugger Link</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Live Scope and Interactive Workspace -->
+            <div class="panel" style="gap: 20px;">
+                <h2>📺 LIVE OSCILLOSCOPE</h2>
+                
+                <div class="scope-container">
+                    <canvas id="scopeCanvas"></canvas>
+                </div>
+
+                <!-- Keyboard Panel -->
+                <div id="keyboardArea">
+                    <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #94a3b8;">INTERACTIVE CONTROLLER</h3>
+                    <div class="studio-keyboard" id="pianoKeyboard"></div>
+                </div>
+
+                <div class="console-container">
+                    <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #94a3b8;">SYSTEM TELEMETRY LOG</h3>
+                    <div class="console-box" id="telemetryLog">System Initialized. Socket listener open...</div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Nixie Telemetry Display and Param Controls -->
+            <div class="panel">
+                <h2>⚡ NIXIE TELEMETRY DISPLAY</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Z550M Cold-Cathode visualization displaying active digit state.</p>
+                
+                <div class="nixie-panel">
+                    <div class="nixie-tube">
+                        <div class="nixie-digits-container" id="nixieContainer">
+                            <!-- Digits 0 to 9 -->
+                            <div class="nixie-digit glow" data-digit="0">0</div>
+                            <div class="nixie-digit" data-digit="1">1</div>
+                            <div class="nixie-digit" data-digit="2">2</div>
+                            <div class="nixie-digit" data-digit="3">3</div>
+                            <div class="nixie-digit" data-digit="4">4</div>
+                            <div class="nixie-digit" data-digit="5">5</div>
+                            <div class="nixie-digit" data-digit="6">6</div>
+                            <div class="nixie-digit" data-digit="7">7</div>
+                            <div class="nixie-digit" data-digit="8">8</div>
+                            <div class="nixie-digit" data-digit="9">9</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="params-grid" id="controlsContainer">
+                    <!-- Dynamic controls go here -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:3000/api/zmm-exec";
+        const scopeCanvas = document.getElementById("scopeCanvas");
+        const ctx = scopeCanvas.getContext("2d");
+        const logBox = document.getElementById("telemetryLog");
+        
+        let activeModule = "philicorda";
+        let activeDigit = 0;
+        let isSweeping = false;
+
+        // Current parameters
+        const params = {
+            philicorda: {
+                pitch: 1.0,
+                rcRate: 5.0
+            },
+            tunnel: {
+                bias: 0.8,
+                pitch: 2.0
+            },
+            pushpull: {
+                bias: 0.0,
+                inputAmp: 1.0
+            },
+            stroboscope: {
+                rate: 1.5
+            },
+            germanium: {
+                inputAmp: 0.8,
+                sourceRb: 100.0
+            },
+            bionika: {
+                stimulus: 0.4,
+                leakRate: 0.1
+            },
+            drum: {
+                pitchK: 0.05,
+                decayD: 0.02,
+                trigger: 0
+            },
+            gyrator: {
+                pitchF: 0.2,
+                dampingQ: 0.05
+            },
+            snare: {
+                pitchK: 0.05,
+                decayD: 0.02,
+                noiseDecay: 0.1,
+                noiseMix: 0.5,
+                trigger: 0
+            }
+        };
+ 
+        // Layout controls depending on active module
+        const controlConfigs = {
+            philicorda: [
+                { id: "pitch", label: "Pitch Coefficient", min: 0.1, max: 5.0, step: 0.1, key: "pitch", unit: "Hz" },
+                { id: "rcRate", label: "RC Constant Rate", min: 1.0, max: 20.0, step: 0.5, key: "rcRate", unit: "V/s" }
+            ],
+            tunnel: [
+                { id: "bias", label: "Steady Bias Current", min: 0.1, max: 3.0, step: 0.1, key: "bias", unit: "mA" },
+                { id: "pitch", label: "LC Tank Pitch Factor", min: 0.5, max: 10.0, step: 0.1, key: "pitch", unit: "x" }
+            ],
+            pushpull: [
+                { id: "bias", label: "Base Diode Bias Voltage", min: 0.0, max: 0.3, step: 0.01, key: "bias", unit: "V" },
+                { id: "inputAmp", label: "Input Signal Amplitude", min: 0.1, max: 2.0, step: 0.1, key: "inputAmp", unit: "V" }
+            ],
+            stroboscope: [
+                { id: "rate", label: "Pulse Trigger Rate", min: 0.1, max: 5.0, step: 0.1, key: "rate", unit: "Hz" }
+            ],
+            germanium: [
+                { id: "inputAmp", label: "Input Signal Amplitude", min: 0.1, max: 2.0, step: 0.1, key: "inputAmp", unit: "V" },
+                { id: "sourceRb", label: "Source Resistance Rb", min: 10.0, max: 500.0, step: 10.0, key: "sourceRb", unit: "kΩ" }
+            ],
+            bionika: [
+                { id: "stimulus", label: "Synaptic Stimulus", min: 0.0, max: 1.0, step: 0.05, key: "stimulus", unit: "V" },
+                { id: "leakRate", label: "Membrane Leak Rate", min: 0.0, max: 0.5, step: 0.01, key: "leakRate", unit: "/tick" }
+            ],
+            drum: [
+                { id: "pitchK", label: "Spring Constant (Pitch)", min: 0.005, max: 0.2, step: 0.005, key: "pitchK", unit: "k" },
+                { id: "decayD", label: "Damping Constant (Decay)", min: 0.005, max: 0.1, step: 0.005, key: "decayD", unit: "d" }
+            ],
+            gyrator: [
+                { id: "pitchF", label: "Center Frequency (Cutoff)", min: 0.01, max: 0.5, step: 0.01, key: "pitchF", unit: "f" },
+                { id: "dampingQ", label: "Filter Damping (1/Q)", min: 0.01, max: 0.2, step: 0.005, key: "dampingQ", unit: "q" }
+            ],
+            snare: [
+                { id: "snarePitchK", label: "Spring Constant (Pitch)", min: 0.005, max: 0.2, step: 0.005, key: "pitchK", unit: "k" },
+                { id: "snareDecayD", label: "Damping Constant (Decay)", min: 0.005, max: 0.1, step: 0.005, key: "decayD", unit: "d" },
+                { id: "snareNoiseDecay", label: "Noise Envelope Decay", min: 0.01, max: 0.5, step: 0.01, key: "noiseDecay", unit: "nd" },
+                { id: "snareNoiseMix", label: "Noise Mix Ratio", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" }
+            ]
+        };
+
+        // Build controls UI
+        function rebuildControls() {
+            const container = document.getElementById("controlsContainer");
+            container.innerHTML = "";
+            const list = controlConfigs[activeModule];
+            
+            list.forEach(cfg => {
+                const group = document.createElement("div");
+                group.className = "control-group";
+                
+                const label = document.createElement("label");
+                label.innerHTML = `${cfg.label} <span class="val-display" id="val-${cfg.id}">${params[activeModule][cfg.key].toFixed(2)} ${cfg.unit}</span>`;
+                
+                const slider = document.createElement("input");
+                slider.type = "range";
+                slider.className = "slider-glow";
+                slider.min = cfg.min;
+                slider.max = cfg.max;
+                slider.step = cfg.step;
+                slider.value = params[activeModule][cfg.key];
+                
+                slider.addEventListener("input", (e) => {
+                    const val = parseFloat(e.target.value);
+                    params[activeModule][cfg.key] = val;
+                    document.getElementById(`val-${cfg.id}`).textContent = `${val.toFixed(2)} ${cfg.unit}`;
+                    triggerSingleSimulationStep();
+                });
+                
+                group.appendChild(label);
+                group.appendChild(slider);
+                container.appendChild(group);
+            });
+
+            if (activeModule === "drum" || activeModule === "snare") {
+                const btn = document.createElement("button");
+                btn.className = "btn btn-primary btn-block";
+                btn.style.marginTop = "15px";
+                btn.textContent = activeModule === "drum" ? "🥁 Trigger Drum Hit" : "🥁 Trigger Snare Hit";
+                btn.addEventListener("mousedown", () => {
+                    params[activeModule].trigger = 1;
+                    triggerSingleSimulationStep();
+                });
+                container.appendChild(btn);
+            }
+        }
+
+        // Post request to ZMM VM
+        async function runZmmCode(code) {
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code })
+                });
+                return await res.json();
+            } catch (err) {
+                console.error("ZMM Execution error:", err);
+                return null;
+            }
+        }
+
+        async function registerModule(name, path, address) {
+            log(`Registering ${name} at ${address}...`);
+            const res = await runZmmCode(`YULINIT "${name}", "${path}", ${address}`);
+            log(`${name} Registration response: ${JSON.stringify(res)}`);
+        }
+
+        async function initSystem() {
+            // Register all contracts on the freshly started server
+            await registerModule("PhilicordaGenerator", "../solidity/bin/philicordaGenerator.yul", "0x99");
+            await registerModule("PushPullStage", "../solidity/bin/pushPullStage.yul", "0x66");
+            await registerModule("tunnelDiodeOscillator", "../solidity/bin/tunnelDiodeOscillator.yul", "0x42");
+            await registerModule("DebuggerV4", "../solidity/bin/debugger.yul", "0x03");
+            await registerModule("Z550mIndicator", "../solidity/bin/z550mIndicator.yul", "0x55");
+            await registerModule("GermaniumStage", "../solidity/bin/germaniumStage.yul", "0x71");
+            await registerModule("BionikaNeuron", "../solidity/bin/bionikaNeuron.yul", "0x88");
+            await registerModule("EquaAmplifier", "../solidity/bin/equaAmplifier.yul", "0x50");
+            await registerModule("DrumSynthesizer", "../solidity/bin/drumSynthesizer.yul", "0x45");
+            await registerModule("GyratorFilter", "../solidity/bin/gyratorFilter.yul", "0x47");
+            await registerModule("SnareSynthesizer", "../solidity/bin/snareSynthesizer.yul", "0x48");
+            log("All system modules successfully registered.");
+            triggerSingleSimulationStep();
+        }
+
+        // Write message to the telemetry logs panel
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+        }
+
+        // Update Nixie Indicator Display
+        function setNixieDigit(digit) {
+            activeDigit = Math.max(0, Math.min(9, Math.round(digit)));
+            document.querySelectorAll(".nixie-digit").forEach(el => {
+                if (parseInt(el.getAttribute("data-digit")) === activeDigit) {
+                    el.classList.add("glow");
+                } else {
+                    el.classList.remove("glow");
+                }
+            });
+        }
+
+        // Canvas Waveform Rendering
+        let samples = Array.from({ length: 100 }, () => 0);
+        function drawWaveform() {
+            // Resize canvas to parent
+            const rect = scopeCanvas.getBoundingClientRect();
+            scopeCanvas.width = rect.width;
+            scopeCanvas.height = rect.height;
+            
+            ctx.clearRect(0, 0, scopeCanvas.width, scopeCanvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            ctx.lineWidth = 1;
+            const gridCells = 8;
+            for (let i = 1; i < gridCells; i++) {
+                // Horizontal
+                const y = (scopeCanvas.height / gridCells) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(scopeCanvas.width, y);
+                ctx.stroke();
+                
+                // Vertical
+                const x = (scopeCanvas.width / gridCells) * i;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, scopeCanvas.height);
+                ctx.stroke();
+            }
+
+            // Draw center line
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+            ctx.beginPath();
+            ctx.moveTo(0, scopeCanvas.height / 2);
+            ctx.lineTo(scopeCanvas.width, scopeCanvas.height / 2);
+            ctx.stroke();
+
+            // Plot samples
+            ctx.strokeStyle = activeModule === "philicorda" ? "#00ffcc" :
+                              activeModule === "tunnel" ? "#00f2fe" :
+                              activeModule === "pushpull" ? "#ff007f" :
+                              activeModule === "drum" ? "#00ff00" :
+                              activeModule === "snare" ? "#facc15" :
+                              activeModule === "gyrator" ? "#a855f7" : "#ffaa00";
+            ctx.lineWidth = 3;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+
+            const step = scopeCanvas.width / (samples.length - 1);
+            for (let i = 0; i < samples.length; i++) {
+                const x = i * step;
+                const y = (scopeCanvas.height / 2) - (samples[i] * (scopeCanvas.height / 2) * 0.8);
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0; // reset
+        }
+
+        // Apply Equa-Amplifier dynamic limiter (AGC)
+        async function applyEquaLimiter(outVolts, loadImpedance = 0.51) {
+            const isChecked = document.getElementById("chkEquaLimiter").checked;
+            if (!isChecked) return outVolts;
+
+            const inputVal = BigInt(Math.round(outVolts * 1e18));
+            const loadVal = BigInt(Math.round(loadImpedance * 1e18));
+
+            const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+            const calldata = iface.encodeFunctionData("processSample", [inputVal, loadVal]);
+
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: "EquaAmplifier", calldata })
+            });
+            const payload = await res.json();
+
+            if (payload && payload.result && payload.result.output) {
+                const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                return Number(decoded[0]) / 1e18;
+            }
+            return outVolts;
+        }
+
+        // Trigger a step simulation
+        async function triggerSingleSimulationStep() {
+            if (activeModule === "philicorda") {
+                const pitch = BigInt(Math.round(params.philicorda.pitch * 1e18));
+                const rcRate = BigInt(Math.round(params.philicorda.rcRate * 1e18));
+                
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256,int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [pitch, rcRate]);
+                
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "PhilicordaGenerator", calldata })
+                });
+                const payload = await res.json();
+                
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const masterOut = await applyEquaLimiter(rawOut, 0.51);
+                    const dividedOut = Number(decoded[1]) / 1e18;
+
+                    // Push value into samples buffer
+                    samples.push(masterOut);
+                    samples.shift();
+                    drawWaveform();
+
+                    // Update Nixie indicator telemetry with the output signal level
+                    const mappedDigit = Math.abs(Math.round((masterOut + 1.0) * 4.5));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "tunnel") {
+                const bias = BigInt(Math.round(params.tunnel.bias * 1e18));
+                const pitch = BigInt(Math.round(params.tunnel.pitch * 1e18));
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [bias, pitch]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "tunnelDiodeOscillator", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round((outVolts + 0.5) * 3.6)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "pushpull") {
+                // Simulate pushpull output stages
+                const inputAmp = params.pushpull.inputAmp;
+                const angle = (Date.now() / 1000) * Math.PI * 2;
+                const inputSignal = BigInt(Math.round(Math.sin(angle) * inputAmp * 1e18));
+                const bias = BigInt(Math.round(params.pushpull.bias * 1e18));
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputSignal, bias]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "PushPullStage", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.abs(Math.round((outVolts + 1.0) * 4.5));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "germanium") {
+                const inputAmp = params.germanium.inputAmp;
+                const angle = (Date.now() / 1000) * Math.PI * 2;
+                const inputSignal = BigInt(Math.round(Math.sin(angle) * inputAmp * 1e18));
+
+                const iface = new ethers.Interface(["function processSample(int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputSignal]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "GermaniumStage", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    
+                    // Apply limiter to AC component and restore offset
+                    const limitedAc = await applyEquaLimiter(rawOut - 7.5, 0.76);
+                    const outVolts = limitedAc + 7.5;
+
+                    // Standardize scale to fit oscilloscope window
+                    const normOut = (outVolts - 7.5) / 2.0;
+
+                    samples.push(normOut);
+                    samples.shift();
+                    drawWaveform();
+
+                    // Display mapped output on Nixie tube
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round((outVolts - 5.5) * 2.25)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "bionika") {
+                const stimulus = BigInt(Math.round(params.bionika.stimulus * 1e18));
+                const leakRate = BigInt(Math.round(params.bionika.leakRate * 1e18));
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256,int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [stimulus, leakRate]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "BionikaNeuron", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const spike = Number(decoded[0]) / 1e18;
+                    const potential = Number(decoded[1]) / 1e18;
+
+                    if (spike > 0.5) {
+                        log("⚡ Bionika Neuron FIRED a threshold spike!");
+                    }
+
+                    samples.push(potential);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(potential * 9)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "drum") {
+                const triggerVal = params.drum.trigger ? 1000000000000000000n : 0n;
+                params.drum.trigger = 0; // reset trigger state
+
+                const pitchK = BigInt(Math.round(params.drum.pitchK * 1e18));
+                const decayD = BigInt(Math.round(params.drum.decayD * 1e18));
+                const packedVal = pitchK + (decayD << 128n);
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [triggerVal, packedVal]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "DrumSynthesizer", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "gyrator") {
+                // Generate white noise sample (representative of Issue 1/2 noise generators)
+                const noiseSample = (Math.random() * 2.0 - 1.0) * 0.5;
+                const inputVal = BigInt(Math.round(noiseSample * 1e18));
+
+                const pitchF = BigInt(Math.round(params.gyrator.pitchF * 1e18));
+                const dampingQ = BigInt(Math.round(params.gyrator.dampingQ * 1e18));
+                const packedVal = pitchF + (dampingQ << 128n);
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputVal, packedVal]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "GyratorFilter", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 18)));
+                    setNixieDigit(mappedDigit);
+                }
+            } else if (activeModule === "snare") {
+                const triggerVal = params.snare.trigger ? 1000000000000000000n : 0n;
+                params.snare.trigger = 0; // reset trigger state
+
+                const pitchK = BigInt(Math.round(params.snare.pitchK * 1e18));
+                const decayD = BigInt(Math.round(params.snare.decayD * 1e18));
+                const noiseDecay = BigInt(Math.round(params.snare.noiseDecay * 1e18));
+                const noiseMix = BigInt(Math.round(params.snare.noiseMix * 1e18));
+
+                // Pack parameters (64 bits each)
+                const packedVal = pitchK + (decayD << 64n) + (noiseDecay << 128n) + (noiseMix << 192n);
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [triggerVal, packedVal]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "SnareSynthesizer", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
+                    setNixieDigit(mappedDigit);
+                }
+            }
+        }
+
+        // Build continuous loop simulation
+        function animate() {
+            if (!isSweeping) {
+                triggerSingleSimulationStep();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Run structured diagnostic sweep
+        document.getElementById("btnRunSweep").addEventListener("click", async () => {
+            isSweeping = true;
+            log("Initiating sweeping diagnostic run...");
+            
+            for (let step = 1; step <= 10; step++) {
+                setNixieDigit(step - 1);
+                log(`Sweeping index: step ${step} active on Nixie indicators.`);
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            log("Diagnostic sweep complete. Resuming simulation.");
+            isSweeping = false;
+        });
+
+        // Trigger CPU debugger verify
+        document.getElementById("btnTestDebuggerLink").addEventListener("click", async () => {
+            log("Triggering CPU Debugger Telemetry link...");
+            
+            const dbIface = new ethers.Interface([
+                "function writeRegister(uint8 regId, uint256 val) public returns (bool)",
+                "function runDebugger(uint256 maxSteps) public returns (uint256, uint256)"
+            ]);
+
+            // Reset PC (Register 0) to 0
+            const setPc = dbIface.encodeFunctionData("writeRegister", [0, 0]);
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: "DebuggerV4", calldata: setPc })
+            });
+
+            // Run 2 execution steps
+            const run = dbIface.encodeFunctionData("runDebugger", [2]);
+            const runRes = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: "DebuggerV4", calldata: run })
+            });
+            const payload = await runRes.json();
+            
+            log(`Debugger Execution Step response: ${JSON.stringify(payload)}`);
+        });
+
+        // Toggle Modules UI
+        document.querySelectorAll(".module-card").forEach(card => {
+            card.addEventListener("click", (e) => {
+                document.querySelectorAll(".module-card").forEach(el => el.classList.remove("active"));
+                
+                const m = card.getAttribute("data-module");
+                activeModule = m;
+                card.classList.add("active");
+                
+                log(`Loaded configuration module: ${m}`);
+                rebuildControls();
+            });
+        });
+
+        // Render Piano keys
+        function renderPianoKeyboard() {
+            const kb = document.getElementById("pianoKeyboard");
+            kb.innerHTML = "";
+            const keys = [
+                { note: "C4", isBlack: false, pos: 0 },
+                { note: "C#4", isBlack: true, pos: 1 },
+                { note: "D4", isBlack: false, pos: 2 },
+                { note: "D#4", isBlack: true, pos: 3 },
+                { note: "E4", isBlack: false, pos: 4 },
+                { note: "F4", isBlack: false, pos: 5 },
+                { note: "F#4", isBlack: true, pos: 6 },
+                { note: "G4", isBlack: false, pos: 7 },
+                { note: "G#4", isBlack: true, pos: 8 },
+                { note: "A4", isBlack: false, pos: 9 },
+                { note: "A#4", isBlack: true, pos: 10 },
+                { note: "B4", isBlack: false, pos: 11 },
+                { note: "C5", isBlack: false, pos: 12 }
+            ];
+
+            const whiteWidth = 100 / 8; // 8 white keys
+
+            keys.forEach(k => {
+                const key = document.createElement("div");
+                key.className = `piano-key ${k.isBlack ? 'black-key' : 'white-key'}`;
+                key.textContent = k.note;
+                
+                if (!k.isBlack) {
+                    const whiteIdx = Math.floor(k.pos / 1.5) || 0; // rough layout mapping
+                    const mappedPos = [0, 0, 1, 0, 2, 3, 0, 4, 0, 5, 0, 6, 7][k.pos];
+                    key.style.width = `${whiteWidth}%`;
+                    key.style.left = `${mappedPos * whiteWidth}%`;
+                } else {
+                    const mappedPos = [0, 0.65, 0, 1.65, 0, 0, 3.65, 0, 4.65, 0, 5.65, 0, 0][k.pos];
+                    key.style.width = `${whiteWidth * 0.7}%`;
+                    key.style.left = `${mappedPos * whiteWidth}%`;
+                    key.style.height = "60%";
+                    key.style.zIndex = "5";
+                }
+
+                key.addEventListener("mousedown", () => {
+                    key.classList.add("active");
+                    // Update pitch dynamically when note is played
+                    const freqs = {
+                        "C4": 1.0, "C#4": 1.06, "D4": 1.12, "D#4": 1.19, "E4": 1.26,
+                        "F4": 1.33, "F#4": 1.41, "G4": 1.50, "G#4": 1.59, "A4": 1.68,
+                        "A#4": 1.78, "B4": 1.89, "C5": 2.0
+                    };
+                    params.philicorda.pitch = freqs[k.note];
+                    rebuildControls();
+                    log(`Note ${k.note} pressed -> pitch coefficient: ${freqs[k.note].toFixed(2)}`);
+                });
+
+                key.addEventListener("mouseup", () => {
+                    key.classList.remove("active");
+                });
+
+                key.addEventListener("mouseleave", () => {
+                    key.classList.remove("active");
+                });
+
+                kb.appendChild(key);
+            });
+        }
+
+        // Initialize UI
+        rebuildControls();
+        renderPianoKeyboard();
+        initSystem();
+        animate();
+    </script>
+</body>
+</html>

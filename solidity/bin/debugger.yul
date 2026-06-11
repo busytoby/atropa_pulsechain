@@ -11,6 +11,10 @@ object "Debugger" {
 
             // Helpers for register reads/writes
             function getReg(regId) -> val {
+                if eq(regId, 200) { val := sload(200) leave }
+                if eq(regId, 201) { val := sload(201) leave }
+                if eq(regId, 202) { val := sload(60200) leave }
+                if eq(regId, 203) { val := sload(60203) leave }
                 val := sload(add(60000, regId))
             }
             function setReg(regId, val) {
@@ -221,6 +225,28 @@ object "Debugger" {
                         let target := or(shl(8, getMem(add(regPC, 1))), getMem(add(regPC, 2)))
                         setMem(target, a)
                         regPC := add(regPC, 3)
+                        continue
+                    }
+
+                    // CALL_OSC (0x09)
+                    if eq(opcode, 0x09) {
+                        let scaledBias := mul(a, 100000000000000)    // scale to mA (10^14)
+                        let scaledPitch := mul(b, 1000)          // scale to pitch units
+                        mstore(0x00, 0x07a96d8c00000000000000000000000000000000000000000000000000000000)
+                        mstore(0x04, scaledBias)
+                        mstore(0x24, scaledPitch)
+                        let success := call(gas(), 0x0000000000000000000000000000000000000042, 0, 0x00, 0x44, 0x00, 0x20)
+                        sstore(60203, success)
+                        if success {
+                            let outVal := mload(0x00)
+                            sstore(60200, outVal) // Debug: Save raw output value
+                            let positiveOut := add(outVal, 500000000000000000)
+                            a := and(div(positiveOut, 10000000000000000), 0xFF)
+                        }
+                        if iszero(success) {
+                            sstore(60200, 0xDEADBEEF) // Debug: Indicate call failure
+                        }
+                        regPC := add(regPC, 1)
                         continue
                     }
 

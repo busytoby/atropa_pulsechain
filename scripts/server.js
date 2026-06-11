@@ -1,9 +1,25 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { spawn } = require("child_process");
 
 const PORT = 3000;
 const CONFIG_PATH = path.join(__dirname, "../config/user_config.json");
+
+// Spawn the native ZMM VM MCP server process at startup
+const mcpBinary = path.join(__dirname, "../tsfi2-deepseek/bin/tsfi_mcp_server");
+const mcpCwd = path.join(__dirname, "../tsfi2-deepseek");
+
+console.log(`[SERVER] Spawning native ZMM VM MCP server: ${mcpBinary}`);
+const mcpProcess = spawn(mcpBinary, [], {
+    cwd: mcpCwd,
+    stdio: "inherit"
+});
+
+mcpProcess.on("error", err => {
+    console.error("[SERVER] Failed to start native ZMM VM MCP server:", err);
+});
+
 
 const MIME_TYPES = {
     ".html": "text/html",
@@ -212,6 +228,65 @@ const server = http.createServer((req, res) => {
                 fs.writeFileSync(safePath, content, "utf8");
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+    // POST API endpoint to run a command or YULEXEC on the ZMM VM MCP server
+    if (req.url === "/api/zmm-exec" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => {
+            body += chunk.toString();
+        });
+        req.on("end", () => {
+            try {
+                const payload = JSON.parse(body);
+                let code = payload.code;
+                if (!code && payload.name && payload.calldata) {
+                    code = `YULEXEC "${payload.name}", "${payload.calldata}"`;
+                }
+                if (!code) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "Missing 'code' or 'name' and 'calldata' parameter" }));
+                    return;
+                }
+
+                const net = require("net");
+                const socket = net.createConnection({ port: 10042 }, () => {
+                    socket.write(JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "wave512.run",
+                        params: { code: code },
+                        id: 1
+                    }));
+                });
+
+                let responseData = "";
+                socket.on("data", chunk => {
+                    responseData += chunk.toString();
+                });
+
+                socket.on("end", () => {
+                    try {
+                        const parsed = JSON.parse(responseData);
+                        res.writeHead(200, { 
+                            "Content-Type": "application/json",
+                            "Access-Control-Allow-Origin": "*"
+                        });
+                        res.end(JSON.stringify(parsed));
+                    } catch (e) {
+                        res.writeHead(500, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: "Failed to parse ZMM VM response: " + e.message, raw: responseData }));
+                    }
+                });
+
+                socket.on("error", err => {
+                    res.writeHead(500, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ error: "ZMM VM socket error: " + err.message }));
+                });
             } catch (err) {
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ error: err.message }));

@@ -686,67 +686,86 @@ def generation_thread():
 
             out_path = "assets/mpx_out.png"
 
-            # THE ALLIGATOR CRITIC LOOP
-            # Maximum 3 attempts to generate a structurally sound frame
-            for attempt in range(3):
-                cmd = [
-                    "assets/sd_cpp/build/bin/sd-cli",
-                    "-m", "assets/models/sd15.safetensors",
-                    "--vae", "assets/models/taesd.safetensors",
-                    "--lora-model-dir", "assets/models",
-                    "--control-net", "assets/models/control_openpose.safetensors",
-                    "--control-image", mask_path,
-                    "--control-strength", f"{dynamic_control:.2f}", 
-                    "-p", prompt,
-                    "-n", "human, humanoid, person, man, woman, child, people, boy, girl, human face, human hands, human fingers, human limbs, human skin, human body, realistic animals, flesh, standing upright like a human, wearing human clothes, abstract, blurry, ugly, deformed anatomy, bad proportions, missing limbs, disconnected limbs, mutation, balls, spheres, blobs, melting, loose parts, simple geometric shapes, text, font, unicode, watermark, signature",
-                    "-W", "512", "-H", "512",
-                    "--steps", "4", 
-                    "--threads", "4",
-                    "--cfg-scale", f"{dynamic_cfg:.1f}", 
-                    "--seed", divergent_seed, 
-                    "-o", out_path
-                ]
-                
-                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                time.sleep(0.5) # GPU throttle
-                
-                # 1. The Alligator evaluates the physical Form
-                passed, reason, advice = run_vision_critic(out_path, mask_path, decay_ratio)
-                
-                # 2. The Spider evaluates the Content Textures
-                spider_advice = "NONE"
-                if passed:
-                    spider_advice = run_spider_critic(out_path, prompt)
-                    if spider_advice != "NONE":
-                        passed = False
-                        reason = f"SPIDER_REJECT: {spider_advice}"
-                        advice = spider_advice
-
-                if passed:
-                    break # Frame is physically valid and texturally sound
+            passed = False
+            if not os.path.exists("assets/sd_cpp/build/bin/sd-cli"):
+                # Procedural high-tech fallback renderer
+                from PIL import ImageDraw
+                fallback_img = Image.new("RGB", (512, 512), (10, 15, 26))
+                draw = ImageDraw.Draw(fallback_img)
+                # Draw background grid
+                for grid_i in range(0, 512, 32):
+                    draw.line([(grid_i, 0), (grid_i, 512)], fill=(20, 25, 40))
+                    draw.line([(0, grid_i), (512, grid_i)], fill=(20, 25, 40))
+                # Superimpose skeleton mask if present
+                if os.path.exists(mask_path):
+                    mask_img = Image.open(mask_path).convert("RGB")
+                    fallback_img = Image.blend(fallback_img, mask_img, 0.45)
+                    draw = ImageDraw.Draw(fallback_img)
+                # Render metadata overlays
+                draw.text((20, 20), "SYSTEM0 PROCEDURAL MANIFOLD ACTIVE", fill=(0, 242, 254))
+                draw.text((20, 40), f"FRAME INDEX: {local_f_idx}", fill=(255, 170, 0))
+                draw.text((20, 60), f"GENOME: {current_genome[:28]}...", fill=(0, 255, 100))
+                draw.text((20, 80), f"POSTURE PHASE: {phase.upper()}", fill=(255, 0, 127))
+                fallback_img.save(out_path)
+                passed = True
+            else:
+                # THE ALLIGATOR CRITIC LOOP
+                # Maximum 3 attempts to generate a structurally sound frame
+                for attempt in range(3):
+                    cmd = [
+                        "assets/sd_cpp/build/bin/sd-cli",
+                        "-m", "assets/models/sd15.safetensors",
+                        "--vae", "assets/models/taesd.safetensors",
+                        "--lora-model-dir", "assets/models",
+                        "--control-net", "assets/models/control_openpose.safetensors",
+                        "--control-image", mask_path,
+                        "--control-strength", f"{dynamic_control:.2f}", 
+                        "-p", prompt,
+                        "-n", "human, humanoid, person, man, woman, child, people, boy, girl, human face, human hands, human fingers, human limbs, human skin, human body, realistic animals, flesh, standing upright like a human, wearing human clothes, abstract, blurry, ugly, deformed anatomy, bad proportions, missing limbs, disconnected limbs, mutation, balls, spheres, blobs, melting, loose parts, simple geometric shapes, text, font, unicode, watermark, signature",
+                        "-W", "512", "-H", "512",
+                        "--steps", "4", 
+                        "--threads", "4",
+                        "--cfg-scale", f"{dynamic_cfg:.1f}", 
+                        "--seed", divergent_seed, 
+                        "-o", out_path
+                    ]
                     
-                print(f"[CRITIC BITE] Frame {local_f_idx} failed: {reason}. Retrying (Attempt {attempt+1}/3). Action: {advice}")
-                
-                # Apply Dynamic Self-Improvement based on Critic feedback
-                if advice == "INCREASE_CONTROL":
-                    dynamic_control = min(1.0, dynamic_control + 0.15)
-                elif advice == "SCRAMBLE_SEED":
-                    divergent_seed = str(int(divergent_seed) + 777)
-                elif advice == "INCREASE_STEPS":
-                    cmd[cmd.index("--steps")+1] = "6"
-                elif advice == "INCREASE_CFG":
-                    dynamic_cfg += 0.5
-                elif advice == "INCREASE_LIGHTING":
-                    # DeepSeek-style prompt injection for immediate correction
-                    prompt = "EXTREMELY BRIGHT BLINDING SOFTBOX LIGHTING, OVEREXPOSED, " + prompt
-                elif advice == "EMPHASIZE_GATOR":
-                    prompt = "MASSIVE BRIGHT GREEN ALLIGATOR PLUSH, " + prompt
-                elif advice == "EMPHASIZE_BEAR":
-                    prompt = "MASSIVE BROWN TEDDY BEAR PLUSH, " + prompt
-                elif advice == "HUMAN_CONTAMINATION":
-                    # Scramble the seed completely and drop controlnet strength slightly so the text prompt can overpower the human skeleton shape
-                    divergent_seed = str(int(divergent_seed) + 12345)
-                    dynamic_control = max(0.5, dynamic_control - 0.1)
+                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    time.sleep(0.5) # GPU throttle
+                    
+                    # 1. The Alligator evaluates the physical Form
+                    passed, reason, advice = run_vision_critic(out_path, mask_path, decay_ratio)
+                    
+                    # 2. The Spider evaluates the Content Textures
+                    spider_advice = "NONE"
+                    if passed:
+                        spider_advice = run_spider_critic(out_path, prompt)
+                        if spider_advice != "NONE":
+                            passed = False
+                            reason = f"SPIDER_REJECT: {spider_advice}"
+                            advice = spider_advice
+
+                    if passed:
+                        break # Frame is physically valid and texturally sound
+                        
+                    print(f"[CRITIC BITE] Frame {local_f_idx} failed: {reason}. Retrying (Attempt {attempt+1}/3). Action: {advice}")
+                    
+                    # Apply Dynamic Self-Improvement based on Critic feedback
+                    if advice == "INCREASE_CONTROL":
+                        dynamic_control = min(1.0, dynamic_control + 0.15)
+                    elif advice == "SCRAMBLE_SEED":
+                        divergent_seed = str(int(divergent_seed) + 777)
+                    elif advice == "INCREASE_STEPS":
+                        cmd[cmd.index("--steps")+1] = "6"
+                    elif advice == "INCREASE_CFG":
+                        dynamic_cfg += 0.5
+                    elif advice == "INCREASE_LIGHTING":
+                        # DeepSeek-style prompt injection for immediate correction
+                        prompt = "MASSIVE BROWN TEDDY BEAR PLUSH, " + prompt
+                    elif advice == "HUMAN_CONTAMINATION":
+                        # Scramble the seed completely and drop controlnet strength slightly so the text prompt can overpower the human skeleton shape
+                        divergent_seed = str(int(divergent_seed) + 12345)
+                        dynamic_control = max(0.5, dynamic_control - 0.1)
             
             painter_img = Image.open(out_path).convert("RGB")
             

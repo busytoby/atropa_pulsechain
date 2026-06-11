@@ -640,7 +640,7 @@ void tsfi_zmm_vm_exec(TsfiZmmVmState *state, const char *code_in) {
                 parse_string_arg(&p, path, sizeof(path));
                 skip_comma(&p);
                 char *end;
-                uint64_t virt_addr = strtoull(p, &end, 10);
+                uint64_t virt_addr = strtoull(p, &end, 0);
                 p = end;
                 
                 lau_yul_thunk_init(name, path, virt_addr);
@@ -656,18 +656,24 @@ void tsfi_zmm_vm_exec(TsfiZmmVmState *state, const char *code_in) {
                 uint8_t cd_bytes[4096];
                 size_t len = strlen(calldata_hex);
                 if (len > 8192) len = 8192;
-                for (size_t i = 0; i < len; i += 2) {
+                size_t start_idx = 0;
+                if (len >= 2 && calldata_hex[0] == '0' && (calldata_hex[1] == 'x' || calldata_hex[1] == 'X')) {
+                    start_idx = 2;
+                }
+                for (size_t i = start_idx; i < len; i += 2) {
                     unsigned int byteval = 0;
                     sscanf(&calldata_hex[i], "%02x", &byteval);
-                    cd_bytes[i/2] = (uint8_t)byteval;
-                    cd_len++;
+                    cd_bytes[cd_len++] = (uint8_t)byteval;
                 }
                 
                 size_t max_retval_len = 262144;
                 uint8_t *retval = malloc(max_retval_len);
                 if (retval) {
                     size_t retval_len = max_retval_len;
-                    lau_yul_thunk_execute(name, cd_bytes, cd_len, retval, &retval_len);
+                    bool success = lau_yul_thunk_execute(name, cd_bytes, cd_len, retval, &retval_len);
+                    if (!success) {
+                        retval_len = 0;
+                    }
                     
                     for (size_t i = 0; i < retval_len && (size_t)state->output_pos < (sizeof(state->output_buffer) - 10); i++) {
                         sprintf(&state->output_buffer[state->output_pos], "%02x", retval[i]);

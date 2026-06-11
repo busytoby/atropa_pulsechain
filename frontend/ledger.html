@@ -109,7 +109,7 @@
                 <a href="/protecto.html" class="btn btn-secondary">Protecto Console</a>
                 <select id="networkSelect" class="btn btn-secondary" style="background: #000; color: #fff; border: 1px solid var(--neon-purple); cursor: pointer; text-transform: uppercase;" onchange="switchNetwork()">
                     <option value="localhost">Local EVM (Anvil)</option>
-                    <option value="zmm">ZMM VM (Simulated)</option>
+                    <option value="zmm">ZMM VM (On-Chain)</option>
                 </select>
                 <div class="network-badge" id="networkBadge">Disconnected</div>
                 <button class="btn btn-connect" id="btnConnect">Connect Wallet</button>
@@ -342,31 +342,43 @@ Loading ZMM VM inventory coordinates and items...
         }
 
         async function queryZmmInventory() {
-            if (!config.networks || !config.networks.localhost) return;
-            const localhostContracts = config.networks.localhost;
-            const zmachineAddr = localhostContracts.zmachineAddress || "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
             const consoleEl = document.getElementById("zmmInventoryConsole");
             consoleEl.innerText = "Querying ZMM VM on-chain state...";
             
             try {
-                const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
-                const zmAbi = [
+                const zmInterface = new ethers.Interface([
                     "function parseCommand(address player, bytes cmd) public returns (bytes)"
-                ];
-                const zmContract = new ethers.Contract(zmachineAddr, zmAbi, activeProvider);
+                ]);
                 const queryUser = signer ? (await signer.getAddress()) : "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
                 
-                // Query "look" and "inve"
-                const lookBytes = await zmContract.parseCommand.staticCall(queryUser, ethers.toUtf8Bytes("look"));
-                const lookStr = ethers.toUtf8String(lookBytes);
+                // Query "look"
+                const lookCalldata = zmInterface.encodeFunctionData("parseCommand", [queryUser, ethers.toUtf8Bytes("look")]);
+                const lookRes = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "zmachine", calldata: lookCalldata })
+                });
+                const lookJson = await lookRes.json();
+                if (lookJson.error) throw new Error(lookJson.error);
+                const lookDecoded = zmInterface.decodeFunctionResult("parseCommand", "0x" + lookJson.result.output);
+                const lookStr = ethers.toUtf8String(lookDecoded[0]);
                 
-                const inveBytes = await zmContract.parseCommand.staticCall(queryUser, ethers.toUtf8Bytes("inve"));
-                const inveStr = ethers.toUtf8String(inveBytes);
+                // Query "inve"
+                const inveCalldata = zmInterface.encodeFunctionData("parseCommand", [queryUser, ethers.toUtf8Bytes("inve")]);
+                const inveRes = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "zmachine", calldata: inveCalldata })
+                });
+                const inveJson = await inveRes.json();
+                if (inveJson.error) throw new Error(inveJson.error);
+                const inveDecoded = zmInterface.decodeFunctionResult("parseCommand", "0x" + inveJson.result.output);
+                const inveStr = ethers.toUtf8String(inveDecoded[0]);
                 
                 consoleEl.innerText = `[ZMM VM Position / Area]\n${lookStr.trim()}\n\n[ZMM VM Carrying Inventory]\n${inveStr.trim()}`;
-                log("ZMM VM state fetched successfully via staticCall.", "success");
+                log("ZMM VM state fetched successfully via native JIT thunks.", "success");
             } catch (e) {
-                consoleEl.innerText = `Error querying ZMM VM: ${e.message}\nMake sure zmachine is compiled & deployed.`;
+                consoleEl.innerText = `Error querying ZMM VM: ${e.message}\nMake sure tsfi_mcp_server is running.`;
                 log(`ZMM query failed: ${e.message}`, "error");
             }
         }
@@ -376,37 +388,27 @@ Loading ZMM VM inventory coordinates and items...
             const cmdText = inputEl.value.trim();
             if (!cmdText) return;
             
-            if (!signer) {
-                log("Please connect your wallet to submit commands to the on-chain ZMM VM.", "warning");
-                return;
-            }
-            if (!config.networks || !config.networks.localhost) return;
-            const localhostContracts = config.networks.localhost;
-            const zmachineAddr = localhostContracts.zmachineAddress || "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
-            
+            const queryUser = signer ? (await signer.getAddress()) : "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
             log(`Sending ZMM command: "${cmdText}"`, "info");
             
             try {
-                const zmAbi = [
+                const zmInterface = new ethers.Interface([
                     "function parseCommand(address player, bytes cmd) public returns (bytes)"
-                ];
-                const zmContract = new ethers.Contract(zmachineAddr, zmAbi, signer);
-                const cmdBytes = ethers.toUtf8Bytes(cmdText);
+                ]);
+                const cmdCalldata = zmInterface.encodeFunctionData("parseCommand", [queryUser, ethers.toUtf8Bytes(cmdText)]);
                 
-                // Static call first to see the message/output
-                const outputBytes = await zmContract.parseCommand.staticCall(signer.address, cmdBytes);
-                const outputText = ethers.toUtf8String(outputBytes);
+                const response = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "zmachine", calldata: cmdCalldata })
+                });
+                const resJson = await response.json();
+                if (resJson.error) throw new Error(resJson.error);
+                
+                const outputBytes = resJson.result.output;
+                const decoded = zmInterface.decodeFunctionResult("parseCommand", "0x" + outputBytes);
+                const outputText = ethers.toUtf8String(decoded[0]);
                 log(`ZMM Command Output: ${outputText}`, "success");
-                
-                // If it's a state-modifying action, execute transaction
-                const action = cmdText.split(/\s+/)[0].toLowerCase();
-                const stateModifying = ["take", "use", "go", "n", "s", "e", "w", "north", "south", "east", "west", "play"];
-                if (stateModifying.includes(action)) {
-                    log("Syncing action to on-chain storage...", "info");
-                    const tx = await zmContract.parseCommand(signer.address, cmdBytes, { gasLimit: 1000000 });
-                    await tx.wait();
-                    log("Action synced successfully.", "success");
-                }
                 
                 inputEl.value = "";
                 await queryZmmInventory();
@@ -416,11 +418,77 @@ Loading ZMM VM inventory coordinates and items...
         }
 
         async function updateBalances(userAddress) {
+            if (currentEnv === "zmm") {
+                try {
+                    const zmInterface = new ethers.Interface([
+                        "function symbol() public view returns (string)",
+                        "function decimals() public view returns (uint8)",
+                        "function balanceOf(address) public view returns (uint256)"
+                    ]);
+
+                    // Natively query symbol
+                    const symRes = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("symbol", []) })
+                    });
+                    const symJson = await symRes.json();
+                    const symbol = symJson.error ? "CHO" : ethers.toUtf8String(zmInterface.decodeFunctionResult("symbol", "0x" + symJson.result.output)[0]);
+
+                    // Natively query decimals
+                    const decRes = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("decimals", []) })
+                    });
+                    const decJson = await decRes.json();
+                    const decimals = decJson.error ? 18 : Number(zmInterface.decodeFunctionResult("decimals", "0x" + decJson.result.output)[0]);
+
+                    // Natively query user balance (0x44c)
+                    const userBalRes = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("balanceOf", ["0x000000000000000000000000000000000000044C"]) })
+                    });
+                    const userBalJson = await userBalRes.json();
+                    const userBal = userBalJson.error ? 0n : zmInterface.decodeFunctionResult("balanceOf", "0x" + userBalJson.result.output)[0];
+                    const userFormatted = parseFloat(ethers.formatUnits(userBal, decimals)).toFixed(4);
+                    document.getElementById("ledgerAcc1100").innerText = `${userFormatted} ${symbol}`;
+
+                    // Natively query treasury balance (0x4b0)
+                    const treasuryBalRes = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("balanceOf", ["0x00000000000000000000000000000000000004B0"]) })
+                    });
+                    const treasuryBalJson = await treasuryBalRes.json();
+                    const treasuryBal = treasuryBalJson.error ? 0n : zmInterface.decodeFunctionResult("balanceOf", "0x" + treasuryBalJson.result.output)[0];
+                    const treasuryFormatted = parseFloat(ethers.formatUnits(treasuryBal, decimals)).toFixed(4);
+                    document.getElementById("ledgerAcc1200").innerText = `${treasuryFormatted} ${symbol}`;
+
+                    // Natively query Accrued Diyat Fees (0x898)
+                    const diyatBalRes = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cho", calldata: zmInterface.encodeFunctionData("balanceOf", ["0x0000000000000000000000000000000000000898"]) })
+                    });
+                    const diyatBalJson = await diyatBalRes.json();
+                    const diyatBal = diyatBalJson.error ? 0n : zmInterface.decodeFunctionResult("balanceOf", "0x" + diyatBalJson.result.output)[0];
+                    const diyatFormatted = parseFloat(ethers.formatUnits(diyatBal, decimals)).toFixed(4);
+                    document.getElementById("ledgerAcc2200").innerText = `${diyatFormatted} ${symbol}`;
+
+                    log("Ledger balances fetched natively via ZMM VM thunks.", "success");
+                } catch (e) {
+                    log(`Failed to fetch native ZMM balances: ${e.message}`, "error");
+                }
+                return;
+            }
+
             if (!config.networks || !config.networks.localhost) return;
             const localhostContracts = config.networks.localhost;
             
             try {
-                // Query the upgraded ledger contract directly
+                // If ZMM env is selected, query the CHO contract directly on-chain, otherwise Zarrella Ledger
                 const tokenAddr = localhostContracts.ledgerAddress || "0x50F903ee8e55348C72f1EbE7E36421469C568e7D";
 
                 const activeProvider = provider || new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
@@ -447,7 +515,6 @@ Loading ZMM VM inventory coordinates and items...
                 document.getElementById("ledgerAcc1200").innerText = `${treasuryFormatted} ${symbol}`;
 
                 // Fetch Accrued Diyat Fees (Acc 2200) using balanceOf(2200)
-                const diyatAddr = "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69";
                 let diyatFormatted = "0.0000";
                 try {
                     const diyatBal = await tokenContract.balanceOf("0x0000000000000000000000000000000000000898");
@@ -457,7 +524,7 @@ Loading ZMM VM inventory coordinates and items...
 
                 // Query Dysnomia & LAU Tokens Hub Info
                 const hubLauAddress = localhostContracts.mariarahelLau || "0x6c615C766EE6b7e69275b0D070eF50acc93ab880";
-                const hubChoAddress = localhostContracts.CHO || "0xcADC60d0DFf1256915B70C5Bd12591d5002b5179";
+                const hubChoAddress = localhostContracts.CHO || "0xCb591105c732C55bc81e109dCAeEd9E136AC6c89";
                 const hubZmachineAddress = localhostContracts.zmachineAddress || "0xcF77747751A078aD59247D6ccf4415C98e3739f5";
                 
                 document.getElementById("hubLauAddress").innerText = hubLauAddress;
@@ -544,38 +611,57 @@ Loading ZMM VM inventory coordinates and items...
         }
 
         async function transmute() {
-            if (!signer) {
+            if (currentEnv !== "zmm" && !signer) {
                 log("Please connect your browser wallet to perform an on-chain transfer.", "warning");
                 return;
             }
             if (!config.networks || !config.networks.localhost) return;
             const localhostContracts = config.networks.localhost;
             
-            const tokenAddr = localhostContracts.ledgerAddress || "0x50F903ee8e55348C72f1EbE7E36421469C568e7D";
+            const tokenAddr = currentEnv === "zmm"
+                ? (localhostContracts.CHO || "0xCb591105c732C55bc81e109dCAeEd9E136AC6c89")
+                : (localhostContracts.ledgerAddress || "0x50F903ee8e55348C72f1EbE7E36421469C568e7D");
+            
             const ledgerABI = [
                 "function postTransaction(uint256 debitAccount, uint256 creditAccount, uint256 amount) external returns (uint256)"
             ];
-            const ledgerContract = new ethers.Contract(tokenAddr, ledgerABI, signer);
 
             try {
-                log(`Sending double-entry transmutation: Debit 1200, Credit 1100, Amount 10 ZAL...`, "info");
-                const tx = await ledgerContract.postTransaction(1200, 1100, 10);
-                log(`Transaction sent. Hash: ${tx.hash}`, "info");
-                await tx.wait();
-                log(`Transfer confirmed! 10 ZAL shifted from User (1100) to Treasury (1200).`, "success");
+                if (currentEnv === "zmm") {
+                    log(`Sending ZMM CHO token transfer: 10 CHO to Treasury (0x00000000000000000000000000000000000004B0)...`, "info");
+                    const erc20Interface = new ethers.Interface(erc20Abi);
+                    const calldata = erc20Interface.encodeFunctionData("transfer", ["0x00000000000000000000000000000000000004B0", ethers.parseEther("10")]);
+                    
+                    const response = await fetch("/api/zmm-exec", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: "cho", calldata: calldata })
+                    });
+                    const resJson = await response.json();
+                    if (resJson.error) throw new Error(resJson.error);
+                    
+                    log("Transfer confirmed natively in ZMM! 10 CHO shifted to Treasury Vault.", "success");
+                } else {
+                    log(`Sending double-entry transmutation: Debit 1200, Credit 1100, Amount 10 ZAL...`, "info");
+                    const ledgerContract = new ethers.Contract(tokenAddr, ledgerABI, signer);
+                    const tx = await ledgerContract.postTransaction(1200, 1100, 10);
+                    log(`Transaction sent. Hash: ${tx.hash}`, "info");
+                    await tx.wait();
+                    log(`Transfer confirmed! 10 ZAL shifted from User (1100) to Treasury (1200).`, "success");
+                }
 
                 const logKey = currentEnv === "zmm" ? "zmm_ledger_logs" : "cabs_ledger_logs";
                 const storedLogs = JSON.parse(localStorage.getItem(logKey) || "[]");
                 storedLogs.unshift({
                     time: new Date().toLocaleTimeString(),
-                    account: "1100 & 1200",
-                    desc: "Alchemical Transmutation",
+                    account: currentEnv === "zmm" ? "CHO Token" : "1100 & 1200",
+                    desc: currentEnv === "zmm" ? "CHO Token Transfer" : "Alchemical Transmutation",
                     debit: "10.0000",
                     credit: "10.0000"
                 });
                 localStorage.setItem(logKey, JSON.stringify(storedLogs.slice(0, 10)));
 
-                const address = await signer.getAddress();
+                const address = signer ? await signer.getAddress() : null;
                 await updateBalances(address);
             } catch (err) {
                 log(`Transmutation failed: ${err.message}`, "error");

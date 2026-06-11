@@ -57,7 +57,7 @@ static uint8_t* hex_to_bytes(const char *hex, size_t *out_len) {
 }
 
 static void persist_reconciliation_data(void) {
-    FILE *fp = fopen("evm_storage.json", "w");
+    FILE *fp = fopen("tsfi2-deepseek/evm_storage.json", "w");
     if (!fp) return;
     fprintf(fp, "{\n  \"storage\": [\n");
     for (int i = 0; i < g_yul_evm_context.storage_count; i++) {
@@ -77,7 +77,7 @@ static void persist_reconciliation_data(void) {
 }
 
 static void load_reconciliation_data(void) {
-    FILE *fp = fopen("evm_storage.json", "r");
+    FILE *fp = fopen("tsfi2-deepseek/evm_storage.json", "r");
     if (!fp) return;
     char line[512];
     while (fgets(line, sizeof(line), fp)) {
@@ -646,21 +646,8 @@ static u256_t u256_mulmod(u256_t a, u256_t b, u256_t N) {
 }
 
 static u256_t get_namespaced_key(uint64_t self_addr, u256_t key) {
-    uint64_t h = 14695981039346656037ULL;
-    for (int i = 0; i < 8; i++) {
-        h ^= (self_addr >> (i * 8)) & 0xff;
-        h *= 1099511628211ULL;
-    }
-    u256_t res;
-    for (int limb = 0; limb < 4; limb++) {
-        uint64_t temp = h ^ (limb * 97);
-        for (int i = 0; i < 8; i++) {
-            temp ^= (key.d[limb] >> (i * 8)) & 0xff;
-            temp *= 1099511628211ULL;
-        }
-        res.d[limb] = temp;
-    }
-    return res;
+    (void)self_addr;
+    return key;
 }
 
 static u256_t context_sload(YulEvmContext *ctx, u256_t key) {
