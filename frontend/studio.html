@@ -550,6 +550,9 @@
         let formantCompEnv = 0.0;
         let semafoonEnvState = 0.0;
         let orbitAngleState = 0.0;
+        let formantCompActive = false;
+        let prevStimulusState = 0.0;
+        let compGainState = 1.0;
 
         // Current parameters
         const params = {
@@ -1474,16 +1477,35 @@
                     formantCompEnv = Number(envDecoded[0]) / 1e18;
                 }
 
-                // Dynamic compGain scaling factor (reduction factor)
-                const compThreshold = 0.3;
-                let compGain = 1.0;
-                if (formantCompEnv > compThreshold) {
-                    compGain = compThreshold / formantCompEnv;
+                // Sylvania-style hysteretic trigger (Issue 9)
+                const compStrikeThreshold = 0.35;
+                const compExtinguishThreshold = 0.12;
+                if (formantCompEnv > compStrikeThreshold) {
+                    formantCompActive = true;
+                } else if (formantCompEnv < compExtinguishThreshold) {
+                    formantCompActive = false;
                 }
-                if (compGain < 0.05) compGain = 0.05; // avoid divide by zero/underflow
 
-                // Scale down stimulus by compGain before sending to the VM FormantFilter
-                const compressedStimulus = stimulus * compGain;
+                // Dynamic compGain scaling factor
+                let targetCompGain = 1.0;
+                if (formantCompActive && formantCompEnv > 0.0) {
+                    targetCompGain = compStrikeThreshold / formantCompEnv;
+                }
+                if (targetCompGain < 0.05) targetCompGain = 0.05; // avoid divide by zero/underflow
+
+                // Zero-crossing synchronization: only update compGainState when stimulus changes polarity
+                let zeroCrossed = false;
+                if ((stimulus >= 0.0 && prevStimulusState < 0.0) || (stimulus < 0.0 && prevStimulusState >= 0.0)) {
+                    zeroCrossed = true;
+                }
+                prevStimulusState = stimulus;
+
+                if (zeroCrossed) {
+                    compGainState = targetCompGain;
+                }
+
+                // Scale down stimulus by synchronized compGainState before sending to the VM FormantFilter
+                const compressedStimulus = stimulus * compGainState;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
@@ -1516,8 +1538,8 @@
                     const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
                     let rawOut = Number(decoded[0]) / 1e18;
 
-                    // Multiply the returned rawOut by the reciprocal of compGain (expanding the dynamics)
-                    rawOut = rawOut * (1.0 / compGain);
+                    // Multiply the returned rawOut by the reciprocal of compGainState (expanding the dynamics)
+                    rawOut = rawOut * (1.0 / compGainState);
 
                     const outVolts = await applyEquaLimiter(rawOut, 0.51);
 
