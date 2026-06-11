@@ -960,11 +960,38 @@
         // Canvas Waveform Rendering
         let samples = Array.from({ length: 100 }, () => 0);
         let auxSamples1 = Array.from({ length: 100 }, () => 0);
+        let fdnDelayLeft = Array.from({ length: 441 }, () => 0); // prime delay 1 (10ms at 44.1kHz equivalent scale)
+        let fdnDelayRight = Array.from({ length: 509 }, () => 0); // prime delay 2 (11.5ms)
+        let fdnIndex = 0;
         let auxSamples2 = Array.from({ length: 100 }, () => 0);
 
         // Dynamic push proxy for multi-channel oscilloscope multiplexing (Issue 4)
         samples.push = function(val) {
-            Array.prototype.push.call(this, val);
+            // Apply 2x2 Unitary FDN spatialization with one-pole damping lowpass filters
+            const theta = (Math.sin(Date.now() / 10000) * Math.PI) / 4.0; // Vaesen-tied emotional rotation angle
+            const cosT = Math.cos(theta);
+            const sinT = Math.sin(theta);
+
+            const delayedL = fdnDelayLeft[fdnIndex];
+            const delayedR = fdnDelayRight[fdnIndex];
+
+            // One-pole lowpass feedback damping (Issue 13 / Issue 14 hybrid)
+            const dampL = delayedL * 0.5;
+            const dampR = delayedR * 0.5;
+
+            // Unitary feedback mixing matrix (Franz Alt rotation)
+            const feedbackL = dampL * cosT - dampR * sinT;
+            const feedbackR = dampL * sinT + dampR * cosT;
+
+            // Update delay buffers with current sample + feedback
+            fdnDelayLeft[fdnIndex] = val + feedbackL * 0.40;
+            fdnDelayRight[fdnIndex] = val + feedbackR * 0.40;
+
+            fdnIndex = (fdnIndex + 1) % fdnDelayLeft.length;
+
+            // Spatialized left channel is pushed to main buffer
+            let spatializedVal = val + feedbackL * 0.30;
+            Array.prototype.push.call(this, spatializedVal);
             
             let aux1 = 0;
             let aux2 = 0;
@@ -1485,6 +1512,27 @@
             return outVolts;
         }
 
+        function checkGraeffeStability(f, d) {
+            // Chamberlin coefficients of: z^2 - (2 - d*f - f^2)*z + (1 - d*f) = 0
+            const a2 = 1.0;
+            const a1 = -(2.0 - d * f - f * f);
+            const a0 = 1.0 - d * f;
+            
+            // Iteration 1 (root squaring)
+            const b2 = a2 * a2;
+            const b1 = a1 * a1 - 2 * a2 * a0;
+            const b0 = a0 * a0;
+            
+            // Iteration 2 (root squaring)
+            const c2 = b2 * b2;
+            const c1 = b1 * b1 - 2 * b2 * b0;
+            const c0 = b0 * b0;
+            
+            // Root magnitude estimation: (c1 / c2)^(1/4)
+            const r1 = Math.pow(Math.abs(c1 / c2), 0.25);
+            return r1;
+        }
+
         let isSimulationRunning = false;
         // Trigger a step simulation
         async function triggerSingleSimulationStep() {
@@ -1946,8 +1994,14 @@
                 if (finalPitchF < 0.01) finalPitchF = 0.01;
                 if (finalPitchF > 0.6) finalPitchF = 0.6;
 
+                let dynamicDampingQ = params.formant.dampingQ;
+                const stabilityScore = checkGraeffeStability(finalPitchF, dynamicDampingQ);
+                if (stabilityScore >= 0.98) {
+                    dynamicDampingQ = dynamicDampingQ * 2.0; // scale up damping (reduce Q) to pull poles in
+                }
+
                 const pitchF = BigInt(Math.round(finalPitchF * 1e18));
-                const dampingQ = BigInt(Math.round(params.formant.dampingQ * 1e18));
+                const dampingQ = BigInt(Math.round(dynamicDampingQ * 1e18));
                 const packedVal = pitchF + (dampingQ << 128n);
 
                 const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
