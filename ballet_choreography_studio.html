@@ -1547,9 +1547,9 @@ Status: Awaiting user to start music.</div>
                         const px = imgData.data;
                         for (let i = 0; i < px.length; i += 4) {
                             let r = px[i], g = px[i+1], b = px[i+2];
-                            let brightness = (r + g + b) / 3;
-                            if (brightness < 40) {
-                                px[i+3] = Math.max(0, Math.min(255, (brightness - 10) / 30 * 255));
+                            if (r < 18 && g < 18 && b < 18) {
+                                let maxVal = Math.max(r, g, b);
+                                px[i+3] = Math.max(0, Math.min(255, (maxVal - 3) / 15 * 255));
                             }
                         }
                         tempCtx.putImageData(imgData, 0, 0);
