@@ -530,6 +530,7 @@
             whistle: {
                 pitch: 1.5,
                 noiseMix: 0.3,
+                mode: 0,
                 trigger: 0
             }
         };
@@ -574,8 +575,9 @@
                 { id: "snareNoiseMix", label: "Noise Mix Ratio", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" }
             ],
             whistle: [
-                { id: "whistlePitch", label: "Whistle Pitch Frequency", min: 0.5, max: 4.0, step: 0.1, key: "pitch", unit: "x" },
-                { id: "whistleNoiseMix", label: "Avalanche Noise Mix", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" }
+                { id: "whistlePitch", label: "Whistle Pitch/Time Constant", min: 0.5, max: 4.0, step: 0.1, key: "pitch", unit: "x" },
+                { id: "whistleNoiseMix", label: "Avalanche Noise Mix", min: 0.0, max: 1.0, step: 0.05, key: "noiseMix", unit: "x" },
+                { id: "whistleMode", label: "Generator Mode (0=Whistle, 1=Flame)", min: 0, max: 1, step: 1, key: "mode", unit: "m" }
             ]
         };
 
@@ -1023,7 +1025,8 @@
 
                 const pitch = BigInt(Math.round(params.whistle.pitch * 1e18));
                 const noiseMix = BigInt(Math.round(params.whistle.noiseMix * 1e18));
-                const packedVal = pitch + (noiseMix << 128n);
+                const modeVal = BigInt(Math.round(params.whistle.mode));
+                const packedVal = pitch + (noiseMix << 128n) + (modeVal << 192n);
 
                 const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256)"]);
                 const calldata = iface.encodeFunctionData("processSample", [triggerVal, packedVal]);

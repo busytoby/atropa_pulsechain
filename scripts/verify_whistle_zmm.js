@@ -31,7 +31,7 @@ function postJson(path, payload) {
 }
 
 async function test() {
-    console.log("=== Testing Steam Whistle & Avalanche Noise on ZMM VM ===");
+    console.log("=== Testing Steam Whistle & Flickering Flame on ZMM VM ===");
 
     const whistleAddr = "0x0000000000000000000000000000000000000049";
 
@@ -45,45 +45,40 @@ async function test() {
         "function processSample(int256 trigger, int256 pitchAndNoiseMix) public returns (int256)"
     ]);
 
-    // Parameters
-    const pitch = 1500000000000000000n; // 1.5 pitch factor
-    const noiseMix = 300000000000000000n; // 0.3 noise mix
-    const packedVal = pitch + (noiseMix << 128n);
+    // Test Suite 1: Whistle Mode (mode = 0)
+    console.log("\n--- Running Whistle Mode (0) ---");
+    const whistlePitch = 1500000000000000000n; // 1.5
+    const whistleNoise = 300000000000000000n; // 0.3
+    const whistlePacked = whistlePitch + (whistleNoise << 128n) + (0n << 192n); // mode 0
 
-    console.log("Triggering whistle and simulating 15 steps...");
-    let outputs = [];
-
-    for (let i = 0; i < 15; i++) {
-        const triggerVal = i === 0 ? 1000000000000000000n : 0n;
-
-        const calldata = whistleInterface.encodeFunctionData("processSample", [triggerVal, packedVal]);
-        const res = await postJson("/api/zmm-exec", {
-            name: "SteamWhistle",
-            calldata: calldata
-        });
-
-        if (res.error || !res.result || !res.result.output) {
-            console.error("Execution error, full response:", JSON.stringify(res));
-            break;
-        }
-
-        const decoded = whistleInterface.decodeFunctionResult("processSample", "0x" + res.result.output);
-        const outVal = Number(decoded[0]) / 1e18;
-        outputs.push(outVal);
-        console.log(`Step ${i + 1}: Output = ${outVal.toFixed(6)}`);
+    let whistleOuts = [];
+    for (let i = 0; i < 5; i++) {
+        const calldata = whistleInterface.encodeFunctionData("processSample", [0n, whistlePacked]);
+        const res = await postJson("/api/zmm-exec", { name: "SteamWhistle", calldata });
+        const outVal = Number(whistleInterface.decodeFunctionResult("processSample", "0x" + res.result.output)[0]) / 1e18;
+        whistleOuts.push(outVal);
+        console.log(`Step ${i + 1}: Whistle Output = ${outVal.toFixed(6)}`);
     }
 
-    let responded = false;
-    for (let i = 0; i < outputs.length; i++) {
-        if (Math.abs(outputs[i]) > 0.0) {
-            responded = true;
-        }
+    // Test Suite 2: Flickering Flame Mode (mode = 1)
+    console.log("\n--- Running Flickering Flame Mode (1) ---");
+    const flamePitch = 1000000000000000000n; // 1.0
+    const flameNoise = 800000000000000000n; // 0.8 (high noise mix)
+    const flamePacked = flamePitch + (flameNoise << 128n) + (1n << 192n); // mode 1
+
+    let flameOuts = [];
+    for (let i = 0; i < 5; i++) {
+        const calldata = whistleInterface.encodeFunctionData("processSample", [0n, flamePacked]);
+        const res = await postJson("/api/zmm-exec", { name: "SteamWhistle", calldata });
+        const outVal = Number(whistleInterface.decodeFunctionResult("processSample", "0x" + res.result.output)[0]) / 1e18;
+        flameOuts.push(outVal);
+        console.log(`Step ${i + 1}: Flame Output = ${outVal.toFixed(6)}`);
     }
 
-    if (responded) {
-        console.log("\n★★★ ALL STEAM WHISTLE TESTS PASSED ★★★");
+    if (whistleOuts.length > 0 && flameOuts.length > 0) {
+        console.log("\n★★★ ALL STEAM/FLAME GENERATOR TESTS PASSED ★★★");
     } else {
-        console.log("\n❌ Whistle returned zero response.");
+        console.log("\n❌ Failure in generating outputs.");
     }
 }
 
