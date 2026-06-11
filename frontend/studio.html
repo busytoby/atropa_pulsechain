@@ -434,7 +434,13 @@
 
             <!-- Center Panel: Live Scope and Interactive Workspace -->
             <div class="panel" style="gap: 20px;">
-                <h2>📺 LIVE OSCILLOSCOPE</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>📺 LIVE OSCILLOSCOPE</h2>
+                    <div id="clipIndicator" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 5px 12px; border-radius: 4px; color: #ef4444; font-size: 0.8rem; font-weight: bold; opacity: 0; transition: opacity 0.1s ease-in-out; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);">
+                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #ef4444; border-radius: 50%; box-shadow: 0 0 8px #ef4444;"></span>
+                        ⚠️ OVERLOAD CLIPPING
+                    </div>
+                </div>
                 
                 <div class="scope-container">
                     <canvas id="scopeCanvas"></canvas>
@@ -779,8 +785,35 @@
             ctx.shadowBlur = 0; // reset
         }
 
+        let clipTimeout = null;
+        function triggerClipWarning() {
+            const indicator = document.getElementById("clipIndicator");
+            if (!indicator) return;
+            indicator.style.opacity = "1";
+            indicator.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.4)";
+            
+            // Log to telemetry panel
+            log("⚠️ WARNING: Signal amplitude exceeded SOAR boundary! Sharp clipping / Limiting active.");
+            
+            if (clipTimeout) clearTimeout(clipTimeout);
+            clipTimeout = setTimeout(() => {
+                indicator.style.opacity = "0";
+                indicator.style.boxShadow = "none";
+            }, 800);
+        }
+
         // Apply Equa-Amplifier dynamic limiter (AGC)
         async function applyEquaLimiter(outVolts, loadImpedance = 0.51) {
+            // SOAR voltage ceiling calculation: V_max = I_limit * loadRL
+            const I_limit = 1.969696969696969697;
+            const V_max = I_limit * loadImpedance;
+            const softLimit = V_max * 0.95;
+
+            // Check if signal amplitude exceeds soft limit
+            if (Math.abs(outVolts) > softLimit) {
+                triggerClipWarning();
+            }
+
             const isChecked = document.getElementById("chkEquaLimiter").checked;
             if (!isChecked) return outVolts;
 
