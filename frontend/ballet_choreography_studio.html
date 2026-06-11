@@ -2180,43 +2180,105 @@ Status: Awaiting user to start music.</div>
             cardCanvas.height = 448;
             const cCtx = cardCanvas.getContext("2d");
 
-            // Gold/Pink Ballet Border theme
-            const grad = cCtx.createLinearGradient(0, 0, 320, 448);
-            grad.addColorStop(0, "#ffd700"); // Gold
-            grad.addColorStop(1, "#ff69b4"); // Pink
-            cCtx.fillStyle = grad;
+            // Cyberpunk Dark Background
+            cCtx.fillStyle = "#090212";
             cCtx.fillRect(0, 0, 320, 448);
-            
-            cCtx.strokeStyle = "#ffffff";
-            cCtx.lineWidth = 2;
-            cCtx.strokeRect(6, 6, 308, 436);
-            cCtx.strokeRect(10, 10, 300, 428);
 
-            // Draw current stage snapshot
+            // Draw Neon Cyber Grid in the background
+            cCtx.save();
+            cCtx.strokeStyle = "rgba(0, 240, 255, 0.12)";
+            cCtx.lineWidth = 1;
+            for (let x = 0; x < 320; x += 20) {
+                cCtx.beginPath();
+                cCtx.moveTo(x, 0);
+                cCtx.lineTo(x, 448);
+                cCtx.stroke();
+            }
+            for (let y = 0; y < 448; y += 20) {
+                cCtx.beginPath();
+                cCtx.moveTo(0, y);
+                cCtx.lineTo(320, y);
+                cCtx.stroke();
+            }
+            cCtx.restore();
+
+            // Neon outer wireframe border (angular cutouts)
+            cCtx.save();
+            cCtx.strokeStyle = "#ff007f"; // Cyber Pink
+            cCtx.shadowColor = "#ff007f";
+            cCtx.shadowBlur = 8;
+            cCtx.lineWidth = 2;
+            cCtx.beginPath();
+            cCtx.moveTo(20, 10);
+            cCtx.lineTo(300, 10);
+            cCtx.lineTo(310, 20);
+            cCtx.lineTo(310, 428);
+            cCtx.lineTo(300, 438);
+            cCtx.lineTo(20, 438);
+            cCtx.lineTo(10, 428);
+            cCtx.lineTo(10, 20);
+            cCtx.closePath();
+            cCtx.stroke();
+            cCtx.restore();
+
+            // Cyber brackets in corners
+            cCtx.strokeStyle = "#00f0ff"; // Cyber Cyan
+            cCtx.lineWidth = 1.5;
+            cCtx.beginPath();
+            cCtx.moveTo(15, 25); cCtx.lineTo(15, 15); cCtx.lineTo(25, 15);
+            cCtx.stroke();
+            cCtx.beginPath();
+            cCtx.moveTo(305, 25); cCtx.lineTo(305, 15); cCtx.lineTo(295, 15);
+            cCtx.stroke();
+
+            // Draw current stage snapshot inside a neon frame
             cCtx.fillStyle = "#000";
-            cCtx.fillRect(16, 16, 288, 288);
-            cCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 16, 16, 288, 288);
+            cCtx.fillRect(20, 20, 280, 280);
+            cCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 20, 20, 280, 280);
+            
+            cCtx.strokeStyle = "#00f0ff";
+            cCtx.lineWidth = 2;
+            cCtx.strokeRect(20, 20, 280, 280);
 
             // Dark info section at bottom
-            cCtx.fillStyle = "#1e0b1c"; // dark wine/pinkish black
-            cCtx.fillRect(16, 314, 288, 118);
-            cCtx.strokeStyle = "#ff69b4";
-            cCtx.lineWidth = 1.5;
-            cCtx.strokeRect(16, 314, 288, 118);
+            cCtx.fillStyle = "rgba(18, 5, 34, 0.85)";
+            cCtx.fillRect(20, 312, 280, 116);
+            cCtx.strokeStyle = "#ff007f";
+            cCtx.lineWidth = 1;
+            cCtx.strokeRect(20, 312, 280, 116);
 
-            cCtx.fillStyle = "#ffffff";
-            cCtx.font = "bold 13px monospace";
-            cCtx.fillText("TSFI BALLET CHOREOGRAPHER", 26, 336);
+            // Glitch text helper
+            function drawGlitchText(text, x, y, font, baseColor, glitchColor, offset = 1.5) {
+                cCtx.font = font;
+                cCtx.fillStyle = glitchColor;
+                cCtx.fillText(text, x - offset, y + offset);
+                cCtx.fillStyle = baseColor;
+                cCtx.fillText(text, x, y);
+            }
+
+            // Text Outputs
+            drawGlitchText("TSFI // CHOREO_MATRIX", 30, 335, "bold 12px monospace", "#ffffff", "#ff007f");
+            drawGlitchText("STANCE: " + (window.activeStance || "IDLE").toUpperCase(), 30, 354, "10px monospace", "#00f0ff", "#ff007f");
+            drawGlitchText("AUDIO TEMPO: " + (window.bpm || "120") + " BPM", 30, 370, "9px monospace", "#f472b6", "#00f0ff");
             
-            cCtx.fillStyle = "#ffd700";
-            cCtx.font = "10px monospace";
-            cCtx.fillText("STANCE: " + (window.activeStance || "IDLE").toUpperCase(), 26, 356);
+            let systemHash = "SYS_VERIFY::OK";
+            if (window.coreColors) {
+                systemHash = `CORES::${window.coreColors.length}_ACTIVE`;
+            }
+            drawGlitchText(systemHash, 30, 386, "9px monospace", "#a855f7", "#ff007f");
+            
+            let zString = "CONSOLE::ONLINE";
+            if (document.getElementById("z-input")) {
+                let placeholderText = document.getElementById("z-input").placeholder;
+                if (placeholderText && placeholderText.length > 5) {
+                    zString = `Z_SEQ::${placeholderText.substring(0, 18).toUpperCase()}`;
+                }
+            }
+            drawGlitchText(zString, 30, 402, "9px monospace", "#34d399", "#00f0ff");
 
-            cCtx.fillStyle = "#f472b6";
-            cCtx.font = "9px monospace";
-            cCtx.fillText("MUSIC TEMPO: " + (window.bpm || "120") + " BPM", 26, 376);
-            cCtx.fillText("SHADOW CORES: " + (window.coreColors ? window.coreColors.length : "DEFAULT"), 26, 392);
-            cCtx.fillText("Z-MACHINE LOG: " + (document.getElementById("z-input") ? document.getElementById("z-input").placeholder.substring(0, 24) : "ACTIVE"), 26, 408);
+            cCtx.fillStyle = "rgba(0, 240, 255, 0.4)";
+            cCtx.font = "8px monospace";
+            cCtx.fillText("[SCANNING_LPC...]", 190, 420);
 
             const cardBase64 = cardCanvas.toDataURL("image/png");
 
