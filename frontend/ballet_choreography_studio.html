@@ -883,33 +883,39 @@ Status: Awaiting user to start music.</div>
         // 3D Bear Skeleton calculations
         function getBearSkeleton(offset3D, scale, angles) {
             const { leftArm, rightArm, leftLeg, rightLeg, headYaw = 0, headPitch = 0 } = angles;
-            let headX = offset3D.x + Math.sin(headYaw) * 15 * scale;
-            let headY = offset3D.y + 160 * scale - Math.cos(headPitch) * 5 * scale;
-            let headZ = offset3D.z + Math.cos(headYaw) * 15 * scale;
+            
+            // Apply DNA scale multipliers if loaded from card
+            const hMult = window.dancerHeadScaleMultiplier || 1.0;
+            const tMult = window.dancerTorsoScaleMultiplier || 1.0;
+            const lMult = window.dancerLegsScaleMultiplier || 1.0;
+
+            let headX = offset3D.x + Math.sin(headYaw) * 15 * scale * hMult;
+            let headY = offset3D.y + 160 * scale * hMult - Math.cos(headPitch) * 5 * scale;
+            let headZ = offset3D.z + Math.cos(headYaw) * 15 * scale * hMult;
             let head = new Point3D(headX, headY, headZ);
-            let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale, offset3D.z);
-            let lShoulder = new Point3D(offset3D.x - 70 * scale, offset3D.y + 90 * scale, offset3D.z);
-            let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
-            let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale, offset3D.z);
+            let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale * tMult, offset3D.z);
+            let lShoulder = new Point3D(offset3D.x - 70 * scale * tMult, offset3D.y + 90 * scale * tMult, offset3D.z);
+            let rShoulder = new Point3D(offset3D.x + 70 * scale * tMult, offset3D.y + 90 * scale * tMult, offset3D.z);
+            let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale * tMult, offset3D.z);
 
             let lPaw = new Point3D(
-                lShoulder.x + Math.sin(leftArm) * 90 * scale,
-                lShoulder.y - Math.cos(leftArm) * 90 * scale,
+                lShoulder.x + Math.sin(leftArm) * 90 * scale * lMult,
+                lShoulder.y - Math.cos(leftArm) * 90 * scale * lMult,
                 lShoulder.z
             );
             let rPaw = new Point3D(
-                rShoulder.x - Math.sin(rightArm) * 90 * scale,
-                rShoulder.y - Math.cos(rightArm) * 90 * scale,
+                rShoulder.x - Math.sin(rightArm) * 90 * scale * lMult,
+                rShoulder.y - Math.cos(rightArm) * 90 * scale * lMult,
                 rShoulder.z
             );
             let lFoot = new Point3D(
-                offset3D.x - 50 * scale + Math.sin(leftLeg) * 80 * scale,
-                midHip.y - Math.cos(leftLeg) * 80 * scale,
+                offset3D.x - 50 * scale * tMult + Math.sin(leftLeg) * 80 * scale * lMult,
+                midHip.y - Math.cos(leftLeg) * 80 * scale * lMult,
                 offset3D.z
             );
             let rFoot = new Point3D(
-                offset3D.x + 50 * scale - Math.sin(rightLeg) * 80 * scale,
-                midHip.y - Math.cos(rightLeg) * 80 * scale,
+                offset3D.x + 50 * scale * tMult - Math.sin(rightLeg) * 80 * scale * lMult,
+                midHip.y - Math.cos(rightLeg) * 80 * scale * lMult,
                 offset3D.z
             );
 
@@ -2328,9 +2334,14 @@ Status: Awaiting user to start music.</div>
                 savedDeck.forEach((card, idx) => {
                     const cardNode = document.createElement("div");
                     cardNode.className = "deck-card-thumb";
+                    cardNode.title = "Single-click to preview. Double-click to load character stance / translate DNA parameters.";
                     cardNode.onclick = (e) => {
                         if (e.target.className === "deck-card-delete") return;
                         openCardLightbox(card.image);
+                    };
+                    cardNode.ondblclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        loadCardIntoBallet(card);
                     };
 
                     cardNode.innerHTML = `
@@ -2340,6 +2351,49 @@ Status: Awaiting user to start music.</div>
                     `;
                     listContainer.appendChild(cardNode);
                 });
+            }
+        }
+
+        function loadCardIntoBallet(card) {
+            logEvent(`Double-clicked card. Loading stance / DNA characteristics...`);
+            if (card.score === "BALLET" && card.style) {
+                // Restore saved stance
+                const targetStance = card.style.toLowerCase();
+                const acts = ["plie", "arabesque", "attitude", "releve", "pirouette", "grand_jete"];
+                if (acts.includes(targetStance)) {
+                    activeStance = targetStance;
+                    logEvent(`Restored stance: ${targetStance.toUpperCase()}`);
+                } else {
+                    logEvent(`Restored choreography stance to default: PLIE`);
+                    activeStance = "plie";
+                }
+            } else if (card.zilSource && card.zilSource.includes("GENOME-SCALES")) {
+                // Parse DNA scale properties from Teddy Bear ZIL compiler source directly
+                try {
+                    const headMatch = card.zilSource.match(/\(HEAD\s+([0-9.]+)\)/);
+                    const torsoMatch = card.zilSource.match(/\(TORSO\s+([0-9.]+)\)/);
+                    const legsMatch = card.zilSource.match(/\(LEGS\s+([0-9.]+)\)/);
+
+                    if (headMatch || torsoMatch || legsMatch) {
+                        const headScale = headMatch ? parseFloat(headMatch[1]) : 1.0;
+                        const torsoScale = torsoMatch ? parseFloat(torsoMatch[1]) : 1.0;
+                        const legsScale = legsMatch ? parseFloat(legsMatch[1]) : 1.0;
+
+                        // Translate DNA traits to modify the dancer's pose kinetics or body scale ratios
+                        window.dancerHeadScaleMultiplier = headScale;
+                        window.dancerTorsoScaleMultiplier = torsoScale;
+                        window.dancerLegsScaleMultiplier = legsScale;
+
+                        logEvent(`[DNA Translation] Configured Dancer scale factors:`);
+                        logEvent(`- Head Scale: ${headScale.toFixed(2)}x`);
+                        logEvent(`- Torso Scale: ${torsoScale.toFixed(2)}x`);
+                        logEvent(`- Legs Scale: ${legsScale.toFixed(2)}x`);
+                    }
+                } catch(e) {
+                    console.error("Dancer DNA parser error:", e);
+                }
+            } else {
+                logEvent(`Card does not contain specific stance data. Stance remains: ${activeStance.toUpperCase()}`);
             }
         }
 
