@@ -1689,7 +1689,62 @@ object "GraphicsSystem" {
                 return(0x00, 64)
             }
 
+            // ----------------------------------------------------------------
+            // Method 35: drawBresenhamLine(int256 x1, int256 y1, int256 x2, int256 y2, uint8 color, uint256 baseAddr)
+            // Selector: 0xb9a31a9f
+            // ----------------------------------------------------------------
+            if eq(selector, 0xb9a31a9f) {
+                function abs(v) -> r {
+                    r := v
+                    if slt(v, 0) { r := sub(0, v) }
+                }
+
+                let x1 := calldataload(4)
+                let y1 := calldataload(36)
+                let x2 := calldataload(68)
+                let y2 := calldataload(100)
+                let color := and(calldataload(132), 0xFF)
+                let baseAddr := calldataload(164)
+
+                let dx := abs(sub(x2, x1))
+                let dy := abs(sub(y2, y1))
+                
+                let sx := 1
+                if lt(x2, x1) { sx := -1 }
+                
+                let sy := 1
+                if lt(y2, y1) { sy := -1 }
+                
+                let err := sub(dx, dy)
+                
+                let cx := x1
+                let cy := y1
+                
+                for { } 1 { } {
+                    let pixelAddr := add(baseAddr, add(mul(cy, 320), cx))
+                    mstore8(pixelAddr, color)
+                    
+                    if and(eq(cx, x2), eq(cy, y2)) { break }
+                    
+                    let e2 := mul(err, 2)
+                    
+                    if sgt(e2, sub(0, dy)) {
+                        err := sub(err, dy)
+                        cx := add(cx, sx)
+                    }
+                    
+                    if slt(e2, dx) {
+                        err := add(err, dx)
+                        cy := add(cy, sy)
+                    }
+                }
+                
+                mstore(0x00, 1)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
 }
+
