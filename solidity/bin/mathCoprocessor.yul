@@ -112,6 +112,122 @@ object "MathCoprocessor" {
                 c := getSinNormalized(add(phi, 250000000000000000))
             }
 
+            // Fixed-point Square Root helper (scaled 1e18)
+            function getSqrt(opA) -> res {
+                if slt(opA, 0) {
+                    res := 0
+                    leave
+                }
+                let temp := opA
+                let x := temp
+                let y := 1000000000000000000
+                if gt(temp, 0) {
+                    for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+                        x := sdiv(add(x, y), 2)
+                        y := sdiv(mul(temp, 1000000000000000000), x)
+                    }
+                }
+                res := x
+            }
+
+            // Bessel Function J0(x) polynomial / cosine approximation (scaled 1e18)
+            function getJ0(x) -> j {
+                let scale := 1000000000000000000
+                if slt(x, 0) { x := sub(0, x) }
+                
+                // Polynomial approximation for x <= 3.0
+                if iszero(gt(x, 3000000000000000000)) {
+                    let x3 := sdiv(x, 3)
+                    let y := sdiv(mul(x3, x3), scale)
+                    
+                    let c1 := 2249999700000000000
+                    let c2 := 1265620800000000000
+                    let c3 := 316386600000000000
+                    let c4 := 44447900000000000
+                    let c5 := 3944400000000000
+                    let c6 := 210000000000000
+                    
+                    let term := sdiv(mul(c6, y), scale)
+                    term := sub(term, c5)
+                    term := sdiv(mul(term, y), scale)
+                    term := add(term, c4)
+                    term := sdiv(mul(term, y), scale)
+                    term := sub(term, c3)
+                    term := sdiv(mul(term, y), scale)
+                    term := add(term, c2)
+                    term := sdiv(mul(term, y), scale)
+                    term := sub(term, c1)
+                    term := sdiv(mul(term, y), scale)
+                    j := add(scale, term)
+                    leave
+                }
+                
+                // Asymptotic cosine approximation for x > 3.0
+                let pi := 3141592653589793238
+                let quarterPi := 785398163397448309
+                let den := sdiv(mul(pi, x), scale)
+                let amp := 0
+                if den {
+                    let inner := sdiv(mul(2000000000000000000, scale), den)
+                    amp := getSqrt(inner)
+                }
+                let angle := sub(x, quarterPi)
+                let cosTerm := getCos(angle)
+                j := sdiv(mul(amp, cosTerm), scale)
+            }
+
+            // Bessel Function J1(x) polynomial / cosine approximation (scaled 1e18)
+            function getJ1(x) -> j {
+                let scale := 1000000000000000000
+                let sign := 1
+                if slt(x, 0) {
+                    x := sub(0, x)
+                    sign := sub(0, 1)
+                }
+                
+                // Polynomial approximation for x <= 3.0
+                if iszero(gt(x, 3000000000000000000)) {
+                    let x3 := sdiv(x, 3)
+                    let y := sdiv(mul(x3, x3), scale)
+                    
+                    let c0 := 500000000000000000
+                    let c1 := 562499850000000000
+                    let c2 := 210935730000000000
+                    let c3 := 39542890000000000
+                    let c4 := 4433190000000000
+                    let c5 := 317610000000000
+                    let c6 := 11090000000000
+                    
+                    let term := sdiv(mul(c6, y), scale)
+                    term := sub(term, c5)
+                    term := sdiv(mul(term, y), scale)
+                    term := add(term, c4)
+                    term := sdiv(mul(term, y), scale)
+                    term := sub(term, c3)
+                    term := sdiv(mul(term, y), scale)
+                    term := add(term, c2)
+                    term := sdiv(mul(term, y), scale)
+                    term := sub(term, c1)
+                    term := sdiv(mul(term, y), scale)
+                    let factor := add(c0, term)
+                    j := mul(sdiv(mul(x, factor), scale), sign)
+                    leave
+                }
+                
+                // Asymptotic cosine approximation for x > 3.0
+                let pi := 3141592653589793238
+                let threeQuarterPi := 2356194490192344928
+                let den := sdiv(mul(pi, x), scale)
+                let amp := 0
+                if den {
+                    let inner := sdiv(mul(2000000000000000000, scale), den)
+                    amp := getSqrt(inner)
+                }
+                let angle := sub(x, threeQuarterPi)
+                let cosTerm := getCos(angle)
+                j := mul(sdiv(mul(amp, cosTerm), scale), sign)
+            }
+
             // executeMath(uint256 op, uint256 a, uint256 b) -> (uint256 res, uint256 status)
             // Selector: 0x2f32067e
             if eq(selector, 0x2f32067e) {
@@ -155,21 +271,8 @@ object "MathCoprocessor" {
                     }
                 }
                 case 7 { // Square Root
-                    if slt(opA, 0) {
-                        status := 1
-                    }
-                    if iszero(slt(opA, 0)) {
-                        let temp := opA
-                        let x := temp
-                        let y := 1000000000000000000
-                        if gt(temp, 0) {
-                            for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
-                                x := sdiv(add(x, y), 2)
-                                y := sdiv(mul(temp, 1000000000000000000), x)
-                            }
-                        }
-                        res := x
-                    }
+                    res := getSqrt(opA)
+                    if slt(opA, 0) { status := 1 }
                 }
                 case 8 { // Sine
                     res := getSin(opA)
@@ -190,6 +293,12 @@ object "MathCoprocessor" {
                 }
                 case 12 { // Normalized Cosine
                     res := getCosNormalized(opA)
+                }
+                case 13 { // Bessel J0(x)
+                    res := getJ0(opA)
+                }
+                case 14 { // Bessel J1(x)
+                    res := getJ1(opA)
                 }
 
                 mstore(0x00, res)
