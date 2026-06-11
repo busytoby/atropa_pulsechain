@@ -320,6 +320,7 @@
                 <a href="/index.html" class="btn btn-secondary">🏠 Back to Hub</a>
                 <a href="http://127.0.0.1:9092" target="_blank" class="btn btn-secondary" style="border-color: #00ff00; color: #f8fafc; text-shadow: 0 0 5px #00ff00;">🌌 System0 Studio</a>
                 <button class="btn btn-primary" id="btnRunSweep">⚡ Run Telemetry Sweep</button>
+                <button class="btn btn-secondary" id="btnToggleSound" style="border-color: #ff9f00; color: #ff9f00;">🔊 Toggle Sound</button>
             </div>
         </header>
 
@@ -809,6 +810,84 @@
             triggerSingleSimulationStep();
         }
 
+        let audioCtx = null;
+        let synthOsc = null;
+        let synthGain = null;
+
+        function toggleAudio() {
+            const btn = document.getElementById("btnToggleSound");
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                synthOsc = audioCtx.createOscillator();
+                synthGain = audioCtx.createGain();
+                
+                synthOsc.type = 'sawtooth';
+                synthOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                synthGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                
+                synthOsc.connect(synthGain);
+                synthGain.connect(audioCtx.destination);
+                synthOsc.start();
+                btn.textContent = "🔊 Sound: ON";
+                btn.style.borderColor = "#00ff00";
+                btn.style.color = "#00ff00";
+                log("🔊 Web Audio API Synthesizer initialized!");
+            } else if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+                btn.textContent = "🔊 Sound: ON";
+                btn.style.borderColor = "#00ff00";
+                btn.style.color = "#00ff00";
+                log("🔊 Audio resumed.");
+            } else {
+                audioCtx.suspend();
+                btn.textContent = "🔇 Sound: OFF";
+                btn.style.borderColor = "#ff9f00";
+                btn.style.color = "#ff9f00";
+                log("🔇 Audio suspended.");
+            }
+        }
+
+        function playTriggerTone(freq, duration, type = "sine") {
+            if (!audioCtx || audioCtx.state !== "running") return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if (type === "sine") {
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + duration);
+            }
+            
+            gainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function updateAudioSynthesis(outVolts) {
+            if (!audioCtx || audioCtx.state !== "running") return;
+            
+            if (activeModule === "philicorda" || activeModule === "tunnel" || activeModule === "stroboscope") {
+                const baseFreq = activeModule === "philicorda" ? 220 : activeModule === "tunnel" ? 110 : 55;
+                const targetFreq = baseFreq + Math.max(-baseFreq * 0.9, outVolts * 120);
+                synthOsc.frequency.setValueAtTime(targetFreq, audioCtx.currentTime);
+                
+                const volume = Math.min(0.20, Math.abs(outVolts) * 0.05);
+                synthGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            } else if (activeModule === "germanium" || activeModule === "formant" || activeModule === "gyrator") {
+                const baseFreq = activeModule === "germanium" ? 330 : activeModule === "formant" ? 440 : 180;
+                const targetFreq = baseFreq + Math.max(-baseFreq * 0.9, outVolts * 180);
+                synthOsc.frequency.setValueAtTime(targetFreq, audioCtx.currentTime);
+                
+                const volume = Math.min(0.15, Math.abs(outVolts) * 0.04);
+                synthGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            } else {
+                synthGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            }
+        }
+
         // Write message to the telemetry logs panel
         function log(msg) {
             const time = new Date().toLocaleTimeString();
@@ -1146,6 +1225,7 @@
                     bionikaLastSpikeTime = Date.now();
                     log("⚡ Bionika Axon: Action potential fired! Propagating along the nerve...");
                     fired = true;
+                    playTriggerTone(880, 0.04, "sine");
                 }
                 bionikaAxonQueue.push(fired ? 1.0 : 0.0);
             } else {
@@ -1208,8 +1288,11 @@
 
             if (payload && payload.result && payload.result.output) {
                 const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
-                return Number(decoded[0]) / 1e18;
+                const resultVal = Number(decoded[0]) / 1e18;
+                updateAudioSynthesis(resultVal);
+                return resultVal;
             }
+            updateAudioSynthesis(outVolts);
             return outVolts;
         }
 
@@ -1403,6 +1486,9 @@
             } else if (activeModule === "drum") {
                 const triggerVal = params.drum.trigger ? 1000000000000000000n : 0n;
                 params.drum.trigger = 0; // reset trigger state
+                if (triggerVal > 0n) {
+                    playTriggerTone(80, 0.22, "sine");
+                }
 
                 const pitchK = BigInt(Math.round(params.drum.pitchK * 1e18));
                 const decayD = BigInt(Math.round(params.drum.decayD * 1e18));
@@ -1464,6 +1550,9 @@
             } else if (activeModule === "snare") {
                 const triggerVal = params.snare.trigger ? 1000000000000000000n : 0n;
                 params.snare.trigger = 0; // reset trigger state
+                if (triggerVal > 0n) {
+                    playTriggerTone(190, 0.14, "triangle");
+                }
 
                 const pitchK = BigInt(Math.round(params.snare.pitchK * 1e18));
                 const decayD = BigInt(Math.round(params.snare.decayD * 1e18));
@@ -1748,6 +1837,10 @@
                 let snareTrigger = (bitmask & 2) ? 1000000000000000000n : 0n;
                 let hihatTrigger = (bitmask & 4) ? 1000000000000000000n : 0n;
 
+                if (kickTrigger > 0n) playTriggerTone(60, 0.20, "sine");
+                if (snareTrigger > 0n) playTriggerTone(200, 0.12, "triangle");
+                if (hihatTrigger > 0n) playTriggerTone(1200, 0.02, "sawtooth");
+
                 // 2. Process Membrane Drum (Kick)
                 const dPitch = BigInt(Math.round(params.drum.pitchK * 1e18));
                 const dDecay = BigInt(Math.round(params.drum.decayD * 1e18));
@@ -1890,6 +1983,10 @@
 
             log("Diagnostic sweep complete. Resuming simulation.");
             isSweeping = false;
+        });
+
+        document.getElementById("btnToggleSound").addEventListener("click", () => {
+            toggleAudio();
         });
 
         // Trigger CPU debugger verify
