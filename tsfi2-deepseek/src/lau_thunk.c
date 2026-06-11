@@ -31,7 +31,7 @@ ThunkProxy* ThunkProxy_create(void) {
     proxy->thunk_pool = (uint8_t *)lau_memalign_wired(pg, pg);
     g_in_thunk_create = 0;
     
-    fprintf(stderr, "[DEBUG] ThunkProxy_create: proxy=%p, thunk_pool=%p\n", proxy, proxy->thunk_pool);
+    // fprintf(stderr, "[DEBUG] ThunkProxy_create: proxy=%p, thunk_pool=%p\n", proxy, proxy->thunk_pool);
     
     if (!proxy->thunk_pool) { lau_free(proxy); return NULL; }
     

@@ -978,11 +978,21 @@ int main() {
             printf("[GAME STATE] Win status changed to: %d\n", game_win);
             fflush(stdout);
             last_game_win = game_win;
+            if (ai_mode && game_win) {
+                printf("[SMURFS] AI Autopilot successfully won the game! Exiting with SUCCESS.\n");
+                fflush(stdout);
+                exit_requested = 1;
+            }
         }
         if (game_over != last_game_over) {
             printf("[GAME STATE] Game Over status changed to: %d\n", game_over);
             fflush(stdout);
             last_game_over = game_over;
+            if (ai_mode && game_over) {
+                printf("[SMURFS] AI Autopilot failed / game over occurred. Exiting with FAILURE.\n");
+                fflush(stdout);
+                exit_requested = 1;
+            }
         }
         if (frame_counter % 30 == 0) {
             printf("[GAME PROGRESS] Screen: %d, X: %.1f, Y: %.1f, Energy: %d\n", game_screen, smurf_x, smurf_y, energy);
@@ -1081,10 +1091,23 @@ int main() {
         // 5. Sound trigger output checking
         int snd_trigger = (int)thunk_peek(55036);
         if (snd_trigger != 0) {
-            if (snd_trigger == 1) play_synth_sound("jump");
-            else if (snd_trigger == 2) play_synth_sound("hit");
-            else if (snd_trigger == 3) play_synth_sound("win");
-            else if (snd_trigger == 4) play_synth_sound("gameover");
+            if (snd_trigger == 1) {
+                printf("[SMURFS] AI/EVM Triggered Sound: JUMP (Playing via audio synthesizer)\n");
+                play_synth_sound("jump");
+            }
+            else if (snd_trigger == 2) {
+                printf("[SMURFS] AI/EVM Triggered Sound: HIT (Playing via audio synthesizer)\n");
+                play_synth_sound("hit");
+            }
+            else if (snd_trigger == 3) {
+                printf("[SMURFS] AI/EVM Triggered Sound: WIN (Playing via audio synthesizer)\n");
+                play_synth_sound("win");
+            }
+            else if (snd_trigger == 4) {
+                printf("[SMURFS] AI/EVM Triggered Sound: GAMEOVER (Playing via audio synthesizer)\n");
+                play_synth_sound("gameover");
+            }
+            fflush(stdout);
             thunk_poke(55036, 0); // Clear sound trigger
         }
 

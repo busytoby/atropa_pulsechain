@@ -217,6 +217,382 @@
             opacity: 0.8;
             text-decoration: underline;
         }
+
+        /* Story Book Panel */
+        .storybook-panel {
+            margin-top: 25px;
+            width: 100%;
+            background: rgba(30, 24, 38, 0.85);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6), 0 0 15px rgba(255, 170, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .storybook-header {
+            background: linear-gradient(90deg, rgba(255, 170, 0, 0.15) 0%, rgba(255, 170, 0, 0.02) 100%);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 170, 0, 0.2);
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.5px;
+        }
+
+        .storybook-content {
+            padding: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        .storybook-entry {
+            border-left: 2px solid var(--primary);
+            padding-left: 12px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .storybook-entry.success {
+            border-left-color: var(--success);
+        }
+
+        .storybook-entry.fail {
+            border-left-color: var(--danger);
+        }
+
+        .storybook-entry.system {
+            border-left-color: #b2a8c0;
+            font-style: italic;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(216, 112, 0, 0.1) 100%);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* Paginated Storybook Modal */
+        .book-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 8, 14, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .book-container {
+            position: relative;
+            width: 90%;
+            max-width: 950px;
+            height: 580px;
+            background: #f4edd8;
+            border-radius: 12px;
+            border: 8px solid #3d2b1f;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 170, 0, 0.15);
+            display: flex;
+            padding: 25px;
+            gap: 20px;
+            color: #2b1f14;
+        }
+
+        .book-close {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background: #3d2b1f;
+            border: 2px solid #f4edd8;
+            color: #f4edd8;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+        }
+
+        .book-close:hover {
+            background: #8c251e;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .book-spine {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.15) 100%);
+            border-left: 1px solid rgba(0,0,0,0.2);
+            border-right: 1px solid rgba(0,0,0,0.2);
+        }
+
+        .book-page {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px 25px;
+            height: calc(100% - 60px);
+            font-family: 'Georgia', serif;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .left-page {
+            border-right: 1px dashed rgba(0, 0, 0, 0.1);
+        }
+
+        .right-page {
+            border-left: 1px dashed rgba(0, 0, 0, 0.1);
+        }
+
+        .page-num {
+            font-size: 0.85rem;
+            font-weight: 700;
+            opacity: 0.6;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .page-content {
+            flex-grow: 1;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .page-content .dropcap::first-letter {
+            font-size: 3.5rem;
+            float: left;
+            line-height: 1;
+            margin-right: 8px;
+            margin-top: 4px;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            color: #8c251e;
+        }
+
+        .book-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 50px;
+        }
+
+        .book-btn {
+            background: #3d2b1f;
+            border: 1px solid rgba(0,0,0,0.2);
+            color: #f4edd8;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .book-btn:hover {
+            background: #8c251e;
+            box-shadow: 0 0 10px rgba(140, 37, 30, 0.4);
+        }
+
+        .book-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #555;
+        }
+
+        .book-btn-read {
+            background: #8c251e;
+            border-color: #f4edd8;
+        }
+
+        .book-btn-read:hover {
+            background: #b53128;
+        }
+
+        .btn-book-trigger {
+            background: linear-gradient(135deg, #8c251e 0%, #5a1410 100%);
+            border: 1px solid var(--primary);
+            color: #fff;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-book-trigger:hover {
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+        }
+
+        /* Reading word highlight */
+        .storybook-word-highlight {
+            background-color: rgba(255, 170, 0, 0.25);
+            border-bottom: 2px solid #8c251e;
+            transition: background-color 0.1s ease;
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+
+        /* Book Tabs Navigation */
+        .book-tabs {
+            position: absolute;
+            top: 15px;
+            left: 25px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .book-tab-btn {
+            background: #2b1f14;
+            border: 1px solid rgba(0,0,0,0.1);
+            color: #f4edd8;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .book-tab-btn:hover {
+            background: #5a1410;
+        }
+
+        .book-tab-btn.active {
+            background: #8c251e;
+            box-shadow: 0 0 5px rgba(140, 37, 30, 0.4);
+        }
+
+        /* Page Editor styles */
+        .book-editor {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .editor-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 12px;
+        }
+
+        .editor-label {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #8c251e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.5px;
+        }
+
+        .editor-textarea {
+            width: 100%;
+            height: 80px;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            color: #2b1f14;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Georgia', serif;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .editor-textarea:focus {
+            border-color: #8c251e;
+            box-shadow: 0 0 8px rgba(140, 37, 30, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .editor-btn-delete {
+            background: transparent;
+            border: none;
+            color: #ff3c3c;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .editor-btn-delete:hover {
+            text-decoration: underline;
+        }
+
+        /* Tactile Page Turn Transition */
+        .page-turn-active {
+            animation: pageFlip 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            transform-origin: left center;
+        }
+
+        @keyframes pageFlip {
+            0% { opacity: 0.3; transform: scale(0.97) rotateY(-8deg); filter: brightness(0.85); }
+            100% { opacity: 1; transform: scale(1) rotateY(0deg); filter: brightness(1); }
+        }
     </style>
 </head>
 <body>
@@ -243,6 +619,61 @@
 
         <div class="status-panel" id="statusMessage">
             Insert Coin / Press any action button to start the game!
+        </div>
+
+        <!-- Story Book Chronicles Panel -->
+        <div class="storybook-panel">
+            <div class="storybook-header">
+                <span>📖 The Chronicles of Dirk the Daring</span>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-book-trigger" onclick="openBook()" id="btnOpenBook" style="display: none;">📖 Open Book</button>
+                    <button class="btn-save" onclick="downloadStory()" id="btnDownloadStory" style="display: none;">Save Tale</button>
+                </div>
+            </div>
+            <div class="storybook-content" id="storybookContent">
+                <p style="color: #655a74; font-style: italic;">No chronicle has begun yet. Start the simulator to write Dirk's tale...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginated Storybook Modal -->
+    <div class="book-modal" id="bookModal">
+        <div class="book-container">
+            <button class="book-close" onclick="closeBook()">✕</button>
+            
+            <!-- Book Tab Navigation -->
+            <div class="book-tabs">
+                <button class="book-tab-btn active" onclick="switchBookTab('read')">📖 Read Book</button>
+                <button class="book-tab-btn" onclick="switchBookTab('edit')">✍ Edit Chronicles</button>
+            </div>
+
+            <div class="book-spine"></div>
+
+            <!-- Page Reading Container -->
+            <div class="book-pages-wrapper" id="bookPagesWrapper" style="display: flex; width: 100%; height: calc(100% - 60px); gap: 20px; margin-top: 30px;">
+                <div class="book-page left-page">
+                    <div class="page-num" id="pageNumLeft">Page 1</div>
+                    <div class="page-content" id="pageContentLeft"></div>
+                </div>
+                <div class="book-page right-page">
+                    <div class="page-num" id="pageNumRight">Page 2</div>
+                    <div class="page-content" id="pageContentRight"></div>
+                </div>
+            </div>
+
+            <!-- Page Editing Container -->
+            <div class="book-editor" id="bookEditor" style="display: none; width: 100%; height: calc(100% - 60px); overflow-y: auto; padding: 10px; margin-top: 30px; flex-direction: column; gap: 15px;">
+                <!-- Filled dynamically via JS -->
+            </div>
+
+            <div class="book-controls">
+                <button class="book-btn" onclick="prevPage()" id="btnPrevPage">◀ Prev</button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <select id="voiceSelect" style="background: #3d2b1f; color: #f4edd8; border: 1px solid rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; font-family: 'Outfit', sans-serif; font-size: 0.8rem; max-width: 180px; outline: none; cursor: pointer;"></select>
+                    <button class="book-btn book-btn-read" onclick="toggleReadAloud()" id="btnReadAloud">🔊 Read Aloud</button>
+                </div>
+                <button class="book-btn" onclick="nextPage()" id="btnNextPage">Next ▶</button>
+            </div>
         </div>
     </div>
 
@@ -284,6 +715,477 @@
         let currentStage = 0;
         let aiMode = false;
 
+        let storyBook = [
+            {
+                text: "Dirk the Daring stood before the gaping maw of the dark, imposing castle entrance, his heart pounding in his chest. Before him lay the entrance to the legendary Dragon's Lair, a place from which no adventurer had ever returned. With a firm grip on his heavy steel sword, he stepped into the gloomy shadows, stepping across the threshold of fate.",
+                type: "system",
+                timestamp: "12:00:00 AM"
+            },
+            {
+                text: "Suddenly, the stone floor collapsed! Dirk sprinted down the crumbling corridor as giant burning boulders rained down from the high arched ceiling. Leaping forward at the last second, he rolled through a narrow doorway as the hall fell into the bottomless cavern behind him.",
+                type: "system",
+                timestamp: "12:01:15 AM"
+            },
+            {
+                text: "Dirk crept deeper into the sulfuric caverns. Without warning, a colossal, fire-breathing beast lunged from the darkness! Dirk drew his glowing blade in a split second, deflecting the dragon's fiery breath with his steel shield and striking a heavy blow that sent the monster retreating into the shadows.",
+                type: "system",
+                timestamp: "12:02:40 AM"
+            },
+            {
+                text: "Further inside, Dirk encountered a rotting stone bridge suspended over an endless abyss of magma. As he crossed, the stone arches crumbled into dust! Gathering all his strength, Dirk took a flying leap to the left, catching the edge of a stable ledge just as the bridge vanished.",
+                type: "system",
+                timestamp: "12:03:55 AM"
+            },
+            {
+                text: "In the heart of the keep, the Electric Knight blocked his path, crackling with static energy and raising an electrified energy blade. The Knight lunged with blinding speed, but Dirk dodged right under the blade, striking the Knight's power core and disabling the mechanical defender.",
+                type: "system",
+                timestamp: "12:05:10 AM"
+            },
+            {
+                text: "Dirk finally reached the grand treasure chamber, where Princess Daphne was trapped inside a glowing cage. Guarding her was Singe, the massive red dragon. With a final, heroic battle cry, Dirk avoided Singe's claws, lunged forward, and drove his sword deep into the dragon's heart. Dirk rescued Daphne, and their legend was forever etched in the stars!",
+                type: "system",
+                timestamp: "12:06:30 AM"
+            }
+        ];
+
+        let lastAttemptedAction = "";
+
+        function renderDefaultStory() {
+            const container = document.getElementById("storybookContent");
+            if (!container) return;
+            container.innerHTML = "";
+            storyBook.forEach(entry => {
+                const div = document.createElement("div");
+                div.className = `storybook-entry ${entry.type}`;
+                div.innerHTML = `<span style="color: #8a7c9d; font-size: 0.8rem; display: block; margin-bottom: 2px;">[${entry.timestamp}]</span> ${entry.text}`;
+                container.appendChild(div);
+            });
+            document.getElementById("btnOpenBook").style.display = "block";
+            document.getElementById("btnDownloadStory").style.display = "block";
+        }
+
+        function appendStoryEntry(text, type = 'system') {
+            const container = document.getElementById("storybookContent");
+            if (storyBook.length === 0) {
+                container.innerHTML = "";
+                document.getElementById("btnDownloadStory").style.display = "block";
+                document.getElementById("btnOpenBook").style.display = "block";
+            }
+            
+            storyBook.push({ text, type, timestamp: new Date().toLocaleTimeString() });
+            
+            const div = document.createElement("div");
+            div.className = `storybook-entry ${type}`;
+            div.innerHTML = `<span style="color: #8a7c9d; font-size: 0.8rem; display: block; margin-bottom: 2px;">[${new Date().toLocaleTimeString()}]</span> ${text}`;
+            container.appendChild(div);
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function downloadStory() {
+            if (storyBook.length === 0) return;
+            const content = storyBook.map(entry => `[${entry.timestamp}] ${entry.text}`).join("\n");
+            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Dirk_The_Daring_Chronicles_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /* Paginated Book Modal Helpers */
+        let currentPageIndex = 0;
+        let synth = window.speechSynthesis;
+        let utterance = null;
+        let isReading = false;
+        let leftPageWords = [];
+        let rightPageWords = [];
+        let leftTextRaw = "";
+        let rightTextRaw = "";
+
+        // Parse words and store character ranges for boundary highlighting
+        function parseWords(text, pageId) {
+            const words = [];
+            const regex = /\S+/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                words.push({
+                    word: match[0],
+                    start: match.index,
+                    end: match.index + match[0].length,
+                    id: `word-${pageId}-${words.length}`
+                });
+            }
+            return words;
+        }
+
+        function renderSpans(words, isDropCap = false) {
+            return words.map((w, idx) => {
+                const dropClass = (isDropCap && idx === 0) ? "class='dropcap'" : "";
+                return `<span id="${w.id}" ${dropClass}>${w.word}</span>`;
+            }).join(" ");
+        }
+
+        function loadVoices() {
+            if (!synth) return;
+            const select = document.getElementById("voiceSelect");
+            if (!select) return;
+            select.innerHTML = "";
+            const voices = synth.getVoices();
+            const englishVoices = voices.filter(v => v.lang.startsWith("en"));
+            
+            englishVoices.forEach(voice => {
+                const opt = document.createElement("option");
+                opt.value = voice.name;
+                opt.innerText = voice.name.replace("Microsoft", "MS").replace("Google", "G");
+                select.appendChild(opt);
+            });
+        }
+        
+        if (synth) {
+            if (synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = loadVoices;
+            }
+            // Trigger initial load (Firefox/Safari support)
+            setTimeout(loadVoices, 500);
+        }
+
+        let activeTab = 'read';
+
+        function switchBookTab(tab) {
+            stopReading();
+            activeTab = tab;
+            const tabs = document.querySelectorAll(".book-tab-btn");
+            if (tabs.length >= 2) {
+                tabs[0].classList.toggle("active", tab === 'read');
+                tabs[1].classList.toggle("active", tab === 'edit');
+            }
+
+            const pagesWrapper = document.getElementById("bookPagesWrapper");
+            const editor = document.getElementById("bookEditor");
+            const controls = document.querySelector(".book-controls");
+
+            if (tab === 'read') {
+                pagesWrapper.style.display = "flex";
+                editor.style.display = "none";
+                controls.style.display = "flex";
+                renderBookPages();
+            } else {
+                pagesWrapper.style.display = "none";
+                editor.style.display = "flex";
+                controls.style.display = "none";
+                populateEditor();
+            }
+        }
+
+        function populateEditor() {
+            const container = document.getElementById("bookEditor");
+            container.innerHTML = "";
+
+            storyBook.forEach((entry, idx) => {
+                const row = document.createElement("div");
+                row.className = "editor-row";
+                row.innerHTML = `
+                    <div class="editor-label">
+                        <span>PAGE ${idx + 1} (${entry.type.toUpperCase()})</span>
+                        <button class="editor-btn-delete" onclick="deleteEditorPage(${idx})">Delete Page</button>
+                    </div>
+                    <textarea class="editor-textarea" id="editor-page-${idx}">${entry.text}</textarea>
+                `;
+                container.appendChild(row);
+            });
+
+            const actionRow = document.createElement("div");
+            actionRow.style.display = "flex";
+            actionRow.style.gap = "12px";
+            actionRow.style.marginTop = "15px";
+            actionRow.innerHTML = `
+                <button class="book-btn" onclick="addNewEditorPage()">➕ Add Custom Page</button>
+                <button class="book-btn book-btn-read" onclick="compileAndSaveEditor()">💾 Save & Compile Book</button>
+            `;
+            container.appendChild(actionRow);
+        }
+
+        function addNewEditorPage() {
+            saveCurrentEditorTexts();
+            storyBook.push({ text: "Write your custom story page text here...", type: "custom", timestamp: new Date().toLocaleTimeString() });
+            populateEditor();
+        }
+
+        function deleteEditorPage(idx) {
+            saveCurrentEditorTexts();
+            storyBook.splice(idx, 1);
+            populateEditor();
+        }
+
+        function saveCurrentEditorTexts() {
+            storyBook.forEach((entry, idx) => {
+                const textarea = document.getElementById(`editor-page-${idx}`);
+                if (textarea) {
+                    entry.text = textarea.value;
+                }
+            });
+        }
+
+        function compileAndSaveEditor() {
+            saveCurrentEditorTexts();
+            const container = document.getElementById("storybookContent");
+            container.innerHTML = "";
+            storyBook.forEach(entry => {
+                const div = document.createElement("div");
+                div.className = `storybook-entry ${entry.type}`;
+                div.innerHTML = `<span style="color: #8a7c9d; font-size: 0.8rem; display: block; margin-bottom: 2px;">[${entry.timestamp || new Date().toLocaleTimeString()}]</span> ${entry.text}`;
+                container.appendChild(div);
+            });
+            switchBookTab('read');
+        }
+
+        /* Aura Ambient Drone Synthesizer */
+        let ambientOsc1 = null;
+        let ambientOsc2 = null;
+        let ambientFilter = null;
+        let ambientGain = null;
+        let ambientActive = false;
+
+        function startAmbientSynth() {
+            if (ambientActive) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                // Sub-rumble filter
+                ambientFilter = audioCtx.createBiquadFilter();
+                ambientFilter.type = 'lowpass';
+                ambientFilter.frequency.setValueAtTime(110, audioCtx.currentTime);
+
+                // Extremely soft ambient gain
+                ambientGain = audioCtx.createGain();
+                ambientGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                
+                // Deep Detuned Chorus Wind Pad
+                ambientOsc1 = audioCtx.createOscillator();
+                ambientOsc1.type = 'sawtooth';
+                ambientOsc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1
+
+                ambientOsc2 = audioCtx.createOscillator();
+                ambientOsc2.type = 'triangle';
+                ambientOsc2.frequency.setValueAtTime(55.3, audioCtx.currentTime); // slightly detuned
+
+                ambientOsc1.connect(ambientFilter);
+                ambientOsc2.connect(ambientFilter);
+                ambientFilter.connect(ambientGain);
+                ambientGain.connect(audioCtx.destination);
+
+                ambientOsc1.start();
+                ambientOsc2.start();
+
+                // Soft fade-in over 2.5 seconds
+                ambientGain.gain.linearRampToValueAtTime(0.035, audioCtx.currentTime + 2.5);
+                ambientActive = true;
+            } catch (e) {
+                console.error("Ambient synth failed:", e);
+            }
+        }
+
+        function stopAmbientSynth() {
+            if (!ambientActive) return;
+            try {
+                const now = audioCtx.currentTime;
+                ambientGain.gain.cancelScheduledValues(now);
+                ambientGain.gain.setValueAtTime(ambientGain.gain.value, now);
+                ambientGain.gain.linearRampToValueAtTime(0.0, now + 1.2);
+
+                setTimeout(() => {
+                    if (ambientOsc1) { ambientOsc1.stop(); ambientOsc1.disconnect(); }
+                    if (ambientOsc2) { ambientOsc2.stop(); ambientOsc2.disconnect(); }
+                    if (ambientFilter) { ambientFilter.disconnect(); }
+                    if (ambientGain) { ambientGain.disconnect(); }
+                    ambientOsc1 = null;
+                    ambientOsc2 = null;
+                    ambientFilter = null;
+                    ambientGain = null;
+                    ambientActive = false;
+                }, 1300);
+            } catch (e) {
+                console.error("Ambient stop failed:", e);
+            }
+        }
+
+        function openBook() {
+            if (storyBook.length === 0) return;
+            document.getElementById("bookModal").style.display = "flex";
+            currentPageIndex = 0;
+            loadVoices();
+            switchBookTab('read');
+            startAmbientSynth();
+        }
+
+        function closeBook() {
+            stopReading();
+            stopAmbientSynth();
+            document.getElementById("bookModal").style.display = "none";
+        }
+
+        function renderBookPages() {
+            const leftContent = document.getElementById("pageContentLeft");
+            const rightContent = document.getElementById("pageContentRight");
+            const leftNum = document.getElementById("pageNumLeft");
+            const rightNum = document.getElementById("pageNumRight");
+
+            stopReading();
+
+            const leftIdx = currentPageIndex * 2;
+            const rightIdx = leftIdx + 1;
+
+            if (leftIdx < storyBook.length) {
+                leftTextRaw = storyBook[leftIdx].text;
+                leftPageWords = parseWords(leftTextRaw, "left");
+                leftContent.innerHTML = renderSpans(leftPageWords, true);
+                leftNum.innerText = `Page ${leftIdx + 1}`;
+            } else {
+                leftTextRaw = "";
+                leftPageWords = [];
+                leftContent.innerHTML = "";
+                leftNum.innerText = "";
+            }
+
+            if (rightIdx < storyBook.length) {
+                rightTextRaw = storyBook[rightIdx].text;
+                rightPageWords = parseWords(rightTextRaw, "right");
+                rightContent.innerHTML = renderSpans(rightPageWords, true);
+                rightNum.innerText = `Page ${rightIdx + 1}`;
+            } else {
+                rightTextRaw = "";
+                rightPageWords = [];
+                rightContent.innerHTML = `<p style="color: #8a7c9d; font-style: italic; text-align: center; margin-top: 100px;">The End</p>`;
+                rightNum.innerText = "";
+            }
+
+            document.getElementById("btnPrevPage").disabled = (currentPageIndex === 0);
+            document.getElementById("btnNextPage").disabled = ((currentPageIndex + 1) * 2 >= storyBook.length);
+
+            // Trigger tactile page turn animation
+            const lPage = document.querySelector(".left-page");
+            const rPage = document.querySelector(".right-page");
+            if (lPage && rPage) {
+                lPage.classList.remove("page-turn-active");
+                rPage.classList.remove("page-turn-active");
+                void lPage.offsetWidth;
+                void rPage.offsetWidth;
+                lPage.classList.add("page-turn-active");
+                rPage.classList.add("page-turn-active");
+            }
+        }
+
+        function prevPage() {
+            if (currentPageIndex > 0) {
+                currentPageIndex--;
+                renderBookPages();
+            }
+        }
+
+        function nextPage() {
+            if ((currentPageIndex + 1) * 2 < storyBook.length) {
+                currentPageIndex++;
+                renderBookPages();
+            }
+        }
+
+        function toggleReadAloud() {
+            if (isReading) {
+                stopReading();
+            } else {
+                startReading();
+            }
+        }
+
+        function startReading() {
+            if (!synth) return;
+            synth.cancel();
+
+            let cleanLeft = leftTextRaw.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "");
+            let cleanRight = rightTextRaw.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "");
+
+            let textToRead = "";
+            if (cleanLeft) textToRead += cleanLeft + " ";
+            if (cleanRight) textToRead += cleanRight;
+
+            if (!textToRead) return;
+
+            utterance = new SpeechSynthesisUtterance(textToRead);
+            
+            // Apply selected voice
+            const selectedVoiceName = document.getElementById("voiceSelect").value;
+            const voices = synth.getVoices();
+            const voice = voices.find(v => v.name === selectedVoiceName);
+            if (voice) utterance.voice = voice;
+
+            utterance.rate = 0.95;
+            utterance.pitch = 1.0;
+
+            utterance.onboundary = (event) => {
+                if (event.name !== 'word') return;
+                const charIndex = event.charIndex;
+
+                // Remove previous word highlights
+                document.querySelectorAll(".storybook-word-highlight").forEach(el => {
+                    el.classList.remove("storybook-word-highlight");
+                });
+
+                const leftLen = cleanLeft ? (cleanLeft.length + 1) : 0;
+
+                if (charIndex < leftLen && cleanLeft) {
+                    const word = leftPageWords.find(w => charIndex >= w.start && charIndex < w.end);
+                    if (word) {
+                        const el = document.getElementById(word.id);
+                        if (el) el.classList.add("storybook-word-highlight");
+                    }
+                } else if (cleanRight) {
+                    const rightCharIndex = charIndex - leftLen;
+                    const word = rightPageWords.find(w => rightCharIndex >= w.start && rightCharIndex < w.end);
+                    if (word) {
+                        const el = document.getElementById(word.id);
+                        if (el) el.classList.add("storybook-word-highlight");
+                    }
+                }
+            };
+
+            utterance.onend = () => {
+                isReading = false;
+                document.getElementById("btnReadAloud").innerText = "🔊 Read Aloud";
+                document.querySelectorAll(".storybook-word-highlight").forEach(el => {
+                    el.classList.remove("storybook-word-highlight");
+                });
+            };
+
+            utterance.onerror = () => {
+                isReading = false;
+                document.getElementById("btnReadAloud").innerText = "🔊 Read Aloud";
+                document.querySelectorAll(".storybook-word-highlight").forEach(el => {
+                    el.classList.remove("storybook-word-highlight");
+                });
+            };
+
+            isReading = true;
+            document.getElementById("btnReadAloud").innerText = "⏹ Stop Reading";
+            synth.speak(utterance);
+        }
+
+        function stopReading() {
+            if (synth && isReading) {
+                synth.cancel();
+                isReading = false;
+                document.getElementById("btnReadAloud").innerText = "🔊 Read Aloud";
+                document.querySelectorAll(".storybook-word-highlight").forEach(el => {
+                    el.classList.remove("storybook-word-highlight");
+                });
+            }
+        }
+
         async function initWeb3() {
             try {
                 provider = new ethers.JsonRpcProvider(PROVIDER_URL);
@@ -299,6 +1201,7 @@
             } catch (err) {
                 console.error("Failed to connect to local EVM contract:", err);
             }
+            renderDefaultStory();
         }
 
         function playSound(freq, type, duration) {
@@ -397,6 +1300,7 @@
 
             if (!dragonsLairContract) return;
 
+            lastAttemptedAction = action;
             const actionId = ACTION_MAP[action] || 0; // 0 for NONE (too slow)
             try {
                 const res = await dragonsLairContract.updateGame(actionId);
@@ -438,6 +1342,11 @@
                 promptActive = Number(res[3]) === 1;
                 expectedAction = ACTION_REVERSE_MAP[Number(res[4])] || "";
                 
+                // Reset and start Chronicles
+                storyBook = [];
+                document.getElementById("storybookContent").innerHTML = "";
+                appendStoryEntry("📖 Dirk the Daring stood before the dark, imposing cavern entrance, his heart racing as he prepared to cross the threshold into the Dragon's Lair.", "system");
+
                 gameActive = true;
                 updateHUD();
                 nextStage();
@@ -451,30 +1360,35 @@
             document.getElementById("promptBox").style.display = "none";
             
             if (currentStage === 1) {
+                appendStoryEntry("🏰 Dirk entered the Crumbling Hall. Giant burning stones began tumbling down, crushing everything in their path. There was no turning back!", "system");
                 document.getElementById("gameScreen").src = "dragons_lair_action.png";
                 document.getElementById("statusMessage").innerText = "Stage 1: Crumbling hall! Giant burning stones are falling. Find the escape route!";
                 setTimeout(() => {
                     triggerPrompt("RIGHT");
                 }, 2000);
             } else if (currentStage === 2) {
+                appendStoryEntry("🐲 Dirk crept into the dragon's cavern. The stench of sulfur filled the air. Suddenly, the beast lunged forward from the darkness!", "system");
                 document.getElementById("gameScreen").src = "dragons_lair_title.png";
                 document.getElementById("statusMessage").innerText = "Stage 2: Dirk enters the dragon's cavern! The beast attacks. Quick, draw your sword!";
                 setTimeout(() => {
                     triggerPrompt("SWORD");
                 }, 2500);
             } else if (currentStage === 3) {
+                appendStoryEntry("🌉 Dirk reached a fragile stone bridge suspended over an endless abyss, but the stones began to crack and fall away!", "system");
                 document.getElementById("gameScreen").src = "dragons_lair_action.png";
                 document.getElementById("statusMessage").innerText = "Stage 3: Falling bridge! Jump to the safe side!";
                 setTimeout(() => {
                     triggerPrompt("LEFT");
                 }, 2000);
             } else if (currentStage === 4) {
+                appendStoryEntry("⚡ Out of the shadows emerged the Electric Knight, crackling with pure static energy and raising his electrified sword!", "system");
                 document.getElementById("gameScreen").src = "dragons_lair_title.png";
                 document.getElementById("statusMessage").innerText = "Stage 4: The Electric Knight! Dodge his attack!";
                 setTimeout(() => {
                     triggerPrompt("LEFT");
                 }, 2200);
             } else if (currentStage === 5) {
+                appendStoryEntry("🐉 Dirk reached the treasure chamber and faced Singe, the gigantic red dragon guarding Princess Daphne. This was the final showdown!", "system");
                 document.getElementById("gameScreen").src = "dragons_lair_action.png";
                 document.getElementById("statusMessage").innerText = "Stage 5: Final confrontation with Singe the Dragon!";
                 setTimeout(() => {
@@ -490,6 +1404,19 @@
             clearTimeout(promptTimer);
             document.getElementById("promptBox").style.display = "none";
             
+            // Chronicle success based on stage
+            if (currentStage === 1) {
+                appendStoryEntry("🏃 Dirk successfully sprinted to the right, narrowly escaping the giant burning stones that smashed behind him!", "success");
+            } else if (currentStage === 2) {
+                appendStoryEntry("⚔ Dirk drew his sword at the perfect split-second and struck the beast, forcing it back into the shadows!", "success");
+            } else if (currentStage === 3) {
+                appendStoryEntry("🦘 Dirk made a daring leap to the left just as the old stone bridge collapsed into the abyss!", "success");
+            } else if (currentStage === 4) {
+                appendStoryEntry("🛡 Dirk reacted instantly and dodged the lightning-fast slash of the Electric Knight!", "success");
+            } else if (currentStage === 5) {
+                appendStoryEntry("🗡 Dirk landed a decisive strike on Singe the Dragon, defeating the beast once and for all!", "success");
+            }
+
             playSound(880, 'sine', 0.45);
             document.getElementById("statusMessage").innerText = "Success! Dirk avoided the hazard.";
             
@@ -501,6 +1428,25 @@
             clearTimeout(promptTimer);
             document.getElementById("promptBox").style.display = "none";
             
+            // Chronicle failure
+            let failText = "";
+            if (lastAttemptedAction === "NONE" || !lastAttemptedAction) {
+                failText = `⌛ Dirk froze in panic, failing to react in time!`;
+            } else {
+                if (currentStage === 1) {
+                    failText = `🪨 Dirk moved ${lastAttemptedAction} instead of RIGHT, getting crushed by a massive burning boulder.`;
+                } else if (currentStage === 2) {
+                    failText = `🔥 Dirk performed a ${lastAttemptedAction} dodge instead of drawing his sword, leaving him defenseless against the dragon's fiery breath.`;
+                } else if (currentStage === 3) {
+                    failText = `🕳 Dirk jumped ${lastAttemptedAction} instead of LEFT, plummeting down the crumbling bridge ruins.`;
+                } else if (currentStage === 4) {
+                    failText = `⚡ Dirk attempted a ${lastAttemptedAction} movement, failing to dodge and getting struck down by the Electric Knight's energy blade.`;
+                } else if (currentStage === 5) {
+                    failText = `💀 Dirk performed a ${lastAttemptedAction} movement, but was overpowered by Singe the Dragon's final counter-attack.`;
+                }
+            }
+            appendStoryEntry(failText, "fail");
+
             triggerFlash();
             playSound(150, 'sawtooth', 0.6);
             document.getElementById("statusMessage").innerText = msg;
@@ -514,15 +1460,19 @@
 
         function winGame() {
             gameActive = false;
+            appendStoryEntry("👑 Victory! Dirk has defeated Singe the Dragon, rescued Princess Daphne, and escaped the lair. Their names will be sung in legend forever!", "success");
             playSound(1200, 'sine', 0.8);
             document.getElementById("statusMessage").innerText = "Victory! Dirk has defeated Singe the Dragon and rescued Princess Daphne!";
             document.getElementById("gameScreen").src = "dragons_lair_title.png";
+            setTimeout(openBook, 2000);
         }
 
         function gameOver() {
             gameActive = false;
+            appendStoryEntry("🪦 Alas! Dirk the Daring has met his tragic end. The Legend of the Dragon's Lair remains unfinished...", "fail");
             document.getElementById("statusMessage").innerText = "Game Over. Press any action to insert coin and try again.";
             document.getElementById("gameScreen").src = "dragons_lair_title.png";
+            setTimeout(openBook, 2000);
         }
 
         window.onload = initWeb3;
