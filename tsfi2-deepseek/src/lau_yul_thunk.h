@@ -18,11 +18,12 @@ typedef struct {
     uint8_t return_data[524288];
     size_t return_size;
     
-    uint64_t storage_keys[4096];
+    u256_t storage_keys[4096];
     u256_t storage_vals[4096];
     int storage_count;
     bool reverted;
     uint64_t self_address;
+    u256_t caller_address;
 } YulEvmContext;
 
 extern _Thread_local YulEvmContext g_yul_evm_context;
