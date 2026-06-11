@@ -277,6 +277,64 @@
             color: var(--glow-cyan);
             box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
         }
+
+        /* Card Thumbnails in Deck Tray */
+        .deck-card-thumb {
+            width: 100px;
+            height: 140px;
+            background: #000;
+            border: 2px solid #1e293b;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+        .deck-card-thumb:hover {
+            border-color: var(--glow-gold);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(255, 196, 0, 0.25);
+        }
+        .deck-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .deck-card-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.85);
+            color: var(--glow-cyan);
+            font-size: 7px;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-family: 'Share Tech Mono', monospace;
+            border: 1px solid rgba(0,240,255,0.2);
+        }
+        .deck-card-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255,0,127,0.85);
+            color: #fff;
+            font-size: 8px;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .deck-card-thumb:hover .deck-card-delete {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -392,6 +450,7 @@
                     <input type="checkbox" id="canny-edge-outline"> Canny Edge Outline (Sobel)
                 </label>
                 <button class="btn btn-gold" id="btn-ai-render" onclick="triggerControlNetRender()">Synthesize Ballet Pose</button>
+                <button class="btn" id="btn-save-card" onclick="saveCurrentCardToDeck()" style="border-color: var(--glow-cyan); color: var(--glow-cyan); margin-top: 2px;">💾 Save Pose to Deck</button>
                 <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 4px; word-break: break-all;">Status: Idle</div>
             </div>
 
@@ -424,7 +483,6 @@
                 </div>
             </div>
             <div id="console">Initializing Ballet Stage...
-System: Vector engine loaded 3D meshes.
 Stage: Synthesizer core loaded.
 Status: Awaiting user to start music.</div>
             <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
@@ -434,6 +492,19 @@ Status: Awaiting user to start music.</div>
                 </div>
                 <input type="text" id="z-input" placeholder="Type commands (e.g. dance plie, practice start, director start)" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: var(--glow-cyan); padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Share Tech Mono', monospace; outline: none; margin-top: 6px;">
             </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Card Deck Tray Crossover -->
+    <div id="deck-drawer" style="height: 40px; background: rgba(4, 6, 12, 0.95); border-top: 1px solid #141d33; transition: height 0.3s ease; display: flex; flex-direction: column; overflow: hidden; z-index: 50; box-shadow: 0 -4px 25px rgba(0,0,0,0.85); backdrop-filter: blur(20px);">
+        <div onclick="toggleDeckDrawer()" style="height: 40px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; cursor: pointer; border-bottom: 1px solid #1a2333; user-select: none;">
+            <div style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--glow-gold); font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                🎴 COLLECTED SPORTS CARDS DECK (<span id="deck-count">0</span> Cards Saved)
+            </div>
+            <div id="drawer-toggle-icon" style="color: #94a3b8; font-size: 10px; font-family: 'Share Tech Mono', monospace;">▲ EXPAND DECK Tray</div>
+        </div>
+        <div id="deck-list-container" style="flex: 1; padding: 12px 30px; display: flex; gap: 16px; overflow-x: auto; align-items: center; background: rgba(1, 2, 5, 0.4);">
+            <div style="font-size: 11px; color: #475569; font-family: 'Share Tech Mono', monospace;">Your card album is currently empty. Synthesize a card and save it!</div>
         </div>
     </div>
 
@@ -2087,6 +2158,155 @@ Status: Awaiting user to start music.</div>
                 consoleBox.scrollTop = consoleBox.scrollHeight;
             }
         });
+
+        // Collapsible Card Deck Tray Javascript Crossover
+        let drawerExpanded = false;
+        function toggleDeckDrawer() {
+            const drawer = document.getElementById("deck-drawer");
+            const toggleIcon = document.getElementById("drawer-toggle-icon");
+            drawerExpanded = !drawerExpanded;
+            if (drawerExpanded) {
+                drawer.style.height = "200px";
+                toggleIcon.innerText = "▼ COLLAPSE DECK Tray";
+            } else {
+                drawer.style.height = "40px";
+                toggleIcon.innerText = "▲ EXPAND DECK Tray";
+            }
+        }
+
+        function saveCurrentCardToDeck() {
+            const cardCanvas = document.createElement("canvas");
+            cardCanvas.width = 320;
+            cardCanvas.height = 448;
+            const cCtx = cardCanvas.getContext("2d");
+
+            // Gold/Pink Ballet Border theme
+            const grad = cCtx.createLinearGradient(0, 0, 320, 448);
+            grad.addColorStop(0, "#ffd700"); // Gold
+            grad.addColorStop(1, "#ff69b4"); // Pink
+            cCtx.fillStyle = grad;
+            cCtx.fillRect(0, 0, 320, 448);
+            
+            cCtx.strokeStyle = "#ffffff";
+            cCtx.lineWidth = 2;
+            cCtx.strokeRect(6, 6, 308, 436);
+            cCtx.strokeRect(10, 10, 300, 428);
+
+            // Draw current stage snapshot
+            cCtx.fillStyle = "#000";
+            cCtx.fillRect(16, 16, 288, 288);
+            cCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 16, 16, 288, 288);
+
+            // Dark info section at bottom
+            cCtx.fillStyle = "#1e0b1c"; // dark wine/pinkish black
+            cCtx.fillRect(16, 314, 288, 118);
+            cCtx.strokeStyle = "#ff69b4";
+            cCtx.lineWidth = 1.5;
+            cCtx.strokeRect(16, 314, 288, 118);
+
+            cCtx.fillStyle = "#ffffff";
+            cCtx.font = "bold 13px monospace";
+            cCtx.fillText("TSFI BALLET CHOREOGRAPHER", 26, 336);
+            
+            cCtx.fillStyle = "#ffd700";
+            cCtx.font = "10px monospace";
+            cCtx.fillText("STANCE: " + (window.activeStance || "IDLE").toUpperCase(), 26, 356);
+
+            cCtx.fillStyle = "#f472b6";
+            cCtx.font = "9px monospace";
+            cCtx.fillText("MUSIC TEMPO: " + (window.bpm || "120") + " BPM", 26, 376);
+            cCtx.fillText("SHADOW CORES: " + (window.coreColors ? window.coreColors.length : "DEFAULT"), 26, 392);
+            cCtx.fillText("Z-MACHINE LOG: " + (document.getElementById("z-input") ? document.getElementById("z-input").placeholder.substring(0, 24) : "ACTIVE"), 26, 408);
+
+            const cardBase64 = cardCanvas.toDataURL("image/png");
+
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            savedDeck.push({
+                image: cardBase64,
+                timestamp: Date.now(),
+                score: "BALLET",
+                style: window.activeStance || "Choreography"
+            });
+
+            localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+            const consoleBox = document.getElementById("console");
+            if (consoleBox) {
+                consoleBox.innerHTML += `\n[Deck-Machine] Saved card successfully into deck local storage!`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+            loadDeckList();
+
+            if (!drawerExpanded) toggleDeckDrawer();
+        }
+
+        function loadDeckList() {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            const deckCountEl = document.getElementById("deck-count");
+            if (deckCountEl) deckCountEl.innerText = savedDeck.length;
+
+            const listContainer = document.getElementById("deck-list-container");
+            if (listContainer) {
+                listContainer.innerHTML = "";
+
+                if (savedDeck.length === 0) {
+                    listContainer.innerHTML = `<div style="font-size: 11px; color: #475569; font-family: 'Share Tech Mono', monospace;">Your card album is currently empty. Synthesize a card and save it!</div>`;
+                    return;
+                }
+
+                savedDeck.forEach((card, idx) => {
+                    const cardNode = document.createElement("div");
+                    cardNode.className = "deck-card-thumb";
+                    cardNode.onclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        openCardLightbox(card.image);
+                    };
+
+                    cardNode.innerHTML = `
+                        <img src="${card.image}">
+                        <div class="deck-card-delete" onclick="deleteCardFromDeck(${idx}); event.stopPropagation();">X</div>
+                        <div class="deck-card-badge">${card.score}</div>
+                    `;
+                    listContainer.appendChild(cardNode);
+                });
+            }
+        }
+
+        function deleteCardFromDeck(index) {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            savedDeck.splice(index, 1);
+            localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+            loadDeckList();
+        }
+
+        function openCardLightbox(imgSrc) {
+            let overlay = document.getElementById("card-lightbox");
+            if (!overlay) {
+                overlay = document.createElement("div");
+                overlay.id = "card-lightbox";
+                overlay.style = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; cursor: pointer;";
+                overlay.onclick = () => overlay.style.display = "none";
+                document.body.appendChild(overlay);
+            }
+            overlay.innerHTML = `<img src="${imgSrc}" style="max-height: 85vh; border: 5px solid #d2b48c; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">`;
+            overlay.style.display = "flex";
+        }
+
+        loadDeckList();
 
         requestAnimationFrame(loop);
     </script>

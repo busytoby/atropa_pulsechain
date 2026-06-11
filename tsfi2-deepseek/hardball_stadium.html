@@ -290,6 +290,13 @@
             <div id="console">System: Vulcan-Wayland hardball module online.
 Stage: Retro vanishing lines projected.
 Status: Press Pitch to begin.</div>
+            <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
+                <div style="font-size: 11px; color: #94a3b8; font-family: 'Share Tech Mono', monospace; display: flex; gap: 5px;">
+                    <span style="color: var(--glow-cyan); font-weight: bold;">Z-MACHINE:</span>
+                    <span>INPUT COMMAND</span>
+                </div>
+                <input type="text" id="z-input" placeholder="Type commands (e.g. pitch strike, bat swing, stadium lights off, card save)" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: var(--glow-cyan); padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Share Tech Mono', monospace; outline: none; margin-top: 6px;">
+            </div>
         </div>
 
         <!-- Center Arena Viewport -->
@@ -504,50 +511,124 @@ Status: Press Pitch to begin.</div>
         poseCanvas.height = 512;
         const pCtx = poseCanvas.getContext("2d");
 
+        window.activeBalletStance = "none";
+
         function getFighterSkeleton(offset, scale, swingAngle, position) {
+            let localOffset = { ...offset };
+            let stance = window.activeBalletStance || "none";
+
+            // Modify position offset based on stance
+            if (stance === "plie") {
+                localOffset.y -= 12 * scale; // bend down
+            } else if (stance === "grandjete") {
+                localOffset.y += 40 * scale; // leap up
+            }
+
+            let skel;
             // Pitcher
             if (position === 'pitcher') {
-                return {
-                    head: { x: offset.x, y: 55 * scale, z: offset.z },
-                    neck: { x: offset.x, y: 35 * scale, z: offset.z },
-                    midHip: { x: offset.x, y: -20 * scale, z: offset.z },
-                    lShoulder: { x: offset.x - 15 * scale, y: 35 * scale, z: offset.z },
-                    rShoulder: { x: offset.x + 15 * scale, y: 35 * scale, z: offset.z },
-                    lPaw: { x: offset.x - 20 * scale, y: 0 * scale, z: offset.z },
-                    rPaw: { x: offset.x + 20 * scale, y: 15 * scale, z: offset.z },
-                    lFoot: { x: offset.x - 12 * scale, y: -65 * scale, z: offset.z },
-                    rFoot: { x: offset.x + 12 * scale, y: -65 * scale, z: offset.z }
+                skel = {
+                    head: { x: localOffset.x, y: 55 * scale, z: localOffset.z },
+                    neck: { x: localOffset.x, y: 35 * scale, z: localOffset.z },
+                    midHip: { x: localOffset.x, y: -20 * scale, z: localOffset.z },
+                    lShoulder: { x: localOffset.x - 15 * scale, y: 35 * scale, z: localOffset.z },
+                    rShoulder: { x: localOffset.x + 15 * scale, y: 35 * scale, z: localOffset.z },
+                    lPaw: { x: localOffset.x - 20 * scale, y: 0 * scale, z: localOffset.z },
+                    rPaw: { x: localOffset.x + 20 * scale, y: 15 * scale, z: localOffset.z },
+                    lFoot: { x: localOffset.x - 12 * scale, y: -65 * scale, z: localOffset.z },
+                    rFoot: { x: localOffset.x + 12 * scale, y: -65 * scale, z: localOffset.z }
                 };
+
+                if (stance === "arabesque") {
+                    skel.head.y -= 10 * scale;
+                    skel.rFoot = { x: localOffset.x + 35 * scale, y: 20 * scale, z: localOffset.z - 30 * scale };
+                    skel.lPaw = { x: localOffset.x - 40 * scale, y: 35 * scale, z: localOffset.z };
+                } else if (stance === "pirouette") {
+                    let spin = (Date.now() * 0.005) % (Math.PI * 2);
+                    let cosS = Math.cos(spin);
+                    skel.lPaw = { x: localOffset.x + cosS * 20 * scale, y: 30 * scale, z: localOffset.z };
+                    skel.rPaw = { x: localOffset.x - cosS * 20 * scale, y: 30 * scale, z: localOffset.z };
+                    skel.rFoot = { x: localOffset.x, y: -20 * scale, z: localOffset.z + 10 * scale };
+                } else if (stance === "grandjete") {
+                    skel.lFoot = { x: localOffset.x - 55 * scale, y: 0 * scale, z: localOffset.z };
+                    skel.rFoot = { x: localOffset.x + 55 * scale, y: 0 * scale, z: localOffset.z };
+                }
             }
             // Batter
             else if (position === 'batter') {
-                let batX = offset.x + Math.cos(swingAngle) * 40 * scale;
+                let batX = localOffset.x + Math.cos(swingAngle) * 40 * scale;
                 let batY = 15 * scale + Math.sin(swingAngle) * 15 * scale;
-                return {
-                    head: { x: offset.x, y: 65 * scale, z: offset.z },
-                    neck: { x: offset.x, y: 40 * scale, z: offset.z },
-                    midHip: { x: offset.x, y: -25 * scale, z: offset.z },
-                    lShoulder: { x: offset.x - 18 * scale, y: 40 * scale, z: offset.z },
-                    rShoulder: { x: offset.x + 18 * scale, y: 40 * scale, z: offset.z },
-                    lPaw: { x: offset.x - 22 * scale, y: 15 * scale, z: offset.z },
-                    rPaw: { x: batX, y: batY, z: offset.z }, // holding/swinging bat
-                    lFoot: { x: offset.x - 15 * scale, y: -70 * scale, z: offset.z },
-                    rFoot: { x: offset.x + 15 * scale, y: -70 * scale, z: offset.z }
+                skel = {
+                    head: { x: localOffset.x, y: 65 * scale, z: localOffset.z },
+                    neck: { x: localOffset.x, y: 40 * scale, z: localOffset.z },
+                    midHip: { x: localOffset.x, y: -25 * scale, z: localOffset.z },
+                    lShoulder: { x: localOffset.x - 18 * scale, y: 40 * scale, z: localOffset.z },
+                    rShoulder: { x: localOffset.x + 18 * scale, y: 40 * scale, z: localOffset.z },
+                    lPaw: { x: localOffset.x - 22 * scale, y: 15 * scale, z: localOffset.z },
+                    rPaw: { x: batX, y: batY, z: localOffset.z },
+                    lFoot: { x: localOffset.x - 15 * scale, y: -70 * scale, z: localOffset.z },
+                    rFoot: { x: localOffset.x + 15 * scale, y: -70 * scale, z: localOffset.z }
                 };
+
+                if (stance === "arabesque") {
+                    skel.head.y -= 10 * scale;
+                    skel.lFoot = { x: localOffset.x - 40 * scale, y: 15 * scale, z: localOffset.z - 30 * scale };
+                    skel.rPaw = { x: localOffset.x + 40 * scale, y: 40 * scale, z: localOffset.z };
+                } else if (stance === "pirouette") {
+                    let spin = (Date.now() * 0.005) % (Math.PI * 2);
+                    let cosS = Math.cos(spin);
+                    skel.lPaw = { x: localOffset.x + cosS * 22 * scale, y: 35 * scale, z: localOffset.z };
+                    skel.lFoot = { x: localOffset.x, y: -25 * scale, z: localOffset.z + 10 * scale };
+                } else if (stance === "grandjete") {
+                    skel.lFoot = { x: localOffset.x - 60 * scale, y: -10 * scale, z: localOffset.z };
+                    skel.rFoot = { x: localOffset.x + 60 * scale, y: -10 * scale, z: localOffset.z };
+                }
             }
             // Catcher
             else {
-                return {
-                    head: { x: offset.x, y: 25 * scale, z: offset.z },
-                    neck: { x: offset.x, y: 10 * scale, z: offset.z },
-                    midHip: { x: offset.x, y: -30 * scale, z: offset.z },
-                    lShoulder: { x: offset.x - 15 * scale, y: 10 * scale, z: offset.z },
-                    rShoulder: { x: offset.x + 15 * scale, y: 10 * scale, z: offset.z },
-                    lPaw: { x: offset.x - 18 * scale, y: -10 * scale, z: offset.z },
-                    rPaw: { x: offset.x + 18 * scale, y: -10 * scale, z: offset.z },
-                    lFoot: { x: offset.x - 14 * scale, y: -55 * scale, z: offset.z },
-                    rFoot: { x: offset.x + 14 * scale, y: -55 * scale, z: offset.z }
+                skel = {
+                    head: { x: localOffset.x, y: 25 * scale, z: localOffset.z },
+                    neck: { x: localOffset.x, y: 10 * scale, z: localOffset.z },
+                    midHip: { x: localOffset.x, y: -30 * scale, z: localOffset.z },
+                    lShoulder: { x: localOffset.x - 15 * scale, y: 10 * scale, z: localOffset.z },
+                    rShoulder: { x: localOffset.x + 15 * scale, y: 10 * scale, z: localOffset.z },
+                    lPaw: { x: localOffset.x - 18 * scale, y: -10 * scale, z: localOffset.z },
+                    rPaw: { x: localOffset.x + 18 * scale, y: -10 * scale, z: localOffset.z },
+                    lFoot: { x: localOffset.x - 14 * scale, y: -55 * scale, z: localOffset.z },
+                    rFoot: { x: localOffset.x + 14 * scale, y: -55 * scale, z: localOffset.z }
                 };
+            }
+            return skel;
+        }
+
+        function drawCharacter3D(offset, scale, swingAngle, position, color) {
+            const skel = getFighterSkeleton(offset, scale, swingAngle, position);
+            
+            // Draw head sphere
+            drawVolumetricSphere(skel.head, 14 * scale, "rgba(255, 196, 0, 0.9)");
+            
+            // Draw torso/spine capsule
+            drawVolumetricCapsule(skel.neck, skel.midHip, 11 * scale, color);
+            
+            // Draw arms
+            drawVolumetricCapsule(skel.neck, skel.lShoulder, 7 * scale, color);
+            drawVolumetricCapsule(skel.neck, skel.rShoulder, 7 * scale, color);
+            drawVolumetricCapsule(skel.lShoulder, skel.lPaw, 6 * scale, color);
+            drawVolumetricCapsule(skel.rShoulder, skel.rPaw, 6 * scale, color);
+            
+            // Draw legs
+            drawVolumetricCapsule(skel.midHip, skel.lFoot, 8 * scale, color);
+            drawVolumetricCapsule(skel.midHip, skel.rFoot, 8 * scale, color);
+
+            // Draw bat for batter
+            if (position === 'batter') {
+                if (batSwinging) {
+                    let batX = skel.rPaw.x + Math.cos(swingAngle) * 35 * scale;
+                    let batY = skel.rPaw.y + Math.sin(swingAngle) * 15 * scale;
+                    drawLine3D(skel.rPaw, { x: batX, y: batY, z: skel.rPaw.z }, "rgba(255, 234, 0, 0.95)", 5);
+                } else {
+                    drawLine3D(skel.rPaw, { x: skel.rPaw.x + 20 * scale, y: skel.rPaw.y + 35 * scale, z: skel.rPaw.z }, "rgba(255, 234, 0, 0.95)", 5);
+                }
             }
         }
 
@@ -717,6 +798,7 @@ Status: Press Pitch to begin.</div>
 
         // Spotlights tracking the home plate zone
         function drawSpotlights(bass = 0.1) {
+            if (window.stadiumLights === false) return;
             let top1 = project({ x: -400, y: 600, z: -100 });
             let top2 = project({ x: 400, y: 600, z: -100 });
             let target = project({ x: 0, y: -90, z: -100 });
@@ -856,6 +938,7 @@ Status: Press Pitch to begin.</div>
 
         // Keyboard Event bindings
         window.addEventListener("keydown", (e) => {
+            if (document.activeElement && document.activeElement.id === "z-input") return;
             if (e.key === "Enter") triggerPitch();
             else if (e.key === " ") triggerSwing();
         });
@@ -940,27 +1023,15 @@ Status: Press Pitch to begin.</div>
                 drawOverlaySegment({ x: -45, y: 0, z: -60 }, 1.2, sdBatter);
                 drawOverlaySegment({ x: 0, y: 0, z: -100 }, 1.2, sdCatcher);
             } else {
-                // Render volumetric solid geometry
+                // Render volumetric solid geometry driven by skeletons (including ballet crossover stances)
                 // 1. Pitcher mound elements
-                drawVolumetricCapsule({ x: 0, y: -20, z: 220 }, { x: 0, y: 35, z: 220 }, 12, "rgba(0, 240, 255, 0.8)");
-                drawVolumetricSphere({ x: 0, y: 45, z: 220 }, 14, "rgba(255, 196, 0, 0.9)");
+                drawCharacter3D({ x: 0, y: 0, z: 220 }, 1.2, 0, 'pitcher', "rgba(0, 240, 255, 0.8)");
 
                 // 2. Batter elements
-                drawVolumetricCapsule({ x: -45, y: -25, z: -60 }, { x: -45, y: 40, z: -60 }, 15, "rgba(0, 240, 255, 0.8)");
-                drawVolumetricSphere({ x: -45, y: 50, z: -60 }, 18, "rgba(255, 196, 0, 0.9)");
-                
-                // Draw bat swinging
-                if (batSwinging) {
-                    let batX = -45 + Math.cos(batSwingAngle) * 45;
-                    let batY = 20 + Math.sin(batSwingAngle) * 15;
-                    drawLine3D({ x: -45, y: 20, z: -60 }, { x: batX, y: batY, z: -60 }, "rgba(255, 234, 0, 0.95)", 4);
-                } else {
-                    drawLine3D({ x: -45, y: 20, z: -60 }, { x: -25, y: 55, z: -60 }, "rgba(255, 234, 0, 0.95)", 4);
-                }
+                drawCharacter3D({ x: -45, y: 0, z: -60 }, 1.2, batSwingAngle, 'batter', "rgba(0, 240, 255, 0.8)");
 
                 // 3. Catcher elements
-                drawVolumetricCapsule({ x: 0, y: -30, z: -100 }, { x: 0, y: 15, z: -100 }, 16, "rgba(0, 240, 255, 0.8)");
-                drawVolumetricSphere({ x: 0, y: 25, z: -100 }, 19, "rgba(255, 196, 0, 0.9)");
+                drawCharacter3D({ x: 0, y: 0, z: -100 }, 1.2, 0, 'catcher', "rgba(0, 240, 255, 0.8)");
             }
 
             // Draw baseball ball
@@ -978,6 +1049,11 @@ Status: Press Pitch to begin.</div>
                     ctx.restore();
                 }
             }
+
+            if (typeof updateRain === "function") updateRain();
+
+            requestAnimationFrame(loop);
+        }
 
         // Collapsible Card Deck Tray Javascript Crossover
         let drawerExpanded = false;
@@ -1123,6 +1199,138 @@ Status: Press Pitch to begin.</div>
 
         // Initialize Deck List UI
         loadDeckList();
+
+        window.stadiumLights = true;
+        window.stadiumWeather = "sunny";
+        let rainParticles = [];
+        function updateRain() {
+            if (window.stadiumWeather !== "rain") return;
+            if (rainParticles.length < 100) {
+                rainParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: -20,
+                    length: Math.random() * 20 + 10,
+                    speed: Math.random() * 8 + 8
+                });
+            }
+            ctx.strokeStyle = "rgba(0, 240, 255, 0.35)";
+            ctx.lineWidth = 1.2;
+            rainParticles.forEach((p) => {
+                p.y += p.speed;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - 2, p.y + p.length);
+                ctx.stroke();
+                if (p.y > canvas.height) {
+                    p.y = -20;
+                    p.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        document.getElementById("z-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const val = e.target.value.trim();
+                if (!val) return;
+                e.target.value = "";
+
+                const consoleBox = document.getElementById("console");
+                consoleBox.innerHTML += `\n\n> ${val}`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+
+                const parts = val.toLowerCase().split(/\s+/);
+                const action = parts[0];
+                const arg = parts[1] || "";
+                const arg2 = parts[2] || "";
+
+                if (action === "dance" || action === "pose") {
+                    const poses = ["none", "plie", "arabesque", "pirouette", "grandjete"];
+                    if (poses.includes(arg)) {
+                        window.activeBalletStance = arg;
+                        consoleBox.innerHTML += `\n[Z-Machine] Cross-over action: Directing 3D players to pose stance: ${arg.toUpperCase()}`;
+                        if (arg !== "none") {
+                            document.getElementById("ai-prompt").value = `A highly detailed retro baseball card, ${arg} ballet dance stance pose, masterpiece, cinematic lighting, cardboard frame border, vintage sports outfit`;
+                            triggerControlNetRender();
+                        }
+                    } else {
+                        consoleBox.innerHTML += `\n[Z-Machine] Unknown stance. Available: ${poses.join(", ")}`;
+                    }
+                } else if (action === "pitch") {
+                    if (arg === "strike") {
+                        if (ballActive) return;
+                        triggerPitch();
+                        ballVX = 0;
+                        consoleBox.innerHTML += `\n[Z-Machine] Adjusting curve physics: Pitch targeted for absolute STRIKE.`;
+                    } else if (arg === "ball") {
+                        if (ballActive) return;
+                        triggerPitch();
+                        ballVX = (Math.random() > 0.5 ? 2.5 : -2.5);
+                        consoleBox.innerHTML += `\n[Z-Machine] Adjusting curve physics: Pitch targeted outside strike zone.`;
+                    } else {
+                        triggerPitch();
+                    }
+                } else if (action === "swing" || (action === "bat" && arg === "swing")) {
+                    triggerSwing();
+                } else if (action === "stadium" || action === "lights") {
+                    let lightsArg = action === "stadium" ? arg2 : arg;
+                    let targetState = (action === "stadium" ? arg : action);
+                    if (lightsArg === "off" || (targetState === "lights" && arg === "off")) {
+                        window.stadiumLights = false;
+                        consoleBox.innerHTML += `\n[Z-Machine] Stadium spotlights deactivated. Stage darkened.`;
+                    } else {
+                        window.stadiumLights = true;
+                        consoleBox.innerHTML += `\n[Z-Machine] Stadium spotlights online. Halogen core active.`;
+                    }
+                } else if (action === "weather") {
+                    if (arg === "rain" || arg === "storm") {
+                        window.stadiumWeather = "rain";
+                        consoleBox.innerHTML += `\n[Z-Machine] Rain simulator enabled. Volumetric mist initialized.`;
+                    } else {
+                        window.stadiumWeather = "sunny";
+                        consoleBox.innerHTML += `\n[Z-Machine] Clear skies initialized. Bright sun core aligned.`;
+                    }
+                } else if (action === "orbit" || action === "zoom" || action === "camera") {
+                    let cmd = action === "camera" ? arg : action;
+                    let direction = action === "camera" ? arg2 : arg;
+                    if (cmd === "zoom") {
+                        if (direction === "in") {
+                            camera.distance = Math.max(600, camera.distance - 150);
+                            consoleBox.innerHTML += `\n[Z-Machine] Camera zoom closer.`;
+                        } else if (direction === "out") {
+                            camera.distance = Math.min(2200, camera.distance + 150);
+                            consoleBox.innerHTML += `\n[Z-Machine] Camera zoom further.`;
+                        } else {
+                            camera.distance = 1300;
+                            consoleBox.innerHTML += `\n[Z-Machine] Camera zoom reset.`;
+                        }
+                    } else {
+                        if (direction === "left") camera.yaw -= 0.15;
+                        else if (direction === "right") camera.yaw += 0.15;
+                        else if (direction === "up") camera.pitch = Math.min(Math.PI/3, camera.pitch + 0.08);
+                        else if (direction === "down") camera.pitch = Math.max(0.02, camera.pitch - 0.08);
+                        else {
+                            camera.yaw = -Math.PI / 4;
+                            camera.pitch = Math.PI / 8;
+                        }
+                        consoleBox.innerHTML += `\n[Z-Machine] Adjusting stadium view angles.`;
+                    }
+                } else if (action === "card" || action === "deck") {
+                    if (arg === "save") {
+                        saveCurrentCardToDeck();
+                        consoleBox.innerHTML += `\n[Z-Machine] Committing current frame snapshot to shared deck...`;
+                    } else if (arg === "clear") {
+                        localStorage.removeItem("tsfi_hardball_deck");
+                        loadDeckList();
+                        consoleBox.innerHTML += `\n[Z-Machine] Local deck storage cleared.`;
+                    } else {
+                        consoleBox.innerHTML += `\n[Z-Machine] Shared collection deck count: ${document.getElementById("deck-count").innerText}`;
+                    }
+                } else {
+                    consoleBox.innerHTML += `\n[Z-Machine] Unknown stadium command. Available: 'dance plie/arabesque/pirouette/grandjete/none', 'pitch strike', 'pitch ball', 'bat swing', 'stadium lights off', 'weather rain', 'camera zoom in', 'card save'.`;
+                }
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        });
 
         requestAnimationFrame(loop);
     </script>

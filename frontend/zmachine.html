@@ -885,7 +885,7 @@ Connect your wallet to retrieve the active story ROM.</div>
                 const scLeft = project(pBarreLeft);
                 const scRight = project(pBarreRight);
                 if (scLeft && scRight) {
-                    drawBone(pBarreLeft, pBarreRight, "rgba(150, 100, 60, 0.9)", 6); // Brown wooden rail
+                    drawBone(scLeft, scRight, "rgba(150, 100, 60, 0.9)", 6); // Brown wooden rail
                 }
                 
                 const pPostLeftTop = new Point3D(offset.x - 90 * scale, offset.y + 80 * scale, offset.z - 30 * scale);
@@ -893,8 +893,17 @@ Connect your wallet to retrieve the active story ROM.</div>
                 const pPostRightTop = new Point3D(offset.x + 90 * scale, offset.y + 80 * scale, offset.z - 30 * scale);
                 const pPostRightBottom = new Point3D(offset.x + 90 * scale, offset.y - 70 * scale, offset.z - 30 * scale);
                 
-                drawBone(pPostLeftTop, pPostLeftBottom, "rgba(120, 120, 120, 0.6)", 3.5);
-                drawBone(pPostRightTop, pPostRightBottom, "rgba(120, 120, 120, 0.6)", 3.5);
+                const scPostLeftTop = project(pPostLeftTop);
+                const scPostLeftBottom = project(pPostLeftBottom);
+                const scPostRightTop = project(pPostRightTop);
+                const scPostRightBottom = project(pPostRightBottom);
+                
+                if (scPostLeftTop && scPostLeftBottom) {
+                    drawBone(scPostLeftTop, scPostLeftBottom, "rgba(120, 120, 120, 0.6)", 3.5);
+                }
+                if (scPostRightTop && scPostRightBottom) {
+                    drawBone(scPostRightTop, scPostRightBottom, "rgba(120, 120, 120, 0.6)", 3.5);
+                }
             }
 
             // Draw tutu
