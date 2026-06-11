@@ -1530,14 +1530,21 @@
                     compGainState = targetCompGain;
                 }
 
-                // Scale down stimulus by synchronized compGainState before sending to the VM FormantFilter
-                const compressedStimulus = stimulus * compGainState;
+                // Zener Avalanche Dither Injection (Issue 11)
+                let zenerDither = 0.0;
+                if (formantCompActive) {
+                    // 1.5% amplitude white noise to disperse filter limit cycles
+                    zenerDither = (Math.random() - 0.5) * 0.015;
+                }
+
+                // Scale down stimulus by synchronized compGainState and add Zener dither
+                const compressedStimulus = (stimulus * compGainState) + zenerDither;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
                 let scatterOffset = 0.0;
-                if (formantCompEnv > compThreshold) {
-                    const excess = formantCompEnv - compThreshold;
+                if (formantCompEnv > compStrikeThreshold) {
+                    const excess = formantCompEnv - compStrikeThreshold;
                     // High-frequency scatter perturbation to shift resonance peak
                     scatterOffset = Math.sin(Date.now() * 0.15) * excess * 0.12;
                 }
