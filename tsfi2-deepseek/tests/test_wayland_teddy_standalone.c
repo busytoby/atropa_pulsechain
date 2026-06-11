@@ -155,7 +155,7 @@ int main() {
         int fd = socket(AF_UNIX, SOCK_STREAM, 0);
         struct sockaddr_un addr = {0}; addr.sun_family = AF_UNIX;
         snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", path);
-        if (connect(fd, (struct sockaddr *)&addr) != 0) {
+        if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) != 0) {
             printf("[WARN] Could not connect to Wayland. Render-only mode.\\n");
         } else {
             // ... (rest of wayland setup) ...

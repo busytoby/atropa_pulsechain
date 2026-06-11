@@ -12,18 +12,13 @@
 void tsfi_fourier_init_basis(TSFiFourierBasis *basis) {
     if (!basis) return;
     
-    // Fill Basis Matrix M (K x 2N)
-    // Rows: Time steps t (0..2PI)
-    // Cols: cos(1t), sin(1t), cos(2t), sin(2t)...
-    
     for (int k = 0; k < TSFI_FOURIER_SAMPLES; k++) {
         float t = (2.0f * ((float)TSFI_SECRET_CORE) * k) / TSFI_FOURIER_SAMPLES;
         
         for (int n = 0; n < TSFI_FOURIER_HARMONICS; n++) {
             int harmonic = n + 1;
-            // Interleaved Cos/Sin for easier SIMD loading
-            basis->data[k][n*2 + 0] = cosf(harmonic * t);
-            basis->data[k][n*2 + 1] = sinf(harmonic * t);
+            basis->data[n*2 + 0][k] = cosf(harmonic * t);
+            basis->data[n*2 + 1][k] = sinf(harmonic * t);
         }
     }
 }
@@ -65,13 +60,9 @@ void tsfi_fourier_reconstruct_avx512(float *output_voxels,
                                      const TSFiFourierBasis *basis, 
                                      const TSFiFourierGlyph *glyph) 
 {
-    // Use dense packed accumulators for the 512 samples
-    float acc_x[TSFI_FOURIER_SAMPLES] = {0};
-    float acc_y[TSFI_FOURIER_SAMPLES] = {0};
-
-    // Transposed Synthesis (Wavefront Broadcasting)
-    // For each harmonic n, we broadcast its Hilbert coefficients (DNA)
-    // and apply it to the entire Banach coordinate manifold (512 samples).
+    // Use aligned accumulators to enable aligned vector loads
+    float acc_x[TSFI_FOURIER_SAMPLES] __attribute__((aligned(64))) = {0};
+    float acc_y[TSFI_FOURIER_SAMPLES] __attribute__((aligned(64))) = {0};
     
     for (int n = 0; n < TSFI_FOURIER_HARMONICS; n++) {
         __m512 v_an = _mm512_set1_ps(glyph->coeffs[n][0]);
@@ -79,32 +70,29 @@ void tsfi_fourier_reconstruct_avx512(float *output_voxels,
         __m512 v_cn = _mm512_set1_ps(glyph->coeffs[n][2]);
         __m512 v_dn = _mm512_set1_ps(glyph->coeffs[n][3]);
 
-        // Process 512 samples in 32 tight vectorized steps
+        const float *cos_base = basis->data[n*2 + 0];
+        const float *sin_base = basis->data[n*2 + 1];
+
+        // Process 512 samples in tight vectorized steps (16 floats per iteration)
         for (int k = 0; k < TSFI_FOURIER_SAMPLES; k += 16) {
-            __m512i v_idx = _mm512_set_epi32(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
-            v_idx = _mm512_mullo_epi32(v_idx, _mm512_set1_epi32(TSFI_FOURIER_HARMONICS * 2));
-            
-            __m512 v_cos = _mm512_i32gather_ps(v_idx, &basis->data[k][n*2+0], 4);
-            __m512 v_sin = _mm512_i32gather_ps(v_idx, &basis->data[k][n*2+1], 4);
+            __m512 v_cos = _mm512_load_ps(&cos_base[k]);
+            __m512 v_sin = _mm512_load_ps(&sin_base[k]);
 
-            // Load Wavefront Accumulators (Unaligned)
-            __m512 v_ax = _mm512_loadu_ps(&acc_x[k]);
-            __m512 v_ay = _mm512_loadu_ps(&acc_y[k]);
+            __m512 v_ax = _mm512_load_ps(&acc_x[k]);
+            __m512 v_ay = _mm512_load_ps(&acc_y[k]);
 
-            // FMA: Synthesis step (Matrix Multiply)
             v_ax = _mm512_fmadd_ps(v_an, v_cos, v_ax);
             v_ax = _mm512_fmadd_ps(v_bn, v_sin, v_ax);
             
             v_ay = _mm512_fmadd_ps(v_cn, v_cos, v_ay);
             v_ay = _mm512_fmadd_ps(v_dn, v_sin, v_ay);
 
-            // Store back to cache (Unaligned)
-            _mm512_storeu_ps(&acc_x[k], v_ax);
-            _mm512_storeu_ps(&acc_y[k], v_ay);
+            _mm512_store_ps(&acc_x[k], v_ax);
+            _mm512_store_ps(&acc_y[k], v_ay);
         }
     }
 
-// Interleave back to output
+    // Interleave back to output
     for(int i = 0; i < TSFI_FOURIER_SAMPLES; i++) {
         output_voxels[i*2+0] = acc_x[i];
         output_voxels[i*2+1] = acc_y[i];

@@ -88,3 +88,13 @@ tests/fix_*.c
 !tools/mcp_mass_audit.txt
 
 tmp/
+
+# Ignore compiled executables in tests/ (exclude source code, scripts, and docs)
+tsfi2-deepseek/tests/*
+!tsfi2-deepseek/tests/*.c
+!tsfi2-deepseek/tests/*.h
+!tsfi2-deepseek/tests/*.py
+!tsfi2-deepseek/tests/*.sh
+!tsfi2-deepseek/tests/*.tsfi
+!tsfi2-deepseek/tests/*.md
+!tsfi2-deepseek/tests/Makefile

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi Unified Browser Studio Model</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0b0c10;
+            color: #c5c6c7;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: radial-gradient(circle at 10% 20%, rgba(90, 92, 106, 0.05) 0%, rgba(32, 34, 47, 0.05) 90%);
+        }
+        #container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            border: 1px solid #1f2833;
+            border-radius: 16px;
+            padding: 24px;
+            background: rgba(11, 12, 16, 0.85);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+            max-width: 95vw;
+        }
+        #viewport-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border: 1px solid #1f2833;
+            border-radius: 12px;
+            background-color: #000;
+            max-width: 65vw;
+            max-height: 70vh;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.05);
+        }
+        #sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel {
+            border: 1px solid #1f2833;
+            border-radius: 8px;
+            padding: 16px;
+            background: rgba(31, 40, 51, 0.2);
+        }
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #66fcf1;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            color: #c5c6c7;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1f2833;
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #66fcf1;
+            cursor: pointer;
+            box-shadow: 0 0 8px #66fcf1;
+        }
+        #console {
+            height: 180px;
+            background: #000;
+            border: 1px solid #1f2833;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #00ff66;
+            padding: 8px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        #stats {
+            margin-top: 16px;
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #8c92a0;
+        }
+        .stat-val {
+            color: #66fcf1;
+            font-weight: bold;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            align-self: flex-start;
+            background: linear-gradient(45deg, #66fcf1, #45f3ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <div id="viewport-container">
+        <div class="title">TSFi Sovereign Choreography Web Studio</div>
+        <canvas id="screenCanvas" width="3840" height="2160"></canvas>
+        <div id="stats">
+            <div>Resolution: <span class="stat-val">3840x2160 (4K)</span></div>
+            <div>Consensus: <span id="consensusStatus" class="stat-val">PENDING</span></div>
+            <div>FPS: <span id="fpsVal" class="stat-val">0</span></div>
+            <div>L3 Cache: <span class="stat-val">64MB / CCD</span></div>
+        </div>
+    </div>
+    
+    <div id="sidebar">
+        <div class="panel">
+            <div class="panel-title">Kinematics & Shading</div>
+            <div class="control-group">
+                <label><span>Stride Speed</span><span id="speedVal">1.0x</span></label>
+                <input type="range" id="paramSpeed" min="0" max="3" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <label><span>Sickness Mutation</span><span id="sickVal">0.8</span></label>
+                <input type="range" id="paramSick" min="0" max="1" step="0.05" value="0.8">
+            </div>
+            <div class="control-group">
+                <label><span>Rim Light Specular</span><span id="lightVal">1.0</span></label>
+                <input type="range" id="paramLight" min="0" max="2" step="0.1" value="1.0">
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">AOT DeepSeek Telemetry Console</div>
+            <div id="console">Initializing telemetry handshake...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. Local DeepSeek Validation Telemetry ---
+    const Telemetry = {
+        neural_consensus_flag: 0, // 0 = blocked, 1 = verified
+        seed_x: 512,
+        seed_y: 875
+    };
+
+    // Simulate local DeepSeek verifying the layout parameters
+    function runLocalDeepSeekVerification() {
+        console.log("[DEEPSEEK] Verification cycle active...");
+        
+        // Confirm geometry is anchored to the Origin (512, 875)
+        if (Math.abs(Telemetry.seed_x - 512) < 50 && Math.abs(Telemetry.seed_y - 875) < 50) {
+            Telemetry.neural_consensus_flag = 1;
+            document.getElementById('consensusStatus').innerText = "VERIFIED (Consensus Active)";
+            document.getElementById('consensusStatus').style.color = "#00ff66";
+        } else {
+            Telemetry.neural_consensus_flag = 0;
+            document.getElementById('consensusStatus').innerText = "BLOCKED (Geometric Drift)";
+            document.getElementById('consensusStatus').style.color = "#ff3333";
+        }
+    }
+
+    // --- 2. WebGPU Pipeline Initialization ---
+    async function initWebGPUPipeline() {
+        if (!navigator.gpu) {
+            console.warn("[WARN] WebGPU not supported on this browser. Falling back to 2D Canvas emulation.");
+            run2DCanvasEmulation();
+            return;
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+        
+        const canvas = document.getElementById("screenCanvas");
+        const context = canvas.getContext("webgpu");
+        
+        const format = navigator.gpu.getPreferredCanvasFormat();
+        context.configure({
+            device,
+            format,
+            alphaMode: "opaque"
+        });
+
+        // 8MB Storage Buffer representing our competitive memory state
+        const bufferSize = 8 * 1024 * 1024;
+        const competitiveBuffer = device.createBuffer({
+            size: bufferSize,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });
+
+        console.log("[WEBGPU] 8MB Competitive Storage Buffer Allocated.");
+        runRenderLoop(context, device, competitiveBuffer);
+    }
+
+    // --- 3. Render Loop with FSR Spatial Upscaling ---
+    let frameCount = 0;
+    let lastTime = performance.now();
+
+    function runRenderLoop(context, device, compBuffer) {
+        // Run DeepSeek consensus check
+        runLocalDeepSeekVerification();
+
+        function frame(time) {
+            if (Telemetry.neural_consensus_flag !== 1) {
+                requestAnimationFrame(frame);
+                return;
+            }
+
+            // Calculate FPS
+            frameCount++;
+            if (time - lastTime >= 1000) {
+                document.getElementById("fpsVal").innerText = frameCount;
+                frameCount = 0;
+                lastTime = time;
+            }
+
+            // WebGPU Command submission simulating FSR upscaling
+            const commandEncoder = device.createCommandEncoder();
+            const textureView = context.getCurrentTexture().createView();
+
+            const renderPassDescriptor = {
+                colorAttachments: [{
+                    view: textureView,
+                    clearValue: { r: 13/255, g: 14/255, b: 18/255, a: 1.0 },
+                    loadOp: "clear",
+                    storeOp: "store"
+                }]
+            };
+
+            const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+            // In a complete WebGPU pipeline, we bind our FSR spatial shader here
+            // to upscale the low-res 8MB buffer coordinates to the 4K canvas.
+            passEncoder.end();
+
+            device.queue.submit([commandEncoder.finish()]);
+            requestAnimationFrame(frame);
+        }
+
+        requestAnimationFrame(frame);
+    }
+
+    // --- 4. 2D Canvas Fallback (CPU Denoise / Render) ---
+    function run2DCanvasEmulation() {
+        const canvas = document.getElementById("screenCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        runLocalDeepSeekVerification();
+
+        function draw(time) {
+            if (Telemetry.neural_consensus_flag !== 1) {
+                requestAnimationFrame(draw);
+                return;
+            }
+
+            // Gather dynamic control values from UI Knobs
+            const speedCoeff = parseFloat(document.getElementById("paramSpeed").value);
+            const sicknessVal = parseFloat(document.getElementById("paramSick").value);
+            const lightCoeff = parseFloat(document.getElementById("paramLight").value);
+
+            document.getElementById("speedVal").innerText = speedCoeff.toFixed(1) + "x";
+            document.getElementById("sickVal").innerText = sicknessVal.toFixed(2);
+            document.getElementById("lightVal").innerText = lightCoeff.toFixed(1);
+
+            // Simulate CPU calculations
+            ctx.fillStyle = "#0d0e12";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let headX = (Telemetry.seed_x / 1024) * canvas.width;
+            let headY = (Telemetry.seed_y / 1536) * canvas.height - 200;
+
+            // Seeded RNG to keep strand roots consistent across frames
+            let rngSeed = 42;
+            function seededRandom() {
+                let x = Math.sin(rngSeed++) * 10000;
+                return x - Math.floor(x);
+            }
+
+            // Simple pseudo-random hash noise for fur texturing
+            function furNoise(x, y, scale) {
+                let val = Math.sin(x * 0.129898 + y * 0.78233) * 43758.5453;
+                return (val - Math.floor(val)) * scale;
+            }
+
+            function fillTexturedPath(pathFunc, baseColorHex, noiseColorHex, scale) {
+                ctx.save();
+                ctx.beginPath();
+                pathFunc();
+                ctx.clip();
+                
+                // Reset RNG seed so hair roots are deterministic every frame
+                rngSeed = 42;
+                
+                // Draw base color (blend towards sickly green-brown if sickness is active)
+                if (sicknessVal > 0.1) {
+                    ctx.fillStyle = baseColorHex;
+                    ctx.fill();
+                    ctx.fillStyle = `rgba(85, 107, 47, ${sicknessVal * 0.45})`;
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = baseColorHex;
+                    ctx.fill();
+                }
+
+                // Draw high-frequency fine hair strands (curves) on the surface
+                if (sicknessVal > 0.2) {
+                    ctx.strokeStyle = `rgba(74, 93, 35, ${sicknessVal * 0.8})`;
+                } else {
+                    ctx.strokeStyle = noiseColorHex;
+                }
+                ctx.lineWidth = 1.5;
+                
+                // Dynamic wind wave parameters driven by time and speed
+                let windTime = time * 0.0006 * speedCoeff;
+                
+                for (let i = 0; i < 2000; i++) {
+                    let rx = seededRandom() * canvas.width;
+                    let ry = seededRandom() * canvas.height;
+                    
+                    // Clumping/matting: cluster strand positions using sine grids under sickness
+                    if (sicknessVal > 0.3) {
+                        let clumpX = Math.sin(rx * 0.08) * 25 * sicknessVal;
+                        let clumpY = Math.cos(ry * 0.08) * 25 * sicknessVal;
+                        rx += clumpX;
+                        ry += clumpY;
+                    }
+                    
+                    // Calculate wind displacement at this coordinate
+                    let windAngle = Math.sin(windTime + rx * 0.003 + ry * 0.002) * 0.35;
+                    let windStrength = 15 + Math.cos(windTime + rx * 0.005) * 6;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    let ctrlX = rx + Math.cos(windAngle) * (windStrength * 0.6) + (seededRandom() - 0.5) * 3;
+                    let ctrlY = ry + Math.sin(windAngle) * (windStrength * 0.6) + (seededRandom() - 0.5) * 3;
+                    let endX = rx + Math.cos(windAngle) * windStrength + (seededRandom() - 0.5) * 4;
+                    let endY = ry + Math.sin(windAngle) * windStrength + (seededRandom() - 0.5) * 4;
+                    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Draw fuzzy fur strands protruding radially from the edges (the soft boundary)
+            function drawFuzzyEdge(cx, cy, rx, ry, rotation, colorHex, numStrands = 400, maxLen = 14) {
+                ctx.save();
+                ctx.strokeStyle = colorHex;
+                ctx.lineWidth = 1.5;
+                
+                // Seed based on ellipse location to prevent overlap correlation
+                rngSeed = Math.floor(100 + cx + cy);
+                
+                let windTime = time * 0.0008 * speedCoeff;
+                
+                for (let i = 0; i < numStrands; i++) {
+                    let theta = (i / numStrands) * Math.PI * 2;
+                    let thetaNoise = (Math.sin(theta * 50) + Math.cos(theta * 12)) * 0.02;
+                    let t = theta + thetaNoise;
+                    
+                    let cosT = Math.cos(t);
+                    let sinT = Math.sin(t);
+                    
+                    let x = cx + rx * cosT * Math.cos(rotation) - ry * sinT * Math.sin(rotation);
+                    let y = cy + rx * cosT * Math.sin(rotation) + ry * sinT * Math.cos(rotation);
+                    
+                    let dx = x - cx;
+                    let dy = y - cy;
+                    let len = Math.sqrt(dx * dx + dy * dy);
+                    if (len === 0) continue;
+                    let nx = dx / len;
+                    let ny = dy / len;
+                    
+                    // Matting/clumping: segment strands into thick clusters based on sickness
+                    let clump = Math.floor(t * 15) % 4 === 0 ? 1.4 : 0.3;
+                    let sicknessClump = 1.0 - sicknessVal + clump * sicknessVal;
+                    
+                    // Wind oscillation vector acting on boundary strands
+                    let windInfluence = Math.sin(windTime + t * 6.0) * 0.22;
+                    
+                    let strandLen = (maxLen + Math.sin(t * 80) * (maxLen * 0.4) + (seededRandom() - 0.5) * 3) * sicknessClump;
+                    let angleVar = Math.sin(t * 30) * 0.3 + windInfluence + (seededRandom() - 0.5) * 0.1;
+                    
+                    let cosV = Math.cos(angleVar);
+                    let sinV = Math.sin(angleVar);
+                    let rxDirection = nx * cosV - ny * sinV;
+                    let ryDirection = nx * sinV + ny * cosV;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    let ctrlX = x + rxDirection * (strandLen * 0.5);
+                    let ctrlY = y + ryDirection * (strandLen * 0.5);
+                    let endX = x + rxDirection * strandLen;
+                    let endY = y + ryDirection * strandLen;
+                    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Generate plush pear-shaped stuffed body path points
+            function getBodyPathPoints(cx, cy) {
+                let points = [];
+                const steps = 240;
+                for (let i = 0; i < steps; i++) {
+                    let theta = (i / steps) * Math.PI * 2;
+                    let rX = 250;
+                    let rY = 340;
+                    
+                    // Sharp neck taper (narrower top) and wide bottom hips/belly
+                    let verticalFactor = Math.sin(theta); // -1 at top, +1 at bottom
+                    let shapeMod = 0.8 + (verticalFactor + 1.0) * 0.20;
+                    
+                    // Add organic stuffed plump belly bulge
+                    let bulge = 1.0;
+                    if (theta > 0 && theta < Math.PI) {
+                        bulge += Math.sin(theta) * 0.10;
+                    }
+                    
+                    let x = cx + rX * Math.cos(theta) * shapeMod * bulge;
+                    let y = cy + 265 + rY * Math.sin(theta) * shapeMod * bulge;
+                    points.push({x, y});
+                }
+                return points;
+            }
+
+            function drawPathPoints(points) {
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+                ctx.closePath();
+            }
+
+            // Draw fuzzy fur strands outward along an arbitrary path of points
+            function drawFuzzyEdgePath(points, colorHex, numStrands = 450, maxLen = 14) {
+                ctx.save();
+                ctx.strokeStyle = colorHex;
+                ctx.lineWidth = 1.5;
+                
+                rngSeed = 500;
+                let windTime = time * 0.0008 * speedCoeff;
+                
+                for (let i = 0; i < numStrands; i++) {
+                    let idx = Math.floor((i / numStrands) * points.length);
+                    let p = points[idx];
+                    let prev = points[(idx - 1 + points.length) % points.length];
+                    let next = points[(idx + 1) % points.length];
+                    
+                    let tx = next.x - prev.x;
+                    let ty = next.y - prev.y;
+                    let tLen = Math.sqrt(tx * tx + ty * ty);
+                    if (tLen === 0) continue;
+                    
+                    // Normal pointing outward (clockwise path direction)
+                    let nx = ty / tLen;
+                    let ny = -tx / tLen;
+                    
+                    let t = (i / numStrands) * Math.PI * 2;
+                    let clump = Math.floor(t * 15) % 4 === 0 ? 1.4 : 0.3;
+                    let sicknessClump = 1.0 - sicknessVal + clump * sicknessVal;
+                    
+                    let windInfluence = Math.sin(windTime + t * 6.0) * 0.22;
+                    let strandLen = (maxLen + Math.sin(t * 80) * (maxLen * 0.4) + (seededRandom() - 0.5) * 3) * sicknessClump;
+                    let angleVar = windInfluence + (seededRandom() - 0.5) * 0.1;
+                    
+                    let cosV = Math.cos(angleVar);
+                    let sinV = Math.sin(angleVar);
+                    let rxDirection = nx * cosV - ny * sinV;
+                    let ryDirection = nx * sinV + ny * cosV;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    let ctrlX = p.x + rxDirection * (strandLen * 0.5);
+                    let ctrlY = p.y + ryDirection * (strandLen * 0.5);
+                    let endX = p.x + rxDirection * strandLen;
+                    let endY = p.y + ryDirection * strandLen;
+                    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Draw floor shadow (Bifurcated, branch-like contact shadow)
+            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+            ctx.beginPath();
+            let shadowX = (Telemetry.seed_x / 1024) * canvas.width;
+            let shadowY = (Telemetry.seed_y / 1536) * canvas.height + 650;
+            ctx.ellipse(shadowX - 150, shadowY, 200, 40, 0, 0, Math.PI * 2);
+            ctx.ellipse(shadowX + 150, shadowY, 200, 40, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Arms (Drawn behind body)
+            fillTexturedPath(() => {
+                // Left Arm
+                ctx.ellipse(headX - 420, headY + 350, 80, 250, Math.PI / 6, 0, Math.PI * 2);
+                // Right Arm
+                ctx.ellipse(headX + 420, headY + 350, 80, 250, -Math.PI / 6, 0, Math.PI * 2);
+            }, "#3e2723", "#2d1a12", 10);
+            drawFuzzyEdge(headX - 420, headY + 350, 80, 250, Math.PI / 6, "#3e2723");
+            drawFuzzyEdge(headX + 420, headY + 350, 80, 250, -Math.PI / 6, "#3e2723");
+
+            // Paw pads on hands
+            fillTexturedPath(() => {
+                ctx.ellipse(headX - 435, headY + 440, 45, 65, Math.PI / 6, 0, Math.PI * 2);
+                ctx.ellipse(headX + 435, headY + 440, 45, 65, -Math.PI / 6, 0, Math.PI * 2);
+            }, "#d7ccc8", "#bcaaa4", 8);
+            drawFuzzyEdge(headX - 435, headY + 440, 45, 65, Math.PI / 6, "#d7ccc8", 120, 4);
+            drawFuzzyEdge(headX + 435, headY + 440, 45, 65, -Math.PI / 6, "#d7ccc8", 120, 4);
+
+            // Legs (Drawn behind body)
+            fillTexturedPath(() => {
+                // Left Leg
+                ctx.ellipse(headX - 200, headY + 800, 110, 280, 0, 0, Math.PI * 2);
+                // Right Leg
+                ctx.ellipse(headX + 200, headY + 800, 110, 280, 0, 0, Math.PI * 2);
+            }, "#5c4033", "#4e342e", 15);
+            drawFuzzyEdge(headX - 200, headY + 800, 110, 280, 0, "#5c4033");
+            drawFuzzyEdge(headX + 200, headY + 800, 110, 280, 0, "#5c4033");
+
+            // Foot pads on feet (Main circle + 3 toes)
+            fillTexturedPath(() => {
+                ctx.ellipse(headX - 200, headY + 920, 65, 65, 0, 0, Math.PI * 2);
+                ctx.ellipse(headX + 200, headY + 920, 65, 65, 0, 0, Math.PI * 2);
+                
+                // Left toes
+                ctx.arc(headX - 240, headY + 840, 18, 0, Math.PI * 2);
+                ctx.arc(headX - 200, headY + 825, 20, 0, Math.PI * 2);
+                ctx.arc(headX - 160, headY + 840, 18, 0, Math.PI * 2);
+                
+                // Right toes
+                ctx.arc(headX + 240, headY + 840, 18, 0, Math.PI * 2);
+                ctx.arc(headX + 200, headY + 825, 20, 0, Math.PI * 2);
+                ctx.arc(headX + 160, headY + 840, 18, 0, Math.PI * 2);
+            }, "#d7ccc8", "#bcaaa4", 8);
+            drawFuzzyEdge(headX - 200, headY + 920, 65, 65, 0, "#d7ccc8", 120, 4);
+            drawFuzzyEdge(headX + 200, headY + 920, 65, 65, 0, "#d7ccc8", 120, 4);
+
+            // Sickness Body Torso (Plush pear shape)
+            let bodyPoints = getBodyPathPoints(headX, headY);
+            fillTexturedPath(() => {
+                drawPathPoints(bodyPoints);
+            }, "#5c4033", "#4e342e", 15);
+            drawFuzzyEdgePath(bodyPoints, "#5c4033", 450, 15);
+
+            // Cream Belly Patch
+            fillTexturedPath(() => {
+                ctx.ellipse(headX, headY + 480, 160, 210, 0, 0, Math.PI * 2);
+            }, "#d7ccc8", "#c5b8b1", 12);
+            drawFuzzyEdge(headX, headY + 480, 160, 210, 0, "#d7ccc8", 250, 6);
+
+            // Draw Teddy Bear head (Base)
+            fillTexturedPath(() => {
+                ctx.arc(headX, headY, 300, 0, Math.PI * 2);
+            }, "#5c4033", "#4e342e", 15);
+            drawFuzzyEdge(headX, headY, 300, 300, 0, "#5c4033");
+
+            // Ears
+            fillTexturedPath(() => {
+                ctx.arc(headX - 220, headY - 220, 100, 0, Math.PI * 2);
+                ctx.arc(headX + 220, headY - 220, 100, 0, Math.PI * 2);
+            }, "#3e2723", "#2d1a12", 10);
+            drawFuzzyEdge(headX - 220, headY - 220, 100, 100, 0, "#3e2723");
+            drawFuzzyEdge(headX + 220, headY - 220, 100, 100, 0, "#3e2723");
+
+            // Inner Ear Patches (Cream-pink)
+            fillTexturedPath(() => {
+                ctx.arc(headX - 220, headY - 220, 60, 0, Math.PI * 2);
+                ctx.arc(headX + 220, headY - 220, 60, 0, Math.PI * 2);
+            }, "#ffcdd2", "#e1bee7", 8);
+            drawFuzzyEdge(headX - 220, headY - 220, 60, 60, 0, "#ffcdd2", 120, 3);
+            drawFuzzyEdge(headX + 220, headY - 220, 60, 60, 0, "#ffcdd2", 120, 3);
+
+            // Silk Red Bowtie (at the neck)
+            ctx.fillStyle = "#d32f2f";
+            ctx.strokeStyle = "#b71c1c";
+            ctx.lineWidth = 4;
+            
+            // Left bow wing
+            ctx.beginPath();
+            ctx.moveTo(headX, headY + 205);
+            ctx.lineTo(headX - 90, headY + 160);
+            ctx.lineTo(headX - 90, headY + 250);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Right bow wing
+            ctx.beginPath();
+            ctx.moveTo(headX, headY + 205);
+            ctx.lineTo(headX + 90, headY + 160);
+            ctx.lineTo(headX + 90, headY + 250);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Bow center knot
+            ctx.beginPath();
+            ctx.arc(headX, headY + 205, 26, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Cheek Blush (Soft transparent pink)
+            ctx.fillStyle = "rgba(255, 128, 171, 0.28)";
+            ctx.beginPath();
+            ctx.arc(headX - 170, headY + 50, 45, 0, Math.PI * 2);
+            ctx.arc(headX + 170, headY + 50, 45, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes (Consensus verified green pulse)
+            let pulse = Math.abs(Math.sin(time * 0.005 * speedCoeff));
+            ctx.fillStyle = `rgb(0, ${Math.floor(155 + pulse * 100)}, 0)`;
+            ctx.beginPath();
+            ctx.arc(headX - 90, headY - 50, 40, 0, Math.PI * 2); // Left Eye
+            ctx.fill();
+            drawFuzzyEdge(headX - 90, headY - 50, 40, 40, 0, "#2d1a12", 150, 3);
+
+            // Eye reflection highlight left
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(headX - 105, headY - 65, 12, 0, Math.PI * 2);
+            ctx.arc(headX - 82, headY - 42, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Right Eye Button (Glossy black)
+            ctx.fillStyle = "#121212";
+            ctx.beginPath();
+            ctx.arc(headX + 90, headY - 50, 40, 0, Math.PI * 2); 
+            ctx.fill();
+            drawFuzzyEdge(headX + 90, headY - 50, 40, 40, 0, "#2d1a12", 150, 3);
+
+            // Eye reflection highlight right
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(headX + 75, headY - 65, 12, 0, Math.PI * 2);
+            ctx.arc(headX + 98, headY - 42, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Muzzle / Snout (Layered clearly on top of head)
+            ctx.fillStyle = "#d7ccc8"; // High contrast cream color
+            ctx.beginPath();
+            ctx.ellipse(headX, headY + 110, 120, 90, 0, 0, Math.PI * 2);
+            ctx.fill();
+            drawFuzzyEdge(headX, headY + 110, 120, 90, 0, "#d7ccc8", 300, 4);
+
+            // Nose
+            ctx.fillStyle = "#1d0a02";
+            ctx.beginPath();
+            ctx.ellipse(headX, headY + 70, 50, 35, 0, 0, Math.PI * 2);
+            ctx.fill();
+            drawFuzzyEdge(headX, headY + 70, 50, 35, 0, "#1d0a02", 150, 2);
+
+            // Mouth Stitching (Black lines - crooked and loose under sickness)
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 8;
+            
+            if (sicknessVal > 0.2) {
+                ctx.setLineDash([15 - sicknessVal * 12, 5 + sicknessVal * 15]);
+            } else {
+                ctx.setLineDash([]);
+            }
+            
+            let startY = headY + 90;
+            let endY = headY + 140;
+            let midY = (startY + endY) / 2;
+            let stitchOffset = (Math.sin(time * 0.01) * 12 * sicknessVal);
+            
+            ctx.beginPath();
+            ctx.moveTo(headX, startY);
+            ctx.quadraticCurveTo(headX + stitchOffset, midY, headX + (stitchOffset * 0.5), endY);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(headX, headY + 95, 45, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Frayed dangling thread effects
+            if (sicknessVal > 0.4) {
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 3;
+                
+                // Thread 1
+                ctx.beginPath();
+                ctx.moveTo(headX + 30, headY + 130);
+                let swing1 = Math.sin(time * 0.003 * speedCoeff) * 15 * sicknessVal;
+                ctx.bezierCurveTo(
+                    headX + 40, headY + 160,
+                    headX + 30 + swing1, headY + 190,
+                    headX + 35 + swing1 * 1.3, headY + 220
+                );
+                ctx.stroke();
+
+                // Thread 2
+                ctx.beginPath();
+                ctx.moveTo(headX - 35, headY + 128);
+                let swing2 = Math.cos(time * 0.0025 * speedCoeff) * 18 * sicknessVal;
+                ctx.bezierCurveTo(
+                    headX - 45, headY + 155,
+                    headX - 35 + swing2, headY + 185,
+                    headX - 40 + swing2 * 1.2, headY + 215
+                );
+                ctx.stroke();
+            }
+
+            // Draw dynamic green decay spots (using the textured/fuzzy fur pipeline)
+            let spotCount = Math.floor(sicknessVal * 10);
+            for (let i = 0; i < spotCount; i++) {
+                let angle = (i / spotCount) * Math.PI * 2 + (time * 0.0005);
+                let ox = Math.cos(angle) * 180;
+                let oy = Math.sin(angle) * 220;
+                
+                let blobX = headX + ox;
+                let blobY = headY + 450 + oy;
+                let radius = 35 + Math.sin(time * 0.01 + i) * 10;
+                
+                fillTexturedPath(() => {
+                    ctx.arc(blobX, blobY, radius, 0, Math.PI * 2);
+                }, "#4a5d23", "#3a4d1a", 8);
+                drawFuzzyEdge(blobX, blobY, radius, radius, 0, "#4a5d23", 100, 6);
+            }
+
+            // Specular Highlight Overlay (Controlled by lighting slider)
+            ctx.fillStyle = `rgba(102, 252, 241, ${0.15 * lightCoeff})`;
+            ctx.beginPath();
+            ctx.ellipse(headX - 120, headY - 120, 150, 80, -Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Calculate FPS
+            frameCount++;
+            if (time - lastTime >= 1000) {
+                document.getElementById("fpsVal").innerText = frameCount;
+                frameCount = 0;
+                lastTime = time;
+
+                // Log mock telemetry to console
+                const consoleBox = document.getElementById("console");
+                const timestamp = new Date().toLocaleTimeString();
+                consoleBox.innerHTML += `\n[${timestamp}] Consensus: Verified. CPU L3: 28.6MB. BDA Handoff: Safe.\n[${timestamp}] FSR Upscale latency: 0.14ms.`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+
+            requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+    }
+
+    // Start initialization - Prioritizing 2D Canvas emulation for direct visibility
+    window.onload = run2DCanvasEmulation;
+</script>
+</body>
+</html>

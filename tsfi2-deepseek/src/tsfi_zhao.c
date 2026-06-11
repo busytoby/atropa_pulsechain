@@ -37,17 +37,96 @@ static int tsfi_zhao_worker_entry(void *arg) {
 
     atomic_fetch_add(&g_zhao.active_workers, 1);
     
+    // Thread-local state for fast LCG random selection of victim rings
+    uint32_t steal_state = (uint32_t)(uintptr_t)ring;
+
     while (!atomic_load_explicit(&g_zhao.shutdown, memory_order_relaxed)) {
-        uint32_t h = atomic_load_explicit(&ring->head, memory_order_relaxed);
+        uint32_t h = atomic_load_explicit(&ring->head, memory_order_acquire);
         uint32_t t = atomic_load_explicit(&ring->tail, memory_order_acquire);
         
+        bool executed = false;
         if (h != t) {
-            ZhaoTask *task = &ring->tasks[h & ZHAO_RING_MASK];
-            task->func(task->ctx);
-            
-            atomic_fetch_sub_explicit(&g_zhao.tasks_inflight, 1, memory_order_release);
-            atomic_store_explicit(&ring->head, h + 1, memory_order_release);
-        } else {
+            // Attempt to claim the task at head via Compare-and-Swap
+            if (atomic_compare_exchange_strong_explicit(&ring->head, &h, h + 1, 
+                                                        memory_order_acq_rel, memory_order_acquire)) {
+                ZhaoTask task = ring->tasks[h & ZHAO_RING_MASK];
+                if (task.func) {
+                    task.func(task.ctx);
+                }
+                atomic_fetch_sub_explicit(&g_zhao.tasks_inflight, 1, memory_order_release);
+                executed = true;
+            }
+        }
+        
+        // If own queue is empty or CAS failed, try to steal from other workers (CCX-local first, then cross-CCX)
+        if (!executed) {
+            int worker_count = g_zhao.worker_count;
+            if (worker_count > 1) {
+                steal_state = steal_state * 1664525 + 1013904223;
+                int start_victim = steal_state % worker_count;
+                
+                // Determine our CCX ID based on cpu_id (CCX0 has cores 0-7/16-23, CCX1 has 8-15/24-31)
+                // We check core ID mapping to cache topology
+                int my_cpu = ring->cpu_id;
+                int my_ccx = ((my_cpu >= 8 && my_cpu <= 15) || (my_cpu >= 24 && my_cpu <= 31)) ? 1 : 0;
+
+                // Pass 1: Try to steal from a victim in the SAME CCX
+                for (int i = 0; i < worker_count; i++) {
+                    int victim_idx = (start_victim + i) % worker_count;
+                    if (victim_idx == my_cpu) continue;
+                    
+                    ZhaoRing *victim = &g_zhao.rings[victim_idx];
+                    int victim_ccx = ((victim_idx >= 8 && victim_idx <= 15) || (victim_idx >= 24 && victim_idx <= 31)) ? 1 : 0;
+                    if (victim_ccx != my_ccx) continue; // Skip non-local CCX on Pass 1
+                    
+                    uint32_t v_h = atomic_load_explicit(&victim->head, memory_order_acquire);
+                    uint32_t v_t = atomic_load_explicit(&victim->tail, memory_order_acquire);
+                    
+                    if (v_h != v_t) {
+                        if (atomic_compare_exchange_strong_explicit(&victim->head, &v_h, v_h + 1, 
+                                                                    memory_order_acq_rel, memory_order_acquire)) {
+                            ZhaoTask task = victim->tasks[v_h & ZHAO_RING_MASK];
+                            if (task.func) {
+                                task.func(task.ctx);
+                            }
+                            atomic_fetch_sub_explicit(&g_zhao.tasks_inflight, 1, memory_order_release);
+                            executed = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Pass 2: Try to steal from a victim in the OTHER CCX (Cross-CCX fallback)
+                if (!executed) {
+                    for (int i = 0; i < worker_count; i++) {
+                        int victim_idx = (start_victim + i) % worker_count;
+                        if (victim_idx == my_cpu) continue;
+                        
+                        ZhaoRing *victim = &g_zhao.rings[victim_idx];
+                        int victim_ccx = ((victim_idx >= 8 && victim_idx <= 15) || (victim_idx >= 24 && victim_idx <= 31)) ? 1 : 0;
+                        if (victim_ccx == my_ccx) continue; // Already searched in Pass 1
+                        
+                        uint32_t v_h = atomic_load_explicit(&victim->head, memory_order_acquire);
+                        uint32_t v_t = atomic_load_explicit(&victim->tail, memory_order_acquire);
+                        
+                        if (v_h != v_t) {
+                            if (atomic_compare_exchange_strong_explicit(&victim->head, &v_h, v_h + 1, 
+                                                                        memory_order_acq_rel, memory_order_acquire)) {
+                                ZhaoTask task = victim->tasks[v_h & ZHAO_RING_MASK];
+                                if (task.func) {
+                                    task.func(task.ctx);
+                                }
+                                atomic_fetch_sub_explicit(&g_zhao.tasks_inflight, 1, memory_order_release);
+                                executed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!executed) {
             _mm_pause();
         }
     }

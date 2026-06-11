@@ -219,15 +219,55 @@ void tsfi_bn_sub_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b)
 void tsfi_bn_mul_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
     TSFiBigInt tmp;
     memset(&tmp, 0, sizeof(tmp));
-    for (size_t i = 0; i < a->active_limbs; i++) {
+    
+    size_t a_limbs = a->active_limbs;
+    size_t b_limbs = b->active_limbs;
+    if (a_limbs == 0 || b_limbs == 0) {
+        memset(r->limbs, 0, sizeof(r->limbs));
+        r->active_limbs = 0;
+        return;
+    }
+
+    for (size_t i = 0; i < a_limbs; i++) {
+        uint64_t a_val = a->limbs[i];
+        __m512i v_a = _mm512_set1_epi64(a_val);
         uint64_t carry = 0;
-        for (size_t j = 0; j < b->active_limbs; j++) {
-            unsigned __int128 prod = (unsigned __int128)a->limbs[i] * b->limbs[j] + tmp.limbs[i+j] + carry;
-            tmp.limbs[i+j] = (uint64_t)prod & TSFI_LIMB_MASK;
+        
+        size_t j = 0;
+        for (; j + 7 < b_limbs; j += 8) {
+            __m512i v_b = _mm512_loadu_si512(&b->limbs[j]);
+            __m512i v_tmp = _mm512_loadu_si512(&tmp.limbs[i + j]);
+            
+            __m512i v_prod_lo = _mm512_madd52lo_epu64(v_tmp, v_a, v_b);
+            __m512i v_prod_hi = _mm512_madd52hi_epu64(_mm512_setzero_si512(), v_a, v_b);
+            
+            alignas(64) uint64_t low[8];
+            alignas(64) uint64_t high[8];
+            _mm512_store_si512(low, v_prod_lo);
+            _mm512_store_si512(high, v_prod_hi);
+            
+            for (int k = 0; k < 8; k++) {
+                unsigned __int128 sum = (unsigned __int128)low[k] + carry;
+                tmp.limbs[i + j + k] = (uint64_t)sum & TSFI_LIMB_MASK;
+                carry = high[k] + (uint64_t)(sum >> TSFI_LIMB_BITS);
+            }
+        }
+        
+        for (; j < b_limbs; j++) {
+            unsigned __int128 prod = (unsigned __int128)a_val * b->limbs[j] + tmp.limbs[i + j] + carry;
+            tmp.limbs[i + j] = (uint64_t)prod & TSFI_LIMB_MASK;
             carry = (uint64_t)(prod >> TSFI_LIMB_BITS);
         }
-        tmp.limbs[i + b->active_limbs] += carry;
+        
+        size_t k = i + b_limbs;
+        while (carry > 0 && k < TSFI_NUM_LIMBS) {
+            unsigned __int128 sum = (unsigned __int128)tmp.limbs[k] + carry;
+            tmp.limbs[k] = (uint64_t)sum & TSFI_LIMB_MASK;
+            carry = (uint64_t)(sum >> TSFI_LIMB_BITS);
+            k++;
+        }
     }
+    
     tsfi_bn_copy(r, &tmp);
     tsfi_bn_trim(r);
 }
@@ -378,6 +418,38 @@ void tsfi_bn_modpow_avx512(TSFiBigInt *result, const TSFiBigInt *base, const TSF
         tsfi_bn_set_u64(result, r);
         return;
     }
+    if (mod->active_limbs > 1) {
+        TSFiBigInt *r_val = tsfi_bn_alloc();
+        TSFiBigInt *b_val = tsfi_bn_alloc();
+        TSFiBigInt *e_val = tsfi_bn_alloc();
+        
+        tsfi_bn_set_u64(r_val, 1);
+        tsfi_bn_div_avx512(NULL, b_val, base, mod);
+        tsfi_bn_copy(e_val, exp);
+        
+        TSFiBigInt *temp = tsfi_bn_alloc();
+        TSFiBigInt *zero = tsfi_bn_alloc();
+        tsfi_bn_set_u64(zero, 0);
+        
+        while (tsfi_bn_cmp_avx512(e_val, zero) > 0) {
+            if (e_val->limbs[0] & 1) {
+                tsfi_bn_mul_avx512(temp, r_val, b_val);
+                tsfi_bn_div_avx512(NULL, r_val, temp, mod);
+            }
+            tsfi_bn_mul_avx512(temp, b_val, b_val);
+            tsfi_bn_div_avx512(NULL, b_val, temp, mod);
+            tsfi_bn_rshift_avx512(e_val, e_val, 1);
+        }
+        
+        tsfi_bn_copy(result, r_val);
+        
+        tsfi_bn_free(r_val);
+        tsfi_bn_free(b_val);
+        tsfi_bn_free(e_val);
+        tsfi_bn_free(temp);
+        tsfi_bn_free(zero);
+        return;
+    }
     tsfi_bn_set_u64(result, 0);
 }
 
@@ -445,21 +517,28 @@ void tsfi_bn_lshift_avx512(TSFiBigInt *result, const TSFiBigInt *src, int bits) 
         tsfi_bn_copy(result, src);
         return;
     }
-    int limbs_shift = bits / 64;
-    int bit_shift = bits % 64;
+    alignas(64) uint64_t src_limbs[TSFI_NUM_LIMBS];
+    memcpy(src_limbs, src->limbs, sizeof(src_limbs));
+    memset(result->limbs, 0, sizeof(result->limbs));
+    
+    int limbs_shift = bits / TSFI_LIMB_BITS;
+    int bit_shift = bits % TSFI_LIMB_BITS;
     
     uint64_t carry = 0;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < TSFI_NUM_LIMBS; i++) {
         int dst_idx = i + limbs_shift;
-        if (dst_idx < 8) {
-            uint64_t val = src->limbs[i];
-            result->limbs[dst_idx] = (val << bit_shift) | carry;
-            carry = (bit_shift > 0) ? (val >> (64 - bit_shift)) : 0;
+        if (dst_idx < TSFI_NUM_LIMBS) {
+            uint64_t val = src_limbs[i];
+            result->limbs[dst_idx] = ((val << bit_shift) | carry) & TSFI_LIMB_MASK;
+            carry = (bit_shift > 0) ? (val >> (TSFI_LIMB_BITS - bit_shift)) : 0;
         }
     }
-    for (int i = 0; i < limbs_shift && i < 8; i++) {
-        result->limbs[i] = 0;
+    if (limbs_shift + (int)src->active_limbs < TSFI_NUM_LIMBS) {
+        result->active_limbs = src->active_limbs + limbs_shift + (carry > 0 ? 1 : 0);
+    } else {
+        result->active_limbs = TSFI_NUM_LIMBS;
     }
+    tsfi_bn_trim(result);
 }
 
 void tsfi_bn_rshift_avx512(TSFiBigInt *result, const TSFiBigInt *src, int bits) {
@@ -467,19 +546,21 @@ void tsfi_bn_rshift_avx512(TSFiBigInt *result, const TSFiBigInt *src, int bits) 
         tsfi_bn_copy(result, src);
         return;
     }
-    int limbs_shift = bits / 64;
-    int bit_shift = bits % 64;
+    alignas(64) uint64_t src_limbs[TSFI_NUM_LIMBS];
+    memcpy(src_limbs, src->limbs, sizeof(src_limbs));
+    memset(result->limbs, 0, sizeof(result->limbs));
+    
+    int limbs_shift = bits / TSFI_LIMB_BITS;
+    int bit_shift = bits % TSFI_LIMB_BITS;
     
     uint64_t carry = 0;
-    for (int i = 7; i >= 0; i--) {
+    for (int i = TSFI_NUM_LIMBS - 1; i >= 0; i--) {
         int dst_idx = i - limbs_shift;
         if (dst_idx >= 0) {
-            uint64_t val = src->limbs[i];
-            result->limbs[dst_idx] = (val >> bit_shift) | carry;
-            carry = (bit_shift > 0) ? (val << (64 - bit_shift)) : 0;
+            uint64_t val = src_limbs[i];
+            result->limbs[dst_idx] = ((val >> bit_shift) | carry) & TSFI_LIMB_MASK;
+            carry = (bit_shift > 0) ? ((val & ((1ULL << bit_shift) - 1)) << (TSFI_LIMB_BITS - bit_shift)) : 0;
         }
     }
-    for (int i = 8 - limbs_shift; i < 8 && i >= 0; i++) {
-        result->limbs[i] = 0;
-    }
+    tsfi_bn_trim(result);
 }

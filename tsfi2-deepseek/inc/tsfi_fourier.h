@@ -19,10 +19,10 @@ typedef struct {
 } TSFiFourierGlyph;
 
 // The Basis Matrix (Constant ROM)
-// K rows x (2*N + 1) cols. 
+// (2*N) rows x K cols. 
 // Precomputed cos(nt), sin(nt).
 typedef struct {
-    float data[TSFI_FOURIER_SAMPLES][TSFI_FOURIER_HARMONICS * 2];
+    float data[TSFI_FOURIER_HARMONICS * 2][TSFI_FOURIER_SAMPLES] __attribute__((aligned(64)));
 } TSFiFourierBasis;
 
 // API

@@ -40,7 +40,7 @@ int main() {
     // Bind JIT synthesis execution hook for autonomous processing
     // We use a baked mixed emit to map the reconstruction directly to the memory bounds
     void (*jit_reconstruct)(float*, const TSFiFourierBasis*) = (void(*)(float*, const TSFiFourierBasis*))ThunkProxy_emit_forwarding(h->proxy, (void*)fourier_reconstruct_stub, glyph);
-    lau_mprotect(h->proxy->thunk_pool, PROT_READ | PROT_EXEC);
+    ThunkProxy_seal(h->proxy);
 
     tsfi_fourier_from_points(glyph, poly, TSFI_FOURIER_SAMPLES);
     
