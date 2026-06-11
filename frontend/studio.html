@@ -588,6 +588,9 @@
         let filterTemperature = 25.0;
         let bionikaAxonQueue = new Array(12).fill(0.0);
         let currentPreAttenuation = 1.0;
+        let vactrolLdr = 1.0;
+        let vactrolLight = 0.0;
+        let resonantPhaseAngle = 0.0;
 
         // Current parameters
         const params = {
@@ -1991,18 +1994,20 @@
                 // Zener Avalanche Dither Injection (Issue 11)
                 let zenerDither = 0.0;
                 if (formantCompActive) {
-                    // 1.5% amplitude white noise to disperse filter limit cycles
-                    zenerDither = (Math.random() - 0.5) * 0.015;
+                             // Gallium Phosphide (GaP) LED Photocoupler Compressor (Issue 18)
+                // Model the optocoupler's slow-attack, slow-decay response
+                const targetLight = Math.max(0.0, Math.abs(stimulusAmp) - 0.15) * 5.0;
+                if (targetLight > vactrolLight) {
+                    vactrolLight += (targetLight - vactrolLight) * 0.1; // attack rate
+                } else {
+                    vactrolLight += (targetLight - vactrolLight) * 0.02; // release decay
                 }
+                vactrolLdr = 1000.0 * Math.exp(-2.5 * vactrolLight); // LDR resistance drops with light
+                const rSeries = 150.0;
+                const optoGain = vactrolLdr / (rSeries + vactrolLdr); // shunt voltage divider
 
-                // Mullard Mullard-Style Varistor (VDR) pre-filter compression (Issue 15)
-                const vdrBeta = 3.0;
-                const vdrAlpha = 2.5;
-                const vdrG0 = 0.12;
-                const stimulusAmp = stimulus * compGainState * currentPreAttenuation;
-                const vdrConductance = vdrG0 * (1.0 + vdrAlpha * Math.pow(Math.abs(stimulusAmp), vdrBeta));
-                // V_compressed = V_in / (1 + G(V_in))
-                const compressedStimulus = (stimulusAmp / (1.0 + vdrConductance)) + zenerDither;
+                // Apply Mullard-Style Varistor (VDR) & GaP Optocoupler compression
+                const compressedStimulus = ((stimulusAmp / (1.0 + vdrConductance)) * optoGain) + zenerDither;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
                 // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
@@ -2030,7 +2035,16 @@
                     log(`🦠 [NASA BIO-DETECTOR] Electrolyte impedance at ${(metabolicImpedance * 100).toFixed(1)}%. Shunting feedback loop.`);
                 }
 
-                let dynamicDampingQ = params.formant.dampingQ * (1.0 / metabolicImpedance);
+                // Phase-Coherent Solar Laser Feedback Loop (Issue 10)
+                // Align feedback damping to the phase of the primary filter formant to prevent phase noise/cancellation.
+                resonantPhaseAngle += finalPitchF * 2.0 * Math.PI;
+                if (resonantPhaseAngle > 2.0 * Math.PI) {
+                    resonantPhaseAngle -= 2.0 * Math.PI;
+                }
+                // Coherent alignment modifier: damp more strongly during zero-crossing phases
+                const coherenceMod = 1.0 + 0.45 * Math.abs(Math.sin(resonantPhaseAngle));
+                let dynamicDampingQ = params.formant.dampingQ * (1.0 / metabolicImpedance) * coherenceMod;
+
                 const stabilityScore = checkGraeffeStability(finalPitchF, dynamicDampingQ);
                 if (stabilityScore >= 0.98) {
                     dynamicDampingQ = dynamicDampingQ * 2.0; // scale up damping (reduce Q) to pull poles in
