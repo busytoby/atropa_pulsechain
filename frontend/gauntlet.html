@@ -726,6 +726,76 @@ Status: Awaiting hero to join the battle.</div>
             }
         }
 
+        let lastPhysTrauma = 0;
+        let lastMentTrauma = 0;
+
+        async function syncTraumaToChain(phys_trauma, ment_trauma) {
+            if (!folkloreContract || !onChainMode) return;
+            try {
+                await folkloreContract.poke(55043, phys_trauma, { nonce: chainNonce++ });
+                await folkloreContract.poke(55044, ment_trauma, { nonce: chainNonce++ });
+                logEvent(`[Folklore CPU] Synced trauma: Phys=${phys_trauma}, Ment=${ment_trauma}`);
+                
+                if (speechContract) {
+                    let coefficients = [10, 15, 20, 25, 30, 35, 40, 45, 50];
+                    let basePitch = 100;
+                    let baseEnergy = 100;
+                    if (ment_trauma === 2) {
+                        basePitch = 120;
+                    } else if (ment_trauma === 4) {
+                        basePitch = 75;
+                        baseEnergy = 50;
+                    }
+                    if (phys_trauma === 1) {
+                        baseEnergy = 80;
+                    } else if (phys_trauma === 3) {
+                        baseEnergy = 30;
+                    }
+                    await speechContract.writeReflectionCoefficients(coefficients, basePitch, baseEnergy, { nonce: chainNonce++ });
+                    logEvent(`[Vaesen Speech] Reflection parameters updated. Pitch=${basePitch}, Energy=${baseEnergy}`);
+                }
+            } catch (e) {
+                console.warn("Trauma sync error:", e);
+            }
+        }
+
+        function checkAndSyncTrauma() {
+            if (!folkloreContract || !onChainMode) return;
+
+            let phys_trauma = 0;
+            if (health < 150) {
+                phys_trauma = 3;
+            } else if (health < 500) {
+                phys_trauma = 1;
+            }
+
+            let ment_trauma = 0;
+            let closeEnemies = 0;
+            enemies.forEach(e => {
+                if (Math.hypot(player.x - e.x, player.y - e.y) < 160) {
+                    closeEnemies++;
+                }
+            });
+            let nearSpawner = false;
+            spawners.forEach(s => {
+                if (Math.hypot(player.x - s.x, player.y - s.y) < 120) {
+                    nearSpawner = true;
+                }
+            });
+
+            if (nearSpawner || closeEnemies >= 4) {
+                ment_trauma = 2;
+            } else if (health < 300) {
+                ment_trauma = 4;
+            }
+
+            if (phys_trauma !== lastPhysTrauma || ment_trauma !== lastMentTrauma) {
+                lastPhysTrauma = phys_trauma;
+                lastMentTrauma = ment_trauma;
+                syncTraumaToChain(phys_trauma, ment_trauma);
+            }
+        }
+
         function update() {
             if (!gameActive) return;
 
@@ -738,6 +808,8 @@ Status: Awaiting hero to join the battle.</div>
                 resetGame();
                 return;
             }
+
+            checkAndSyncTrauma();
 
             player.shootCooldown--;
 
@@ -1069,6 +1141,7 @@ Status: Awaiting hero to join the battle.</div>
         let walletAddress = "";
         let folkloreContract = null;
         let tokenContract = null;
+        let speechContract = null;
         let onChainMode = false;
         let chainNonce = 0;
         let config = null;
@@ -1076,6 +1149,12 @@ Status: Awaiting hero to join the battle.</div>
         const folkloreABI = [
             "function poke(uint256 addr, uint256 val) public returns (uint256)",
             "function peek(uint256 addr) public view returns (uint256)"
+        ];
+
+        const speechABI = [
+            "function bindCpuAddress(address cpu) public returns (bool)",
+            "function bindMusicMaker(address musicMaker) public returns (bool)",
+            "function writeReflectionCoefficients(uint256[9] coefficients, uint256 pitch, uint256 energy) public returns (bool)"
         ];
 
         const erc20ABI = [
@@ -1098,6 +1177,7 @@ Status: Awaiting hero to join the battle.</div>
                 
                 const networks = config.networks.localhost;
                 folkloreContract = new ethers.Contract(networks.folkloreAddress, folkloreABI, signer);
+                speechContract = new ethers.Contract(networks.speechSynthesizerAddress, speechABI, signer);
                 tokenContract = new ethers.Contract("0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b", erc20ABI, signer);
                 
                 chainNonce = await provider.getTransactionCount(walletAddress, "pending");
