@@ -446,6 +446,14 @@
                         </div>
                         <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Clock Dividers & Trigger Pattern Matrix</p>
                     </div>
+
+                    <div class="module-card" data-module="semafoon">
+                        <div class="header-row">
+                            <span class="module-name">📟 PTT Semafoon Decoder (Issue 13)</span>
+                            <span class="status-dot"></span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">Wien-Bridge Selective Tone Detector</p>
+                    </div>
                 </div>
 
                 <div style="margin-top: auto;">
@@ -598,6 +606,10 @@
             rhythm: {
                 pattern: 0,
                 tempo: 120
+            },
+            semafoon: {
+                frequency: 1000,
+                rcDecay: 0.01
             }
         };
  
@@ -656,6 +668,10 @@
             rhythm: [
                 { id: "rhythmPattern", label: "SGS Programmed Pattern (0=Rock, 1=Waltz)", min: 0, max: 1, step: 1, key: "pattern", unit: "p" },
                 { id: "rhythmTempo", label: "Sequencer Clock Tempo (BPM)", min: 60, max: 240, step: 5, key: "tempo", unit: "BPM" }
+            ],
+            semafoon: [
+                { id: "semafoonFreq", label: "Signal Generator Frequency", min: 200.0, max: 2000.0, step: 10.0, key: "frequency", unit: "Hz" },
+                { id: "semafoonDecay", label: "Envelope Decay Coefficient", min: 0.001, max: 0.1, step: 0.001, key: "rcDecay", unit: "x" }
             ]
         };
 
@@ -759,6 +775,7 @@
             await registerModule("FormantFilter", "../solidity/bin/formantFilter.yul", "0x95");
             await registerModule("EnvelopeDetector", "../solidity/bin/envelopeDetector.yul", "0x85");
             await registerModule("RhythmGenerator", "../solidity/bin/rhythmGenerator.yul", "0x67");
+            await registerModule("SemafoonDecoder", "../solidity/bin/semafoonDecoder.yul", "0x13");
             log("All system modules successfully registered.");
             triggerSingleSimulationStep();
         }
@@ -828,7 +845,8 @@
                               activeModule === "gyrator" ? "#a855f7" :
                               activeModule === "ringmod" ? "#f43f5e" :
                               activeModule === "formant" ? "#10b981" :
-                              activeModule === "rhythm" ? "#eab308" : "#ffaa00";
+                              activeModule === "rhythm" ? "#eab308" :
+                              activeModule === "semafoon" ? "#22d3ee" : "#ffaa00";
             ctx.lineWidth = 3;
             ctx.shadowColor = ctx.strokeStyle;
             ctx.shadowBlur = 10;
@@ -1517,6 +1535,38 @@
 
                 const mappedDigit = Math.max(0, Math.min(9, Math.round(Math.abs(outVolts) * 9)));
                 setNixieDigit(mappedDigit);
+            } else if (activeModule === "semafoon") {
+                // Generate sine wave stimulus at selected frequency
+                const freq = params.semafoon.frequency;
+                const angle = (Date.now() / 1000) * freq * Math.PI * 2;
+                const stimulus = Math.sin(angle) * 1.5; // 1.5V stimulus
+                const inputVal = BigInt(Math.round(stimulus * 1e18));
+                const rcDecay = BigInt(Math.round(params.semafoon.rcDecay * 1e18));
+
+                const iface = new ethers.Interface(["function processSample(int256,int256) returns (int256,int256)"]);
+                const calldata = iface.encodeFunctionData("processSample", [inputVal, rcDecay]);
+
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "SemafoonDecoder", calldata })
+                });
+                const payload = await res.json();
+
+                if (payload && payload.result && payload.result.output) {
+                    const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
+                    const rawOut = Number(decoded[0]) / 1e18;
+                    const envelope = Number(decoded[1]) / 1e18;
+                    const outVolts = await applyEquaLimiter(rawOut, 0.51);
+
+                    samples.push(outVolts);
+                    samples.shift();
+                    drawWaveform();
+
+                    // Display mapped envelope value on Nixie digit
+                    const mappedDigit = Math.max(0, Math.min(9, Math.round(envelope * 9)));
+                    setNixieDigit(mappedDigit);
+                }
             }
             } catch (err) {
                 console.error("Simulation step error:", err);
