@@ -1900,7 +1900,26 @@ Ready to initiate tournament match.</div>
                         phase: fighter2.phase,
                         sick: fighter2.sick
                     }
-                }
+                },
+                // ZIL story preview compiler output
+                zilSource: `<OBJECT TOURNAMENT-BEAR-${fighter1.name.toUpperCase().replace(/\s+/g, "-")}\n      (IN ROOM-10) ; Void\n      (DESC "${fighter1.name} Tournament Card")\n      (FLAGS TAKEBIT CONTBIT)\n      (SIZE ${Math.round(fighter1.hp)})\n      (VALUE ${Math.round(fighter1.spike * 100)})\n      (TIMBRE "${document.getElementById("synth-timbre")?.value || "sine"}")\n      (ADSR <ADSR-ENVELOPE\n            (ATTACK ${parseFloat(document.getElementById("synth-attack")?.value || 0.02)})\n            (DECAY ${parseFloat(document.getElementById("synth-decay")?.value || 0.30)})\n            (SUSTAIN ${parseFloat(document.getElementById("synth-sustain")?.value || 0.20)})\n            (RELEASE ${parseFloat(document.getElementById("synth-release")?.value || 0.15)})>)\n      (DNA <GENOME-SCALES\n            (HEAD ${parseFloat(document.getElementById("synth-head")?.value || 1.0)})\n            (TORSO ${parseFloat(document.getElementById("synth-torso")?.value || 1.0)})\n            (EARS ${parseFloat(document.getElementById("synth-ears")?.value || 1.0)})\n            (MUZZLE ${parseFloat(document.getElementById("synth-muzzle")?.value || 1.0)})\n            (ARMS ${parseFloat(document.getElementById("synth-arms")?.value || 1.0)})\n            (LEGS ${parseFloat(document.getElementById("synth-legs")?.value || 1.0)})\n            (FUR ${parseFloat(document.getElementById("synth-fur")?.value || 1.0)})>)\n>`,
+                // C64 assembly machine bin bytecode mapping to virtual DFS sectors
+                assemblyBin: (() => {
+                    // Pre-compile 6502 assembly instruction sets (e.g. LDA #headScale, STA $D000)
+                    const headVal = Math.round(parseFloat(document.getElementById("synth-head")?.value || 1.0) * 100);
+                    const bodyVal = Math.round(parseFloat(document.getElementById("synth-torso")?.value || 1.0) * 100);
+                    const earsVal = Math.round(parseFloat(document.getElementById("synth-ears")?.value || 1.0) * 100);
+                    
+                    // LDA #headVal ($A9 xx), STA $D000 ($8D 00 D0), LDA #bodyVal ($A9 xx), STA $D001 ($8D 01 D0), RTS ($60)
+                    let hex = "a9" + headVal.toString(16).padStart(2, '0');
+                    hex += "8d00d0";
+                    hex += "a9" + bodyVal.toString(16).padStart(2, '0');
+                    hex += "8d01d0";
+                    hex += "a9" + earsVal.toString(16).padStart(2, '0');
+                    hex += "8d02d0";
+                    hex += "60"; // Return from Subroutine
+                    return hex.padEnd(512, "0"); // Pad block payload size to full floppy sectors
+                })()
             });
 
             localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
