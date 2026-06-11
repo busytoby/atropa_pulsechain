@@ -85,87 +85,157 @@
                 <span class="status-badge pending" id="test3">PENDING</span>
             </div>
             <div class="test-row">
-                <span class="test-name">4. ROM Loader Load & Go Hook</span>
-                <span class="status-badge pending" id="test4">PENDING</span>
+                <span class="test-name">5. Deck Storage JSON Integration (`tsfi_hardball_deck`)</span>
+                <span class="status-badge pending" id="test5">PENDING</span>
+            </div>
+            <div class="test-row">
+                <span class="test-name">6. DNA Synthesis Parameter Restoration Check</span>
+                <span class="status-badge pending" id="test6">PENDING</span>
             </div>
         </div>
     </div>
 
     <!-- Hidden iframe targeting cosmac_elf.html for sandbox test access -->
     <iframe src="cosmac_elf.html" id="testFrame"></iframe>
+    <iframe src="ballet_choreography_studio.html" id="balletFrame" style="display:none;"></iframe>
 
     <script>
         const frame = document.getElementById("testFrame");
+        const balletFrame = document.getElementById("balletFrame");
 
-        frame.onload = () => {
-            setTimeout(() => {
-                const win = frame.contentWindow;
-                if (!win || !win.cpu) {
-                    console.error("COSMAC VIP context not found.");
-                    return;
-                }
+        // Set up test deck item in localStorage before testing
+        const sampleDeck = [
+            {
+                image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                score: "BALLET",
+                style: "ARABESQUE",
+                zilSource: "(GENOME-SCALES (HEAD 1.5) (TORSO 0.8) (LEGS 1.2))",
+                assemblyBin: "a5106901851060"
+            }
+        ];
+        localStorage.setItem("tsfi_hardball_deck", JSON.stringify(sampleDeck));
 
-                // Test 1: Initial State Check
-                const test1 = document.getElementById("test1");
-                if (win.cpu.pc === 0x200 && win.forthStack.length === 0) {
-                    test1.innerText = "PASS";
-                    test1.className = "status-badge pass";
+        let frameLoaded = false;
+        let balletLoaded = false;
+
+        function runAllTests() {
+            if (!frameLoaded || !balletLoaded) return;
+
+            const win = frame.contentWindow;
+            const bwin = balletFrame.contentWindow;
+
+            if (!win || !win.cpu || !bwin) {
+                console.error("Test environments not ready.");
+                return;
+            }
+
+            // Test 1: Initial State Check
+            const test1 = document.getElementById("test1");
+            if (win.cpu.pc === 0x200 && win.forthStack.length === 0) {
+                test1.innerText = "PASS";
+                test1.className = "status-badge pass";
+            } else {
+                test1.innerText = "FAIL";
+                test1.className = "status-badge fail";
+            }
+
+            // Test 2: Forth Postfix Math
+            const test2 = document.getElementById("test2");
+            try {
+                win.executeForthLine("5 5 *");
+                if (win.forthStack[0] === 25) {
+                    test2.innerText = "PASS";
+                    test2.className = "status-badge pass";
                 } else {
-                    test1.innerText = "FAIL";
-                    test1.className = "status-badge fail";
-                }
-
-                // Test 2: Forth Postfix Math
-                const test2 = document.getElementById("test2");
-                try {
-                    win.executeForthLine("5 5 *");
-                    if (win.forthStack[0] === 25) {
-                        test2.innerText = "PASS";
-                        test2.className = "status-badge pass";
-                    } else {
-                        test2.innerText = "FAIL";
-                        test2.className = "status-badge fail";
-                    }
-                } catch(e) {
                     test2.innerText = "FAIL";
                     test2.className = "status-badge fail";
                 }
+            } catch(e) {
+                test2.innerText = "FAIL";
+                test2.className = "status-badge fail";
+            }
 
-                // Test 3: Forth Register Write
-                const test3 = document.getElementById("test3");
-                try {
-                    win.executeForthLine("12 v2 !");
-                    if (win.cpu.v[2] === 12) {
-                        test3.innerText = "PASS";
-                        test3.className = "status-badge pass";
-                    } else {
-                        test3.innerText = "FAIL";
-                        test3.className = "status-badge fail";
-                    }
-                } catch(e) {
+            // Test 3: Forth Register Write
+            const test3 = document.getElementById("test3");
+            try {
+                win.executeForthLine("12 v2 !");
+                if (win.cpu.v[2] === 12) {
+                    test3.innerText = "PASS";
+                    test3.className = "status-badge pass";
+                } else {
                     test3.innerText = "FAIL";
                     test3.className = "status-badge fail";
                 }
+            } catch(e) {
+                test3.innerText = "FAIL";
+                test3.className = "status-badge fail";
+            }
 
-                // Test 4: ROM Loader Load & Go Hook
-                const test4 = document.getElementById("test4");
-                try {
-                    win.document.getElementById("romSelector").value = "maze";
-                    win.document.getElementById("romSelector").dispatchEvent(new Event("change"));
-                    
-                    if (win.isRunning === true && win.cpu.pc === 0x200) {
-                        test4.innerText = "PASS";
-                        test4.className = "status-badge pass";
-                    } else {
-                        test4.innerText = "FAIL";
-                        test4.className = "status-badge fail";
-                    }
-                } catch(e) {
+            // Test 4: ROM Loader Load & Go Hook
+            const test4 = document.getElementById("test4");
+            try {
+                win.document.getElementById("romSelector").value = "maze";
+                win.document.getElementById("romSelector").dispatchEvent(new Event("change"));
+                
+                if (win.isRunning === true && win.cpu.pc === 0x200) {
+                    test4.innerText = "PASS";
+                    test4.className = "status-badge pass";
+                } else {
                     test4.innerText = "FAIL";
                     test4.className = "status-badge fail";
                 }
+            } catch(e) {
+                test4.innerText = "FAIL";
+                test4.className = "status-badge fail";
+            }
 
-            }, 800);
+            // Test 5: Deck Storage JSON Integration
+            const test5 = document.getElementById("test5");
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                const deck = JSON.parse(stored);
+                if (deck && deck.length > 0 && deck[0].score === "BALLET") {
+                    test5.innerText = "PASS";
+                    test5.className = "status-badge pass";
+                } else {
+                    test5.innerText = "FAIL";
+                    test5.className = "status-badge fail";
+                }
+            } catch(e) {
+                test5.innerText = "FAIL";
+                test5.className = "status-badge fail";
+            }
+
+            // Test 6: DNA Synthesis Parameter Restoration Check
+            const test6 = document.getElementById("test6");
+            try {
+                if (typeof bwin.loadCardIntoBallet === "function") {
+                    bwin.loadCardIntoBallet(sampleDeck[0]);
+                    if (bwin.dancerHeadScaleMultiplier === 1.5 && bwin.dancerTorsoScaleMultiplier === 0.8 && bwin.dancerLegsScaleMultiplier === 1.2) {
+                        test6.innerText = "PASS";
+                        test6.className = "status-badge pass";
+                    } else {
+                        test6.innerText = "FAIL";
+                        test6.className = "status-badge fail";
+                    }
+                } else {
+                    test6.innerText = "FAIL";
+                    test6.className = "status-badge fail";
+                }
+            } catch(e) {
+                test6.innerText = "FAIL";
+                test6.className = "status-badge fail";
+            }
+        }
+
+        frame.onload = () => {
+            frameLoaded = true;
+            setTimeout(runAllTests, 800);
+        };
+
+        balletFrame.onload = () => {
+            balletLoaded = true;
+            setTimeout(runAllTests, 800);
         };
     </script>
 </body>
