@@ -228,7 +228,38 @@ async function runDemo() {
         const nixieDigit = Math.max(0, Math.min(9, Math.round(outClamped * 5.625))); // scale 1.6V to digit 9
         console.log(`   Signal Surge = ${inp.toFixed(2)}V | Clamped Output = ${outClamped.toFixed(2)}V | Nixie Digit = ${nixieDigit}`);
     });
-    console.log("   -> Zener shunt prevents display driver overload, keeping indicators within limits.");
+    console.log("   -> Zener shunt prevents display driver overload, keeping indicators within limits.\n");
+
+    // 4. Zener Symmetrical Waveform Clipper Demo
+    console.log("4. Zener Symmetrical Waveform Clipper (Back-to-Back Fuzz Shaper):");
+    const V_breakdown = 1.2;
+    const V_diode_forward = 0.6;
+    const clampLimit = V_breakdown + V_diode_forward; // 1.8V symmetrical clipping
+    const testWaves = [-2.5, -1.5, 0.0, 1.5, 2.5];
+    testWaves.forEach(w => {
+        let clipped = w;
+        if (w > clampLimit) clipped = clampLimit;
+        else if (w < -clampLimit) clipped = -clampLimit;
+        console.log(`   Wave input = ${w.toFixed(2)}V | Clipped Wave output = ${clipped.toFixed(2)}V (Symmetrical Clamped at ±${clampLimit.toFixed(2)}V)`);
+    });
+    console.log("   -> Symmetrical clipping generates rich odd-harmonic distortion (analog fuzz square waves).\n");
+
+    // 5. Zener Temperature-Compensated Reference Demo
+    console.log("5. Zener Temperature-Compensated Reference (Opposite Coefficient Drift Cancellation):");
+    // Standard Zener coefficient is positive (+2.5mV/°C)
+    // Forward diode coefficient is negative (-2.5mV/°C)
+    const T_temps = [25.0, 35.0, 45.0, 55.0];
+    const zenerCoeff = 0.0025; // +2.5mV/°C
+    const diodeCoeff = -0.0025; // -2.5mV/°C
+    const V_ref_base = 5.6; // 5.6V reference baseline
+
+    T_temps.forEach(temp => {
+        const dT = temp - 25.0;
+        const v_zener_drift = V_ref_base + (dT * zenerCoeff);
+        const v_compensated = V_ref_base + (dT * zenerCoeff) + (dT * diodeCoeff);
+        console.log(`   Temp = ${temp}°C | Uncompensated Zener = ${v_zener_drift.toFixed(4)}V | Compensated Pair = ${v_compensated.toFixed(4)}V`);
+    });
+    console.log("   -> Series pairing of Zener + Diode cancels thermal drift, providing a stable voltage reference.");
     console.log("\n★★★ COMPARATOR & ZENER DEMO RUN COMPLETED SUCCESSFULLY ★★★");
 }
 
