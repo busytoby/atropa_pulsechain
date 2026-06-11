@@ -139,6 +139,14 @@ object "MathCoprocessor" {
                 case 9 { // Cosine
                     res := getCos(opA)
                 }
+                case 10 { // Get Dysnomia Primes
+                    switch opA
+                    case 1 { res := 953467954114363 }    // Motzkin's 36th Prime
+                    case 2 { res := 953473 }             // Apogee Prime
+                    case 3 { res := 954114361 }          // Apex Prime
+                    case 4 { res := 953473954114361 }    // VERTEX of DYSNOMIA
+                    default { status := 1 }
+                }
 
                 mstore(0x00, res)
                 mstore(0x20, status)
