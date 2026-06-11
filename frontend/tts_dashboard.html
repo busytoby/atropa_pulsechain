@@ -591,34 +591,43 @@
                     
                     <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); margin-bottom: 15px;">
                         <div>
-                            <span class="knob-label" style="color: var(--neon-cyan);">Live Neural Excitation Grid (K1..K9)</span>
-                            <div id="neuralGrid" style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin-top: 10px;">
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k1" style="background: var(--neon-cyan); width: 100%; height: 20%; transition: height 0.1s;"></div>K1
+                            <span class="knob-label" style="color: var(--neon-cyan);">Interactive Excitation Reflection Coefficients (K1..K9)</span>
+                            <div id="neuralGrid" style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; margin-top: 10px;">
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k1" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K1</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k2" style="background: var(--neon-cyan); width: 100%; height: 40%; transition: height 0.1s;"></div>K2
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k2" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K2</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k3" style="background: var(--neon-cyan); width: 100%; height: 50%; transition: height 0.1s;"></div>K3
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k3" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K3</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k4" style="background: var(--neon-cyan); width: 100%; height: 30%; transition: height 0.1s;"></div>K4
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k4" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K4</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k5" style="background: var(--neon-cyan); width: 100%; height: 60%; transition: height 0.1s;"></div>K5
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k5" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K5</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k6" style="background: var(--neon-cyan); width: 100%; height: 70%; transition: height 0.1s;"></div>K6
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k6" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K6</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k7" style="background: var(--neon-cyan); width: 100%; height: 10%; transition: height 0.1s;"></div>K7
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k7" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K7</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k8" style="background: var(--neon-cyan); width: 100%; height: 15%; transition: height 0.1s;"></div>K8
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k8" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K8</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 50px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.7rem;">
-                                    <div id="bar-k9" style="background: var(--neon-cyan); width: 100%; height: 80%; transition: height 0.1s;"></div>K9
+                                <div style="background: rgba(255,255,255,0.02); height: 160px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="range" id="bar-k9" min="1" max="99" value="50" style="writing-mode: vertical-lr; direction: rtl; width: 12px; height: 100px; cursor: pointer; accent-color: var(--neon-cyan);">
+                                    <span style="font-size: 0.65rem; margin-top: 4px; font-family: monospace;">K9</span>
                                 </div>
                             </div>
                         </div>
@@ -2637,10 +2646,10 @@
             for (let i = 0; i < generatedLpcSequence.length; i++) {
                 const frame = generatedLpcSequence[i];
                 
-                // Update UI grid
+                // Update UI sliders
                 for (let k = 0; k < 9; k++) {
                     const bar = document.getElementById(`bar-k${k+1}`);
-                    if (bar) bar.style.height = `${frame.coeffs[k]}%`;
+                    if (bar) bar.value = frame.coeffs[k];
                 }
 
                 // Render dynamic formant pitch modulation
@@ -2653,10 +2662,10 @@
                 await new Promise(r => setTimeout(r, 80));
             }
 
-            // Reset UI bars
+            // Reset UI sliders
             for (let k = 0; k < 9; k++) {
                 const bar = document.getElementById(`bar-k${k+1}`);
-                if (bar) bar.style.height = "10%";
+                if (bar) bar.value = 50;
             }
 
             isNeuralPlaying = false;
@@ -2896,7 +2905,7 @@
                 
                 for (let k = 0; k < 9; k++) {
                     const bar = document.getElementById(`bar-k${k+1}`);
-                    if (bar) bar.style.height = `${scaledCoeffs[k]}%`;
+                    if (bar) bar.value = scaledCoeffs[k];
                 }
 
                 if (speechContract) {
@@ -3264,6 +3273,25 @@
             renderScope();
             updateCombatStatus();
             setTimeout(initWeb3, 800);
+
+            // Bind interactive reflection coefficient sliders to the synth coefficients directly
+            for (let k = 1; k <= 9; k++) {
+                const slider = document.getElementById(`bar-k${k}`);
+                if (slider) {
+                    slider.addEventListener("input", (e) => {
+                        const val = parseInt(e.target.value);
+                        // Map 1..99 back to -0.98..0.98 reflection coefficient range
+                        const floatK = (val / 50.0) - 1.0;
+                        if (window.speechContract) {
+                            if (!window.speechContract.coefficients) {
+                                window.speechContract.coefficients = new Array(9).fill(0);
+                            }
+                            window.speechContract.coefficients[k - 1] = val;
+                        }
+                        logConsole(`Manual reflection coefficient updated: K${k} = ${floatK.toFixed(2)} (${val})`);
+                    });
+                }
+            }
         });
     </script>
 </body>
