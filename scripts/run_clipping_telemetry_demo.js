@@ -193,7 +193,43 @@ async function runDemo() {
     console.log(`- Max peak amplitude (Unprotected): ${maxUnp.toFixed(3)}V (Hard clipping threshold breached)`);
     console.log(`- Max peak amplitude (Protected):   ${maxProt.toFixed(3)}V (Compressed gracefully below dynamic saturation ceiling)`);
     console.log(`- Bionika Spiking Reflex: Successful attenuation triggering.`);
-    console.log(`\n★★★ COMPARATOR DEMO RUN COMPLETED SUCCESSFULLY ★★★`);
+
+    console.log("\n======================================================================");
+    console.log("⚡  ZENER DIODE APPLICATIONS DEMONSTRATION SUITE (ISSUE 18)");
+    console.log("======================================================================\n");
+
+    // 1. Zener Avalanche Dither Demo
+    console.log("1. Zener Avalanche Dither (Spectral Dispersion):");
+    let ditherSamples = [];
+    for (let i = 0; i < 5; i++) {
+        const dither = (Math.random() - 0.5) * 0.015;
+        ditherSamples.push(dither);
+        console.log(`   Sample ${i + 1}: Noise injection = ${dither.toFixed(6)}V`);
+    }
+    const avgDither = ditherSamples.reduce((a, b) => a + b, 0) / ditherSamples.length;
+    console.log(`   -> Mean Dither Offset: ${avgDither.toFixed(6)}V (Centered near 0V to prevent DC drift)\n`);
+
+    // 2. Zener DC Coupling Offset Demo
+    console.log("2. Zener DC Coupling Offset (Constant Voltage Shifting):");
+    const V_zener_couple = 2.0; // 2.0V breakdown
+    const inputs = [3.5, 4.0, 4.5];
+    inputs.forEach(inp => {
+        const outCoupled = Math.max(0, inp - V_zener_couple);
+        console.log(`   Input = ${inp.toFixed(2)}V | Zener Shifted Output = ${outCoupled.toFixed(2)}V (Shift = -${V_zener_couple.toFixed(2)}V)`);
+    });
+    console.log("   -> AC variations are transmitted with 1:1 gain while shifting DC operating points.\n");
+
+    // 3. Zener Meter Protection Shunt Demo
+    console.log("3. Zener Meter Protection Shunt (Nixie Overload Clamping):");
+    const V_zener_clamp = 1.6; // Clamps display to 1.6V (corresponds to Nixie Digit 9)
+    const surgeInputs = [1.2, 1.5, 1.8, 2.5, 3.5];
+    surgeInputs.forEach(inp => {
+        const outClamped = Math.min(inp, V_zener_clamp);
+        const nixieDigit = Math.max(0, Math.min(9, Math.round(outClamped * 5.625))); // scale 1.6V to digit 9
+        console.log(`   Signal Surge = ${inp.toFixed(2)}V | Clamped Output = ${outClamped.toFixed(2)}V | Nixie Digit = ${nixieDigit}`);
+    });
+    console.log("   -> Zener shunt prevents display driver overload, keeping indicators within limits.");
+    console.log("\n★★★ COMPARATOR & ZENER DEMO RUN COMPLETED SUCCESSFULLY ★★★");
 }
 
 runDemo().catch(console.error);
