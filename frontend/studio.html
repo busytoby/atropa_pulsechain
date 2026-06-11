@@ -470,8 +470,9 @@
 
                 <div style="margin-top: auto;">
                     <h3>DEBUGGER TELEMETRY LINK</h3>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <button class="btn btn-secondary btn-block" id="btnTestDebuggerLink">🧪 Trigger CPU Debugger Link</button>
+                    <div class="form-group" style="margin-bottom: 0; display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" style="flex: 2; margin: 0;" id="btnTestDebuggerLink">🧪 Trigger CPU Debugger Link</button>
+                        <button class="btn btn-primary" style="flex: 1; margin: 0; background: #ec4899; border-color: #ec4899; text-shadow: 0 0 5px #ec4899;" id="btnPlop">🎮 PLOP</button>
                     </div>
                 </div>
 
@@ -903,6 +904,32 @@
             } else {
                 synthGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
             }
+        }
+
+        function triggerPlopSound() {
+            if (!audioCtx || audioCtx.state !== "running") {
+                log("⚠️ Initialize Audio first by clicking Toggle Sound!");
+                return;
+            }
+            log("🎮 6502 1-Bit PLOP: Executing software delay-loop pitch sweep...");
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = "square";
+            
+            const now = audioCtx.currentTime;
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.16);
+            
+            gainNode.gain.setValueAtTime(0.25, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+            
+            osc.start(now);
+            osc.stop(now + 0.16);
         }
 
         // Write message to the telemetry logs panel
@@ -2041,6 +2068,10 @@
 
         document.getElementById("btnToggleSound").addEventListener("click", () => {
             toggleAudio();
+        });
+
+        document.getElementById("btnPlop").addEventListener("click", () => {
+            triggerPlopSound();
         });
 
         // Trigger CPU debugger verify
