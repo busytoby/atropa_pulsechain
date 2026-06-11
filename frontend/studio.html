@@ -548,6 +548,8 @@
         let spriteRotation = 0;
         let spriteX = 0;
         let formantCompEnv = 0.0;
+        let semafoonEnvState = 0.0;
+        let orbitAngleState = 0.0;
 
         // Current parameters
         const params = {
@@ -865,49 +867,134 @@
             ctx.stroke();
             ctx.shadowBlur = 0; // reset
 
-            // Draw dancing/pulsing speaker sprite (modulates dynamically based on rhythm triggers)
-            if (activeModule === "rhythm") {
-                // Decay animations smoothly
-                spriteScale += (1.0 - spriteScale) * 0.15;
-                spriteX += (0 - spriteX) * 0.15;
+            // Decay animations smoothly
+            spriteScale += (1.0 - spriteScale) * 0.15;
+            spriteX += (0 - spriteX) * 0.15;
 
-                drawRetroSprite(ctx, scopeCanvas.width - 60 + spriteX, 60, spriteScale, spriteRotation);
+            // Draw the Sprite Puppetry Rack
+            // 1. Speaker Puppet (reacts to rhythm or volume level)
+            const speakerScale = activeModule === "rhythm" ? spriteScale : (1.0 + Math.abs(samples[samples.length - 1]) * 0.4);
+            drawRetroSpeaker(ctx, 40 + spriteX, 40, speakerScale, spriteRotation);
+
+            // 2. Vowel Mouth Puppet (reacts to formantCompEnv)
+            drawVowelMouth(ctx, 100, 40, 20, formantCompEnv);
+
+            // 3. Orbiting Tunnel/Discharge Particles (reacts to tunnel/stroboscope rates)
+            let orbitSpeed = 0.02;
+            if (activeModule === "tunnel") orbitSpeed = params.tunnel.pitch * 0.04;
+            if (activeModule === "stroboscope") orbitSpeed = params.stroboscope.rate * 0.02;
+            orbitAngleState += orbitSpeed;
+            drawOrbitingParticles(ctx, 160, 40, 20, orbitAngleState);
+
+            // 4. PTT Semafoon Alert Light (reacts to selective call envelope)
+            drawSemafoonAlert(ctx, 220, 40, 16, semafoonEnvState);
+
+            // 5. Space-Needle Scatter (Project West Ford)
+            if (formantCompEnv > 0.3) {
+                drawSpaceNeedleScatter(ctx, scopeCanvas.width, scopeCanvas.height, formantCompEnv);
             }
         }
 
-        function drawRetroSprite(ctx, x, y, scale, rotation) {
+        function drawRetroSpeaker(ctx, x, y, scale, rotation) {
             ctx.save();
             ctx.translate(x, y);
             ctx.scale(scale, scale);
             ctx.rotate(rotation);
-
-            // Draw speaker box
             ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-            ctx.strokeStyle = "#eab308"; // yellow to match rhythm sequencer color
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#eab308";
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.rect(-25, -35, 50, 70);
+            ctx.rect(-14, -20, 28, 40);
             ctx.fill();
             ctx.stroke();
-
-            // Draw outer speaker cone
             ctx.strokeStyle = "#f43f5e";
             ctx.beginPath();
-            ctx.arc(0, 10, 15, 0, Math.PI * 2);
+            ctx.arc(0, 6, 9, 0, Math.PI * 2);
             ctx.stroke();
-
-            // Draw inner speaker cone (pulses outward on drum hits)
             ctx.fillStyle = "#f43f5e";
             ctx.beginPath();
-            ctx.arc(0, 10, Math.max(3, 7 * (scale - 0.2)), 0, Math.PI * 2);
+            ctx.arc(0, 6, Math.max(2, 4 * (scale - 0.2)), 0, Math.PI * 2);
             ctx.fill();
-
-            // Draw tweeter
             ctx.strokeStyle = "#00f2fe";
             ctx.beginPath();
-            ctx.arc(0, -18, 6, 0, Math.PI * 2);
+            ctx.arc(0, -10, 3, 0, Math.PI * 2);
             ctx.stroke();
+            ctx.restore();
+        }
 
+        function drawVowelMouth(ctx, x, y, radius, env) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.strokeStyle = "#10b981";
+            ctx.lineWidth = 2.0;
+            // Face outline
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            // Mouth
+            ctx.fillStyle = "#ef4444";
+            ctx.beginPath();
+            const w = radius * 0.6;
+            const h = Math.max(2, radius * 0.5 * env);
+            ctx.ellipse(0, 5, w, h, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Eyes
+            ctx.fillStyle = "#10b981";
+            ctx.beginPath();
+            ctx.arc(-radius * 0.35, -radius * 0.2, 2.5, 0, Math.PI * 2);
+            ctx.arc(radius * 0.35, -radius * 0.2, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawOrbitingParticles(ctx, x, y, radius, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.3)";
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            // Orbiter
+            const particleX = Math.cos(angle) * radius;
+            const particleY = Math.sin(angle) * radius;
+            ctx.fillStyle = "#00f2fe";
+            ctx.beginPath();
+            ctx.arc(particleX, particleY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawSemafoonAlert(ctx, x, y, radius, env) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.strokeStyle = "#22d3ee";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.rect(-radius, -radius, radius * 2, radius * 2);
+            ctx.stroke();
+            const opacity = Math.max(0.1, Math.min(1.0, env));
+            ctx.fillStyle = `rgba(34, 211, 238, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawSpaceNeedleScatter(ctx, width, height, overload) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(168, 85, 247, 0.4)";
+            ctx.lineWidth = 1.5;
+            const needlesCount = Math.round(overload * 25);
+            for (let i = 0; i < needlesCount; i++) {
+                const needleX = (Math.sin(i * 45 + Date.now() * 0.001) * 0.5 + 0.5) * width;
+                const needleY = (Math.cos(i * 12 + Date.now() * 0.002) * 0.5 + 0.5) * height;
+                ctx.beginPath();
+                ctx.moveTo(needleX - 10, needleY - 2);
+                ctx.lineTo(needleX + 10, needleY + 2);
+                ctx.stroke();
+            }
             ctx.restore();
         }
 
@@ -1557,6 +1644,7 @@
                     const decoded = iface.decodeFunctionResult("processSample", "0x" + payload.result.output);
                     const rawOut = Number(decoded[0]) / 1e18;
                     const envelope = Number(decoded[1]) / 1e18;
+                    semafoonEnvState = envelope;
                     const outVolts = await applyEquaLimiter(rawOut, 0.51);
 
                     samples.push(outVolts);
