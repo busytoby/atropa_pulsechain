@@ -217,9 +217,6 @@ void tsfi_bn_sub_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b)
 }
 
 void tsfi_bn_mul_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
-    TSFiBigInt tmp;
-    memset(&tmp, 0, sizeof(tmp));
-    
     size_t a_limbs = a->active_limbs;
     size_t b_limbs = b->active_limbs;
     if (a_limbs == 0 || b_limbs == 0) {
@@ -228,6 +225,9 @@ void tsfi_bn_mul_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b)
         return;
     }
 
+    TSFiBigInt *tmp = tsfi_bn_alloc();
+    if (!tmp) return;
+
     for (size_t i = 0; i < a_limbs; i++) {
         uint64_t a_val = a->limbs[i];
         __m512i v_a = _mm512_set1_epi64(a_val);
@@ -235,41 +235,44 @@ void tsfi_bn_mul_avx512(TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b)
         
         size_t j = 0;
         for (; j + 7 < b_limbs; j += 8) {
+            if (i + j + 7 >= TSFI_NUM_LIMBS) break;
             __m512i v_b = _mm512_loadu_si512(&b->limbs[j]);
-            __m512i v_tmp = _mm512_loadu_si512(&tmp.limbs[i + j]);
+            __m512i v_tmp = _mm512_loadu_si512(&tmp->limbs[i + j]);
             
             __m512i v_prod_lo = _mm512_madd52lo_epu64(v_tmp, v_a, v_b);
             __m512i v_prod_hi = _mm512_madd52hi_epu64(_mm512_setzero_si512(), v_a, v_b);
             
-            alignas(64) uint64_t low[8];
-            alignas(64) uint64_t high[8];
-            _mm512_store_si512(low, v_prod_lo);
-            _mm512_store_si512(high, v_prod_hi);
+            uint64_t low[8];
+            uint64_t high[8];
+            _mm512_storeu_si512(low, v_prod_lo);
+            _mm512_storeu_si512(high, v_prod_hi);
             
             for (int k = 0; k < 8; k++) {
                 unsigned __int128 sum = (unsigned __int128)low[k] + carry;
-                tmp.limbs[i + j + k] = (uint64_t)sum & TSFI_LIMB_MASK;
+                tmp->limbs[i + j + k] = (uint64_t)sum & TSFI_LIMB_MASK;
                 carry = high[k] + (uint64_t)(sum >> TSFI_LIMB_BITS);
             }
         }
         
         for (; j < b_limbs; j++) {
-            unsigned __int128 prod = (unsigned __int128)a_val * b->limbs[j] + tmp.limbs[i + j] + carry;
-            tmp.limbs[i + j] = (uint64_t)prod & TSFI_LIMB_MASK;
+            if (i + j >= TSFI_NUM_LIMBS) break;
+            unsigned __int128 prod = (unsigned __int128)a_val * b->limbs[j] + tmp->limbs[i + j] + carry;
+            tmp->limbs[i + j] = (uint64_t)prod & TSFI_LIMB_MASK;
             carry = (uint64_t)(prod >> TSFI_LIMB_BITS);
         }
         
         size_t k = i + b_limbs;
         while (carry > 0 && k < TSFI_NUM_LIMBS) {
-            unsigned __int128 sum = (unsigned __int128)tmp.limbs[k] + carry;
-            tmp.limbs[k] = (uint64_t)sum & TSFI_LIMB_MASK;
+            unsigned __int128 sum = (unsigned __int128)tmp->limbs[k] + carry;
+            tmp->limbs[k] = (uint64_t)sum & TSFI_LIMB_MASK;
             carry = (uint64_t)(sum >> TSFI_LIMB_BITS);
             k++;
         }
     }
     
-    tsfi_bn_copy(r, &tmp);
+    tsfi_bn_copy(r, tmp);
     tsfi_bn_trim(r);
+    tsfi_bn_free(tmp);
 }
 
 void tsfi_bn_div_avx512(TSFiBigInt *q, TSFiBigInt *r, const TSFiBigInt *a, const TSFiBigInt *b) {
