@@ -1346,7 +1346,19 @@
                 const compressedStimulus = stimulus * compGain;
                 const inputVal = BigInt(Math.round(compressedStimulus * 1e18));
 
-                const pitchF = BigInt(Math.round(params.formant.pitchF * 1e18));
+                // Calculate dynamic Space-Needle Scatter mapping when overloading (Project West Ford)
+                let scatterOffset = 0.0;
+                if (formantCompEnv > compThreshold) {
+                    const excess = formantCompEnv - compThreshold;
+                    // High-frequency scatter perturbation to shift resonance peak
+                    scatterOffset = Math.sin(Date.now() * 0.15) * excess * 0.12;
+                }
+
+                let finalPitchF = params.formant.pitchF + scatterOffset;
+                if (finalPitchF < 0.01) finalPitchF = 0.01;
+                if (finalPitchF > 0.6) finalPitchF = 0.6;
+
+                const pitchF = BigInt(Math.round(finalPitchF * 1e18));
                 const dampingQ = BigInt(Math.round(params.formant.dampingQ * 1e18));
                 const packedVal = pitchF + (dampingQ << 128n);
 
