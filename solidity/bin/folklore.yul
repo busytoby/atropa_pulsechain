@@ -92,32 +92,71 @@ object "cpu6502" {
                 // Sign conversion for vertical velocity
                 if gt(pvy, 127) { pvy := sub(pvy, 256) }
 
-                // Horizontal movement input processing
-                if eq(moveDir, 1) { // Left
-                    if gt(px, 15) { px := sub(px, 3) }
-                }
-                if eq(moveDir, 2) { // Right
-                    px := add(px, 3)
-                    if gt(px, 785) { // Screen transition
-                        if lt(screen, 3) {
-                            screen := add(screen, 1)
-                            px := 20
-                            // Setup screen-specific entity coordinates
-                            if eq(screen, 2) {
-                                sstore(getUserSlot(55037), 600) // crow_x
-                                sstore(getUserSlot(55038), 240) // crow_y
-                                sstore(getUserSlot(55039), 254) // crow_vx (-2)
-                            }
-                            if eq(screen, 3) {
-                                sstore(getUserSlot(55040), 600) // gargamel_x
-                                sstore(getUserSlot(55041), 253) // gargamel_vx (-3)
-                            }
-                        }
-                        if eq(screen, 3) {
-                            if gt(px, 780) { px := 780 }
-                        }
-                    }
-                }
+                 // Load trauma conditions and game ticks
+                 let phys_trauma := sload(getUserSlot(55043))
+                 let ment_trauma := sload(getUserSlot(55044))
+                 let tick_counter := sload(getUserSlot(55068))
+                 tick_counter := add(tick_counter, 1)
+                 sstore(getUserSlot(55068), tick_counter)
+
+                 // Apply Mental condition: Terrified (2) reverses controls
+                 if eq(ment_trauma, 2) {
+                     if eq(moveDir, 1) { moveDir := 2 }
+                     if eq(moveDir, 2) { moveDir := 1 }
+                 }
+
+                 // Apply Mental condition: Panicked (3) freezes periodically
+                 if eq(ment_trauma, 3) {
+                     if lt(mod(tick_counter, 20), 8) {
+                         moveDir := 0
+                     }
+                 }
+
+                 // Apply Physical condition speed penalties (Exhausted: 33% slower, Battered: 50% slower, Broken: 75% slower)
+                 let speed_ok := 1
+                 if eq(phys_trauma, 1) { // Exhausted
+                     if iszero(mod(tick_counter, 3)) { speed_ok := 0 }
+                 }
+                 if eq(phys_trauma, 2) { // Battered
+                     if iszero(mod(tick_counter, 2)) { speed_ok := 0 }
+                 }
+                 if eq(phys_trauma, 3) { // Broken
+                     if lt(mod(tick_counter, 4), 3) { speed_ok := 0 }
+                     jumpTrigger := 0 // Cannot jump when broken
+                 }
+                 // Melancholic speed penalty
+                 if eq(ment_trauma, 4) {
+                     if iszero(mod(tick_counter, 3)) { speed_ok := 0 }
+                 }
+
+                 // Horizontal movement input processing
+                 if speed_ok {
+                     if eq(moveDir, 1) { // Left
+                         if gt(px, 15) { px := sub(px, 3) }
+                     }
+                     if eq(moveDir, 2) { // Right
+                         px := add(px, 3)
+                         if gt(px, 785) { // Screen transition
+                             if lt(screen, 3) {
+                                 screen := add(screen, 1)
+                                 px := 20
+                                 // Setup screen-specific entity coordinates
+                                 if eq(screen, 2) {
+                                     sstore(getUserSlot(55037), 600) // crow_x
+                                     sstore(getUserSlot(55038), 240) // crow_y
+                                     sstore(getUserSlot(55039), 254) // crow_vx (-2)
+                                 }
+                                 if eq(screen, 3) {
+                                     sstore(getUserSlot(55040), 600) // gargamel_x
+                                     sstore(getUserSlot(55041), 253) // gargamel_vx (-3)
+                                 }
+                             }
+                             if eq(screen, 3) {
+                                 if gt(px, 780) { px := 780 }
+                             }
+                         }
+                     }
+                 }
 
                 // Jump mechanics (EVM float-free gravity)
                 let jumpCount := sload(getUserSlot(55065))

@@ -938,40 +938,7 @@ int main() {
             else if (key_d_held) moveDir = 2;
         }
 
-        if (!ai_mode) {
-            // Apply Vaesen Mental condition effects on movement inputs
-            if (ment_trauma == 2) { // Terrified: reversed controls
-                if (moveDir == 1) moveDir = 2;
-                else if (moveDir == 2) moveDir = 1;
-            } else if (ment_trauma == 3) { // Panicked: freeze periodically
-                if (frame_counter % 20 < 8) {
-                    moveDir = 0;
-                }
-            }
-
-            // Apply Vaesen Physical condition effects on movement inputs (speed penalty)
-            if (phys_trauma == 1) { // Exhausted: 33% slower (skip move every 3rd frame)
-                if (frame_counter % 3 == 0) {
-                    moveDir = 0;
-                }
-            } else if (phys_trauma == 2) { // Battered: 50% slower (skip move every 2nd frame)
-                if (frame_counter % 2 == 0) {
-                    moveDir = 0;
-                }
-            } else if (phys_trauma == 3) { // Broken: 75% slower (only move every 4th frame)
-                if (frame_counter % 4 != 0) {
-                    moveDir = 0;
-                }
-                thunk_poke(55026, 0); // Override and clear jump trigger
-            }
-
-            if (ment_trauma == 4) { // Melancholic: 33% slower (despair sluggishness)
-                if (frame_counter % 3 == 0) {
-                    moveDir = 0;
-                }
-            }
-        }
-
+        // Trauma modifiers are now executed natively inside the Yul physics loop.
         thunk_poke(55025, moveDir);
 
         // 3. Trigger Physics / Collision updates inside Yul
