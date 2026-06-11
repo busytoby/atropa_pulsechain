@@ -64,3 +64,22 @@ state.json
 *.wav
 *.mp3
 *.tar.gz
+
+# Ignore compiled binaries and solidity binary builds
+/solidity/bin/
+*.bin
+
+# Ignore compiled binaries inside tsfi2-deepseek/tests/ (allow source files and scripts)
+/tsfi2-deepseek/tests/*
+!/tsfi2-deepseek/tests/**/*.c
+!/tsfi2-deepseek/tests/**/*.h
+!/tsfi2-deepseek/tests/**/*.py
+!/tsfi2-deepseek/tests/**/*.sh
+!/tsfi2-deepseek/tests/**/*.js
+!/tsfi2-deepseek/tests/**/*.html
+!/tsfi2-deepseek/tests/**/*.md
+!/tsfi2-deepseek/tests/Makefile
+
+# Specific executable output
+/tsfi2-deepseek/tsfi2
+
