@@ -195,6 +195,64 @@
             text-shadow: 0 0 8px var(--primary-glow);
             text-decoration: underline;
         }
+
+        /* Card Thumbnails in Deck */
+        .deck-card-thumb {
+            width: 100px;
+            height: 140px;
+            background: #000;
+            border: 2px solid #1e293b;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+        .deck-card-thumb:hover {
+            border-color: #ffd700;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(255, 196, 0, 0.25);
+        }
+        .deck-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .deck-card-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.85);
+            color: #00f0ff;
+            font-size: 7px;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-family: monospace;
+            border: 1px solid rgba(0,240,255,0.2);
+        }
+        .deck-card-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255,0,127,0.85);
+            color: #fff;
+            font-size: 8px;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .deck-card-thumb:hover .deck-card-delete {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -229,6 +287,33 @@
             <strong>[SPACE]</strong> Use Magic Bomb
             <br>
             Defeat Ghosts, destroy Spawners, collect keys, and harvest reagents for Alchemical transmutation!
+        </div>
+
+        <!-- Z-Machine Console -->
+        <div class="controls-info" style="border-top: 1px solid var(--border); margin-top: 15px; padding-top: 15px; width: 100%; text-align: left;">
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--primary); font-weight: bold; margin-bottom: 5px;">📟 Z-MACHINE CONSOLE / CHOREOGRAPHY LOGGER:</div>
+            <div id="console" style="background: rgba(0,0,0,0.7); border: 1px solid rgba(230, 81, 0, 0.2); padding: 8px; border-radius: 6px; height: 80px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #a5d6a7; margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4;">System: Gauntlet engine initialized.
+Status: Awaiting hero to join the battle.</div>
+            <div style="display: flex; gap: 6px; align-items: center; width: 100%;">
+                <span style="color: var(--primary); font-size: 10px; font-family: 'Orbitron', sans-serif; font-weight: bold;">INPUT:</span>
+                <input type="text" id="z-input" placeholder="Type commands (e.g. spawn ghost, spawn spawner, add health, card save)" style="flex: 1; background: #000; border: 1px solid rgba(230, 81, 0, 0.4); color: var(--primary); padding: 6px; border-radius: 4px; font-size: 11px; font-family: monospace; outline: none;">
+                <label style="font-size: 10px; display: flex; align-items: center; gap: 4px; color: #bfaecb; font-family: 'Rajdhani', sans-serif; cursor: pointer;">
+                    <input type="checkbox" id="canny-edge-outline"> Canny Edge (Sobel)
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Card Deck Tray Crossover -->
+    <div id="deck-drawer" style="height: 40px; background: rgba(4, 6, 12, 0.95); border-top: 1px solid #141d33; transition: height 0.3s ease; display: flex; flex-direction: column; overflow: hidden; z-index: 50; box-shadow: 0 -4px 25px rgba(0,0,0,0.85); backdrop-filter: blur(20px); width: 100%; max-width: 720px; border-radius: 12px 12px 0 0; margin-top: 30px;">
+        <div onclick="toggleDeckDrawer()" style="height: 40px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; cursor: pointer; border-bottom: 1px solid #1a2333; user-select: none;">
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--primary); font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                🎴 COLLECTED SPORTS CARDS DECK (<span id="deck-count">0</span> Cards Saved)
+            </div>
+            <div id="drawer-toggle-icon" style="color: #94a3b8; font-size: 10px; font-family: monospace;">▲ EXPAND DECK Tray</div>
+        </div>
+        <div id="deck-list-container" style="flex: 1; padding: 12px 30px; display: flex; gap: 16px; overflow-x: auto; align-items: center; background: rgba(1, 2, 5, 0.4);">
+            <div style="font-size: 11px; color: #475569; font-family: monospace;">Your card album is currently empty. Synthesize a card and save it!</div>
         </div>
     </div>
 
@@ -329,8 +414,14 @@
         let particles = [];
 
         const keyboard = {};
-        window.addEventListener("keydown", e => { keyboard[e.code] = true; });
-        window.addEventListener("keyup", e => { keyboard[e.code] = false; });
+        window.addEventListener("keydown", e => {
+            if (document.activeElement && document.activeElement.id === "z-input") return;
+            keyboard[e.code] = true;
+        });
+        window.addEventListener("keyup", e => {
+            if (document.activeElement && document.activeElement.id === "z-input") return;
+            keyboard[e.code] = false;
+        });
 
         function loadHarvestedReagents() {
             leadHarvested = parseInt(localStorage.getItem("harvested_Lead")) || 0;
@@ -1149,9 +1240,291 @@
             }
         }
 
+        // Sobel preprocessor
+        function applySobelFilter(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const output = ctx.createImageData(width, height);
+            const outData = output.data;
+
+            function getGray(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) return 0;
+                const idx = (y * width + x) * 4;
+                return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            }
+
+            const gx = [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ];
+            const gy = [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ];
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let valX = 0;
+                    let valY = 0;
+
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const pixel = getGray(x + kx, y + ky);
+                            valX += pixel * gx[ky + 1][kx + 1];
+                            valY += pixel * gy[ky + 1][kx + 1];
+                        }
+                    }
+
+                    const magnitude = Math.min(255, Math.sqrt(valX * valX + valY * valY));
+                    const idx = (y * width + x) * 4;
+                    outData[idx] = magnitude;     // R
+                    outData[idx + 1] = magnitude; // G
+                    outData[idx + 2] = magnitude; // B
+                    outData[idx + 3] = 255;       // A
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
+
+        // Collapsible Card Deck Tray Javascript Crossover
+        let drawerExpanded = false;
+        function toggleDeckDrawer() {
+            const drawer = document.getElementById("deck-drawer");
+            const toggleIcon = document.getElementById("drawer-toggle-icon");
+            drawerExpanded = !drawerExpanded;
+            if (drawerExpanded) {
+                drawer.style.height = "200px";
+                toggleIcon.innerText = "▼ COLLAPSE DECK Tray";
+            } else {
+                drawer.style.height = "40px";
+                toggleIcon.innerText = "▲ EXPAND DECK Tray";
+            }
+        }
+
+        function saveCurrentCardToDeck() {
+            const cardCanvas = document.createElement("canvas");
+            cardCanvas.width = 320;
+            cardCanvas.height = 448;
+            const cCtx = cardCanvas.getContext("2d");
+
+            // Bronze/Orange Gauntlet Border theme
+            const grad = cCtx.createLinearGradient(0, 0, 320, 448);
+            grad.addColorStop(0, "#e65100"); // Orange
+            grad.addColorStop(1, "#ffd600"); // Yellow
+            cCtx.fillStyle = grad;
+            cCtx.fillRect(0, 0, 320, 448);
+            
+            cCtx.strokeStyle = "#ffffff";
+            cCtx.lineWidth = 2;
+            cCtx.strokeRect(6, 6, 308, 436);
+            cCtx.strokeRect(10, 10, 300, 428);
+
+            // Draw current canvas snapshot
+            cCtx.fillStyle = "#000";
+            cCtx.fillRect(16, 16, 288, 288);
+            cCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 16, 16, 288, 288);
+
+            // Dark info section at bottom
+            cCtx.fillStyle = "#160b00"; // dark brown/black
+            cCtx.fillRect(16, 314, 288, 118);
+            cCtx.strokeStyle = "#ffd600";
+            cCtx.lineWidth = 1.5;
+            cCtx.strokeRect(16, 314, 288, 118);
+
+            cCtx.fillStyle = "#ffffff";
+            cCtx.font = "bold 13px monospace";
+            cCtx.fillText("TSFI ARCADE GAUNTLET", 26, 336);
+            
+            cCtx.fillStyle = "#e65100";
+            cCtx.font = "10px monospace";
+            cCtx.fillText("CLASS: WARRIOR / ON-CHAIN HERO", 26, 356);
+
+            cCtx.fillStyle = "#ffb74d";
+            cCtx.font = "9px monospace";
+            cCtx.fillText("SCORE: " + score + " | LEVEL: " + currentLevel, 26, 376);
+            cCtx.fillText("HEALTH: " + Math.floor(health) + " | KEYS: " + keysCount, 26, 392);
+            cCtx.fillText("REAGENTS: PB " + leadHarvested + " | HG " + mercuryHarvested + " | S " + sulfurHarvested, 26, 408);
+
+            const cardBase64 = cardCanvas.toDataURL("image/png");
+
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            savedDeck.push({
+                image: cardBase64,
+                timestamp: Date.now(),
+                score: "GAUNTLET",
+                style: `Score ${score}`
+            });
+
+            localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+            logEvent("💾 Saved arcade card successfully into shared deck!");
+            loadDeckList();
+
+            if (!drawerExpanded) toggleDeckDrawer();
+        }
+
+        function loadDeckList() {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            const deckCountEl = document.getElementById("deck-count");
+            if (deckCountEl) deckCountEl.innerText = savedDeck.length;
+
+            const listContainer = document.getElementById("deck-list-container");
+            if (listContainer) {
+                listContainer.innerHTML = "";
+
+                if (savedDeck.length === 0) {
+                    listContainer.innerHTML = `<div style="font-size: 11px; color: #475569; font-family: monospace;">Your card album is currently empty. Synthesize a card and save it!</div>`;
+                    return;
+                }
+
+                savedDeck.forEach((card, idx) => {
+                    const cardNode = document.createElement("div");
+                    cardNode.className = "deck-card-thumb";
+                    cardNode.onclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        openCardLightbox(card.image);
+                    };
+
+                    cardNode.innerHTML = `
+                        <img src="${card.image}">
+                        <div class="deck-card-delete" onclick="deleteCardFromDeck(${idx}); event.stopPropagation();">X</div>
+                        <div class="deck-card-badge">${card.score}</div>
+                    `;
+                    listContainer.appendChild(cardNode);
+                });
+            }
+        }
+
+        function deleteCardFromDeck(index) {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            savedDeck.splice(index, 1);
+            localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+            logEvent("🗑️ Card deleted from sports card collection.");
+            loadDeckList();
+        }
+
+        function openCardLightbox(imgSrc) {
+            let overlay = document.getElementById("card-lightbox");
+            if (!overlay) {
+                overlay = document.createElement("div");
+                overlay.id = "card-lightbox";
+                overlay.style = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; cursor: pointer;";
+                overlay.onclick = () => overlay.style.display = "none";
+                document.body.appendChild(overlay);
+            }
+            overlay.innerHTML = `<img src="${imgSrc}" style="max-height: 85vh; border: 5px solid #d2b48c; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">`;
+            overlay.style.display = "flex";
+        }
+
+        function logEvent(msg) {
+            const consoleBox = document.getElementById("console");
+            if (consoleBox) {
+                consoleBox.innerHTML += `\n${msg}`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        }
+
+        document.getElementById("z-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const val = e.target.value.trim();
+                if (!val) return;
+                e.target.value = "";
+
+                logEvent(`\n> ${val}`);
+
+                const parts = val.toLowerCase().split(/\s+/);
+                const action = parts[0];
+                const arg = parts[1] || "";
+                const arg2 = parts[2] || "";
+
+                if (action === "spawn") {
+                    if (arg === "ghost" || arg === "enemy") {
+                        spawnGhost(player.x + 80, player.y);
+                        logEvent(`[Z-Machine] Spawned ghost enemy close to the hero.`);
+                    } else if (arg === "spawner") {
+                        let spawned = false;
+                        let attempts = 0;
+                        while (!spawned && attempts < 100) {
+                            attempts++;
+                            const sx = Math.floor(player.x / TILE_SIZE) + (Math.random() > 0.5 ? 2 : -2);
+                            const sy = Math.floor(player.y / TILE_SIZE) + (Math.random() > 0.5 ? 2 : -2);
+                            if (sx >= 0 && sx < GRID_W && sy >= 0 && sy < GRID_H && map[sy] && map[sy][sx] === 0) {
+                                spawners.push({
+                                    x: sx * TILE_SIZE + TILE_SIZE / 2,
+                                    y: sy * TILE_SIZE + TILE_SIZE / 2,
+                                    health: 100,
+                                    spawnTimer: Math.random() * 90
+                                });
+                                spawned = true;
+                            }
+                        }
+                        logEvent(`[Z-Machine] Spawned ghost spawner entity.`);
+                    } else {
+                        logEvent(`[Z-Machine] Unknown spawn. Try 'spawn ghost' or 'spawn spawner'.`);
+                    }
+                } else if (action === "add" || action === "give") {
+                    if (arg === "key" || arg === "keys") {
+                        keysCount++;
+                        logEvent(`[Z-Machine] Granted 1 key to the hero.`);
+                    } else if (arg === "health" || arg === "hp") {
+                        health = Math.min(9999, health + 500);
+                        logEvent(`[Z-Machine] Repaired hero health. +500 HP.`);
+                    } else {
+                        logEvent(`[Z-Machine] Try 'add key' or 'add health'.`);
+                    }
+                } else if (action === "sobel" || action === "outline" || (action === "canny" && arg === "edge")) {
+                    const check = document.getElementById("canny-edge-outline");
+                    if (check) {
+                        check.checked = (arg === "on" || arg === "enable" || (action === "canny" && arg2 === "on"));
+                        logEvent(`[Z-Machine] Canny Edge outlines updated.`);
+                    }
+                } else if (action === "card" || action === "deck") {
+                    if (arg === "save") {
+                        saveCurrentCardToDeck();
+                    } else {
+                        logEvent(`[Z-Machine] Shared collection deck count: ${document.getElementById("deck-count").innerText}`);
+                    }
+                } else if (action === "dance" || action === "pose") {
+                    logEvent(`[Z-Machine] Ballet cross-over: Hero performs a ${arg.toUpperCase()} stance while dodging monsters!`);
+                    if (arg === "plie") {
+                        player.speed = 1.0; // move slower during plié
+                        setTimeout(() => { player.speed = 3.0; }, 2000);
+                    }
+                } else {
+                    logEvent(`[Z-Machine] Unknown command. Available: 'spawn ghost', 'spawn spawner', 'add key', 'add health', 'sobel on/off', 'card save'.`);
+                }
+            }
+        });
+
+        // Initialize deck list
+        loadDeckList();
+
         function loop() {
             update();
             draw();
+
+            const sobelCheck = document.getElementById("canny-edge-outline");
+            if (sobelCheck && sobelCheck.checked) {
+                applySobelFilter(ctx, width, height);
+            }
+
             requestAnimationFrame(loop);
         }
 
