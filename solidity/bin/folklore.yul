@@ -120,13 +120,24 @@ object "cpu6502" {
                 }
 
                 // Jump mechanics (EVM float-free gravity)
+                let jumpCount := sload(getUserSlot(55065))
                 if jumpTrigger {
                     if iszero(jumping) {
                         pvy := sub(0, 12)
                         jumping := 1
+                        jumpCount := 1
                         sstore(getUserSlot(55036), 1) // Sound Strobe: Jump
+                    } else {
+                        if lt(jumpCount, 2) {
+                            pvy := sub(0, 10) // Floaty double jump impulse
+                            jumpCount := 2
+                            sstore(getUserSlot(55036), 1) // Sound Strobe: Jump
+                        }
                     }
+                    // Reset trigger to prevent repeated triggers in same step
+                    sstore(getUserSlot(55026), 0)
                 }
+                sstore(getUserSlot(55065), jumpCount)
 
                 // Apply gravity step
                 if jumping {
@@ -139,10 +150,12 @@ object "cpu6502" {
                     py := 500
                     pvy := 0
                     jumping := 0
+                    sstore(getUserSlot(55065), 0)
                 }
                 if eq(py, 500) {
                     pvy := 0
                     jumping := 0
+                    sstore(getUserSlot(55065), 0)
                 }
 
                 // Obstacle and hazard interactions

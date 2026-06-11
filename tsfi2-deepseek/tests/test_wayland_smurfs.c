@@ -501,10 +501,13 @@ static void smurfs_key_hook(void *data, uint32_t serial, uint32_t time, uint32_t
     } else if (key == 32 || key == 106) { // D or RIGHT
         key_d_held = pressed;
     } else if (key == 57 || key == 103 || key == 17) { // SPACE or UP or W
-        if (pressed && !smurf_jumping && !game_over && !game_win) {
+        if (pressed && !game_over && !game_win) {
             // Check if player is Broken (Physical Trauma == 3) in 6502 PC RAM
             if (thunk_peek(55043) != 3) {
-                thunk_poke(55026, 1); // Trigger Jump in Yul
+                int jumpCount = (int)thunk_peek(55065);
+                if (jumpCount < 2) {
+                    thunk_poke(55026, 1); // Trigger Jump in Yul
+                }
             }
         }
     } else if (key == 19) { // R
