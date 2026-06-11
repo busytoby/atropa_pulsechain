@@ -184,6 +184,53 @@ object "cpu6502" {
                         if gt(px, 30) { px := sub(px, 30) }
                         sstore(getUserSlot(55036), 2) // Sound Strobe: Hit
                     }
+
+                    // Falling Stalactite (Triggered by player proximity)
+                    let stal_x := 450
+                    let stal_y := sload(getUserSlot(55066))
+                    let stal_vy := sload(getUserSlot(55067))
+                    // Initialize stalactite position on ceiling if zero
+                    if iszero(stal_y) {
+                        stal_y := 50 // Ceiling height
+                        sstore(getUserSlot(55066), stal_y)
+                    }
+
+                    // Trigger fall if player is close (within 100px) and it hasn't fallen yet
+                    let x_diff := 0
+                    if gt(px, stal_x) { x_diff := sub(px, stal_x) }
+                    if iszero(gt(px, stal_x)) { x_diff := sub(stal_x, px) }
+                    if and(iszero(stal_vy), lt(x_diff, 100)) {
+                        stal_vy := 4 // Speed of fall
+                    }
+
+                    if stal_vy {
+                        stal_y := add(stal_y, stal_vy)
+                        // Accelerate downward
+                        stal_vy := add(stal_vy, 1)
+
+                        // Collision with player
+                        let dx := sub(px, stal_x)
+                        let dy := sub(py, stal_y)
+                        let dist_sq := add(mul(dx, dx), mul(dy, dy))
+                        if lt(dist_sq, 900) {
+                            if gt(energy, 25) { energy := sub(energy, 25) }
+                            if iszero(gt(energy, 25)) { energy := 0 }
+                            if gt(px, 30) { px := sub(px, 30) }
+                            sstore(getUserSlot(55036), 2) // Sound Strobe: Hit
+                            // Reset stalactite
+                            stal_y := 50
+                            stal_vy := 0
+                        }
+
+                        // Collision with ground
+                        if gt(stal_y, 500) {
+                            // Reset stalactite
+                            stal_y := 50
+                            stal_vy := 0
+                        }
+                    }
+                    sstore(getUserSlot(55066), stal_y)
+                    sstore(getUserSlot(55067), stal_vy)
                     
                     // Shadow Crow flight patterns
                     let bat_x := sload(getUserSlot(55037))

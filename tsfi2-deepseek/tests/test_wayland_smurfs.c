@@ -483,6 +483,8 @@ static void reset_game_yul() {
     thunk_poke(55045, 0);   // sprite scaling (0 = Normal, 1 = Giant, 2 = Tiny)
     thunk_poke(55046, 0);   // sprite collision strobe
     thunk_poke(55047, 0);   // sprite animation state (0 = Idle, 1 = Walk, 2 = Jump, 3 = Wounded, 4 = Panicked)
+    thunk_poke(55066, 50);  // stalactite y coordinate
+    thunk_poke(55067, 0);   // stalactite y velocity
     prev_energy = 100;
 }
 
@@ -1217,6 +1219,18 @@ int main() {
             draw_line_aa(pixels, W, H, stal_cx - 6, floor_y, stal_cx, floor_y - 22, neon_cyan, 1.5f);
             draw_line_aa(pixels, W, H, stal_cx + 6, floor_y, stal_cx, floor_y - 22, neon_cyan, 1.5f);
             draw_line_aa(pixels, W, H, stal_cx, floor_y, stal_cx, floor_y - 28, make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+
+            // Draw Falling Stalactite at x = 450
+            float stalactite_x = 450.0f;
+            float stalactite_y = (float)thunk_peek(55066);
+            if (stalactite_y > 0) {
+                draw_radial_glow(pixels, W, H, stalactite_x, stalactite_y + 15, 20.0f, make_ab4h_pixel(1.0f, 0.3f, 0.0f, 0.45f)); // Orange glow
+                // Draw downward pointing stalactite spike
+                draw_line_aa(pixels, W, H, stalactite_x - 10, stalactite_y, stalactite_x, stalactite_y + 25, make_ab4h_pixel(0.3f, 0.25f, 0.25f, 1.0f), 2.5f);
+                draw_line_aa(pixels, W, H, stalactite_x + 10, stalactite_y, stalactite_x, stalactite_y + 25, make_ab4h_pixel(0.25f, 0.2f, 0.2f, 1.0f), 2.5f);
+                // Heat core
+                draw_line_aa(pixels, W, H, stalactite_x, stalactite_y, stalactite_x, stalactite_y + 20, make_ab4h_pixel(1.0f, 0.6f, 0.0f, 1.0f), 1.2f);
+            }
 
             // Draw Crow (Stable Diffusion Sprite)
             int crow_vx_raw = (int)thunk_peek(55039);
