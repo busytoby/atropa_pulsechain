@@ -561,6 +561,8 @@
         let formantCompActive = false;
         let prevStimulusState = 0.0;
         let compGainState = 1.0;
+        let bionikaVm = 0.0;
+        let bionikaLastSpikeTime = 0;
 
         // Current parameters
         const params = {
@@ -1069,12 +1071,28 @@
             const V_max = I_limit * loadImpedance;
             const softLimit = V_max * 0.95;
 
+            // Bionika leak integration step (leak rate = 5% per simulation frame)
+            bionikaVm = bionikaVm * 0.95;
+
             // Check if signal amplitude exceeds soft limit
             if (Math.abs(inputScaled) > softLimit) {
                 triggerClipWarning();
                 if (document.getElementById("chkCCSAuto").checked) {
                     masterAttenuation = Math.max(0.1, masterAttenuation - 0.08);
                     lastClipTime = Date.now();
+                }
+
+                // Inject stimulus into Bionika Spiking Neuron
+                bionikaVm += 0.35;
+
+                // Threshold check (1.0 threshold voltage) with 200ms refractory lockout
+                if (bionikaVm >= 1.0 && Date.now() - bionikaLastSpikeTime > 200) {
+                    bionikaVm = 0.0; // reset potential
+                    bionikaLastSpikeTime = Date.now();
+                    log("⚡ Bionika Neural Reflex: Acoustic threshold spike fired! Triggering dynamic ear-protection attenuation.");
+                    
+                    // Aggressive protective reflex attenuation
+                    masterAttenuation = Math.max(0.05, masterAttenuation - 0.30);
                 }
             } else {
                 // Slow recovery if no clipping has occurred recently (e.g. 500ms recovery window)
