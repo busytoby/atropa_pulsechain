@@ -1588,9 +1588,14 @@ Status: Awaiting hero to join the battle.</div>
                 savedDeck.forEach((card, idx) => {
                     const cardNode = document.createElement("div");
                     cardNode.className = "deck-card-thumb";
+                    cardNode.title = "Single-click to preview. Double-click to load card stats or translate DNA scale parameters.";
                     cardNode.onclick = (e) => {
                         if (e.target.className === "deck-card-delete") return;
                         openCardLightbox(card.image);
+                    };
+                    cardNode.ondblclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        loadCardIntoGauntlet(card);
                     };
 
                     cardNode.innerHTML = `
@@ -1600,6 +1605,52 @@ Status: Awaiting hero to join the battle.</div>
                     `;
                     listContainer.appendChild(cardNode);
                 });
+            }
+        }
+
+        function loadCardIntoGauntlet(card) {
+            logEvent(`[Z-Machine] Double-clicked Card. Loading stats...`);
+            if (card.bag && card.bag.type === "gauntlet_hero") {
+                score = card.bag.score || score;
+                health = card.bag.health || health;
+                keysCount = card.bag.keys || keysCount;
+                currentLevel = card.bag.level || currentLevel;
+                if (card.bag.inventory && card.bag.inventory.reagents) {
+                    leadHarvested = card.bag.inventory.reagents.lead || 0;
+                    mercuryHarvested = card.bag.inventory.reagents.mercury || 0;
+                    sulfurHarvested = card.bag.inventory.reagents.sulfur || 0;
+                    saveHarvestedReagents();
+                }
+                logEvent(`[Z-Machine] Successfully restored Gauntlet Hero state values!`);
+                if (window.onChainMode) {
+                    logEvent(`[Z-Machine] Synchronizing restored state to Folklore CPU...`);
+                    syncStateToChain();
+                }
+            } else if (card.zilSource && card.zilSource.includes("GENOME-SCALES")) {
+                // Parse DNA scale properties from ZIL compiler source directly
+                try {
+                    const headMatch = card.zilSource.match(/\(HEAD\s+([0-9.]+)\)/);
+                    const torsoMatch = card.zilSource.match(/\(TORSO\s+([0-9.]+)\)/);
+                    const legsMatch = card.zilSource.match(/\(LEGS\s+([0-9.]+)\)/);
+
+                    if (headMatch || torsoMatch || legsMatch) {
+                        const headScale = headMatch ? parseFloat(headMatch[1]) : 1.0;
+                        const torsoScale = torsoMatch ? parseFloat(torsoMatch[1]) : 1.0;
+                        const legsScale = legsMatch ? parseFloat(legsMatch[1]) : 1.0;
+
+                        // Translate DNA traits:
+                        // Torso/Size scale adjusts player hitbox size (base player radius/shield multiplier)
+                        // Leg scale affects movement speed
+                        player.speed = 3.0 * legsScale;
+                        logEvent(`[DNA Synthesis Translation] Loaded Teddy Bear DNA:`);
+                        logEvent(`- Movement Speed set to ${(3.0 * legsScale).toFixed(2)} (Leg scale: ${legsScale.toFixed(2)})`);
+                        logEvent(`- Character Scale (Head: ${headScale.toFixed(2)}, Torso: ${torsoScale.toFixed(2)})`);
+                    }
+                } catch(e) {
+                    console.error("DNA parser error:", e);
+                }
+            } else {
+                logEvent(`[Z-Machine] Cannot load stats: Card type '${card.bag ? card.bag.type : "unknown"}' is not gauntlet_hero compatible.`);
             }
         }
 
