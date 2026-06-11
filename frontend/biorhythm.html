@@ -444,10 +444,24 @@
                 masterGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
                 masterGain.connect(audioCtx.destination);
 
+                // Dynamically fetch reflection coefficients from shared synth to modulate chords
+                let baseFreq = 140;
+                let pitchShift = 1.0;
+                try {
+                    const stored = localStorage.getItem("tsfi_hardball_deck");
+                    if (stored) {
+                        const deck = JSON.parse(stored);
+                        const lastCard = deck[deck.length - 1];
+                        if (lastCard && lastCard.audioTraits) {
+                            baseFreq = 140 * (lastCard.audioTraits.attack || 1.0);
+                        }
+                    }
+                } catch (e) { console.warn("LPC mapping to biorhythms skipped:", e); }
+
                 ratios.forEach((ratio, i) => {
                     const osc = audioCtx.createOscillator();
                     osc.type = i % 2 === 0 ? "sine" : "triangle";
-                    osc.frequency.setValueAtTime(140 * ratio, now); // deep low key frequency
+                    osc.frequency.setValueAtTime(baseFreq * ratio, now); // Modulated deep key frequency
                     osc.connect(masterGain);
                     osc.start(now);
                     osc.stop(now + 2.0);
