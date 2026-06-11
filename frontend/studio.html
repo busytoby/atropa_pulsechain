@@ -1097,9 +1097,12 @@
                     masterAttenuation = Math.max(0.05, masterAttenuation - 0.30);
                 }
             } else {
-                // Slow recovery if no clipping has occurred recently (e.g. 500ms recovery window)
+                // Exponential Half-life recovery (Yttrium 90 curve)
                 if (document.getElementById("chkCCSAuto").checked && Date.now() - lastClipTime > 500) {
-                    masterAttenuation = Math.min(1.0, masterAttenuation + 0.02);
+                    const halfLifeSteps = 30.0; // recover 50% deficit every 30 frames
+                    const lambda = Math.LN2 / halfLifeSteps;
+                    const loss = 1.0 - masterAttenuation;
+                    masterAttenuation = 1.0 - loss * Math.exp(-lambda);
                 }
             }
 
