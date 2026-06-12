@@ -501,6 +501,10 @@
                         <label><span>Cone Signal</span><span id="label-cone-signal">99</span></label>
                         <input type="range" id="param-cone-signal" min="1" max="500" value="99" oninput="updateParams()">
                     </div>
+                    <div class="control-group" style="grid-column: 1 / -1;">
+                        <label><span>Pitch Modulation Blend (Daiichi &harr; Ichidai)</span><span id="label-pitch-blend">0.50</span></label>
+                        <input type="range" id="param-pitch-blend" min="0" max="100" value="50" oninput="updateParams()">
+                    </div>
                 </div>
 
                 <div class="toggle-container" id="feedback-toggle">
@@ -531,6 +535,7 @@
         let coneSecret = 150n;
         let rodSignal = 42n;
         let coneSignal = 99n;
+        let pitchBlend = 0.5;
 
         // Active State variables
         let activeKeyFreq = 0;
@@ -643,11 +648,13 @@
             coneSecret = BigInt(document.getElementById("param-cone-secret").value);
             rodSignal = BigInt(document.getElementById("param-rod-signal").value);
             coneSignal = BigInt(document.getElementById("param-cone-signal").value);
+            pitchBlend = parseFloat(document.getElementById("param-pitch-blend").value) / 100.0;
 
             document.getElementById("label-rod-secret").textContent = rodSecret;
             document.getElementById("label-cone-secret").textContent = coneSecret;
             document.getElementById("label-rod-signal").textContent = rodSignal;
             document.getElementById("label-cone-signal").textContent = coneSignal;
+            document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
         }
 
         function randomizeTransducer() {
@@ -655,6 +662,7 @@
             document.getElementById("param-cone-secret").value = Math.floor(Math.random() * 499) + 1;
             document.getElementById("param-rod-signal").value = Math.floor(Math.random() * 499) + 1;
             document.getElementById("param-cone-signal").value = Math.floor(Math.random() * 499) + 1;
+            document.getElementById("param-pitch-blend").value = Math.floor(Math.random() * 101);
             updateParams();
         }
 
@@ -729,6 +737,17 @@
             // Execute the YI Transducer calculation
             const results = runYITransducer(freq);
 
+            // Calculate dynamic sound note pitch modulation derived from Ichidai (Eta) and/or Daiichi (Kappa)
+            const valEta = Number(results.Eta % 1000n) / 1000.0;
+            const valKappa = Number(results.Kappa % 1000n) / 1000.0;
+            // Blend them: 0.0 is pure Daiichi (Kappa), 1.0 is pure Ichidai (Eta)
+            const blendVal = (pitchBlend * valEta) + ((1.0 - pitchBlend) * valKappa);
+            // Modulate base frequency by scaling pitch based on the transducer outputs
+            const modulatedFreq = freq * (0.6 + blendVal * 0.8);
+
+            // Also update activeKeyFreq so the oscilloscope matches the modulated pitch
+            activeKeyFreq = modulatedFreq;
+
             if (audioEnabled) {
                 initAudio();
                 
@@ -743,7 +762,7 @@
 
                 // Select synth wave style based on evolved genes
                 oscNode.type = 'sawtooth';
-                oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                oscNode.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
 
                 // Use the output voltage to modulate filter cutoff if active feedback is checked
                 let cutoffFreq = 800; // default cutoff
