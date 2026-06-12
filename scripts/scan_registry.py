@@ -332,6 +332,48 @@ def main():
                             token_data[addr]["parent_symbol"] = symbol_map.get(decoded.lower(), "UNKNOWN")
                     except Exception as e:
                         print(f"Error decoding Parent for {addr}: {e}")
+
+            # 5b. Resolve symbols for parent addresses that are still UNKNOWN by running a quick multicall for their name/symbol
+            unresolved_parents = []
+            for addr in treasury_addrs:
+                p_addr = token_data.get(addr, {}).get("parent_address")
+                if p_addr and p_addr != "0x0000000000000000000000000000000000000000" and p_addr not in symbol_map:
+                    unresolved_parents.append(p_addr)
+            
+            if unresolved_parents:
+                unresolved_parents = list(set(unresolved_parents))
+                print(f"Resolving names/symbols for {len(unresolved_parents)} unresolved parent tokens...")
+                parent_calls = []
+                parent_meta = []
+                for p_addr in unresolved_parents:
+                    p_checksum = Web3.to_checksum_address(p_addr)
+                    parent_calls.append({
+                        "target": p_checksum,
+                        "allowFailure": True,
+                        "callData": dummy_erc20.encode_abi("symbol")
+                    })
+                    parent_meta.append({"type": "symbol", "address": p_addr})
+                
+                try:
+                    parent_results = multicall_contract.functions.aggregate3(parent_calls).call()
+                    for idx, (success, return_data) in enumerate(parent_results):
+                        meta = parent_meta[idx]
+                        p_addr = meta["address"]
+                        if success and return_data:
+                            try:
+                                decoded = abi.decode(["string"], return_data)[0]
+                                symbol_map[p_addr] = decoded
+                                print(f"Resolved parent symbol for {p_addr}: {decoded}")
+                            except Exception:
+                                pass
+                    
+                    # Update token_data entries with newly resolved parent symbols
+                    for addr in treasury_addrs:
+                        p_addr = token_data.get(addr, {}).get("parent_address")
+                        if p_addr in symbol_map:
+                            token_data[addr]["parent_symbol"] = symbol_map[p_addr]
+                except Exception as e:
+                    print(f"Parent symbol resolution Multicall failed: {e}")
         except Exception as e:
             print(f"Secondary Multicall failed: {e}")
 

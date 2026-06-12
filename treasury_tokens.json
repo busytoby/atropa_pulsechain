@@ -19,7 +19,7 @@
         "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
         "minter_name": "FederalMinter",
         "parent_address": "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff",
-        "parent_symbol": "UNKNOWN"
+        "parent_symbol": "F\u327eD"
     },
     "0x5e27247fcc38100fd5c6d59d0ab433924f023153": {
         "address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
@@ -30,7 +30,7 @@
         "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
         "minter_name": "IndexMinter",
         "parent_address": "0xc23dbe3a7cefcb17041b44593a9d3927fc45fb5c",
-        "parent_symbol": "UNKNOWN"
+        "parent_symbol": "BC\u00d8RN"
     },
     "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00": {
         "address": "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00",
@@ -41,7 +41,7 @@
         "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
         "minter_name": "IndexMinter",
         "parent_address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
-        "parent_symbol": "UNKNOWN"
+        "parent_symbol": "D\u00d8WN"
     },
     "0x13f4d925287aa5e06522a9f4be6ca203af8ce443": {
         "address": "0x13f4d925287aa5e06522a9f4be6ca203af8ce443",
@@ -52,7 +52,7 @@
         "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
         "minter_name": "IndexMinter",
         "parent_address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
-        "parent_symbol": "UNKNOWN"
+        "parent_symbol": "ENIGMA"
     },
     "0x3ec6db226563036fdcff375604627c14c820a1fa": {
         "address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
@@ -63,7 +63,7 @@
         "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
         "minter_name": "IndexMinter",
         "parent_address": "0x2dcf43e943d73d43735704230aca51e023031506",
-        "parent_symbol": "UNKNOWN"
+        "parent_symbol": "EQ"
     },
     "0x38407c5a0c26675e34b6dd06bf98c571cbcdb6bf": {
         "address": "0x38407c5a0c26675e34b6dd06bf98c571cbcdb6bf",
@@ -73,7 +73,7 @@
         "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
         "minter_name": "IndexMinter",
         "parent_address": "0x1c81b4358246d3088ab4361ab755f3d8d4dd62d2",
-        "parent_symbol": "UNKNOWN",
+        "parent_symbol": "Finvesta",
         "ignored": false
     }
 }
