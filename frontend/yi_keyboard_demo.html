@@ -808,6 +808,26 @@
                 <div id="biotika-oracle-prediction" style="font-size: 0.7rem; border-top: 1px dashed var(--border-color); padding-top: 0.4rem; margin-top: 0.2rem; color: var(--text-muted); line-height: 1.3;">
                     🔮 Oracle status: Calibrating prediction models...
                 </div>
+                <div id="predictions-market-container" style="border-top: 1px dashed var(--border-color); padding-top: 0.4rem; margin-top: 0.3rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; align-items: center; margin-bottom: 0.3rem;">
+                        <span style="font-weight: 600; color: var(--accent-glow);">🔮 Predictions Market</span>
+                        <span style="font-family: monospace; color: #fff; font-size: 0.75rem;">Credits: <span id="market-credits" style="color: var(--secondary-glow); font-weight: bold;">1000</span></span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 0.3rem; margin-bottom: 0.3rem;">
+                        <select class="synth-select" id="market-bet-candidate" style="font-size: 0.7rem; padding: 0.2rem; height: auto;">
+                            <option value="0">Biotika_Alpha</option>
+                            <option value="1">Biotika_Beta</option>
+                            <option value="2">Biotika_Gamma</option>
+                            <option value="3">Biotika_Delta</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="placeMarketBet()" style="font-size: 0.7rem; padding: 0.2rem; line-height: 1;">
+                            Bet (100)
+                        </button>
+                    </div>
+                    <div id="market-bet-status" style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.3;">
+                        No active bets. Beat the oracle projection to double your credits!
+                    </div>
+                </div>
             </div>
 
             <!-- Reaction Log -->
@@ -1340,6 +1360,35 @@
                     });
                 } catch(e) {}
                 
+                // Evaluate Predictions Market Bet
+                if (activeBetIndex !== null) {
+                    const statusEl = document.getElementById("market-bet-status");
+                    const won = (bestIdx === activeBetIndex);
+                    const oracleWasWrong = (bestIdx !== oracleProjectedIndex);
+
+                    if (won) {
+                        let reward = 200;
+                        let msg = "";
+                        if (oracleWasWrong && activeBetIndex !== oracleProjectedIndex) {
+                            reward = 300; // Extra bonus for beating a wrong oracle!
+                            msg = `🔥 You beat the Oracle prediction! Winner: ${this.djs[bestIdx].name}. +300 Credits!`;
+                            statusEl.style.color = "var(--accent-glow)";
+                        } else {
+                            msg = `🎉 Correct prediction! Winner: ${this.djs[bestIdx].name}. +200 Credits!`;
+                            statusEl.style.color = "var(--success-color)";
+                        }
+                        marketCredits += reward;
+                        logPipeline(`🔮 Predictions Market: You won! ${msg}`);
+                    } else {
+                        let msg = `❌ Incorrect. Winner: ${this.djs[bestIdx].name}. Oracle projected: ${this.djs[oracleProjectedIndex].name || 'None'}.`;
+                        statusEl.textContent = msg;
+                        statusEl.style.color = "var(--error-color)";
+                        logPipeline(`🔮 Predictions Market: Loss. ${msg}`);
+                    }
+                    document.getElementById("market-credits").textContent = marketCredits;
+                    activeBetIndex = null;
+                }
+
                 this.renderUI();
                 if (this.isLoopRunning) {
                     this.steerSynthesizer();
@@ -1429,6 +1478,7 @@
                     }
                 });
 
+                oracleProjectedIndex = bestProj;
                 const nextWinner = this.djs[bestProj];
                 const oracleEl = document.getElementById("biotika-oracle-prediction");
                 if (oracleEl) {
@@ -1510,6 +1560,39 @@
             } else {
                 biotikaElection.stopLoop();
                 logPipeline("🧬 Biotika AI DJ Loop deactivated.");
+            }
+        }
+
+        // Predictions Market Global State & Betting
+        let marketCredits = 1000;
+        let activeBetIndex = null;
+        let oracleProjectedIndex = 0;
+
+        function placeMarketBet() {
+            if (marketCredits < 100) {
+                const statusEl = document.getElementById("market-bet-status");
+                if (statusEl) {
+                    statusEl.textContent = "Insufficient credits! Resetting to 500...";
+                    statusEl.style.color = "var(--error-color)";
+                }
+                marketCredits = 500;
+                const credsEl = document.getElementById("market-credits");
+                if (credsEl) credsEl.textContent = marketCredits;
+                return;
+            }
+            
+            const candSelect = document.getElementById("market-bet-candidate");
+            if (!candSelect) return;
+            activeBetIndex = parseInt(candSelect.value);
+            marketCredits -= 100;
+            const credsEl = document.getElementById("market-credits");
+            if (credsEl) credsEl.textContent = marketCredits;
+
+            const candidateName = biotikaElection.djs[activeBetIndex].name;
+            const statusEl = document.getElementById("market-bet-status");
+            if (statusEl) {
+                statusEl.textContent = `Bet placed: 100 credits on ${candidateName}. Waiting for election tally...`;
+                statusEl.style.color = "var(--secondary-glow)";
             }
         }
 
