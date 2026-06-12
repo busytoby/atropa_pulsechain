@@ -700,6 +700,23 @@
                     <div class="toggle-switch"></div>
                     <span>Stateful Reactor (Each react mutates the internal Monopole)</span>
                 </div>
+
+                <div class="toggle-container" id="arp-toggle" style="margin-top: 0.2rem;">
+                    <div class="toggle-switch"></div>
+                    <span>Arpeggiator (Sequenced notes under One YI)</span>
+                </div>
+
+                <div class="control-group" id="arp-controls" style="display: none; margin-top: 0.4rem; padding-left: 1rem; border-left: 2px solid var(--accent-glow);">
+                    <label><span>Arpeggiator BPM</span><span id="label-arp-bpm">120</span></label>
+                    <input type="range" id="param-arp-bpm" min="60" max="240" value="120" oninput="updateParams()">
+
+                    <label style="margin-top: 0.4rem;"><span>Pattern</span></label>
+                    <select class="synth-select" id="param-arp-pattern" onchange="updateParams()">
+                        <option value="up">Up (Lowest to Highest)</option>
+                        <option value="down">Down (Highest to Lowest)</option>
+                        <option value="random">Random Selection</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Reaction Log -->
@@ -1168,6 +1185,12 @@
         let activeStateful = false;
         let pitchBlend = 0.5;
         let synthMode = "pitch";
+        let activeArp = false;
+        let arpBpm = 120;
+        let arpPattern = "up";
+        let arpTimer = null;
+        let heldKeys = [];
+        let currentArpIndex = 0;
 
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
@@ -1211,10 +1234,8 @@
             keyEl.appendChild(labelEl);
 
             keyEl.addEventListener("mousedown", () => playNote(item.note, item.freq));
-            keyEl.addEventListener("mouseup", () => stopNote());
-            keyEl.addEventListener("mouseleave", () => {
-                if (activeKeyNote === item.note) stopNote();
-            });
+            keyEl.addEventListener("mouseup", () => stopNote(item.note));
+            keyEl.addEventListener("mouseleave", () => stopNote(item.note));
 
             pianoContainer.appendChild(keyEl);
         });
@@ -1237,9 +1258,7 @@
         window.addEventListener("keyup", (e) => {
             const mapped = keyMap[e.key.toLowerCase()];
             if (mapped) {
-                if (activeKeyNote === mapped.note) {
-                    stopNote();
-                }
+                stopNote(mapped.note);
                 const keyEl = document.querySelector(`[data-note="${mapped.note}"]`);
                 if (keyEl) keyEl.classList.remove("active");
             }
@@ -1264,6 +1283,17 @@
             activeStateful = this.classList.contains("active");
         });
 
+        document.getElementById("arp-toggle").addEventListener("click", function() {
+            this.classList.toggle("active");
+            activeArp = this.classList.contains("active");
+            const ctrls = document.getElementById("arp-controls");
+            ctrls.style.display = activeArp ? "block" : "none";
+            if (!activeArp) {
+                heldKeys = [];
+                stopArpeggiatorClock();
+            }
+        });
+
         let prophecyCore = "yi";
 
         function updateParams() {
@@ -1271,6 +1301,13 @@
             document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
             synthMode = document.getElementById("param-synth-mode").value;
             prophecyCore = document.getElementById("param-prophecy-core").value;
+
+            arpBpm = parseInt(document.getElementById("param-arp-bpm").value);
+            document.getElementById("label-arp-bpm").textContent = arpBpm;
+            arpPattern = document.getElementById("param-arp-pattern").value;
+            if (activeArp && arpTimer) {
+                startArpeggiatorClock();
+            }
         }
 
         function initAudio() {
@@ -1385,12 +1422,45 @@
             }
         }
 
-        function playNote(note, freq) {
+        function startArpeggiatorClock() {
+            if (arpTimer) clearInterval(arpTimer);
+            const interval = (60.0 / arpBpm) * 500 / 2.0; // 8th notes
+            arpTimer = setInterval(tickArpeggiator, interval);
+        }
+
+        function stopArpeggiatorClock() {
+            if (arpTimer) {
+                clearInterval(arpTimer);
+                arpTimer = null;
+            }
+            stopNoteNodes();
+        }
+
+        function tickArpeggiator() {
+            if (heldKeys.length === 0) {
+                stopNoteNodes();
+                return;
+            }
+
+            let sortedKeys = [...heldKeys].sort((a, b) => a.freq - b.freq);
+
+            if (arpPattern === "up") {
+                currentArpIndex = (currentArpIndex + 1) % sortedKeys.length;
+            } else if (arpPattern === "down") {
+                currentArpIndex = (currentArpIndex - 1 + sortedKeys.length) % sortedKeys.length;
+            } else if (arpPattern === "random") {
+                currentArpIndex = Math.floor(Math.random() * sortedKeys.length);
+            } else {
+                currentArpIndex = (currentArpIndex + 1) % sortedKeys.length;
+            }
+
+            const activeNode = sortedKeys[currentArpIndex];
+            triggerArpNote(activeNode.note, activeNode.freq);
+        }
+
+        function triggerArpNote(note, freq) {
             activeKeyNote = note;
             activeKeyFreq = freq;
-
-            const keyEl = document.querySelector(`[data-note="${note}"]`);
-            if (keyEl) keyEl.classList.add("active");
 
             const results = runYITransducer(freq);
             if (!results) return;
@@ -1402,17 +1472,20 @@
             if (audioEnabled) {
                 initAudio();
                 
-                stopNoteNodes();
+                // Stop previous nodes instantly for crisp tempo sequencing
+                try { if (oscNode) oscNode.stop(); } catch(e) {}
+                try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
+                try { if (lfoNode) lfoNode.stop(); } catch(e) {}
 
                 filterNode = audioCtx.createBiquadFilter();
                 gainNode = audioCtx.createGain();
                 panNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
                 let sourceNode = null;
+                let modulatedFreq = freq;
 
-                // --- Synthesis Modes Mapping ---
                 if (synthMode === "pitch") {
-                    const modulatedFreq = freq * (0.6 + blendVal * 0.8);
+                    modulatedFreq = freq * (0.6 + blendVal * 0.8);
                     activeKeyFreq = modulatedFreq;
 
                     oscNode = audioCtx.createOscillator();
@@ -1424,6 +1497,7 @@
                     const carrierFreq = freq * 0.8;
                     const modFreq = carrierFreq * (1.0 + Math.floor(valKappa * 8.0));
                     const modDepth = valEta * 2000.0;
+                    modulatedFreq = carrierFreq;
 
                     oscNode = audioCtx.createOscillator();
                     oscNode.type = 'sine';
@@ -1475,24 +1549,20 @@
                     oscSubNode.start();
                 }
 
-                // If sub-oscillator is active, add a sub-octave layer underneath
                 if (subOscVol > 0.005 && synthMode !== "timbre") {
                     const subOsc = audioCtx.createOscillator();
                     const subGain = audioCtx.createGain();
                     subOsc.type = 'triangle';
-                    // Half of the modulated frequency (one octave down)
-                    subOsc.frequency.setValueAtTime(activeKeyFreq * 0.5, audioCtx.currentTime);
+                    subOsc.frequency.setValueAtTime(modulatedFreq * 0.5, audioCtx.currentTime);
                     subGain.gain.setValueAtTime(subOscVol, audioCtx.currentTime);
                     
                     subOsc.connect(subGain);
                     subGain.connect(filterNode);
                     subOsc.start();
                     
-                    // store reference for teardown
                     oscSubNode = subOsc; 
                 }
 
-                // Lowpass Filter setup
                 let cutoffFreq = 900;
                 if (activeFeedback) {
                     cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
@@ -1501,7 +1571,6 @@
                 filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
                 filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
 
-                // --- Stable LFO Modulation Routing ---
                 if (shio.IsGenerated) {
                     lfoNode = audioCtx.createOscillator();
                     lfoNode.type = 'sine';
@@ -1515,18 +1584,14 @@
                     lfoNode.start();
                 }
 
-                // Apply ADSR Envelope derived from contracts
                 const attack = adsrEnvelope.attack;
                 const decay = adsrEnvelope.decay;
                 const sustain = adsrEnvelope.sustain;
 
                 if (synthMode !== "timbre") {
                     gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
-                    // Attack
                     gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
-                    // Decay to Sustain
                     gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
-                    
                     sourceNode.connect(filterNode);
                 }
 
@@ -1543,8 +1608,170 @@
             }
         }
 
+        function playNote(note, freq) {
+            const keyEl = document.querySelector(`[data-note="${note}"]`);
+            if (keyEl) keyEl.classList.add("active");
+
+            if (activeArp) {
+                if (!heldKeys.some(k => k.note === note)) {
+                    heldKeys.push({ note, freq });
+                    if (!arpTimer) {
+                        currentArpIndex = -1;
+                        tickArpeggiator();
+                        startArpeggiatorClock();
+                    }
+                }
+            } else {
+                activeKeyNote = note;
+                activeKeyFreq = freq;
+
+                const results = runYITransducer(freq);
+                if (!results) return;
+
+                const valEta = Number(results.Eta % 1000n) / 1000.0;
+                const valKappa = Number(results.Kappa % 1000n) / 1000.0;
+                const blendVal = (pitchBlend * valEta) + ((1.0 - pitchBlend) * valKappa);
+
+                if (audioEnabled) {
+                    initAudio();
+                    
+                    stopNoteNodes();
+
+                    filterNode = audioCtx.createBiquadFilter();
+                    gainNode = audioCtx.createGain();
+                    panNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+
+                    let sourceNode = null;
+                    let modulatedFreq = freq;
+
+                    // --- Synthesis Modes Mapping ---
+                    if (synthMode === "pitch") {
+                        modulatedFreq = freq * (0.6 + blendVal * 0.8);
+                        activeKeyFreq = modulatedFreq;
+
+                        oscNode = audioCtx.createOscillator();
+                        oscNode.type = 'sawtooth';
+                        oscNode.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
+                        sourceNode = oscNode;
+                    } 
+                    else if (synthMode === "fm") {
+                        const carrierFreq = freq * 0.8;
+                        const modFreq = carrierFreq * (1.0 + Math.floor(valKappa * 8.0));
+                        const modDepth = valEta * 2000.0;
+                        modulatedFreq = carrierFreq;
+
+                        oscNode = audioCtx.createOscillator();
+                        oscNode.type = 'sine';
+                        oscNode.frequency.setValueAtTime(carrierFreq, audioCtx.currentTime);
+
+                        oscSubNode = audioCtx.createOscillator();
+                        oscSubNode.type = 'sine';
+                        oscSubNode.frequency.setValueAtTime(modFreq, audioCtx.currentTime);
+
+                        gainSubNode = audioCtx.createGain();
+                        gainSubNode.gain.setValueAtTime(modDepth, audioCtx.currentTime);
+
+                        oscSubNode.connect(gainSubNode);
+                        gainSubNode.connect(oscNode.frequency);
+                        oscSubNode.start();
+
+                        sourceNode = oscNode;
+                        activeKeyFreq = carrierFreq;
+                    } 
+                    else if (synthMode === "panning") {
+                        oscNode = audioCtx.createOscillator();
+                        oscNode.type = 'triangle';
+                        oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                        const panVal = Math.max(-1.0, Math.min(1.0, (valEta - valKappa) * 2.0));
+                        if (panNode) {
+                            panNode.pan.setValueAtTime(panVal, audioCtx.currentTime);
+                        }
+                        sourceNode = oscNode;
+                    } 
+                    else if (synthMode === "timbre") {
+                        oscNode = audioCtx.createOscillator();
+                        oscNode.type = 'sawtooth';
+                        oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                        oscSubNode = audioCtx.createOscillator();
+                        oscSubNode.type = 'triangle';
+                        oscSubNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                        gainNode.gain.setValueAtTime(valEta * 0.12, audioCtx.currentTime);
+                        gainSubNode = audioCtx.createGain();
+                        gainSubNode.gain.setValueAtTime((1.0 - valEta) * 0.15, audioCtx.currentTime);
+
+                        oscNode.connect(filterNode);
+                        oscSubNode.connect(gainSubNode);
+                        gainSubNode.connect(filterNode);
+
+                        oscNode.start();
+                        oscSubNode.start();
+                    }
+
+                    if (subOscVol > 0.005 && synthMode !== "timbre") {
+                        const subOsc = audioCtx.createOscillator();
+                        const subGain = audioCtx.createGain();
+                        subOsc.type = 'triangle';
+                        subOsc.frequency.setValueAtTime(modulatedFreq * 0.5, audioCtx.currentTime);
+                        subGain.gain.setValueAtTime(subOscVol, audioCtx.currentTime);
+                        
+                        subOsc.connect(subGain);
+                        subGain.connect(filterNode);
+                        subOsc.start();
+                        
+                        oscSubNode = subOsc; 
+                    }
+
+                    let cutoffFreq = 900;
+                    if (activeFeedback) {
+                        cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
+                    }
+                    filterNode.type = 'lowpass';
+                    filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
+                    filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
+
+                    if (shio.IsGenerated) {
+                        lfoNode = audioCtx.createOscillator();
+                        lfoNode.type = 'sine';
+                        lfoNode.frequency.setValueAtTime(lfoParams.rate, audioCtx.currentTime);
+
+                        lfoGainNode = audioCtx.createGain();
+                        lfoGainNode.gain.setValueAtTime(lfoParams.depth, audioCtx.currentTime);
+
+                        lfoNode.connect(lfoGainNode);
+                        lfoGainNode.connect(filterNode.frequency);
+                        lfoNode.start();
+                    }
+
+                    const attack = adsrEnvelope.attack;
+                    const decay = adsrEnvelope.decay;
+                    const sustain = adsrEnvelope.sustain;
+
+                    if (synthMode !== "timbre") {
+                        gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
+                        gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
+                        sourceNode.connect(filterNode);
+                    }
+
+                    if (panNode) {
+                        filterNode.connect(panNode);
+                        panNode.connect(gainNode);
+                    } else {
+                        filterNode.connect(gainNode);
+                    }
+
+                    gainNode.connect(audioCtx.destination);
+                    
+                    if (oscNode && synthMode !== "timbre") oscNode.start();
+                }
+            }
+        }
+
         function stopNoteNodes() {
-            if (activeKeyNote !== "") return; // Safeguard: a new note is already active
+            if (activeKeyNote !== "" && !activeArp) return;
             try { if (oscNode) oscNode.stop(); } catch(e) {}
             try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
             try { if (lfoNode) lfoNode.stop(); } catch(e) {}
@@ -1556,20 +1783,31 @@
             panNode = null;
         }
 
-        function stopNote() {
-            activeKeyNote = "";
-            activeKeyFreq = 0;
+        function stopNote(note) {
+            if (activeArp) {
+                heldKeys = heldKeys.filter(k => k.note !== note);
+                const keyEl = document.querySelector(`[data-note="${note}"]`);
+                if (keyEl) keyEl.classList.remove("active");
 
-            const keys = document.querySelectorAll(".key");
-            keys.forEach(k => k.classList.remove("active"));
+                if (heldKeys.length === 0) {
+                    stopArpeggiatorClock();
+                }
+            } else {
+                if (note && activeKeyNote !== note) return;
+                activeKeyNote = "";
+                activeKeyFreq = 0;
 
-            if (gainNode) {
-                const current = audioCtx ? audioCtx.currentTime : 0;
-                gainNode.gain.cancelScheduledValues(current);
-                gainNode.gain.setValueAtTime(gainNode.gain.value, current);
-                // Safe linear release ramp
-                gainNode.gain.linearRampToValueAtTime(0.0, current + adsrEnvelope.release);
-                setTimeout(stopNoteNodes, adsrEnvelope.release * 1000 + 50);
+                const keys = document.querySelectorAll(".key");
+                keys.forEach(k => k.classList.remove("active"));
+
+                if (gainNode) {
+                    const current = audioCtx ? audioCtx.currentTime : 0;
+                    gainNode.gain.cancelScheduledValues(current);
+                    gainNode.gain.setValueAtTime(gainNode.gain.value, current);
+                    // Safe linear release ramp
+                    gainNode.gain.linearRampToValueAtTime(0.0, current + adsrEnvelope.release);
+                    setTimeout(stopNoteNodes, adsrEnvelope.release * 1000 + 50);
+                }
             }
         }
 
