@@ -904,13 +904,6 @@ static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t
                 u256_t b = ctx->stack[ctx->stack_ptr - 1];
                 u256_t r = {{0}};
                 r.d[0] = u256_eq(a, b);
-                if (a.d[0] == b.d[0] && r.d[0] == 0) {
-                    printf("[DEBUG_EQ_MISMATCH] name=%s, a=%016lx%016lx%016lx%016lx, b=%016lx%016lx%016lx%016lx\n",
-                           name ? name : "NULL",
-                           a.d[3], a.d[2], a.d[1], a.d[0],
-                           b.d[3], b.d[2], b.d[1], b.d[0]);
-                    fflush(stdout);
-                }
                 ctx->stack[ctx->stack_ptr - 1] = r;
                 break;
             }
