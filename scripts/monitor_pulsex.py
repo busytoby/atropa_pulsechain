@@ -133,8 +133,9 @@ def save_price_cache():
     except Exception as e:
         print(f"Error saving price cache: {e}")
 
-# Token metadata cache
+# Token metadata cache and lookup filters
 token_cache = {}
+non_treasury_cache = set()
 
 def get_token_info(w3, address):
     addr_lower = address.lower()
@@ -160,15 +161,31 @@ def get_token_info(w3, address):
     # Check if this token is a Treasury Token
     is_treasury = False
     treasury_owner = None
-    try:
-        pk_minter = w3.eth.contract(address=Web3.to_checksum_address(PKMINTER_ADDRESS), abi=PKMINTER_ABI)
-        owner = pk_minter.functions.GetTreasuryTokenOwner(Web3.to_checksum_address(address)).call()
-        if owner != "0x0000000000000000000000000000000000000000":
-            is_treasury = True
-            treasury_owner = owner.lower()
-            save_treasury_token(address, symbol, name, owner)
-    except Exception:
-        pass
+    
+    # 1. Verify against pre-established local registry
+    if os.path.exists(TREASURY_TOKENS_FILE):
+        try:
+            with open(TREASURY_TOKENS_FILE, "r") as f:
+                reg = json.load(f)
+                if addr_lower in reg:
+                    is_treasury = True
+                    treasury_owner = reg[addr_lower].get("owner")
+        except Exception:
+            pass
+
+    # 2. Check on-chain ONLY if not in local registry or known session cache
+    if not is_treasury and addr_lower not in non_treasury_cache:
+        try:
+            pk_minter = w3.eth.contract(address=Web3.to_checksum_address(PKMINTER_ADDRESS), abi=PKMINTER_ABI)
+            owner = pk_minter.functions.GetTreasuryTokenOwner(Web3.to_checksum_address(address)).call()
+            if owner != "0x0000000000000000000000000000000000000000":
+                is_treasury = True
+                treasury_owner = owner.lower()
+                save_treasury_token(address, symbol, name, owner)
+            else:
+                non_treasury_cache.add(addr_lower)
+        except Exception:
+            pass
 
     info = {
         "name": name, 
