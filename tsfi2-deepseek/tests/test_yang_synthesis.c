@@ -129,13 +129,15 @@ int main() {
     // Initialize random seeds
     srand(1337);
 
-    printf("[YANG] Stepping the triple-pole model through 10 iterations...\n");
-    for (int i = 0; i < 10; i++) {
+    printf("[YANG] Stepping the triple-pole model through 10,000 iterations to check for late fibrillation...\n");
+    for (int i = 0; i < 10000; i++) {
         yang_react(&yang);
-        printf("  Iteration %d:\n", i);
-        printf("    Pole[0] (Bang Omicron): %lu\n", yang.Pole[0]);
-        printf("    Pole[1] (Le Omicron):   %lu\n", yang.Pole[1]);
-        printf("    Pole[2] (Lai Omicron):  %lu\n", yang.Pole[2]);
+        if (i < 5 || i >= 9995) {
+            printf("  Iteration %d:\n", i);
+            printf("    Pole[0] (Bang Omicron): %lu\n", yang.Pole[0]);
+            printf("    Pole[1] (Le Omicron):   %lu\n", yang.Pole[1]);
+            printf("    Pole[2] (Lai Omicron):  %lu\n", yang.Pole[2]);
+        }
         
         // Assert all poles remain strictly bounded and non-zero (non-degenerate)
         assert(yang.Pole[0] < MOTZKIN_PRIME);
@@ -146,6 +148,6 @@ int main() {
         assert(yang.Pole[2] > 0);
     }
 
-    printf("[SUCCESS] YANG Tai validation complete!\n");
+    printf("[SUCCESS] YANG Tai validation complete! No late-stage fibrillation detected across 10,000 iterations.\n");
     return 0;
 }
