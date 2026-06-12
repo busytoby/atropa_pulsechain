@@ -805,6 +805,9 @@
                 <div id="biotika-djs-list" style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.2rem;">
                     <!-- Filled dynamically via JS -->
                 </div>
+                <div id="biotika-oracle-prediction" style="font-size: 0.7rem; border-top: 1px dashed var(--border-color); padding-top: 0.4rem; margin-top: 0.2rem; color: var(--text-muted); line-height: 1.3;">
+                    🔮 Oracle status: Calibrating prediction models...
+                </div>
             </div>
 
             <!-- Reaction Log -->
@@ -1409,6 +1412,32 @@
                     `;
                     listEl.appendChild(card);
                 });
+                this.updatePrediction();
+            }
+
+            updatePrediction() {
+                let bestProj = 0;
+                let maxProj = 0;
+                const forecastSteps = 5;
+
+                this.djs.forEach((dj, idx) => {
+                    let driftRate = (dj.applause / 100.0) * (Math.random() - 0.25);
+                    let projected = dj.applause + driftRate * forecastSteps;
+                    if (projected > maxProj) {
+                        maxProj = projected;
+                        bestProj = idx;
+                    }
+                });
+
+                const nextWinner = this.djs[bestProj];
+                const oracleEl = document.getElementById("biotika-oracle-prediction");
+                if (oracleEl) {
+                    oracleEl.innerHTML = `
+                        <span style="color: var(--accent-glow); font-weight: bold;">🔮 Oracle Projection:</span> 
+                        Projecting <span style="color: ${nextWinner.color}; font-weight: 600;">${nextWinner.name}</span> 
+                        to win next cycle with ~${maxProj.toFixed(0)}% favor.
+                    `;
+                }
             }
 
             startLoop() {
