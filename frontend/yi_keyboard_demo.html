@@ -668,6 +668,15 @@
                 </div>
 
                 <div class="control-group">
+                    <label><span>Prophecy Core Selection</span></label>
+                    <select class="synth-select" id="param-prophecy-core" onchange="updateParams()">
+                        <option value="yi">YI Core (Single Pole Commutator)</option>
+                        <option value="yau">YAU Core (Double Pole Stateful Feedback)</option>
+                        <option value="yang">YANG Core (Triple Pole Tai Triad Crossover)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
                     <label><span>Synthesis Modulation Mode</span></label>
                     <select class="synth-select" id="param-synth-mode" onchange="updateParams()">
                         <option value="pitch">Pitch Modulation (Base frequency scaling)</option>
@@ -880,7 +889,144 @@
             }
         }
 
+        class ZHENGContract {
+            constructor(yiContract) {
+                this.Eta = yiContract;
+                this.Sigma = {};
+            }
+            GetRodByIdx(theta) {
+                if (!this.Sigma[theta]) {
+                    this.Sigma[theta] = {
+                        Phi: "0x0000000000000000000000000000000000000000",
+                        Xi: theta,
+                        Omicron: 0n,
+                        Omega: 0n
+                    };
+                }
+                return this.Sigma[theta];
+            }
+            InstallRod(theta, beta, monopole) {
+                this.Sigma[theta] = beta;
+                return beta;
+            }
+        }
+
+        class ZHOUContract {
+            constructor(zhengContract) {
+                this.Upsilon = zhengContract;
+                this.Xi = 0n;
+                this.Monopole = 0n;
+                this.IsInitialized = false;
+            }
+            Init() {
+                let randomVal = BigInt(Math.floor(Math.random() * 1000000) + 1);
+                let theta = {
+                    Phi: "ZHOU",
+                    Xi: randomVal,
+                    Omicron: 0n,
+                    Omega: 0n
+                };
+                let reactResult = this.Upsilon.Eta.React(randomVal);
+                if (reactResult) {
+                    theta.Omicron = reactResult.Omicron;
+                    theta.Omega = reactResult.Omega;
+                }
+                this.Monopole = theta.Omicron;
+                this.Upsilon.InstallRod(theta.Xi, theta, this.Monopole);
+                this.Xi = theta.Xi;
+                this.IsInitialized = true;
+            }
+            React(iota) {
+                if (!this.IsInitialized) this.Init();
+                let theta = this.Upsilon.GetRodByIdx(this.Xi);
+                let reactResult = this.Upsilon.Eta.React(iota);
+                if (reactResult) {
+                    theta.Omicron = reactResult.Omicron;
+                    theta.Omega = reactResult.Omega;
+                }
+                return theta;
+            }
+        }
+
+        class YAUContract {
+            constructor(zhouContract) {
+                this.Tau = zhouContract;
+                this.Theta = null;
+                this.Monopole = [0n, 0n];
+                this.IsInitialized = false;
+            }
+            Init() {
+                if (!this.Tau.IsInitialized) this.Tau.Init();
+                let randomVal = BigInt(Math.floor(Math.random() * 1000000) + 1);
+                this.Theta = this.Tau.React(randomVal);
+                this.Theta.Phi = "YAU";
+                this.Theta.Xi = this.Monopole[0] = this.Theta.Omega;
+                this.Monopole[1] = this.Theta.Omicron;
+                this.Tau.Upsilon.InstallRod(this.Theta.Xi, this.Theta, this.Monopole[1]);
+                this.IsInitialized = true;
+            }
+            React() {
+                if (!this.IsInitialized) this.Init();
+                let reactResult = this.Tau.Upsilon.Eta.React(this.Theta.Omega);
+                let Delta = {
+                    Omicron: reactResult ? reactResult.Omicron : 0n,
+                    Omega: reactResult ? reactResult.Omega : 0n
+                };
+                this.Theta.Omicron = Delta.Omicron;
+                this.Theta.Omega = this.Theta.Omega ^ Delta.Omega;
+                return Delta;
+            }
+        }
+
+        class YANGContract {
+            constructor(yauContract) {
+                this.Mu = yauContract;
+                this.Rho = { Bang: null, Lai: null, Le: null };
+                this.Pole = [0n, 0n, 0n];
+                this.IsInitialized = false;
+            }
+            React() {
+                if (!this.IsInitialized) {
+                    if (!this.Mu.IsInitialized) this.Mu.Init();
+                    this.Rho.Bang = this.Mu.React();
+                    this.Pole[0] = this.Rho.Bang.Omicron;
+                    this.Rho.Le = this.Mu.Tau.React(this.Pole[0]);
+                    this.Pole[1] = this.Rho.Le.Omicron;
+                    let xi = this.Rho.Bang.Omega ^ this.Rho.Le.Omega;
+                    let reactResult = this.Mu.Tau.Upsilon.Eta.React(this.Pole[1]);
+                    this.Rho.Lai = {
+                        Phi: "YANG_LAI",
+                        Xi: xi,
+                        Omicron: reactResult ? reactResult.Omicron : 0n,
+                        Omega: reactResult ? reactResult.Omega : 0n
+                    };
+                    this.Pole[2] = this.Rho.Lai.Omicron;
+                    this.Mu.Tau.Upsilon.InstallRod(xi, this.Rho.Lai, this.Pole[2]);
+                    this.IsInitialized = true;
+                } else {
+                    this.Rho.Bang = this.Mu.React();
+                    this.Pole[0] = this.Rho.Bang.Omicron;
+                    this.Rho.Le = this.Mu.Tau.React(this.Pole[0]);
+                    this.Pole[1] = this.Rho.Le.Omicron;
+                    let xi = this.Rho.Bang.Omega ^ this.Rho.Le.Omega;
+                    let reactResult = this.Mu.Tau.Upsilon.Eta.React(this.Pole[1]);
+                    this.Rho.Lai.Omicron = reactResult ? reactResult.Omicron : 0n;
+                    this.Rho.Lai.Omega = reactResult ? reactResult.Omega : 0n;
+                    this.Pole[2] = this.Rho.Lai.Omicron;
+                }
+                return {
+                    Bang: this.Pole[0],
+                    Le: this.Pole[1],
+                    Lai: this.Pole[2]
+                };
+            }
+        }
+
         const shio = new SHIOContract();
+        const zheng = new ZHENGContract(shio);
+        const zhou = new ZHOUContract(zheng);
+        const yau = new YAUContract(zhou);
+        const yang = new YANGContract(yau);
 
         // Wizard steps executions
         let currentStep = 1;
@@ -1118,10 +1264,13 @@
             activeStateful = this.classList.contains("active");
         });
 
+        let prophecyCore = "yi";
+
         function updateParams() {
             pitchBlend = parseFloat(document.getElementById("param-pitch-blend").value) / 100.0;
             document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
             synthMode = document.getElementById("param-synth-mode").value;
+            prophecyCore = document.getElementById("param-prophecy-core").value;
         }
 
         function initAudio() {
@@ -1142,19 +1291,76 @@
             const Pi = BigInt(Math.round(freq * 1000));
 
             try {
-                const reactResult = shio.React(Pi);
-                if (!reactResult) return null;
-
-                const Eta = reactResult.Omicron;  // Ichidai
-                const Kappa = reactResult.Omega;  // Daiichi
-
-                if (activeStateful) {
-                    shio.Monopole = (shio.Monopole + Eta) % MotzkinPrime;
-                    logPipeline(`Monopole evolved to: ${shio.Monopole.toString().substring(0, 16)}...`);
+                let Eta, Kappa;
+                let coreInfo = "";
+                
+                if (prophecyCore === "yi") {
+                    const reactResult = shio.React(Pi);
+                    if (!reactResult) return null;
+                    Eta = reactResult.Omicron;
+                    Kappa = reactResult.Omega;
+                    
+                    if (activeStateful) {
+                        shio.Monopole = (shio.Monopole + Eta) % MotzkinPrime;
+                        logPipeline(`Monopole evolved to: ${shio.Monopole.toString().substring(0, 16)}...`);
+                    }
+                    coreInfo = `React(Pi: ${Pi}) [YI Core]`;
+                } 
+                else if (prophecyCore === "yau") {
+                    if (!yau.IsInitialized) yau.Init();
+                    const reactResult = yau.React();
+                    Eta = reactResult.Omicron;
+                    Kappa = reactResult.Omega;
+                    coreInfo = `YAU.React() [Omega XOR feedback]`;
+                } 
+                else { // yang
+                    if (!yang.IsInitialized) yang.React();
+                    const result = yang.React();
+                    Eta = result.Bang;
+                    Kappa = result.Lai;
+                    coreInfo = `YANG.React() [Bang/Le/Lai Triad]`;
                 }
 
                 const normEta = Number(Eta % 1000000n) / 1000000;
                 const Vout = 9.0 * (0.1 + normEta * 0.9);
+
+                // Dynamically update the synthesis profile based on the active core
+                if (prophecyCore === "yau") {
+                    const raw0 = Number(yau.Monopole[0] % 1000n) / 1000.0;
+                    const raw1 = Number(yau.Monopole[1] % 1000n) / 1000.0;
+                    
+                    adsrEnvelope.attack = 0.05 + raw0 * 1.0;
+                    adsrEnvelope.decay = 0.05 + raw1 * 1.0;
+                    adsrEnvelope.sustain = 0.2 + raw0 * 0.8;
+                    adsrEnvelope.release = 0.2 + raw1 * 2.0;
+
+                    lfoParams.rate = 1.0 + raw0 * 15.0;
+                    lfoParams.depth = raw1 * 800.0;
+                    subOscVol = raw0 * 0.08;
+                } 
+                else if (prophecyCore === "yang") {
+                    const raw0 = Number(yang.Pole[0] % 1000n) / 1000.0;
+                    const raw1 = Number(yang.Pole[1] % 1000n) / 1000.0;
+                    const raw2 = Number(yang.Pole[2] % 1000n) / 1000.0;
+
+                    adsrEnvelope.attack = 0.01 + raw0 * 0.8;
+                    adsrEnvelope.decay = 0.05 + raw1 * 0.8;
+                    adsrEnvelope.sustain = 0.3 + raw2 * 0.7;
+                    adsrEnvelope.release = 0.1 + raw0 * 1.5;
+
+                    lfoParams.rate = 0.5 + raw1 * 20.0;
+                    lfoParams.depth = raw2 * 1000.0;
+                    subOscVol = raw2 * 0.10;
+                }
+
+                // Update UI sealed profile elements in real-time
+                document.getElementById("prof-attack").textContent = `${adsrEnvelope.attack.toFixed(2)}s`;
+                document.getElementById("prof-decay").textContent = `${adsrEnvelope.decay.toFixed(2)}s`;
+                document.getElementById("prof-sustain").textContent = `${Math.round(adsrEnvelope.sustain * 100)}%`;
+                document.getElementById("prof-release").textContent = `${adsrEnvelope.release.toFixed(2)}s`;
+                document.getElementById("prof-lfo-rate").textContent = `${lfoParams.rate.toFixed(1)} Hz`;
+                document.getElementById("prof-lfo-depth").textContent = `${Math.round(lfoParams.depth)} cents`;
+                document.getElementById("prof-sub-vol").textContent = `${(subOscVol * 100).toFixed(1)}%`;
 
                 document.getElementById("meter-volts").textContent = `${Vout.toFixed(2)} V`;
                 const rot = -60 + (Vout / 9.0) * 120;
@@ -1164,9 +1370,9 @@
                 const entry = document.createElement("div");
                 entry.className = "log-line";
                 entry.innerHTML = `
-                    <span class="log-meta">[${new Date().toLocaleTimeString()}] React(Pi: ${Pi})</span>
-                    <span>├─ Ichidai (Omicron): ${Eta.toString().substring(0, 12)}...</span>
-                    <span>├─ Daiichi (Omega): ${Kappa.toString().substring(0, 12)}...</span>
+                    <span class="log-meta">[${new Date().toLocaleTimeString()}] ${coreInfo}</span>
+                    <span>├─ Omicron / Bang: ${Eta.toString().substring(0, 12)}...</span>
+                    <span>├─ Omega / Lai: ${Kappa.toString().substring(0, 12)}...</span>
                     <span>└─ Transduced Out: ${Vout.toFixed(4)} V</span>
                 `;
                 container.appendChild(entry);
@@ -1338,6 +1544,7 @@
         }
 
         function stopNoteNodes() {
+            if (activeKeyNote !== "") return; // Safeguard: a new note is already active
             try { if (oscNode) oscNode.stop(); } catch(e) {}
             try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
             try { if (lfoNode) lfoNode.stop(); } catch(e) {}
@@ -1360,8 +1567,8 @@
                 const current = audioCtx ? audioCtx.currentTime : 0;
                 gainNode.gain.cancelScheduledValues(current);
                 gainNode.gain.setValueAtTime(gainNode.gain.value, current);
-                // Apply release envelope derived from contracts
-                gainNode.gain.exponentialRampToValueAtTime(0.001, current + adsrEnvelope.release);
+                // Safe linear release ramp
+                gainNode.gain.linearRampToValueAtTime(0.0, current + adsrEnvelope.release);
                 setTimeout(stopNoteNodes, adsrEnvelope.release * 1000 + 50);
             }
         }
