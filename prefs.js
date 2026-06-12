@@ -1172,3 +1172,8 @@ user_pref("widget.transparent-windows", false);
 user_pref("widget.wayland.fractional-scale.enabled", true);
 user_pref("widget.wayland.opaque-region.enabled", false);
 user_pref("widget.window-transforms.disabled", true);
+user_pref("atropa.synth.activeBayesian", false);
+user_pref("atropa.synth.activeLatch", false);
+user_pref("atropa.synth.arpBpm", 120);
+user_pref("atropa.dragons_lair.hex5555Lock", false);
+
