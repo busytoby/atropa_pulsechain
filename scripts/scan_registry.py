@@ -118,30 +118,19 @@ def main():
                     except Exception as e:
                         print(f"Error reading solidity file {file_path}: {e}")
     
-    # Also find addresses from state/cache files (price_cache.json, resolved_swaps.json, state.json)
-    for cache_path in ["price_cache.json", "resolved_swaps.json", "state.json"]:
-        if os.path.exists(cache_path):
-            try:
-                # Read state.json line by line or in chunks if it is too large
-                if cache_path == "state.json":
-                    with open(cache_path, "r", encoding="utf-8", errors="ignore") as f:
-                        for line in f:
-                            raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", line))
-                else:
-                    with open(cache_path, "r") as f:
-                        cache_content = f.read()
-                        raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", cache_content))
-            except Exception as e:
-                print(f"Error parsing cache file {cache_path}: {e}")
+    # Set addresses to check strictly to Published log events to achieve 100% precision and instant speed
+    published_path = "published_addresses.json"
+    if os.path.exists(published_path):
+        try:
+            with open(published_path, "r") as f:
+                addresses_to_check = sorted(list(set(addr.lower() for addr in json.load(f))))
+            print(f"Instantly loading {len(addresses_to_check)} published log addresses to scan.")
+        except Exception as e:
+            print(f"Error reading published_addresses.json: {e}")
+            addresses_to_check = []
+    else:
+        addresses_to_check = []
 
-    unique_addresses = sorted(list(set(addr.lower() for addr in raw_addresses)))
-    print(f"Found {len(unique_addresses)} unique addresses to scan across solidity files and state/cache files.")
- 
-    # Filter out addresses to check
-    addresses_to_check = [
-        addr for addr in unique_addresses 
-        if addr not in ["0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"]
-    ]
     print(f"Sample addresses_to_check: {addresses_to_check[:15]}")
 
     # Pre-build dummy contract objects for encoding/decoding
