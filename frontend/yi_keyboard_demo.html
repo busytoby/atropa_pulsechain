@@ -788,6 +788,25 @@
                 </div>
             </div>
 
+            <!-- DJ Election of the Biotika -->
+            <div class="panel" id="biotika-election-panel">
+                <div class="panel-title">
+                    <span>🧬 DJ Election of the Biotika</span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <div class="toggle-container" id="biotika-dj-toggle" onclick="toggleBiotikaDJ()">
+                            <div class="toggle-switch"></div>
+                            <span style="font-size: 0.75rem;">Auto-DJ Loop</span>
+                        </div>
+                    </div>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: -0.3rem; margin-bottom: 0.2rem;">
+                    Biotika creatures mutate their DNA profiles and compete for crowd applause to gain control of the synthesizer booth.
+                </p>
+                <div id="biotika-djs-list" style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.2rem;">
+                    <!-- Filled dynamically via JS -->
+                </div>
+            </div>
+
             <!-- Reaction Log -->
             <div class="panel">
                 <div class="panel-title">
@@ -1253,6 +1272,205 @@
                     statusTag.style.background = "rgba(0, 243, 255, 0.1)";
                 }
             }, 600);
+        }
+
+        class BiotikaDJ {
+            constructor(name, color, genes) {
+                this.name = name;
+                this.color = color;
+                this.genes = genes; // Array of 8 normalized floats
+                this.applause = 25.0; // Starting crowd approval %
+                this.preferredBPM = Math.round(80 + genes[0] * 120);
+                this.preferredPattern = ["up", "down", "random", "repeat"][Math.floor(genes[1] * 4)];
+                this.preferredBlend = genes[2];
+                this.preferredMode = ["pitch", "fm", "panning", "timbre"][Math.floor(genes[3] * 4)];
+            }
+        }
+
+        class BiotikaElectionBooth {
+            constructor() {
+                this.djs = [
+                    new BiotikaDJ("Biotika_Alpha", "#ff007f", [0.25, 0.1, 0.45, 0.85, 0.5, 0.3, 0.7, 0.8]),
+                    new BiotikaDJ("Biotika_Beta", "#00f3ff", [0.75, 0.5, 0.90, 0.15, 0.2, 0.6, 0.4, 0.3]),
+                    new BiotikaDJ("Biotika_Gamma", "#ffd700", [0.55, 0.85, 0.15, 0.55, 0.8, 0.2, 0.9, 0.1]),
+                    new BiotikaDJ("Biotika_Delta", "#10b981", [0.65, 0.35, 0.65, 0.75, 0.3, 0.9, 0.1, 0.5])
+                ];
+                this.activeDJIndex = 0;
+                this.isLoopRunning = false;
+                this.electionTimer = null;
+                this.performanceTimer = null;
+                this.performanceStep = 0;
+            }
+
+            TallyVotes() {
+                let total = 0;
+                this.djs.forEach(dj => {
+                    dj.applause = Math.max(5.0, dj.applause + (Math.random() - 0.5) * 5.0);
+                    total += dj.applause;
+                });
+                this.djs.forEach(dj => {
+                    dj.applause = (dj.applause / total) * 100.0;
+                });
+
+                let bestIdx = 0;
+                let maxApp = 0;
+                this.djs.forEach((dj, idx) => {
+                    if (dj.applause > maxApp) {
+                        maxApp = dj.applause;
+                        bestIdx = idx;
+                    }
+                });
+
+                if (bestIdx !== this.activeDJIndex) {
+                    this.activeDJIndex = bestIdx;
+                    logPipeline(`🧬 [DJ ELECTION] Crowd favor shifts! ${this.djs[this.activeDJIndex].name} takes the DJ booth.`);
+                }
+                
+                this.renderUI();
+                if (this.isLoopRunning) {
+                    this.steerSynthesizer();
+                }
+            }
+
+            steerSynthesizer() {
+                const activeDJ = this.djs[this.activeDJIndex];
+                
+                const blendSlider = document.getElementById("param-pitch-blend");
+                if (blendSlider) {
+                    let currentBlend = parseFloat(blendSlider.value) / 100.0;
+                    let newBlend = currentBlend * 0.8 + activeDJ.preferredBlend * 0.2;
+                    blendSlider.value = Math.round(newBlend * 100);
+                }
+
+                const bpmSlider = document.getElementById("param-arp-bpm");
+                if (bpmSlider) {
+                    let currentBpm = parseInt(bpmSlider.value);
+                    let newBpm = Math.round(currentBpm * 0.8 + activeDJ.preferredBPM * 0.2);
+                    bpmSlider.value = newBpm;
+                }
+
+                const modeSelect = document.getElementById("param-synth-mode");
+                if (modeSelect) {
+                    modeSelect.value = activeDJ.preferredMode;
+                }
+
+                const patternSelect = document.getElementById("param-arp-pattern");
+                if (patternSelect) {
+                    patternSelect.value = activeDJ.preferredPattern;
+                }
+
+                updateParams();
+            }
+
+            renderUI() {
+                const listEl = document.getElementById("biotika-djs-list");
+                if (!listEl) return;
+                listEl.innerHTML = "";
+
+                this.djs.forEach((dj, idx) => {
+                    const isActive = idx === this.activeDJIndex;
+                    const card = document.createElement("div");
+                    card.className = `step-card ${isActive ? 'active' : ''}`;
+                    card.style.padding = "0.4rem 0.6rem";
+                    card.style.margin = "0";
+                    card.style.borderLeft = `3px solid ${dj.color}`;
+                    card.style.background = isActive ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.15)";
+                    card.style.borderRadius = "6px";
+                    card.style.transition = "all 0.3s ease";
+
+                    let geneBlocks = "";
+                    dj.genes.forEach(g => {
+                        geneBlocks += `<div style="flex: 1; height: 3px; background: ${dj.color}; opacity: ${0.2 + g * 0.8};"></div>`;
+                    });
+
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; align-items: center; margin-bottom: 0.15rem;">
+                            <span style="font-weight: 600; color: ${isActive ? '#fff' : 'var(--text-muted)'};">${dj.name}</span>
+                            <span style="font-family: monospace; color: ${isActive ? 'var(--secondary-glow)' : 'var(--text-muted)'}; font-weight: 600;">${dj.applause.toFixed(1)}%</span>
+                        </div>
+                        <div style="display: flex; gap: 1px; width: 100%; height: 3px; border-radius: 1px; overflow: hidden; background: rgba(255,255,255,0.05); margin-bottom: 0.2rem;">
+                            ${geneBlocks}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); opacity: 0.85;">
+                            <span>BPM: ${dj.preferredBPM} (${dj.preferredPattern.toUpperCase()})</span>
+                            <span>Mode: ${dj.preferredMode.toUpperCase()}</span>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            }
+
+            startLoop() {
+                this.isLoopRunning = true;
+                this.electionTimer = setInterval(() => this.TallyVotes(), 3000);
+                this.TallyVotes();
+
+                const arpToggle = document.getElementById("arp-toggle");
+                if (arpToggle && !arpToggle.classList.contains("active")) {
+                    arpToggle.click();
+                }
+
+                this.performanceTimer = setInterval(() => {
+                    if (!this.isLoopRunning) return;
+                    
+                    if (this.performanceStep % 4 === 0) {
+                        heldKeys = [];
+                        const keys = document.querySelectorAll(".key");
+                        keys.forEach(k => k.classList.remove("active"));
+                        
+                        const chords = [
+                            ["C4", "E4", "G4", "B4"],
+                            ["D4", "F4", "A4", "C5"],
+                            ["G4", "B4", "D5", "F#5"],
+                            ["E4", "G4", "B4", "D5"]
+                        ];
+                        
+                        const chosen = chords[Math.floor(Math.random() * chords.length)];
+                        chosen.forEach(noteName => {
+                            const mapped = notes.find(n => n.note === noteName);
+                            if (mapped) {
+                                playNote(mapped.note, mapped.freq);
+                            }
+                        });
+                        logPipeline(`🧬 [BIOTIKA DJ] Performance Set Chords: [${chosen.join(", ")}]`);
+                    }
+                    this.performanceStep++;
+                }, 2000);
+            }
+
+            stopLoop() {
+                this.isLoopRunning = false;
+                if (this.electionTimer) {
+                    clearInterval(this.electionTimer);
+                    this.electionTimer = null;
+                }
+                if (this.performanceTimer) {
+                    clearInterval(this.performanceTimer);
+                    this.performanceTimer = null;
+                }
+                heldKeys = [];
+                const keys = document.querySelectorAll(".key");
+                keys.forEach(k => k.classList.remove("active"));
+                stopArpeggiatorClock();
+                stopArpBClock();
+                this.renderUI();
+            }
+        }
+
+        const biotikaElection = new BiotikaElectionBooth();
+
+        function toggleBiotikaDJ() {
+            const toggle = document.getElementById("biotika-dj-toggle");
+            if (!toggle) return;
+            toggle.classList.toggle("active");
+            const active = toggle.classList.contains("active");
+            if (active) {
+                biotikaElection.startLoop();
+                logPipeline("🧬 Biotika AI DJ Loop activated. Simulated performers steering presets.");
+            } else {
+                biotikaElection.stopLoop();
+                logPipeline("🧬 Biotika AI DJ Loop deactivated.");
+            }
         }
 
         // Wizard steps executions
@@ -2311,6 +2529,7 @@
         drawScopes();
         randomizeInputs();
         renderChoElection();
+        biotikaElection.renderUI();
 
     </script>
 </body>
