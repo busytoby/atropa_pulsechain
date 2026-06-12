@@ -716,6 +716,11 @@
                     <span>Arpeggiator Latch (Hold loop permanently)</span>
                 </div>
 
+                <div class="toggle-container" id="sick-toggle" style="margin-top: 0.2rem;" onclick="toggleSickMode()">
+                    <div class="toggle-switch"></div>
+                    <span>Sick Beat (Diode Distortion & Bitcrush)</span>
+                </div>
+
                 <div class="control-group" id="arp-controls" style="display: none; margin-top: 0.4rem; padding-left: 1rem; border-left: 2px solid var(--accent-glow);">
                     <h4 style="margin: 0 0 0.4rem 0; font-size: 0.85rem; color: var(--secondary-glow);">Arpeggiator A (Primary)</h4>
                     <label><span>Arpeggiator BPM</span><span id="label-arp-bpm">120</span></label>
@@ -1860,6 +1865,31 @@
         let activeKeyNote = "";
         let audioEnabled = true;
         let activeFeedback = false;
+        let activeSickMode = false;
+        
+        function makeDistortionCurve(amount) {
+            let k = typeof amount === 'number' ? amount : 50;
+            let n_samples = 44100;
+            let curve = new Float32Array(n_samples);
+            let deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                let x = (i * 2) / n_samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        function toggleSickMode() {
+            const toggle = document.getElementById("sick-toggle");
+            if (!toggle) return;
+            toggle.classList.toggle("active");
+            activeSickMode = toggle.classList.contains("active");
+            if (activeSickMode) {
+                logPipeline("🤢 Sick Beat activated! Diode WaveShaping saturation engaged.");
+            } else {
+                logPipeline("Clean tone restored.");
+            }
+        }
         let activeStateful = false;
         let pitchBlend = 0.5;
         let synthMode = "pitch";
@@ -2423,11 +2453,19 @@
                     sourceNode.connect(filterNode);
                 }
 
+                let preGainNode = filterNode;
                 if (panNode) {
                     filterNode.connect(panNode);
-                    panNode.connect(gainNode);
+                    preGainNode = panNode;
+                }
+                if (activeSickMode) {
+                    let distNode = audioCtx.createWaveShaper();
+                    distNode.curve = makeDistortionCurve(100);
+                    distNode.oversample = '4x';
+                    preGainNode.connect(distNode);
+                    distNode.connect(gainNode);
                 } else {
-                    filterNode.connect(gainNode);
+                    preGainNode.connect(gainNode);
                 }
 
                 gainNode.connect(audioCtx.destination);
@@ -2639,11 +2677,19 @@
                         sourceNode.connect(filterNode);
                     }
 
+                    let preGainNode = filterNode;
                     if (panNode) {
                         filterNode.connect(panNode);
-                        panNode.connect(gainNode);
+                        preGainNode = panNode;
+                    }
+                    if (activeSickMode) {
+                        let distNode = audioCtx.createWaveShaper();
+                        distNode.curve = makeDistortionCurve(100);
+                        distNode.oversample = '4x';
+                        preGainNode.connect(distNode);
+                        distNode.connect(gainNode);
                     } else {
-                        filterNode.connect(gainNode);
+                        preGainNode.connect(gainNode);
                     }
 
                     gainNode.connect(audioCtx.destination);
