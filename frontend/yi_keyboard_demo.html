@@ -572,6 +572,7 @@
                     <div class="step-card" id="step-2">
                         <div class="step-header">
                             <span>Step 2: Generate Manifolds</span>
+                            <button class="btn btn-secondary" id="btn-rand-inputs" disabled style="padding: 0.1rem 0.4rem; font-size: 0.7rem;" onclick="randomizeInputs()">Randomize</button>
                             <span class="step-status" id="status-step-2">Locked</span>
                         </div>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">Provide crossover parameters Xi, Alpha (Rod Identity), and Beta (Cone Identity).</p>
@@ -842,12 +843,20 @@
             }
         }
 
+        function randomizeInputs() {
+            document.getElementById("input-xi").value = Math.floor(Math.random() * 900000) + 100000;
+            document.getElementById("input-alpha").value = Math.floor(Math.random() * 90000) + 10000;
+            document.getElementById("input-beta").value = Math.floor(Math.random() * 90000) + 10000;
+            logPipeline("Inputs Xi, Alpha, and Beta randomized.");
+        }
+
         function executeSeed() {
             try {
                 shio.Seed();
                 updateStepUI(1, "Seeded", true);
                 currentStep = 2;
                 updateStepUI(2, "Ready");
+                document.getElementById("btn-rand-inputs").disabled = false;
                 logPipeline("Step 1: Seed successful. Rod/Cone tunings calibrated.");
             } catch(e) {
                 logPipeline(`Step 1 Failure: ${e.message}`, true);
@@ -862,6 +871,7 @@
 
                 shio.Generate(Xi, Alpha, Beta);
                 updateStepUI(2, "Sealed", true);
+                document.getElementById("btn-rand-inputs").disabled = true;
                 currentStep = 3;
                 updateStepUI(3, "Ready");
                 logPipeline(`Step 2: Generate complete. Channels and foundations populated.`);
