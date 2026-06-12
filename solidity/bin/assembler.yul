@@ -102,6 +102,54 @@ object "Assembler" {
                         continue
                     }
 
+                    // SNT (83, 78, 84) - Set Synthesizer Parameter
+                    if and(and(eq(c0, 83), eq(c1, 78)), eq(c2, 84)) {
+                        mstore8(memPtr, 0x09)
+                        memPtr := add(memPtr, 1)
+
+                        let nextIdx := add(i, 3)
+                        for { } lt(nextIdx, codeLen) { nextIdx := add(nextIdx, 1) } {
+                            let tc := byte(0, calldataload(add(codeStart, nextIdx)))
+                            if iszero(isSpace(tc)) { break }
+                        }
+                        
+                        let num := 0
+                        for { } lt(nextIdx, codeLen) { nextIdx := add(nextIdx, 1) } {
+                            let tc := byte(0, calldataload(add(codeStart, nextIdx)))
+                            if or(lt(tc, 48), gt(tc, 57)) { break }
+                            num := add(mul(num, 10), sub(tc, 48))
+                        }
+                        
+                        mstore8(memPtr, num)
+                        memPtr := add(memPtr, 1)
+                        i := nextIdx
+                        continue
+                    }
+
+                    // SFX (83, 70, 88) - Trigger Synth Effect
+                    if and(and(eq(c0, 83), eq(c1, 70)), eq(c2, 88)) {
+                        mstore8(memPtr, 0x0A)
+                        memPtr := add(memPtr, 1)
+
+                        let nextIdx := add(i, 3)
+                        for { } lt(nextIdx, codeLen) { nextIdx := add(nextIdx, 1) } {
+                            let tc := byte(0, calldataload(add(codeStart, nextIdx)))
+                            if iszero(isSpace(tc)) { break }
+                        }
+                        
+                        let num := 0
+                        for { } lt(nextIdx, codeLen) { nextIdx := add(nextIdx, 1) } {
+                            let tc := byte(0, calldataload(add(codeStart, nextIdx)))
+                            if or(lt(tc, 48), gt(tc, 57)) { break }
+                            num := add(mul(num, 10), sub(tc, 48))
+                        }
+                        
+                        mstore8(memPtr, num)
+                        memPtr := add(memPtr, 1)
+                        i := nextIdx
+                        continue
+                    }
+
                     // JMP, JZ, LDA, STA
                     let op := 0
                     let skipCount := 3
