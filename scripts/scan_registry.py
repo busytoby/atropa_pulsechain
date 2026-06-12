@@ -103,19 +103,30 @@ def main():
     minter_addresses = [x for x in minter_addresses if not (x in seen or seen.add(x))]
     print(f"Active Minter Lookup registry addresses (formatted): {[x.lower() for x in minter_addresses]}")
 
-    # 2. Extract all unique addresses from addresses.sol
+    # 2. Extract all unique addresses from solidity/addresses.sol
     address_path = "solidity/addresses.sol"
     if not os.path.exists(address_path):
         print(f"Error: {address_path} not found")
         return
-
+ 
     with open(address_path, "r") as f:
         content = f.read()
-
+ 
     raw_addresses = re.findall(r"0x[0-9a-fA-F]{40}", content)
-    unique_addresses = sorted(list(set(addr.lower() for addr in raw_addresses)))
-    print(f"Found {len(unique_addresses)} unique addresses in {address_path}")
+    
+    # Also find addresses from state/cache files (price_cache.json, resolved_swaps.json)
+    for cache_path in ["price_cache.json", "resolved_swaps.json"]:
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r") as f:
+                    cache_content = f.read()
+                    raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", cache_content))
+            except Exception:
+                pass
 
+    unique_addresses = sorted(list(set(addr.lower() for addr in raw_addresses)))
+    print(f"Found {len(unique_addresses)} unique addresses to scan across addresses.sol and cache files.")
+ 
     # Filter out addresses to check
     addresses_to_check = [
         addr for addr in unique_addresses 
@@ -171,19 +182,25 @@ def main():
         })
         call_metadata.append({"type": "symbol", "address": addr.lower()})
 
-    print(f"Packed {len(calls)} lookup calls into 1 Multicall transaction.")
-    print("Executing Multicall on PulseChain...")
-
+    print(f"Packed {len(calls)} lookup calls. Executing in batches of 1000 to prevent rpc return data limits...")
     multicall_contract = w3.eth.contract(address=Web3.to_checksum_address(MULTICALL3_ADDRESS), abi=MULTICALL3_ABI)
     
-    try:
-        results = multicall_contract.functions.aggregate3(calls).call()
-        print(f"First-round Multicall returned {len(results)} results.")
-        successes = sum(1 for success, _ in results if success)
-        print(f"First-round success rate: {successes}/{len(results)}")
-    except Exception as e:
-        print(f"Multicall failed: {e}")
-        return
+    results = []
+    chunk_size = 1000
+    for i in range(0, len(calls), chunk_size):
+        chunk = calls[i:i+chunk_size]
+        print(f"Executing batch {i//chunk_size + 1}/{(len(calls)-1)//chunk_size + 1} ({len(chunk)} calls)...")
+        try:
+            res = multicall_contract.functions.aggregate3(chunk).call()
+            results.extend(res)
+        except Exception as e:
+            print(f"Batch failed: {e}")
+            # Fill failed batch with default empty responses
+            results.extend([(False, b"")] * len(chunk))
+
+    print(f"Total first-round Multicall returned {len(results)} results.")
+    successes = sum(1 for success, _ in results if success)
+    print(f"First-round success rate: {successes}/{len(results)}")
 
     # 4. Parse first-round results to identify treasury tokens
     token_data = {}
