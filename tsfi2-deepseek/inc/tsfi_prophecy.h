@@ -14,5 +14,6 @@ typedef struct {
 // Core functions
 int tsfi_prophecy_generate_bank(const char *filepath, int grid_resolution);
 int tsfi_prophecy_inverse_lookup(const char *filepath, float target_crest, float target_dist, TsfiBiotikaDna *out_dna);
+float tsfi_prophecy_transduce_sample(float sound_pressure, float electrical_bias);
 
 #endif // TSFI_PROPHECY_H

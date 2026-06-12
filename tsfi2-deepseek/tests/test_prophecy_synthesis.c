@@ -56,6 +56,25 @@ int main() {
 
     // Assert that the result is logically bounded and near the target
     assert(measured_crest >= 1.0f);
+
+    // 4. Feed Wien-Bridge oscillator output through the mechanical transducer stage
+    printf("[PROPHECY] Transducing oscillator output...\n");
+    float transduced[500];
+    float trans_min = 9.0f;
+    float trans_max = 0.0f;
+    for (int step = 0; step < 500; step++) {
+        transduced[step] = tsfi_prophecy_transduce_sample(buffer[step], 0.7f);
+        if (transduced[step] < trans_min) trans_min = transduced[step];
+        if (transduced[step] > trans_max) trans_max = transduced[step];
+    }
+    printf("[PROPHECY] Transduction Results (Bias: 0.7V):\n");
+    printf("  Min Collector Out: %f V\n", trans_min);
+    printf("  Max Collector Out: %f V\n", trans_max);
+    assert(trans_min >= 0.0f);
+    assert(trans_max <= 9.0f);
+    assert(trans_max > trans_min); // ensures the output is modulated/dynamic
+
     printf("[SUCCESS] Inverse Prophecy Synthesis verified successfully!\n");
     return 0;
 }
+

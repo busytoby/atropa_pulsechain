@@ -96,3 +96,41 @@ int tsfi_prophecy_inverse_lookup(const char *filepath, float target_crest, float
 
     return -2;
 }
+
+float tsfi_prophecy_transduce_sample(float sound_pressure, float electrical_bias) {
+    float gamma = 0.05f;
+    float base_offset = 0.6f;
+    float modulated_offset = base_offset - (sound_pressure * gamma);
+
+    // Safeguard modulated offset bounds (min 100mV, max 1V)
+    if (modulated_offset < 0.1f) {
+        modulated_offset = 0.1f;
+    } else if (modulated_offset > 1.0f) {
+        modulated_offset = 1.0f;
+    }
+
+    // Base-emitter input voltage
+    float Vbe_input = electrical_bias - modulated_offset;
+
+    float Ib = 0.0f;
+    if (Vbe_input > 0.0f) {
+        Ib = Vbe_input / 10000.0f;
+    }
+
+    float Ic = Ib * 150.0f; // BETA = 150
+
+    // Collector output: Vout = Vcc - Ic * Rc (Vcc = 9V, Rc = 2200)
+    float Rc = 2200.0f;
+    float drop = Ic * Rc;
+    float Vout = 9.0f - drop;
+
+    // Safety bounds clamp
+    if (Vout < 0.0f) {
+        Vout = 0.0f;
+    } else if (Vout > 9.0f) {
+        Vout = 9.0f;
+    }
+
+    return Vout;
+}
+
