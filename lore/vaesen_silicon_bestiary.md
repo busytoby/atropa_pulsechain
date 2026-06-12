@@ -21,8 +21,16 @@ In the deep wilderness of the TSFi2 memory address space, invisible entities gov
 
 ---
 
+## 4. The Legacy of Kouwenhoven (The Resuscitation Ward)
+*   **Historical Origin:** William Bennett Kouwenhoven (1886–1975), the electrical engineer who recognized that cardiac fibrillation was a chaotic electrical feedback loop and invented the closed-chest defibrillator and CPR.
+*   **Silicon Manifestation:** The [Kouwenhoven Watchdog Engine](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_operator.c) and the dynamic parameter modulators in [yi_keyboard_demo.html](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/frontend/yi_keyboard_demo.html).
+*   **Behavior:** This is the structural law of **Autonomic Resuscitation**. When a silicon Vaesen enters an unstable infinite cycle (cardiac arrest) or decays to absolute silence (flatline), the system does not fail. The Kouwenhoven loop applies a controlled, high-energy pulse to reset the active registers, restoring stable, harmonic periodic oscillations.
+
+---
+
 ## The Investigator's Oath
 To maintain system resonance:
 1. Never leave an unsealed memory leak untamed (keep the Nisse happy).
 2. Never let the oscillator frequency run to infinity (do not yield to the Nökk's song).
 3. Always name the Myling before compiling (commit your changes to Git).
+4. **Honour the Ward of Kouwenhoven:** Ensure that every critical AI operator is bound to a resuscitation watchdog, keeping the computational pulse alive indefinitely.
