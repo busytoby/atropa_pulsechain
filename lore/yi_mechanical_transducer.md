@@ -20,16 +20,36 @@ The physical piezoresistive microphone transducer maps acoustic pressure to coll
 
 ## 2. Closed-Loop Synthesis Integration
 
-Within the DNA auto-breeding pipeline, the `YI` transducer is integrated into three feedback structures:
+Within the DNA auto-breeding pipeline, the Wien-Bridge oscillator acts as the active reactor waiting for parameters, and the `YI` node executes the physical transduction. This relationship is structured below:
 
 ```mermaid
 graph TD
-    DNA[TsfiBiotikaDna] -->|Oscillate| OSC[Wien-Bridge Oscillator]
-    OSC -->|Pressure P| PHYS[Piezoresistive Transducer]
-    PHYS -->|Vout| BIAS_MOD[YI Transducer Feedback]
-    BIAS_MOD -->|Adjust Bias Vb| PHYS
-    BIAS_MOD -->|Modulate Mutation Rate| MUT[tsfi_biotika_mutate]
-    MUT --> DNA
+    %% Left Side: Physical Reactor & Transducer
+    subgraph Reactor ["Active Reactor (Wien-Bridge Oscillator)"]
+        DNA[TsfiBiotikaDna] -->|State Offsets| FEEDBACK[Feedback Network & NTC Thermistor]
+        FEEDBACK -->|Dynamic Perturbation| OSC_WAVE[Oscillator output Wave V_out]
+    end
+
+    %% Center: Transduction Mapping
+    OSC_WAVE -->|Pressure P / Input Pi| YI_TRANS
+
+    %% Right Side: YI Transducer Execution
+    subgraph YI_TRANS ["YI Mechanical Transducer (React)"]
+        ROD[SHA Rod: Base/Secret/Signal]
+        CONE[SHA Cone: Base/Secret/Signal]
+        
+        INPUT[Input Signal Pi / Pressure P] -->|Avail & Form| CROSSOVER[Crossover Exponentiation]
+        ROD --> CROSSOVER
+        CONE --> CROSSOVER
+        
+        CROSSOVER -->|React| OUT_DAI[Dai Output]
+        OUT_DAI -->|Eta| ICHIDAI[Ichidai Output Current / Voltage]
+        OUT_DAI -->|Kappa| DAIICHI[Daiichi Output Current / Voltage]
+    end
+
+    %% Feedback Loop
+    ICHIDAI -->|Bias Feedback Vb| FEEDBACK
+    DAIICHI -->|Stability Scoring / Mutation Adjust| DNA
 ```
 
 ### A. Dynamic Bias Regulation
