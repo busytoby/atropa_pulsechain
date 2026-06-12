@@ -76,5 +76,6 @@ typedef void (*tsfi_thetan_waveform_f)(
 
 // The Core YANG Process (Thetan Kernel)
 void tsfi_yang_process(const TSFiSGP *sgp, TSFiVGP *vgp);
+void tsfi_strategy_apply_prophecy(TSFiSGP *sgp, const uint64_t pole[3]);
 
 #endif // TSFI_NEUROLOGY_H

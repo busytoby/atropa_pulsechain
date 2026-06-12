@@ -72,3 +72,22 @@ void tsfi_yang_process(const TSFiSGP *sgp, TSFiVGP *vgp) {
     vgp->op_ctrl = 0xCAFEBABE; // Active YANG State
     vgp->mutation_id = (uint32_t)sgp->generation;
 }
+
+void tsfi_strategy_apply_prophecy(TSFiSGP *sgp, const uint64_t pole[3]) {
+    if (!sgp) return;
+    
+    double raw0 = (double)(pole[0] % 1000ULL) / 1000.0;
+    double raw1 = (double)(pole[1] % 1000ULL) / 1000.0;
+    double raw2 = (double)(pole[2] % 1000ULL) / 1000.0;
+
+    sgp->weights[0] = raw0;                   // Primary exploration bias
+    sgp->weights[1] = raw1;                   // Exploitation rate
+    sgp->weights[2] = raw2;                   // Mutation crossover energy
+    sgp->weights[3] = raw0 * raw1;            // Non-linear combination 1
+    sgp->weights[4] = raw1 * raw2;            // Non-linear combination 2
+    sgp->weights[5] = raw2 * raw0;            // Non-linear combination 3
+    sgp->weights[6] = (raw0 + raw1 + raw2) / 3.0; // Mean strategic balance
+    sgp->weights[7] = sgp->banach_norm * (0.8 + 0.2 * raw2); // Clamped limit scaling
+
+    sgp->generation++;
+}
