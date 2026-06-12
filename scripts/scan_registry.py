@@ -118,18 +118,24 @@ def main():
                     except Exception as e:
                         print(f"Error reading solidity file {file_path}: {e}")
     
-    # Also find addresses from state/cache files (price_cache.json, resolved_swaps.json)
-    for cache_path in ["price_cache.json", "resolved_swaps.json"]:
+    # Also find addresses from state/cache files (price_cache.json, resolved_swaps.json, state.json)
+    for cache_path in ["price_cache.json", "resolved_swaps.json", "state.json"]:
         if os.path.exists(cache_path):
             try:
-                with open(cache_path, "r") as f:
-                    cache_content = f.read()
-                    raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", cache_content))
-            except Exception:
-                pass
+                # Read state.json line by line or in chunks if it is too large
+                if cache_path == "state.json":
+                    with open(cache_path, "r", encoding="utf-8", errors="ignore") as f:
+                        for line in f:
+                            raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", line))
+                else:
+                    with open(cache_path, "r") as f:
+                        cache_content = f.read()
+                        raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", cache_content))
+            except Exception as e:
+                print(f"Error parsing cache file {cache_path}: {e}")
 
     unique_addresses = sorted(list(set(addr.lower() for addr in raw_addresses)))
-    print(f"Found {len(unique_addresses)} unique addresses to scan across addresses.sol and cache files.")
+    print(f"Found {len(unique_addresses)} unique addresses to scan across solidity files and state/cache files.")
  
     # Filter out addresses to check
     addresses_to_check = [
@@ -143,15 +149,47 @@ def main():
     dummy_erc20 = w3.eth.contract(abi=ERC20_ABI_DUMMY)
     dummy_tt = w3.eth.contract(abi=TT_ABI_DUMMY)
 
-    # 3. Pack calls for Multicall3
+    # 3. Pack calls for Multicall3 (First Phase: Treasury ownership checks only)
     calls = []
     call_metadata = []
-
+    
+    # Prioritize addresses by putting those in state files first (likely active tokens)
+    active_priority = []
+    inactive_priority = []
+    
+    # Read cache directories to see which tokens have resolved or unresolved swaps
+    priority_addrs = set()
+    for cache_path in ["resolved_swaps.json", "unresolved_swaps.json"]:
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r") as f:
+                    for m in re.finditer(r"0x[0-9a-fA-F]{40}", f.read()):
+                        priority_addrs.add(m.group(0).lower())
+            except Exception:
+                pass
+                
     for addr in addresses_to_check:
+        if addr in priority_addrs:
+            active_priority.append(addr)
+        else:
+            inactive_priority.append(addr)
+            
+    sorted_addresses = active_priority + inactive_priority
+    print(f"Prioritized search: {len(active_priority)} high-priority (active swaps) addresses first, then {len(inactive_priority)} others.")
+
+    # Define optimized list of first-round lookup minter address contracts:
+    # 1. PKMINTER (0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B) - resolves GetTreasuryTokenOwner recursively
+    # 2. V1MINTER (0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B) - mapping of TreasuryTokens directly
+    opt_minters = [
+        PKMINTER_ADDRESS.lower(),
+        "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b" # V1Minter
+    ]
+
+    for addr in sorted_addresses:
         addr_checksum = Web3.to_checksum_address(addr)
         
-        # Query GetTreasuryTokenOwner and TreasuryTokens on all minters
-        for minter_addr in minter_addresses:
+        # Query GetTreasuryTokenOwner and TreasuryTokens only on primary resolution targets
+        for minter_addr in opt_minters:
             minter_checksum = Web3.to_checksum_address(minter_addr)
             
             # Call: GetTreasuryTokenOwner
@@ -169,22 +207,6 @@ def main():
                 "callData": dummy_minter.encode_abi("TreasuryTokens", args=[addr_checksum])
             })
             call_metadata.append({"type": "owner_lookup", "address": addr.lower(), "minter": minter_addr.lower(), "method": "TreasuryTokens"})
-
-        # Call: ERC20 name()
-        calls.append({
-            "target": addr_checksum,
-            "allowFailure": True,
-            "callData": dummy_erc20.encode_abi("name")
-        })
-        call_metadata.append({"type": "name", "address": addr.lower()})
-
-        # Call: ERC20 symbol()
-        calls.append({
-            "target": addr_checksum,
-            "allowFailure": True,
-            "callData": dummy_erc20.encode_abi("symbol")
-        })
-        call_metadata.append({"type": "symbol", "address": addr.lower()})
 
     print(f"Packed {len(calls)} lookup calls. Executing in batches of 1000 to prevent rpc return data limits...")
     multicall_contract = w3.eth.contract(address=Web3.to_checksum_address(MULTICALL3_ADDRESS), abi=MULTICALL3_ABI)
@@ -262,7 +284,7 @@ def main():
             except Exception:
                 pass
 
-    # 5. For identified treasury tokens, perform a second multicall to fetch Parent() and V2Minter()
+    # 5. For identified treasury tokens, perform a second multicall to fetch Parent(), V2Minter(), name(), symbol()
     registry_file = "treasury_tokens.json"
     cached_addrs = []
     if os.path.exists(registry_file):
@@ -284,6 +306,22 @@ def main():
         for addr in treasury_addrs:
             addr_checksum = Web3.to_checksum_address(addr)
             
+            # Call: name()
+            second_calls.append({
+                "target": addr_checksum,
+                "allowFailure": True,
+                "callData": dummy_erc20.encode_abi("name")
+            })
+            second_metadata.append({"type": "name", "address": addr})
+
+            # Call: symbol()
+            second_calls.append({
+                "target": addr_checksum,
+                "allowFailure": True,
+                "callData": dummy_erc20.encode_abi("symbol")
+            })
+            second_metadata.append({"type": "symbol", "address": addr})
+
             # Call: V2Minter() view
             second_calls.append({
                 "target": addr_checksum,
@@ -337,7 +375,20 @@ def main():
                 addr = meta["address"]
                 if not success or not return_data:
                     continue
-                if meta["type"] == "minter_view":
+                if meta["type"] == "name":
+                    try:
+                        decoded = abi.decode(["string"], return_data)[0]
+                        token_data[addr]["name"] = decoded
+                    except Exception:
+                        pass
+                elif meta["type"] == "symbol":
+                    try:
+                        decoded = abi.decode(["string"], return_data)[0]
+                        token_data[addr]["symbol"] = decoded
+                        symbol_map[addr] = decoded
+                    except Exception:
+                        pass
+                elif meta["type"] == "minter_view":
                     try:
                         decoded = abi.decode(["address"], return_data)[0]
                         if decoded != "0x0000000000000000000000000000000000000000":
