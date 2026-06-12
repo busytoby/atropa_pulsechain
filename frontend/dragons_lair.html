@@ -3502,6 +3502,17 @@
         let selectedFrame = 50;
         let activeHexLock = false;
 
+        // Tab-to-Tab Beat Sync Listener
+        const beatChannel = new BroadcastChannel('pulse_beat');
+        let lastBeatTime = Date.now();
+        let currentBeatBpm = 120;
+        beatChannel.onmessage = function(e) {
+            if (e.data.type === 'tick') {
+                lastBeatTime = Date.now();
+                currentBeatBpm = e.data.bpm;
+            }
+        };
+
         function initVectorCanvas() {
             // Register slider listeners to auto-update label value text and redraw vector frame
             const ids = ["gx", "gy", "stretch", "pulse", "fire", "light", "ec"];
@@ -3627,8 +3638,11 @@
             let currentStretch = stretch;
             
             if (activeHexLock) {
-                const hexPeriod = (Date.now() % 5555) / 5555.0 * Math.PI * 2;
-                breathe = Math.sin(hexPeriod) * 0.15;
+                // Pulse to the active arpeggiator clock BPM broadcast in real time!
+                const msPerBeat = 60000.0 / currentBeatBpm;
+                const elapsed = Date.now() - lastBeatTime;
+                const phase = (elapsed % msPerBeat) / msPerBeat;
+                breathe = Math.sin(phase * Math.PI) * 0.18;
                 currentScaleColor = "#ff00a0";
                 currentEyeColor = "#7e22ce";
                 currentGx = 0.5555;

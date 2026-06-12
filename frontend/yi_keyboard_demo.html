@@ -1231,6 +1231,7 @@
         let arpBPattern = "down";
         let arpBTimer = null;
         let currentArpBIndex = 0;
+        const beatChannel = new BroadcastChannel('pulse_beat');
 
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
@@ -1619,6 +1620,9 @@
 
 
         function triggerArpNote(note, freq) {
+            try {
+                beatChannel.postMessage({ type: 'tick', bpm: arpBpm });
+            } catch(e) {}
             activeKeyNote = note;
             activeKeyFreq = freq;
 
