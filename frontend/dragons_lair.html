@@ -1081,7 +1081,10 @@
                 <option value="VIGOUR">Vigour</option>
                 <option value="TERROR">Terror</option>
                 <option value="SIGHT">Sight</option>
-                <option value="VOXEL">Voxel</option>
+                <option value="ROOM">Z-Machine Rooms</option>
+                <option value="BAG">Backpack (Bag)</option>
+                <option value="ITEM">Room Items</option>
+                <option value="VOXEL">Voxel Assets</option>
             </select>
         </div>
         <div class="cards-deck-container" id="cabsCardsContainer" style="width: 100%;">
@@ -2947,11 +2950,47 @@
                 }
             ];
 
-            const cabsCardsData = [...reactorCards, ...cachedCabsCards];
+            // Generate dynamic Room Card
+            const currentRoomName = ROOM_INFO[mockZmRoom]?.name || `Room ${mockZmRoom}`;
+            const roomExits = ROOM_INFO[mockZmRoom]?.exits || "None";
+            const roomCard = {
+                name: `Room: ${currentRoomName}`,
+                type: "ROOM",
+                color: "#9c27b0",
+                size: "32x32x16",
+                desc: `Dirk's active location. Exits: ${roomExits}.`
+            };
+
+            // Generate dynamic Bag / Inventory Card
+            const bagItemsStr = mockZmInventory.length > 0 ? mockZmInventory.join(", ") : "Empty";
+            const bagCard = {
+                name: "Dirk's Backpack (Bag)",
+                type: "BAG",
+                color: "#795548",
+                size: "16x16x20",
+                desc: `Items carried: [${bagItemsStr}]. Use the terminal to drop or take items.`
+            };
+
+            // Generate dynamic Item Cards for items physically in the current room
+            const roomItemCards = [];
+            for (let itemId in mockZmState.items) {
+                if (mockZmState.items[itemId] === mockZmRoom) {
+                    const itemName = ITEM_NAMES[itemId];
+                    roomItemCards.push({
+                        name: `Item: ${itemName}`,
+                        type: "ITEM",
+                        color: "#00bcd4",
+                        size: "8x8x8",
+                        desc: `A ${itemName} lies resting on the ground in the ${currentRoomName}. Type 'take ${itemName.toLowerCase()}' in terminal.`
+                    });
+                }
+            }
+
+            const cabsCardsData = [...reactorCards, roomCard, bagCard, ...roomItemCards, ...cachedCabsCards];
 
             cabsCardsData.forEach(card => {
                 const isMatchedSearch = card.name.toLowerCase().includes(query) || card.desc.toLowerCase().includes(query);
-                const isMatchedType = (filterType === "ALL") || (card.type === filterType) || (filterType === "VOXEL" && !["VIGOUR", "TERROR", "SIGHT"].includes(card.type));
+                const isMatchedType = (filterType === "ALL") || (card.type === filterType) || (filterType === "VOXEL" && !["VIGOUR", "TERROR", "SIGHT", "ROOM", "BAG", "ITEM"].includes(card.type));
 
                 if (!isMatchedSearch || !isMatchedType) {
                     return;
