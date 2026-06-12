@@ -40,6 +40,28 @@ PKMINTER_ABI = [
 UNRESOLVED_FILE = "unresolved_swaps.json"
 PRICE_CACHE_FILE = "price_cache.json"
 RESOLVED_FILE = "resolved_swaps.json"
+TREASURY_TOKENS_FILE = "treasury_tokens.json"
+
+def save_treasury_token(address, symbol, name, owner):
+    try:
+        tokens = {}
+        if os.path.exists(TREASURY_TOKENS_FILE):
+            with open(TREASURY_TOKENS_FILE, "r") as f:
+                tokens = json.load(f)
+        addr_lower = address.lower()
+        if addr_lower not in tokens:
+            tokens[addr_lower] = {
+                "address": addr_lower,
+                "symbol": symbol,
+                "name": name,
+                "owner": owner.lower() if owner else None,
+                "ignored": False
+            }
+            with open(TREASURY_TOKENS_FILE, "w") as f:
+                json.dump(tokens, f, indent=4)
+            print(f"👑 Added new Treasury Token to tracking: {symbol} ({name})")
+    except Exception as e:
+        print(f"Error saving treasury token: {e}")
 
 def save_resolved(swap):
     try:
@@ -144,6 +166,7 @@ def get_token_info(w3, address):
         if owner != "0x0000000000000000000000000000000000000000":
             is_treasury = True
             treasury_owner = owner.lower()
+            save_treasury_token(address, symbol, name, owner)
     except Exception:
         pass
 

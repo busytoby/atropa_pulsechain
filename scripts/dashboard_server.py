@@ -46,12 +46,63 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 except Exception:
                     pass
             
+            treasury_tokens = {}
+            if os.path.exists("treasury_tokens.json"):
+                try:
+                    with open("treasury_tokens.json", "r") as f:
+                        treasury_tokens = json.load(f)
+                except Exception:
+                    pass
+            
             response = {
                 "prices": prices,
                 "unresolved": unresolved,
-                "resolved": resolved
+                "resolved": resolved,
+                "treasury_tokens": treasury_tokens
             }
             self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+        elif self.path.startswith('/api/ignore'):
+            parsed_url = urllib.parse.urlparse(self.path)
+            params = urllib.parse.parse_qs(parsed_url.query)
+            address = params.get('address', [None])[0]
+            ignored_val = params.get('ignored', ['true'])[0].lower() == 'true'
+            
+            if address:
+                address = address.lower()
+                tokens = {}
+                if os.path.exists("treasury_tokens.json"):
+                    try:
+                        with open("treasury_tokens.json", "r") as f:
+                            tokens = json.load(f)
+                    except Exception:
+                        pass
+                
+                if address not in tokens:
+                    tokens[address] = {
+                        "address": address,
+                        "symbol": "UNKNOWN",
+                        "name": "Unknown Token",
+                        "owner": None,
+                        "ignored": ignored_val
+                    }
+                else:
+                    tokens[address]["ignored"] = ignored_val
+                
+                try:
+                    with open("treasury_tokens.json", "w") as f:
+                        json.dump(tokens, f, indent=4)
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": True, "address": address, "ignored": ignored_val}).encode('utf-8'))
+                    return
+                except Exception as e:
+                    print(f"Error saving ignored status: {e}")
+            
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b"Invalid request")
         elif self.path == '/' or self.path == '/index.html':
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -371,6 +422,34 @@ HTML_CONTENT = """<!DOCTYPE html>
             font-size: 0.85rem;
             color: var(--text-muted);
         }
+
+        .btn {
+            padding: 0.3rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .btn-ignore {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.25);
+        }
+        .btn-ignore:hover {
+            background: rgba(239, 68, 68, 0.25);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+        }
+        .btn-track {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.25);
+        }
+        .btn-track:hover {
+            background: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -447,7 +526,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
     </div>
 
-    <div class="grid" style="grid-template-columns: 1fr">
+    <div class="grid" style="grid-template-columns: 1.2fr 1fr">
         <!-- Unresolved Swaps Table -->
         <div class="card">
             <div class="card-header">
@@ -468,6 +547,33 @@ HTML_CONTENT = """<!DOCTYPE html>
                     <tbody>
                         <tr>
                             <td colspan="5" style="text-align: center; color: var(--text-muted)">No pending swaps in queue.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Treasury Token Registry Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title" style="color: #fbbf24">👑 Treasury Token Registry</div>
+                <div class="badge badge-resolved" id="treasury-tokens-count" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24">0 Minted</div>
+            </div>
+            <div style="margin-bottom: 0.8rem; font-size: 0.85rem; color: var(--text-muted)">
+                Active tracking of standard tokens minted by minters. Ignored tokens are hidden from the price catalog.
+            </div>
+            <div class="list-container" style="max-height: 300px">
+                <table class="table" id="treasury-registry-table">
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Owner Address</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--text-muted)">No treasury tokens identified yet.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -549,6 +655,44 @@ HTML_CONTENT = """<!DOCTYPE html>
                     `;
                 }).join('');
             }
+
+            // Update Treasury Token Registry Table
+            const treasuryBody = document.querySelector('#treasury-registry-table tbody');
+            const treasuryEntries = Object.entries(cachedData.treasury_tokens || {});
+            
+            // Update treasury count badge
+            document.getElementById('treasury-tokens-count').innerText = `${treasuryEntries.length} Minted`;
+
+            if (treasuryEntries.length === 0) {
+                treasuryBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted)">No treasury tokens identified yet.</td></tr>';
+            } else {
+                treasuryBody.innerHTML = treasuryEntries.map(([addr, token]) => {
+                    const isIgnored = token.ignored === true;
+                    const name = token.name || 'Unknown';
+                    const symbol = token.symbol || 'UNKNOWN';
+                    
+                    // Display gold crown next to tracked treasury tokens, cross out ignored ones
+                    const displaySymbol = isIgnored ? `<del style="color: var(--text-muted)">${symbol}</del>` : `👑 <span class="token-symbol-glow" style="color: #fbbf24">${symbol}</span>`;
+                    const displayName = isIgnored ? `<del style="color: var(--text-muted)">${name}</del>` : name;
+                    
+                    const buttonText = isIgnored ? "Track" : "Ignore";
+                    const buttonClass = isIgnored ? "btn-track" : "btn-ignore";
+                    const nextIgnored = !isIgnored;
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <div>${displaySymbol}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted)">${displayName}</div>
+                            </td>
+                            <td><a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${addr}">${formatAddress(addr)}</a></td>
+                            <td>
+                                <button class="btn ${buttonClass}" onclick="toggleIgnoreToken('${addr}', ${nextIgnored})">${buttonText}</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
 
         function renderCatalog() {
@@ -557,7 +701,11 @@ HTML_CONTENT = """<!DOCTYPE html>
             const priceEntries = Object.entries(cachedData.prices);
 
             const filtered = priceEntries.filter(([addr, val]) => {
-                return addr.toLowerCase().includes(searchVal) || 
+                const addrLower = addr.toLowerCase();
+                if (cachedData.treasury_tokens && cachedData.treasury_tokens[addrLower] && cachedData.treasury_tokens[addrLower].ignored) {
+                    return false;
+                }
+                return addrLower.includes(searchVal) || 
                        (val && val.symbol && val.symbol.toLowerCase().includes(searchVal)) ||
                        (val && val.name && val.name.toLowerCase().includes(searchVal));
             });
@@ -598,7 +746,11 @@ HTML_CONTENT = """<!DOCTYPE html>
 
                 let isTreasury = false;
                 let treasuryOwner = null;
-                if (val && typeof val === 'object') {
+                const addrLower = addr.toLowerCase();
+                if (cachedData.treasury_tokens && cachedData.treasury_tokens[addrLower]) {
+                    isTreasury = true;
+                    treasuryOwner = cachedData.treasury_tokens[addrLower].owner;
+                } else if (val && typeof val === 'object') {
                     if (val.is_treasury) isTreasury = val.is_treasury;
                     if (val.treasury_owner) treasuryOwner = val.treasury_owner;
                 }
@@ -621,6 +773,19 @@ HTML_CONTENT = """<!DOCTYPE html>
                     </tr>
                 `;
             }).join('');
+        }
+
+        async function toggleIgnoreToken(address, ignored) {
+            try {
+                const response = await fetch(`/api/ignore?address=${encodeURIComponent(address)}&ignored=${ignored}`);
+                if (response.ok) {
+                    fetchData();
+                } else {
+                    console.error("Failed to toggle ignore status");
+                }
+            } catch (err) {
+                console.error("Error toggling ignore status:", err);
+            }
         }
 
         document.getElementById('catalog-search').addEventListener('input', renderCatalog);
