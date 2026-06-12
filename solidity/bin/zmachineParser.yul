@@ -28,6 +28,9 @@ object "ZMachineParser" {
                     sstore(add(2000300, 50), 1) // Item 50: Gold Token (starts in Room 1 / lobby)
                     sstore(add(2000300, 51), 2) // Item 51: Keycard (starts in Room 2)
                     sstore(add(2000300, 52), 3) // Item 52: Energy Pack (starts in Room 3)
+                    sstore(add(2000300, 60), 20) // Item 60: Magic Sword (starts in Room 20)
+                    sstore(add(2000300, 61), 24) // Item 61: Golden Crown (starts in Room 24)
+                    sstore(add(2000300, 62), 23) // Item 62: Fire Key (starts in Room 23)
                 }
 
                 let resultPtr := 0x40
@@ -215,6 +218,30 @@ object "ZMachineParser" {
                                 sstore(add(2000300, 52), 0)
                                 mstore(resultPtr, 0x596f7520746f6f6b2074686520456e65726779205061636b2e00000000000000) // "You took the Energy Pack."
                                 resultPtr := add(resultPtr, 25)
+                                taken := 1
+                            }
+                        }
+                        if iszero(taken) {
+                            if eq(sload(add(2000300, 60)), roomId) {
+                                sstore(add(2000300, 60), 0)
+                                mstore(resultPtr, 0x596f7520746f6f6b20746865204d616769632053776f72642e00000000000000) // "You took the Magic Sword."
+                                resultPtr := add(resultPtr, 25)
+                                taken := 1
+                            }
+                        }
+                        if iszero(taken) {
+                            if eq(sload(add(2000300, 61)), roomId) {
+                                sstore(add(2000300, 61), 0)
+                                mstore(resultPtr, 0x596f7520746f6f6b2074686520476f6c64656e2043726f776e2e000000000000) // "You took the Golden Crown."
+                                resultPtr := add(resultPtr, 26)
+                                taken := 1
+                            }
+                        }
+                        if iszero(taken) {
+                            if eq(sload(add(2000300, 62)), roomId) {
+                                sstore(add(2000300, 62), 0)
+                                mstore(resultPtr, 0x596f7520746f6f6b207468652046697265204b65792e00000000000000000000) // "You took the Fire Key."
+                                resultPtr := add(resultPtr, 22)
                                 taken := 1
                             }
                         }
@@ -410,7 +437,42 @@ object "ZMachineParser" {
                                     mstore(add(resultPtr, 64), 0x6f722e0a00000000000000000000000000000000000000000000000000000000) // "or.\n"
                                     resultPtr := add(resultPtr, 68)
                                 }
-                                let knownRoom := or(or(or(iszero(roomId), eq(roomId, 1)), or(eq(roomId, 2), eq(roomId, 3))), eq(roomId, 4))
+                                if eq(roomId, 20) {
+                                    mstore(resultPtr, 0x596f75207374616e64206265666f726520746865206761746573206f66207468) // "You stand before the gates of th"
+                                    mstore(add(resultPtr, 32), 0x6520447261676f6e2773204c6169722e204469726b2028333278313678363420) // "e Dragon's Lair. Dirk (32x16x64 "
+                                    mstore(add(resultPtr, 64), 0x766f78656c732c20676f6c642061726d6f722c20726564206361706529207072) // "voxels, gold armor, red cape) pr"
+                                    mstore(add(resultPtr, 96), 0x65706172657320746f20656e7465722e0a5b4652414d453a35305d0a00000000) // "epares to enter.\n[FRAME:50]\n"
+                                    resultPtr := add(resultPtr, 124)
+                                }
+                                if eq(roomId, 21) {
+                                    mstore(resultPtr, 0x596f752061726520696e2061206461726b2073746f6e6520636f727269646f72) // "You are in a dark stone corridor"
+                                    mstore(add(resultPtr, 32), 0x2e2041206769616e742073696c686f7565747465206f6620612063726f756368) // ". A giant silhouette of a crouch"
+                                    mstore(add(resultPtr, 64), 0x696e672053696e6765202836347836347831323820766f78656c732920697320) // "ing Singe (64x64x128 voxels) is "
+                                    mstore(add(resultPtr, 96), 0x70726f6a6563746564206f6e207468652077616c6c2e0a5b4652414d453a3338) // "projected on the wall.\n[FRAME:38"
+                                    mstore(add(resultPtr, 128), 0x305d0a0000000000000000000000000000000000000000000000000000000000) // "0]\n"
+                                    resultPtr := add(resultPtr, 131)
+                                }
+                                if eq(roomId, 22) {
+                                    mstore(resultPtr, 0x596f7520666163652061206465657020636861736d2e204469726b2028333278) // "You face a deep chasm. Dirk (32x"
+                                    mstore(add(resultPtr, 32), 0x313678363420766f78656c732c20636f696c6564207374616e63652920697320) // "16x64 voxels, coiled stance) is "
+                                    mstore(add(resultPtr, 64), 0x707265706172696e6720746f206c656170206163726f73732e0a5b4652414d45) // "preparing to leap across.\n[FRAME"
+                                    mstore(add(resultPtr, 96), 0x3a3538305d0a0000000000000000000000000000000000000000000000000000) // ":580]\n"
+                                    resultPtr := add(resultPtr, 103)
+                                }
+                                if eq(roomId, 23) {
+                                    mstore(resultPtr, 0x596f752061726520696e2053696e676527732043617665726e2e2053696e6765) // "You are in Singe's Cavern. Singe"
+                                    mstore(add(resultPtr, 32), 0x202836347836347831323820766f78656c732920697320636f696c65642c2072) // " (64x64x128 voxels) is coiled, r"
+                                    mstore(add(resultPtr, 64), 0x6561677920746f20626c61737420666972652e0a5b4652414d453a3730305d0a) // "eady to blast fire.\n[FRAME:700]\n"
+                                    resultPtr := add(resultPtr, 95)
+                                }
+                                if eq(roomId, 24) {
+                                    mstore(resultPtr, 0x596f752061726520696e20746865205472656173757265205661756c742e2050) // "You are in the Treasure Vault. P"
+                                    mstore(add(resultPtr, 32), 0x72696e6365737320446170686e652028313678313278363020766f78656c732c) // "rincess Daphne (16x12x60 voxels,"
+                                    mstore(add(resultPtr, 64), 0x20676c6f77696e672063726f776e2920697320747261707065642e0a5b465241) // " glowing crown) is trapped.\n[FRA"
+                                    mstore(add(resultPtr, 96), 0x4d453a313035305d0a0000000000000000000000000000000000000000000000) // "ME:1050]\n"
+                                    resultPtr := add(resultPtr, 105)
+                                }
+                                let knownRoom := or(or(or(or(iszero(roomId), eq(roomId, 1)), or(eq(roomId, 2), eq(roomId, 3))), or(eq(roomId, 4), eq(roomId, 20))), or(or(eq(roomId, 21), eq(roomId, 22)), or(eq(roomId, 23), eq(roomId, 24))))
                                 if iszero(knownRoom) {
                                     mstore(resultPtr, 0x596f752061726520696e20616e20656d70747920726f6f6d2e00000000000000) // "You are in an empty room."
                                     resultPtr := add(resultPtr, 25)
@@ -430,6 +492,25 @@ object "ZMachineParser" {
                         if eq(sload(add(2000300, 52)), roomId) {
                             mstore(resultPtr, 0x20596f752073656520616e20456e65726779205061636b20686572652e000000) // " You see an Energy Pack here."
                             resultPtr := add(resultPtr, 28)
+                        }
+                        if eq(sload(add(2000300, 60)), roomId) {
+                            mstore(resultPtr, 0x20596f75207365652061204d616769632053776f726420686572652e20436172) // " You see a Magic Sword here. Car"
+                            mstore(add(resultPtr, 32), 0x642036303a2032347834783420766f78656c732c20737465656c20626c756520) // "d 60: 24x4x4 voxels, steel blue "
+                            mstore(add(resultPtr, 64), 0x626c6164652c20676c6f77696e672063726f737367756172642e000000000000) // "blade, glowing crossguard."
+                            resultPtr := add(resultPtr, 90)
+                        }
+                        if eq(sload(add(2000300, 61)), roomId) {
+                            mstore(resultPtr, 0x20596f7520736565206120476f6c64656e2043726f776e20686572652e204361) // " You see a Golden Crown here. Ca"
+                            mstore(add(resultPtr, 32), 0x72642036313a203132783132783820766f78656c732c20706f6c697368656420) // "rd 61: 12x12x8 voxels, polished "
+                            mstore(add(resultPtr, 64), 0x676f6c642066696c69677265652c206372696d736f6e2076656c766574206361) // "gold filigree, crimson velvet ca"
+                            mstore(add(resultPtr, 96), 0x702e000000000000000000000000000000000000000000000000000000000000) // "p."
+                            resultPtr := add(resultPtr, 98)
+                        }
+                        if eq(sload(add(2000300, 62)), roomId) {
+                            mstore(resultPtr, 0x20596f752073656520612046697265204b657920686572652e20436172642036) // " You see a Fire Key here. Card 6"
+                            mstore(add(resultPtr, 32), 0x323a20387833783220766f78656c732c206f6273696469616e20636f72652c20) // "2: 8x3x2 voxels, obsidian core, "
+                            mstore(add(resultPtr, 64), 0x666c69636b6572696e67206865617420656d626572732e000000000000000000) // "flickering heat embers."
+                            resultPtr := add(resultPtr, 87)
                         }
                         
                         let enemyType := 0
@@ -1685,6 +1766,21 @@ object "ZMachineParser" {
                         invPtr := add(invPtr, 14)
                         count := add(count, 1)
                     }
+                    if getInventoryBalance(player, 60) {
+                        mstore(invPtr, 0x0a2d204d616769632053776f7264000000000000000000000000000000000000) // "\n- Magic Sword"
+                        invPtr := add(invPtr, 14)
+                        count := add(count, 1)
+                    }
+                    if getInventoryBalance(player, 61) {
+                        mstore(invPtr, 0x0a2d20476f6c64656e2043726f776e0000000000000000000000000000000000) // "\n- Golden Crown"
+                        invPtr := add(invPtr, 15)
+                        count := add(count, 1)
+                    }
+                    if getInventoryBalance(player, 62) {
+                        mstore(invPtr, 0x0a2d2046697265204b6579000000000000000000000000000000000000000000) // "\n- Fire Key"
+                        invPtr := add(invPtr, 11)
+                        count := add(count, 1)
+                    }
 
                     // Gauntlet Stats Bridge: Check if Gauntlet is active
                     let folkloreAddr := sload(2500000)
@@ -2129,10 +2225,15 @@ object "ZMachineParser" {
             function getRoomExits(roomId) -> exits {
                 exits := sload(add(3200000, roomId))
                 if iszero(exits) {
-                    if eq(roomId, 10) { exits := 0x01000000 } // North -> Room 1
+                    if eq(roomId, 10) { exits := 0x01140000 } // North -> Room 1, South -> Room 20
                     if eq(roomId, 1)  { exits := 0x000a0203 } // South -> Room 10, East -> Room 2, West -> Room 3
                     if eq(roomId, 2)  { exits := 0x00000001 } // West -> Room 1
                     if eq(roomId, 3)  { exits := 0x00000100 } // East -> Room 1
+                    if eq(roomId, 20) { exits := 0x0a001500 } // North -> Room 10, East -> Room 21
+                    if eq(roomId, 21) { exits := 0x00001614 } // East -> Room 22, West -> Room 20
+                    if eq(roomId, 22) { exits := 0x17000015 } // North -> Room 23, West -> Room 21
+                    if eq(roomId, 23) { exits := 0x00161800 } // South -> Room 22, East -> Room 24
+                    if eq(roomId, 24) { exits := 0x00000017 } // West -> Room 23
                 }
             }
             

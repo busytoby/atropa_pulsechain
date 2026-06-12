@@ -28,7 +28,7 @@ def load_dna_frame(file_path, frame_idx):
             'er': er, 'eg': eg, 'eb': eb, 'ec': ec, 'total': total_frames
         }
 
-def render_dragon_frame(frame_idx=700):
+def render_dragon_frame(frame_idx=700, steps_override=None, cfg_override=None, prompt_override=None):
     print("=== TSFi Dragon's Lair Style DNA Renderer ===")
     
     dna_path = "tsfi2-deepseek/assets/dragon.dna"
@@ -46,18 +46,31 @@ def render_dragon_frame(frame_idx=700):
     print(f"  -> Fire intensity: {fire_percent}% | Light contrast: {frame['light']:.2f}")
     print(f"  -> Dragon RGB: ({frame['r']}, {frame['g']}, {frame['b']})")
     
-    # Construct cel-shaded Don Bluth prompt with values from DNA record
-    prompt = (
-        f"A fierce animated red dragon, skin color RGB({frame['r']},{frame['g']},{frame['b']}), "
-        f"glowing eyes RGB({frame['er']},{frame['eg']},{frame['eb']}), "
-        f"1980s cel animation style, classic Don Bluth aesthetic, bold black ink outlines, "
-        f"vibrant hand-painted gouache coloration, dramatic lighting with contrast {frame['light']:.2f}, "
-    )
-    
-    if frame_idx >= 600 and frame_idx < 900:
-        prompt += f"breathing a massive burst of fiery orange dragon fire, hot golden flame eruption with intensity {frame['fire']:.2f}, dark fantasy dungeon background"
+    # Prompt Setup
+    if prompt_override and prompt_override.strip():
+        prompt = prompt_override
     else:
-        prompt += f"crouched down inside a dark fantasy castle dungeon hallway, embers in the air with intensity {frame['fire']:.2f}"
+        eye_desc = "two glowing eyes"
+        if frame['ec'] == 1:
+            eye_desc = "one single glowing eye on its face"
+        elif frame['ec'] == 3:
+            eye_desc = "three glowing eyes arranged in a mystical pattern on its forehead"
+        elif frame['ec'] == 4:
+            eye_desc = "four glowing eyes arranged symmetrically"
+        elif frame['ec'] == 0:
+            eye_desc = "no eyes, blind face"
+
+        prompt = (
+            f"A fierce animated red dragon, skin color RGB({frame['r']},{frame['g']},{frame['b']}), "
+            f"having {eye_desc} of color RGB({frame['er']},{frame['eg']},{frame['eb']}), "
+            f"1980s cel animation style, classic Don Bluth aesthetic, bold black ink outlines, "
+            f"vibrant hand-painted gouache coloration, dramatic lighting with contrast {frame['light']:.2f}, "
+        )
+        
+        if frame_idx >= 600 and frame_idx < 900:
+            prompt += f"breathing a massive burst of fiery orange dragon fire, hot golden flame eruption with intensity {frame['fire']:.2f}, dark fantasy dungeon background"
+        else:
+            prompt += f"crouched down inside a dark fantasy castle dungeon hallway, embers in the air with intensity {frame['fire']:.2f}"
         
     raw_out = "tmp/dna_render_dragon.raw"
     png_out = "assets/storybook/page_dragon_dna.png"
@@ -65,6 +78,9 @@ def render_dragon_frame(frame_idx=700):
     os.makedirs("tmp", exist_ok=True)
     os.makedirs("assets/storybook", exist_ok=True)
     
+    steps = str(steps_override) if steps_override is not None else "4"
+    cfg = str(cfg_override) if cfg_override is not None else "1.5"
+
     # Run C++ Stable Diffusion worker
     worker_path = "./bin/tsfi_sd_worker"
     cmd = [
@@ -73,9 +89,9 @@ def render_dragon_frame(frame_idx=700):
         raw_out,
         "0", # no shm
         "turbo",
-        "4", # steps
+        steps,
         "euler_a",
-        "1.5" # cfg
+        cfg
     ]
     
     print(f"[Director] Executing Stable Diffusion: {' '.join(cmd)}")
@@ -130,8 +146,12 @@ def render_dragon_frame(frame_idx=700):
             print("Make sure Ollama is running on port 11435.")
 
 if __name__ == "__main__":
-    import sys
-    frame_to_render = 700
-    if len(sys.argv) > 1:
-        frame_to_render = int(sys.argv[1])
-    render_dragon_frame(frame_to_render)
+    import argparse
+    parser = argparse.ArgumentParser(description="TSFi Dragon DNA Renderer")
+    parser.add_argument("frame", type=int, nargs="?", default=700, help="Frame index to render")
+    parser.add_argument("--steps", type=int, default=None, help="Stable Diffusion steps override")
+    parser.add_argument("--cfg", type=float, default=None, help="Stable Diffusion CFG scale override")
+    parser.add_argument("--prompt", type=str, default=None, help="Custom prompt override")
+    args = parser.parse_args()
+    
+    render_dragon_frame(args.frame, args.steps, args.cfg, args.prompt)

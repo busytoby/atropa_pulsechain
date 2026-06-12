@@ -593,6 +593,403 @@
             0% { opacity: 0.3; transform: scale(0.97) rotateY(-8deg); filter: brightness(0.85); }
             100% { opacity: 1; transform: scale(1) rotateY(0deg); filter: brightness(1); }
         }
+
+        /* Dashboard Tabs Layout */
+        .dashboard-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-tabs .tab-btn {
+            background: rgba(30, 24, 38, 0.6);
+            border: 1px solid var(--border);
+            color: #b2a8c0;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .dashboard-tabs .tab-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+            transform: translateY(-1px);
+        }
+
+        .dashboard-tabs .tab-btn.active {
+            background: linear-gradient(135deg, #ffaa00 0%, #d87000 100%);
+            color: #000;
+            border-color: #ffaa00;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+        }
+
+        .tab-panel {
+            width: 100%;
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-panel.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* CABS Voxel Cards Styles */
+        .cards-deck-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 24px;
+            padding: 10px;
+        }
+
+        .cabs-card {
+            background: linear-gradient(135deg, rgba(26, 21, 32, 0.85) 0%, rgba(13, 11, 15, 0.95) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cabs-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 170, 0, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .cabs-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 15px 35px rgba(255, 170, 0, 0.15), 0 0 20px rgba(255, 170, 0, 0.05);
+            transform: translateY(-5px);
+        }
+
+        .cabs-card-artwork {
+            width: 100%;
+            height: 140px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 170, 0, 0.15);
+            background: #110e16;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cabs-card-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 170, 0, 0.2);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 4px var(--primary-glow);
+        }
+
+        .cabs-card-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }
+
+        .cabs-card-voxels {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #d8a3ff;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .cabs-card-desc {
+            font-size: 0.88rem;
+            line-height: 1.5;
+            color: #a59cb4;
+        }
+
+        /* Z-Machine Terminal Styles */
+        .terminal-grid {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1.8fr 1fr;
+            gap: 20px;
+        }
+
+        .crt-terminal {
+            background: #050208;
+            border: 2px solid #8a2be2;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.25), inset 0 0 20px rgba(0,0,0,0.9);
+            padding: 20px;
+            height: 480px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .crt-terminal::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .terminal-output {
+            flex-grow: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            color: #c896ff;
+            text-shadow: 0 0 4px rgba(200, 150, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 8px;
+            scroll-behavior: smooth;
+        }
+
+        .terminal-output::-webkit-scrollbar {
+            width: 6px;
+        }
+        .terminal-output::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+        }
+        .terminal-output::-webkit-scrollbar-thumb {
+            background: #8a2be2;
+            border-radius: 3px;
+        }
+
+        .terminal-line {
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .terminal-line.cmd {
+            color: #00ffff;
+            text-shadow: 0 0 4px rgba(0, 255, 255, 0.5);
+            font-weight: 700;
+        }
+        .terminal-line.system {
+            color: #ffaa00;
+            text-shadow: 0 0 4px rgba(255, 170, 0, 0.5);
+        }
+
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(138, 43, 226, 0.3);
+            padding-top: 15px;
+            margin-top: 10px;
+            gap: 10px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .terminal-prompt {
+            color: #00ffff;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .terminal-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00ffff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            text-shadow: 0 0 4px rgba(0, 255, 255, 0.5);
+        }
+
+        .terminal-status-card {
+            background: rgba(138, 43, 226, 0.06);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            height: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* DNA Editor Styles */
+        .editor-grid {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 24px;
+        }
+
+        .editor-controls-card {
+            background: rgba(30, 24, 38, 0.65);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            backdrop-filter: blur(12px);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-label-container {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #b2a8c0;
+        }
+
+        .slider-input {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #251e2e;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--primary-glow);
+            transition: transform 0.1s;
+        }
+
+        .slider-input::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .color-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .color-input-picker {
+            border: none;
+            background: transparent;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .editor-preview-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .vector-canvas-container {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #110c18;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .editor-presets-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn-preset {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #b2a8c0;
+            padding: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .btn-preset:hover {
+            background: rgba(255, 170, 0, 0.08);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -600,38 +997,283 @@
     <h1>Dragon's Lair</h1>
     <div class="subtitle">An interactive laserdisc tribute. Guide Dirk the Daring by executing the correct action cue (Move or Sword) at the exact moment.</div>
 
-    <div class="cabinet" id="arcadeCabinet">
-        <div class="screen-container" id="screenContainer">
-            <img src="dragons_lair_title.png" alt="Dragon's Lair Title Screen" class="screen-img" id="gameScreen">
-            <div class="hud-overlay">
-                <div class="score">SCORE: <span id="scoreVal">00000</span></div>
-                <div class="lives">LIVES: <span id="livesVal">❤❤❤</span></div>
+    <!-- Main Dashboard Tabs -->
+    <div class="dashboard-tabs">
+        <button class="tab-btn active" id="tabBtn-game" onclick="switchDashboardTab('game')">🎮 Arcade Cabinet</button>
+        <button class="tab-btn" id="tabBtn-cards" onclick="switchDashboardTab('cards')">🃏 CABS Voxel Cards</button>
+        <button class="tab-btn" id="tabBtn-zmachine" onclick="switchDashboardTab('zmachine')">📟 Z-Machine Terminal</button>
+        <button class="tab-btn" id="tabBtn-editor" onclick="switchDashboardTab('editor')">🧬 Dragon DNA Editor</button>
+    </div>
+
+    <!-- Tab Panel: Cinematic Game -->
+    <div id="gameTab" class="tab-panel active">
+        <div class="cabinet" id="arcadeCabinet">
+            <div class="screen-container" id="screenContainer">
+                <img src="dragons_lair_title.png" alt="Dragon's Lair Title Screen" class="screen-img" id="gameScreen">
+                <div class="hud-overlay">
+                    <div class="score">SCORE: <span id="scoreVal">00000</span></div>
+                    <div class="lives">LIVES: <span id="livesVal">❤❤❤</span></div>
+                </div>
+                <div class="prompt-overlay" id="promptBox">ACT NOW!</div>
             </div>
-            <div class="prompt-overlay" id="promptBox">ACT NOW!</div>
-        </div>
 
-        <div class="action-container">
-            <button class="btn" onclick="makeMove('LEFT')">◀ Left</button>
-            <button class="btn" onclick="makeMove('RIGHT')">Right ▶</button>
-            <button class="btn btn-sword" onclick="makeMove('SWORD')">⚔ SWORD</button>
-            <button class="btn" id="btnAiToggle" onclick="toggleAiMode()" style="border-color: var(--success); color: var(--success);">AI Autoplay</button>
-        </div>
+            <div class="action-container">
+                <button class="btn" onclick="makeMove('LEFT')">◀ Left</button>
+                <button class="btn" onclick="makeMove('RIGHT')">Right ▶</button>
+                <button class="btn btn-sword" onclick="makeMove('SWORD')">⚔ SWORD</button>
+                <button class="btn" id="btnAiToggle" onclick="toggleAiMode()" style="border-color: var(--success); color: var(--success);">AI Autoplay</button>
+            </div>
 
-        <div class="status-panel" id="statusMessage">
-            Insert Coin / Press any action button to start the game!
-        </div>
-
-        <!-- Story Book Chronicles Panel -->
-        <div class="storybook-panel">
-            <div class="storybook-header">
-                <span>📖 The Chronicles of Dirk the Daring</span>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn-book-trigger" onclick="openBook()" id="btnOpenBook" style="display: none;">📖 Open Book</button>
-                    <button class="btn-save" onclick="downloadStory()" id="btnDownloadStory" style="display: none;">Save Tale</button>
+            <!-- L-Network Impedance Tuner Control Panel -->
+            <div class="storybook-panel" style="margin: 15px 0 10px 0; padding: 12px; width: 100%; border-color: rgba(0, 230, 118, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 0.85rem; color: #ffaa00; margin-bottom: 8px;">
+                    <span>⚡ ALCHEMICAL L-NETWORK TUNER</span>
+                    <span id="tunerStatus" style="color: #00e676; font-weight: bold;">MATCHED (1.00:1)</span>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; align-items: center; font-family: monospace; font-size: 0.8rem; flex-grow: 1; min-width: 140px;">
+                        <span style="color: #a59cb4;">Series C:</span>
+                        <input type="range" id="tunerC" min="1" max="100" value="50" style="flex-grow: 1; accent-color: #ffaa00;" oninput="adjustTunerManually()">
+                        <span id="valTunerC" style="color: #fff; width: 35px;">50pF</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; font-family: monospace; font-size: 0.8rem; flex-grow: 1; min-width: 140px;">
+                        <span style="color: #a59cb4;">Shunt L:</span>
+                        <input type="range" id="tunerL" min="1" max="100" value="50" style="flex-grow: 1; accent-color: #ffaa00;" oninput="adjustTunerManually()">
+                        <span id="valTunerL" style="color: #fff; width: 35px;">50nH</span>
+                    </div>
+                    <button class="btn" id="btnAutoTune" onclick="triggerAutoTune()" style="font-size: 0.75rem; padding: 5px 10px; border-color: #00e676; color: #00e676; min-width: 90px; background: transparent; height: 28px; line-height: 16px;">Auto-Match</button>
                 </div>
             </div>
-            <div class="storybook-content" id="storybookContent">
-                <p style="color: #655a74; font-style: italic;">No chronicle has begun yet. Start the simulator to write Dirk's tale...</p>
+
+            <div class="status-panel" id="statusMessage">
+                Insert Coin / Press any action button to start the game!
+            </div>
+
+            <!-- Story Book Chronicles Panel -->
+            <div class="storybook-panel">
+                <div class="storybook-header">
+                    <span>📖 The Chronicles of Dirk the Daring</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-book-trigger" onclick="openBook()" id="btnOpenBook" style="display: none;">📖 Open Book</button>
+                        <button class="btn-save" onclick="downloadStory()" id="btnDownloadStory" style="display: none;">Save Tale</button>
+                    </div>
+                </div>
+                <div class="storybook-content" id="storybookContent">
+                    <p style="color: #655a74; font-style: italic;">No chronicle has begun yet. Start the simulator to write Dirk's tale...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Panel: CABS Voxel Cards -->
+    <div id="cardsTab" class="tab-panel">
+        <div class="cards-deck-container" id="cabsCardsContainer">
+            <!-- Rendered dynamically via JS -->
+        </div>
+        <!-- Reactor Statistics Panel -->
+        <div class="storybook-panel" style="margin-top: 30px; border-color: var(--border);">
+            <div class="storybook-header" style="border-bottom-color: var(--border);">
+                <span style="color: var(--primary);">📊 REACTOR TELEMETRY STATISTICS</span>
+                <span id="statsSummary" style="font-family: monospace; font-size: 0.85rem; color: var(--text);">Cycles: 0 | Avg SWR: 1.00:1</span>
+            </div>
+            <div style="padding: 15px; font-family: monospace; max-height: 250px; overflow-y: auto;" id="reactorStatsLogs">
+                <p style="color: #655a74; font-style: italic;">No telemetry cycles recorded yet. Play the game or trigger actions to collect statistics...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Panel: Z-Machine ZIL Terminal -->
+    <div id="zmachineTab" class="tab-panel">
+        <div class="terminal-grid">
+            <div class="crt-terminal">
+                <div class="terminal-output" id="terminalOutput">
+                    <div class="terminal-line system">*** Z-MACHINE INTERACTIVE TERMINAL ACTIVE ***</div>
+                    <div class="terminal-line system">Type 'look' or direction commands to navigate the Dragon's Lair still frame rooms.</div>
+                </div>
+                <div class="terminal-input-container">
+                    <span class="terminal-prompt">&gt;</span>
+                    <input type="text" id="terminalInput" class="terminal-input" placeholder="Type command here..." autofocus>
+                </div>
+            </div>
+            
+            <div class="terminal-status-card">
+                <h3 style="font-family: 'Orbitron', sans-serif; color: #8a2be2; margin: 0; border-bottom: 1px solid rgba(138,43,226,0.3); padding-bottom: 8px;">Z-MACHINE HUD</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; font-family: monospace; font-size: 0.95rem;">
+                    <div>📍 Current Room: <span id="zStatusRoom" style="color: #fff; font-weight: bold;">10 (Gates Entrance)</span></div>
+                    <div>🚪 Exits: <span id="zStatusExits" style="color: #00ffff;">North</span></div>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; margin-top: 5px;">
+                        <strong>EVM Connection Status:</strong>
+                        <div id="zEVMStatus" style="color: #ffaa00; margin-top: 5px;">Checking chain status...</div>
+                    </div>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; margin-top: 5px;">
+                        <strong>Backpack Inventory:</strong>
+                        <div id="zInventoryStatus" style="color: #b2a8c0; margin-top: 5px; font-style: italic;">No items held.</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.82rem; color: #8a7c9d; line-height: 1.4; border-top: 1px solid rgba(138,43,226,0.2); padding-top: 10px;">
+                    💡 Tips: Go south to explore the new stills rooms (Gates, Corridor, Leap, Cavern, Vault). Take cards and examine them.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Panel: Dragon DNA Editor -->
+    <div id="editorTab" class="tab-panel">
+        <div class="editor-grid">
+            <div class="editor-controls-card">
+                <h3 style="color: var(--primary); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; border-bottom: 1px solid rgba(255,170,0,0.2); padding-bottom: 8px;">GENOME PARAMETERS</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Horizontal Offset (g_x)</span>
+                        <span id="label-gx">0.00</span>
+                    </div>
+                    <input type="range" id="slider-gx" class="slider-input" min="-1" max="1" step="0.01" value="0.00">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Vertical Bob (g_y)</span>
+                        <span id="label-gy">0.00</span>
+                    </div>
+                    <input type="range" id="slider-gy" class="slider-input" min="-1" max="1" step="0.01" value="0.00">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Squash & Stretch</span>
+                        <span id="label-stretch">1.00</span>
+                    </div>
+                    <input type="range" id="slider-stretch" class="slider-input" min="0.5" max="1.5" step="0.01" value="1.00">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Bessel Pulse (Breathing)</span>
+                        <span id="label-pulse">0.00</span>
+                    </div>
+                    <input type="range" id="slider-pulse" class="slider-input" min="-1.5" max="1.5" step="0.01" value="0.00">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Flame Eruption Volume (fire)</span>
+                        <span id="label-fire">0.00</span>
+                    </div>
+                    <input type="range" id="slider-fire" class="slider-input" min="0" max="1.2" step="0.01" value="0.00">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Contrast Lighting (light)</span>
+                        <span id="label-light">1.00</span>
+                    </div>
+                    <input type="range" id="slider-light" class="slider-input" min="0.5" max="2.0" step="0.05" value="1.00">
+                </div>
+
+                <div class="color-picker-group">
+                    <div class="slider-group">
+                        <label class="slider-label-container" style="font-size: 0.78rem;">Scale Color (RGB)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="picker-scale" class="color-input-picker" value="#ff2200">
+                            <span id="label-scale-color" style="font-family: monospace; font-size: 0.8rem;">#ff2200</span>
+                        </div>
+                    </div>
+                    <div class="slider-group">
+                        <label class="slider-label-container" style="font-size: 0.78rem;">Eye Highlight (RGB)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="picker-eye" class="color-input-picker" value="#ffcc00">
+                            <span id="label-eye-color" style="font-family: monospace; font-size: 0.8rem;">#ffcc00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Active Eye Count</span>
+                        <span id="label-ec">2</span>
+                    </div>
+                    <input type="range" id="slider-ec" class="slider-input" min="0" max="4" step="1" value="2">
+                </div>
+
+                <div style="border-top: 1px solid rgba(255,170,0,0.15); margin-top: 15px; padding-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                    <h4 style="color: var(--primary); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">DIFFUSION WORKER OVERRIDES</h4>
+                    
+                    <div class="slider-group">
+                        <label class="slider-label-container" style="font-size: 0.78rem;">Prompt Text Override</label>
+                        <textarea id="txtPromptOverride" placeholder="Optional: Enter a custom Stable Diffusion prompt override..." style="width: 100%; min-height: 50px; background: #110e16; color: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-family: monospace; font-size: 0.75rem; outline: none;"></textarea>
+                    </div>
+
+                    <div class="preset-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="slider-group">
+                            <div class="slider-label-container" style="font-size: 0.75rem;">
+                                <span>Steps</span>
+                                <span id="label-steps">4</span>
+                            </div>
+                            <input type="range" id="slider-steps" min="1" max="25" step="1" value="4" oninput="document.getElementById('label-steps').innerText = this.value">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label-container" style="font-size: 0.75rem;">
+                                <span>CFG Scale</span>
+                                <span id="label-cfg">1.5</span>
+                            </div>
+                            <input type="range" id="slider-cfg" min="1.0" max="15.0" step="0.5" value="1.5" oninput="document.getElementById('label-cfg').innerText = Number(this.value).toFixed(1)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-preview-card">
+                <div class="vector-canvas-container">
+                    <canvas id="vectorCanvas" width="400" height="300" style="width: 100%; height: 100%; display: block;"></canvas>
+                </div>
+                
+                <div class="editor-presets-container">
+                    <h4 style="color: var(--primary); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">LOAD STILL PRESETS</h4>
+                    <div class="preset-grid">
+                        <button class="btn-preset" onclick="loadDnaPreset(50, 0.0, 0.04, 1.02, 0.35, 0.0, 1.0, '#d81e1e', '#ffdd00', 2)">
+                            <span>Page 1: The Gates</span>
+                            <span style="font-size: 0.65rem; color: #8a7c9d;">Frame 50 - Idle Bob</span>
+                        </button>
+                        <button class="btn-preset" onclick="loadDnaPreset(380, 0.0, -0.04, 0.93, 0.55, 0.1, 0.85, '#9f1d1d', '#ffa800', 2)">
+                            <span>Page 2: The Corridor</span>
+                            <span style="font-size: 0.65rem; color: #8a7c9d;">Frame 380 - Silhouette</span>
+                        </button>
+                        <button class="btn-preset" onclick="loadDnaPreset(580, 0.0, -0.14, 0.77, 0.95, 0.2, 0.7, '#881b1b', '#ff8800', 2)">
+                            <span>Page 3: The Leap</span>
+                            <span style="font-size: 0.65rem; color: #8a7c9d;">Frame 580 - Deep Squash</span>
+                        </button>
+                        <button class="btn-preset" onclick="loadDnaPreset(700, 0.08, 0.02, 1.1, -0.45, 1.0, 1.6, '#ff2525', '#ffcc00', 2)">
+                            <span>Page 4: The Fire Blast</span>
+                            <span style="font-size: 0.65rem; color: #8a7c9d;">Frame 700 - Eruption</span>
+                        </button>
+                        <button class="btn-preset" onclick="loadDnaPreset(1050, 0.0, 0.08, 1.03, 0.15, 0.05, 1.3, '#d81e1e', '#ffdd00', 2)">
+                            <span>Page 5: The Victory</span>
+                            <span style="font-size: 0.65rem; color: #8a7c9d;">Frame 1050 - Triumph</span>
+                        </button>
+                    </div>
+                    
+                    <h4 style="color: var(--primary); margin: 10px 0 0 0; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">CHARACTER DNA STAMP</h4>
+                    <div class="preset-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 5px;">
+                        <button class="btn-preset" onclick="loadDnaPreset(selectedFrame, 0.0, 0.0, 1.0, 0.2, 0.0, 1.0, '#ffaa00', '#ff0000', 2)">
+                            <span>🛡️ Dirk</span>
+                        </button>
+                        <button class="btn-preset" onclick="loadDnaPreset(selectedFrame, 0.1, 0.05, 1.2, 0.8, 1.0, 1.8, '#ff3c3c', '#ffdd00', 3)">
+                            <span>🐉 Singe</span>
+                        </button>
+                        <button class="btn-preset" onclick="loadDnaPreset(selectedFrame, -0.05, 0.0, 0.9, 0.1, 0.0, 1.2, '#ff00bb', '#00ffff', 2)">
+                            <span>👑 Daphne</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn btn-sword btn-block" onclick="synthesizeDnaFrame()" id="btnSynthDna" style="justify-content: center;">
+                        ✨ Synthesize Cel Frame
+                    </button>
+                    <div id="synthLogs" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,170,0,0.15); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.75rem; color: #6f9; max-height: 120px; overflow-y: auto; display: none;">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -669,7 +1311,21 @@
             <div class="book-controls">
                 <button class="book-btn" onclick="prevPage()" id="btnPrevPage">◀ Prev</button>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <select id="voiceSelect" style="background: #3d2b1f; color: #f4edd8; border: 1px solid rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; font-family: 'Outfit', sans-serif; font-size: 0.8rem; max-width: 180px; outline: none; cursor: pointer;"></select>
+                    <select id="voiceSelect" style="background: #3d2b1f; color: #f4edd8; border: 1px solid rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; font-family: 'Outfit', sans-serif; font-size: 0.8rem; max-width: 140px; outline: none; cursor: pointer;"></select>
+                    <label style="font-family: 'Outfit', sans-serif; font-size: 0.8rem; color: #3d2b1f; display: flex; align-items: center; gap: 4px; font-weight: bold; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="chkYoungVoice" onchange="toggleYoungVoiceCheck(this.checked)" style="cursor: pointer;">
+                        👶 Young Tone
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 5px; font-family: 'Outfit', sans-serif; font-size: 0.75rem; color: #3d2b1f; font-weight: bold;">
+                        <span>Pitch:</span>
+                        <input type="range" id="ttsPitch" min="0.5" max="2" step="0.05" value="1.0" style="width: 60px; height: 4px; cursor: pointer;" oninput="stopReading()">
+                        <span id="lblTtsPitch" style="min-width: 20px;">1.0</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; font-family: 'Outfit', sans-serif; font-size: 0.75rem; color: #3d2b1f; font-weight: bold;">
+                        <span>Rate:</span>
+                        <input type="range" id="ttsRate" min="0.5" max="2" step="0.05" value="1.0" style="width: 60px; height: 4px; cursor: pointer;" oninput="stopReading()">
+                        <span id="lblTtsRate" style="min-width: 20px;">1.0</span>
+                    </div>
                     <button class="book-btn book-btn-read" onclick="toggleReadAloud()" id="btnReadAloud">🔊 Read Aloud</button>
                 </div>
                 <button class="book-btn" onclick="nextPage()" id="btnNextPage">Next ▶</button>
@@ -714,6 +1370,13 @@
         let expectedAction = "";
         let currentStage = 0;
         let aiMode = false;
+
+        // SWR Vaesen Emotional Reactor Variables
+        let swr = 1.0;
+        let returnLoss = 40.0;
+        let transEfficiency = 1.0;
+        let vaesenTerror = 1.0;
+        let reactorStatsHistory = [];
 
         let storyBook = [
             {
@@ -1010,6 +1673,104 @@
                 }
             }
 
+            // Procedurally render matched character voxel models onto the scene
+            const characters = [
+                { name: "dirk", color: "#ffaa00", dims: [32, 16, 64] },
+                { name: "singe", color: "#ff3c3c", dims: [64, 64, 128] },
+                { name: "daphne", color: "#ff00bb", dims: [16, 12, 60] },
+                { name: "lizard king", color: "#00ff66", dims: [30, 20, 58] },
+                { name: "giddy goon", color: "#77ff00", dims: [18, 12, 36] },
+                { name: "electric knight", color: "#00ffff", dims: [32, 20, 68] },
+                { name: "sword", color: "#ffaa00", dims: [24, 4, 4] },
+                { name: "crown", color: "#ffd700", dims: [12, 12, 8] },
+                { name: "key", color: "#ff7700", dims: [8, 3, 2] }
+            ];
+
+            let drawCount = 0;
+            characters.forEach(char => {
+                if (p.includes(char.name) && drawCount < 2) {
+                    const cx = 120 + drawCount * 160;
+                    const cy = 180;
+                    const maxDim = Math.max(...char.dims);
+                    const baseScale = 50 / (maxDim || 24);
+                    
+                    // Draw character background glow
+                    const charGlow = ctx.createRadialGradient(cx, cy, 5, cx, cy, 40);
+                    charGlow.addColorStop(0, char.color + "44");
+                    charGlow.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = charGlow;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Project corners isometric
+                    const angle = 0.6; // fixed aesthetic angle for storybook stills
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    const project = (x, y, z) => {
+                        const rx = x * cos - z * sin;
+                        const rz = x * sin + z * cos;
+                        const screenX = cx + (rx - y) * Math.cos(Math.PI / 6) * baseScale;
+                        const screenY = cy + (rx + y) * Math.sin(Math.PI / 6) * baseScale - rz * baseScale * 0.5;
+                        return [screenX, screenY];
+                    };
+
+                    const dx = char.dims[0] / 2;
+                    const dy = char.dims[1] / 2;
+                    const dz = char.dims[2] / 2;
+
+                    const corners = [
+                        [-dx, -dy, -dz], [dx, -dy, -dz], [dx, dy, -dz], [-dx, dy, -dz],
+                        [-dx, -dy, dz], [dx, -dy, dz], [dx, dy, dz], [-dx, dy, dz]
+                    ].map(c => project(c[0], c[1], c[2]));
+
+                    const edges = [
+                        [0, 1], [1, 2], [2, 3], [3, 0],
+                        [4, 5], [5, 6], [6, 7], [7, 4],
+                        [0, 4], [1, 5], [2, 6], [3, 7]
+                    ];
+
+                    ctx.strokeStyle = char.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    edges.forEach(([u, v]) => {
+                        ctx.moveTo(corners[u][0], corners[u][1]);
+                        ctx.lineTo(corners[v][0], corners[v][1]);
+                    });
+                    ctx.stroke();
+
+                    // Internal density points (voxels)
+                    ctx.fillStyle = char.color;
+                    const steps = 3;
+                    for (let x = -dx; x <= dx; x += (char.dims[0] / steps)) {
+                        for (let y = -dy; y <= dy; y += (char.dims[1] / steps)) {
+                            for (let z = -dz; z <= dz; z += (char.dims[2] / steps)) {
+                                const hash = Math.sin(x*12.9898 + y*78.233 + z*43.122) * 43758.5453;
+                                if (Math.abs(hash % 1) > 0.5) {
+                                    const [px, py] = project(x, y, z);
+                                    ctx.beginPath();
+                                    ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            }
+                        }
+                    }
+
+                    // Label character tag
+                    ctx.fillStyle = "rgba(0,0,0,0.6)";
+                    ctx.fillRect(cx - 40, cy + 45, 80, 16);
+                    ctx.strokeStyle = char.color;
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(cx - 40, cy + 45, 80, 16);
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "8px monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillText(char.name.toUpperCase(), cx, cy + 56);
+
+                    drawCount++;
+                }
+            });
+
             // Vintage vignette & border overlay
             let vign = ctx.createRadialGradient(200, 150, 100, 200, 150, 220);
             vign.addColorStop(0, 'rgba(0,0,0,0)');
@@ -1063,7 +1824,20 @@
         let ambientOsc2 = null;
         let ambientFilter = null;
         let ambientGain = null;
+        let ambientShaper = null;
+        let zenerNoiseSource = null;
+        let zenerNoiseGain = null;
         let ambientActive = false;
+
+        function makeZenerClipperCurve(limit) {
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = Math.max(-limit, Math.min(limit, x));
+            }
+            return curve;
+        }
 
         function startAmbientSynth() {
             if (ambientActive) return;
@@ -1076,6 +1850,11 @@
                 ambientFilter = audioCtx.createBiquadFilter();
                 ambientFilter.type = 'lowpass';
                 ambientFilter.frequency.setValueAtTime(110, audioCtx.currentTime);
+
+                // Waveshaper for Zener Symmetrical Clipping (Back-to-Back Diode Saturated Fuzz)
+                ambientShaper = audioCtx.createWaveShaper();
+                ambientShaper.curve = makeZenerClipperCurve(0.45); 
+                ambientShaper.oversample = '4x';
 
                 // Extremely soft ambient gain
                 ambientGain = audioCtx.createGain();
@@ -1090,13 +1869,36 @@
                 ambientOsc2.type = 'triangle';
                 ambientOsc2.frequency.setValueAtTime(55.3, audioCtx.currentTime); // slightly detuned
 
+                // Zener Avalanche Dither White Noise Generator
+                const bufferSize = audioCtx.sampleRate * 2;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const noiseData = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    noiseData[i] = Math.random() * 2 - 1;
+                }
+                zenerNoiseSource = audioCtx.createBufferSource();
+                zenerNoiseSource.buffer = noiseBuffer;
+                zenerNoiseSource.loop = true;
+
+                zenerNoiseGain = audioCtx.createGain();
+                zenerNoiseGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+
+                // Connect oscillators to filter, then to Waveshaper, then to main gain
                 ambientOsc1.connect(ambientFilter);
                 ambientOsc2.connect(ambientFilter);
-                ambientFilter.connect(ambientGain);
+                
+                ambientFilter.connect(ambientShaper);
+                ambientShaper.connect(ambientGain);
+
+                // Connect Zener Avalanche Dither directly to main output gain
+                zenerNoiseSource.connect(zenerNoiseGain);
+                zenerNoiseGain.connect(ambientGain);
+
                 ambientGain.connect(audioCtx.destination);
 
                 ambientOsc1.start();
                 ambientOsc2.start();
+                zenerNoiseSource.start();
 
                 // Soft fade-in over 2.5 seconds
                 ambientGain.gain.linearRampToValueAtTime(0.035, audioCtx.currentTime + 2.5);
@@ -1117,10 +1919,16 @@
                 setTimeout(() => {
                     if (ambientOsc1) { ambientOsc1.stop(); ambientOsc1.disconnect(); }
                     if (ambientOsc2) { ambientOsc2.stop(); ambientOsc2.disconnect(); }
+                    if (zenerNoiseSource) { zenerNoiseSource.stop(); zenerNoiseSource.disconnect(); }
+                    if (zenerNoiseGain) { zenerNoiseGain.disconnect(); }
+                    if (ambientShaper) { ambientShaper.disconnect(); }
                     if (ambientFilter) { ambientFilter.disconnect(); }
                     if (ambientGain) { ambientGain.disconnect(); }
                     ambientOsc1 = null;
                     ambientOsc2 = null;
+                    zenerNoiseSource = null;
+                    zenerNoiseGain = null;
+                    ambientShaper = null;
                     ambientFilter = null;
                     ambientGain = null;
                     ambientActive = false;
@@ -1247,8 +2055,14 @@
             const voice = voices.find(v => v.name === selectedVoiceName);
             if (voice) utterance.voice = voice;
 
-            utterance.rate = 0.95;
-            utterance.pitch = 1.0;
+            const pitchVal = parseFloat(document.getElementById("ttsPitch").value);
+            const rateVal = parseFloat(document.getElementById("ttsRate").value);
+            utterance.pitch = pitchVal;
+            utterance.rate = rateVal;
+
+            // Update display labels
+            document.getElementById("lblTtsPitch").innerText = pitchVal.toFixed(2);
+            document.getElementById("lblTtsRate").innerText = rateVal.toFixed(2);
 
             utterance.onboundary = (event) => {
                 if (event.name !== 'word') return;
@@ -1309,6 +2123,19 @@
             }
         }
 
+        function toggleYoungVoiceCheck(checked) {
+            stopReading();
+            if (checked) {
+                document.getElementById("ttsPitch").value = 1.25;
+                document.getElementById("ttsRate").value = 1.05;
+            } else {
+                document.getElementById("ttsPitch").value = 1.0;
+                document.getElementById("ttsRate").value = 1.0;
+            }
+            document.getElementById("lblTtsPitch").innerText = parseFloat(document.getElementById("ttsPitch").value).toFixed(2);
+            document.getElementById("lblTtsRate").innerText = parseFloat(document.getElementById("ttsRate").value).toFixed(2);
+        }
+
         async function initWeb3() {
             try {
                 provider = new ethers.JsonRpcProvider(PROVIDER_URL);
@@ -1325,6 +2152,16 @@
                 console.error("Failed to connect to local EVM contract:", err);
             }
             renderDefaultStory();
+            
+            // Auto-boot in AI Autoplay mode for continuous play testing & telemetry statistics collection
+            aiMode = true;
+            const btn = document.getElementById("btnAiToggle");
+            if (btn) {
+                btn.style.background = "linear-gradient(135deg, #004d40 0%, #00251a 100%)";
+                btn.innerText = "AI Mode: On";
+            }
+            startAmbientSynth();
+            startGame();
         }
 
         function playSound(freq, type, duration) {
@@ -1382,33 +2219,264 @@
             }
         }
 
-        async function triggerPrompt(action) {
-            if (!dragonsLairContract) return;
-            try {
-                const actionId = await dragonsLairContract.triggerPrompt();
-                promptActive = true;
-                expectedAction = ACTION_REVERSE_MAP[Number(actionId)];
+        const dlInterface = new ethers.Interface([
+            "function initializeGame() external returns (uint256 score, uint256 lives, uint256 currentStage, uint256 promptActive, uint256 expectedAction, uint256 status)",
+            "function triggerPrompt() external returns (uint256 expectedAction)",
+            "function updateGame(uint256 action) external returns (uint256 score, uint256 lives, uint256 currentStage, uint256 promptActive, uint256 expectedAction, uint256 status)"
+        ]);
 
-                document.getElementById("promptBox").style.display = "block";
-                playSound(600, 'triangle', 0.25);
+        let tuningInterval = null;
 
-                if (aiMode) {
-                    const reactionDelay = 400 + Math.random() * 400;
-                    setTimeout(() => {
-                        if (promptActive && expectedAction === action) {
-                            makeMove(action);
-                        }
-                    }, reactionDelay);
-                }
-
-                promptTimer = setTimeout(() => {
-                    if (promptActive) {
-                        makeMove("NONE"); // Trigger timeout failure
-                    }
-                }, 1800);
-            } catch (err) {
-                console.error(err);
+        function adjustTunerManually() {
+            const sliderC = document.getElementById("tunerC");
+            const sliderL = document.getElementById("tunerL");
+            if (sliderC && sliderL) {
+                document.getElementById("valTunerC").innerText = `${sliderC.value}pF`;
+                document.getElementById("valTunerL").innerText = `${sliderL.value}nH`;
             }
+            updateVaesenReactor();
+        }
+
+        function triggerAutoTune() {
+            if (tuningInterval) clearInterval(tuningInterval);
+            const btn = document.getElementById("btnAutoTune");
+            if (btn) {
+                btn.innerText = "Tuning...";
+                btn.disabled = true;
+            }
+            
+            tuningInterval = setInterval(() => {
+                const sliderC = document.getElementById("tunerC");
+                const sliderL = document.getElementById("tunerL");
+                if (!sliderC || !sliderL) {
+                    clearInterval(tuningInterval);
+                    return;
+                }
+                
+                // Targets based on current stage (different target per corridor/room)
+                const targetCVal = Math.round((0.15 + (currentStage % 5) * 0.16) * 100);
+                const targetLVal = Math.round((0.85 - (currentStage % 5) * 0.14) * 100);
+                
+                let currentCVal = parseInt(sliderC.value);
+                let currentLVal = parseInt(sliderL.value);
+                
+                let step = 3;
+                if (currentCVal < targetCVal) currentCVal = Math.min(targetCVal, currentCVal + step);
+                else if (currentCVal > targetCVal) currentCVal = Math.max(targetCVal, currentCVal - step);
+                
+                if (currentLVal < targetLVal) currentLVal = Math.min(targetLVal, currentLVal + step);
+                else if (currentLVal > targetLVal) currentLVal = Math.max(targetLVal, currentLVal - step);
+                
+                sliderC.value = currentCVal;
+                sliderL.value = currentLVal;
+                
+                document.getElementById("valTunerC").innerText = `${currentCVal}pF`;
+                document.getElementById("valTunerL").innerText = `${currentLVal}nH`;
+                
+                updateVaesenReactor();
+                
+                if (currentCVal === targetCVal && currentLVal === targetLVal) {
+                    clearInterval(tuningInterval);
+                    if (btn) {
+                        btn.innerText = "Auto-Match";
+                        btn.disabled = false;
+                    }
+                    playSound(800, 'triangle', 0.1); // Success audio confirmation
+                }
+            }, 30);
+        }
+
+        function updateVaesenReactor() {
+            // SWR is determined by the distance between tuner dials and target match settings for the stage
+            const sliderC = document.getElementById("tunerC");
+            const sliderL = document.getElementById("tunerL");
+            const cVal = sliderC ? parseInt(sliderC.value) / 100 : 0.5;
+            const lVal = sliderL ? parseInt(sliderL.value) / 100 : 0.5;
+            
+            const targetC = 0.15 + (currentStage % 5) * 0.16;
+            const targetL = 0.85 - (currentStage % 5) * 0.14;
+            
+            const dist = Math.sqrt((cVal - targetC)**2 + (lVal - targetL)**2);
+            
+            // SWR base is 1.0, scales up with mismatch distance
+            const baseSWR = 1.0 + 8.0 * dist;
+            const jitter = (Math.random() - 0.5) * 0.05;
+            swr = Math.max(1.0, baseSWR + jitter);
+            
+            // Calculate return loss from SWR
+            const Gamma = (swr - 1) / (swr + 1);
+            returnLoss = -20 * Math.log10(Math.max(1e-5, Gamma));
+            transEfficiency = 1.0 - (Gamma * Gamma);
+            
+            // Terror Resistance
+            vaesenTerror = Math.max(0.05, 1.0 / (1.0 + 0.3 * (swr - 1)));
+            
+            // Update tuner status text
+            const statusEl = document.getElementById("tunerStatus");
+            if (statusEl) {
+                if (swr < 1.3) {
+                    statusEl.innerText = `MATCHED (${swr.toFixed(2)}:1)`;
+                    statusEl.style.color = "#00e676";
+                } else if (swr < 2.5) {
+                    statusEl.innerText = `WARNING (${swr.toFixed(2)}:1)`;
+                    statusEl.style.color = "#ffaa00";
+                } else {
+                    statusEl.innerText = `MISMATCH (${swr.toFixed(2)}:1)`;
+                    statusEl.style.color = "#ff3c3c";
+                }
+            }
+
+            // Modulate the audio context drone synth frequency/gain if active
+            if (ambientActive && ambientOsc2 && ambientFilter) {
+                // detune Voice 2 dynamically as SWR increases (adding tension)
+                const baseFreq = 55.0;
+                ambientOsc2.frequency.setValueAtTime(baseFreq + (swr * 0.5), audioCtx.currentTime);
+                // open the filter cut-off as tension rises
+                ambientFilter.frequency.setValueAtTime(110 + (swr * 80), audioCtx.currentTime);
+                
+                // Inject Zener Avalanche Dither dynamically proportional to SWR mismatch
+                if (zenerNoiseGain) {
+                    const noiseTarget = Math.min(0.03, (swr - 1.0) * 0.005);
+                    zenerNoiseGain.gain.setValueAtTime(noiseTarget, audioCtx.currentTime);
+                }
+            }
+
+            // Collect Statistics
+            const newLog = {
+                timestamp: new Date().toLocaleTimeString(),
+                stage: currentStage,
+                swr: swr,
+                returnLoss: returnLoss,
+                vigour: transEfficiency
+            };
+            reactorStatsHistory.push(newLog);
+            if (reactorStatsHistory.length > 50) {
+                reactorStatsHistory.shift();
+            }
+
+            // Render updated stats in HTML
+            renderReactorStats();
+        }
+
+        function renderReactorStats() {
+            const statsLogsEl = document.getElementById("reactorStatsLogs");
+            const summaryEl = document.getElementById("statsSummary");
+            if (!statsLogsEl || !summaryEl) return;
+
+            if (reactorStatsHistory.length === 0) {
+                statsLogsEl.innerHTML = `<p style="color: #655a74; font-style: italic;">No telemetry cycles recorded yet. Play the game or trigger actions to collect statistics...</p>`;
+                return;
+            }
+
+            // Calculate metrics
+            let sumSWR = 0;
+            let maxSWR = 0;
+            reactorStatsHistory.forEach(d => {
+                sumSWR += d.swr;
+                if (d.swr > maxSWR) maxSWR = d.swr;
+            });
+            const avgSWR = sumSWR / reactorStatsHistory.length;
+
+            summaryEl.innerText = `Cycles: ${reactorStatsHistory.length} | Avg SWR: ${avgSWR.toFixed(2)}:1 | Peak SWR: ${maxSWR.toFixed(2)}:1`;
+
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; font-family: monospace;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--primary);">
+                            <th style="padding: 6px;">Time</th>
+                            <th style="padding: 6px;">Stage</th>
+                            <th style="padding: 6px;">SWR</th>
+                            <th style="padding: 6px;">Return Loss</th>
+                            <th style="padding: 6px;">Vigour (Eff)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (let i = reactorStatsHistory.length - 1; i >= 0; i--) {
+                const log = reactorStatsHistory[i];
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff;">
+                        <td style="padding: 6px; color: #a59cb4;">${log.timestamp}</td>
+                        <td style="padding: 6px;">Stage ${log.stage}</td>
+                        <td style="padding: 6px; color: ${log.swr > 3.0 ? 'var(--danger)' : 'var(--success)'};">${log.swr.toFixed(2)}:1</td>
+                        <td style="padding: 6px;">${log.returnLoss.toFixed(2)} dB</td>
+                        <td style="padding: 6px; color: var(--primary);">${(log.vigour * 100).toFixed(0)}%</td>
+                    </tr>
+                `;
+            }
+
+            html += `</tbody></table>`;
+            statsLogsEl.innerHTML = html;
+        }
+
+        async function triggerPrompt(action) {
+            if (aiMode) {
+                triggerAutoTune();
+            }
+            updateVaesenReactor();
+            const qteWindow = 900 + Math.round(1100 * vaesenTerror);
+
+            // 1. ZMM VM Instant Thunk
+            try {
+                const calldata = dlInterface.encodeFunctionData("triggerPrompt");
+                const res = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "dragonsLair", calldata })
+                });
+                const resJson = await res.json();
+                if (resJson && resJson.result && resJson.result.output) {
+                    const decoded = dlInterface.decodeFunctionResult("triggerPrompt", "0x" + resJson.result.output);
+                    const expectedActionId = Number(decoded[0]);
+                    
+                    promptActive = true;
+                    expectedAction = ACTION_REVERSE_MAP[expectedActionId] || action;
+
+                    document.getElementById("promptBox").style.display = "block";
+                    playSound(600, 'triangle', 0.25);
+
+                    if (aiMode) {
+                        const reactionDelay = 400 + Math.random() * 400;
+                        setTimeout(() => {
+                            if (promptActive) {
+                                makeMove(expectedAction);
+                            }
+                        }, reactionDelay);
+                    }
+
+                    promptTimer = setTimeout(() => {
+                        if (promptActive) {
+                            makeMove("NONE");
+                        }
+                    }, qteWindow);
+                    return;
+                }
+            } catch (err) {
+                console.warn("ZMM VM triggerPrompt thunk failed, falling back to sandbox:", err);
+            }
+
+            // 2. Client-side Sandbox fallback
+            promptActive = true;
+            expectedAction = action;
+
+            document.getElementById("promptBox").style.display = "block";
+            playSound(600, 'triangle', 0.25);
+
+            if (aiMode) {
+                const reactionDelay = 400 + Math.random() * 400;
+                setTimeout(() => {
+                    if (promptActive && expectedAction === action) {
+                        makeMove(action);
+                    }
+                }, reactionDelay);
+            }
+
+            promptTimer = setTimeout(() => {
+                if (promptActive) {
+                    makeMove("NONE"); // Trigger timeout failure
+                }
+            }, qteWindow);
         }
 
         async function makeMove(action) {
@@ -1421,61 +2489,109 @@
                 return;
             }
 
-            if (!dragonsLairContract) return;
-
-            lastAttemptedAction = action;
-            const actionId = ACTION_MAP[action] || 0; // 0 for NONE (too slow)
+            // 1. ZMM VM Instant Thunk
             try {
-                const res = await dragonsLairContract.updateGame(actionId);
-                const newScore = Number(res[0]);
-                const newLives = Number(res[1]);
-                const newStage = Number(res[2]);
-                const newPromptActive = Number(res[3]) === 1;
-                const newExpected = ACTION_REVERSE_MAP[Number(res[4])] || "";
-                const newStatus = Number(res[5]);
+                const actionId = ACTION_MAP[action] || 0;
+                const calldata = dlInterface.encodeFunctionData("updateGame", [actionId]);
+                const res = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "dragonsLair", calldata })
+                });
+                const resJson = await res.json();
+                if (resJson && resJson.result && resJson.result.output) {
+                    const decoded = dlInterface.decodeFunctionResult("updateGame", "0x" + resJson.result.output);
+                    const newScore = Number(decoded[0]);
+                    const newLives = Number(decoded[1]);
+                    const newStage = Number(decoded[2]);
+                    const newPromptActive = Number(decoded[3]) === 1;
+                    const newExpected = ACTION_REVERSE_MAP[Number(decoded[4])] || "";
+                    const newStatus = Number(decoded[5]);
 
-                if (newLives < lives) {
-                    lives = newLives;
-                    score = newScore;
-                    failAction(lives <= 0 ? "Game Over! Dirk met his demise." : "Wrong move! Dirk fell to the hazards.");
-                } else if (newStage > currentStage) {
-                    currentStage = newStage;
-                    score = newScore;
-                    successAction();
-                } else if (newStatus === 1) {
-                    winGame();
-                } else if (newStatus === 2) {
-                    lives = 0;
-                    failAction("Game Over! Dirk met his demise.");
+                    lastAttemptedAction = action;
+                    if (promptActive) clearTimeout(promptTimer);
+
+                    if (newLives < lives) {
+                        lives = newLives;
+                        score = newScore;
+                        failAction(lives <= 0 ? "Game Over! Dirk met his demise." : "Wrong move! Dirk fell to the hazards.");
+                    } else if (newStage > currentStage) {
+                        currentStage = newStage;
+                        score = newScore;
+                        successAction();
+                    } else if (newStatus === 1) {
+                        winGame();
+                    } else if (newStatus === 2) {
+                        lives = 0;
+                        failAction("Game Over! Dirk met his demise.");
+                    }
+                    return;
                 }
             } catch (err) {
-                console.error(err);
+                console.warn("ZMM VM makeMove thunk failed, falling back to sandbox:", err);
+            }
+
+            // 2. Client-side Sandbox fallback
+            lastAttemptedAction = action;
+            if (!promptActive) return;
+            clearTimeout(promptTimer);
+
+            if (action === expectedAction) {
+                score += 1000;
+                currentStage += 1;
+                successAction();
+            } else {
+                lives -= 1;
+                failAction(lives <= 0 ? "Game Over! Dirk met his demise." : "Wrong move! Dirk fell to the hazards.");
             }
         }
 
         async function startGame() {
-            if (!dragonsLairContract) await initWeb3();
-            if (!dragonsLairContract) return alert("Contract not loaded. Make sure Anvil is running!");
-
+            // 1. ZMM VM Instant Thunk
             try {
-                const res = await dragonsLairContract.initializeGame();
-                score = Number(res[0]);
-                lives = Number(res[1]);
-                currentStage = Number(res[2]);
-                promptActive = Number(res[3]) === 1;
-                expectedAction = ACTION_REVERSE_MAP[Number(res[4])] || "";
-                
-                // Reset and start Chronicles
-                storyBook = [];
-                document.getElementById("storybookContent").innerHTML = "";
-                appendStoryEntry("📖 Dirk the Daring stood before the dark, imposing cavern entrance, his heart racing as he prepared to cross the threshold into the Dragon's Lair.", "system");
+                const calldata = dlInterface.encodeFunctionData("initializeGame");
+                const res = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "dragonsLair", calldata })
+                });
+                const resJson = await res.json();
+                if (resJson && resJson.result && resJson.result.output) {
+                    const decoded = dlInterface.decodeFunctionResult("initializeGame", "0x" + resJson.result.output);
+                    score = Number(decoded[0]);
+                    lives = Number(decoded[1]);
+                    currentStage = Number(decoded[2]);
+                    promptActive = Number(decoded[3]) === 1;
+                    expectedAction = ACTION_REVERSE_MAP[Number(decoded[4])] || "";
 
-                gameActive = true;
-                updateHUD();
-                nextStage();
+                    storyBook = [];
+                    document.getElementById("storybookContent").innerHTML = "";
+                    appendStoryEntry("📖 Dirk the Daring stood before the dark, imposing cavern entrance, his heart racing as he prepared to cross the threshold into the Dragon's Lair.", "system");
+
+                    gameActive = true;
+                    updateHUD();
+                    nextStage();
+                    return;
+                }
             } catch (err) {
-                console.error(err);
+                console.warn("ZMM VM startGame thunk failed, falling back to sandbox:", err);
             }
+
+            // 2. Client-side Sandbox fallback
+            console.log("[Arcade Cabinet] Running in Offline Sandbox Mode.");
+            score = 0;
+            lives = 3;
+            currentStage = 1;
+            promptActive = false;
+            expectedAction = "";
+
+            storyBook = [];
+            document.getElementById("storybookContent").innerHTML = "";
+            appendStoryEntry("📖 Dirk the Daring stood before the dark, imposing cavern entrance, his heart racing as he prepared to cross the threshold into the Dragon's Lair.", "system");
+
+            gameActive = true;
+            updateHUD();
+            nextStage();
         }
 
         function nextStage() {
@@ -1543,7 +2659,9 @@
             playSound(880, 'sine', 0.45);
             document.getElementById("statusMessage").innerText = "Success! Dirk avoided the hazard.";
             
-            setTimeout(nextStage, 1500);
+            setTimeout(() => {
+                nextStage();
+            }, 1500);
         }
 
         function failAction(msg) {
@@ -1576,8 +2694,15 @@
             
             if (lives <= 0) {
                 gameOver();
+                if (aiMode) {
+                    setTimeout(() => {
+                        if (aiMode) startGame();
+                    }, 4000);
+                }
             } else {
-                setTimeout(nextStage, 2000);
+                setTimeout(() => {
+                    nextStage();
+                }, 2000);
             }
         }
 
@@ -1598,7 +2723,942 @@
             setTimeout(openBook, 2000);
         }
 
+        /* -------------------------------------------------------------
+           NEW DASHBOARD INTEGRATIONS
+           ------------------------------------------------------------- */
+
+        // Tab Switching Logic
+        function switchDashboardTab(tabId) {
+            document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            
+            if (tabId === 'game') {
+                document.getElementById("gameTab").classList.add("active");
+                document.getElementById("tabBtn-game").classList.add("active");
+            } else if (tabId === 'cards') {
+                document.getElementById("cardsTab").classList.add("active");
+                document.getElementById("tabBtn-cards").classList.add("active");
+                renderCabsCards();
+            } else if (tabId === 'zmachine') {
+                document.getElementById("zmachineTab").classList.add("active");
+                document.getElementById("tabBtn-zmachine").classList.add("active");
+                document.getElementById("terminalInput").focus();
+            } else if (tabId === 'editor') {
+                document.getElementById("editorTab").classList.add("active");
+                document.getElementById("tabBtn-editor").classList.add("active");
+                initVectorCanvas();
+            }
+        }
+
+        async function renderCabsCards() {
+            const container = document.getElementById("cabsCardsContainer");
+            if (!container) return;
+            container.innerHTML = "";
+
+            let cabsCardsData = [];
+            try {
+                const res = await fetch("/api/cabs-cards");
+                cabsCardsData = await res.json();
+            } catch (err) {
+                console.warn("Failed to fetch CABS cards from server, using local fallback:", err);
+            }
+
+            // Append SWR / Vaesen Emotion Reactor cards!
+            const reactorCards = [
+                {
+                    name: "Dirk's Fortitude",
+                    type: "VIGOUR",
+                    color: "#c5a059",
+                    size: "16x16x16",
+                    desc: `Vigour: ${Math.round(transEfficiency * 100)}%. Power transmission matching efficiency.`
+                },
+                {
+                    name: "Panic Sentinel",
+                    type: "TERROR",
+                    color: "#ff3c3c",
+                    size: "12x12x16",
+                    desc: `Terror Resistance: ${Math.round(vaesenTerror * 100)}%. SWR stress indicator: ${swr.toFixed(2)}:1`
+                },
+                {
+                    name: "Alchemical Sight",
+                    type: "SIGHT",
+                    color: "#00e676",
+                    size: "8x8x12",
+                    desc: `Sight: ${Math.round(Math.min(1, returnLoss / 30.0) * 100)}%. Return Loss: ${returnLoss.toFixed(2)} dB.`
+                }
+            ];
+
+            cabsCardsData = [...reactorCards, ...cabsCardsData];
+
+            cabsCardsData.forEach(card => {
+                const el = document.createElement("div");
+                el.className = "cabs-card";
+                    
+                    // Procedural thumbnail using Canvas (3D rotating voxel projection)
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 160;
+                    canvas.height = 120;
+                    canvas.style.display = "block";
+                    canvas.style.margin = "0 auto";
+                    const ctx = canvas.getContext("2d");
+                    
+                    // Decode size e.g. "32x16x64 voxels" or "8x3x2 voxels"
+                    const sizeMatch = card.size.match(/(\d+)x(\d+)x(\d+)/);
+                    const dims = sizeMatch ? [parseInt(sizeMatch[1]), parseInt(sizeMatch[2]), parseInt(sizeMatch[3])] : [16, 16, 16];
+                    
+                    let angle = 0;
+                    let activeScene = 'default';
+
+                    function drawVoxelCard() {
+                        // Background based on activeScene
+                        if (activeScene === 'castle') {
+                            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                            grad.addColorStop(0, '#3d2b4f');
+                            grad.addColorStop(1, '#0c0714');
+                            ctx.fillStyle = grad;
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Castle stone texture details
+                            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+                        } else if (activeScene === 'lava') {
+                            let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 5, canvas.width/2, canvas.height/2, canvas.width/2);
+                            grad.addColorStop(0, '#5e2000');
+                            grad.addColorStop(1, '#110200');
+                            ctx.fillStyle = grad;
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Lava particles
+                            ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
+                            for(let i=0; i<8; i++) {
+                                let px = (Math.sin(Date.now()*0.001 + i) * 0.5 + 0.5) * canvas.width;
+                                let py = (Math.cos(Date.now()*0.0013 + i) * 0.5 + 0.5) * canvas.height;
+                                ctx.beginPath();
+                                ctx.arc(px, py, 2, 0, Math.PI*2);
+                                ctx.fill();
+                            }
+                        } else if (activeScene === 'electric') {
+                            ctx.fillStyle = '#050a12';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Grid overlay
+                            ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+                            ctx.lineWidth = 1;
+                            for(let i=0; i<canvas.width; i+=20) {
+                                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                            }
+                        } else {
+                            ctx.fillStyle = "#110e16";
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                        
+                        // Center point
+                        const cx = canvas.width / 2;
+                        const cy = canvas.height / 2;
+                        
+                        // Scale factors based on voxel dimensions
+                        const maxDim = Math.max(...dims);
+                        const baseScale = Math.min(canvas.width, canvas.height) / (maxDim * 1.5 || 24);
+                        
+                        // Draw grid/voxels projection
+                        ctx.strokeStyle = card.color;
+                        ctx.lineWidth = 1;
+                        
+                        // Isometric / perspective drawing of sub-voxels or shape
+                        const cos = Math.cos(angle);
+                        const sin = Math.sin(angle);
+                        
+                        const project = (x, y, z) => {
+                            const rx = x * cos - z * sin;
+                            const rz = x * sin + z * cos;
+                            const screenX = cx + (rx - y) * Math.cos(Math.PI / 6) * baseScale;
+                            const screenY = cy + (rx + y) * Math.sin(Math.PI / 6) * baseScale - rz * baseScale * 0.5;
+                            return [screenX, screenY];
+                        };
+                        
+                        // Draw bounding wireframe or pseudo-voxel points
+                        const dx = dims[0] / 2;
+                        const dy = dims[1] / 2;
+                        const dz = dims[2] / 2;
+                        
+                        const corners = [
+                            [-dx, -dy, -dz], [dx, -dy, -dz], [dx, dy, -dz], [-dx, dy, -dz],
+                            [-dx, -dy, dz], [dx, -dy, dz], [dx, dy, dz], [-dx, dy, dz]
+                        ].map(c => project(c[0], c[1], c[2]));
+                        
+                        const edges = [
+                            [0, 1], [1, 2], [2, 3], [3, 0], // Bottom
+                            [4, 5], [5, 6], [6, 7], [7, 4], // Top
+                            [0, 4], [1, 5], [2, 6], [3, 7]  // Vertical links
+                        ];
+                        
+                        // Draw filled transparent faces
+                        ctx.fillStyle = card.color + "11";
+                        ctx.beginPath();
+                        ctx.moveTo(corners[0][0], corners[0][1]);
+                        corners.forEach(c => ctx.lineTo(c[0], c[1]));
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Draw edges
+                        ctx.beginPath();
+                        edges.forEach(([u, v]) => {
+                            ctx.moveTo(corners[u][0], corners[u][1]);
+                            ctx.lineTo(corners[v][0], corners[v][1]);
+                        });
+                        ctx.stroke();
+                        
+                        // Draw custom volumetric voxel configurations for each character type
+                        const maxSteps = 6;
+                        for (let x = -maxSteps; x <= maxSteps; x++) {
+                            for (let y = -maxSteps; y <= maxSteps; y++) {
+                                for (let z = -maxSteps; z <= maxSteps; z++) {
+                                    // Map coordinates to target grid range
+                                    const vx = x / maxSteps;
+                                    const vy = y / maxSteps;
+                                    const vz = z / maxSteps;
+                                    
+                                    let shouldDraw = false;
+                                    let voxelColor = card.color;
+                                    
+                                    const pName = card.name.toLowerCase();
+                                    if (pName.includes("fortitude")) {
+                                        // Render Dirk's Fortitude: A golden shield shape
+                                        const shield = Math.abs(vx) < 0.35 && vy > -0.1 && vy < 0.15 && Math.abs(vz) < 0.45;
+                                        const cross = (Math.abs(vx) < 0.08 || Math.abs(vz) < 0.08) && shield;
+                                        if (shield) {
+                                            shouldDraw = true;
+                                            voxelColor = cross ? "#ffffff" : card.color;
+                                        }
+                                    } else if (pName.includes("sentinel")) {
+                                        // Render Panic Sentinel: A black/red crow outline
+                                        const body = (vx*vx + vy*vy + vz*vz) < 0.18;
+                                        const wings = Math.abs(vy) > 0.25 && Math.abs(vx) < 0.4 && vz > -0.1 && vz < 0.2;
+                                        const eyes = vz > 0.05 && vz < 0.18 && vy < -0.1 && Math.abs(vx) > 0.05 && Math.abs(vx) < 0.12;
+                                        if (eyes) {
+                                            shouldDraw = true;
+                                            voxelColor = "#ff0000"; // Red glow eyes
+                                        } else if (body || wings) {
+                                            shouldDraw = true;
+                                            voxelColor = "#1a1625"; // Obsidian crow feathers
+                                        }
+                                    } else if (pName.includes("sight")) {
+                                        // Render Alchemical Sight: An octahedral glowing crystal
+                                        const dist = Math.abs(vx) + Math.abs(vy) + Math.abs(vz);
+                                        const crystal = dist < 0.55;
+                                        const core = dist < 0.22;
+                                        if (crystal) {
+                                            shouldDraw = true;
+                                            voxelColor = core ? "#ffffff" : card.color;
+                                        }
+                                    } else if (pName.includes("dirk")) {
+                                        // Render Dirk: Knight helmet, torso shield, red cape level
+                                        const head = (vx*vx + vy*vy + (vz - 0.35)*(vz - 0.35)) < 0.12;
+                                        const body = (vx*vx + vy*vy + (vz + 0.1)*(vz + 0.1)) < 0.25;
+                                        const cape = vx < -0.15 && Math.abs(vy) < 0.3 && vz < 0.2;
+                                        
+                                        if (head) {
+                                            shouldDraw = true;
+                                            voxelColor = "#ffe0a0"; // Head skin color
+                                        } else if (body) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color; // Gold armor
+                                        } else if (cape) {
+                                            shouldDraw = true;
+                                            voxelColor = "#d81e1e"; // Red cape
+                                        }
+                                    } else if (pName.includes("singe") || pName.includes("dragon")) {
+                                        // Render Singe: Large spherical body, snout extension, wing planes
+                                        const core = (vx*vx + vy*vy + vz*vz) < 0.35;
+                                        const wings = Math.abs(vy) > 0.4 && vx > 0.1 && Math.abs(vz) < 0.25;
+                                        const snout = vy < -0.2 && Math.abs(vx) < 0.2 && vz > 0.1;
+                                        
+                                        if (core) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color;
+                                        } else if (wings) {
+                                            shouldDraw = true;
+                                            voxelColor = "#aa1c1c"; // Dark wings
+                                        } else if (snout) {
+                                            shouldDraw = true;
+                                            voxelColor = "#ff7700"; // Glowing snout
+                                        }
+                                    } else if (pName.includes("daphne")) {
+                                        // Render Princess Daphne: Slender dress, golden crown, hair pixels
+                                        const crown = vz > 0.4 && Math.abs(vx) < 0.2 && Math.abs(vy) < 0.2;
+                                        const hair = vz > 0.1 && Math.abs(vx) < 0.3 && vy > 0.1;
+                                        const dress = vz < 0.1 && (vx*vx + vy*vy) < 0.2;
+                                        
+                                        if (crown) {
+                                            shouldDraw = true;
+                                            voxelColor = "#ffd700"; // Golden crown
+                                        } else if (hair) {
+                                            shouldDraw = true;
+                                            voxelColor = "#ffaa00"; // Orange hair
+                                        } else if (dress) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color; // Magenta dress
+                                        }
+                                    } else {
+                                        // Default items or hazards (generate a glowing geometric voxel pattern)
+                                        const centerCore = (vx*vx + vy*vy + vz*vz) < 0.2;
+                                        const rings = Math.abs(vx*vx + vy*vy - 0.25) < 0.05 && Math.abs(vz) < 0.15;
+                                        if (centerCore || rings) {
+                                            shouldDraw = true;
+                                            voxelColor = card.color;
+                                        }
+                                    }
+                                    
+                                    if (shouldDraw) {
+                                        const [px, py] = project(x * (dims[0] / (maxSteps * 2)), y * (dims[1] / (maxSteps * 2)), z * (dims[2] / (maxSteps * 2)));
+                                        ctx.fillStyle = voxelColor;
+                                        ctx.beginPath();
+                                        ctx.arc(px, py, 2, 0, Math.PI * 2);
+                                        ctx.fill();
+                                    }
+                                }
+                            }
+                        }
+                        
+                        angle += 0.02;
+                    }
+                    
+                    // Simple interval animation loop attached to the element
+                    let animId = setInterval(drawVoxelCard, 40);
+                    el.addEventListener("mouseenter", () => {
+                        // speed up rotation on hover
+                        clearInterval(animId);
+                        animId = setInterval(drawVoxelCard, 16);
+                    });
+                    el.addEventListener("mouseleave", () => {
+                        clearInterval(animId);
+                        animId = setInterval(drawVoxelCard, 40);
+                    });
+                    
+                    // Make sure we stop animation if card is removed
+                    el.dataset.animId = animId;
+
+                    el.innerHTML = `
+                        <div class="cabs-card-artwork">
+                            <span class="cabs-card-badge">${card.type}</span>
+                        </div>
+                        <div class="cabs-card-title">${card.name}</div>
+                        <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
+                            <label style="font-size: 0.75rem; color: #a59cb4;">Scene Context:</label>
+                            <select class="cabs-scene-select" style="background: #110e16; color: #fff; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; padding: 2px 4px;">
+                                <option value="default">Default Void</option>
+                                <option value="castle">Castle Gates</option>
+                                <option value="lava">Lava Chamber</option>
+                                <option value="electric">Electric Corridor</option>
+                            </select>
+                        </div>
+                        <div class="cabs-card-voxels">
+                            <span>DIM:</span>
+                            <span>${card.size}</span>
+                        </div>
+                        <div class="cabs-card-desc">${card.desc}</div>
+                        <button class="btn btn-sword btn-block" style="font-size: 0.75rem; padding: 6px; justify-content: center;" onclick="loadCardDnaIntoEditor(${JSON.stringify(card).replace(/"/g, '&quot;')})">
+                            🧬 Render Card DNA
+                        </button>
+                    `;
+                    el.querySelector(".cabs-card-artwork").appendChild(canvas);
+
+                    // Dropdown select change binding
+                    el.querySelector(".cabs-scene-select").addEventListener("change", (e) => {
+                        activeScene = e.target.value;
+                    });
+                    
+                    container.appendChild(el);
+                });
+            } catch (err) {
+                console.error("Failed to fetch CABS cards:", err);
+                container.innerHTML = "<p style='color: var(--danger); font-family: monospace;'>Error: Failed to load CABS Voxel Cards JSON database.</p>";
+            }
+        }
+
+        function loadCardDnaIntoEditor(card) {
+            // Map dimensions to stretch/pulse attributes
+            const sizeMatch = card.size.match(/(\d+)x(\d+)x(\d+)/);
+            const dims = sizeMatch ? [parseInt(sizeMatch[1]), parseInt(sizeMatch[2]), parseInt(sizeMatch[3])] : [16, 16, 16];
+            const maxDim = Math.max(...dims);
+            
+            // Derive preset values from metadata
+            const gx = 0.0;
+            const gy = 0.0;
+            const stretch = (dims[0] / 32).toFixed(2);
+            const pulse = (dims[1] / 16).toFixed(2);
+            
+            let fire = 0.0;
+            let light = 1.0;
+            if (card.type === 'Boss' || card.type === 'Hazard') {
+                fire = 0.8;
+                light = 1.6;
+            } else if (card.type === 'Item' || card.type === 'Treasure') {
+                light = 1.4;
+            }
+
+            const scaleColor = card.color;
+            const eyeColor = card.type === 'Boss' ? '#ffdd00' : '#00ffff';
+            const eyeCount = card.type === 'Boss' ? 3 : (card.type === 'Hero' || card.type === 'NPC' ? 2 : 0);
+
+            // Switch to DNA Editor tab and load values
+            switchDashboardTab('editor');
+            loadDnaPreset(selectedFrame, gx, gy, stretch, pulse, fire, light, scaleColor, eyeColor, eyeCount);
+        }
+
+        // Z-Machine ZIL State Engine & Console Implementation
+        let mockZmRoom = 10;
+        let mockZmInventory = [];
+        let mockZmState = {
+            3000805: 0, // Keycard used flag
+            items: {
+                50: 1,  // Gold Token in room 1
+                51: 2,  // Keycard in room 2
+                52: 3,  // Energy Pack in room 3
+                60: 20, // Magic Sword in room 20
+                62: 23, // Fire Key in room 23
+                61: 24  // Golden Crown in room 24
+            }
+        };
+
+        const ROOM_INFO = {
+            10: { name: "Gates Entrance", exits: "North, South" },
+            1:  { name: "Lobby Entrance", exits: "South, East, West" },
+            2:  { name: "Living Room", exits: "West" },
+            3:  { name: "Unreal Portal Vault", exits: "East" },
+            4:  { name: "Outside Victorian House", exits: "South" },
+            20: { name: "The Gates Still (Room 20)", exits: "North, East" },
+            21: { name: "The Corridor Still (Room 21)", exits: "West, East" },
+            22: { name: "The Leap Still (Room 22)", exits: "West, North" },
+            23: { name: "Singe's Cavern Still (Room 23)", exits: "South, East" },
+            24: { name: "Treasure Vault Still (Room 24)", exits: "West" }
+        };
+
+        const ITEM_NAMES = {
+            50: "Gold Token",
+            51: "Keycard",
+            52: "Energy Pack",
+            60: "Magic Sword",
+            61: "Golden Crown",
+            62: "Fire Key"
+        };
+
+        // Initialize Terminal event listener
+        document.getElementById("terminalInput").addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                const cmd = e.target.value.trim();
+                e.target.value = "";
+                if (!cmd) return;
+
+                printTerminalLine(`> ${cmd}`, "cmd");
+                await executeZmachineCommand(cmd);
+            }
+        });
+
+        function printTerminalLine(text, className = "") {
+            const out = document.getElementById("terminalOutput");
+            if (!out) return;
+            const line = document.createElement("div");
+            line.className = `terminal-line ${className}`;
+            line.innerText = text;
+            out.appendChild(line);
+            out.scrollTop = out.scrollHeight;
+        }
+
+        async function executeZmachineCommand(cmd) {
+            const lowerCmd = cmd.toLowerCase();
+            
+            // 1. Prioritize native ZMM VM JIT Thunk (instant execution, zero block wait times, zero fees)
+            try {
+                const queryUser = signer ? (await signer.getAddress()) : "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+                const zmInterface = new ethers.Interface([
+                    "function parseCommand(address player, bytes cmd) public returns (bytes)"
+                ]);
+                const cmdCalldata = zmInterface.encodeFunctionData("parseCommand", [queryUser, ethers.toUtf8Bytes(cmd)]);
+                
+                const response = await fetch("/api/zmm-exec", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: "zmachine", calldata: cmdCalldata })
+                });
+                const resJson = await response.json();
+                if (resJson && resJson.result && resJson.result.output) {
+                    const decoded = zmInterface.decodeFunctionResult("parseCommand", "0x" + resJson.result.output);
+                    const outputText = ethers.toUtf8String(decoded[0]);
+                    
+                    document.getElementById("zEVMStatus").innerText = "⚡ ZMM VM Thunk Active";
+                    document.getElementById("zEVMStatus").style.color = "var(--success)";
+                    
+                    printTerminalLine(outputText);
+                    updateMockHUDFromThunk(outputText);
+                    checkForFrameAutoSync(outputText);
+                    return;
+                }
+            } catch (err) {
+                console.warn("ZMM VM JIT Thunk offline/failed, falling back to EVM/Mock:", err);
+            }
+
+            // 2. Fallback to Stateful EVM (Anvil)
+            if (zmachineContract) {
+                try {
+                    document.getElementById("zEVMStatus").innerText = "🔗 EVM Contract Online";
+                    document.getElementById("zEVMStatus").style.color = "var(--success)";
+
+                    const response = await zmachineContract.parseCommand.staticCall(signer.address, ethers.toUtf8Bytes(cmd));
+                    
+                    // Modify state on-chain if command requires it
+                    if (lowerCmd === "take" || lowerCmd === "look" || ["n", "s", "e", "w", "north", "south", "east", "west"].includes(lowerCmd)) {
+                        const tx = await zmachineContract.parseCommand(signer.address, ethers.toUtf8Bytes(cmd), { gasLimit: 1500000 });
+                        await tx.wait();
+                    }
+                    
+                    printTerminalLine(response);
+                    await updateZmachineHUDFromEVM();
+                    
+                    // Auto-sync frame presets from output
+                    checkForFrameAutoSync(response);
+                    return;
+                } catch (err) {
+                    console.warn("EVM Command failed, falling back to local simulation:", err);
+                }
+            }
+
+            // 2. Offline Fallback simulation logic
+            document.getElementById("zEVMStatus").innerText = "⚠️ Offline Fallback Mode";
+            document.getElementById("zEVMStatus").style.color = "#ff3c3c";
+
+            if (lowerCmd === "look" || lowerCmd === "l") {
+                let desc = "";
+                if (mockZmRoom === 10) desc = "You stand before the gates of the Victorian House.";
+                else if (mockZmRoom === 1) desc = "You are standing in the lobby.\n[SONIC_SIGNATURE:220,1]";
+                else if (mockZmRoom === 2) desc = "You are in the Living Room.\n[SONIC_SIGNATURE:330,0]";
+                else if (mockZmRoom === 3) {
+                    if (mockZmState[3000805]) {
+                        desc = "You are in the Unreal Portal Vault. The portal glows brightly North.\n[SONIC_SIGNATURE:440,0]";
+                    } else {
+                        desc = "You are in the Unreal Portal Vault. A locked portal arch is here.\n[SONIC_SIGNATURE:147,2]";
+                    }
+                }
+                else if (mockZmRoom === 4) desc = "You are outside the Victorian House. A dark mist shrouds the manor.";
+                else if (mockZmRoom === 20) desc = "You stand before the gates of the Dragon's Lair. Dirk (32x16x64 voxels, gold armor, red cape) prepares to enter.\n[FRAME:50]";
+                else if (mockZmRoom === 21) desc = "You are in a dark stone corridor. A giant silhouette of a crouching Singe (64x64x128 voxels) is projected on the wall.\n[FRAME:380]";
+                else if (mockZmRoom === 22) desc = "You face a deep chasm. Dirk (32x16x64 voxels, coiled stance) is preparing to leap across.\n[FRAME:580]";
+                else if (mockZmRoom === 23) desc = "You are in Singe's Cavern. Singe (64x64x128 voxels) is coiled, ready to blast fire.\n[FRAME:700]";
+                else if (mockZmRoom === 24) desc = "You are in the Treasure Vault. Princess Daphne (16x12x60 voxels, glowing crown) is trapped.\n[FRAME:1050]";
+
+                // Add items in room description
+                for (const [itemId, roomVal] of Object.entries(mockZmState.items)) {
+                    if (roomVal === mockZmRoom) {
+                        desc += `\nYou see a ${ITEM_NAMES[itemId]} here.`;
+                    }
+                }
+                printTerminalLine(desc);
+                checkForFrameAutoSync(desc);
+            } 
+            else if (lowerCmd === "n" || lowerCmd === "north") {
+                if (mockZmRoom === 10) changeMockRoom(1);
+                else if (mockZmRoom === 3 && mockZmState[3000805]) changeMockRoom(4);
+                else if (mockZmRoom === 20) changeMockRoom(10);
+                else if (mockZmRoom === 22) changeMockRoom(23);
+                else printTerminalLine("You cannot go that way.");
+            }
+            else if (lowerCmd === "s" || lowerCmd === "south") {
+                if (mockZmRoom === 1) changeMockRoom(10);
+                else if (mockZmRoom === 10) changeMockRoom(20);
+                else if (mockZmRoom === 4) changeMockRoom(3);
+                else if (mockZmRoom === 23) changeMockRoom(22);
+                else printTerminalLine("You cannot go that way.");
+            }
+            else if (lowerCmd === "e" || lowerCmd === "east") {
+                if (mockZmRoom === 1) changeMockRoom(2);
+                else if (mockZmRoom === 3) changeMockRoom(1);
+                else if (mockZmRoom === 20) changeMockRoom(21);
+                else if (mockZmRoom === 21) changeMockRoom(22);
+                else if (mockZmRoom === 23) changeMockRoom(24);
+                else printTerminalLine("You cannot go that way.");
+            }
+            else if (lowerCmd === "w" || lowerCmd === "west") {
+                if (mockZmRoom === 2) changeMockRoom(1);
+                else if (mockZmRoom === 1) changeMockRoom(3);
+                else if (mockZmRoom === 21) changeMockRoom(20);
+                else if (mockZmRoom === 22) changeMockRoom(21);
+                else if (mockZmRoom === 24) changeMockRoom(23);
+                else printTerminalLine("You cannot go that way.");
+            }
+            else if (lowerCmd.startsWith("take ") || lowerCmd.startsWith("get ")) {
+                const targetName = lowerCmd.replace("take ", "").replace("get ", "").trim();
+                let foundItem = null;
+                for (const [itemId, roomVal] of Object.entries(mockZmState.items)) {
+                    if (roomVal === mockZmRoom && ITEM_NAMES[itemId].toLowerCase() === targetName) {
+                        foundItem = itemId;
+                        break;
+                    }
+                }
+                if (foundItem) {
+                    mockZmState.items[foundItem] = 0; // move to inventory
+                    mockZmInventory.push(ITEM_NAMES[foundItem]);
+                    printTerminalLine(`You took the ${ITEM_NAMES[foundItem]}.`);
+                } else {
+                    printTerminalLine("There is nothing here to take.");
+                }
+            }
+            else if (lowerCmd === "inventory" || lowerCmd === "i") {
+                if (mockZmInventory.length === 0) {
+                    printTerminalLine("Your inventory is empty.");
+                } else {
+                    printTerminalLine("You are carrying:\n- " + mockZmInventory.join("\n- "));
+                }
+            }
+            else if (lowerCmd.startsWith("use keycard") && mockZmRoom === 3) {
+                if (mockZmInventory.includes("Keycard")) {
+                    mockZmState[3000805] = 1;
+                    printTerminalLine("You swipe the Keycard. The portal hums to life! North is open.");
+                } else {
+                    printTerminalLine("You don't have a keycard.");
+                }
+            }
+            else {
+                printTerminalLine("I don't understand that command.");
+            }
+
+            updateMockHUD();
+        }
+
+        function changeMockRoom(newRoom) {
+            mockZmRoom = newRoom;
+            printTerminalLine(`[Moving to Room ${newRoom}...]`);
+            executeZmachineCommand("look");
+        }
+
+        function updateMockHUDFromThunk(outputText) {
+            let roomNum = 10;
+            if (outputText.includes("gates of the Dragon's Lair") || outputText.includes("gates of the Dragon")) roomNum = 20;
+            else if (outputText.includes("dark stone corridor")) roomNum = 21;
+            else if (outputText.includes("deep chasm")) roomNum = 22;
+            else if (outputText.includes("Singe's Cavern")) roomNum = 23;
+            else if (outputText.includes("Treasure Vault")) roomNum = 24;
+            else if (outputText.includes("lobby")) roomNum = 1;
+            else if (outputText.includes("Living Room")) roomNum = 2;
+            else if (outputText.includes("Unreal Portal Vault")) roomNum = 3;
+            else if (outputText.includes("outside the Victorian")) roomNum = 4;
+            else if (outputText.includes("gates of the Victorian")) roomNum = 10;
+
+            mockZmRoom = roomNum;
+
+            // Extract item pickups if printed
+            if (outputText.includes("Gold Token") && outputText.includes("took")) mockZmInventory.push("Gold Token");
+            if (outputText.includes("Keycard") && outputText.includes("took")) mockZmInventory.push("Keycard");
+            if (outputText.includes("Energy Pack") && outputText.includes("took")) mockZmInventory.push("Energy Pack");
+            if (outputText.includes("Magic Sword") && outputText.includes("took")) mockZmInventory.push("Magic Sword");
+            if (outputText.includes("Golden Crown") && outputText.includes("took")) mockZmInventory.push("Golden Crown");
+            if (outputText.includes("Fire Key") && outputText.includes("took")) mockZmInventory.push("Fire Key");
+
+            mockZmInventory = [...new Set(mockZmInventory)];
+            updateMockHUD();
+        }
+
+        function checkForFrameAutoSync(terminalOutputText) {
+            const match = terminalOutputText.match(/\[FRAME:(\d+)\]/);
+            if (match) {
+                const frameVal = parseInt(match[1]);
+                console.log(`[Z-Machine Sync] Found frame preset ${frameVal}. Loading editor genome...`);
+                
+                // Trigger Tab switch highlight logic internally
+                if (frameVal === 50) loadDnaPreset(50, 0.0, 0.04, 1.02, 0.35, 0.0, 1.0, '#d81e1e', '#ffdd00', 2);
+                if (frameVal === 380) loadDnaPreset(380, 0.0, -0.04, 0.93, 0.55, 0.1, 0.85, '#9f1d1d', '#ffa800', 2);
+                if (frameVal === 580) loadDnaPreset(580, 0.0, -0.14, 0.77, 0.95, 0.2, 0.7, '#881b1b', '#ff8800', 2);
+                if (frameVal === 700) loadDnaPreset(700, 0.08, 0.02, 1.1, -0.45, 1.0, 1.6, '#ff2525', '#ffcc00', 2);
+                if (frameVal === 1050) loadDnaPreset(1050, 0.0, 0.08, 1.03, 0.15, 0.05, 1.3, '#d81e1e', '#ffdd00', 2);
+            }
+        }
+
+        async function updateZmachineHUDFromEVM() {
+            if (!zmachineContract) return;
+            try {
+                const playerRoom = Number(await zmachineContract.getObjectProperty(0, 4000000, signer.address));
+                document.getElementById("zStatusRoom").innerText = `${playerRoom} (${ROOM_INFO[playerRoom]?.name || 'Unknown'})`;
+                document.getElementById("zStatusExits").innerText = ROOM_INFO[playerRoom]?.exits || "None";
+                
+                // Check items in backpack
+                let holding = [];
+                for (const itemId of [50, 51, 52, 60, 61, 62]) {
+                    const roomVal = Number(await zmachineContract.getObjectProperty(itemId, 30, signer.address));
+                    if (roomVal === 0) holding.push(ITEM_NAMES[itemId]);
+                }
+                
+                const invEl = document.getElementById("zInventoryStatus");
+                invEl.innerText = holding.length > 0 ? holding.join(", ") : "No items held.";
+            } catch(err) {
+                console.error("Failed to read Z-Machine HUD from chain:", err);
+            }
+        }
+
+        function updateMockHUD() {
+            document.getElementById("zStatusRoom").innerText = `${mockZmRoom} (${ROOM_INFO[mockZmRoom]?.name || 'Unknown'})`;
+            document.getElementById("zStatusExits").innerText = ROOM_INFO[mockZmRoom]?.exits || "None";
+            
+            const invEl = document.getElementById("zInventoryStatus");
+            invEl.innerText = mockZmInventory.length > 0 ? mockZmInventory.join(", ") : "No items held.";
+        }
+
+        // Dragon DNA Editor Canvas Visualizations
+        let canvasAnimFrame = null;
+        let selectedFrame = 50;
+
+        function initVectorCanvas() {
+            // Register slider listeners to auto-update label value text and redraw vector frame
+            const ids = ["gx", "gy", "stretch", "pulse", "fire", "light", "ec"];
+            ids.forEach(id => {
+                const el = document.getElementById(`slider-${id}`);
+                if (el) {
+                    el.addEventListener("input", (e) => {
+                        document.getElementById(`label-${id}`).innerText = Number(e.target.value).toFixed(2);
+                        if (id === 'gx' || id === 'gy') redrawStaticVector();
+                    });
+                }
+            });
+
+            // Color picker updates
+            document.getElementById("picker-scale").addEventListener("input", (e) => {
+                document.getElementById("label-scale-color").innerText = e.target.value;
+            });
+            document.getElementById("picker-eye").addEventListener("input", (e) => {
+                document.getElementById("label-eye-color").innerText = e.target.value;
+            });
+
+            // Launch active canvas loop
+            if (canvasAnimFrame) cancelAnimationFrame(canvasAnimFrame);
+            tickCanvasAnimation();
+        }
+
+        function loadDnaPreset(frameNum, gx, gy, stretch, pulse, fire, light, scaleColor, eyeColor, eyeCount) {
+            selectedFrame = frameNum;
+            
+            document.getElementById("slider-gx").value = gx;
+            document.getElementById("slider-gy").value = gy;
+            document.getElementById("slider-stretch").value = stretch;
+            document.getElementById("slider-pulse").value = pulse;
+            document.getElementById("slider-fire").value = fire;
+            document.getElementById("slider-light").value = light;
+            document.getElementById("picker-scale").value = scaleColor;
+            document.getElementById("picker-eye").value = eyeColor;
+            document.getElementById("slider-ec").value = eyeCount;
+
+            // Update Label texts
+            document.getElementById("label-gx").innerText = Number(gx).toFixed(2);
+            document.getElementById("label-gy").innerText = Number(gy).toFixed(2);
+            document.getElementById("label-stretch").innerText = Number(stretch).toFixed(2);
+            document.getElementById("label-pulse").innerText = Number(pulse).toFixed(2);
+            document.getElementById("label-fire").innerText = Number(fire).toFixed(2);
+            document.getElementById("label-light").innerText = Number(light).toFixed(2);
+            document.getElementById("label-scale-color").innerText = scaleColor;
+            document.getElementById("label-eye-color").innerText = eyeColor;
+            document.getElementById("label-ec").innerText = eyeCount;
+        }
+
+        function redrawStaticVector() {
+            // Hook for non-animated vector components if needed
+        }
+
+        function tickCanvasAnimation() {
+            const canvas = document.getElementById("vectorCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            // Read parameters from UI sliders
+            const gx = parseFloat(document.getElementById("slider-gx").value);
+            const gy = parseFloat(document.getElementById("slider-gy").value);
+            const stretch = parseFloat(document.getElementById("slider-stretch").value);
+            const pulse = parseFloat(document.getElementById("slider-pulse").value);
+            const fire = parseFloat(document.getElementById("slider-fire").value);
+            const light = parseFloat(document.getElementById("slider-light").value);
+            const scaleColor = document.getElementById("picker-scale").value;
+            const eyeColor = document.getElementById("picker-eye").value;
+            const eyeCount = parseInt(document.getElementById("slider-ec").value);
+            
+            // Draw radial grid glow
+            ctx.fillStyle = "#110c18";
+            ctx.fillRect(0, 0, w, h);
+            
+            let time = Date.now() * 0.003;
+            let breathe = Math.sin(time) * 0.05 * pulse;
+            
+            ctx.save();
+            // Translate based on offset, stretch, and breath
+            ctx.translate(w/2 + gx * 80, h/2 + (gy + breathe) * 80);
+            ctx.scale(stretch, 2.0 - stretch); // Conservation of mass stretch
+            
+            // Draw stylized vector based on color matching presets
+            if (scaleColor === '#ffaa00') {
+                // Render Dirk the Daring (Knight) outline
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = scaleColor;
+                ctx.strokeStyle = scaleColor;
+                ctx.lineWidth = 4;
+                
+                // Draw Knight helmet & plume
+                ctx.beginPath();
+                ctx.arc(0, -10, 40, 0, Math.PI * 2); // Helmet dome
+                ctx.stroke();
+                
+                // Visor slit
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-20, -5);
+                ctx.lineTo(20, -5);
+                ctx.stroke();
+                
+                // Plume
+                ctx.fillStyle = "#ff0000";
+                ctx.beginPath();
+                ctx.moveTo(0, -50);
+                ctx.bezierCurveTo(-30, -80, 10, -90, 40, -70);
+                ctx.closePath();
+                ctx.fill();
+            } else if (scaleColor === '#ff00bb') {
+                // Render Princess Daphne (Crown / Face profile)
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = scaleColor;
+                ctx.strokeStyle = scaleColor;
+                ctx.lineWidth = 4;
+                
+                // Profile & hair
+                ctx.beginPath();
+                ctx.arc(0, 10, 35, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Crown
+                ctx.fillStyle = "#ffd700";
+                ctx.beginPath();
+                ctx.moveTo(-20, -25);
+                ctx.lineTo(-25, -45);
+                ctx.lineTo(-10, -35);
+                ctx.lineTo(0, -55);
+                ctx.lineTo(10, -35);
+                ctx.lineTo(25, -45);
+                ctx.lineTo(20, -25);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                // Default / Singe: Draw stylized vector dragon snout/jaw
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = scaleColor;
+                ctx.strokeStyle = scaleColor;
+                ctx.lineWidth = 4;
+                
+                ctx.beginPath();
+                ctx.moveTo(-60, -20);
+                ctx.quadraticCurveTo(-100, -30, -120, -10); // Snout
+                ctx.quadraticCurveTo(-140, 0, -120, 20); // Chin
+                ctx.lineTo(-40, 10);
+                ctx.quadraticCurveTo(0, 30, 40, -10); // neck line
+                ctx.quadraticCurveTo(80, -40, 100, -80); // wings outline
+                ctx.lineTo(80, -90);
+                ctx.quadraticCurveTo(40, -40, -20, -30); // wing joint
+                ctx.lineTo(-40, -30);
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            // Draw glowing eyes
+            ctx.shadowColor = eyeColor;
+            ctx.fillStyle = eyeColor;
+            for (let i = 0; i < eyeCount; i++) {
+                ctx.beginPath();
+                // Alternate positions for eyes
+                let ex = -90 + (i * 12);
+                let ey = -18 - (i * 3);
+                if (scaleColor === '#ffaa00' || scaleColor === '#ff00bb') {
+                    // Offset for human face templates
+                    ex = -15 + (i * 15);
+                    ey = -10;
+                }
+                ctx.arc(ex, ey, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw roaring fire blast vector paths
+            if (fire > 0.05) {
+                ctx.shadowColor = "#ff7700";
+                ctx.fillStyle = "rgba(255, 120, 0, 0.45)";
+                ctx.beginPath();
+                ctx.moveTo(-120, 5);
+                ctx.bezierCurveTo(-160 - fire*120, -20 - fire*60, -180 - fire*120, 10 + fire*60, -120, 15);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw secondary inner core flame
+                ctx.fillStyle = "rgba(255, 230, 0, 0.7)";
+                ctx.beginPath();
+                ctx.moveTo(-120, 8);
+                ctx.bezierCurveTo(-140 - fire*80, -10 - fire*30, -150 - fire*80, 5 + fire*30, -120, 12);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+            
+            canvasAnimFrame = requestAnimationFrame(tickCanvasAnimation);
+        }
+
+        // Synthesize Cel Frame via Node server endpoint
+        async function synthesizeDnaFrame() {
+            const btn = document.getElementById("btnSynthDna");
+            const logs = document.getElementById("synthLogs");
+            btn.disabled = true;
+            btn.innerText = "⏳ Synthesizing frame (Stable Diffusion)...";
+            logs.style.display = "block";
+            logs.innerHTML = `[DNA] Initiating synthesis for frame preset ${selectedFrame}...\n`;
+
+            try {
+                const res = await fetch("/api/render-dna", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        frame: selectedFrame,
+                        g_x: parseFloat(document.getElementById("slider-gx").value),
+                        g_y: parseFloat(document.getElementById("slider-gy").value),
+                        stretch: parseFloat(document.getElementById("slider-stretch").value),
+                        pulse: parseFloat(document.getElementById("slider-pulse").value),
+                        fire: parseFloat(document.getElementById("slider-fire").value),
+                        light: parseFloat(document.getElementById("slider-light").value),
+                        scaleColor: document.getElementById("picker-scale").value,
+                        eyeColor: document.getElementById("picker-eye").value,
+                        eyeCount: parseInt(document.getElementById("slider-ec").value),
+                        steps: parseInt(document.getElementById("slider-steps").value),
+                        cfg: parseFloat(document.getElementById("slider-cfg").value),
+                        promptOverride: document.getElementById("txtPromptOverride").value
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    logs.innerHTML += `[SUCCESS] Output generated at: ${data.url}\n`;
+                    logs.innerHTML += `=== CLI Output logs ===\n${data.logs}`;
+                    
+                    // Display newly synthesized cel frame inside the cabinet display
+                    document.getElementById("gameScreen").src = "/" + data.url + "?t=" + Date.now();
+                    
+                    // Switch back to Cabinet tab so they can see the masterpiece
+                    switchDashboardTab('game');
+                } else {
+                    logs.innerHTML += `[ERROR] Synthesis failed: ${data.error}\n`;
+                }
+            } catch(e) {
+                logs.innerHTML += `[ERROR] Connection failed: ${e.message}\n`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "✨ Synthesize Cel Frame";
+            }
+        }
+
         window.onload = initWeb3;
+
     </script>
 </body>
 </html>

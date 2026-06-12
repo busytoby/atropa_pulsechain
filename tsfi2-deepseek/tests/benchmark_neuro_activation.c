@@ -25,6 +25,7 @@ typedef struct {
     uint64_t *hyper_roots;
     uint64_t *super_roots;
     uint64_t *root_masks;
+    void (*jit_activation_fn)(float*, float*);
 } TranscendentContext;
 
 static inline void compute_activation_avx512(float *dst, float *src) {
@@ -91,7 +92,7 @@ static void target_func_activation(void *ctx, float *data, uint64_t *mask, size_
                                                                 uint64_t root = sys->root_masks[0];
                                                                 while(root) {
                                                                     int r_bit = __builtin_ctzll(root);
-                                                                    compute_activation_avx512(data, data);
+                                                                    sys->jit_activation_fn(data, data);
                                                                     root &= ~(1ULL << r_bit);
                                                                 }
                                                                 super &= ~(1ULL << s_bit);
@@ -154,6 +155,12 @@ int main() {
     ctx->hyper_roots = (uint64_t*)lau_malloc(64 * 8); memset(ctx->hyper_roots, 0, 64*8);
     ctx->super_roots = (uint64_t*)lau_malloc(64 * 8); memset(ctx->super_roots, 0, 64*8);
     ctx->root_masks = (uint64_t*)lau_malloc(64 * 8); memset(ctx->root_masks, 0, 64*8);
+    
+    ThunkProxy *act_proxy = ThunkProxy_create();
+    void *jit_fn = ThunkProxy_emit_activation_avx512(act_proxy);
+    ThunkProxy_seal(act_proxy);
+    ctx->jit_activation_fn = (void (*)(float*, float*))jit_fn;
+    
     tsfi_font_ai_bind_evolve_sparse_wave(fs, (void*)target_func_activation, ctx);
     ctx->gemini_root = 1; ctx->qing_roots[0] = 1; ctx->bunch_roots[0] = 1; ctx->small_roots[0] = 1; ctx->chen_jur_roots[0] = 1; ctx->exa_roots[0] = 1; ctx->peta_roots[0] = 1; ctx->tera_roots[0] = 1; ctx->giga_roots[0] = 1; ctx->mega_roots[0] = 1; ctx->kilo_roots[0] = 1; ctx->hecto_roots[0] = 1; ctx->deca_roots[0] = 1; ctx->hyper_roots[0] = 1; ctx->super_roots[0] = 1; ctx->root_masks[0] = 1;
     float *data = (float*)lau_memalign(64, 256); 
@@ -168,7 +175,26 @@ int main() {
     printf("Virtual Activation: %.4f Gemini-Neurons/s\n", rate_gemini);
     printf("Total Time:         %.4f s\n", dur_sec);
     if (rate_gemini > 1.0) printf("[PASS] Activation Transcendence Verified\n");
-    lau_free(ctx->qing_roots); lau_free(ctx); tsfi_font_ai_destroy(fs); lau_free(fs); lau_free(data);
+    lau_free(ctx->qing_roots);
+    lau_free(ctx->bunch_roots);
+    lau_free(ctx->small_roots);
+    lau_free(ctx->chen_jur_roots);
+    lau_free(ctx->exa_roots);
+    lau_free(ctx->peta_roots);
+    lau_free(ctx->tera_roots);
+    lau_free(ctx->giga_roots);
+    lau_free(ctx->mega_roots);
+    lau_free(ctx->kilo_roots);
+    lau_free(ctx->hecto_roots);
+    lau_free(ctx->deca_roots);
+    lau_free(ctx->hyper_roots);
+    lau_free(ctx->super_roots);
+    lau_free(ctx->root_masks);
+    lau_free(ctx);
+    ThunkProxy_destroy(act_proxy);
+    tsfi_font_ai_destroy(fs);
+    lau_free(fs);
+    lau_free(data);
         extern void lau_registry_teardown(void);
     lau_registry_teardown();
     extern void lau_report_memory_metrics(void);

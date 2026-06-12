@@ -825,3 +825,154 @@ void* ThunkProxy_emit_mapped(ThunkProxy *p, MappedCommon *c, LauWiredHeader *h) 
     
     return (void*)c->step_safety_epoch;
 }
+
+void* ThunkProxy_emit_backprop_avx512(ThunkProxy *p) {
+    thunk_check_bounds(p, 128);
+    uint8_t *c = p->thunk_cursor; void *start = (void*)c;
+    
+    // vbroadcastss %xmm0, %zmm0
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x18; *c++ = 0xc0;
+    
+    // k = 0
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x0e;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x59; *c++ = 0x0a;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x75; *c++ = 0x48; *c++ = 0xac; *c++ = 0x0f;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x0f;
+    
+    // k = 1
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x4a; *c++ = 0x01;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x59; *c++ = 0x4e; *c++ = 0x01;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x75; *c++ = 0x48; *c++ = 0xac; *c++ = 0x4f; *c++ = 0x01;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x4f; *c++ = 0x01;
+    
+    // k = 2
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x4a; *c++ = 0x02;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x59; *c++ = 0x4e; *c++ = 0x02;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x75; *c++ = 0x48; *c++ = 0xac; *c++ = 0x4f; *c++ = 0x02;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x4f; *c++ = 0x02;
+    
+    // k = 3
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x4a; *c++ = 0x03;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x59; *c++ = 0x4e; *c++ = 0x03;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x75; *c++ = 0x48; *c++ = 0xac; *c++ = 0x4f; *c++ = 0x03;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x4f; *c++ = 0x03;
+    
+    // vzeroupper, ret
+    *c++ = 0xc5; *c++ = 0xf8; *c++ = 0x77;
+    *c++ = 0xc3;
+    
+    p->thunk_cursor = c;
+    __builtin___clear_cache((char*)start, (char*)c);
+    return start;
+}
+
+void* ThunkProxy_emit_activation_avx512(ThunkProxy *p) {
+    thunk_check_bounds(p, 128);
+    uint8_t *c = p->thunk_cursor; void *start = (void*)c;
+
+    // mov eax, 0x7fffffff
+    *c++ = 0xb8; *c++ = 0xff; *c++ = 0xff; *c++ = 0xff; *c++ = 0x7f;
+    // vpbroadcastd eax, zmm0
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x7c; *c++ = 0xc0;
+    
+    // mov edx, 0x3f800000
+    *c++ = 0xba; *c++ = 0x00; *c++ = 0x00; *c++ = 0x80; *c++ = 0x3f;
+    // vpbroadcastd edx, zmm2
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x7c; *c++ = 0xd2;
+
+    // k = 0
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x1e;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x64; *c++ = 0x48; *c++ = 0x54; *c++ = 0xc8;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x58; *c++ = 0xca;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x4c; *c++ = 0xc9;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x59; *c++ = 0xcb;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x0f;
+
+    // k = 1
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x5e; *c++ = 0x01;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x64; *c++ = 0x48; *c++ = 0x54; *c++ = 0xc8;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x58; *c++ = 0xca;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x4c; *c++ = 0xc9;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x64; *c++ = 0x48; *c++ = 0x59; *c++ = 0xd9;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x5f; *c++ = 0x01;
+
+    // k = 2
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x5e; *c++ = 0x02;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x64; *c++ = 0x48; *c++ = 0x54; *c++ = 0xc8;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x58; *c++ = 0xca;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x4c; *c++ = 0xc9;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x64; *c++ = 0x48; *c++ = 0x59; *c++ = 0xd9;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x5f; *c++ = 0x02;
+
+    // k = 3
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = 0x4e; *c++ = 0x03;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x74; *c++ = 0x48; *c++ = 0x54; *c++ = 0xc0;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x58; *c++ = 0xc2;
+    *c++ = 0x62; *c++ = 0xf2; *c++ = 0x7d; *c++ = 0x48; *c++ = 0x4c; *c++ = 0xc0;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x59; *c++ = 0xc1;
+    *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = 0x47; *c++ = 0x03;
+
+    // vzeroupper, ret
+    *c++ = 0xc5; *c++ = 0xf8; *c++ = 0x77;
+    *c++ = 0xc3;
+
+    p->thunk_cursor = c;
+    __builtin___clear_cache((char*)start, (char*)c);
+    return start;
+}
+
+void* ThunkProxy_relocate(ThunkProxy *dest, void *thunk_ptr, size_t size) {
+    if (!dest || !thunk_ptr || size < 2) return NULL;
+    thunk_check_bounds(dest, size);
+    
+    uint8_t *src = (uint8_t*)thunk_ptr;
+    uint16_t secret = *(u16_u*)(src - 2);
+    
+    uint8_t *meta = dest->thunk_cursor;
+    dest->thunk_cursor += 2;
+    uint8_t *code_start = dest->thunk_cursor;
+    
+    size_t code_size = size - 2;
+    memcpy(code_start, src, code_size);
+    dest->thunk_cursor += code_size;
+    
+    *(u16_u*)meta = secret;
+    
+    // Relocate 32-bit relative branches (E8 for CALL, E9 for JMP, 0F 8X for JCC)
+    // Adjusts displacements targeting addresses external to the relocated block.
+    for (size_t i = 0; i < code_size; i++) {
+        if (src[i] == 0xE8 || src[i] == 0xE9) { // CALL rel32 / JMP rel32
+            if (i + 4 < code_size) {
+                int32_t offset = *(int32_t*)(src + i + 1);
+                uint8_t *target = src + i + 5 + offset;
+                if (target < src || target >= src + code_size) {
+                    int32_t new_offset = (int32_t)(target - (code_start + i + 5));
+                    *(int32_t*)(code_start + i + 1) = new_offset;
+                }
+                i += 4;
+            }
+        } else if (src[i] == 0x0F && i + 1 < code_size && (src[i+1] >= 0x80 && src[i+1] <= 0x8F)) { // Jcc rel32
+            if (i + 5 < code_size) {
+                int32_t offset = *(int32_t*)(src + i + 2);
+                uint8_t *target = src + i + 6 + offset;
+                if (target < src || target >= src + code_size) {
+                    int32_t new_offset = (int32_t)(target - (code_start + i + 6));
+                    *(int32_t*)(code_start + i + 2) = new_offset;
+                }
+                i += 5;
+            }
+        }
+    }
+    
+    __builtin___clear_cache((char*)code_start, (char*)dest->thunk_cursor);
+    return (void*)code_start;
+}
+
+void* ThunkProxy_emit_breakpoint(ThunkProxy *p) {
+    thunk_check_bounds(p, 1);
+    uint8_t *c = p->thunk_cursor; void *start = (void*)c;
+    *c++ = 0xcc;
+    p->thunk_cursor = c;
+    __builtin___clear_cache((char*)start, (char*)c);
+    return start;
+}

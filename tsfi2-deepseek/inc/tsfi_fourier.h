@@ -27,6 +27,7 @@ typedef struct {
 
 // API
 void tsfi_fourier_init_basis(TSFiFourierBasis *basis);
+void tsfi_walsh_init_basis(TSFiFourierBasis *basis);
 
 // Generate Voxel Field from Spectrum (Simulating WMMA)
 // output_voxels: float buffer [SAMPLES * 2] (x,y interleaved)

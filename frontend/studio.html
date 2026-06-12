@@ -1623,11 +1623,19 @@
             const hfRate = Math.abs(outVolts - prevOut);
             lastOutVolts = outVolts;
 
-            let saturatedVal = inputScaled;
+            // 1. Zener Avalanche Dither (Spectral Dispersion to prevent limit cycles in the magnetic domain)
+            const zenerTapeDither = (Math.random() - 0.5) * 0.012;
+            const preSaturatedVal = inputScaled + zenerTapeDither;
+
+            // 2. Zener DC Coupling Offset (Simulating constant magnetic bias shifting on the tape recording head)
+            const V_zener_bias = 0.15; 
+            const biasedInput = preSaturatedVal + V_zener_bias;
+
+            let saturatedVal = biasedInput;
             const saturationThreshold = softLimit * saturationFactor * Math.max(0.5, 1.0 - hfRate * 0.25);
-            if (Math.abs(inputScaled) > saturationThreshold) {
-                const sign = Math.sign(inputScaled);
-                const absVal = Math.abs(inputScaled);
+            if (Math.abs(biasedInput) > saturationThreshold) {
+                const sign = Math.sign(biasedInput);
+                const absVal = Math.abs(biasedInput);
                 const excess = absVal - saturationThreshold;
                 const limitMargin = V_max - saturationThreshold;
                 if (limitMargin > 0.0) {
@@ -1635,6 +1643,9 @@
                     saturatedVal = sign * (saturationThreshold + limitMargin * Math.tanh(excess / limitMargin));
                 }
             }
+
+            // Restore DC Coupling balance (subtracting the constant Zener bias offset)
+            saturatedVal = saturatedVal - V_zener_bias;
 
             const isChecked = document.getElementById("chkEquaLimiter").checked;
             if (!isChecked) return saturatedVal;

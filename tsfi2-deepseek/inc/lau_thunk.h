@@ -111,5 +111,9 @@ void ThunkProxy_rebind(void *thunk_ptr, void *new_target);
 void ThunkProxy_seal(ThunkProxy *p);
 void ThunkProxy_unseal(ThunkProxy *p);
 void ThunkProxy_destroy(ThunkProxy *p);
+void* ThunkProxy_emit_backprop_avx512(ThunkProxy *p);
+void* ThunkProxy_emit_activation_avx512(ThunkProxy *p);
+void* ThunkProxy_relocate(ThunkProxy *dest, void *thunk_ptr, size_t size);
+void* ThunkProxy_emit_breakpoint(ThunkProxy *p);
 
 #endif // LAU_THUNK_H

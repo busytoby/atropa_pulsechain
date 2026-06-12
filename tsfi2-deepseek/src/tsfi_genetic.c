@@ -59,8 +59,63 @@ TSFiBigInt* MixDNA_bn(TSFiBigInt* A, TSFiBigInt* B) {
     return res;
 }
 
-void tsfi_k0rn_mutate(K0RnStream *s, float rate) { (void)s; (void)rate; }
-void tsfi_k0rn_crossover(const K0RnStream *a, const K0RnStream *b, K0RnStream *child) { (void)a; (void)b; (void)child; }
+void tsfi_k0rn_mutate(K0RnStream *s, float rate) {
+    if (!s || s->op_count == 0) return;
+    for (uint32_t i = 0; i < s->op_count; i++) {
+        if (((float)rand() / (float)RAND_MAX) < rate) {
+            K0RnOp *op = &s->ops[i];
+            if (((float)rand() / (float)RAND_MAX) < 0.1f) {
+                op->type = rand() % 6;
+            }
+            float rx = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+            op->x += rx * 0.05f;
+            float ry = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+            op->y += ry * 0.05f;
+            float rz = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+            op->z += rz * 0.05f;
+            float rw = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+            op->w += rw * 0.05f;
+            
+            float rp1 = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+            op->p1 += rp1 * 0.02f;
+            if (op->p1 < 0.01f) op->p1 = 0.01f;
+            if (op->p1 > 0.5f) op->p1 = 0.5f;
+
+            float rp2 = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+            op->p2 += rp2 * 0.02f;
+        }
+    }
+}
+
+void tsfi_k0rn_crossover(const K0RnStream *a, const K0RnStream *b, K0RnStream *child) {
+    if (!a || !b || !child) return;
+    uint32_t min_count = (a->op_count < b->op_count) ? a->op_count : b->op_count;
+    uint32_t max_count = (a->op_count > b->op_count) ? a->op_count : b->op_count;
+    uint32_t child_count = min_count + (rand() % (max_count - min_count + 1));
+    if (child_count > child->stream_capacity) {
+        child_count = child->stream_capacity;
+    }
+    child->op_count = child_count;
+
+    for (uint32_t i = 0; i < child_count; i++) {
+        const K0RnStream *parent = (rand() % 2 == 0) ? a : b;
+        if (i < parent->op_count) {
+            child->ops[i] = parent->ops[i];
+        } else {
+            const K0RnStream *fallback = (parent == a) ? b : a;
+            child->ops[i] = fallback->ops[i];
+        }
+        
+        if (i < a->op_count && i < b->op_count && (rand() % 4 == 0)) {
+            child->ops[i].x = (a->ops[i].x + b->ops[i].x) * 0.5f;
+            child->ops[i].y = (a->ops[i].y + b->ops[i].y) * 0.5f;
+            child->ops[i].z = (a->ops[i].z + b->ops[i].z) * 0.5f;
+            child->ops[i].w = (a->ops[i].w + b->ops[i].w) * 0.5f;
+            child->ops[i].p1 = (a->ops[i].p1 + b->ops[i].p1) * 0.5f;
+            child->ops[i].p2 = (a->ops[i].p2 + b->ops[i].p2) * 0.5f;
+        }
+    }
+}
 
 void tsfi_k0rn_symmetrize(K0RnStream *s) {
     if (!s || s->op_count == 0) return;

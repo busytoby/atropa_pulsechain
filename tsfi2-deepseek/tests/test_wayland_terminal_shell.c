@@ -3334,9 +3334,9 @@ static void redraw_disintegrator_screen(void) {
         char row_str[128] = "       ";
         for (int x = 0; x < 9; x++) {
             if (x == g_disint_px && y == g_disint_py) {
-                strcat(row_str, "▲ "); // Player
+                strcat(row_str, "^ "); // Player
             } else if (x == g_disint_tx && y == g_disint_ty) {
-                strcat(row_str, "👾 "); // Target/Enemy
+                strcat(row_str, "* "); // Target/Enemy
             } else {
                 strcat(row_str, ". ");
             }

@@ -27,6 +27,7 @@ typedef struct {
     uint64_t *super_roots;
     uint64_t *root_masks;
     float lr; // Learning rate
+    void (*jit_backprop_fn)(float*, float*, float*, float);
 } BackpropContext;
 
 // AVX-512 Backprop Kernel
@@ -97,7 +98,7 @@ static void target_func_backprop(void *ctx, float *data, uint64_t *mask, size_t 
                                                                 uint64_t root = sys->root_masks[0];
                                                                 while(root) {
                                                                     int r_bit = __builtin_ctzll(root);
-                                                                    compute_backprop_avx512(w, in, d, lr);
+                                                                    sys->jit_backprop_fn(w, in, d, lr);
                                                                     root &= ~(1ULL << r_bit);
                                                                 }
                                                                 super &= ~(1ULL << s_bit);
@@ -166,6 +167,11 @@ int main() {
     ctx->root_masks = (uint64_t*)lau_malloc(64 * sizeof(uint64_t)); memset(ctx->root_masks, 0, 64*8);
     ctx->lr = 0.01f;
     
+    ThunkProxy *bp_proxy = ThunkProxy_create();
+    void *jit_fn = ThunkProxy_emit_backprop_avx512(bp_proxy);
+    ThunkProxy_seal(bp_proxy);
+    ctx->jit_backprop_fn = (void (*)(float*, float*, float*, float))jit_fn;
+    
     tsfi_font_ai_bind_evolve_sparse_wave(fs, (void*)target_func_backprop, ctx);
     
     ctx->gemini_root = 1;
@@ -231,6 +237,7 @@ int main() {
     lau_free(ctx->super_roots);
     lau_free(ctx->root_masks);
     lau_free(ctx);
+    ThunkProxy_destroy(bp_proxy);
     tsfi_font_ai_destroy(fs);
     lau_free(fs);
     lau_free(data);

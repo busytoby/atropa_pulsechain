@@ -23,6 +23,28 @@ void tsfi_fourier_init_basis(TSFiFourierBasis *basis) {
     }
 }
 
+static float walsh_function(int j, int k, int num_bits) {
+    int gray_j = j ^ (j >> 1);
+    int parity = 0;
+    for (int i = 0; i < num_bits; i++) {
+        if ((gray_j & (1 << i)) && (k & (1 << i))) {
+            parity ^= 1;
+        }
+    }
+    return parity ? -1.0f : 1.0f;
+}
+
+void tsfi_walsh_init_basis(TSFiFourierBasis *basis) {
+    if (!basis) return;
+    
+    for (int k = 0; k < TSFI_FOURIER_SAMPLES; k++) {
+        for (int n = 0; n < TSFI_FOURIER_HARMONICS; n++) {
+            basis->data[n*2 + 0][k] = walsh_function(n*2 + 1, k, 9);
+            basis->data[n*2 + 1][k] = walsh_function(n*2 + 2, k, 9);
+        }
+    }
+}
+
 // Convert Coordinate Set to Fourier Coeffs
 // Based on Kuhl & Giardina (1982) logic simplified
 // Input: xy is flat array of x,y,x,y...
@@ -248,6 +270,8 @@ static void tsfi_form_memory_from_fracture(void *manifold_shm, uint64_t svdag_id
     tsfi_journal_anchor_fracture_memory(manifold_shm, svdag_id, dag);
 }
 
+extern void tsfi_resolve_fault_autonomous(void *manifold_shm, void *vk);
+
 void tsfi_grow_fault_energy(void *manifold_shm, float weight) {
     if (!manifold_shm) return;
     uint8_t *leaf502 = (uint8_t *)manifold_shm + (502 * 256);
@@ -260,8 +284,9 @@ void tsfi_grow_fault_energy(void *manifold_shm, float weight) {
     current_energy += (0.1f * weight);
     memcpy(leaf502 + 48, &current_energy, 4);
 
-    if (current_energy > 10.0f) {
+    if (current_energy >= 10.0f) {
         tsfi_io_printf(stdout, "[AUTONOMY] Fracture Energy SATURATED (%.2f). Development Mandate Active.\n", current_energy);
+        tsfi_resolve_fault_autonomous(manifold_shm, NULL);
     }
 }
 
