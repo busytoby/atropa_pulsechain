@@ -32,6 +32,24 @@ int main() {
     printf("  Read 3 value: %d (expected 0)\n", read_val3);
     assert(read_val3 == 0);
 
+    // 3. Inhibit Driver Verification
+    printf("[PLANE] Resetting plane and testing Inhibit Driver current cancellation...\n");
+    tsfi_core_plane_init(&plane);
+
+    // Write a '0' utilizing Inhibit pulse (this applies Ix = Iy = 0.75, Inhibit = -0.75)
+    // The target core (3, 3) must remain 0
+    tsfi_core_plane_write_inhibited(&plane, 3, 3, 0);
+    int read_inhibit_0 = tsfi_core_plane_read_destructive(&plane, 3, 3);
+    printf("  Read inhibited '0': %d (expected 0)\n", read_inhibit_0);
+    assert(read_inhibit_0 == 0);
+
+    // Write a '1' utilizing Inhibit pulse (this applies Ix = Iy = 0.75, Inhibit = 0)
+    // The target core (3, 3) must switch to 1
+    tsfi_core_plane_write_inhibited(&plane, 3, 3, 1);
+    int read_inhibit_1 = tsfi_core_plane_read_destructive(&plane, 3, 3);
+    printf("  Read inhibited '1': %d (expected 1)\n", read_inhibit_1);
+    assert(read_inhibit_1 == 1);
+
     // Check for memory leaks
     extern void lau_report_memory_metrics(void);
     lau_report_memory_metrics();
