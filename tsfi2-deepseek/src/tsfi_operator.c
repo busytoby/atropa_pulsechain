@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 static double get_time_s() {
     struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -25,6 +26,40 @@ TSFiOperator* tsfi_op_create(const char* name, void* cpu_fn, const uint32_t* spv
 }
 
 void tsfi_op_dispatch(struct TSFiOperator* op, VulkanContext* vk, WaveStream* stream, void* uniforms, size_t u_size) {
+    // --- Kouwenhoven Resuscitation Watchdog ---
+    if (stream && stream->data && stream->count > 0 && stream->atom_size == sizeof(float)) {
+        float* f_data = (float*)stream->data;
+        uint32_t check_count = stream->count < 256 ? stream->count : 256;
+        float sum = 0.0f;
+        float max_abs = 0.0f;
+        for (uint32_t i = 0; i < check_count; i++) {
+            float val = f_data[i];
+            sum += val;
+            float abs_val = val < 0.0f ? -val : val;
+            if (abs_val > max_abs) max_abs = abs_val;
+        }
+        float mean = sum / check_count;
+        float var_sum = 0.0f;
+        for (uint32_t i = 0; i < check_count; i++) {
+            float diff = f_data[i] - mean;
+            var_sum += diff * diff;
+        }
+        float variance = var_sum / check_count;
+
+        if (max_abs < 1e-4f || variance < 1e-6f) {
+            static int flatline_ticks = 0;
+            flatline_ticks++;
+            if (flatline_ticks > 50) { 
+                printf("[KOUWENHOVEN] Resuscitation Watchdog triggered: Flatline/Fibrillation detected on operator '%s'! (MaxAbs: %f, Var: %f)\n", op->name, max_abs, variance);
+                for (uint32_t i = 0; i < check_count; i++) {
+                    f_data[i] = (float)sin((double)i * 0.1) * 0.5f + ((float)(rand() % 1000) / 1000.0f - 0.5f) * 0.3f;
+                }
+                printf("[KOUWENHOVEN] Defibrillation pulse successfully injected to jumpstart the AI Operator.\n");
+                flatline_ticks = 0;
+            }
+        }
+    }
+
     size_t data_size = stream->count * stream->stride;
         int pressure = (stream->flags & WAVE_FLAG_BACKPRESSURE);
         int verify = (stream->flags & WAVE_FLAG_VERIFY);

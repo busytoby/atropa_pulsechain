@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 // Zero-Copy Reservoir Sizes
 #define RESERVOIR_REGISTRY_CAP 4096     // 4K Glyphs (Fits in 64MB instead of 4GB)
@@ -280,4 +281,37 @@ void tsfi_font_generate_default(TSFiFontSystem *fs) {
         tsfi_font_set_glyph(fs, c, temp_segs, idx, w + 2000, l, b, r, t);
     }
     tsfi_io_printf(stdout, "[TSFI_FONT] Default Font Generated.\n");
+}
+
+void tsfi_font_morph_glyph(TSFiFontSystem *fs, uint32_t codepoint, const uint64_t pole[3]) {
+    if (codepoint >= TSFI_FONT_MAP_SIZE) return;
+    uint32_t rid = fs->unicode_map[codepoint];
+    if (rid == 0) return;
+    uint32_t dna_idx = fs->dna_indices[codepoint];
+    uint32_t num_atoms = fs->registry[rid].num_segments;
+
+    float raw0 = (float)(pole[0] % 1000ULL) / 1000.0f;
+    float raw1 = (float)(pole[1] % 1000ULL) / 1000.0f;
+    float raw2 = (float)(pole[2] % 1000ULL) / 1000.0f;
+
+    float boldness = 0.7f + raw0 * 0.6f;
+    float italic_shear = (raw1 - 0.5f) * 0.4f;
+    float vertical_jitter = (raw2 - 0.5f) * 100.0f;
+
+    for (uint32_t i = 0; i < num_atoms; i++) {
+        WAVE15 *atom = &fs->wave_elements[dna_idx + i];
+        
+        atom->p0_x = (int16_t)(((float)atom->p0_x - 8192.0f) * boldness + 8192.0f);
+        atom->p1_x = (int16_t)(((float)atom->p1_x - 8192.0f) * boldness + 8192.0f);
+        atom->p2_x = (int16_t)(((float)atom->p2_x - 8192.0f) * boldness + 8192.0f);
+
+        atom->p0_x += (int16_t)((float)atom->p0_y * italic_shear);
+        atom->p1_x += (int16_t)((float)atom->p1_y * italic_shear);
+        atom->p2_x += (int16_t)((float)atom->p2_y * italic_shear);
+
+        float phase = (float)i * 0.5f;
+        atom->p0_y += (int16_t)(sinf(phase) * vertical_jitter);
+        atom->p1_y += (int16_t)(sinf(phase + 1.0f) * vertical_jitter);
+        atom->p2_y += (int16_t)(sinf(phase + 2.0f) * vertical_jitter);
+    }
 }

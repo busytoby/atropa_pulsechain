@@ -146,6 +146,7 @@ void tsfi_font_set_style(TSFiFontSystem *fs, float thick, float soft, int16_t sx
 void tsfi_font_set_glyph(TSFiFontSystem *fs, uint32_t codepoint, 
                          TSFiPackedSegment *segs, size_t count, 
                          int16_t advance, int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+void tsfi_font_morph_glyph(TSFiFontSystem *fs, uint32_t codepoint, const uint64_t pole[3]);
 
 // Procedural Generation (The "Internal Font")
 void tsfi_font_generate_default(TSFiFontSystem *fs);
