@@ -1129,6 +1129,13 @@
                         <strong>Backpack Inventory:</strong>
                         <div id="zInventoryStatus" style="color: #b2a8c0; margin-top: 5px; font-style: italic;">No items held.</div>
                     </div>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; margin-top: 5px;">
+                        <strong>Biotika DJ Broadcast:</strong>
+                        <div id="zBiotikaDJStatus" style="color: #94a3b8; margin-top: 5px; font-weight: bold; display: flex; align-items: center; gap: 6px; font-family: monospace;">
+                            <span id="zBiotikaIndicator" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; transition: all 0.3s ease;"></span>
+                            <span id="zBiotikaDJName">No Active DJ</span>
+                        </div>
+                    </div>
                 </div>
                 <div style="font-size: 0.82rem; color: #8a7c9d; line-height: 1.4; border-top: 1px solid rgba(138,43,226,0.2); padding-top: 10px;">
                     💡 Tips: Go south to explore the new stills rooms (Gates, Corridor, Leap, Cavern, Vault). Take cards and examine them.
@@ -3573,10 +3580,42 @@
         const beatChannel = new BroadcastChannel('pulse_beat');
         let lastBeatTime = Date.now();
         let currentBeatBpm = 120;
+        let activeBiotikaDJColor = "#ff00a0"; // Default template
+        let activeBiotikaDJName = "No Active DJ";
+        let beatFlashActive = 0.0;
+
+        function triggerBeatFlash() {
+            beatFlashActive = 1.0;
+        }
+
         beatChannel.onmessage = function(e) {
             if (e.data.type === 'tick') {
                 lastBeatTime = Date.now();
                 currentBeatBpm = e.data.bpm;
+                if (e.data.djColor) {
+                    activeBiotikaDJColor = e.data.djColor;
+                }
+                if (e.data.djName) {
+                    activeBiotikaDJName = e.data.djName;
+                    const nameEl = document.getElementById("zBiotikaDJName");
+                    const indEl = document.getElementById("zBiotikaIndicator");
+                    if (nameEl) nameEl.textContent = activeBiotikaDJName;
+                    if (indEl) {
+                        indEl.style.backgroundColor = activeBiotikaDJColor;
+                        indEl.style.boxShadow = `0 0 8px ${activeBiotikaDJColor}`;
+                    }
+                }
+                triggerBeatFlash();
+            } else if (e.data.type === 'dj_election') {
+                activeBiotikaDJColor = e.data.color;
+                activeBiotikaDJName = e.data.name;
+                const nameEl = document.getElementById("zBiotikaDJName");
+                const indEl = document.getElementById("zBiotikaIndicator");
+                if (nameEl) nameEl.textContent = activeBiotikaDJName + " (ELECTED)";
+                if (indEl) {
+                    indEl.style.backgroundColor = activeBiotikaDJColor;
+                    indEl.style.boxShadow = `0 0 12px ${activeBiotikaDJColor}`;
+                }
             }
         };
 
@@ -3694,9 +3733,26 @@
             // Draw radial grid glow
             ctx.fillStyle = "#110c18";
             ctx.fillRect(0, 0, w, h);
+
+            // Draw Biotika Beat ripple rings in background
+            beatFlashActive = Math.max(0.0, beatFlashActive - 0.04);
+            if (beatFlashActive > 0.0) {
+                ctx.strokeStyle = activeBiotikaDJColor;
+                ctx.lineWidth = 2.0;
+                ctx.save();
+                ctx.globalAlpha = beatFlashActive * 0.35;
+                ctx.beginPath();
+                ctx.arc(w/2, h/2, 50 + beatFlashActive * 150, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(w/2, h/2, 20 + beatFlashActive * 75, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
             
             let time = Date.now() * 0.003;
-            let breathe = Math.sin(time) * 0.05 * pulse;
+            let breathe = (Math.sin(time) * 0.05 * pulse) + (beatFlashActive * 0.12);
             
             let currentScaleColor = scaleColor;
             let currentEyeColor = eyeColor;

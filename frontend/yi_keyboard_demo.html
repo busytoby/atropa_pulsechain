@@ -1326,6 +1326,17 @@
                     logPipeline(`🧬 [DJ ELECTION] Crowd favor shifts! ${this.djs[this.activeDJIndex].name} takes the DJ booth.`);
                 }
                 
+                try {
+                    const activeDJ = this.djs[this.activeDJIndex];
+                    beatChannel.postMessage({
+                        type: 'dj_election',
+                        name: activeDJ.name,
+                        color: activeDJ.color,
+                        genes: activeDJ.genes,
+                        applause: activeDJ.applause
+                    });
+                } catch(e) {}
+                
                 this.renderUI();
                 if (this.isLoopRunning) {
                     this.steerSynthesizer();
@@ -2020,7 +2031,13 @@
 
         function triggerArpNote(note, freq) {
             try {
-                beatChannel.postMessage({ type: 'tick', bpm: arpBpm });
+                const activeDJ = biotikaElection.djs[biotikaElection.activeDJIndex];
+                beatChannel.postMessage({ 
+                    type: 'tick', 
+                    bpm: arpBpm,
+                    djColor: activeDJ ? activeDJ.color : "#ff007f",
+                    djName: activeDJ ? activeDJ.name : "No Active DJ"
+                });
             } catch(e) {}
             activeKeyNote = note;
             activeKeyFreq = freq;
