@@ -60,6 +60,8 @@ ERC20_ABI_DUMMY = [
 
 TT_ABI_DUMMY = [
     {"inputs": [], "name": "V2Minter", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
+    {"inputs": [], "name": "PersonalMinter", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
+    {"inputs": [], "name": "IndexMinter", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
     {"inputs": [], "name": "Parent", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"}
 ]
 
@@ -267,7 +269,23 @@ def main():
                 "allowFailure": True,
                 "callData": dummy_tt.encode_abi("V2Minter")
             })
-            second_metadata.append({"type": "minter_view", "address": addr})
+            second_metadata.append({"type": "minter_view", "address": addr, "var_name": "V2Minter"})
+
+            # Call: PersonalMinter() view
+            second_calls.append({
+                "target": addr_checksum,
+                "allowFailure": True,
+                "callData": dummy_tt.encode_abi("PersonalMinter")
+            })
+            second_metadata.append({"type": "minter_view", "address": addr, "var_name": "PersonalMinter"})
+
+            # Call: IndexMinter() view
+            second_calls.append({
+                "target": addr_checksum,
+                "allowFailure": True,
+                "callData": dummy_tt.encode_abi("IndexMinter")
+            })
+            second_metadata.append({"type": "minter_view", "address": addr, "var_name": "IndexMinter"})
 
             # Call: Parent() view
             second_calls.append({
@@ -290,7 +308,7 @@ def main():
                     "parent_symbol": None
                 }
 
-        print(f"Executing secondary Multicall to fetch V2Minter and Parent for {len(treasury_addrs)} treasury tokens...")
+        print(f"Executing secondary Multicall to fetch V2Minter, PersonalMinter, IndexMinter, and Parent for {len(treasury_addrs)} treasury tokens...")
         try:
             second_results = multicall_contract.functions.aggregate3(second_calls).call()
             for idx, (success, return_data) in enumerate(second_results):
@@ -305,7 +323,7 @@ def main():
                             token_data[addr]["minter_address"] = decoded.lower()
                             token_data[addr]["minter_name"] = MINTER_NAMES.get(decoded.lower(), "Unknown Minter")
                     except Exception as e:
-                        print(f"Error decoding V2Minter for {addr}: {e}")
+                        print(f"Error decoding {meta.get('var_name', 'Minter')} for {addr}: {e}")
                 elif meta["type"] == "parent_view":
                     try:
                         decoded = abi.decode(["address"], return_data)[0]
