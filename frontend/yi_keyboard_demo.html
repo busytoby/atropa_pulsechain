@@ -748,6 +748,46 @@
                 </div>
             </div>
 
+            <!-- CHO Election Panel -->
+            <div class="panel" id="cho-election-panel">
+                <div class="panel-title">
+                    <span>🔮 Prophecy of the CHO Election</span>
+                    <span class="glow-tag" id="cho-election-status" style="background: rgba(0, 243, 255, 0.1); color: var(--secondary-glow); border-color: rgba(0, 243, 255, 0.2); font-size: 0.7rem;">Registry Synced</span>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: -0.3rem; margin-bottom: 0.2rem;">
+                    Active delegate voting power distribution in the on-chain <code>CHO</code> contract determines default preset ratios.
+                </p>
+                <div id="cho-distribution-container" style="display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: #161a2e; margin-bottom: 0.3rem;">
+                    <!-- Filled dynamically via JS -->
+                </div>
+                <div style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.2); margin-bottom: 0.3rem;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); background: rgba(255,255,255,0.02);">
+                                <th style="padding: 0.3rem 0.5rem;">Delegate (Soul)</th>
+                                <th style="padding: 0.3rem 0.5rem;">Address</th>
+                                <th style="padding: 0.3rem 0.5rem; text-align: right;">Power (CHO)</th>
+                                <th style="padding: 0.3rem 0.5rem; text-align: right;">Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cho-delegates-body">
+                            <!-- Filled dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.1rem;">
+                        <div>Consensus Preset Ratios:</div>
+                        <div id="consensus-presets-info" style="font-family: monospace; color: var(--accent-glow); font-weight: 600;">
+                            Blend: 0.50 | FM: 0.50 | Timbre: 0.50
+                        </div>
+                    </div>
+                    <button class="btn" id="btn-tally-cho" onclick="tallyChoElection()" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; width: auto;">
+                        Tally & Override
+                    </button>
+                </div>
+            </div>
+
             <!-- Reaction Log -->
             <div class="panel">
                 <div class="panel-title">
@@ -1073,6 +1113,147 @@
         const zhou = new ZHOUContract(zheng);
         const yau = new YAUContract(zhou);
         const yang = new YANGContract(yau);
+
+        class CHOContract {
+            constructor() {
+                // Preset mock delegate users matching localhost config / state
+                this.Delegates = [
+                    { soul: 9999n, address: "0xe40AF675753322508d033CE8EE6135aA76470338", username: "Genesis_Nine", balance: 50000n, votePitchBlend: 0.25, voteFMMult: 0.8, voteTimbreMorph: 0.15 },
+                    { soul: 4444n, address: "0xb4C9Ed909ecB896586d6ebCfEbA0E97fdCA51310", username: "Genesis_Four", balance: 35000n, votePitchBlend: 0.75, voteFMMult: 0.4, voteTimbreMorph: 0.65 },
+                    { soul: 3333n, address: "0x5fD11B3E10E0d71Ab05ace92797e517e532E1462", username: "Genesis_Three", balance: 20000n, votePitchBlend: 0.50, voteFMMult: 0.2, voteTimbreMorph: 0.90 },
+                    { soul: 1234n, address: "0xdE3F48Cdf1af8a44b21Ed04BB12999A87B53c82a", username: "MariaRahel", balance: 15000n, votePitchBlend: 0.90, voteFMMult: 0.9, voteTimbreMorph: 0.45 }
+                ];
+                this.ContractAddress = "0xCb591105c732C55bc81e109dCAeEd9E136AC6c89";
+            }
+
+            GetTotalPower() {
+                return this.Delegates.reduce((sum, d) => sum + d.balance, 0n);
+            }
+
+            TallyConsensus() {
+                let total = Number(this.GetTotalPower());
+                let pitchBlendSum = 0;
+                let fmMultSum = 0;
+                let timbreMorphSum = 0;
+
+                this.Delegates.forEach(d => {
+                    let w = Number(d.balance) / total;
+                    pitchBlendSum += d.votePitchBlend * w;
+                    fmMultSum += d.voteFMMult * w;
+                    timbreMorphSum += d.voteTimbreMorph * w;
+                });
+
+                return {
+                    pitchBlend: pitchBlendSum,
+                    fmMux: fmMultSum,
+                    timbreMorph: timbreMorphSum
+                };
+            }
+        }
+
+        const choContract = new CHOContract();
+
+        function renderChoElection() {
+            const tbody = document.getElementById("cho-delegates-body");
+            if (!tbody) return;
+            const totalPower = choContract.GetTotalPower();
+            const totalNum = Number(totalPower);
+
+            tbody.innerHTML = "";
+            const colors = ["#ff007f", "#00f3ff", "#ffd700", "#10b981"];
+            
+            const distContainer = document.getElementById("cho-distribution-container");
+            if (distContainer) {
+                distContainer.innerHTML = "";
+            }
+
+            choContract.Delegates.forEach((d, i) => {
+                const weight = totalNum > 0 ? (Number(d.balance) / totalNum) : 0;
+                const weightPct = (weight * 100).toFixed(1);
+                
+                const tr = document.createElement("tr");
+                tr.style.borderBottom = "1px solid var(--border-color)";
+                tr.innerHTML = `
+                    <td style="padding: 0.3rem 0.5rem; font-weight: 600; color: ${colors[i % colors.length]};">${d.username} (${d.soul})</td>
+                    <td style="padding: 0.3rem 0.5rem; color: var(--text-muted); font-family: monospace;">${d.address.substring(0, 6)}...${d.address.substring(38)}</td>
+                    <td style="padding: 0.3rem 0.5rem; text-align: right; font-family: monospace;">${d.balance.toLocaleString()}</td>
+                    <td style="padding: 0.3rem 0.5rem; text-align: right; font-weight: 600; font-family: monospace;">${weightPct}%</td>
+                `;
+                tbody.appendChild(tr);
+
+                // Add to distribution block
+                if (weight > 0 && distContainer) {
+                    const block = document.createElement("div");
+                    block.style.width = `${weightPct}%`;
+                    block.style.backgroundColor = colors[i % colors.length];
+                    block.style.height = "100%";
+                    block.title = `${d.username}: ${weightPct}%`;
+                    distContainer.appendChild(block);
+                }
+            });
+
+            const consensus = choContract.TallyConsensus();
+            const infoEl = document.getElementById("consensus-presets-info");
+            if (infoEl) {
+                infoEl.textContent = `Blend: ${consensus.pitchBlend.toFixed(2)} | FM: ${consensus.fmMux.toFixed(2)} | Timbre: ${consensus.timbreMorph.toFixed(2)}`;
+            }
+        }
+
+        function tallyChoElection() {
+            const statusTag = document.getElementById("cho-election-status");
+            if (statusTag) {
+                statusTag.textContent = "Tallying...";
+                statusTag.style.borderColor = "var(--accent-glow)";
+                statusTag.style.color = "var(--accent-glow)";
+                statusTag.style.background = "rgba(255, 215, 0, 0.1)";
+            }
+
+            // Shift opinions slightly to simulate organic voter sentiment changes
+            choContract.Delegates.forEach(d => {
+                d.votePitchBlend = Math.min(1.0, Math.max(0.0, d.votePitchBlend + (Math.random() - 0.5) * 0.1));
+                d.voteFMMult = Math.min(1.0, Math.max(0.0, d.voteFMMult + (Math.random() - 0.5) * 0.1));
+                d.voteTimbreMorph = Math.min(1.0, Math.max(0.0, d.voteTimbreMorph + (Math.random() - 0.5) * 0.1));
+                let delta = BigInt(Math.floor((Math.random() - 0.5) * 1000));
+                if (d.balance + delta > 1000n) {
+                    d.balance += delta;
+                }
+            });
+
+            setTimeout(() => {
+                renderChoElection();
+                const consensus = choContract.TallyConsensus();
+
+                // Override parameters with consensus ratios
+                const blendSlider = document.getElementById("param-pitch-blend");
+                if (blendSlider) {
+                    blendSlider.value = Math.round(consensus.pitchBlend * 100);
+                }
+                
+                const modeSelect = document.getElementById("param-synth-mode");
+                if (modeSelect) {
+                    if (consensus.fmMux < 0.25) {
+                        modeSelect.value = "pitch";
+                    } else if (consensus.fmMux < 0.50) {
+                        modeSelect.value = "fm";
+                    } else if (consensus.fmMux < 0.75) {
+                        modeSelect.value = "panning";
+                    } else {
+                        modeSelect.value = "timbre";
+                    }
+                }
+
+                updateParams();
+
+                logPipeline(`CHO Election tally complete! Overrode sliders: Blend=${consensus.pitchBlend.toFixed(2)}, Timbre=${consensus.timbreMorph.toFixed(2)}.`);
+                
+                if (statusTag) {
+                    statusTag.textContent = "Registry Synced";
+                    statusTag.style.borderColor = "rgba(0, 243, 255, 0.2)";
+                    statusTag.style.color = "var(--secondary-glow)";
+                    statusTag.style.background = "rgba(0, 243, 255, 0.1)";
+                }
+            }, 600);
+        }
 
         // Wizard steps executions
         let currentStep = 1;
@@ -2129,6 +2310,7 @@
 
         drawScopes();
         randomizeInputs();
+        renderChoElection();
 
     </script>
 </body>
