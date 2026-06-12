@@ -500,15 +500,16 @@ HTML_CONTENT = """<!DOCTYPE html>
                 <table class="table" id="catalog-table">
                     <thead>
                         <tr>
-                            <th>Token</th>
-                            <th>Address</th>
-                            <th>USD Price</th>
-                            <th>Amount for $1.00 USD</th>
+                            <th onclick="setSort('symbol')" style="cursor: pointer; user-select: none;">Token<span id="sort-symbol"> ⇅</span></th>
+                            <th onclick="setSort('address')" style="cursor: pointer; user-select: none;">Address<span id="sort-address"> ⇅</span></th>
+                            <th onclick="setSort('price')" style="cursor: pointer; user-select: none;">USD Price<span id="sort-price"> ⇅</span></th>
+                            <th onclick="setSort('volume')" style="cursor: pointer; user-select: none;">Traded Volume<span id="sort-volume" style="color: var(--primary)"> ▼</span></th>
+                            <th onclick="setSort('amount')" style="cursor: pointer; user-select: none;">Amount for $1.00 USD<span id="sort-amount"> ⇅</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-muted)">Loading oracle prices...</td>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted)">Loading oracle prices...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -695,10 +696,50 @@ HTML_CONTENT = """<!DOCTYPE html>
             }
         }
 
+        let currentSort = { column: 'volume', direction: 'desc' };
+
+        function setSort(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'desc';
+            }
+            updateSortIndicators();
+            renderCatalog();
+        }
+
+        function updateSortIndicators() {
+            const columns = ['symbol', 'address', 'price', 'volume', 'amount'];
+            columns.forEach(col => {
+                const el = document.getElementById(`sort-${col}`);
+                if (!el) return;
+                if (currentSort.column === col) {
+                    el.innerText = currentSort.direction === 'asc' ? ' ▲' : ' ▼';
+                    el.style.color = 'var(--primary)';
+                } else {
+                    el.innerText = ' ⇅';
+                    el.style.color = 'var(--text-muted)';
+                }
+            });
+        }
+
         function renderCatalog() {
             const searchVal = document.getElementById('catalog-search').value.toLowerCase();
             const catalogBody = document.querySelector('#catalog-table tbody');
             const priceEntries = Object.entries(cachedData.prices);
+
+            // Calculate volumes for each token address
+            const volumes = {};
+            if (cachedData.resolved) {
+                cachedData.resolved.forEach(swap => {
+                    const addr0 = swap.token0.address.toLowerCase();
+                    const addr1 = swap.token1.address.toLowerCase();
+                    const val = parseFloat(swap.usd_value) || 0;
+                    volumes[addr0] = (volumes[addr0] || 0) + val;
+                    volumes[addr1] = (volumes[addr1] || 0) + val;
+                });
+            }
 
             const filtered = priceEntries.filter(([addr, val]) => {
                 const addrLower = addr.toLowerCase();
@@ -710,8 +751,51 @@ HTML_CONTENT = """<!DOCTYPE html>
                        (val && val.name && val.name.toLowerCase().includes(searchVal));
             });
 
+            // Sort logic: Treasury tokens first, then sorted by chosen column
+            filtered.sort((a, b) => {
+                const addrA = a[0].toLowerCase();
+                const addrB = b[0].toLowerCase();
+                
+                const isTreasuryA = !!(cachedData.treasury_tokens && cachedData.treasury_tokens[addrA] && !cachedData.treasury_tokens[addrA].ignored);
+                const isTreasuryB = !!(cachedData.treasury_tokens && cachedData.treasury_tokens[addrB] && !cachedData.treasury_tokens[addrB].ignored);
+                
+                if (isTreasuryA && !isTreasuryB) return -1;
+                if (!isTreasuryA && isTreasuryB) return 1;
+                
+                let valA, valB;
+                const priceA = parseFloat(typeof a[1] === 'object' ? a[1].price : a[1]) || 0;
+                const priceB = parseFloat(typeof b[1] === 'object' ? b[1].price : b[1]) || 0;
+                
+                if (currentSort.column === 'price') {
+                    valA = priceA;
+                    valB = priceB;
+                } else if (currentSort.column === 'volume') {
+                    valA = volumes[addrA] || 0;
+                    valB = volumes[addrB] || 0;
+                } else if (currentSort.column === 'amount') {
+                    valA = priceA > 0 ? (1 / priceA) : 0;
+                    valB = priceB > 0 ? (1 / priceB) : 0;
+                } else if (currentSort.column === 'symbol') {
+                    const matchA = cachedData.resolved.find(r => r.token0.address === a[0]) || cachedData.resolved.find(r => r.token1.address === a[0]);
+                    const symA = (matchA ? (matchA.token0.address === a[0] ? matchA.token0.symbol : matchA.token1.symbol) : ((a[1] && a[1].symbol) || '')).toLowerCase();
+                    
+                    const matchB = cachedData.resolved.find(r => r.token0.address === b[0]) || cachedData.resolved.find(r => r.token1.address === b[0]);
+                    const symB = (matchB ? (matchB.token0.address === b[0] ? matchB.token0.symbol : matchB.token1.symbol) : ((b[1] && b[1].symbol) || '')).toLowerCase();
+                    
+                    return currentSort.direction === 'asc' ? symA.localeCompare(symB) : symB.localeCompare(symA);
+                } else if (currentSort.column === 'address') {
+                    return currentSort.direction === 'asc' ? addrA.localeCompare(addrB) : addrB.localeCompare(addrA);
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return valA - valB;
+                } else {
+                    return valB - valA;
+                }
+            });
+
             if (filtered.length === 0) {
-                catalogBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted)">No matching tokens found.</td></tr>';
+                catalogBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted)">No matching tokens found.</td></tr>';
                 return;
             }
 
@@ -757,6 +841,9 @@ HTML_CONTENT = """<!DOCTYPE html>
 
                 let priceFloat = parseFloat(price);
                 let amountForOneUsd = priceFloat > 0 ? (1 / priceFloat).toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8}) : 'N/A';
+                
+                const vol = volumes[addrLower] || 0;
+                const volStr = vol > 0 ? `$${vol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '$0.00';
 
                 let symbolHtml = isTreasury ? `<span class="token-symbol-glow" style="color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4)">👑 ${symbol}</span>` : `<span class="token-symbol-glow">${symbol}</span>`;
                 let nameHtml = isTreasury ? `<div style="font-size:0.75rem; color:var(--text-muted)">${name} <span style="color:#fbbf24; font-size:0.7rem; font-weight:600" title="Treasury Owner: ${treasuryOwner}">(Treasury)</span></div>` : `<div style="font-size:0.75rem; color:var(--text-muted)">${name}</div>`;
@@ -769,6 +856,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                         </td>
                         <td><a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${addr}">${formatAddress(addr)}</a></td>
                         <td style="font-family: monospace; font-weight: 700; color: #fff">$${priceFloat.toFixed(8)}</td>
+                        <td style="font-family: monospace; font-weight: 700; color: #a78bfa">${volStr}</td>
                         <td style="font-family: monospace; font-weight: 700; color: #34d399">${amountForOneUsd} ${symbol}</td>
                     </tr>
                 `;
