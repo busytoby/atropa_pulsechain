@@ -1171,14 +1171,7 @@
 
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
-        let oscNode = null;
-        let oscSubNode = null;    // Dual/Sub/Modulator oscillator
-        let filterNode = null;
-        let gainNode = null;
-        let gainSubNode = null;
-        let panNode = null;
-        let lfoNode = null;       // Low Frequency Oscillator Node
-        let lfoGainNode = null;   // LFO gain controller
+        const activeVoices = new Map();
 
         // Setup Piano Keys
         const notes = [
@@ -1211,10 +1204,8 @@
             keyEl.appendChild(labelEl);
 
             keyEl.addEventListener("mousedown", () => playNote(item.note, item.freq));
-            keyEl.addEventListener("mouseup", () => stopNote());
-            keyEl.addEventListener("mouseleave", () => {
-                if (activeKeyNote === item.note) stopNote();
-            });
+            keyEl.addEventListener("mouseup", () => stopNote(item.note));
+            keyEl.addEventListener("mouseleave", () => stopNote(item.note));
 
             pianoContainer.appendChild(keyEl);
         });
@@ -1229,19 +1220,13 @@
             const mapped = keyMap[e.key.toLowerCase()];
             if (mapped) {
                 playNote(mapped.note, mapped.freq);
-                const keyEl = document.querySelector(`[data-note="${mapped.note}"]`);
-                if (keyEl) keyEl.classList.add("active");
             }
         });
 
         window.addEventListener("keyup", (e) => {
             const mapped = keyMap[e.key.toLowerCase()];
             if (mapped) {
-                if (activeKeyNote === mapped.note) {
-                    stopNote();
-                }
-                const keyEl = document.querySelector(`[data-note="${mapped.note}"]`);
-                if (keyEl) keyEl.classList.remove("active");
+                stopNote(mapped.note);
             }
         });
 
@@ -1386,11 +1371,16 @@
         }
 
         function playNote(note, freq) {
-            activeKeyNote = note;
-            activeKeyFreq = freq;
-
             const keyEl = document.querySelector(`[data-note="${note}"]`);
             if (keyEl) keyEl.classList.add("active");
+
+            // Avoid double voice allocation
+            if (activeVoices.has(note)) {
+                stopVoiceNodeImmediately(note);
+            }
+
+            activeKeyNote = note;
+            activeKeyFreq = freq;
 
             const results = runYITransducer(freq);
             if (!results) return;
@@ -1402,77 +1392,82 @@
             if (audioEnabled) {
                 initAudio();
                 
-                stopNoteNodes();
-
-                filterNode = audioCtx.createBiquadFilter();
-                gainNode = audioCtx.createGain();
-                panNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+                const voice = {
+                    oscNode: null,
+                    oscSubNode: null,
+                    filterNode: audioCtx.createBiquadFilter(),
+                    gainNode: audioCtx.createGain(),
+                    panNode: audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null,
+                    lfoNode: null,
+                    lfoGainNode: null,
+                    gainSubNode: null
+                };
 
                 let sourceNode = null;
+                let modulatedFreq = freq;
 
                 // --- Synthesis Modes Mapping ---
                 if (synthMode === "pitch") {
-                    const modulatedFreq = freq * (0.6 + blendVal * 0.8);
-                    activeKeyFreq = modulatedFreq;
-
-                    oscNode = audioCtx.createOscillator();
-                    oscNode.type = 'sawtooth';
-                    oscNode.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
-                    sourceNode = oscNode;
+                    modulatedFreq = freq * (0.6 + blendVal * 0.8);
+                    
+                    voice.oscNode = audioCtx.createOscillator();
+                    voice.oscNode.type = 'sawtooth';
+                    voice.oscNode.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
+                    sourceNode = voice.oscNode;
                 } 
                 else if (synthMode === "fm") {
                     const carrierFreq = freq * 0.8;
                     const modFreq = carrierFreq * (1.0 + Math.floor(valKappa * 8.0));
                     const modDepth = valEta * 2000.0;
+                    modulatedFreq = carrierFreq;
 
-                    oscNode = audioCtx.createOscillator();
-                    oscNode.type = 'sine';
-                    oscNode.frequency.setValueAtTime(carrierFreq, audioCtx.currentTime);
+                    voice.oscNode = audioCtx.createOscillator();
+                    voice.oscNode.type = 'sine';
+                    voice.oscNode.frequency.setValueAtTime(carrierFreq, audioCtx.currentTime);
 
-                    oscSubNode = audioCtx.createOscillator();
-                    oscSubNode.type = 'sine';
-                    oscSubNode.frequency.setValueAtTime(modFreq, audioCtx.currentTime);
+                    voice.oscSubNode = audioCtx.createOscillator();
+                    voice.oscSubNode.type = 'sine';
+                    voice.oscSubNode.frequency.setValueAtTime(modFreq, audioCtx.currentTime);
 
-                    gainSubNode = audioCtx.createGain();
-                    gainSubNode.gain.setValueAtTime(modDepth, audioCtx.currentTime);
+                    voice.gainSubNode = audioCtx.createGain();
+                    voice.gainSubNode.gain.setValueAtTime(modDepth, audioCtx.currentTime);
 
-                    oscSubNode.connect(gainSubNode);
-                    gainSubNode.connect(oscNode.frequency);
-                    oscSubNode.start();
+                    voice.oscSubNode.connect(voice.gainSubNode);
+                    voice.gainSubNode.connect(voice.oscNode.frequency);
+                    voice.oscSubNode.start();
 
-                    sourceNode = oscNode;
-                    activeKeyFreq = carrierFreq;
+                    sourceNode = voice.oscNode;
                 } 
                 else if (synthMode === "panning") {
-                    oscNode = audioCtx.createOscillator();
-                    oscNode.type = 'triangle';
-                    oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    voice.oscNode = audioCtx.createOscillator();
+                    voice.oscNode.type = 'triangle';
+                    voice.oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
                     const panVal = Math.max(-1.0, Math.min(1.0, (valEta - valKappa) * 2.0));
-                    if (panNode) {
-                        panNode.pan.setValueAtTime(panVal, audioCtx.currentTime);
+                    if (voice.panNode) {
+                        voice.panNode.pan.setValueAtTime(panVal, audioCtx.currentTime);
                     }
-                    sourceNode = oscNode;
+                    sourceNode = voice.oscNode;
                 } 
                 else if (synthMode === "timbre") {
-                    oscNode = audioCtx.createOscillator();
-                    oscNode.type = 'sawtooth';
-                    oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    voice.oscNode = audioCtx.createOscillator();
+                    voice.oscNode.type = 'sawtooth';
+                    voice.oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-                    oscSubNode = audioCtx.createOscillator();
-                    oscSubNode.type = 'triangle';
-                    oscSubNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    voice.oscSubNode = audioCtx.createOscillator();
+                    voice.oscSubNode.type = 'triangle';
+                    voice.oscSubNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-                    gainNode.gain.setValueAtTime(valEta * 0.12, audioCtx.currentTime);
-                    gainSubNode = audioCtx.createGain();
-                    gainSubNode.gain.setValueAtTime((1.0 - valEta) * 0.15, audioCtx.currentTime);
+                    voice.gainNode.gain.setValueAtTime(valEta * 0.12, audioCtx.currentTime);
+                    voice.gainSubNode = audioCtx.createGain();
+                    voice.gainSubNode.gain.setValueAtTime((1.0 - valEta) * 0.15, audioCtx.currentTime);
 
-                    oscNode.connect(filterNode);
-                    oscSubNode.connect(gainSubNode);
-                    gainSubNode.connect(filterNode);
+                    voice.oscNode.connect(voice.filterNode);
+                    voice.oscSubNode.connect(voice.gainSubNode);
+                    voice.gainSubNode.connect(voice.filterNode);
 
-                    oscNode.start();
-                    oscSubNode.start();
+                    voice.oscNode.start();
+                    voice.oscSubNode.start();
                 }
 
                 // If sub-oscillator is active, add a sub-octave layer underneath
@@ -1480,16 +1475,14 @@
                     const subOsc = audioCtx.createOscillator();
                     const subGain = audioCtx.createGain();
                     subOsc.type = 'triangle';
-                    // Half of the modulated frequency (one octave down)
-                    subOsc.frequency.setValueAtTime(activeKeyFreq * 0.5, audioCtx.currentTime);
+                    subOsc.frequency.setValueAtTime(modulatedFreq * 0.5, audioCtx.currentTime);
                     subGain.gain.setValueAtTime(subOscVol, audioCtx.currentTime);
                     
                     subOsc.connect(subGain);
-                    subGain.connect(filterNode);
+                    subGain.connect(voice.filterNode);
                     subOsc.start();
                     
-                    // store reference for teardown
-                    oscSubNode = subOsc; 
+                    voice.oscSubNode = subOsc; 
                 }
 
                 // Lowpass Filter setup
@@ -1497,22 +1490,22 @@
                 if (activeFeedback) {
                     cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
                 }
-                filterNode.type = 'lowpass';
-                filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
-                filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
+                voice.filterNode.type = 'lowpass';
+                voice.filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
+                voice.filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
 
                 // --- Stable LFO Modulation Routing ---
                 if (shio.IsGenerated) {
-                    lfoNode = audioCtx.createOscillator();
-                    lfoNode.type = 'sine';
-                    lfoNode.frequency.setValueAtTime(lfoParams.rate, audioCtx.currentTime);
+                    voice.lfoNode = audioCtx.createOscillator();
+                    voice.lfoNode.type = 'sine';
+                    voice.lfoNode.frequency.setValueAtTime(lfoParams.rate, audioCtx.currentTime);
 
-                    lfoGainNode = audioCtx.createGain();
-                    lfoGainNode.gain.setValueAtTime(lfoParams.depth, audioCtx.currentTime);
+                    voice.lfoGainNode = audioCtx.createGain();
+                    voice.lfoGainNode.gain.setValueAtTime(lfoParams.depth, audioCtx.currentTime);
 
-                    lfoNode.connect(lfoGainNode);
-                    lfoGainNode.connect(filterNode.frequency);
-                    lfoNode.start();
+                    voice.lfoNode.connect(voice.lfoGainNode);
+                    voice.lfoGainNode.connect(voice.filterNode.frequency);
+                    voice.lfoNode.start();
                 }
 
                 // Apply ADSR Envelope derived from contracts
@@ -1521,55 +1514,64 @@
                 const sustain = adsrEnvelope.sustain;
 
                 if (synthMode !== "timbre") {
-                    gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+                    voice.gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
                     // Attack
-                    gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
+                    voice.gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
                     // Decay to Sustain
-                    gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
+                    voice.gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
                     
-                    sourceNode.connect(filterNode);
+                    sourceNode.connect(voice.filterNode);
                 }
 
-                if (panNode) {
-                    filterNode.connect(panNode);
-                    panNode.connect(gainNode);
+                if (voice.panNode) {
+                    voice.filterNode.connect(voice.panNode);
+                    voice.panNode.connect(voice.gainNode);
                 } else {
-                    filterNode.connect(gainNode);
+                    voice.filterNode.connect(voice.gainNode);
                 }
 
-                gainNode.connect(audioCtx.destination);
+                voice.gainNode.connect(audioCtx.destination);
                 
-                if (oscNode && synthMode !== "timbre") oscNode.start();
+                if (voice.oscNode && synthMode !== "timbre") voice.oscNode.start();
+
+                activeVoices.set(note, voice);
             }
         }
 
-        function stopNoteNodes() {
-            if (activeKeyNote !== "") return; // Safeguard: a new note is already active
-            try { if (oscNode) oscNode.stop(); } catch(e) {}
-            try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
-            try { if (lfoNode) lfoNode.stop(); } catch(e) {}
-            oscNode = null;
-            oscSubNode = null;
-            lfoNode = null;
-            lfoGainNode = null;
-            gainSubNode = null;
-            panNode = null;
+        function stopVoiceNodeImmediately(note) {
+            const voice = activeVoices.get(note);
+            if (!voice) return;
+            try { if (voice.oscNode) voice.oscNode.stop(); } catch(e) {}
+            try { if (voice.oscSubNode) voice.oscSubNode.stop(); } catch(e) {}
+            try { if (voice.lfoNode) voice.lfoNode.stop(); } catch(e) {}
+            activeVoices.delete(note);
         }
 
-        function stopNote() {
-            activeKeyNote = "";
-            activeKeyFreq = 0;
+        function stopNote(note) {
+            const keyEl = document.querySelector(`[data-note="${note}"]`);
+            if (keyEl) keyEl.classList.remove("active");
 
-            const keys = document.querySelectorAll(".key");
-            keys.forEach(k => k.classList.remove("active"));
-
-            if (gainNode) {
+            const voice = activeVoices.get(note);
+            if (voice && voice.gainNode) {
                 const current = audioCtx ? audioCtx.currentTime : 0;
-                gainNode.gain.cancelScheduledValues(current);
-                gainNode.gain.setValueAtTime(gainNode.gain.value, current);
+                voice.gainNode.gain.cancelScheduledValues(current);
+                voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, current);
                 // Safe linear release ramp
-                gainNode.gain.linearRampToValueAtTime(0.0, current + adsrEnvelope.release);
-                setTimeout(stopNoteNodes, adsrEnvelope.release * 1000 + 50);
+                voice.gainNode.gain.linearRampToValueAtTime(0.0, current + adsrEnvelope.release);
+                
+                setTimeout(() => {
+                    try { if (voice.oscNode) voice.oscNode.stop(); } catch(e) {}
+                    try { if (voice.oscSubNode) voice.oscSubNode.stop(); } catch(e) {}
+                    try { if (voice.lfoNode) voice.lfoNode.stop(); } catch(e) {}
+                    if (activeVoices.get(note) === voice) {
+                        activeVoices.delete(note);
+                    }
+                }, adsrEnvelope.release * 1000 + 50);
+            }
+
+            if (activeKeyNote === note) {
+                activeKeyNote = "";
+                activeKeyFreq = 0;
             }
         }
 
