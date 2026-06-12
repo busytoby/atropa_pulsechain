@@ -622,6 +622,11 @@
                     <div class="toggle-switch"></div>
                     <span>Active Feedback (Ichidai modulates Synth Cutoff)</span>
                 </div>
+
+                <div class="toggle-container" id="stateful-toggle" style="margin-top: 0.5rem;">
+                    <div class="toggle-switch"></div>
+                    <span>Stateful Reactor (Each react mutates the internal Monopole)</span>
+                </div>
             </div>
 
             <!-- Reaction Log -->
@@ -911,6 +916,7 @@
         let activeKeyNote = "";
         let audioEnabled = true;
         let activeFeedback = false;
+        let activeStateful = false;
         let pitchBlend = 0.5;
 
         // Web Audio Synthesizer Nodes
@@ -1000,6 +1006,11 @@
             activeFeedback = this.classList.contains("active");
         });
 
+        document.getElementById("stateful-toggle").addEventListener("click", function() {
+            this.classList.toggle("active");
+            activeStateful = this.classList.contains("active");
+        });
+
         function updateParams() {
             pitchBlend = parseFloat(document.getElementById("param-pitch-blend").value) / 100.0;
             document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
@@ -1032,6 +1043,12 @@
 
                 const Eta = reactResult.Omicron;  // Ichidai
                 const Kappa = reactResult.Omega;  // Daiichi
+
+                // If stateful is active, continuously evolve Monopole with output Eta
+                if (activeStateful) {
+                    shio.Monopole = (shio.Monopole + Eta) % MotzkinPrime;
+                    logPipeline(`Monopole evolved to: ${shio.Monopole.toString().substring(0, 16)}...`);
+                }
 
                 // Calculate output voltage equivalence (Vout)
                 const normEta = Number(Eta % 1000000n) / 1000000;
