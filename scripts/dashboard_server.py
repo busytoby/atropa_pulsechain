@@ -596,14 +596,24 @@ HTML_CONTENT = """<!DOCTYPE html>
                     symbol = match.symbol;
                 }
 
+                let isTreasury = false;
+                let treasuryOwner = null;
+                if (val && typeof val === 'object') {
+                    if (val.is_treasury) isTreasury = val.is_treasury;
+                    if (val.treasury_owner) treasuryOwner = val.treasury_owner;
+                }
+
                 let priceFloat = parseFloat(price);
                 let amountForOneUsd = priceFloat > 0 ? (1 / priceFloat).toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8}) : 'N/A';
 
+                let symbolHtml = isTreasury ? `<span class="token-symbol-glow" style="color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4)">👑 ${symbol}</span>` : `<span class="token-symbol-glow">${symbol}</span>`;
+                let nameHtml = isTreasury ? `<div style="font-size:0.75rem; color:var(--text-muted)">${name} <span style="color:#fbbf24; font-size:0.7rem; font-weight:600" title="Treasury Owner: ${treasuryOwner}">(Treasury)</span></div>` : `<div style="font-size:0.75rem; color:var(--text-muted)">${name}</div>`;
+
                 return `
-                    <tr>
+                    <tr style="${isTreasury ? 'background: rgba(251, 191, 36, 0.02); border-left: 3px solid #fbbf24;' : ''}">
                         <td>
-                            <span class="token-symbol-glow">${symbol}</span>
-                            <div style="font-size:0.75rem; color:var(--text-muted)">${name}</div>
+                            ${symbolHtml}
+                            ${nameHtml}
                         </td>
                         <td><a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${addr}">${formatAddress(addr)}</a></td>
                         <td style="font-family: monospace; font-weight: 700; color: #fff">$${priceFloat.toFixed(8)}</td>

@@ -25,6 +25,17 @@ PAIR_ABI = [
     {"constant": True, "inputs": [], "name": "token1", "outputs": [{"name": "", "type": "address"}], "type": "function"}
 ]
 
+PKMINTER_ADDRESS = "0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B"
+PKMINTER_ABI = [
+    {
+        "inputs": [{"name": "ctx", "type": "address"}],
+        "name": "GetTreasuryTokenOwner",
+        "outputs": [{"name": "", "type": "address"}],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
+
 # Files to store state
 UNRESOLVED_FILE = "unresolved_swaps.json"
 PRICE_CACHE_FILE = "price_cache.json"
@@ -69,11 +80,13 @@ def get_cached_price(address):
         return entry.get("price")
     return float(entry)
 
-def update_price(address, price, symbol, name):
+def update_price(address, price, symbol, name, is_treasury=False, treasury_owner=None):
     price_cache[address.lower()] = {
         "price": float(price),
         "symbol": symbol,
-        "name": name
+        "name": name,
+        "is_treasury": is_treasury,
+        "treasury_owner": treasury_owner
     }
     save_price_cache()
 
@@ -122,7 +135,26 @@ def get_token_info(w3, address):
     except Exception:
         decimals = 18
         
-    info = {"name": name, "symbol": symbol, "decimals": decimals, "address": addr_lower}
+    # Check if this token is a Treasury Token
+    is_treasury = False
+    treasury_owner = None
+    try:
+        pk_minter = w3.eth.contract(address=Web3.to_checksum_address(PKMINTER_ADDRESS), abi=PKMINTER_ABI)
+        owner = pk_minter.functions.GetTreasuryTokenOwner(Web3.to_checksum_address(address)).call()
+        if owner != "0x0000000000000000000000000000000000000000":
+            is_treasury = True
+            treasury_owner = owner.lower()
+    except Exception:
+        pass
+
+    info = {
+        "name": name, 
+        "symbol": symbol, 
+        "decimals": decimals, 
+        "address": addr_lower,
+        "is_treasury": is_treasury,
+        "treasury_owner": treasury_owner
+    }
     token_cache[addr_lower] = info
     return info
 
@@ -195,7 +227,14 @@ def resolve_retroactive_prices():
                 # Resolve token1 price
                 if amt1 > 0:
                     p1_val = (amt0 * p0) / amt1
-                    update_price(t1_addr, p1_val, swap["token1"]["symbol"], swap["token1"]["name"])
+                    update_price(
+                        t1_addr, 
+                        p1_val, 
+                        swap["token1"]["symbol"], 
+                        swap["token1"]["name"],
+                        swap["token1"].get("is_treasury", False),
+                        swap["token1"].get("treasury_owner")
+                    )
                     usd_val = amt0 * p0
                     print(f"✨ Retroactive Resolution: Calculated {swap['token1']['symbol']} price: ${p1_val:.8f} USD")
                     print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
@@ -217,7 +256,14 @@ def resolve_retroactive_prices():
                 # Resolve token0 price
                 if amt0 > 0:
                     p0_val = (amt1 * p1) / amt0
-                    update_price(t0_addr, p0_val, swap["token0"]["symbol"], swap["token0"]["name"])
+                    update_price(
+                        t0_addr, 
+                        p0_val, 
+                        swap["token0"]["symbol"], 
+                        swap["token0"]["name"],
+                        swap["token0"].get("is_treasury", False),
+                        swap["token0"].get("treasury_owner")
+                    )
                     usd_val = amt1 * p1
                     print(f"✨ Retroactive Resolution: Calculated {swap['token0']['symbol']} price: ${p0_val:.8f} USD")
                     print(f"   Tx Hash: {swap['tx_hash']} | Swap Value: ${usd_val:.2f} USD")
@@ -258,14 +304,28 @@ def handle_detected_swap(tx_hash, pool_address, version, t0, t1, amt0_in, amt1_i
         usd_val = sent_amt * p_sent
         # Resolve/Update price of recv_token
         if recv_amt > 0:
-            update_price(recv_token["address"], usd_val / recv_amt, recv_token["symbol"], recv_token["name"])
+            update_price(
+                recv_token["address"], 
+                usd_val / recv_amt, 
+                recv_token["symbol"], 
+                recv_token["name"],
+                recv_token.get("is_treasury", False),
+                recv_token.get("treasury_owner")
+            )
             print(f"📈 Price update: {recv_token['symbol']} price set to ${get_cached_price(recv_token['address']):.8f} USD")
             
     elif p_recv is not None:
         usd_val = recv_amt * p_recv
         # Resolve/Update price of sent_token
         if sent_amt > 0:
-            update_price(sent_token["address"], usd_val / sent_amt, sent_token["symbol"], sent_token["name"])
+            update_price(
+                sent_token["address"], 
+                usd_val / sent_amt, 
+                sent_token["symbol"], 
+                sent_token["name"],
+                sent_token.get("is_treasury", False),
+                sent_token.get("treasury_owner")
+            )
             print(f"📈 Price update: {sent_token['symbol']} price set to ${get_cached_price(sent_token['address']):.8f} USD")
             
     print(f"\n------------------------------------------------------------")
