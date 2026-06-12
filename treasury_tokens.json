@@ -5,5 +5,47 @@
         "name": "Proof Of Finvestment",
         "owner": null,
         "ignored": false
+    },
+    "0x069f475eff71a0c8268e0d094d47a560e866a587": {
+        "address": "0x069f475eff71a0c8268e0d094d47a560e866a587",
+        "symbol": "TREASURY SHARE",
+        "name": "Treasury Share \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9": {
+        "address": "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9",
+        "symbol": "FD\u327eC",
+        "name": "Federal Deposit Insurance Contract",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x5e27247fcc38100fd5c6d59d0ab433924f023153": {
+        "address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
+        "symbol": "D\u00d8WN",
+        "name": "Down Jones",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false
+    },
+    "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00": {
+        "address": "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00",
+        "symbol": "NQ55",
+        "name": "NasQrack55",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false
+    },
+    "0x13f4d925287aa5e06522a9f4be6ca203af8ce443": {
+        "address": "0x13f4d925287aa5e06522a9f4be6ca203af8ce443",
+        "symbol": "SP369",
+        "name": "Smelly&Poor369",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false
+    },
+    "0x3ec6db226563036fdcff375604627c14c820a1fa": {
+        "address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
+        "symbol": "ENIGMA",
+        "name": "ENIGMA",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false
     }
 }
