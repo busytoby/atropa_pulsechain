@@ -721,6 +721,7 @@
                         <option value="up">Up (Lowest to Highest)</option>
                         <option value="down">Down (Highest to Lowest)</option>
                         <option value="random">Random Selection</option>
+                        <option value="repeat">Farfisa Repeat (Stutter Pulse)</option>
                     </select>
 
                     <h4 style="margin: 0.6rem 0 0.4rem 0; font-size: 0.85rem; color: var(--accent-glow);">Arpeggiator B (Cascade Layer)</h4>
@@ -737,6 +738,7 @@
                         <option value="down">Down (Highest to Lowest)</option>
                         <option value="up">Up (Lowest to Highest)</option>
                         <option value="random">Random Selection</option>
+                        <option value="repeat">Farfisa Repeat (Stutter Pulse)</option>
                     </select>
                 </div>
             </div>
@@ -1557,6 +1559,9 @@
                 currentArpIndex = (currentArpIndex - 1 + sortedKeys.length) % sortedKeys.length;
             } else if (arpPattern === "random") {
                 currentArpIndex = Math.floor(Math.random() * sortedKeys.length);
+            } else if (arpPattern === "repeat") {
+                // Farfisa Repeat: repeat the last/newest key, or cycle in-place
+                currentArpIndex = sortedKeys.length - 1;
             } else {
                 currentArpIndex = (currentArpIndex + 1) % sortedKeys.length;
             }
@@ -1578,6 +1583,9 @@
                 currentArpBIndex = (currentArpBIndex - 1 + sortedKeys.length) % sortedKeys.length;
             } else if (arpBPattern === "random") {
                 currentArpBIndex = Math.floor(Math.random() * sortedKeys.length);
+            } else if (arpBPattern === "repeat") {
+                // Farfisa Repeat B Layer
+                currentArpBIndex = sortedKeys.length - 1;
             } else {
                 currentArpBIndex = (currentArpBIndex + 1) % sortedKeys.length;
             }
