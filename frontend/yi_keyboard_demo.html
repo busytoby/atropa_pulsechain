@@ -706,6 +706,11 @@
                     <span>Arpeggiator (Sequenced notes under One YI)</span>
                 </div>
 
+                <div class="toggle-container" id="bayesian-toggle" style="margin-top: 0.2rem;">
+                    <div class="toggle-switch"></div>
+                    <span>Bayesian Preference Net (Adapt Arp & DNA to playstyle)</span>
+                </div>
+
                 <div class="control-group" id="arp-controls" style="display: none; margin-top: 0.4rem; padding-left: 1rem; border-left: 2px solid var(--accent-glow);">
                     <h4 style="margin: 0 0 0.4rem 0; font-size: 0.85rem; color: var(--secondary-glow);">Arpeggiator A (Primary)</h4>
                     <label><span>Arpeggiator BPM</span><span id="label-arp-bpm">120</span></label>
@@ -1202,6 +1207,10 @@
         let activeStateful = false;
         let pitchBlend = 0.5;
         let synthMode = "pitch";
+        let activeBayesian = false;
+        let lastNoteOnTime = 0;
+        let playDensity = 0.0;
+        let prefTempo = 0.5;
         let activeArp = false;
         let arpBpm = 120;
         let arpPattern = "up";
@@ -1328,6 +1337,14 @@
             }
         });
 
+        document.getElementById("bayesian-toggle").addEventListener("click", function() {
+            this.classList.toggle("active");
+            activeBayesian = this.classList.contains("active");
+            if (activeBayesian) {
+                logPipeline("Bayesian Preference Filter activated. Play speed dynamically tunes BPM and ADSR.");
+            }
+        });
+
         let prophecyCore = "yi";
 
         function updateParams() {
@@ -1408,10 +1425,27 @@
                     const raw0 = Number(yau.Monopole[0] % 1000n) / 1000.0;
                     const raw1 = Number(yau.Monopole[1] % 1000n) / 1000.0;
                     
-                    adsrEnvelope.attack = 0.05 + raw0 * 1.0;
-                    adsrEnvelope.decay = 0.05 + raw1 * 1.0;
-                    adsrEnvelope.sustain = 0.2 + raw0 * 0.8;
-                    adsrEnvelope.release = 0.2 + raw1 * 2.0;
+                    let att = 0.05 + raw0 * 1.0;
+                    let dec = 0.05 + raw1 * 1.0;
+                    let sus = 0.2 + raw0 * 0.8;
+                    let rel = 0.2 + raw1 * 2.0;
+
+                    if (activeBayesian) {
+                        const targetAttack = 0.01 + (1.0 - prefTempo) * 0.79;
+                        const targetDecay = 0.05 + (1.0 - prefTempo) * 0.95;
+                        const targetSustain = 0.2 + prefTempo * 0.7;
+                        const targetRelease = 0.1 + (1.0 - prefTempo) * 1.9;
+
+                        att = 0.6 * att + 0.4 * targetAttack;
+                        dec = 0.6 * dec + 0.4 * targetDecay;
+                        sus = 0.6 * sus + 0.4 * targetSustain;
+                        rel = 0.6 * rel + 0.4 * targetRelease;
+                    }
+
+                    adsrEnvelope.attack = att;
+                    adsrEnvelope.decay = dec;
+                    adsrEnvelope.sustain = sus;
+                    adsrEnvelope.release = rel;
 
                     lfoParams.rate = 1.0 + raw0 * 15.0;
                     lfoParams.depth = raw1 * 800.0;
@@ -1422,10 +1456,27 @@
                     const raw1 = Number(yang.Pole[1] % 1000n) / 1000.0;
                     const raw2 = Number(yang.Pole[2] % 1000n) / 1000.0;
 
-                    adsrEnvelope.attack = 0.01 + raw0 * 0.8;
-                    adsrEnvelope.decay = 0.05 + raw1 * 0.8;
-                    adsrEnvelope.sustain = 0.3 + raw2 * 0.7;
-                    adsrEnvelope.release = 0.1 + raw0 * 1.5;
+                    let att = 0.01 + raw0 * 0.8;
+                    let dec = 0.05 + raw1 * 0.8;
+                    let sus = 0.3 + raw2 * 0.7;
+                    let rel = 0.1 + raw0 * 1.5;
+
+                    if (activeBayesian) {
+                        const targetAttack = 0.01 + (1.0 - prefTempo) * 0.79;
+                        const targetDecay = 0.05 + (1.0 - prefTempo) * 0.95;
+                        const targetSustain = 0.2 + prefTempo * 0.7;
+                        const targetRelease = 0.1 + (1.0 - prefTempo) * 1.9;
+
+                        att = 0.6 * att + 0.4 * targetAttack;
+                        dec = 0.6 * dec + 0.4 * targetDecay;
+                        sus = 0.6 * sus + 0.4 * targetSustain;
+                        rel = 0.6 * rel + 0.4 * targetRelease;
+                    }
+
+                    adsrEnvelope.attack = att;
+                    adsrEnvelope.decay = dec;
+                    adsrEnvelope.sustain = sus;
+                    adsrEnvelope.release = rel;
 
                     lfoParams.rate = 0.5 + raw1 * 20.0;
                     lfoParams.depth = raw2 * 1000.0;
@@ -1689,6 +1740,51 @@
         function playNote(note, freq) {
             const keyEl = document.querySelector(`[data-note="${note}"]`);
             if (keyEl) keyEl.classList.add("active");
+
+            if (activeBayesian) {
+                const now = Date.now();
+                if (lastNoteOnTime > 0) {
+                    const delta = (now - lastNoteOnTime) / 1000.0;
+                    if (delta > 0 && delta < 5.0) {
+                        const currentDensity = 1.0 / delta;
+                        playDensity = 0.85 * playDensity + 0.15 * currentDensity;
+                    }
+                } else {
+                    playDensity = 2.0;
+                }
+                lastNoteOnTime = now;
+
+                // Bayesian preference net state update:
+                const targetTempo = Math.min(1.0, Math.max(0.0, (playDensity - 0.5) / 4.5));
+                prefTempo = 0.85 * prefTempo + 0.15 * targetTempo;
+
+                // Synchronize preference expectation to BPM range
+                const computedBpm = Math.round(60 + prefTempo * 180);
+                arpBpm = computedBpm;
+                const bpmSlider = document.getElementById("param-arp-bpm");
+                if (bpmSlider) {
+                    bpmSlider.value = computedBpm;
+                }
+                const bpmLabel = document.getElementById("label-arp-bpm");
+                if (bpmLabel) {
+                    bpmLabel.textContent = computedBpm;
+                }
+
+                // Smoothly modulate ADSR parameters based on inferred preference
+                if (prophecyCore === "yi") {
+                    adsrEnvelope.attack = 0.01 + (1.0 - prefTempo) * 0.79;
+                    adsrEnvelope.decay = 0.05 + (1.0 - prefTempo) * 0.95;
+                    adsrEnvelope.sustain = 0.2 + prefTempo * 0.7;
+                    adsrEnvelope.release = 0.1 + (1.0 - prefTempo) * 1.9;
+
+                    document.getElementById("prof-attack").textContent = `${adsrEnvelope.attack.toFixed(2)}s`;
+                    document.getElementById("prof-decay").textContent = `${adsrEnvelope.decay.toFixed(2)}s`;
+                    document.getElementById("prof-sustain").textContent = `${Math.round(adsrEnvelope.sustain * 100)}%`;
+                    document.getElementById("prof-release").textContent = `${adsrEnvelope.release.toFixed(2)}s`;
+                }
+
+                logPipeline(`Bayesian preference net updated: density=${playDensity.toFixed(2)} notes/s, prefTempo=${prefTempo.toFixed(2)} -> BPM tuned to ${computedBpm}`);
+            }
 
             if (activeArp) {
                 if (!heldKeys.some(k => k.note === note)) {
