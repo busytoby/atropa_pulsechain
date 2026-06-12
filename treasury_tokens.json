@@ -163,5 +163,16 @@
         "parent_address": "0xe37acc54711562510fafc45d8199ee329ebbcedd",
         "parent_symbol": "PARADE \u327e",
         "ignored": false
+    },
+    "0xd61c2e0dc5a844183cef9d070041b1fcfc30f0a4": {
+        "address": "0xd61c2e0dc5a844183cef9d070041b1fcfc30f0a4",
+        "symbol": "GITANE \u327e",
+        "name": "Gitane Demone Teddy Bear",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0xd6c31ba0754c4383a41c0e9df042c62b5e918f6d",
+        "parent_symbol": "TEDDY BEAR \u327e",
+        "ignored": false
     }
 }
