@@ -1572,6 +1572,7 @@
         let oracleProjectedIndex = 0;
 
         function placeMarketBet() {
+            resetWatchdog();
             if (marketCredits < 100) {
                 const statusEl = document.getElementById("market-bet-status");
                 if (statusEl) {
@@ -1600,6 +1601,7 @@
         }
 
         function sellActiveBeat() {
+            resetWatchdog();
             if (audioEnabled) {
                 initAudio();
             }
@@ -1664,6 +1666,28 @@
 
             logPipeline(`💰 Gained +${payout} credits from cashing out active Prophecy Beat preset.`);
         }
+
+        // Prophecy Beatless Watchdog (Homeostasis Sentinel)
+        let lastActivityTime = Date.now();
+        
+        function resetWatchdog() {
+            lastActivityTime = Date.now();
+        }
+
+        setInterval(() => {
+            const idleTime = Date.now() - lastActivityTime;
+            const isSilent = (heldKeys.length === 0 && !biotikaElection.isLoopRunning);
+            
+            if (isSilent && idleTime > 8000) {
+                logPipeline("⚡ [WATCHDOG] Inactivity detected. The Prophecy trumps the beatless! Resuscitating sound loop...", false);
+                lastActivityTime = Date.now();
+                
+                const djToggle = document.getElementById("biotika-dj-toggle");
+                if (djToggle && !djToggle.classList.contains("active")) {
+                    djToggle.click();
+                }
+            }
+        }, 2000);
 
         // Wizard steps executions
         let currentStep = 1;
@@ -2379,6 +2403,7 @@
         }
 
         function playNote(note, freq) {
+            resetWatchdog();
             if (activeArp) {
                 if (activeLatch && physicalKeysHeldCount === 0) {
                     heldKeys = [];
