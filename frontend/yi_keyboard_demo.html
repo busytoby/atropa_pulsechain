@@ -707,6 +707,7 @@
                 </div>
 
                 <div class="control-group" id="arp-controls" style="display: none; margin-top: 0.4rem; padding-left: 1rem; border-left: 2px solid var(--accent-glow);">
+                    <h4 style="margin: 0 0 0.4rem 0; font-size: 0.85rem; color: var(--secondary-glow);">Arpeggiator A (Primary)</h4>
                     <label><span>Arpeggiator BPM</span><span id="label-arp-bpm">120</span></label>
                     <input type="range" id="param-arp-bpm" min="60" max="240" value="120" oninput="updateParams()">
 
@@ -714,6 +715,22 @@
                     <select class="synth-select" id="param-arp-pattern" onchange="updateParams()">
                         <option value="up">Up (Lowest to Highest)</option>
                         <option value="down">Down (Highest to Lowest)</option>
+                        <option value="random">Random Selection</option>
+                    </select>
+
+                    <h4 style="margin: 0.6rem 0 0.4rem 0; font-size: 0.85rem; color: var(--accent-glow);">Arpeggiator B (Cascade Layer)</h4>
+                    <div class="toggle-container" id="arp-b-toggle" style="margin-bottom: 0.4rem;">
+                        <div class="toggle-switch"></div>
+                        <span>Enable Arp B (Interleaved Cascade)</span>
+                    </div>
+                    
+                    <label><span>Arp B Rate Multiplier</span><span id="label-arp-b-mult">1.5x</span></label>
+                    <input type="range" id="param-arp-b-mult" min="5" max="30" value="15" oninput="updateParams()">
+
+                    <label style="margin-top: 0.4rem;"><span>Arp B Pattern</span></label>
+                    <select class="synth-select" id="param-arp-b-pattern" onchange="updateParams()">
+                        <option value="down">Down (Highest to Lowest)</option>
+                        <option value="up">Up (Lowest to Highest)</option>
                         <option value="random">Random Selection</option>
                     </select>
                 </div>
@@ -1191,6 +1208,11 @@
         let arpTimer = null;
         let heldKeys = [];
         let currentArpIndex = 0;
+        let activeArpB = false;
+        let arpBMult = 1.5;
+        let arpBPattern = "down";
+        let arpBTimer = null;
+        let currentArpBIndex = 0;
 
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
@@ -1291,6 +1313,18 @@
             if (!activeArp) {
                 heldKeys = [];
                 stopArpeggiatorClock();
+                stopArpBClock();
+            }
+        });
+
+        document.getElementById("arp-b-toggle").addEventListener("click", function() {
+            this.classList.toggle("active");
+            activeArpB = this.classList.contains("active");
+            if (activeArpB && activeArp && heldKeys.length > 0) {
+                currentArpBIndex = -1;
+                startArpBClock();
+            } else {
+                stopArpBClock();
             }
         });
 
@@ -1305,8 +1339,16 @@
             arpBpm = parseInt(document.getElementById("param-arp-bpm").value);
             document.getElementById("label-arp-bpm").textContent = arpBpm;
             arpPattern = document.getElementById("param-arp-pattern").value;
+
+            arpBMult = parseFloat(document.getElementById("param-arp-b-mult").value) / 10.0;
+            document.getElementById("label-arp-b-mult").textContent = `${arpBMult.toFixed(1)}x`;
+            arpBPattern = document.getElementById("param-arp-b-pattern").value;
+
             if (activeArp && arpTimer) {
                 startArpeggiatorClock();
+            }
+            if (activeArp && activeArpB && arpBTimer) {
+                startArpBClock();
             }
         }
 
@@ -1433,7 +1475,21 @@
                 clearInterval(arpTimer);
                 arpTimer = null;
             }
-            stopNoteNodes();
+            if (!arpBTimer) stopNoteNodes();
+        }
+
+        function startArpBClock() {
+            if (arpBTimer) clearInterval(arpBTimer);
+            const interval = (60.0 / arpBpm) * 500 / (2.0 * arpBMult);
+            arpBTimer = setInterval(tickArpB, interval);
+        }
+
+        function stopArpBClock() {
+            if (arpBTimer) {
+                clearInterval(arpBTimer);
+                arpBTimer = null;
+            }
+            if (!arpTimer) stopNoteNodes();
         }
 
         function tickArpeggiator() {
@@ -1457,6 +1513,28 @@
             const activeNode = sortedKeys[currentArpIndex];
             triggerArpNote(activeNode.note, activeNode.freq);
         }
+
+        function tickArpB() {
+            if (heldKeys.length === 0) {
+                return;
+            }
+
+            let sortedKeys = [...heldKeys].sort((a, b) => a.freq - b.freq);
+
+            if (arpBPattern === "up") {
+                currentArpBIndex = (currentArpBIndex + 1) % sortedKeys.length;
+            } else if (arpBPattern === "down") {
+                currentArpBIndex = (currentArpBIndex - 1 + sortedKeys.length) % sortedKeys.length;
+            } else if (arpBPattern === "random") {
+                currentArpBIndex = Math.floor(Math.random() * sortedKeys.length);
+            } else {
+                currentArpBIndex = (currentArpBIndex + 1) % sortedKeys.length;
+            }
+
+            const activeNode = sortedKeys[currentArpBIndex];
+            triggerArpNote(activeNode.note, activeNode.freq);
+        }
+
 
         function triggerArpNote(note, freq) {
             activeKeyNote = note;
