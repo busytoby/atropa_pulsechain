@@ -103,16 +103,20 @@ def main():
     minter_addresses = [x for x in minter_addresses if not (x in seen or seen.add(x))]
     print(f"Active Minter Lookup registry addresses (formatted): {[x.lower() for x in minter_addresses]}")
 
-    # 2. Extract all unique addresses from solidity/addresses.sol
-    address_path = "solidity/addresses.sol"
-    if not os.path.exists(address_path):
-        print(f"Error: {address_path} not found")
-        return
- 
-    with open(address_path, "r") as f:
-        content = f.read()
- 
-    raw_addresses = re.findall(r"0x[0-9a-fA-F]{40}", content)
+    # 2. Extract all unique addresses from solidity/ directory files recursively
+    raw_addresses = []
+    solidity_dir = "solidity"
+    if os.path.exists(solidity_dir):
+        for root, dirs, files in os.walk(solidity_dir):
+            for file in files:
+                if file.endswith(".sol") or file.endswith(".yul"):
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, "r", errors="ignore") as f:
+                            content = f.read()
+                            raw_addresses.extend(re.findall(r"0x[0-9a-fA-F]{40}", content))
+                    except Exception as e:
+                        print(f"Error reading solidity file {file_path}: {e}")
     
     # Also find addresses from state/cache files (price_cache.json, resolved_swaps.json)
     for cache_path in ["price_cache.json", "resolved_swaps.json"]:

@@ -141,5 +141,27 @@
         "parent_address": "0x2963cbf549efcd00b21e471d0a224c0bbdcb4be2",
         "parent_symbol": "OJIBWE",
         "ignored": false
+    },
+    "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5": {
+        "address": "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5",
+        "symbol": "BUREAU \u327e",
+        "name": "Dysnomian Credit Bureau",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f",
+        "parent_symbol": "TLRz",
+        "ignored": false
+    },
+    "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f": {
+        "address": "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f",
+        "symbol": "TLRz",
+        "name": "Tellerz  \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
+        "minter_name": "FederalMinter",
+        "parent_address": "0xe37acc54711562510fafc45d8199ee329ebbcedd",
+        "parent_symbol": "PARADE \u327e",
+        "ignored": false
     }
 }
