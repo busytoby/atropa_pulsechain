@@ -1052,8 +1052,14 @@
             <!-- Story Book Chronicles Panel -->
             <div class="storybook-panel">
                 <div class="storybook-header">
-                    <span>📖 The Chronicles of Dirk the Daring</span>
-                    <div style="display: flex; gap: 8px;">
+                    <span id="storybookTitle">📖 The Chronicles of Dirk the Daring</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="storySelect" onchange="changeStory(this.value)" style="background: #171122; color: #ffaa00; border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px; font-weight: bold; cursor: pointer; outline: none; font-size: 0.8rem;">
+                            <option value="dragons_lair">Dragon's Lair</option>
+                            <option value="space_ace">Space Ace</option>
+                            <option value="dragons_lair_2">Dragon's Lair II</option>
+                            <option value="sleeping_beauty">Sleeping Beauty</option>
+                        </select>
                         <button class="btn-book-trigger" onclick="openBook()" id="btnOpenBook" style="display: none;">📖 Open Book</button>
                         <button class="btn-save" onclick="downloadStory()" id="btnDownloadStory" style="display: none;">Save Tale</button>
                     </div>
@@ -1066,8 +1072,18 @@
     </div>
 
     <!-- Tab Panel: CABS Voxel Cards -->
-    <div id="cardsTab" class="tab-panel">
-        <div class="cards-deck-container" id="cabsCardsContainer">
+    <div id="cardsTab" class="tab-panel" style="width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+        <div class="search-filter-container" style="width: 100%; display: flex; gap: 12px; margin-bottom: 5px;">
+            <input type="text" id="cardSearchInput" placeholder="🔍 Search cards by name or description..." oninput="filterCabsCards()" style="flex-grow: 1; padding: 10px 15px; border-radius: 10px; border: 1px solid var(--border); background: #110e16; color: #fff; outline: none; font-size: 0.9rem;">
+            <select id="cardTypeSelect" onchange="filterCabsCards()" style="padding: 10px 15px; border-radius: 10px; border: 1px solid var(--border); background: #110e16; color: #ffaa00; font-weight: bold; outline: none; cursor: pointer; font-size: 0.9rem;">
+                <option value="ALL">All Types</option>
+                <option value="VIGOUR">Vigour</option>
+                <option value="TERROR">Terror</option>
+                <option value="SIGHT">Sight</option>
+                <option value="VOXEL">Voxel</option>
+            </select>
+        </div>
+        <div class="cards-deck-container" id="cabsCardsContainer" style="width: 100%;">
             <!-- Rendered dynamically via JS -->
         </div>
         <!-- Reactor Statistics Panel -->
@@ -1378,44 +1394,138 @@
         let vaesenTerror = 1.0;
         let reactorStatsHistory = [];
 
-        let storyBook = [
-            {
-                text: "Dirk the Daring stood before the gaping maw of the dark, imposing castle entrance, his heart pounding in his chest. Before him lay the entrance to the legendary Dragon's Lair, a place from which no adventurer had ever returned. With a firm grip on his heavy steel sword, he stepped into the gloomy shadows, stepping across the threshold of fate.",
-                type: "system",
-                timestamp: "12:00:00 AM",
-                illustration: "assets/storybook/page1.png"
-            },
-            {
-                text: "Suddenly, the stone floor collapsed! Dirk sprinted down the crumbling corridor as giant burning boulders rained down from the high arched ceiling. Leaping forward at the last second, he rolled through a narrow doorway as the hall fell into the bottomless cavern behind him.",
-                type: "system",
-                timestamp: "12:01:15 AM",
-                illustration: "assets/storybook/page2.png"
-            },
-            {
-                text: "Dirk crept deeper into the sulfuric caverns. Without warning, a colossal, fire-breathing beast lunged from the darkness! Dirk drew his glowing blade in a split second, deflecting the dragon's fiery breath with his steel shield and striking a heavy blow that sent the monster retreating into the shadows.",
-                type: "system",
-                timestamp: "12:02:40 AM",
-                illustration: "assets/storybook/page3.png"
-            },
-            {
-                text: "Further inside, Dirk encountered a rotting stone bridge suspended over an endless abyss of magma. As he crossed, the stone arches crumbled into dust! Gathering all his strength, Dirk took a flying leap to the left, catching the edge of a stable ledge just as the bridge vanished.",
-                type: "system",
-                timestamp: "12:03:55 AM",
-                illustration: "assets/storybook/page4.png"
-            },
-            {
-                text: "In the heart of the keep, the Electric Knight blocked his path, crackling with static energy and raising an electrified energy blade. The Knight lunged with blinding speed, but Dirk dodged right under the blade, striking the Knight's power core and disabling the mechanical defender.",
-                type: "system",
-                timestamp: "12:05:10 AM",
-                illustration: "assets/storybook/page5.png"
-            },
-            {
-                text: "Dirk finally reached the grand treasure chamber, where Princess Daphne was trapped inside a glowing cage. Guarding her was Singe, the massive red dragon. With a final, heroic battle cry, Dirk avoided Singe's claws, lunged forward, and drove his sword deep into the dragon's heart. Dirk rescued Daphne, and their legend was forever etched in the stars!",
-                type: "system",
-                timestamp: "12:06:30 AM",
-                illustration: "assets/storybook/page6.png"
-            }
-        ];
+        const stories = {
+            dragons_lair: [
+                {
+                    text: "Dirk the Daring stood before the gaping maw of the dark, imposing castle entrance, his heart pounding in his chest. Before him lay the entrance to the legendary Dragon's Lair, a place from which no adventurer had ever returned. With a firm grip on his heavy steel sword, he stepped into the gloomy shadows, stepping across the threshold of fate.",
+                    type: "system",
+                    timestamp: "12:00:00 AM",
+                    illustration: "assets/storybook/page1.png"
+                },
+                {
+                    text: "Suddenly, the stone floor collapsed! Dirk sprinted down the crumbling corridor as giant burning boulders rained down from the high arched ceiling. Leaping forward at the last second, he rolled through a narrow doorway as the hall fell into the bottomless cavern behind him.",
+                    type: "system",
+                    timestamp: "12:01:15 AM",
+                    illustration: "assets/storybook/page2.png"
+                },
+                {
+                    text: "Dirk crept deeper into the sulfuric caverns. Without warning, a colossal, fire-breathing beast lunged from the darkness! Dirk drew his glowing blade in a split second, deflecting the dragon's fiery breath with his steel shield and striking a heavy blow that sent the monster retreating into the shadows.",
+                    type: "system",
+                    timestamp: "12:02:40 AM",
+                    illustration: "assets/storybook/page3.png"
+                },
+                {
+                    text: "Further inside, Dirk encountered a rotting stone bridge suspended over an endless abyss of magma. As he crossed, the stone arches crumbled into dust! Gathering all his strength, Dirk took a flying leap to the left, catching the edge of a stable ledge just as the bridge vanished.",
+                    type: "system",
+                    timestamp: "12:03:55 AM",
+                    illustration: "assets/storybook/page4.png"
+                },
+                {
+                    text: "In the heart of the keep, the Electric Knight blocked his path, crackling with static energy and raising an electrified energy blade. The Knight lunged with blinding speed, but Dirk dodged right under the blade, striking the Knight's power core and disabling the mechanical defender.",
+                    type: "system",
+                    timestamp: "12:05:10 AM",
+                    illustration: "assets/storybook/page5.png"
+                },
+                {
+                    text: "Dirk finally reached the grand treasure chamber, where Princess Daphne was trapped inside a glowing cage. Guarding her was Singe, the massive red dragon. With a final, heroic battle cry, Dirk avoided Singe's claws, lunged forward, and drove his sword deep into the dragon's heart. Dirk rescued Daphne, and their legend was forever etched in the stars!",
+                    type: "system",
+                    timestamp: "12:06:30 AM",
+                    illustration: "assets/storybook/page6.png"
+                }
+            ],
+            space_ace: [
+                {
+                    text: "Ace, the heroic defender of justice, stood ready as the evil Commander Borf threatened Earth with the Infanto Ray. With a flash of energy, Ace was zapped into the clumsy teenager Dexter. Undeterred, Dexter grabbed his laser blaster and boarded his star cruiser to rescue his beloved Kimberly.",
+                    type: "system",
+                    timestamp: "12:00:00 AM",
+                    illustration: "assets/storybook/space1.png"
+                },
+                {
+                    text: "Dexter navigated through Borf's space fleet, dodging plasma blasts. Suddenly, a giant robot claw grabbed his ship! Dexter hit the thrusters, banking hard right to escape the claw's grasp as the enemy cruiser exploded.",
+                    type: "system",
+                    timestamp: "12:01:15 AM",
+                    illustration: "assets/storybook/space2.png"
+                },
+                {
+                    text: "On Borf's space station, Dexter faced the dark labyrinth of vertical elevator shafts. Energizing into Space Ace just in time, he leaped up the platforms, blasting Borf's blue-skinned monster guards as he raced to the command room.",
+                    type: "system",
+                    timestamp: "12:03:00 AM",
+                    illustration: "assets/storybook/space3.png"
+                },
+                {
+                    text: "Faced with Borf himself, Space Ace dodged the giant leader's punches. Grabbing the controls of the Infanto Ray, Ace reversed the polarity and fired, turning Borf into an infant and saving the galaxy!",
+                    type: "system",
+                    timestamp: "12:05:00 AM",
+                    illustration: "assets/storybook/space4.png"
+                }
+            ],
+            dragons_lair_2: [
+                {
+                    text: "Years after Singe's defeat, the evil wizard Mordroc kidnapped Daphne and hid her in a magical time-warp! Dirk the Daring stepped into the mystical time-machine, determined to rescue his wife across the corridors of history.",
+                    type: "system",
+                    timestamp: "12:00:00 AM",
+                    illustration: "assets/storybook/dl2_1.png"
+                },
+                {
+                    text: "Dirk materialized in the prehistoric era, pursued by a rampaging Tyrannosaurus Rex. Leaping over pterodactyl nests and swinging from vines, Dirk narrowly escaped into the next temporal portal.",
+                    type: "system",
+                    timestamp: "12:02:00 AM",
+                    illustration: "assets/storybook/dl2_2.png"
+                },
+                {
+                    text: "Dirk arrived in the Garden of Eden, dodging giant serpents and flying apples. With quick reflexes, he grabbed the Golden Apple and used its magic to open the gateway to the wizard's domain.",
+                    type: "system",
+                    timestamp: "12:04:00 AM",
+                    illustration: "assets/storybook/dl2_3.png"
+                },
+                {
+                    text: "In the wizard's castle, Mordroc prepared to slip the Death Ring onto Daphne's finger. Dirk leaped forward, grabbed the ring, and slipped it onto Mordroc's finger instead, defeating the wizard and returning safely to the present.",
+                    type: "system",
+                    timestamp: "12:06:00 AM",
+                    illustration: "assets/storybook/dl2_4.png"
+                }
+            ],
+            sleeping_beauty: [
+                {
+                    text: "Prince Phillip rode his valiant steed Samson towards the dark, thorn-covered castle of Maleficent, who had put Princess Aurora into a deep, eternal sleep. With the Shield of Virtue and the Sword of Truth in hand, the Prince prepared to face the ultimate evil.",
+                    type: "system",
+                    timestamp: "12:00:00 AM",
+                    illustration: "assets/storybook/sb1.png"
+                },
+                {
+                    text: "Suddenly, Maleficent blocked his path, transforming into a colossal black dragon breathing green, toxic flames. Phillip raised his shield of virtue, deflecting the dragon's breath as he searched for a weakness.",
+                    type: "system",
+                    timestamp: "12:02:00 AM",
+                    illustration: "assets/storybook/sb2.png"
+                },
+                {
+                    text: "Guided by the three good fairies, Phillip threw the Sword of Truth directly into the dragon's heart. With a final, agonizing roar, the dragon collapsed over the cliff, and the thorns withered away.",
+                    type: "system",
+                    timestamp: "12:04:00 AM",
+                    illustration: "assets/storybook/sb3.png"
+                },
+                {
+                    text: "Prince Phillip climbed the tower, found the sleeping Princess Aurora, and woke her with true love's kiss, breaking the spell and restoring peace to the kingdom.",
+                    type: "system",
+                    timestamp: "12:05:30 AM",
+                    illustration: "assets/storybook/sb4.png"
+                }
+            ]
+        };
+
+        let storyBook = [...stories.dragons_lair];
+
+        function changeStory(val) {
+            storyBook = [...stories[val]];
+            const titles = {
+                dragons_lair: "📖 The Chronicles of Dirk the Daring",
+                space_ace: "🚀 The Chronicles of Space Ace",
+                dragons_lair_2: "⏳ The Chronicles of Dirk & Daphne (Time Warp)",
+                sleeping_beauty: "🏰 The Chronicles of Sleeping Beauty"
+            };
+            document.getElementById("storybookTitle").innerText = titles[val];
+            renderDefaultStory();
+        }
 
         let lastAttemptedAction = "";
 
@@ -2750,18 +2860,32 @@
             }
         }
 
+        let cachedCabsCards = [];
+        let voxelCardTimers = [];
+
         async function renderCabsCards() {
+            if (cachedCabsCards.length === 0) {
+                try {
+                    const res = await fetch("/api/cabs-cards");
+                    cachedCabsCards = await res.json();
+                } catch (err) {
+                    console.warn("Failed to fetch CABS cards from server, using local fallback:", err);
+                }
+            }
+            filterCabsCards();
+        }
+
+        function filterCabsCards() {
             const container = document.getElementById("cabsCardsContainer");
             if (!container) return;
+
+            // Clear old timers to prevent memory leaks
+            voxelCardTimers.forEach(id => clearInterval(id));
+            voxelCardTimers = [];
             container.innerHTML = "";
 
-            let cabsCardsData = [];
-            try {
-                const res = await fetch("/api/cabs-cards");
-                cabsCardsData = await res.json();
-            } catch (err) {
-                console.warn("Failed to fetch CABS cards from server, using local fallback:", err);
-            }
+            const query = (document.getElementById("cardSearchInput")?.value || "").toLowerCase();
+            const filterType = document.getElementById("cardTypeSelect")?.value || "ALL";
 
             // Append SWR / Vaesen Emotion Reactor cards!
             const reactorCards = [
@@ -2788,53 +2912,18 @@
                 }
             ];
 
-            cabsCardsData = [...reactorCards, ...cabsCardsData];
+            const cabsCardsData = [...reactorCards, ...cachedCabsCards];
 
             cabsCardsData.forEach(card => {
+                const isMatchedSearch = card.name.toLowerCase().includes(query) || card.desc.toLowerCase().includes(query);
+                const isMatchedType = (filterType === "ALL") || (card.type === filterType) || (filterType === "VOXEL" && !["VIGOUR", "TERROR", "SIGHT"].includes(card.type));
+
+                if (!isMatchedSearch || !isMatchedType) {
+                    return;
+                }
+
                 const el = document.createElement("div");
                 el.className = "cabs-card";
-                    
-                    // Procedural thumbnail using Canvas (3D rotating voxel projection)
-                    const canvas = document.createElement("canvas");
-                    canvas.width = 160;
-                    canvas.height = 120;
-                    canvas.style.display = "block";
-                    canvas.style.margin = "0 auto";
-                    const ctx = canvas.getContext("2d");
-                    
-                    // Decode size e.g. "32x16x64 voxels" or "8x3x2 voxels"
-                    const sizeMatch = card.size.match(/(\d+)x(\d+)x(\d+)/);
-                    const dims = sizeMatch ? [parseInt(sizeMatch[1]), parseInt(sizeMatch[2]), parseInt(sizeMatch[3])] : [16, 16, 16];
-                    
-                    let angle = 0;
-                    let activeScene = 'default';
-
-                    function drawVoxelCard() {
-                        // Background based on activeScene
-                        if (activeScene === 'castle') {
-                            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                            grad.addColorStop(0, '#3d2b4f');
-                            grad.addColorStop(1, '#0c0714');
-                            ctx.fillStyle = grad;
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            // Castle stone texture details
-                            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-                            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-                        } else if (activeScene === 'lava') {
-                            let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 5, canvas.width/2, canvas.height/2, canvas.width/2);
-                            grad.addColorStop(0, '#5e2000');
-                            grad.addColorStop(1, '#110200');
-                            ctx.fillStyle = grad;
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            // Lava particles
-                            ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
-                            for(let i=0; i<8; i++) {
-                                let px = (Math.sin(Date.now()*0.001 + i) * 0.5 + 0.5) * canvas.width;
-                                let py = (Math.cos(Date.now()*0.0013 + i) * 0.5 + 0.5) * canvas.height;
-                                ctx.beginPath();
-                                ctx.arc(px, py, 2, 0, Math.PI*2);
                                 ctx.fill();
                             }
                         } else if (activeScene === 'electric') {
