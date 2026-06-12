@@ -711,6 +711,11 @@
                     <span>Bayesian Preference Net (Adapt Arp & DNA to playstyle)</span>
                 </div>
 
+                <div class="toggle-container" id="latch-toggle" style="margin-top: 0.2rem;">
+                    <div class="toggle-switch"></div>
+                    <span>Arpeggiator Latch (Hold loop permanently)</span>
+                </div>
+
                 <div class="control-group" id="arp-controls" style="display: none; margin-top: 0.4rem; padding-left: 1rem; border-left: 2px solid var(--accent-glow);">
                     <h4 style="margin: 0 0 0.4rem 0; font-size: 0.85rem; color: var(--secondary-glow);">Arpeggiator A (Primary)</h4>
                     <label><span>Arpeggiator BPM</span><span id="label-arp-bpm">120</span></label>
@@ -1210,6 +1215,8 @@
         let pitchBlend = 0.5;
         let synthMode = "pitch";
         let activeBayesian = false;
+        let activeLatch = false;
+        let physicalKeysHeldCount = 0;
         let lastNoteOnTime = 0;
         let playDensity = 0.0;
         let prefTempo = 0.5;
@@ -1344,6 +1351,22 @@
             activeBayesian = this.classList.contains("active");
             if (activeBayesian) {
                 logPipeline("Bayesian Preference Filter activated. Play speed dynamically tunes BPM and ADSR.");
+            }
+        });
+
+        document.getElementById("latch-toggle").addEventListener("click", function() {
+            this.classList.toggle("active");
+            activeLatch = this.classList.contains("active");
+            if (!activeLatch) {
+                physicalKeysHeldCount = 0;
+                heldKeys = [];
+                const keys = document.querySelectorAll(".key");
+                keys.forEach(k => k.classList.remove("active"));
+                stopArpeggiatorClock();
+                stopArpBClock();
+                logPipeline("Arpeggiator Latch deactivated. Hold buffer cleared.");
+            } else {
+                logPipeline("Arpeggiator Latch activated. The beat will play permanently.");
             }
         });
 
@@ -1755,6 +1778,15 @@
         }
 
         function playNote(note, freq) {
+            if (activeArp) {
+                if (activeLatch && physicalKeysHeldCount === 0) {
+                    heldKeys = [];
+                    const keys = document.querySelectorAll(".key");
+                    keys.forEach(k => k.classList.remove("active"));
+                }
+                physicalKeysHeldCount++;
+            }
+
             const keyEl = document.querySelector(`[data-note="${note}"]`);
             if (keyEl) keyEl.classList.add("active");
 
@@ -1976,6 +2008,10 @@
 
         function stopNote(note) {
             if (activeArp) {
+                if (physicalKeysHeldCount > 0) physicalKeysHeldCount--;
+                if (activeLatch) {
+                    return;
+                }
                 heldKeys = heldKeys.filter(k => k.note !== note);
                 const keyEl = document.querySelector(`[data-note="${note}"]`);
                 if (keyEl) keyEl.classList.remove("active");
