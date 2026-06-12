@@ -479,6 +479,19 @@
             color: var(--success-color);
             border: 1px solid rgba(16, 185, 129, 0.2);
         }
+
+        select.synth-select {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.4rem;
+            border-radius: 6px;
+            width: 100%;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            outline: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -615,7 +628,17 @@
                 </div>
 
                 <div class="control-group">
-                    <label><span>Pitch Modulation Blend (Daiichi &harr; Ichidai)</span><span id="label-pitch-blend">0.50</span></label>
+                    <label><span>Synthesis Modulation Mode</span></label>
+                    <select class="synth-select" id="param-synth-mode" onchange="updateParams()">
+                        <option value="pitch">Pitch Modulation (Base frequency scaling)</option>
+                        <option value="fm">FM Synthesis (Carrier-Modulator Bell Overtones)</option>
+                        <option value="panning">Stereo Panning (Spatial Left-Right balance)</option>
+                        <option value="timbre">Timbre Morphing (Sawtooth &harr; Triangle fade)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label><span>Modulation Blend Weight (Daiichi &harr; Ichidai)</span><span id="label-pitch-blend">0.50</span></label>
                     <input type="range" id="param-pitch-blend" min="0" max="100" value="50" oninput="updateParams()">
                 </div>
 
@@ -624,7 +647,7 @@
                     <span>Active Feedback (Ichidai modulates Synth Cutoff)</span>
                 </div>
 
-                <div class="toggle-container" id="stateful-toggle" style="margin-top: 0.5rem;">
+                <div class="toggle-container" id="stateful-toggle" style="margin-top: 0.2rem;">
                     <div class="toggle-switch"></div>
                     <span>Stateful Reactor (Each react mutates the internal Monopole)</span>
                 </div>
@@ -679,7 +702,6 @@
             }
 
             Seed() {
-                // Generate random Base, Secret, and Signal
                 this.Base = BigInt(Math.floor(Math.random() * 800000) + 10000);
                 this.Secret = BigInt(Math.floor(Math.random() * 800000) + 10000);
                 this.Signal = BigInt(Math.floor(Math.random() * 800000) + 10000);
@@ -764,7 +786,6 @@
             }
 
             Generate(Xi, Alpha, Beta) {
-                // ConductorGenerate
                 this.Rod.Avail(Xi);
                 this.Cone.Avail(Xi);
 
@@ -774,7 +795,6 @@
                 this.Rod.Polarize();
                 this.Cone.Polarize();
 
-                // Generate rest
                 this.Rod.Conjugate(this.Cone.Pole);
                 this.Cone.Conjugate(this.Rod.Pole);
 
@@ -820,7 +840,6 @@
             }
         }
 
-        // Instantiate Shio contract representation
         const shio = new SHIOContract();
 
         // Wizard steps executions
@@ -841,13 +860,6 @@
                 statusLabel.textContent = statusText;
                 if (btn) btn.disabled = false;
             }
-        }
-
-        function randomizeInputs() {
-            document.getElementById("input-xi").value = Math.floor(Math.random() * 900000) + 100000;
-            document.getElementById("input-alpha").value = Math.floor(Math.random() * 90000) + 10000;
-            document.getElementById("input-beta").value = Math.floor(Math.random() * 90000) + 10000;
-            logPipeline("Inputs Xi, Alpha, and Beta randomized.");
         }
 
         function executeSeed() {
@@ -898,15 +910,21 @@
                 shio.Magnetize();
                 updateStepUI(4, "Magnetized", true);
                 
-                // Set synthesis dashboard status
                 const synthStatus = document.getElementById("synthesizer-status");
                 synthStatus.textContent = "SYNTH ACTIVE";
                 synthStatus.classList.add("ready");
 
-                logPipeline(`Step 4: Magnetize succeeded! Commutative Commutative path verified. Ring: ${shio.Ring.toString().substring(0, 16)}...`);
+                logPipeline(`Step 4: Magnetize succeeded! Commutative path verified. Ring: ${shio.Ring.toString().substring(0, 16)}...`);
             } catch(e) {
                 logPipeline(`Step 4 Failure: ${e.message}`, true);
             }
+        }
+
+        function randomizeInputs() {
+            document.getElementById("input-xi").value = Math.floor(Math.random() * 900000) + 100000;
+            document.getElementById("input-alpha").value = Math.floor(Math.random() * 90000) + 10000;
+            document.getElementById("input-beta").value = Math.floor(Math.random() * 90000) + 10000;
+            logPipeline("Inputs Xi, Alpha, and Beta randomized.");
         }
 
         function logPipeline(msg, isError = false) {
@@ -929,12 +947,16 @@
         let activeFeedback = false;
         let activeStateful = false;
         let pitchBlend = 0.5;
+        let synthMode = "pitch";
 
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
-        let oscNode = null;
+        let oscNode = null;       // Main oscillator
+        let oscSubNode = null;    // Secondary/Modulator oscillator
         let filterNode = null;
         let gainNode = null;
+        let gainSubNode = null;   // Secondary gain path
+        let panNode = null;       // Stereo Panner Node
 
         // Setup Piano Keys
         const notes = [
@@ -975,7 +997,6 @@
             pianoContainer.appendChild(keyEl);
         });
 
-        // Computer keyboard listener mapping
         const keyMap = {};
         notes.forEach(item => {
             keyMap[item.key] = item;
@@ -1002,7 +1023,6 @@
             }
         });
 
-        // Toggle Buttons
         document.getElementById("audio-toggle").addEventListener("click", function() {
             this.classList.toggle("active");
             audioEnabled = this.classList.contains("active");
@@ -1025,9 +1045,9 @@
         function updateParams() {
             pitchBlend = parseFloat(document.getElementById("param-pitch-blend").value) / 100.0;
             document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
+            synthMode = document.getElementById("param-synth-mode").value;
         }
 
-        // Web Audio Initializer
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1037,40 +1057,33 @@
             }
         }
 
-        // Perform YI React Transduction Calculation
         function runYITransducer(freq) {
             if (!shio.IsGenerated) {
                 logPipeline("Reactor not initialized. Please complete all 4 contract verification steps first!", true);
                 return null;
             }
 
-            // Map the frequency to the modular input Pi
             const Pi = BigInt(Math.round(freq * 1000));
 
             try {
-                // Execute the verified Shio react method
                 const reactResult = shio.React(Pi);
                 if (!reactResult) return null;
 
                 const Eta = reactResult.Omicron;  // Ichidai
                 const Kappa = reactResult.Omega;  // Daiichi
 
-                // If stateful is active, continuously evolve Monopole with output Eta
                 if (activeStateful) {
                     shio.Monopole = (shio.Monopole + Eta) % MotzkinPrime;
                     logPipeline(`Monopole evolved to: ${shio.Monopole.toString().substring(0, 16)}...`);
                 }
 
-                // Calculate output voltage equivalence (Vout)
                 const normEta = Number(Eta % 1000000n) / 1000000;
-                const Vout = 9.0 * (0.1 + normEta * 0.9); // Clamp within base-emitter offset window
+                const Vout = 9.0 * (0.1 + normEta * 0.9);
 
-                // Update Voltmeter
                 document.getElementById("meter-volts").textContent = `${Vout.toFixed(2)} V`;
-                const rot = -60 + (Vout / 9.0) * 120; // needle rotation -60deg to +60deg
+                const rot = -60 + (Vout / 9.0) * 120;
                 document.getElementById("meter-needle").style.transform = `rotate(${rot}deg)`;
 
-                // Log
                 const container = document.getElementById("reaction-log");
                 const entry = document.createElement("div");
                 entry.className = "log-line";
@@ -1090,7 +1103,6 @@
             }
         }
 
-        // Trigger Audio Tone and Transducer mapping
         function playNote(note, freq) {
             activeKeyNote = note;
             activeKeyFreq = freq;
@@ -1098,55 +1110,135 @@
             const keyEl = document.querySelector(`[data-note="${note}"]`);
             if (keyEl) keyEl.classList.add("active");
 
-            // Execute the YI Transducer calculation
             const results = runYITransducer(freq);
             if (!results) return;
 
-            // Calculate dynamic sound note pitch modulation derived from Ichidai (Eta) and/or Daiichi (Kappa)
             const valEta = Number(results.Eta % 1000n) / 1000.0;
             const valKappa = Number(results.Kappa % 1000n) / 1000.0;
-            // Blend them: 0.0 is pure Daiichi (Kappa), 1.0 is pure Ichidai (Eta)
             const blendVal = (pitchBlend * valEta) + ((1.0 - pitchBlend) * valKappa);
-            // Modulate base frequency by scaling pitch based on the transducer outputs
-            const modulatedFreq = freq * (0.6 + blendVal * 0.8);
-
-            // Also update activeKeyFreq so the oscilloscope matches the modulated pitch
-            activeKeyFreq = modulatedFreq;
 
             if (audioEnabled) {
                 initAudio();
                 
-                // Stop any running oscillator
-                if (oscNode) {
-                    try { oscNode.stop(); } catch(e) {}
-                }
+                // Stop any running nodes
+                stopNoteNodes();
 
-                oscNode = audioCtx.createOscillator();
                 filterNode = audioCtx.createBiquadFilter();
                 gainNode = audioCtx.createGain();
+                panNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
-                // Select synth wave style based on evolved genes
-                oscNode.type = 'sawtooth';
-                oscNode.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
+                let sourceNode = null;
 
-                // Use the output voltage to modulate filter cutoff if active feedback is checked
-                let cutoffFreq = 800; // default cutoff
+                // --- Synthesis Modes Mapping ---
+                if (synthMode === "pitch") {
+                    // 1. Pitch Modulation
+                    const modulatedFreq = freq * (0.6 + blendVal * 0.8);
+                    activeKeyFreq = modulatedFreq;
+
+                    oscNode = audioCtx.createOscillator();
+                    oscNode.type = 'sawtooth';
+                    oscNode.frequency.setValueAtTime(modulatedFreq, audioCtx.currentTime);
+                    sourceNode = oscNode;
+                } 
+                else if (synthMode === "fm") {
+                    // 2. FM Synthesis
+                    const carrierFreq = freq * 0.8;
+                    // Modulator ratio driven by Daiichi (valKappa)
+                    const modFreq = carrierFreq * (1.0 + Math.floor(valKappa * 8.0));
+                    // Modulator depth driven by Ichidai (valEta)
+                    const modDepth = valEta * 2000.0;
+
+                    oscNode = audioCtx.createOscillator();
+                    oscNode.type = 'sine';
+                    oscNode.frequency.setValueAtTime(carrierFreq, audioCtx.currentTime);
+
+                    oscSubNode = audioCtx.createOscillator();
+                    oscSubNode.type = 'sine';
+                    oscSubNode.frequency.setValueAtTime(modFreq, audioCtx.currentTime);
+
+                    gainSubNode = audioCtx.createGain();
+                    gainSubNode.gain.setValueAtTime(modDepth, audioCtx.currentTime);
+
+                    // Route: Modulator -> Gain -> Carrier Frequency
+                    oscSubNode.connect(gainSubNode);
+                    gainSubNode.connect(oscNode.frequency);
+                    oscSubNode.start();
+
+                    sourceNode = oscNode;
+                    activeKeyFreq = carrierFreq;
+                } 
+                else if (synthMode === "panning") {
+                    // 3. Stereo Panning
+                    oscNode = audioCtx.createOscillator();
+                    oscNode.type = 'triangle';
+                    oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                    // Pan coordinate derived from (valEta - valKappa) resulting in [-1.0, 1.0]
+                    const panVal = Math.max(-1.0, Math.min(1.0, (valEta - valKappa) * 2.0));
+                    if (panNode) {
+                        panNode.pan.setValueAtTime(panVal, audioCtx.currentTime);
+                    }
+                    sourceNode = oscNode;
+                } 
+                else if (synthMode === "timbre") {
+                    // 4. Timbre Morphing (Sawtooth & Triangle fade)
+                    oscNode = audioCtx.createOscillator();
+                    oscNode.type = 'sawtooth';
+                    oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                    oscSubNode = audioCtx.createOscillator();
+                    oscSubNode.type = 'triangle';
+                    oscSubNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                    // Gains blended based on Ichidai (valEta)
+                    gainNode.gain.setValueAtTime(valEta * 0.12, audioCtx.currentTime);
+                    gainSubNode = audioCtx.createGain();
+                    gainSubNode.gain.setValueAtTime((1.0 - valEta) * 0.15, audioCtx.currentTime);
+
+                    oscNode.connect(filterNode);
+                    oscSubNode.connect(gainSubNode);
+                    gainSubNode.connect(filterNode);
+
+                    oscNode.start();
+                    oscSubNode.start();
+                }
+
+                // Filter cutoff frequency modulated by voltage feedback
+                let cutoffFreq = 900;
                 if (activeFeedback) {
-                    cutoffFreq = 200 + (results.Vout / 9.0) * 2000;
+                    cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
                 }
                 filterNode.type = 'lowpass';
-                filterNode.Q.setValueAtTime(4.0, audioCtx.currentTime);
+                filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
                 filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
 
-                gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.05);
+                // Connections
+                if (synthMode !== "timbre") {
+                    gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.05);
+                    sourceNode.connect(filterNode);
+                }
 
-                oscNode.connect(filterNode);
-                filterNode.connect(gainNode);
+                if (panNode) {
+                    filterNode.connect(panNode);
+                    panNode.connect(gainNode);
+                } else {
+                    filterNode.connect(gainNode);
+                }
+
                 gainNode.connect(audioCtx.destination);
-
-                oscNode.start();
+                
+                if (oscNode && synthMode !== "timbre") oscNode.start();
             }
+        }
+
+        function stopNoteNodes() {
+            try { if (oscNode) oscNode.stop(); } catch(e) {}
+            try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
+            oscNode = null;
+            oscSubNode = null;
+            gainSubNode = null;
+            panNode = null;
         }
 
         function stopNote() {
@@ -1156,14 +1248,12 @@
             const keys = document.querySelectorAll(".key");
             keys.forEach(k => k.classList.remove("active"));
 
-            if (oscNode && gainNode) {
+            if (gainNode) {
                 const current = audioCtx ? audioCtx.currentTime : 0;
                 gainNode.gain.cancelScheduledValues(current);
                 gainNode.gain.setValueAtTime(gainNode.gain.value, current);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, current + 0.3);
-                setTimeout(() => {
-                    try { oscNode.stop(); } catch(e) {}
-                }, 350);
+                setTimeout(stopNoteNodes, 350);
             }
         }
 
@@ -1189,13 +1279,11 @@
 
             timeOffset += 0.1;
 
-            // Clear canvases
             ctxOsc.fillStyle = "#05070f";
             ctxOsc.fillRect(0, 0, canvasOsc.width, canvasOsc.height);
             ctxTrans.fillStyle = "#05070f";
             ctxTrans.fillRect(0, 0, canvasTrans.width, canvasTrans.height);
 
-            // Draw oscilloscope grid lines
             ctxOsc.strokeStyle = "rgba(255, 255, 255, 0.04)";
             ctxOsc.lineWidth = 1;
             for(let x = 0; x < canvasOsc.width; x += 40) {
@@ -1213,7 +1301,6 @@
                 ctxTrans.beginPath(); ctxTrans.moveTo(0, y); ctxTrans.lineTo(canvasTrans.width, y); ctxTrans.stroke();
             }
 
-            // Draw waveforms
             ctxOsc.beginPath();
             ctxOsc.strokeStyle = varColor('--secondary-glow');
             ctxOsc.lineWidth = 2.5;
@@ -1231,16 +1318,14 @@
 
             for(let i = 0; i < canvasOsc.width; i++) {
                 const angle = (i / canvasOsc.width) * Math.PI * 4 * freqMultiplier - timeOffset;
-                // Wien-bridge oscillator waveform (simulated sinewave output)
                 const yOsc = (canvasOsc.height / 2) + Math.sin(angle) * ampOsc;
                 
                 if (i === 0) ctxOsc.moveTo(i, yOsc);
                 else ctxOsc.lineTo(i, yOsc);
 
-                // Transduced output voltage waveform (clamped collector output with distortion)
                 let yTransRaw = Math.sin(angle) * ampOsc * 1.5;
-                if (yTransRaw > 15) yTransRaw = 15; // physical saturation clamp
-                if (yTransRaw < -20) yTransRaw = -20; // cutoff boundary
+                if (yTransRaw > 15) yTransRaw = 15;
+                if (yTransRaw < -20) yTransRaw = -20;
 
                 const yTrans = (canvasTrans.height / 2) - yTransRaw;
                 if (i === 0) ctxTrans.moveTo(i, yTrans);
@@ -1249,7 +1334,6 @@
             ctxOsc.stroke();
             ctxTrans.stroke();
 
-            // reset shadows
             ctxOsc.shadowBlur = 0;
             ctxTrans.shadowBlur = 0;
         }
@@ -1258,10 +1342,7 @@
             return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
         }
 
-        // Start scopes rendering
         drawScopes();
-
-        // Initial randomization on page load
         randomizeInputs();
 
     </script>
