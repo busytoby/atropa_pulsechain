@@ -1163,10 +1163,10 @@
             constructor() {
                 // Preset mock delegate users matching localhost config / state
                 this.Delegates = [
-                    { soul: 9999n, address: "0xe40AF675753322508d033CE8EE6135aA76470338", username: "Genesis_Nine", balance: 50000n, votePitchBlend: 0.25, voteFMMult: 0.8, voteTimbreMorph: 0.15 },
-                    { soul: 4444n, address: "0xb4C9Ed909ecB896586d6ebCfEbA0E97fdCA51310", username: "Genesis_Four", balance: 35000n, votePitchBlend: 0.75, voteFMMult: 0.4, voteTimbreMorph: 0.65 },
-                    { soul: 3333n, address: "0x5fD11B3E10E0d71Ab05ace92797e517e532E1462", username: "Genesis_Three", balance: 20000n, votePitchBlend: 0.50, voteFMMult: 0.2, voteTimbreMorph: 0.90 },
-                    { soul: 1234n, address: "0xdE3F48Cdf1af8a44b21Ed04BB12999A87B53c82a", username: "MariaRahel", balance: 15000n, votePitchBlend: 0.90, voteFMMult: 0.9, voteTimbreMorph: 0.45 }
+                    { soul: 9999n, address: "0xe40AF675753322508d033CE8EE6135aA76470338", username: "Genesis_Nine", balance: 50000n, votePitchBlend: 0.25, voteFMMult: 0.8, voteTimbreMorph: 0.15, voteBPM: 120, votePattern: "up" },
+                    { soul: 4444n, address: "0xb4C9Ed909ecB896586d6ebCfEbA0E97fdCA51310", username: "Genesis_Four", balance: 35000n, votePitchBlend: 0.75, voteFMMult: 0.4, voteTimbreMorph: 0.65, voteBPM: 140, votePattern: "repeat" },
+                    { soul: 3333n, address: "0x5fD11B3E10E0d71Ab05ace92797e517e532E1462", username: "Genesis_Three", balance: 20000n, votePitchBlend: 0.50, voteFMMult: 0.2, voteTimbreMorph: 0.90, voteBPM: 90, votePattern: "down" },
+                    { soul: 1234n, address: "0xdE3F48Cdf1af8a44b21Ed04BB12999A87B53c82a", username: "MariaRahel", balance: 15000n, votePitchBlend: 0.90, voteFMMult: 0.9, voteTimbreMorph: 0.45, voteBPM: 160, votePattern: "random" }
                 ];
                 this.ContractAddress = "0xCb591105c732C55bc81e109dCAeEd9E136AC6c89";
             }
@@ -1180,18 +1180,35 @@
                 let pitchBlendSum = 0;
                 let fmMultSum = 0;
                 let timbreMorphSum = 0;
+                let bpmSum = 0;
+                let patternWeights = { "up": 0, "down": 0, "random": 0, "repeat": 0 };
 
                 this.Delegates.forEach(d => {
                     let w = Number(d.balance) / total;
                     pitchBlendSum += d.votePitchBlend * w;
                     fmMultSum += d.voteFMMult * w;
                     timbreMorphSum += d.voteTimbreMorph * w;
+                    bpmSum += d.voteBPM * w;
+                    if (patternWeights[d.votePattern] !== undefined) {
+                        patternWeights[d.votePattern] += w;
+                    }
                 });
+
+                let bestPattern = "up";
+                let maxW = 0;
+                for (let pat in patternWeights) {
+                    if (patternWeights[pat] > maxW) {
+                        maxW = patternWeights[pat];
+                        bestPattern = pat;
+                    }
+                }
 
                 return {
                     pitchBlend: pitchBlendSum,
                     fmMux: fmMultSum,
-                    timbreMorph: timbreMorphSum
+                    timbreMorph: timbreMorphSum,
+                    bpm: Math.round(bpmSum),
+                    pattern: bestPattern
                 };
             }
         }
@@ -1240,7 +1257,10 @@
             const consensus = choContract.TallyConsensus();
             const infoEl = document.getElementById("consensus-presets-info");
             if (infoEl) {
-                infoEl.textContent = `Blend: ${consensus.pitchBlend.toFixed(2)} | FM: ${consensus.fmMux.toFixed(2)} | Timbre: ${consensus.timbreMorph.toFixed(2)}`;
+                infoEl.innerHTML = `
+                    <div>Blend: ${consensus.pitchBlend.toFixed(2)} | FM: ${consensus.fmMux.toFixed(2)} | Timbre: ${consensus.timbreMorph.toFixed(2)}</div>
+                    <div style="margin-top: 0.15rem; color: var(--secondary-glow); font-weight: 600;">Consensus Beat: ${consensus.bpm} BPM (${consensus.pattern.toUpperCase()})</div>
+                `;
             }
         }
 
@@ -1258,6 +1278,10 @@
                 d.votePitchBlend = Math.min(1.0, Math.max(0.0, d.votePitchBlend + (Math.random() - 0.5) * 0.1));
                 d.voteFMMult = Math.min(1.0, Math.max(0.0, d.voteFMMult + (Math.random() - 0.5) * 0.1));
                 d.voteTimbreMorph = Math.min(1.0, Math.max(0.0, d.voteTimbreMorph + (Math.random() - 0.5) * 0.1));
+                d.voteBPM = Math.min(240, Math.max(60, d.voteBPM + Math.round((Math.random() - 0.5) * 15)));
+                if (Math.random() < 0.15) {
+                    d.votePattern = ["up", "down", "random", "repeat"][Math.floor(Math.random() * 4)];
+                }
                 let delta = BigInt(Math.floor((Math.random() - 0.5) * 1000));
                 if (d.balance + delta > 1000n) {
                     d.balance += delta;
@@ -1287,9 +1311,19 @@
                     }
                 }
 
+                // Beat Election consensus adjustments
+                const bpmSlider = document.getElementById("param-arp-bpm");
+                if (bpmSlider) {
+                    bpmSlider.value = consensus.bpm;
+                }
+                const patternSelect = document.getElementById("param-arp-pattern");
+                if (patternSelect) {
+                    patternSelect.value = consensus.pattern;
+                }
+
                 updateParams();
 
-                logPipeline(`CHO Election tally complete! Overrode sliders: Blend=${consensus.pitchBlend.toFixed(2)}, Timbre=${consensus.timbreMorph.toFixed(2)}.`);
+                logPipeline(`CHO Beat Election tally complete! Overrode sliders: Blend=${consensus.pitchBlend.toFixed(2)}, BPM=${consensus.bpm} (${consensus.pattern.toUpperCase()}).`);
                 
                 if (statusTag) {
                     statusTag.textContent = "Registry Synced";
