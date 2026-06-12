@@ -1059,6 +1059,7 @@
                             <option value="space_ace">Space Ace</option>
                             <option value="dragons_lair_2">Dragon's Lair II</option>
                             <option value="sleeping_beauty">Sleeping Beauty</option>
+                            <option value="pirate_ship">Pirate Ship (Z-Machine)</option>
                         </select>
                         <button class="btn-book-trigger" onclick="openBook()" id="btnOpenBook" style="display: none;">📖 Open Book</button>
                         <button class="btn-save" onclick="downloadStory()" id="btnDownloadStory" style="display: none;">Save Tale</button>
@@ -1517,6 +1518,32 @@
                     timestamp: "12:05:30 AM",
                     illustration: "assets/storybook/sb4.png"
                 }
+            ],
+            pirate_ship: [
+                {
+                    text: "Dirk the Daring materialized inside the creaking wooden hull of an ancient pirate ship trapped in a temporal Z-machine vortex on PulseChain. Heavy waves crashed against the portholes, and the laughter of ghostly buccaneers echoed from the deck above.",
+                    type: "system",
+                    timestamp: "12:00:00 AM",
+                    illustration: "assets/storybook/space1.png"
+                },
+                {
+                    text: "Dirk rushed up the companionway to find the ghost pirate captain raising a cutlass, its blade glowing with unvoiced noise. Dirk deflected a strike, dodging left as a swinging rope sent him rolling across the deck.",
+                    type: "system",
+                    timestamp: "12:02:00 AM",
+                    illustration: "assets/storybook/space2.png"
+                },
+                {
+                    text: "Suddenly, a giant kraken emerged, tentacles wrapping around the mainmast! Dirk ran up the rigging, scaled the crow's nest, and sliced a tentacle, releasing the mast.",
+                    type: "system",
+                    timestamp: "12:04:00 AM",
+                    illustration: "assets/storybook/space3.png"
+                },
+                {
+                    text: "Reaching the captain's cabin, Dirk found the ship's logbook resting on a chest. As he opened the log, he discovered a list of 5555 on-chain coordinates. Placing a HEX seal on the chest, the pirate ship snapped out of the vortex, and Princess Daphne's location was revealed in the stars.",
+                    type: "system",
+                    timestamp: "12:06:00 AM",
+                    illustration: "assets/storybook/space4.png"
+                }
             ]
         };
 
@@ -1528,7 +1555,8 @@
                 dragons_lair: "📖 The Chronicles of Dirk the Daring",
                 space_ace: "🚀 The Chronicles of Space Ace",
                 dragons_lair_2: "⏳ The Chronicles of Dirk & Daphne (Time Warp)",
-                sleeping_beauty: "🏰 The Chronicles of Sleeping Beauty"
+                sleeping_beauty: "🏰 The Chronicles of Sleeping Beauty",
+                pirate_ship: "🏴‍☠️ The Chronicles of the Z-Machine Pirate Ship"
             };
             document.getElementById("storybookTitle").innerText = titles[val];
             renderDefaultStory();
