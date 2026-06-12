@@ -353,6 +353,35 @@
             text-transform: uppercase;
         }
 
+        /* Profile Data box */
+        .profile-box {
+            background: #05070f;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .profile-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            padding: 0.2rem 0;
+        }
+
+        .profile-label {
+            color: var(--text-muted);
+        }
+
+        .profile-value {
+            color: var(--accent-glow);
+            font-weight: 600;
+        }
+
         /* React log output */
         .log-box {
             background: #030408;
@@ -550,17 +579,28 @@
 
         <!-- Right Side: Transducer parameters and Logs -->
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Analog Volt Meter -->
+            <!-- Analog Volt Meter & Sealed Synthesis Profile -->
             <div class="panel">
                 <div class="panel-title">
-                    <span>Voltmeter Output</span>
+                    <span>Voltmeter & Synthesis Profile</span>
                 </div>
-                <div class="meter-container">
-                    <div class="voltmeter-dial">
-                        <div class="voltmeter-needle" id="meter-needle"></div>
+                <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 1rem; align-items: center;">
+                    <div class="meter-container">
+                        <div class="voltmeter-dial">
+                            <div class="voltmeter-needle" id="meter-needle"></div>
+                        </div>
+                        <div class="voltmeter-value" id="meter-volts">0.00 V</div>
+                        <div class="voltmeter-label">Collector Out</div>
                     </div>
-                    <div class="voltmeter-value" id="meter-volts">0.00 V</div>
-                    <div class="voltmeter-label">Collector Output Voltage</div>
+                    <div class="profile-box" id="profile-values">
+                        <div class="profile-item"><span class="profile-label">Attack:</span><span class="profile-value" id="prof-attack">-</span></div>
+                        <div class="profile-item"><span class="profile-label">Decay:</span><span class="profile-value" id="prof-decay">-</span></div>
+                        <div class="profile-item"><span class="profile-label">Sustain:</span><span class="profile-value" id="prof-sustain">-</span></div>
+                        <div class="profile-item"><span class="profile-label">Release:</span><span class="profile-value" id="prof-release">-</span></div>
+                        <div class="profile-item"><span class="profile-label">LFO Rate:</span><span class="profile-value" id="prof-lfo-rate">-</span></div>
+                        <div class="profile-item"><span class="profile-label">LFO Depth:</span><span class="profile-value" id="prof-lfo-depth">-</span></div>
+                        <div class="profile-item" style="grid-column: span 2;"><span class="profile-label">Sub-Harmonic Vol:</span><span class="profile-value" id="prof-sub-vol">-</span></div>
+                    </div>
                 </div>
             </div>
 
@@ -845,6 +885,11 @@
         // Wizard steps executions
         let currentStep = 1;
 
+        // Stable parameters derived on Magnetization
+        let adsrEnvelope = { attack: 0.1, decay: 0.2, sustain: 0.8, release: 0.5 };
+        let lfoParams = { rate: 5.0, depth: 400.0 };
+        let subOscVol = 0.05;
+
         function updateStepUI(step, statusText, isCompleted = false) {
             const card = document.getElementById(`step-${step}`);
             const statusLabel = document.getElementById(`status-step-${step}`);
@@ -914,6 +959,35 @@
                 synthStatus.textContent = "SYNTH ACTIVE";
                 synthStatus.classList.add("ready");
 
+                // Derive stable synthesis variables from contracts
+                const attackRaw = Number(shio.Rod.Channel % 1000n) / 1000.0;
+                const decayRaw = Number(shio.Cone.Channel % 1000n) / 1000.0;
+                const sustainRaw = Number(shio.Ring % 1000n) / 1000.0;
+                const releaseRaw = Number(shio.Barn % 1000n) / 1000.0;
+
+                adsrEnvelope.attack = 0.02 + attackRaw * 1.5;   // attack range 0.02s - 1.5s
+                adsrEnvelope.decay = 0.05 + decayRaw * 1.5;    // decay range 0.05s - 1.5s
+                adsrEnvelope.sustain = 0.1 + sustainRaw * 0.9;  // sustain range 10% - 100%
+                adsrEnvelope.release = 0.1 + releaseRaw * 2.5;  // release range 0.1s - 2.5s
+
+                const lfoRateRaw = Number(shio.Manifold % 200n) / 10.0;
+                const lfoDepthRaw = Number(shio.Barn % 500n) / 500.0;
+
+                lfoParams.rate = 0.2 + lfoRateRaw;              // LFO speed 0.2Hz - 20.2Hz
+                lfoParams.depth = lfoDepthRaw * 1200.0;         // LFO depth 0 - 1200 cents
+
+                const monopoleRaw = Number(shio.Monopole % 300n) / 300.0;
+                subOscVol = monopoleRaw * 0.08;                 // Sub-volume level
+
+                // Update UI sealed profile
+                document.getElementById("prof-attack").textContent = `${adsrEnvelope.attack.toFixed(2)}s`;
+                document.getElementById("prof-decay").textContent = `${adsrEnvelope.decay.toFixed(2)}s`;
+                document.getElementById("prof-sustain").textContent = `${Math.round(adsrEnvelope.sustain * 100)}%`;
+                document.getElementById("prof-release").textContent = `${adsrEnvelope.release.toFixed(2)}s`;
+                document.getElementById("prof-lfo-rate").textContent = `${lfoParams.rate.toFixed(1)} Hz`;
+                document.getElementById("prof-lfo-depth").textContent = `${Math.round(lfoParams.depth)} cents`;
+                document.getElementById("prof-sub-vol").textContent = `${(subOscVol * 100).toFixed(1)}%`;
+
                 logPipeline(`Step 4: Magnetize succeeded! Commutative path verified. Ring: ${shio.Ring.toString().substring(0, 16)}...`);
             } catch(e) {
                 logPipeline(`Step 4 Failure: ${e.message}`, true);
@@ -951,12 +1025,14 @@
 
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
-        let oscNode = null;       // Main oscillator
-        let oscSubNode = null;    // Secondary/Modulator oscillator
+        let oscNode = null;
+        let oscSubNode = null;    // Dual/Sub/Modulator oscillator
         let filterNode = null;
         let gainNode = null;
-        let gainSubNode = null;   // Secondary gain path
-        let panNode = null;       // Stereo Panner Node
+        let gainSubNode = null;
+        let panNode = null;
+        let lfoNode = null;       // Low Frequency Oscillator Node
+        let lfoGainNode = null;   // LFO gain controller
 
         // Setup Piano Keys
         const notes = [
@@ -1120,7 +1196,6 @@
             if (audioEnabled) {
                 initAudio();
                 
-                // Stop any running nodes
                 stopNoteNodes();
 
                 filterNode = audioCtx.createBiquadFilter();
@@ -1131,7 +1206,6 @@
 
                 // --- Synthesis Modes Mapping ---
                 if (synthMode === "pitch") {
-                    // 1. Pitch Modulation
                     const modulatedFreq = freq * (0.6 + blendVal * 0.8);
                     activeKeyFreq = modulatedFreq;
 
@@ -1141,11 +1215,8 @@
                     sourceNode = oscNode;
                 } 
                 else if (synthMode === "fm") {
-                    // 2. FM Synthesis
                     const carrierFreq = freq * 0.8;
-                    // Modulator ratio driven by Daiichi (valKappa)
                     const modFreq = carrierFreq * (1.0 + Math.floor(valKappa * 8.0));
-                    // Modulator depth driven by Ichidai (valEta)
                     const modDepth = valEta * 2000.0;
 
                     oscNode = audioCtx.createOscillator();
@@ -1159,7 +1230,6 @@
                     gainSubNode = audioCtx.createGain();
                     gainSubNode.gain.setValueAtTime(modDepth, audioCtx.currentTime);
 
-                    // Route: Modulator -> Gain -> Carrier Frequency
                     oscSubNode.connect(gainSubNode);
                     gainSubNode.connect(oscNode.frequency);
                     oscSubNode.start();
@@ -1168,12 +1238,10 @@
                     activeKeyFreq = carrierFreq;
                 } 
                 else if (synthMode === "panning") {
-                    // 3. Stereo Panning
                     oscNode = audioCtx.createOscillator();
                     oscNode.type = 'triangle';
                     oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-                    // Pan coordinate derived from (valEta - valKappa) resulting in [-1.0, 1.0]
                     const panVal = Math.max(-1.0, Math.min(1.0, (valEta - valKappa) * 2.0));
                     if (panNode) {
                         panNode.pan.setValueAtTime(panVal, audioCtx.currentTime);
@@ -1181,7 +1249,6 @@
                     sourceNode = oscNode;
                 } 
                 else if (synthMode === "timbre") {
-                    // 4. Timbre Morphing (Sawtooth & Triangle fade)
                     oscNode = audioCtx.createOscillator();
                     oscNode.type = 'sawtooth';
                     oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -1190,7 +1257,6 @@
                     oscSubNode.type = 'triangle';
                     oscSubNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-                    // Gains blended based on Ichidai (valEta)
                     gainNode.gain.setValueAtTime(valEta * 0.12, audioCtx.currentTime);
                     gainSubNode = audioCtx.createGain();
                     gainSubNode.gain.setValueAtTime((1.0 - valEta) * 0.15, audioCtx.currentTime);
@@ -1203,7 +1269,24 @@
                     oscSubNode.start();
                 }
 
-                // Filter cutoff frequency modulated by voltage feedback
+                // If sub-oscillator is active, add a sub-octave layer underneath
+                if (subOscVol > 0.005 && synthMode !== "timbre") {
+                    const subOsc = audioCtx.createOscillator();
+                    const subGain = audioCtx.createGain();
+                    subOsc.type = 'triangle';
+                    // Half of the modulated frequency (one octave down)
+                    subOsc.frequency.setValueAtTime(activeKeyFreq * 0.5, audioCtx.currentTime);
+                    subGain.gain.setValueAtTime(subOscVol, audioCtx.currentTime);
+                    
+                    subOsc.connect(subGain);
+                    subGain.connect(filterNode);
+                    subOsc.start();
+                    
+                    // store reference for teardown
+                    oscSubNode = subOsc; 
+                }
+
+                // Lowpass Filter setup
                 let cutoffFreq = 900;
                 if (activeFeedback) {
                     cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
@@ -1212,10 +1295,32 @@
                 filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
                 filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
 
-                // Connections
+                // --- Stable LFO Modulation Routing ---
+                if (shio.IsGenerated) {
+                    lfoNode = audioCtx.createOscillator();
+                    lfoNode.type = 'sine';
+                    lfoNode.frequency.setValueAtTime(lfoParams.rate, audioCtx.currentTime);
+
+                    lfoGainNode = audioCtx.createGain();
+                    lfoGainNode.gain.setValueAtTime(lfoParams.depth, audioCtx.currentTime);
+
+                    lfoNode.connect(lfoGainNode);
+                    lfoGainNode.connect(filterNode.frequency);
+                    lfoNode.start();
+                }
+
+                // Apply ADSR Envelope derived from contracts
+                const attack = adsrEnvelope.attack;
+                const decay = adsrEnvelope.decay;
+                const sustain = adsrEnvelope.sustain;
+
                 if (synthMode !== "timbre") {
-                    gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.05);
+                    gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+                    // Attack
+                    gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
+                    // Decay to Sustain
+                    gainNode.gain.linearRampToValueAtTime(0.18 * sustain, audioCtx.currentTime + attack + decay);
+                    
                     sourceNode.connect(filterNode);
                 }
 
@@ -1235,8 +1340,11 @@
         function stopNoteNodes() {
             try { if (oscNode) oscNode.stop(); } catch(e) {}
             try { if (oscSubNode) oscSubNode.stop(); } catch(e) {}
+            try { if (lfoNode) lfoNode.stop(); } catch(e) {}
             oscNode = null;
             oscSubNode = null;
+            lfoNode = null;
+            lfoGainNode = null;
             gainSubNode = null;
             panNode = null;
         }
@@ -1252,8 +1360,9 @@
                 const current = audioCtx ? audioCtx.currentTime : 0;
                 gainNode.gain.cancelScheduledValues(current);
                 gainNode.gain.setValueAtTime(gainNode.gain.value, current);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, current + 0.3);
-                setTimeout(stopNoteNodes, 350);
+                // Apply release envelope derived from contracts
+                gainNode.gain.exponentialRampToValueAtTime(0.001, current + adsrEnvelope.release);
+                setTimeout(stopNoteNodes, adsrEnvelope.release * 1000 + 50);
             }
         }
 
