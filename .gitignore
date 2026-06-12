@@ -83,3 +83,7 @@ state.json
 # Specific executable output
 /tsfi2-deepseek/tsfi2
 
+# Oracle state files
+price_cache.json
+resolved_swaps.json
+unresolved_swaps.json
