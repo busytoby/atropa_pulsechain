@@ -15,6 +15,8 @@
             --accent-glow: #ffd700;
             --text-color: #e2e8f0;
             --text-muted: #94a3b8;
+            --success-color: #10b981;
+            --error-color: #ef4444;
         }
 
         * {
@@ -73,7 +75,7 @@
 
         @media (min-width: 900px) {
             main {
-                grid-template-columns: 2fr 1fr;
+                grid-template-columns: 1.8fr 1.2fr;
             }
         }
 
@@ -212,7 +214,7 @@
             background: #05070f;
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            height: 180px;
+            height: 150px;
             overflow: hidden;
         }
 
@@ -235,35 +237,71 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Dashboard controls */
-        .control-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .control-group {
+        /* Wizard Steps styling */
+        .wizard-steps {
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 0.8rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+            gap: 0.8rem;
         }
 
-        .control-group label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 600;
+        .step-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: border-color 0.3s;
+        }
+
+        .step-card.active {
+            border-color: var(--secondary-glow);
+            background: rgba(0, 243, 255, 0.03);
+        }
+
+        .step-card.completed {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.03);
+        }
+
+        .step-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
-        .control-group input[type="range"] {
+        .step-status {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .step-card.active .step-status {
+            color: var(--secondary-glow);
+        }
+
+        .step-card.completed .step-status {
+            color: var(--success-color);
+        }
+
+        .step-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .step-inputs input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: white;
+            padding: 0.3rem;
+            font-size: 0.8rem;
             width: 100%;
-            accent-color: var(--primary-glow);
-            cursor: pointer;
+            font-family: monospace;
         }
 
         /* Volt meter */
@@ -323,7 +361,7 @@
             padding: 1rem;
             font-family: monospace;
             font-size: 0.8rem;
-            height: 250px;
+            height: 200px;
             overflow-y: auto;
             color: #10b981;
         }
@@ -345,28 +383,25 @@
             background: linear-gradient(135deg, var(--primary-glow), #d00060);
             color: white;
             border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: 'Space Grotesk', sans-serif;
+            text-align: center;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
             transform: translateY(-1px);
         }
 
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: none;
-            transform: none;
+        .btn:disabled {
+            background: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
         }
 
         .toggle-container {
@@ -405,13 +440,52 @@
         .toggle-container.active .toggle-switch::after {
             transform: translateX(20px);
         }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-glow);
+            cursor: pointer;
+        }
+
+        .status-pill {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-pill.ready {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>🔮 YI Mechanical Transducer Synthesis Keyboard</h1>
-        <p class="subtitle">Continuous Wien-Bridge Oscillator Reactor coupled with real-time BigInt YI Transducer mapping</p>
+        <p class="subtitle">Contract-Seeded Wien-Bridge Oscillator Reactor coupled with real-time BigInt YI Transduction</p>
     </header>
 
     <main>
@@ -426,7 +500,7 @@
                             <div class="toggle-switch"></div>
                             <span>Web Audio Synth</span>
                         </div>
-                        <span class="glow-tag">Reactor Ready</span>
+                        <div class="status-pill" id="synthesizer-status">UNINITIALIZED</div>
                     </div>
                 </div>
                 
@@ -477,34 +551,71 @@
                 </div>
             </div>
 
-            <!-- YI Transducer Configuration -->
+            <!-- YI Transducer Configuration / Wizard -->
             <div class="panel">
                 <div class="panel-title">
-                    <span>Transducer (YI) Parameters</span>
-                    <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="randomizeTransducer()">Randomize</button>
+                    <span>Contract Verification Pipeline</span>
                 </div>
                 
-                <div class="control-grid">
-                    <div class="control-group">
-                        <label><span>Rod Secret</span><span id="label-rod-secret">77</span></label>
-                        <input type="range" id="param-rod-secret" min="1" max="500" value="77" oninput="updateParams()">
+                <div class="wizard-steps">
+                    <!-- Step 1: Seed & Tune -->
+                    <div class="step-card active" id="step-1">
+                        <div class="step-header">
+                            <span>Step 1: Seed SHA Nodes</span>
+                            <span class="step-status" id="status-step-1">Seeding Pending</span>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Seed Rod and Cone contracts with random base parameters.</p>
+                        <button class="btn" id="btn-step-1" onclick="executeSeed()">Seed Contracts</button>
                     </div>
-                    <div class="control-group">
-                        <label><span>Cone Secret</span><span id="label-cone-secret">150</span></label>
-                        <input type="range" id="param-cone-secret" min="1" max="500" value="150" oninput="updateParams()">
+
+                    <!-- Step 2: Generate -->
+                    <div class="step-card" id="step-2">
+                        <div class="step-header">
+                            <span>Step 2: Generate Manifolds</span>
+                            <span class="step-status" id="status-step-2">Locked</span>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Provide crossover parameters Xi, Alpha (Rod Identity), and Beta (Cone Identity).</p>
+                        <div class="step-inputs">
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">Xi (Signal)</label>
+                                <input type="text" id="input-xi" value="2389182">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">Alpha (Rod)</label>
+                                <input type="text" id="input-alpha" value="10928">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">Beta (Cone)</label>
+                                <input type="text" id="input-beta" value="38921">
+                            </div>
+                        </div>
+                        <button class="btn" id="btn-step-2" disabled onclick="executeGenerate()">Generate Crossover</button>
                     </div>
-                    <div class="control-group">
-                        <label><span>Rod Signal</span><span id="label-rod-signal">42</span></label>
-                        <input type="range" id="param-rod-signal" min="1" max="500" value="42" oninput="updateParams()">
+
+                    <!-- Step 3: Bond -->
+                    <div class="step-card" id="step-3">
+                        <div class="step-header">
+                            <span>Step 3: Isomerize & Isolate</span>
+                            <span class="step-status" id="status-step-3">Locked</span>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Call Bond on Rod and Cone contracts to lock Dynamo levels.</p>
+                        <button class="btn" id="btn-step-3" disabled onclick="executeBond()">Bond Dynamos</button>
                     </div>
-                    <div class="control-group">
-                        <label><span>Cone Signal</span><span id="label-cone-signal">99</span></label>
-                        <input type="range" id="param-cone-signal" min="1" max="500" value="99" oninput="updateParams()">
+
+                    <!-- Step 4: Magnetize -->
+                    <div class="step-card" id="step-4">
+                        <div class="step-header">
+                            <span>Step 4: Magnetize Verification</span>
+                            <span class="step-status" id="status-step-4">Locked</span>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Verify commutative commutativity of connecting paths.</p>
+                        <button class="btn" id="btn-step-4" disabled onclick="executeMagnetize()">Magnetize Reactor</button>
                     </div>
-                    <div class="control-group" style="grid-column: 1 / -1;">
-                        <label><span>Pitch Modulation Blend (Daiichi &harr; Ichidai)</span><span id="label-pitch-blend">0.50</span></label>
-                        <input type="range" id="param-pitch-blend" min="0" max="100" value="50" oninput="updateParams()">
-                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label><span>Pitch Modulation Blend (Daiichi &harr; Ichidai)</span><span id="label-pitch-blend">0.50</span></label>
+                    <input type="range" id="param-pitch-blend" min="0" max="100" value="50" oninput="updateParams()">
                 </div>
 
                 <div class="toggle-container" id="feedback-toggle">
@@ -519,7 +630,6 @@
                     <span>Reaction Trace</span>
                 </div>
                 <div class="log-box" id="reaction-log">
-                    <!-- Logs populated in real-time -->
                     <div class="log-line">Waiting for key hit to trigger YI reaction...</div>
                 </div>
             </div>
@@ -529,25 +639,6 @@
     <script>
         // Core BigInt Constants for the YI Reactor matching the Solidity system
         const MotzkinPrime = 953467954114363n; // Target Prime modulus
-
-        // Dynamic Rod/Cone Parameters
-        let rodSecret = 77n;
-        let coneSecret = 150n;
-        let rodSignal = 42n;
-        let coneSignal = 99n;
-        let pitchBlend = 0.5;
-
-        // Active State variables
-        let activeKeyFreq = 0;
-        let activeKeyNote = "";
-        let audioEnabled = true;
-        let activeFeedback = false;
-
-        // Web Audio Synthesizer Nodes
-        let audioCtx = null;
-        let oscNode = null;
-        let filterNode = null;
-        let gainNode = null;
 
         // Javascript implementation of modExp for large BigInts
         function modExp(base, exp, mod) {
@@ -561,6 +652,272 @@
             }
             return res;
         }
+
+        // --- Solidity Contract Implementations ---
+        class SHAContract {
+            constructor() {
+                this.Base = 0n;
+                this.Secret = 0n;
+                this.Signal = 0n;
+                this.Channel = 0n;
+                this.Contour = 0n;
+                this.Pole = 0n;
+                this.Coordinate = 0n;
+                this.Identity = 0n;
+                this.Foundation = 0n;
+                this.Charge = 0n;
+                this.Chin = 0n;
+                this.Element = 0n;
+                this.Dynamo = 0n;
+                this.Monopole = 0n;
+            }
+
+            Seed() {
+                // Generate random Base, Secret, and Signal
+                this.Base = BigInt(Math.floor(Math.random() * 800000) + 10000);
+                this.Secret = BigInt(Math.floor(Math.random() * 800000) + 10000);
+                this.Signal = BigInt(Math.floor(Math.random() * 800000) + 10000);
+            }
+
+            Tune() {
+                this.Channel = modExp(this.Base, this.Signal, MotzkinPrime);
+            }
+
+            Avail(Xi) {
+                this.Contour = modExp(Xi, this.Secret, MotzkinPrime);
+            }
+
+            Form(Chi) {
+                this.Base = modExp(Chi, this.Secret, MotzkinPrime);
+                this.Tune();
+            }
+
+            Polarize() {
+                this.Pole = modExp(this.Base, this.Secret, MotzkinPrime);
+            }
+
+            Conjugate(Chi) {
+                this.Coordinate = modExp(Chi, this.Secret, MotzkinPrime);
+            }
+
+            Conify(Alpha) {
+                this.Identity = Alpha;
+                this.Foundation = modExp(this.Base, this.Identity, MotzkinPrime);
+            }
+
+            Saturate(Identity, Epsilon, Theta) {
+                if (this.Identity === 0n) {
+                    this.Identity = Identity;
+                    this.Foundation = modExp(this.Base, this.Identity, MotzkinPrime);
+                }
+                
+                let Beta = modExp(Epsilon, this.Identity, MotzkinPrime);
+                let Rho = modExp(Theta, this.Identity, MotzkinPrime);
+                let Eta = modExp(Epsilon, this.Signal, MotzkinPrime);
+
+                this.Charge = (Rho + Eta) % MotzkinPrime;
+                this.Chin = (Beta + Eta) % MotzkinPrime;
+                this.Element = (Beta + this.Charge) % MotzkinPrime;
+
+                this.Dynamo = modExp(Theta, this.Signal, MotzkinPrime);
+                this.Monopole = modExp(this.Chin, this.Identity, MotzkinPrime);
+            }
+
+            Bond() {
+                this.Dynamo = modExp(this.Base, this.Signal, this.Element);
+                this.Pole = 0n;
+            }
+
+            Adduct(Phi) {
+                return modExp(Phi, this.Signal, this.Element);
+            }
+
+            React(Pi, Theta) {
+                let Eta = modExp(Pi, this.Channel, Theta);
+                let Kappa = modExp(Pi, Theta, this.Channel);
+                return { Eta, Kappa };
+            }
+        }
+
+        class SHIOContract {
+            constructor() {
+                this.Rod = new SHAContract();
+                this.Cone = new SHAContract();
+                this.Barn = 0n;
+                this.Manifold = 0n;
+                this.Monopole = 0n;
+                this.Ring = 0n;
+                this.IsGenerated = false;
+            }
+
+            Seed() {
+                this.Rod.Seed();
+                this.Cone.Seed();
+                this.Rod.Tune();
+                this.Cone.Tune();
+            }
+
+            Generate(Xi, Alpha, Beta) {
+                // ConductorGenerate
+                this.Rod.Avail(Xi);
+                this.Cone.Avail(Xi);
+
+                this.Rod.Form(this.Cone.Contour);
+                this.Cone.Form(this.Rod.Contour);
+
+                this.Rod.Polarize();
+                this.Cone.Polarize();
+
+                // Generate rest
+                this.Rod.Conjugate(this.Cone.Pole);
+                this.Cone.Conjugate(this.Rod.Pole);
+
+                this.Cone.Conify(Alpha);
+
+                this.Rod.Saturate(Alpha, this.Cone.Foundation, this.Cone.Channel);
+                this.Cone.Saturate(Beta, this.Rod.Foundation, this.Rod.Channel);
+            }
+
+            Bond() {
+                this.Rod.Bond();
+                this.Cone.Bond();
+            }
+
+            Magnetize() {
+                this.Manifold = this.Rod.Adduct(this.Cone.Dynamo);
+                let targetManifold = this.Cone.Adduct(this.Rod.Dynamo);
+                if (this.Manifold !== targetManifold) throw new Error("Manifold inequality!");
+
+                this.Ring = modExp(this.Rod.Coordinate, this.Manifold, this.Rod.Element);
+                let targetRing = modExp(this.Cone.Coordinate, this.Manifold, this.Cone.Element);
+                if (this.Ring !== targetRing) throw new Error("Ring inequality!");
+
+                this.Barn = modExp(this.Ring, this.Manifold, this.Rod.Element);
+                let targetBarn = modExp(this.Ring, this.Manifold, this.Cone.Element);
+                if (this.Barn !== targetBarn) throw new Error("Barn inequality!");
+
+                this.Monopole = modExp(this.Rod.Chin, this.Cone.Chin, MotzkinPrime);
+                this.IsGenerated = true;
+                return this.Ring;
+            }
+
+            React(Pi) {
+                if (!this.IsGenerated) return null;
+                let modifiedPi = Pi ^ this.Monopole;
+                let rodResult = this.Rod.React(modifiedPi, this.Cone.Channel);
+                let coneResult = this.Cone.React(modifiedPi, this.Rod.Channel);
+
+                if (coneResult.Eta !== rodResult.Kappa || coneResult.Kappa !== rodResult.Eta) {
+                    throw new Error("Reaction Inequality!");
+                }
+                return { Omicron: coneResult.Eta, Omega: coneResult.Kappa };
+            }
+        }
+
+        // Instantiate Shio contract representation
+        const shio = new SHIOContract();
+
+        // Wizard steps executions
+        let currentStep = 1;
+
+        function updateStepUI(step, statusText, isCompleted = false) {
+            const card = document.getElementById(`step-${step}`);
+            const statusLabel = document.getElementById(`status-step-${step}`);
+            const btn = document.getElementById(`btn-step-${step}`);
+            
+            if (isCompleted) {
+                card.classList.remove("active");
+                card.classList.add("completed");
+                statusLabel.textContent = statusText;
+                if (btn) btn.disabled = true;
+            } else {
+                card.classList.add("active");
+                statusLabel.textContent = statusText;
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function executeSeed() {
+            try {
+                shio.Seed();
+                updateStepUI(1, "Seeded", true);
+                currentStep = 2;
+                updateStepUI(2, "Ready");
+                logPipeline("Step 1: Seed successful. Rod/Cone tunings calibrated.");
+            } catch(e) {
+                logPipeline(`Step 1 Failure: ${e.message}`, true);
+            }
+        }
+
+        function executeGenerate() {
+            try {
+                const Xi = BigInt(document.getElementById("input-xi").value);
+                const Alpha = BigInt(document.getElementById("input-alpha").value);
+                const Beta = BigInt(document.getElementById("input-beta").value);
+
+                shio.Generate(Xi, Alpha, Beta);
+                updateStepUI(2, "Sealed", true);
+                currentStep = 3;
+                updateStepUI(3, "Ready");
+                logPipeline(`Step 2: Generate complete. Channels and foundations populated.`);
+            } catch(e) {
+                logPipeline(`Step 2 Failure: ${e.message}`, true);
+            }
+        }
+
+        function executeBond() {
+            try {
+                shio.Bond();
+                updateStepUI(3, "Bonded", true);
+                currentStep = 4;
+                updateStepUI(4, "Ready");
+                logPipeline("Step 3: Bond complete. Rod and Cone dynamos established.");
+            } catch(e) {
+                logPipeline(`Step 3 Failure: ${e.message}`, true);
+            }
+        }
+
+        function executeMagnetize() {
+            try {
+                shio.Magnetize();
+                updateStepUI(4, "Magnetized", true);
+                
+                // Set synthesis dashboard status
+                const synthStatus = document.getElementById("synthesizer-status");
+                synthStatus.textContent = "SYNTH ACTIVE";
+                synthStatus.classList.add("ready");
+
+                logPipeline(`Step 4: Magnetize succeeded! Commutative Commutative path verified. Ring: ${shio.Ring.toString().substring(0, 16)}...`);
+            } catch(e) {
+                logPipeline(`Step 4 Failure: ${e.message}`, true);
+            }
+        }
+
+        function logPipeline(msg, isError = false) {
+            const container = document.getElementById("reaction-log");
+            const entry = document.createElement("div");
+            entry.className = "log-line";
+            entry.style.color = isError ? "var(--error-color)" : "var(--success-color)";
+            entry.innerHTML = `
+                <span class="log-meta">[PIPELINE]</span>
+                <span>${msg}</span>
+            `;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Active State variables
+        let activeKeyFreq = 0;
+        let activeKeyNote = "";
+        let audioEnabled = true;
+        let activeFeedback = false;
+        let pitchBlend = 0.5;
+
+        // Web Audio Synthesizer Nodes
+        let audioCtx = null;
+        let oscNode = null;
+        let filterNode = null;
+        let gainNode = null;
 
         // Setup Piano Keys
         const notes = [
@@ -644,26 +1001,8 @@
         });
 
         function updateParams() {
-            rodSecret = BigInt(document.getElementById("param-rod-secret").value);
-            coneSecret = BigInt(document.getElementById("param-cone-secret").value);
-            rodSignal = BigInt(document.getElementById("param-rod-signal").value);
-            coneSignal = BigInt(document.getElementById("param-cone-signal").value);
             pitchBlend = parseFloat(document.getElementById("param-pitch-blend").value) / 100.0;
-
-            document.getElementById("label-rod-secret").textContent = rodSecret;
-            document.getElementById("label-cone-secret").textContent = coneSecret;
-            document.getElementById("label-rod-signal").textContent = rodSignal;
-            document.getElementById("label-cone-signal").textContent = coneSignal;
             document.getElementById("label-pitch-blend").textContent = pitchBlend.toFixed(2);
-        }
-
-        function randomizeTransducer() {
-            document.getElementById("param-rod-secret").value = Math.floor(Math.random() * 499) + 1;
-            document.getElementById("param-cone-secret").value = Math.floor(Math.random() * 499) + 1;
-            document.getElementById("param-rod-signal").value = Math.floor(Math.random() * 499) + 1;
-            document.getElementById("param-cone-signal").value = Math.floor(Math.random() * 499) + 1;
-            document.getElementById("param-pitch-blend").value = Math.floor(Math.random() * 101);
-            updateParams();
         }
 
         // Web Audio Initializer
@@ -678,52 +1017,49 @@
 
         // Perform YI React Transduction Calculation
         function runYITransducer(freq) {
+            if (!shio.IsGenerated) {
+                logPipeline("Reactor not initialized. Please complete all 4 contract verification steps first!", true);
+                return null;
+            }
+
             // Map the frequency to the modular input Pi
             const Pi = BigInt(Math.round(freq * 1000));
 
-            // 1. Crossover calculations
-            const rodContour = modExp(Pi, rodSecret, MotzkinPrime);
-            const coneContour = modExp(Pi, coneSecret, MotzkinPrime);
+            try {
+                // Execute the verified Shio react method
+                const reactResult = shio.React(Pi);
+                if (!reactResult) return null;
 
-            const rodBase = modExp(coneContour, rodSecret, MotzkinPrime);
-            const coneBase = modExp(rodContour, coneSecret, MotzkinPrime);
+                const Eta = reactResult.Omicron;  // Ichidai
+                const Kappa = reactResult.Omega;  // Daiichi
 
-            // 2. Compute channels
-            const rodChannel = modExp(rodBase, rodSignal, MotzkinPrime);
-            const coneChannel = modExp(coneBase, coneSignal, MotzkinPrime);
+                // Calculate output voltage equivalence (Vout)
+                const normEta = Number(Eta % 1000000n) / 1000000;
+                const Vout = 9.0 * (0.1 + normEta * 0.9); // Clamp within base-emitter offset window
 
-            // 3. React Call yields Ichidai and Daiichi
-            const Eta = modExp(Pi, rodChannel, MotzkinPrime);
-            const Kappa = modExp(Pi, coneChannel, MotzkinPrime);
+                // Update Voltmeter
+                document.getElementById("meter-volts").textContent = `${Vout.toFixed(2)} V`;
+                const rot = -60 + (Vout / 9.0) * 120; // needle rotation -60deg to +60deg
+                document.getElementById("meter-needle").style.transform = `rotate(${rot}deg)`;
 
-            // 4. Calculate output voltage equivalence (Vout)
-            // Normalize Eta output to float range [0.0, 1.0] and map to 0V-9V
-            const normEta = Number(Eta % 1000000n) / 1000000;
-            const Vout = 9.0 * (0.1 + normEta * 0.9); // Clamp within base-emitter offset window
+                // Log
+                const container = document.getElementById("reaction-log");
+                const entry = document.createElement("div");
+                entry.className = "log-line";
+                entry.innerHTML = `
+                    <span class="log-meta">[${new Date().toLocaleTimeString()}] React(Pi: ${Pi})</span>
+                    <span>├─ Ichidai (Omicron): ${Eta.toString().substring(0, 12)}...</span>
+                    <span>├─ Daiichi (Omega): ${Kappa.toString().substring(0, 12)}...</span>
+                    <span>└─ Transduced Out: ${Vout.toFixed(4)} V</span>
+                `;
+                container.appendChild(entry);
+                container.scrollTop = container.scrollHeight;
 
-            // Update Voltmeter
-            document.getElementById("meter-volts").textContent = `${Vout.toFixed(2)} V`;
-            const rot = -60 + (Vout / 9.0) * 120; // needle rotation -60deg to +60deg
-            document.getElementById("meter-needle").style.transform = `rotate(${rot}deg)`;
-
-            // Log
-            logReaction(Pi, Eta, Kappa, Vout);
-
-            return { Eta, Kappa, Vout };
-        }
-
-        function logReaction(Pi, Eta, Kappa, Vout) {
-            const container = document.getElementById("reaction-log");
-            const entry = document.createElement("div");
-            entry.className = "log-line";
-            entry.innerHTML = `
-                <span class="log-meta">[${new Date().toLocaleTimeString()}] React(Pi: ${Pi})</span>
-                <span>├─ Ichidai (Eta): ${Eta.toString().substring(0, 12)}...</span>
-                <span>├─ Daiichi (Kappa): ${Kappa.toString().substring(0, 12)}...</span>
-                <span>└─ Transduced Out: ${Vout.toFixed(4)} V</span>
-            `;
-            container.appendChild(entry);
-            container.scrollTop = container.scrollHeight;
+                return { Eta, Kappa, Vout };
+            } catch(e) {
+                logPipeline(`Reaction Failure: ${e.message}`, true);
+                return null;
+            }
         }
 
         // Trigger Audio Tone and Transducer mapping
@@ -736,6 +1072,7 @@
 
             // Execute the YI Transducer calculation
             const results = runYITransducer(freq);
+            if (!results) return;
 
             // Calculate dynamic sound note pitch modulation derived from Ichidai (Eta) and/or Daiichi (Kappa)
             const valEta = Number(results.Eta % 1000n) / 1000.0;
