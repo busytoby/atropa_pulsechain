@@ -1212,6 +1212,13 @@
                     <input type="range" id="slider-ec" class="slider-input" min="0" max="4" step="1" value="2">
                 </div>
 
+                <div class="toggle-container" id="hex-5555-toggle" style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 0, 160, 0.3); padding: 8px 12px; border-radius: 6px; background: rgba(255, 0, 160, 0.05); cursor: pointer; transition: all 0.3s ease;">
+                    <span style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ff00a0; text-shadow: 0 0 5px rgba(255,0,160,0.5);">🔒 5555 HEX Stake Lock</span>
+                    <div class="toggle-switch" style="width: 32px; height: 18px; background: #332244; border-radius: 9px; position: relative; transition: background 0.3s ease;">
+                        <div class="toggle-knob" style="width: 14px; height: 14px; background: #888; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.3s ease, background 0.3s ease;"></div>
+                    </div>
+                </div>
+
                 <div style="border-top: 1px solid rgba(255,170,0,0.15); margin-top: 15px; padding-top: 15px; display: flex; flex-direction: column; gap: 10px;">
                     <h4 style="color: var(--primary); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;">DIFFUSION WORKER OVERRIDES</h4>
                     
@@ -3493,6 +3500,7 @@
         // Dragon DNA Editor Canvas Visualizations
         let canvasAnimFrame = null;
         let selectedFrame = 50;
+        let activeHexLock = false;
 
         function initVectorCanvas() {
             // Register slider listeners to auto-update label value text and redraw vector frame
@@ -3514,6 +3522,42 @@
             document.getElementById("picker-eye").addEventListener("input", (e) => {
                 document.getElementById("label-eye-color").innerText = e.target.value;
             });
+
+            // 5555 HEX Stake Lock Toggle
+            const hexToggle = document.getElementById("hex-5555-toggle");
+            if (hexToggle) {
+                hexToggle.addEventListener("click", function() {
+                    activeHexLock = !activeHexLock;
+                    this.classList.toggle("active", activeHexLock);
+                    const knob = this.querySelector(".toggle-knob");
+                    const switchBg = this.querySelector(".toggle-switch");
+                    if (activeHexLock) {
+                        this.style.borderColor = "#ff00a0";
+                        this.style.background = "rgba(255, 0, 160, 0.15)";
+                        switchBg.style.background = "#ff00a0";
+                        knob.style.transform = "translateX(14px)";
+                        knob.style.background = "#fff";
+                        document.getElementById("slider-gx").disabled = true;
+                        document.getElementById("slider-gy").disabled = true;
+                        document.getElementById("slider-stretch").disabled = true;
+                        document.getElementById("slider-pulse").disabled = true;
+                        document.getElementById("picker-scale").value = "#ff00a0";
+                        document.getElementById("picker-eye").value = "#7e22ce";
+                        document.getElementById("label-scale-color").innerText = "#ff00a0";
+                        document.getElementById("label-eye-color").innerText = "#7e22ce";
+                    } else {
+                        this.style.borderColor = "rgba(255, 0, 160, 0.3)";
+                        this.style.background = "rgba(255, 0, 160, 0.05)";
+                        switchBg.style.background = "#332244";
+                        knob.style.transform = "translateX(0px)";
+                        knob.style.background = "#888";
+                        document.getElementById("slider-gx").disabled = false;
+                        document.getElementById("slider-gy").disabled = false;
+                        document.getElementById("slider-stretch").disabled = false;
+                        document.getElementById("slider-pulse").disabled = false;
+                    }
+                });
+            }
 
             // Launch active canvas loop
             if (canvasAnimFrame) cancelAnimationFrame(canvasAnimFrame);
@@ -3576,17 +3620,33 @@
             let time = Date.now() * 0.003;
             let breathe = Math.sin(time) * 0.05 * pulse;
             
+            let currentScaleColor = scaleColor;
+            let currentEyeColor = eyeColor;
+            let currentGx = gx;
+            let currentGy = gy;
+            let currentStretch = stretch;
+            
+            if (activeHexLock) {
+                const hexPeriod = (Date.now() % 5555) / 5555.0 * Math.PI * 2;
+                breathe = Math.sin(hexPeriod) * 0.15;
+                currentScaleColor = "#ff00a0";
+                currentEyeColor = "#7e22ce";
+                currentGx = 0.5555;
+                currentGy = -0.5555;
+                currentStretch = 1.5555;
+            }
+            
             ctx.save();
             // Translate based on offset, stretch, and breath
-            ctx.translate(w/2 + gx * 80, h/2 + (gy + breathe) * 80);
-            ctx.scale(stretch, 2.0 - stretch); // Conservation of mass stretch
+            ctx.translate(w/2 + currentGx * 80, h/2 + (currentGy + breathe) * 80);
+            ctx.scale(currentStretch, 2.0 - currentStretch); // Conservation of mass stretch
             
             // Draw stylized vector based on color matching presets
-            if (scaleColor === '#ffaa00') {
+            if (currentScaleColor === '#ffaa00') {
                 // Render Dirk the Daring (Knight) outline
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = scaleColor;
-                ctx.strokeStyle = scaleColor;
+                ctx.shadowColor = currentScaleColor;
+                ctx.strokeStyle = currentScaleColor;
                 ctx.lineWidth = 4;
                 
                 // Draw Knight helmet & plume
@@ -3609,11 +3669,11 @@
                 ctx.bezierCurveTo(-30, -80, 10, -90, 40, -70);
                 ctx.closePath();
                 ctx.fill();
-            } else if (scaleColor === '#ff00bb') {
+            } else if (currentScaleColor === '#ff00bb') {
                 // Render Princess Daphne (Crown / Face profile)
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = scaleColor;
-                ctx.strokeStyle = scaleColor;
+                ctx.shadowColor = currentScaleColor;
+                ctx.strokeStyle = currentScaleColor;
                 ctx.lineWidth = 4;
                 
                 // Profile & hair
@@ -3636,8 +3696,8 @@
             } else {
                 // Default / Singe: Draw stylized vector dragon snout/jaw
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = scaleColor;
-                ctx.strokeStyle = scaleColor;
+                ctx.shadowColor = currentScaleColor;
+                ctx.strokeStyle = currentScaleColor;
                 ctx.lineWidth = 4;
                 
                 ctx.beginPath();
@@ -3655,14 +3715,14 @@
             }
 
             // Draw glowing eyes
-            ctx.shadowColor = eyeColor;
-            ctx.fillStyle = eyeColor;
+            ctx.shadowColor = currentEyeColor;
+            ctx.fillStyle = currentEyeColor;
             for (let i = 0; i < eyeCount; i++) {
                 ctx.beginPath();
                 // Alternate positions for eyes
                 let ex = -90 + (i * 12);
                 let ey = -18 - (i * 3);
-                if (scaleColor === '#ffaa00' || scaleColor === '#ff00bb') {
+                if (currentScaleColor === '#ffaa00' || currentScaleColor === '#ff00bb') {
                     // Offset for human face templates
                     ex = -15 + (i * 15);
                     ey = -10;
