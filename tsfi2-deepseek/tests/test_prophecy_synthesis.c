@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
 #include "tsfi_prophecy.h"
 #include "tsfi_elektuur_issue25.h"
 
@@ -14,10 +16,12 @@ int main() {
     int res = tsfi_prophecy_generate_bank(db_path, 5);
     assert(res == 0);
 
-    // 2. Perform inverse lookup for target spikiness
-    float target_crest = 1.8f;
-    float target_dist = 50.0f;
-    printf("[PROPHECY] Querying bank for target (Crest: %f, Crossover: %f)...\n", target_crest, target_dist);
+    // 2. Perform inverse lookup for target spikiness using randomized target parameters
+    srand((unsigned int)time(NULL));
+    float target_crest = 1.2f + ((float)rand() / (float)RAND_MAX) * 1.3f; // Range [1.2, 2.5]
+    float target_dist = 10.0f + ((float)rand() / (float)RAND_MAX) * 70.0f; // Range [10.0, 80.0]
+    printf("[PROPHECY] Querying bank for random target (Crest: %f, Crossover: %f)...\n", target_crest, target_dist);
+
 
     TsfiBiotikaDna found_dna;
     int lookup_res = tsfi_prophecy_inverse_lookup(db_path, target_crest, target_dist, &found_dna);
