@@ -857,6 +857,7 @@
                 currentStep = 2;
                 updateStepUI(2, "Ready");
                 document.getElementById("btn-rand-inputs").disabled = false;
+                randomizeInputs();
                 logPipeline("Step 1: Seed successful. Rod/Cone tunings calibrated.");
             } catch(e) {
                 logPipeline(`Step 1 Failure: ${e.message}`, true);
@@ -1259,6 +1260,9 @@
 
         // Start scopes rendering
         drawScopes();
+
+        // Initial randomization on page load
+        randomizeInputs();
 
     </script>
 </body>
