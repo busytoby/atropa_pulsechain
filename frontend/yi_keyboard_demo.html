@@ -1721,9 +1721,18 @@
                     lfoNode.start();
                 }
 
-                const attack = adsrEnvelope.attack;
-                const decay = adsrEnvelope.decay;
-                const sustain = adsrEnvelope.sustain;
+                let attack = adsrEnvelope.attack;
+                let decay = adsrEnvelope.decay;
+                let sustain = adsrEnvelope.sustain;
+
+                // Farfisa Repeat signature envelope: fast click-attack, zero sustain, BPM-linked gate decay
+                const isRepeatActive = (arpPattern === "repeat") || (activeArpB && arpBPattern === "repeat");
+                if (isRepeatActive) {
+                    const tickDuration = 60.0 / arpBpm;
+                    attack = 0.002;
+                    decay = tickDuration * 0.45;
+                    sustain = 0.0;
+                }
 
                 if (synthMode !== "timbre") {
                     gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
