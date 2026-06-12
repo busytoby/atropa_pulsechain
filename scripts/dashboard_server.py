@@ -47,10 +47,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     pass
             
             treasury_tokens = {}
-            if os.path.exists("treasury_tokens.json"):
+            import glob
+            for fpath in glob.glob("treasury_tokens_*.json"):
                 try:
-                    with open("treasury_tokens.json", "r") as f:
-                        treasury_tokens = json.load(f)
+                    with open(fpath, "r") as f:
+                        treasury_tokens.update(json.load(f))
                 except Exception:
                     pass
             
@@ -69,13 +70,31 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             
             if address:
                 address = address.lower()
+                import glob
+                target_fpath = None
                 tokens = {}
-                if os.path.exists("treasury_tokens.json"):
+                
+                # Search all files to find which file has the token
+                for fpath in glob.glob("treasury_tokens_*.json"):
                     try:
-                        with open("treasury_tokens.json", "r") as f:
-                            tokens = json.load(f)
+                        with open(fpath, "r") as f:
+                            data = json.load(f)
+                            if address in data:
+                                target_fpath = fpath
+                                tokens = data
+                                break
                     except Exception:
                         pass
+                
+                if not target_fpath:
+                    # Default to unknown_minter if not found anywhere
+                    target_fpath = "treasury_tokens_unknown_minter.json"
+                    if os.path.exists(target_fpath):
+                        try:
+                            with open(target_fpath, "r") as f:
+                                tokens = json.load(f)
+                        except Exception:
+                            pass
                 
                 if address not in tokens:
                     tokens[address] = {
@@ -83,13 +102,14 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         "symbol": "UNKNOWN",
                         "name": "Unknown Token",
                         "owner": None,
+                        "minter_name": "Unknown Minter",
                         "ignored": ignored_val
                     }
                 else:
                     tokens[address]["ignored"] = ignored_val
                 
                 try:
-                    with open("treasury_tokens.json", "w") as f:
+                    with open(target_fpath, "w") as f:
                         json.dump(tokens, f, indent=4)
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
@@ -450,6 +470,40 @@ HTML_CONTENT = """<!DOCTYPE html>
             background: rgba(16, 185, 129, 0.25);
             box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
         }
+        .tabs-header {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.4rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tabs-header::-webkit-scrollbar {
+            display: none;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.4rem 0.8rem;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .tab-btn.active {
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.08);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -563,27 +617,21 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div style="margin-bottom: 0.8rem; font-size: 0.85rem; color: var(--text-muted)">
                 Active tracking of standard tokens minted by minters. Ignored tokens are hidden from the price catalog.
             </div>
-            <div class="list-container" style="max-height: 300px">
-                <table class="table" id="treasury-registry-table">
-                    <thead>
-                        <tr>
-                            <th>Token</th>
-                            <th>Owner Address</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="3" style="text-align: center; color: var(--text-muted)">No treasury tokens identified yet.</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="tabs-header" id="treasury-tabs-header"></div>
+            <div class="list-container" id="treasury-registry-container" style="max-height: 420px; padding-right: 0.3rem;">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem">No treasury tokens identified yet.</div>
             </div>
         </div>
     </div>
 
     <script>
         let cachedData = { prices: {}, unresolved: [], resolved: [] };
+        let activeMinterTab = null;
+
+        function selectMinterTab(minterName) {
+            activeMinterTab = minterName;
+            updateDashboard();
+        }
 
         async function fetchData() {
             try {
@@ -657,54 +705,120 @@ HTML_CONTENT = """<!DOCTYPE html>
                 }).join('');
             }
 
-            // Update Treasury Token Registry Table
-            const treasuryBody = document.querySelector('#treasury-registry-table tbody');
+            // Update Treasury Token Registry Card (grouped by minter tabs)
+            const tabsHeader = document.getElementById('treasury-tabs-header');
+            const registryContainer = document.getElementById('treasury-registry-container');
             const treasuryEntries = Object.entries(cachedData.treasury_tokens || {});
             
             // Update treasury count badge
             document.getElementById('treasury-tokens-count').innerText = `${treasuryEntries.length} Minted`;
 
             if (treasuryEntries.length === 0) {
-                treasuryBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted)">No treasury tokens identified yet.</td></tr>';
+                tabsHeader.innerHTML = '';
+                registryContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem">No treasury tokens identified yet.</div>';
             } else {
-                treasuryBody.innerHTML = treasuryEntries.map(([addr, token]) => {
-                    const isIgnored = token.ignored === true;
-                    const name = token.name || 'Unknown';
-                    const symbol = token.symbol || 'UNKNOWN';
-                    
-                    // Display gold crown next to tracked treasury tokens, cross out ignored ones
-                    const displaySymbol = isIgnored ? `<del style="color: var(--text-muted)">${symbol}</del>` : `👑 <span class="token-symbol-glow" style="color: #fbbf24">${symbol}</span>`;
-                    const displayName = isIgnored ? `<del style="color: var(--text-muted)">${name}</del>` : name;
-                    
-                    const buttonText = isIgnored ? "Track" : "Ignore";
-                    const buttonClass = isIgnored ? "btn-track" : "btn-ignore";
-                    const nextIgnored = !isIgnored;
-
-                    // Parse parent and minter details
+                // Group by minter name
+                const grouped = {};
+                
+                // Pre-define preferred minters order to ensure consistent layout
+                const preferredMinters = [
+                    "PKIMinter",
+                    "TreasuryMinter",
+                    "FederalMinter",
+                    "BureauMinter",
+                    "IndexMinter",
+                    "PersonalMinter",
+                    "MRPKMinter",
+                    "Unknown Minter"
+                ];
+                
+                preferredMinters.forEach(m => grouped[m] = []);
+                
+                treasuryEntries.forEach(([addr, token]) => {
                     const minterName = token.minter_name || 'Unknown Minter';
-                    const minterAddr = token.minter_address || token.owner || '';
-                    const minterDisplay = minterAddr ? `<a class="address-link" style="font-size:0.75rem" target="_blank" href="https://otter.pulsechain.com/address/${minterAddr}" title="${minterAddr}">${minterName}</a>` : minterName;
-
-                    const parentSymbol = token.parent_symbol || 'None';
-                    const parentAddr = token.parent_address || '';
-                    const parentDisplay = parentAddr ? `<a class="address-link" style="font-size:0.75rem" target="_blank" href="https://otter.pulsechain.com/address/${parentAddr}" title="${parentAddr}">${parentSymbol}</a>` : parentSymbol;
-                    
-                    return `
-                        <tr>
-                            <td>
-                                <div>${displaySymbol}</div>
-                                <div style="font-size:0.75rem; color:var(--text-muted)">${displayName}</div>
-                                <div style="font-size:0.7rem; color:var(--text-muted); margin-top: 0.2rem">
-                                    <span style="color: #8b5cf6">Minter:</span> ${minterDisplay} | <span style="color: #34d399">Parent:</span> ${parentDisplay}
-                                </div>
-                            </td>
-                            <td><a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${addr}">${formatAddress(addr)}</a></td>
-                            <td>
-                                <button class="btn ${buttonClass}" onclick="toggleIgnoreToken('${addr}', ${nextIgnored})">${buttonText}</button>
-                            </td>
-                        </tr>
-                    `;
+                    if (!grouped[minterName]) {
+                        grouped[minterName] = [];
+                    }
+                    grouped[minterName].push([addr, token]);
+                });
+                
+                // Find all minters that actually have tokens
+                const activeMinters = preferredMinters.filter(m => grouped[m] && grouped[m].length > 0);
+                
+                // Set default active tab if none selected or if selected tab has no tokens
+                if (!activeMinterTab || !activeMinters.includes(activeMinterTab)) {
+                    activeMinterTab = activeMinters[0] || null;
+                }
+                
+                // Render tab buttons
+                tabsHeader.innerHTML = activeMinters.map(minterName => {
+                    const count = grouped[minterName].length;
+                    const isActive = minterName === activeMinterTab;
+                    return `<button class="tab-btn ${isActive ? 'active' : ''}" onclick="selectMinterTab('${minterName}')">${minterName} (${count})</button>`;
                 }).join('');
+                
+                if (activeMinterTab && grouped[activeMinterTab]) {
+                    const tokens = grouped[activeMinterTab];
+                    
+                    // Sort tokens within group by symbol
+                    tokens.sort((a, b) => {
+                        const symA = (a[1].symbol || '').toLowerCase();
+                        const symB = (b[1].symbol || '').toLowerCase();
+                        return symA.localeCompare(symB);
+                    });
+                    
+                    const rowsHtml = tokens.map(([addr, token]) => {
+                        const isIgnored = token.ignored === true;
+                        const name = token.name || 'Unknown';
+                        const symbol = token.symbol || 'UNKNOWN';
+                        
+                        const displaySymbol = isIgnored ? `<del style="color: var(--text-muted)">${symbol}</del>` : `👑 <span class="token-symbol-glow" style="color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4)">${symbol}</span>`;
+                        const displayName = isIgnored ? `<del style="color: var(--text-muted)">${name}</del>` : name;
+                        
+                        const buttonText = isIgnored ? "Track" : "Ignore";
+                        const buttonClass = isIgnored ? "btn-track" : "btn-ignore";
+                        const nextIgnored = !isIgnored;
+
+                        const parentSymbol = token.parent_symbol || 'None';
+                        const parentAddr = token.parent_address || '';
+                        const parentDisplay = parentAddr ? `<a class="address-link" style="font-size:0.75rem" target="_blank" href="https://otter.pulsechain.com/address/${parentAddr}" title="${parentAddr}">${parentSymbol}</a>` : parentSymbol;
+                        
+                        return `
+                            <tr>
+                                <td>
+                                    <div>${displaySymbol}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted)">${displayName}</div>
+                                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top: 0.1rem">
+                                        <span style="color: #34d399">Parent:</span> ${parentDisplay}
+                                    </div>
+                                </td>
+                                <td><a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${addr}">${formatAddress(addr)}</a></td>
+                                <td>
+                                    <button class="btn ${buttonClass}" onclick="toggleIgnoreToken('${addr}', ${nextIgnored})">${buttonText}</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                    
+                    registryContainer.innerHTML = `
+                        <div class="minter-group" style="margin-bottom: 0;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50%">Token</th>
+                                        <th style="width: 30%">Address</th>
+                                        <th style="width: 20%">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    registryContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem">No tokens found.</div>';
+                }
             }
         }
 

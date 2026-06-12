@@ -1,0 +1,123 @@
+{
+    "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5": {
+        "address": "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5",
+        "symbol": "BUREAU \u327e",
+        "name": "Dysnomian Credit Bureau",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f",
+        "parent_symbol": "TLRz",
+        "ignored": false
+    },
+    "0x069f475eff71a0c8268e0d094d47a560e866a587": {
+        "address": "0x069f475eff71a0c8268e0d094d47a560e866a587",
+        "symbol": "TREASURY SHARE",
+        "name": "Treasury Share \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x463413c579d29c26d59a65312657dfce30d545a1",
+        "parent_symbol": "TREASURY BILL \u327e"
+    },
+    "0x5e27247fcc38100fd5c6d59d0ab433924f023153": {
+        "address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
+        "symbol": "D\u00d8WN",
+        "name": "Down Jones",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0xc23dbe3a7cefcb17041b44593a9d3927fc45fb5c",
+        "parent_symbol": "BC\u00d8RN"
+    },
+    "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00": {
+        "address": "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00",
+        "symbol": "NQ55",
+        "name": "NasQrack55",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
+        "parent_symbol": "D\u00d8WN"
+    },
+    "0x13f4d925287aa5e06522a9f4be6ca203af8ce443": {
+        "address": "0x13f4d925287aa5e06522a9f4be6ca203af8ce443",
+        "symbol": "SP369",
+        "name": "Smelly&Poor369",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
+        "parent_symbol": "ENIGMA"
+    },
+    "0x3ec6db226563036fdcff375604627c14c820a1fa": {
+        "address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
+        "symbol": "ENIGMA",
+        "name": "ENIGMA",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x2dcf43e943d73d43735704230aca51e023031506",
+        "parent_symbol": "EQ"
+    },
+    "0xd9f3f5674523eaec7a011322d10135021ba699ab": {
+        "address": "0xd9f3f5674523eaec7a011322d10135021ba699ab",
+        "symbol": "CYCLE",
+        "name": "Cycle",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0xe320af6d4abedfcb1f96f156a0eb2a9b4d36e47d",
+        "parent_symbol": "SSARA"
+    },
+    "0x4dfb8e41fbc7716f92945ce666606176f8f7dc4a": {
+        "address": "0x4dfb8e41fbc7716f92945ce666606176f8f7dc4a",
+        "symbol": "\u00d8NE",
+        "name": "\u00d8NE DAI",
+        "owner": "0x31a035a588fe589b2b50f66807ca7138f0558b38",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "parent_symbol": "DAI"
+    },
+    "0x4becd9ddd5e65b3c14c709fac4b004ab45d918d4": {
+        "address": "0x4becd9ddd5e65b3c14c709fac4b004ab45d918d4",
+        "symbol": "MXDAI",
+        "name": "Matrix Dai",
+        "owner": "0x3ad6c170e7ec137d99c128c1076e861c748beb4b",
+        "ignored": false,
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "parent_symbol": "DAI"
+    },
+    "0x35c282ad04365e1de2d512ba1ad833a3bf5daaf6": {
+        "address": "0x35c282ad04365e1de2d512ba1ad833a3bf5daaf6",
+        "symbol": "\ud83d\udcb5",
+        "name": "\ud83d\udcb5",
+        "owner": "0xb900a201a508ac479192be0ce3ec428beb256343",
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x46eff99491624bea3fcffbc3991cc45a805bfe3f",
+        "parent_symbol": "\ud83d\udcb2",
+        "ignored": false
+    },
+    "0x4d6ae4b2753ea61579f4fac3c48f8bb741476f65": {
+        "address": "0x4d6ae4b2753ea61579f4fac3c48f8bb741476f65",
+        "symbol": "\ud83d\udcb5",
+        "name": "\ud83d\udcb5",
+        "owner": "0xb900a201a508ac479192be0ce3ec428beb256343",
+        "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
+        "minter_name": "IndexMinter",
+        "parent_address": "0x46eff99491624bea3fcffbc3991cc45a805bfe3f",
+        "parent_symbol": "\ud83d\udcb2",
+        "ignored": false
+    }
+}

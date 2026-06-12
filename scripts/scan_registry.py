@@ -67,13 +67,12 @@ TT_ABI_DUMMY = [
 
 # Mapping of known minter contract addresses to friendly names
 MINTER_NAMES = {
-    "0x9f4e1471e614747a9a56a33eb0338671eba1de2b": "PKMinter",
+    "0x9f4e1471e614747a9a56a33eb0338671eba1de2b": "PKIMinter",
     "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b": "TreasuryMinter",
     "0xc15c5f699daf5e1135732139f05d2c05b3ef4354": "FederalMinter",
     "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5": "BureauMinter",
     "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc": "IndexMinter",
     "0x394c3d5990cefc7be36b82fdb07a7251ace61cc7": "PersonalMinter",
-    "0xb6be11f0a788014c1f68c92f8d6ccc1abf78f2ab": "ChoMinter",
     "0x3827e9035d94ad636d006288683ade2294f210a5": "MRPKMinter"
 }
 
@@ -119,6 +118,7 @@ def main():
                         print(f"Error reading solidity file {file_path}: {e}")
     
     # Set addresses to check strictly to Published log events to achieve 100% precision and instant speed
+    addresses_to_check = []
     published_path = "published_addresses.json"
     if os.path.exists(published_path):
         try:
@@ -128,8 +128,16 @@ def main():
         except Exception as e:
             print(f"Error reading published_addresses.json: {e}")
             addresses_to_check = []
-    else:
-        addresses_to_check = []
+
+    # Load token to minter mapping
+    token_to_minter = {}
+    if os.path.exists("token_to_minter.json"):
+        try:
+            with open("token_to_minter.json", "r") as f:
+                token_to_minter = {k.lower(): v.lower() for k, v in json.load(f).items()}
+            print(f"Loaded {len(token_to_minter)} mappings from token_to_minter.json.")
+        except Exception as e:
+            print(f"Error reading token_to_minter.json: {e}")
 
     print(f"Sample addresses_to_check: {addresses_to_check[:15]}")
 
@@ -167,11 +175,14 @@ def main():
     print(f"Prioritized search: {len(active_priority)} high-priority (active swaps) addresses first, then {len(inactive_priority)} others.")
 
     # Define optimized list of first-round lookup minter address contracts:
-    # 1. PKMINTER (0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B) - resolves GetTreasuryTokenOwner recursively
-    # 2. V1MINTER (0xC7bDAc3e6Bb5eC37041A11328723e9927cCf430B) - mapping of TreasuryTokens directly
     opt_minters = [
         PKMINTER_ADDRESS.lower(),
-        "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b" # V1Minter
+        "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b", # V1Minter
+        "0xc15c5f699daf5e1135732139f05d2c05b3ef4354", # FederalMinter
+        "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5", # BureauMinter
+        "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc", # IndexMinter
+        "0x394c3d5990cefc7be36b82fdb07a7251ace61cc7", # PersonalMinter
+        "0x3827e9035d94ad636d006288683ade2294f210a5"  # MRPKMinter
     ]
 
     for addr in sorted_addresses:
@@ -358,7 +369,16 @@ def main():
 
         print(f"Executing secondary Multicall to fetch V2Minter, PersonalMinter, IndexMinter, and Parent for {len(treasury_addrs)} treasury tokens...")
         try:
-            second_results = multicall_contract.functions.aggregate3(second_calls).call()
+            second_results = []
+            chunk_size = 500
+            for i in range(0, len(second_calls), chunk_size):
+                chunk = second_calls[i:i+chunk_size]
+                try:
+                    res = multicall_contract.functions.aggregate3(chunk).call()
+                    second_results.extend(res)
+                except Exception as e:
+                    print(f"Secondary batch failed: {e}")
+                    second_results.extend([(False, b"")] * len(chunk))
             for idx, (success, return_data) in enumerate(second_results):
                 meta = second_metadata[idx]
                 addr = meta["address"]
@@ -438,13 +458,22 @@ def main():
         except Exception as e:
             print(f"Secondary Multicall failed: {e}")
 
-    # Load existing registry
-    registry_file = "treasury_tokens.json"
+    # Load existing registry (merge split files + legacy)
     registry = {}
-    if os.path.exists(registry_file):
+    import glob
+    for fpath in glob.glob("treasury_tokens_*.json"):
         try:
-            with open(registry_file, "r") as f:
-                registry = json.load(f)
+            with open(fpath, "r") as f:
+                registry.update(json.load(f))
+        except Exception as e:
+            print(f"Error reading {fpath}: {e}")
+            
+    legacy_file = "treasury_tokens.json"
+    if os.path.exists(legacy_file):
+        try:
+            with open(legacy_file, "r") as f:
+                registry.update(json.load(f))
+            print("Imported legacy registry file.")
         except Exception:
             pass
 
@@ -453,11 +482,18 @@ def main():
     for addr, info in token_data.items():
         addr_lower = addr.lower()
         if info["is_treasury"]:
-            # Fallbacks for minter/parent names if not queryable but resolved by owner
-            minter_name = info["minter_name"]
+            # Query mapped minter from Otterscan index first, otherwise fallback to on-chain V2Minter/owner
+            minter_addr = token_to_minter.get(addr_lower) or info["minter_address"]
+            minter_name = MINTER_NAMES.get(minter_addr) if minter_addr else None
+            
+            if not minter_name:
+                minter_name = info["minter_name"]
             if not minter_name and info["owner"]:
-                # The owner returned is the address that minted it, which could match a minter address
                 minter_name = MINTER_NAMES.get(info["owner"], "Unknown Minter")
+                if minter_name != "Unknown Minter" and not minter_addr:
+                    minter_addr = info["owner"]
+
+            minter_name = minter_name or "Unknown Minter"
 
             if addr_lower not in registry:
                 registry[addr_lower] = {
@@ -465,18 +501,18 @@ def main():
                     "symbol": info["symbol"],
                     "name": info["name"],
                     "owner": info["owner"],
-                    "minter_address": info["minter_address"],
+                    "minter_address": minter_addr,
                     "minter_name": minter_name,
                     "parent_address": info["parent_address"],
                     "parent_symbol": info["parent_symbol"],
                     "ignored": False
                 }
                 added += 1
-                print(f"👑 Found Treasury Token: {info['symbol']} ({info['name']}) at {addr_lower}")
+                print(f"👑 Found Treasury Token: {info['symbol']} ({info['name']}) at {addr_lower} (Minter: {minter_name})")
             else:
                 registry[addr_lower]["owner"] = info["owner"] or registry[addr_lower].get("owner")
-                registry[addr_lower]["minter_address"] = info["minter_address"] or registry[addr_lower].get("minter_address")
-                registry[addr_lower]["minter_name"] = minter_name or registry[addr_lower].get("minter_name")
+                registry[addr_lower]["minter_address"] = minter_addr or registry[addr_lower].get("minter_address")
+                registry[addr_lower]["minter_name"] = (minter_name and minter_name != "Unknown Minter" and minter_name) or registry[addr_lower].get("minter_name") or "Unknown Minter"
                 registry[addr_lower]["parent_address"] = info["parent_address"] or registry[addr_lower].get("parent_address")
                 registry[addr_lower]["parent_symbol"] = info["parent_symbol"] or registry[addr_lower].get("parent_symbol")
                 if (registry[addr_lower]["symbol"] == "UNKNOWN" or registry[addr_lower]["symbol"] == "Cached Treasury Token") and info["symbol"] != "UNKNOWN":
@@ -498,7 +534,7 @@ def main():
             "name": "Proof Of Finvestment",
             "owner": None,
             "minter_address": None,
-            "minter_name": None,
+            "minter_name": "Unknown Minter",
             "parent_address": None,
             "parent_symbol": None,
             "ignored": False
@@ -518,11 +554,31 @@ def main():
             registry[k.lower()] = val
             del registry[k]
 
-    # Save registry
-    with open(registry_file, "w") as f:
-        json.dump(registry, f, indent=4)
+    # Save registry split up per minter
+    split_registries = {}
+    for addr, val in registry.items():
+        m_name = val.get("minter_name") or "Unknown Minter"
+        # Sanitize filename (lowercase and replace spaces with underscore)
+        safe_name = m_name.lower().replace(" ", "_")
+        fpath = f"treasury_tokens_{safe_name}.json"
+        if fpath not in split_registries:
+            split_registries[fpath] = {}
+        split_registries[fpath][addr] = val
 
-    print(f"Scanning complete. Reduced RPC queries to 1 Multicall request. Total treasury tokens in registry: {len(registry)}")
+    for fpath, data in split_registries.items():
+        with open(fpath, "w") as f:
+            json.dump(data, f, indent=4)
+        print(f"Saved {len(data)} tokens to {fpath}")
+
+    # Remove legacy unified registry file if it exists
+    if os.path.exists(legacy_file):
+        try:
+            os.remove(legacy_file)
+            print(f"Removed legacy unified registry {legacy_file}")
+        except Exception as e:
+            print(f"Error removing legacy file: {e}")
+
+    print(f"Scanning complete. Reduced RPC queries to 1 Multicall request. Total treasury tokens in split registries: {len(registry)}")
 
 if __name__ == "__main__":
     main()
