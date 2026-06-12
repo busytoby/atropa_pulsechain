@@ -679,12 +679,24 @@ HTML_CONTENT = """<!DOCTYPE html>
                     const buttonText = isIgnored ? "Track" : "Ignore";
                     const buttonClass = isIgnored ? "btn-track" : "btn-ignore";
                     const nextIgnored = !isIgnored;
+
+                    // Parse parent and minter details
+                    const minterName = token.minter_name || 'Unknown Minter';
+                    const minterAddr = token.minter_address || token.owner || '';
+                    const minterDisplay = minterAddr ? `<a class="address-link" style="font-size:0.75rem" target="_blank" href="https://otter.pulsechain.com/address/${minterAddr}" title="${minterAddr}">${minterName}</a>` : minterName;
+
+                    const parentSymbol = token.parent_symbol || 'None';
+                    const parentAddr = token.parent_address || '';
+                    const parentDisplay = parentAddr ? `<a class="address-link" style="font-size:0.75rem" target="_blank" href="https://otter.pulsechain.com/address/${parentAddr}" title="${parentAddr}">${parentSymbol}</a>` : parentSymbol;
                     
                     return `
                         <tr>
                             <td>
                                 <div>${displaySymbol}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted)">${displayName}</div>
+                                <div style="font-size:0.7rem; color:var(--text-muted); margin-top: 0.2rem">
+                                    <span style="color: #8b5cf6">Minter:</span> ${minterDisplay} | <span style="color: #34d399">Parent:</span> ${parentDisplay}
+                                </div>
                             </td>
                             <td><a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${addr}">${formatAddress(addr)}</a></td>
                             <td>

@@ -58,6 +58,23 @@ ERC20_ABI_DUMMY = [
     {"inputs": [], "name": "symbol", "outputs": [{"name": "", "type": "string"}], "stateMutability": "view", "type": "function"}
 ]
 
+TT_ABI_DUMMY = [
+    {"inputs": [], "name": "V2Minter", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
+    {"inputs": [], "name": "Parent", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"}
+]
+
+# Mapping of known minter contract addresses to friendly names
+MINTER_NAMES = {
+    "0x9f4e1471e614747a9a56a33eb0338671eba1de2b": "PKMinter",
+    "0xc7bdac3e6bb5ec37041a11328723e9927ccf430b": "TreasuryMinter",
+    "0xc15c5f699daf5e1135732139f05d2c05b3ef4354": "FederalMinter",
+    "0x0b92ad7ed0da6c44bf71b3fcee668d1670000ff5": "BureauMinter",
+    "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc": "IndexMinter",
+    "0x394c3d5990cefc7be36b82fdb07a7251ace61cc7": "PersonalMinter",
+    "0xb6be11f0a788014c1f68c92f8d6ccc1abf78f2ab": "ChoMinter",
+    "0x3827e9035d94ad636d006288683ade2294f210a5": "MRPKMinter"
+}
+
 def main():
     print("Connecting to PulseChain...")
     w3 = Web3(Web3.HTTPProvider(RPC_URL))
@@ -66,7 +83,7 @@ def main():
         return
 
     # 1. Fetch all minters referenced from PKMinter
-    minter_addresses = [PKMINTER_ADDRESS]
+    minter_addresses = [PKMINTER_ADDRESS.lower()]
     try:
         pk_minter_contract = w3.eth.contract(address=Web3.to_checksum_address(PKMINTER_ADDRESS), abi=PKMINTER_ABI_FULL)
         for method in ["TreasuryMinter", "FederalMinter", "BureauMinter", "IndexMinter", "PersonalMinter", "Cho", "MRPK"]:
@@ -82,7 +99,7 @@ def main():
     # Remove duplicates but preserve order
     seen = set()
     minter_addresses = [x for x in minter_addresses if not (x in seen or seen.add(x))]
-    print(f"Active Minter Lookup registry addresses: {minter_addresses}")
+    print(f"Active Minter Lookup registry addresses (formatted): {[x.lower() for x in minter_addresses]}")
 
     # 2. Extract all unique addresses from addresses.sol
     address_path = "solidity/addresses.sol"
@@ -102,10 +119,12 @@ def main():
         addr for addr in unique_addresses 
         if addr not in ["0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"]
     ]
+    print(f"Sample addresses_to_check: {addresses_to_check[:15]}")
 
     # Pre-build dummy contract objects for encoding/decoding
     dummy_minter = w3.eth.contract(abi=MINTER_ABI_DUMMY)
     dummy_erc20 = w3.eth.contract(abi=ERC20_ABI_DUMMY)
+    dummy_tt = w3.eth.contract(abi=TT_ABI_DUMMY)
 
     # 3. Pack calls for Multicall3
     calls = []
@@ -124,7 +143,7 @@ def main():
                 "allowFailure": True,
                 "callData": dummy_minter.encode_abi("GetTreasuryTokenOwner", args=[addr_checksum])
             })
-            call_metadata.append({"type": "owner_lookup", "address": addr, "minter": minter_addr, "method": "GetTreasuryTokenOwner"})
+            call_metadata.append({"type": "owner_lookup", "address": addr.lower(), "minter": minter_addr.lower(), "method": "GetTreasuryTokenOwner"})
 
             # Call: TreasuryTokens mapping
             calls.append({
@@ -132,7 +151,7 @@ def main():
                 "allowFailure": True,
                 "callData": dummy_minter.encode_abi("TreasuryTokens", args=[addr_checksum])
             })
-            call_metadata.append({"type": "owner_lookup", "address": addr, "minter": minter_addr, "method": "TreasuryTokens"})
+            call_metadata.append({"type": "owner_lookup", "address": addr.lower(), "minter": minter_addr.lower(), "method": "TreasuryTokens"})
 
         # Call: ERC20 name()
         calls.append({
@@ -140,7 +159,7 @@ def main():
             "allowFailure": True,
             "callData": dummy_erc20.encode_abi("name")
         })
-        call_metadata.append({"type": "name", "address": addr})
+        call_metadata.append({"type": "name", "address": addr.lower()})
 
         # Call: ERC20 symbol()
         calls.append({
@@ -148,21 +167,37 @@ def main():
             "allowFailure": True,
             "callData": dummy_erc20.encode_abi("symbol")
         })
-        call_metadata.append({"type": "symbol", "address": addr})
+        call_metadata.append({"type": "symbol", "address": addr.lower()})
 
-    print(f"Packed {len(calls)} calls into 1 Multicall transaction.")
+    print(f"Packed {len(calls)} lookup calls into 1 Multicall transaction.")
     print("Executing Multicall on PulseChain...")
 
     multicall_contract = w3.eth.contract(address=Web3.to_checksum_address(MULTICALL3_ADDRESS), abi=MULTICALL3_ABI)
     
     try:
         results = multicall_contract.functions.aggregate3(calls).call()
+        print(f"First-round Multicall returned {len(results)} results.")
+        successes = sum(1 for success, _ in results if success)
+        print(f"First-round success rate: {successes}/{len(results)}")
     except Exception as e:
         print(f"Multicall failed: {e}")
         return
 
-    # 4. Parse results
+    # 4. Parse first-round results to identify treasury tokens
     token_data = {}
+    symbol_map = {} # To resolve parent symbols
+
+    # Fill name/symbol map first
+    for idx, (success, return_data) in enumerate(results):
+        meta = call_metadata[idx]
+        addr = meta["address"]
+        if success and return_data and meta["type"] == "symbol":
+            try:
+                decoded = abi.decode(["string"], return_data)[0]
+                symbol_map[addr] = decoded
+            except Exception:
+                pass
+
     for idx, (success, return_data) in enumerate(results):
         meta = call_metadata[idx]
         addr = meta["address"]
@@ -172,7 +207,11 @@ def main():
                 "is_treasury": False,
                 "owner": None,
                 "name": "Unknown Treasury Token",
-                "symbol": "UNKNOWN"
+                "symbol": "UNKNOWN",
+                "minter_address": None,
+                "minter_name": None,
+                "parent_address": None,
+                "parent_symbol": None
             }
 
         if not success or not return_data:
@@ -184,8 +223,9 @@ def main():
                 if decoded != "0x0000000000000000000000000000000000000000":
                     token_data[addr]["is_treasury"] = True
                     token_data[addr]["owner"] = decoded.lower()
-            except Exception:
-                pass
+                    print(f"Token {addr} owner lookup found treasury ownership: owner={decoded}")
+            except Exception as e:
+                print(f"Decode error for owner_lookup: {e}")
         elif meta["type"] == "name":
             try:
                 decoded = abi.decode(["string"], return_data)[0]
@@ -198,6 +238,84 @@ def main():
                 token_data[addr]["symbol"] = decoded
             except Exception:
                 pass
+
+    # 5. For identified treasury tokens, perform a second multicall to fetch Parent() and V2Minter()
+    registry_file = "treasury_tokens.json"
+    cached_addrs = []
+    if os.path.exists(registry_file):
+        try:
+            with open(registry_file, "r") as f:
+                cached_addrs = [k.lower() for k in json.load(f).keys()]
+        except Exception:
+            pass
+
+    treasury_addrs = sorted(list(set(
+        [addr for addr, info in token_data.items() if info["is_treasury"] or info["owner"] is not None] + 
+        cached_addrs + 
+        ["0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf"]
+    )))
+    print(f"Identified treasury tokens for secondary checks: {treasury_addrs}")
+    if treasury_addrs:
+        second_calls = []
+        second_metadata = []
+        for addr in treasury_addrs:
+            addr_checksum = Web3.to_checksum_address(addr)
+            
+            # Call: V2Minter() view
+            second_calls.append({
+                "target": addr_checksum,
+                "allowFailure": True,
+                "callData": dummy_tt.encode_abi("V2Minter")
+            })
+            second_metadata.append({"type": "minter_view", "address": addr})
+
+            # Call: Parent() view
+            second_calls.append({
+                "target": addr_checksum,
+                "allowFailure": True,
+                "callData": dummy_tt.encode_abi("Parent")
+            })
+            second_metadata.append({"type": "parent_view", "address": addr})
+            
+            # Ensure key exists in token_data if it only came from cached registry
+            if addr not in token_data:
+                token_data[addr] = {
+                    "is_treasury": True,
+                    "owner": None,
+                    "name": "Cached Treasury Token",
+                    "symbol": "UNKNOWN",
+                    "minter_address": None,
+                    "minter_name": None,
+                    "parent_address": None,
+                    "parent_symbol": None
+                }
+
+        print(f"Executing secondary Multicall to fetch V2Minter and Parent for {len(treasury_addrs)} treasury tokens...")
+        try:
+            second_results = multicall_contract.functions.aggregate3(second_calls).call()
+            for idx, (success, return_data) in enumerate(second_results):
+                meta = second_metadata[idx]
+                addr = meta["address"]
+                if not success or not return_data:
+                    continue
+                if meta["type"] == "minter_view":
+                    try:
+                        decoded = abi.decode(["address"], return_data)[0]
+                        if decoded != "0x0000000000000000000000000000000000000000":
+                            token_data[addr]["minter_address"] = decoded.lower()
+                            token_data[addr]["minter_name"] = MINTER_NAMES.get(decoded.lower(), "Unknown Minter")
+                    except Exception as e:
+                        print(f"Error decoding V2Minter for {addr}: {e}")
+                elif meta["type"] == "parent_view":
+                    try:
+                        decoded = abi.decode(["address"], return_data)[0]
+                        if decoded != "0x0000000000000000000000000000000000000000":
+                            token_data[addr]["parent_address"] = decoded.lower()
+                            token_data[addr]["parent_symbol"] = symbol_map.get(decoded.lower(), "UNKNOWN")
+                    except Exception as e:
+                        print(f"Error decoding Parent for {addr}: {e}")
+        except Exception as e:
+            print(f"Secondary Multicall failed: {e}")
 
     # Load existing registry
     registry_file = "treasury_tokens.json"
@@ -212,34 +330,72 @@ def main():
     added = 0
     # Save newly found tokens to registry
     for addr, info in token_data.items():
+        addr_lower = addr.lower()
         if info["is_treasury"]:
-            if addr not in registry:
-                registry[addr] = {
-                    "address": addr,
+            # Fallbacks for minter/parent names if not queryable but resolved by owner
+            minter_name = info["minter_name"]
+            if not minter_name and info["owner"]:
+                # The owner returned is the address that minted it, which could match a minter address
+                minter_name = MINTER_NAMES.get(info["owner"], "Unknown Minter")
+
+            if addr_lower not in registry:
+                registry[addr_lower] = {
+                    "address": addr_lower,
                     "symbol": info["symbol"],
                     "name": info["name"],
                     "owner": info["owner"],
+                    "minter_address": info["minter_address"],
+                    "minter_name": minter_name,
+                    "parent_address": info["parent_address"],
+                    "parent_symbol": info["parent_symbol"],
                     "ignored": False
                 }
                 added += 1
-                print(f"👑 Found Treasury Token: {info['symbol']} ({info['name']}) at {addr}")
+                print(f"👑 Found Treasury Token: {info['symbol']} ({info['name']}) at {addr_lower}")
             else:
-                registry[addr]["owner"] = info["owner"]
-                if registry[addr]["symbol"] == "UNKNOWN" and info["symbol"] != "UNKNOWN":
-                    registry[addr]["symbol"] = info["symbol"]
-                if registry[addr]["name"] == "Unknown Treasury Token" and info["name"] != "Unknown Treasury Token":
-                    registry[addr]["name"] = info["name"]
+                registry[addr_lower]["owner"] = info["owner"] or registry[addr_lower].get("owner")
+                registry[addr_lower]["minter_address"] = info["minter_address"] or registry[addr_lower].get("minter_address")
+                registry[addr_lower]["minter_name"] = minter_name or registry[addr_lower].get("minter_name")
+                registry[addr_lower]["parent_address"] = info["parent_address"] or registry[addr_lower].get("parent_address")
+                registry[addr_lower]["parent_symbol"] = info["parent_symbol"] or registry[addr_lower].get("parent_symbol")
+                if (registry[addr_lower]["symbol"] == "UNKNOWN" or registry[addr_lower]["symbol"] == "Cached Treasury Token") and info["symbol"] != "UNKNOWN":
+                    registry[addr_lower]["symbol"] = info["symbol"]
+                if (registry[addr_lower]["name"] == "Unknown Treasury Token" or registry[addr_lower]["name"] == "Cached Treasury Token") and info["name"] != "Unknown Treasury Token":
+                    registry[addr_lower]["name"] = info["name"]
 
     # Ensure FINVESTIBLE stays in the registry
-    finvestible_addr = "0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf"
+    finvestible_addr = "0x38407c5a0c26675e34b6dd06bf98c571cbcdb6bf"
+    
+    # Remove any uppercase variant from registry to ensure complete lowercase clean
+    if "0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf" in registry:
+        del registry["0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf"]
+        
     if finvestible_addr not in registry:
         registry[finvestible_addr] = {
             "address": finvestible_addr,
             "symbol": "FINVESTIBLE",
             "name": "Proof Of Finvestment",
             "owner": None,
+            "minter_address": None,
+            "minter_name": None,
+            "parent_address": None,
+            "parent_symbol": None,
             "ignored": False
         }
+    else:
+        # Update symbol/name if it was set to placeholder values
+        if registry[finvestible_addr]["symbol"] == "UNKNOWN" or registry[finvestible_addr]["symbol"] == "Cached Treasury Token":
+            registry[finvestible_addr]["symbol"] = "FINVESTIBLE"
+        if registry[finvestible_addr]["name"] == "Unknown Treasury Token" or registry[finvestible_addr]["name"] == "Cached Treasury Token":
+            registry[finvestible_addr]["name"] = "Proof Of Finvestment"
+
+    # Also clean up any other uppercase keys if present in registry
+    for k in list(registry.keys()):
+        if k != k.lower():
+            val = registry[k]
+            val["address"] = k.lower()
+            registry[k.lower()] = val
+            del registry[k]
 
     # Save registry
     with open(registry_file, "w") as f:

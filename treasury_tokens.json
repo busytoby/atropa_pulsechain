@@ -1,51 +1,79 @@
 {
-    "0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf": {
-        "address": "0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf",
-        "symbol": "FINVESTIBLE",
-        "name": "Proof Of Finvestment",
-        "owner": null,
-        "ignored": false
-    },
     "0x069f475eff71a0c8268e0d094d47a560e866a587": {
         "address": "0x069f475eff71a0c8268e0d094d47a560e866a587",
         "symbol": "TREASURY SHARE",
         "name": "Treasury Share \u327e",
-        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
-        "ignored": false
+        "owner": null,
+        "ignored": false,
+        "minter_address": null,
+        "minter_name": null,
+        "parent_address": "0x463413c579d29c26d59a65312657dfce30d545a1",
+        "parent_symbol": "TREASURY BILL \u327e"
     },
     "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9": {
         "address": "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9",
         "symbol": "FD\u327eC",
         "name": "Federal Deposit Insurance Contract",
-        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
-        "ignored": false
+        "owner": null,
+        "ignored": false,
+        "minter_address": "0xc15c5f699daf5e1135732139f05d2c05b3ef4354",
+        "minter_name": "FederalMinter",
+        "parent_address": "0x1d177cb9efeea49a8b97ab1c72785a3a37abc9ff",
+        "parent_symbol": "UNKNOWN"
     },
     "0x5e27247fcc38100fd5c6d59d0ab433924f023153": {
         "address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
         "symbol": "D\u00d8WN",
         "name": "Down Jones",
-        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
-        "ignored": false
+        "owner": null,
+        "ignored": false,
+        "minter_address": null,
+        "minter_name": null,
+        "parent_address": "0xc23dbe3a7cefcb17041b44593a9d3927fc45fb5c",
+        "parent_symbol": "UNKNOWN"
     },
     "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00": {
         "address": "0x53fc4d5bdd8ea8b05ba261c15c9faa6634229b00",
         "symbol": "NQ55",
         "name": "NasQrack55",
-        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
-        "ignored": false
+        "owner": null,
+        "ignored": false,
+        "minter_address": null,
+        "minter_name": null,
+        "parent_address": "0x5e27247fcc38100fd5c6d59d0ab433924f023153",
+        "parent_symbol": "UNKNOWN"
     },
     "0x13f4d925287aa5e06522a9f4be6ca203af8ce443": {
         "address": "0x13f4d925287aa5e06522a9f4be6ca203af8ce443",
         "symbol": "SP369",
         "name": "Smelly&Poor369",
-        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
-        "ignored": false
+        "owner": null,
+        "ignored": false,
+        "minter_address": null,
+        "minter_name": null,
+        "parent_address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
+        "parent_symbol": "UNKNOWN"
     },
     "0x3ec6db226563036fdcff375604627c14c820a1fa": {
         "address": "0x3ec6db226563036fdcff375604627c14c820a1fa",
         "symbol": "ENIGMA",
         "name": "ENIGMA",
-        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "owner": null,
+        "ignored": false,
+        "minter_address": null,
+        "minter_name": null,
+        "parent_address": "0x2dcf43e943d73d43735704230aca51e023031506",
+        "parent_symbol": "UNKNOWN"
+    },
+    "0x38407c5a0c26675e34b6dd06bf98c571cbcdb6bf": {
+        "address": "0x38407c5a0c26675e34b6dd06bf98c571cbcdb6bf",
+        "symbol": "FINVESTIBLE",
+        "name": "Proof Of Finvestment",
+        "owner": null,
+        "minter_address": null,
+        "minter_name": null,
+        "parent_address": "0x1c81b4358246d3088ab4361ab755f3d8d4dd62d2",
+        "parent_symbol": "UNKNOWN",
         "ignored": false
     }
 }

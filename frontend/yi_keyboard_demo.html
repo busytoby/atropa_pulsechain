@@ -1912,6 +1912,32 @@
         let currentArpBIndex = 0;
         const beatChannel = new BroadcastChannel('pulse_beat');
 
+        // BroadcastChannel to receive LPC reflection coefficients from TTS Dashboard
+        let sharedCoefficients = new Float32Array(10);
+        const lpcCoeffChannel = new BroadcastChannel('lpc_coefficients');
+        lpcCoeffChannel.onmessage = (event) => {
+            if (event.data && event.data.coefficients) {
+                for (let idx = 0; idx < Math.min(10, event.data.coefficients.length); idx++) {
+                    sharedCoefficients[idx] = event.data.coefficients[idx];
+                }
+                if (typeof event.data.isSickMode !== 'undefined') {
+                    const toggle = document.getElementById("sick-toggle");
+                    if (toggle) {
+                        if (event.data.isSickMode && !toggle.classList.contains("active")) {
+                            toggle.classList.add("active");
+                            activeSickMode = true;
+                            logPipeline("🤢 Sick Beat activated via Broadcast Channel!");
+                        } else if (!event.data.isSickMode && toggle.classList.contains("active")) {
+                            toggle.classList.remove("active");
+                            activeSickMode = false;
+                            logPipeline("🤢 Sick Beat deactivated via Broadcast Channel.");
+                        }
+                    }
+                }
+                logPipeline("📡 Shared coefficients sync: [" + Array.from(sharedCoefficients).map(c => c.toFixed(2)).join(",") + "]");
+            }
+        };
+
         // Web Audio Synthesizer Nodes
         let audioCtx = null;
         let oscNode = null;
@@ -2318,6 +2344,10 @@
             const valKappa = Number(results.Kappa % 1000n) / 1000.0;
             const blendVal = (pitchBlend * valEta) + ((1.0 - pitchBlend) * valKappa);
 
+            // Coefficients above the YI (K1..K5) and below the YI (K6..K10)
+            const coeffAboveYI = Array.from(sharedCoefficients.slice(0, 5)).reduce((a, b) => a + Math.abs(b), 0.0);
+            const coeffBelowYI = Array.from(sharedCoefficients.slice(5, 10)).reduce((a, b) => a + Math.abs(b), 0.0);
+
             if (audioEnabled) {
                 initAudio();
                 
@@ -2334,7 +2364,7 @@
                 let modulatedFreq = freq;
 
                 if (synthMode === "pitch") {
-                    modulatedFreq = freq * (0.6 + blendVal * 0.8);
+                    modulatedFreq = freq * (0.6 + blendVal * 0.8) * (1.0 + coeffAboveYI * 0.15 - coeffBelowYI * 0.1);
                     activeKeyFreq = modulatedFreq;
 
                     oscNode = audioCtx.createOscillator();
@@ -2416,8 +2446,20 @@
                 if (activeFeedback) {
                     cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
                 }
+                
+                // Modulate cutoff frequency by coefficients above and below YI
+                cutoffFreq = cutoffFreq * (1.0 + coeffAboveYI * 0.4 - coeffBelowYI * 0.3);
+                if (cutoffFreq < 50) cutoffFreq = 50;
+                if (cutoffFreq > 15000) cutoffFreq = 15000;
+
                 filterNode.type = 'lowpass';
-                filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
+                let filterQ = 3.0;
+                if (activeSickMode) {
+                    filterQ = 3.0 + (coeffAboveYI + coeffBelowYI) * 12.0; // Instability resonance
+                } else {
+                    filterQ = 3.0 + coeffAboveYI * 2.0;
+                }
+                filterNode.Q.setValueAtTime(filterQ, audioCtx.currentTime);
                 filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
 
                 if (shio.IsGenerated) {
@@ -2553,6 +2595,10 @@
                 const valKappa = Number(results.Kappa % 1000n) / 1000.0;
                 const blendVal = (pitchBlend * valEta) + ((1.0 - pitchBlend) * valKappa);
 
+                // Coefficients above the YI (K1..K5) and below the YI (K6..K10)
+                const coeffAboveYI = Array.from(sharedCoefficients.slice(0, 5)).reduce((a, b) => a + Math.abs(b), 0.0);
+                const coeffBelowYI = Array.from(sharedCoefficients.slice(5, 10)).reduce((a, b) => a + Math.abs(b), 0.0);
+
                 if (audioEnabled) {
                     initAudio();
                     
@@ -2567,7 +2613,7 @@
 
                     // --- Synthesis Modes Mapping ---
                     if (synthMode === "pitch") {
-                        modulatedFreq = freq * (0.6 + blendVal * 0.8);
+                        modulatedFreq = freq * (0.6 + blendVal * 0.8) * (1.0 + coeffAboveYI * 0.15 - coeffBelowYI * 0.1);
                         activeKeyFreq = modulatedFreq;
 
                         oscNode = audioCtx.createOscillator();
@@ -2649,8 +2695,20 @@
                     if (activeFeedback) {
                         cutoffFreq = 200 + (results.Vout / 9.0) * 2500;
                     }
+
+                    // Modulate cutoff frequency by coefficients above and below YI
+                    cutoffFreq = cutoffFreq * (1.0 + coeffAboveYI * 0.4 - coeffBelowYI * 0.3);
+                    if (cutoffFreq < 50) cutoffFreq = 50;
+                    if (cutoffFreq > 15000) cutoffFreq = 15000;
+
                     filterNode.type = 'lowpass';
-                    filterNode.Q.setValueAtTime(3.0, audioCtx.currentTime);
+                    let filterQ = 3.0;
+                    if (activeSickMode) {
+                        filterQ = 3.0 + (coeffAboveYI + coeffBelowYI) * 12.0; // Instability resonance
+                    } else {
+                        filterQ = 3.0 + coeffAboveYI * 2.0;
+                    }
+                    filterNode.Q.setValueAtTime(filterQ, audioCtx.currentTime);
                     filterNode.frequency.setValueAtTime(cutoffFreq, audioCtx.currentTime);
 
                     if (shio.IsGenerated) {
