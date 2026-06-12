@@ -2,11 +2,12 @@
 import re
 import os
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from eth_abi import abi
 from web3 import Web3
 
 RPC_URL = "https://rpc.pulsechain.com"
 PKMINTER_ADDRESS = "0x9f4E1471e614747A9a56A33eb0338671ebA1dE2B"
+MULTICALL3_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11"
 
 PKMINTER_ABI_FULL = [
     {"inputs": [], "name": "TreasuryMinter", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
@@ -18,62 +19,44 @@ PKMINTER_ABI_FULL = [
     {"inputs": [], "name": "MRPK", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"}
 ]
 
-MINTER_ABI = [
+MULTICALL3_ABI = [
     {
-        "inputs": [{"name": "ctx", "type": "address"}],
-        "name": "GetTreasuryTokenOwner",
-        "outputs": [{"name": "", "type": "address"}],
-        "stateMutability": "view",
+        "inputs": [
+            {
+                "components": [
+                    {"name": "target", "type": "address"},
+                    {"name": "allowFailure", "type": "bool"},
+                    {"name": "callData", "type": "bytes"}
+                ],
+                "name": "calls",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "aggregate3",
+        "outputs": [
+            {
+                "components": [
+                    {"name": "success", "type": "bool"},
+                    {"name": "returnData", "type": "bytes"}
+                ],
+                "name": "returnValues",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "payable",
         "type": "function"
     }
 ]
 
-ERC20_ABI = [
-    {"constant": True, "inputs": [], "name": "name", "outputs": [{"name": "", "type": "string"}], "type": "function"},
-    {"constant": True, "inputs": [], "name": "symbol", "outputs": [{"name": "", "type": "string"}], "type": "function"}
+MINTER_ABI_DUMMY = [
+    {"inputs": [{"name": "ctx", "type": "address"}], "name": "GetTreasuryTokenOwner", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
+    {"inputs": [{"name": "", "type": "address"}], "name": "TreasuryTokens", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"}
 ]
 
-def check_address(addr, minter_contracts, w3):
-    addr_checksum = Web3.to_checksum_address(addr)
-    for minter_addr, contract in minter_contracts:
-        owner = "0x0000000000000000000000000000000000000000"
-        
-        # 1. Try GetTreasuryTokenOwner
-        try:
-            owner = contract.functions.GetTreasuryTokenOwner(addr_checksum).call()
-        except Exception:
-            pass
-            
-        # 2. Try TreasuryTokens mapping if GetTreasuryTokenOwner returned null or failed
-        if owner == "0x0000000000000000000000000000000000000000":
-            try:
-                temp_contract = w3.eth.contract(
-                    address=Web3.to_checksum_address(minter_addr),
-                    abi=[{"inputs": [{"name": "", "type": "address"}], "name": "TreasuryTokens", "outputs": [{"name": "", "type": "address"}], "stateMutability": "view", "type": "function"}]
-                )
-                owner = temp_contract.functions.TreasuryTokens(addr_checksum).call()
-            except Exception:
-                pass
-                
-        if owner != "0x0000000000000000000000000000000000000000":
-            # Fetch token name/symbol
-            token_contract = w3.eth.contract(address=addr_checksum, abi=ERC20_ABI)
-            try:
-                name = token_contract.functions.name().call()
-            except Exception:
-                name = "Unknown Treasury Token"
-            try:
-                symbol = token_contract.functions.symbol().call()
-            except Exception:
-                symbol = "UNKNOWN"
-            return {
-                "address": addr,
-                "symbol": symbol,
-                "name": name,
-                "owner": owner.lower(),
-                "ignored": False
-            }
-    return None
+ERC20_ABI_DUMMY = [
+    {"inputs": [], "name": "name", "outputs": [{"name": "", "type": "string"}], "stateMutability": "view", "type": "function"},
+    {"inputs": [], "name": "symbol", "outputs": [{"name": "", "type": "string"}], "stateMutability": "view", "type": "function"}
+]
 
 def main():
     print("Connecting to PulseChain...")
@@ -114,6 +97,108 @@ def main():
     unique_addresses = sorted(list(set(addr.lower() for addr in raw_addresses)))
     print(f"Found {len(unique_addresses)} unique addresses in {address_path}")
 
+    # Filter out addresses to check
+    addresses_to_check = [
+        addr for addr in unique_addresses 
+        if addr not in ["0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"]
+    ]
+
+    # Pre-build dummy contract objects for encoding/decoding
+    dummy_minter = w3.eth.contract(abi=MINTER_ABI_DUMMY)
+    dummy_erc20 = w3.eth.contract(abi=ERC20_ABI_DUMMY)
+
+    # 3. Pack calls for Multicall3
+    calls = []
+    call_metadata = []
+
+    for addr in addresses_to_check:
+        addr_checksum = Web3.to_checksum_address(addr)
+        
+        # Query GetTreasuryTokenOwner and TreasuryTokens on all minters
+        for minter_addr in minter_addresses:
+            minter_checksum = Web3.to_checksum_address(minter_addr)
+            
+            # Call: GetTreasuryTokenOwner
+            calls.append({
+                "target": minter_checksum,
+                "allowFailure": True,
+                "callData": dummy_minter.encode_abi("GetTreasuryTokenOwner", args=[addr_checksum])
+            })
+            call_metadata.append({"type": "owner_lookup", "address": addr, "minter": minter_addr, "method": "GetTreasuryTokenOwner"})
+
+            # Call: TreasuryTokens mapping
+            calls.append({
+                "target": minter_checksum,
+                "allowFailure": True,
+                "callData": dummy_minter.encode_abi("TreasuryTokens", args=[addr_checksum])
+            })
+            call_metadata.append({"type": "owner_lookup", "address": addr, "minter": minter_addr, "method": "TreasuryTokens"})
+
+        # Call: ERC20 name()
+        calls.append({
+            "target": addr_checksum,
+            "allowFailure": True,
+            "callData": dummy_erc20.encode_abi("name")
+        })
+        call_metadata.append({"type": "name", "address": addr})
+
+        # Call: ERC20 symbol()
+        calls.append({
+            "target": addr_checksum,
+            "allowFailure": True,
+            "callData": dummy_erc20.encode_abi("symbol")
+        })
+        call_metadata.append({"type": "symbol", "address": addr})
+
+    print(f"Packed {len(calls)} calls into 1 Multicall transaction.")
+    print("Executing Multicall on PulseChain...")
+
+    multicall_contract = w3.eth.contract(address=Web3.to_checksum_address(MULTICALL3_ADDRESS), abi=MULTICALL3_ABI)
+    
+    try:
+        results = multicall_contract.functions.aggregate3(calls).call()
+    except Exception as e:
+        print(f"Multicall failed: {e}")
+        return
+
+    # 4. Parse results
+    token_data = {}
+    for idx, (success, return_data) in enumerate(results):
+        meta = call_metadata[idx]
+        addr = meta["address"]
+        
+        if addr not in token_data:
+            token_data[addr] = {
+                "is_treasury": False,
+                "owner": None,
+                "name": "Unknown Treasury Token",
+                "symbol": "UNKNOWN"
+            }
+
+        if not success or not return_data:
+            continue
+
+        if meta["type"] == "owner_lookup":
+            try:
+                decoded = abi.decode(["address"], return_data)[0]
+                if decoded != "0x0000000000000000000000000000000000000000":
+                    token_data[addr]["is_treasury"] = True
+                    token_data[addr]["owner"] = decoded.lower()
+            except Exception:
+                pass
+        elif meta["type"] == "name":
+            try:
+                decoded = abi.decode(["string"], return_data)[0]
+                token_data[addr]["name"] = decoded
+            except Exception:
+                pass
+        elif meta["type"] == "symbol":
+            try:
+                decoded = abi.decode(["string"], return_data)[0]
+                token_data[addr]["symbol"] = decoded
+            except Exception:
+                pass
+
     # Load existing registry
     registry_file = "treasury_tokens.json"
     registry = {}
@@ -124,40 +209,26 @@ def main():
         except Exception:
             pass
 
-    # Pre-build minter contract instances
-    minter_contracts = []
-    for minter_addr in minter_addresses:
-        minter_contracts.append((minter_addr, w3.eth.contract(address=Web3.to_checksum_address(minter_addr), abi=MINTER_ABI)))
-
-    # Filter out addresses to check
-    addresses_to_check = [
-        addr for addr in unique_addresses 
-        if addr not in ["0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"]
-    ]
-
-    print(f"Scanning {len(addresses_to_check)} addresses using multithreading (GetTreasuryTokenOwner + TreasuryTokens)...")
-    
-    # Run check in thread pool
-    results = []
-    with ThreadPoolExecutor(max_workers=25) as executor:
-        futures = {executor.submit(check_address, addr, minter_contracts, w3): addr for addr in addresses_to_check}
-        for future in as_completed(futures):
-            res = future.result()
-            if res:
-                results.append(res)
-                print(f"👑 Found Treasury Token: {res['symbol']} ({res['name']}) at {res['address']}")
-
-    # Save results to registry
-    for res in results:
-        addr = res["address"]
-        if addr not in registry:
-            registry[addr] = res
-        else:
-            registry[addr]["owner"] = res["owner"]
-            if registry[addr]["symbol"] == "UNKNOWN" and res["symbol"] != "UNKNOWN":
-                registry[addr]["symbol"] = res["symbol"]
-            if registry[addr]["name"] == "Unknown Treasury Token" and res["name"] != "Unknown Treasury Token":
-                registry[addr]["name"] = res["name"]
+    added = 0
+    # Save newly found tokens to registry
+    for addr, info in token_data.items():
+        if info["is_treasury"]:
+            if addr not in registry:
+                registry[addr] = {
+                    "address": addr,
+                    "symbol": info["symbol"],
+                    "name": info["name"],
+                    "owner": info["owner"],
+                    "ignored": False
+                }
+                added += 1
+                print(f"👑 Found Treasury Token: {info['symbol']} ({info['name']}) at {addr}")
+            else:
+                registry[addr]["owner"] = info["owner"]
+                if registry[addr]["symbol"] == "UNKNOWN" and info["symbol"] != "UNKNOWN":
+                    registry[addr]["symbol"] = info["symbol"]
+                if registry[addr]["name"] == "Unknown Treasury Token" and info["name"] != "Unknown Treasury Token":
+                    registry[addr]["name"] = info["name"]
 
     # Ensure FINVESTIBLE stays in the registry
     finvestible_addr = "0x38407c5a0c26675e34b6dd06bf98c571cbCdb6bf"
@@ -174,7 +245,7 @@ def main():
     with open(registry_file, "w") as f:
         json.dump(registry, f, indent=4)
 
-    print(f"Scanning complete. Total treasury tokens in registry: {len(registry)}")
+    print(f"Scanning complete. Reduced RPC queries to 1 Multicall request. Total treasury tokens in registry: {len(registry)}")
 
 if __name__ == "__main__":
     main()
