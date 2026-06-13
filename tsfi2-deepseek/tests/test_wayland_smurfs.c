@@ -735,9 +735,22 @@ static void draw_sprite_blitted(AB4HPixel *dest, int dest_w, int dest_h,
                     AB4HPixel dp = dest[dy * dest_w + dx];
                     float dr = half_to_float(dp.r), dg = half_to_float(dp.g), db = half_to_float(dp.b), da = half_to_float(dp.a);
                     float sr = half_to_float(sp.r), sg = half_to_float(sp.g), sb = half_to_float(sp.b);
-                    float nr = dr * (1.0f - sa) + sr * sa;
-                    float ng = dg * (1.0f - sa) + sg * sa;
-                    float nb = db * (1.0f - sa) + sb * sa;
+
+                    // --- Spiggle Shader Highlight Effect ---
+                    // Generates dynamic angle-of-incidence refraction gloss at sprite boundaries.
+                    float norm_x = ((float)x / sw) - 0.5f;
+                    float norm_y = ((float)y / sh) - 0.5f;
+                    float dist_from_center = sqrtf(norm_x * norm_x + norm_y * norm_y);
+                    // Edge Fresnel approximation: brighter highlights on the outer contours
+                    float spiggle_edge_fresnel = powf(fmaxf(0.0f, dist_from_center * 2.0f), 3.0f);
+                    
+                    // Simple light source offset reflection (specular highlight)
+                    float spec_glow = fmaxf(0.0f, norm_x * 0.707f - norm_y * 0.707f);
+                    float spiggle_glow = powf(spec_glow, 4.0f) * spiggle_edge_fresnel * 0.35f;
+
+                    float nr = dr * (1.0f - sa) + (sr + spiggle_glow) * sa;
+                    float ng = dg * (1.0f - sa) + (sg + spiggle_glow) * sa;
+                    float nb = db * (1.0f - sa) + (sb + spiggle_glow) * sa;
                     dest[dy * dest_w + dx] = make_ab4h_pixel(nr, ng, nb, da);
                 }
             }
