@@ -479,18 +479,29 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
         float w = expf(-dist / 0.04f);
         sum_w += w;
         
-        float sphere_r = dna_fur_r;
-        float sphere_g = dna_fur_g;
-        float sphere_b = dna_fur_b;
+        float sphere_r, sphere_g, sphere_b;
+        if (dl_game_active) {
+            if (i == 0 || i == 1 || i == 6 || i == 7) {
+                sphere_r = 0.85f; sphere_g = 0.12f; sphere_b = 0.08f;
+            } else if (i == 2 || i == 3) {
+                sphere_r = 0.18f; sphere_g = 0.10f; sphere_b = 0.18f;
+            } else if (i == 4 || i == 5) {
+                sphere_r = 0.95f; sphere_g = 0.78f; sphere_b = 0.20f;
+            } else {
+                sphere_r = 0.85f; sphere_g = 0.12f; sphere_b = 0.08f;
+            }
+        } else {
+            sphere_r = dna_fur_r;
+            sphere_g = dna_fur_g;
+            sphere_b = dna_fur_b;
 
-        // Apply dynamic cosine color variation based on local body height
-        float height_factor = (body[i].y - 0.20f) / 0.40f;
-        sphere_r += 0.12f * cosf(3.14159f * height_factor);
-        sphere_g += 0.08f * cosf(3.14159f * (height_factor + 0.25f));
-        sphere_b += 0.05f * cosf(3.14159f * (height_factor + 0.50f));
-        
-        if (i == 2 || i == 3) {
-            // Inner ear pink center smooth gradient using smoothstep
+            float height_factor = (body[i].y - 0.20f) / 0.40f;
+            sphere_r += 0.12f * cosf(3.14159f * height_factor);
+            sphere_g += 0.08f * cosf(3.14159f * (height_factor + 0.25f));
+            sphere_b += 0.05f * cosf(3.14159f * (height_factor + 0.50f));
+        }
+
+        if (!dl_game_active && (i == 2 || i == 3)) {
             float active_scale = body[i].r / 0.09f;
             float inner_dx = cx - (body[i].x + (i == 2 ? 0.015f : -0.015f) * active_scale);
             float inner_dy = cy - (body[i].y - 0.01f * active_scale);
@@ -498,7 +509,7 @@ static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, floa
             float ear_blend = 1.0f - (inner_dist / (body[i].r * 0.75f));
             if (ear_blend < 0.0f) ear_blend = 0.0f;
             if (ear_blend > 1.0f) ear_blend = 1.0f;
-            ear_blend = ear_blend * ear_blend * (3.0f - 2.0f * ear_blend); // smoothstep
+            ear_blend = ear_blend * ear_blend * (3.0f - 2.0f * ear_blend);
             
             sphere_r = dna_fur_r * (1.0f - ear_blend) + 0.82f * ear_blend;
             sphere_g = dna_fur_g * (1.0f - ear_blend) + 0.62f * ear_blend;
@@ -714,35 +725,52 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     }
     float active_scale = scale_val + breathe + twitch;
 
-    SphereGeometry body[15] = {
-        { 0.0f + pos_x,  -0.12f, 0.0f, 0.32f * active_scale, 1.00f, 1.05f, 1.0f }, // Body (rounder, slightly smaller)
-        { 0.0f + pos_x,   0.30f, 0.0f, 0.28f * active_scale, 1.15f, 1.05f, 1.0f }, // Head (larger relative to body)
-        { -0.23f * active_scale + pos_x, 0.50f * active_scale, 0.0f, 0.12f * active_scale, 1.15f, 1.00f, 1.0f }, // Left Ear (wider/fluffier)
-        {  0.23f * active_scale + pos_x, 0.50f * active_scale, 0.0f, 0.12f * active_scale, 1.15f, 1.00f, 1.0f }, // Right Ear (wider/fluffier)
-        { -0.25f * active_scale + pos_x, -0.05f * active_scale, 0.08f * active_scale, 0.07f * active_scale, 0.90f, 1.00f, 1.0f }, // Left Arm (stubbier)
-        {  0.25f * active_scale + pos_x, -0.05f * active_scale, 0.08f * active_scale, 0.07f * active_scale, 0.90f, 1.00f, 1.0f }, // Right Arm (stubbier)
-        { -0.16f * active_scale + pos_x, -0.28f * active_scale, 0.10f * active_scale, 0.09f * active_scale, 1.00f, 1.00f, 1.0f }, // Left Leg (stubbier)
-        {  0.16f * active_scale + pos_x, -0.28f * active_scale, 0.10f * active_scale, 0.09f * active_scale, 1.00f, 1.00f, 1.0f }, // Right Leg (stubbier)
-        { 0.0f + pos_x,   0.20f, 0.20f * active_scale, 0.11f * active_scale, 1.25f, 0.95f, 1.0f }, // Snout (larger, rounder)
-        { 0.0f + pos_x,   0.24f, 0.29f * active_scale, 0.035f * active_scale, 1.20f, 0.85f, 1.0f }, // Nose (larger, on snout)
-        { -0.11f * active_scale + pos_x, 0.34f, 0.24f * active_scale, 0.03f * active_scale, 0.90f, 1.10f, 1.0f }, // Left Eye (spaced slightly wider, larger)
-        {  0.11f * active_scale + pos_x, 0.34f, 0.24f * active_scale, 0.03f * active_scale, 0.90f, 1.10f, 1.0f }, // Right Eye (spaced slightly wider, larger)
-        { 0.0f + pos_x, 0.10f, 0.18f * active_scale, 0.035f * active_scale, 1.30f, 0.80f, 1.0f }, // Bow Tie Center
-        { -0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale, 1.30f, 0.80f, 1.0f }, // Bow Tie Left
-        {  0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale, 1.30f, 0.80f, 1.0f }  // Bow Tie Right
-    };
+    SphereGeometry body[15];
+    if (dl_game_active) {
+        body[0] = (SphereGeometry){ 0.0f + pos_x,  -0.15f, 0.0f, 0.26f * active_scale, 1.25f, 0.90f, 1.0f };
+        body[1] = (SphereGeometry){ 0.0f + pos_x,   0.24f, 0.0f, 0.22f * active_scale, 0.95f, 1.05f, 1.0f };
+        body[2] = (SphereGeometry){ -0.32f * active_scale + pos_x, 0.10f * active_scale, -0.05f, 0.25f * active_scale, 0.50f, 1.50f, 1.0f };
+        body[3] = (SphereGeometry){  0.32f * active_scale + pos_x, 0.10f * active_scale, -0.05f, 0.25f * active_scale, 0.50f, 1.50f, 1.0f };
+        body[4] = (SphereGeometry){ -0.15f * active_scale + pos_x, 0.42f * active_scale, 0.0f, 0.06f * active_scale, 0.50f, 2.00f, 1.0f };
+        body[5] = (SphereGeometry){  0.15f * active_scale + pos_x, 0.42f * active_scale, 0.0f, 0.06f * active_scale, 0.50f, 2.00f, 1.0f };
+        body[6] = (SphereGeometry){ -0.25f * active_scale + pos_x, -0.08f * active_scale, 0.05f * active_scale, 0.06f * active_scale, 0.80f, 1.00f, 1.0f };
+        body[7] = (SphereGeometry){  0.25f * active_scale + pos_x, -0.08f * active_scale, 0.05f * active_scale, 0.06f * active_scale, 0.80f, 1.00f, 1.0f };
+        body[8] = (SphereGeometry){ 0.0f + pos_x,   0.14f, 0.15f * active_scale, 0.10f * active_scale, 1.35f, 0.85f, 1.0f };
+        body[9] = (SphereGeometry){ 0.0f + pos_x,   0.17f, 0.23f * active_scale, 0.03f * active_scale, 1.20f, 0.85f, 1.0f };
+        body[10] = (SphereGeometry){ -0.08f * active_scale + pos_x, 0.28f, 0.18f * active_scale, 0.035f * active_scale, 0.85f, 1.15f, 1.0f };
+        body[11] = (SphereGeometry){  0.08f * active_scale + pos_x, 0.28f, 0.18f * active_scale, 0.035f * active_scale, 0.85f, 1.15f, 1.0f };
+        body[12] = (SphereGeometry){ -0.10f * active_scale + pos_x, -0.32f * active_scale, -0.10f * active_scale, 0.15f * active_scale, 1.50f, 0.60f, 1.0f };
+        body[13] = (SphereGeometry){ 0.0f + pos_x, -0.05f, 0.15f * active_scale, 0.05f * active_scale, 1.00f, 1.00f, 1.0f };
+        body[14] = (SphereGeometry){  0.35f * active_scale + pos_x, -0.25f * active_scale, 0.10f * active_scale, 0.06f * active_scale, 1.00f, 1.00f, 1.0f };
+    } else {
+        body[0] = (SphereGeometry){ 0.0f + pos_x,  -0.12f, 0.0f, 0.32f * active_scale, 1.00f, 1.05f, 1.0f };
+        body[1] = (SphereGeometry){ 0.0f + pos_x,   0.30f, 0.0f, 0.28f * active_scale, 1.15f, 1.05f, 1.0f };
+        body[2] = (SphereGeometry){ -0.23f * active_scale + pos_x, 0.50f * active_scale, 0.0f, 0.12f * active_scale, 1.15f, 1.00f, 1.0f };
+        body[3] = (SphereGeometry){  0.23f * active_scale + pos_x, 0.50f * active_scale, 0.0f, 0.12f * active_scale, 1.15f, 1.00f, 1.0f };
+        body[4] = (SphereGeometry){ -0.25f * active_scale + pos_x, -0.05f * active_scale, 0.08f * active_scale, 0.07f * active_scale, 0.90f, 1.00f, 1.0f };
+        body[5] = (SphereGeometry){  0.25f * active_scale + pos_x, -0.05f * active_scale, 0.08f * active_scale, 0.07f * active_scale, 0.90f, 1.00f, 1.0f };
+        body[6] = (SphereGeometry){ -0.16f * active_scale + pos_x, -0.28f * active_scale, 0.10f * active_scale, 0.09f * active_scale, 1.00f, 1.00f, 1.0f };
+        body[7] = (SphereGeometry){  0.16f * active_scale + pos_x, -0.28f * active_scale, 0.10f * active_scale, 0.09f * active_scale, 1.00f, 1.00f, 1.0f };
+        body[8] = (SphereGeometry){ 0.0f + pos_x,   0.20f, 0.20f * active_scale, 0.11f * active_scale, 1.25f, 0.95f, 1.0f };
+        body[9] = (SphereGeometry){ 0.0f + pos_x,   0.24f, 0.29f * active_scale, 0.035f * active_scale, 1.20f, 0.85f, 1.0f };
+        body[10] = (SphereGeometry){ -0.11f * active_scale + pos_x, 0.34f, 0.24f * active_scale, 0.03f * active_scale, 0.90f, 1.10f, 1.0f };
+        body[11] = (SphereGeometry){  0.11f * active_scale + pos_x, 0.34f, 0.24f * active_scale, 0.03f * active_scale, 0.90f, 1.10f, 1.0f };
+        body[12] = (SphereGeometry){ 0.0f + pos_x, 0.10f, 0.18f * active_scale, 0.035f * active_scale, 1.30f, 0.80f, 1.0f };
+        body[13] = (SphereGeometry){ -0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale, 1.30f, 0.80f, 1.0f };
+        body[14] = (SphereGeometry){  0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale, 1.30f, 0.80f, 1.0f };
 
-    // Apply head tilt around the neck joint (pos_x, 0.20f) for head indices
-    float tilt_angle = (twitch_intensity - 0.5f) * 0.4f;
-    float cos_h = cosf(tilt_angle);
-    float sin_h = sinf(tilt_angle);
-    int head_indices[] = {1, 2, 3, 8, 9, 10, 11};
-    for (int idx = 0; idx < 7; idx++) {
-        int i = head_indices[idx];
-        float hx = body[i].x - pos_x;
-        float hy = body[i].y - 0.20f;
-        body[i].x = pos_x + hx * cos_h - hy * sin_h;
-        body[i].y = 0.20f + hx * sin_h + hy * cos_h;
+        // Apply head tilt around the neck joint (pos_x, 0.20f) for head indices
+        float tilt_angle = (twitch_intensity - 0.5f) * 0.4f;
+        float cos_h = cosf(tilt_angle);
+        float sin_h = sinf(tilt_angle);
+        int head_indices[] = {1, 2, 3, 8, 9, 10, 11};
+        for (int idx = 0; idx < 7; idx++) {
+            int i = head_indices[idx];
+            float hx = body[i].x - pos_x;
+            float hy = body[i].y - 0.20f;
+            body[i].x = pos_x + hx * cos_h - hy * sin_h;
+            body[i].y = 0.20f + hx * sin_h + hy * cos_h;
+        }
     }
 
     for (int i = 0; i < 15; i++) {
@@ -888,41 +916,79 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                 float diffuse = (diffuse_key * 1.0f) + (sky_light * 0.15f + bounce_light * 0.10f) * analytical_ao;
                                 float fresnel = powf(1.0f - fmaxf(nz, 0.0f), 4.0f) * 0.12f;
 
-                                if (i == 8) { // Snout with SSS
-                                    float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.25f;
-                                    sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.2f;
-                                    sub_g = 0.80f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.15f;
-                                    sub_b = 0.70f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.1f;
-                                } else if (i == 9) { // Nose
-                                    sub_r = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
-                                    sub_g = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
-                                    sub_b = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
-                                } else if (i == 10 || i == 11) { // Eyes with specular highlights
-                                    float hx = lx;
-                                    float hy = ly;
-                                    float hz = lz + 1.0f;
-                                    float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                                    hx /= hlen; hy /= hlen; hz /= hlen;
-                                    float spec = nx*hx + ny*hy + nz*hz;
-                                    if (spec < 0.0f) spec = 0.0f;
-                                    spec = powf(spec, 32.0f) * 0.8f;
+                                if (dl_game_active) {
+                                    if (dist2 > r2 * 0.88f) {
+                                        sub_r = 0.0f;
+                                        sub_g = 0.0f;
+                                        sub_b = 0.0f;
+                                    } else {
+                                        float cel_diff = 0.35f;
+                                        if (diffuse > 0.65f) cel_diff = 1.0f;
+                                        else if (diffuse > 0.25f) cel_diff = 0.65f;
 
-                                    sub_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
-                                    sub_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
-                                    sub_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
-                                } else { // Red Bow Tie (Indices 12, 13, 14)
-                                    float hx = lx;
-                                    float hy = ly;
-                                    float hz = lz + 1.0f;
-                                    float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                                    hx /= hlen; hy /= hlen; hz /= hlen;
-                                    float spec = nx*hx + ny*hy + nz*hz;
-                                    if (spec < 0.0f) spec = 0.0f;
-                                    spec = powf(spec, 16.0f) * 0.5f;
+                                        if (i == 8) {
+                                            sub_r = 0.90f * cel_diff;
+                                            sub_g = 0.85f * cel_diff;
+                                            sub_b = 0.55f * cel_diff;
+                                        } else if (i == 9) {
+                                            sub_r = 0.15f * cel_diff;
+                                            sub_g = 0.05f * cel_diff;
+                                            sub_b = 0.05f * cel_diff;
+                                        } else if (i == 10 || i == 11) {
+                                            if (dist2 < r2 * 0.20f) {
+                                                sub_r = 0.0f; sub_g = 0.0f; sub_b = 0.0f;
+                                            } else {
+                                                sub_r = 0.10f * cel_diff;
+                                                sub_g = 0.90f * cel_diff;
+                                                sub_b = 0.20f * cel_diff;
+                                            }
+                                        } else if (i == 12) {
+                                            sub_r = 0.85f * cel_diff;
+                                            sub_g = 0.12f * cel_diff;
+                                            sub_b = 0.08f * cel_diff;
+                                        } else {
+                                            sub_r = 0.95f * cel_diff;
+                                            sub_g = 0.78f * cel_diff;
+                                            sub_b = 0.20f * cel_diff;
+                                        }
+                                    }
+                                } else {
+                                    if (i == 8) { // Snout with SSS
+                                        float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.25f;
+                                        sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.2f;
+                                        sub_g = 0.80f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.15f;
+                                        sub_b = 0.70f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.1f;
+                                    } else if (i == 9) { // Nose
+                                        sub_r = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                        sub_g = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                        sub_b = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                    } else if (i == 10 || i == 11) { // Eyes with specular highlights
+                                        float hx = lx;
+                                        float hy = ly;
+                                        float hz = lz + 1.0f;
+                                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                        hx /= hlen; hy /= hlen; hz /= hlen;
+                                        float spec = nx*hx + ny*hy + nz*hz;
+                                        if (spec < 0.0f) spec = 0.0f;
+                                        spec = powf(spec, 32.0f) * 0.8f;
 
-                                    sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.2f;
-                                    sub_g = 0.05f * (diffuse * 0.7f + 0.3f) + spec;
-                                    sub_b = 0.10f * (diffuse * 0.7f + 0.3f) + spec;
+                                        sub_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                        sub_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                        sub_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                    } else { // Red Bow Tie (Indices 12, 13, 14)
+                                        float hx = lx;
+                                        float hy = ly;
+                                        float hz = lz + 1.0f;
+                                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                        hx /= hlen; hy /= hlen; hz /= hlen;
+                                        float spec = nx*hx + ny*hy + nz*hz;
+                                        if (spec < 0.0f) spec = 0.0f;
+                                        spec = powf(spec, 16.0f) * 0.5f;
+
+                                        sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.2f;
+                                        sub_g = 0.05f * (diffuse * 0.7f + 0.3f) + spec;
+                                        sub_b = 0.10f * (diffuse * 0.7f + 0.3f) + spec;
+                                    }
                                 }
                                 sub_a = 1.0f;
                                 hit_bear = true;
@@ -939,36 +1005,21 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                         float ny_blend = 0.0f;
                         float d_blend = evaluate_d_blend_all(cx, cy, body, &nx_blend, &ny_blend, &base_r, &base_g, &base_b);
                         
-                        for (int shell = num_shells - 1; shell >= 0; shell--) {
-                            float shell_offset = ((float)shell / num_shells) * fur_length;
-                            if (d_blend < shell_offset) {
-                                float w_dx = 0.0f, w_dy = 0.0f;
-                                float noise_val = fur_noise(sx, sy, shell, &w_dx, &w_dy);
-                                float threshold = (float)shell / num_shells;
-
-                                if (noise_val > threshold || shell == 0) {
-                                    hit_bear = true;
-
+                        if (dl_game_active) {
+                            if (d_blend < 0.0f) {
+                                hit_bear = true;
+                                if (d_blend > -0.012f) {
+                                    sub_r = 0.0f; sub_g = 0.0f; sub_b = 0.0f;
+                                } else {
                                     float nx = nx_blend;
                                     float ny = ny_blend;
-
-                                    // Dome normal calculation
                                     float dist_from_edge = -d_blend;
-                                    if (dist_from_edge < 0.0f) dist_from_edge = 0.0f;
                                     float nz = dist_from_edge / (0.22f * active_scale);
                                     if (nz > 1.0f) nz = 1.0f;
                                     float nxy_scale = sqrtf(1.0f - nz*nz);
                                     nx *= nxy_scale;
                                     ny *= nxy_scale;
 
-                                    // Perturb normal analytically using value noise derivatives
-                                    float bump_strength = 0.15f;
-                                    nx += w_dx * bump_strength;
-                                    ny += w_dy * bump_strength;
-                                    float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
-                                    if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
-
-                                    // Calculate closest sphere index for shadow casting source
                                     int closest_idx = 0;
                                     float min_d = 1e10f;
                                     for (int i = 0; i < 8; i++) {
@@ -981,22 +1032,19 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                         }
                                     }
 
-                                    // Calculate soft shadow at this fur shell hit
-                                    float radius_with_shell = body[closest_idx].r + shell_offset;
+                                    float radius_with_shell = body[closest_idx].r;
                                     float dx_closest = cx - body[closest_idx].x;
                                     float dy_closest = cy - body[closest_idx].y;
                                     float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
                                     float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
                                     float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
 
-                                    // Analytical ambient occlusion from other spheres
                                     float analytical_ao = 1.0f;
                                     for (int j = 0; j < 15; j++) {
                                         if (j == closest_idx) continue;
                                         analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
                                     }
 
-                                    // 3-point hemisphere lighting
                                     float diffuse_key = nx*lx + ny*ly + nz*lz;
                                     if (diffuse_key < 0.0f) diffuse_key = 0.0f;
                                     diffuse_key *= shadow_val;
@@ -1005,51 +1053,120 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                     float bounce_light = nx*(-lx) + nz*(-lz);
                                     if (bounce_light < 0.0f) bounce_light = 0.0f;
 
-                                    // Independent lighting terms: shadow_val only affects key light, analytical_ao only affects ambient lights
                                     float diffuse = (diffuse_key * 1.0f) + (sky_light * 0.15f + bounce_light * 0.10f) * analytical_ao;
-                                    float fresnel = powf(1.0f - fmaxf(nz, 0.0f), 4.0f) * 0.12f;
 
-                                    // Apply golden highlights at the fur tips (shell-texturing depth gradient)
-                                    float tip_factor = (float)shell / num_shells;
-                                    if (tip_factor > 0.5f) {
-                                        float blend = (tip_factor - 0.5f) / 0.5f;
-                                        base_r = base_r * (1.0f - blend) + 0.85f * blend;
-                                        base_g = base_g * (1.0f - blend) + 0.68f * blend;
-                                        base_b = base_b * (1.0f - blend) + 0.42f * blend;
+                                    float cel_diff = 0.35f;
+                                    if (diffuse > 0.65f) cel_diff = 1.0f;
+                                    else if (diffuse > 0.25f) cel_diff = 0.65f;
+
+                                    sub_r = base_r * cel_diff;
+                                    sub_g = base_g * cel_diff;
+                                    sub_b = base_b * cel_diff;
+                                }
+                                sub_a = 1.0f;
+                            }
+                        } else {
+                            for (int shell = num_shells - 1; shell >= 0; shell--) {
+                                float shell_offset = ((float)shell / num_shells) * fur_length;
+                                if (d_blend < shell_offset) {
+                                    float w_dx = 0.0f, w_dy = 0.0f;
+                                    float noise_val = fur_noise(sx, sy, shell, &w_dx, &w_dy);
+                                    float threshold = (float)shell / num_shells;
+
+                                    if (noise_val > threshold || shell == 0) {
+                                        hit_bear = true;
+
+                                        float nx = nx_blend;
+                                        float ny = ny_blend;
+
+                                        float dist_from_edge = -d_blend;
+                                        if (dist_from_edge < 0.0f) dist_from_edge = 0.0f;
+                                        float nz = dist_from_edge / (0.22f * active_scale);
+                                        if (nz > 1.0f) nz = 1.0f;
+                                        float nxy_scale = sqrtf(1.0f - nz*nz);
+                                        nx *= nxy_scale;
+                                        ny *= nxy_scale;
+
+                                        float bump_strength = 0.15f;
+                                        nx += w_dx * bump_strength;
+                                        ny += w_dy * bump_strength;
+                                        float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
+                                        if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
+
+                                        int closest_idx = 0;
+                                        float min_d = 1e10f;
+                                        for (int i = 0; i < 8; i++) {
+                                            float dx = cx - body[i].x;
+                                            float dy = cy - body[i].y;
+                                            float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+                                            if (dist < min_d) {
+                                                min_d = dist;
+                                                closest_idx = i;
+                                            }
+                                        }
+
+                                        float radius_with_shell = body[closest_idx].r + shell_offset;
+                                        float dx_closest = cx - body[closest_idx].x;
+                                        float dy_closest = cy - body[closest_idx].y;
+                                        float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
+                                        float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
+                                        float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
+
+                                        float analytical_ao = 1.0f;
+                                        for (int j = 0; j < 15; j++) {
+                                            if (j == closest_idx) continue;
+                                            analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
+                                        }
+
+                                        float diffuse_key = nx*lx + ny*ly + nz*lz;
+                                        if (diffuse_key < 0.0f) diffuse_key = 0.0f;
+                                        diffuse_key *= shadow_val;
+
+                                        float sky_light = 0.5f + 0.5f * ny;
+                                        float bounce_light = nx*(-lx) + nz*(-lz);
+                                        if (bounce_light < 0.0f) bounce_light = 0.0f;
+
+                                        float diffuse = (diffuse_key * 1.0f) + (sky_light * 0.15f + bounce_light * 0.10f) * analytical_ao;
+                                        float fresnel = powf(1.0f - fmaxf(nz, 0.0f), 4.0f) * 0.12f;
+
+                                        float tip_factor = (float)shell / num_shells;
+                                        if (tip_factor > 0.5f) {
+                                            float blend = (tip_factor - 0.5f) / 0.5f;
+                                            base_r = base_r * (1.0f - blend) + 0.85f * blend;
+                                            base_g = base_g * (1.0f - blend) + 0.68f * blend;
+                                            base_b = base_b * (1.0f - blend) + 0.42f * blend;
+                                        }
+
+                                        float hx = lx;
+                                        float hy = ly;
+                                        float hz = lz + 1.0f;
+                                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                        if (hlen > 0.0001f) { hx /= hlen; hy /= hlen; hz /= hlen; }
+                                        float spec = nx*hx + ny*hy + nz*hz;
+                                        if (spec < 0.0f) spec = 0.0f;
+                                        float fur_spec = powf(spec, 16.0f) * 0.35f * tip_factor;
+
+                                        sub_r = base_r * (diffuse * 0.8f + 0.2f) + fresnel * 0.85f + fur_spec;
+                                        sub_g = base_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
+                                        sub_b = base_b * (diffuse * 0.8f + 0.2f) + fresnel * 0.65f + fur_spec * 0.5f;
+
+                                        float sheen = powf(1.0f - fmaxf(nx*lx + ny*ly + nz*lz, 0.0f), 3.0f) * powf(nz, 2.0f) * 0.15f;
+                                        sub_r += sheen * 0.75f;
+                                        sub_g += sheen * 0.65f;
+                                        sub_b += sheen * 0.50f;
+
+                                        if (closest_idx == 2 || closest_idx == 3) {
+                                            float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.35f;
+                                            sub_r += sss * 0.8f;
+                                            sub_g += sss * 0.3f;
+                                            sub_b += sss * 0.2f;
+                                        }
+
+                                        float ao = 0.4f + 0.6f * ((float)shell / num_shells);
+                                        sub_r *= ao; sub_g *= ao; sub_b *= ao;
+                                        sub_a = 1.0f;
+                                        break;
                                     }
-
-                                    // Add a specular highlight term to the tips
-                                    float hx = lx;
-                                    float hy = ly;
-                                    float hz = lz + 1.0f;
-                                    float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                                    if (hlen > 0.0001f) { hx /= hlen; hy /= hlen; hz /= hlen; }
-                                    float spec = nx*hx + ny*hy + nz*hz;
-                                    if (spec < 0.0f) spec = 0.0f;
-                                    float fur_spec = powf(spec, 16.0f) * 0.35f * tip_factor;
-
-                                    sub_r = base_r * (diffuse * 0.8f + 0.2f) + fresnel * 0.85f + fur_spec;
-                                    sub_g = base_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
-                                    sub_b = base_b * (diffuse * 0.8f + 0.2f) + fresnel * 0.65f + fur_spec * 0.5f;
-
-                                    // Velvet sheen highlights at the tips
-                                    float sheen = powf(1.0f - fmaxf(nx*lx + ny*ly + nz*lz, 0.0f), 3.0f) * powf(nz, 2.0f) * 0.15f;
-                                    sub_r += sheen * 0.75f;
-                                    sub_g += sheen * 0.65f;
-                                    sub_b += sheen * 0.50f;
-
-                                    // Subsurface scattering on ears
-                                    if (closest_idx == 2 || closest_idx == 3) {
-                                        float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.35f;
-                                        sub_r += sss * 0.8f;
-                                        sub_g += sss * 0.3f;
-                                        sub_b += sss * 0.2f;
-                                    }
-
-                                    float ao = 0.4f + 0.6f * ((float)shell / num_shells);
-                                    sub_r *= ao; sub_g *= ao; sub_b *= ao;
-                                    sub_a = 1.0f;
-                                    break;
                                 }
                             }
                         }
