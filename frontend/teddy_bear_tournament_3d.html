@@ -1437,6 +1437,9 @@ Ready to initiate tournament match.</div>
             ctx.save();
             ctx.shadowBlur = 10;
             
+            // Calculate parasitic ammeter load damping from ammeterState
+            const ammeter_damping = 1.0 / (1.0 + (ammeterState ? ammeterState.theta : 0.0) * 1.5);
+            
             // Draw grid lines modulated by Bessel gravity wave
             for (let i = -gridLimit; i <= gridLimit; i += step) {
                 // Parallel to Z-axis
@@ -1446,8 +1449,8 @@ Ready to initiate tournament match.</div>
                 ctx.beginPath();
                 for (let j = -gridLimit; j <= gridLimit; j += 40) {
                     let dist = Math.sqrt(i*i + j*j);
-                    // Bessel wave ripple outward from center
-                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32;
+                    // Bessel wave ripple outward from center, damped parasitically
+                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32 * ammeter_damping;
                     let sc = project(new Point3D(i, -100 + ripple, j));
                     if (sc) {
                         if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
@@ -1460,7 +1463,7 @@ Ready to initiate tournament match.</div>
                 ctx.beginPath();
                 for (let j = -gridLimit; j <= gridLimit; j += 40) {
                     let dist = Math.sqrt(j*j + i*i);
-                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32;
+                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32 * ammeter_damping;
                     let sc = project(new Point3D(j, -100 + ripple, i));
                     if (sc) {
                         if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
@@ -1481,7 +1484,7 @@ Ready to initiate tournament match.</div>
                 let rx = Math.cos(theta) * 750;
                 let rz = Math.sin(theta) * 750;
                 let dist = Math.sqrt(rx*rx + rz*rz);
-                let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32;
+                let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32 * ammeter_damping;
                 let pt = new Point3D(rx, -100 + ripple, rz);
                 if (prevPt) {
                     drawLine3D(prevPt, pt, "rgba(255, 0, 127, 0.4)", 3);
