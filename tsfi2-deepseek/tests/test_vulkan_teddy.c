@@ -20,6 +20,103 @@
 #include <linux/input.h>
 #include <time.h>
 #include <omp.h>
+#include <alsa/asoundlib.h>
+#include <pthread.h>
+
+struct SoundData {
+    char type[32];
+};
+
+static void* play_sound_thread(void *arg) {
+    struct SoundData *sd = (struct SoundData*)arg;
+    snd_pcm_t *pcm_handle;
+    if (snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0) {
+        free(sd); return NULL;
+    }
+    if (snd_pcm_set_params(pcm_handle, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 8000, 1, 500000) < 0) {
+        snd_pcm_close(pcm_handle); free(sd); return NULL;
+    }
+    int len = 0;
+    uint8_t *buf = NULL;
+    if (strcmp(sd->type, "leap") == 0) {
+        len = 2000; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float freq = 220.0f + 330.0f * (1.0f - expf(-8.0f * t));
+                float phase = freq * t * 2.0f * 3.14159265f;
+                float sat = tanhf(1.2f * sinf(phase));
+                buf[i] = 128 + (int)((1.0f - t/0.25f) * 110.0f * sat);
+            }
+        }
+    } else if (strcmp(sd->type, "dodge") == 0) {
+        len = 1600; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float freq = 440.0f - 180.0f * sinf(3.14159f * (t / 0.2f));
+                float phase = freq * t * 2.0f * 3.14159265f;
+                float sat = tanhf(1.0f * sinf(phase));
+                buf[i] = 128 + (int)((1.0f - t/0.2f) * 110.0f * sat);
+            }
+        }
+    } else if (strcmp(sd->type, "sword") == 0) {
+        len = 1200; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float freq = 600.0f * expf(-12.0f * t) + 150.0f;
+                float phase = freq * t * 2.0f * 3.14159265f;
+                float noise = ((float)(rand() % 200) - 100.0f) / 100.0f;
+                float wave = sinf(phase) * 0.6f + noise * 0.4f;
+                float sat = tanhf(1.5f * wave);
+                buf[i] = 128 + (int)((1.0f - t/0.15f) * 120.0f * sat);
+            }
+        }
+    } else if (strcmp(sd->type, "success") == 0) {
+        len = 2400; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float wave = sinf(523.25f * t * 2.0f * 3.14159f) * 0.5f + sinf(783.99f * t * 2.0f * 3.14159f) * 0.5f;
+                float sat = tanhf(2.0f * wave);
+                buf[i] = 128 + (int)((1.0f - t/0.3f) * 110.0f * sat);
+            }
+        }
+    } else if (strcmp(sd->type, "fail") == 0) {
+        len = 3200; buf = malloc(len);
+        if (buf) {
+            for (int i = 0; i < len; i++) {
+                float t = (float)i / 8000.0f;
+                float wave = sinf(80.0f * t * 2.0f * 3.14159f) * 0.7f + sinf(120.0f * t * 2.0f * 3.14159f) * 0.3f;
+                float sat = wave > 0.0f ? 1.0f : -1.0f;
+                buf[i] = 128 + (int)((1.0f - t/0.4f) * 120.0f * sat);
+            }
+        }
+    }
+    if (buf && len > 0) {
+        snd_pcm_sframes_t frames = snd_pcm_writei(pcm_handle, buf, len);
+        if (frames < 0) {
+            snd_pcm_prepare(pcm_handle);
+            snd_pcm_writei(pcm_handle, buf, len);
+        }
+        free(buf);
+    }
+    snd_pcm_drain(pcm_handle);
+    snd_pcm_close(pcm_handle);
+    free(sd);
+    return NULL;
+}
+
+static void play_synth_sound(const char *type) {
+    struct SoundData *sd = malloc(sizeof(struct SoundData));
+    if (!sd) return;
+    strncpy(sd->type, type, sizeof(sd->type) - 1);
+    sd->type[sizeof(sd->type) - 1] = '\0';
+    pthread_t thread;
+    pthread_create(&thread, NULL, play_sound_thread, sd);
+    pthread_detach(thread);
+}
 
 #include "tsfi_svdag.h"
 #include "tsfi_opt_zmm.h"
@@ -1782,9 +1879,18 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                     else if (mouse_x >= 1115 && mouse_x <= 1180) clicked_action = 5;
 
                     if (clicked_action > 0) {
+                        if (clicked_action == 1 || clicked_action == 2) {
+                            play_synth_sound("dodge");
+                        } else if (clicked_action == 3) {
+                            play_synth_sound("sword");
+                        } else if (clicked_action == 4 || clicked_action == 5) {
+                            play_synth_sound("leap");
+                        }
+
                         if (clicked_action == dl_expected_action) {
                             dl_score += 1500;
                             dl_stage++;
+                            play_synth_sound("success");
                             if (dl_stage == 6) {
                                 dl_status = 1;
                             } else {
@@ -1792,6 +1898,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                             }
                         } else {
                             dl_lives--;
+                            play_synth_sound("fail");
                             if (dl_lives == 0) {
                                 dl_status = 2;
                             }
