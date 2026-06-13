@@ -131,7 +131,7 @@ async function main() {
     const generatorContract = new ethers.Contract(
         predictedAddress,
         generatorBin.abi,
-        provider
+        deployer
     );
 
     const checkLau = await generatorContract.lauAddress();
@@ -139,11 +139,27 @@ async function main() {
     console.log(`Lau Address in Contract:  ${checkLau}`);
     console.log(`Math Address in Contract: ${checkMath}`);
 
-    const randomValues = await generatorContract.getRandomValues();
-    console.log("\nGenerated Random Values (bytes32):");
-    randomValues.forEach((val, i) => {
-        console.log(` [${i}]: ${val}`);
-    });
+    // Fund contract so it has balance to pay the Diyat tax using Anvil cheat code
+    await provider.send("anvil_setBalance", [
+        predictedAddress,
+        "0x1bc16d674ec0000" // 0.125 ETH in hex
+    ]);
+
+    const treasuryAddress = "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69";
+    const balanceBefore = await provider.getBalance(treasuryAddress);
+    console.log(`\nTreasury Balance Before: ${ethers.formatEther(balanceBefore)} ETH`);
+
+    // Execute transaction mutatively
+    const execTx = await generatorContract.getRandomValues();
+    const execReceipt = await execTx.wait();
+    console.log(`Transaction Hash: ${execReceipt.hash}`);
+    console.log(`Gas Price: ${ethers.formatUnits(execReceipt.gasPrice, "gwei")} Gwei`);
+
+    const balanceAfter = await provider.getBalance(treasuryAddress);
+    console.log(`Treasury Balance After:  ${ethers.formatEther(balanceAfter)} ETH`);
+
+    const difference = balanceAfter - balanceBefore;
+    console.log(`Diyat Tax Paid:          ${ethers.formatEther(difference)} ETH (${difference.toString()} wei)`);
 }
 
 main().catch(console.error);

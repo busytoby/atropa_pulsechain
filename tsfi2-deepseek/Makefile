@@ -207,6 +207,9 @@ bin/test_spark_helix: tests/test_spark_helix.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_in
 bin/test_hot_wire: tests/test_hot_wire.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_synth_ammeter: tests/test_synth_ammeter.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_oscillating_audion: tests/test_oscillating_audion.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
