@@ -799,6 +799,28 @@
             bCtx.strokeStyle = "rgba(0,0,0,0.15)";
             bCtx.stroke();
 
+            // Belly Highlight Patch
+            bCtx.fillStyle = `rgb(${Math.min(255, genome.fur_r + 30)}, ${Math.min(255, genome.fur_g + 20)}, ${Math.min(255, genome.fur_b + 15)})`;
+            bCtx.beginPath();
+            bCtx.ellipse(cx, cy + 32 * s, 26 * s, (38 + breathing * 0.6) * s, 0, 0, Math.PI * 2);
+            bCtx.fill();
+
+            // Glowing Bessel Coil neck collar
+            bCtx.strokeStyle = "rgba(0, 240, 255, 0.85)";
+            bCtx.lineWidth = 5 * s;
+            bCtx.shadowBlur = 10;
+            bCtx.shadowColor = "rgba(0, 240, 255, 0.9)";
+            bCtx.beginPath();
+            bCtx.arc(cx, cy + 2 * s, 24 * s, 0.25 * Math.PI, 0.75 * Math.PI);
+            bCtx.stroke();
+            bCtx.shadowBlur = 0; // Reset
+
+            // Gold connector bead
+            bCtx.fillStyle = "#fbbf24";
+            bCtx.beginPath();
+            bCtx.arc(cx, cy + 26 * s, 4 * s, 0, Math.PI * 2);
+            bCtx.fill();
+
             // Draw Head
             bCtx.beginPath();
             bCtx.ellipse(cx, cy - 25, 38 * s, 34 * s, 0, 0, Math.PI * 2);
@@ -810,6 +832,14 @@
             bCtx.arc(cx - 30 * s, cy - 50 * s, 12 * s, 0, Math.PI * 2);
             bCtx.arc(cx + 30 * s, cy - 50 * s, 12 * s, 0, Math.PI * 2);
             bCtx.fill();
+            bCtx.stroke();
+
+            // Ear depth arcs
+            bCtx.strokeStyle = "rgba(0,0,0,0.15)";
+            bCtx.lineWidth = 1.5 * s;
+            bCtx.beginPath();
+            bCtx.arc(cx - 30 * s, cy - 50 * s, 10 * s, 0.5 * Math.PI, 1.5 * Math.PI);
+            bCtx.arc(cx + 30 * s, cy - 50 * s, 10 * s, 1.5 * Math.PI, 0.5 * Math.PI);
             bCtx.stroke();
 
             // Ear inner highlights
@@ -825,11 +855,29 @@
             bCtx.ellipse(cx, cy - 18, 14 * s, 10 * s, 0, 0, Math.PI * 2);
             bCtx.fill();
 
+            // Cute Blush Cheeks
+            bCtx.fillStyle = "rgba(239, 68, 68, 0.22)";
+            bCtx.beginPath();
+            bCtx.arc(cx - 16 * s, cy - 17 * s, 4 * s, 0, Math.PI * 2);
+            bCtx.arc(cx + 16 * s, cy - 17 * s, 4 * s, 0, Math.PI * 2);
+            bCtx.fill();
+
             // Nose
             bCtx.fillStyle = "#1e293b";
             bCtx.beginPath();
             bCtx.arc(cx, cy - 21, 4 * s, 0, Math.PI * 2);
             bCtx.fill();
+
+            // Mouth line
+            bCtx.strokeStyle = "#1e293b";
+            bCtx.lineWidth = 1.2 * s;
+            bCtx.beginPath();
+            bCtx.moveTo(cx, cy - 21 + 3 * s);
+            bCtx.lineTo(cx, cy - 17 * s);
+            bCtx.arc(cx - 3 * s, cy - 17 * s, 3 * s, 0, Math.PI);
+            bCtx.moveTo(cx, cy - 17 * s);
+            bCtx.arc(cx + 3 * s, cy - 17 * s, 3 * s, 0, Math.PI);
+            bCtx.stroke();
 
             // Eyes (glowing green/custom)
             bCtx.fillStyle = eyeColor;
