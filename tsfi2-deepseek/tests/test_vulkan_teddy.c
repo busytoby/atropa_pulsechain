@@ -76,6 +76,16 @@ static bool hover_btn1 = false;
 static bool hover_btn2 = false;
 static bool hover_btn3 = false;
 
+// Multi-Model Selection and Genetic Optimizer Trigger variables
+static const char* vlm_names[] = {"moondream", "qwen2-vl", "llama3.2-vision", "claude", "gemini", "mock"};
+static const char* generator_names[] = {"sd15", "turbo", "dream", "flux", "sdxl"};
+static int selected_vlm = 0;
+static int selected_generator = 1;
+static char opt_status[128] = "Optimizer Status: IDLE";
+static bool hover_vlm_btn = false;
+static bool hover_gen_btn = false;
+static bool hover_run_btn = false;
+
 // Custom 16-bit float converter helper
 static inline uint16_t double_to_half(double f) {
     union { float f; uint32_t u; } u = { (float)f };
@@ -479,23 +489,37 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_rect_ab4h(canvas, 850, 480, 350, 40, btn_bg);
     draw_string_ab4h(canvas, "RESET DEFAULT STATE", 930, 492, btn_text);
 
-    // Dynamic Query Tokenizer Output
-    draw_string_ab4h(canvas, "=== DYNAMIC LLM TOKENIZER LOGS ===", 820, 550, text_hdr);
+    // VLM Selector
+    draw_string_ab4h(canvas, "VLM Critic:", 820, 540, text_hdr);
+    Ab4hPixel vlm_btn_bg = hover_vlm_btn ? make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    draw_rect_ab4h(canvas, 960, 530, 240, 30, vlm_btn_bg);
+    draw_string_ab4h(canvas, vlm_names[selected_vlm], 980, 538, btn_text);
+
+    // Generator Selector
+    draw_string_ab4h(canvas, "Generator:", 820, 580, text_hdr);
+    Ab4hPixel gen_btn_bg = hover_gen_btn ? make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    draw_rect_ab4h(canvas, 960, 570, 240, 30, gen_btn_bg);
+    draw_string_ab4h(canvas, generator_names[selected_generator], 980, 578, btn_text);
+
+    // Run Optimizer Button
+    Ab4hPixel run_btn_bg = hover_run_btn ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.25f, 1.0f);
+    draw_rect_ab4h(canvas, 850, 610, 350, 35, run_btn_bg);
+    draw_string_ab4h(canvas, "TRIGGER GENETIC OPTIMIZER", 910, 620, btn_text);
+
+    // Status Text
+    Ab4hPixel status_col = make_ab4h_pixel(0.9f, 0.7f, 0.2f, 1.0f); // Amber
+    draw_string_ab4h(canvas, opt_status, 850, 655, status_col);
+
+    // Compact Dynamic Query Tokenizer Output
     Ab4hPixel log_col = make_ab4h_pixel(0.5f, 0.85f, 0.5f, 1.0f); // Green
-
-    const char *prompt_fur = (fur_length > 0.14f) ? "dense thick-furred" : ((fur_length < 0.05f) ? "short-hair trimmed" : "fluffy");
-    const char *prompt_size = (scale_val > 1.4f) ? "giant plush" : ((scale_val < 0.6f) ? "tiny pocket-sized" : "standard");
-    const char *prompt_light = (light_angle_deg > 180.0f) ? "sunset backlighting" : "studio illuminated";
-
-    char dynamic_prompt[256];
+    const char *prompt_fur = (fur_length > 0.14f) ? "dense" : ((fur_length < 0.05f) ? "short" : "fluffy");
+    const char *prompt_size = (scale_val > 1.4f) ? "giant" : ((scale_val < 0.6f) ? "tiny" : "standard");
+    char dynamic_prompt[128];
     snprintf(dynamic_prompt, sizeof(dynamic_prompt),
-             "Prompt: 'a %s %s golden-brown bear, %s'\n"
-             "Tokens: [1042, 9811, 2035, 8431]\n"
-             "Identity Pole: 261640507549433\n"
-             "Aura (Light Vector): ACTIVE [x: %.2f y: %.2f]",
-             prompt_fur, prompt_size, prompt_light, lx, ly);
-
-    draw_string_ab4h(canvas, dynamic_prompt, 820, 580, log_col);
+             "Prompt: 'a %s %s golden-brown bear'\n"
+             "Tokens: [1042, 9811, 2035]",
+             prompt_fur, prompt_size);
+    draw_string_ab4h(canvas, dynamic_prompt, 850, 680, log_col);
 }
 
 // Downsamples AB4H 64-bit float canvas to standard 32-bit ARGB Wayland framebuffer
@@ -643,6 +667,9 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     hover_btn1 = (mouse_y >= 430 && mouse_y <= 470 && mouse_x >= 850 && mouse_x <= 1010);
     hover_btn2 = (mouse_y >= 430 && mouse_y <= 470 && mouse_x >= 1030 && mouse_x <= 1200);
     hover_btn3 = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 850 && mouse_x <= 1200);
+    hover_vlm_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 530 && mouse_y <= 560);
+    hover_gen_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 570 && mouse_y <= 600);
+    hover_run_btn = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 610 && mouse_y <= 645);
 
     if (mouse_pressed && active_slider != -1) {
         float pct = (float)(mouse_x - 850) / 350.0f;
@@ -700,6 +727,20 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                     fur_length = 0.08f;
                     scale_val = 1.0f;
                     light_angle_deg = 135.0f;
+                }
+            } else if (mouse_y >= 530 && mouse_y <= 560 && mouse_x >= 960 && mouse_x <= 1200) {
+                selected_vlm = (selected_vlm + 1) % 6;
+            } else if (mouse_y >= 570 && mouse_y <= 600 && mouse_x >= 960 && mouse_x <= 1200) {
+                selected_generator = (selected_generator + 1) % 5;
+            } else if (mouse_y >= 610 && mouse_y <= 645 && mouse_x >= 850 && mouse_x <= 1200) {
+                char run_cmd[512];
+                snprintf(run_cmd, sizeof(run_cmd), "python3 scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
+                         vlm_names[selected_vlm], generator_names[selected_generator]);
+                int ret = system(run_cmd);
+                if (ret == 0) {
+                    snprintf(opt_status, sizeof(opt_status), "Optimizer Status: RUNNING (Background)");
+                } else {
+                    snprintf(opt_status, sizeof(opt_status), "Optimizer Status: LAUNCH FAILED");
                 }
             }
         } else {
