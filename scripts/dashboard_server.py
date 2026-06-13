@@ -62,6 +62,133 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 "treasury_tokens": treasury_tokens
             }
             self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+        elif self.path.startswith('/api/pools'):
+            parsed_url = urllib.parse.urlparse(self.path)
+            params = urllib.parse.parse_qs(parsed_url.query)
+            address = params.get('address', [None])[0]
+            
+            if address:
+                address = address.lower()
+                from web3 import Web3
+                w3 = Web3(Web3.HTTPProvider("https://rpc.pulsechain.com"))
+                
+                # Setup contracts
+                token_checksum = Web3.to_checksum_address(address)
+                factory_checksum = Web3.to_checksum_address("0x1715a3E4A142d8b698131108995174F37aEBA10D")
+                
+                # ABIs
+                FACTORY_ABI = [
+                    {
+                        "constant": True,
+                        "inputs": [{"name": "tokenA", "type": "address"}, {"name": "tokenB", "type": "address"}],
+                        "name": "getPair",
+                        "outputs": [{"name": "pair", "type": "address"}],
+                        "payable": False,
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ]
+                
+                PAIR_ABI = [
+                    {"constant": True, "inputs": [], "name": "token0", "outputs": [{"name": "", "type": "address"}], "payable": False, "stateMutability": "view", "type": "function"},
+                    {"constant": True, "inputs": [], "name": "token1", "outputs": [{"name": "", "type": "address"}], "payable": False, "stateMutability": "view", "type": "function"},
+                    {"constant": True, "inputs": [], "name": "getReserves", "outputs": [{"name": "_reserve0", "type": "uint112"}, {"name": "_reserve1", "type": "uint112"}, {"name": "_blockTimestampLast", "type": "uint32"}], "payable": False, "stateMutability": "view", "type": "function"}
+                ]
+                
+                ERC20_ABI = [
+                    {"constant": True, "inputs": [], "name": "symbol", "outputs": [{"name": "", "type": "string"}], "payable": False, "stateMutability": "view", "type": "function"},
+                    {"constant": True, "inputs": [], "name": "name", "outputs": [{"name": "", "type": "string"}], "payable": False, "stateMutability": "view", "type": "function"},
+                    {"constant": True, "inputs": [], "name": "decimals", "outputs": [{"name": "", "type": "uint8"}], "payable": False, "stateMutability": "view", "type": "function"}
+                ]
+                
+                BASE_ASSETS = {
+                    "0xA1077a294dDE1B09bB078844df40758a5D0f9a27".lower(): {"symbol": "WPLS", "decimals": 18},
+                    "0x959C5Ad5C5Ad5c5ad5C5AD5C5AD5C5ad5c5AD5CD".lower(): {"symbol": "PLSX", "decimals": 18},
+                    "0x15D38573d2feeb82e7ad5187aB8c1D52810B1f07".lower(): {"symbol": "USDC (from Ethereum)", "decimals": 6},
+                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".lower(): {"symbol": "USDC", "decimals": 6},
+                    "0xefD766cCb8C15E5E9F813af7b2809857Baa53A1f".lower(): {"symbol": "DAI (from Ethereum)", "decimals": 18},
+                    "0x6b175474e89094c44da98b954eedeac495271d0f".lower(): {"symbol": "DAI", "decimals": 18},
+                    "0x0Cb81b54A05e0547D2d08C4A9E273a7d4C72B9eB".lower(): {"symbol": "USDT (from Ethereum)", "decimals": 6},
+                    "0xdac17f958d2ee523a2206206994597c13d831ec7".lower(): {"symbol": "USDT", "decimals": 6},
+                    "0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6".lower(): {"symbol": "Atropa", "decimals": 18},
+                    "0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d".lower(): {"symbol": "TeddyBear", "decimals": 18}
+                }
+                
+                pools_found = []
+                try:
+                    token_contract = w3.eth.contract(address=token_checksum, abi=ERC20_ABI)
+                    decimals = token_contract.functions.decimals().call()
+                    symbol = token_contract.functions.symbol().call()
+                    name = token_contract.functions.name().call()
+                    
+                    # PulseX V1 Factory: 0x29ea7545def87022badc76323f373ea1e707c523
+                    factories = {
+                        "PulseX V2": "0x1715a3E4A142d8b698131108995174F37aEBA10D",
+                        "PulseX V1": "0x29ea7545def87022badc76323f373ea1e707c523"
+                    }
+                    
+                    for version_name, factory_addr in factories.items():
+                        factory_contract = w3.eth.contract(address=Web3.to_checksum_address(factory_addr), abi=FACTORY_ABI)
+                        for base_addr, base_info in BASE_ASSETS.items():
+                            if base_addr == address:
+                                continue
+                            try:
+                                pair_addr = factory_contract.functions.getPair(
+                                    token_checksum,
+                                    Web3.to_checksum_address(base_addr)
+                                ).call()
+                                
+                                if pair_addr != "0x0000000000000000000000000000000000000000":
+                                    pair_contract = w3.eth.contract(address=Web3.to_checksum_address(pair_addr), abi=PAIR_ABI)
+                                    token0 = pair_contract.functions.token0().call().lower()
+                                    reserves = pair_contract.functions.getReserves().call()
+                                    
+                                    if token0 == address:
+                                        token_reserve = reserves[0]
+                                        base_reserve = reserves[1]
+                                    else:
+                                        token_reserve = reserves[1]
+                                        base_reserve = reserves[0]
+                                        
+                                    pools_found.append({
+                                        "pair_address": pair_addr.lower(),
+                                        "base_symbol": base_info["symbol"],
+                                        "base_address": base_addr,
+                                        "version": version_name,
+                                        "token_reserve": token_reserve / (10 ** decimals),
+                                        "base_reserve": base_reserve / (10 ** base_info["decimals"])
+                                    })
+                            except Exception:
+                                pass
+                    
+                    # Sort pools by token reserve
+                    pools_found.sort(key=lambda x: x["token_reserve"], reverse=True)
+                    
+                    response = {
+                        "success": True,
+                        "token": {
+                            "address": address,
+                            "symbol": symbol,
+                            "name": name,
+                            "decimals": decimals
+                        },
+                        "pools": pools_found
+                    }
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+                    return
+                except Exception as e:
+                    self.send_response(500)
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+                    return
+            
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b"Invalid request")
         elif self.path.startswith('/api/ignore'):
             parsed_url = urllib.parse.urlparse(self.path)
             params = urllib.parse.parse_qs(parsed_url.query)
@@ -74,29 +201,30 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 target_fpath = None
                 tokens = {}
                 
-                # Search all files to find which file has the token
+                # Search all files to find which files have the token and update them
+                found_any = False
                 for fpath in glob.glob("treasury_tokens_*.json"):
                     try:
                         with open(fpath, "r") as f:
                             data = json.load(f)
-                            if address in data:
-                                target_fpath = fpath
-                                tokens = data
-                                break
+                        if address in data:
+                            data[address]["ignored"] = ignored_val
+                            with open(fpath, "w") as f:
+                                json.dump(data, f, indent=4)
+                            found_any = True
                     except Exception:
                         pass
                 
-                if not target_fpath:
+                if not found_any:
                     # Default to unknown_minter if not found anywhere
                     target_fpath = "treasury_tokens_unknown_minter.json"
+                    tokens = {}
                     if os.path.exists(target_fpath):
                         try:
                             with open(target_fpath, "r") as f:
                                 tokens = json.load(f)
                         except Exception:
                             pass
-                
-                if address not in tokens:
                     tokens[address] = {
                         "address": address,
                         "symbol": "UNKNOWN",
@@ -105,12 +233,13 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         "minter_name": "Unknown Minter",
                         "ignored": ignored_val
                     }
-                else:
-                    tokens[address]["ignored"] = ignored_val
+                    try:
+                        with open(target_fpath, "w") as f:
+                            json.dump(tokens, f, indent=4)
+                    except Exception:
+                        pass
                 
                 try:
-                    with open(target_fpath, "w") as f:
-                        json.dump(tokens, f, indent=4)
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
                     self.send_header('Access-Control-Allow-Origin', '*')
@@ -118,7 +247,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(json.dumps({"success": True, "address": address, "ignored": ignored_val}).encode('utf-8'))
                     return
                 except Exception as e:
-                    print(f"Error saving ignored status: {e}")
+                    print(f"Error sending ignore response: {e}")
             
             self.send_response(400)
             self.end_headers()
@@ -319,12 +448,16 @@ HTML_CONTENT = """<!DOCTYPE html>
         .table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
 
         .table th, .table td {
             text-align: left;
-            padding: 0.8rem 1rem;
-            font-size: 0.9rem;
+            padding: 0.8rem 0.5rem;
+            font-size: 0.85rem;
+            word-wrap: break-word;
+            word-break: break-all;
+            white-space: normal;
         }
 
         .table th {
@@ -504,6 +637,98 @@ HTML_CONTENT = """<!DOCTYPE html>
             background: rgba(251, 191, 36, 0.08);
             box-shadow: 0 0 12px rgba(251, 191, 36, 0.1);
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background: rgba(17, 25, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(139, 92, 246, 0.15);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 700px;
+            padding: 2rem;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-close {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: #fff;
+        }
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .modal-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            word-break: break-all;
+        }
+        .modal-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .clickable-token {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .clickable-token:hover {
+            transform: translateX(4px);
+        }
     </style>
 </head>
 <body>
@@ -624,6 +849,18 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- LP Details Modal -->
+    <div class="modal-overlay" id="lp-modal" onclick="closeLpModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeLpModal(event)">&times;</button>
+            <div class="modal-title" id="lp-modal-title">Token LP Reserves</div>
+            <div class="modal-subtitle" id="lp-modal-subtitle">0x00000...</div>
+            <div id="lp-modal-body">
+                <!-- Dynamic Content or Loader -->
+            </div>
+        </div>
+    </div>
+
     <script>
         let cachedData = { prices: {}, unresolved: [], resolved: [] };
         let activeMinterTab = null;
@@ -711,7 +948,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             const treasuryEntries = Object.entries(cachedData.treasury_tokens || {});
             
             // Update treasury count badge
-            document.getElementById('treasury-tokens-count').innerText = `${treasuryEntries.length} Minted`;
+            const activeCount = treasuryEntries.filter(([a, t]) => t.ignored !== true).length;
+            document.getElementById('treasury-tokens-count').innerText = `${activeCount} Tracked`;
 
             if (treasuryEntries.length === 0) {
                 tabsHeader.innerHTML = '';
@@ -742,8 +980,8 @@ HTML_CONTENT = """<!DOCTYPE html>
                     grouped[minterName].push([addr, token]);
                 });
                 
-                // Find all minters that actually have tokens
-                const activeMinters = preferredMinters.filter(m => grouped[m] && grouped[m].length > 0);
+                // Find all minters that actually have active tokens
+                const activeMinters = preferredMinters.filter(m => grouped[m] && grouped[m].filter(([a, t]) => t.ignored !== true).length > 0);
                 
                 // Set default active tab if none selected or if selected tab has no tokens
                 if (!activeMinterTab || !activeMinters.includes(activeMinterTab)) {
@@ -752,7 +990,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 
                 // Render tab buttons
                 tabsHeader.innerHTML = activeMinters.map(minterName => {
-                    const count = grouped[minterName].length;
+                    const count = grouped[minterName].filter(([a, t]) => t.ignored !== true).length;
                     const isActive = minterName === activeMinterTab;
                     return `<button class="tab-btn ${isActive ? 'active' : ''}" onclick="selectMinterTab('${minterName}')">${minterName} (${count})</button>`;
                 }).join('');
@@ -767,7 +1005,9 @@ HTML_CONTENT = """<!DOCTYPE html>
                         return symA.localeCompare(symB);
                     });
                     
-                    const rowsHtml = tokens.map(([addr, token]) => {
+                    const rowsHtml = tokens
+                        .filter(([addr, token]) => token.ignored !== true)
+                        .map(([addr, token]) => {
                         const isIgnored = token.ignored === true;
                         const name = token.name || 'Unknown';
                         const symbol = token.symbol || 'UNKNOWN';
@@ -783,9 +1023,12 @@ HTML_CONTENT = """<!DOCTYPE html>
                         const parentAddr = token.parent_address || '';
                         const parentDisplay = parentAddr ? `<a class="address-link" style="font-size:0.75rem" target="_blank" href="https://otter.pulsechain.com/address/${parentAddr}" title="${parentAddr}">${parentSymbol}</a>` : parentSymbol;
                         
+                        const b64Symbol = btoa(unescape(encodeURIComponent(symbol)));
+                        const b64Name = btoa(unescape(encodeURIComponent(name)));
+                        
                         return `
                             <tr>
-                                <td>
+                                <td class="clickable-token" onclick="showLpModal('${addr}', '${b64Symbol}', '${b64Name}', true)">
                                     <div>${displaySymbol}</div>
                                     <div style="font-size:0.75rem; color:var(--text-muted)">${displayName}</div>
                                     <div style="font-size:0.7rem; color:var(--text-muted); margin-top: 0.1rem">
@@ -805,9 +1048,9 @@ HTML_CONTENT = """<!DOCTYPE html>
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 50%">Token</th>
+                                        <th style="width: 45%">Token</th>
                                         <th style="width: 30%">Address</th>
-                                        <th style="width: 20%">Action</th>
+                                        <th style="width: 25%">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -974,9 +1217,12 @@ HTML_CONTENT = """<!DOCTYPE html>
                 let symbolHtml = isTreasury ? `<span class="token-symbol-glow" style="color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4)">👑 ${symbol}</span>` : `<span class="token-symbol-glow">${symbol}</span>`;
                 let nameHtml = isTreasury ? `<div style="font-size:0.75rem; color:var(--text-muted)">${name} <span style="color:#fbbf24; font-size:0.7rem; font-weight:600" title="Treasury Owner: ${treasuryOwner}">(Treasury)</span></div>` : `<div style="font-size:0.75rem; color:var(--text-muted)">${name}</div>`;
 
+                const b64Symbol = btoa(unescape(encodeURIComponent(symbol)));
+                const b64Name = btoa(unescape(encodeURIComponent(name)));
+
                 return `
                     <tr style="${isTreasury ? 'background: rgba(251, 191, 36, 0.02); border-left: 3px solid #fbbf24;' : ''}">
-                        <td>
+                        <td class="clickable-token" onclick="showLpModal('${addr}', '${b64Symbol}', '${b64Name}', true)">
                             ${symbolHtml}
                             ${nameHtml}
                         </td>
@@ -1000,6 +1246,92 @@ HTML_CONTENT = """<!DOCTYPE html>
             } catch (err) {
                 console.error("Error toggling ignore status:", err);
             }
+        }
+
+        async function showLpModal(address, symbol, name, isB64) {
+            if (isB64) {
+                try {
+                    symbol = decodeURIComponent(escape(atob(symbol)));
+                    name = decodeURIComponent(escape(atob(name)));
+                } catch(e) {
+                    console.error("Base64 decode error:", e);
+                }
+            }
+            const modal = document.getElementById('lp-modal');
+            const titleEl = document.getElementById('lp-modal-title');
+            const subtitleEl = document.getElementById('lp-modal-subtitle');
+            const bodyEl = document.getElementById('lp-modal-body');
+
+            titleEl.innerText = `${symbol} Liquidity Pools`;
+            subtitleEl.innerHTML = `Address: <a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${address}">${address}</a>`;
+            
+            bodyEl.innerHTML = `
+                <div class="modal-loader">
+                    <div class="spinner"></div>
+                    <div>Querying PulseChain nodes for active PulseX V1 & V2 pools...</div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+
+            try {
+                const res = await fetch(`/api/pools?address=${encodeURIComponent(address)}`);
+                if (!res.ok) throw new Error("API request failed");
+                const data = await res.json();
+                
+                if (!data.success) {
+                    bodyEl.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 2rem">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                if (data.pools.length === 0) {
+                    bodyEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem">No liquidity pools found matching standard base assets on PulseX V1 or V2.</div>`;
+                    return;
+                }
+
+                const rowsHtml = data.pools.map((pool, idx) => {
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: #fff;">${symbol} / ${pool.base_symbol}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                    <span style="color:#fbbf24; font-weight:600;">${pool.version}</span> Pool: <a class="address-link" target="_blank" href="https://otter.pulsechain.com/address/${pool.pair_address}">${formatAddress(pool.pair_address)}</a>
+                                </div>
+                            </td>
+                            <td style="font-family: monospace; text-align: right; color: #34d399; font-weight: 700;">
+                                ${pool.token_reserve.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}
+                            </td>
+                            <td style="font-family: monospace; text-align: right; color: #a78bfa; font-weight: 700;">
+                                ${pool.base_reserve.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                bodyEl.innerHTML = `
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Pool Pair</th>
+                                    <th style="text-align: right;">${symbol} Reserve</th>
+                                    <th style="text-align: right;">Base Asset Reserve</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (err) {
+                bodyEl.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 2rem">Failed fetching pool reserves. Ensure daemon connection is active.</div>`;
+            }
+        }
+
+        function closeLpModal(event) {
+            const modal = document.getElementById('lp-modal');
+            modal.classList.remove('active');
         }
 
         document.getElementById('catalog-search').addEventListener('input', renderCatalog);

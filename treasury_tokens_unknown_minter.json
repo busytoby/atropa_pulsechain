@@ -8,7 +8,7 @@
         "minter_name": "Unknown Minter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x0774e0a4ef0b8b57d5c0c0aac535da4592de34c3": {
         "address": "0x0774e0a4ef0b8b57d5c0c0aac535da4592de34c3",

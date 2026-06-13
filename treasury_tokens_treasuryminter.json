@@ -8,7 +8,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x0774e0a4ef0b8b57d5c0c0aac535da4592de34c3": {
         "address": "0x0774e0a4ef0b8b57d5c0c0aac535da4592de34c3",
@@ -118,7 +118,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x0c7aa4e0c3f7235b78802022c56ffa54fde987f2": {
         "address": "0x0c7aa4e0c3f7235b78802022c56ffa54fde987f2",
@@ -129,7 +129,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x266362702ca95e549bff512dfe7731179966529b",
         "parent_symbol": "aaa",
-        "ignored": false
+        "ignored": true
     },
     "0x0e6e5daef7eceebaf9ef997a9b3eff128fb39301": {
         "address": "0x0e6e5daef7eceebaf9ef997a9b3eff128fb39301",
@@ -140,7 +140,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x10111668f251f2b99ce2e2f897452f30c9a0afe0": {
         "address": "0x10111668f251f2b99ce2e2f897452f30c9a0afe0",
@@ -151,7 +151,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x11ce834ef873c7306c70cf291f57ff2c1cb6eb32": {
         "address": "0x11ce834ef873c7306c70cf291f57ff2c1cb6eb32",
@@ -162,7 +162,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa3ca45298e068a4c67744a35c3d5c7dad2fd88c4",
         "parent_symbol": "AAA",
-        "ignored": false
+        "ignored": true
     },
     "0x11d09962587fab90f5f5a0eff41eaaec806d74c1": {
         "address": "0x11d09962587fab90f5f5a0eff41eaaec806d74c1",
@@ -173,7 +173,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x5c5cf9c15f59ab1dcb3af86dca27aa1e65f0eb46",
         "parent_symbol": "a",
-        "ignored": false
+        "ignored": true
     },
     "0x12b2743b1c0514c80ef187b92a9b8c059cb170b2": {
         "address": "0x12b2743b1c0514c80ef187b92a9b8c059cb170b2",
@@ -184,7 +184,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x35f2eee9f0ddb08ad1c0c2a765b48c6db43d61ed",
         "parent_symbol": "M1",
-        "ignored": false
+        "ignored": true
     },
     "0x137d5468f51f7510572161c9eba1fbef9d63568f": {
         "address": "0x137d5468f51f7510572161c9eba1fbef9d63568f",
@@ -195,7 +195,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x15e690c898e30c594e604923f18236404a135376": {
         "address": "0x15e690c898e30c594e604923f18236404a135376",
@@ -206,7 +206,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x166db51d2d823835b38554583fb119cb99f6f6c5": {
         "address": "0x166db51d2d823835b38554583fb119cb99f6f6c5",
@@ -217,7 +217,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x167e1033249b5ac823117c16ad9bdce046b9617d": {
         "address": "0x167e1033249b5ac823117c16ad9bdce046b9617d",
@@ -250,7 +250,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x7c98492cbb9840752533371b368b0c596d578e5b",
         "parent_symbol": "111",
-        "ignored": false
+        "ignored": true
     },
     "0x1dc8e53ed78a5eea905ac99fabc5298123ed684b": {
         "address": "0x1dc8e53ed78a5eea905ac99fabc5298123ed684b",
@@ -261,7 +261,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x210813a39d6b10754f9e2f38066e920ed122b208": {
         "address": "0x210813a39d6b10754f9e2f38066e920ed122b208",
@@ -272,7 +272,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc0dbcd0a8ac5d02edcf4a9b4eec39bed535d94f1",
         "parent_symbol": "K1",
-        "ignored": false
+        "ignored": true
     },
     "0x225ede471d2372459fceb5c47833495f2615ed84": {
         "address": "0x225ede471d2372459fceb5c47833495f2615ed84",
@@ -283,7 +283,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x2a8c125cca39983f6c23b585e713dd3c7e2cba11",
         "parent_symbol": "\ud83c\udfe6\ud83c\udf32\ud83c\udfe6\ud83c\udf32\ud83c\udfe6",
-        "ignored": false
+        "ignored": true
     },
     "0x23ea14708122876f94c351b961ecefd28bbba557": {
         "address": "0x23ea14708122876f94c351b961ecefd28bbba557",
@@ -294,7 +294,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x8db967db332594cdc24e2de14ce46803be81163f",
         "parent_symbol": "\u26bd\ufe0f\ud83c\udfc0\ud83c\udfc8\u26be\ufe0f\ud83e\udd4e\ud83c\udfbe",
-        "ignored": false
+        "ignored": true
     },
     "0x24018708afdec50514ab3a8aa114cbc74d837af2": {
         "address": "0x24018708afdec50514ab3a8aa114cbc74d837af2",
@@ -305,7 +305,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x293e4c5c02a2feef48cb3cd2bf633e51d0819746": {
         "address": "0x293e4c5c02a2feef48cb3cd2bf633e51d0819746",
@@ -316,7 +316,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc0dbcd0a8ac5d02edcf4a9b4eec39bed535d94f1",
         "parent_symbol": "K1",
-        "ignored": false
+        "ignored": true
     },
     "0x29a865071d8a75a23722211defeae70bae30c78c": {
         "address": "0x29a865071d8a75a23722211defeae70bae30c78c",
@@ -327,7 +327,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xb7a77bb9bcd39756d158d43d83d6b0da80d8386d",
         "parent_symbol": "\u2c89\u2c9b\u2ca7\u2c93\u2ca3v\u2c93\u2c89\u2cb1",
-        "ignored": false
+        "ignored": true
     },
     "0x2ba92fdf4552525058cd95a119d3c872d3fae122": {
         "address": "0x2ba92fdf4552525058cd95a119d3c872d3fae122",
@@ -338,7 +338,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x38c92f96f8fe7b0297b7c58a709224eb1680a063",
         "parent_symbol": "\ud83c\udfe6\ud83c\udf32\ud83c\udf32\ud83c\udf32\ud83c\udfe6",
-        "ignored": false
+        "ignored": true
     },
     "0x2d96ecd171f469e90d1cea07d63f2f0190e51d45": {
         "address": "0x2d96ecd171f469e90d1cea07d63f2f0190e51d45",
@@ -349,7 +349,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x2da3a9c30584425d8250b0ca036bd9b736201559": {
         "address": "0x2da3a9c30584425d8250b0ca036bd9b736201559",
@@ -360,7 +360,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x2e2cb4ade3bec924ae002f4ade16b78f7a7287f7": {
         "address": "0x2e2cb4ade3bec924ae002f4ade16b78f7a7287f7",
@@ -371,7 +371,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x326a2fa60697992403fb73a7972206431bec9d2b": {
         "address": "0x326a2fa60697992403fb73a7972206431bec9d2b",
@@ -382,7 +382,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xab72bd6ec721c62cdcad7d1e95b37bee32a9d1bf",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0x37a29eb6d9c65d5bb1480b4e7917baefd016c4e8": {
         "address": "0x37a29eb6d9c65d5bb1480b4e7917baefd016c4e8",
@@ -393,7 +393,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xab72bd6ec721c62cdcad7d1e95b37bee32a9d1bf",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0x3af4fca40ba0ac76e39bb6b1de54251005d7dd05": {
         "address": "0x3af4fca40ba0ac76e39bb6b1de54251005d7dd05",
@@ -404,7 +404,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x3fa92db6a3ad249b1031e0bbce69657d39f1e0fb": {
         "address": "0x3fa92db6a3ad249b1031e0bbce69657d39f1e0fb",
@@ -415,7 +415,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xb7a77bb9bcd39756d158d43d83d6b0da80d8386d",
         "parent_symbol": "\u2c89\u2c9b\u2ca7\u2c93\u2ca3v\u2c93\u2c89\u2cb1",
-        "ignored": false
+        "ignored": true
     },
     "0x431610d1fe1a29ae72d011578d3ff07dbf04e6ca": {
         "address": "0x431610d1fe1a29ae72d011578d3ff07dbf04e6ca",
@@ -426,7 +426,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x466be25b5bcf4ef3ea0ae19894197c3bfdaf0498": {
         "address": "0x466be25b5bcf4ef3ea0ae19894197c3bfdaf0498",
@@ -437,7 +437,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x4730a787c0adcc3ec6aa3a804238d6a07cc3dc83": {
         "address": "0x4730a787c0adcc3ec6aa3a804238d6a07cc3dc83",
@@ -459,7 +459,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x19f10d182ac3bf3ce6fa9f021cc3115b0b0c71a0",
         "parent_symbol": "J1",
-        "ignored": false
+        "ignored": true
     },
     "0x49dea91b3fd1df85f1838935f6a8eff7653a874a": {
         "address": "0x49dea91b3fd1df85f1838935f6a8eff7653a874a",
@@ -481,7 +481,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x4dd97fd2587136241c0ef647612ec9bf7ec4be47": {
         "address": "0x4dd97fd2587136241c0ef647612ec9bf7ec4be47",
@@ -492,7 +492,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x4f05b6ed315190736d278e4a758920d5e37bd32d": {
         "address": "0x4f05b6ed315190736d278e4a758920d5e37bd32d",
@@ -514,7 +514,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x7c98492cbb9840752533371b368b0c596d578e5b",
         "parent_symbol": "111",
-        "ignored": false
+        "ignored": true
     },
     "0x55cfebe632e0932d61ead43b579906ea96902860": {
         "address": "0x55cfebe632e0932d61ead43b579906ea96902860",
@@ -525,7 +525,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xfcaab5b94f9b4b616e21c38fbc9e63b4a238df09",
         "parent_symbol": "V1",
-        "ignored": false
+        "ignored": true
     },
     "0x5a7736497e4663fd91235fd44671e02da1ca23d5": {
         "address": "0x5a7736497e4663fd91235fd44671e02da1ca23d5",
@@ -536,7 +536,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x5a85e98939304152b5aa17ebff9daad74e4cd6a9": {
         "address": "0x5a85e98939304152b5aa17ebff9daad74e4cd6a9",
@@ -547,7 +547,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x5f0f761cdeadbd686324a0624b41f8636f05034b": {
         "address": "0x5f0f761cdeadbd686324a0624b41f8636f05034b",
@@ -569,7 +569,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x38c92f96f8fe7b0297b7c58a709224eb1680a063",
         "parent_symbol": "\ud83c\udfe6\ud83c\udf32\ud83c\udf32\ud83c\udf32\ud83c\udfe6",
-        "ignored": false
+        "ignored": true
     },
     "0x674144e22bd71fb7cb9f82432b661174b201f771": {
         "address": "0x674144e22bd71fb7cb9f82432b661174b201f771",
@@ -580,7 +580,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x69f7d48070b9857dfc22c0d4e81a61c0039d9c52": {
         "address": "0x69f7d48070b9857dfc22c0d4e81a61c0039d9c52",
@@ -591,7 +591,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x574d1012cab3b2cdcd9597290f767306bbdd3c60",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0x6a1a09d5847759562d587c07ba6e2b00eebd6461": {
         "address": "0x6a1a09d5847759562d587c07ba6e2b00eebd6461",
@@ -602,7 +602,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x76ac0420febe67f55370b28e11c80970fd26f3be",
         "parent_symbol": "H!Dr\u2640\u327eStr\u2640N",
-        "ignored": false
+        "ignored": true
     },
     "0x6b612ecf9dde72628a5372f217cddd829493e568": {
         "address": "0x6b612ecf9dde72628a5372f217cddd829493e568",
@@ -613,7 +613,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x8db967db332594cdc24e2de14ce46803be81163f",
         "parent_symbol": "\u26bd\ufe0f\ud83c\udfc0\ud83c\udfc8\u26be\ufe0f\ud83e\udd4e\ud83c\udfbe",
-        "ignored": false
+        "ignored": true
     },
     "0x6bbb48be1a90816e3100ac0c73f81bfb6d73b5e1": {
         "address": "0x6bbb48be1a90816e3100ac0c73f81bfb6d73b5e1",
@@ -624,7 +624,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x6bdbe018faafd85bf7a2e8dcfc0c4edd4b540164": {
         "address": "0x6bdbe018faafd85bf7a2e8dcfc0c4edd4b540164",
@@ -635,7 +635,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x14d852dfdaa02718a2e2df697c17ccb9dd4cfaf1",
         "parent_symbol": "L\u24b6\u26b8t!M\u327e\u29bb",
-        "ignored": false
+        "ignored": true
     },
     "0x6be25eded22935c46768c6b3707e4abd2803d1e2": {
         "address": "0x6be25eded22935c46768c6b3707e4abd2803d1e2",
@@ -646,7 +646,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x574d1012cab3b2cdcd9597290f767306bbdd3c60",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0x6f6b7e45f3c14857e6d9480601beaf243c98d433": {
         "address": "0x6f6b7e45f3c14857e6d9480601beaf243c98d433",
@@ -657,7 +657,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xe1f716c4c87b6d6ea48e462f4a235d9725866342",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0x71cdb5379fe5b406654e59da48f8582bf4f80040": {
         "address": "0x71cdb5379fe5b406654e59da48f8582bf4f80040",
@@ -668,7 +668,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x73c0cb0b98db715fb8f1bbfcea82db719fbbed0c": {
         "address": "0x73c0cb0b98db715fb8f1bbfcea82db719fbbed0c",
@@ -679,7 +679,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x19f10d182ac3bf3ce6fa9f021cc3115b0b0c71a0",
         "parent_symbol": "J1",
-        "ignored": false
+        "ignored": true
     },
     "0x78fdf62ad867a70ace798c1c5e7404b7d1b3204b": {
         "address": "0x78fdf62ad867a70ace798c1c5e7404b7d1b3204b",
@@ -690,7 +690,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x790d8ddafc4bf2c70b4bac500d81707480e95eb9": {
         "address": "0x790d8ddafc4bf2c70b4bac500d81707480e95eb9",
@@ -701,7 +701,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xb3d450f56fba2d21728e33a3c3e52815e43dabbf",
         "parent_symbol": "\ud83c\udfe6\ud83c\udf32\ud83c\udfe6",
-        "ignored": false
+        "ignored": true
     },
     "0x798f16fdfe3623c2eac1c975fd3bb79a5eb3f7d8": {
         "address": "0x798f16fdfe3623c2eac1c975fd3bb79a5eb3f7d8",
@@ -723,7 +723,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x8db967db332594cdc24e2de14ce46803be81163f",
         "parent_symbol": "\u26bd\ufe0f\ud83c\udfc0\ud83c\udfc8\u26be\ufe0f\ud83e\udd4e\ud83c\udfbe",
-        "ignored": false
+        "ignored": true
     },
     "0x7b164762c38cbe5133cec4aed7129ca0f60ea556": {
         "address": "0x7b164762c38cbe5133cec4aed7129ca0f60ea556",
@@ -734,7 +734,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x8066a8e60b02ff6baee4c7ad0003ddc78bd162ab": {
         "address": "0x8066a8e60b02ff6baee4c7ad0003ddc78bd162ab",
@@ -778,7 +778,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xfcaab5b94f9b4b616e21c38fbc9e63b4a238df09",
         "parent_symbol": "V1",
-        "ignored": false
+        "ignored": true
     },
     "0x8b6dd17e8057cc18a42e1a6be8cb2036bdf5e5a7": {
         "address": "0x8b6dd17e8057cc18a42e1a6be8cb2036bdf5e5a7",
@@ -789,7 +789,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x8e677897a45ceb3b5a30d0e6c3132b1383d487c9": {
         "address": "0x8e677897a45ceb3b5a30d0e6c3132b1383d487c9",
@@ -800,7 +800,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x8e6ee8da74fcff11b848767d605aee938e2e0b87": {
         "address": "0x8e6ee8da74fcff11b848767d605aee938e2e0b87",
@@ -811,7 +811,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x14d852dfdaa02718a2e2df697c17ccb9dd4cfaf1",
         "parent_symbol": "L\u24b6\u26b8t!M\u327e\u29bb",
-        "ignored": false
+        "ignored": true
     },
     "0x8f3556157f983b74472419600beedd0b12fbf591": {
         "address": "0x8f3556157f983b74472419600beedd0b12fbf591",
@@ -822,7 +822,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x8f488ce79b72ce9b40b1e68430b8cfdfe1ea4a7a": {
         "address": "0x8f488ce79b72ce9b40b1e68430b8cfdfe1ea4a7a",
@@ -833,7 +833,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x903cb7a20284fb53f812ae22f91394eea9e61bc1": {
         "address": "0x903cb7a20284fb53f812ae22f91394eea9e61bc1",
@@ -844,7 +844,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x76ac0420febe67f55370b28e11c80970fd26f3be",
         "parent_symbol": "H!Dr\u2640\u327eStr\u2640N",
-        "ignored": false
+        "ignored": true
     },
     "0x92cbbbe1681117ee9851522d6a968f76da2658e5": {
         "address": "0x92cbbbe1681117ee9851522d6a968f76da2658e5",
@@ -855,7 +855,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x9386d83326f21dd43381dcd67943d683be0a2455": {
         "address": "0x9386d83326f21dd43381dcd67943d683be0a2455",
@@ -866,7 +866,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa3ca45298e068a4c67744a35c3d5c7dad2fd88c4",
         "parent_symbol": "AAA",
-        "ignored": false
+        "ignored": true
     },
     "0x96ad3857b0b3cbed8cd02960a382cab449771849": {
         "address": "0x96ad3857b0b3cbed8cd02960a382cab449771849",
@@ -877,7 +877,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x2a8c125cca39983f6c23b585e713dd3c7e2cba11",
         "parent_symbol": "\ud83c\udfe6\ud83c\udf32\ud83c\udfe6\ud83c\udf32\ud83c\udfe6",
-        "ignored": false
+        "ignored": true
     },
     "0x997957fb3782f371b640707146b1efe81a597fc9": {
         "address": "0x997957fb3782f371b640707146b1efe81a597fc9",
@@ -899,7 +899,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xa872bfea1732fbb6a82ec6b4f66818e0aaf84667": {
         "address": "0xa872bfea1732fbb6a82ec6b4f66818e0aaf84667",
@@ -910,7 +910,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xa884d3c479e6e7a50c3e27187bc1c0676edf6771": {
         "address": "0xa884d3c479e6e7a50c3e27187bc1c0676edf6771",
@@ -932,7 +932,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x83cd7974bd2a3179138ccd01f8802bfbd6f4eada",
         "parent_symbol": "\ud83c\udfad",
-        "ignored": false
+        "ignored": true
     },
     "0xadb6ef3839be3c2e1d91b45e772e8e5821f792c2": {
         "address": "0xadb6ef3839be3c2e1d91b45e772e8e5821f792c2",
@@ -954,7 +954,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0xb6359a65c814d134ea3c4330218aa7ec1a20bc35": {
         "address": "0xb6359a65c814d134ea3c4330218aa7ec1a20bc35",
@@ -965,7 +965,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xb699fa2cdf35095fdc2a1887e2570c3a4590dbba": {
         "address": "0xb699fa2cdf35095fdc2a1887e2570c3a4590dbba",
@@ -976,7 +976,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa2e6f4abeccc859bf906a2e8ea3919b33fa59514",
         "parent_symbol": "\ud83d\udcb8",
-        "ignored": false
+        "ignored": true
     },
     "0xb7c22da3954ee5de9e77ae3aa1c4a8fa8a96ee06": {
         "address": "0xb7c22da3954ee5de9e77ae3aa1c4a8fa8a96ee06",
@@ -987,7 +987,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x8db967db332594cdc24e2de14ce46803be81163f",
         "parent_symbol": "\u26bd\ufe0f\ud83c\udfc0\ud83c\udfc8\u26be\ufe0f\ud83e\udd4e\ud83c\udfbe",
-        "ignored": false
+        "ignored": true
     },
     "0xb85e4f6df3721594c9021f65cb465563c6d2ae0f": {
         "address": "0xb85e4f6df3721594c9021f65cb465563c6d2ae0f",
@@ -998,7 +998,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xbb0c1ea61d23195db229f5f4c2889f7d1437c96a": {
         "address": "0xbb0c1ea61d23195db229f5f4c2889f7d1437c96a",
@@ -1009,7 +1009,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x76ac0420febe67f55370b28e11c80970fd26f3be",
         "parent_symbol": "H!Dr\u2640\u327eStr\u2640N",
-        "ignored": false
+        "ignored": true
     },
     "0xbd5327b8ee1b2bdeada6438079f70a2600d85ef5": {
         "address": "0xbd5327b8ee1b2bdeada6438079f70a2600d85ef5",
@@ -1020,7 +1020,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xbe1a890ab2056fe675f2ab9592adfd1b08e9c4ec": {
         "address": "0xbe1a890ab2056fe675f2ab9592adfd1b08e9c4ec",
@@ -1031,7 +1031,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xc133f9352031316729384538f53e21f508db89e2": {
         "address": "0xc133f9352031316729384538f53e21f508db89e2",
@@ -1042,7 +1042,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xe1f716c4c87b6d6ea48e462f4a235d9725866342",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0xca425da5dc6f62d5aca434e2ba8766d1c6f51b6b": {
         "address": "0xca425da5dc6f62d5aca434e2ba8766d1c6f51b6b",
@@ -1053,7 +1053,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xce4dab2d0d4c2d42264a780f06df6ab28b1abd5c": {
         "address": "0xce4dab2d0d4c2d42264a780f06df6ab28b1abd5c",
@@ -1075,7 +1075,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xb3d450f56fba2d21728e33a3c3e52815e43dabbf",
         "parent_symbol": "\ud83c\udfe6\ud83c\udf32\ud83c\udfe6",
-        "ignored": false
+        "ignored": true
     },
     "0xd42eb4251a7c367c6283f3304aa0e4d580e8b5db": {
         "address": "0xd42eb4251a7c367c6283f3304aa0e4d580e8b5db",
@@ -1097,7 +1097,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0xd70ca5fe12b07d21c0636804589d3c5fc02d2654": {
         "address": "0xd70ca5fe12b07d21c0636804589d3c5fc02d2654",
@@ -1108,7 +1108,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xd7e83fcb7b3f69719efbc8e2f20000acc00c6248": {
         "address": "0xd7e83fcb7b3f69719efbc8e2f20000acc00c6248",
@@ -1119,7 +1119,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xd8eb6ed01a22575d9fe5f2e3c1a2c951e7b9d9ed": {
         "address": "0xd8eb6ed01a22575d9fe5f2e3c1a2c951e7b9d9ed",
@@ -1152,7 +1152,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xf8403d46d1bc596274e1293f8adb39c74568153c": {
         "address": "0xf8403d46d1bc596274e1293f8adb39c74568153c",
@@ -1163,7 +1163,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x266362702ca95e549bff512dfe7731179966529b",
         "parent_symbol": "aaa",
-        "ignored": false
+        "ignored": true
     },
     "0xfbcaa7c986918fe579f9af961fa5e475bc4750f7": {
         "address": "0xfbcaa7c986918fe579f9af961fa5e475bc4750f7",
@@ -1185,7 +1185,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0xfe875ad5119441fe7680fb48f7269ec9b5f84929": {
         "address": "0xfe875ad5119441fe7680fb48f7269ec9b5f84929",
@@ -1207,7 +1207,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x35f2eee9f0ddb08ad1c0c2a765b48c6db43d61ed",
         "parent_symbol": "M1",
-        "ignored": false
+        "ignored": true
     },
     "0x32c1884c77ee16df0cfa63ebbb15c679e7234151": {
         "address": "0x32c1884c77ee16df0cfa63ebbb15c679e7234151",
@@ -1240,7 +1240,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa2e6f4abeccc859bf906a2e8ea3919b33fa59514",
         "parent_symbol": "\ud83d\udcb8",
-        "ignored": false
+        "ignored": true
     },
     "0xc65a178939e8bfb99a4e7c122aa144736fd6c594": {
         "address": "0xc65a178939e8bfb99a4e7c122aa144736fd6c594",
@@ -1251,7 +1251,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x395b1a20c53242fbd3972ce2ffdf7d67eb93e209": {
         "address": "0x395b1a20c53242fbd3972ce2ffdf7d67eb93e209",
@@ -1262,7 +1262,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xdd7d4d12ccd5dff0bf31d18cf98d57d61319d246",
         "parent_symbol": "try",
-        "ignored": false
+        "ignored": true
     },
     "0x41d738b1e4c1493ffffb961b1c047a26dc312e4e": {
         "address": "0x41d738b1e4c1493ffffb961b1c047a26dc312e4e",
@@ -1306,7 +1306,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x9d184edd853fc050def638cbb4b95ddf0d0a7473",
         "parent_symbol": "GOO",
-        "ignored": false
+        "ignored": true
     },
     "0x122e81ca52882ac56e671d4dfa94a6afd44ee376": {
         "address": "0x122e81ca52882ac56e671d4dfa94a6afd44ee376",
@@ -1317,7 +1317,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xac1d38801d2281ca53eaf2b63f80090deb423fde",
         "parent_symbol": "FTWO",
-        "ignored": false
+        "ignored": true
     },
     "0x12bd4416185f3154d374a3e61212e260b6a13d5c": {
         "address": "0x12bd4416185f3154d374a3e61212e260b6a13d5c",
@@ -1339,7 +1339,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x1820e5fd6674a0c0d17761a4b5eb113cfddd6955": {
         "address": "0x1820e5fd6674a0c0d17761a4b5eb113cfddd6955",
@@ -1350,7 +1350,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x343d9aad43356ad01d85d7955bec1f982a37c066": {
         "address": "0x343d9aad43356ad01d85d7955bec1f982a37c066",
@@ -1361,7 +1361,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x486666d9291586a01a1cd7634e23abb289ea09f1": {
         "address": "0x486666d9291586a01a1cd7634e23abb289ea09f1",
@@ -1372,7 +1372,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x522a6db630ccfb96b968a1397b4060b4ef832eb6": {
         "address": "0x522a6db630ccfb96b968a1397b4060b4ef832eb6",
@@ -1383,7 +1383,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x55a8a51b7cb59c5df4ecb8ccba57b080b33fcece": {
         "address": "0x55a8a51b7cb59c5df4ecb8ccba57b080b33fcece",
@@ -1394,7 +1394,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x58e1990c02313f12956fd7d7ca60538337a8239f": {
         "address": "0x58e1990c02313f12956fd7d7ca60538337a8239f",
@@ -1405,7 +1405,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x59e4f79deff147f5e113cdc1bd74537e147352d9": {
         "address": "0x59e4f79deff147f5e113cdc1bd74537e147352d9",
@@ -1427,7 +1427,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x6eaf6650c4898f428e74b2da30fa9216836910d7": {
         "address": "0x6eaf6650c4898f428e74b2da30fa9216836910d7",
@@ -1438,7 +1438,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x77107a8be7e5515432d035c42656ec15ee50ddf0": {
         "address": "0x77107a8be7e5515432d035c42656ec15ee50ddf0",
@@ -1449,7 +1449,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x87e12a626d9115e2f6e42c19bc61e50eca25bdfd": {
         "address": "0x87e12a626d9115e2f6e42c19bc61e50eca25bdfd",
@@ -1460,7 +1460,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x8e0a2473af13d2101d3b66bc03c7bf4a05ee12b6": {
         "address": "0x8e0a2473af13d2101d3b66bc03c7bf4a05ee12b6",
@@ -1471,7 +1471,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x9290737a8d3c9b3fbe1ed5b8a759a6436442bc5f": {
         "address": "0x9290737a8d3c9b3fbe1ed5b8a759a6436442bc5f",
@@ -1482,7 +1482,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x94a20820865d27cdf9291d2ce5e058d283a59179": {
         "address": "0x94a20820865d27cdf9291d2ce5e058d283a59179",
@@ -1493,7 +1493,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x95a089e17311a4fcdd63c75b4e9bf55d969f62a5": {
         "address": "0x95a089e17311a4fcdd63c75b4e9bf55d969f62a5",
@@ -1504,7 +1504,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x9d184edd853fc050def638cbb4b95ddf0d0a7473": {
         "address": "0x9d184edd853fc050def638cbb4b95ddf0d0a7473",
@@ -1515,7 +1515,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa06bf1962729b5780f219b06084f1de92e7f1573": {
         "address": "0xa06bf1962729b5780f219b06084f1de92e7f1573",
@@ -1526,7 +1526,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xaa7a49190e9598b72fca9bc9c5a1c5b5ed7ce0bb": {
         "address": "0xaa7a49190e9598b72fca9bc9c5a1c5b5ed7ce0bb",
@@ -1537,7 +1537,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xac1d38801d2281ca53eaf2b63f80090deb423fde": {
         "address": "0xac1d38801d2281ca53eaf2b63f80090deb423fde",
@@ -1548,7 +1548,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xb85b0807c69e7d44fc5d3f953eb38d1e1406cd05": {
         "address": "0xb85b0807c69e7d44fc5d3f953eb38d1e1406cd05",
@@ -1603,7 +1603,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xd4e0847d1eb564a4c0a93d12147211a1d121ec5c": {
         "address": "0xd4e0847d1eb564a4c0a93d12147211a1d121ec5c",
@@ -1614,7 +1614,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xdc0dedd98336299ce2f1fa557ea5b11b6fec5616": {
         "address": "0xdc0dedd98336299ce2f1fa557ea5b11b6fec5616",
@@ -1625,7 +1625,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xdd06de50dcb596cc2cadc278bb415c37b84bb8de": {
         "address": "0xdd06de50dcb596cc2cadc278bb415c37b84bb8de",
@@ -1647,7 +1647,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xe465bdb54f5441a4606d132b618ec0678e86424c": {
         "address": "0xe465bdb54f5441a4606d132b618ec0678e86424c",
@@ -1658,7 +1658,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xac1d38801d2281ca53eaf2b63f80090deb423fde",
         "parent_symbol": "FTWO",
-        "ignored": false
+        "ignored": true
     },
     "0xe87026d9feda0f31fe4c473510574dbb935e4cfd": {
         "address": "0xe87026d9feda0f31fe4c473510574dbb935e4cfd",
@@ -1691,7 +1691,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x00f5c65d8b20ddf4800d14e01f90b7d5055c203e": {
         "address": "0x00f5c65d8b20ddf4800d14e01f90b7d5055c203e",
@@ -1713,7 +1713,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x027ccc153f4367a7df927f74dae87721955d179c": {
         "address": "0x027ccc153f4367a7df927f74dae87721955d179c",
@@ -1724,7 +1724,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x574d1012cab3b2cdcd9597290f767306bbdd3c60",
         "parent_symbol": "A1",
-        "ignored": false
+        "ignored": true
     },
     "0x02ddab249a56281a62453db2f91676108367b01a": {
         "address": "0x02ddab249a56281a62453db2f91676108367b01a",
@@ -1746,7 +1746,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x0a278dc7c495bcfc87e8d95db79b93093dc302e3": {
         "address": "0x0a278dc7c495bcfc87e8d95db79b93093dc302e3",
@@ -1757,7 +1757,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x0a713b876e09b2049d6dc80e80c69d718265740b": {
         "address": "0x0a713b876e09b2049d6dc80e80c69d718265740b",
@@ -1779,7 +1779,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x11e08778f0a0d449f4a05477871ddc3f8601fe27": {
         "address": "0x11e08778f0a0d449f4a05477871ddc3f8601fe27",
@@ -1801,7 +1801,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xc02f48fa993a88e0b5bff0ed1359e3e52c610060",
         "parent_symbol": "\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f\ud83d\udee1\ufe0f",
-        "ignored": false
+        "ignored": true
     },
     "0x1456bbecdd2a3191f57c6cfb52915c0e537ef51c": {
         "address": "0x1456bbecdd2a3191f57c6cfb52915c0e537ef51c",
@@ -1812,7 +1812,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x14d852dfdaa02718a2e2df697c17ccb9dd4cfaf1": {
         "address": "0x14d852dfdaa02718a2e2df697c17ccb9dd4cfaf1",
@@ -1823,7 +1823,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x19f10d182ac3bf3ce6fa9f021cc3115b0b0c71a0": {
         "address": "0x19f10d182ac3bf3ce6fa9f021cc3115b0b0c71a0",
@@ -1834,7 +1834,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x1cd64bef16b1468b640e54e002f9d87f981c255b": {
         "address": "0x1cd64bef16b1468b640e54e002f9d87f981c255b",
@@ -1867,7 +1867,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x231a527cc4a63f9fd306625fe11585f22d47d421": {
         "address": "0x231a527cc4a63f9fd306625fe11585f22d47d421",
@@ -1878,7 +1878,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x241a0021b52777553da2ab0e08819d21549a70a7": {
         "address": "0x241a0021b52777553da2ab0e08819d21549a70a7",
@@ -1900,7 +1900,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x0a278dc7c495bcfc87e8d95db79b93093dc302e3",
         "parent_symbol": "D\u327eL\u327eStr\u327eC",
-        "ignored": false
+        "ignored": true
     },
     "0x26445026e2718940293c91f3c9a9a380b6dfbac3": {
         "address": "0x26445026e2718940293c91f3c9a9a380b6dfbac3",
@@ -1922,7 +1922,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x28a9b379c9ea836ff74601a226155570777a7177": {
         "address": "0x28a9b379c9ea836ff74601a226155570777a7177",
@@ -1933,7 +1933,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x290927fd80c58533390c1e6051e98f45640a57e5": {
         "address": "0x290927fd80c58533390c1e6051e98f45640a57e5",
@@ -1955,7 +1955,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x2a84c45a2da69aaf8ca417a5e1177dc2a8ed7c93": {
         "address": "0x2a84c45a2da69aaf8ca417a5e1177dc2a8ed7c93",
@@ -1966,7 +1966,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x2a8c125cca39983f6c23b585e713dd3c7e2cba11": {
         "address": "0x2a8c125cca39983f6c23b585e713dd3c7e2cba11",
@@ -1977,7 +1977,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x2e70cf852273165152f538f6fb99cd28ea5bebee": {
         "address": "0x2e70cf852273165152f538f6fb99cd28ea5bebee",
@@ -1988,7 +1988,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x2ee965930f79a38c0c5d5a8ebc5da23a085caaf7": {
         "address": "0x2ee965930f79a38c0c5d5a8ebc5da23a085caaf7",
@@ -1999,7 +1999,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x3060bb2709e22475a4d451661a96af57f153fc52": {
         "address": "0x3060bb2709e22475a4d451661a96af57f153fc52",
@@ -2010,7 +2010,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x307fcf99994827709b60f095471e3eb9b19c586c": {
         "address": "0x307fcf99994827709b60f095471e3eb9b19c586c",
@@ -2021,7 +2021,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x8b8b9344838ac7898d7d3fbd8437a5c9c800dc15",
         "parent_symbol": "icles",
-        "ignored": false
+        "ignored": true
     },
     "0x34b21e393f2e018aa5f182aec469c07a70ce88e5": {
         "address": "0x34b21e393f2e018aa5f182aec469c07a70ce88e5",
@@ -2043,7 +2043,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x350c997fe374c25c21a5a8f202581bf70ed44db4": {
         "address": "0x350c997fe374c25c21a5a8f202581bf70ed44db4",
@@ -2054,7 +2054,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x35d7579c5acdbde961f7fed813f333b5f0f3283b": {
         "address": "0x35d7579c5acdbde961f7fed813f333b5f0f3283b",
@@ -2076,7 +2076,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x3636832799afad5c362e18368d2868e0fa67deec": {
         "address": "0x3636832799afad5c362e18368d2868e0fa67deec",
@@ -2098,7 +2098,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x38c92f96f8fe7b0297b7c58a709224eb1680a063": {
         "address": "0x38c92f96f8fe7b0297b7c58a709224eb1680a063",
@@ -2109,7 +2109,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x3a8dd29746e3ea7bbdba5c1edc24a200fdd14292": {
         "address": "0x3a8dd29746e3ea7bbdba5c1edc24a200fdd14292",
@@ -2120,7 +2120,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x3af1541bcf6035364f0c48d2625faa53e054d1c0": {
         "address": "0x3af1541bcf6035364f0c48d2625faa53e054d1c0",
@@ -2131,7 +2131,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x3b8a751e2ff30cd4f9a3db55bb7bbc5820852dd5": {
         "address": "0x3b8a751e2ff30cd4f9a3db55bb7bbc5820852dd5",
@@ -2164,7 +2164,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x411022f6f898640ec4724e4f41dd4ffb5a431036": {
         "address": "0x411022f6f898640ec4724e4f41dd4ffb5a431036",
@@ -2175,7 +2175,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xb7a77bb9bcd39756d158d43d83d6b0da80d8386d",
         "parent_symbol": "\u2c89\u2c9b\u2ca7\u2c93\u2ca3v\u2c93\u2c89\u2cb1",
-        "ignored": false
+        "ignored": true
     },
     "0x42ab5ad8a16d57705b7403fd02607d9af1dd36cb": {
         "address": "0x42ab5ad8a16d57705b7403fd02607d9af1dd36cb",
@@ -2186,7 +2186,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x43a749d16ccffb1f4f42a961ad8da530cd9a93ea": {
         "address": "0x43a749d16ccffb1f4f42a961ad8da530cd9a93ea",
@@ -2219,7 +2219,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x475f46d81ce48d6b8529b8e8a001ac592a968404": {
         "address": "0x475f46d81ce48d6b8529b8e8a001ac592a968404",
@@ -2230,7 +2230,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x47a886ff67d4b3d571907f3daaea0d6b615d0b5e": {
         "address": "0x47a886ff67d4b3d571907f3daaea0d6b615d0b5e",
@@ -2241,7 +2241,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x48e0b15e1af194f9be7d02ddf3c3dc752e48d286": {
         "address": "0x48e0b15e1af194f9be7d02ddf3c3dc752e48d286",
@@ -2252,7 +2252,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x49f5b39a7faf4a4dd6e192832b703e23ddd7b50f": {
         "address": "0x49f5b39a7faf4a4dd6e192832b703e23ddd7b50f",
@@ -2263,7 +2263,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x4cd0d33ac0d08c33ce7fc6552ded05c8bfdb2ba8": {
         "address": "0x4cd0d33ac0d08c33ce7fc6552ded05c8bfdb2ba8",
@@ -2296,7 +2296,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x53b8eb8825e11e050a1fce306347baace095f08b": {
         "address": "0x53b8eb8825e11e050a1fce306347baace095f08b",
@@ -2318,7 +2318,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x574d1012cab3b2cdcd9597290f767306bbdd3c60": {
         "address": "0x574d1012cab3b2cdcd9597290f767306bbdd3c60",
@@ -2329,7 +2329,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x5a14740cefc8e21adb75ad0025b79fdcd1bc29f9": {
         "address": "0x5a14740cefc8e21adb75ad0025b79fdcd1bc29f9",
@@ -2340,7 +2340,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x5a4e64bf078bfb90a8ca6529df1871696a4ce011": {
         "address": "0x5a4e64bf078bfb90a8ca6529df1871696a4ce011",
@@ -2362,7 +2362,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xfa1ae7a0d8d2d10cbda3ffccc019d44b7d7be9db",
         "parent_symbol": "looper",
-        "ignored": false
+        "ignored": true
     },
     "0x61d62628fc446dc36b07bad469429594cf17a6ca": {
         "address": "0x61d62628fc446dc36b07bad469429594cf17a6ca",
@@ -2384,7 +2384,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x62889944a75e597a8a9c662aad7cb4d267ad5927": {
         "address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
@@ -2417,7 +2417,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x6688f166ade3cea812a2a140f0c632750ea8c6e1": {
         "address": "0x6688f166ade3cea812a2a140f0c632750ea8c6e1",
@@ -2472,7 +2472,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xb7a77bb9bcd39756d158d43d83d6b0da80d8386d",
         "parent_symbol": "\u2c89\u2c9b\u2ca7\u2c93\u2ca3v\u2c93\u2c89\u2cb1",
-        "ignored": false
+        "ignored": true
     },
     "0x713614e961eb3439c34261a2cee92dd92af88d47": {
         "address": "0x713614e961eb3439c34261a2cee92dd92af88d47",
@@ -2494,7 +2494,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x19f10d182ac3bf3ce6fa9f021cc3115b0b0c71a0",
         "parent_symbol": "J1",
-        "ignored": false
+        "ignored": true
     },
     "0x742142de985f584ea825b6492793c8077fb84320": {
         "address": "0x742142de985f584ea825b6492793c8077fb84320",
@@ -2516,7 +2516,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x76ac0420febe67f55370b28e11c80970fd26f3be": {
         "address": "0x76ac0420febe67f55370b28e11c80970fd26f3be",
@@ -2527,7 +2527,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x794e7b6a52892fa3f3cf7f839b7b2d035eae4cb5": {
         "address": "0x794e7b6a52892fa3f3cf7f839b7b2d035eae4cb5",
@@ -2549,7 +2549,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x7c98492cbb9840752533371b368b0c596d578e5b": {
         "address": "0x7c98492cbb9840752533371b368b0c596d578e5b",
@@ -2571,7 +2571,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x828891d345e790f09bb491f1446e284d6db256a1": {
         "address": "0x828891d345e790f09bb491f1446e284d6db256a1",
@@ -2582,7 +2582,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x83cd7974bd2a3179138ccd01f8802bfbd6f4eada": {
         "address": "0x83cd7974bd2a3179138ccd01f8802bfbd6f4eada",
@@ -2604,7 +2604,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x8745437290b0ab799d2133fc445c1b037c5576ff": {
         "address": "0x8745437290b0ab799d2133fc445c1b037c5576ff",
@@ -2626,7 +2626,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x89c66870db99bc40b58b184c00e0c592e1af4451": {
         "address": "0x89c66870db99bc40b58b184c00e0c592e1af4451",
@@ -2637,7 +2637,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x8ad4ecac9d9a2ea315caf0bb4f946be542fe2792": {
         "address": "0x8ad4ecac9d9a2ea315caf0bb4f946be542fe2792",
@@ -2648,7 +2648,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0x8b8b9344838ac7898d7d3fbd8437a5c9c800dc15": {
         "address": "0x8b8b9344838ac7898d7d3fbd8437a5c9c800dc15",
@@ -2659,7 +2659,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x8baafa6bd905ee5fcdb62e79f0437656612f2f45": {
         "address": "0x8baafa6bd905ee5fcdb62e79f0437656612f2f45",
@@ -2670,7 +2670,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0x8d9a9b0082eebb487b72e38e633c43844d2173e9": {
         "address": "0x8d9a9b0082eebb487b72e38e633c43844d2173e9",
@@ -2681,7 +2681,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x8db967db332594cdc24e2de14ce46803be81163f": {
         "address": "0x8db967db332594cdc24e2de14ce46803be81163f",
@@ -2692,7 +2692,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x8fb625766faa9935afb0563e9386fad6fa3d2a43": {
         "address": "0x8fb625766faa9935afb0563e9386fad6fa3d2a43",
@@ -2703,7 +2703,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x93f492c87973546317d356637d2b0794073c6f7f": {
         "address": "0x93f492c87973546317d356637d2b0794073c6f7f",
@@ -2714,7 +2714,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x961f7f3537d3c93cacd0b630d9f9bf885eab6d78": {
         "address": "0x961f7f3537d3c93cacd0b630d9f9bf885eab6d78",
@@ -2747,7 +2747,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x96edb70300109dd1c7ce1149c060e3f382c5575d": {
         "address": "0x96edb70300109dd1c7ce1149c060e3f382c5575d",
@@ -2758,7 +2758,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x9de77589ce8f58050b12ae0c18fcdb9448bb7d2d": {
         "address": "0x9de77589ce8f58050b12ae0c18fcdb9448bb7d2d",
@@ -2769,7 +2769,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0x9f3ede227ea6c2462ea9144537d382ecbe58078c": {
         "address": "0x9f3ede227ea6c2462ea9144537d382ecbe58078c",
@@ -2802,7 +2802,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa1d8595389c431bda2de7ebe7279b6e53e38d8de": {
         "address": "0xa1d8595389c431bda2de7ebe7279b6e53e38d8de",
@@ -2813,7 +2813,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa26e9eb03f815fdddbd2372821c20fca26a191d8": {
         "address": "0xa26e9eb03f815fdddbd2372821c20fca26a191d8",
@@ -2824,7 +2824,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa2e6f4abeccc859bf906a2e8ea3919b33fa59514": {
         "address": "0xa2e6f4abeccc859bf906a2e8ea3919b33fa59514",
@@ -2857,7 +2857,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa45b87333e9f5d1964b943370db35b2527066f18": {
         "address": "0xa45b87333e9f5d1964b943370db35b2527066f18",
@@ -2868,7 +2868,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa4cc6424db9f50a74812d1cca165baf297fd2794": {
         "address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
@@ -2879,7 +2879,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa5424ea262f12c3d64d36016aeb5d8dc59e44323": {
         "address": "0xa5424ea262f12c3d64d36016aeb5d8dc59e44323",
@@ -2890,7 +2890,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa5dfe87ca0080efb5d9119bffd71fe2c0b59b419": {
         "address": "0xa5dfe87ca0080efb5d9119bffd71fe2c0b59b419",
@@ -2901,7 +2901,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xa62f03266d27f86b8b4a1cbe2e9e618bdc5c2a24": {
         "address": "0xa62f03266d27f86b8b4a1cbe2e9e618bdc5c2a24",
@@ -2934,7 +2934,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xac7614a8bd7ea659260a120cd4e235cfd7b69603": {
         "address": "0xac7614a8bd7ea659260a120cd4e235cfd7b69603",
@@ -2945,7 +2945,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0xadc3318567dd96b001b25613fd02b1bf71e7f04f": {
         "address": "0xadc3318567dd96b001b25613fd02b1bf71e7f04f",
@@ -3000,7 +3000,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xb42008068a3ba8fdcbdb1ffbf4549db36e0b8ee6": {
         "address": "0xb42008068a3ba8fdcbdb1ffbf4549db36e0b8ee6",
@@ -3011,7 +3011,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xb5b302a259b66a0e788a5bffbe7be303c465c646": {
         "address": "0xb5b302a259b66a0e788a5bffbe7be303c465c646",
@@ -3022,7 +3022,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xb64cf4f677044795d7b633766f8fe3780e9c3ec7": {
         "address": "0xb64cf4f677044795d7b633766f8fe3780e9c3ec7",
@@ -3033,7 +3033,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x0a278dc7c495bcfc87e8d95db79b93093dc302e3",
         "parent_symbol": "D\u327eL\u327eStr\u327eC",
-        "ignored": false
+        "ignored": true
     },
     "0xb7a77bb9bcd39756d158d43d83d6b0da80d8386d": {
         "address": "0xb7a77bb9bcd39756d158d43d83d6b0da80d8386d",
@@ -3066,7 +3066,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xbdeb7d929bd372790111cee83963b8388458e194": {
         "address": "0xbdeb7d929bd372790111cee83963b8388458e194",
@@ -3077,7 +3077,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xbf68d6434a5073088862dd7b393539840b43575d": {
         "address": "0xbf68d6434a5073088862dd7b393539840b43575d",
@@ -3110,7 +3110,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xc813a32cb49a71d1b31bd05f67ed9ce8f33be6f1": {
         "address": "0xc813a32cb49a71d1b31bd05f67ed9ce8f33be6f1",
@@ -3154,7 +3154,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xccfbbd95346d6954095797299310ae94fab5da75": {
         "address": "0xccfbbd95346d6954095797299310ae94fab5da75",
@@ -3165,7 +3165,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xce7a961094fbebba6fddde49f706b37d3bc7e45b": {
         "address": "0xce7a961094fbebba6fddde49f706b37d3bc7e45b",
@@ -3176,7 +3176,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xd22f7f399269c8d4aad886ccff0f53976b0bb27b": {
         "address": "0xd22f7f399269c8d4aad886ccff0f53976b0bb27b",
@@ -3187,7 +3187,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xd25412e2238d4b71de5e38dca831d9681bb952a2": {
         "address": "0xd25412e2238d4b71de5e38dca831d9681bb952a2",
@@ -3198,7 +3198,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xd5a3482a5b8a43ef78a17147bd85d3d4c1317a50": {
         "address": "0xd5a3482a5b8a43ef78a17147bd85d3d4c1317a50",
@@ -3209,7 +3209,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xd6b2033baf803319bc4d7b460244971bc30b2c90": {
         "address": "0xd6b2033baf803319bc4d7b460244971bc30b2c90",
@@ -3220,7 +3220,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xd740b4518fe6814e2ef632b98426b94909e34f62": {
         "address": "0xd740b4518fe6814e2ef632b98426b94909e34f62",
@@ -3231,7 +3231,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0xd9eca31f5f19a1c5ed551d5f923e758a76b616bc": {
         "address": "0xd9eca31f5f19a1c5ed551d5f923e758a76b616bc",
@@ -3308,7 +3308,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xe2c64b3a2e886851b7b88a5814952e6a5067f167": {
         "address": "0xe2c64b3a2e886851b7b88a5814952e6a5067f167",
@@ -3352,7 +3352,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0xe75b6764ab93f887fa093c270c294483d7f067dd": {
         "address": "0xe75b6764ab93f887fa093c270c294483d7f067dd",
@@ -3363,7 +3363,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xfcaab5b94f9b4b616e21c38fbc9e63b4a238df09",
         "parent_symbol": "V1",
-        "ignored": false
+        "ignored": true
     },
     "0xe8ded7544f32a0c0b909b48ca3a394586fb9c2b4": {
         "address": "0xe8ded7544f32a0c0b909b48ca3a394586fb9c2b4",
@@ -3374,7 +3374,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x8b8b9344838ac7898d7d3fbd8437a5c9c800dc15",
         "parent_symbol": "icles",
-        "ignored": false
+        "ignored": true
     },
     "0xe9055cbfbdebf4f1c3cb9ce141333bd87ec82055": {
         "address": "0xe9055cbfbdebf4f1c3cb9ce141333bd87ec82055",
@@ -3385,7 +3385,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xfa1ae7a0d8d2d10cbda3ffccc019d44b7d7be9db",
         "parent_symbol": "looper",
-        "ignored": false
+        "ignored": true
     },
     "0xe9f19263aa6be0f721bc508aa593e3f7b9f5007e": {
         "address": "0xe9f19263aa6be0f721bc508aa593e3f7b9f5007e",
@@ -3407,7 +3407,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xeb70c57f1d29c341454f04a883f91cb46123bc3b": {
         "address": "0xeb70c57f1d29c341454f04a883f91cb46123bc3b",
@@ -3429,7 +3429,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0xf01e4a3797777201678cb898521939ab02e926eb": {
         "address": "0xf01e4a3797777201678cb898521939ab02e926eb",
@@ -3473,7 +3473,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0xfa1869a2ad7b8647c69a8fe6b78ffd05a6dca6f6": {
         "address": "0xfa1869a2ad7b8647c69a8fe6b78ffd05a6dca6f6",
@@ -3484,7 +3484,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0x62889944a75e597a8a9c662aad7cb4d267ad5927",
         "parent_symbol": "AoA",
-        "ignored": false
+        "ignored": true
     },
     "0xfa1ae7a0d8d2d10cbda3ffccc019d44b7d7be9db": {
         "address": "0xfa1ae7a0d8d2d10cbda3ffccc019d44b7d7be9db",
@@ -3495,7 +3495,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xfa9e03dc946742c6c708d8d13269e4eef8a5c937": {
         "address": "0xfa9e03dc946742c6c708d8d13269e4eef8a5c937",
@@ -3506,7 +3506,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     },
     "0xfb77050610efa6d8eaf2c977eacce9f597cee4fa": {
         "address": "0xfb77050610efa6d8eaf2c977eacce9f597cee4fa",
@@ -3517,7 +3517,7 @@
         "minter_name": "TreasuryMinter",
         "parent_address": "0xa4cc6424db9f50a74812d1cca165baf297fd2794",
         "parent_symbol": "\u20baSC",
-        "ignored": false
+        "ignored": true
     },
     "0xfba8aa83aaf92ea5e2ae2315dc659f4976ff6c6a": {
         "address": "0xfba8aa83aaf92ea5e2ae2315dc659f4976ff6c6a",
@@ -3539,6 +3539,6 @@
         "minter_name": "TreasuryMinter",
         "parent_address": null,
         "parent_symbol": null,
-        "ignored": false
+        "ignored": true
     }
 }
