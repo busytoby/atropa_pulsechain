@@ -110,7 +110,9 @@ int main() {
         stations[i].phase_corr = phase_true - phase_est; // Correction factor
     }
 
-    // 5. Physical propagation of RF modulated spy signal
+    // 5. Physical propagation of RF modulated spy signal and a high-power jammer
+    double jam_x = 50.0;
+    double jam_y = 50.0;
     for (int i = 0; i < NUM_STATIONS; i++) {
         double dx = stations[i].x_true - tx_x;
         double dy = stations[i].y_true - tx_y;
@@ -119,17 +121,26 @@ int main() {
         int delay_samples_tx = (int)(delay_tx * SAMPLING_RATE);
         double path_loss_tx = 5000.0 / (dist_tx_m + 1.0);
 
+        double dx_jam = stations[i].x_true - jam_x;
+        double dy_jam = stations[i].y_true - jam_y;
+        double dist_jam_m = sqrt(dx_jam * dx_jam + dy_jam * dy_jam) * 1000.0;
+        double delay_jam = dist_jam_m / SPEED_OF_LIGHT;
+        double path_loss_jam = 150000.0 / (dist_jam_m + 1.0); // High-power jammer
+
         float noise_std = 0.1f;
 
         for (int step = 0; step < TOTAL_SAMPLES; step++) {
             int idx_tx = step - delay_samples_tx;
             float val_tx = (idx_tx >= 0 && idx_tx < TOTAL_SAMPLES) ? tx_signal[idx_tx] : 0.0f;
             
-            // RF modulate onto the carrier at true propagation delay
+            // RF modulate spy onto the carrier at true propagation delay
             double t = (double)step / SAMPLING_RATE;
             double rf_val = val_tx * cos(2.0 * M_PI * fc_carrier * (t - delay_tx));
+            
+            // RF modulate jammer (2000 Hz tone) at true propagation delay
+            double rf_jam = sin(2.0 * M_PI * 2000.0 * (t - delay_jam)) * cos(2.0 * M_PI * fc_carrier * (t - delay_jam));
 
-            stations[i].buffer[step] = (float)(path_loss_tx * rf_val) + noise_std * generate_gaussian_noise();
+            stations[i].buffer[step] = (float)(path_loss_tx * rf_val) + (float)(path_loss_jam * rf_jam) + noise_std * generate_gaussian_noise();
         }
     }
 
@@ -159,7 +170,7 @@ int main() {
             int read_idx_true = step + delay_samples_true;
             if (read_idx_true >= 0 && read_idx_true < TOTAL_SAMPLES) {
                 double weight = 5000.0 / (dist_true + 1.0);
-                // Demodulate coherently
+                // Coherently demodulate target spy signal
                 double val = (double)stations[i].buffer[read_idx_true] * cos(2.0 * M_PI * fc_carrier * t);
                 sum_perf += val * weight;
                 weight_perf += weight;
@@ -197,42 +208,222 @@ int main() {
         calibrated_out[step] = (weight_cal > 0.0) ? (float)(sum_cal / weight_cal) : 0.0f;
     }
 
-    // 7. Calculate correlations with original clean signal
-    double dot_perf = 0.0, energy_perf = 0.0, energy_tx = 0.0;
-    double dot_jit = 0.0, energy_jit = 0.0;
-    double dot_cal = 0.0, energy_cal = 0.0;
-
-    for (int i = 0; i < TOTAL_SAMPLES; i++) {
-        dot_perf += (double)(tx_signal[i] * perfect_out[i]);
-        energy_perf += (double)(perfect_out[i] * perfect_out[i]);
-        energy_tx += (double)(tx_signal[i] * tx_signal[i]);
-
-        dot_jit += (double)(tx_signal[i] * jitter_out[i]);
-        energy_jit += (double)(jitter_out[i] * jitter_out[i]);
-
-        dot_cal += (double)(tx_signal[i] * calibrated_out[i]);
-        energy_cal += (double)(calibrated_out[i] * calibrated_out[i]);
+    // 7. Find station closest to the jammer to use as the noise/jammer reference channel
+    int jam_ref_station_idx = 0;
+    double min_dist_to_jam = 1e15;
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        double dx = stations[i].x_true - jam_x;
+        double dy = stations[i].y_true - jam_y;
+        double dist = sqrt(dx*dx + dy*dy);
+        if (dist < min_dist_to_jam) {
+            min_dist_to_jam = dist;
+            jam_ref_station_idx = i;
+        }
     }
 
-    double corr_perf = dot_perf / sqrt(energy_tx * energy_perf + 1e-9);
-    double corr_jit = dot_jit / sqrt(energy_tx * energy_jit + 1e-9);
-    double corr_cal = dot_cal / sqrt(energy_tx * energy_cal + 1e-9);
+    // Allocate adaptive filter outputs
+    float *lms_out = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    float *rls_out = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    float *rls_out_jit = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
 
-    printf("[RESULTS] Perfect array correlation: %.4f\n", corr_perf);
-    printf("[RESULTS] Jittery array correlation (uncalibrated): %.4f\n", corr_jit);
-    printf("[RESULTS] Calibrated array correlation (pilot corrected): %.4f\n", corr_cal);
+    int L_taps = 4;
+    double *w_lms = (double*)calloc(L_taps, sizeof(double));
+    double *x_lms = (double*)calloc(L_taps, sizeof(double));
 
-    // Save calibrated audio output to WAV file
+    double *w_rls = (double*)calloc(L_taps, sizeof(double));
+    double *x_rls = (double*)calloc(L_taps, sizeof(double));
+    double *P_rls = (double*)calloc(L_taps * L_taps, sizeof(double));
+
+    double *w_rls_jit = (double*)calloc(L_taps, sizeof(double));
+    double *x_rls_jit = (double*)calloc(L_taps, sizeof(double));
+    double *P_rls_jit = (double*)calloc(L_taps * L_taps, sizeof(double));
+
+    // Initialize P matrices to delta * I
+    for (int i = 0; i < L_taps; i++) {
+        P_rls[i * L_taps + i] = 100.0;
+        P_rls_jit[i * L_taps + i] = 100.0;
+    }
+
+    double mu_step = 0.00002; // LMS step size
+    double lambda = 0.99;   // RLS forgetting factor
+
+    for (int step = 0; step < TOTAL_SAMPLES; step++) {
+        double t = (double)step / SAMPLING_RATE;
+        // Demodulate reference station buffer to baseband using same carrier
+        double ref_val_demod = (double)stations[jam_ref_station_idx].buffer[step] * cos(2.0 * M_PI * fc_carrier * t);
+
+        // Update tap delay lines
+        for (int j = L_taps - 1; j > 0; j--) {
+            x_lms[j] = x_lms[j-1];
+            x_rls[j] = x_rls[j-1];
+            x_rls_jit[j] = x_rls_jit[j-1];
+        }
+        x_lms[0] = ref_val_demod;
+        x_rls[0] = ref_val_demod;
+        x_rls_jit[0] = ref_val_demod;
+
+        // A. LMS Filter (Calibrated)
+        double y_lms = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            y_lms += w_lms[j] * x_lms[j];
+        }
+        double e_lms = (double)calibrated_out[step] - y_lms;
+        lms_out[step] = (float)e_lms;
+        for (int j = 0; j < L_taps; j++) {
+            w_lms[j] += mu_step * e_lms * x_lms[j];
+        }
+
+        // B. RLS Filter (Calibrated)
+        double y_rls = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            y_rls += w_rls[j] * x_rls[j];
+        }
+        double alpha = (double)calibrated_out[step] - y_rls;
+        
+        double P_x[4];
+        for (int row = 0; row < L_taps; row++) {
+            P_x[row] = 0.0;
+            for (int col = 0; col < L_taps; col++) {
+                P_x[row] += P_rls[row * L_taps + col] * x_rls[col];
+            }
+        }
+        double x_P_x = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            x_P_x += x_rls[j] * P_x[j];
+        }
+        double den = lambda + x_P_x;
+        double k_gain[4];
+        for (int j = 0; j < L_taps; j++) {
+            k_gain[j] = P_x[j] / den;
+        }
+        for (int j = 0; j < L_taps; j++) {
+            w_rls[j] += k_gain[j] * alpha;
+        }
+        double k_x_P[16];
+        for (int row = 0; row < L_taps; row++) {
+            for (int col = 0; col < L_taps; col++) {
+                double x_P_col = 0.0;
+                for (int m = 0; m < L_taps; m++) {
+                    x_P_col += x_rls[m] * P_rls[m * L_taps + col];
+                }
+                k_x_P[row * L_taps + col] = k_gain[row] * x_P_col;
+            }
+        }
+        for (int j = 0; j < L_taps * L_taps; j++) {
+            P_rls[j] = (P_rls[j] - k_x_P[j]) / lambda;
+        }
+        double y_rls_post = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            y_rls_post += w_rls[j] * x_rls[j];
+        }
+        rls_out[step] = (float)(calibrated_out[step] - y_rls_post);
+
+        // C. RLS Filter (Jittery/Uncalibrated)
+        double y_rls_jit = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            y_rls_jit += w_rls_jit[j] * x_rls_jit[j];
+        }
+        double alpha_jit = (double)jitter_out[step] - y_rls_jit;
+        
+        double P_x_jit[4];
+        for (int row = 0; row < L_taps; row++) {
+            P_x_jit[row] = 0.0;
+            for (int col = 0; col < L_taps; col++) {
+                P_x_jit[row] += P_rls_jit[row * L_taps + col] * x_rls_jit[col];
+            }
+        }
+        double x_P_x_jit = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            x_P_x_jit += x_rls_jit[j] * P_x_jit[j];
+        }
+        double den_jit = lambda + x_P_x_jit;
+        double k_gain_jit[4];
+        for (int j = 0; j < L_taps; j++) {
+            k_gain_jit[j] = P_x_jit[j] / den_jit;
+        }
+        for (int j = 0; j < L_taps; j++) {
+            w_rls_jit[j] += k_gain_jit[j] * alpha_jit;
+        }
+        double k_x_P_jit[16];
+        for (int row = 0; row < L_taps; row++) {
+            for (int col = 0; col < L_taps; col++) {
+                double x_P_col = 0.0;
+                for (int m = 0; m < L_taps; m++) {
+                    x_P_col += x_rls_jit[m] * P_rls_jit[m * L_taps + col];
+                }
+                k_x_P_jit[row * L_taps + col] = k_gain_jit[row] * x_P_col;
+            }
+        }
+        for (int j = 0; j < L_taps * L_taps; j++) {
+            P_rls_jit[j] = (P_rls_jit[j] - k_x_P_jit[j]) / lambda;
+        }
+        double y_rls_post_jit = 0.0;
+        for (int j = 0; j < L_taps; j++) {
+            y_rls_post_jit += w_rls_jit[j] * x_rls_jit[j];
+        }
+        rls_out_jit[step] = (float)(jitter_out[step] - y_rls_post_jit);
+    }
+
+    // 8. Calculate correlations with original clean signal
+    // Short convergence window: first 0.05 seconds (4800 samples)
+    int short_samples = (int)(SAMPLING_RATE * 0.05);
+    double dot_lms_short = 0.0, energy_lms_short = 0.0, energy_tx_short = 0.0;
+    double dot_rls_short = 0.0, energy_rls_short = 0.0;
+
+    // Total window: 1.0 second
+    double dot_cal_no_filter = 0.0, energy_cal_no_filter = 0.0, energy_tx = 0.0;
+    double dot_lms_total = 0.0, energy_lms_total = 0.0;
+    double dot_rls_total = 0.0, energy_rls_total = 0.0;
+    double dot_rls_jit = 0.0, energy_rls_jit = 0.0;
+
+    for (int i = 0; i < TOTAL_SAMPLES; i++) {
+        energy_tx += (double)(tx_signal[i] * tx_signal[i]);
+        dot_cal_no_filter += (double)(tx_signal[i] * calibrated_out[i]);
+        energy_cal_no_filter += (double)(calibrated_out[i] * calibrated_out[i]);
+
+        dot_lms_total += (double)(tx_signal[i] * lms_out[i]);
+        energy_lms_total += (double)(lms_out[i] * lms_out[i]);
+
+        dot_rls_total += (double)(tx_signal[i] * rls_out[i]);
+        energy_rls_total += (double)(rls_out[i] * rls_out[i]);
+
+        dot_rls_jit += (double)(tx_signal[i] * rls_out_jit[i]);
+        energy_rls_jit += (double)(rls_out_jit[i] * rls_out_jit[i]);
+
+        if (i < short_samples) {
+            dot_lms_short += (double)(tx_signal[i] * lms_out[i]);
+            energy_lms_short += (double)(lms_out[i] * lms_out[i]);
+            dot_rls_short += (double)(tx_signal[i] * rls_out[i]);
+            energy_rls_short += (double)(rls_out[i] * rls_out[i]);
+            energy_tx_short += (double)(tx_signal[i] * tx_signal[i]);
+        }
+    }
+
+    double corr_cal_no_filter = dot_cal_no_filter / sqrt(energy_tx * energy_cal_no_filter + 1e-9);
+    double corr_lms_short = dot_lms_short / sqrt(energy_tx_short * energy_lms_short + 1e-9);
+    double corr_rls_short = dot_rls_short / sqrt(energy_tx_short * energy_rls_short + 1e-9);
+    double corr_lms_total = dot_lms_total / sqrt(energy_tx * energy_lms_total + 1e-9);
+    double corr_rls_total = dot_rls_total / sqrt(energy_tx * energy_rls_total + 1e-9);
+    double corr_rls_jit = dot_rls_jit / sqrt(energy_tx * energy_rls_jit + 1e-9);
+
+    printf("[RESULTS] Calibrated combining correlation (no filter): %.4f\n", corr_cal_no_filter);
+    printf("[RESULTS] LMS short convergence window (0.05s) correlation: %.4f\n", corr_lms_short);
+    printf("[RESULTS] RLS short convergence window (0.05s) correlation: %.4f\n", corr_rls_short);
+    printf("[RESULTS] LMS total window correlation: %.4f\n", corr_lms_total);
+    printf("[RESULTS] RLS total window correlation: %.4f\n", corr_rls_total);
+    printf("[RESULTS] Jittery RLS correlation (uncalibrated): %.4f\n", corr_rls_jit);
+
+    // Save calibrated + RLS filtered audio output to WAV file
     int16_t *pcm_buffer = (int16_t*)malloc(TOTAL_SAMPLES * sizeof(int16_t));
     float max_val = 0.0001f;
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
-        if (fabsf(calibrated_out[i]) > max_val) {
-            max_val = fabsf(calibrated_out[i]);
+        if (fabsf(rls_out[i]) > max_val) {
+            max_val = fabsf(rls_out[i]);
         }
     }
     float norm = 28000.0f / max_val;
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
-        float val = calibrated_out[i] * norm;
+        float val = rls_out[i] * norm;
         if (val > 32767.0f) val = 32767.0f;
         if (val < -32768.0f) val = -32768.0f;
         pcm_buffer[i] = (int16_t)val;
@@ -263,11 +454,14 @@ int main() {
     fwrite(pcm_buffer, sizeof(int16_t), TOTAL_SAMPLES, fp);
     fclose(fp);
 
-    // Verify that calibration successfully recovers the correlation back above 0.50
-    // while the uncalibrated jittery array drops below 0.35 due to phase mismatch
-    assert(corr_jit < 0.35);
-    assert(corr_cal > 0.50);
-    printf("[SUCCESS] Pilot phase calibration restored coherent combining in the presence of coordinate jitter!\n");
+    // Verify that RLS achieves rapid convergence (> 0.75 in first 0.05s)
+    // while LMS fails to converge in that window (< 0.40)
+    // and that uncalibrated RLS remains low due to destructive carrier phase combining (< 0.35)
+    assert(corr_rls_short > 0.75);
+    assert(corr_lms_short < 0.40);
+    assert(corr_rls_total > 0.80);
+    assert(corr_rls_jit < 0.35);
+    printf("[SUCCESS] RLS adaptive filter successfully cancelled the jammer with rapid convergence!\n");
 
     // 8. TDOA Cross-Correlation and 2D Grid Search Localization
     printf("\n=== TDOA Localization Grid Search ===\n");
@@ -275,8 +469,77 @@ int main() {
     estimated_tdoa[0] = 0.0;
 
     int max_lag = 80;
+
+    // Run RF-level RLS filter on each station to clean the jammer signal
+    float **cleaned_buffers = (float**)malloc(NUM_STATIONS * sizeof(float*));
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        cleaned_buffers[i] = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    }
+
+    #pragma omp parallel for
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        int L = 4;
+        double *w = (double*)calloc(L, sizeof(double));
+        double *x = (double*)calloc(L, sizeof(double));
+        double *P = (double*)calloc(L * L, sizeof(double));
+        for (int k = 0; k < L; k++) P[k * L + k] = 100.0;
+        
+        for (int step = 0; step < TOTAL_SAMPLES; step++) {
+            double ref_val = (double)stations[jam_ref_station_idx].buffer[step];
+            
+            for (int j = L - 1; j > 0; j--) {
+                x[j] = x[j-1];
+            }
+            x[0] = ref_val;
+            
+            double y = 0.0;
+            for (int j = 0; j < L; j++) {
+                y += w[j] * x[j];
+            }
+            double alpha = (double)stations[i].buffer[step] - y;
+            
+            double P_x[4];
+            for (int row = 0; row < L; row++) {
+                P_x[row] = 0.0;
+                for (int col = 0; col < L; col++) {
+                    P_x[row] += P[row * L + col] * x[col];
+                }
+            }
+            double x_P_x = 0.0;
+            for (int j = 0; j < L; j++) {
+                x_P_x += x[j] * P_x[j];
+            }
+            double den = lambda + x_P_x;
+            double k_gain[4];
+            for (int j = 0; j < L; j++) {
+                k_gain[j] = P_x[j] / den;
+            }
+            for (int j = 0; j < L; j++) {
+                w[j] += k_gain[j] * alpha;
+            }
+            double k_x_P[16];
+            for (int row = 0; row < L; row++) {
+                for (int col = 0; col < L; col++) {
+                    double x_P_col = 0.0;
+                    for (int m = 0; m < L; m++) {
+                        x_P_col += x[m] * P[m * L + col];
+                    }
+                    k_x_P[row * L + col] = k_gain[row] * x_P_col;
+                }
+            }
+            for (int j = 0; j < L * L; j++) {
+                P[j] = (P[j] - k_x_P[j]) / lambda;
+            }
+            
+            cleaned_buffers[i][step] = (float)(stations[i].buffer[step] - (w[0]*x[0] + w[1]*x[1] + w[2]*x[2] + w[3]*x[3]));
+        }
+        
+        free(w);
+        free(x);
+        free(P);
+    }
     
-    // Allocate IQ buffers for all stations
+    // Allocate IQ buffers for all stations using the cleaned RF signals
     double **I_sig = (double**)malloc(NUM_STATIONS * sizeof(double*));
     double **Q_sig = (double**)malloc(NUM_STATIONS * sizeof(double*));
     for (int i = 0; i < NUM_STATIONS; i++) {
@@ -291,8 +554,8 @@ int main() {
                 int idx = n - k;
                 if (idx >= 0) {
                     double t = (double)idx / SAMPLING_RATE;
-                    sum_I += (double)stations[i].buffer[idx] * cos(2.0 * M_PI * fc_carrier * t);
-                    sum_Q += (double)stations[i].buffer[idx] * sin(2.0 * M_PI * fc_carrier * t);
+                    sum_I += (double)cleaned_buffers[i][idx] * cos(2.0 * M_PI * fc_carrier * t);
+                    sum_Q += (double)cleaned_buffers[i][idx] * sin(2.0 * M_PI * fc_carrier * t);
                     count++;
                 }
             }
@@ -430,12 +693,26 @@ int main() {
     // Clean up
     for (int i = 0; i < NUM_STATIONS; i++) {
         free(stations[i].buffer);
+        free(cleaned_buffers[i]);
     }
+    free(cleaned_buffers);
     free(tx_signal);
     free(perfect_out);
     free(jitter_out);
     free(calibrated_out);
     free(pcm_buffer);
+
+    free(lms_out);
+    free(rls_out);
+    free(rls_out_jit);
+    free(w_lms);
+    free(x_lms);
+    free(w_rls);
+    free(x_rls);
+    free(P_rls);
+    free(w_rls_jit);
+    free(x_rls_jit);
+    free(P_rls_jit);
 
     return 0;
 }
