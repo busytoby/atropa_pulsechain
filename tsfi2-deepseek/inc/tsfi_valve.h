@@ -19,6 +19,10 @@ typedef struct {
     int is_tubular;           // Geometry flag: 1 for cylindrical (Type T), 0 for flat-plate
     int use_deforest_ground;  // 1 to reference grid/plate potentials to A+ positive filament ground
     double V_filament;        // Filament heating potential in Volts (typically 4.0V to 6.0V)
+    double T_junction;        // Cathode Temperature in Kelvin (e.g. 1000K)
+    double shot_noise_scale;  // Schottky shot noise coefficient [0.0, 1.0]
+    double flicker_noise_scale;// flicker noise coefficient [0.0, 1.0]
+    uint64_t noise_seed;      // State for micro-physical noise LCG generator
 } TsfiValveTriode;
 
 

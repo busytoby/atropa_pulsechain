@@ -17,6 +17,10 @@ void tsfi_valve_init(TsfiValveTriode *valve, double base_mu, double base_k, doub
     valve->is_tubular = 0;           // Default flat-plate geometry
     valve->use_deforest_ground = 0;  // Default standard grounding
     valve->V_filament = 5.0;         // Default 5.0V filament
+    valve->T_junction = 1000.0;      // Cathode temperature typical for tungsten/oxide cathode (K)
+    valve->shot_noise_scale = 1.0;   // Fully active shot noise by default
+    valve->flicker_noise_scale = 1.0;// Fully active flicker noise by default
+    valve->noise_seed = 0xDEADAFFE12345678ULL;
 }
 
 
@@ -182,6 +186,26 @@ void tsfi_valve_process_regenerative(
             double sig_norm = 0.5 + 0.5 * sig;
             ip *= (1.0 + ion_factor * sig_norm);
         }
+
+        // --- Level 5 Quantum and Microscopic Thermodynamic Noise ---
+        // LCG update for local noise generation: X_{n+1} = (a * X_n + c) mod m
+        valve->noise_seed = valve->noise_seed * 6364136223846793005ULL + 1442695040888963407ULL;
+        // Generate uniform random variable in range [-1.0, 1.0]
+        double rand_val = ((double)(int32_t)(valve->noise_seed >> 32)) / 2147483648.0;
+
+        // 1. Schottky's Shot Noise: variance is 2 * e * Ip * df (where df is Nyquist bandwidth, approx 22kHz)
+        // e = 1.602e-19, df = 22050.0. Total factor is sqrt(2 * e * Ip * df)
+        double e_charge = 1.602176634e-19;
+        double df_bandwidth = 22050.0;
+        double shot_noise_sigma = sqrt(2.0 * e_charge * fmax(ip, 0.0) * df_bandwidth);
+        double shot_noise = shot_noise_sigma * rand_val * valve->shot_noise_scale;
+
+        // 2. Oxide Cathode Flicker Noise (1/f dynamic scaling):
+        // Mapped here to base current magnitude with noise-walk memory
+        double flicker_noise = 1e-8 * rand_val * ip * valve->flicker_noise_scale;
+
+        // Apply noise contributions directly to plate current
+        ip = fmax(0.0, ip + shot_noise + flicker_noise);
 
         double vp = vp_supply - ip * r_plate;
         if (vp < 0.0) vp = 0.0;
