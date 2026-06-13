@@ -154,6 +154,7 @@ void tsfi_distributed_coil_process(
         // 2. FDTD 3D Yee updates
         // Update H-field:
         // H = H - (dt / mu) * curl(E)
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < GRID_X - 1; x++) {
             for (int y = 0; y < GRID_Y - 1; y++) {
                 for (int z = 0; z < GRID_Z - 1; z++) {
@@ -181,6 +182,7 @@ void tsfi_distributed_coil_process(
 
         // Update E-field:
         // E = E + (dt / eps) * (curl(H) - sigma * E)
+        #pragma omp parallel for collapse(2)
         for (int x = 1; x < GRID_X - 1; x++) {
             for (int y = 1; y < GRID_Y - 1; y++) {
                 for (int z = 1; z < GRID_Z - 1; z++) {
