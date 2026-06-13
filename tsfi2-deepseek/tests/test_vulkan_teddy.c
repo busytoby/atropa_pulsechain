@@ -323,6 +323,13 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
     return shadow;
 }
 
+static Ab4hPixel evaluate_palette(float t) {
+    float r = 0.5f + 0.5f * cosf(6.28318f * (1.0f * t + 0.00f));
+    float g = 0.5f + 0.5f * cosf(6.28318f * (1.0f * t + 0.33f));
+    float b = 0.5f + 0.5f * cosf(6.28318f * (1.0f * t + 0.67f));
+    return make_ab4h_pixel(r, g, b, 1.0f);
+}
+
 // Complete Viewport rendering (left: rotating teddy bear, right: tool palette)
 void render_frame(TsfiAb4hMat *canvas, int frame) {
     // 1. Clear background to dark charcoal/purple with semi-transparency (0.75f alpha)
@@ -611,12 +618,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_string_ab4h(canvas, "=== PARAMETER TOOL PALETTE ===", 820, 80, text_hdr);
 
     Ab4hPixel track_col = make_ab4h_pixel(0.2f, 0.2f, 0.22f, 1.0f);
-    Ab4hPixel fill_col = make_ab4h_pixel(0.8f, 0.3f, 1.0f, 1.0f);
     Ab4hPixel thumb_col = make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f);
-
-    // Hover colors
-    if (hover_slider0) fill_col = make_ab4h_pixel(0.9f, 0.4f, 1.0f, 1.0f);
-    else fill_col = make_ab4h_pixel(0.8f, 0.3f, 1.0f, 1.0f);
 
     // Slider 0: Fur Length
     char str_buf[128];
@@ -624,29 +626,50 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_string_ab4h(canvas, str_buf, 820, 120, text_hdr);
     draw_rect_ab4h(canvas, 850, 150, 350, 8, track_col);
     int fill_w0 = (int)(350 * (fur_length - 0.01f) / (0.20f - 0.01f));
-    draw_rect_ab4h(canvas, 850, 150, fill_w0, 8, fill_col);
+    for (int tx = 0; tx < fill_w0; tx++) {
+        float t = (float)tx / 350.0f;
+        Ab4hPixel col = evaluate_palette(t);
+        if (hover_slider0) {
+            col.r = double_to_half(half_to_float(col.r) * 1.2f);
+            col.g = double_to_half(half_to_float(col.g) * 1.2f);
+            col.b = double_to_half(half_to_float(col.b) * 1.2f);
+        }
+        draw_rect_ab4h(canvas, 850 + tx, 150, 1, 8, col);
+    }
     draw_rect_ab4h(canvas, 850 + fill_w0 - 6, 144, 12, 20, thumb_col);
-
-    if (hover_slider1) fill_col = make_ab4h_pixel(0.9f, 0.4f, 1.0f, 1.0f);
-    else fill_col = make_ab4h_pixel(0.8f, 0.3f, 1.0f, 1.0f);
 
     // Slider 1: Scale
     snprintf(str_buf, sizeof(str_buf), "Scale: %.2f", scale_val);
     draw_string_ab4h(canvas, str_buf, 820, 220, text_hdr);
     draw_rect_ab4h(canvas, 850, 250, 350, 8, track_col);
     int fill_w1 = (int)(350 * (scale_val - 0.2f) / (2.0f - 0.2f));
-    draw_rect_ab4h(canvas, 850, 250, fill_w1, 8, fill_col);
+    for (int tx = 0; tx < fill_w1; tx++) {
+        float t = (float)tx / 350.0f;
+        Ab4hPixel col = evaluate_palette(t);
+        if (hover_slider1) {
+            col.r = double_to_half(half_to_float(col.r) * 1.2f);
+            col.g = double_to_half(half_to_float(col.g) * 1.2f);
+            col.b = double_to_half(half_to_float(col.b) * 1.2f);
+        }
+        draw_rect_ab4h(canvas, 850 + tx, 250, 1, 8, col);
+    }
     draw_rect_ab4h(canvas, 850 + fill_w1 - 6, 244, 12, 20, thumb_col);
-
-    if (hover_slider2) fill_col = make_ab4h_pixel(0.9f, 0.4f, 1.0f, 1.0f);
-    else fill_col = make_ab4h_pixel(0.8f, 0.3f, 1.0f, 1.0f);
 
     // Slider 2: Light Angle
     snprintf(str_buf, sizeof(str_buf), "Light Angle: %.1f Deg", light_angle_deg);
     draw_string_ab4h(canvas, str_buf, 820, 320, text_hdr);
     draw_rect_ab4h(canvas, 850, 350, 350, 8, track_col);
     int fill_w2 = (int)(350 * (light_angle_deg / 360.0f));
-    draw_rect_ab4h(canvas, 850, 350, fill_w2, 8, fill_col);
+    for (int tx = 0; tx < fill_w2; tx++) {
+        float t = (float)tx / 350.0f;
+        Ab4hPixel col = evaluate_palette(t);
+        if (hover_slider2) {
+            col.r = double_to_half(half_to_float(col.r) * 1.2f);
+            col.g = double_to_half(half_to_float(col.g) * 1.2f);
+            col.b = double_to_half(half_to_float(col.b) * 1.2f);
+        }
+        draw_rect_ab4h(canvas, 850 + tx, 350, 1, 8, col);
+    }
     draw_rect_ab4h(canvas, 850 + fill_w2 - 6, 344, 12, 20, thumb_col);
 
     // Action Buttons
