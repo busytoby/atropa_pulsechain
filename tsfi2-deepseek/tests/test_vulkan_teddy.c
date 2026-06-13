@@ -217,25 +217,36 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     lx /= len; ly /= len; lz /= len;
 
     float pos_x = ((float)(params.identity_pole % 40) - 20.0f) * 0.02f;
-    
     // Rotate body elements around Y axis based on frame number
     float theta = (float)frame * 0.04f;
     float cos_t = cosf(theta);
     float sin_t = sinf(theta);
 
-    SphereGeometry body[8] = {
-        { 0.0f + pos_x,  -0.12f, 0.0f, 0.35f * scale_val }, // 0: Torso (furred)
-        { 0.0f + pos_x,   0.32f, 0.0f, 0.24f * scale_val }, // 1: Head (furred)
-        { -0.18f * scale_val + pos_x, 0.52f * scale_val, 0.0f, 0.09f * scale_val }, // 2: Left Ear (furred)
-        {  0.18f * scale_val + pos_x, 0.52f * scale_val, 0.0f, 0.09f * scale_val }, // 3: Right Ear (furred)
-        { 0.0f + pos_x,   0.23f, 0.17f * scale_val, 0.08f * scale_val }, // 4: Snout (smooth cream)
-        { 0.0f + pos_x,   0.25f, 0.24f * scale_val, 0.025f * scale_val }, // 5: Nose (smooth black)
-        { -0.08f * scale_val + pos_x, 0.34f, 0.20f * scale_val, 0.022f * scale_val }, // 6: Left Eye (shiny)
-        {  0.08f * scale_val + pos_x, 0.34f, 0.20f * scale_val, 0.022f * scale_val }  // 7: Right Eye (shiny)
+    SphereGeometry body[15] = {
+        // Furred Features (Indices 0 - 7)
+        { 0.0f + pos_x,  -0.12f, 0.0f, 0.35f * scale_val }, // 0: Torso
+        { 0.0f + pos_x,   0.32f, 0.0f, 0.24f * scale_val }, // 1: Head
+        { -0.18f * scale_val + pos_x, 0.52f * scale_val, 0.0f, 0.09f * scale_val }, // 2: Left Ear
+        {  0.18f * scale_val + pos_x, 0.52f * scale_val, 0.0f, 0.09f * scale_val }, // 3: Right Ear
+        { -0.25f * scale_val + pos_x, -0.05f * scale_val, 0.10f * scale_val, 0.08f * scale_val }, // 4: Left Arm
+        {  0.25f * scale_val + pos_x, -0.05f * scale_val, 0.10f * scale_val, 0.08f * scale_val }, // 5: Right Arm
+        { -0.18f * scale_val + pos_x, -0.32f * scale_val, 0.12f * scale_val, 0.10f * scale_val }, // 6: Left Leg
+        {  0.18f * scale_val + pos_x, -0.32f * scale_val, 0.12f * scale_val, 0.10f * scale_val }, // 7: Right Leg
+
+        // Smooth Features (Indices 8 - 11)
+        { 0.0f + pos_x,   0.23f, 0.17f * scale_val, 0.08f * scale_val }, // 8: Snout
+        { 0.0f + pos_x,   0.25f, 0.24f * scale_val, 0.025f * scale_val }, // 9: Nose
+        { -0.08f * scale_val + pos_x, 0.34f, 0.20f * scale_val, 0.022f * scale_val }, // 10: Left Eye
+        {  0.08f * scale_val + pos_x, 0.34f, 0.20f * scale_val, 0.022f * scale_val }, // 11: Right Eye
+
+        // Red Bow Tie (Indices 12 - 14)
+        { 0.0f + pos_x, 0.10f, 0.18f * scale_val, 0.035f * scale_val }, // 12: Knot
+        { -0.05f * scale_val + pos_x, 0.10f, 0.17f * scale_val, 0.045f * scale_val }, // 13: Left Wing
+        {  0.05f * scale_val + pos_x, 0.10f, 0.17f * scale_val, 0.045f * scale_val }  // 14: Right Wing
     };
 
     // Apply rotation
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 15; i++) {
         float dx = body[i].x - pos_x;
         float dz = body[i].z;
         body[i].x = pos_x + dx * cos_t - dz * sin_t;
@@ -257,8 +268,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
             bool hit_bear = false;
 
-            // Check smooth features first (Snout, Nose, Eyes)
-            for (int i = 4; i < 8; i++) {
+            // Check smooth features first (Snout, Nose, Eyes, and Red Bow Tie)
+            for (int i = 8; i < 15; i++) {
                 float dx = cx - body[i].x;
                 float dy = cy - body[i].y;
                 float dist2 = dx*dx + dy*dy;
@@ -272,15 +283,15 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     float diffuse = nx*lx + ny*ly + nz*lz;
                     if (diffuse < 0.0f) diffuse = 0.0f;
 
-                    if (i == 4) { // Snout
+                    if (i == 8) { // Snout
                         acc_r = 0.85f * (diffuse * 0.7f + 0.3f);
                         acc_g = 0.80f * (diffuse * 0.7f + 0.3f);
                         acc_b = 0.70f * (diffuse * 0.7f + 0.3f);
-                    } else if (i == 5) { // Nose
+                    } else if (i == 9) { // Nose
                         acc_r = 0.05f * (diffuse * 0.9f + 0.1f);
                         acc_g = 0.05f * (diffuse * 0.9f + 0.1f);
                         acc_b = 0.05f * (diffuse * 0.9f + 0.1f);
-                    } else { // Eyes with specular highlights
+                    } else if (i == 10 || i == 11) { // Eyes with specular highlights
                         float hx = lx;
                         float hy = ly;
                         float hz = lz + 1.0f;
@@ -293,17 +304,30 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                         acc_r = 0.03f * diffuse + spec;
                         acc_g = 0.03f * diffuse + spec;
                         acc_b = 0.03f * diffuse + spec;
+                    } else { // Red Bow Tie (Indices 12, 13, 14)
+                        float hx = lx;
+                        float hy = ly;
+                        float hz = lz + 1.0f;
+                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                        hx /= hlen; hy /= hlen; hz /= hlen;
+                        float spec = nx*hx + ny*hy + nz*hz;
+                        if (spec < 0.0f) spec = 0.0f;
+                        spec = powf(spec, 16.0f) * 0.5f;
+
+                        acc_r = 0.85f * (diffuse * 0.7f + 0.3f) + spec;
+                        acc_g = 0.05f * (diffuse * 0.7f + 0.3f);
+                        acc_b = 0.10f * (diffuse * 0.7f + 0.3f);
                     }
-                    acc_a = 1.0f; // Bear is fully opaque
+                    acc_a = 1.0f; // Fully opaque
                     break;
                 }
             }
 
-            // March shells if we didn't hit smooth snout/eyes
+            // March shells if we didn't hit smooth elements
             if (!hit_bear) {
                 for (int shell = num_shells - 1; shell >= 0; shell--) {
                     float shell_offset = ((float)shell / num_shells) * fur_length;
-                    for (int i = 0; i < 4; i++) {
+                    for (int i = 0; i < 8; i++) {
                         float dx = cx - body[i].x;
                         float dy = cy - body[i].y;
                         float dist2 = dx*dx + dy*dy;
@@ -327,8 +351,17 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                 float base_g = 0.44f;
                                 float base_b = 0.22f;
 
-                                if (i >= 2) { // Ears pink center
+                                if (i == 2 || i == 3) { // Ears pink center
                                     base_r = 0.82f; base_g = 0.62f; base_b = 0.52f;
+                                }
+
+                                // Apply golden highlights at the fur tips (shell-texturing depth gradient)
+                                float tip_factor = (float)shell / num_shells;
+                                if (tip_factor > 0.7f) {
+                                    float blend = (tip_factor - 0.7f) / 0.3f;
+                                    base_r = base_r * (1.0f - blend) + 0.78f * blend;
+                                    base_g = base_g * (1.0f - blend) + 0.60f * blend;
+                                    base_b = base_b * (1.0f - blend) + 0.38f * blend;
                                 }
 
                                 acc_r = base_r * (diffuse * 0.8f + 0.2f);
@@ -452,9 +485,9 @@ void present_ab4h_to_argb(TsfiAb4hMat *canvas, uint32_t *dest_argb) {
     for (int y = 0; y < canvas->rows; y++) {
         Ab4hPixel *row = (Ab4hPixel *)((char *)canvas->data + y * canvas->stride);
         for (int x = 0; x < canvas->cols; x++) {
-            float r = half_to_float(row[x].r);
-            float g = half_to_float(row[x].g);
-            float b = half_to_float(row[x].b);
+            float r = sqrtf(half_to_float(row[x].r));
+            float g = sqrtf(half_to_float(row[x].g));
+            float b = sqrtf(half_to_float(row[x].b));
             float a = half_to_float(row[x].a);
 
             int ir = (int)(r * 255.0f);
