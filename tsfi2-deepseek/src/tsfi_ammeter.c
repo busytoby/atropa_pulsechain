@@ -48,19 +48,38 @@ void tsfi_ammeter_process(
         // 1. Calculate temperature dependent wire resistance
         double R = R0 * (1.0 + alpha * (T - T_ambient));
 
-        // 2. Solve Joule heating thermal balance:
-        // dT/dt = (I^2 * R - k_loss * (T - T_ambient)) / thermal_mass
+        // 2. Solve Joule heating thermal balance with Stefan-Boltzmann radiative cooling
         double Joule_power = i_rf * i_rf * R;
-        double cooling_power = k_loss * (T - T_ambient);
+        double k_rad = 5.67e-13; // Emissivity * area * Stefan-Boltzmann constant
+        double T4_diff = (T * T * T * T) - (T_ambient * T_ambient * T_ambient * T_ambient);
+        double cooling_power = k_loss * (T - T_ambient) + k_rad * T4_diff;
         double dT = (Joule_power - cooling_power) / thermal_mass;
         T += dT * dt;
 
-        // 3. Solve needle second-order display mechanics:
+        // 3. Solve needle second-order display mechanics using RK4 integration:
         // M_needle * d^2(theta)/dt^2 + B_needle * d(theta)/dt + K_spring * theta = Torque
         double torque = K_torque * (T - T_ambient);
-        double d_omega = (torque - B_needle * omega - K_spring * theta) / M_needle;
-        omega += d_omega * dt;
-        theta += omega * dt;
+
+        double k1_theta = omega;
+        double k1_omega = (torque - B_needle * omega - K_spring * theta) / M_needle;
+
+        double t2 = theta + 0.5 * dt * k1_theta;
+        double w2 = omega + 0.5 * dt * k1_omega;
+        double k2_theta = w2;
+        double k2_omega = (torque - B_needle * w2 - K_spring * t2) / M_needle;
+
+        double t3 = theta + 0.5 * dt * k2_theta;
+        double w3 = omega + 0.5 * dt * k2_omega;
+        double k3_theta = w3;
+        double k3_omega = (torque - B_needle * w3 - K_spring * t3) / M_needle;
+
+        double t4 = theta + dt * k3_theta;
+        double w4 = omega + dt * k3_omega;
+        double k4_theta = w4;
+        double k4_omega = (torque - B_needle * w4 - K_spring * t4) / M_needle;
+
+        theta += (dt / 6.0) * (k1_theta + 2.0 * k2_theta + 2.0 * k3_theta + k4_theta);
+        omega += (dt / 6.0) * (k1_omega + 2.0 * k2_omega + 2.0 * k3_omega + k4_omega);
 
         // Clamp physical needle stops
         if (theta < 0.0) {
