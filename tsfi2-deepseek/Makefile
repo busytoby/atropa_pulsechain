@@ -200,6 +200,9 @@ bin/test_yang_audion_bjt_quality: tests/test_yang_audion_bjt_quality.c $(CORE_OB
 bin/test_yi_harmonizer: tests/test_yi_harmonizer.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_spark_helix: tests/test_spark_helix.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_oscillating_audion: tests/test_oscillating_audion.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
