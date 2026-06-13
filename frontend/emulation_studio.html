@@ -648,6 +648,18 @@
             document.getElementById("ammeterValDisplay").innerText = `Temp: ${ammeter_T.toFixed(1)} K (${(deflectionNormalized * 100).toFixed(0)}%)`;
         }
 
+        function bessel_j0(x) {
+            let val = 0.0;
+            let term = 1.0;
+            for (let k = 0; k < 12; k++) {
+                if (k > 0) {
+                    term *= - (x * x) / (4.0 * k * k);
+                }
+                val += term;
+            }
+            return val;
+        }
+
         function drawBear() {
             const w = bCanvas.width;
             const h = bCanvas.height;
@@ -663,8 +675,9 @@
             const needle_deflection = 0.005 * (ammeter_T - 293.15);
             const ammeter_damping = 1.0 / (1.0 + needle_deflection * 1.5);
 
+            const phase = (frameCount * 0.12 * breathing_freq) % (Math.PI * 2);
             const parasitic_leak = 0.015 * Math.cos(frameCount * 0.24 * breathing_freq);
-            const breathe = (0.05 * Math.sin(frameCount * 0.12 * breathing_freq) + parasitic_leak) * ammeter_damping;
+            const breathe = (0.05 * bessel_j0(phase) + parasitic_leak) * ammeter_damping;
 
             let twitch = 0.0;
             if ((frameCount % 60) < 6) {
