@@ -104,6 +104,32 @@ static uint8_t seq_grid[2][8] = {
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
 
+// Dragon's Lair Interactive Storybook Sequencer (1983 Retro QTE Game Loop)
+static bool dl_game_active = false;
+static int dl_score = 0;
+static int dl_lives = 3;
+static int dl_stage = 1;
+static int dl_expected_action = 0;
+static int dl_status = 0;
+static const char* dl_stage_texts[6] = {
+    "1. Entrance: Floor collapses! (RIGHT)",
+    "2. Cavern: Beast lunges! (SWORD)",
+    "3. Bridge: Falling bridge! (LEFT)",
+    "4. Keep: Knight attacks! (UP)",
+    "5. Lair: Singe wakes! (DOWN)",
+    "6. Victory: Princess Daphne rescued!"
+};
+static int dl_stage_actions[5] = { 2, 3, 1, 4, 5 };
+static bool hover_dl_btn = false;
+
+static void init_dl_game(void) {
+    dl_score = 0;
+    dl_lives = 3;
+    dl_stage = 1;
+    dl_status = 0;
+    dl_expected_action = dl_stage_actions[0];
+}
+
 static int mouse_x = 0;
 static int mouse_y = 0;
 static bool mouse_pressed = false;
@@ -1087,57 +1113,100 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     Ab4hPixel track_col = make_ab4h_pixel(0.2f, 0.2f, 0.22f, 1.0f);
     Ab4hPixel thumb_col = make_ab4h_pixel(1.0f, 1.0f, 1.0f, 1.0f);
 
-    // Slider 0: Fur Length
-    char str_buf[128];
-    snprintf(str_buf, sizeof(str_buf), "Fur Length: %.3f", fur_length);
-    draw_string_ab4h(canvas, str_buf, 820, 120, text_hdr);
-    draw_rect_ab4h(canvas, 850, 150, 350, 8, track_col);
-    int fill_w0 = (int)(350 * (fur_length - 0.01f) / (0.20f - 0.01f));
-    for (int tx = 0; tx < fill_w0; tx++) {
-        float t = (float)tx / 350.0f;
-        Ab4hPixel col = evaluate_palette(t);
-        if (hover_slider0) {
-            col.r = double_to_half(half_to_float(col.r) * 1.2f);
-            col.g = double_to_half(half_to_float(col.g) * 1.2f);
-            col.b = double_to_half(half_to_float(col.b) * 1.2f);
+    if (dl_game_active) {
+        // Draw Dragon's Lair Storybook Panel
+        Ab4hPixel panel_bg = make_ab4h_pixel(0.12f, 0.04f, 0.04f, 1.0f);
+        draw_rect_ab4h(canvas, 820, 110, 370, 255, panel_bg);
+        
+        Ab4hPixel dl_title_col = make_ab4h_pixel(1.0f, 0.82f, 0.2f, 1.0f);
+        draw_string_ab4h(canvas, "DRAGON'S LAIR STORYBOOK", 840, 130, dl_title_col);
+        
+        char stats_buf[128];
+        snprintf(stats_buf, sizeof(stats_buf), "LIVES: %d/3 | SCORE: %d | STAGE: %d/5", dl_lives, dl_score, dl_stage);
+        draw_string_ab4h(canvas, stats_buf, 840, 155, make_ab4h_pixel(1.0f, 0.35f, 0.35f, 1.0f));
+        
+        draw_string_ab4h(canvas, dl_stage_texts[dl_stage - 1], 840, 185, make_ab4h_pixel(0.9f, 0.9f, 0.95f, 1.0f));
+        
+        if (dl_status == 0) {
+            char prompt_buf[128];
+            snprintf(prompt_buf, sizeof(prompt_buf), "QTE Prompt: %s", 
+                     (dl_expected_action == 1) ? "LEAP LEFT" :
+                     (dl_expected_action == 2) ? "DODGE RIGHT" :
+                     (dl_expected_action == 3) ? "USE SWORD" :
+                     (dl_expected_action == 4) ? "JUMP UP" : "DUCK DOWN");
+            draw_string_ab4h(canvas, prompt_buf, 840, 220, make_ab4h_pixel(1.0f, 1.0f, 0.2f, 1.0f));
+            
+            const char* act_names[6] = { "", "LEFT", "RIGHT", "SWORD", "UP", "DOWN" };
+            for (int act = 1; act <= 5; act++) {
+                int btn_x = 835 + (act - 1) * 70;
+                Ab4hPixel act_btn_bg = make_ab4h_pixel(0.25f, 0.08f, 0.08f, 1.0f);
+                draw_rect_ab4h(canvas, btn_x, 260, 65, 30, act_btn_bg);
+                draw_string_ab4h(canvas, act_names[act], btn_x + 5, 270, make_ab4h_pixel(0.95f, 0.95f, 0.95f, 1.0f));
+            }
+        } else if (dl_status == 1) {
+            draw_string_ab4h(canvas, "VICTORY! Princess Daphne rescued!", 840, 220, make_ab4h_pixel(0.2f, 0.9f, 0.2f, 1.0f));
+            Ab4hPixel play_btn_bg = make_ab4h_pixel(0.08f, 0.35f, 0.08f, 1.0f);
+            draw_rect_ab4h(canvas, 940, 260, 140, 30, play_btn_bg);
+            draw_string_ab4h(canvas, "PLAY AGAIN", 965, 270, thumb_col);
+        } else if (dl_status == 2) {
+            draw_string_ab4h(canvas, "GAME OVER! Dirk has perished!", 840, 220, make_ab4h_pixel(0.9f, 0.2f, 0.2f, 1.0f));
+            Ab4hPixel retry_btn_bg = make_ab4h_pixel(0.35f, 0.08f, 0.08f, 1.0f);
+            draw_rect_ab4h(canvas, 940, 260, 140, 30, retry_btn_bg);
+            draw_string_ab4h(canvas, "RETRY QUEST", 960, 270, thumb_col);
         }
-        draw_rect_ab4h(canvas, 850 + tx, 150, 1, 8, col);
-    }
-    draw_rect_ab4h(canvas, 850 + fill_w0 - 6, 144, 12, 20, thumb_col);
+    } else {
+        // Slider 0: Fur Length
+        char str_buf[128];
+        snprintf(str_buf, sizeof(str_buf), "Fur Length: %.3f", fur_length);
+        draw_string_ab4h(canvas, str_buf, 820, 120, text_hdr);
+        draw_rect_ab4h(canvas, 850, 150, 350, 8, track_col);
+        int fill_w0 = (int)(350 * (fur_length - 0.01f) / (0.20f - 0.01f));
+        for (int tx = 0; tx < fill_w0; tx++) {
+            float t = (float)tx / 350.0f;
+            Ab4hPixel col = evaluate_palette(t);
+            if (hover_slider0) {
+                col.r = double_to_half(half_to_float(col.r) * 1.2f);
+                col.g = double_to_half(half_to_float(col.g) * 1.2f);
+                col.b = double_to_half(half_to_float(col.b) * 1.2f);
+            }
+            draw_rect_ab4h(canvas, 850 + tx, 150, 1, 8, col);
+        }
+        draw_rect_ab4h(canvas, 850 + fill_w0 - 6, 144, 12, 20, thumb_col);
 
-    // Slider 1: Scale
-    snprintf(str_buf, sizeof(str_buf), "Scale: %.2f", scale_val);
-    draw_string_ab4h(canvas, str_buf, 820, 220, text_hdr);
-    draw_rect_ab4h(canvas, 850, 250, 350, 8, track_col);
-    int fill_w1 = (int)(350 * (scale_val - 0.2f) / (2.0f - 0.2f));
-    for (int tx = 0; tx < fill_w1; tx++) {
-        float t = (float)tx / 350.0f;
-        Ab4hPixel col = evaluate_palette(t);
-        if (hover_slider1) {
-            col.r = double_to_half(half_to_float(col.r) * 1.2f);
-            col.g = double_to_half(half_to_float(col.g) * 1.2f);
-            col.b = double_to_half(half_to_float(col.b) * 1.2f);
+        // Slider 1: Scale
+        snprintf(str_buf, sizeof(str_buf), "Scale: %.2f", scale_val);
+        draw_string_ab4h(canvas, str_buf, 820, 220, text_hdr);
+        draw_rect_ab4h(canvas, 850, 250, 350, 8, track_col);
+        int fill_w1 = (int)(350 * (scale_val - 0.2f) / (2.0f - 0.2f));
+        for (int tx = 0; tx < fill_w1; tx++) {
+            float t = (float)tx / 350.0f;
+            Ab4hPixel col = evaluate_palette(t);
+            if (hover_slider1) {
+                col.r = double_to_half(half_to_float(col.r) * 1.2f);
+                col.g = double_to_half(half_to_float(col.g) * 1.2f);
+                col.b = double_to_half(half_to_float(col.b) * 1.2f);
+            }
+            draw_rect_ab4h(canvas, 850 + tx, 250, 1, 8, col);
         }
-        draw_rect_ab4h(canvas, 850 + tx, 250, 1, 8, col);
-    }
-    draw_rect_ab4h(canvas, 850 + fill_w1 - 6, 244, 12, 20, thumb_col);
+        draw_rect_ab4h(canvas, 850 + fill_w1 - 6, 244, 12, 20, thumb_col);
 
-    // Slider 2: Light Angle
-    snprintf(str_buf, sizeof(str_buf), "Light Angle: %.1f Deg", light_angle_deg);
-    draw_string_ab4h(canvas, str_buf, 820, 320, text_hdr);
-    draw_rect_ab4h(canvas, 850, 350, 350, 8, track_col);
-    int fill_w2 = (int)(350 * (light_angle_deg / 360.0f));
-    for (int tx = 0; tx < fill_w2; tx++) {
-        float t = (float)tx / 350.0f;
-        Ab4hPixel col = evaluate_palette(t);
-        if (hover_slider2) {
-            col.r = double_to_half(half_to_float(col.r) * 1.2f);
-            col.g = double_to_half(half_to_float(col.g) * 1.2f);
-            col.b = double_to_half(half_to_float(col.b) * 1.2f);
+        // Slider 2: Light Angle
+        snprintf(str_buf, sizeof(str_buf), "Light Angle: %.1f Deg", light_angle_deg);
+        draw_string_ab4h(canvas, str_buf, 820, 320, text_hdr);
+        draw_rect_ab4h(canvas, 850, 350, 350, 8, track_col);
+        int fill_w2 = (int)(350 * (light_angle_deg / 360.0f));
+        for (int tx = 0; tx < fill_w2; tx++) {
+            float t = (float)tx / 350.0f;
+            Ab4hPixel col = evaluate_palette(t);
+            if (hover_slider2) {
+                col.r = double_to_half(half_to_float(col.r) * 1.2f);
+                col.g = double_to_half(half_to_float(col.g) * 1.2f);
+                col.b = double_to_half(half_to_float(col.b) * 1.2f);
+            }
+            draw_rect_ab4h(canvas, 850 + tx, 350, 1, 8, col);
         }
-        draw_rect_ab4h(canvas, 850 + tx, 350, 1, 8, col);
+        draw_rect_ab4h(canvas, 850 + fill_w2 - 6, 344, 12, 20, thumb_col);
     }
-    draw_rect_ab4h(canvas, 850 + fill_w2 - 6, 344, 12, 20, thumb_col);
 
     // Action Buttons
     Ab4hPixel btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
@@ -1210,10 +1279,14 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_rect_ab4h(canvas, 960, 570, 240, 30, gen_btn_bg);
     draw_string_ab4h(canvas, generator_names[selected_generator], 980, 578, btn_text);
 
-    // Run Optimizer Button
+    // Run Optimizer & Dragon's Lair Buttons
     Ab4hPixel run_btn_bg = hover_run_btn ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.25f, 1.0f);
-    draw_rect_ab4h(canvas, 850, 610, 350, 35, run_btn_bg);
-    draw_string_ab4h(canvas, "TRIGGER GENETIC OPTIMIZER", 910, 620, btn_text);
+    draw_rect_ab4h(canvas, 850, 610, 170, 35, run_btn_bg);
+    draw_string_ab4h(canvas, "RUN OPTIMIZER", 880, 620, btn_text);
+
+    Ab4hPixel dl_btn_bg = hover_dl_btn ? make_ab4h_pixel(0.35f, 0.15f, 0.15f, 1.0f) : (dl_game_active ? make_ab4h_pixel(0.25f, 0.08f, 0.08f, 1.0f) : make_ab4h_pixel(0.15f, 0.08f, 0.08f, 1.0f));
+    draw_rect_ab4h(canvas, 1030, 610, 170, 35, dl_btn_bg);
+    draw_string_ab4h(canvas, dl_game_active ? "EXIT LAIR" : "DRAGON'S LAIR", 1060, 620, btn_text);
 
     // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (2-Track, 8-Step)
     Ab4hPixel grid_label_col = make_ab4h_pixel(0.7f, 0.7f, 0.8f, 1.0f);
@@ -1470,7 +1543,8 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     hover_btn3 = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 850 && mouse_x <= 1200);
     hover_vlm_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 530 && mouse_y <= 560);
     hover_gen_btn = (mouse_x >= 960 && mouse_x <= 1200 && mouse_y >= 570 && mouse_y <= 600);
-    hover_run_btn = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 610 && mouse_y <= 645);
+    hover_run_btn = (mouse_x >= 850 && mouse_x <= 1020 && mouse_y >= 610 && mouse_y <= 645);
+    hover_dl_btn = (mouse_x >= 1030 && mouse_x <= 1200 && mouse_y >= 610 && mouse_y <= 645);
 
     if (mouse_pressed && active_slider != -1) {
         float pct = (float)(mouse_x - 850) / 350.0f;
@@ -1506,7 +1580,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                     }
                 }
             }
-            if (mouse_x >= 850 && mouse_x <= 1200) {
+            if (!dl_game_active && mouse_x >= 850 && mouse_x <= 1200) {
                 if (mouse_y >= 135 && mouse_y <= 165) {
                     active_slider = 0;
                 } else if (mouse_y >= 235 && mouse_y <= 265) {
@@ -1580,15 +1654,53 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                 } else {
                     snprintf(opt_status, sizeof(opt_status), "Optimizer Status: LAUNCH FAILED");
                 }
-            } else if (mouse_y >= 610 && mouse_y <= 645 && mouse_x >= 850 && mouse_x <= 1200) {
-                char run_cmd[512];
-                snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
-                         vlm_names[selected_vlm], generator_names[selected_generator]);
-                int ret = system(run_cmd);
-                if (ret == 0) {
-                    snprintf(opt_status, sizeof(opt_status), "Optimizer Status: RUNNING (Background)");
+            }
+            if (dl_game_active && mouse_y >= 260 && mouse_y <= 290) {
+                if (dl_status == 0) {
+                    int clicked_action = 0;
+                    if (mouse_x >= 835 && mouse_x <= 900) clicked_action = 1;
+                    else if (mouse_x >= 905 && mouse_x <= 970) clicked_action = 2;
+                    else if (mouse_x >= 975 && mouse_x <= 1040) clicked_action = 3;
+                    else if (mouse_x >= 1045 && mouse_x <= 1110) clicked_action = 4;
+                    else if (mouse_x >= 1115 && mouse_x <= 1180) clicked_action = 5;
+
+                    if (clicked_action > 0) {
+                        if (clicked_action == dl_expected_action) {
+                            dl_score += 1500;
+                            dl_stage++;
+                            if (dl_stage == 6) {
+                                dl_status = 1;
+                            } else {
+                                dl_expected_action = dl_stage_actions[dl_stage - 1];
+                            }
+                        } else {
+                            dl_lives--;
+                            if (dl_lives == 0) {
+                                dl_status = 2;
+                            }
+                        }
+                    }
                 } else {
-                    snprintf(opt_status, sizeof(opt_status), "Optimizer Status: LAUNCH FAILED");
+                    if (mouse_x >= 940 && mouse_x <= 1080) {
+                        init_dl_game();
+                    }
+                }
+            } else if (mouse_y >= 610 && mouse_y <= 645) {
+                if (mouse_x >= 850 && mouse_x <= 1020) {
+                    char run_cmd[512];
+                    snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
+                             vlm_names[selected_vlm], generator_names[selected_generator]);
+                    int ret = system(run_cmd);
+                    if (ret == 0) {
+                        snprintf(opt_status, sizeof(opt_status), "Optimizer Status: RUNNING (Background)");
+                    } else {
+                        snprintf(opt_status, sizeof(opt_status), "Optimizer Status: LAUNCH FAILED");
+                    }
+                } else if (mouse_x >= 1030 && mouse_x <= 1200) {
+                    dl_game_active = !dl_game_active;
+                    if (dl_game_active) {
+                        init_dl_game();
+                    }
                 }
             }
         } else {
