@@ -12301,39 +12301,75 @@ static void draw_fill_round_rect(uint32_t *buf, int width, int height, int x1, i
     }
 }
 
+static void vm_poke(TsfiZmmVmState *vstate, uint64_t addr, uint8_t val);
+
 static void sync_vram_to_cpu(void) {
-    uint8_t buffer[9600];
+    static uint8_t shadow_buffer[9600];
+    static bool shadow_initialized = false;
+    
+    uint8_t current_buffer[9600];
     for (int y = 0; y < 60; y++) {
         for (int x = 0; x < 160; x++) {
-            buffer[y * 160 + x] = (uint8_t)g_vram->grid[y][x].character;
+            current_buffer[y * 160 + x] = (uint8_t)g_vram->grid[y][x].character;
         }
     }
     
-    static uint8_t calldata[9700];
-    // Selector: 0xf7e8e81b (pokeBytes)
-    calldata[0] = 0xf7; calldata[1] = 0xe8; calldata[2] = 0xe8; calldata[3] = 0x1b;
-    
-    // startAddr: 0x4000 (16384)
-    memset(&calldata[4], 0, 32);
-    calldata[4 + 30] = 0x40;
-    calldata[4 + 31] = 0x00;
-    
-    // offset: 64 (0x40)
-    memset(&calldata[36], 0, 32);
-    calldata[36 + 31] = 0x40;
-    
-    // length: 9600 (0x2580)
-    memset(&calldata[68], 0, 32);
-    calldata[68 + 30] = 0x25;
-    calldata[68 + 31] = 0x80;
-    
-    // Copy data
-    memcpy(&calldata[100], buffer, 9600);
-    
-    uint8_t retval[32];
-    size_t retval_len = 32;
     extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
-    lau_yul_thunk_execute("cpu6502", calldata, 9700, retval, &retval_len);
+    
+    if (!shadow_initialized) {
+        memcpy(shadow_buffer, current_buffer, 9600);
+        shadow_initialized = true;
+        
+        static uint8_t calldata[9700];
+        calldata[0] = 0xf7; calldata[1] = 0xe8; calldata[2] = 0xe8; calldata[3] = 0x1b;
+        memset(&calldata[4], 0, 32);
+        calldata[4 + 30] = 0x40;
+        calldata[4 + 31] = 0x00;
+        memset(&calldata[36], 0, 32);
+        calldata[36 + 31] = 0x40;
+        memset(&calldata[68], 0, 32);
+        calldata[68 + 30] = 0x25;
+        calldata[68 + 31] = 0x80;
+        memcpy(&calldata[100], current_buffer, 9600);
+        
+        uint8_t retval[32];
+        size_t retval_len = 32;
+        lau_yul_thunk_execute("cpu6502", calldata, 9700, retval, &retval_len);
+        return;
+    }
+    
+    int diff_count = 0;
+    for (int i = 0; i < 9600; i++) {
+        if (current_buffer[i] != shadow_buffer[i]) {
+            diff_count++;
+        }
+    }
+    
+    if (diff_count > 50) {
+        memcpy(shadow_buffer, current_buffer, 9600);
+        static uint8_t calldata[9700];
+        calldata[0] = 0xf7; calldata[1] = 0xe8; calldata[2] = 0xe8; calldata[3] = 0x1b;
+        memset(&calldata[4], 0, 32);
+        calldata[4 + 30] = 0x40;
+        calldata[4 + 31] = 0x00;
+        memset(&calldata[36], 0, 32);
+        calldata[36 + 31] = 0x40;
+        memset(&calldata[68], 0, 32);
+        calldata[68 + 30] = 0x25;
+        calldata[68 + 31] = 0x80;
+        memcpy(&calldata[100], current_buffer, 9600);
+        
+        uint8_t retval[32];
+        size_t retval_len = 32;
+        lau_yul_thunk_execute("cpu6502", calldata, 9700, retval, &retval_len);
+    } else if (diff_count > 0) {
+        for (int i = 0; i < 9600; i++) {
+            if (current_buffer[i] != shadow_buffer[i]) {
+                vm_poke(&vm, 0x4000 + i, current_buffer[i]);
+                shadow_buffer[i] = current_buffer[i];
+            }
+        }
+    }
 }
 
 #include "tsfi_vae_firmware.h"
