@@ -33,6 +33,7 @@ typedef struct {
 
 static CachedContract g_cached_contracts[MAX_CACHED_CONTRACTS];
 static int g_cached_contracts_count = 0;
+static bool g_storage_dirty = false;
 
 _Thread_local YulEvmContext g_yul_evm_context;
 
@@ -665,7 +666,10 @@ static void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
     u256_t ns_key = get_namespaced_key(ctx->self_address ? ctx->self_address : 0x1000, key);
     for (int i = 0; i < ctx->storage_count; i++) {
         if (u256_eq(ctx->storage_keys[i], ns_key)) {
-            ctx->storage_vals[i] = val;
+            if (!u256_eq(ctx->storage_vals[i], val)) {
+                ctx->storage_vals[i] = val;
+                g_storage_dirty = true;
+            }
             return;
         }
     }
@@ -673,6 +677,7 @@ static void context_sstore(YulEvmContext *ctx, u256_t key, u256_t val) {
         ctx->storage_keys[ctx->storage_count] = ns_key;
         ctx->storage_vals[ctx->storage_count] = val;
         ctx->storage_count++;
+        g_storage_dirty = true;
     }
 }
 
@@ -1545,7 +1550,10 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     bool success = run_yul_bytecode(&g_yul_evm_context, c->bytecode, c->size, name);
 
     if (success) {
-        persist_reconciliation_data();
+        if (g_storage_dirty) {
+            persist_reconciliation_data();
+            g_storage_dirty = false;
+        }
         if (retval && retval_len) {
             size_t out_size = g_yul_evm_context.return_size < *retval_len ? g_yul_evm_context.return_size : *retval_len;
             memcpy(retval, g_yul_evm_context.return_data, out_size);
