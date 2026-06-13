@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi2 Emulation & Render Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030408;
+            --panel-bg: rgba(6, 9, 20, 0.85);
+            --glow-cyan: #00f0ff;
+            --glow-magenta: #ff007f;
+            --glow-gold: #ffc400;
+            --glow-green: #39ff14;
+            --text-color: #e2e8f0;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.65);
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 50% 10%, rgba(255, 0, 127, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(3, 5, 12, 0.95);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .logo h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+        }
+
+        .logo p {
+            margin: 4px 0 0 0;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2b1f3d 0%, #171122 100%);
+            border: 1px solid rgba(255, 170, 0, 0.2);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            border-color: var(--glow-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        /* Dashboard Grid Layout */
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            .studio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Dragon's Lair Cabinet style */
+        .arcade-screen {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border: 4px solid #1f1728;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 170, 0, 0.1);
+        }
+
+        .screen-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            font-family: monospace;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        .prompt-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--glow-gold);
+            border-radius: 30px;
+            padding: 8px 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--glow-gold);
+            box-shadow: 0 0 15px rgba(255, 196, 0, 0.4);
+            animation: pulse 1.5s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; transform: translate(-50%, -2px) scale(1.05); }
+            100% { opacity: 0.6; }
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        /* Targ Mercenary map grid style */
+        .vector-canvas {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #02040a;
+            border: 2px solid #141d33;
+            border-radius: 12px;
+            display: block;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.95);
+        }
+
+        /* Teddy Bear DNA sprite layout */
+        .sliders-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-group .val-display {
+            color: var(--glow-cyan);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .slider-glow {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #121824;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider-glow::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--glow-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--glow-cyan);
+            transition: transform 0.1s;
+        }
+
+        .slider-glow::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* Console telemetry */
+        .console-box {
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #a2b4c2;
+            height: 140px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="studio-container" style="max-width: 1600px; margin: 0 auto; width: 100%;">
+        <header>
+            <div class="logo">
+                <h1>TSFi2 Integrated Emulation Studio</h1>
+                <p>Unified Dragon's Lair machine, Targ Mercenary vector map, and 12-byte Teddy DNA sprite generator</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="/index.html" class="btn">🏠 Home Hub</a>
+                <a href="/studio.html" class="btn" style="border-color: var(--glow-magenta); color: var(--glow-magenta);">🎹 Synthesis Studio</a>
+            </div>
+        </header>
+
+        <div class="studio-grid">
+            <!-- Panel 1: Dragon's Lair Emulator -->
+            <div class="panel">
+                <h2>🐉 DRAGON'S LAIR SIMULATOR</h2>
+                <div class="arcade-screen">
+                    <img id="dlScreen" src="dragons_lair_title.png" class="screen-img" alt="Arcade Screen">
+                    <div class="hud-overlay">
+                        <span class="score" id="dlScore">SCORE: 0</span>
+                        <span class="lives" id="dlLives">LIVES: ❤️❤️❤️</span>
+                    </div>
+                    <div class="prompt-overlay" id="dlPrompt">PRESS SWORD TO START</div>
+                </div>
+                <div class="controls-row">
+                    <button class="btn btn-secondary" onclick="inputDirection('UP')">▲</button>
+                </div>
+                <div class="controls-row">
+                    <button class="btn btn-secondary" onclick="inputDirection('LEFT')">◀</button>
+                    <button class="btn" id="btnSword" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000;" onclick="inputSword()">🗡️ SWORD</button>
+                    <button class="btn btn-secondary" onclick="inputDirection('RIGHT')">▶</button>
+                </div>
+                <div class="controls-row">
+                    <button class="btn btn-secondary" onclick="inputDirection('DOWN')">▼</button>
+                </div>
+            </div>
+
+            <!-- Panel 2: Targ Mercenary Vector Map -->
+            <div class="panel">
+                <h2>🌀 TARG MERCENARY GRID</h2>
+                <canvas id="vectorCanvas" class="vector-canvas"></canvas>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span id="mercenaryCoords" style="font-family: 'Fira Code', monospace; font-size: 0.95rem; color: var(--glow-cyan);">POS: X=0, Y=0, Z=0</span>
+                    <span style="font-size: 0.8rem; color: #94a3b8;">Use W/A/S/D or arrow keys to navigate the grid</span>
+                </div>
+            </div>
+
+            <!-- Panel 3: Teddy Bear DNA Sprite Generator -->
+            <div class="panel">
+                <h2>🧸 TEDDY BEAR DNA SPRITE GENERATOR</h2>
+                <div style="display: flex; gap: 20px;">
+                    <div style="width: 250px; aspect-ratio: 1; background: #020617; border: 2px solid #141d33; border-radius: 12px; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.95);">
+                        <canvas id="bearCanvas" width="250" height="250" style="display: block; width: 100%; height: 100%;"></canvas>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="background: rgba(0,240,255,0.04); border: 1px solid rgba(0,240,255,0.15); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.8rem; color: var(--glow-cyan);">
+                            <strong>🧬 12-Byte Genome:</strong>
+                            <div id="dnaHexDisplay" style="color: #fff; margin-top: 4px; font-weight: bold; word-break: break-all; font-size: 0.9rem; letter-spacing: 1px;">000000000000000000000000</div>
+                        </div>
+                        <button class="btn" style="background: var(--glow-magenta); border: none;" onclick="triggerBreeding()">🧬 Mutate Genome</button>
+                    </div>
+                </div>
+                <div class="sliders-grid">
+                    <div class="control-group">
+                        <label>Fur Red <span class="val-display" id="valFurR">91</span></label>
+                        <input type="range" id="sldFurR" class="slider-glow" min="0" max="255" value="91" oninput="updateBearGene('fur_r', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Fur Green <span class="val-display" id="valFurG">63</span></label>
+                        <input type="range" id="sldFurG" class="slider-glow" min="0" max="255" value="63" oninput="updateBearGene('fur_g', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Fur Blue <span class="val-display" id="valFurB">51</span></label>
+                        <input type="range" id="sldFurB" class="slider-glow" min="0" max="255" value="51" oninput="updateBearGene('fur_b', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Eye Green <span class="val-display" id="valEyeG">255</span></label>
+                        <input type="range" id="sldEyeG" class="slider-glow" min="0" max="255" value="255" oninput="updateBearGene('eye_g', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Sickness % <span class="val-display" id="valSickness">50</span></label>
+                        <input type="range" id="sldSickness" class="slider-glow" min="0" max="100" value="50" oninput="updateBearGene('sickness', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Scale <span class="val-display" id="valScale">100</span></label>
+                        <input type="range" id="sldScale" class="slider-glow" min="50" max="150" value="100" oninput="updateBearGene('scale', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Fur Length <span class="val-display" id="valFurLength">80</span></label>
+                        <input type="range" id="sldFurLength" class="slider-glow" min="10" max="200" value="80" oninput="updateBearGene('fur_length', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label>Light Angle <span class="val-display" id="valLightAngle">135</span></label>
+                        <input type="range" id="sldLightAngle" class="slider-glow" min="0" max="255" value="95" oninput="updateBearGene('light_angle', this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 4: Telemetry Log & Consolidated Control -->
+            <div class="panel">
+                <h2>📟 CONSOLIDATED EMULATION TELEMETRY</h2>
+                <div class="console-box" id="studioLog">Console active. Dynamic bindings initialized...</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn" style="border-color: var(--glow-cyan); color: var(--glow-cyan);" onclick="syncAllSystems()">🌌 Sync All Systems</button>
+                    <button class="btn" style="border-color: #ef4444; color: #ef4444;" onclick="clearLogs()">🧹 Clear Console Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGGER ---
+        const logBox = document.getElementById("studioLog");
+        function logEvent(msg) {
+            const time = new Date().toLocaleTimeString();
+            logBox.innerText += `\n[${time}] ${msg}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function clearLogs() {
+            logBox.innerText = "Console cleared.";
+        }
+
+        // --- DRAGON'S LAIR MACHINE ---
+        let dlState = "TITLE";
+        let score = 0;
+        let lives = 3;
+        const dlScreen = document.getElementById("dlScreen");
+        const dlScore = document.getElementById("dlScore");
+        const dlPrompt = document.getElementById("dlPrompt");
+
+        function inputSword() {
+            if (dlState === "TITLE") {
+                dlState = "CAVERN";
+                dlScreen.src = "dragons_lair_action.png";
+                dlPrompt.innerText = "DIRK ENTERS THE CAVERN! PRESS UP TO ESCAPE FALLING ROCKS!";
+                score = 1000;
+                dlScore.innerText = `SCORE: ${score}`;
+                logEvent("Dragon's Lair: Started game, Cavern level loaded.");
+            } else if (dlState === "SWORD_PROMPT") {
+                dlState = "DAPHNE_ROOM";
+                dlPrompt.innerText = "SUCCESS! RESCUED PRINCESS DAPHNE! PRESS SWORD TO WIN!";
+                score += 5000;
+                dlScore.innerText = `SCORE: ${score}`;
+                logEvent("Dragon's Lair: Sword timing correct, advancing to Daphne Room.");
+            } else if (dlState === "DAPHNE_ROOM") {
+                dlState = "WON";
+                dlPrompt.innerText = "VICTORY! DIRK WINS!";
+                score += 10000;
+                dlScore.innerText = `SCORE: ${score}`;
+                logEvent("Dragon's Lair: Dirk rescues Daphne and slays the dragon!");
+            }
+        }
+
+        function inputDirection(dir) {
+            if (dlState === "CAVERN" && dir === "UP") {
+                dlState = "SWORD_PROMPT";
+                dlPrompt.innerText = "DRAGON WAKES UP! PRESS SWORD NOW TO STRIKE!";
+                score += 2000;
+                dlScore.innerText = `SCORE: ${score}`;
+                logEvent(`Dragon's Lair: Dirk jumped UP to dodge falling debris.`);
+            } else if (dlState === "CAVERN") {
+                triggerDeath("Dirk crushed by boulder.");
+            } else if (dlState === "SWORD_PROMPT") {
+                triggerDeath("Singe the Dragon incinerates Dirk.");
+            }
+        }
+
+        function triggerDeath(reason) {
+            lives--;
+            document.getElementById("dlLives").innerText = `LIVES: ` + "❤️".repeat(lives);
+            logEvent(`Dragon's Lair: Dirk died. Reason: ${reason}`);
+            if (lives <= 0) {
+                dlState = "TITLE";
+                dlPrompt.innerText = "GAME OVER. PRESS SWORD TO RESTART";
+                dlScreen.src = "dragons_lair_title.png";
+                lives = 3;
+                document.getElementById("dlLives").innerText = "LIVES: ❤️❤️❤️";
+            } else {
+                dlState = "CAVERN";
+                dlPrompt.innerText = "TRY AGAIN. PRESS UP TO DODGE CAVERN DEBRIS!";
+            }
+        }
+
+        // --- TARG MERCENARY GRID ---
+        const vCanvas = document.getElementById("vectorCanvas");
+        const vCtx = vCanvas.getContext("2d");
+        let playerX = 120, playerY = 0, playerZ = 80;
+
+        // Dynamic coordinate display
+        function updateMercenaryCoords() {
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)}`;
+        }
+
+        function drawGrid() {
+            const w = vCanvas.width = vCanvas.offsetWidth;
+            const h = vCanvas.height = vCanvas.offsetHeight;
+            vCtx.clearRect(0, 0, w, h);
+
+            // Vector matrix lines
+            vCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+            vCtx.lineWidth = 1.5;
+
+            // Draw pseudo 3D wireframe mesh grid
+            const cols = 20, rows = 12;
+            const stepX = w / cols;
+            const stepY = h / rows;
+
+            vCtx.beginPath();
+            for (let i = 0; i <= cols; i++) {
+                vCtx.moveTo(i * stepX, 0);
+                vCtx.lineTo(i * stepX + (i - cols/2) * (playerZ / 100), h);
+            }
+            for (let j = 0; j <= rows; j++) {
+                vCtx.moveTo(0, j * stepY);
+                vCtx.lineTo(w, j * stepY);
+            }
+            vCtx.stroke();
+
+            // Draw Targ Mercenary Player token (glowing box)
+            const tokenX = w/2 + (playerX - 120) * 2;
+            const tokenY = h/2 + (playerY) * 2;
+
+            vCtx.fillStyle = "rgba(255, 0, 127, 0.8)";
+            vCtx.shadowBlur = 15;
+            vCtx.shadowColor = "#ff007f";
+            vCtx.fillRect(tokenX - 10, tokenY - 10, 20, 20);
+
+            // Outer ring
+            vCtx.strokeStyle = "#ff007f";
+            vCtx.beginPath();
+            vCtx.arc(tokenX, tokenY, 18, 0, Math.PI * 2);
+            vCtx.stroke();
+
+            vCtx.shadowBlur = 0; // Reset
+        }
+
+        // Handle navigation keys for the map
+        window.addEventListener("keydown", (e) => {
+            let key = e.key.toLowerCase();
+            let moved = false;
+            if (key === "w" || e.key === "ArrowUp") { playerY -= 5; moved = true; }
+            if (key === "s" || e.key === "ArrowDown") { playerY += 5; moved = true; }
+            if (key === "a" || e.key === "ArrowLeft") { playerX -= 5; moved = true; }
+            if (key === "d" || e.key === "ArrowRight") { playerX += 5; moved = true; }
+
+            if (moved) {
+                // Bounds clipping
+                playerX = Math.max(50, Math.min(200, playerX));
+                playerY = Math.max(-50, Math.min(50, playerY));
+                updateMercenaryCoords();
+                drawGrid();
+            }
+        });
+
+        // --- TEDDY BEAR DNA SPRITE GENERATOR ---
+        const bCanvas = document.getElementById("bearCanvas");
+        const bCtx = bCanvas.getContext("2d");
+
+        const genome = {
+            fur_r: 91,
+            fur_g: 63,
+            fur_b: 51,
+            eye_r: 0,
+            eye_g: 255,
+            eye_b: 0,
+            sickness: 50,
+            scale: 100,
+            fur_length: 80,
+            light_angle: 95,
+            breathing_freq: 128,
+            twitch_intensity: 128
+        };
+
+        function updateBearGene(gene, val) {
+            genome[gene] = parseInt(val);
+            const labelId = "val" + gene.charAt(0).toUpperCase() + gene.slice(1);
+            const labelEl = document.getElementById(labelId);
+            if (labelEl) labelEl.innerText = val;
+            updateDnaHexDisplay();
+            drawBear();
+        }
+
+        function updateDnaHexDisplay() {
+            const bytes = [
+                genome.fur_r, genome.fur_g, genome.fur_b,
+                genome.eye_r, genome.eye_g, genome.eye_b,
+                genome.sickness, genome.scale, genome.fur_length,
+                genome.light_angle, genome.breathing_freq, genome.twitch_intensity
+            ];
+            const hex = bytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
+            document.getElementById("dnaHexDisplay").innerText = hex;
+        }
+
+        function drawBear() {
+            const w = bCanvas.width;
+            const h = bCanvas.height;
+            bCtx.clearRect(0, 0, w, h);
+
+            const s = genome.scale / 100.0;
+            const furColor = `rgb(${genome.fur_r}, ${genome.fur_g}, ${genome.fur_b})`;
+            const eyeColor = `rgb(${genome.eye_r}, ${genome.eye_g}, ${genome.eye_b})`;
+
+            // Center of the bear
+            const cx = w / 2;
+            const cy = h / 2 + 10;
+
+            // Breathing offset
+            const time = Date.now() * 0.003;
+            const breathing = Math.sin(time) * 4 * (genome.sickness / 100 + 0.2);
+
+            // Draw Body
+            bCtx.fillStyle = furColor;
+            bCtx.beginPath();
+            bCtx.ellipse(cx, cy + 30, 45 * s, (55 + breathing) * s, 0, 0, Math.PI * 2);
+            bCtx.fill();
+            bCtx.strokeStyle = "rgba(0,0,0,0.15)";
+            bCtx.stroke();
+
+            // Draw Head
+            bCtx.beginPath();
+            bCtx.ellipse(cx, cy - 25, 38 * s, 34 * s, 0, 0, Math.PI * 2);
+            bCtx.fill();
+            bCtx.stroke();
+
+            // Ears
+            bCtx.beginPath();
+            bCtx.arc(cx - 30 * s, cy - 50 * s, 12 * s, 0, Math.PI * 2);
+            bCtx.arc(cx + 30 * s, cy - 50 * s, 12 * s, 0, Math.PI * 2);
+            bCtx.fill();
+            bCtx.stroke();
+
+            // Ear inner highlights
+            bCtx.fillStyle = `rgb(${Math.min(255, genome.fur_r + 40)}, ${Math.min(255, genome.fur_g + 30)}, ${Math.min(255, genome.fur_b + 25)})`;
+            bCtx.beginPath();
+            bCtx.arc(cx - 30 * s, cy - 50 * s, 7 * s, 0, Math.PI * 2);
+            bCtx.arc(cx + 30 * s, cy - 50 * s, 7 * s, 0, Math.PI * 2);
+            bCtx.fill();
+
+            // Snout/Muzzle
+            bCtx.fillStyle = "#dfd6cd";
+            bCtx.beginPath();
+            bCtx.ellipse(cx, cy - 18, 14 * s, 10 * s, 0, 0, Math.PI * 2);
+            bCtx.fill();
+
+            // Nose
+            bCtx.fillStyle = "#1e293b";
+            bCtx.beginPath();
+            bCtx.arc(cx, cy - 21, 4 * s, 0, Math.PI * 2);
+            bCtx.fill();
+
+            // Eyes (glowing green/custom)
+            bCtx.fillStyle = eyeColor;
+            bCtx.shadowBlur = 10;
+            bCtx.shadowColor = eyeColor;
+            bCtx.beginPath();
+            bCtx.arc(cx - 15 * s, cy - 28 * s, 6 * s, 0, Math.PI * 2);
+            bCtx.arc(cx + 15 * s, cy - 28 * s, 6 * s, 0, Math.PI * 2);
+            bCtx.fill();
+
+            bCtx.shadowBlur = 0; // Reset
+
+            // Pupiles
+            bCtx.fillStyle = "#fff";
+            bCtx.beginPath();
+            bCtx.arc(cx - 13 * s, cy - 30 * s, 2 * s, 0, Math.PI * 2);
+            bCtx.arc(cx + 17 * s, cy - 30 * s, 2 * s, 0, Math.PI * 2);
+            bCtx.fill();
+        }
+
+        function triggerBreeding() {
+            // Random mutation
+            genome.fur_r = Math.floor(Math.random() * 256);
+            genome.fur_g = Math.floor(Math.random() * 256);
+            genome.fur_b = Math.floor(Math.random() * 256);
+            genome.eye_g = Math.floor(Math.random() * 256);
+            genome.sickness = Math.floor(Math.random() * 101);
+            genome.scale = Math.floor(Math.random() * 101) + 50;
+
+            document.getElementById("sldFurR").value = genome.fur_r;
+            document.getElementById("sldFurG").value = genome.fur_g;
+            document.getElementById("sldFurB").value = genome.fur_b;
+            document.getElementById("sldEyeG").value = genome.eye_g;
+            document.getElementById("sldSickness").value = genome.sickness;
+            document.getElementById("sldScale").value = genome.scale;
+
+            updateBearGene('fur_r', genome.fur_r);
+            updateBearGene('fur_g', genome.fur_g);
+            updateBearGene('fur_b', genome.fur_b);
+            updateBearGene('eye_g', genome.eye_g);
+            updateBearGene('sickness', genome.sickness);
+            updateBearGene('scale', genome.scale);
+
+            logEvent(`Teddy Bear DNA: Mutated genome to ${document.getElementById("dnaHexDisplay").innerText}`);
+        }
+
+        // --- CONSOLIDATED SYNCHRONIZATION ---
+        function syncAllSystems() {
+            // Feed Targ Mercenary grid position to Teddy Bear Scale
+            const dynamicScale = Math.round(100 + (playerY / 5));
+            updateBearGene('scale', dynamicScale);
+            document.getElementById("sldScale").value = dynamicScale;
+
+            // Feed Dragon's Lair score to lighting angle index
+            const dynamicLightAngle = Math.round((score / 16000) * 255) % 256;
+            updateBearGene('light_angle', dynamicLightAngle);
+            document.getElementById("sldLightAngle").value = dynamicLightAngle;
+
+            logEvent(`Consolidated Sync: Steered Teddy Scale to ${dynamicScale}% via Mercenary grid, and Light Angle to ${dynamicLightAngle} via Arcade score.`);
+        }
+
+        // --- INITIALIZATION ---
+        window.addEventListener("load", () => {
+            updateDnaHexDisplay();
+            drawGrid();
+            drawBear();
+            // Animation tick
+            setInterval(drawBear, 50);
+            logEvent("Studio fully active.");
+        });
+    </script>
+</body>
+</html>
