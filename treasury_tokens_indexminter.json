@@ -70,7 +70,7 @@
         "symbol": "CYCLE",
         "name": "Cycle",
         "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
-        "ignored": false,
+        "ignored": true,
         "minter_address": "0x0c4f73328dfcecfbecf235c9f78a4494a7ec5ddc",
         "minter_name": "IndexMinter",
         "parent_address": "0xe320af6d4abedfcb1f96f156a0eb2a9b4d36e47d",
@@ -107,7 +107,7 @@
         "minter_name": "IndexMinter",
         "parent_address": "0x46eff99491624bea3fcffbc3991cc45a805bfe3f",
         "parent_symbol": "\ud83d\udcb2",
-        "ignored": false
+        "ignored": true
     },
     "0x4d6ae4b2753ea61579f4fac3c48f8bb741476f65": {
         "address": "0x4d6ae4b2753ea61579f4fac3c48f8bb741476f65",
@@ -118,6 +118,6 @@
         "minter_name": "IndexMinter",
         "parent_address": "0x46eff99491624bea3fcffbc3991cc45a805bfe3f",
         "parent_symbol": "\ud83d\udcb2",
-        "ignored": false
+        "ignored": true
     }
 }
