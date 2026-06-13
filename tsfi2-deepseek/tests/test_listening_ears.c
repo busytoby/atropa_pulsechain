@@ -27,8 +27,8 @@ static inline void* safe_calloc(size_t nmemb, size_t size, const char *file, int
     return ptr;
 }
 
-#define malloc(size) safe_malloc(size, __FILE__, __LINE__)
-#define calloc(nmemb, size) safe_calloc(nmemb, size, __FILE__, __LINE__)
+#define malloc_safe(size) safe_malloc(size, __FILE__, __LINE__)
+#define calloc_safe(nmemb, size) safe_calloc(nmemb, size, __FILE__, __LINE__)
 
 #define SAMPLING_RATE 96000.0
 #define DURATION_SEC 1.0
@@ -146,7 +146,7 @@ int main() {
     double pilot_y = tx_y;
 
     // Spy signal (1000 Hz baseband tone)
-    float *tx_signal = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    float *tx_signal = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
         double t = (double)i / SAMPLING_RATE;
         float key = (i < TOTAL_SAMPLES / 2) ? 1.0f : 0.1f;
@@ -167,7 +167,7 @@ int main() {
         stations[i].y_estimated = stations[i].y_true + jitter_std * generate_gaussian_noise();
         stations[i].phase_corr = 0.0;
         
-        stations[i].buffer = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+        stations[i].buffer = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
     }
 
     // 4. Pilot Calibration Phase: Broadcast calibration tone and measure phase error at each station
@@ -229,9 +229,9 @@ int main() {
     // A. Perfect (no jitter)
     // B. Jittery (with coordinate errors, uncalibrated)
     // C. Calibrated (with coordinate errors, pilot-phase corrected)
-    float *perfect_out = (float*)calloc(TOTAL_SAMPLES, sizeof(float));
-    float *jitter_out = (float*)calloc(TOTAL_SAMPLES, sizeof(float));
-    float *calibrated_out = (float*)calloc(TOTAL_SAMPLES, sizeof(float));
+    float *perfect_out = (float*)calloc_safe(TOTAL_SAMPLES, sizeof(float));
+    float *jitter_out = (float*)calloc_safe(TOTAL_SAMPLES, sizeof(float));
+    float *calibrated_out = (float*)calloc_safe(TOTAL_SAMPLES, sizeof(float));
 
     for (int step = 0; step < TOTAL_SAMPLES; step++) {
         double sum_perf = 0.0, weight_perf = 0.0;
@@ -303,21 +303,21 @@ int main() {
     }
 
     // Allocate adaptive filter outputs
-    float *lms_out = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
-    float *rls_out = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
-    float *rls_out_jit = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    float *lms_out = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
+    float *rls_out = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
+    float *rls_out_jit = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
 
     int L_taps = 4;
-    double *w_lms = (double*)calloc(L_taps, sizeof(double));
-    double *x_lms = (double*)calloc(L_taps, sizeof(double));
+    double *w_lms = (double*)calloc_safe(L_taps, sizeof(double));
+    double *x_lms = (double*)calloc_safe(L_taps, sizeof(double));
 
-    double *w_rls = (double*)calloc(L_taps, sizeof(double));
-    double *x_rls = (double*)calloc(L_taps, sizeof(double));
-    double *P_rls = (double*)calloc(L_taps * L_taps, sizeof(double));
+    double *w_rls = (double*)calloc_safe(L_taps, sizeof(double));
+    double *x_rls = (double*)calloc_safe(L_taps, sizeof(double));
+    double *P_rls = (double*)calloc_safe(L_taps * L_taps, sizeof(double));
 
-    double *w_rls_jit = (double*)calloc(L_taps, sizeof(double));
-    double *x_rls_jit = (double*)calloc(L_taps, sizeof(double));
-    double *P_rls_jit = (double*)calloc(L_taps * L_taps, sizeof(double));
+    double *w_rls_jit = (double*)calloc_safe(L_taps, sizeof(double));
+    double *x_rls_jit = (double*)calloc_safe(L_taps, sizeof(double));
+    double *P_rls_jit = (double*)calloc_safe(L_taps * L_taps, sizeof(double));
 
     // Initialize P matrices to delta * I
     for (int i = 0; i < L_taps; i++) {
@@ -495,7 +495,7 @@ int main() {
     printf("[RESULTS] Jittery RLS correlation (uncalibrated): %.4f\n", corr_rls_jit);
 
     // Save calibrated + RLS filtered audio output to WAV file
-    int16_t *pcm_buffer = (int16_t*)malloc(TOTAL_SAMPLES * sizeof(int16_t));
+    int16_t *pcm_buffer = (int16_t*)malloc_safe(TOTAL_SAMPLES * sizeof(int16_t));
     float max_val = 0.0001f;
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
         if (fabsf(rls_out[i]) > max_val) {
@@ -546,23 +546,23 @@ int main() {
 
     // 8. TDOA Cross-Correlation and 2D Grid Search Localization
     printf("\n=== TDOA Localization Grid Search ===\n");
-    double *estimated_tdoa = (double*)malloc(NUM_STATIONS * sizeof(double));
+    double *estimated_tdoa = (double*)malloc_safe(NUM_STATIONS * sizeof(double));
     estimated_tdoa[0] = 0.0;
 
     int max_lag = 80;
 
     // Run RF-level RLS filter on each station to clean the jammer signal
-    float **cleaned_buffers = (float**)malloc(NUM_STATIONS * sizeof(float*));
+    float **cleaned_buffers = (float**)malloc_safe(NUM_STATIONS * sizeof(float*));
     for (int i = 0; i < NUM_STATIONS; i++) {
-        cleaned_buffers[i] = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+        cleaned_buffers[i] = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
     }
 
     #pragma omp parallel for
     for (int i = 0; i < NUM_STATIONS; i++) {
         int L = 4;
-        double *w = (double*)calloc(L, sizeof(double));
-        double *x = (double*)calloc(L, sizeof(double));
-        double *P = (double*)calloc(L * L, sizeof(double));
+        double *w = (double*)calloc_safe(L, sizeof(double));
+        double *x = (double*)calloc_safe(L, sizeof(double));
+        double *P = (double*)calloc_safe(L * L, sizeof(double));
         for (int k = 0; k < L; k++) P[k * L + k] = 100.0;
         
         for (int step = 0; step < TOTAL_SAMPLES; step++) {
@@ -621,11 +621,11 @@ int main() {
     }
     
     // Allocate IQ buffers for all stations using the cleaned RF signals
-    double **I_sig = (double**)malloc(NUM_STATIONS * sizeof(double*));
-    double **Q_sig = (double**)malloc(NUM_STATIONS * sizeof(double*));
+    double **I_sig = (double**)malloc_safe(NUM_STATIONS * sizeof(double*));
+    double **Q_sig = (double**)malloc_safe(NUM_STATIONS * sizeof(double*));
     for (int i = 0; i < NUM_STATIONS; i++) {
-        I_sig[i] = (double*)malloc(TOTAL_SAMPLES * sizeof(double));
-        Q_sig[i] = (double*)malloc(TOTAL_SAMPLES * sizeof(double));
+        I_sig[i] = (double*)malloc_safe(TOTAL_SAMPLES * sizeof(double));
+        Q_sig[i] = (double*)malloc_safe(TOTAL_SAMPLES * sizeof(double));
         for (int n = 0; n < TOTAL_SAMPLES; n++) {
             // Apply a 4-sample moving average to low-pass filter the mix products
             double sum_I = 0.0;
@@ -645,9 +645,9 @@ int main() {
         }
     }
 
-    double **R_mag = (double**)malloc(NUM_STATIONS * sizeof(double*));
+    double **R_mag = (double**)malloc_safe(NUM_STATIONS * sizeof(double*));
     for (int i = 0; i < NUM_STATIONS; i++) {
-        R_mag[i] = (double*)calloc(2 * max_lag + 1, sizeof(double));
+        R_mag[i] = (double*)calloc_safe(2 * max_lag + 1, sizeof(double));
     }
 
     #pragma omp parallel for
@@ -677,7 +677,7 @@ int main() {
 
     // Calculate weights based on peak correlation quality (SNR / Peak-to-Mean Ratio)
     // and compute estimated_tdoa with robust parabolic interpolation (cancelling bad inputs)
-    double *weights = (double*)malloc(NUM_STATIONS * sizeof(double));
+    double *weights = (double*)malloc_safe(NUM_STATIONS * sizeof(double));
     for (int i = 0; i < NUM_STATIONS; i++) {
         weights[i] = 1.0;
     }
@@ -782,9 +782,9 @@ int main() {
     int GENS = 50;
 
     // Define a population: each individual is a binary array of size NUM_STATIONS
-    int **population = (int**)malloc(POP_SIZE * sizeof(int*));
+    int **population = (int**)malloc_safe(POP_SIZE * sizeof(int*));
     for (int p = 0; p < POP_SIZE; p++) {
-        population[p] = (int*)calloc(NUM_STATIONS, sizeof(int));
+        population[p] = (int*)calloc_safe(NUM_STATIONS, sizeof(int));
         population[p][0] = 1; // Always select reference station 0
         int count = 1;
         while (count < K_select) {
@@ -796,8 +796,8 @@ int main() {
         }
     }
 
-    double *fitness = (double*)malloc(POP_SIZE * sizeof(double));
-    int *best_individual = (int*)calloc(NUM_STATIONS, sizeof(int));
+    double *fitness = (double*)malloc_safe(POP_SIZE * sizeof(double));
+    int *best_individual = (int*)calloc_safe(NUM_STATIONS, sizeof(int));
     double best_fitness = -1.0;
 
     // Helper macro/function to compute GDOP of an individual
@@ -835,9 +835,9 @@ int main() {
         }
 
         // 2. Selection & Breeding (Tournament of size 3)
-        int **next_pop = (int**)malloc(POP_SIZE * sizeof(int*));
+        int **next_pop = (int**)malloc_safe(POP_SIZE * sizeof(int*));
         for (int p = 0; p < POP_SIZE; p++) {
-            next_pop[p] = (int*)calloc(NUM_STATIONS, sizeof(int));
+            next_pop[p] = (int*)calloc_safe(NUM_STATIONS, sizeof(int));
         }
 
         // Elitism: carry over best individual
