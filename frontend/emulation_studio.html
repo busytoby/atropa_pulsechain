@@ -356,6 +356,10 @@
                                     <option value="S">Type S (Standard Flat-plate)</option>
                                 </select>
                             </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; border-top: 1px solid rgba(255,165,0,0.15); padding-top: 6px; color: var(--glow-cyan);">
+                                <span>Taylor Mint:</span>
+                                <span id="taylorTokenDisplay" style="font-weight: bold;">0.0000 TLR🕯️</span>
+                            </div>
                         </div>
                         <button class="btn" style="background: var(--glow-magenta); border: none; padding: 6px 12px; font-size: 0.8rem;" onclick="triggerBreeding()">🧬 Mutate Genome</button>
                     </div>
@@ -629,6 +633,7 @@
         let frameCount = 0;
         let ammeter_k_loss = 0.03;       // Default Type T (lower loss)
         let ammeter_thermal_mass = 0.012; // Default Type T (lower mass, faster heating)
+        let taylorTokensMinted = 0.0;     // Virtual client-side token minting
         const ammeterCanvas = document.getElementById("ammeterCanvas");
         const aCtx = ammeterCanvas.getContext("2d");
 
@@ -759,6 +764,12 @@
 
             const needle_deflection = 0.005 * (ammeter_T - 293.15);
             const ammeter_damping = 1.0 / (1.0 + needle_deflection * 1.5);
+
+            // Dynamically simulate Taylor Series token production rate based on breathing frequency and ammeter damping
+            const mintRate = 0.00025 * breathing_freq * ammeter_damping;
+            taylorTokensMinted += mintRate;
+            const tokenEl = document.getElementById("taylorTokenDisplay");
+            if (tokenEl) tokenEl.innerText = `${taylorTokensMinted.toFixed(4)} TLR🕯️`;
 
             const phase = (frameCount * 0.12 * breathing_freq) % (Math.PI * 2);
             const parasitic_leak = 0.015 * taylor_cos(frameCount * 0.24 * breathing_freq);
