@@ -210,6 +210,14 @@ bin/test_type_t_tubular: tests/test_type_t_tubular.c $(CORE_OBJS) $(OBJ_DIR)/vul
 bin/bench_valve_synthesis: tests/bench_valve_synthesis.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_autodyne_demodulation: tests/test_autodyne_demodulation.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_harmonizer_melody: tests/test_harmonizer_melody.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
+
 
 
 
