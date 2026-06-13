@@ -9,6 +9,27 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+static inline void* safe_malloc(size_t size, const char *file, int line) {
+    void *ptr = malloc(size);
+    if (!ptr) {
+        fprintf(stderr, "[FATAL] Memory allocation of %zu bytes failed at %s:%d\n", size, file, line);
+        exit(EXIT_FAILURE);
+    }
+    return ptr;
+}
+
+static inline void* safe_calloc(size_t nmemb, size_t size, const char *file, int line) {
+    void *ptr = calloc(nmemb, size);
+    if (!ptr) {
+        fprintf(stderr, "[FATAL] Memory allocation of %zu elements of size %zu failed at %s:%d\n", nmemb, size, file, line);
+        exit(EXIT_FAILURE);
+    }
+    return ptr;
+}
+
+#define malloc(size) safe_malloc(size, __FILE__, __LINE__)
+#define calloc(nmemb, size) safe_calloc(nmemb, size, __FILE__, __LINE__)
+
 #define SAMPLING_RATE 96000.0
 #define DURATION_SEC 1.0
 #define TOTAL_SAMPLES (int)(SAMPLING_RATE * DURATION_SEC)
