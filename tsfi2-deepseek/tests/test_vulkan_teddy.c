@@ -224,8 +224,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     float cos_t = cosf(theta);
     float sin_t = sinf(theta);
 
-    // Compute dynamic Bessel breathing and Biotika twitch scale factors (synthesize to the beat)
-    float breathe = 0.05f * sinf((float)frame * 0.12f * breathing_freq);
+    // Compute dynamic Bessel breathing, parasitized by a secondary coil-leak harmonic, and Biotika twitches
+    float parasitic_leak = 0.015f * cosf((float)frame * 0.24f * breathing_freq);
+    float breathe = 0.05f * sinf((float)frame * 0.12f * breathing_freq) + parasitic_leak;
     float twitch = 0.0f;
     if ((frame % 60) < 6) {
         twitch = ((float)(rand() % 100) / 100.0f) * 0.03f * twitch_intensity;
