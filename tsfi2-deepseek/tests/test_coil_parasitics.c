@@ -29,20 +29,19 @@ int main() {
     TsfiDistributedCoil coil_ideal;
     TsfiDistributedCoil coil_parasitic;
 
-    // Ideal coil has negligible parasitic coupling (1e-15 F)
+    // Initialize 2D FDTD coils
     tsfi_distributed_coil_init(&coil_ideal, diameter, height, turns, wire_gauge_mm, C_tune);
-    coil_ideal.C_total_parasitic = 1.6e-14; // negligible
-    for (int j = 0; j < COIL_SEGMENTS; j++) {
-        coil_ideal.C_seg[j] = 1.0e-15; // 1 fF base to prevent division by zero
+    
+    // Force ideal coil dielectric to vacuum permitivity everywhere
+    double eps0 = 8.8541878128e-12;
+    for (int r = 0; r < GRID_R; r++) {
+        for (int z = 0; z < GRID_Z; z++) {
+            coil_ideal.eps[r][z] = eps0;
+            coil_ideal.sigma[r][z] = 0.0;
+        }
     }
-    coil_ideal.C_seg[COIL_SEGMENTS - 1] = C_tune;
 
-    // Parasitic coil uses empirical Medhurst factors
     tsfi_distributed_coil_init(&coil_parasitic, diameter, height, turns, wire_gauge_mm, C_tune);
-
-    printf("[THEORY] Distributed Inductance L: %.2f uH\n", coil_parasitic.L_total * 1e6);
-    printf("[THEORY] Medhurst Self-Capacitance C0: %.2f pF\n", coil_parasitic.C_total_parasitic * 1e12);
-    printf("[THEORY] Wire DC Resistance: %.2f Ohm\n", coil_parasitic.R_dc);
 
     float *input_rf = (float*)malloc(NUM_SAMPLES * sizeof(float));
     float *out_ideal = (float*)malloc(NUM_SAMPLES * sizeof(float));
@@ -56,7 +55,7 @@ int main() {
         input_rf[i] = (float)sin(phase);
     }
 
-    // Process using the 16-node distributed solver
+    // Process using the 2D FDTD EM solver
     for (int i = 0; i < NUM_SAMPLES; i++) {
         double t = (double)i / SAMPLING_RATE;
         double freq = 400000.0 + (500000.0 / DURATION_SEC) * t;
@@ -96,8 +95,8 @@ int main() {
         }
     }
 
-    printf("[DEMO] Ideal Distributed Coil Resonance: %.2f kHz\n", max_freq_ideal / 1000.0);
-    printf("[DEMO] Real (Medhurst) Coil Resonance: %.2f kHz (Shifted by distributed capacity)\n", max_freq_par / 1000.0);
+    printf("[DEMO] Ideal Distributed 2D Coil Resonance: %.2f kHz\n", max_freq_ideal / 1000.0);
+    printf("[DEMO] Real (Medhurst) 2D Coil Resonance: %.2f kHz\n", max_freq_par / 1000.0);
 
     free(input_rf);
     free(out_ideal);

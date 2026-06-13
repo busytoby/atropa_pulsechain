@@ -5,16 +5,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Semi-empirical Medhurst factor approximation for H/D between 0.1 and 5.0
-static double get_medhurst_factor(double height_over_diameter) {
-    if (height_over_diameter <= 0.2) return 0.35;
-    if (height_over_diameter <= 0.5) return 0.38;
-    if (height_over_diameter <= 1.0) return 0.46;
-    if (height_over_diameter <= 2.0) return 0.50;
-    if (height_over_diameter <= 3.0) return 0.61;
-    if (height_over_diameter <= 4.0) return 0.72;
-    return 0.81; // Extrapolated / capped
-}
 
 void tsfi_distributed_coil_init(
     TsfiDistributedCoil *coil,
@@ -25,47 +15,71 @@ void tsfi_distributed_coil_init(
     double C_tune
 ) {
     if (!coil) return;
+    (void)wire_gauge_mm; // Suppress unused parameter
 
-    coil->coil_diameter = diameter;
-    coil->coil_height = height;
-    coil->wire_radius = (wire_gauge_mm / 1000.0) / 2.0;
+    // Define physical spatial dimensions for FDTD cell sizes:
+    // Radius of simulation domain = outer coil radius + 5 cm boundary margin
+    double max_r = (diameter / 2.0) + 0.05;
+    // Length of simulation domain = coil height + 5 cm margin on each side
+    double max_z = height + 0.10;
+
+    coil->dr = max_r / GRID_R;
+    coil->dz = max_z / GRID_Z;
     coil->C_tune = C_tune;
-    
-    // Set standard 1916 dielectric properties: shellac/bakelite form with loss tangent
-    coil->loss_tangent = 0.02; // 2% typical loss factor for vintage forms
-    coil->turns_pitch = height / turns;
+    coil->v_tuning_node = 0.0;
+    coil->i_tuning_loop = 0.0;
 
-    // 1. Calculate Inductance using Wheeler's formula: L = (d^2 * n^2) / (18d + 40l)
-    // where d is diameter in inches, l is length in inches. Converts to meters:
-    double d_inches = diameter * 39.3701;
-    double h_inches = height * 39.3701;
-    double L_uH = (d_inches * d_inches * turns * turns) / (18.0 * d_inches + 40.0 * h_inches);
-    coil->L_total = L_uH * 1e-6;
+    double eps0 = 8.8541878128e-12;
 
-    // 2. Calculate Medhurst self-capacitance: C0 = K * D (in pF, where D is diameter in cm)
-    double D_cm = diameter * 100.0;
-    double K_factor = get_medhurst_factor(height / diameter);
-    coil->C_total_parasitic = K_factor * D_cm * 1e-12; // Farads
+    // Initialize EM grids to zero
+    for (int r = 0; r < GRID_R; r++) {
+        for (int z = 0; z < GRID_Z; z++) {
+            coil->Er[r][z] = 0.0;
+            coil->Ez[r][z] = 0.0;
+            coil->Hphi[r][z] = 0.0;
 
-    // 3. DC Resistance of copper wire
-    // Wire length = turns * pi * diameter
-    double wire_len = turns * M_PI * diameter;
-    double resistivity_copper = 1.68e-8; // Ohm-meters
-    double area = M_PI * coil->wire_radius * coil->wire_radius;
-    coil->R_dc = resistivity_copper * wire_len / area;
-
-    // 4. Distribute values across 16 segments
-    for (int j = 0; j < COIL_SEGMENTS; j++) {
-        coil->v[j] = 0.0;
-        coil->i_l[j] = 0.0;
-        coil->L_seg[j] = coil->L_total / COIL_SEGMENTS;
-        coil->C_seg[j] = (coil->C_total_parasitic) / COIL_SEGMENTS;
-        coil->R_seg[j] = coil->R_dc / COIL_SEGMENTS;
-        coil->G_seg[j] = 0.0; // Dynamic dielectric loss
+            // Set air properties by default
+            coil->eps[r][z] = eps0;
+            coil->sigma[r][z] = 0.0;
+        }
     }
 
-    // Node 15 (last segment output) incorporates the parallel tuning capacitor C_tune
-    coil->C_seg[COIL_SEGMENTS - 1] += C_tune;
+    // Map the copper winding boundary into the FDTD conductivity tensor
+    // Turns are modeled as discrete rings spaced uniformly along the height of the coil form
+    double start_z = 0.05; // 5 cm margin start
+    double end_z = start_z + height;
+    double turn_spacing = height / turns;
+
+    // Convert coil radius to grid index
+    int coil_r_idx = (int)((diameter / 2.0) / coil->dr);
+    if (coil_r_idx >= GRID_R) coil_r_idx = GRID_R - 2;
+
+    // Copper conductivity = 5.96e7 S/m
+    double sigma_copper = 5.96e7;
+    
+    // Map turns
+    for (int n = 0; n < (int)turns; n++) {
+        double turn_z = start_z + n * turn_spacing;
+        int turn_z_idx = (int)(turn_z / coil->dz);
+        if (turn_z_idx < GRID_Z) {
+            // Apply copper conductivity to cells matching the winding radius
+            coil->sigma[coil_r_idx][turn_z_idx] = sigma_copper;
+        }
+    }
+
+    // Map the lossy Bakelite form (tan delta = 0.02, eps_r = 3.5) inside the coil radius
+    double eps_form = 3.5 * eps0;
+    double loss_tangent = 0.02;
+    double form_sigma = 2.0 * M_PI * 1.0e6 * eps_form * loss_tangent; // at 1 MHz reference
+
+    for (int r = 0; r < coil_r_idx; r++) {
+        for (int z = (int)(start_z / coil->dz); z < (int)(end_z / coil->dz); z++) {
+            if (z < GRID_Z) {
+                coil->eps[r][z] = eps_form;
+                coil->sigma[r][z] = form_sigma;
+            }
+        }
+    }
 }
 
 void tsfi_distributed_coil_process(
@@ -77,62 +91,66 @@ void tsfi_distributed_coil_process(
     double current_freq_hz
 ) {
     if (!coil || !input_rf || !output_grid || count == 0) return;
+    (void)current_freq_hz; // Suppress unused parameter
 
     double dt = 1.0 / sample_rate;
-
-    // 1. Skin effect calculations
-    double resistivity_copper = 1.68e-8;
     double mu0 = 4.0 * M_PI * 1e-7;
-    double skin_depth = sqrt(resistivity_copper / (M_PI * current_freq_hz * mu0));
-    
-    double skin_multiplier = 1.0;
-    if (skin_depth < coil->wire_radius) {
-        skin_multiplier = coil->wire_radius / (2.0 * skin_depth);
-        if (skin_multiplier < 1.0) skin_multiplier = 1.0;
-    }
 
-    // 2. Proximity effect calculation: Medhurst/Butterworth relation
-    // Ratio of wire diameter to winding pitch
-    double wire_diam = 2.0 * coil->wire_radius;
-    double d_over_p = wire_diam / coil->turns_pitch;
-    if (d_over_p > 0.95) d_over_p = 0.95; // Physical cap to prevent overlap
-    
-    // Proximity factor scaling approximation
-    double proximity_factor = 1.0 + 3.29 * (d_over_p * d_over_p);
-    double total_r_multiplier = skin_multiplier * proximity_factor;
-
-    // 3. Update segment parameters dynamically
-    double omega = 2.0 * M_PI * current_freq_hz;
-    for (int j = 0; j < COIL_SEGMENTS; j++) {
-        coil->R_seg[j] = (coil->R_dc / COIL_SEGMENTS) * total_r_multiplier;
-        // Dielectric loss conductance: G = omega * C * tan(delta)
-        coil->G_seg[j] = omega * coil->C_seg[j] * coil->loss_tangent;
-    }
+    double dr = coil->dr;
+    double dz = coil->dz;
 
     // Process sample by sample
     for (size_t step = 0; step < count; step++) {
         double v_in = (double)input_rf[step];
 
-        // Numerical finite difference solver:
-        // Segment j current update: d(i_l[j])/dt = (v[j-1] - v[j] - i_l[j] * R_seg[j]) / L_seg[j]
-        // Segment j voltage update: d(v[j])/dt = (i_l[j] - i_l[j+1] - v[j] * G_seg[j]) / C_seg[j]
+        // 1. Inject input voltage at the bottom boundary of the coil winding
+        int source_z_idx = (int)(0.05 / dz);
+        int coil_r_idx = (int)((GRID_R - 2) * 0.8);
+        coil->Ez[coil_r_idx][source_z_idx] += v_in / dz;
 
-        // Current solver step
-        for (int j = 0; j < COIL_SEGMENTS; j++) {
-            double v_prev = (j == 0) ? v_in : coil->v[j - 1];
-            double v_curr = coil->v[j];
-            double dil = (v_prev - v_curr - coil->i_l[j] * coil->R_seg[j]) / coil->L_seg[j];
-            coil->i_l[j] += dil * dt;
+        // 2. FDTD Update Equations for Cylindrical coordinates
+        // Update Hphi (magnetic field curl):
+        // d(Hphi)/dt = (1/mu) * (d(Er)/dz - d(Ez)/dr)
+        for (int r = 0; r < GRID_R - 1; r++) {
+            for (int z = 0; z < GRID_Z - 1; z++) {
+                double dEr_dz = (coil->Er[r][z + 1] - coil->Er[r][z]) / dz;
+                double dEz_dr = (coil->Ez[r + 1][z] - coil->Ez[r][z]) / dr;
+                coil->Hphi[r][z] += (dt / mu0) * (dEr_dz - dEz_dr);
+            }
         }
 
-        // Voltage solver step with shunt dielectric loss leakage conductance G_seg
-        for (int j = 0; j < COIL_SEGMENTS; j++) {
-            double i_next = (j == COIL_SEGMENTS - 1) ? 0.0 : coil->i_l[j + 1];
-            double dvc = (coil->i_l[j] - i_next - coil->v[j] * coil->G_seg[j]) / coil->C_seg[j];
-            coil->v[j] += dvc * dt;
+        // Update E-fields incorporating conductive boundaries (sigma)
+        // d(Er)/dt = (1/eps) * (-d(Hphi)/dz - sigma * Er)
+        for (int r = 0; r < GRID_R; r++) {
+            for (int z = 1; z < GRID_Z - 1; z++) {
+                double dHphi_dz = (coil->Hphi[r][z] - coil->Hphi[r][z - 1]) / dz;
+                double cond_term = coil->sigma[r][z] * coil->Er[r][z];
+                coil->Er[r][z] += (dt / coil->eps[r][z]) * (-dHphi_dz - cond_term);
+            }
         }
 
-        // The grid of our Audion is tapped across the last segment (node 15)
-        output_grid[step] = (float)coil->v[COIL_SEGMENTS - 1];
+        // d(Ez)/dt = (1/eps) * ((1/r) * d(r * Hphi)/dr - sigma * Ez)
+        for (int r = 1; r < GRID_R - 1; r++) {
+            for (int z = 0; z < GRID_Z; z++) {
+                double r_val = r * dr;
+                double d_rHphi_dr = ((r_val + dr) * coil->Hphi[r + 1][z] - r_val * coil->Hphi[r][z]) / dr;
+                double cond_term = coil->sigma[r][z] * coil->Ez[r][z];
+                coil->Ez[r][z] += (dt / coil->eps[r][z]) * ((1.0 / r_val) * d_rHphi_dr - cond_term);
+            }
+        }
+
+        // 3. Lumped Tuning Capacitor Boundary Condition at top node
+        int load_z_idx = (int)((0.05 + 0.10) / dz);
+        if (load_z_idx >= GRID_Z) load_z_idx = GRID_Z - 2;
+
+        // Current flows through lumped capacitor: d(v_tune)/dt = i_loop / C_tune
+        coil->i_tuning_loop += (coil->Ez[coil_r_idx][load_z_idx] * dz - coil->v_tuning_node) * dt / (mu0 * dr);
+        coil->v_tuning_node += (coil->i_tuning_loop / coil->C_tune) * dt;
+
+        // Apply tuning potential back as a boundary load on Ez
+        coil->Ez[coil_r_idx][load_z_idx] = coil->v_tuning_node / dz;
+
+        // Output grid node potential (audion feed) is tapped at the top of the winding
+        output_grid[step] = (float)coil->v_tuning_node;
     }
 }

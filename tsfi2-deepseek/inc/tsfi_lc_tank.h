@@ -3,33 +3,30 @@
 
 #include <stddef.h>
 
-#define COIL_SEGMENTS 16
+// 2D Cylindrical coordinate Yee grid sizes (R x Z)
+#define GRID_R 32
+#define GRID_Z 64
 
-// Distributed Parameter Transmission Line Coil Model
+// 2D Axisymmetric FDTD Maxwell Electromagnetic Solver Model
 typedef struct {
-    double L_total;             // Total nominal inductance in Henries
-    double R_dc;                // DC resistance in Ohms
-    double C_total_parasitic;   // Total Medhurst parasitic capacitance in Farads
-    double C_tune;              // Tuning capacitor capacitance in Farads
+    // Electromagnetic Field tensors in cylindrical coordinates
+    double Er[GRID_R][GRID_Z];  // Radial Electric Field (V/m)
+    double Ez[GRID_R][GRID_Z];  // Axial Electric Field (V/m)
+    double Hphi[GRID_R][GRID_Z];// Azimuthal Magnetic Field (A/m)
 
-    // Discretized spatial states (16 segments)
-    double v[COIL_SEGMENTS];    // Voltage at each node along the coil axis
-    double i_l[COIL_SEGMENTS];  // Current through each inductor segment
+    // Spatial Material properties
+    double sigma[GRID_R][GRID_Z]; // Electrical Conductivity (S/m)
+    double eps[GRID_R][GRID_Z];   // Dielectric Permittivity (F/m)
 
-    // Matrix parameter fields
-    double L_seg[COIL_SEGMENTS]; // Self-inductance of each segment
-    double C_seg[COIL_SEGMENTS]; // Distributed shunt capacitance of each segment
-    double R_seg[COIL_SEGMENTS]; // Resistance of each segment (updated dynamically)
-    double G_seg[COIL_SEGMENTS]; // Shunt conductance representing dielectric loss (updated dynamically)
+    double dr;                  // Radial grid step size in meters
+    double dz;                  // Axial grid step size in meters
 
-    double wire_radius;          // Radius of the copper wire in meters (for skin depth)
-    double coil_diameter;        // Outer diameter of the coil in meters
-    double coil_height;          // Height of the coil in meters
-    double turns_pitch;          // Distance between adjacent turns in meters
-    double loss_tangent;         // Dielectric loss tangent (tan delta) of the coil form/insulation
+    double C_tune;              // Attached lumped tuning capacitor (F)
+    double v_tuning_node;       // Voltage state of lumped capacitor loop
+    double i_tuning_loop;       // Current state of lumped capacitor loop
 } TsfiDistributedCoil;
 
-// Initialize the distributed parameter coil model using Medhurst empirical relations
+// Initialize the 2D Maxwell EM model setting copper conductor boundaries and lossy forms
 void tsfi_distributed_coil_init(
     TsfiDistributedCoil *coil,
     double diameter,
@@ -39,7 +36,7 @@ void tsfi_distributed_coil_init(
     double C_tune
 );
 
-// Process a block of samples through the distributed transmission line simulation
+// Process a block of samples through the 2D FDTD solver updating field tensors
 void tsfi_distributed_coil_process(
     TsfiDistributedCoil *coil,
     const float *input_rf,
