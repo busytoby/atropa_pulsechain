@@ -169,11 +169,23 @@ void tsfi_valve_process_regenerative(
         }
         double vg_fb = vg_in[i] + current_bias + beta * ac_feedback;
 
+        // Non-linear grid current loading
+        double ig = 0.0;
+        if (vg_fb > 0.0) {
+            double Kg = 0.15 * active_k;
+            ig = Kg * vg_fb * sqrt(vg_fb);
+        }
+        double r_grid_source = 10000.0; // Grid source impedance (10k Ohm)
+        double vg_fb_loaded = vg_fb - ig * r_grid_source;
+        if (vg_fb_loaded < 0.0 && vg_fb > 0.0) {
+            vg_fb_loaded = 0.0;
+        }
+
         // Dielectric modulation
         eps = 1.0 + eta * vg_in[i];
         if (eps < 0.1) eps = 0.1;
 
-        double vg = (vg_fb / eps) * geom_scale;
+        double vg = (vg_fb_loaded / eps) * geom_scale;
         double factor = (vp_supply / active_mu) + vg;
         if (factor < 0.0) factor = 0.0;
 
