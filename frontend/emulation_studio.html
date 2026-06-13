@@ -784,7 +784,8 @@
 
             const phase = taylor_sin(frameCount * 0.06 * breathing_freq) * 3.0;
             const parasitic_leak = 0.015 * taylor_cos(frameCount * 0.24 * breathing_freq);
-            const breathe = (0.05 * bessel_j0(phase) + parasitic_leak) * ammeter_damping;
+            const independent_leak = 0.005 * bessel_j0(taylor_sin(frameCount * 0.45) * 3.0);
+            const breathe = (0.05 * bessel_j0(phase) + parasitic_leak) * ammeter_damping + independent_leak;
 
             let twitch = 0.0;
             if ((frameCount % 60) < 6) {
