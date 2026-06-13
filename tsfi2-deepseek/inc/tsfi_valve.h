@@ -17,6 +17,8 @@ typedef struct {
     double R_plate;           // Dynamic plate load resistance (Ohm, e.g. 100000.0)
     double Vp_tuner_offset;   // Fine plate battery step tuner offset (V, e.g. -1.5 to +4.5)
     int is_tubular;           // Geometry flag: 1 for cylindrical (Type T), 0 for flat-plate
+    int use_deforest_ground;  // 1 to reference grid/plate potentials to A+ positive filament ground
+    double V_filament;        // Filament heating potential in Volts (typically 4.0V to 6.0V)
 } TsfiValveTriode;
 
 

@@ -15,6 +15,8 @@ void tsfi_valve_init(TsfiValveTriode *valve, double base_mu, double base_k, doub
     valve->R_plate = 100000.0;       // Default 100k Ohm resistor
     valve->Vp_tuner_offset = 0.0;    // Default zero offset
     valve->is_tubular = 0;           // Default flat-plate geometry
+    valve->use_deforest_ground = 0;  // Default standard grounding
+    valve->V_filament = 5.0;         // Default 5.0V filament
 }
 
 
@@ -134,7 +136,11 @@ void tsfi_valve_process_regenerative(
     double geom_scale = valve->is_tubular ? 0.85 : 1.0;
 
     // Calculate idle plate voltage as the DC offset reference
-    double idle_vg_mod = (bias / valve->epsilon_state) * geom_scale;
+    double idle_bias = bias;
+    if (valve->use_deforest_ground) {
+        idle_bias -= (valve->V_filament / 2.0);
+    }
+    double idle_vg_mod = (idle_bias / valve->epsilon_state) * geom_scale;
     double idle_factor = (vp_supply / active_mu) + idle_vg_mod;
     if (idle_factor < 0.0) idle_factor = 0.0;
     double idle_ip = active_k * idle_factor * sqrt(idle_factor);
@@ -153,7 +159,11 @@ void tsfi_valve_process_regenerative(
     for (size_t i = 0; i < count; i++) {
         // Regenerative Feedback: feed back AC component of previous plate voltage
         double ac_feedback = prev_vp - dc_offset;
-        double vg_fb = vg_in[i] + bias + beta * ac_feedback;
+        double current_bias = bias;
+        if (valve->use_deforest_ground) {
+            current_bias -= (valve->V_filament / 2.0);
+        }
+        double vg_fb = vg_in[i] + current_bias + beta * ac_feedback;
 
         // Dielectric modulation
         eps = 1.0 + eta * vg_in[i];
@@ -176,8 +186,6 @@ void tsfi_valve_process_regenerative(
         double vp = vp_supply - ip * r_plate;
         if (vp < 0.0) vp = 0.0;
         if (vp > vp_supply) vp = vp_supply;
-
-
 
         vp_out[i] = (float)vp;
         prev_vp = vp;
