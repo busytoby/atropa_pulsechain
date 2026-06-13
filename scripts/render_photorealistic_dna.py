@@ -86,41 +86,15 @@ def render_and_evaluate():
         img.save(png_out)
         print(f"[Director] Photorealistic bear frame ({width}x{height}) saved to: {png_out}")
         
-        # Call DeepSeek VLM Evaluator
-        print("[Director] Initiating DeepSeek local VLM validation...")
-        
-        VLM_URL = "http://127.0.0.1:11435/api/generate"
-        with open(png_out, "rb") as image_file:
-            b64_data = base64.b64encode(image_file.read()).decode('utf-8')
-            
-        payload = {
-            "model": "moondream",
-            "prompt": (
-                "Analyze this photorealistic teddy bear frame rendered from DNA. "
-                "Confirm if it matches the DNA specification: "
-                f"Is the fur brown? Are the eyes glowing? Is there approximately {sick_percent}% sickness/mutation?"
-            ),
-            "images": [b64_data],
-            "stream": False
-        }
-        
-        try:
-            req = urllib.request.Request(
-                VLM_URL,
-                data=json.dumps(payload).encode('utf-8'),
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=30) as response:
-                res_data = response.read().decode('utf-8')
-                res_json = json.loads(res_data)
-                feedback = res_json.get("response", "")
-                print("\n=== DeepSeek DNA Verification Analysis ===")
-                print(feedback)
-                print("==========================================\n")
-        except Exception as e:
-            print(f"[VLM ERROR] Failed to connect to Ollama/VLM: {e}")
-            print("Make sure Ollama is running on port 11435 (OLLAMA_HOST=127.0.0.1:11435) with the 'moondream' model pulled.")
+        # Call OpenCV Evaluator
+        print("[Director] Initiating OpenCV query tokenizer and visual validation...")
+        eval_cmd = [
+            "python3",
+            "scripts/opencv_teddy_evaluator.py",
+            prompt,
+            png_out
+        ]
+        subprocess.run(eval_cmd)
             
     else:
         print("[Error] SD Worker output file not found.")

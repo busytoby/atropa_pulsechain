@@ -1,0 +1,422 @@
+{
+    "0xd67a1bf3a912a1880cfe29d0410752546bcba0e5": {
+        "address": "0xd67a1bf3a912a1880cfe29d0410752546bcba0e5",
+        "symbol": "STEADY FORCE\ud83d\udd6f\ufe0f",
+        "name": "BANAA ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0xa2ffe364c17a056a898095c0e35b117231b8b458": {
+        "address": "0xa2ffe364c17a056a898095c0e35b117231b8b458",
+        "symbol": "DISTRACTION\ud83d\udd6f\ufe0f",
+        "name": "TBRAP ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0xa7a7bb23115487a0df2423d84fa18c7996364a27": {
+        "address": "0xa7a7bb23115487a0df2423d84fa18c7996364a27",
+        "symbol": "FRUSTRATION\ud83d\udd6f\ufe0f",
+        "name": "AAIRA ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0x5f4d034f05ed737937b53f867a9d4356aeb90f42": {
+        "address": "0x5f4d034f05ed737937b53f867a9d4356aeb90f42",
+        "symbol": "BEGINNING\ud83d\udd6f\ufe0f",
+        "name": "TAMOX ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0x2ae4ee4e16b14645b350e63eef62f4c992d86448": {
+        "address": "0x2ae4ee4e16b14645b350e63eef62f4c992d86448",
+        "symbol": "INSTINCTIVE\ud83d\udd6f\ufe0f",
+        "name": "TECOP ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0x491127c99f093b120f20456e2a7c09e605f89da3": {
+        "address": "0x491127c99f093b120f20456e2a7c09e605f89da3",
+        "symbol": "FLUX",
+        "name": "Flux",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0xe16e03923928f2c0b1ee7f7dc82a20f5c34f46b2": {
+        "address": "0xe16e03923928f2c0b1ee7f7dc82a20f5c34f46b2",
+        "symbol": "BLNCE",
+        "name": "Balance",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0x77f80c7b24cd329a02732b9181c794037cf50919": {
+        "address": "0x77f80c7b24cd329a02732b9181c794037cf50919",
+        "symbol": "BPILL",
+        "name": "Blue Pill",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0xfe33ce21c80d9c17787150c3d599bcd76af967e6": {
+        "address": "0xfe33ce21c80d9c17787150c3d599bcd76af967e6",
+        "symbol": "OH \u327e",
+        "name": "Burst",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x600032f4a970cabfd9565c62def0e1593a4a5503": {
+        "address": "0x600032f4a970cabfd9565c62def0e1593a4a5503",
+        "symbol": "PLOVE",
+        "name": "PulseLove",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0xaa1505c928fd85e10a550cfde9e8f464c3574d8a": {
+        "address": "0xaa1505c928fd85e10a550cfde9e8f464c3574d8a",
+        "symbol": "SoTD&P\u327e\u327eR",
+        "name": "Proof Of Own Reserves Contract",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x5de2624784ff1a95612e376470f5dda6a8d705b7": {
+        "address": "0x5de2624784ff1a95612e376470f5dda6a8d705b7",
+        "symbol": "\ud83d\udc41\ufe0f",
+        "name": "ICU",
+        "owner": "0xc6c36d2ed1cebc82b33e14ad94cc2602859b2719",
+        "ignored": false
+    },
+    "0x2d6f91aa29bea7eb0c32e5bc83868d3c3e3921b5": {
+        "address": "0x2d6f91aa29bea7eb0c32e5bc83868d3c3e3921b5",
+        "symbol": "\u04e8 \u327e",
+        "name": "THETA",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xa62c512adba29f39c27ce49d75afa599fbbed09a": {
+        "address": "0xa62c512adba29f39c27ce49d75afa599fbbed09a",
+        "symbol": "CAJUN",
+        "name": "Cajun",
+        "owner": "0xc1a964c41c216455bee3d5d222212ce0c2d86f41",
+        "ignored": false
+    },
+    "0x46cafb1cfa07a2547241a7ba82e4403468b876e1": {
+        "address": "0x46cafb1cfa07a2547241a7ba82e4403468b876e1",
+        "symbol": "MOVEMENT\ud83d\udd6f\ufe0f",
+        "name": "ORGAN ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0xf4d53ca2f566aee88340a87e78f664bb67221955": {
+        "address": "0xf4d53ca2f566aee88340a87e78f664bb67221955",
+        "symbol": "EXPLOITERZ \u327e",
+        "name": "Exploiterz Coin",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xa2f9a0d1a3ee40eb318480e5632a7fda862ce9a5": {
+        "address": "0xa2f9a0d1a3ee40eb318480e5632a7fda862ce9a5",
+        "symbol": "STUFF \u327e",
+        "name": "All Yr Abjurational Branches",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x553d74b68fadb8156cafa4165cc2ab588a0f4003": {
+        "address": "0x553d74b68fadb8156cafa4165cc2ab588a0f4003",
+        "symbol": "EFFECT",
+        "name": "MANDALA EFFECT",
+        "owner": "0x3ad6c170e7ec137d99c128c1076e861c748beb4b",
+        "ignored": false
+    },
+    "0xd92c27d2a88dce60505497562d6aa0d59d9e1fa7": {
+        "address": "0xd92c27d2a88dce60505497562d6aa0d59d9e1fa7",
+        "symbol": "\u0e1a\u0e2d\u0e01\u0e36",
+        "name": "\u0e1a\u0e2d\u0e01\u0e36",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xa5019fa6ff4f8782eba6c59194b26fbf27feffbc": {
+        "address": "0xa5019fa6ff4f8782eba6c59194b26fbf27feffbc",
+        "symbol": "USB \u327e",
+        "name": "United States Bank",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xe37acc54711562510fafc45d8199ee329ebbcedd": {
+        "address": "0xe37acc54711562510fafc45d8199ee329ebbcedd",
+        "symbol": "PARADE \u327e",
+        "name": "The Parade Before The Interview",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xb57daeccc53f00340d10826892e93a71d098d32c": {
+        "address": "0xb57daeccc53f00340d10826892e93a71d098d32c",
+        "symbol": "\ud83d\udd25\ud83d\udcb5",
+        "name": "BurninBills",
+        "owner": "0x765414e37d836d3efde7613d2c576d063a8340be",
+        "ignored": false
+    },
+    "0x8bca581d9415870fb4a23314cf2202cdd6ced628": {
+        "address": "0x8bca581d9415870fb4a23314cf2202cdd6ced628",
+        "symbol": "\u03b3\u0398\u03c1",
+        "name": "\u0391\u1f50\u03b3\u03b5\u03af\u03b1\u03c2",
+        "owner": "0xda7cb15f8344eba150f017dc62dd81ca4e83eb46",
+        "ignored": false
+    },
+    "0xffb8ae659e8054e474e7209d6e7bf688d38f16a8": {
+        "address": "0xffb8ae659e8054e474e7209d6e7bf688d38f16a8",
+        "symbol": "\u03b3\u327e\u03c1 ",
+        "name": "\u03b3\u327e\u03c1  \u03a4\u03b9",
+        "owner": "0xda7cb15f8344eba150f017dc62dd81ca4e83eb46",
+        "ignored": false
+    },
+    "0xb6c97fbe81e48abf8991b159265f292086b14691": {
+        "address": "0xb6c97fbe81e48abf8991b159265f292086b14691",
+        "symbol": "ENVY\ud83d\udd6f\ufe0f",
+        "name": "RNACO ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0x2f916d937750ca829c44478cf10b3a0afceaf75d": {
+        "address": "0x2f916d937750ca829c44478cf10b3a0afceaf75d",
+        "symbol": "VERSTILITY\ud83d\udd6f\ufe0f",
+        "name": "XFMND ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0x4e51c8db4cf170b8b1e171e3118cc77dcbadedd4": {
+        "address": "0x4e51c8db4cf170b8b1e171e3118cc77dcbadedd4",
+        "symbol": "CONCENTRATION\ud83d\udd6f\ufe0f",
+        "name": "XSIAS ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0x1b537955db9fb0a7a89edec1c5c56a8d38261e58": {
+        "address": "0x1b537955db9fb0a7a89edec1c5c56a8d38261e58",
+        "symbol": "\u0e17\u0e41\u0e32\u0e23\u0e37\u0e2a\u0e33\u0e31",
+        "name": "\u0e44\u0e23\u0e2a\u0e2a\u0e23\u0e1f\u0e17 \u0e17\u0e41\u0e32\u0e23\u0e37\u0e2a\u0e33\u0e31 \u0e41\u0e19\u0e23\u0e37",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xe6bb10c2ec68d76f5ebd3aa76422b85eac784bae": {
+        "address": "0xe6bb10c2ec68d76f5ebd3aa76422b85eac784bae",
+        "symbol": "\u0e44\u0e33\u0e37\u0e30",
+        "name": "\u0e44\u0e49",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xadb6ef3839be3c2e1d91b45e772e8e5821f792c2": {
+        "address": "0xadb6ef3839be3c2e1d91b45e772e8e5821f792c2",
+        "symbol": "\ud83c\udf32\ud83c\udf32",
+        "name": "Treesurance",
+        "owner": "0x52e7d427c36dd15bfdc98dcae66f8228fbcc2b32",
+        "ignored": false
+    },
+    "0xd5505016abdf0bde251a79f4fbbab424742a328b": {
+        "address": "0xd5505016abdf0bde251a79f4fbbab424742a328b",
+        "symbol": "SYSOP",
+        "name": "First Sysops At The IPO In Front",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xb127a62f4410df578448fb70f1f306b728bb8565": {
+        "address": "0xb127a62f4410df578448fb70f1f306b728bb8565",
+        "symbol": "WWE \u327e",
+        "name": "Official WWE Coin",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x0d964f1f97e72120550c448171e693f1bee3c9d2": {
+        "address": "0x0d964f1f97e72120550c448171e693f1bee3c9d2",
+        "symbol": "B\u327eF",
+        "name": "Bullion Index Fund",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x6a964a6cf48e6c850c4ad8b8ab2d5a384e287be5": {
+        "address": "0x6a964a6cf48e6c850c4ad8b8ab2d5a384e287be5",
+        "symbol": "M\u327eF",
+        "name": "Monat Index Fund",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x06540f88b6a6983d01d6c7f22f54ad853200335e": {
+        "address": "0x06540f88b6a6983d01d6c7f22f54ad853200335e",
+        "symbol": "PRISM",
+        "name": "PRISM",
+        "owner": "0x765414e37d836d3efde7613d2c576d063a8340be",
+        "ignored": false
+    },
+    "0x601f6d55a663249f0c679aea5b960f29cde691d8": {
+        "address": "0x601f6d55a663249f0c679aea5b960f29cde691d8",
+        "symbol": "RPILL",
+        "name": "Red Pill",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0x26b565954778a2661887a04a761c8057b99a80e9": {
+        "address": "0x26b565954778a2661887a04a761c8057b99a80e9",
+        "symbol": "AWAKE",
+        "name": "Awaken",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0x7a62fd6b9397740c1e59127a013025e32da310a8": {
+        "address": "0x7a62fd6b9397740c1e59127a013025e32da310a8",
+        "symbol": "D\u327eW\u327eJ",
+        "name": "DownJones",
+        "owner": "0xce28607bb80a69c73173a933a25519e745b03ce9",
+        "ignored": false
+    },
+    "0xc519e2705d930033df7b8560fa2764a380fd6958": {
+        "address": "0xc519e2705d930033df7b8560fa2764a380fd6958",
+        "symbol": "DCREE",
+        "name": "Decree",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0xa2fd786d1a7cd580d3656c13efee6cf9a14983bb": {
+        "address": "0xa2fd786d1a7cd580d3656c13efee6cf9a14983bb",
+        "symbol": "\u0f53\u0f72\u0f53\u0f97",
+        "name": "\u0f50\u0f7a \u0f5d\u0f61 \u0f50\u0f4f \u0f50\u0f7a \u0f53\u0f72\u0f53\u0f97",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x51cc2e2fa670c7c4cabbbe21c91333f78b124d46": {
+        "address": "0x51cc2e2fa670c7c4cabbbe21c91333f78b124d46",
+        "symbol": "TIGARD \u327e",
+        "name": "Tigard Coin",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x99adb301828be038d4845fe8195cfff20ae5cf62": {
+        "address": "0x99adb301828be038d4845fe8195cfff20ae5cf62",
+        "symbol": "WOSCC\u327e",
+        "name": "Wrapped Official Sly Cooper Coin \u327e",
+        "owner": "0xaebd88430387b3ca9ee75a1f5139202428b63ec4",
+        "ignored": false
+    },
+    "0xd6cb337150749de53a853cca3d6fc9e3ab16e468": {
+        "address": "0xd6cb337150749de53a853cca3d6fc9e3ab16e468",
+        "symbol": "W\u0391\u327e\u03b4 \ua565",
+        "name": "Wrapped \u0391\u03b5\u03af\u327e\u03b4\u03c9 \ua565",
+        "owner": "0xaebd88430387b3ca9ee75a1f5139202428b63ec4",
+        "ignored": false
+    },
+    "0x34b21e393f2e018aa5f182aec469c07a70ce88e5": {
+        "address": "0x34b21e393f2e018aa5f182aec469c07a70ce88e5",
+        "symbol": "\u2c98\u2c80\u2c96\u2ca6\u2c80",
+        "name": "Radju Malta",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x120d7f68bb69a36ed65029645c980f4d17ef2cd4": {
+        "address": "0x120d7f68bb69a36ed65029645c980f4d17ef2cd4",
+        "symbol": "WELL \u327e",
+        "name": "Well Fed \u327e",
+        "owner": "0x18f621662d6a1f23700ea32d146b32195dc33111",
+        "ignored": false
+    },
+    "0xca803da0df03c7e0897ff09bc53369654be0e3e7": {
+        "address": "0xca803da0df03c7e0897ff09bc53369654be0e3e7",
+        "symbol": "\u32e8",
+        "name": "\u327e \u0710\u072a\u0721\u0723 \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xaba8718faa833ac3aa229aad1ebf979ef595ef6d": {
+        "address": "0xaba8718faa833ac3aa229aad1ebf979ef595ef6d",
+        "symbol": "WPILL",
+        "name": "White Pill",
+        "owner": "0x75a8210f04990f71e2936f150260889281829ae8",
+        "ignored": false
+    },
+    "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f": {
+        "address": "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f",
+        "symbol": "TLRz",
+        "name": "Tellerz  \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x6a8ee78653c588530d31fa308f4b165f346bd9e0": {
+        "address": "0x6a8ee78653c588530d31fa308f4b165f346bd9e0",
+        "symbol": "\ua3eb \u327e",
+        "name": "JOB",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x1c27fd7ab4faa8141119484e00d2455851639c2b": {
+        "address": "0x1c27fd7ab4faa8141119484e00d2455851639c2b",
+        "symbol": "SSA \u327e",
+        "name": "Social Security Administration",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x1852d017596f62cbb08a51a67c0e694c17ea5eb7": {
+        "address": "0x1852d017596f62cbb08a51a67c0e694c17ea5eb7",
+        "symbol": "GUIDANCE\ud83d\udd6f\ufe0f",
+        "name": "NRLMV ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
+    },
+    "0xdb4ebeafb23eca5275821ab0d87c7f6fa5514ea4": {
+        "address": "0xdb4ebeafb23eca5275821ab0d87c7f6fa5514ea4",
+        "symbol": "SCOIETY \u327e",
+        "name": "Teh Fdeeralist Scoiety",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xd33358f1b3130e2e9715c5992028d9de384544e8": {
+        "address": "0xd33358f1b3130e2e9715c5992028d9de384544e8",
+        "symbol": "CAMPAIGN \u327e",
+        "name": "United States Presidential Campaign",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x7ba907a5d308024e2a2010ea60318b834c1d8e9e": {
+        "address": "0x7ba907a5d308024e2a2010ea60318b834c1d8e9e",
+        "symbol": "\u0713\u0710\u071d\u0710\u0722\u0710\u0723",
+        "name": "\u327e OPIUM \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xf5f1e1b45524cf6919e7ce3eddb83569ec452aea": {
+        "address": "0xf5f1e1b45524cf6919e7ce3eddb83569ec452aea",
+        "symbol": "\u072b",
+        "name": "\u327e \u0712\u0713\u0715\u0717\u0728 \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x921bc9a18eaf7299ae42c1cc416ef070b04ef81e": {
+        "address": "0x921bc9a18eaf7299ae42c1cc416ef070b04ef81e",
+        "symbol": "TEHATER \u327e",
+        "name": "\u327e \u072ce\u0717\u0710\u072ce\u072a \u327e",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0xaae18cd46c45d343bba1eab46716b4d69d799734": {
+        "address": "0xaae18cd46c45d343bba1eab46716b4d69d799734",
+        "symbol": "BAR \u327e",
+        "name": "Cheat On Teh Bar Exam",
+        "owner": "0xbf182955401af3f2f7e244cb31184e93e74a2501",
+        "ignored": false
+    },
+    "0x72133f113700acb44b546baa0220061e403c8b8d": {
+        "address": "0x72133f113700acb44b546baa0220061e403c8b8d",
+        "symbol": "FICKLE",
+        "name": "FICKLE DAI",
+        "owner": "0xab5fd4e68e65dab439874cac83b20837edc82b33",
+        "ignored": false
+    },
+    "0x203c861c9ffda339e481d2f871e53ae948f06612": {
+        "address": "0x203c861c9ffda339e481d2f871e53ae948f06612",
+        "symbol": "THE THREAD CAME FIRST",
+        "name": "Before The Posterior, THE THREAD DID",
+        "owner": "0x7a20189b297343cf26d8548764b04891f37f3414",
+        "ignored": false
+    },
+    "0x3eb3bce16e760ab7e4e2b01babd11be15990edeb": {
+        "address": "0x3eb3bce16e760ab7e4e2b01babd11be15990edeb",
+        "symbol": "\u2665\u203f\u2665",
+        "name": "Love \u327e Index",
+        "owner": "0x18f621662d6a1f23700ea32d146b32195dc33111",
+        "ignored": false
+    }
+}
