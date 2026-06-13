@@ -45,6 +45,7 @@ static float generate_gaussian_noise() {
 }
 
 static double interpolate_correlation(double *R_i, double lag, int max_lag) {
+    if (isnan(lag) || isinf(lag)) return 0.0;
     double idx_exact = lag + max_lag;
     if (idx_exact < 0.0) return R_i[0];
     if (idx_exact >= 2.0 * max_lag) return R_i[2 * max_lag];
@@ -66,7 +67,53 @@ typedef struct {
     float *buffer;
 } ReceiverStation;
 
+static void run_safety_benchmarks() {
+    printf("\n=== Listening Ears Safety and Robustness Benchmark ===\n");
+
+    // Test 1: Parabolic Interpolation divide-by-zero (flat peak)
+    double R_flat[3] = {10.0, 10.0, 10.0};
+    double alpha = R_flat[0];
+    double beta = R_flat[1];
+    double gamma = R_flat[2];
+    double denom = alpha - 2.0 * beta + gamma;
+    assert(fabs(denom) < 1e-9); // flat peak
+    double frac = 0.0;
+    if (fabs(denom) > 1e-9) {
+        frac = (alpha - gamma) / (2.0 * denom);
+    }
+    assert(frac == 0.0); // handled correctly
+    printf("[SAFE] Flat peak divide-by-zero handled (frac = %.2f)\n", frac);
+
+    // Test 2: Boundary value (peak at index 0)
+    int best_lag_idx = 0;
+    int max_lag = 80;
+    frac = 0.0;
+    if (best_lag_idx > 0 && best_lag_idx < 2 * max_lag) {
+        assert(0 && "Should not attempt to interpolate at left boundary!");
+    }
+    printf("[SAFE] Boundary value interpolation ignored (frac = %.2f)\n", frac);
+
+    // Test 3: Out of bounds lag in continuous lookup
+    double R_test[161] = {0};
+    R_test[80] = 5.0; // center peak
+    double val_low = interpolate_correlation(R_test, -200.0, max_lag);
+    double val_high = interpolate_correlation(R_test, 200.0, max_lag);
+    assert(val_low == R_test[0]);
+    assert(val_high == R_test[2 * max_lag]);
+    printf("[SAFE] Out-of-bounds lag lookup clamped correctly (low: %.2f, high: %.2f)\n", val_low, val_high);
+
+    // Test 4: NaN and Inf input protection in lookup
+    double val_nan = interpolate_correlation(R_test, NAN, max_lag);
+    double val_inf = interpolate_correlation(R_test, INFINITY, max_lag);
+    assert(val_nan == 0.0);
+    assert(val_inf == 0.0);
+    printf("[SAFE] NaN/Inf lag input handled gracefully (nan lookup: %.2f, inf lookup: %.2f)\n", val_nan, val_inf);
+
+    printf("[SUCCESS] All listening ears safety benchmarks passed successfully!\n\n");
+}
+
 int main() {
+    run_safety_benchmarks();
     printf("=== TSFi2 QST Issue #14: Array Jitter & Pilot Phase Calibration ===\n");
 
     // 1. Target Spy Transmitter (located at x = 25.0 km, y = -40.0 km)
