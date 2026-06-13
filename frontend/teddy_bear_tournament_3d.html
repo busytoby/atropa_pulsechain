@@ -621,6 +621,19 @@
             </div>
 
             <div class="panel-header">
+                HOT-WIRE AMMETER <span>BALLANTINE</span>
+            </div>
+            <div class="card" style="border-color: rgba(255, 0, 127, 0.3); padding: 12px; background: rgba(5, 2, 8, 0.9);">
+                <div style="text-align: center; margin-bottom: 6px;">
+                    <canvas id="ammeter-canvas" style="width: 100%; height: 95px; background: #000; border: 1px solid rgba(255, 0, 127, 0.2); border-radius: 6px;"></canvas>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: 'Share Tech Mono', monospace; color: #94a3b8;">
+                    <span>HEATER TEMP: <span id="ammeter-temp" style="color: #ff007f;">20.0°C</span></span>
+                    <span>DEFLECTION: <span id="ammeter-val" style="color: #ff007f;">0.00A</span></span>
+                </div>
+            </div>
+
+            <div class="panel-header">
                 SOVEREIGN AUDIO WAVEFORM
             </div>
             <div id="oscilloscope-container">
@@ -827,6 +840,135 @@ Ready to initiate tournament match.</div>
             oscCtx.stroke();
         }
         drawOscilloscope();
+
+        // Hot-Wire Ammeter Card Tool drawing
+        const ammCanvas = document.getElementById("ammeter-canvas");
+        const ammCtx = ammCanvas.getContext("2d");
+        
+        let ammeterState = {
+            T: 20.0,      // Temperature in Celsius
+            theta: 0.0,   // Pointer angle deflection
+            omega: 0.0,   // Pointer speed
+            targetCurrent: 0.0
+        };
+
+        function drawAmmeter() {
+            requestAnimationFrame(drawAmmeter);
+
+            ammCanvas.width = ammCanvas.clientWidth;
+            ammCanvas.height = ammCanvas.clientHeight;
+
+            // Clear panel background
+            ammCtx.fillStyle = "#020204";
+            ammCtx.fillRect(0, 0, ammCanvas.width, ammCanvas.height);
+
+            // Fetch dynamic audio current level (linked to analyser output if playing, or decay to baseline)
+            let currentRf = 0.0;
+            if (analyser) {
+                let bufferLength = analyser.frequencyBinCount;
+                let dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+                let sumSq = 0.0;
+                for (let i = 0; i < bufferLength; i++) {
+                    let norm = (dataArray[i] - 128.0) / 128.0;
+                    sumSq += norm * norm;
+                }
+                currentRf = Math.sqrt(sumSq / bufferLength) * 8.5; // Scale to Amps
+            } else if (matchActive) {
+                // Combat spark current simulation
+                currentRf = Math.sin(Date.now() * 0.05) * 1.5 + 1.5;
+            }
+
+            // Ballantine ODE Step (dt = 0.016s frame rate)
+            const dt_frame = 0.016;
+            const thermal_mass = 0.015;
+            const k_loss = 0.05;
+            const R0 = 4.5;
+            const alpha = 0.00393;
+            
+            // Heat delta
+            let R = R0 * (1.0 + alpha * (ammeterState.T - 20.0));
+            let Joule_power = currentRf * currentRf * R;
+            let cooling_power = k_loss * (ammeterState.T - 20.0);
+            let dT = (Joule_power - cooling_power) / thermal_mass;
+            ammeterState.T += dT * dt_frame;
+            if (ammeterState.T < 20.0) ammeterState.T = 20.0;
+
+            // Display pointer mechanics
+            const M_needle = 0.002;
+            const B_needle = 0.01;
+            const K_spring = 0.5;
+            const K_torque = 0.0025;
+
+            let torque = K_torque * (ammeterState.T - 20.0);
+            let d_omega = (torque - B_needle * ammeterState.omega - K_spring * ammeterState.theta) / M_needle;
+            ammeterState.omega += d_omega * dt_frame;
+            ammeterState.theta += ammeterState.omega * dt_frame;
+
+            if (ammeterState.theta < 0.0) {
+                ammeterState.theta = 0.0;
+                ammeterState.omega = 0.0;
+            }
+            if (ammeterState.theta > 2.0) {
+                ammeterState.theta = 2.0; // max stop peg
+                ammeterState.omega = 0.0;
+            }
+
+            // Update UI readout cards
+            document.getElementById("ammeter-temp").innerText = `${ammeterState.T.toFixed(1)}°C`;
+            document.getElementById("ammeter-val").innerText = `${(ammeterState.theta * 1.5).toFixed(2)}A`;
+
+            // Draw Gauge Arc
+            let cx = ammCanvas.width / 2;
+            let cy = ammCanvas.height - 15;
+            let radius = ammCanvas.height * 0.75;
+
+            ammCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ammCtx.lineWidth = 4;
+            ammCtx.beginPath();
+            ammCtx.arc(cx, cy, radius, -Math.PI * 0.8, -Math.PI * 0.2);
+            ammCtx.stroke();
+
+            // Draw Tick Marks
+            ammCtx.strokeStyle = "#475569";
+            ammCtx.lineWidth = 2;
+            for (let i = 0; i <= 10; i++) {
+                let fraction = i / 10;
+                let angle = -Math.PI * 0.8 + fraction * (Math.PI * 0.6);
+                let xStart = cx + Math.cos(angle) * (radius - 4);
+                let yStart = cy + Math.sin(angle) * (radius - 4);
+                let xEnd = cx + Math.cos(angle) * (radius + 4);
+                let yEnd = cy + Math.sin(angle) * (radius + 4);
+                ammCtx.beginPath();
+                ammCtx.moveTo(xStart, yStart);
+                ammCtx.lineTo(xEnd, yEnd);
+                ammCtx.stroke();
+            }
+
+            // Draw Needle (Warm Neon Red Glow)
+            let needleAngle = -Math.PI * 0.8 + (ammeterState.theta / 2.0) * (Math.PI * 0.6);
+            let needleLen = radius * 0.95;
+            let nx = cx + Math.cos(needleAngle) * needleLen;
+            let ny = cy + Math.sin(needleAngle) * needleLen;
+
+            ammCtx.save();
+            ammCtx.strokeStyle = "#ff007f";
+            ammCtx.shadowBlur = 8;
+            ammCtx.shadowColor = "#ff007f";
+            ammCtx.lineWidth = 3;
+            ammCtx.beginPath();
+            ammCtx.moveTo(cx, cy);
+            ammCtx.lineTo(nx, ny);
+            ammCtx.stroke();
+            ammCtx.restore();
+
+            // Center Pin
+            ammCtx.fillStyle = "#ffffff";
+            ammCtx.beginPath();
+            ammCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+            ammCtx.fill();
+        }
+        drawAmmeter();
 
         // Bessel math helper for ground grid distortion
         function bessel_j0(x) {
