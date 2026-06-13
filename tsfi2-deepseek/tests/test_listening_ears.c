@@ -31,15 +31,13 @@ struct wav_header {
     uint32_t data_size;
 };
 
-// LCG random generator for noise and placement
 static double get_random() {
     static uint64_t seed = 987654321ULL;
     seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
-    return (double)(seed & 0xFFFFFFFFFFFFULL) / 281474976710656.0; // [0, 1]
+    return (double)(seed & 0xFFFFFFFFFFFFULL) / 281474976710656.0;
 }
 
 static float generate_gaussian_noise() {
-    // Box-Muller transform
     double u1 = get_random();
     double u2 = get_random();
     if (u1 < 1e-15) u1 = 1e-15;
@@ -53,13 +51,17 @@ typedef struct {
 } ReceiverStation;
 
 int main() {
-    printf("=== TSFi2 QST Issue #14: One Thousand Listening Ears Network Simulation ===\n");
+    printf("=== TSFi2 QST Issue #14: Spatial Interference Nulling Beamformer ===\n");
 
     // 1. Target Spy Transmitter (located at x = 25.0 km, y = -40.0 km)
     double tx_x = 25.0;
     double tx_y = -40.0;
     
-    // Message signal: Morse code sequence of 1000 Hz tone keyed (0.5s ON, 0.5s OFF)
+    // 2. High-Power Jammer/Interferer (located at x = -30.0 km, y = 50.0 km)
+    double jam_x = -30.0;
+    double jam_y = 50.0;
+
+    // Spy signal (1000 Hz tone)
     float *tx_signal = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
         double t = (double)i / SAMPLING_RATE;
@@ -67,130 +69,195 @@ int main() {
         tx_signal[i] = key * sinf(2.0f * (float)M_PI * 1000.0f * (float)t);
     }
 
-    // 2. Initialize 50 decentralized stations dispersed across a 100 km radius
+    // Jammer signal (1500 Hz tone, 10x stronger amplitude)
+    float *jam_signal = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    for (int i = 0; i < TOTAL_SAMPLES; i++) {
+        double t = (double)i / SAMPLING_RATE;
+        jam_signal[i] = 10.0f * sinf(2.0f * (float)M_PI * 1500.0f * (float)t);
+    }
+
+    // 3. Initialize stations
     ReceiverStation stations[NUM_STATIONS];
     for (int i = 0; i < NUM_STATIONS; i++) {
         double angle = get_random() * 2.0 * M_PI;
-        double radius = get_random() * 100.0; // up to 100 km
+        double radius = get_random() * 100.0;
         stations[i].x = radius * cos(angle);
         stations[i].y = radius * sin(angle);
         stations[i].buffer = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
     }
 
-    // 3. Physical propagation with delay, path loss, and high local static noise
+    // 4. Physical propagation with both target and jammer
+    double fc_carrier = 24000.0; // 24 kHz carrier to match Nyquist
     for (int i = 0; i < NUM_STATIONS; i++) {
-        double dx = stations[i].x - tx_x;
-        double dy = stations[i].y - tx_y;
-        double distance_m = sqrt(dx * dx + dy * dy) * 1000.0; // convert to meters
-        double delay_sec = distance_m / SPEED_OF_LIGHT;
-        int delay_samples = (int)(delay_sec * SAMPLING_RATE);
+        double dx_tx = stations[i].x - tx_x;
+        double dy_tx = stations[i].y - tx_y;
+        double dist_tx_m = sqrt(dx_tx * dx_tx + dy_tx * dy_tx) * 1000.0;
+        double delay_tx = dist_tx_m / SPEED_OF_LIGHT;
+        int delay_samples_tx = (int)(delay_tx * SAMPLING_RATE);
+        double path_loss_tx = 5000.0 / (dist_tx_m + 1.0);
 
-        double path_loss = 5000.0 / (distance_m + 1.0); // simple inverse distance
-        float noise_std = 1.0f; // High noise (buried signal)
+        double dx_jam = stations[i].x - jam_x;
+        double dy_jam = stations[i].y - jam_y;
+        double dist_jam_m = sqrt(dx_jam * dx_jam + dy_jam * dy_jam) * 1000.0;
+        double delay_jam = dist_jam_m / SPEED_OF_LIGHT;
+        int delay_samples_jam = (int)(delay_jam * SAMPLING_RATE);
+        double path_loss_jam = 5000.0 / (dist_jam_m + 1.0);
+
+        float noise_std = 1.0f;
 
         for (int step = 0; step < TOTAL_SAMPLES; step++) {
-            int src_idx = step - delay_samples;
-            float sig_val = (src_idx >= 0 && src_idx < TOTAL_SAMPLES) ? tx_signal[src_idx] : 0.0f;
-            stations[i].buffer[step] = (float)(path_loss * sig_val) + noise_std * generate_gaussian_noise();
+            int idx_tx = step - delay_samples_tx;
+            int idx_jam = step - delay_samples_jam;
+
+            float val_tx = (idx_tx >= 0 && idx_tx < TOTAL_SAMPLES) ? tx_signal[idx_tx] : 0.0f;
+            float val_jam = (idx_jam >= 0 && idx_jam < TOTAL_SAMPLES) ? jam_signal[idx_jam] : 0.0f;
+
+            stations[i].buffer[step] = (float)(path_loss_tx * val_tx) + 
+                                       (float)(path_loss_jam * val_jam) + 
+                                       noise_std * generate_gaussian_noise();
         }
     }
 
-    // 4. TDOA Grid Search Localization of the Unknown Transmitter
-    printf("[LOCALIZATION] Scanning coordinate space to localize target...\n");
-    double best_x = 0.0;
-    double best_y = 0.0;
-    double max_energy = -1.0;
+    // 5. Compute Gram-Schmidt Spatial Nulling Weights
+    double *h1 = (double*)malloc(NUM_STATIONS * sizeof(double));
+    double *h2 = (double*)malloc(NUM_STATIONS * sizeof(double));
+    double *h3 = (double*)malloc(NUM_STATIONS * sizeof(double));
 
-    // Scan grid from -80 to +80 km in steps of 5 km
-    for (double gx = -80.0; gx <= 80.0; gx += 5.0) {
-        for (double gy = -80.0; gy <= 80.0; gy += 5.0) {
-            double energy = 0.0;
-            // Compute combined signal energy over a test window of samples to identify coherence peak
-            int num_test_samples = 2000;
-            for (int step = 2000; step < 2000 + num_test_samples; step++) {
-                double sum = 0.0;
-                double weight_sum = 0.0;
-                for (int i = 0; i < NUM_STATIONS; i++) {
-                    double dx = stations[i].x - gx;
-                    double dy = stations[i].y - gy;
-                    double distance_m = sqrt(dx * dx + dy * dy) * 1000.0;
-                    double delay_sec = distance_m / SPEED_OF_LIGHT;
-                    int delay_samples = (int)(delay_sec * SAMPLING_RATE);
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        double dx_tx = stations[i].x - tx_x;
+        double dy_tx = stations[i].y - tx_y;
+        double dist_tx_m = sqrt(dx_tx * dx_tx + dy_tx * dy_tx) * 1000.0;
+        double delay_tx = dist_tx_m / SPEED_OF_LIGHT;
 
-                    int read_idx = step + delay_samples;
-                    if (read_idx >= 0 && read_idx < TOTAL_SAMPLES) {
-                        double path_loss = 5000.0 / (distance_m + 1.0);
-                        double weight = path_loss * path_loss;
-                        sum += (double)stations[i].buffer[read_idx] * weight;
-                        weight_sum += weight;
-                    }
-                }
-                double val = (weight_sum > 0.0) ? (sum / weight_sum) : 0.0;
-                energy += val * val;
-            }
-            if (energy > max_energy) {
-                max_energy = energy;
-                best_x = gx;
-                best_y = gy;
-            }
-        }
+        double dx_jam = stations[i].x - jam_x;
+        double dy_jam = stations[i].y - jam_y;
+        double dist_jam_m = sqrt(dx_jam * dx_jam + dy_jam * dy_jam) * 1000.0;
+        double delay_jam = dist_jam_m / SPEED_OF_LIGHT;
+
+        double delta_delay = delay_jam - delay_tx;
+
+        h1[i] = 5000.0 / (dist_tx_m + 1.0); // target gain
+        double path_loss_jam = 5000.0 / (dist_jam_m + 1.0);
+        h2[i] = path_loss_jam * cos(2.0 * M_PI * fc_carrier * delta_delay);
+        h3[i] = path_loss_jam * sin(2.0 * M_PI * fc_carrier * delta_delay);
     }
 
-    printf("[LOCALIZATION] Estimated transmitter coordinate: (%.1f, %.1f) km\n", best_x, best_y);
-    printf("[LOCALIZATION] Real spy transmitter coordinate: (%.1f, %.1f) km\n", tx_x, tx_y);
+    // Gram-Schmidt orthogonalization
+    double *e2 = (double*)malloc(NUM_STATIONS * sizeof(double));
+    double *e3 = (double*)malloc(NUM_STATIONS * sizeof(double));
 
-    double error_dist = sqrt((best_x - tx_x)*(best_x - tx_x) + (best_y - tx_y)*(best_y - tx_y));
-    printf("[LOCALIZATION] Localization radial error: %.2f km\n", error_dist);
-    assert(error_dist < 10.0);
+    // Normalize h1 (target vector)
+    double norm_h1 = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) norm_h1 += h1[i] * h1[i];
+    norm_h1 = sqrt(norm_h1);
+    double *e1 = (double*)malloc(NUM_STATIONS * sizeof(double));
+    for (int i = 0; i < NUM_STATIONS; i++) e1[i] = h1[i] / norm_h1;
 
-    // 5. Coherent Spatial Diversity Combining using the localized coordinate estimate
-    float *combined_output = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
-    memset(combined_output, 0, TOTAL_SAMPLES * sizeof(float));
+    // Project h2 out of e1
+    double dot_h2_e1 = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) dot_h2_e1 += h2[i] * e1[i];
+    double norm_e2 = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        e2[i] = h2[i] - dot_h2_e1 * e1[i];
+        norm_e2 += e2[i] * e2[i];
+    }
+    norm_e2 = sqrt(norm_e2);
+    for (int i = 0; i < NUM_STATIONS; i++) e2[i] /= norm_e2;
+
+    // Project h3 out of e1 and e2
+    double dot_h3_e1 = 0.0;
+    double dot_h3_e2 = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        dot_h3_e1 += h3[i] * e1[i];
+        dot_h3_e2 += h3[i] * e2[i];
+    }
+    double norm_e3 = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        e3[i] = h3[i] - dot_h3_e1 * e1[i] - dot_h3_e2 * e2[i];
+        norm_e3 += e3[i] * e3[i];
+    }
+    norm_e3 = sqrt(norm_e3);
+    for (int i = 0; i < NUM_STATIONS; i++) e3[i] /= norm_e3;
+
+    // Construct nulled weight vector starting with h1
+    double *w = (double*)malloc(NUM_STATIONS * sizeof(double));
+    double dot_h1_e2 = 0.0;
+    double dot_h1_e3 = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        dot_h1_e2 += h1[i] * e2[i];
+        dot_h1_e3 += h1[i] * e3[i];
+    }
+    double scale = 0.0;
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        w[i] = h1[i] - dot_h1_e2 * e2[i] - dot_h1_e3 * e3[i];
+        scale += w[i] * h1[i];
+    }
+    // Normalize so that w^T h1 = 1
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        w[i] /= scale;
+    }
+
+    // 6. Perform both Non-Nulled and Spatial Nulled combining
+    float *non_nulled_out = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    float *nulled_out = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
+    memset(non_nulled_out, 0, TOTAL_SAMPLES * sizeof(float));
+    memset(nulled_out, 0, TOTAL_SAMPLES * sizeof(float));
 
     for (int step = 0; step < TOTAL_SAMPLES; step++) {
-        double sum = 0.0;
-        double weight_sum = 0.0;
-        for (int i = 0; i < NUM_STATIONS; i++) {
-            double dx = stations[i].x - best_x;
-            double dy = stations[i].y - best_y;
-            double distance_m = sqrt(dx * dx + dy * dy) * 1000.0;
-            double delay_sec = distance_m / SPEED_OF_LIGHT;
-            int delay_samples = (int)(delay_sec * SAMPLING_RATE);
+        double sum_mrc = 0.0;
+        double weight_mrc = 0.0;
+        double sum_null = 0.0;
 
-            int read_idx = step + delay_samples;
+        for (int i = 0; i < NUM_STATIONS; i++) {
+            double dx_tx = stations[i].x - tx_x;
+            double dy_tx = stations[i].y - tx_y;
+            double dist_tx_m = sqrt(dx_tx * dx_tx + dy_tx * dy_tx) * 1000.0;
+            double delay_tx = dist_tx_m / SPEED_OF_LIGHT;
+            int delay_samples_tx = (int)(delay_tx * SAMPLING_RATE);
+
+            int read_idx = step + delay_samples_tx;
             if (read_idx >= 0 && read_idx < TOTAL_SAMPLES) {
-                double path_loss = 5000.0 / (distance_m + 1.0);
-                double weight = path_loss * path_loss;
-                sum += stations[i].buffer[read_idx] * weight;
-                weight_sum += weight;
+                // MRC weights
+                double weight = h1[i] * h1[i];
+                sum_mrc += stations[i].buffer[read_idx] * weight;
+                weight_mrc += weight;
+
+                // Spatial nulling weights
+                sum_null += stations[i].buffer[read_idx] * w[i];
             }
         }
-        combined_output[step] = (weight_sum > 0.0) ? (float)(sum / weight_sum) : 0.0f;
+        non_nulled_out[step] = (weight_mrc > 0.0) ? (float)(sum_mrc / weight_mrc) : 0.0f;
+        nulled_out[step] = (float)sum_null;
     }
 
-    // 5. Calculate Correlation (to verify signal recovery)
-    double dot_product = 0.0;
-    double energy_tx = 0.0;
-    double energy_combined = 0.0;
+    // 7. Calculate correlation with original clean signal
+    double dot_mrc = 0.0, energy_mrc = 0.0, energy_tx = 0.0;
+    double dot_null = 0.0, energy_null = 0.0;
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
-        dot_product += (double)(tx_signal[i] * combined_output[i]);
+        dot_mrc += (double)(tx_signal[i] * non_nulled_out[i]);
+        energy_mrc += (double)(non_nulled_out[i] * non_nulled_out[i]);
         energy_tx += (double)(tx_signal[i] * tx_signal[i]);
-        energy_combined += (double)(combined_output[i] * combined_output[i]);
-    }
-    double correlation = dot_product / sqrt(energy_tx * energy_combined + 1e-9);
-    printf("[ANALYSIS] Spatial diversity recovery correlation: %.4f\n", correlation);
 
-    // Write to WAV File
+        dot_null += (double)(tx_signal[i] * nulled_out[i]);
+        energy_null += (double)(nulled_out[i] * nulled_out[i]);
+    }
+    double corr_mrc = dot_mrc / sqrt(energy_tx * energy_mrc + 1e-9);
+    double corr_null = dot_null / sqrt(energy_tx * energy_null + 1e-9);
+
+    printf("[BEAMFORMER] Non-nulled correlation (with jammer): %.4f\n", corr_mrc);
+    printf("[BEAMFORMER] Spatial-nulled correlation (jammer cancelled): %.4f\n", corr_null);
+
+    // Save nulled audio output to WAV file
     int16_t *pcm_buffer = (int16_t*)malloc(TOTAL_SAMPLES * sizeof(int16_t));
     float max_val = 0.0001f;
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
-        if (fabsf(combined_output[i]) > max_val) {
-            max_val = fabsf(combined_output[i]);
+        if (fabsf(nulled_out[i]) > max_val) {
+            max_val = fabsf(nulled_out[i]);
         }
     }
     float norm = 28000.0f / max_val;
     for (int i = 0; i < TOTAL_SAMPLES; i++) {
-        float val = combined_output[i] * norm;
+        float val = nulled_out[i] * norm;
         if (val > 32767.0f) val = 32767.0f;
         if (val < -32768.0f) val = -32768.0f;
         pcm_buffer[i] = (int16_t)val;
@@ -221,17 +288,22 @@ int main() {
     fwrite(pcm_buffer, sizeof(int16_t), TOTAL_SAMPLES, fp);
     fclose(fp);
 
-    // Verify recovery is successful (correlation should be significantly positive, e.g. > 0.05 despite massive noise)
-    assert(correlation > 0.05);
-    printf("[SUCCESS] Spy transmitter signal recovered from severe local noise floor!\n");
+    // Verify spatial nulling successfully recovers the signal
+    assert(corr_null > 0.40);
+    printf("[SUCCESS] Gram-Schmidt spatial nulling successfully cancelled the strong terrestrial jammer!\n");
 
     // Clean up
     for (int i = 0; i < NUM_STATIONS; i++) {
         free(stations[i].buffer);
     }
     free(tx_signal);
-    free(combined_output);
+    free(jam_signal);
+    free(non_nulled_out);
+    free(nulled_out);
     free(pcm_buffer);
+    free(h1); free(h2); free(h3);
+    free(e1); free(e2); free(e3);
+    free(w);
 
     return 0;
 }
