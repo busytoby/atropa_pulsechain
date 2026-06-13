@@ -168,11 +168,20 @@ void tsfi_distributed_coil_process(
         // d(Ez)/dt = (1/eps) * ((1/r) * d(r * Hphi)/dr - sigma * Ez)
         for (int r = 1; r < GRID_R - 1; r++) {
             for (int z = 0; z < GRID_Z; z++) {
-                double r_val = r * dr;
-                double d_rHphi_dr = ((r_val + dr) * coil->Hphi[r + 1][z] - r_val * coil->Hphi[r][z]) / dr;
-                double cond_term = coil->sigma[r][z] * coil->Ez[r][z];
-                coil->Ez[r][z] += (dt / coil->eps[r][z]) * ((1.0 / r_val) * d_rHphi_dr - cond_term);
+                if (z == 0) {
+                    coil->Ez[r][z] = 0.0; // Perfect Electrical Conductor ground plane boundary
+                } else {
+                    double r_val = r * dr;
+                    double d_rHphi_dr = ((r_val + dr) * coil->Hphi[r + 1][z] - r_val * coil->Hphi[r][z]) / dr;
+                    double cond_term = coil->sigma[r][z] * coil->Ez[r][z];
+                    coil->Ez[r][z] += (dt / coil->eps[r][z]) * ((1.0 / r_val) * d_rHphi_dr - cond_term);
+                }
             }
+        }
+
+        // Enforce Er = 0 at z = 0 boundary
+        for (int r = 0; r < GRID_R; r++) {
+            coil->Er[r][0] = 0.0;
         }
 
         // 3. Lumped Tuning Capacitor Boundary Condition at top node
