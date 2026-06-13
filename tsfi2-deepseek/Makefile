@@ -190,8 +190,6 @@ bin/test_prophecy_synthesis: tests/test_prophecy_synthesis.c $(CORE_OBJS) $(OBJ_
 bin/test_yang_synthesis: tests/test_yang_synthesis.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bin/test_biotika_germanium_dai: tests/test_biotika_germanium_dai.c thunks/tsfi_phi_resolve.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_valve_synthesis: tests/test_valve_synthesis.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
