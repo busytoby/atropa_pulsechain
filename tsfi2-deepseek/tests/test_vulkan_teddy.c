@@ -175,10 +175,38 @@ static float smooth_noise_2d(float x, float y) {
            d * ux * uy;
 }
 
-static float fur_noise(int x, int y, int shell) {
-    // Domain warping: distort sampling coordinates using smooth 2D value noise
+static float smooth_noise_2d_deriv(float x, float y, float *dx_out, float *dy_out) {
+    int ix = (int)floorf(x);
+    int iy = (int)floorf(y);
+    float fx = x - (float)ix;
+    float fy = y - (float)iy;
+    
+    float ux = fx * fx * (3.0f - 2.0f * fx);
+    float uy = fy * fy * (3.0f - 2.0f * fy);
+    
+    float dux = 6.0f * fx * (1.0f - fx);
+    float duy = 6.0f * fy * (1.0f - fy);
+    
+    float a = hash_noise_2d(ix,     iy);
+    float b = hash_noise_2d(ix + 1, iy);
+    float c = hash_noise_2d(ix,     iy + 1);
+    float d = hash_noise_2d(ix + 1, iy + 1);
+    
+    float val = a * (1.0f - ux) * (1.0f - uy) +
+                b * ux * (1.0f - uy) +
+                c * (1.0f - ux) * uy +
+                d * ux * uy;
+                
+    *dx_out = dux * ((b - a) * (1.0f - uy) + (d - c) * uy);
+    *dy_out = duy * ((c - a) * (1.0f - ux) + (d - b) * ux);
+    
+    return val;
+}
+
+static float fur_noise(int x, int y, int shell, float *w_dx, float *w_dy) {
+    // Domain warping: distort sampling coordinates using smooth 2D value noise with analytical derivatives
     float scale = 0.08f;
-    float wx = smooth_noise_2d((float)x * scale, (float)y * scale);
+    float wx = smooth_noise_2d_deriv((float)x * scale, (float)y * scale, w_dx, w_dy);
     float wy = smooth_noise_2d((float)x * scale + 13.7f, (float)y * scale + 27.3f);
     
     float warp_strength = 2.0f + sickness_intensity * 12.0f;
@@ -530,7 +558,8 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                 for (int shell = num_shells - 1; shell >= 0; shell--) {
                     float shell_offset = ((float)shell / num_shells) * fur_length;
                     if (d_blend < shell_offset) {
-                        float noise_val = fur_noise(x, y, shell);
+                        float w_dx = 0.0f, w_dy = 0.0f;
+                        float noise_val = fur_noise(x, y, shell, &w_dx, &w_dy);
                         float threshold = (float)shell / num_shells;
 
                         if (noise_val > threshold || shell == 0) {
@@ -556,6 +585,13 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                             float nxy_scale = sqrtf(1.0f - nz*nz);
                             nx *= nxy_scale;
                             ny *= nxy_scale;
+
+                            // Perturb normal analytically using value noise derivatives
+                            float bump_strength = 0.15f;
+                            nx += w_dx * bump_strength;
+                            ny += w_dy * bump_strength;
+                            float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
+                            if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
 
                             // Determine closest sphere color
                             int closest_idx = 0;
