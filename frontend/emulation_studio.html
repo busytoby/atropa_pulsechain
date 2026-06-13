@@ -669,8 +669,8 @@
                 const rInner = w * 0.38;
                 const rOuter = w * 0.42;
                 aCtx.beginPath();
-                aCtx.moveTo(w / 2 + rInner * Math.cos(tickAngle), h - 5 + rInner * Math.sin(tickAngle));
-                aCtx.lineTo(w / 2 + rOuter * Math.cos(tickAngle), h - 5 + rOuter * Math.sin(tickAngle));
+                aCtx.moveTo(w / 2 + rInner * taylor_cos(tickAngle), h - 5 + rInner * taylor_sin(tickAngle));
+                aCtx.lineTo(w / 2 + rOuter * taylor_cos(tickAngle), h - 5 + rOuter * taylor_sin(tickAngle));
                 aCtx.stroke();
             }
 
@@ -691,7 +691,7 @@
             aCtx.beginPath();
             aCtx.moveTo(w / 2, h - 5);
             const rNeedle = w * 0.38;
-            aCtx.lineTo(w / 2 + rNeedle * Math.cos(angle), h - 5 + rNeedle * Math.sin(angle));
+            aCtx.lineTo(w / 2 + rNeedle * taylor_cos(angle), h - 5 + rNeedle * taylor_sin(angle));
             aCtx.stroke();
             aCtx.shadowBlur = 0;
 
@@ -701,6 +701,34 @@
             aCtx.fill();
 
             document.getElementById("ammeterValDisplay").innerText = `Temp: ${ammeter_T.toFixed(1)} K (${(deflectionNormalized * 100).toFixed(0)}%)`;
+        }
+
+        function taylor_sin(x) {
+            let z = x % (Math.PI * 2);
+            if (z > Math.PI) z -= Math.PI * 2;
+            if (z < -Math.PI) z += Math.PI * 2;
+
+            let val = 0.0;
+            let term = z;
+            for (let n = 0; n < 8; n++) {
+                val += term;
+                term *= - (z * z) / ((2 * n + 2) * (2 * n + 3));
+            }
+            return val;
+        }
+
+        function taylor_cos(x) {
+            let z = x % (Math.PI * 2);
+            if (z > Math.PI) z -= Math.PI * 2;
+            if (z < -Math.PI) z += Math.PI * 2;
+
+            let val = 0.0;
+            let term = 1.0;
+            for (let n = 0; n < 8; n++) {
+                val += term;
+                term *= - (z * z) / ((2 * n + 1) * (2 * n + 2));
+            }
+            return val;
         }
 
         function bessel_j0(x) {
@@ -733,7 +761,7 @@
             const ammeter_damping = 1.0 / (1.0 + needle_deflection * 1.5);
 
             const phase = (frameCount * 0.12 * breathing_freq) % (Math.PI * 2);
-            const parasitic_leak = 0.015 * Math.cos(frameCount * 0.24 * breathing_freq);
+            const parasitic_leak = 0.015 * taylor_cos(frameCount * 0.24 * breathing_freq);
             const breathe = (0.05 * bessel_j0(phase) + parasitic_leak) * ammeter_damping;
 
             let twitch = 0.0;
