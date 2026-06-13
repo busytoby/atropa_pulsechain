@@ -59,6 +59,8 @@ typedef struct {
 static float fur_length = 0.08f;
 static float scale_val = 1.00f;
 static float light_angle_deg = 135.0f;
+static float breathing_freq = 1.0f;
+static float twitch_intensity = 0.5f;
 
 static int mouse_x = 0;
 static int mouse_y = 0;
@@ -222,27 +224,35 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     float cos_t = cosf(theta);
     float sin_t = sinf(theta);
 
+    // Compute dynamic Bessel breathing and Biotika twitch scale factors (synthesize to the beat)
+    float breathe = 0.05f * sinf((float)frame * 0.12f * breathing_freq);
+    float twitch = 0.0f;
+    if ((frame % 60) < 6) {
+        twitch = ((float)(rand() % 100) / 100.0f) * 0.03f * twitch_intensity;
+    }
+    float active_scale = scale_val + breathe + twitch;
+
     SphereGeometry body[15] = {
         // Furred Features (Indices 0 - 7)
-        { 0.0f + pos_x,  -0.12f, 0.0f, 0.35f * scale_val }, // 0: Torso
-        { 0.0f + pos_x,   0.32f, 0.0f, 0.24f * scale_val }, // 1: Head
-        { -0.18f * scale_val + pos_x, 0.52f * scale_val, 0.0f, 0.09f * scale_val }, // 2: Left Ear
-        {  0.18f * scale_val + pos_x, 0.52f * scale_val, 0.0f, 0.09f * scale_val }, // 3: Right Ear
-        { -0.25f * scale_val + pos_x, -0.05f * scale_val, 0.10f * scale_val, 0.08f * scale_val }, // 4: Left Arm
-        {  0.25f * scale_val + pos_x, -0.05f * scale_val, 0.10f * scale_val, 0.08f * scale_val }, // 5: Right Arm
-        { -0.18f * scale_val + pos_x, -0.32f * scale_val, 0.12f * scale_val, 0.10f * scale_val }, // 6: Left Leg
-        {  0.18f * scale_val + pos_x, -0.32f * scale_val, 0.12f * scale_val, 0.10f * scale_val }, // 7: Right Leg
+        { 0.0f + pos_x,  -0.12f, 0.0f, 0.35f * active_scale }, // 0: Torso
+        { 0.0f + pos_x,   0.32f, 0.0f, 0.24f * active_scale }, // 1: Head
+        { -0.18f * active_scale + pos_x, 0.52f * active_scale, 0.0f, 0.09f * active_scale }, // 2: Left Ear
+        {  0.18f * active_scale + pos_x, 0.52f * active_scale, 0.0f, 0.09f * active_scale }, // 3: Right Ear
+        { -0.25f * active_scale + pos_x, -0.05f * active_scale, 0.10f * active_scale, 0.08f * active_scale }, // 4: Left Arm
+        {  0.25f * active_scale + pos_x, -0.05f * active_scale, 0.10f * active_scale, 0.08f * active_scale }, // 5: Right Arm
+        { -0.18f * active_scale + pos_x, -0.32f * active_scale, 0.12f * active_scale, 0.10f * active_scale }, // 6: Left Leg
+        {  0.18f * active_scale + pos_x, -0.32f * active_scale, 0.12f * active_scale, 0.10f * active_scale }, // 7: Right Leg
 
         // Smooth Features (Indices 8 - 11)
-        { 0.0f + pos_x,   0.23f, 0.17f * scale_val, 0.08f * scale_val }, // 8: Snout
-        { 0.0f + pos_x,   0.25f, 0.24f * scale_val, 0.025f * scale_val }, // 9: Nose
-        { -0.08f * scale_val + pos_x, 0.34f, 0.20f * scale_val, 0.022f * scale_val }, // 10: Left Eye
-        {  0.08f * scale_val + pos_x, 0.34f, 0.20f * scale_val, 0.022f * scale_val }, // 11: Right Eye
+        { 0.0f + pos_x,   0.23f, 0.17f * active_scale, 0.08f * active_scale }, // 8: Snout
+        { 0.0f + pos_x,   0.25f, 0.24f * active_scale, 0.025f * active_scale }, // 9: Nose
+        { -0.08f * active_scale + pos_x, 0.34f, 0.20f * active_scale, 0.022f * active_scale }, // 10: Left Eye
+        {  0.08f * active_scale + pos_x, 0.34f, 0.20f * active_scale, 0.022f * active_scale }, // 11: Right Eye
 
         // Red Bow Tie (Indices 12 - 14)
-        { 0.0f + pos_x, 0.10f, 0.18f * scale_val, 0.035f * scale_val }, // 12: Knot
-        { -0.05f * scale_val + pos_x, 0.10f, 0.17f * scale_val, 0.045f * scale_val }, // 13: Left Wing
-        {  0.05f * scale_val + pos_x, 0.10f, 0.17f * scale_val, 0.045f * scale_val }  // 14: Right Wing
+        { 0.0f + pos_x, 0.10f, 0.18f * active_scale, 0.035f * active_scale }, // 12: Knot
+        { -0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale }, // 13: Left Wing
+        {  0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale }  // 14: Right Wing
     };
 
     // Apply rotation
@@ -856,6 +866,8 @@ static void reload_genome() {
             fur_length = (float)dna.base_fur_length / 1000.0f;
             scale_val = (float)dna.base_scale / 100.0f;
             light_angle_deg = (float)dna.light_angle_deg / 255.0f * 360.0f;
+            breathing_freq = (float)dna.breathing_freq / 128.0f;
+            twitch_intensity = (float)dna.twitch_intensity / 255.0f;
         }
         fclose(df);
     }
