@@ -488,23 +488,55 @@
             const h = vCanvas.height = vCanvas.offsetHeight;
             vCtx.clearRect(0, 0, w, h);
 
-            // Vector matrix lines
-            vCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+            // Vector matrix lines - color shifts as ammeter heats up
+            const tempDiff = ammeter_T - 293.15;
+            const distortionIntensity = tempDiff * 0.04; // scale distortion based on ammeter thermal state
+            const greenGlow = Math.min(255, Math.max(0, 240 - Math.floor(tempDiff * 1.5)));
+            const redGlow = Math.min(255, Math.floor(tempDiff * 2.2));
+            vCtx.strokeStyle = `rgba(${redGlow}, ${greenGlow}, 255, 0.45)`;
             vCtx.lineWidth = 1.5;
 
-            // Draw pseudo 3D wireframe mesh grid
+            // Draw pseudo 3D wireframe mesh grid (distorted by ammeter heat)
             const cols = 20, rows = 12;
             const stepX = w / cols;
             const stepY = h / rows;
 
             vCtx.beginPath();
             for (let i = 0; i <= cols; i++) {
-                vCtx.moveTo(i * stepX, 0);
-                vCtx.lineTo(i * stepX + (i - cols/2) * (playerZ / 100), h);
+                const startX = i * stepX;
+                const endX = i * stepX + (i - cols/2) * (playerZ / 100);
+                
+                vCtx.moveTo(startX, 0);
+                const segments = 12;
+                for (let k = 1; k <= segments; k++) {
+                    const ratio = k / segments;
+                    const py = ratio * h;
+                    let px = startX + (endX - startX) * ratio;
+                    
+                    // Ripple coordinates using Bessel J0 via Taylor Series
+                    const distToCenter = Math.abs(px - w/2);
+                    const phase = (distToCenter / 45 - frameCount * 0.08) % (Math.PI * 2);
+                    const ripple = bessel_j0(phase) * distortionIntensity;
+                    px += ripple * 12;
+                    
+                    vCtx.lineTo(px, py);
+                }
             }
             for (let j = 0; j <= rows; j++) {
-                vCtx.moveTo(0, j * stepY);
-                vCtx.lineTo(w, j * stepY);
+                const py = j * stepY;
+                vCtx.moveTo(0, py);
+                const segments = 16;
+                for (let k = 1; k <= segments; k++) {
+                    const ratio = k / segments;
+                    let px = ratio * w;
+                    
+                    const distToCenter = Math.abs(px - w/2);
+                    const phase = (distToCenter / 45 - frameCount * 0.08) % (Math.PI * 2);
+                    const ripple = bessel_j0(phase) * distortionIntensity;
+                    const distortedY = py + ripple * 6;
+                    
+                    vCtx.lineTo(px, distortedY);
+                }
             }
             vCtx.stroke();
 
@@ -669,7 +701,9 @@
             const scale_val = genome.scale / 100.0;
             const breathing_freq = genome.breathing_freq / 128.0;
 
-            const current_sq = (breathing_freq * scale_val) * (breathing_freq * scale_val);
+            // Dragon's Lair score parasitizes the current loop (heats the coil via voltage leakage)
+            const scoreLeak = (score / 18000.0) * 0.4;
+            const current_sq = ((breathing_freq + scoreLeak) * scale_val) * ((breathing_freq + scoreLeak) * scale_val);
             ammeter_T += (current_sq * 10.0 - 0.05 * (ammeter_T - 293.15)) * 0.05;
 
             const needle_deflection = 0.005 * (ammeter_T - 293.15);
@@ -755,6 +789,9 @@
 
             // Draw parasitic ammeter
             drawAmmeter(needle_deflection);
+
+            // Redraw grid dynamically to reflect ammeter-dependent coordinate distortion
+            drawGrid();
         }
 
         function triggerBreeding() {
