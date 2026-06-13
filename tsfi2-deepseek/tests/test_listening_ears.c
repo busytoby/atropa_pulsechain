@@ -618,6 +618,25 @@ int main() {
     free(I_sig);
     free(Q_sig);
 
+    // Calculate weights based on peak correlation quality (SNR / Peak-to-Mean Ratio)
+    double *weights = (double*)malloc(NUM_STATIONS * sizeof(double));
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        weights[i] = 1.0;
+    }
+    for (int i = 1; i < NUM_STATIONS; i++) {
+        double max_val = 0.0;
+        double sum_val = 0.0;
+        for (int lag = -max_lag; lag <= max_lag; lag++) {
+            double v = R_mag[i][lag + max_lag];
+            sum_val += v;
+            if (v > max_val) {
+                max_val = v;
+            }
+        }
+        double mean_val = sum_val / (2.0 * max_lag + 1.0);
+        weights[i] = (mean_val > 0.0) ? (max_val / mean_val) : 1.0;
+    }
+
     // Coarse grid search: -100 km to 100 km with 2 km steps
     double best_x = 0.0, best_y = 0.0;
     double max_cost = -1.0;
@@ -634,7 +653,7 @@ int main() {
                 double model_tdoa = delayi - delay0;
                 int lag = (int)round(model_tdoa * SAMPLING_RATE);
                 if (lag >= -max_lag && lag <= max_lag) {
-                    cost += R_mag[i][lag + max_lag];
+                    cost += weights[i] * R_mag[i][lag + max_lag];
                 }
             }
 
@@ -663,7 +682,7 @@ int main() {
                 double model_tdoa = delayi - delay0;
                 int lag = (int)round(model_tdoa * SAMPLING_RATE);
                 if (lag >= -max_lag && lag <= max_lag) {
-                    cost += R_mag[i][lag + max_lag];
+                    cost += weights[i] * R_mag[i][lag + max_lag];
                 }
             }
 
@@ -854,7 +873,7 @@ int main() {
                     double model_tdoa = delayi - delay0;
                     int lag = (int)round(model_tdoa * SAMPLING_RATE);
                     if (lag >= -max_lag && lag <= max_lag) {
-                        cost += R_mag[i][lag + max_lag];
+                        cost += weights[i] * R_mag[i][lag + max_lag];
                     }
                 }
             }
@@ -884,7 +903,7 @@ int main() {
                     double model_tdoa = delayi - delay0;
                     int lag = (int)round(model_tdoa * SAMPLING_RATE);
                     if (lag >= -max_lag && lag <= max_lag) {
-                        cost += R_mag[i][lag + max_lag];
+                        cost += weights[i] * R_mag[i][lag + max_lag];
                     }
                 }
             }
@@ -918,6 +937,7 @@ int main() {
     }
     free(R_mag);
     free(estimated_tdoa);
+    free(weights);
 
     // Clean up
     for (int i = 0; i < NUM_STATIONS; i++) {
