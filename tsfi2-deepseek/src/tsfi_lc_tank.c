@@ -156,11 +156,24 @@ void tsfi_distributed_coil_process(
         }
 
         // Update E-fields incorporating conductive boundaries (sigma)
+        // Adjust copper conductivity dynamically based on skin effect at current frequency:
+        // sigma_skin = sigma_dc * (skin_depth / wire_radius) where skin_depth = sqrt(2 / (omega * mu * sigma_dc))
+        double omega = 2.0 * M_PI * fmax(current_freq_hz, 1000.0);
+        double skin_depth = sqrt(2.0 / (omega * mu0 * 5.96e7));
+        double wire_radius = (coil->dr * 0.4); // approximate wire radius inside cell
+        double skin_ratio = fmin(1.0, skin_depth / wire_radius);
+        double dynamic_sigma_copper = 5.96e7 * skin_ratio;
+
         // d(Er)/dt = (1/eps) * (-d(Hphi)/dz - sigma * Er)
         for (int r = 0; r < GRID_R; r++) {
             for (int z = 1; z < GRID_Z - 1; z++) {
                 double dHphi_dz = (coil->Hphi[r][z] - coil->Hphi[r][z - 1]) / dz;
-                double cond_term = coil->sigma[r][z] * coil->Er[r][z];
+                double sig_val = coil->sigma[r][z];
+                // Apply skin-effect scaling on copper winding cells
+                if (sig_val > 1e6) {
+                    sig_val = dynamic_sigma_copper;
+                }
+                double cond_term = sig_val * coil->Er[r][z];
                 coil->Er[r][z] += (dt / coil->eps[r][z]) * (-dHphi_dz - cond_term);
             }
         }
@@ -173,7 +186,12 @@ void tsfi_distributed_coil_process(
                 } else {
                     double r_val = r * dr;
                     double d_rHphi_dr = ((r_val + dr) * coil->Hphi[r + 1][z] - r_val * coil->Hphi[r][z]) / dr;
-                    double cond_term = coil->sigma[r][z] * coil->Ez[r][z];
+                    double sig_val = coil->sigma[r][z];
+                    // Apply skin-effect scaling on copper winding cells
+                    if (sig_val > 1e6) {
+                        sig_val = dynamic_sigma_copper;
+                    }
+                    double cond_term = sig_val * coil->Ez[r][z];
                     coil->Ez[r][z] += (dt / coil->eps[r][z]) * ((1.0 / r_val) * d_rHphi_dr - cond_term);
                 }
             }
