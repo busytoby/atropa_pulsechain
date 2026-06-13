@@ -539,7 +539,7 @@
                     
                     // Ripple coordinates using Bessel J0 via Taylor Series
                     const distToCenter = Math.abs(px - w/2);
-                    const phase = (distToCenter / 45 - frameCount * 0.08) % (Math.PI * 2);
+                    const phase = taylor_sin(distToCenter / 45 - frameCount * 0.08) * 3.0;
                     const ripple = bessel_j0(phase) * distortionIntensity;
                     px += ripple * 12;
                     
@@ -555,7 +555,7 @@
                     let px = ratio * w;
                     
                     const distToCenter = Math.abs(px - w/2);
-                    const phase = (distToCenter / 45 - frameCount * 0.08) % (Math.PI * 2);
+                    const phase = taylor_sin(distToCenter / 45 - frameCount * 0.08) * 3.0;
                     const ripple = bessel_j0(phase) * distortionIntensity;
                     const distortedY = py + ripple * 6;
                     
@@ -782,7 +782,7 @@
             const tokenEl = document.getElementById("taylorTokenDisplay");
             if (tokenEl) tokenEl.innerText = `${taylorTokensMinted.toFixed(4)} TLR🕯️`;
 
-            const phase = (frameCount * 0.12 * breathing_freq) % (Math.PI * 2);
+            const phase = taylor_sin(frameCount * 0.06 * breathing_freq) * 3.0;
             const parasitic_leak = 0.015 * taylor_cos(frameCount * 0.24 * breathing_freq);
             const breathe = (0.05 * bessel_j0(phase) + parasitic_leak) * ammeter_damping;
 
