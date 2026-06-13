@@ -28,6 +28,12 @@ void tsfi_distributed_coil_init(
     coil->v_tuning_node = 0.0;
     coil->i_tuning_loop = 0.0;
 
+    // Initialize nested physical components
+    tsfi_zener_init(&coil->zener_clamp, 5.6, 0.003, 96000.0);
+    tsfi_tunnel_latch_init(&coil->tunnel_diode);
+    coil->w0tkx_state_i_l = 0.0;
+    coil->w0tkx_state_v_c = 0.0;
+
     double eps0 = 8.8541878128e-12;
 
     // Initialize 3D field tensors to zero
@@ -145,6 +151,11 @@ void tsfi_distributed_coil_process(
     for (size_t step = 0; step < count; step++) {
         double v_in = (double)input_rf[step];
 
+        // Zener Clamp at input excitation node
+        double z_noise = 0.0;
+        double clamped_v = tsfi_zener_tick(&coil->zener_clamp, v_in, 1000.0, &z_noise);
+        v_in = clamped_v + z_noise;
+
         // 1. Inject input voltage at bottom center of the coil winding
         int source_x = GRID_X / 2;
         int source_y = GRID_Y / 2 - (GRID_Y / 4); // slightly off-center on the winding radius
@@ -172,6 +183,19 @@ void tsfi_distributed_coil_process(
                 }
             }
         }
+
+        // W0TKX Class C Transistor Final conductivity modulation at mid-tap
+        int mid_x = GRID_X / 2;
+        int mid_y = GRID_Y / 2;
+        int mid_z = GRID_Z / 2;
+        float w0tkx_drive = (float)(coil->Ez[mid_x][mid_y][mid_z] * dz);
+        float w0tkx_i_coll = 0.0f;
+        if (w0tkx_drive > 0.6f) {
+            w0tkx_i_coll = (w0tkx_drive - 0.6f) * 0.2f;
+            if (w0tkx_i_coll > 0.5f) w0tkx_i_coll = 0.5f;
+        }
+        double base_sigma_mid = coil->sigma[mid_x][mid_y][mid_z];
+        coil->sigma[mid_x][mid_y][mid_z] += (double)(w0tkx_i_coll * 1.0e6f);
 
         // Adjust copper conductivity dynamically based on skin effect
         double omega = 2.0 * M_PI * fmax(current_freq_hz, 1000.0);
@@ -221,9 +245,20 @@ void tsfi_distributed_coil_process(
         if (load_z >= GRID_Z) load_z = GRID_Z - 2;
 
         coil->i_tuning_loop += (coil->Ez[load_x][load_y][load_z] * dz - coil->v_tuning_node) * dt / (mu0 * dx);
-        coil->v_tuning_node += (coil->i_tuning_loop / coil->C_tune) * dt;
+
+        // Solve W3UZN Tunnel Diode series voltage drop (KVL)
+        // Convert current from A to mA as trigger for latch step
+        float i_loop_ma = (float)(coil->i_tuning_loop * 1e3);
+        tsfi_tunnel_latch_step(&coil->tunnel_diode, i_loop_ma - coil->tunnel_diode.i_bias);
+        double v_tunnel = (double)coil->tunnel_diode.v_phys;
+
+        // Update loop voltage including series tunnel diode drop
+        coil->v_tuning_node += ((coil->i_tuning_loop) / coil->C_tune) * dt - v_tunnel * dt;
 
         coil->Ez[load_x][load_y][load_z] = coil->v_tuning_node / dz;
         output_grid[step] = (float)coil->v_tuning_node;
+
+        // Restore mid-tap conductivity
+        coil->sigma[mid_x][mid_y][mid_z] = base_sigma_mid;
     }
 }

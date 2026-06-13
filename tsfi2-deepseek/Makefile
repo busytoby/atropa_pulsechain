@@ -62,6 +62,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_studio_core.o $(OBJ_DIR)/tsfi_wavefront_core.o \
             $(OBJ_DIR)/tsfi_lc_tank.o \
             $(OBJ_DIR)/tsfi_ammeter.o \
+            $(OBJ_DIR)/tsfi_zener.o \
             $(OBJ_DIR)/drm-lease-v1-protocol.o
 
 # --- Plugin Objects ---
@@ -193,6 +194,11 @@ bin/test_yang_synthesis: tests/test_yang_synthesis.c $(CORE_OBJS) $(OBJ_DIR)/vul
 
 
 bin/test_valve_synthesis: tests/test_valve_synthesis.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_seventy_three_circuits: tests/test_seventy_three_circuits.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+bin/test_zener_simulation: tests/test_zener_simulation.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_yang_audion_bjt_quality: tests/test_yang_audion_bjt_quality.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)

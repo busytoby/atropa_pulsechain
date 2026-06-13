@@ -60,8 +60,9 @@ def tokenize_query(query_str):
     }
 
 # --- OpenCV Visual Validator ---
-def validate_bear_image(image_path, targets):
-    print(f"[OpenCV] Loading image for visual validation: {image_path}")
+def validate_bear_image(image_path, targets, print_logs=True):
+    if print_logs:
+        print(f"[OpenCV] Loading image for visual validation: {image_path}")
     if not os.path.exists(image_path):
         print(f"[Error] Image file not found at {image_path}")
         return False
@@ -72,6 +73,10 @@ def validate_bear_image(image_path, targets):
         return False
         
     h, w, _ = img.shape
+    if w == 1280 and h == 720:
+        # Crop to the teddy bear viewport (left 800x720) to exclude UI panel sidebar
+        img = img[:, :800]
+        h, w, _ = img.shape
     
     # 1. Fur Color Validation (Sample central region where bear is)
     center_roi = img[int(h*0.35):int(h*0.65), int(w*0.35):int(w*0.65)]
@@ -134,6 +139,7 @@ def validate_bear_image(image_path, targets):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     detected_eyes_rgb = []
+    detected_eyes_pos = []
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if 5 < area < 800: # Filter typical eye sizes
@@ -143,10 +149,18 @@ def validate_bear_image(image_path, targets):
             mean_val = cv2.mean(img, mask=cnt_mask)
             eye_rgb = (int(mean_val[2]), int(mean_val[1]), int(mean_val[0]))
             detected_eyes_rgb.append(eye_rgb)
+            # Find centroid
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+            else:
+                cx, cy = 0, 0
+            detected_eyes_pos.append((cx, cy))
             
     print(f"  -> Detected Glowing Eye Contours: {len(detected_eyes_rgb)}")
     for idx, col in enumerate(detected_eyes_rgb):
-        print(f"     Eye {idx+1} RGB: {col}")
+        print(f"     Eye {idx+1} RGB: {col} at Pos: {detected_eyes_pos[idx]}")
         
     # Check if we matched color using HSV range
     eye_match = False
@@ -195,6 +209,51 @@ def validate_bear_image(image_path, targets):
     symmetry_score = 1.0 - (np.mean(diff) / 255.0)
     print(f"  -> Vertical Symmetry Score: {symmetry_score:.4f}")
     
+    # 4. Aspect Ratio & Coverage Checks
+    _, thresholded = cv2.threshold(gray, 35, 255, cv2.THRESH_BINARY)
+    bear_contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    bear_aspect_ratio = 1.0
+    bear_coverage_ratio = 0.0
+    if bear_contours:
+        largest_cnt = max(bear_contours, key=cv2.contourArea)
+        bx, by, bw, bh = cv2.boundingRect(largest_cnt)
+        if bh > 0:
+            bear_aspect_ratio = bw / bh
+        bear_coverage_ratio = cv2.contourArea(largest_cnt) / (h * w)
+        print(f"  -> Bear Aspect Ratio (W/H): {bear_aspect_ratio:.4f}")
+        print(f"  -> Bear Area Coverage: {bear_coverage_ratio:.4f}")
+    else:
+        print("  -> Bear Aspect Ratio (W/H): [UNDETECTED]")
+        print("  -> Bear Area Coverage: [UNDETECTED]")
+
+    # 5. Sharpness Check (Laplacian Variance)
+    sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+    print(f"  -> Surface Detail Sharpness (Laplacian Var): {sharpness:.4f}")
+
+    # 6. Global Contrast (Standard Deviation)
+    contrast_score = np.std(gray)
+    print(f"  -> Global Brightness Contrast (StdDev): {contrast_score:.4f}")
+
+    # 7. Color Saturation Channel
+    saturation_score = np.mean(hsv[:, :, 1])
+    print(f"  -> Global Color Saturation (Average HSV S): {saturation_score:.4f}")
+
+    # 8. Eye Alignment Check
+    eye_alignment_ok = True
+    if len(detected_eyes_pos) == 2:
+        eye1, eye2 = detected_eyes_pos[0], detected_eyes_pos[1]
+        vert_diff = abs(eye1[1] - eye2[1]) / float(h)
+        eye_midpoint_x = (eye1[0] + eye2[0]) / 2.0
+        center_dev = abs(eye_midpoint_x - (w / 2.0)) / float(w)
+        print(f"  -> Eye Vertical Offset: {vert_diff:.4f} | Center Deviation: {center_dev:.4f}")
+        if vert_diff > 0.05:
+            print("  [FAIL] Eyes are not vertically aligned.")
+            eye_alignment_ok = False
+        if center_dev > 0.10:
+            print("  [FAIL] Eyes midpoint is significantly off-center.")
+            eye_alignment_ok = False
+
     # Decision Matrix
     passed = True
     if fur_dist > 150:
@@ -206,11 +265,46 @@ def validate_bear_image(image_path, targets):
     if targets["sickness"] > 0.5 and symmetry_score > 0.95:
         print("  [FAIL] Sickness mutation requested, but image is overly symmetric.")
         passed = False
+    if bear_aspect_ratio < 0.5 or bear_aspect_ratio > 1.5:
+        print(f"  [FAIL] Bear aspect ratio {bear_aspect_ratio:.2f} out of bound [0.5, 1.5]")
+        passed = False
+    if bear_coverage_ratio < 0.05 or bear_coverage_ratio > 0.85:
+        print(f"  [FAIL] Bear coverage ratio {bear_coverage_ratio:.2f} out of bound [0.05, 0.85]")
+        passed = False
+    if sharpness < 10.0:
+        print(f"  [FAIL] Bear detail sharpness {sharpness:.2f} too low (min: 10.0)")
+        passed = False
+    if contrast_score < 12.0:
+        print(f"  [FAIL] Image contrast {contrast_score:.2f} too low (min: 12.0)")
+        passed = False
+    if targets["fur_rgb"] not in [(240, 240, 240), (15, 15, 15)] and saturation_score < 20.0:
+        print(f"  [FAIL] Image saturation {saturation_score:.2f} too low (min: 20.0)")
+        passed = False
+    if not eye_alignment_ok:
+        print("  [FAIL] Glowing eye alignment failed.")
+        passed = False
         
     if passed:
         print("=== [SUCCESS] OpenCV Validation Passed ===")
     else:
         print("=== [FAILED] OpenCV Validation Failed ===")
+        
+    import json
+    metrics = {
+        "fur_rgb": avg_rgb,
+        "fur_dist": float(fur_dist),
+        "eye_count": len(detected_eyes_rgb),
+        "eyes_rgb": detected_eyes_rgb[0] if detected_eyes_rgb else (0, 0, 0),
+        "eye_match": bool(eye_match),
+        "symmetry_score": float(symmetry_score),
+        "bear_aspect_ratio": float(bear_aspect_ratio),
+        "bear_coverage_ratio": float(bear_coverage_ratio),
+        "sharpness": float(sharpness),
+        "contrast": float(contrast_score),
+        "saturation": float(saturation_score),
+        "passed": bool(passed)
+    }
+    print(f"__METRICS_JSON__:{json.dumps(metrics)}")
         
     return passed
 

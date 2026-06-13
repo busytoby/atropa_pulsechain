@@ -2,6 +2,8 @@
 #define TSFI_LC_TANK_H
 
 #include <stddef.h>
+#include "tsfi_zener.h"
+#include "tsfi_tunnel_latch.h"
 
 // 3D Cartesian coordinate Yee grid sizes (X x Y x Z)
 #define GRID_X 16
@@ -31,6 +33,12 @@ typedef struct {
     double C_tune;              // Attached lumped tuning capacitor (F)
     double v_tuning_node;       // Voltage state of lumped capacitor loop
     double i_tuning_loop;       // Current state of lumped capacitor loop
+
+    // Nested non-linear physical component states
+    TsfiZener zener_clamp;
+    TsfiTunnelLatch tunnel_diode;
+    double w0tkx_state_i_l;
+    double w0tkx_state_v_c;
 } TsfiDistributedCoil;
 
 // Initialize the 3D Maxwell EM model setting copper conductor boundaries and lossy forms

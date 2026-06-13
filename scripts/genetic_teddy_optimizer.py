@@ -345,176 +345,73 @@ def run_optimization_loop(target_query, vlm_engine="moondream", generator_profil
         eval_output = eval_proc.stdout
         print(eval_output)
         
-        # Extract symmetry score for VLM feedback
+        # Extract metrics JSON from evaluator output
         import re
-        sym_match = re.search(r'Vertical Symmetry Score:\s*([\d\.]+)', eval_output)
-        symmetry_score = float(sym_match.group(1)) if sym_match else 0.98
-        
-        # D. Run Visual LLM/VLM feedback
-        print(f"[Optimizer] Querying {vlm_engine} for shape and aesthetic analysis...")
-        import base64
         import json
-        import urllib.request
+        metrics = {}
+        json_match = re.search(r'__METRICS_JSON__:(.*)', eval_output)
+        if json_match:
+            try:
+                metrics = json.loads(json_match.group(1))
+            except Exception as je:
+                print(f"[Optimizer] Failed to parse JSON metrics: {je}")
         
-        deepseek_feedback = ""
-        vlm_prompt = (
-            f"Analyze this teddy bear image shape. The user wants '{target_query}'. "
-            f"Evaluate the lighting angle (currently at {genes['light_angle']}/255 index), "
-            f"fur shagginess (fur_length: {genes['fur_length']}), and render scale ({genes['scale']}). "
-            "Suggest adjustments to lighting, scale, and fur shagginess."
-        )
-        
-        try:
-            with open(png_out, "rb") as image_file:
-                b64_data = base64.b64encode(image_file.read()).decode('utf-8')
+        if not metrics:
+            print("[Optimizer] Error: No metrics parsed. Skipping feedback step.")
+            continue
             
-            if vlm_engine in ["moondream", "qwen2-vl", "llama3.2-vision"]:
-                # Local Ollama endpoint
-                model_map = {
-                    "moondream": "moondream",
-                    "qwen2-vl": "qwen2-vl",
-                    "llama3.2-vision": "llama3.2-vision"
-                }
-                payload = {
-                    "model": model_map[vlm_engine],
-                    "prompt": vlm_prompt,
-                    "images": [b64_data],
-                    "stream": False
-                }
-                req = urllib.request.Request(
-                    "http://127.0.0.1:11435/api/generate",
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={"Content-Type": "application/json"},
-                    method="POST"
-                )
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    res_data = response.read().decode('utf-8')
-                    res_json = json.loads(res_data)
-                    deepseek_feedback = res_json.get("response", "")
-            
-            elif vlm_engine == "claude":
-                # Anthropic API
-                api_key = os.environ.get("ANTHROPIC_API_KEY", "mock")
-                if api_key == "mock":
-                    raise ValueError("ANTHROPIC_API_KEY not set")
-                payload = {
-                    "model": "claude-3-5-sonnet-20241022",
-                    "max_tokens": 1024,
-                    "messages": [{
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": vlm_prompt},
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "image/png",
-                                    "data": b64_data
-                                }
-                            }
-                        ]
-                    }]
-                }
-                req = urllib.request.Request(
-                    "https://api.anthropic.com/v1/messages",
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": api_key,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    method="POST"
-                )
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    res_data = response.read().decode('utf-8')
-                    res_json = json.loads(res_data)
-                    deepseek_feedback = res_json.get("content", [{}])[0].get("text", "")
-            
-            elif vlm_engine == "gemini":
-                # Google Gemini API
-                api_key = os.environ.get("GEMINI_API_KEY", "mock")
-                if api_key == "mock":
-                    raise ValueError("GEMINI_API_KEY not set")
-                payload = {
-                    "contents": [{
-                        "parts": [
-                            {"text": vlm_prompt},
-                            {
-                                "inlineData": {
-                                    "mimeType": "image/png",
-                                    "data": b64_data
-                                }
-                            }
-                        ]
-                    }]
-                }
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={"Content-Type": "application/json"},
-                    method="POST"
-                )
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    res_data = response.read().decode('utf-8')
-                    res_json = json.loads(res_data)
-                    deepseek_feedback = res_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            
-            else:
-                raise ValueError("Unknown VLM engine")
-                
-        except Exception as e:
-            # Fallback to local simulated response based on visual validation results
-            symmetry_flag = "highly symmetric" if symmetry_score > 0.95 else "asymmetric and mutated"
-            color_flag = "warm golden" if target_fur[0] == 180 else "standard brown"
-            deepseek_feedback = (
-                f"[Simulated {vlm_engine.upper()} Response]: The teddy bear shape is well-formed, but the lighting angle ({genes['light_angle']}) "
-                f"creates a flat look. The fur is {symmetry_flag} and appears {color_flag}. "
-                "Recommend shifting light_angle index by +15 for better highlights and decreasing scale to 95 to prevent clipping."
-            )
-        
-        print(f"\n=== {vlm_engine.upper()} Shape & Aesthetic Critique ===")
-        print(deepseek_feedback)
-        print("===========================================\n")
-
-        # Parse VLM feedback corrections
-        if "lighting" in deepseek_feedback.lower() or "light_angle" in deepseek_feedback.lower() or "angle" in deepseek_feedback.lower():
-            genes["light_angle"] = int(np.clip(genes["light_angle"] + 15, 0, 255))
-            print(f"[Feedback Loop - VLM] Adjusted Light Angle Gene: {genes['light_angle']}")
-            
-        if "scale" in deepseek_feedback.lower() or "clipping" in deepseek_feedback.lower() or "frustum" in deepseek_feedback.lower():
-            genes["scale"] = int(np.clip(genes["scale"] - 5, 50, 150))
-            print(f"[Feedback Loop - VLM] Adjusted Scale Gene: {genes['scale']}")
-            
-        # Check if we passed OpenCV validation
-        if "=== [SUCCESS] OpenCV Validation Passed ===" in eval_output:
+        # Check if we passed visual validation
+        if metrics.get("passed", False):
             print(f"[PASS] Bear successfully matched targets on iteration {i+1}!")
             break
+
+        # Apply proportional feedback loop corrections (AI Optimizer updates genes)
+        # 1. Fur color adjustment (Delta Correction)
+        det_fur = np.array(metrics["fur_rgb"])
+        fur_bias = det_fur - np.array([genes["fur_r"], genes["fur_g"], genes["fur_b"]])
+        target_adjustment = target_fur - fur_bias
+        genes["fur_r"] = int(np.clip(target_adjustment[0], 0, 255))
+        genes["fur_g"] = int(np.clip(target_adjustment[1], 0, 255))
+        genes["fur_b"] = int(np.clip(target_adjustment[2], 0, 255))
+        print(f"[Feedback Loop] Adjusting Fur Genes: RGB({genes['fur_r']},{genes['fur_g']},{genes['fur_b']})")
+        
+        # 2. Eye color adjustment
+        if not metrics.get("eye_match", False) or metrics.get("eye_count", 0) == 0:
+            genes["eye_r"] = int(np.clip(target_eyes[0] * 1.2, 0, 255))
+            genes["eye_g"] = int(np.clip(target_eyes[1] * 1.2, 0, 255))
+            genes["eye_b"] = int(np.clip(target_eyes[2] * 1.2, 0, 255))
+            print(f"[Feedback Loop] Boosting Eye Genes: RGB({genes['eye_r']},{genes['eye_g']},{genes['eye_b']})")
             
-        # E. Analyze validator outputs and apply delta corrections (AI Optimizer updates genes)
-        try:
-            # Parse detected Fur RGB
-            fur_match = re.search(r'Detected Fur RGB:\s*\((\d+),\s*(\d+),\s*(\d+)\)', eval_output)
-            if fur_match:
-                det_fur = np.array([int(fur_match.group(1)), int(fur_match.group(2)), int(fur_match.group(3))])
-                # Shift genes towards target color by correcting for synthesis bias (Delta Correction)
-                fur_bias = det_fur - np.array([genes["fur_r"], genes["fur_g"], genes["fur_b"]])
-                target_adjustment = target_fur - fur_bias
+        # 3. Sickness / mutation check (symmetry vs. spots)
+        if targets["sickness"] > 0.5:
+            # If symmetry remains high, boost sickness/mutation gene to generate more spots
+            if metrics.get("symmetry_score", 1.0) > 0.94:
+                genes["sickness"] = int(np.clip(genes["sickness"] + 15, 0, 100))
+                print(f"[Feedback Loop] Sickness/Mutation increased to: {genes['sickness']}%")
+        else:
+            genes["sickness"] = 0
+            
+        # 4. Scale check (coverage ratio target range: 0.25 - 0.45)
+        coverage = metrics.get("bear_coverage_ratio", 0.0)
+        if coverage > 0.0:
+            if coverage < 0.25:
+                genes["scale"] = int(np.clip(genes["scale"] + 10, 50, 150))
+                print(f"[Feedback Loop] Scaling up bear size. Scale: {genes['scale']}%")
+            elif coverage > 0.45:
+                genes["scale"] = int(np.clip(genes["scale"] - 10, 50, 150))
+                print(f"[Feedback Loop] Scaling down bear size. Scale: {genes['scale']}%")
                 
-                genes["fur_r"] = int(np.clip(target_adjustment[0], 0, 255))
-                genes["fur_g"] = int(np.clip(target_adjustment[1], 0, 255))
-                genes["fur_b"] = int(np.clip(target_adjustment[2], 0, 255))
-                print(f"[Feedback Loop - OpenCV] Adjusting Fur Genes: RGB({genes['fur_r']},{genes['fur_g']},{genes['fur_b']})")
-                
-            # Parse eye contours to boost eye color values if undetected
-            eye_match = re.search(r'Detected Glowing Eye Contours:\s*(\d+)', eval_output)
-            if eye_match and int(eye_match.group(1)) == 0:
-                genes["eye_r"] = int(np.clip(target_eyes[0] * 1.2, 0, 255))
-                genes["eye_g"] = int(np.clip(target_eyes[1] * 1.2, 0, 255))
-                genes["eye_b"] = int(np.clip(target_eyes[2] * 1.2, 0, 255))
-                print(f"[Feedback Loop - OpenCV] Boosting Eye Saturated Genes: RGB({genes['eye_r']},{genes['eye_g']},{genes['eye_b']})")
-        except Exception as ex:
-            print(f"[Optimizer] Failed to parse feedback details: {ex}")
+        # 5. Lighting angle check (boost contrast if image details are flat)
+        contrast = metrics.get("contrast", 0.0)
+        if contrast > 0.0 and contrast < 25.0:
+            genes["light_angle"] = int(np.clip(genes["light_angle"] + 25, 0, 255))
+            print(f"[Feedback Loop] Shifting light angle index to: {genes['light_angle']}")
+            
+        # 6. Fur length check (boost shagginess if sharpness is too low)
+        sharpness = metrics.get("sharpness", 0.0)
+        if sharpness > 0.0 and sharpness < 15.0:
+            genes["fur_length"] = int(np.clip(genes["fur_length"] + 15, 0, 255))
+            print(f"[Feedback Loop] Increasing fur shagginess. Length: {genes['fur_length']}")
             
     # Copy final best render to artifacts
     subprocess.run(["cp", base_dir + "assets/photorealistic_bear_final.png", "/home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/photorealistic_bear_final.png"])
