@@ -95,7 +95,55 @@ int main() {
         }
     }
 
-    // 4. Spatial Diversity Combining (Delay alignment & Summation)
+    // 4. TDOA Grid Search Localization of the Unknown Transmitter
+    printf("[LOCALIZATION] Scanning coordinate space to localize target...\n");
+    double best_x = 0.0;
+    double best_y = 0.0;
+    double max_energy = -1.0;
+
+    // Scan grid from -80 to +80 km in steps of 5 km
+    for (double gx = -80.0; gx <= 80.0; gx += 5.0) {
+        for (double gy = -80.0; gy <= 80.0; gy += 5.0) {
+            double energy = 0.0;
+            // Compute combined signal energy over a test window of samples to identify coherence peak
+            int num_test_samples = 2000;
+            for (int step = 2000; step < 2000 + num_test_samples; step++) {
+                double sum = 0.0;
+                double weight_sum = 0.0;
+                for (int i = 0; i < NUM_STATIONS; i++) {
+                    double dx = stations[i].x - gx;
+                    double dy = stations[i].y - gy;
+                    double distance_m = sqrt(dx * dx + dy * dy) * 1000.0;
+                    double delay_sec = distance_m / SPEED_OF_LIGHT;
+                    int delay_samples = (int)(delay_sec * SAMPLING_RATE);
+
+                    int read_idx = step + delay_samples;
+                    if (read_idx >= 0 && read_idx < TOTAL_SAMPLES) {
+                        double path_loss = 5000.0 / (distance_m + 1.0);
+                        double weight = path_loss * path_loss;
+                        sum += (double)stations[i].buffer[read_idx] * weight;
+                        weight_sum += weight;
+                    }
+                }
+                double val = (weight_sum > 0.0) ? (sum / weight_sum) : 0.0;
+                energy += val * val;
+            }
+            if (energy > max_energy) {
+                max_energy = energy;
+                best_x = gx;
+                best_y = gy;
+            }
+        }
+    }
+
+    printf("[LOCALIZATION] Estimated transmitter coordinate: (%.1f, %.1f) km\n", best_x, best_y);
+    printf("[LOCALIZATION] Real spy transmitter coordinate: (%.1f, %.1f) km\n", tx_x, tx_y);
+
+    double error_dist = sqrt((best_x - tx_x)*(best_x - tx_x) + (best_y - tx_y)*(best_y - tx_y));
+    printf("[LOCALIZATION] Localization radial error: %.2f km\n", error_dist);
+    assert(error_dist < 10.0);
+
+    // 5. Coherent Spatial Diversity Combining using the localized coordinate estimate
     float *combined_output = (float*)malloc(TOTAL_SAMPLES * sizeof(float));
     memset(combined_output, 0, TOTAL_SAMPLES * sizeof(float));
 
@@ -103,17 +151,16 @@ int main() {
         double sum = 0.0;
         double weight_sum = 0.0;
         for (int i = 0; i < NUM_STATIONS; i++) {
-            double dx = stations[i].x - tx_x;
-            double dy = stations[i].y - tx_y;
+            double dx = stations[i].x - best_x;
+            double dy = stations[i].y - best_y;
             double distance_m = sqrt(dx * dx + dy * dy) * 1000.0;
             double delay_sec = distance_m / SPEED_OF_LIGHT;
             int delay_samples = (int)(delay_sec * SAMPLING_RATE);
 
             int read_idx = step + delay_samples;
             if (read_idx >= 0 && read_idx < TOTAL_SAMPLES) {
-                // Maximum Ratio Combining weighting based on expected path strength
                 double path_loss = 5000.0 / (distance_m + 1.0);
-                double weight = path_loss * path_loss; 
+                double weight = path_loss * path_loss;
                 sum += stations[i].buffer[read_idx] * weight;
                 weight_sum += weight;
             }
