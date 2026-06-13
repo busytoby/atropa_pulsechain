@@ -80,6 +80,42 @@ void tsfi_distributed_coil_init(
             }
         }
     }
+
+    // 5. Perfectly Matched Layer (PML) Absorbing Boundaries at grid edges
+    // Quadratic absorption gradient to prevent boundary reflections
+    double pml_sigma_max = 5.0; // max conductivity at boundary wall
+    int pml_cells = 4;          // 4 cells depth PML layer
+    
+    // Radial PML boundary (outer radius)
+    for (int r = GRID_R - pml_cells; r < GRID_R; r++) {
+        double factor = (double)(r - (GRID_R - pml_cells)) / pml_cells;
+        double pml_val = pml_sigma_max * factor * factor;
+        for (int z = 0; z < GRID_Z; z++) {
+            if (pml_val > coil->sigma[r][z]) {
+                coil->sigma[r][z] = pml_val;
+            }
+        }
+    }
+
+    // Axial PML boundaries (bottom and top)
+    for (int z = 0; z < pml_cells; z++) {
+        double factor = (double)(pml_cells - z) / pml_cells;
+        double pml_val = pml_sigma_max * factor * factor;
+        for (int r = 0; r < GRID_R; r++) {
+            if (pml_val > coil->sigma[r][z]) {
+                coil->sigma[r][z] = pml_val;
+            }
+        }
+    }
+    for (int z = GRID_Z - pml_cells; z < GRID_Z; z++) {
+        double factor = (double)(z - (GRID_Z - pml_cells)) / pml_cells;
+        double pml_val = pml_sigma_max * factor * factor;
+        for (int r = 0; r < GRID_R; r++) {
+            if (pml_val > coil->sigma[r][z]) {
+                coil->sigma[r][z] = pml_val;
+            }
+        }
+    }
 }
 
 void tsfi_distributed_coil_process(
