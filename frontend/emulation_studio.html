@@ -802,12 +802,36 @@
             const cx = w / 2;
             const cy = h / 2 + 10;
 
+            // Draw Legs
+            bCtx.fillStyle = furColor;
+            bCtx.beginPath();
+            bCtx.ellipse(cx - 24 * s, cy + 76 * s, 14 * s, 20 * s, -0.1, 0, Math.PI * 2);
+            bCtx.ellipse(cx + 24 * s, cy + 76 * s, 14 * s, 20 * s, 0.1, 0, Math.PI * 2);
+            bCtx.fill();
+            bCtx.strokeStyle = "rgba(0,0,0,0.15)";
+            bCtx.stroke();
+
+            // Leg paw highlights
+            bCtx.fillStyle = `rgb(${Math.min(255, genome.fur_r + 30)}, ${Math.min(255, genome.fur_g + 20)}, ${Math.min(255, genome.fur_b + 15)})`;
+            bCtx.beginPath();
+            bCtx.arc(cx - 24 * s, cy + 80 * s, 6 * s, 0, Math.PI * 2);
+            bCtx.arc(cx + 24 * s, cy + 80 * s, 6 * s, 0, Math.PI * 2);
+            bCtx.fill();
+
             // Draw Body
             bCtx.fillStyle = furColor;
             bCtx.beginPath();
             bCtx.ellipse(cx, cy + 30, 45 * s, (55 + breathing) * s, 0, 0, Math.PI * 2);
             bCtx.fill();
             bCtx.strokeStyle = "rgba(0,0,0,0.15)";
+            bCtx.stroke();
+
+            // Draw Arms
+            bCtx.fillStyle = furColor;
+            bCtx.beginPath();
+            bCtx.ellipse(cx - 40 * s, cy + 34 * s, 12 * s, 22 * s, 0.4, 0, Math.PI * 2);
+            bCtx.ellipse(cx + 40 * s, cy + 34 * s, 12 * s, 22 * s, -0.4, 0, Math.PI * 2);
+            bCtx.fill();
             bCtx.stroke();
 
             // Belly Highlight Patch
@@ -915,7 +939,9 @@
             drawGrid();
         }
 
+        let breedingInterval = null;
         function runGeneticBreeder() {
+            if (breedingInterval) clearInterval(breedingInterval);
             const goal = document.getElementById("breedingGoal").value;
             logEvent(`Genetic Breeding Start: Optimizing 12-byte genome for goal: [${goal}]`);
 
@@ -947,41 +973,82 @@
                 let fit = 0.0;
 
                 if (goal === "golden") {
-                    // Target Golden Fur: R=200, G=150, B=80
-                    const distR = Math.abs(r - 200);
-                    const distG = Math.abs(g - 150);
-                    const distB = Math.abs(b - 80);
-                    fit += (1000.0 - (distR * 2 + distG * 2 + distB * 2));
+                    // Target Goldenrod/Golden Fur: R=218, G=165, B=32
+                    const distR = Math.abs(r - 218);
+                    const distG = Math.abs(g - 165);
+                    const distB = Math.abs(b - 32);
+                    fit += (1000.0 - (distR * 3 + distG * 3 + distB * 3));
                     
-                    // Target stable breathing frequency near 128
-                    const distFreq = Math.abs(bFreq - 128);
+                    // Target stable breathing frequency near 120
+                    const distFreq = Math.abs(bFreq - 120);
                     fit += (500.0 - distFreq * 4);
                 } else if (goal === "healthy") {
                     // Target minimal sickness and minimal twitching
-                    fit += (100.0 - sick) * 10;
-                    fit += (128.0 - twitch) * 5; 
-                    // Higher scale
-                    fit += scale * 3;
+                    fit += (100.0 - sick) * 20;
+                    fit += (128.0 - twitch) * 10; 
+                    // High scale (140)
+                    const distScale = Math.abs(scale - 140);
+                    fit += (500.0 - distScale * 5);
                 } else if (goal === "highfreq") {
-                    // Maximum breathing frequency
-                    fit += bFreq * 10;
-                    // High light angle
-                    fit += lAngle * 4;
+                    // Maximum breathing frequency (255)
+                    fit += bFreq * 15;
+                    // Low sickness
+                    fit += (100.0 - sick) * 5;
                 }
                 return fit;
             }
 
-            // Run for 50 generations
-            for (let gen = 0; gen < 50; gen++) {
+            let gen = 0;
+            const maxGen = 30;
+
+            breedingInterval = setInterval(() => {
                 // Calculate fitness
                 population.forEach(ind => ind.fitness = evaluateFitness(ind));
 
                 // Sort by fitness descending
                 population.sort((a, b) => b.fitness - a.fitness);
 
-                // Telemetry logging for key milestones
-                if (gen === 0 || gen === 24 || gen === 49) {
-                    logEvent(`Gen ${gen}: Best Fitness = ${population[0].fitness.toFixed(1)}`);
+                // Load best chromosome of current generation dynamically to show morphing
+                const winner = population[0].genes;
+                genome.fur_r = winner[0];
+                genome.fur_g = winner[1];
+                genome.fur_b = winner[2];
+                genome.eye_r = winner[3];
+                genome.eye_g = winner[4];
+                genome.eye_b = winner[5];
+                genome.sickness = winner[6];
+                genome.scale = winner[7];
+                genome.fur_length = winner[8];
+                genome.light_angle = winner[9];
+                genome.breathing_freq = winner[10];
+                genome.twitch_intensity = winner[11];
+
+                // Update sliders/visual display
+                document.getElementById("sldFurR").value = genome.fur_r;
+                document.getElementById("sldFurG").value = genome.fur_g;
+                document.getElementById("sldFurB").value = genome.fur_b;
+                document.getElementById("sldEyeG").value = genome.eye_g;
+                document.getElementById("sldSickness").value = genome.sickness;
+                document.getElementById("sldScale").value = genome.scale;
+                document.getElementById("sldFurLength").value = genome.fur_length;
+                document.getElementById("sldLightAngle").value = genome.light_angle;
+
+                updateBearGene('fur_r', genome.fur_r);
+                updateBearGene('fur_g', genome.fur_g);
+                updateBearGene('fur_b', genome.fur_b);
+                updateBearGene('eye_g', genome.eye_g);
+                updateBearGene('sickness', genome.sickness);
+                updateBearGene('scale', genome.scale);
+                updateBearGene('fur_length', genome.fur_length);
+                updateBearGene('light_angle', genome.light_angle);
+
+                logEvent(`Gen ${gen}: Best Fitness = ${population[0].fitness.toFixed(0)}`);
+
+                if (gen >= maxGen) {
+                    clearInterval(breedingInterval);
+                    breedingInterval = null;
+                    logEvent(`🧬 Breeding Success: Best phenotype converged! Optimal DNA Hex: ${document.getElementById("dnaHexDisplay").innerText}`);
+                    return;
                 }
 
                 // Selection (Keep top 15)
@@ -1016,43 +1083,8 @@
                 }
 
                 population = nextGen;
-            }
-
-            // Load winning chromosome
-            const winner = population[0].genes;
-            genome.fur_r = winner[0];
-            genome.fur_g = winner[1];
-            genome.fur_b = winner[2];
-            genome.eye_r = winner[3];
-            genome.eye_g = winner[4];
-            genome.eye_b = winner[5];
-            genome.sickness = winner[6];
-            genome.scale = winner[7];
-            genome.fur_length = winner[8];
-            genome.light_angle = winner[9];
-            genome.breathing_freq = winner[10];
-            genome.twitch_intensity = winner[11];
-
-            // Update sliders/visual display
-            document.getElementById("sldFurR").value = genome.fur_r;
-            document.getElementById("sldFurG").value = genome.fur_g;
-            document.getElementById("sldFurB").value = genome.fur_b;
-            document.getElementById("sldEyeG").value = genome.eye_g;
-            document.getElementById("sldSickness").value = genome.sickness;
-            document.getElementById("sldScale").value = genome.scale;
-            document.getElementById("sldFurLength").value = genome.fur_length;
-            document.getElementById("sldLightAngle").value = genome.light_angle;
-
-            updateBearGene('fur_r', genome.fur_r);
-            updateBearGene('fur_g', genome.fur_g);
-            updateBearGene('fur_b', genome.fur_b);
-            updateBearGene('eye_g', genome.eye_g);
-            updateBearGene('sickness', genome.sickness);
-            updateBearGene('scale', genome.scale);
-            updateBearGene('fur_length', genome.fur_length);
-            updateBearGene('light_angle', genome.light_angle);
-
-            logEvent(`🧬 Breeding Success: Best phenotype loaded! Optimal DNA Hex: ${document.getElementById("dnaHexDisplay").innerText}`);
+                gen++;
+            }, 60);
         }
 
         function triggerBreeding() {
