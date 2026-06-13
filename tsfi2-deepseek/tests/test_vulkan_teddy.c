@@ -848,21 +848,24 @@ typedef struct {
     uint8_t twitch_intensity;
 } TsfiTeddyDna;
 
-int main() {
-    printf("=== TSFi Photorealistic Teddy Bear Generator ===\n");
-    
-    // Load small 12-byte procedural bear DNA genome
+static void reload_genome() {
     FILE *df = fopen("assets/bear_genome.dna", "rb");
     if (df) {
         TsfiTeddyDna dna;
         if (fread(&dna, sizeof(TsfiTeddyDna), 1, df) == 1) {
-            printf("[DNA] Loaded 12-byte procedurally animation-ready bear genome.\n");
             fur_length = (float)dna.base_fur_length / 1000.0f;
             scale_val = (float)dna.base_scale / 100.0f;
             light_angle_deg = (float)dna.light_angle_deg / 255.0f * 360.0f;
         }
         fclose(df);
     }
+}
+
+int main() {
+    printf("=== TSFi Photorealistic Teddy Bear Generator ===\n");
+    
+    // Load small 12-byte procedural bear DNA genome
+    reload_genome();
 
     printf("[EVM] Retrieving symbolic parameters from local Dysnomia VM...\n");
 
@@ -976,6 +979,10 @@ int main() {
         wl_display_flush(display);
         if (poll(fds, 1, 0) > 0) {
             wl_display_dispatch(display);
+        }
+
+        if (frame % 30 == 0) {
+            reload_genome();
         }
 
         // Render viewport layout to offscreen AB4H canvas
