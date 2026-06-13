@@ -62,6 +62,7 @@ static float scale_val = 1.00f;
 static float light_angle_deg = 135.0f;
 static float breathing_freq = 1.0f;
 static float twitch_intensity = 0.5f;
+static float sickness_intensity = 0.5f;
 static float ammeter_T = 293.15f;
 static float voltmeter_V = 120.0f;
 static float dna_fur_r = 0.62f;
@@ -180,7 +181,7 @@ static float fur_noise(int x, int y, int shell) {
     float wx = smooth_noise_2d((float)x * scale, (float)y * scale);
     float wy = smooth_noise_2d((float)x * scale + 13.7f, (float)y * scale + 27.3f);
     
-    float warp_strength = 6.0f;
+    float warp_strength = 2.0f + sickness_intensity * 12.0f;
     int warped_x = x + (int)((wx - 0.5f) * warp_strength);
     int warped_y = y + (int)((wy - 0.5f) * warp_strength);
     
@@ -391,6 +392,19 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         { -0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale },
         {  0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale }
     };
+
+    // Apply head tilt around the neck joint (pos_x, 0.20f) for head indices
+    float tilt_angle = (twitch_intensity - 0.5f) * 0.4f;
+    float cos_h = cosf(tilt_angle);
+    float sin_h = sinf(tilt_angle);
+    int head_indices[] = {1, 2, 3, 8, 9, 10, 11};
+    for (int idx = 0; idx < 7; idx++) {
+        int i = head_indices[idx];
+        float hx = body[i].x - pos_x;
+        float hy = body[i].y - 0.20f;
+        body[i].x = pos_x + hx * cos_h - hy * sin_h;
+        body[i].y = 0.20f + hx * sin_h + hy * cos_h;
+    }
 
     for (int i = 0; i < 15; i++) {
         float dx = body[i].x - pos_x;
@@ -1114,6 +1128,7 @@ static void reload_genome() {
             light_angle_deg = (float)dna.light_angle_deg / 255.0f * 360.0f;
             breathing_freq = (float)dna.breathing_freq / 128.0f;
             twitch_intensity = (float)dna.twitch_intensity / 255.0f;
+            sickness_intensity = (float)dna.base_sickness / 255.0f;
             
             dna_fur_r = (float)dna.fur_r / 255.0f;
             dna_fur_g = (float)dna.fur_g / 255.0f;
