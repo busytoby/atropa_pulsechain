@@ -44,6 +44,19 @@ static float generate_gaussian_noise() {
     return (float)(sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2));
 }
 
+static double interpolate_correlation(double *R_i, double lag, int max_lag) {
+    double idx_exact = lag + max_lag;
+    if (idx_exact < 0.0) return R_i[0];
+    if (idx_exact >= 2.0 * max_lag) return R_i[2 * max_lag];
+    
+    int idx_low = (int)floor(idx_exact);
+    int idx_high = idx_low + 1;
+    if (idx_high > 2 * max_lag) idx_high = 2 * max_lag;
+    
+    double t = idx_exact - idx_low;
+    return (1.0 - t) * R_i[idx_low] + t * R_i[idx_high];
+}
+
 typedef struct {
     double x_true;      // True coordinates (km)
     double y_true;
@@ -564,36 +577,12 @@ int main() {
         }
     }
 
-    for (int i = 1; i < NUM_STATIONS; i++) {
-        double max_mag2 = -1.0;
-        int best_lag = 0;
-        for (int lag = -max_lag; lag <= max_lag; lag++) {
-            double sum_real = 0.0;
-            double sum_imag = 0.0;
-            for (int n = max_lag; n < TOTAL_SAMPLES - max_lag; n++) {
-                double I_i = I_sig[i][n];
-                double Q_i = Q_sig[i][n];
-                double I_0 = I_sig[0][n - lag];
-                double Q_0 = Q_sig[0][n - lag];
-                
-                sum_real += (I_i * I_0 + Q_i * Q_0);
-                sum_imag += (Q_i * I_0 - I_i * Q_0);
-            }
-            double mag2 = sum_real * sum_real + sum_imag * sum_imag;
-            if (mag2 > max_mag2) {
-                max_mag2 = mag2;
-                best_lag = lag;
-            }
-        }
-        estimated_tdoa[i] = (double)best_lag / SAMPLING_RATE;
-        
-    }
-
     double **R_mag = (double**)malloc(NUM_STATIONS * sizeof(double*));
     for (int i = 0; i < NUM_STATIONS; i++) {
         R_mag[i] = (double*)calloc(2 * max_lag + 1, sizeof(double));
     }
 
+    #pragma omp parallel for
     for (int i = 1; i < NUM_STATIONS; i++) {
         for (int lag = -max_lag; lag <= max_lag; lag++) {
             double sum_real = 0.0;
@@ -619,6 +608,7 @@ int main() {
     free(Q_sig);
 
     // Calculate weights based on peak correlation quality (SNR / Peak-to-Mean Ratio)
+    // and compute estimated_tdoa with robust parabolic interpolation (cancelling bad inputs)
     double *weights = (double*)malloc(NUM_STATIONS * sizeof(double));
     for (int i = 0; i < NUM_STATIONS; i++) {
         weights[i] = 1.0;
@@ -626,15 +616,33 @@ int main() {
     for (int i = 1; i < NUM_STATIONS; i++) {
         double max_val = 0.0;
         double sum_val = 0.0;
+        int best_lag_idx = 0;
         for (int lag = -max_lag; lag <= max_lag; lag++) {
             double v = R_mag[i][lag + max_lag];
             sum_val += v;
             if (v > max_val) {
                 max_val = v;
+                best_lag_idx = lag + max_lag;
             }
         }
         double mean_val = sum_val / (2.0 * max_lag + 1.0);
         weights[i] = (mean_val > 0.0) ? (max_val / mean_val) : 1.0;
+
+        // Parabolic sub-sample interpolation
+        double frac = 0.0;
+        if (best_lag_idx > 0 && best_lag_idx < 2 * max_lag) {
+            double alpha = R_mag[i][best_lag_idx - 1];
+            double beta = R_mag[i][best_lag_idx];
+            double gamma = R_mag[i][best_lag_idx + 1];
+            double denom = alpha - 2.0 * beta + gamma;
+            if (fabs(denom) > 1e-9) {
+                frac = (alpha - gamma) / (2.0 * denom);
+                if (frac < -0.5) frac = -0.5;
+                if (frac > 0.5) frac = 0.5;
+            }
+        }
+        int best_lag = best_lag_idx - max_lag;
+        estimated_tdoa[i] = ((double)best_lag + frac) / SAMPLING_RATE;
     }
 
     // Coarse grid search: -100 km to 100 km with 2 km steps
@@ -651,10 +659,8 @@ int main() {
                 double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
                 double delayi = disti / SPEED_OF_LIGHT;
                 double model_tdoa = delayi - delay0;
-                int lag = (int)round(model_tdoa * SAMPLING_RATE);
-                if (lag >= -max_lag && lag <= max_lag) {
-                    cost += weights[i] * R_mag[i][lag + max_lag];
-                }
+                double model_lag = model_tdoa * SAMPLING_RATE;
+                cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
             }
 
             if (cost > max_cost) {
@@ -680,10 +686,8 @@ int main() {
                 double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
                 double delayi = disti / SPEED_OF_LIGHT;
                 double model_tdoa = delayi - delay0;
-                int lag = (int)round(model_tdoa * SAMPLING_RATE);
-                if (lag >= -max_lag && lag <= max_lag) {
-                    cost += weights[i] * R_mag[i][lag + max_lag];
-                }
+                double model_lag = model_tdoa * SAMPLING_RATE;
+                cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
             }
 
             if (cost > max_cost) {
@@ -871,10 +875,8 @@ int main() {
                     double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
                     double delayi = disti / SPEED_OF_LIGHT;
                     double model_tdoa = delayi - delay0;
-                    int lag = (int)round(model_tdoa * SAMPLING_RATE);
-                    if (lag >= -max_lag && lag <= max_lag) {
-                        cost += weights[i] * R_mag[i][lag + max_lag];
-                    }
+                    double model_lag = model_tdoa * SAMPLING_RATE;
+                    cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
                 }
             }
 
@@ -901,10 +903,8 @@ int main() {
                     double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
                     double delayi = disti / SPEED_OF_LIGHT;
                     double model_tdoa = delayi - delay0;
-                    int lag = (int)round(model_tdoa * SAMPLING_RATE);
-                    if (lag >= -max_lag && lag <= max_lag) {
-                        cost += weights[i] * R_mag[i][lag + max_lag];
-                    }
+                    double model_lag = model_tdoa * SAMPLING_RATE;
+                    cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
                 }
             }
 
