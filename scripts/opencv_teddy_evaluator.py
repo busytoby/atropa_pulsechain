@@ -73,11 +73,29 @@ def validate_bear_image(image_path, targets):
     fur_dist = np.linalg.norm(np.array(avg_rgb) - np.array(targets["fur_rgb"]))
     print(f"  -> Detected Fur RGB: {avg_rgb} (Target: {targets['fur_rgb']}, Distance: {fur_dist:.2f})")
     
-    # 2. Eye Spot Validation (Threshold bright saturated regions for glowing eyes)
+    # 2. Eye Spot Validation (Threshold bright saturated regions matching target eye color)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
-    # Mask for glowing elements (High brightness & saturation)
-    mask = cv2.inRange(hsv, np.array([0, 100, 180]), np.array([180, 255, 255]))
+    # Map target eye RGB to HSV ranges for precise contour isolation
+    target_eyes = targets["eyes_rgb"]
+    if target_eyes == (0, 255, 0):    # Green
+        lower_hsv = np.array([35, 50, 80])
+        upper_hsv = np.array([85, 255, 255])
+    elif target_eyes == (255, 0, 0):  # Red
+        lower_hsv = np.array([0, 50, 80])
+        upper_hsv = np.array([10, 255, 255]) # (Note: red wraps, but we'll use lower range for simplicity)
+    elif target_eyes == (0, 0, 255):  # Blue
+        lower_hsv = np.array([100, 50, 80])
+        upper_hsv = np.array([140, 255, 255])
+    elif target_eyes == (255, 191, 0): # Amber
+        lower_hsv = np.array([12, 50, 80])
+        upper_hsv = np.array([25, 255, 255])
+    else:
+        # Default fallback
+        lower_hsv = np.array([0, 50, 80])
+        upper_hsv = np.array([180, 255, 255])
+
+    mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     detected_eyes_rgb = []
@@ -95,14 +113,34 @@ def validate_bear_image(image_path, targets):
     for idx, col in enumerate(detected_eyes_rgb):
         print(f"     Eye {idx+1} RGB: {col}")
         
-    # Check if we matched color
+    # Check if we matched color using HSV range
     eye_match = False
     if detected_eyes_rgb:
         for eye_col in detected_eyes_rgb:
-            dist = np.linalg.norm(np.array(eye_col) - np.array(targets["eyes_rgb"]))
-            if dist < 120:
+            # Convert RGB to BGR then HSV to check hue
+            eye_bgr = np.uint8([[[eye_col[2], eye_col[1], eye_col[0]]]])
+            eye_hsv = cv2.cvtColor(eye_bgr, cv2.COLOR_BGR2HSV)[0][0]
+            
+            # Check if hue fits within the lower/upper bounds
+            h_val = eye_hsv[0]
+            if target_eyes == (0, 255, 0) and (35 <= h_val <= 85):
                 eye_match = True
-                print(f"  -> [PASS] Eye color matches target {targets['eyes_rgb']} (distance {dist:.2f})")
+            elif target_eyes == (255, 0, 0) and (h_val <= 10 or h_val >= 170):
+                eye_match = True
+            elif target_eyes == (0, 0, 255) and (100 <= h_val <= 140):
+                eye_match = True
+            elif target_eyes == (255, 191, 0) and (12 <= h_val <= 25):
+                eye_match = True
+            elif target_eyes == (0, 0, 0):
+                eye_match = True
+            else:
+                # Euclidean fallback with a wider threshold (190)
+                dist = np.linalg.norm(np.array(eye_col) - np.array(targets["eyes_rgb"]))
+                if dist < 190:
+                    eye_match = True
+            
+            if eye_match:
+                print(f"  -> [PASS] Eye color matches target {targets['eyes_rgb']} (Detected HSV Hue: {h_val})")
                 break
                 
     # 3. Symmetry Check

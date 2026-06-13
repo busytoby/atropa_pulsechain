@@ -50,11 +50,27 @@ def run_optimization_loop(target_query, max_iterations=5):
             f.write(dna_data)
             
         # B. Run the synthesizer to generate the photorealistic image matching the genome
-        # Construct the prompt based on active gene colors
+        # Translate RGB values to words for high-fidelity prompt matching
+        fur_word = "brown"
+        if abs(genes["fur_r"] - 180) < 50 and abs(genes["fur_g"] - 130) < 50:
+            fur_word = "golden"
+        elif genes["fur_r"] > 200 and genes["fur_g"] < 180 and genes["fur_b"] > 160:
+            fur_word = "pink"
+        elif genes["fur_r"] < 50 and genes["fur_g"] < 50:
+            fur_word = "dark brown"
+
+        eye_word = "green"
+        if genes["eye_r"] > 200 and genes["eye_g"] < 100 and genes["eye_b"] < 100:
+            eye_word = "red"
+        elif genes["eye_r"] < 100 and genes["eye_g"] < 100 and genes["eye_b"] > 200:
+            eye_word = "blue"
+        elif genes["eye_r"] > 200 and genes["eye_g"] > 150 and genes["eye_b"] < 100:
+            eye_word = "amber"
+
         prompt = (
             f"A highly detailed photorealistic teddy bear plush sitting down, "
-            f"fur color RGB({genes['fur_r']},{genes['fur_g']},{genes['fur_b']}), "
-            f"glowing eyes RGB({genes['eye_r']},{genes['eye_g']},{genes['eye_b']}), "
+            f"with beautiful soft and shaggy {fur_word} fur, "
+            f"two extremely prominent glowing bright laser {eye_word} eyes, "
             f"cinematic lighting with intensity 0.50, "
             f"{genes['sickness']} percent sickness mutation details, dark background, 8k resolution, masterpiece"
         )
