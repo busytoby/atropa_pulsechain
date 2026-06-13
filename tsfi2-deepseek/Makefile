@@ -229,6 +229,9 @@ bin/test_deforest_ground: tests/test_deforest_ground.c $(CORE_OBJS) $(OBJ_DIR)/v
 bin/test_aerial_llm_bridge: tests/test_aerial_llm_bridge.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_dead_end_losses: tests/test_dead_end_losses.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 
 
 
