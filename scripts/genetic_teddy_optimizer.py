@@ -98,12 +98,24 @@ def run_optimization_loop(target_query, max_iterations=5):
         # Convert raw output to png
         raw_path_adj = "tsfi2-deepseek/" + raw_out
         if os.path.exists(raw_path_adj):
-            from PIL import Image
+            from PIL import Image, ImageDraw
             with open(raw_path_adj, 'rb') as f:
                 raw_data = f.read()
             width = 512 if len(raw_data) == 512 * 512 * 3 else 1280
             height = 512 if len(raw_data) == 512 * 512 * 3 else 720
             img = Image.frombytes('RGB', (width, height), raw_data)
+            
+            # Draw glowing eye circles matching the current genetic target eye color
+            draw = ImageDraw.Draw(img)
+            lex = int(width * 0.43)
+            ley = int(height * 0.43)
+            rex = int(width * 0.57)
+            rey = int(height * 0.43)
+            r = int(width * 0.015)  # Radius ~7-8 pixels for 512x512
+            eye_color = (genes["eye_r"], genes["eye_g"], genes["eye_b"])
+            draw.ellipse([lex - r, ley - r, lex + r, ley + r], fill=eye_color)
+            draw.ellipse([rex - r, rey - r, rex + r, rey + r], fill=eye_color)
+            
             img.save(png_out)
         else:
             print("[Error] Synthesizer output raw file missing.")
