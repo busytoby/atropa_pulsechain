@@ -361,7 +361,18 @@
                                 <span id="taylorTokenDisplay" style="font-weight: bold;">0.0000 TLR🕯️</span>
                             </div>
                         </div>
-                        <button class="btn" style="background: var(--glow-magenta); border: none; padding: 6px 12px; font-size: 0.8rem;" onclick="triggerBreeding()">🧬 Mutate Genome</button>
+                        <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(255, 0, 127, 0.03); border: 1px solid rgba(255, 0, 127, 0.15); border-radius: 8px; padding: 10px; width: 100%; box-sizing: border-box;">
+                            <strong style="color: var(--glow-magenta); font-size: 0.75rem; font-family: monospace;">🧬 DNA BREEDING CONTROLLER:</strong>
+                            <select id="breedingGoal" style="background: #02040a; color: #fff; border: 1px solid rgba(255, 0, 127, 0.3); border-radius: 3.5px; font-family: monospace; font-size: 0.72rem; padding: 3px; cursor: pointer; width: 100%;">
+                                <option value="golden">Golden Fur & Stable Breathing</option>
+                                <option value="healthy">Low Sickness & High Heat Resistance</option>
+                                <option value="highfreq">Regenerative High Frequency</option>
+                            </select>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+                                <button class="btn" style="background: var(--glow-magenta); border: none; padding: 5px; font-size: 0.72rem; font-family: monospace; font-weight: bold; cursor: pointer;" onclick="runGeneticBreeder()">🧬 DNA Breed</button>
+                                <button class="btn" style="background: #1e293b; border: none; padding: 5px; font-size: 0.72rem; font-family: monospace; font-weight: bold; cursor: pointer;" onclick="triggerBreeding()">🎲 Random Mutate</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="sliders-grid">
@@ -902,6 +913,146 @@
 
             // Redraw grid dynamically to reflect ammeter-dependent coordinate distortion
             drawGrid();
+        }
+
+        function runGeneticBreeder() {
+            const goal = document.getElementById("breedingGoal").value;
+            logEvent(`Genetic Breeding Start: Optimizing 12-byte genome for goal: [${goal}]`);
+
+            // Initialize population of 40 chromosomes
+            let population = [];
+            for (let i = 0; i < 40; i++) {
+                population.push({
+                    genes: [
+                        Math.floor(Math.random() * 256), // fur_r
+                        Math.floor(Math.random() * 256), // fur_g
+                        Math.floor(Math.random() * 256), // fur_b
+                        0,                               // eye_r
+                        Math.floor(Math.random() * 256), // eye_g
+                        0,                               // eye_b
+                        Math.floor(Math.random() * 101), // sickness
+                        Math.floor(Math.random() * 101) + 50, // scale
+                        Math.floor(Math.random() * 191) + 10, // fur_length
+                        Math.floor(Math.random() * 256), // light_angle
+                        Math.floor(Math.random() * 256), // breathing_freq
+                        Math.floor(Math.random() * 256)  // twitch_intensity
+                    ],
+                    fitness: 0
+                });
+            }
+
+            // Fitness evaluation helper
+            function evaluateFitness(ind) {
+                const [r, g, b, er, eg, eb, sick, scale, furLen, lAngle, bFreq, twitch] = ind.genes;
+                let fit = 0.0;
+
+                if (goal === "golden") {
+                    // Target Golden Fur: R=200, G=150, B=80
+                    const distR = Math.abs(r - 200);
+                    const distG = Math.abs(g - 150);
+                    const distB = Math.abs(b - 80);
+                    fit += (1000.0 - (distR * 2 + distG * 2 + distB * 2));
+                    
+                    // Target stable breathing frequency near 128
+                    const distFreq = Math.abs(bFreq - 128);
+                    fit += (500.0 - distFreq * 4);
+                } else if (goal === "healthy") {
+                    // Target minimal sickness and minimal twitching
+                    fit += (100.0 - sick) * 10;
+                    fit += (128.0 - twitch) * 5; 
+                    // Higher scale
+                    fit += scale * 3;
+                } else if (goal === "highfreq") {
+                    // Maximum breathing frequency
+                    fit += bFreq * 10;
+                    // High light angle
+                    fit += lAngle * 4;
+                }
+                return fit;
+            }
+
+            // Run for 50 generations
+            for (let gen = 0; gen < 50; gen++) {
+                // Calculate fitness
+                population.forEach(ind => ind.fitness = evaluateFitness(ind));
+
+                // Sort by fitness descending
+                population.sort((a, b) => b.fitness - a.fitness);
+
+                // Telemetry logging for key milestones
+                if (gen === 0 || gen === 24 || gen === 49) {
+                    logEvent(`Gen ${gen}: Best Fitness = ${population[0].fitness.toFixed(1)}`);
+                }
+
+                // Selection (Keep top 15)
+                let nextGen = [];
+                for (let i = 0; i < 15; i++) {
+                    nextGen.push(JSON.parse(JSON.stringify(population[i])));
+                }
+
+                // Reproduce to fill up to 40
+                while (nextGen.length < 40) {
+                    const parentA = population[Math.floor(Math.random() * 15)];
+                    const parentB = population[Math.floor(Math.random() * 15)];
+                    
+                    // Crossover
+                    let childGenes = [];
+                    const crossPt = Math.floor(Math.random() * 12);
+                    for (let g = 0; g < 12; g++) {
+                        childGenes.push(g < crossPt ? parentA.genes[g] : parentB.genes[g]);
+                    }
+
+                    // Mutation (10% rate per gene)
+                    for (let g = 0; g < 12; g++) {
+                        if (Math.random() < 0.1) {
+                            if (g === 6) childGenes[g] = Math.floor(Math.random() * 101); // sickness
+                            else if (g === 7) childGenes[g] = Math.floor(Math.random() * 101) + 50; // scale
+                            else if (g === 8) childGenes[g] = Math.floor(Math.random() * 191) + 10; // fur_length
+                            else childGenes[g] = Math.floor(Math.random() * 256);
+                        }
+                    }
+
+                    nextGen.push({ genes: childGenes, fitness: 0 });
+                }
+
+                population = nextGen;
+            }
+
+            // Load winning chromosome
+            const winner = population[0].genes;
+            genome.fur_r = winner[0];
+            genome.fur_g = winner[1];
+            genome.fur_b = winner[2];
+            genome.eye_r = winner[3];
+            genome.eye_g = winner[4];
+            genome.eye_b = winner[5];
+            genome.sickness = winner[6];
+            genome.scale = winner[7];
+            genome.fur_length = winner[8];
+            genome.light_angle = winner[9];
+            genome.breathing_freq = winner[10];
+            genome.twitch_intensity = winner[11];
+
+            // Update sliders/visual display
+            document.getElementById("sldFurR").value = genome.fur_r;
+            document.getElementById("sldFurG").value = genome.fur_g;
+            document.getElementById("sldFurB").value = genome.fur_b;
+            document.getElementById("sldEyeG").value = genome.eye_g;
+            document.getElementById("sldSickness").value = genome.sickness;
+            document.getElementById("sldScale").value = genome.scale;
+            document.getElementById("sldFurLength").value = genome.fur_length;
+            document.getElementById("sldLightAngle").value = genome.light_angle;
+
+            updateBearGene('fur_r', genome.fur_r);
+            updateBearGene('fur_g', genome.fur_g);
+            updateBearGene('fur_b', genome.fur_b);
+            updateBearGene('eye_g', genome.eye_g);
+            updateBearGene('sickness', genome.sickness);
+            updateBearGene('scale', genome.scale);
+            updateBearGene('fur_length', genome.fur_length);
+            updateBearGene('light_angle', genome.light_angle);
+
+            logEvent(`🧬 Breeding Success: Best phenotype loaded! Optimal DNA Hex: ${document.getElementById("dnaHexDisplay").innerText}`);
         }
 
         function triggerBreeding() {
