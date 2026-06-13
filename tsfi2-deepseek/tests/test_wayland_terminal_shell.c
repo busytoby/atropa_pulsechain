@@ -12902,62 +12902,57 @@ void render_terminal_display(void) {
 
 }
 
-static void format_uint256_hex(char *dest, uint64_t val) {
-    for (int i = 0; i < 32; i++) {
-        int shift = (31 - i) * 8;
-        uint8_t byteval = 0;
-        if (shift < 64) {
-            byteval = (val >> shift) & 0xFF;
-        }
-        sprintf(&dest[i * 2], "%02x", byteval);
-    }
-}
+
+
+extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t calldatasize, uint8_t *retval, size_t *retval_len);
 
 static void vm_poke(TsfiZmmVmState *vstate, uint64_t addr, uint8_t val) {
-    char cmd[512];
-    char addr_hex[65];
-    char val_hex[65];
-    format_uint256_hex(addr_hex, addr);
-    format_uint256_hex(val_hex, val);
+    (void)vstate;
+    uint8_t poke_cd[68] = {0};
+    poke_cd[0] = 0x80; poke_cd[1] = 0x29; poke_cd[2] = 0xe7; poke_cd[3] = 0xc0;
+    for (int i = 0; i < 8; i++) {
+        poke_cd[4 + 31 - i] = (addr >> (i * 8)) & 0xFF;
+    }
+    poke_cd[36 + 31] = val;
     
-    // selector: poke(uint256,uint256) -> 0x8029e7c0
-    sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0%s%s\"", addr_hex, val_hex);
-    vstate->output_pos = 0;
-    tsfi_zmm_vm_exec(vstate, cmd);
+    uint8_t ret[32];
+    size_t ret_len = 32;
+    lau_yul_thunk_execute("cpu6502", poke_cd, 68, ret, &ret_len);
 }
 
 static uint64_t vm_peek(TsfiZmmVmState *vstate, uint64_t addr) {
-    char cmd[512];
-    char addr_hex[65];
-    format_uint256_hex(addr_hex, addr);
+    (void)vstate;
+    uint8_t peek_cd[36] = {0};
+    peek_cd[0] = 0x78; peek_cd[1] = 0x61; peek_cd[2] = 0xd2; peek_cd[3] = 0x69;
+    for (int i = 0; i < 8; i++) {
+        peek_cd[4 + 31 - i] = (addr >> (i * 8)) & 0xFF;
+    }
     
-    // selector: peek(uint256) -> 0x7861d269
-    sprintf(cmd, "YULEXEC \"cpu6502\", \"7861d269%s\"", addr_hex);
-    vstate->output_pos = 0;
-    tsfi_zmm_vm_exec(vstate, cmd);
-    
+    uint8_t peek_ret[32] = {0};
+    size_t peek_ret_len = 32;
     uint64_t res = 0;
-    size_t len = strlen(vstate->output_buffer);
-    if (len >= 64) {
-        char val_str[17];
-        strncpy(val_str, &vstate->output_buffer[len - 16], 16);
-        val_str[16] = '\0';
-        res = strtoull(val_str, NULL, 16);
+    if (lau_yul_thunk_execute("cpu6502", peek_cd, 36, peek_ret, &peek_ret_len)) {
+        for (int i = 0; i < 8; i++) {
+            res |= ((uint64_t)peek_ret[31 - i]) << (i * 8);
+        }
     }
     return res;
 }
 
 static void vm_poke64(TsfiZmmVmState *vstate, uint64_t addr, uint64_t val) {
-    char cmd[512];
-    char addr_hex[65];
-    char val_hex[65];
-    format_uint256_hex(addr_hex, addr);
-    format_uint256_hex(val_hex, val);
+    (void)vstate;
+    uint8_t poke_cd[68] = {0};
+    poke_cd[0] = 0x80; poke_cd[1] = 0x29; poke_cd[2] = 0xe7; poke_cd[3] = 0xc0;
+    for (int i = 0; i < 8; i++) {
+        poke_cd[4 + 31 - i] = (addr >> (i * 8)) & 0xFF;
+    }
+    for (int i = 0; i < 8; i++) {
+        poke_cd[36 + 31 - i] = (val >> (i * 8)) & 0xFF;
+    }
     
-    // selector: poke(uint256,uint256) -> 0x8029e7c0
-    sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0%s%s\"", addr_hex, val_hex);
-    vstate->output_pos = 0;
-    tsfi_zmm_vm_exec(vstate, cmd);
+    uint8_t ret[32];
+    size_t ret_len = 32;
+    lau_yul_thunk_execute("cpu6502", poke_cd, 68, ret, &ret_len);
 }
 
 static void init_pong_game(void) {
