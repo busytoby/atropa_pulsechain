@@ -684,6 +684,235 @@ int main() {
     assert(loc_error < 5.0);
     printf("[SUCCESS] TDOA grid search successfully localized the spy transmitter!\n");
 
+    // 9. Genetic Algorithm for Optimal Subset Node Selection (select K = 8 stations out of 50)
+    printf("\n=== Genetic Algorithm Node Selection ===\n");
+    int K_select = 8;
+    int POP_SIZE = 30;
+    int GENS = 50;
+
+    // Define a population: each individual is a binary array of size NUM_STATIONS
+    int **population = (int**)malloc(POP_SIZE * sizeof(int*));
+    for (int p = 0; p < POP_SIZE; p++) {
+        population[p] = (int*)calloc(NUM_STATIONS, sizeof(int));
+        population[p][0] = 1; // Always select reference station 0
+        int count = 1;
+        while (count < K_select) {
+            int idx = 1 + (int)(get_random() * (NUM_STATIONS - 1));
+            if (population[p][idx] == 0) {
+                population[p][idx] = 1;
+                count++;
+            }
+        }
+    }
+
+    double *fitness = (double*)malloc(POP_SIZE * sizeof(double));
+    int *best_individual = (int*)calloc(NUM_STATIONS, sizeof(int));
+    double best_fitness = -1.0;
+
+    // Helper macro/function to compute GDOP of an individual
+    #define EVALUATE_INDIVIDUAL_GDOP(ind, tx_val_x, tx_val_y) ({ \
+        double g00 = 0.0, g11 = 0.0, g01 = 0.0; \
+        double c_light = 1.0; \
+        double dx_ref = tx_val_x - stations[0].x_true; \
+        double dy_ref = tx_val_y - stations[0].y_true; \
+        double d0_ref = sqrt(dx_ref*dx_ref + dy_ref*dy_ref); \
+        for (int i = 1; i < NUM_STATIONS; i++) { \
+            if ((ind)[i]) { \
+                double dx_i = tx_val_x - stations[i].x_true; \
+                double dy_i = tx_val_y - stations[i].y_true; \
+                double di = sqrt(dx_i*dx_i + dy_i*dy_i); \
+                double H_i0 = (dx_i / di - dx_ref / d0_ref) / c_light; \
+                double H_i1 = (dy_i / di - dy_ref / d0_ref) / c_light; \
+                g00 += H_i0 * H_i0; \
+                g11 += H_i1 * H_i1; \
+                g01 += H_i0 * H_i1; \
+            } \
+        } \
+        double det_val = g00 * g11 - g01 * g01; \
+        (det_val > 1e-9) ? sqrt((g00 + g11) / det_val) : 1e15; \
+    })
+
+    for (int gen = 0; gen < GENS; gen++) {
+        // 1. Evaluate fitness
+        for (int p = 0; p < POP_SIZE; p++) {
+            double gdop = EVALUATE_INDIVIDUAL_GDOP(population[p], best_x, best_y);
+            fitness[p] = 1.0 / (gdop + 1e-9);
+            if (fitness[p] > best_fitness) {
+                best_fitness = fitness[p];
+                memcpy(best_individual, population[p], NUM_STATIONS * sizeof(int));
+            }
+        }
+
+        // 2. Selection & Breeding (Tournament of size 3)
+        int **next_pop = (int**)malloc(POP_SIZE * sizeof(int*));
+        for (int p = 0; p < POP_SIZE; p++) {
+            next_pop[p] = (int*)calloc(NUM_STATIONS, sizeof(int));
+        }
+
+        // Elitism: carry over best individual
+        memcpy(next_pop[0], best_individual, NUM_STATIONS * sizeof(int));
+
+        for (int p = 1; p < POP_SIZE; p++) {
+            // Tournament selection for Parent 1
+            int p1_idx = 0;
+            double p1_fit = -1.0;
+            for (int t = 0; t < 3; t++) {
+                int cand = (int)(get_random() * POP_SIZE);
+                if (fitness[cand] > p1_fit) {
+                    p1_fit = fitness[cand];
+                    p1_idx = cand;
+                }
+            }
+
+            // Tournament selection for Parent 2
+            int p2_idx = 0;
+            double p2_fit = -1.0;
+            for (int t = 0; t < 3; t++) {
+                int cand = (int)(get_random() * POP_SIZE);
+                if (fitness[cand] > p2_fit) {
+                    p2_fit = fitness[cand];
+                    p2_idx = cand;
+                }
+            }
+
+            // Crossover: Single-point crossover
+            int crossover_point = 1 + (int)(get_random() * (NUM_STATIONS - 2));
+            for (int j = 0; j < NUM_STATIONS; j++) {
+                next_pop[p][j] = (j < crossover_point) ? population[p1_idx][j] : population[p2_idx][j];
+            }
+            next_pop[p][0] = 1; // Always keep reference 0
+
+            // Repair: ensure exactly K_select active stations
+            int active_count = 0;
+            for (int j = 0; j < NUM_STATIONS; j++) {
+                if (next_pop[p][j]) active_count++;
+            }
+
+            while (active_count > K_select) {
+                int remove_idx = 1 + (int)(get_random() * (NUM_STATIONS - 1));
+                if (next_pop[p][remove_idx]) {
+                    next_pop[p][remove_idx] = 0;
+                    active_count--;
+                }
+            }
+
+            while (active_count < K_select) {
+                int add_idx = 1 + (int)(get_random() * (NUM_STATIONS - 1));
+                if (next_pop[p][add_idx] == 0) {
+                    next_pop[p][add_idx] = 1;
+                    active_count++;
+                }
+            }
+
+            // Mutation: Swap active and inactive
+            if (get_random() < 0.15) {
+                int active_idx = -1;
+                while (active_idx == -1) {
+                    int idx = 1 + (int)(get_random() * (NUM_STATIONS - 1));
+                    if (next_pop[p][idx] == 1) active_idx = idx;
+                }
+                int inactive_idx = -1;
+                while (inactive_idx == -1) {
+                    int idx = 1 + (int)(get_random() * (NUM_STATIONS - 1));
+                    if (next_pop[p][idx] == 0) inactive_idx = idx;
+                }
+                next_pop[p][active_idx] = 0;
+                next_pop[p][inactive_idx] = 1;
+            }
+        }
+
+        // Free old pop and swap
+        for (int p = 0; p < POP_SIZE; p++) {
+            free(population[p]);
+        }
+        free(population);
+        population = next_pop;
+    }
+
+    double best_gdop = 1.0 / best_fitness;
+    printf("[RESULTS] Best subset GDOP: %.4f\n", best_gdop);
+    printf("[RESULTS] Selected GA stations: ");
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        if (best_individual[i]) printf("%d ", i);
+    }
+    printf("\n");
+
+    // Evaluate localization error using only the GA selected 8 stations
+    double best_x_ga = 0.0, best_y_ga = 0.0;
+    double max_cost_ga = -1.0;
+
+    for (double gx = -100.0; gx <= 100.0; gx += 2.0) {
+        for (double gy = -100.0; gy <= 100.0; gy += 2.0) {
+            double cost = 0.0;
+            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
+            double delay0 = dist0 / SPEED_OF_LIGHT;
+
+            for (int i = 1; i < NUM_STATIONS; i++) {
+                if (best_individual[i]) {
+                    double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
+                    double delayi = disti / SPEED_OF_LIGHT;
+                    double model_tdoa = delayi - delay0;
+                    int lag = (int)round(model_tdoa * SAMPLING_RATE);
+                    if (lag >= -max_lag && lag <= max_lag) {
+                        cost += R_mag[i][lag + max_lag];
+                    }
+                }
+            }
+
+            if (cost > max_cost_ga) {
+                max_cost_ga = cost;
+                best_x_ga = gx;
+                best_y_ga = gy;
+            }
+        }
+    }
+
+    double coarse_x_ga = best_x_ga;
+    double coarse_y_ga = best_y_ga;
+    max_cost_ga = -1.0;
+
+    for (double gx = coarse_x_ga - 5.0; gx <= coarse_x_ga + 5.0; gx += 0.1) {
+        for (double gy = coarse_y_ga - 5.0; gy <= coarse_y_ga + 5.0; gy += 0.1) {
+            double cost = 0.0;
+            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
+            double delay0 = dist0 / SPEED_OF_LIGHT;
+
+            for (int i = 1; i < NUM_STATIONS; i++) {
+                if (best_individual[i]) {
+                    double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
+                    double delayi = disti / SPEED_OF_LIGHT;
+                    double model_tdoa = delayi - delay0;
+                    int lag = (int)round(model_tdoa * SAMPLING_RATE);
+                    if (lag >= -max_lag && lag <= max_lag) {
+                        cost += R_mag[i][lag + max_lag];
+                    }
+                }
+            }
+
+            if (cost > max_cost_ga) {
+                max_cost_ga = cost;
+                best_x_ga = gx;
+                best_y_ga = gy;
+            }
+        }
+    }
+
+    double loc_error_ga = sqrt((best_x_ga - tx_x)*(best_x_ga - tx_x) + (best_y_ga - tx_y)*(best_y_ga - tx_y));
+    printf("[RESULTS] GA Subset (8 stations) Localized TX coordinates: (%.1f, %.1f) km\n", best_x_ga, best_y_ga);
+    printf("[RESULTS] GA Subset Localization error: %.2f km\n", loc_error_ga);
+
+    // Verify GA subset successfully localizes within 5.0 km
+    assert(loc_error_ga < 5.0);
+    printf("[SUCCESS] GA-selected subset of 8 stations successfully localized the transmitter!\n");
+
+    // Clean up GA structures
+    for (int p = 0; p < POP_SIZE; p++) {
+        free(population[p]);
+    }
+    free(population);
+    free(fitness);
+    free(best_individual);
+
     for (int i = 0; i < NUM_STATIONS; i++) {
         free(R_mag[i]);
     }
