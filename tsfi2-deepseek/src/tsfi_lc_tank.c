@@ -5,7 +5,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-
 void tsfi_distributed_coil_init(
     TsfiDistributedCoil *coil,
     double diameter,
@@ -17,13 +16,13 @@ void tsfi_distributed_coil_init(
     if (!coil) return;
     (void)wire_gauge_mm; // Suppress unused parameter
 
-    // Define physical spatial dimensions for FDTD cell sizes:
-    // Radius of simulation domain = outer coil radius + 5 cm boundary margin
-    double max_r = (diameter / 2.0) + 0.05;
-    // Length of simulation domain = coil height + 5 cm margin on each side
+    // Determine 3D grid cell size: simulation domain bounds
+    double max_x = diameter + 0.10;
+    double max_y = diameter + 0.10;
     double max_z = height + 0.10;
 
-    coil->dr = max_r / GRID_R;
+    coil->dx = max_x / GRID_X;
+    coil->dy = max_y / GRID_Y;
     coil->dz = max_z / GRID_Z;
     coil->C_tune = C_tune;
     coil->v_tuning_node = 0.0;
@@ -31,88 +30,95 @@ void tsfi_distributed_coil_init(
 
     double eps0 = 8.8541878128e-12;
 
-    // Initialize EM grids to zero
-    for (int r = 0; r < GRID_R; r++) {
-        for (int z = 0; z < GRID_Z; z++) {
-            coil->Er[r][z] = 0.0;
-            coil->Ez[r][z] = 0.0;
-            coil->Hphi[r][z] = 0.0;
+    // Initialize 3D field tensors to zero
+    for (int x = 0; x < GRID_X; x++) {
+        for (int y = 0; y < GRID_Y; y++) {
+            for (int z = 0; z < GRID_Z; z++) {
+                coil->Ex[x][y][z] = 0.0;
+                coil->Ey[x][y][z] = 0.0;
+                coil->Ez[x][y][z] = 0.0;
+                coil->Hx[x][y][z] = 0.0;
+                coil->Hy[x][y][z] = 0.0;
+                coil->Hz[x][y][z] = 0.0;
 
-            // Set air properties by default
-            coil->eps[r][z] = eps0;
-            coil->sigma[r][z] = 0.0;
+                coil->eps[x][y][z] = eps0;
+                coil->sigma[x][y][z] = 0.0;
+            }
         }
     }
 
-    // Map the copper winding boundary into the FDTD conductivity tensor
-    // Turns are modeled as discrete rings spaced uniformly along the height of the coil form
-    double start_z = 0.05; // 5 cm margin start
-    double end_z = start_z + height;
+    // Map the circular winding turns along the height (Z-axis) into 3D Cartesian coordinates
+    double r_coil = diameter / 2.0;
+    double start_z = 0.05;
     double turn_spacing = height / turns;
-
-    // Convert coil radius to grid index
-    int coil_r_idx = (int)((diameter / 2.0) / coil->dr);
-    if (coil_r_idx >= GRID_R) coil_r_idx = GRID_R - 2;
-
-    // Copper conductivity = 5.96e7 S/m
     double sigma_copper = 5.96e7;
-    
-    // Map turns
+
     for (int n = 0; n < (int)turns; n++) {
-        double turn_z = start_z + n * turn_spacing;
-        int turn_z_idx = (int)(turn_z / coil->dz);
-        if (turn_z_idx < GRID_Z) {
-            // Apply copper conductivity to cells matching the winding radius
-            coil->sigma[coil_r_idx][turn_z_idx] = sigma_copper;
+        double z_turn = start_z + n * turn_spacing;
+        int z_idx = (int)(z_turn / coil->dz);
+        if (z_idx >= GRID_Z) continue;
+
+        // Trace a circle in X-Y plane at z_idx
+        for (int x = 0; x < GRID_X; x++) {
+            double rx = (x + 0.5) * coil->dx - (max_x / 2.0);
+            for (int y = 0; y < GRID_Y; y++) {
+                double ry = (y + 0.5) * coil->dy - (max_y / 2.0);
+                double d = sqrt(rx * rx + ry * ry);
+                // Winding boundary width is approx half-cell step
+                if (fabs(d - r_coil) < (coil->dx * 0.6)) {
+                    coil->sigma[x][y][z_idx] = sigma_copper;
+                }
+            }
         }
     }
 
-    // Map the lossy Bakelite form (tan delta = 0.02, eps_r = 3.5) inside the coil radius
+    // Map the lossy Bakelite form (tan delta = 0.02, eps_r = 3.5) inside the coil form
     double eps_form = 3.5 * eps0;
     double loss_tangent = 0.02;
-    double form_sigma = 2.0 * M_PI * 1.0e6 * eps_form * loss_tangent; // at 1 MHz reference
+    double form_sigma = 2.0 * M_PI * 1.0e6 * eps_form * loss_tangent; // 1 MHz ref
 
-    for (int r = 0; r < coil_r_idx; r++) {
-        for (int z = (int)(start_z / coil->dz); z < (int)(end_z / coil->dz); z++) {
-            if (z < GRID_Z) {
-                coil->eps[r][z] = eps_form;
-                coil->sigma[r][z] = form_sigma;
+    int z_start_idx = (int)(start_z / coil->dz);
+    int z_end_idx = (int)((start_z + height) / coil->dz);
+
+    for (int x = 0; x < GRID_X; x++) {
+        double rx = (x + 0.5) * coil->dx - (max_x / 2.0);
+        for (int y = 0; y < GRID_Y; y++) {
+            double ry = (y + 0.5) * coil->dy - (max_y / 2.0);
+            double d = sqrt(rx * rx + ry * ry);
+            if (d < r_coil) {
+                for (int z = z_start_idx; z < z_end_idx; z++) {
+                    if (z < GRID_Z) {
+                        coil->eps[x][y][z] = eps_form;
+                        coil->sigma[x][y][z] = form_sigma;
+                    }
+                }
             }
         }
     }
 
-    // 5. Perfectly Matched Layer (PML) Absorbing Boundaries at grid edges
-    // Quadratic absorption gradient to prevent boundary reflections
-    double pml_sigma_max = 5.0; // max conductivity at boundary wall
-    int pml_cells = 4;          // 4 cells depth PML layer
-    
-    // Radial PML boundary (outer radius)
-    for (int r = GRID_R - pml_cells; r < GRID_R; r++) {
-        double factor = (double)(r - (GRID_R - pml_cells)) / pml_cells;
-        double pml_val = pml_sigma_max * factor * factor;
-        for (int z = 0; z < GRID_Z; z++) {
-            if (pml_val > coil->sigma[r][z]) {
-                coil->sigma[r][z] = pml_val;
-            }
-        }
-    }
+    // 3D PML Absorbing Boundaries on all outer edges
+    double pml_sigma_max = 5.0;
+    int pml_cells = 2; // Keep PML thin due to smaller 3D grid size to maintain performance
 
-    // Axial PML boundaries (bottom and top)
-    for (int z = 0; z < pml_cells; z++) {
-        double factor = (double)(pml_cells - z) / pml_cells;
-        double pml_val = pml_sigma_max * factor * factor;
-        for (int r = 0; r < GRID_R; r++) {
-            if (pml_val > coil->sigma[r][z]) {
-                coil->sigma[r][z] = pml_val;
-            }
-        }
-    }
-    for (int z = GRID_Z - pml_cells; z < GRID_Z; z++) {
-        double factor = (double)(z - (GRID_Z - pml_cells)) / pml_cells;
-        double pml_val = pml_sigma_max * factor * factor;
-        for (int r = 0; r < GRID_R; r++) {
-            if (pml_val > coil->sigma[r][z]) {
-                coil->sigma[r][z] = pml_val;
+    for (int x = 0; x < GRID_X; x++) {
+        for (int y = 0; y < GRID_Y; y++) {
+            for (int z = 0; z < GRID_Z; z++) {
+                // Determine minimum distance to any boundary in cell units
+                int dist_x = x < GRID_X / 2 ? x : (GRID_X - 1 - x);
+                int dist_y = y < GRID_Y / 2 ? y : (GRID_Y - 1 - y);
+                int dist_z = z < GRID_Z / 2 ? z : (GRID_Z - 1 - z);
+                
+                int min_dist = dist_x;
+                if (dist_y < min_dist) min_dist = dist_y;
+                if (dist_z < min_dist) min_dist = dist_z;
+
+                if (min_dist < pml_cells) {
+                    double factor = (double)(pml_cells - min_dist) / pml_cells;
+                    double pml_val = pml_sigma_max * factor * factor;
+                    if (pml_val > coil->sigma[x][y][z]) {
+                        coil->sigma[x][y][z] = pml_val;
+                    }
+                }
             }
         }
     }
@@ -127,93 +133,95 @@ void tsfi_distributed_coil_process(
     double current_freq_hz
 ) {
     if (!coil || !input_rf || !output_grid || count == 0) return;
-    (void)current_freq_hz; // Suppress unused parameter
 
     double dt = 1.0 / sample_rate;
     double mu0 = 4.0 * M_PI * 1e-7;
 
-    double dr = coil->dr;
+    double dx = coil->dx;
+    double dy = coil->dy;
     double dz = coil->dz;
 
     // Process sample by sample
     for (size_t step = 0; step < count; step++) {
         double v_in = (double)input_rf[step];
 
-        // 1. Inject input voltage at the bottom boundary of the coil winding
-        int source_z_idx = (int)(0.05 / dz);
-        int coil_r_idx = (int)((GRID_R - 2) * 0.8);
-        coil->Ez[coil_r_idx][source_z_idx] += v_in / dz;
+        // 1. Inject input voltage at bottom center of the coil winding
+        int source_x = GRID_X / 2;
+        int source_y = GRID_Y / 2 - (GRID_Y / 4); // slightly off-center on the winding radius
+        int source_z = (int)(0.05 / dz);
+        coil->Ez[source_x][source_y][source_z] += v_in / dz;
 
-        // 2. FDTD Update Equations for Cylindrical coordinates
-        // Update Hphi (magnetic field curl):
-        // d(Hphi)/dt = (1/mu) * (d(Er)/dz - d(Ez)/dr)
-        for (int r = 0; r < GRID_R - 1; r++) {
-            for (int z = 0; z < GRID_Z - 1; z++) {
-                double dEr_dz = (coil->Er[r][z + 1] - coil->Er[r][z]) / dz;
-                double dEz_dr = (coil->Ez[r + 1][z] - coil->Ez[r][z]) / dr;
-                coil->Hphi[r][z] += (dt / mu0) * (dEr_dz - dEz_dr);
+        // 2. FDTD 3D Yee updates
+        // Update H-field:
+        // H = H - (dt / mu) * curl(E)
+        for (int x = 0; x < GRID_X - 1; x++) {
+            for (int y = 0; y < GRID_Y - 1; y++) {
+                for (int z = 0; z < GRID_Z - 1; z++) {
+                    double dEz_dy = (coil->Ez[x][y + 1][z] - coil->Ez[x][y][z]) / dy;
+                    double dEy_dz = (coil->Ey[x][y][z + 1] - coil->Ey[x][y][z]) / dz;
+                    coil->Hx[x][y][z] -= (dt / mu0) * (dEz_dy - dEy_dz);
+
+                    double dEx_dz = (coil->Ex[x][y][z + 1] - coil->Ex[x][y][z]) / dz;
+                    double dEz_dx = (coil->Ez[x + 1][y][z] - coil->Ez[x][y][z]) / dx;
+                    coil->Hy[x][y][z] -= (dt / mu0) * (dEx_dz - dEz_dx);
+
+                    double dEy_dx = (coil->Ey[x + 1][y][z] - coil->Ey[x][y][z]) / dx;
+                    double dEx_dy = (coil->Ex[x][y + 1][z] - coil->Ex[x][y][z]) / dy;
+                    coil->Hz[x][y][z] -= (dt / mu0) * (dEy_dx - dEx_dy);
+                }
             }
         }
 
-        // Update E-fields incorporating conductive boundaries (sigma)
-        // Adjust copper conductivity dynamically based on skin effect at current frequency:
-        // sigma_skin = sigma_dc * (skin_depth / wire_radius) where skin_depth = sqrt(2 / (omega * mu * sigma_dc))
+        // Adjust copper conductivity dynamically based on skin effect
         double omega = 2.0 * M_PI * fmax(current_freq_hz, 1000.0);
         double skin_depth = sqrt(2.0 / (omega * mu0 * 5.96e7));
-        double wire_radius = (coil->dr * 0.4); // approximate wire radius inside cell
+        double wire_radius = (coil->dx * 0.4);
         double skin_ratio = fmin(1.0, skin_depth / wire_radius);
         double dynamic_sigma_copper = 5.96e7 * skin_ratio;
 
-        // d(Er)/dt = (1/eps) * (-d(Hphi)/dz - sigma * Er)
-        for (int r = 0; r < GRID_R; r++) {
-            for (int z = 1; z < GRID_Z - 1; z++) {
-                double dHphi_dz = (coil->Hphi[r][z] - coil->Hphi[r][z - 1]) / dz;
-                double sig_val = coil->sigma[r][z];
-                // Apply skin-effect scaling on copper winding cells
-                if (sig_val > 1e6) {
-                    sig_val = dynamic_sigma_copper;
-                }
-                double cond_term = sig_val * coil->Er[r][z];
-                coil->Er[r][z] += (dt / coil->eps[r][z]) * (-dHphi_dz - cond_term);
-            }
-        }
+        // Update E-field:
+        // E = E + (dt / eps) * (curl(H) - sigma * E)
+        for (int x = 1; x < GRID_X - 1; x++) {
+            for (int y = 1; y < GRID_Y - 1; y++) {
+                for (int z = 1; z < GRID_Z - 1; z++) {
+                    // Update Ex
+                    double dHz_dy = (coil->Hz[x][y][z] - coil->Hz[x][y - 1][z]) / dy;
+                    double dHy_dz = (coil->Hy[x][y][z] - coil->Hy[x][y][z - 1]) / dz;
+                    double sig_x = coil->sigma[x][y][z];
+                    if (sig_x > 1e6) sig_x = dynamic_sigma_copper;
+                    coil->Ex[x][y][z] += (dt / coil->eps[x][y][z]) * ((dHz_dy - dHy_dz) - sig_x * coil->Ex[x][y][z]);
 
-        // d(Ez)/dt = (1/eps) * ((1/r) * d(r * Hphi)/dr - sigma * Ez)
-        for (int r = 1; r < GRID_R - 1; r++) {
-            for (int z = 0; z < GRID_Z; z++) {
-                if (z == 0) {
-                    coil->Ez[r][z] = 0.0; // Perfect Electrical Conductor ground plane boundary
-                } else {
-                    double r_val = r * dr;
-                    double d_rHphi_dr = ((r_val + dr) * coil->Hphi[r + 1][z] - r_val * coil->Hphi[r][z]) / dr;
-                    double sig_val = coil->sigma[r][z];
-                    // Apply skin-effect scaling on copper winding cells
-                    if (sig_val > 1e6) {
-                        sig_val = dynamic_sigma_copper;
+                    // Update Ey
+                    double dHx_dz = (coil->Hx[x][y][z] - coil->Hx[x][y][z - 1]) / dz;
+                    double dHz_dx = (coil->Hz[x][y][z] - coil->Hz[x - 1][y][z]) / dx;
+                    double sig_y = coil->sigma[x][y][z];
+                    if (sig_y > 1e6) sig_y = dynamic_sigma_copper;
+                    coil->Ey[x][y][z] += (dt / coil->eps[x][y][z]) * ((dHx_dz - dHz_dx) - sig_y * coil->Ey[x][y][z]);
+
+                    // Update Ez
+                    if (z == 0) {
+                        coil->Ez[x][y][z] = 0.0; // Bottom PEC ground plane
+                    } else {
+                        double dHy_dx = (coil->Hy[x][y][z] - coil->Hy[x - 1][y][z]) / dx;
+                        double dHx_dy = (coil->Hx[x][y][z] - coil->Hx[x][y - 1][z]) / dy;
+                        double sig_z = coil->sigma[x][y][z];
+                        if (sig_z > 1e6) sig_z = dynamic_sigma_copper;
+                        coil->Ez[x][y][z] += (dt / coil->eps[x][y][z]) * ((dHy_dx - dHx_dy) - sig_z * coil->Ez[x][y][z]);
                     }
-                    double cond_term = sig_val * coil->Ez[r][z];
-                    coil->Ez[r][z] += (dt / coil->eps[r][z]) * ((1.0 / r_val) * d_rHphi_dr - cond_term);
                 }
             }
         }
 
-        // Enforce Er = 0 at z = 0 boundary
-        for (int r = 0; r < GRID_R; r++) {
-            coil->Er[r][0] = 0.0;
-        }
+        // 3. Lumped Tuning Capacitor Boundary at top tap
+        int load_x = GRID_X / 2;
+        int load_y = GRID_Y / 2 - (GRID_Y / 4);
+        int load_z = GRID_Z - 3; // Tap near the top boundary of the simulated Z winding grid
+        if (load_z >= GRID_Z) load_z = GRID_Z - 2;
 
-        // 3. Lumped Tuning Capacitor Boundary Condition at top node
-        int load_z_idx = (int)((0.05 + 0.10) / dz);
-        if (load_z_idx >= GRID_Z) load_z_idx = GRID_Z - 2;
-
-        // Current flows through lumped capacitor: d(v_tune)/dt = i_loop / C_tune
-        coil->i_tuning_loop += (coil->Ez[coil_r_idx][load_z_idx] * dz - coil->v_tuning_node) * dt / (mu0 * dr);
+        coil->i_tuning_loop += (coil->Ez[load_x][load_y][load_z] * dz - coil->v_tuning_node) * dt / (mu0 * dx);
         coil->v_tuning_node += (coil->i_tuning_loop / coil->C_tune) * dt;
 
-        // Apply tuning potential back as a boundary load on Ez
-        coil->Ez[coil_r_idx][load_z_idx] = coil->v_tuning_node / dz;
-
-        // Output grid node potential (audion feed) is tapped at the top of the winding
+        coil->Ez[load_x][load_y][load_z] = coil->v_tuning_node / dz;
         output_grid[step] = (float)coil->v_tuning_node;
     }
 }
