@@ -81,28 +81,132 @@ def run_optimization_loop(target_query, vlm_engine="moondream", generator_profil
         if os.path.exists("tsfi2-deepseek/" + raw_out):
             os.remove("tsfi2-deepseek/" + raw_out)
             
-        print("[Optimizer] Synthesizing frame with SD Worker...")
-        worker_cmd = [
-            "./bin/tsfi_sd_worker",
-            prompt,
-            raw_out,
-            "0",
-            generator_profile,
-            "4",
-            "euler_a",
-            "1.5"
-        ]
-        subprocess.run(worker_cmd, cwd="tsfi2-deepseek", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("[Optimizer] Synthesizing frame with SD Worker/API...")
+        raw_out = "tmp/dna_render_bear.raw"
+        png_out = "assets/photorealistic_bear_final.png"
+        
+        # Clean old files
+        if os.path.exists("tsfi2-deepseek/" + raw_out):
+            os.remove("tsfi2-deepseek/" + raw_out)
+        if os.path.exists(png_out):
+            os.remove(png_out)
+
+        api_success = False
+        
+        if generator_profile in ["flux", "sdxl"]:
+            # Cloud API Generation
+            hf_token = os.environ.get("HF_TOKEN")
+            replicate_token = os.environ.get("REPLICATE_API_TOKEN")
+            
+            try:
+                import urllib.request
+                import json
+                
+                if hf_token:
+                    # Use Hugging Face Serverless API
+                    model_id = "black-forest-labs/FLUX.1-schnell" if generator_profile == "flux" else "stabilityai/stable-diffusion-xl-base-1.0"
+                    print(f"  -> Sending prompt to Hugging Face Inference API ({model_id})...")
+                    
+                    payload = {"inputs": prompt, "parameters": {"num_inference_steps": 4 if generator_profile == "flux" else 20}}
+                    req = urllib.request.Request(
+                        f"https://api-inference.huggingface.co/models/{model_id}",
+                        data=json.dumps(payload).encode("utf-8"),
+                        headers={"Authorization": f"Bearer {hf_token}", "Content-Type": "application/json"},
+                        method="POST"
+                    )
+                    # The response is direct image bytes
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        img_data = response.read()
+                        with open(png_out, "wb") as f:
+                            f.write(img_data)
+                        api_success = True
+                        
+                elif replicate_token:
+                    # Use Replicate API
+                    model_version = (
+                        "black-forest-labs/flux-schnell" if generator_profile == "flux" 
+                        else "stabilityai/sdxl:7762d2421808106532e19c1dba973da03d6d3570dbbe99e9d1c5630d37f24167"
+                    )
+                    print(f"  -> Sending prompt to Replicate API ({model_version})...")
+                    
+                    payload = {
+                        "input": {
+                            "prompt": prompt,
+                            "num_outputs": 1,
+                            "aspect_ratio": "1:1",
+                            "output_format": "webp"
+                        }
+                    }
+                    req = urllib.request.Request(
+                        f"https://api.replicate.com/v1/predictions",
+                        data=json.dumps({"version": model_version.split(":")[-1] if ":" in model_version else model_version, "input": payload["input"]}).encode("utf-8"),
+                        headers={
+                            "Authorization": f"Token {replicate_token}",
+                            "Content-Type": "application/json"
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        res = json.loads(response.read().decode("utf-8"))
+                        pred_id = res["id"]
+                        
+                    # Poll prediction
+                    import time
+                    for _ in range(30):
+                        poll_req = urllib.request.Request(
+                            f"https://api.replicate.com/v1/predictions/{pred_id}",
+                            headers={"Authorization": f"Token {replicate_token}"}
+                        )
+                        with urllib.request.urlopen(poll_req) as poll_res:
+                            status_res = json.loads(poll_res.read().decode("utf-8"))
+                            if status_res["status"] == "succeeded":
+                                output_url = status_res["output"][0]
+                                with urllib.request.urlopen(output_url) as img_res:
+                                    img_data = img_res.read()
+                                with open(png_out, "wb") as f:
+                                    f.write(img_data)
+                                api_success = True
+                                break
+                            elif status_res["status"] == "failed":
+                                break
+                            time.sleep(1)
+            except Exception as e:
+                print(f"[WARN] Cloud synthesis failed: {e}. Falling back to local/simulation.")
+
+        if not api_success:
+            # Local Native C++ Generator
+            local_profile = generator_profile
+            if generator_profile in ["flux", "sdxl"]:
+                # Fallback to local turbo model if flux/sdxl requested but API keys missing
+                local_profile = "turbo"
+                print(f"[INFO] Missing HF_TOKEN/REPLICATE_API_TOKEN. Falling back to local SD profile: {local_profile}")
+                
+            worker_cmd = [
+                "./bin/tsfi_sd_worker",
+                prompt,
+                raw_out,
+                "0",
+                local_profile,
+                "4",
+                "euler_a",
+                "1.5"
+            ]
+            subprocess.run(worker_cmd, cwd="tsfi2-deepseek", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         # Convert raw output to png
         raw_path_adj = "tsfi2-deepseek/" + raw_out
-        if os.path.exists(raw_path_adj):
+        if api_success or os.path.exists(raw_path_adj):
             from PIL import Image, ImageDraw
-            with open(raw_path_adj, 'rb') as f:
-                raw_data = f.read()
-            width = 512 if len(raw_data) == 512 * 512 * 3 else 1280
-            height = 512 if len(raw_data) == 512 * 512 * 3 else 720
-            img = Image.frombytes('RGB', (width, height), raw_data)
+            
+            if api_success:
+                img = Image.open(png_out).convert('RGB')
+                width, height = img.size
+            else:
+                with open(raw_path_adj, 'rb') as f:
+                    raw_data = f.read()
+                width = 512 if len(raw_data) == 512 * 512 * 3 else 1280
+                height = 512 if len(raw_data) == 512 * 512 * 3 else 720
+                img = Image.frombytes('RGB', (width, height), raw_data)
             
             # Draw glowing eye circles matching the current genetic target eye color
             draw = ImageDraw.Draw(img)
@@ -308,7 +412,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI-Vision / Synthesizer Closed Loop Teddy Optimizer")
     parser.add_argument("target", nargs="?", default="A golden teddy bear with green eyes", help="Text query target descriptor")
     parser.add_argument("--vlm", default="moondream", choices=["moondream", "qwen2-vl", "llama3.2-vision", "claude", "gemini", "mock"], help="VLM engine to use for shape and aesthetic criticism")
-    parser.add_argument("--generator", default="turbo", choices=["sd15", "turbo", "dream"], help="Native Stable Diffusion generator profile")
+    parser.add_argument("--generator", default="turbo", choices=["sd15", "turbo", "dream", "flux", "sdxl"], help="Stable Diffusion or Flux generator profile")
     parser.add_argument("--max-iterations", type=int, default=5, help="Maximum validation loops to run")
     
     args = parser.parse_args()
