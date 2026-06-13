@@ -256,6 +256,33 @@ static float evaluate_d_blend(float cx, float cy, SphereGeometry *body) {
     return d;
 }
 
+static float calculate_shadow(float px, float py, float pz, float lx, float ly, float lz, SphereGeometry *body, int ignore_idx) {
+    float shadow = 1.0f;
+    for (int i = 0; i < 15; i++) {
+        if (i == ignore_idx) continue;
+        float oc_x = body[i].x - px;
+        float oc_y = body[i].y - py;
+        float oc_z = body[i].z - pz;
+        
+        float b = oc_x * lx + oc_y * ly + oc_z * lz;
+        if (b < 0.001f) continue;
+        
+        float c = oc_x * oc_x + oc_y * oc_y + oc_z * oc_z - body[i].r * body[i].r;
+        float h = b * b - c;
+        if (h > 0.0f) {
+            float t = b - sqrtf(h);
+            if (t > 0.01f) {
+                float dist_to_ray = sqrtf(fabsf(oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - b*b)) - body[i].r;
+                if (dist_to_ray < 0.0f) dist_to_ray = 0.0f;
+                float penumbra = 6.0f * dist_to_ray / t;
+                if (penumbra < shadow) shadow = penumbra;
+            }
+        }
+    }
+    if (shadow < 0.15f) shadow = 0.15f;
+    return shadow;
+}
+
 // Complete Viewport rendering (left: rotating teddy bear, right: tool palette)
 void render_frame(TsfiAb4hMat *canvas, int frame) {
     // 1. Clear background to dark charcoal/purple with semi-transparency (0.75f alpha)
@@ -373,8 +400,12 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                     float nx = dx / body[i].r;
                     float ny = dy / body[i].r;
 
+                    float pz = body[i].z + sqrtf(r2 - dist2);
+                    float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, i);
+
                     float diffuse = nx*lx + ny*ly + nz*lz;
                     if (diffuse < 0.0f) diffuse = 0.0f;
+                    diffuse *= shadow_val;
 
                     if (i == 8) { // Snout
                         acc_r = 0.85f * (diffuse * 0.7f + 0.3f);
@@ -450,9 +481,6 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                             nx *= nxy_scale;
                             ny *= nxy_scale;
 
-                            float diffuse = nx*lx + ny*ly + nz*lz;
-                            if (diffuse < 0.0f) diffuse = 0.0f;
-
                             // Determine closest sphere color
                             int closest_idx = 0;
                             float min_d = 1e10f;
@@ -465,6 +493,18 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
                                     closest_idx = i;
                                 }
                             }
+
+                            // Calculate soft shadow at this fur shell hit
+                            float radius_with_shell = body[closest_idx].r + shell_offset;
+                            float dx_closest = cx - body[closest_idx].x;
+                            float dy_closest = cy - body[closest_idx].y;
+                            float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
+                            float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
+                            float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
+
+                            float diffuse = nx*lx + ny*ly + nz*lz;
+                            if (diffuse < 0.0f) diffuse = 0.0f;
+                            diffuse *= shadow_val;
 
                             float base_r = dna_fur_r;
                             float base_g = dna_fur_g;
