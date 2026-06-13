@@ -341,12 +341,21 @@
                             <strong>🧬 12-Byte Genome:</strong>
                             <div id="dnaHexDisplay" style="color: #fff; margin-top: 4px; font-weight: bold; word-break: break-all; font-size: 0.9rem; letter-spacing: 1px;">000000000000000000000000</div>
                         </div>
-                        <div style="background: rgba(255,165,0,0.04); border: 1px solid rgba(255,165,0,0.25); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.8rem; color: #ffa500; display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <strong>🔌 Parasitic Ammeter:</strong>
-                                <div style="color: #fff; margin-top: 4px; font-weight: bold; font-size: 0.78rem;" id="ammeterValDisplay">Temp: 293.1 K</div>
+                        <div style="background: rgba(255,165,0,0.04); border: 1px solid rgba(255,165,0,0.25); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.8rem; color: #ffa500; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                <div>
+                                    <strong>🔌 Parasitic Ammeter:</strong>
+                                    <div style="color: #fff; margin-top: 4px; font-weight: bold; font-size: 0.78rem;" id="ammeterValDisplay">Temp: 293.1 K</div>
+                                </div>
+                                <canvas id="ammeterCanvas" width="90" height="45" style="display: block; width: 90px; height: 45px; background: #02040a; border: 1px solid rgba(255,165,0,0.3); border-radius: 4px;"></canvas>
                             </div>
-                            <canvas id="ammeterCanvas" width="90" height="45" style="display: block; width: 90px; height: 45px; background: #02040a; border: 1px solid rgba(255,165,0,0.3); border-radius: 4px;"></canvas>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; border-top: 1px solid rgba(255,165,0,0.15); padding-top: 6px;">
+                                <span>Coil Type:</span>
+                                <select id="ammeterType" onchange="setAmmeterGeometry(this.value)" style="background: #02040a; color: #ffa500; border: 1px solid rgba(255,165,0,0.3); border-radius: 3px; font-family: monospace; font-size: 0.7rem; padding: 1px 4px; cursor: pointer;">
+                                    <option value="T">Type T (Tubular Cylindrical)</option>
+                                    <option value="S">Type S (Standard Flat-plate)</option>
+                                </select>
+                            </div>
                         </div>
                         <button class="btn" style="background: var(--glow-magenta); border: none; padding: 6px 12px; font-size: 0.8rem;" onclick="triggerBreeding()">🧬 Mutate Genome</button>
                     </div>
@@ -618,8 +627,22 @@
         // --- AMMETER PARASITIC PHYSICS ---
         let ammeter_T = 293.15;
         let frameCount = 0;
+        let ammeter_k_loss = 0.03;       // Default Type T (lower loss)
+        let ammeter_thermal_mass = 0.012; // Default Type T (lower mass, faster heating)
         const ammeterCanvas = document.getElementById("ammeterCanvas");
         const aCtx = ammeterCanvas.getContext("2d");
+
+        function setAmmeterGeometry(type) {
+            if (type === "T") {
+                ammeter_k_loss = 0.03;
+                ammeter_thermal_mass = 0.012;
+                logEvent("Ammeter Config: Switched to Type T (Tubular Cylindrical) - Low loss, fast reaction.");
+            } else {
+                ammeter_k_loss = 0.05;
+                ammeter_thermal_mass = 0.015;
+                logEvent("Ammeter Config: Switched to Type S (Standard Flat-plate) - High loss, standard reaction.");
+            }
+        }
 
         function drawAmmeter(needle_deflection) {
             const w = ammeterCanvas.width;
@@ -704,7 +727,7 @@
             // Dragon's Lair score parasitizes the current loop (heats the coil via voltage leakage)
             const scoreLeak = (score / 18000.0) * 0.4;
             const current_sq = ((breathing_freq + scoreLeak) * scale_val) * ((breathing_freq + scoreLeak) * scale_val);
-            ammeter_T += (current_sq * 10.0 - 0.05 * (ammeter_T - 293.15)) * 0.05;
+            ammeter_T += (current_sq * 10.0 - ammeter_k_loss * (ammeter_T - 293.15)) * (0.0006 / ammeter_thermal_mass);
 
             const needle_deflection = 0.005 * (ammeter_T - 293.15);
             const ammeter_damping = 1.0 / (1.0 + needle_deflection * 1.5);
