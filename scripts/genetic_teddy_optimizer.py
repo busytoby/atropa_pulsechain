@@ -8,9 +8,10 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from opencv_teddy_evaluator import tokenize_query, VOCAB_FUR, VOCAB_EYES
 
-def run_optimization_loop(target_query, max_iterations=5):
+def run_optimization_loop(target_query, vlm_engine="moondream", generator_profile="turbo", max_iterations=5):
     print(f"=== Starting AI-Vision/Synthesizer Closed Loop Optimizer ===")
     print(f"Target Objective: '{target_query}'")
+    print(f"VLM Critic: '{vlm_engine}' | Generator Profile: '{generator_profile}'")
     
     # 1. Tokenize query to find the target parameters
     targets = tokenize_query(target_query)
@@ -18,7 +19,6 @@ def run_optimization_loop(target_query, max_iterations=5):
     target_eyes = np.array(targets["eyes_rgb"])
     
     # Initialize 12-byte genome starting values (mutatable genes)
-    # Start with a default generic brown bear
     genes = {
         "fur_r": 91, "fur_g": 63, "fur_b": 51,
         "eye_r": 0, "eye_g": 255, "eye_b": 0,
@@ -50,7 +50,6 @@ def run_optimization_loop(target_query, max_iterations=5):
             f.write(dna_data)
             
         # B. Run the synthesizer to generate the photorealistic image matching the genome
-        # Translate RGB values to words for high-fidelity prompt matching
         fur_word = "brown"
         if abs(genes["fur_r"] - 180) < 50 and abs(genes["fur_g"] - 130) < 50:
             fur_word = "golden"
@@ -88,7 +87,7 @@ def run_optimization_loop(target_query, max_iterations=5):
             prompt,
             raw_out,
             "0",
-            "turbo",
+            generator_profile,
             "4",
             "euler_a",
             "1.5"
@@ -134,60 +133,141 @@ def run_optimization_loop(target_query, max_iterations=5):
         sym_match = re.search(r'Vertical Symmetry Score:\s*([\d\.]+)', eval_output)
         symmetry_score = float(sym_match.group(1)) if sym_match else 0.98
         
-        # D. Run DeepSeek VLM vision analysis on the shapes
-        print("[Optimizer] Querying DeepSeek VLM for shape and aesthetic analysis...")
+        # D. Run Visual LLM/VLM feedback
+        print(f"[Optimizer] Querying {vlm_engine} for shape and aesthetic analysis...")
         import base64
         import json
         import urllib.request
         
         deepseek_feedback = ""
+        vlm_prompt = (
+            f"Analyze this teddy bear image shape. The user wants '{target_query}'. "
+            f"Evaluate the lighting angle (currently at {genes['light_angle']}/255 index), "
+            f"fur shagginess (fur_length: {genes['fur_length']}), and render scale ({genes['scale']}). "
+            "Suggest adjustments to lighting, scale, and fur shagginess."
+        )
+        
         try:
             with open(png_out, "rb") as image_file:
                 b64_data = base64.b64encode(image_file.read()).decode('utf-8')
-            payload = {
-                "model": "moondream",
-                "prompt": (
-                    f"Analyze this teddy bear image shape. The user wants '{target_query}'. "
-                    f"Evaluate the lighting angle (currently at {genes['light_angle']}/255 index), "
-                    f"fur shagginess (fur_length: {genes['fur_length']}), and render scale ({genes['scale']}). "
-                    "Suggest adjustments to lighting, scale, and fur shagginess."
-                ),
-                "images": [b64_data],
-                "stream": False
-            }
-            req = urllib.request.Request(
-                "http://127.0.0.1:11435/api/generate",
-                data=json.dumps(payload).encode('utf-8'),
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=5) as response:
-                res_data = response.read().decode('utf-8')
-                res_json = json.loads(res_data)
-                deepseek_feedback = res_json.get("response", "")
+            
+            if vlm_engine in ["moondream", "qwen2-vl", "llama3.2-vision"]:
+                # Local Ollama endpoint
+                model_map = {
+                    "moondream": "moondream",
+                    "qwen2-vl": "qwen2-vl",
+                    "llama3.2-vision": "llama3.2-vision"
+                }
+                payload = {
+                    "model": model_map[vlm_engine],
+                    "prompt": vlm_prompt,
+                    "images": [b64_data],
+                    "stream": False
+                }
+                req = urllib.request.Request(
+                    "http://127.0.0.1:11435/api/generate",
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    res_data = response.read().decode('utf-8')
+                    res_json = json.loads(res_data)
+                    deepseek_feedback = res_json.get("response", "")
+            
+            elif vlm_engine == "claude":
+                # Anthropic API
+                api_key = os.environ.get("ANTHROPIC_API_KEY", "mock")
+                if api_key == "mock":
+                    raise ValueError("ANTHROPIC_API_KEY not set")
+                payload = {
+                    "model": "claude-3-5-sonnet-20241022",
+                    "max_tokens": 1024,
+                    "messages": [{
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": vlm_prompt},
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/png",
+                                    "data": b64_data
+                                }
+                            }
+                        ]
+                    }]
+                }
+                req = urllib.request.Request(
+                    "https://api.anthropic.com/v1/messages",
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01"
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res_data = response.read().decode('utf-8')
+                    res_json = json.loads(res_data)
+                    deepseek_feedback = res_json.get("content", [{}])[0].get("text", "")
+            
+            elif vlm_engine == "gemini":
+                # Google Gemini API
+                api_key = os.environ.get("GEMINI_API_KEY", "mock")
+                if api_key == "mock":
+                    raise ValueError("GEMINI_API_KEY not set")
+                payload = {
+                    "contents": [{
+                        "parts": [
+                            {"text": vlm_prompt},
+                            {
+                                "inlineData": {
+                                    "mimeType": "image/png",
+                                    "data": b64_data
+                                }
+                            }
+                        ]
+                    }]
+                }
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res_data = response.read().decode('utf-8')
+                    res_json = json.loads(res_data)
+                    deepseek_feedback = res_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            
+            else:
+                raise ValueError("Unknown VLM engine")
+                
         except Exception as e:
-            # Fallback to local DeepSeek model simulation based on OpenCV findings
+            # Fallback to local simulated response based on visual validation results
             symmetry_flag = "highly symmetric" if symmetry_score > 0.95 else "asymmetric and mutated"
             color_flag = "warm golden" if target_fur[0] == 180 else "standard brown"
             deepseek_feedback = (
-                f"[DeepSeek Simulated Response]: The teddy bear shape is well-formed, but the lighting angle ({genes['light_angle']}) "
+                f"[Simulated {vlm_engine.upper()} Response]: The teddy bear shape is well-formed, but the lighting angle ({genes['light_angle']}) "
                 f"creates a flat look. The fur is {symmetry_flag} and appears {color_flag}. "
                 "Recommend shifting light_angle index by +15 for better highlights and decreasing scale to 95 to prevent clipping."
             )
         
-        print("\n=== DeepSeek Shape & Aesthetic Critique ===")
+        print(f"\n=== {vlm_engine.upper()} Shape & Aesthetic Critique ===")
         print(deepseek_feedback)
         print("===========================================\n")
 
-        # Parse DeepSeek feedback corrections
+        # Parse VLM feedback corrections
         if "lighting" in deepseek_feedback.lower() or "light_angle" in deepseek_feedback.lower() or "angle" in deepseek_feedback.lower():
-            # Apply subtle incremental adjustments to lighting angle based on deepseek criticism
             genes["light_angle"] = int(np.clip(genes["light_angle"] + 15, 0, 255))
-            print(f"[Feedback Loop - DeepSeek] Adjusted Light Angle Gene: {genes['light_angle']}")
+            print(f"[Feedback Loop - VLM] Adjusted Light Angle Gene: {genes['light_angle']}")
             
         if "scale" in deepseek_feedback.lower() or "clipping" in deepseek_feedback.lower() or "frustum" in deepseek_feedback.lower():
             genes["scale"] = int(np.clip(genes["scale"] - 5, 50, 150))
-            print(f"[Feedback Loop - DeepSeek] Adjusted Scale Gene: {genes['scale']}")
+            print(f"[Feedback Loop - VLM] Adjusted Scale Gene: {genes['scale']}")
             
         # Check if we passed OpenCV validation
         if "=== [SUCCESS] OpenCV Validation Passed ===" in eval_output:
@@ -195,7 +275,6 @@ def run_optimization_loop(target_query, max_iterations=5):
             break
             
         # E. Analyze validator outputs and apply delta corrections (AI Optimizer updates genes)
-        # Parse detected values from standard output
         try:
             # Parse detected Fur RGB
             fur_match = re.search(r'Detected Fur RGB:\s*\((\d+),\s*(\d+),\s*(\d+)\)', eval_output)
@@ -213,7 +292,6 @@ def run_optimization_loop(target_query, max_iterations=5):
             # Parse eye contours to boost eye color values if undetected
             eye_match = re.search(r'Detected Glowing Eye Contours:\s*(\d+)', eval_output)
             if eye_match and int(eye_match.group(1)) == 0:
-                # Saturated color wasn't bright enough: boost eye color intensities
                 genes["eye_r"] = int(np.clip(target_eyes[0] * 1.2, 0, 255))
                 genes["eye_g"] = int(np.clip(target_eyes[1] * 1.2, 0, 255))
                 genes["eye_b"] = int(np.clip(target_eyes[2] * 1.2, 0, 255))
@@ -226,5 +304,12 @@ def run_optimization_loop(target_query, max_iterations=5):
     print("=== Optimization Loop Completed ===")
 
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else "A golden teddy bear with green eyes"
-    run_optimization_loop(target)
+    import argparse
+    parser = argparse.ArgumentParser(description="AI-Vision / Synthesizer Closed Loop Teddy Optimizer")
+    parser.add_argument("target", nargs="?", default="A golden teddy bear with green eyes", help="Text query target descriptor")
+    parser.add_argument("--vlm", default="moondream", choices=["moondream", "qwen2-vl", "llama3.2-vision", "claude", "gemini", "mock"], help="VLM engine to use for shape and aesthetic criticism")
+    parser.add_argument("--generator", default="turbo", choices=["sd15", "turbo", "dream"], help="Native Stable Diffusion generator profile")
+    parser.add_argument("--max-iterations", type=int, default=5, help="Maximum validation loops to run")
+    
+    args = parser.parse_args()
+    run_optimization_loop(args.target, vlm_engine=args.vlm, generator_profile=args.generator, max_iterations=args.max_iterations)
