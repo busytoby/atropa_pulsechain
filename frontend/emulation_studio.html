@@ -821,7 +821,7 @@
             // Draw Body
             bCtx.fillStyle = furColor;
             bCtx.beginPath();
-            bCtx.ellipse(cx, cy + 30, 45 * s, (55 + breathing) * s, 0, 0, Math.PI * 2);
+            bCtx.ellipse(cx, cy + 30 * s, 45 * s, (55 + breathing) * s, 0, 0, Math.PI * 2);
             bCtx.fill();
             bCtx.strokeStyle = "rgba(0,0,0,0.15)";
             bCtx.stroke();
@@ -858,7 +858,7 @@
 
             // Draw Head
             bCtx.beginPath();
-            bCtx.ellipse(cx, cy - 25, 38 * s, 34 * s, 0, 0, Math.PI * 2);
+            bCtx.ellipse(cx, cy - 25 * s, 38 * s, 34 * s, 0, 0, Math.PI * 2);
             bCtx.fill();
             bCtx.stroke();
 
@@ -887,7 +887,7 @@
             // Snout/Muzzle
             bCtx.fillStyle = "#dfd6cd";
             bCtx.beginPath();
-            bCtx.ellipse(cx, cy - 18, 14 * s, 10 * s, 0, 0, Math.PI * 2);
+            bCtx.ellipse(cx, cy - 18 * s, 14 * s, 10 * s, 0, 0, Math.PI * 2);
             bCtx.fill();
 
             // Cute Blush Cheeks
@@ -900,14 +900,14 @@
             // Nose
             bCtx.fillStyle = "#1e293b";
             bCtx.beginPath();
-            bCtx.arc(cx, cy - 21, 4 * s, 0, Math.PI * 2);
+            bCtx.arc(cx, cy - 21 * s, 4 * s, 0, Math.PI * 2);
             bCtx.fill();
 
             // Mouth line
             bCtx.strokeStyle = "#1e293b";
             bCtx.lineWidth = 1.2 * s;
             bCtx.beginPath();
-            bCtx.moveTo(cx, cy - 21 + 3 * s);
+            bCtx.moveTo(cx, cy - 21 * s + 3 * s);
             bCtx.lineTo(cx, cy - 17 * s);
             bCtx.arc(cx - 3 * s, cy - 17 * s, 3 * s, 0, Math.PI);
             bCtx.moveTo(cx, cy - 17 * s);
