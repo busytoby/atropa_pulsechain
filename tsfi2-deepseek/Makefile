@@ -61,6 +61,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_dl_thunks.o $(OBJ_DIR)/lau_vram.o \
             $(OBJ_DIR)/tsfi_studio_core.o $(OBJ_DIR)/tsfi_wavefront_core.o \
             $(OBJ_DIR)/tsfi_lc_tank.o \
+            $(OBJ_DIR)/tsfi_ammeter.o \
             $(OBJ_DIR)/drm-lease-v1-protocol.o
 
 # --- Plugin Objects ---
