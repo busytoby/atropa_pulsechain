@@ -291,6 +291,22 @@ static float evaluate_d_blend(float cx, float cy, SphereGeometry *body) {
         float dx = cx - body[i].x;
         float dy = cy - body[i].y;
         float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+        
+        // Apply cupped/hollowed ear subtraction in 2D
+        if (i == 2) { // Left ear
+            float active_scale = body[i].r / 0.09f;
+            float inner_dx = cx - (body[i].x + 0.015f * active_scale);
+            float inner_dy = cy - (body[i].y - 0.01f * active_scale);
+            float inner_dist = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f;
+            dist = fmaxf(dist, -inner_dist);
+        } else if (i == 3) { // Right ear
+            float active_scale = body[i].r / 0.09f;
+            float inner_dx = cx - (body[i].x - 0.015f * active_scale);
+            float inner_dy = cy - (body[i].y - 0.01f * active_scale);
+            float inner_dist = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f;
+            dist = fmaxf(dist, -inner_dist);
+        }
+        
         d = smin_quad(d, dist, 0.08f);
     }
     return d;
