@@ -144,8 +144,47 @@ static inline Ab4hPixel make_ab4h_pixel(float r, float g, float b, float a) {
 }
 
 // Shell texturing noise generator for photorealistic fur strands
+static float hash_noise_2d(int x, int y) {
+    uint32_t hash = (uint32_t)x * 73856093 ^ (uint32_t)y * 19349663;
+    hash = (hash ^ 61) ^ (hash >> 16);
+    hash += hash << 3;
+    hash ^= hash >> 4;
+    hash *= 0x27d4eb2d;
+    hash ^= hash >> 15;
+    return (float)(hash & 0xFFFF) / 65535.0f;
+}
+
+static float smooth_noise_2d(float x, float y) {
+    int ix = (int)floorf(x);
+    int iy = (int)floorf(y);
+    float fx = x - (float)ix;
+    float fy = y - (float)iy;
+    
+    float ux = fx * fx * (3.0f - 2.0f * fx);
+    float uy = fy * fy * (3.0f - 2.0f * fy);
+    
+    float a = hash_noise_2d(ix,     iy);
+    float b = hash_noise_2d(ix + 1, iy);
+    float c = hash_noise_2d(ix,     iy + 1);
+    float d = hash_noise_2d(ix + 1, iy + 1);
+    
+    return a * (1.0f - ux) * (1.0f - uy) +
+           b * ux * (1.0f - uy) +
+           c * (1.0f - ux) * uy +
+           d * ux * uy;
+}
+
 static float fur_noise(int x, int y, int shell) {
-    uint32_t hash = (uint32_t)x * 73856093 ^ (uint32_t)y * 19349663 ^ (uint32_t)shell * 83492791;
+    // Domain warping: distort sampling coordinates using smooth 2D value noise
+    float scale = 0.08f;
+    float wx = smooth_noise_2d((float)x * scale, (float)y * scale);
+    float wy = smooth_noise_2d((float)x * scale + 13.7f, (float)y * scale + 27.3f);
+    
+    float warp_strength = 6.0f;
+    int warped_x = x + (int)((wx - 0.5f) * warp_strength);
+    int warped_y = y + (int)((wy - 0.5f) * warp_strength);
+    
+    uint32_t hash = (uint32_t)warped_x * 73856093 ^ (uint32_t)warped_y * 19349663 ^ (uint32_t)shell * 83492791;
     hash = (hash ^ 61) ^ (hash >> 16);
     hash += hash << 3;
     hash ^= hash >> 4;
