@@ -269,6 +269,164 @@ int main() {
     assert(corr_cal > 0.50);
     printf("[SUCCESS] Pilot phase calibration restored coherent combining in the presence of coordinate jitter!\n");
 
+    // 8. TDOA Cross-Correlation and 2D Grid Search Localization
+    printf("\n=== TDOA Localization Grid Search ===\n");
+    double *estimated_tdoa = (double*)malloc(NUM_STATIONS * sizeof(double));
+    estimated_tdoa[0] = 0.0;
+
+    int max_lag = 80;
+    
+    // Allocate IQ buffers for all stations
+    double **I_sig = (double**)malloc(NUM_STATIONS * sizeof(double*));
+    double **Q_sig = (double**)malloc(NUM_STATIONS * sizeof(double*));
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        I_sig[i] = (double*)malloc(TOTAL_SAMPLES * sizeof(double));
+        Q_sig[i] = (double*)malloc(TOTAL_SAMPLES * sizeof(double));
+        for (int n = 0; n < TOTAL_SAMPLES; n++) {
+            // Apply a 4-sample moving average to low-pass filter the mix products
+            double sum_I = 0.0;
+            double sum_Q = 0.0;
+            int count = 0;
+            for (int k = 0; k < 4; k++) {
+                int idx = n - k;
+                if (idx >= 0) {
+                    double t = (double)idx / SAMPLING_RATE;
+                    sum_I += (double)stations[i].buffer[idx] * cos(2.0 * M_PI * fc_carrier * t);
+                    sum_Q += (double)stations[i].buffer[idx] * sin(2.0 * M_PI * fc_carrier * t);
+                    count++;
+                }
+            }
+            I_sig[i][n] = sum_I / count;
+            Q_sig[i][n] = sum_Q / count;
+        }
+    }
+
+    for (int i = 1; i < NUM_STATIONS; i++) {
+        double max_mag2 = -1.0;
+        int best_lag = 0;
+        for (int lag = -max_lag; lag <= max_lag; lag++) {
+            double sum_real = 0.0;
+            double sum_imag = 0.0;
+            for (int n = max_lag; n < TOTAL_SAMPLES - max_lag; n++) {
+                double I_i = I_sig[i][n];
+                double Q_i = Q_sig[i][n];
+                double I_0 = I_sig[0][n - lag];
+                double Q_0 = Q_sig[0][n - lag];
+                
+                sum_real += (I_i * I_0 + Q_i * Q_0);
+                sum_imag += (Q_i * I_0 - I_i * Q_0);
+            }
+            double mag2 = sum_real * sum_real + sum_imag * sum_imag;
+            if (mag2 > max_mag2) {
+                max_mag2 = mag2;
+                best_lag = lag;
+            }
+        }
+        estimated_tdoa[i] = (double)best_lag / SAMPLING_RATE;
+        
+    }
+
+    double **R_mag = (double**)malloc(NUM_STATIONS * sizeof(double*));
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        R_mag[i] = (double*)calloc(2 * max_lag + 1, sizeof(double));
+    }
+
+    for (int i = 1; i < NUM_STATIONS; i++) {
+        for (int lag = -max_lag; lag <= max_lag; lag++) {
+            double sum_real = 0.0;
+            double sum_imag = 0.0;
+            for (int n = max_lag; n < TOTAL_SAMPLES - max_lag; n++) {
+                double I_i = I_sig[i][n];
+                double Q_i = Q_sig[i][n];
+                double I_0 = I_sig[0][n - lag];
+                double Q_0 = Q_sig[0][n - lag];
+                
+                sum_real += (I_i * I_0 + Q_i * Q_0);
+                sum_imag += (Q_i * I_0 - I_i * Q_0);
+            }
+            R_mag[i][lag + max_lag] = sqrt(sum_real * sum_real + sum_imag * sum_imag);
+        }
+    }
+
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        free(I_sig[i]);
+        free(Q_sig[i]);
+    }
+    free(I_sig);
+    free(Q_sig);
+
+    // Coarse grid search: -100 km to 100 km with 2 km steps
+    double best_x = 0.0, best_y = 0.0;
+    double max_cost = -1.0;
+
+    for (double gx = -100.0; gx <= 100.0; gx += 2.0) {
+        for (double gy = -100.0; gy <= 100.0; gy += 2.0) {
+            double cost = 0.0;
+            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
+            double delay0 = dist0 / SPEED_OF_LIGHT;
+
+            for (int i = 1; i < NUM_STATIONS; i++) {
+                double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
+                double delayi = disti / SPEED_OF_LIGHT;
+                double model_tdoa = delayi - delay0;
+                int lag = (int)round(model_tdoa * SAMPLING_RATE);
+                if (lag >= -max_lag && lag <= max_lag) {
+                    cost += R_mag[i][lag + max_lag];
+                }
+            }
+
+            if (cost > max_cost) {
+                max_cost = cost;
+                best_x = gx;
+                best_y = gy;
+            }
+        }
+    }
+
+    // Fine grid search: search within +/- 5 km around best coarse estimate with 0.1 km steps
+    double coarse_x = best_x;
+    double coarse_y = best_y;
+    max_cost = -1.0;
+
+    for (double gx = coarse_x - 5.0; gx <= coarse_x + 5.0; gx += 0.1) {
+        for (double gy = coarse_y - 5.0; gy <= coarse_y + 5.0; gy += 0.1) {
+            double cost = 0.0;
+            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
+            double delay0 = dist0 / SPEED_OF_LIGHT;
+
+            for (int i = 1; i < NUM_STATIONS; i++) {
+                double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
+                double delayi = disti / SPEED_OF_LIGHT;
+                double model_tdoa = delayi - delay0;
+                int lag = (int)round(model_tdoa * SAMPLING_RATE);
+                if (lag >= -max_lag && lag <= max_lag) {
+                    cost += R_mag[i][lag + max_lag];
+                }
+            }
+
+            if (cost > max_cost) {
+                max_cost = cost;
+                best_x = gx;
+                best_y = gy;
+            }
+        }
+    }
+
+    double loc_error = sqrt((best_x - tx_x)*(best_x - tx_x) + (best_y - tx_y)*(best_y - tx_y));
+    printf("[RESULTS] True TX coordinates: (%.1f, %.1f) km\n", tx_x, tx_y);
+    printf("[RESULTS] Localized TX coordinates: (%.1f, %.1f) km\n", best_x, best_y);
+    printf("[RESULTS] Localization error: %.2f km\n", loc_error);
+
+    // Verify TDOA localization successfully finds coordinates within 5.0 km
+    assert(loc_error < 5.0);
+    printf("[SUCCESS] TDOA grid search successfully localized the spy transmitter!\n");
+
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        free(R_mag[i]);
+    }
+    free(R_mag);
+    free(estimated_tdoa);
+
     // Clean up
     for (int i = 0; i < NUM_STATIONS; i++) {
         free(stations[i].buffer);
