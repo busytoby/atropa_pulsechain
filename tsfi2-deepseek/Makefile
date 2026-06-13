@@ -223,6 +223,9 @@ bin/test_coil_parasitics: tests/test_coil_parasitics.c $(CORE_OBJS) $(OBJ_DIR)/v
 bin/prove_maxwell_fdtd: tests/prove_maxwell_fdtd.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_deforest_ground: tests/test_deforest_ground.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 
 
 
