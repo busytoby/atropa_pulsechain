@@ -30,6 +30,10 @@ void tsfi_distributed_coil_init(
     coil->coil_height = height;
     coil->wire_radius = (wire_gauge_mm / 1000.0) / 2.0;
     coil->C_tune = C_tune;
+    
+    // Set standard 1916 dielectric properties: shellac/bakelite form with loss tangent
+    coil->loss_tangent = 0.02; // 2% typical loss factor for vintage forms
+    coil->turns_pitch = height / turns;
 
     // 1. Calculate Inductance using Wheeler's formula: L = (d^2 * n^2) / (18d + 40l)
     // where d is diameter in inches, l is length in inches. Converts to meters:
@@ -57,6 +61,7 @@ void tsfi_distributed_coil_init(
         coil->L_seg[j] = coil->L_total / COIL_SEGMENTS;
         coil->C_seg[j] = (coil->C_total_parasitic) / COIL_SEGMENTS;
         coil->R_seg[j] = coil->R_dc / COIL_SEGMENTS;
+        coil->G_seg[j] = 0.0; // Dynamic dielectric loss
     }
 
     // Node 15 (last segment output) incorporates the parallel tuning capacitor C_tune
@@ -75,20 +80,33 @@ void tsfi_distributed_coil_process(
 
     double dt = 1.0 / sample_rate;
 
-    // Update dynamic resistance due to RF Skin Effect: R_ac = R_dc * (wire_radius / (2 * skin_depth))
-    // Skin depth delta = sqrt(rho / (pi * f * mu0))
+    // 1. Skin effect calculations
     double resistivity_copper = 1.68e-8;
     double mu0 = 4.0 * M_PI * 1e-7;
     double skin_depth = sqrt(resistivity_copper / (M_PI * current_freq_hz * mu0));
     
-    double r_multiplier = 1.0;
+    double skin_multiplier = 1.0;
     if (skin_depth < coil->wire_radius) {
-        r_multiplier = coil->wire_radius / (2.0 * skin_depth);
-        if (r_multiplier < 1.0) r_multiplier = 1.0;
+        skin_multiplier = coil->wire_radius / (2.0 * skin_depth);
+        if (skin_multiplier < 1.0) skin_multiplier = 1.0;
     }
 
+    // 2. Proximity effect calculation: Medhurst/Butterworth relation
+    // Ratio of wire diameter to winding pitch
+    double wire_diam = 2.0 * coil->wire_radius;
+    double d_over_p = wire_diam / coil->turns_pitch;
+    if (d_over_p > 0.95) d_over_p = 0.95; // Physical cap to prevent overlap
+    
+    // Proximity factor scaling approximation
+    double proximity_factor = 1.0 + 3.29 * (d_over_p * d_over_p);
+    double total_r_multiplier = skin_multiplier * proximity_factor;
+
+    // 3. Update segment parameters dynamically
+    double omega = 2.0 * M_PI * current_freq_hz;
     for (int j = 0; j < COIL_SEGMENTS; j++) {
-        coil->R_seg[j] = (coil->R_dc / COIL_SEGMENTS) * r_multiplier;
+        coil->R_seg[j] = (coil->R_dc / COIL_SEGMENTS) * total_r_multiplier;
+        // Dielectric loss conductance: G = omega * C * tan(delta)
+        coil->G_seg[j] = omega * coil->C_seg[j] * coil->loss_tangent;
     }
 
     // Process sample by sample
@@ -96,9 +114,8 @@ void tsfi_distributed_coil_process(
         double v_in = (double)input_rf[step];
 
         // Numerical finite difference solver:
-        // Segment 0 is fed directly by the RF source
         // Segment j current update: d(i_l[j])/dt = (v[j-1] - v[j] - i_l[j] * R_seg[j]) / L_seg[j]
-        // Segment j voltage update: d(v[j])/dt = (i_l[j] - i_l[j+1]) / C_seg[j]
+        // Segment j voltage update: d(v[j])/dt = (i_l[j] - i_l[j+1] - v[j] * G_seg[j]) / C_seg[j]
 
         // Current solver step
         for (int j = 0; j < COIL_SEGMENTS; j++) {
@@ -108,10 +125,10 @@ void tsfi_distributed_coil_process(
             coil->i_l[j] += dil * dt;
         }
 
-        // Voltage solver step
+        // Voltage solver step with shunt dielectric loss leakage conductance G_seg
         for (int j = 0; j < COIL_SEGMENTS; j++) {
             double i_next = (j == COIL_SEGMENTS - 1) ? 0.0 : coil->i_l[j + 1];
-            double dvc = (coil->i_l[j] - i_next) / coil->C_seg[j];
+            double dvc = (coil->i_l[j] - i_next - coil->v[j] * coil->G_seg[j]) / coil->C_seg[j];
             coil->v[j] += dvc * dt;
         }
 

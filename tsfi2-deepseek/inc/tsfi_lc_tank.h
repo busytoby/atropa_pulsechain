@@ -19,11 +19,14 @@ typedef struct {
     // Matrix parameter fields
     double L_seg[COIL_SEGMENTS]; // Self-inductance of each segment
     double C_seg[COIL_SEGMENTS]; // Distributed shunt capacitance of each segment
-    double R_seg[COIL_SEGMENTS]; // Resistance of each segment (updated dynamically for skin effect)
+    double R_seg[COIL_SEGMENTS]; // Resistance of each segment (updated dynamically)
+    double G_seg[COIL_SEGMENTS]; // Shunt conductance representing dielectric loss (updated dynamically)
 
     double wire_radius;          // Radius of the copper wire in meters (for skin depth)
     double coil_diameter;        // Outer diameter of the coil in meters
     double coil_height;          // Height of the coil in meters
+    double turns_pitch;          // Distance between adjacent turns in meters
+    double loss_tangent;         // Dielectric loss tangent (tan delta) of the coil form/insulation
 } TsfiDistributedCoil;
 
 // Initialize the distributed parameter coil model using Medhurst empirical relations
