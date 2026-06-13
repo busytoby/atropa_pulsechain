@@ -61,6 +61,7 @@ static float scale_val = 1.00f;
 static float light_angle_deg = 135.0f;
 static float breathing_freq = 1.0f;
 static float twitch_intensity = 0.5f;
+static float ammeter_T = 293.15f;
 
 static int mouse_x = 0;
 static int mouse_y = 0;
@@ -224,9 +225,15 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     float cos_t = cosf(theta);
     float sin_t = sinf(theta);
 
-    // Compute dynamic Bessel breathing, parasitized by a secondary coil-leak harmonic, and Biotika twitches
+    // Compute dynamic Bessel breathing, parasitized by a secondary coil-leak harmonic
+    // The ammeter current sensing wire loads the coil, introducing thermal parasitic damping
+    float current_sq = (breathing_freq * scale_val) * (breathing_freq * scale_val);
+    ammeter_T += (current_sq * 10.0f - 0.05f * (ammeter_T - 293.15f)) * 0.033f; // Heat dissipation
+    float needle_deflection = 0.005f * (ammeter_T - 293.15f);
+    float ammeter_damping = 1.0f / (1.0f + needle_deflection * 1.5f); // Parasitic load damping
+
     float parasitic_leak = 0.015f * cosf((float)frame * 0.24f * breathing_freq);
-    float breathe = 0.05f * sinf((float)frame * 0.12f * breathing_freq) + parasitic_leak;
+    float breathe = (0.05f * sinf((float)frame * 0.12f * breathing_freq) + parasitic_leak) * ammeter_damping;
     float twitch = 0.0f;
     if ((frame % 60) < 6) {
         twitch = ((float)(rand() % 100) / 100.0f) * 0.03f * twitch_intensity;
