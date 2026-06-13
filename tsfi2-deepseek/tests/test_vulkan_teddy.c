@@ -237,6 +237,25 @@ static TSFiVmStateParams params = {
     .aura = 341042560473881ULL
 };
 
+static float smin_quad(float a, float b, float k) {
+    float h = k - fabs(a - b);
+    if (h < 0.0f) h = 0.0f;
+    h /= k;
+    float min_val = (a < b) ? a : b;
+    return min_val - h * h * k * 0.25f;
+}
+
+static float evaluate_d_blend(float cx, float cy, SphereGeometry *body) {
+    float d = 1e10f;
+    for (int i = 0; i < 8; i++) {
+        float dx = cx - body[i].x;
+        float dy = cy - body[i].y;
+        float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+        d = smin_quad(d, dist, 0.08f);
+    }
+    return d;
+}
+
 // Complete Viewport rendering (left: rotating teddy bear, right: tool palette)
 void render_frame(TsfiAb4hMat *canvas, int frame) {
     // 1. Clear background to dark charcoal/purple with semi-transparency (0.75f alpha)
@@ -400,57 +419,80 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
             // March shells if we didn't hit smooth elements
             if (!hit_bear) {
+                float d_blend = evaluate_d_blend(cx, cy, body);
                 for (int shell = num_shells - 1; shell >= 0; shell--) {
                     float shell_offset = ((float)shell / num_shells) * fur_length;
-                    for (int i = 0; i < 8; i++) {
-                        float dx = cx - body[i].x;
-                        float dy = cy - body[i].y;
-                        float dist2 = dx*dx + dy*dy;
-                        float radius_with_shell = body[i].r + shell_offset;
+                    if (d_blend < shell_offset) {
+                        float noise_val = fur_noise(x, y, shell);
+                        float threshold = (float)shell / num_shells;
 
-                        if (dist2 < radius_with_shell * radius_with_shell) {
-                            float noise_val = fur_noise(x, y, shell);
-                            float threshold = (float)shell / num_shells;
+                        if (noise_val > threshold || shell == 0) {
+                            hit_bear = true;
+                            
+                            // Estimate normal using 2D finite differences
+                            float eps = 0.005f;
+                            float d_r = evaluate_d_blend(cx + eps, cy, body);
+                            float d_l = evaluate_d_blend(cx - eps, cy, body);
+                            float d_t = evaluate_d_blend(cx, cy + eps, body);
+                            float d_b = evaluate_d_blend(cx, cy - eps, body);
+                            float nx = (d_r - d_l) / (2.0f * eps);
+                            float ny = (d_t - d_b) / (2.0f * eps);
+                            
+                            float len2d = sqrtf(nx*nx + ny*ny);
+                            if (len2d > 0.001f) { nx /= len2d; ny /= len2d; }
+                            
+                            // Dome normal calculation
+                            float dist_from_edge = -d_blend;
+                            if (dist_from_edge < 0.0f) dist_from_edge = 0.0f;
+                            float nz = dist_from_edge / (0.22f * active_scale);
+                            if (nz > 1.0f) nz = 1.0f;
+                            float nxy_scale = sqrtf(1.0f - nz*nz);
+                            nx *= nxy_scale;
+                            ny *= nxy_scale;
 
-                            if (noise_val > threshold || shell == 0) {
-                                hit_bear = true;
-                                float nz = sqrtf(radius_with_shell*radius_with_shell - dist2);
-                                float nx = dx / radius_with_shell;
-                                float ny = dy / radius_with_shell;
-                                nz /= radius_with_shell;
+                            float diffuse = nx*lx + ny*ly + nz*lz;
+                            if (diffuse < 0.0f) diffuse = 0.0f;
 
-                                float diffuse = nx*lx + ny*ly + nz*lz;
-                                if (diffuse < 0.0f) diffuse = 0.0f;
-
-                                float base_r = dna_fur_r;
-                                float base_g = dna_fur_g;
-                                float base_b = dna_fur_b;
-
-                                if (i == 2 || i == 3) { // Ears pink center
-                                    base_r = 0.82f; base_g = 0.62f; base_b = 0.52f;
+                            // Determine closest sphere color
+                            int closest_idx = 0;
+                            float min_d = 1e10f;
+                            for (int i = 0; i < 8; i++) {
+                                float dx = cx - body[i].x;
+                                float dy = cy - body[i].y;
+                                float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+                                if (dist < min_d) {
+                                    min_d = dist;
+                                    closest_idx = i;
                                 }
-
-                                // Apply golden highlights at the fur tips (shell-texturing depth gradient)
-                                float tip_factor = (float)shell / num_shells;
-                                if (tip_factor > 0.7f) {
-                                    float blend = (tip_factor - 0.7f) / 0.3f;
-                                    base_r = base_r * (1.0f - blend) + 0.78f * blend;
-                                    base_g = base_g * (1.0f - blend) + 0.60f * blend;
-                                    base_b = base_b * (1.0f - blend) + 0.38f * blend;
-                                }
-
-                                acc_r = base_r * (diffuse * 0.8f + 0.2f);
-                                acc_g = base_g * (diffuse * 0.8f + 0.2f);
-                                acc_b = base_b * (diffuse * 0.8f + 0.2f);
-                                
-                                float ao = 0.4f + 0.6f * ((float)shell / num_shells);
-                                acc_r *= ao; acc_g *= ao; acc_b *= ao;
-                                acc_a = 1.0f;
-                                break;
                             }
+
+                            float base_r = dna_fur_r;
+                            float base_g = dna_fur_g;
+                            float base_b = dna_fur_b;
+
+                            if (closest_idx == 2 || closest_idx == 3) { // Ears pink center
+                                base_r = 0.82f; base_g = 0.62f; base_b = 0.52f;
+                            }
+
+                            // Apply golden highlights at the fur tips (shell-texturing depth gradient)
+                            float tip_factor = (float)shell / num_shells;
+                            if (tip_factor > 0.7f) {
+                                float blend = (tip_factor - 0.7f) / 0.3f;
+                                base_r = base_r * (1.0f - blend) + 0.78f * blend;
+                                base_g = base_g * (1.0f - blend) + 0.60f * blend;
+                                base_b = base_b * (1.0f - blend) + 0.38f * blend;
+                            }
+
+                            acc_r = base_r * (diffuse * 0.8f + 0.2f);
+                            acc_g = base_g * (diffuse * 0.8f + 0.2f);
+                            acc_b = base_b * (diffuse * 0.8f + 0.2f);
+                            
+                            float ao = 0.4f + 0.6f * ((float)shell / num_shells);
+                            acc_r *= ao; acc_g *= ao; acc_b *= ao;
+                            acc_a = 1.0f;
+                            break;
                         }
                     }
-                    if (hit_bear) break;
                 }
             }
 
