@@ -8,14 +8,23 @@ VOCAB_FUR = {
     "brown": (91, 63, 51),
     "golden": (180, 130, 50),
     "dark": (30, 20, 15),
-    "pink": (220, 150, 180)
+    "pink": (220, 150, 180),
+    "white": (240, 240, 240),
+    "black": (15, 15, 15),
+    "purple": (130, 50, 180),
+    "orange": (230, 110, 30),
+    "yellow": (220, 200, 30)
 }
 
 VOCAB_EYES = {
     "green": (0, 255, 0),
     "red": (255, 0, 0),
     "blue": (0, 0, 255),
-    "amber": (255, 191, 0)
+    "amber": (255, 191, 0),
+    "purple": (160, 32, 240),
+    "yellow": (255, 255, 0),
+    "white": (255, 255, 255),
+    "orange": (255, 165, 0)
 }
 
 def tokenize_query(query_str):
@@ -66,7 +75,12 @@ def validate_bear_image(image_path, targets):
     
     # 1. Fur Color Validation (Sample central region where bear is)
     center_roi = img[int(h*0.35):int(h*0.65), int(w*0.35):int(w*0.65)]
-    avg_bgr = np.mean(center_roi, axis=(0, 1))
+    pixels = center_roi.reshape(-1, 3)
+    non_bg_pixels = pixels[np.any(pixels > 35, axis=1)]
+    if len(non_bg_pixels) > 0:
+        avg_bgr = np.mean(non_bg_pixels, axis=0)
+    else:
+        avg_bgr = np.mean(pixels, axis=0)
     avg_rgb = (int(avg_bgr[2]), int(avg_bgr[1]), int(avg_bgr[0]))
     
     # Distance to target fur color
@@ -78,24 +92,45 @@ def validate_bear_image(image_path, targets):
     
     # Map target eye RGB to HSV ranges for precise contour isolation
     target_eyes = targets["eyes_rgb"]
+    is_red = False
     if target_eyes == (0, 255, 0):    # Green
         lower_hsv = np.array([35, 50, 80])
         upper_hsv = np.array([85, 255, 255])
     elif target_eyes == (255, 0, 0):  # Red
-        lower_hsv = np.array([0, 50, 80])
-        upper_hsv = np.array([10, 255, 255]) # (Note: red wraps, but we'll use lower range for simplicity)
+        is_red = True
+        lower_hsv1 = np.array([0, 50, 80])
+        upper_hsv1 = np.array([10, 255, 255])
+        lower_hsv2 = np.array([170, 50, 80])
+        upper_hsv2 = np.array([180, 255, 255])
     elif target_eyes == (0, 0, 255):  # Blue
         lower_hsv = np.array([100, 50, 80])
         upper_hsv = np.array([140, 255, 255])
     elif target_eyes == (255, 191, 0): # Amber
         lower_hsv = np.array([12, 50, 80])
         upper_hsv = np.array([25, 255, 255])
+    elif target_eyes == (255, 255, 255): # White
+        lower_hsv = np.array([0, 0, 200])
+        upper_hsv = np.array([180, 40, 255])
+    elif target_eyes == (160, 32, 240):  # Purple
+        lower_hsv = np.array([140, 40, 80])
+        upper_hsv = np.array([165, 255, 255])
+    elif target_eyes == (255, 255, 0):   # Yellow
+        lower_hsv = np.array([25, 50, 80])
+        upper_hsv = np.array([35, 255, 255])
+    elif target_eyes == (255, 165, 0):   # Orange
+        lower_hsv = np.array([5, 50, 80])
+        upper_hsv = np.array([18, 255, 255])
     else:
         # Default fallback
         lower_hsv = np.array([0, 50, 80])
         upper_hsv = np.array([180, 255, 255])
 
-    mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
+    if is_red:
+        mask1 = cv2.inRange(hsv, lower_hsv1, upper_hsv1)
+        mask2 = cv2.inRange(hsv, lower_hsv2, upper_hsv2)
+        mask = cv2.bitwise_or(mask1, mask2)
+    else:
+        mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     detected_eyes_rgb = []
@@ -123,6 +158,8 @@ def validate_bear_image(image_path, targets):
             
             # Check if hue fits within the lower/upper bounds
             h_val = eye_hsv[0]
+            s_val = eye_hsv[1]
+            v_val = eye_hsv[2]
             if target_eyes == (0, 255, 0) and (35 <= h_val <= 85):
                 eye_match = True
             elif target_eyes == (255, 0, 0) and (h_val <= 10 or h_val >= 170):
@@ -130,6 +167,14 @@ def validate_bear_image(image_path, targets):
             elif target_eyes == (0, 0, 255) and (100 <= h_val <= 140):
                 eye_match = True
             elif target_eyes == (255, 191, 0) and (12 <= h_val <= 25):
+                eye_match = True
+            elif target_eyes == (255, 255, 255) and (s_val <= 40 and v_val >= 200):
+                eye_match = True
+            elif target_eyes == (160, 32, 240) and (140 <= h_val <= 165):
+                eye_match = True
+            elif target_eyes == (255, 255, 0) and (25 <= h_val <= 35):
+                eye_match = True
+            elif target_eyes == (255, 165, 0) and (5 <= h_val <= 18):
                 eye_match = True
             elif target_eyes == (0, 0, 0):
                 eye_match = True

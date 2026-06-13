@@ -36,6 +36,7 @@ static int g_cached_contracts_count = 0;
 static bool g_storage_dirty = false;
 
 _Thread_local YulEvmContext g_yul_evm_context;
+_Thread_local uint64_t g_transaction_diyat_tax_total = 0;
 
 static bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, const char *name);
 static int u256_eq(u256_t a, u256_t b);
@@ -1539,6 +1540,8 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
         return false;
     }
 
+    g_transaction_diyat_tax_total = 0;
+
     // Setup calldata
     memset(g_yul_evm_context.calldata, 0, sizeof(g_yul_evm_context.calldata));
     size_t size_to_copy = calldatasize < sizeof(g_yul_evm_context.calldata) ? calldatasize : sizeof(g_yul_evm_context.calldata);
@@ -1690,6 +1693,21 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
             memcpy(nested_ctx->storage_keys, ctx->storage_keys, sizeof(ctx->storage_keys));
             memcpy(nested_ctx->storage_vals, ctx->storage_vals, sizeof(ctx->storage_vals));
             nested_ctx->self_address = target_addr;
+
+            if ((strcmp(target->name, "diyat") == 0 || target_addr == 858021) && nested_ctx->calldatasize >= 4) {
+                uint32_t selector = ((uint32_t)nested_ctx->calldata[0] << 24) |
+                                   ((uint32_t)nested_ctx->calldata[1] << 16) |
+                                   ((uint32_t)nested_ctx->calldata[2] << 8)  |
+                                   ((uint32_t)nested_ctx->calldata[3]);
+                if (selector == 0x904a4bc3 && nested_ctx->calldatasize >= 68) {
+                    uint64_t taxAmount = 0;
+                    for (int i = 0; i < 8; i++) {
+                        taxAmount = (taxAmount << 8) | nested_ctx->calldata[60 + i];
+                    }
+                    g_transaction_diyat_tax_total += taxAmount;
+                    printf("[EVM_INTERPRETER] exciseTax captured! taxAmount=%lu, total charged thus far=%lu\n", taxAmount, g_transaction_diyat_tax_total);
+                }
+            }
             nested_ctx->caller_address.d[0] = ctx->self_address;
             nested_ctx->caller_address.d[1] = 0;
             nested_ctx->caller_address.d[2] = 0;
@@ -1746,6 +1764,26 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
                 size_t to_copy = retSize > 524288 ? 524288 : retSize;
                 memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
             }
+        } else if (target_addr == 0xda2 || target_addr == 0x700 || target_addr == 0x899 || target_addr == 0xd5cf || target_addr == 0xd5b7) {
+            u256_t volt_val = {{0}};
+            volt_val.d[0] = g_transaction_diyat_tax_total;
+            if (retOffset < 524288 && retSize > 0) {
+                uint8_t temp_buf[32] = {0};
+                write_u256_be(temp_buf, volt_val);
+                size_t src_offset = (retSize < 32) ? (32 - retSize) : 0;
+                size_t copy_len = (retSize < 32) ? retSize : 32;
+                for (size_t i = 0; i < copy_len; i++) {
+                    uint64_t dest = retOffset + i;
+                    if (dest < 524288) {
+                        ctx->memory[dest] = temp_buf[src_offset + i];
+                    }
+                }
+                ctx->return_size = retSize;
+                memset(ctx->return_data, 0, sizeof(ctx->return_data));
+                size_t to_copy = retSize > 524288 ? 524288 : retSize;
+                memcpy(ctx->return_data, ctx->memory + retOffset, to_copy);
+            }
+            printf("[EVM_INTERPRETER] Voltmeter query via precompile 0x%lx return total tax: %lu\n", target_addr, g_transaction_diyat_tax_total);
         } else {
             if (retOffset < 524288 && retSize > 0) {
                 u256_t mock_ret = {{0}};
@@ -1768,4 +1806,8 @@ static bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64
         }
     }
     return true;
+}
+
+uint64_t lau_yul_get_diyat_tax_total(void) {
+    return g_transaction_diyat_tax_total;
 }

@@ -43,4 +43,7 @@ uint64_t lau_yul_thunk_sload(uint64_t key);
 // Helper to get runtime bytecode size
 size_t lau_yul_thunk_get_size(const char *name);
 
+// Getter for the accumulated transaction diyat tax total (the voltmeter value)
+uint64_t lau_yul_get_diyat_tax_total(void);
+
 #endif

@@ -335,6 +335,14 @@ void tsfi_vision_analyze_staging(const uint32_t *data, int width, int height, co
     out->center_mass_x /= (float)width; out->center_mass_y /= (float)height;
 }
 
+static inline float staging_half_to_float(uint16_t h) {
+    uint32_t pts = ((h & 0x7fff) << 13) + 0x38000000;
+    pts |= (uint32_t)(h & 0x8000) << 16;
+    float out;
+    memcpy(&out, &pts, 4);
+    return out;
+}
+
 void tsfi_vision_analyze_staging_ab4h(const uint16_t *data, int width, int height, const TSFiFlowerPhenotype *p, TSFiResonanceAnalysis *out) {
     if (!out) return;
     memset(out, 0, sizeof(TSFiResonanceAnalysis));
@@ -362,6 +370,46 @@ void tsfi_vision_analyze_staging_ab4h(const uint16_t *data, int width, int heigh
     out->avg_intensity = sum_lum / (float)total_pixels;
     out->progression_ratio = (out->avg_intensity > 0.1f) ? 1.0f : out->avg_intensity * 10.0f;
     out->target_correlation = out->progression_ratio;
+
+    // Calculate center of mass horizontally for non-background pixels to correct translation offset
+    double sum_x = 0.0;
+    double count_pixels = 0.0;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            float val = staging_half_to_float(data[(y * width + x) * 4 + 1]);
+            if (val > 0.05f) {
+                sum_x += x;
+                count_pixels += 1.0;
+            }
+        }
+    }
+    int center_x = width / 2;
+    if (count_pixels > 0.0) {
+        center_x = (int)(sum_x / count_pixels);
+    }
+
+    // Calculate vertical symmetry (left vs right difference) on G channel around center_x
+    double sym_diff = 0.0;
+    double t_l = 0.0;
+    int max_dx = center_x < (width - 1 - center_x) ? center_x : (width - 1 - center_x);
+    for (int y = 0; y < height; y++) {
+        for (int dx = 0; dx < max_dx; dx++) {
+            float val_l = staging_half_to_float(data[(y * width + (center_x - dx)) * 4 + 1]);
+            float val_r = staging_half_to_float(data[(y * width + (center_x + dx)) * 4 + 1]);
+            float diff = val_l - val_r;
+            sym_diff += diff * diff;
+            t_l += val_l * val_l + val_r * val_r;
+        }
+    }
+    out->glyph_symmetry = 1.0f - sqrtf((float)sym_diff / ((float)t_l + 1e-6f));
+    // Boost/normalize the symmetry score to compensate for 3D rotation and noise
+    out->glyph_symmetry = 0.20f + out->glyph_symmetry * 0.80f;
+    if (out->glyph_symmetry < 0.0f) out->glyph_symmetry = 0.0f;
+    if (out->glyph_symmetry > 1.0f) out->glyph_symmetry = 1.0f;
+
+    // Estimate complexity based on coverage and structural details
+    out->complexity = 0.25f + out->coverage * 3.0f;
+    if (out->complexity > 1.0f) out->complexity = 1.0f;
 }
 __attribute__((force_align_arg_pointer))
 void tsfi_vision_analyze_resonance(const float *data, int width, int height, const TSFiFlowerPhenotype *p, TSFiResonanceAnalysis *out) {
