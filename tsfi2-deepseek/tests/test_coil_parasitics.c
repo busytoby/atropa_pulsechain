@@ -34,10 +34,12 @@ int main() {
     
     // Force ideal coil dielectric to vacuum permitivity everywhere
     double eps0 = 8.8541878128e-12;
-    for (int r = 0; r < GRID_R; r++) {
-        for (int z = 0; z < GRID_Z; z++) {
-            coil_ideal.eps[r][z] = eps0;
-            coil_ideal.sigma[r][z] = 0.0;
+    for (int x = 0; x < GRID_X; x++) {
+        for (int y = 0; y < GRID_Y; y++) {
+            for (int z = 0; z < GRID_Z; z++) {
+                coil_ideal.eps[x][y][z] = eps0;
+                coil_ideal.sigma[x][y][z] = 0.0;
+            }
         }
     }
 
