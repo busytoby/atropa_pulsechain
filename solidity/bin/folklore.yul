@@ -161,12 +161,14 @@ object "cpu6502" {
                 // Jump mechanics (EVM float-free gravity)
                 let jumpCount := sload(getUserSlot(55065))
                 if jumpTrigger {
-                    if iszero(jumping) {
+                    let was_jumping := jumping
+                    if iszero(was_jumping) {
                         pvy := sub(0, 12)
                         jumping := 1
                         jumpCount := 1
                         sstore(getUserSlot(55036), 1) // Sound Strobe: Jump
-                    } else {
+                    }
+                    if was_jumping {
                         if lt(jumpCount, 2) {
                             pvy := sub(0, 10) // Floaty double jump impulse
                             jumpCount := 2
@@ -307,28 +309,30 @@ object "cpu6502" {
                      if gt(px, gargamel_x) { dist_x := sub(px, gargamel_x) }
                      if iszero(gt(px, gargamel_x)) { dist_x := sub(gargamel_x, px) }
 
-                     if lt(dist_x, 200) {
-                         // CHASE MODE: Increase velocity magnitude and seek player direction
-                         if gt(px, gargamel_x) {
-                             gargamel_vx := 5
-                         }
-                         if iszero(gt(px, gargamel_x)) {
-                             gargamel_vx := sub(0, 5)
-                         }
-                     } else {
-                         // PATROL MODE: Move and bounce off wall boundaries
-                         if iszero(gargamel_vx) {
-                             gargamel_vx := sub(0, 3) // Initial patrol direction
-                         }
-                         if or(lt(gargamel_x, 300), gt(gargamel_x, 650)) {
-                             if lt(gargamel_x, 300) {
-                                 gargamel_vx := 3
-                             }
-                             if gt(gargamel_x, 650) {
-                                 gargamel_vx := sub(0, 3)
-                             }
-                         }
-                     }
+                      let chase := lt(dist_x, 200)
+                      if chase {
+                          // CHASE MODE: Increase velocity magnitude and seek player direction
+                          if gt(px, gargamel_x) {
+                              gargamel_vx := 5
+                          }
+                          if iszero(gt(px, gargamel_x)) {
+                              gargamel_vx := sub(0, 5)
+                          }
+                      }
+                      if iszero(chase) {
+                          // PATROL MODE: Move and bounce off wall boundaries
+                          if iszero(gargamel_vx) {
+                              gargamel_vx := sub(0, 3) // Initial patrol direction
+                          }
+                          if or(lt(gargamel_x, 300), gt(gargamel_x, 650)) {
+                              if lt(gargamel_x, 300) {
+                                  gargamel_vx := 3
+                              }
+                              if gt(gargamel_x, 650) {
+                                  gargamel_vx := sub(0, 3)
+                              }
+                          }
+                      }
 
                      gargamel_x := add(gargamel_x, gargamel_vx)
                      sstore(getUserSlot(55040), gargamel_x)
