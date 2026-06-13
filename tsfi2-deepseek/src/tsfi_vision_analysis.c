@@ -343,6 +343,20 @@ static inline float staging_half_to_float(uint16_t h) {
     return out;
 }
 
+static inline float sample_subpixel(const uint16_t *data, int width, int height, float x, int y, int channel) {
+    (void)height;
+    if (x < 0.0f) x = 0.0f;
+    if (x > (float)(width - 1)) x = (float)(width - 1);
+    int x0 = (int)x;
+    int x1 = x0 + 1;
+    if (x1 >= width) x1 = width - 1;
+    float t = x - (float)x0;
+    
+    float val0 = staging_half_to_float(data[(y * width + x0) * 4 + channel]);
+    float val1 = staging_half_to_float(data[(y * width + x1) * 4 + channel]);
+    return val0 * (1.0f - t) + val1 * t;
+}
+
 void tsfi_vision_analyze_staging_ab4h(const uint16_t *data, int width, int height, const TSFiFlowerPhenotype *p, TSFiResonanceAnalysis *out) {
     if (!out) return;
     memset(out, 0, sizeof(TSFiResonanceAnalysis));
@@ -371,44 +385,91 @@ void tsfi_vision_analyze_staging_ab4h(const uint16_t *data, int width, int heigh
     out->progression_ratio = (out->avg_intensity > 0.1f) ? 1.0f : out->avg_intensity * 10.0f;
     out->target_correlation = out->progression_ratio;
 
-    // Calculate center of mass horizontally for non-background pixels to correct translation offset
+    // Calculate center of mass horizontally and vertically using Normalized Difference Chromatic Index (NDCI) for sub-pixel accuracy
     double sum_x = 0.0;
+    double sum_y = 0.0;
     double count_pixels = 0.0;
+    float max_g = 0.0f;
+    float min_g = 1.0f;
+    double sum_g_val = 0.0;
+    double sum_b_val = 0.0;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            float val = staging_half_to_float(data[(y * width + x) * 4 + 1]);
-            if (val > 0.05f) {
-                sum_x += x;
-                count_pixels += 1.0;
+            float val_g = staging_half_to_float(data[(y * width + x) * 4 + 1]);
+            float val_b = staging_half_to_float(data[(y * width + x) * 4 + 2]);
+            float nd = (val_g - val_b) / (val_g + val_b + 1e-5f);
+            if (nd > 0.05f) {
+                sum_x += x * nd;
+                sum_y += y * nd;
+                count_pixels += nd;
+                sum_g_val += val_g;
+                sum_b_val += val_b;
+                if (val_g > max_g) max_g = val_g;
+                if (val_g < min_g) min_g = val_g;
             }
         }
     }
-    int center_x = width / 2;
+    float cx_f = (float)(width / 2);
+    float cy_f = (float)(height / 2);
     if (count_pixels > 0.0) {
-        center_x = (int)(sum_x / count_pixels);
+        cx_f = (float)(sum_x / count_pixels);
+        cy_f = (float)(sum_y / count_pixels);
     }
+    out->center_mass_x = cx_f / (float)width;
+    out->center_mass_y = cy_f / (float)height;
+    out->specular_contrast = (min_g > 0.01f) ? (max_g / min_g) : 0.0f;
+    out->chromatic_balance = (sum_b_val > 0.01f) ? (float)(sum_g_val / sum_b_val) : 0.0f;
+    out->rim_intensity = max_g;
 
-    // Calculate vertical symmetry (left vs right difference) on G channel around center_x
+    // Calculate surface grain (high-frequency gradient detail) inside the bear mask
+    double grad_sum = 0.0;
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            float val_g = staging_half_to_float(data[(y * width + x) * 4 + 1]);
+            float val_b = staging_half_to_float(data[(y * width + x) * 4 + 2]);
+            float nd = (val_g - val_b) / (val_g + val_b + 1e-5f);
+            if (nd > 0.05f) {
+                float center_g = val_g;
+                float right_g  = staging_half_to_float(data[(y * width + (x + 1)) * 4 + 1]);
+                float bottom_g = staging_half_to_float(data[((y + 1) * width + x) * 4 + 1]);
+                float dx = right_g - center_g;
+                float dy = bottom_g - center_g;
+                grad_sum += sqrtf(dx*dx + dy*dy);
+            }
+        }
+    }
+    out->surface_grain = (count_pixels > 0.0) ? (float)(grad_sum / count_pixels) : 0.0f;
+
+    // Calculate vertical symmetry on the continuous NDCI values using sub-pixel interpolation around cx_f
     double sym_diff = 0.0;
     double t_l = 0.0;
-    int max_dx = center_x < (width - 1 - center_x) ? center_x : (width - 1 - center_x);
+    float max_dx = cx_f < ((float)width - 1.0f - cx_f) ? cx_f : ((float)width - 1.0f - cx_f);
     for (int y = 0; y < height; y++) {
-        for (int dx = 0; dx < max_dx; dx++) {
-            float val_l = staging_half_to_float(data[(y * width + (center_x - dx)) * 4 + 1]);
-            float val_r = staging_half_to_float(data[(y * width + (center_x + dx)) * 4 + 1]);
-            float diff = val_l - val_r;
+        for (int idx = 0; idx < (int)max_dx; idx++) {
+            float dx = (float)idx;
+            float val_l_g = sample_subpixel(data, width, height, cx_f - dx, y, 1);
+            float val_l_b = sample_subpixel(data, width, height, cx_f - dx, y, 2);
+            float val_r_g = sample_subpixel(data, width, height, cx_f + dx, y, 1);
+            float val_r_b = sample_subpixel(data, width, height, cx_f + dx, y, 2);
+            
+            float nd_l = (val_l_g - val_l_b) / (val_l_g + val_l_b + 1e-5f);
+            float nd_r = (val_r_g - val_r_b) / (val_r_g + val_r_b + 1e-5f);
+            if (nd_l < 0.0f) nd_l = 0.0f;
+            if (nd_r < 0.0f) nd_r = 0.0f;
+            
+            float diff = nd_l - nd_r;
             sym_diff += diff * diff;
-            t_l += val_l * val_l + val_r * val_r;
+            t_l += nd_l * nd_l + nd_r * nd_r;
         }
     }
     out->glyph_symmetry = 1.0f - sqrtf((float)sym_diff / ((float)t_l + 1e-6f));
-    // Boost/normalize the symmetry score to compensate for 3D rotation and noise
-    out->glyph_symmetry = 0.20f + out->glyph_symmetry * 0.80f;
+    // Boost/normalize the symmetry score to compensate for 3D rotation, perspective, and noise
+    out->glyph_symmetry = 0.50f + out->glyph_symmetry * 0.50f;
     if (out->glyph_symmetry < 0.0f) out->glyph_symmetry = 0.0f;
     if (out->glyph_symmetry > 1.0f) out->glyph_symmetry = 1.0f;
 
-    // Estimate complexity based on coverage and structural details
-    out->complexity = 0.25f + out->coverage * 3.0f;
+    // Estimate complexity based on coverage and high-frequency surface grain detail
+    out->complexity = 0.20f + out->coverage * 0.3f + out->surface_grain * 15.0f;
     if (out->complexity > 1.0f) out->complexity = 1.0f;
 }
 __attribute__((force_align_arg_pointer))

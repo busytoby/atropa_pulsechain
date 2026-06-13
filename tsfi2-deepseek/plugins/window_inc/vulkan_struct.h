@@ -38,6 +38,8 @@ typedef struct VulkanContext {
     VkSemaphore renderFinishedSemaphores[8]; // Max Swapchain Images
     VkFence inFlightFences[3];
     uint32_t currentFrame;
+    VkPresentModeKHR desiredPresentMode;
+    VkPresentModeKHR currentPresentMode;
 
     VkSemaphore timelineSemaphore;
     uint64_t timelineValue;

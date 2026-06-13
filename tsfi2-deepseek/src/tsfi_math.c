@@ -292,6 +292,9 @@ void tsfi_bn_div_avx512(TSFiBigInt *q, TSFiBigInt *r, const TSFiBigInt *a, const
         uint64_t carry = (a->limbs[i / TSFI_LIMB_BITS] >> (i % TSFI_LIMB_BITS)) & 1;
         uint64_t r_carry = carry;
         for(size_t j=0; j<rem.active_limbs || r_carry; j++) {
+            if (j >= TSFI_NUM_LIMBS) {
+                break;
+            }
             uint64_t val = (rem.limbs[j] << 1) | r_carry;
             rem.limbs[j] = val & TSFI_LIMB_MASK;
             r_carry = val >> TSFI_LIMB_BITS;

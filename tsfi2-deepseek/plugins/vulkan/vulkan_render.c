@@ -1,3 +1,4 @@
+#include <time.h>
 #include "tsfi_hotloader.h"
 #include "vulkan_render.h"
 #include <stdio.h>
@@ -636,6 +637,44 @@ void draw_frame(VulkanSystem *s) {
 
     VulkanContext *vk = s->vk;
     if (!vk->swapchain) return;
+
+    // Monitor frame timing for dynamic presentation mode toggling
+    static struct timespec prev_time = {0};
+    struct timespec curr_time;
+    clock_gettime(CLOCK_MONOTONIC, &curr_time);
+    float frame_time_ms = 0.0f;
+    if (prev_time.tv_sec != 0) {
+        frame_time_ms = (float)(curr_time.tv_sec - prev_time.tv_sec) * 1000.0f +
+                        (float)(curr_time.tv_nsec - prev_time.tv_nsec) / 1000000.0f;
+    }
+    prev_time = curr_time;
+
+    static int low_time_cnt = 0;
+    static int high_time_cnt = 0;
+    if (frame_time_ms > 0.0f && !vk->is_leased) {
+        if (frame_time_ms < 14.0f) {
+            low_time_cnt++;
+            high_time_cnt = 0;
+        } else if (frame_time_ms > 16.0f) {
+            high_time_cnt++;
+            low_time_cnt = 0;
+        } else {
+            low_time_cnt = 0;
+            high_time_cnt = 0;
+        }
+
+        if (low_time_cnt > 30 && vk->currentPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) {
+            printf("\n[VULKAN] Pacing: Frame time is %.2f ms. Switching to MAILBOX present mode...\n", frame_time_ms);
+            vk->desiredPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+            recreate_swapchain(s);
+            low_time_cnt = 0;
+        } else if (high_time_cnt > 30 && vk->currentPresentMode != VK_PRESENT_MODE_FIFO_KHR) {
+            printf("\n[VULKAN] Pacing: Frame time is %.2f ms. Reverting to FIFO present mode...\n", frame_time_ms);
+            vk->desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+            recreate_swapchain(s);
+            high_time_cnt = 0;
+        }
+    }
 
     vk->vkWaitForFences(vk->device, 1, &vk->inFlightFences[vk->currentFrame], VK_TRUE, UINT64_MAX);
     vk->vkResetFences(vk->device, 1, &vk->inFlightFences[vk->currentFrame]);

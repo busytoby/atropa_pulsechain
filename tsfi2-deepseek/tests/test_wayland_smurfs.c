@@ -802,20 +802,65 @@ void deepseek_evolve_impl(void *ctx, float intensity) {
     }
 }
 
-int main() {
+int main(int argc, char **argv) {
     printf("[SMURFS] Launching C64 Smurfs Rescue Manifold...\n");
     signal(SIGPIPE, SIG_IGN);
     setenv("TSFI_AB4H", "1", 1);
 
-    VulkanSystem *s = create_vulkan_system();
-    if (!s) return 1;
-    lau_unseal_object(s);
-    printf("[SMURFS] Vulkan System initialized. s->vk->swapchain = %p, s->vk->surface = %p\n", (void*)s->vk->swapchain, (void*)s->vk->surface);
+    bool headless = false;
+    int headless_frames = 1;
+    for (int idx = 1; idx < argc; idx++) {
+        if (strcmp(argv[idx], "--headless") == 0 || strcmp(argv[idx], "--render-once") == 0) {
+            headless = true;
+        }
+        if (strcmp(argv[idx], "--headless-frames") == 0 && idx + 1 < argc) {
+            headless = true;
+            headless_frames = atoi(argv[idx + 1]);
+        }
+    }
+
+    const char *run_env = getenv("XDG_RUNTIME_DIR");
+    const char *disp_env = getenv("WAYLAND_DISPLAY");
+    if (!run_env || !disp_env) {
+        headless = true;
+    }
+
+    VulkanSystem *s = NULL;
+    VulkanSystem mock_s;
+    StagingBuffer mock_buf;
+    AB4HPixel *offscreen_data = NULL;
+
+    if (!headless) {
+        s = create_vulkan_system();
+        if (s) {
+            lau_unseal_object(s);
+            printf("[SMURFS] Vulkan System initialized. s->vk->swapchain = %p, s->vk->surface = %p\n", (void*)s->vk->swapchain, (void*)s->vk->surface);
+        } else {
+            headless = true;
+        }
+    }
+
+    if (headless) {
+        offscreen_data = calloc(1, 800 * 600 * sizeof(AB4HPixel));
+        mock_buf.width = 800;
+        mock_buf.height = 600;
+        mock_buf.data = offscreen_data;
+        mock_s.paint_buffer = &mock_buf;
+        mock_s.display = NULL;
+        mock_s.running = true;
+        mock_s.vk = NULL;
+        s = &mock_s;
+        printf("[SMURFS] Headless mode initialized.\n");
+    }
 
     // 1. Initialize the Yul target contract AFTER Vulkan system is ready
     if (!lau_yul_thunk_init("cpu6502", "../solidity/bin/folklore.yul", 0x1)) {
         printf("[SMURFS] Error: Failed to initialize Yul cpu6502 thunk!\n");
-        destroy_vulkan_system(s);
+        if (!headless) {
+            destroy_vulkan_system(s);
+        } else {
+            free(offscreen_data);
+        }
         return 1;
     }
 
@@ -860,13 +905,15 @@ int main() {
     init_sprite_system();
 
     while (s->running && !exit_requested) {
-        wl_display_roundtrip(s->display);
-        
-        // Dynamically initialize swapchain in loop if compositor wasn't ready during create_vulkan_system
-        if (!s->vk->swapchain) {
-            init_swapchain(s);
-            if (s->vk->swapchain) {
-                printf("[SMURFS] Vulkan Swapchain dynamically initialized in frame loop!\n");
+        if (!headless) {
+            wl_display_roundtrip(s->display);
+            
+            // Dynamically initialize swapchain in loop if compositor wasn't ready during create_vulkan_system
+            if (!s->vk->swapchain) {
+                init_swapchain(s);
+                if (s->vk->swapchain) {
+                    printf("[SMURFS] Vulkan Swapchain dynamically initialized in frame loop!\n");
+                }
             }
         }
 
@@ -1547,18 +1594,54 @@ int main() {
         }
 
         // Render Frame
+        if (headless && (frame_counter >= headless_frames - 1 || exit_requested)) {
+            FILE *f = fopen("/home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/vaesen_smurfs_render.ppm", "wb");
+            if (f) {
+                fprintf(f, "P6\n%d %d\n255\n", W, H);
+                for (int py_idx = 0; py_idx < H; py_idx++) {
+                    for (int px_idx = 0; px_idx < W; px_idx++) {
+                        AB4HPixel p = pixels[py_idx * W + px_idx];
+                        float r_val = half_to_float(p.r);
+                        float g_val = half_to_float(p.g);
+                        float b_val = half_to_float(p.b);
+                        if (r_val < 0.0f) r_val = 0.0f;
+                        if (r_val > 1.0f) r_val = 1.0f;
+                        if (g_val < 0.0f) g_val = 0.0f;
+                        if (g_val > 1.0f) g_val = 1.0f;
+                        if (b_val < 0.0f) b_val = 0.0f;
+                        if (b_val > 1.0f) b_val = 1.0f;
+                        unsigned char r_b = (unsigned char)(r_val * 255.0f);
+                        unsigned char g_b = (unsigned char)(g_val * 255.0f);
+                        unsigned char b_b = (unsigned char)(b_val * 255.0f);
+                        fwrite(&r_b, 1, 1, f);
+                        fwrite(&g_b, 1, 1, f);
+                        fwrite(&b_b, 1, 1, f);
+                    }
+                }
+                fclose(f);
+                printf("[SMURFS] Successfully exported headless frame (frame %d) to /home/mariarahel/.gemini/antigravity-cli/brain/dc445656-3da0-44e3-be2f-cae81a8b8170/scratch/vaesen_smurfs_render.ppm\n", frame_counter);
+            }
+            break;
+        }
+
         draw_frame(s);
         frame_counter++;
         tsfi_raw_usleep(16000);
     }
 
     printf("[SMURFS] Teardown Wayland-Vulkan context.\n");
-    lau_unseal_object(s);
+    if (!headless) {
+        lau_unseal_object(s);
+    }
     if (ai_fs) {
         tsfi_font_ai_destroy(ai_fs);
         tsfi_font_destroy(ai_fs);
     }
-    destroy_vulkan_system(s);
+    if (!headless) {
+        destroy_vulkan_system(s);
+    } else {
+        free(offscreen_data);
+    }
     extern _Atomic int g_teardown_in_progress;
     g_teardown_in_progress = 1;
     extern void lau_registry_teardown(void);

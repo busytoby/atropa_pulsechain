@@ -391,7 +391,7 @@ void lau_seal_object_loc(void *ptr, const char *file, int line) {
         if (h->proxy) {
             extern struct YI* tsfi_reaction_shoot(TSFiBigInt* Prime);
             TSFiBigInt* prime = tsfi_bn_alloc();
-            tsfi_bn_randomize(prime);
+            tsfi_bn_set_u64(prime, 953467954114363ULL);
             struct YI *yi = tsfi_reaction_shoot(prime);
             tsfi_bn_free(prime);
             

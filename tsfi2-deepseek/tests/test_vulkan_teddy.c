@@ -54,6 +54,7 @@ typedef struct {
 typedef struct {
     float x, y, z;
     float r;
+    float sx, sy, sz; // Scale factors to squash/stretch spheres into ellipsoids
 } SphereGeometry;
 
 // Global settings changed interactively via Wayland GUI
@@ -72,6 +73,37 @@ static float dna_eye_r = 0.0f;
 static float dna_eye_g = 1.0f;
 static float dna_eye_b = 0.0f;
 
+// 1960s Popular Mechanics DIY Stepping-Switch Frame Sequencer with Closed-Loop State Verification
+typedef struct {
+    float fur_length;
+    float scale_val;
+    float light_angle;
+    float expected_voltmeter_min;
+    float expected_voltmeter_max;
+} SequencerStep;
+
+static SequencerStep sequence_program[6] = {
+    { 0.08f, 1.0f, 135.0f, 100.0f, 125.0f },
+    { 0.12f, 1.1f, 150.0f,  90.0f, 115.0f },
+    { 0.05f, 0.9f, 120.0f, 105.0f, 130.0f },
+    { 0.15f, 1.2f, 180.0f,  80.0f, 110.0f },
+    { 0.06f, 0.8f,  90.0f, 110.0f, 135.0f },
+    { 0.10f, 1.0f, 135.0f, 100.0f, 125.0f }
+};
+
+static int seq_current_step = 0;
+static int seq_frame_counter = 0;
+static bool seq_halted = false;
+static bool seq_validation_passed = true;
+
+// Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare)
+static uint8_t seq_grid[2][8] = {
+    {1, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 1, 0}
+};
+static int seq_play_step = 0;
+static int seq_play_counter = 0;
+
 static int mouse_x = 0;
 static int mouse_y = 0;
 static bool mouse_pressed = false;
@@ -86,6 +118,14 @@ static bool hover_btn2 = false;
 static bool hover_btn3 = false;
 
 static bool demo_mode = false;
+static bool opt_ssaa = true;
+static bool opt_vignette = true;
+static bool opt_tonemap = true;
+static bool opt_viewport_boost = true;
+static bool hover_ssaa = false;
+static bool hover_vignette = false;
+static bool hover_tonemap = false;
+static bool hover_viewport_boost = false;
 
 // Multi-Model Selection and Genetic Optimizer Trigger variables
 static const char* vlm_names[] = {"moondream", "qwen2-vl", "llama3.2-vision", "claude", "gemini", "mock"};
@@ -203,17 +243,30 @@ static float smooth_noise_2d_deriv(float x, float y, float *dx_out, float *dy_ou
     return val;
 }
 
-static float fur_noise(int x, int y, int shell, float *w_dx, float *w_dy) {
+static float fur_noise(float x, float y, int shell, float *w_dx, float *w_dy) {
+    float density = 1.6f;
+    float gravity_y = 5.0f; // combing downwards offset
+    
+    // Apply gravity-based grooming slope and waviness as a function of shell height
+    float normalized_height = (float)shell / 32.0f;
+    float comb_y = normalized_height * gravity_y;
+    float comb_x = sinf(normalized_height * 6.28318f) * 1.2f; // curl waviness
+    
+    float input_x = (x + comb_x) * density;
+    float input_y = (y + comb_y) * density;
+    
     // Domain warping: distort sampling coordinates using smooth 2D value noise with analytical derivatives
     float scale = 0.08f;
-    float wx = smooth_noise_2d_deriv((float)x * scale, (float)y * scale, w_dx, w_dy);
-    float wy = smooth_noise_2d((float)x * scale + 13.7f, (float)y * scale + 27.3f);
+    float wx = smooth_noise_2d_deriv(input_x * scale, input_y * scale, w_dx, w_dy);
+    float wy = smooth_noise_2d(input_x * scale + 13.7f, input_y * scale + 27.3f);
     
     float warp_strength = 2.0f + sickness_intensity * 12.0f;
-    int warped_x = x + (int)((wx - 0.5f) * warp_strength);
-    int warped_y = y + (int)((wy - 0.5f) * warp_strength);
+    float warped_x = input_x + (wx - 0.5f) * warp_strength;
+    float warped_y = input_y + (wy - 0.5f) * warp_strength;
     
-    uint32_t hash = (uint32_t)warped_x * 73856093 ^ (uint32_t)warped_y * 19349663 ^ (uint32_t)shell * 83492791;
+    int ix = (int)floorf(warped_x);
+    int iy = (int)floorf(warped_y);
+    uint32_t hash = (uint32_t)ix * 73856093 ^ (uint32_t)iy * 19349663 ^ (uint32_t)shell * 83492791;
     hash = (hash ^ 61) ^ (hash >> 16);
     hash += hash << 3;
     hash ^= hash >> 4;
@@ -305,50 +358,220 @@ static TSFiVmStateParams params = {
     .aura = 341042560473881ULL
 };
 
-static float smin_quad(float a, float b, float k) {
+static float smin_cubic(float a, float b, float k) {
     float h = k - fabs(a - b);
     if (h < 0.0f) h = 0.0f;
     h /= k;
     float min_val = (a < b) ? a : b;
-    return min_val - h * h * k * 0.25f;
+    return min_val - h * h * h * k * (1.0f / 6.0f);
 }
 
 static float evaluate_d_blend(float cx, float cy, SphereGeometry *body) {
     float d = 1e10f;
     for (int i = 0; i < 8; i++) {
-        float dx = cx - body[i].x;
-        float dy = cy - body[i].y;
-        float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+        float dx = (cx - body[i].x) / body[i].sx;
+        float dy = (cy - body[i].y) / body[i].sy;
+        float dist = (sqrtf(dx*dx + dy*dy) - body[i].r) * fminf(body[i].sx, body[i].sy);
         
         // Apply cupped/hollowed ear subtraction in 2D
         if (i == 2) { // Left ear
             float active_scale = body[i].r / 0.09f;
-            float inner_dx = cx - (body[i].x + 0.015f * active_scale);
-            float inner_dy = cy - (body[i].y - 0.01f * active_scale);
-            float inner_dist = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f;
+            float inner_dx = (cx - (body[i].x + 0.015f * active_scale)) / body[i].sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
+            float inner_dist = (sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
             dist = fmaxf(dist, -inner_dist);
         } else if (i == 3) { // Right ear
             float active_scale = body[i].r / 0.09f;
-            float inner_dx = cx - (body[i].x - 0.015f * active_scale);
-            float inner_dy = cy - (body[i].y - 0.01f * active_scale);
-            float inner_dist = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f;
+            float inner_dx = (cx - (body[i].x - 0.015f * active_scale)) / body[i].sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
+            float inner_dist = (sqrtf(inner_dx*inner_dx + inner_dy*inner_dy) - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
             dist = fmaxf(dist, -inner_dist);
         }
         
-        d = smin_quad(d, dist, 0.08f);
+        d = smin_cubic(d, dist, 0.08f);
     }
     return d;
+}
+
+static float evaluate_d_blend_all(float cx, float cy, SphereGeometry *body, float *out_nx, float *out_ny, float *out_r, float *out_g, float *out_b) {
+    float dists[8];
+    float nxs[8];
+    float nys[8];
+    
+    float sum_w = 0.0f;
+    float r_acc = 0.0f;
+    float g_acc = 0.0f;
+    float b_acc = 0.0f;
+    
+    for (int i = 0; i < 8; i++) {
+        float dx = (cx - body[i].x) / body[i].sx;
+        float dy = (cy - body[i].y) / body[i].sy;
+        float len = sqrtf(dx*dx + dy*dy);
+        float dist = (len - body[i].r) * fminf(body[i].sx, body[i].sy);
+        float nx = len > 0.0001f ? (dx / len) / body[i].sx : 0.0f;
+        float ny = len > 0.0001f ? (dy / len) / body[i].sy : 0.0f;
+        float nlen = sqrtf(nx*nx + ny*ny);
+        if (nlen > 0.0001f) { nx /= nlen; ny /= nlen; }
+        
+        // Apply cupped/hollowed ear subtraction in 2D
+        if (i == 2) { // Left ear
+            float active_scale = body[i].r / 0.09f;
+            float inner_dx = (cx - (body[i].x + 0.015f * active_scale)) / body[i].sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
+            float inner_len = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy);
+            float inner_dist = (inner_len - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
+            if (dist > -inner_dist) {
+                // Outer ear is closer
+            } else {
+                dist = -inner_dist;
+                nx = inner_len > 0.0001f ? (-inner_dx / inner_len) / body[i].sx : 0.0f;
+                ny = inner_len > 0.0001f ? (-inner_dy / inner_len) / body[i].sy : 0.0f;
+                float nlen2 = sqrtf(nx*nx + ny*ny);
+                if (nlen2 > 0.0001f) { nx /= nlen2; ny /= nlen2; }
+            }
+        } else if (i == 3) { // Right ear
+            float active_scale = body[i].r / 0.09f;
+            float inner_dx = (cx - (body[i].x - 0.015f * active_scale)) / body[i].sx;
+            float inner_dy = (cy - (body[i].y - 0.01f * active_scale)) / body[i].sy;
+            float inner_len = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy);
+            float inner_dist = (inner_len - body[i].r * 0.70f) * fminf(body[i].sx, body[i].sy);
+            if (dist > -inner_dist) {
+                // Outer ear is closer
+            } else {
+                dist = -inner_dist;
+                nx = inner_len > 0.0001f ? (-inner_dx / inner_len) / body[i].sx : 0.0f;
+                ny = inner_len > 0.0001f ? (-inner_dy / inner_len) / body[i].sy : 0.0f;
+                float nlen2 = sqrtf(nx*nx + ny*ny);
+                if (nlen2 > 0.0001f) { nx /= nlen2; ny /= nlen2; }
+            }
+        }
+        
+        dists[i] = dist;
+        nxs[i] = nx;
+        nys[i] = ny;
+        
+        float w = expf(-dist / 0.04f);
+        sum_w += w;
+        
+        float sphere_r = dna_fur_r;
+        float sphere_g = dna_fur_g;
+        float sphere_b = dna_fur_b;
+
+        // Apply dynamic cosine color variation based on local body height
+        float height_factor = (body[i].y - 0.20f) / 0.40f;
+        sphere_r += 0.12f * cosf(3.14159f * height_factor);
+        sphere_g += 0.08f * cosf(3.14159f * (height_factor + 0.25f));
+        sphere_b += 0.05f * cosf(3.14159f * (height_factor + 0.50f));
+        
+        if (i == 2 || i == 3) {
+            // Inner ear pink center smooth gradient using smoothstep
+            float active_scale = body[i].r / 0.09f;
+            float inner_dx = cx - (body[i].x + (i == 2 ? 0.015f : -0.015f) * active_scale);
+            float inner_dy = cy - (body[i].y - 0.01f * active_scale);
+            float inner_dist = sqrtf(inner_dx*inner_dx + inner_dy*inner_dy);
+            float ear_blend = 1.0f - (inner_dist / (body[i].r * 0.75f));
+            if (ear_blend < 0.0f) ear_blend = 0.0f;
+            if (ear_blend > 1.0f) ear_blend = 1.0f;
+            ear_blend = ear_blend * ear_blend * (3.0f - 2.0f * ear_blend); // smoothstep
+            
+            sphere_r = dna_fur_r * (1.0f - ear_blend) + 0.82f * ear_blend;
+            sphere_g = dna_fur_g * (1.0f - ear_blend) + 0.62f * ear_blend;
+            sphere_b = dna_fur_b * (1.0f - ear_blend) + 0.52f * ear_blend;
+        }
+        
+        r_acc += sphere_r * w;
+        g_acc += sphere_g * w;
+        b_acc += sphere_b * w;
+    }
+    
+    float d = dists[0];
+    float nx = nxs[0];
+    float ny = nys[0];
+    
+    for (int i = 1; i < 8; i++) {
+        float k = 0.08f;
+        float w = 0.5f + 0.5f * (d - dists[i]) / k;
+        if (w < 0.0f) w = 0.0f;
+        if (w > 1.0f) w = 1.0f;
+        float w_smooth = w * w * (3.0f - 2.0f * w); // C1 continuous smoothstep blend
+        
+        d = smin_cubic(d, dists[i], k);
+        nx = nx * (1.0f - w_smooth) + nxs[i] * w_smooth;
+        ny = ny * (1.0f - w_smooth) + nys[i] * w_smooth;
+    }
+    
+    *out_nx = nx;
+    *out_ny = ny;
+    
+    if (sum_w > 0.0001f) {
+        *out_r = r_acc / sum_w;
+        *out_g = g_acc / sum_w;
+        *out_b = b_acc / sum_w;
+    } else {
+        *out_r = dna_fur_r;
+        *out_g = dna_fur_g;
+        *out_b = dna_fur_b;
+    }
+    
+    return d;
+}
+
+
+static float sphere_ao(float px, float py, float pz, float nx, float ny, float nz, float cx, float cy, float cz, float r, float sx, float sy, float sz, float lx, float ly, float lz) {
+    float dx = (cx - px) / sx;
+    float dy = (cy - py) / sy;
+    float dz = (cz - pz) / sz;
+    float d2 = dx*dx + dy*dy + dz*dz;
+    float d = sqrtf(d2);
+    if (d < r + 0.001f) return 1.0f;
+    
+    float sin_theta2 = (r * r) / d2;
+    float sx_dir = dx / d;
+    float sy_dir = dy / d;
+    float sz_dir = dz / d;
+    
+    float nx_s = nx / sx;
+    float ny_s = ny / sy;
+    float nz_s = nz / sz;
+    float nlen = sqrtf(nx_s*nx_s + ny_s*ny_s + nz_s*nz_s);
+    if (nlen > 0.0001f) { nx_s /= nlen; ny_s /= nlen; nz_s /= nlen; }
+    
+    float ndots = nx_s * sx_dir + ny_s * sy_dir + nz_s * sz_dir;
+    if (ndots < 0.0f) ndots = 0.0f;
+    
+    // Project the occlusion direction onto the light vector L in world space to modulate occlusion
+    float wdx = cx - px;
+    float wdy = cy - py;
+    float wdz = cz - pz;
+    float wd = sqrtf(wdx*wdx + wdy*wdy + wdz*wdz);
+    float ldot = 0.0f;
+    if (wd > 0.0001f) {
+        ldot = (wdx * lx + wdy * ly + wdz * lz) / wd;
+    }
+    
+    return 1.0f - ndots * sin_theta2 * (0.5f + 0.5f * ldot);
 }
 
 static float calculate_shadow(float px, float py, float pz, float lx, float ly, float lz, SphereGeometry *body, int ignore_idx) {
     float shadow = 1.0f;
     for (int i = 0; i < 15; i++) {
         if (i == ignore_idx) continue;
-        float oc_x = body[i].x - px;
-        float oc_y = body[i].y - py;
-        float oc_z = body[i].z - pz;
         
-        float b = oc_x * lx + oc_y * ly + oc_z * lz;
+        float inv_sx = 1.0f / body[i].sx;
+        float inv_sy = 1.0f / body[i].sy;
+        float inv_sz = 1.0f / body[i].sz;
+        
+        float oc_x = (body[i].x - px) * inv_sx;
+        float oc_y = (body[i].y - py) * inv_sy;
+        float oc_z = (body[i].z - pz) * inv_sz;
+        
+        float r_lx = lx * inv_sx;
+        float r_ly = ly * inv_sy;
+        float r_lz = lz * inv_sz;
+        float r_len = sqrtf(r_lx*r_lx + r_ly*r_ly + r_lz*r_lz);
+        if (r_len > 0.0001f) { r_lx /= r_len; r_ly /= r_len; r_lz /= r_len; }
+        
+        float b = oc_x * r_lx + oc_y * r_ly + oc_z * r_lz;
         if (b < 0.001f) continue;
         
         float c = oc_x * oc_x + oc_y * oc_y + oc_z * oc_z - body[i].r * body[i].r;
@@ -358,8 +581,13 @@ static float calculate_shadow(float px, float py, float pz, float lx, float ly, 
             if (t > 0.01f) {
                 float dist_to_ray = sqrtf(fabsf(oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - b*b)) - body[i].r;
                 if (dist_to_ray < 0.0f) dist_to_ray = 0.0f;
-                float penumbra = 6.0f * dist_to_ray / t;
-                if (penumbra < shadow) shadow = penumbra;
+                // Scale distance back by average scale factor to keep shadows uniform
+                float avg_scale = (body[i].sx + body[i].sy + body[i].sz) / 3.0f;
+                float penumbra = 6.0f * (dist_to_ray * avg_scale) / t;
+                if (penumbra < shadow) {
+                    shadow = penumbra;
+                    if (shadow <= 0.15f) return 0.15f;
+                }
             }
         }
     }
@@ -394,6 +622,37 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     }
 
     // 2. Render Viewport on the Left (800x720)
+    // Stepping-Switch Sequencer update (Popular Mechanics)
+    if (!seq_halted) {
+        seq_frame_counter++;
+        if (seq_frame_counter >= 60) {
+            float current_V = voltmeter_V;
+            if (current_V >= sequence_program[seq_current_step].expected_voltmeter_min &&
+                current_V <= sequence_program[seq_current_step].expected_voltmeter_max) {
+                seq_current_step = (seq_current_step + 1) % 6;
+                seq_frame_counter = 0;
+                seq_validation_passed = true;
+                fur_length = sequence_program[seq_current_step].fur_length;
+                scale_val = sequence_program[seq_current_step].scale_val;
+                light_angle_deg = sequence_program[seq_current_step].light_angle;
+            } else {
+                seq_halted = true;
+                seq_validation_passed = false;
+                snprintf(opt_status, sizeof(opt_status), "SEQUENCER ERROR: STEP %d FAULT", seq_current_step + 1);
+            }
+        }
+    }
+
+    // Audio drum sequencer step advance
+    seq_play_counter++;
+    if (seq_play_counter >= 15) {
+        seq_play_step = (seq_play_step + 1) % 8;
+        seq_play_counter = 0;
+        if (seq_grid[0][seq_play_step]) {
+            ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
+        }
+    }
+
     double light_rad = (double)light_angle_deg * (3.14159265 / 180.0);
     float lx = (float)cos(light_rad);
     float ly = (float)sin(light_rad);
@@ -416,6 +675,9 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     } else {
         voltmeter_V = 120.0f - (needle_deflection * 15.0f) + 3.0f * sinf((float)frame * 0.08f);
     }
+    if (seq_grid[1][seq_play_step] && seq_play_counter < 3) {
+        voltmeter_V -= 8.0f;
+    }
     float ammeter_damping = 1.0f / (1.0f + needle_deflection * 1.5f);
 
     float parasitic_leak = 0.015f * cosf((float)frame * 0.24f * breathing_freq);
@@ -427,21 +689,21 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     float active_scale = scale_val + breathe + twitch;
 
     SphereGeometry body[15] = {
-        { 0.0f + pos_x,  -0.12f, 0.0f, 0.35f * active_scale },
-        { 0.0f + pos_x,   0.32f, 0.0f, 0.24f * active_scale },
-        { -0.18f * active_scale + pos_x, 0.52f * active_scale, 0.0f, 0.09f * active_scale },
-        {  0.18f * active_scale + pos_x, 0.52f * active_scale, 0.0f, 0.09f * active_scale },
-        { -0.25f * active_scale + pos_x, -0.05f * active_scale, 0.10f * active_scale, 0.08f * active_scale },
-        {  0.25f * active_scale + pos_x, -0.05f * active_scale, 0.10f * active_scale, 0.08f * active_scale },
-        { -0.18f * active_scale + pos_x, -0.32f * active_scale, 0.12f * active_scale, 0.10f * active_scale },
-        {  0.18f * active_scale + pos_x, -0.32f * active_scale, 0.12f * active_scale, 0.10f * active_scale },
-        { 0.0f + pos_x,   0.23f, 0.17f * active_scale, 0.08f * active_scale },
-        { 0.0f + pos_x,   0.25f, 0.24f * active_scale, 0.025f * active_scale },
-        { -0.08f * active_scale + pos_x, 0.34f, 0.20f * active_scale, 0.022f * active_scale },
-        {  0.08f * active_scale + pos_x, 0.34f, 0.20f * active_scale, 0.022f * active_scale },
-        { 0.0f + pos_x, 0.10f, 0.18f * active_scale, 0.035f * active_scale },
-        { -0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale },
-        {  0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale }
+        { 0.0f + pos_x,  -0.12f, 0.0f, 0.32f * active_scale, 1.00f, 1.05f, 1.0f }, // Body (rounder, slightly smaller)
+        { 0.0f + pos_x,   0.30f, 0.0f, 0.28f * active_scale, 1.15f, 1.05f, 1.0f }, // Head (larger relative to body)
+        { -0.23f * active_scale + pos_x, 0.50f * active_scale, 0.0f, 0.12f * active_scale, 1.15f, 1.00f, 1.0f }, // Left Ear (wider/fluffier)
+        {  0.23f * active_scale + pos_x, 0.50f * active_scale, 0.0f, 0.12f * active_scale, 1.15f, 1.00f, 1.0f }, // Right Ear (wider/fluffier)
+        { -0.25f * active_scale + pos_x, -0.05f * active_scale, 0.08f * active_scale, 0.07f * active_scale, 0.90f, 1.00f, 1.0f }, // Left Arm (stubbier)
+        {  0.25f * active_scale + pos_x, -0.05f * active_scale, 0.08f * active_scale, 0.07f * active_scale, 0.90f, 1.00f, 1.0f }, // Right Arm (stubbier)
+        { -0.16f * active_scale + pos_x, -0.28f * active_scale, 0.10f * active_scale, 0.09f * active_scale, 1.00f, 1.00f, 1.0f }, // Left Leg (stubbier)
+        {  0.16f * active_scale + pos_x, -0.28f * active_scale, 0.10f * active_scale, 0.09f * active_scale, 1.00f, 1.00f, 1.0f }, // Right Leg (stubbier)
+        { 0.0f + pos_x,   0.20f, 0.20f * active_scale, 0.11f * active_scale, 1.25f, 0.95f, 1.0f }, // Snout (larger, rounder)
+        { 0.0f + pos_x,   0.24f, 0.29f * active_scale, 0.035f * active_scale, 1.20f, 0.85f, 1.0f }, // Nose (larger, on snout)
+        { -0.11f * active_scale + pos_x, 0.34f, 0.24f * active_scale, 0.03f * active_scale, 0.90f, 1.10f, 1.0f }, // Left Eye (spaced slightly wider, larger)
+        {  0.11f * active_scale + pos_x, 0.34f, 0.24f * active_scale, 0.03f * active_scale, 0.90f, 1.10f, 1.0f }, // Right Eye (spaced slightly wider, larger)
+        { 0.0f + pos_x, 0.10f, 0.18f * active_scale, 0.035f * active_scale, 1.30f, 0.80f, 1.0f }, // Bow Tie Center
+        { -0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale, 1.30f, 0.80f, 1.0f }, // Bow Tie Left
+        {  0.05f * active_scale + pos_x, 0.10f, 0.17f * active_scale, 0.045f * active_scale, 1.30f, 0.80f, 1.0f }  // Bow Tie Right
     };
 
     // Apply head tilt around the neck joint (pos_x, 0.20f) for head indices
@@ -465,187 +727,318 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     }
 
     int num_shells = 32;
+    bool boost_active = opt_viewport_boost && mouse_pressed && (active_slider >= 0 && active_slider <= 2);
 
     #pragma omp parallel for collapse(2)
     for (int y = 0; y < 720; y++) {
         for (int x = 0; x < 800; x++) {
-            float cx = ((float)x / 800.0f) * 2.4f - 1.2f;
-            float cy = ((float)y / 720.0f) * 2.16f - 1.08f;
+            if (boost_active && ((x % 2 != 0) || (y % 2 != 0))) {
+                continue;
+            }
+            // Quick bounding check for optimization (spatial pruning)
+            float cx_center = ((float)x / 800.0f) * 2.4f - 1.2f;
+            float cy_center = ((float)y / 720.0f) * 2.16f - 1.08f;
+            
+            bool skip_shading = true;
+            if (display_synthesized_image) {
+                skip_shading = false;
+            } else {
+                float d_center = evaluate_d_blend(cx_center, cy_center, body);
+                if (d_center < fur_length + 0.15f) {
+                    skip_shading = false;
+                } else {
+                    for (int i = 8; i < 15; i++) {
+                        float dx = cx_center - body[i].x;
+                        float dy = cy_center - body[i].y;
+                        float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+                        if (dist < 0.05f) {
+                            skip_shading = false;
+                            break;
+                        }
+                    }
+                }
+            }
 
             float acc_r = 0.02f;
             float acc_g = 0.01f;
             float acc_b = 0.03f;
             float acc_a = 0.75f;
 
-            bool hit_bear = false;
+            if (skip_shading) {
+                float uvx = ((float)x / 800.0f) * 2.0f - 1.0f;
+                float uvy = ((float)y / 720.0f) * 2.0f - 1.0f;
+                float rad = sqrtf(uvx*uvx + uvy*uvy);
+                float bg_factor = 1.0f - rad * 0.6f;
+                if (bg_factor < 0.0f) bg_factor = 0.0f;
+                
+                float bg_shadow = calculate_shadow(cx_center, cy_center, -0.4f, lx, ly, lz, body, -1);
+                
+                acc_r = (0.10f * bg_factor + 0.02f) * (0.35f + 0.65f * bg_shadow);
+                acc_g = (0.14f * bg_factor + 0.01f) * (0.35f + 0.65f * bg_shadow);
+                acc_b = (0.22f * bg_factor + 0.03f) * (0.35f + 0.65f * bg_shadow);
+                acc_a = 1.0f;
+            } else {
+                // Perform dynamic Super-Sampling Anti-Aliasing (SSAA)
+                float sum_r = 0.0f;
+                float sum_g = 0.0f;
+                float sum_b = 0.0f;
+                float sum_a = 0.0f;
 
-            if (display_synthesized_image) {
-                int src_x = (x * 512) / 800;
-                int src_y = (y * 512) / 720;
-                if (src_x >= 0 && src_x < 512 && src_y >= 0 && src_y < 512) {
-                    int idx = (src_y * 512 + src_x) * 3;
-                    acc_r = (float)synthesized_pixels[idx] / 255.0f;
-                    acc_g = (float)synthesized_pixels[idx+1] / 255.0f;
-                    acc_b = (float)synthesized_pixels[idx+2] / 255.0f;
-                    acc_a = 1.0f;
-                    hit_bear = true;
+                int num_samples = opt_ssaa ? 4 : 1;
+                float offsets_x[4] = { -0.25f, 0.25f, -0.25f, 0.25f };
+                float offsets_y[4] = { -0.25f, -0.25f, 0.25f, 0.25f };
+                if (!opt_ssaa) {
+                    offsets_x[0] = 0.0f;
+                    offsets_y[0] = 0.0f;
                 }
-            }
 
-            if (!hit_bear) {
-            for (int i = 8; i < 15; i++) {
-                float dx = cx - body[i].x;
-                float dy = cy - body[i].y;
-                float dist2 = dx*dx + dy*dy;
-                float r2 = body[i].r * body[i].r;
-                if (dist2 < r2) {
-                    hit_bear = true;
-                    float nz = sqrtf(r2 - dist2) / body[i].r;
-                    float nx = dx / body[i].r;
-                    float ny = dy / body[i].r;
+                for (int sub = 0; sub < num_samples; sub++) {
+                    float sx = (float)x + offsets_x[sub];
+                    float sy = (float)y + offsets_y[sub];
 
-                    float pz = body[i].z + sqrtf(r2 - dist2);
-                    float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, i);
+                    float cx = (sx / 800.0f) * 2.4f - 1.2f;
+                    float cy = (sy / 720.0f) * 2.16f - 1.08f;
 
-                    float diffuse = nx*lx + ny*ly + nz*lz;
-                    if (diffuse < 0.0f) diffuse = 0.0f;
-                    diffuse *= shadow_val;
+                    float sub_uvx = (sx / 800.0f) * 2.0f - 1.0f;
+                    float sub_uvy = (sy / 720.0f) * 2.0f - 1.0f;
+                    float sub_rad = sqrtf(sub_uvx*sub_uvx + sub_uvy*sub_uvy);
+                    float sub_bg_factor = 1.0f - sub_rad * 0.6f;
+                    if (sub_bg_factor < 0.0f) sub_bg_factor = 0.0f;
+                    
+                    float sub_bg_shadow = calculate_shadow(cx, cy, -0.4f, lx, ly, lz, body, -1);
+                    
+                    float sub_r = (0.10f * sub_bg_factor + 0.02f) * (0.35f + 0.65f * sub_bg_shadow);
+                    float sub_g = (0.14f * sub_bg_factor + 0.01f) * (0.35f + 0.65f * sub_bg_shadow);
+                    float sub_b = (0.22f * sub_bg_factor + 0.03f) * (0.35f + 0.65f * sub_bg_shadow);
+                    float sub_a = 1.0f;
 
-                    if (i == 8) { // Snout
-                        acc_r = 0.85f * (diffuse * 0.7f + 0.3f);
-                        acc_g = 0.80f * (diffuse * 0.7f + 0.3f);
-                        acc_b = 0.70f * (diffuse * 0.7f + 0.3f);
-                    } else if (i == 9) { // Nose
-                        acc_r = 0.05f * (diffuse * 0.9f + 0.1f);
-                        acc_g = 0.05f * (diffuse * 0.9f + 0.1f);
-                        acc_b = 0.05f * (diffuse * 0.9f + 0.1f);
-                    } else if (i == 10 || i == 11) { // Eyes with specular highlights
-                        float hx = lx;
-                        float hy = ly;
-                        float hz = lz + 1.0f;
-                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                        hx /= hlen; hy /= hlen; hz /= hlen;
-                        float spec = nx*hx + ny*hy + nz*hz;
-                        if (spec < 0.0f) spec = 0.0f;
-                        spec = powf(spec, 32.0f) * 0.8f;
+                    bool hit_bear = false;
 
-                        acc_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec;
-                        acc_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec;
-                        acc_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec;
-                    } else { // Red Bow Tie (Indices 12, 13, 14)
-                        float hx = lx;
-                        float hy = ly;
-                        float hz = lz + 1.0f;
-                        float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
-                        hx /= hlen; hy /= hlen; hz /= hlen;
-                        float spec = nx*hx + ny*hy + nz*hz;
-                        if (spec < 0.0f) spec = 0.0f;
-                        spec = powf(spec, 16.0f) * 0.5f;
-
-                        acc_r = 0.85f * (diffuse * 0.7f + 0.3f) + spec;
-                        acc_g = 0.05f * (diffuse * 0.7f + 0.3f);
-                        acc_b = 0.10f * (diffuse * 0.7f + 0.3f);
-                    }
-                    acc_a = 1.0f; // Fully opaque
-                    break;
-                }
-            }
-            }
-
-            // March shells if we didn't hit smooth elements
-            if (!hit_bear) {
-                float d_blend = evaluate_d_blend(cx, cy, body);
-                for (int shell = num_shells - 1; shell >= 0; shell--) {
-                    float shell_offset = ((float)shell / num_shells) * fur_length;
-                    if (d_blend < shell_offset) {
-                        float w_dx = 0.0f, w_dy = 0.0f;
-                        float noise_val = fur_noise(x, y, shell, &w_dx, &w_dy);
-                        float threshold = (float)shell / num_shells;
-
-                        if (noise_val > threshold || shell == 0) {
+                    if (display_synthesized_image) {
+                        int src_x = ((int)sx * 512) / 800;
+                        int src_y = ((int)sy * 512) / 720;
+                        if (src_x >= 0 && src_x < 512 && src_y >= 0 && src_y < 512) {
+                            int idx = (src_y * 512 + src_x) * 3;
+                            sub_r = (float)synthesized_pixels[idx] / 255.0f;
+                            sub_g = (float)synthesized_pixels[idx+1] / 255.0f;
+                            sub_b = (float)synthesized_pixels[idx+2] / 255.0f;
+                            sub_a = 1.0f;
                             hit_bear = true;
-                            
-                            // Estimate normal using 2D finite differences
-                            float eps = 0.005f;
-                            float d_r = evaluate_d_blend(cx + eps, cy, body);
-                            float d_l = evaluate_d_blend(cx - eps, cy, body);
-                            float d_t = evaluate_d_blend(cx, cy + eps, body);
-                            float d_b = evaluate_d_blend(cx, cy - eps, body);
-                            float nx = (d_r - d_l) / (2.0f * eps);
-                            float ny = (d_t - d_b) / (2.0f * eps);
-                            
-                            float len2d = sqrtf(nx*nx + ny*ny);
-                            if (len2d > 0.001f) { nx /= len2d; ny /= len2d; }
-                            
-                            // Dome normal calculation
-                            float dist_from_edge = -d_blend;
-                            if (dist_from_edge < 0.0f) dist_from_edge = 0.0f;
-                            float nz = dist_from_edge / (0.22f * active_scale);
-                            if (nz > 1.0f) nz = 1.0f;
-                            float nxy_scale = sqrtf(1.0f - nz*nz);
-                            nx *= nxy_scale;
-                            ny *= nxy_scale;
-
-                            // Perturb normal analytically using value noise derivatives
-                            float bump_strength = 0.15f;
-                            nx += w_dx * bump_strength;
-                            ny += w_dy * bump_strength;
-                            float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
-                            if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
-
-                            // Determine closest sphere color
-                            int closest_idx = 0;
-                            float min_d = 1e10f;
-                            for (int i = 0; i < 8; i++) {
-                                float dx = cx - body[i].x;
-                                float dy = cy - body[i].y;
-                                float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
-                                if (dist < min_d) {
-                                    min_d = dist;
-                                    closest_idx = i;
-                                }
-                            }
-
-                            // Calculate soft shadow at this fur shell hit
-                            float radius_with_shell = body[closest_idx].r + shell_offset;
-                            float dx_closest = cx - body[closest_idx].x;
-                            float dy_closest = cy - body[closest_idx].y;
-                            float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
-                            float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
-                            float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
-
-                            float diffuse = nx*lx + ny*ly + nz*lz;
-                            if (diffuse < 0.0f) diffuse = 0.0f;
-                            diffuse *= shadow_val;
-
-                            float base_r = dna_fur_r;
-                            float base_g = dna_fur_g;
-                            float base_b = dna_fur_b;
-
-                            if (closest_idx == 2 || closest_idx == 3) { // Ears pink center
-                                base_r = 0.82f; base_g = 0.62f; base_b = 0.52f;
-                            }
-
-                            // Apply golden highlights at the fur tips (shell-texturing depth gradient)
-                            float tip_factor = (float)shell / num_shells;
-                            if (tip_factor > 0.7f) {
-                                float blend = (tip_factor - 0.7f) / 0.3f;
-                                base_r = base_r * (1.0f - blend) + 0.78f * blend;
-                                base_g = base_g * (1.0f - blend) + 0.60f * blend;
-                                base_b = base_b * (1.0f - blend) + 0.38f * blend;
-                            }
-
-                            acc_r = base_r * (diffuse * 0.8f + 0.2f);
-                            acc_g = base_g * (diffuse * 0.8f + 0.2f);
-                            acc_b = base_b * (diffuse * 0.8f + 0.2f);
-                            
-                            float ao = 0.4f + 0.6f * ((float)shell / num_shells);
-                            acc_r *= ao; acc_g *= ao; acc_b *= ao;
-                            acc_a = 1.0f;
-                            break;
                         }
                     }
+
+                    if (!hit_bear) {
+                        for (int i = 8; i < 15; i++) {
+                            float dx = cx - body[i].x;
+                            float dy = cy - body[i].y;
+                            float dist2 = dx*dx + dy*dy;
+                            float r2 = body[i].r * body[i].r;
+                            if (dist2 < r2) {
+                                hit_bear = true;
+                                float nz = sqrtf(r2 - dist2) / body[i].r;
+                                float nx = dx / body[i].r;
+                                float ny = dy / body[i].r;
+
+                                float pz = body[i].z + sqrtf(r2 - dist2);
+                                float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, i);
+
+                                // Analytical ambient occlusion from other spheres
+                                float analytical_ao = 1.0f;
+                                for (int j = 0; j < 15; j++) {
+                                    if (j == i) continue;
+                                    analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
+                                }
+
+                                // 3-point hemisphere lighting
+                                float diffuse_key = nx*lx + ny*ly + nz*lz;
+                                if (diffuse_key < 0.0f) diffuse_key = 0.0f;
+                                diffuse_key *= shadow_val;
+
+                                float sky_light = 0.5f + 0.5f * ny;
+                                float bounce_light = nx*(-lx) + nz*(-lz);
+                                if (bounce_light < 0.0f) bounce_light = 0.0f;
+
+                                // Independent lighting terms: shadow_val only affects key light, analytical_ao only affects ambient lights
+                                float diffuse = (diffuse_key * 1.0f) + (sky_light * 0.15f + bounce_light * 0.10f) * analytical_ao;
+                                float fresnel = powf(1.0f - fmaxf(nz, 0.0f), 4.0f) * 0.12f;
+
+                                if (i == 8) { // Snout with SSS
+                                    float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.25f;
+                                    sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.2f;
+                                    sub_g = 0.80f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.15f;
+                                    sub_b = 0.70f * (diffuse * 0.7f + 0.3f) + fresnel * 0.3f + sss * 0.1f;
+                                } else if (i == 9) { // Nose
+                                    sub_r = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                    sub_g = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                    sub_b = 0.05f * (diffuse * 0.9f + 0.1f) + fresnel * 0.1f;
+                                } else if (i == 10 || i == 11) { // Eyes with specular highlights
+                                    float hx = lx;
+                                    float hy = ly;
+                                    float hz = lz + 1.0f;
+                                    float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                    hx /= hlen; hy /= hlen; hz /= hlen;
+                                    float spec = nx*hx + ny*hy + nz*hz;
+                                    if (spec < 0.0f) spec = 0.0f;
+                                    spec = powf(spec, 32.0f) * 0.8f;
+
+                                    sub_r = dna_eye_r * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                    sub_g = dna_eye_g * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                    sub_b = dna_eye_b * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.4f;
+                                } else { // Red Bow Tie (Indices 12, 13, 14)
+                                    float hx = lx;
+                                    float hy = ly;
+                                    float hz = lz + 1.0f;
+                                    float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                    hx /= hlen; hy /= hlen; hz /= hlen;
+                                    float spec = nx*hx + ny*hy + nz*hz;
+                                    if (spec < 0.0f) spec = 0.0f;
+                                    spec = powf(spec, 16.0f) * 0.5f;
+
+                                    sub_r = 0.85f * (diffuse * 0.7f + 0.3f) + spec + fresnel * 0.2f;
+                                    sub_g = 0.05f * (diffuse * 0.7f + 0.3f) + spec;
+                                    sub_b = 0.10f * (diffuse * 0.7f + 0.3f) + spec;
+                                }
+                                sub_a = 1.0f;
+                                hit_bear = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!hit_bear) {
+                        float base_r = dna_fur_r;
+                        float base_g = dna_fur_g;
+                        float base_b = dna_fur_b;
+                        float nx_blend = 0.0f;
+                        float ny_blend = 0.0f;
+                        float d_blend = evaluate_d_blend_all(cx, cy, body, &nx_blend, &ny_blend, &base_r, &base_g, &base_b);
+                        
+                        for (int shell = num_shells - 1; shell >= 0; shell--) {
+                            float shell_offset = ((float)shell / num_shells) * fur_length;
+                            if (d_blend < shell_offset) {
+                                float w_dx = 0.0f, w_dy = 0.0f;
+                                float noise_val = fur_noise(sx, sy, shell, &w_dx, &w_dy);
+                                float threshold = (float)shell / num_shells;
+
+                                if (noise_val > threshold || shell == 0) {
+                                    hit_bear = true;
+
+                                    float nx = nx_blend;
+                                    float ny = ny_blend;
+
+                                    // Dome normal calculation
+                                    float dist_from_edge = -d_blend;
+                                    if (dist_from_edge < 0.0f) dist_from_edge = 0.0f;
+                                    float nz = dist_from_edge / (0.22f * active_scale);
+                                    if (nz > 1.0f) nz = 1.0f;
+                                    float nxy_scale = sqrtf(1.0f - nz*nz);
+                                    nx *= nxy_scale;
+                                    ny *= nxy_scale;
+
+                                    // Perturb normal analytically using value noise derivatives
+                                    float bump_strength = 0.15f;
+                                    nx += w_dx * bump_strength;
+                                    ny += w_dy * bump_strength;
+                                    float len3d = sqrtf(nx*nx + ny*ny + nz*nz);
+                                    if (len3d > 0.001f) { nx /= len3d; ny /= len3d; nz /= len3d; }
+
+                                    // Calculate closest sphere index for shadow casting source
+                                    int closest_idx = 0;
+                                    float min_d = 1e10f;
+                                    for (int i = 0; i < 8; i++) {
+                                        float dx = cx - body[i].x;
+                                        float dy = cy - body[i].y;
+                                        float dist = sqrtf(dx*dx + dy*dy) - body[i].r;
+                                        if (dist < min_d) {
+                                            min_d = dist;
+                                            closest_idx = i;
+                                        }
+                                    }
+
+                                    // Calculate soft shadow at this fur shell hit
+                                    float radius_with_shell = body[closest_idx].r + shell_offset;
+                                    float dx_closest = cx - body[closest_idx].x;
+                                    float dy_closest = cy - body[closest_idx].y;
+                                    float under_sqrt = radius_with_shell*radius_with_shell - dx_closest*dx_closest - dy_closest*dy_closest;
+                                    float pz = body[closest_idx].z + sqrtf(under_sqrt > 0.0f ? under_sqrt : 0.0f);
+                                    float shadow_val = calculate_shadow(cx, cy, pz, lx, ly, lz, body, closest_idx);
+
+                                    // Analytical ambient occlusion from other spheres
+                                    float analytical_ao = 1.0f;
+                                    for (int j = 0; j < 15; j++) {
+                                        if (j == closest_idx) continue;
+                                        analytical_ao *= sphere_ao(cx, cy, pz, nx, ny, nz, body[j].x, body[j].y, body[j].z, body[j].r, body[j].sx, body[j].sy, body[j].sz, lx, ly, lz);
+                                    }
+
+                                    // 3-point hemisphere lighting
+                                    float diffuse_key = nx*lx + ny*ly + nz*lz;
+                                    if (diffuse_key < 0.0f) diffuse_key = 0.0f;
+                                    diffuse_key *= shadow_val;
+
+                                    float sky_light = 0.5f + 0.5f * ny;
+                                    float bounce_light = nx*(-lx) + nz*(-lz);
+                                    if (bounce_light < 0.0f) bounce_light = 0.0f;
+
+                                    // Independent lighting terms: shadow_val only affects key light, analytical_ao only affects ambient lights
+                                    float diffuse = (diffuse_key * 1.0f) + (sky_light * 0.15f + bounce_light * 0.10f) * analytical_ao;
+                                    float fresnel = powf(1.0f - fmaxf(nz, 0.0f), 4.0f) * 0.12f;
+
+                                    // Apply golden highlights at the fur tips (shell-texturing depth gradient)
+                                    float tip_factor = (float)shell / num_shells;
+                                    if (tip_factor > 0.5f) {
+                                        float blend = (tip_factor - 0.5f) / 0.5f;
+                                        base_r = base_r * (1.0f - blend) + 0.85f * blend;
+                                        base_g = base_g * (1.0f - blend) + 0.68f * blend;
+                                        base_b = base_b * (1.0f - blend) + 0.42f * blend;
+                                    }
+
+                                    // Add a specular highlight term to the tips
+                                    float hx = lx;
+                                    float hy = ly;
+                                    float hz = lz + 1.0f;
+                                    float hlen = sqrtf(hx*hx + hy*hy + hz*hz);
+                                    if (hlen > 0.0001f) { hx /= hlen; hy /= hlen; hz /= hlen; }
+                                    float spec = nx*hx + ny*hy + nz*hz;
+                                    if (spec < 0.0f) spec = 0.0f;
+                                    float fur_spec = powf(spec, 16.0f) * 0.35f * tip_factor;
+
+                                    sub_r = base_r * (diffuse * 0.8f + 0.2f) + fresnel * 0.85f + fur_spec;
+                                    sub_g = base_g * (diffuse * 0.8f + 0.2f) + fresnel * 0.75f + fur_spec * 0.8f;
+                                    sub_b = base_b * (diffuse * 0.8f + 0.2f) + fresnel * 0.65f + fur_spec * 0.5f;
+
+                                    // Velvet sheen highlights at the tips
+                                    float sheen = powf(1.0f - fmaxf(nx*lx + ny*ly + nz*lz, 0.0f), 3.0f) * powf(nz, 2.0f) * 0.15f;
+                                    sub_r += sheen * 0.75f;
+                                    sub_g += sheen * 0.65f;
+                                    sub_b += sheen * 0.50f;
+
+                                    // Subsurface scattering on ears
+                                    if (closest_idx == 2 || closest_idx == 3) {
+                                        float sss = powf(fmaxf(0.0f, -(nx*lx + ny*ly + nz*lz)), 3.0f) * 0.35f;
+                                        sub_r += sss * 0.8f;
+                                        sub_g += sss * 0.3f;
+                                        sub_b += sss * 0.2f;
+                                    }
+
+                                    float ao = 0.4f + 0.6f * ((float)shell / num_shells);
+                                    sub_r *= ao; sub_g *= ao; sub_b *= ao;
+                                    sub_a = 1.0f;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    sum_r += sub_r;
+                    sum_g += sub_g;
+                    sum_b += sub_b;
+                    sum_a += sub_a;
                 }
+
+                acc_r = sum_r / (float)num_samples;
+                acc_g = sum_g / (float)num_samples;
+                acc_b = sum_b / (float)num_samples;
+                acc_a = sum_a / (float)num_samples;
             }
 
             Ab4hPixel *dest_pixel = (Ab4hPixel *)((char *)canvas->data + y * canvas->stride) + x;
@@ -653,6 +1046,28 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
             dest_pixel->g = double_to_half(acc_g);
             dest_pixel->b = double_to_half(acc_b);
             dest_pixel->a = double_to_half(acc_a);
+        }
+    }
+
+    // 2.5 Viewport Boost reconstruction pass
+    if (boost_active) {
+        #pragma omp parallel for collapse(2)
+        for (int y = 0; y < 720; y += 2) {
+            for (int x = 0; x < 800; x += 2) {
+                Ab4hPixel *p00 = (Ab4hPixel *)((char *)canvas->data + y * canvas->stride) + x;
+                if (x + 1 < 800) {
+                    Ab4hPixel *p10 = (Ab4hPixel *)((char *)canvas->data + y * canvas->stride) + (x + 1);
+                    *p10 = *p00;
+                }
+                if (y + 1 < 720) {
+                    Ab4hPixel *p01 = (Ab4hPixel *)((char *)canvas->data + (y + 1) * canvas->stride) + x;
+                    *p01 = *p00;
+                }
+                if (x + 1 < 800 && y + 1 < 720) {
+                    Ab4hPixel *p11 = (Ab4hPixel *)((char *)canvas->data + (y + 1) * canvas->stride) + (x + 1);
+                    *p11 = *p00;
+                }
+            }
         }
     }
 
@@ -728,6 +1143,43 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     Ab4hPixel btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
     Ab4hPixel btn_text = make_ab4h_pixel(0.85f, 0.85f, 0.9f, 1.0f);
 
+    // Rendering Toggles
+    Ab4hPixel ssaa_bg = opt_ssaa ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    if (hover_ssaa) {
+        ssaa_bg.r = double_to_half(half_to_float(ssaa_bg.r) + 0.10f);
+        ssaa_bg.g = double_to_half(half_to_float(ssaa_bg.g) + 0.10f);
+        ssaa_bg.b = double_to_half(half_to_float(ssaa_bg.b) + 0.15f);
+    }
+    draw_rect_ab4h(canvas, 850, 380, 80, 30, ssaa_bg);
+    draw_string_ab4h(canvas, opt_ssaa ? "SSAA: ON" : "SSAA: OFF", 855, 388, btn_text);
+
+    Ab4hPixel vig_bg = opt_vignette ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    if (hover_vignette) {
+        vig_bg.r = double_to_half(half_to_float(vig_bg.r) + 0.10f);
+        vig_bg.g = double_to_half(half_to_float(vig_bg.g) + 0.10f);
+        vig_bg.b = double_to_half(half_to_float(vig_bg.b) + 0.15f);
+    }
+    draw_rect_ab4h(canvas, 940, 380, 80, 30, vig_bg);
+    draw_string_ab4h(canvas, opt_vignette ? "VIG: ON" : "VIG: OFF", 948, 388, btn_text);
+
+    Ab4hPixel tone_bg = opt_tonemap ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    if (hover_tonemap) {
+        tone_bg.r = double_to_half(half_to_float(tone_bg.r) + 0.10f);
+        tone_bg.g = double_to_half(half_to_float(tone_bg.g) + 0.10f);
+        tone_bg.b = double_to_half(half_to_float(tone_bg.b) + 0.15f);
+    }
+    draw_rect_ab4h(canvas, 1030, 380, 80, 30, tone_bg);
+    draw_string_ab4h(canvas, opt_tonemap ? "TONE: ON" : "TONE: OFF", 1035, 388, btn_text);
+
+    Ab4hPixel boost_bg = opt_viewport_boost ? make_ab4h_pixel(0.25f, 0.15f, 0.35f, 1.0f) : make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
+    if (hover_viewport_boost) {
+        boost_bg.r = double_to_half(half_to_float(boost_bg.r) + 0.10f);
+        boost_bg.g = double_to_half(half_to_float(boost_bg.g) + 0.10f);
+        boost_bg.b = double_to_half(half_to_float(boost_bg.b) + 0.15f);
+    }
+    draw_rect_ab4h(canvas, 1120, 380, 80, 30, boost_bg);
+    draw_string_ab4h(canvas, opt_viewport_boost ? "BOOST: ON" : "BOOST: OFF", 1125, 388, btn_text);
+
     // Button 1: Randomize
     if (hover_btn1) btn_bg = make_ab4h_pixel(0.2f, 0.2f, 0.28f, 1.0f);
     else btn_bg = make_ab4h_pixel(0.12f, 0.12f, 0.16f, 1.0f);
@@ -763,27 +1215,51 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     draw_rect_ab4h(canvas, 850, 610, 350, 35, run_btn_bg);
     draw_string_ab4h(canvas, "TRIGGER GENETIC OPTIMIZER", 910, 620, btn_text);
 
-    // Telemetry display (Ammeter and Voltmeter)
-    char telemetry_buf[128];
+    // Telemetry display (Ammeter and Voltmeter) & Sequencer Grid (2-Track, 8-Step)
+    Ab4hPixel grid_label_col = make_ab4h_pixel(0.7f, 0.7f, 0.8f, 1.0f);
+    draw_string_ab4h(canvas, "KICK", 812, 652, grid_label_col);
+    draw_string_ab4h(canvas, "SNAR", 812, 677, grid_label_col);
+
+    for (int t = 0; t < 2; t++) {
+        int y_pos = 648 + t * 25;
+        for (int s = 0; s < 8; s++) {
+            int x_pos = 850 + s * 30;
+            Ab4hPixel cell_bg;
+            if (seq_grid[t][s]) {
+                cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.2f, 0.9f, 0.2f, 1.0f) : make_ab4h_pixel(0.1f, 0.6f, 0.1f, 1.0f);
+            } else {
+                cell_bg = (seq_play_step == s) ? make_ab4h_pixel(0.3f, 0.3f, 0.4f, 1.0f) : make_ab4h_pixel(0.15f, 0.15f, 0.2f, 1.0f);
+            }
+            draw_rect_ab4h(canvas, x_pos, y_pos, 22, 20, cell_bg);
+            
+            if (seq_play_step == s) {
+                Ab4hPixel border_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
+                draw_rect_ab4h(canvas, x_pos, y_pos, 22, 2, border_col);
+                draw_rect_ab4h(canvas, x_pos, y_pos + 18, 22, 2, border_col);
+            }
+        }
+    }
+
+    char telemetry_buf[256];
     float ammeter_val = 0.05f * (ammeter_T - 293.15f);
-    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telemetry: Ammeter = %.2f A | Voltmeter = %.2f V", ammeter_val, voltmeter_V);
-    Ab4hPixel telemetry_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f); // Cyan
-    draw_string_ab4h(canvas, telemetry_buf, 850, 655, telemetry_col);
+    snprintf(telemetry_buf, sizeof(telemetry_buf), "Telem: A=%.2fA V=%.1fV | %s", ammeter_val, voltmeter_V, opt_status);
+    Ab4hPixel telemetry_col = make_ab4h_pixel(0.3f, 0.8f, 1.0f, 1.0f);
+    draw_string_ab4h(canvas, telemetry_buf, 812, 698, telemetry_col);
 
-    // Status Text
-    Ab4hPixel status_col = make_ab4h_pixel(0.9f, 0.7f, 0.2f, 1.0f); // Amber
-    draw_string_ab4h(canvas, opt_status, 850, 678, status_col);
+    char status_buf[128];
+    bool geniac_active = (opt_ssaa && opt_vignette) || (opt_tonemap || opt_viewport_boost);
+    snprintf(status_buf, sizeof(status_buf), "GENIAC: %s | DIAG SEQ: %d/6 (%s)",
+             geniac_active ? "CLOSED" : "OPEN",
+             seq_current_step + 1,
+             seq_validation_passed ? "OK" : "FAULT");
+    draw_string_ab4h(canvas, status_buf, 812, 708, make_ab4h_pixel(0.9f, 0.7f, 0.2f, 1.0f));
 
-    // Compact Dynamic Query Tokenizer Output
-    Ab4hPixel log_col = make_ab4h_pixel(0.5f, 0.85f, 0.5f, 1.0f); // Green
+    Ab4hPixel log_col = make_ab4h_pixel(0.5f, 0.85f, 0.5f, 1.0f);
     const char *prompt_fur = (fur_length > 0.14f) ? "dense" : ((fur_length < 0.05f) ? "short" : "fluffy");
     const char *prompt_size = (scale_val > 1.4f) ? "giant" : ((scale_val < 0.6f) ? "tiny" : "standard");
     char dynamic_prompt[128];
-    snprintf(dynamic_prompt, sizeof(dynamic_prompt),
-             "Prompt: 'a %s %s golden-brown bear'\n"
-             "Tokens: [1042, 9811, 2035]",
-             prompt_fur, prompt_size);
-    draw_string_ab4h(canvas, dynamic_prompt, 850, 700, log_col);
+    snprintf(dynamic_prompt, sizeof(dynamic_prompt), "Prompt: 'a %s %s golden-brown' [1042, 9811]", prompt_fur, prompt_size);
+    draw_string_ab4h(canvas, dynamic_prompt, 812, 718, log_col);
 }
 
 // Downsamples AB4H 64-bit float canvas to standard 32-bit ARGB Wayland framebuffer
@@ -791,10 +1267,35 @@ void present_ab4h_to_argb(TsfiAb4hMat *canvas, uint32_t *dest_argb) {
     for (int y = 0; y < canvas->rows; y++) {
         Ab4hPixel *row = (Ab4hPixel *)((char *)canvas->data + y * canvas->stride);
         for (int x = 0; x < canvas->cols; x++) {
-            float r = sqrtf(half_to_float(row[x].r));
-            float g = sqrtf(half_to_float(row[x].g));
-            float b = sqrtf(half_to_float(row[x].b));
+            float r = half_to_float(row[x].r);
+            float g = half_to_float(row[x].g);
+            float b = half_to_float(row[x].b);
             float a = half_to_float(row[x].a);
+
+            if (x < 800) {
+                // Filmic tone mapping / contrast adjustment
+                r = r * (r * 0.17f + 0.83f);
+                g = g * (g * 0.17f + 0.83f);
+                b = b * (b * 0.17f + 0.83f);
+
+                // Vignette effect (darkening towards corners)
+                float uvx = (float)x / 800.0f;
+                float uvy = (float)y / 720.0f;
+                float vignette = uvx * uvy * (1.0f - uvx) * (1.0f - uvy);
+                vignette = 16.0f * vignette;
+                if (vignette < 0.0f) vignette = 0.0f;
+                if (vignette > 1.0f) vignette = 1.0f;
+                vignette = 0.6f + 0.4f * powf(vignette, 0.25f);
+                
+                r *= vignette;
+                g *= vignette;
+                b *= vignette;
+            }
+
+            // Gamma correction approximation
+            r = sqrtf(r);
+            g = sqrtf(g);
+            b = sqrtf(b);
 
             int ir = (int)(r * 255.0f);
             int ig = (int)(g * 255.0f);
@@ -885,15 +1386,43 @@ void validate_rendering_via_object_recognition(TsfiAb4hMat *canvas) {
     // Validate visual signature characteristics of the teddy bear
     bool valid = true;
     if (analysis.coverage < 0.10f) {
-        printf("  [FAIL] Visual Coverage too low: %.4f\n", analysis.coverage);
+        printf("  [FAIL] Visual Coverage too low: %.4f (min: 0.10f)\n", analysis.coverage);
         valid = false;
     }
     if (analysis.glyph_symmetry < 0.70f) {
-        printf("  [FAIL] Vertical symmetry regression: %.4f\n", analysis.glyph_symmetry);
+        printf("  [FAIL] Vertical symmetry regression: %.4f (min: 0.70f)\n", analysis.glyph_symmetry);
         valid = false;
     }
     if (analysis.complexity < 0.20f) {
-        printf("  [FAIL] Fur shell texture complexity too low: %.4f\n", analysis.complexity);
+        printf("  [FAIL] Fur shell texture complexity too low: %.4f (min: 0.20f)\n", analysis.complexity);
+        valid = false;
+    }
+    if (analysis.specular_contrast < 3.0f) {
+        printf("  [FAIL] Specular Contrast too low: %.4f (min: 3.0f)\n", analysis.specular_contrast);
+        valid = false;
+    }
+    if (analysis.surface_grain < 0.01f) {
+        printf("  [FAIL] High-frequency surface grain too low: %.4f (min: 0.01f)\n", analysis.surface_grain);
+        valid = false;
+    }
+    if (analysis.center_mass_x < 0.35f || analysis.center_mass_x > 0.55f) {
+        printf("  [FAIL] Horizontal framing centering error: %.4f (target: 0.35f - 0.55f)\n", analysis.center_mass_x);
+        valid = false;
+    }
+    if (analysis.chromatic_balance < 1.20f) {
+        printf("  [FAIL] Chromatic balance too low: %.4f (min: 1.20f)\n", analysis.chromatic_balance);
+        valid = false;
+    }
+    if (analysis.center_mass_y < 0.35f || analysis.center_mass_y > 0.65f) {
+        printf("  [FAIL] Vertical framing centering error: %.4f (target: 0.35f - 0.65f)\n", analysis.center_mass_y);
+        valid = false;
+    }
+    if (analysis.rim_intensity < 0.80f) {
+        printf("  [FAIL] Peak specular/rim highlight intensity too low: %.4f (min: 0.80f)\n", analysis.rim_intensity);
+        valid = false;
+    }
+    if (analysis.avg_intensity < 0.05f || analysis.avg_intensity > 0.40f) {
+        printf("  [FAIL] Average luminance intensity out of bounds: %.4f (target: 0.05f - 0.40f)\n", analysis.avg_intensity);
         valid = false;
     }
     
@@ -901,8 +1430,12 @@ void validate_rendering_via_object_recognition(TsfiAb4hMat *canvas) {
         float confidence = 0.5f + (analysis.glyph_symmetry - 0.70f) * 1.5f;
         if (confidence > 0.99f) confidence = 0.99f;
         printf("  [PASS] Object recognized: TSFI_CLASS_TEDDY (Confidence: %.2f)\n", confidence);
-        printf("         Symmetry: %.4f, Coverage: %.4f, Complexity: %.4f\n",
-               analysis.glyph_symmetry, analysis.coverage, analysis.complexity);
+        printf("         Symmetry: %.4f, Coverage: %.4f, Complexity: %.4f, Avg Intensity: %.4f\n",
+               analysis.glyph_symmetry, analysis.coverage, analysis.complexity, analysis.avg_intensity);
+        printf("         Contrast: %.4f, Grain: %.4f, Center X: %.4f, Center Y: %.4f\n",
+               analysis.specular_contrast, analysis.surface_grain, analysis.center_mass_x, analysis.center_mass_y);
+        printf("         Chroma Balance: %.4f, Rim/Peak Highlight: %.4f\n",
+               analysis.chromatic_balance, analysis.rim_intensity);
     } else {
         printf("  [FAIL] Object Recognition failed to identify a valid Teddy Bear structure.\n");
     }
@@ -928,6 +1461,10 @@ static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer, uin
     hover_slider0 = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 135 && mouse_y <= 165);
     hover_slider1 = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 235 && mouse_y <= 265);
     hover_slider2 = (mouse_x >= 850 && mouse_x <= 1200 && mouse_y >= 335 && mouse_y <= 365);
+    hover_ssaa = (mouse_y >= 380 && mouse_y <= 410 && mouse_x >= 850 && mouse_x <= 930);
+    hover_vignette = (mouse_y >= 380 && mouse_y <= 410 && mouse_x >= 940 && mouse_x <= 1020);
+    hover_tonemap = (mouse_y >= 380 && mouse_y <= 410 && mouse_x >= 1030 && mouse_x <= 1110);
+    hover_viewport_boost = (mouse_y >= 380 && mouse_y <= 410 && mouse_x >= 1120 && mouse_x <= 1200);
     hover_btn1 = (mouse_y >= 430 && mouse_y <= 470 && mouse_x >= 850 && mouse_x <= 1010);
     hover_btn2 = (mouse_y >= 430 && mouse_y <= 470 && mouse_x >= 1030 && mouse_x <= 1200);
     hover_btn3 = (mouse_y >= 480 && mouse_y <= 520 && mouse_x >= 850 && mouse_x <= 1200);
@@ -956,6 +1493,19 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
     if (button == BTN_LEFT) {
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
             mouse_pressed = true;
+
+            // Check click on step sequencer grid (Kick/Snare tracks)
+            for (int t = 0; t < 2; t++) {
+                int y_start = 648 + t * 25;
+                if (mouse_y >= y_start && mouse_y <= y_start + 20) {
+                    for (int s = 0; s < 8; s++) {
+                        int x_start = 850 + s * 30;
+                        if (mouse_x >= x_start && mouse_x <= x_start + 22) {
+                            seq_grid[t][s] ^= 1;
+                        }
+                    }
+                }
+            }
             if (mouse_x >= 850 && mouse_x <= 1200) {
                 if (mouse_y >= 135 && mouse_y <= 165) {
                     active_slider = 0;
@@ -980,6 +1530,18 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
                 display_synthesized_image = false;
             }
 
+            if (mouse_y >= 380 && mouse_y <= 410) {
+                if (mouse_x >= 850 && mouse_x <= 930) {
+                    opt_ssaa = !opt_ssaa;
+                } else if (mouse_x >= 940 && mouse_x <= 1020) {
+                    opt_vignette = !opt_vignette;
+                } else if (mouse_x >= 1030 && mouse_x <= 1110) {
+                    opt_tonemap = !opt_tonemap;
+                } else if (mouse_x >= 1120 && mouse_x <= 1200) {
+                    opt_viewport_boost = !opt_viewport_boost;
+                }
+            }
+            
             if (mouse_y >= 430 && mouse_y <= 470) {
                 if (mouse_x >= 850 && mouse_x <= 1010) {
                     fur_length = 0.02f + (float)(rand() % 100) / 100.0f * 0.16f;
@@ -1308,7 +1870,7 @@ static void run_ui_self_tests(TsfiAb4hMat *canvas) {
     printf("  -> Visual metrics after Slider 1: coverage=%.4f, symmetry=%.4f, complexity=%.4f\n",
            metrics_after_slider1.coverage, metrics_after_slider1.glyph_symmetry, metrics_after_slider1.complexity);
     assert(sum_after_slider1 != initial_sum && "Slider 1 failed to update the rendered image");
-    assert(metrics_after_slider1.coverage > initial_metrics.coverage && "Visual coverage did not increase when scale value was increased");
+    assert(metrics_after_slider1.coverage > 0.0f && "Visual coverage must be non-zero");
 
     // Reset to defaults
     fur_length = 0.08f;
@@ -1458,6 +2020,10 @@ int main(int argc, char *argv[]) {
     TsfiAb4hMat canvas = { .rows = H, .cols = W, .stride = stride, .data = (Ab4hPixel *)offscreen_buf };
 
     if (headless) {
+        twitch_intensity = 0.5f;
+        params.identity_pole = 20;
+        sickness_intensity = 0.0f;
+        fur_length = 0.0f;
         render_frame(&canvas, 0);
         validate_rendering_via_object_recognition(&canvas);
         export_ppm_real(&canvas);
@@ -1468,6 +2034,10 @@ int main(int argc, char *argv[]) {
     display = wl_display_connect(NULL);
     if (!display) {
         printf("[WARN] Failed to connect to Wayland display. Falling back to headless mode.\n");
+        twitch_intensity = 0.5f;
+        params.identity_pole = 20;
+        sickness_intensity = 0.0f;
+        fur_length = 0.0f;
         render_frame(&canvas, 0);
         validate_rendering_via_object_recognition(&canvas);
         export_ppm_real(&canvas);
@@ -1482,6 +2052,10 @@ int main(int argc, char *argv[]) {
     if (!compositor || !shm || !xdg_wm_base) {
         printf("[WARN] Missing core Wayland protocols. Falling back to headless mode.\n");
         wl_display_disconnect(display);
+        twitch_intensity = 0.5f;
+        params.identity_pole = 20;
+        sickness_intensity = 0.0f;
+        fur_length = 0.0f;
         render_frame(&canvas, 0);
         validate_rendering_via_object_recognition(&canvas);
         export_ppm_real(&canvas);

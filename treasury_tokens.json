@@ -418,5 +418,12 @@
         "name": "Love \u327e Index",
         "owner": "0x18f621662d6a1f23700ea32d146b32195dc33111",
         "ignored": false
+    },
+    "0xb73a529e174d8859964fb5245773b18c950e1998": {
+        "address": "0xb73a529e174d8859964fb5245773b18c950e1998",
+        "symbol": "RESPONSIBILITY\ud83d\udd6f\ufe0f",
+        "name": "NOMGG ",
+        "owner": "0xb46bd3b3750ee5e8244a9acab6974781dd4bf769",
+        "ignored": false
     }
 }

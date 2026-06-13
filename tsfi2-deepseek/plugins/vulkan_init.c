@@ -912,15 +912,28 @@ void init_vk_swapchain(VulkanContext *vk, int width, int height) {
     if (vk->vkGetPhysicalDeviceSurfacePresentModesKHR(vk->physical_device, vk->surface, &presentModeCount, NULL) == VK_SUCCESS && presentModeCount > 0) {
         VkPresentModeKHR *presentModes = (VkPresentModeKHR*)lau_malloc(sizeof(VkPresentModeKHR) * presentModeCount);
         if (vk->vkGetPhysicalDeviceSurfacePresentModesKHR(vk->physical_device, vk->surface, &presentModeCount, presentModes) == VK_SUCCESS) {
-            for (uint32_t i = 0; i < presentModeCount; i++) {
-                if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-                    presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-                    break;
+            bool desired_supported = false;
+            if (vk->desiredPresentMode != 0) {
+                for (uint32_t i = 0; i < presentModeCount; i++) {
+                    if (presentModes[i] == vk->desiredPresentMode) {
+                        desired_supported = true;
+                        presentMode = vk->desiredPresentMode;
+                        break;
+                    }
+                }
+            }
+            if (!desired_supported) {
+                for (uint32_t i = 0; i < presentModeCount; i++) {
+                    if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+                        presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+                        break;
+                    }
                 }
             }
         }
         lau_free(presentModes);
     }
+    vk->currentPresentMode = presentMode;
 
     uint32_t imageCount = caps.minImageCount + 1;
     if (caps.maxImageCount > 0 && imageCount > caps.maxImageCount) {
