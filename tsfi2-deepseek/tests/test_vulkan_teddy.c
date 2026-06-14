@@ -94,13 +94,24 @@ static void* play_sound_thread(void *arg) {
             }
         }
     } else if (strcmp(sd->type, "kick") == 0) {
-        len = 3000; buf = malloc(len);
+        len = 3600; buf = malloc(len);
         if (buf) {
+            float phase = 0.0f;
             for (int i = 0; i < len; i++) {
                 float t = (float)i / 8000.0f;
-                float freq = 45.0f + 105.0f * expf(-40.0f * t);
-                float phase = freq * t * 2.0f * 3.14159265f;
-                float sat = tanhf(2.5f * sinf(phase) * expf(-15.0f * t));
+                // TR-808 pitch sweep: sweeps quickly from 180 Hz to 48 Hz
+                float freq = 48.0f + 132.0f * expf(-75.0f * t);
+                phase += freq * (1.0f / 8000.0f) * 2.0f * 3.14159265f;
+                
+                // Bridged-T decay envelope
+                float env = expf(-8.5f * t);
+                float body = sinf(phase) * env;
+                
+                // Initial beater click component (high frequency transient)
+                float click = sinf(1500.0f * t * 2.0f * 3.14159265f) * expf(-300.0f * t) * 0.35f;
+                
+                // Audion triode warm saturation
+                float sat = tanhf(3.2f * (body + click));
                 buf[i] = 128 + (int)(sat * 120.0f);
             }
         }
