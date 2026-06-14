@@ -300,6 +300,12 @@ tests/test_zmm_mystery_house: tests/test_zmm_mystery_house.c $(CORE_OBJS) $(OBJ_
 tests/test_shadow_registers: tests/test_shadow_registers.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/native_rdna4_rebar: tests/native_rdna4_rebar.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/native_rdna4_wmma: tests/native_rdna4_wmma.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_epyx_opcodes: tests/test_epyx_opcodes.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
