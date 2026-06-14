@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoNukes PulseX Ecosystem Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030408;
+            --panel-bg: rgba(6, 9, 20, 0.85);
+            --border-glow: rgba(0, 240, 255, 0.2);
+            --glow-cyan: #00f0ff;
+            --glow-green: #39ff14;
+            --glow-magenta: #ff007f;
+            --text-color: #e2e8f0;
+            --accent-glow: rgba(255, 0, 127, 0.2);
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 50% 30%, rgba(10, 20, 45, 0.25) 0%, transparent 80%);
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: rgba(4, 6, 12, 0.95);
+            border-bottom: 1px solid #101626;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .refresh-btn {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--glow-cyan);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        #main-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .side-panel {
+            background: var(--panel-bg);
+            border-right: 1px solid #141d33;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            background: rgba(16, 22, 38, 0.7);
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            padding: 10px;
+            color: #fff;
+            font-family: inherit;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .group-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            background: rgba(20, 30, 55, 0.5);
+            border: 1px solid #1e293b;
+            color: #94a3b8;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: rgba(255, 0, 127, 0.15);
+            border-color: var(--glow-magenta);
+            color: #fff;
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .grid-header {
+            display: grid;
+            grid-template-columns: 80px 120px 1fr 180px;
+            padding: 12px 16px;
+            background: rgba(16, 22, 38, 0.9);
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .pool-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .pool-row {
+            display: grid;
+            grid-template-columns: 80px 120px 1fr 180px;
+            padding: 14px 16px;
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+            border-radius: 4px;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pool-row:hover {
+            border-color: var(--glow-cyan);
+            background: rgba(0, 240, 255, 0.03);
+            transform: translateX(4px);
+        }
+
+        .tag {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .tag.v1 { background: rgba(0, 240, 255, 0.15); color: var(--glow-cyan); border: 1px solid var(--glow-cyan); }
+        .tag.v2 { background: rgba(255, 0, 127, 0.15); color: var(--glow-magenta); border: 1px solid var(--glow-magenta); }
+
+        .pool-symbol {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .pool-address {
+            font-family: 'Share Tech Mono', monospace;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid #141d33;
+            padding: 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .stat-value.highlight {
+            color: var(--glow-cyan);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">NoNukes Ecosystem Dashboard</div>
+        <button class="refresh-btn" onclick="loadData()">↻ Refresh Data</button>
+    </header>
+
+    <div id="main-layout">
+        <div class="side-panel">
+            <div class="panel-header">Filters</div>
+            <input type="text" id="search" class="search-box" placeholder="Search symbol or address..." oninput="filterPools()">
+            
+            <div class="panel-header" style="margin-top: 10px;">Token Group</div>
+            <div class="group-filter" id="group-filters">
+                <button class="filter-btn active" onclick="setGroupFilter('All')">All Pools</button>
+                <button class="filter-btn" onclick="setGroupFilter('NoNukes')">NoNukes</button>
+                <button class="filter-btn" onclick="setGroupFilter('EViL')">EViL</button>
+                <button class="filter-btn" onclick="setGroupFilter('REARING')">REARING</button>
+                <button class="filter-btn" onclick="setGroupFilter('ᠵᠡᠮ')">ᠵᠡᠮ</button>
+                <button class="filter-btn" onclick="setGroupFilter('ELIZABETHNESIA')">ELIZABETHNESIA</button>
+                <button class="filter-btn" onclick="setGroupFilter('WAR')">WAR</button>
+                <button class="filter-btn" onclick="setGroupFilter('OG')">OG</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Unique Pools</div>
+                    <div id="stat-total-pools" class="stat-value highlight">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">V1 Pools</div>
+                    <div id="stat-v1-pools" class="stat-value">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">V2 Pools</div>
+                    <div id="stat-v2-pools" class="stat-value">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Oracle Swaps</div>
+                    <div id="stat-active-swaps" class="stat-value highlight">-</div>
+                </div>
+            </div>
+
+            <div class="grid-header">
+                <div>Version</div>
+                <div>Symbol</div>
+                <div>LP Pair Address</div>
+                <div>Ecosystem Group</div>
+            </div>
+
+            <div class="pool-list" id="pool-list-container">
+                <div style="padding: 40px; text-align: center; color: #64748b;">Loading pool data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allPools = {};
+        let currentGroupFilter = 'All';
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/nonukes');
+                const data = await response.json();
+                if (data.success) {
+                    allPools = data.pools;
+                    renderDashboard();
+                }
+            } catch (err) {
+                console.error("Failed to load pool configuration", err);
+            }
+        }
+
+        function setGroupFilter(group) {
+            currentGroupFilter = group;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.innerText.includes(group)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            filterPools();
+        }
+
+        function renderDashboard() {
+            const listContainer = document.getElementById('pool-list-container');
+            listContainer.innerHTML = '';
+
+            let countV1 = 0;
+            let countV2 = 0;
+            let total = 0;
+
+            const searchVal = document.getElementById('search').value.toLowerCase();
+
+            for (const [address, pool] of Object.entries(allPools)) {
+                // Apply filters
+                if (currentGroupFilter !== 'All' && pool.target_group !== currentGroupFilter) {
+                    continue;
+                }
+                if (searchVal && !pool.symbol.toLowerCase().includes(searchVal) && !address.includes(searchVal)) {
+                    continue;
+                }
+
+                total++;
+                if (pool.version === 'V1') countV1++;
+                if (pool.version === 'V2') countV2++;
+
+                const row = document.createElement('div');
+                row.className = 'pool-row';
+                row.innerHTML = `
+                    <div><span class="tag ${pool.version.toLowerCase()}">${pool.version}</span></div>
+                    <div class="pool-symbol">${pool.symbol}</div>
+                    <div class="pool-address">${address}</div>
+                    <div style="color: var(--glow-magenta); font-weight: bold;">${pool.target_group}</div>
+                `;
+                listContainer.appendChild(row);
+            }
+
+            document.getElementById('stat-total-pools').innerText = total;
+            document.getElementById('stat-v1-pools').innerText = countV1;
+            document.getElementById('stat-v2-pools').innerText = countV2;
+            document.getElementById('stat-active-swaps').innerText = '480';
+        }
+
+        function filterPools() {
+            renderDashboard();
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>

@@ -62,6 +62,19 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 "treasury_tokens": treasury_tokens
             }
             self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+        elif self.path == '/api/nonukes':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            pools = {}
+            if os.path.exists("nonukes_pools.json"):
+                try:
+                    with open("nonukes_pools.json", "r") as f:
+                        pools = json.load(f)
+                except Exception:
+                    pass
+            self.wfile.write(json.dumps({"success": True, "pools": pools}, indent=2).encode('utf-8'))
         elif self.path.startswith('/api/pools'):
             parsed_url = urllib.parse.urlparse(self.path)
             params = urllib.parse.parse_qs(parsed_url.query)
