@@ -201,9 +201,10 @@ static void* play_sound_thread(void *arg) {
             if (raw_sig && valve_out) {
                 for (int i = 0; i < len; i++) {
                     float t = (float)i / 8000.0f;
-                    float pitch_env = expf(-45.0f * t);
-                    float base_f = 48.0f + soul_pitch_offset;
-                    float f = base_f + 132.0f * pitch_env;
+                    float pitch_env_fast = expf(-150.0f * t);
+                    float pitch_env_slow = expf(-25.0f * t);
+                    float base_f = 42.0f + soul_pitch_offset;
+                    float f = base_f + 80.0f * pitch_env_slow + 200.0f * pitch_env_fast;
                     float w = 2.0f * 3.14159265f * f / 8000.0f;
                     float cos_w = cosf(w);
                     float decay_rate = 0.9935f * expf(-1.5f * t);
