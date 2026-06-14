@@ -248,6 +248,38 @@ static uint8_t seq_grid[2][8] = {
 static int seq_play_step = 0;
 static int seq_play_counter = 0;
 
+struct Particle {
+    float x;
+    float y;
+    float vx;
+    float vy;
+    float r, g, b;
+    float life;
+    bool active;
+};
+#define MAX_PARTICLES 128
+static struct Particle particles[MAX_PARTICLES];
+
+static void spawn_particles(float x, float y, float r, float g, float b) {
+    int spawned = 0;
+    for (int i = 0; i < MAX_PARTICLES && spawned < 12; i++) {
+        if (!particles[i].active) {
+            particles[i].active = true;
+            particles[i].x = x;
+            particles[i].y = y;
+            float angle = (float)(rand() % 360) * (3.14159265f / 180.0f);
+            float speed = 2.0f + (float)(rand() % 100) / 100.0f * 4.0f;
+            particles[i].vx = cosf(angle) * speed;
+            particles[i].vy = sinf(angle) * speed;
+            particles[i].r = r;
+            particles[i].g = g;
+            particles[i].b = b;
+            particles[i].life = 1.0f;
+            spawned++;
+        }
+    }
+}
+
 // Dragon's Lair Interactive Storybook Sequencer (1983 Retro QTE Game Loop)
 static bool dl_game_active = false;
 static int dl_score = 0;
@@ -833,9 +865,11 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
         if (seq_grid[0][seq_play_step]) {
             ammeter_T += 12.0f; // Kick drum adds a thermal surge to the ammeter
             play_synth_sound("kick");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 648.0f + 10.0f, 0.2f, 0.9f, 0.2f);
         }
         if (seq_grid[1][seq_play_step]) {
             play_synth_sound("snare");
+            spawn_particles(850.0f + (float)seq_play_step * 30.0f + 11.0f, 673.0f + 10.0f, 0.3f, 0.8f, 1.0f);
         }
     }
 
@@ -1606,6 +1640,25 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     char dynamic_prompt[128];
     snprintf(dynamic_prompt, sizeof(dynamic_prompt), "Prompt: 'a %s %s golden-brown' [1042, 9811]", prompt_fur, prompt_size);
     draw_string_ab4h(canvas, dynamic_prompt, 812, 718, log_col);
+    // Update and draw particles
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (particles[i].active) {
+            particles[i].x += particles[i].vx;
+            particles[i].y += particles[i].vy;
+            particles[i].vy += 0.2f; // gravity effect
+            particles[i].life -= 0.04f; // fade out speed
+            if (particles[i].life <= 0.0f) {
+                particles[i].active = false;
+            } else {
+                int px = (int)particles[i].x;
+                int py = (int)particles[i].y;
+                if (px >= 820 && px < 1200 && py >= 0 && py < 720) {
+                    Ab4hPixel p_col = make_ab4h_pixel(particles[i].r * particles[i].life, particles[i].g * particles[i].life, particles[i].b * particles[i].life, 1.0f);
+                    draw_rect_ab4h(canvas, px - 1, py - 1, 3, 3, p_col);
+                }
+            }
+        }
+    }
 }
 
 // Downsamples AB4H 64-bit float canvas to standard 32-bit ARGB Wayland framebuffer
