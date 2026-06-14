@@ -253,7 +253,7 @@ static bool seq_validation_passed = true;
 
 // Synthesizer drum sequencer grid state (Track 0 = Kick, Track 1 = Snare)
 static uint8_t seq_grid[2][8] = {
-    {1, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 1, 0, 0, 0, 1, 0}
 };
 static int seq_play_step = 0;
