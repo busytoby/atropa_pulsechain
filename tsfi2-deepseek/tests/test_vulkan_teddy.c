@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include "tsfi_vm_dft_bridge.h"
 #include "tsfi_valve.h"
+#include "tsfi_obj_loader.h"
 
 static TSFiVmStateParams params = {
     .identity_pole = 261640507549433ULL,
@@ -2977,9 +2978,25 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    if (argc > 1 && strcmp(argv[1], "--demo") == 0) {
-        demo_mode = true;
-    }
+    // Verify standard OBJ loader imports a bear model
+    printf("[OBJ] Verifying standard 3D mesh loader...\n");
+    TsfiObjMesh *bear_mesh = tsfi_obj_load("assets/sample_bear.obj");
+    assert(bear_mesh != NULL && "Failed to load assets/sample_bear.obj");
+    assert(bear_mesh->vertex_count == 6 && "Unexpected vertex count loaded from sample bear");
+    assert(bear_mesh->face_count == 3 && "Unexpected face count loaded from sample bear");
+    
+    TsfiRenderVertex *render_verts = NULL;
+    uint32_t *render_indices = NULL;
+    int r_vert_count = 0;
+    int r_ind_count = 0;
+    tsfi_obj_generate_buffers(bear_mesh, &render_verts, &render_indices, &r_vert_count, &r_ind_count);
+    assert(r_vert_count == 9 && "Expected 9 vertices generated for 3 faces");
+    assert(r_ind_count == 9 && "Expected 9 indices generated for 3 faces");
+    
+    free(render_verts);
+    free(render_indices);
+    tsfi_obj_free(bear_mesh);
+    printf("[OBJ] Successfully imported and validated a regular bear OBJ model!\n");
 
     printf("[EVM] Retrieving symbolic parameters from local Dysnomia VM...\n");
 
