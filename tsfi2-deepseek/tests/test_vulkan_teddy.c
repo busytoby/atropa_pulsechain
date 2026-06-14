@@ -39,7 +39,8 @@ static int selected_valve = 0;
 
 static inline float apply_valve_simulation(float input_sig, int valve_type) {
     if (valve_type == 0) {
-        return tanhf(input_sig);
+        // DeForest Audion Classic warm saturation with pre-gain boost
+        return tanhf(input_sig * 2.5f);
     } else if (valve_type == 1) {
         if (input_sig > 0.3f) {
             return 0.3f + 0.2f * tanhf((input_sig - 0.3f) * 1.5f);
